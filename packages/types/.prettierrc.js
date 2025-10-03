@@ -1,0 +1,1 @@
+module.exports = require("@elkdonis/config/prettier");

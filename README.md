@@ -1,135 +1,81 @@
-# Turborepo starter
+﻿# EAC Repository
 
-This Turborepo starter is maintained by the Turborepo core team.
+This monorepo powers the Elkdonis meeting workspace. The project is mid-redesign, carries no production data, and can be reset without migration risk. Prisma currently backs the prototype, but the long-term plan is to replace it with a self-hosted Supabase instance.
 
-## Using this example
+## Getting Started
+1. Install dependencies with `pnpm install` (root uses workspaces).
+2. Add a `.env.local` that defines `DATABASE_URL` (either in the repo root or inside `apps/central-access/`).
+3. Launch the central access app with `pnpm dev --filter central-access` (rename tasks if you have not yet migrated the workspace from `meeting-app`).
 
-Run the following command:
+## Workspace Layout
+- `apps/central-access` (formerly `apps/meeting-app`): Production Next.js app for dashboards, meeting listings, and creation flows.
+- `packages/db`: Transitional Prisma client wrapper (`@elkdonis/db`) with generated client code and connection bootstrap. This will be deprecated once Supabase is in place.
+- `packages/types`: Shared TypeScript contracts (`@elkdonis/types`) for meetings, organizations, RSVPs, and user-organization roles.
+- `packages/config`: Centralized ESLint/Prettier presets consumed across workspaces.
+- `packages/ui`: Legacy Tailwind/Radix component library kept for reference while Mantine parity is finalized.
 
-```sh
-npx create-turbo@latest
-```
+## Central Access Entry Points
+- `apps/central-access/src/app/layout.tsx`: Registers Mantine providers, Geist fonts, and the persistent bottom navigation shell.
+- `apps/central-access/src/app/page.tsx`: Root listing that fetches meetings via `getMeetings` and renders `MeetingCard` entries.
+- `apps/central-access/src/app/dashboard/page.tsx`: Metrics dashboard combining meeting and RSVP aggregates with the placeholder auth form.
+- `apps/central-access/src/app/new/page.tsx`: Entry for the meeting creation wizard.
+- `apps/central-access/src/app/new/new-meeting-form.tsx`: Client-side form logic handling validation, RSVP toggles, and server action submission.
+- `apps/central-access/src/lib/data.ts`: Prisma-backed data access layer that maps database models into shared types (to be replaced by Supabase queries).
+- `apps/central-access/src/lib/actions.ts`: Server actions that sanitize payloads, resolve a meeting creator, and revalidate key routes.
 
-## What's inside?
+## Shared Data Packages
+- `packages/db/prisma/schema.prisma`: Current schema for organizations, users, meetings, RSVPs, and membership roles. Treat it as disposable while Supabase adoption is planned.
+- `packages/db/src/index.ts`: Entry point exporting the Prisma client and generated types.
+- `packages/db/src/client.ts`: Prisma client bootstrap that ensures `DATABASE_URL` is present and configures logging.
+- `packages/db/scripts/check-prisma.cjs`: Connectivity script to verify the hosted Postgres instance.
+- `packages/types/src/index.ts`: Barrel file exporting user, organization, meeting, RSVP, and membership interfaces.
 
-This Turborepo includes the following packages/apps:
+## Tooling
+- Turbo orchestrates workspace scripts; use `pnpm dev`, `pnpm build`, or `pnpm lint` to run them across the monorepo.
+- ESLint/Prettier live in `packages/config` and are consumed via `eslint.config.mjs` / `.prettierrc.js` in each workspace.
+- Tailwind tooling remains in `packages/ui`, but the active app relies on Mantine components.
 
-### Apps and Packages
+## Additional Docs
+- `STRUCTURE_OVERVIEW.md`: High-level guide to the repo layout and critical entry points (kept in sync with this README).
+- `OVERVIEW.md`: Earlier deep-dive into the meeting app state, Prisma connectivity, and upcoming roadmap items.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Possible Next Steps
+The redesign work has not started yet; the outline below captures the target direction. Because no production data exists, we can discontinue Prisma without migration steps and stand up self-hosted Supabase as the new platform backend.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- **Unified Platform Vision**
+  - Treat the monorepo as the orchestration layer for a content and operations hub. Rename `apps/meeting-app` to `apps/central-access`, expand scope to identity, dashboards, and navigation into forms/blogs.
+  - Introduce shared platform packages (`packages/core` for domain services, `packages/ui` refactored for Mantine, `packages/api` for Supabase-backed access control). Supabase becomes the single source of truth via its Postgres + auth stack.
 
-### Utilities
+- **Central Access (currently meeting app)**
+  - Expand the renamed app to aggregate meetings, form submissions, and blog analytics.
+  - Implement Supabase auth/session handling with role-based enforcement using `UserOrganization.role` equivalents.
+  - Move heavy server actions into typed services stored in `packages/core`, keeping UI components slim.
+  - Surface navigation to meeting management, form responses, content editing, and organization settings.
 
-This Turborepo has some additional tools already setup for you:
+- **Self-Hosted Forms**
+  - Add `apps/forms-admin` for building/previewing forms with Supabase tables (`forms`, `form_fields`, `form_submissions`).
+  - Expose public embeds via `/forms/[slug]` routes or iframe-ready bundles. Use shared Zod schemas so admin, API, and embeds validate consistently.
+  - Plan for supabase functions or edge workers to fire webhooks and spam controls (captcha, rate limits).
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- **Multiple Blogs with Front-End Access**
+  - Model `posts`, `post_versions`, `categories`, and `site_themes` in Supabase.
+  - Provide authoring in Central Access or a dedicated `apps/content-admin` using a rich text editor (e.g., TipTap with Supabase storage).
+  - Deliver public content through `apps/content-web`, leveraging ISR or Supabase caching, and support per-site theming via stored configs.
 
-### Build
+- **Shared Operational Backbone**
+  - Consolidate Supabase queries and RPC calls inside `packages/api`, optionally exposing a GraphQL facade if cross-app querying grows complex.
+  - Introduce background jobs using Supabase cron, edge functions, or a lightweight queue (e.g., `bullmq`) for reminders, digests, and alerts.
+  - Standardize logging with `pino` and add Sentry (or Supabase observability) across all apps.
 
-To build all apps and packages, run the following command:
+- **Renaming and Repo Hygiene Steps**
+  - Complete the workspace rename to `apps/central-access` and update Turbo filters/scripts.
+  - Refactor `packages/ui` to Mantine primitives; retire unused Tailwind pieces.
+  - Refresh seed scripts to populate Supabase tables for forms, content, and meetings.
+  - Update documentation and developer onboarding notes to reflect the Supabase-first stack.
 
-```
-cd my-turborepo
+- **Immediate Next Moves**
+  - Extend the Prisma schema one last time only if necessary for prototyping, but plan to remove Prisma soon.
+  - Stand up the Supabase instance (self-hosted) and configure environment variables across apps.
+  - Draft UI wireframes so navigation between Central Access, Forms Admin, and Content Web is cohesive.
+  - Begin porting existing meeting queries to Supabase SQL and edge functions, validating the new stack end-to-end.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

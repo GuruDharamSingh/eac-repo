@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users    UserOrganization[]
+  meetings Meeting[]
+
+  @@map("organizations")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String?
+  avatarUrl     String?
+  isSuperadmin  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  organizations UserOrganization[]
+  meetings      Meeting[]          @relation("MeetingCreator")
+  rsvps         RSVP[]
+
+  @@map("users")
+}
+
+model UserOrganization {
+  id    String @id @default(cuid())
+  role  Role   @default(MEMBER)
+
+  // Foreign keys
+  userId String
+  orgId  String
+
+  // Relations
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@map("user_organizations")
+}
+
+model Meeting {
+  id                    String             @id @default(cuid())
+  title                 String
+  description           String?
+  startTime             DateTime
+  endTime               DateTime?
+  videoLink             String?
+  isRSVPEnabled         Boolean            @default(false)
+  location              String?
+  timeZone              String?
+  recurrencePattern     MeetingRecurrence  @default(NONE)
+  recurrenceCustomRule  String?
+  reminderMinutesBefore Int?
+  coHostIds             String[]           @default([])
+  rsvpDeadline          DateTime?
+  visibility            MeetingVisibility  @default(ORGANIZATION)
+  autoRecord            Boolean            @default(false)
+  tags                  String[]           @default([])
+  attachments           String[]           @default([])
+  followUpWorkflow      Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  // Foreign keys
+  orgId     String
+  createdBy String
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator      User         @relation("MeetingCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  rsvps        RSVP[]
+
+  @@map("meetings")
+}
+
+model RSVP {
+  id        String     @id @default(cuid())
+  status    RSVPStatus @default(MAYBE)
+  comment   String?
+  createdAt DateTime   @default(now())
+
+  // Foreign keys
+  userId    String
+  meetingId String
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, meetingId])
+  @@map("rsvps")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum RSVPStatus {
+  YES
+  NO
+  MAYBE
+}
+
+enum MeetingRecurrence {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum MeetingVisibility {
+  PUBLIC
+  ORGANIZATION
+  INVITE_ONLY
+}

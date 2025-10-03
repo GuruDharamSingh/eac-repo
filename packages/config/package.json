@@ -1,0 +1,16 @@
+{
+  "name": "@elkdonis/config",
+  "version": "1.0.0",
+  "description": "Shared ESLint and Prettier configurations",
+  "main": "index.js",
+  "files": [
+    "eslint",
+    "prettier"
+  ],
+  "devDependencies": {
+    "@types/eslint": "^9.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.0.0"
+  }
+}
