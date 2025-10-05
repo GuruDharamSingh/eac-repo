@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import type { ReactNode } from "react";
 import { getMeetings, getMeetingsByUser, getRSVPsByUser } from "@/lib/data";
 import { AuthHeaderForm } from "@/components/auth-header-form";
@@ -129,4 +130,5 @@ function SummaryCard({ icon, label, value, badgeColor }: SummaryCardProps) {
     </Card>
   );
 }
+
 
