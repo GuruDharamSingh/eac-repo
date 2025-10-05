@@ -1,4 +1,4 @@
-﻿# EAC Repository
+# EAC Repository
 
 This monorepo powers the Elkdonis meeting workspace. The project is mid-redesign, carries no production data, and can be reset without migration risk. Prisma currently backs the prototype, but the long-term plan is to replace it with a self-hosted Supabase instance.
 
@@ -35,7 +35,7 @@ This monorepo powers the Elkdonis meeting workspace. The project is mid-redesign
 - ESLint/Prettier live in `packages/config` and are consumed via `eslint.config.mjs` / `.prettierrc.js` in each workspace.
 - Tailwind tooling remains in `packages/ui`, but the active app relies on Mantine components.
 
-## Additional Docs
+## Additional Docs`n- `AGENTS.md`: Contributor guide for agents and developers.
 - `STRUCTURE_OVERVIEW.md`: High-level guide to the repo layout and critical entry points (kept in sync with this README).
 - `OVERVIEW.md`: Earlier deep-dive into the meeting app state, Prisma connectivity, and upcoming roadmap items.
 
@@ -78,4 +78,5 @@ The redesign work has not started yet; the outline below captures the target dir
   - Stand up the Supabase instance (self-hosted) and configure environment variables across apps.
   - Draft UI wireframes so navigation between Central Access, Forms Admin, and Content Web is cohesive.
   - Begin porting existing meeting queries to Supabase SQL and edge functions, validating the new stack end-to-end.
+
 
