@@ -1,48 +1,51 @@
 {
-    "name": "@elkdonis/ui",
-    "version": "1.0.0",
-    "description": "Reusable UI components built with Radix UI and Tailwind CSS",
-    "main": "./dist/index.js",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.js"
-        },
-        "./styles.css": "./dist/styles.css"
-    },
-    "scripts": {
-        "build": "tsup && node ./scripts/copy-css.mjs",
-        "dev": "tsup --watch",
-        "type-check": "tsc --noEmit",
-        "lint": "eslint src/"
-    },
-    "files": [
-        "dist/**"
-    ],
-    "peerDependencies": {
-        "react": "^18.0.0 || ^19.0.0",
-        "react-dom": "^18.0.0 || ^19.0.0"
-    },
-    "dependencies": {
-        "@radix-ui/react-dialog": "^1.1.0",
-        "@radix-ui/react-slot": "^1.1.0",
-        "class-variance-authority": "^0.7.0",
-        "clsx": "^2.0.0",
-        "tailwind-merge": "^2.0.0"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.36.0",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "@typescript-eslint/eslint-plugin": "^8.45.0",
-        "@typescript-eslint/parser": "^8.45.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-        "tailwindcss": "^4.0.0",
-        "tsup": "^8.0.0",
-        "typescript": "^5.0.0"
+  "name": "@elkdonis/ui",
+  "version": "1.0.0",
+  "description": "Shared UI components using Mantine",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "files": [
+    "dist/**"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@elkdonis/types": "workspace:*",
+    "@elkdonis/hooks": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "@mantine/core": "^8.3.2",
+    "@mantine/dates": "^8.3.2",
+    "@mantine/dropzone": "^8.3.2",
+    "@mantine/form": "^8.3.5",
+    "@mantine/hooks": "^8.3.2",
+    "@mantine/tiptap": "^8.3.2",
+    "@tabler/icons-react": "^3.0.0",
+    "@tiptap/react": "^2.8.0",
+    "@tiptap/starter-kit": "^2.8.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.544.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
 }

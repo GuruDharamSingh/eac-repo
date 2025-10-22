@@ -1,34 +1,24 @@
-import { PrismaClient } from './generated/prisma/index.js';
-import type { Prisma } from './generated/prisma/index.js';
+import postgres from 'postgres';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __prisma: PrismaClient | undefined;
-}
+/**
+ * PostgreSQL client - Simplified single-schema design
+ *
+ * Architecture:
+ * - Single database with single public schema
+ * - All tables use org_id column for filtering
+ * - All connections are local (no network latency)
+ */
 
-function assertDatabaseUrl() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      'DATABASE_URL is not set. Create a .env.local file (e.g. at the repository root or apps/meeting-app/.env.local) with a DATABASE_URL before importing @elkdonis/db.'
-    );
-  }
-}
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/elkdonis_dev';
 
-assertDatabaseUrl();
+// Main database connection
+export const db = postgres(databaseUrl, {
+  max: 20, // Connection pool size
+  idle_timeout: 20,
+  connect_timeout: 10,
+  debug: process.env.NODE_ENV === 'development',
+  onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
+});
 
-const createPrismaClient = (): PrismaClient => {
-  const logConfig: Prisma.LogLevel[] | undefined =
-    process.env.NODE_ENV === 'development' ? ['query'] : undefined;
-
-  return new PrismaClient({
-    log: logConfig,
-  });
-};
-
-export const prisma = globalThis.__prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__prisma = prisma;
-}
-
-export type PrismaClientType = typeof prisma;
+// Re-export for convenience
+export { postgres as sql };

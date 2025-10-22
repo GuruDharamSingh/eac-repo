@@ -6,5 +6,6 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['react', 'react-dom'],
+  target: 'es2020',
+  external: ['react', 'react-dom', '@elkdonis/hooks', '@elkdonis/utils', '@elkdonis/types'],
 });

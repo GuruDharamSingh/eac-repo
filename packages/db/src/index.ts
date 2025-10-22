@@ -1,2 +1,5 @@
-export { prisma, type PrismaClientType } from './client';
-export * from './generated/prisma/index.js';
+// Database package with simplified single-schema design
+export { db, sql } from './client';
+export { setupDatabase } from './schemas';
+export { Events } from './events';
+export { ForumSync } from './forum-sync';

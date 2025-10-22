@@ -1,7 +1,7 @@
 {
   "name": "@elkdonis/db",
   "version": "1.0.0",
-  "description": "Shared database package with Prisma for Elkdonis monorepo",
+  "description": "Database package using PostgreSQL with event-driven architecture",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -13,30 +13,25 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --project tsconfig.json && prisma generate",
+    "build": "tsup && tsc --emitDeclarationOnly --project tsconfig.json",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
-    "seed": "ts-node --esm src/seed.ts",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:setup": "tsx -e \"import('./src/schemas.ts').then(m => m.setupDatabase())\"",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "tsx src/seed.ts"
   },
   "files": [
     "dist/**",
-    "prisma/**"
+    "migrations/**"
   ],
   "dependencies": {
-    "@prisma/client": "^6.16.2",
-    "@prisma/extension-accelerate": "^2.0.2",
-    "@types/bcrypt": "^6.0.0",
-    "bcrypt": "^6.0.0",
-    "ts-node": "^10.9.2"
+    "postgres": "^3.4.0",
+    "nanoid": "^5.0.0"
   },
   "devDependencies": {
-    "prisma": "^6.16.2",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0",
+    "@types/node": "^20.0.0"
   }
 }

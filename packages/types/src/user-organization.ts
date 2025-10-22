@@ -1,11 +1,13 @@
-﻿import type { Organization } from './organization';
+import type { Organization } from './organization';
 import type { User } from './user';
 
+export type UserOrgRole = 'guide' | 'member' | 'viewer';
+
 export interface UserOrganization {
-  id: string;
   userId: string;
   orgId: string;
-  role: 'ADMIN' | 'MEMBER' | 'GUEST';
+  role: UserOrgRole;
+  joinedAt: Date;
   user?: User;
   org?: Organization;
 }

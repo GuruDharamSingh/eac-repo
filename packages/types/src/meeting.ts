@@ -1,6 +1,7 @@
 import type { Organization } from './organization';
-import type { RSVP } from './rsvp';
+import type { MeetingAttendee } from './meeting-attendee';
 import type { User } from './user';
+import type { Media } from './media';
 
 export type MeetingRecurrence = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
 export type MeetingVisibility = 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
@@ -29,7 +30,22 @@ export interface Meeting {
   followUpWorkflow: boolean;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Additional fields from database
+  guideId?: string;
+  isOnline?: boolean;
+  durationMinutes?: number;
+  
+  // Nextcloud integration
+  nextcloudDocumentId?: string;
+  documentUrl?: string;
+  documentShareToken?: string;
+  
+  // Relations
   organization?: Organization;
   creator?: User;
-  rsvps?: RSVP[];
+  guide?: User;
+  attendees?: MeetingAttendee[];
+  media?: Media[];
+  coverImage?: Media;
 }
