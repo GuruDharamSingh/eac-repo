@@ -1,0 +1,76 @@
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+# Copy workspace files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
+COPY packages ./packages
+COPY apps/inner-gathering/package.json ./apps/inner-gathering/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages ./packages
+COPY --from=deps /app/apps/inner-gathering/node_modules ./apps/inner-gathering/node_modules
+
+# Copy source
+COPY . .
+
+# Build shared packages
+RUN pnpm --filter @elkdonis/db build
+RUN pnpm --filter @elkdonis/ui build
+RUN pnpm --filter @elkdonis/nextcloud build
+RUN pnpm --filter @elkdonis/auth-client build
+RUN pnpm --filter @elkdonis/auth-server build
+RUN pnpm --filter @elkdonis/services build
+RUN pnpm --filter @elkdonis/types build
+RUN pnpm --filter @elkdonis/utils build
+RUN pnpm --filter @elkdonis/hooks build
+
+# Build inner-gathering app
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV production
+RUN cd apps/inner-gathering && pnpm build
+
+# Stage 3: Production Runtime
+FROM node:20-alpine AS production
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+# Add non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy necessary files for standalone build
+COPY --from=builder /app/apps/inner-gathering/next.config.ts ./apps/inner-gathering/
+COPY --from=builder /app/apps/inner-gathering/package.json ./apps/inner-gathering/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/inner-gathering/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/inner-gathering/.next/static ./apps/inner-gathering/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/inner-gathering/public ./apps/inner-gathering/public
+
+USER nextjs
+
+EXPOSE 3004
+
+ENV PORT 3004
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "apps/inner-gathering/server.js"]

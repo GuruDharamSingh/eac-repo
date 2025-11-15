@@ -1,13 +1,13 @@
+// Rich Text Editor
+export { RichTextEditor } from './components/RichTextEditor';
+export type { RichTextEditorProps } from './components/RichTextEditor';
+
 // Blog Entry Components
-// Temporarily commented out until @mantine/form is properly configured
-// export { BlogEntryForm } from './components/BlogEntryForm';
-// export type { BlogEntryFormData, BlogEntryFormProps } from './components/BlogEntryForm';
+export { BlogEntryForm } from './components/BlogEntryForm';
+export type { BlogEntryFormData, BlogEntryFormProps } from './components/BlogEntryForm';
 
 export { MediaUpload } from './components/MediaUpload';
 export type { MediaUploadProps } from './components/MediaUpload';
-
-export { RichTextEditor } from './components/RichTextEditor';
-export type { RichTextEditorProps } from './components/RichTextEditor';
 
 export { MeetingForm } from './components/MeetingForm';
 export type { MeetingFormProps, MeetingFormData, MeetingFormConfig } from './components/MeetingForm';

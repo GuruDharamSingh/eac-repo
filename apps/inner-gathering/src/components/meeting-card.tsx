@@ -1,151 +1,168 @@
-import { Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Anchor } from "@mantine/core";
-import { Calendar, Clock, MapPin, Video, User, Music4, Film, FileText, Image as ImageIcon } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, Video, User, FileText, ExternalLink } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { formatDate, formatTime } from "@/lib/utils";
 import { MediaPlayer, DocumentLink } from "@elkdonis/ui";
+import Image from "next/image";
 
 interface MeetingCardProps {
   meeting: Meeting;
 }
 
 export function MeetingCard({ meeting }: MeetingCardProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const guideName = meeting.guide?.displayName || meeting.creator?.displayName || "Unknown";
   const coverImageId = meeting.coverImage?.id;
   const attachments = (meeting.media || []).filter((media) => media.id !== coverImageId);
-
-  const renderAttachmentIcon = (type?: string) => {
-    switch (type) {
-      case "audio":
-        return <Music4 size={14} />;
-      case "video":
-        return <Film size={14} />;
-      case "image":
-        return <ImageIcon size={14} />;
-      default:
-        return <FileText size={14} />;
-    }
-  };
+  const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
 
   return (
-    <Paper withBorder radius="lg" p="md" shadow="sm">
-      <Stack gap="sm">
-        {meeting.coverImage?.url && (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      {/* Cover Image */}
+      {meeting.coverImage?.url && (
+        <div className="relative h-48 w-full overflow-hidden bg-muted">
           <Image
             src={meeting.coverImage.url}
             alt={meeting.coverImage.altText || meeting.title}
-            radius="md"
-            h={200}
-            fit="cover"
+            fill
+            className="object-cover"
           />
-        )}
-        <Group justify="space-between" align="flex-start">
-          <Stack gap={4}>
-            <Text fw={600} size="lg">
-              {meeting.title}
-            </Text>
-            <Group gap="xs">
-              <Badge variant="light" color="indigo" size="sm">
-                Meeting
+        </div>
+      )}
+
+      <CardHeader className="space-y-3 pb-4">
+        {/* Title & Badges */}
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold leading-tight">{meeting.title}</h3>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">Meeting</Badge>
+            {meeting.isOnline && (
+              <Badge variant="secondary" className="bg-cyan-100 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-100">
+                <Video className="h-3 w-3 mr-1" />
+                Online
               </Badge>
-              {meeting.isOnline && (
-                <Badge variant="light" color="cyan" leftSection={<Video size={12} />} size="sm">
-                  Online
-                </Badge>
-              )}
-            </Group>
-          </Stack>
-        </Group>
+            )}
+          </div>
+        </div>
 
+        {/* Description */}
         {meeting.description && (
-          <Text size="sm" c="dimmed" lineClamp={2}>
+          <p className="text-sm text-muted-foreground line-clamp-2">
             {meeting.description}
-          </Text>
+          </p>
+        )}
+      </CardHeader>
+
+      <CardContent className="space-y-3 text-sm">
+        {/* Date & Time */}
+        {meeting.scheduledAt && mounted && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4 text-indigo-600" />
+              <span className="font-medium text-foreground">{formatDate(new Date(meeting.scheduledAt))}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4 text-indigo-600" />
+              <span>
+                {formatTime(new Date(meeting.scheduledAt))}
+                {meeting.durationMinutes && <span className="text-xs ml-1">({meeting.durationMinutes}m)</span>}
+              </span>
+            </div>
+          </div>
         )}
 
-        <Stack gap={6}>
-          {meeting.startTime && (
-            <>
-              <Group gap="xs">
-                <ThemeIcon size="sm" radius="md" variant="light">
-                  <Calendar size={14} />
-                </ThemeIcon>
-                <Text size="sm">{formatDate(new Date(meeting.startTime))}</Text>
-              </Group>
-              <Group gap="xs">
-                <ThemeIcon size="sm" radius="md" variant="light">
-                  <Clock size={14} />
-                </ThemeIcon>
-                <Text size="sm">
-                  {formatTime(new Date(meeting.startTime))}
-                  {meeting.endTime && ` - ${formatTime(new Date(meeting.endTime))}`}
-                  {meeting.durationMinutes && ` (${meeting.durationMinutes} min)`}
-                </Text>
-              </Group>
-            </>
-          )}
-          {meeting.location && (
-            <Group gap="xs">
-              <ThemeIcon size="sm" radius="md" variant="light">
-                <MapPin size={14} />
-              </ThemeIcon>
-              <Text size="sm">{meeting.location}</Text>
-            </Group>
-          )}
-          <Group gap="xs">
-            <ThemeIcon size="sm" radius="md" variant="light">
-              <User size={14} />
-            </ThemeIcon>
-            <Text size="sm">Guide: {guideName}</Text>
-          </Group>
+        {/* Location */}
+        {meeting.location && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4 text-indigo-600" />
+            <span>{meeting.location}</span>
+          </div>
+        )}
 
-          {attachments.length > 0 && (
-            <Stack gap={8}>
-              <Text size="sm" fw={500}>
-                Media
-              </Text>
-              <Stack gap={8}>
-                {attachments.map((media) => {
-                  const mediaType = media.type || media.mimeType?.split("/")[0];
-                  
-                  // Render inline media player for video, audio, and images
-                  if (mediaType === "video" || mediaType === "audio" || mediaType === "image") {
-                    return (
-                      <MediaPlayer
-                        key={media.id}
-                        url={media.url}
-                        type={mediaType as "video" | "audio" | "image"}
-                        title={media.filename}
-                      />
-                    );
-                  }
-                  
-                  // Fallback to link for other file types
+        {/* Guide */}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <User className="h-4 w-4 text-indigo-600" />
+          <span>Guide: <span className="font-medium text-foreground">{guideName}</span></span>
+        </div>
+
+        {/* Media Attachments */}
+        {attachments.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <h4 className="font-medium text-xs uppercase text-muted-foreground">Media</h4>
+            <div className="space-y-2">
+              {attachments.map((media) => {
+                const mediaType = media.type || media.mimeType?.split("/")[0];
+
+                if (mediaType === "video" || mediaType === "audio" || mediaType === "image") {
                   return (
-                    <Group key={media.id} gap="xs">
-                      <ThemeIcon size="sm" radius="md" variant="outline" color="gray">
-                        {renderAttachmentIcon(mediaType)}
-                      </ThemeIcon>
-                      <Anchor href={media.url} target="_blank" size="sm">
-                        {media.filename || media.url.split("/").pop() || "Download"}
-                      </Anchor>
-                      <Text size="xs" c="dimmed">
-                        {media.mimeType?.split("/")[0] ?? "file"}
-                      </Text>
-                    </Group>
+                    <MediaPlayer
+                      key={media.id}
+                      url={media.url}
+                      type={mediaType as "video" | "audio" | "image"}
+                      title={media.filename}
+                    />
                   );
-                })}
-              </Stack>
-            </Stack>
-          )}
-        </Stack>
+                }
 
-        {meeting.documentUrl && (
-          <DocumentLink
-            documentUrl={meeting.documentUrl}
-            title="📄 Living Document"
-          />
+                return (
+                  <a
+                    key={media.id}
+                    href={media.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs hover:text-indigo-600 transition-colors"
+                  >
+                    <FileText className="h-3 w-3" />
+                    <span className="truncate">{media.filename || "Download"}</span>
+                    <ExternalLink className="h-3 w-3 ml-auto" />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
         )}
-      </Stack>
-    </Paper>
+      </CardContent>
+
+      {/* Actions Footer */}
+      {(meeting.nextcloudTalkToken || meeting.documentUrl) && (
+        <CardFooter className="flex flex-col gap-2 pt-4 border-t">
+          {meeting.nextcloudTalkToken && (
+            <Button asChild className="w-full" size="sm">
+              <a
+                href={`${nextcloudUrl}/call/${meeting.nextcloudTalkToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Join Talk Room
+              </a>
+            </Button>
+          )}
+
+          {meeting.documentUrl && (
+            <Button asChild variant="outline" className="w-full" size="sm">
+              <a
+                href={meeting.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Living Document
+              </a>
+            </Button>
+          )}
+        </CardFooter>
+      )}
+    </Card>
   );
 }

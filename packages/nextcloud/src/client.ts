@@ -74,10 +74,28 @@ export function createNextcloudClient(config: NextcloudConfig): NextcloudClient 
  * ```
  */
 export function getAdminClient(): NextcloudClient {
+  const baseUrl = process.env.NEXTCLOUD_URL;
+  const username = process.env.NEXTCLOUD_ADMIN_USER;
+  const password = process.env.NEXTCLOUD_ADMIN_PASSWORD;
+
+  // SECURITY: Never use hardcoded passwords
+  if (!baseUrl) {
+    throw new Error('NEXTCLOUD_URL environment variable is required');
+  }
+  if (!username) {
+    throw new Error('NEXTCLOUD_ADMIN_USER environment variable is required');
+  }
+  if (!password) {
+    throw new Error(
+      'NEXTCLOUD_ADMIN_PASSWORD environment variable is required. ' +
+      'Set this to a secure password and NEVER commit it to version control.'
+    );
+  }
+
   const config: NextcloudConfig = {
-    baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
-    username: process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis',
-    password: process.env.NEXTCLOUD_ADMIN_PASSWORD || 'Ea4thway',
+    baseUrl,
+    username,
+    password,
   };
 
   return createNextcloudClient(config);

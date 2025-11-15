@@ -43,3 +43,36 @@ export {
   createTalkRoom,
   sendTalkMessage,
 } from './nextcloud';
+
+// Availability polling services
+export {
+  createAvailabilityPoll,
+  getPollById,
+  getPollsByOrg,
+  submitAvailabilityResponse,
+  getPollResponses,
+  getPollSummary,
+  lockPoll,
+  cancelPoll,
+  deletePoll,
+} from './availability';
+
+// Nextcloud sync services
+export {
+  storeNextcloudEvent,
+  processNextcloudEvent,
+  processUnprocessedEvents,
+  getEventStats,
+} from './nextcloud-sync';
+export type { NextcloudEvent } from './nextcloud-sync';
+
+// Calendar sync services
+export {
+  syncMeetingToNextcloud,
+  deleteMeetingFromCalendar,
+  syncCalendarEventToMeeting,
+  handleCalendarWebhook,
+  syncAllMeetingsForOrg,
+  getMeetingSyncStatus,
+} from './calendar-sync';
+export type { MeetingForSync } from './calendar-sync';

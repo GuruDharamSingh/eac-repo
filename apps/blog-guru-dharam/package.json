@@ -9,21 +9,30 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/blog-client": "workspace:*",
+    "@elkdonis/blog-server": "workspace:*",
     "@elkdonis/db": "workspace:*",
-    "@elkdonis/auth": "workspace:*",
     "@elkdonis/types": "workspace:*",
+    "@elkdonis/ui": "workspace:*",
+    "@mantine/core": "^8.3.2",
+    "@mantine/dropzone": "^8.3.4",
+    "@mantine/hooks": "^8.3.2",
+    "@mantine/tiptap": "^8.3.4",
+    "date-fns": "^3.6.0",
+    "nanoid": "^5.0.0",
     "next": "15.5.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "date-fns": "^3.0.0"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4"
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

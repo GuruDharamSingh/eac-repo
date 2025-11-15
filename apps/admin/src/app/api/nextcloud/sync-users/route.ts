@@ -28,19 +28,20 @@ export async function POST() {
         }
 
         // Sync user to Nextcloud
-        const success = await userService.syncUser({
+        const result = await userService.syncUser({
           id: user.id,
           email: user.email,
           displayName: user.display_name,
           orgId: user.org_ids?.[0], // Use first org for now
         });
 
-        if (success) {
-          // Mark as synced in database
+        if (result.success) {
+          // Mark as synced in database and store app password if provided
           await db`
             UPDATE users
             SET
               nextcloud_user_id = ${user.id},
+              nextcloud_app_password = ${result.appPassword || null},
               nextcloud_synced = true,
               updated_at = NOW()
             WHERE id = ${user.id}

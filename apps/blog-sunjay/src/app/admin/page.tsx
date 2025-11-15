@@ -1,65 +1,64 @@
-import { Events, getOrgDb } from '@elkdonis/db';
+import Link from 'next/link';
+import { Button, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
+import { format } from 'date-fns';
+import { getPublishedPosts, requireBlogOwner } from '@elkdonis/blog-server';
+import { blogConfig } from '../../config/blog';
 
-const ORG_ID = 'sunjay';
-
-export default function AdminPage() {
-  async function createPost(formData: FormData) {
-    'use server';
-
-    const db = getOrgDb(ORG_ID);
-    const title = formData.get('title') as string;
-    const body = formData.get('body') as string;
-
-    // Create post in org schema
-    const [post] = await db`
-      INSERT INTO posts (id, title, body, slug, status, author_id)
-      VALUES (
-        gen_random_uuid(),
-        ${title},
-        ${body},
-        ${title.toLowerCase().replace(/\s+/g, '-')},
-        'draft',
-        'user-placeholder'
-      )
-      RETURNING id, title
-    `;
-
-    // Log event
-    await Events.log(ORG_ID, 'user-placeholder', 'created', {
-      contentId: post.id,
-      title: post.title,
-      type: 'post'
-    });
-  }
+export default async function AdminPage() {
+  await requireBlogOwner(blogConfig);
+  const posts = await getPublishedPosts(blogConfig.orgId, 50);
 
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin - Create Post</h1>
-
-      <form action={createPost} className="space-y-4 max-w-lg">
+    <Stack gap="xl">
+      <Group justify="space-between" align="flex-end">
         <div>
-          <label htmlFor="title" className="block mb-1">Title</label>
-          <input
-            name="title"
-            type="text"
-            className="border p-2 w-full"
-            required
-          />
+          <Title order={2}>Admin Dashboard</Title>
+          <Text size="sm" c="dimmed">
+            Manage recent posts and create new entries for {blogConfig.orgName}.
+          </Text>
         </div>
+        <Button component={Link} href="/entry">
+          New Entry
+        </Button>
+      </Group>
 
-        <div>
-          <label htmlFor="body" className="block mb-1">Content</label>
-          <textarea
-            name="body"
-            className="border p-2 w-full h-32"
-            required
-          />
-        </div>
-
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          Create Post
-        </button>
-      </form>
-    </main>
+      <Card withBorder radius="md" padding="lg" shadow="sm">
+        <Stack gap="md">
+          <Title order={4}>Published Posts</Title>
+          {posts.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No posts published yet. Head over to the entry page to publish your first story.
+            </Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Title</Table.Th>
+                  <Table.Th>Published</Table.Th>
+                  <Table.Th>Visibility</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {posts.map((post) => (
+                  <Table.Tr key={post.id}>
+                    <Table.Td>
+                      <Link className="text-blue-600" href={`/posts/${post.slug}`}>
+                        {post.title}
+                      </Link>
+                    </Table.Td>
+                    <Table.Td>
+                      {post.publishedAt
+                        ? format(new Date(post.publishedAt), 'PP')
+                        : format(new Date(post.createdAt), 'PP')}
+                    </Table.Td>
+                    <Table.Td>{post.visibility}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Stack>
+      </Card>
+    </Stack>
   );
 }

@@ -197,24 +197,29 @@ class UserService {
 
   /**
    * Sync user from app database to Nextcloud
+   * Returns the app password for newly created users, or null for existing users
    */
   async syncUser(userData: {
     id: string;
     email: string;
     displayName?: string;
     orgId?: string;
-  }): Promise<boolean> {
+  }): Promise<{ success: boolean; appPassword?: string }> {
     try {
       // Check if user exists
       const existingUser = await this.getUser(userData.id);
 
       if (!existingUser) {
-        // Create new user with random password (should be reset via email)
-        const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
+        // Generate secure password for new user
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let appPassword = '';
+        for (let i = 0; i < 32; i++) {
+          appPassword += charset[Math.floor(Math.random() * charset.length)];
+        }
 
         await this.createUser({
           userid: userData.id,
-          password: tempPassword,
+          password: appPassword,
           displayName: userData.displayName,
           email: userData.email,
           groups: userData.orgId ? [userData.orgId] : [],
@@ -222,6 +227,9 @@ class UserService {
 
         // Create user's personal folder
         await webdavService.createDirectory(`/${userData.id}`);
+
+        // Return the password so it can be stored in database
+        return { success: true, appPassword };
       } else {
         // Update existing user if needed
         if (userData.displayName && userData.displayName !== existingUser.displayname) {
@@ -235,9 +243,10 @@ class UserService {
         if (userData.orgId && !existingUser.groups.includes(userData.orgId)) {
           await this.addUserToGroup(userData.id, userData.orgId);
         }
-      }
 
-      return true;
+        // User already exists, no new password
+        return { success: true };
+      }
     } catch (error) {
       console.error('Error syncing user:', error);
       throw error;

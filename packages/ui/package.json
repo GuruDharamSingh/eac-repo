@@ -25,8 +25,8 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
-    "@elkdonis/types": "workspace:*",
     "@elkdonis/hooks": "workspace:*",
+    "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@mantine/core": "^8.3.2",
     "@mantine/dates": "^8.3.2",
@@ -35,8 +35,12 @@
     "@mantine/hooks": "^8.3.2",
     "@mantine/tiptap": "^8.3.2",
     "@tabler/icons-react": "^3.0.0",
+    "@tiptap/core": "^2.8.0",
+    "@tiptap/pm": "^2.8.0",
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",
+    "@tiptap/extension-link": "^2.8.0",
+    "@tiptap/extension-underline": "^2.8.0",
     "clsx": "^2.0.0",
     "lucide-react": "^0.544.0"
   },

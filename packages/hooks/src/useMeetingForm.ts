@@ -23,6 +23,8 @@ export interface MeetingFormData {
   notes: string;
   media: File[];
   createDocument: boolean;
+  syncToCalendar: boolean;
+  createTalkRoom: boolean;
 }
 
 export interface MeetingFormConfig {
@@ -50,6 +52,8 @@ export interface MeetingFormConfig {
     notes?: boolean;
     media?: boolean;
     createDocument?: boolean;
+    syncToCalendar?: boolean;
+    createTalkRoom?: boolean;
   };
   organizationOptions?: Array<{ value: string; label: string }>;
   fixedValues?: Partial<MeetingFormData>;
@@ -111,6 +115,8 @@ const DEFAULT_CONFIG: MeetingFormConfig = {
     notes: true,
     media: true,
     createDocument: true,
+    syncToCalendar: true,
+    createTalkRoom: true,
   },
 };
 
@@ -138,6 +144,8 @@ export function useMeetingForm(config: MeetingFormConfig = {}): UseMeetingFormRe
     notes: "",
     media: [],
     createDocument: false,
+    syncToCalendar: true,
+    createTalkRoom: true,
     ...mergedConfig.fixedValues,
   });
 
@@ -215,6 +223,8 @@ export function useMeetingForm(config: MeetingFormConfig = {}): UseMeetingFormRe
       notes: "",
       media: [],
       createDocument: false,
+      syncToCalendar: true,
+      createTalkRoom: true,
       ...mergedConfig.fixedValues,
     });
     setError(null);

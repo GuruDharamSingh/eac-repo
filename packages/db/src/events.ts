@@ -2,33 +2,64 @@ import { db } from './client';
 import { nanoid } from 'nanoid';
 
 /**
- * Event System with Forum Aggregation
- * - Logs all activity for audit trail
- * - Handles forum queue and approval workflow
- * - Simplified with single-schema design
+ * Event System - Wide Net Activity Logging
+ *
+ * Vision: Log ALL activity across the network for admin oversight.
+ * Forum surfaces content directly from posts/meetings/replies tables.
+ * Admin has full veto power via visibility overrides and moderation actions.
+ *
+ * This is NOT a queue system - it's an audit trail with admin controls.
  */
+
+export type EventAction =
+  // Content lifecycle
+  | 'post_created' | 'post_published' | 'post_updated' | 'post_deleted'
+  | 'meeting_created' | 'meeting_published' | 'meeting_updated' | 'meeting_deleted'
+  | 'reply_created' | 'reply_updated' | 'reply_deleted'
+  // User actions
+  | 'user_joined_org' | 'user_left_org'
+  | 'meeting_rsvp' | 'meeting_attended'
+  // Interactions
+  | 'reaction_added' | 'reaction_removed'
+  | 'content_bookmarked' | 'content_unbookmarked'
+  | 'thread_watched' | 'thread_unwatched'
+  // Media
+  | 'media_uploaded' | 'media_attached' | 'media_deleted'
+  // Moderation (admin actions)
+  | 'content_hidden' | 'content_unhidden'
+  | 'content_pinned' | 'content_unpinned'
+  | 'content_locked' | 'content_unlocked'
+  | 'content_flagged' | 'flag_resolved'
+  | 'user_banned' | 'user_unbanned'
+  | 'visibility_override';
+
+export type ResourceType =
+  | 'post' | 'meeting' | 'reply'
+  | 'user' | 'organization'
+  | 'media' | 'reaction' | 'bookmark' | 'watch' | 'flag';
+
 export class Events {
 
   /**
-   * Log an event when something happens in any org
+   * Log an event - cast wide net for all network activity
    */
   static async log(
-    orgId: string, 
-    userId: string, 
-    action: string, 
-    resourceType: string,
+    orgId: string | null, // null for cross-org admin actions
+    userId: string,
+    action: EventAction,
+    resourceType: ResourceType,
     resourceId: string,
     data: any = {}
   ) {
     const event = {
       id: nanoid(),
-      orgId,
-      userId,
+      org_id: orgId,
+      user_id: userId,
       action,
-      resourceType,
-      resourceId,
+      resource_type: resourceType,
+      resource_id: resourceId,
       data,
-      createdAt: new Date()
+      created_at: new Date()
     };
 
     await db`
@@ -39,267 +70,279 @@ export class Events {
   }
 
   /**
-   * Submit a post to the forum queue
-   * Called when user publishes a post with share_to_forum = true
+   * Get all events for admin dashboard with filtering
    */
-  static async submitToForumQueue(postId: string, orgId: string) {
-    // Check if org allows auto-sharing
-    const [org] = await db`
-      SELECT auto_share_to_forum
-      FROM organizations
-      WHERE id = ${orgId}
-    `;
+  static async getAllEvents(options: {
+    limit?: number;
+    offset?: number;
+    orgId?: string;
+    userId?: string;
+    action?: EventAction;
+    resourceType?: ResourceType;
+  } = {}) {
+    const { limit = 100, offset = 0, orgId, userId, action, resourceType } = options;
 
-    if (!org?.autoShareToForum) {
-      return null;
-    }
-
-    // Check if already in queue
-    const [existing] = await db`
-      SELECT id FROM forum_queue
-      WHERE post_id = ${postId}
-    `;
-
-    if (existing) {
-      return existing;
-    }
-
-    // Add to queue
-    const queueItem = {
-      id: nanoid(),
-      orgId,
-      postId,
-      status: 'pending',
-      submittedAt: new Date()
-    };
-
-    await db`
-      INSERT INTO forum_queue ${db(queueItem)}
-    `;
-
-    return queueItem;
-  }
-
-  /**
-   * Get pending forum queue items for admin approval
-   */
-  static async getForumQueue() {
-    return db`
-      SELECT
-        fq.*,
-        p.title,
-        p.excerpt,
-        p.created_at as post_created_at,
-        o.name as org_name,
-        o.slug as org_slug,
-        u.display_name as author_name
-      FROM forum_queue fq
-      JOIN posts p ON p.id = fq.post_id
-      JOIN organizations o ON o.id = fq.org_id
-      JOIN users u ON u.id = p.author_id
-      WHERE fq.status = 'pending'
-      ORDER BY fq.submitted_at DESC
-    `;
-  }
-
-  /**
-   * Admin approves content for forum
-   * This COPIES the post to forum_posts for performance and history
-   */
-  static async approveForForum(queueId: string, adminId: string) {
-    // Get the queue item
-    const [item] = await db`
-      SELECT * FROM forum_queue
-      WHERE id = ${queueId} AND status = 'pending'
-    `;
-
-    if (!item) {
-      throw new Error('Queue item not found or already processed');
-    }
-
-    // Get the actual post
-    const [post] = await db`
-      SELECT p.*, u.display_name as author_name
-      FROM posts p
-      JOIN users u ON u.id = p.author_id
-      WHERE p.id = ${item.postId}
-    `;
-
-    if (!post) {
-      // Post was deleted, clean up queue
-      await db`DELETE FROM forum_queue WHERE id = ${queueId}`;
-      throw new Error('Original post not found');
-    }
-
-    // Use transaction to ensure consistency
-    await db.begin(async (tx) => {
-      // Copy content to forum
-      const forumPost = {
-        id: nanoid(),
-        orgId: item.orgId,
-        originalPostId: post.id,
-        title: post.title,
-        body: post.body,
-        excerpt: post.excerpt,
-        authorId: post.authorId,
-        authorName: post.authorName || 'Anonymous',
-        tags: post.tags || [],
-        metadata: post.metadata || {},
-        approvedBy: adminId,
-        approvedAt: new Date(),
-        originalCreatedAt: post.createdAt,
-        viewCount: 0,
-        replyCount: 0
-      };
-
-      await tx`
-        INSERT INTO forum_posts ${tx(forumPost)}
-      `;
-
-      // Update queue status
-      await tx`
-        UPDATE forum_queue
-        SET 
-          status = 'approved',
-          reviewed_at = NOW(),
-          reviewed_by = ${adminId}
-        WHERE id = ${queueId}
-      `;
-
-      // Log the approval
-      await tx`
-        INSERT INTO events (id, org_id, user_id, action, resource_type, resource_id, data)
-        VALUES (
-          ${nanoid()},
-          'admin',
-          ${adminId},
-          'forum_approved',
-          'forum_post',
-          ${forumPost.id},
-          ${JSON.stringify({ queueId, originalPostId: post.id, orgId: item.orgId })}
-        )
-      `;
-    });
-
-    return true;
-  }
-
-  /**
-   * Admin rejects a forum submission
-   */
-  static async rejectForumSubmission(queueId: string, adminId: string, note?: string) {
-    const [item] = await db`
-      SELECT * FROM forum_queue
-      WHERE id = ${queueId} AND status = 'pending'
-    `;
-
-    if (!item) {
-      throw new Error('Queue item not found or already processed');
-    }
-
-    await db`
-      UPDATE forum_queue
-      SET 
-        status = 'rejected',
-        reviewed_at = NOW(),
-        reviewed_by = ${adminId},
-        review_note = ${note || null}
-      WHERE id = ${queueId}
-    `;
-
-    // Log the rejection
-    await this.log('admin', adminId, 'forum_rejected', 'forum_queue', queueId, {
-      postId: item.postId,
-      orgId: item.orgId,
-      note
-    });
-
-    return true;
-  }
-
-  /**
-   * Get forum posts (fast query from copied content)
-   */
-  static async getForumPosts(limit = 50, offset = 0) {
-    return db`
-      SELECT
-        fp.*,
-        o.name as org_name,
-        o.slug as org_slug,
-        o.settings as org_settings
-      FROM forum_posts fp
-      JOIN organizations o ON o.id = fp.org_id
-      ORDER BY fp.approved_at DESC
-      LIMIT ${limit}
-      OFFSET ${offset}
-    `;
-  }
-
-  /**
-   * Get a single forum post with replies
-   */
-  static async getForumPost(postId: string) {
-    const [post] = await db`
-      SELECT
-        fp.*,
-        o.name as org_name,
-        o.slug as org_slug
-      FROM forum_posts fp
-      JOIN organizations o ON o.id = fp.org_id
-      WHERE fp.id = ${postId}
-    `;
-
-    if (!post) return null;
-
-    // Get replies
-    const replies = await db`
-      SELECT
-        fr.*,
-        u.display_name as author_name,
-        u.avatar_url as author_avatar
-      FROM forum_replies fr
-      JOIN users u ON u.id = fr.user_id
-      WHERE fr.post_id = ${postId}
-      ORDER BY fr.created_at ASC
-    `;
-
-    return {
-      ...post,
-      replies
-    };
-  }
-
-  /**
-   * Get all events for admin dashboard
-   */
-  static async getAllEvents(limit = 100, offset = 0) {
-    return db`
+    let query = db`
       SELECT
         e.*,
         o.name as org_name,
-        u.display_name as user_name
+        o.slug as org_slug,
+        u.display_name as user_name,
+        u.email as user_email,
+        u.avatar_url as user_avatar
       FROM events e
       LEFT JOIN organizations o ON o.id = e.org_id
       LEFT JOIN users u ON u.id = e.user_id
+      WHERE 1=1
+    `;
+
+    // Apply filters
+    if (orgId) {
+      query = db`${query} AND e.org_id = ${orgId}`;
+    }
+    if (userId) {
+      query = db`${query} AND e.user_id = ${userId}`;
+    }
+    if (action) {
+      query = db`${query} AND e.action = ${action}`;
+    }
+    if (resourceType) {
+      query = db`${query} AND e.resource_type = ${resourceType}`;
+    }
+
+    query = db`
+      ${query}
       ORDER BY e.created_at DESC
       LIMIT ${limit}
       OFFSET ${offset}
     `;
+
+    return query;
+  }
+
+  /**
+   * Admin: Override content visibility (veto power)
+   * Forces content to be org-only even if author set it PUBLIC
+   */
+  static async overrideVisibility(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    newVisibility: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY',
+    adminId: string,
+    reason?: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET
+        visibility = ${newVisibility},
+        metadata = jsonb_set(
+          COALESCE(metadata, '{}'::jsonb),
+          '{admin_override}',
+          jsonb_build_object(
+            'admin_id', ${adminId},
+            'previous_visibility', visibility,
+            'reason', ${reason || 'Admin override'},
+            'timestamp', NOW()
+          )
+        )
+      WHERE id = ${resourceId}
+    `;
+
+    // Log the override
+    await this.log(null, adminId, 'visibility_override', resourceType, resourceId, {
+      newVisibility,
+      reason
+    });
+  }
+
+  /**
+   * Admin: Hide content from forum (doesn't delete, just prevents surfacing)
+   */
+  static async hideContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string,
+    reason?: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET
+        metadata = jsonb_set(
+          COALESCE(metadata, '{}'::jsonb),
+          '{hidden}',
+          'true'::jsonb
+        ),
+        metadata = jsonb_set(
+          metadata,
+          '{hidden_by}',
+          ${JSON.stringify({ adminId, reason, timestamp: new Date() })}::jsonb
+        )
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_hidden', resourceType, resourceId, { reason });
+  }
+
+  /**
+   * Admin: Unhide content
+   */
+  static async unhideContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET
+        metadata = metadata - 'hidden' - 'hidden_by'
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_unhidden', resourceType, resourceId, {});
+  }
+
+  /**
+   * Admin: Pin content to top of forum
+   */
+  static async pinContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET is_pinned = true
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_pinned', resourceType, resourceId, {});
+  }
+
+  /**
+   * Admin: Unpin content
+   */
+  static async unpinContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET is_pinned = false
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_unpinned', resourceType, resourceId, {});
+  }
+
+  /**
+   * Admin: Lock thread (prevent new replies)
+   */
+  static async lockContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string,
+    reason?: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET is_locked = true
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_locked', resourceType, resourceId, { reason });
+  }
+
+  /**
+   * Admin: Unlock thread
+   */
+  static async unlockContent(
+    resourceType: 'post' | 'meeting',
+    resourceId: string,
+    adminId: string
+  ) {
+    const table = resourceType === 'post' ? 'posts' : 'meetings';
+
+    await db`
+      UPDATE ${db(table)}
+      SET is_locked = false
+      WHERE id = ${resourceId}
+    `;
+
+    await this.log(null, adminId, 'content_unlocked', resourceType, resourceId, {});
   }
 
   /**
    * Get events for a specific organization
    */
   static async getOrgEvents(orgId: string, limit = 50) {
+    return this.getAllEvents({ orgId, limit });
+  }
+
+  /**
+   * Get recent content activity for dashboard summary
+   */
+  static async getRecentActivity(limit = 20) {
     return db`
       SELECT
         e.*,
-        u.display_name as user_name
+        o.name as org_name,
+        o.slug as org_slug,
+        u.display_name as user_name,
+        u.avatar_url as user_avatar
       FROM events e
+      LEFT JOIN organizations o ON o.id = e.org_id
       LEFT JOIN users u ON u.id = e.user_id
-      WHERE e.org_id = ${orgId}
+      WHERE e.action IN (
+        'post_published', 'meeting_published', 'reply_created',
+        'content_hidden', 'visibility_override'
+      )
       ORDER BY e.created_at DESC
       LIMIT ${limit}
     `;
+  }
+
+  /**
+   * Get event stats for admin dashboard
+   */
+  static async getEventStats(since?: Date) {
+    const sinceClause = since ? db`AND created_at >= ${since}` : db``;
+
+    const [stats] = await db`
+      SELECT
+        COUNT(*) FILTER (WHERE action LIKE 'post_%') as post_events,
+        COUNT(*) FILTER (WHERE action LIKE 'meeting_%') as meeting_events,
+        COUNT(*) FILTER (WHERE action LIKE 'reply_%') as reply_events,
+        COUNT(*) FILTER (WHERE action LIKE 'content_%') as moderation_events,
+        COUNT(*) FILTER (WHERE action = 'visibility_override') as visibility_overrides,
+        COUNT(DISTINCT user_id) as active_users,
+        COUNT(DISTINCT org_id) as active_orgs
+      FROM events
+      WHERE 1=1 ${sinceClause}
+    `;
+
+    return stats;
+  }
+
+  /**
+   * Check if user is admin (for server-side checks)
+   */
+  static async isAdmin(userId: string): Promise<boolean> {
+    const [user] = await db`
+      SELECT is_admin FROM users WHERE id = ${userId}
+    `;
+    return user?.is_admin === true;
   }
 }

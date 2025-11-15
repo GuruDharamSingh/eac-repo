@@ -1,8 +1,10 @@
 'use client';
 
-import { RichTextEditor as MantineRTE, Link } from '@mantine/tiptap';
+import { RichTextEditor as MantineRTE } from '@mantine/tiptap';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
 import { useEffect } from 'react';
 
 export interface RichTextEditorProps {
@@ -13,7 +15,16 @@ export interface RichTextEditorProps {
 
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit, Link],
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline',
+        },
+      }),
+      Underline,
+    ],
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());

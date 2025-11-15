@@ -3,7 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 // REST API URL (PostgREST on port 9998)
 const supabaseRestUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 // Auth URL (GoTrue on port 9999)
-const supabaseAuthUrl = process.env.NEXT_PUBLIC_SUPABASE_AUTH_URL || '';
+const supabaseAuthUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_AUTH_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Custom fetch to route auth requests to the correct service

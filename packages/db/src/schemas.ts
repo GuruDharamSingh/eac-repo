@@ -84,13 +84,9 @@ async function createTables() {
       notes TEXT,
 
       -- Time fields
-      start_time TIMESTAMPTZ,
-      end_time TIMESTAMPTZ,
+      scheduled_at TIMESTAMPTZ,
       time_zone VARCHAR(100),
       duration_minutes INTEGER,
-
-      -- Legacy field for backwards compatibility
-      scheduled_at TIMESTAMPTZ,
 
       -- Location
       location TEXT,

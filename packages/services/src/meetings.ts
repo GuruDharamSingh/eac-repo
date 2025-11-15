@@ -167,15 +167,14 @@ function mapMeetingFromDb(row: any): Meeting {
     id: row.id,
     title: row.title,
     description: row.description || undefined,
-    startTime: row.start_time || row.scheduled_at || new Date(),
-    endTime:
-      row.end_time || (row.scheduled_at && row.duration_minutes
-        ? new Date(new Date(row.scheduled_at).getTime() + row.duration_minutes * 60000)
-        : undefined),
+    scheduledAt: row.scheduled_at ? new Date(row.scheduled_at) : new Date(),
+    durationMinutes: row.duration_minutes || undefined,
     orgId: row.org_id,
     createdBy: row.guide_id,
+    guideId: row.guide_id,
     videoLink: row.video_link || row.meeting_url || undefined,
     isRSVPEnabled: row.is_rsvp_enabled ?? false,
+    isOnline: row.is_online ?? false,
     location: row.location || undefined,
     timeZone: row.time_zone || undefined,
     recurrencePattern: row.recurrence_pattern || 'NONE',

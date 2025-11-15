@@ -67,10 +67,11 @@ export async function provisionUser(
   // This is more secure than using main password
   const appPassword = await generateAppPassword(adminClient, userId);
 
-  // Update your database
+  // Update your database with credentials
   await db`
-    UPDATE users 
+    UPDATE users
     SET nextcloud_user_id = ${userId},
+        nextcloud_app_password = ${appPassword},
         nextcloud_synced = true
     WHERE id = ${userId}
   `;
@@ -81,16 +82,18 @@ export async function provisionUser(
 /**
  * Generate an app password for a user
  * App passwords are safer than real passwords and can be revoked
+ *
+ * NOTE: Currently using the same password for both user login and API access.
+ * In production, implement Nextcloud's proper app password API:
+ * POST /ocs/v2.php/core/apppassword (requires user session token)
  */
 export async function generateAppPassword(
-  adminClient: NextcloudClient,
-  userId: string
+  _adminClient: NextcloudClient,
+  _userId: string
 ): Promise<string> {
-  // Note: This requires admin privileges or the user's own session
-  // For production, you might want to use a different auth flow
-  
-  // For now, return the user's password (in production, use proper app password generation)
-  // TODO: Implement proper app password generation via Nextcloud API
+  // For now, generate a secure password to use as both user password and app password
+  // This is simpler but less secure than proper app passwords
+  // TODO: Implement proper app password generation via Nextcloud API when user session tokens are available
   return generateSecurePassword();
 }
 

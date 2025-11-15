@@ -255,6 +255,32 @@ export function MeetingForm({
           </FormSection>
         )}
 
+        {/* Nextcloud Integration */}
+        {(mergedConfig.visibleFields?.syncToCalendar ||
+          mergedConfig.visibleFields?.createTalkRoom) && (
+          <FormSection title="Nextcloud Integration" icon={<Calendar size={16} />}>
+            <Stack gap="md">
+              {mergedConfig.visibleFields?.syncToCalendar && (
+                <Checkbox
+                  label="Sync to Nextcloud Calendar"
+                  description="Event will appear in Nextcloud Calendar and mobile calendar apps (CalDAV)"
+                  checked={formData.syncToCalendar}
+                  onChange={(e) => handleChange("syncToCalendar", e.currentTarget.checked)}
+                />
+              )}
+
+              {mergedConfig.visibleFields?.createTalkRoom && formData.isOnline && (
+                <Checkbox
+                  label="Create video chat room (Nextcloud Talk)"
+                  description="Auto-generate a Nextcloud Talk room for online meetings"
+                  checked={formData.createTalkRoom}
+                  onChange={(e) => handleChange("createTalkRoom", e.currentTarget.checked)}
+                />
+              )}
+            </Stack>
+          </FormSection>
+        )}
+
         {error && (
           <Text c="red" size="sm">
             {error}

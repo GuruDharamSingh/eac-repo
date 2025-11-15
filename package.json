@@ -20,5 +20,9 @@
   ],
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@mantine/core": "^8.3.2",
+    "@mantine/hooks": "^8.3.2"
   }
 }

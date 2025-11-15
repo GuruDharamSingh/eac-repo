@@ -9,17 +9,11 @@ FROM base AS development
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-COPY turbo.json ./
-COPY apps/admin/package.json ./apps/admin/
-COPY packages/*/package.json ./packages/*/
+# Copy all source code (development doesn't need multi-stage optimization)
+COPY . .
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY . .
+RUN pnpm install
 
 # Build database package
 WORKDIR /app
@@ -37,7 +31,8 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml* ./
 COPY turbo.json ./
-COPY apps/admin/package.json ./apps/admin/
+COPY pnpm-workspace.yaml ./
+COPY apps/*/package.json ./apps/*/
 COPY packages/*/package.json ./packages/*/
 
 RUN pnpm install --prod --frozen-lockfile
@@ -49,7 +44,8 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml* ./
 COPY turbo.json ./
-COPY apps/admin/package.json ./apps/admin/
+COPY pnpm-workspace.yaml ./
+COPY apps/*/package.json ./apps/*/
 COPY packages/*/package.json ./packages/*/
 
 RUN pnpm install --frozen-lockfile

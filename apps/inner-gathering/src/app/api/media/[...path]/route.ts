@@ -12,10 +12,11 @@ const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'admin';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const filePath = params.path.join('/');
+    const { path } = await params;
+    const filePath = path.join('/');
     
     // Construct the Nextcloud WebDAV URL
     const nextcloudUrl = `${NEXTCLOUD_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${filePath}`;

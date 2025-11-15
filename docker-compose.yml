@@ -54,6 +54,7 @@ services:
       - "9999:9999"
     networks:
       - eac-network
+      - nextcloud-network
 
   # Supabase PostgREST (REST API for database)
   supabase-rest:
@@ -74,6 +75,7 @@ services:
       - "9998:3000"
     networks:
       - eac-network
+      - nextcloud-network
 
   # Supabase Realtime (for live updates)
   supabase-realtime:
@@ -83,6 +85,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      APP_NAME: realtime
       PORT: 4000
       DB_HOST: postgres
       DB_PORT: 5432
@@ -95,10 +98,12 @@ services:
       REPLICATION_MODE: RLS
       REPLICATION_POLL_INTERVAL: 100
       SECURE_CHANNELS: "true"
+      RLIMIT_NOFILE: 1048576
     ports:
       - "4000:4000"
     networks:
       - eac-network
+      - nextcloud-network
 
   # Redis for caching (optional but recommended)
   redis:
@@ -199,7 +204,6 @@ services:
       NODE_ENV: development
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/apps/blog-sunjay/.next
     ports:
       - "3001:3001"
@@ -224,11 +228,55 @@ services:
       NODE_ENV: development
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/apps/blog-guru-dharam/.next
     ports:
       - "3002:3002"
     command: sh -c "cd apps/blog-guru-dharam && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Inner Gathering App
+  inner-gathering:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-inner-gathering
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+
+      # Supabase Auth (Docker internal)
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:9999
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+
+      # Nextcloud
+      NEXTCLOUD_URL: http://nextcloud-nginx:80
+      NEXTCLOUD_ADMIN_USER: elkdonis
+      NEXTCLOUD_ADMIN_PASSWORD: Ea4thway
+
+      # Node environment
+      NODE_ENV: development
+      PORT: 3004
+      NEXT_PUBLIC_APP_URL: http://localhost:3004
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/inner-gathering/.next
+    ports:
+      - "3004:3004"
+    command: sh -c "cd apps/inner-gathering && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network

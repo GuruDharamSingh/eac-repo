@@ -1,4 +1,4 @@
-whaimport { db } from "@elkdonis/db";
+import { db } from "@elkdonis/db";
 import type {
   Meeting,
   MeetingType,
@@ -21,6 +21,10 @@ export interface CreateMeetingParams {
   isOnline?: boolean;
   meetingUrl?: string;
   visibility?: MeetingVisibility;
+}
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
 export async function createMeeting(params: CreateMeetingParams): Promise<Meeting> {
@@ -141,20 +145,57 @@ export async function getMeetingById(meetingId: string): Promise<Meeting | null>
 
   if (!meeting) return null;
 
+  return mapMeeting(meeting);
+}
+
+// Helper functions
+function mapMeeting(row: any): Meeting {
   return {
-    id: meeting.id,
-    title: meeting.title,
-    description: meeting.description || undefined,
-    startTime: meeting.start_time,
-    endTime: meeting.end_time || undefined,
-    orgId: meeting.org_id,
-    createdBy: meeting.created_by,
-    visibility: meeting.visibility,
-    meetingType: meeting.meeting_type,
-    location: meeting.location || undefined,
-    createdAt: meeting.created_at,
-    updatedAt: meeting.updated_at,
-    organization: meeting.org_name ? { name: meeting.org_name } : undefined,
-    creator: meeting.creator_name ? { name: meeting.creator_name } : undefined,
-  };
+    id: row.id,
+    orgId: row.org_id,
+    createdBy: row.guide_id,
+    guideId: row.guide_id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description || undefined,
+    notes: row.notes || undefined,
+    startTime: row.scheduled_at || undefined,
+    endTime:
+      row.scheduled_at && row.duration_minutes
+        ? new Date(new Date(row.scheduled_at).getTime() + row.duration_minutes * 60000)
+        : undefined,
+    timeZone: row.time_zone || undefined,
+    durationMinutes: row.duration_minutes || undefined,
+    scheduledAt: row.scheduled_at || undefined,
+    location: row.location || undefined,
+    isOnline: row.is_online ?? true,
+    meetingUrl: row.meeting_url || undefined,
+    videoUrl: row.video_url || undefined,
+    videoLink: row.video_link || undefined,
+    recurrencePattern: row.recurrence_pattern || undefined,
+    recurrenceCustomRule: row.recurrence_custom_rule || undefined,
+    isRSVPEnabled: row.is_rsvp_enabled ?? false,
+    rsvpDeadline: row.rsvp_deadline || undefined,
+    attendeeLimit: row.attendee_limit || undefined,
+    coHostIds: Array.isArray(row.co_host_ids) ? row.co_host_ids : [],
+    reminderMinutesBefore: row.reminder_minutes_before || undefined,
+    autoRecord: row.auto_record ?? false,
+    followUpWorkflow: row.follow_up_workflow ?? false,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    status: row.status,
+    visibility: row.visibility,
+    nextcloudFileId: row.nextcloud_file_id || undefined,
+    nextcloudLastSync: row.nextcloud_last_sync || undefined,
+    documentUrl: row.video_url || undefined,
+    nextcloudDocumentId: row.nextcloud_file_id || undefined,
+    metadata: row.metadata || undefined,
+    createdAt: row.created_at,
+    publishedAt: row.published_at || undefined,
+    updatedAt: row.updated_at,
+    viewCount: row.view_count ?? 0,
+    replyCount: row.reply_count ?? 0,
+    guide: row.guide_name ? { displayName: row.guide_name } : undefined,
+    creator: row.guide_name ? { displayName: row.guide_name } : undefined,
+  } as Meeting;
 }

@@ -1,7 +1,9 @@
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
+import "./globals.css";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import type { Metadata } from "next";
+import { LayoutWrapper } from "@/components/layout-wrapper";
 
 export const metadata: Metadata = {
   title: "InnerGathering",
@@ -15,11 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <MantineProvider
           theme={{
             primaryColor: "indigo",
@@ -27,7 +29,7 @@ export default function RootLayout({
             defaultRadius: "md",
           }}
         >
-          {children}
+          <LayoutWrapper>{children}</LayoutWrapper>
         </MantineProvider>
       </body>
     </html>

@@ -1,13 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { Container, Title, Text, Tabs, Stack, Paper, Button, Group } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { Container, Title, Text, Tabs, Stack, Paper, Button, Group, Table, Badge, Loader, Center } from '@mantine/core';
 import { FileBrowser, TalkRoom } from '@elkdonis/ui';
-import { FolderOpen, MessageCircle, Users, Plus } from 'lucide-react';
+import { FolderOpen, MessageCircle, Users, Plus, RefreshCw } from 'lucide-react';
+
+interface UserData {
+  id: string;
+  email: string;
+  display_name: string | null;
+  nextcloud_synced: boolean;
+  nextcloud_user_id: string | null;
+}
 
 export default function NextcloudPage() {
   const [activeTab, setActiveTab] = useState('files');
   const orgId = 'elkdonis'; // This would come from user context in production
+
+  // User sync state
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Mock Talk room data - in production, load from database
   const [talkRooms] = useState([
@@ -16,6 +28,47 @@ export default function NextcloudPage() {
   ]);
 
   const [selectedRoom, setSelectedRoom] = useState(talkRooms[0]);
+
+  // Fetch users when Users tab is active
+  useEffect(() => {
+    if (activeTab === 'users') {
+      loadUsers();
+    }
+  }, [activeTab]);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/nextcloud/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const syncUser = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/nextcloud/sync-user/${userId}`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || 'User synced successfully!');
+        loadUsers(); // Reload users after sync
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to sync user');
+      }
+    } catch (error) {
+      console.error('Error syncing user:', error);
+      alert('Error syncing user');
+    }
+  };
 
   return (
     <Container size="xl" py="xl">
@@ -97,53 +150,74 @@ export default function NextcloudPage() {
 
           <Tabs.Panel value="users" pt="xl">
             <Stack gap="md">
-              <Text size="sm" c="dimmed">
-                Sync users between your app and Nextcloud
-              </Text>
-              <Paper withBorder p="lg">
-                <Stack gap="md">
-                  <Group justify="space-between">
-                    <div>
-                      <Text fw={600}>Auto-sync Users</Text>
-                      <Text size="sm" c="dimmed">
-                        Automatically create Nextcloud accounts for new users
-                      </Text>
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        const response = await fetch('/api/nextcloud/sync-users', {
-                          method: 'POST',
-                        });
-                        if (response.ok) {
-                          alert('Users synced successfully!');
-                        }
-                      }}
-                    >
-                      Sync Now
-                    </Button>
-                  </Group>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">
+                  Manage user synchronization with Nextcloud
+                </Text>
+                <Button
+                  size="sm"
+                  variant="light"
+                  leftSection={<RefreshCw size={16} />}
+                  onClick={loadUsers}
+                  loading={loading}
+                >
+                  Refresh
+                </Button>
+              </Group>
 
-                  <Group justify="space-between">
-                    <div>
-                      <Text fw={600}>Create Organization Folders</Text>
-                      <Text size="sm" c="dimmed">
-                        Set up folder structure for all organizations
-                      </Text>
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        const response = await fetch('/api/nextcloud/setup-folders', {
-                          method: 'POST',
-                        });
-                        if (response.ok) {
-                          alert('Folders created successfully!');
-                        }
-                      }}
-                    >
-                      Create Folders
-                    </Button>
-                  </Group>
-                </Stack>
+              <Paper withBorder>
+                {loading ? (
+                  <Center p="xl">
+                    <Loader size="sm" />
+                  </Center>
+                ) : users.length === 0 ? (
+                  <Center p="xl">
+                    <Text c="dimmed">No users found</Text>
+                  </Center>
+                ) : (
+                  <Table>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Email</Table.Th>
+                        <Table.Th>Display Name</Table.Th>
+                        <Table.Th>Nextcloud ID</Table.Th>
+                        <Table.Th>Status</Table.Th>
+                        <Table.Th>Actions</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {users.map((user) => (
+                        <Table.Tr key={user.id}>
+                          <Table.Td>{user.email}</Table.Td>
+                          <Table.Td>{user.display_name || '-'}</Table.Td>
+                          <Table.Td>
+                            <Text size="xs" c="dimmed" ff="monospace">
+                              {user.nextcloud_user_id || '-'}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            {user.nextcloud_synced ? (
+                              <Badge color="green" size="sm">Synced</Badge>
+                            ) : (
+                              <Badge color="gray" size="sm">Not Synced</Badge>
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            {!user.nextcloud_synced && (
+                              <Button
+                                size="xs"
+                                variant="light"
+                                onClick={() => syncUser(user.id)}
+                              >
+                                Sync
+                              </Button>
+                            )}
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                )}
               </Paper>
             </Stack>
           </Tabs.Panel>

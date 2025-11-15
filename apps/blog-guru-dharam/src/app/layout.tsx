@@ -1,33 +1,40 @@
 import '@mantine/core/styles.css';
-import { MantineProvider, ColorSchemeScript } from '@mantine/core';
+import { ColorSchemeScript } from '@mantine/core';
+import { cookies } from 'next/headers';
+import { BlogHeader, BlogHero, BlogProviders } from '@elkdonis/blog-client';
+import { getServerAuth } from '@elkdonis/auth-server';
+import { blogConfig } from '../config/blog';
 
 export const metadata = {
   title: "Guru Dharam's Blog",
   description: 'Thoughts, writings, and creative explorations',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = getServerAuth(cookies);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <html lang="en">
       <head>
         <ColorSchemeScript />
       </head>
       <body>
-        <MantineProvider>
-          <header className="border-b p-4">
-            <h1 className="text-2xl font-bold">Guru Dharam's Blog</h1>
-            <nav className="mt-2">
-              <a href="/" className="mr-4">Home</a>
-              <a href="/entry" className="mr-4">New Entry</a>
-              <a href="/admin" className="mr-4">Admin</a>
-            </nav>
-          </header>
-          {children}
-        </MantineProvider>
+        <BlogProviders initialSession={session}>
+          <BlogHeader config={blogConfig} />
+          <main className="bg-slate-50">
+            <div className="container mx-auto px-4 py-10">
+              <BlogHero hero={blogConfig.hero} />
+              <div className="mt-8">{children}</div>
+            </div>
+          </main>
+        </BlogProviders>
       </body>
     </html>
   );

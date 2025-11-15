@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { MeetingForm, type MeetingFormData } from "@elkdonis/ui";
 import { createMeetingAction } from "@/lib/actions";
-import { authClient } from "@/lib/auth-client";
+import { getSession } from "@elkdonis/auth-client";
 
 interface CreateMeetingFormProps {
   onSuccess?: () => void;
@@ -15,46 +15,21 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get current auth user and fetch corresponding app user ID
+    // Get current auth user
     const fetchUserId = async () => {
-      // Get the authenticated user from auth-client
-      const { user, error } = await authClient.getUser();
-
-      console.log('Auth check:', { user, error, hasToken: !!authClient.getToken() });
-
-      if (error || !user) {
-        console.error('Auth error:', error);
-        return;
-      }
-
-      // Now fetch the app user ID from the database using the auth user's ID
-      const token = authClient.getToken();
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:9998';
-        const url = `${supabaseUrl}/users?auth_user_id=eq.${user.id}&select=id`;
-        console.log('Fetching user from:', url);
+        const { user } = await getSession();
 
-        const response = await fetch(url, {
-          headers: {
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        console.log('Auth check:', { user });
 
-        const data = await response.json();
-        console.log('User data from DB:', data);
-
-        if (data && data.length > 0) {
-          console.log('Setting userId to:', data[0].id);
-          setUserId(data[0].id);
-        } else {
-          console.error('No user found in database');
+        if (!user) {
+          console.error('No user session found');
+          return;
         }
+
+        // Use user ID directly from session
+        console.log('Setting userId to:', user.id);
+        setUserId(user.id);
       } catch (err) {
         console.error('Error fetching user ID:', err);
       }
@@ -73,17 +48,9 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
         ? parseInt(formData.durationMinutes, 10)
         : formData.durationMinutes;
 
-    // Calculate start and end times based on scheduledAt and duration
-    const startTime = formData.scheduledAt instanceof Date
-      ? formData.scheduledAt.toISOString()
-      : new Date().toISOString();
-
-    let endTime: string | undefined;
-    if (formData.scheduledAt instanceof Date && durationMinutes && !isNaN(durationMinutes)) {
-      const endDate = new Date(formData.scheduledAt);
-      endDate.setMinutes(endDate.getMinutes() + durationMinutes);
-      endTime = endDate.toISOString();
-    }
+    const scheduledAt = formData.scheduledAt instanceof Date
+      ? formData.scheduledAt
+      : new Date();
 
     // Upload media if provided
     const uploadedMedia: Array<{
@@ -161,8 +128,8 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
     await createMeetingAction({
       userId,
       title: formData.title.trim(),
-      startTime,
-      endTime,
+      scheduledAt,
+      durationMinutes,
       location: formData.location?.trim(),
       description: formData.description?.trim() || undefined,
       visibility: formData.visibility || "ORGANIZATION",
@@ -171,6 +138,8 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
       media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
       nextcloudDocumentId: documentData?.fileId,
       documentUrl: documentData?.url,
+      syncToCalendar: formData.syncToCalendar,
+      createTalkRoom: formData.createTalkRoom ?? formData.isOnline, // Auto-create Talk room for online meetings
     });
   };
 

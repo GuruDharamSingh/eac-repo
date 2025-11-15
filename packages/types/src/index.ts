@@ -8,3 +8,4 @@ export * from './post';
 export * from './reply';
 export * from './media';
 export * from './event';
+export * from './availability';

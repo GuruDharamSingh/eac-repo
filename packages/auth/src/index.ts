@@ -36,6 +36,34 @@ export async function checkOrgAccess(userId: string, orgId: string): Promise<boo
 }
 
 /**
+ * Check if user is admin (superadmin access)
+ * Import db dynamically to avoid circular dependencies
+ */
+export async function isAdmin(userId: string): Promise<boolean> {
+  try {
+    const { db } = await import('@elkdonis/db');
+    const [user] = await db`
+      SELECT is_admin FROM users WHERE id = ${userId}
+    `;
+    return user?.is_admin === true;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+}
+
+/**
+ * Middleware helper: Require admin access
+ * Throws error if user is not admin
+ */
+export async function requireAdmin(userId: string): Promise<void> {
+  const admin = await isAdmin(userId);
+  if (!admin) {
+    throw new Error('Admin access required');
+  }
+}
+
+/**
  * Authentication hooks and utilities
  */
 export { useUser, useSession, useSupabaseClient } from '@supabase/auth-helpers-react';

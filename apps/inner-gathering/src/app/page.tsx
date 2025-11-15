@@ -17,8 +17,7 @@ import {
   Alert,
 } from "@mantine/core";
 import { Sparkles, AlertCircle } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { supabase } from "@/lib/supabase";
+import { signInWithPassword, signUp } from "@elkdonis/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,11 +35,11 @@ export default function LoginPage() {
 
     try {
       if (mode === "signup") {
-        // Sign up new user using direct auth client
-        const { user, error: signUpError } = await authClient.signUp(
+        // Sign up new user
+        const { user, error: signUpError } = await signUp(
           email,
           password,
-          { display_name: displayName || email.split("@")[0] }
+          displayName || email.split("@")[0]
         );
 
         if (signUpError) throw new Error(signUpError);
@@ -52,7 +51,10 @@ export default function LoginPage() {
         }
       } else {
         // Sign in existing user
-        const { user, error: signInError } = await authClient.signIn(email, password);
+        const { user, error: signInError } = await signInWithPassword(
+          email,
+          password
+        );
 
         if (signInError) throw new Error(signInError);
 

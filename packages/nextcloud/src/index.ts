@@ -13,6 +13,8 @@ export type { NextcloudClient, NextcloudConfig } from './client';
 export * from './files';
 export * from './users';
 export * from './talk';
+export * from './polls';
+export * from './calendar';
 
 // React components (optional)
 export * from './components';

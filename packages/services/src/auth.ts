@@ -1,11 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { db } from '@elkdonis/db';
 import type { User } from '@elkdonis/types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+let adminClient: SupabaseClient | null = null;
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+function getSupabaseAdminClient(): SupabaseClient {
+  if (adminClient) {
+    return adminClient;
+  }
+
+  const supabaseUrl =
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error(
+      '[services:auth] SUPABASE_URL and SUPABASE_SERVICE_KEY must be set for admin operations'
+    );
+  }
+
+  adminClient = createClient(supabaseUrl, serviceKey);
+  return adminClient;
+}
 
 /**
  * Create a new user with Supabase auth and database record
@@ -18,6 +35,7 @@ export async function createUser(
 ): Promise<User | null> {
   try {
     // Create Supabase auth user
+    const supabase = getSupabaseAdminClient();
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -139,6 +157,7 @@ function mapUserFromDb(row: any): User {
     bio: row.bio || undefined,
     isAdmin: row.is_admin ?? false,
     nextcloudUserId: row.nextcloud_user_id || undefined,
+    nextcloudAppPassword: row.nextcloud_app_password || undefined,
     nextcloudSynced: row.nextcloud_synced ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

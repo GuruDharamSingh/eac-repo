@@ -1,122 +1,127 @@
-# EAC Network - Multi-Organization Platform
+# Elkdonis Arts Collective - Multi-Organization Platform
 
-A self-hosted network of interconnected apps with centralized forum and shared authentication.
+Self-hosted network of interconnected apps with shared authentication and content aggregation.
 
 ## Architecture
 
-**Single-Schema Database** approach:
-- Single PostgreSQL database with one public schema
-- Each org's content filtered by `org_id` column
-- Simpler queries and easier aggregation
-- Event-driven system aggregates content to central forum
+**Single-schema PostgreSQL design:**
+- One database (`elkdonis_dev`) with public schema
+- All content tables include `org_id` for filtering
+- Each app queries same database, filtered to its organization
+- Forum aggregates across all orgs
+
+**Stack:**
+- Next.js 15 (App Router) + React 19
+- PostgreSQL 16 + Supabase GoTrue (auth)
+- Nextcloud 29 (file storage)
+- Redis (cache)
+- Turborepo monorepo (pnpm workspaces)
 
 ## Apps
 
 ```
-eac-repo/
-├── apps/
-│   ├── admin/              Port 3000 - Monitor & approve forum posts
-│   ├── blog-sunjay/        Port 3001 - Sunjay's personal blog
-│   ├── blog-guru-dharam/   Port 3002 - Guru Dharam's personal blog
-│   └── forum/              Port 3003 - Aggregated activity feed
-├── packages/
-│   ├── db/                 PostgreSQL with schema routing + events
-│   ├── auth/               Shared Supabase authentication
-│   └── types/              Shared TypeScript types
+apps/
+├── inner-gathering/     Port 3004 - Mobile-first community app
+├── forum/               Port 3003 - Cross-org content aggregator
+├── admin/               Port 3000 - Admin dashboard
+├── blog-sunjay/         Port 3001 - Personal blog
+└── blog-guru-dharam/    Port 3002 - Personal blog
 ```
 
-## How It Works
+## Database Schema
 
-1. **User creates post** in their blog app (`/admin` page)
-2. **Event logged** to `public.events`
-3. **If auto-share enabled** → Added to `forum_queue`
-4. **Admin approves** → Content copied to `forum_posts`
-5. **Forum displays** all approved content from all orgs
+**Core tables:**
+```
+organizations           Communities within the network
+users                   Shared user accounts (UUID from Supabase)
+user_organizations      Membership + roles (guide/member/viewer)
+topics                  Hierarchical tags
+```
 
-## Database Structure
+**Content tables:**
+```
+posts                   Blog posts (title, body, slug, visibility)
+meetings                Events (scheduling, RSVP, location)
+replies                 Polymorphic comments (post/meeting/reply)
+media                   Nextcloud-backed attachments
+```
 
-```sql
--- All in public schema
-organizations, users, user_organizations
+**System tables:**
+```
+events                  Activity audit log
+post_topics             Post-tag junction
+meeting_topics          Meeting-tag junction
+meeting_attendees       RSVP tracking
+```
 
--- Content tables (all filtered by org_id)
-posts, pages, media
+**Forum tables (migration pending):**
+```
+reactions               Likes/upvotes (polymorphic)
+watches                 Thread subscriptions
+notifications           User alerts (reply/mention/reaction)
+bookmarks               Saved content
+flags                   Content reports
+moderation_log          Audit trail of mod actions
+```
 
--- Event & forum system
-events, forum_queue, forum_posts, forum_replies
+## Shared Packages
+
+```
+packages/
+├── db/                 PostgreSQL client + schema setup
+├── auth/               Supabase auth wrapper
+├── types/              TypeScript definitions
+├── ui/                 Shared React components
+├── hooks/              React hooks
+├── services/           Business logic layer
+├── utils/              Helper functions
+├── nextcloud/          Nextcloud API client
+├── config/             Shared configuration
+└── events/             Event system utilities
 ```
 
 ## Quick Start
 
 ```bash
+# Start infrastructure
+docker-compose up -d
+
 # Install dependencies
 pnpm install
 
-# Start all services
-docker-compose up -d
+# Run migrations
+docker exec -i eac-postgres psql -U postgres -d elkdonis_dev < packages/db/migrations/001_core_schema.sql
 
-# Initialize database (creates all schemas)
-docker-compose exec admin pnpm --filter @elkdonis/db db:migrate
+# Start all apps
+pnpm dev
 
-# Access apps
-- Admin Dashboard: http://localhost:3000
-- Sunjay's Blog: http://localhost:3001
-  - Create Entry: http://localhost:3001/entry
-- Guru Dharam's Blog: http://localhost:3002
-  - Create Entry: http://localhost:3002/entry
-- Community Forum: http://localhost:3003
-- Nextcloud: http://localhost:8080
+# Or start individual app
+cd apps/inner-gathering && pnpm dev
 ```
 
-## Creating Blog Posts
+**Access:**
+- Inner Gathering: http://localhost:3004
+- Forum: http://localhost:3003
+- Admin: http://localhost:3000
+- Nextcloud: http://localhost:8080
+- Supabase Auth: http://localhost:9999
 
-Each blog has an `/entry` page with a rich form including:
-- Title and excerpt
-- Rich text editor (bold, italic, headings, lists, links)
-- Media upload (drag & drop, up to 5 files, 10MB each)
-- Tags
-- External link field
-- Forum thread creation toggle
-  - Auto-submits to forum queue if enabled
-  - Custom thread title or uses post title
+## Content Flow
 
-## Key Features
+1. User signs in (Supabase GoTrue)
+2. User creates post/meeting in their org app
+3. Content stored with `org_id` filter
+4. Forum queries across all orgs (filtered by visibility)
+5. Users react, comment, bookmark
+6. Events logged for audit trail
 
-✅ **Independent Apps** - Each blog runs autonomously
-✅ **Single Sign-On** - Supabase auth shared across all apps
-✅ **Event Tracking** - All activity logged centrally
-✅ **Forum Aggregation** - Approved content from all apps in one feed
-✅ **Schema Isolation** - Each org's data is separated
-✅ **Self-Hosted** - PostgreSQL, Nextcloud, all local
+## Configuration
 
-## Stack
-
-- **Frontend**: Next.js 15, React 19, Tailwind CSS
-- **Database**: PostgreSQL 16 (schema-per-org)
-- **Auth**: Supabase (self-hosted)
-- **Storage**: Nextcloud (self-hosted)
-- **Cache**: Redis
-- **Deployment**: Docker Compose
-
-## Documentation
-
-- [Architecture Overview](./ARCHITECTURE_SIMPLE.md)
-- [App Template Guide](./APP_TEMPLATE.md)
-- [Docker Setup](./DOCKER_SETUP.md)
-
-## Adding a New Blog
-
-1. Copy blog template:
-   ```bash
-   cp -r apps/blog-sunjay apps/blog-newname
-   ```
-
-2. Update `ORG_ID` in the app's pages
-
-3. Add to `docker-compose.yml`
-
-4. Register in database (runs automatically on migration)
+See `.env` for:
+- `DATABASE_URL` - PostgreSQL connection
+- `SUPABASE_URL` + `JWT_SECRET` - Auth config
+- `NEXTCLOUD_URL` + credentials - File storage
 
 ---
 
-Built for the Elkdonis Arts Collective network.
+**Built for spiritual communities to share teachings, coordinate gatherings, and collaborate.**

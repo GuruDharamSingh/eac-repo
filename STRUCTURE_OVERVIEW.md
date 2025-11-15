@@ -1,7 +1,7 @@
 ﻿# Repository Structure Overview
 
 ## Monorepo Layout
-- `apps/meeting-app`: Next.js 15 Mantine-powered UI for browsing, creating, and summarizing meetings; this is the actively developed surface.
+- `apps/admin`: Next.js 15 Mantine-powered UI for browsing, creating, and summarizing meetings; this is the actively developed surface.
 - `packages/db`: Prisma client package (`@elkdonis/db`) with generated client, connection bootstrap, and scripts for database diagnostics.
 - `packages/types`: Shared TypeScript contracts (`@elkdonis/types`) covering meetings, organizations, RSVPs, and user-organization roles.
 - `packages/config`: Centralized ESLint and Prettier presets that the workspaces consume.

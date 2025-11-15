@@ -22,6 +22,7 @@
   ],
   "dependencies": {
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@supabase/supabase-js": "^2.39.0"

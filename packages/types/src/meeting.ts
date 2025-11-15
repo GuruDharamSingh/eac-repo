@@ -10,8 +10,7 @@ export interface Meeting {
   id: string;
   title: string;
   description?: string;
-  startTime: Date;
-  endTime?: Date;
+  scheduledAt: Date;
   orgId: string;
   createdBy: User['id'];
   videoLink?: string;
@@ -30,7 +29,7 @@ export interface Meeting {
   followUpWorkflow: boolean;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Additional fields from database
   guideId?: string;
   isOnline?: boolean;
@@ -40,7 +39,8 @@ export interface Meeting {
   nextcloudDocumentId?: string;
   documentUrl?: string;
   documentShareToken?: string;
-  
+  nextcloudTalkToken?: string; // Talk room token for video conferencing
+
   // Relations
   organization?: Organization;
   creator?: User;

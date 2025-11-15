@@ -10,6 +10,7 @@ export interface User {
   bio?: string;
   isAdmin: boolean;
   nextcloudUserId?: string;
+  nextcloudAppPassword?: string;
   nextcloudSynced: boolean;
   createdAt: Date;
   updatedAt: Date;

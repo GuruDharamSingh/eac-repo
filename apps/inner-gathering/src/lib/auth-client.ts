@@ -1,7 +1,10 @@
 // Direct GoTrue (Supabase Auth) client
 // This bypasses the need for the full Supabase stack
 
-const AUTH_URL = process.env.NEXT_PUBLIC_SUPABASE_AUTH_URL || 'http://localhost:9999';
+const AUTH_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_AUTH_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'http://localhost:9999';
 
 interface AuthResponse {
   user?: any;

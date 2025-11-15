@@ -21,13 +21,15 @@ export interface BlogEntryFormProps {
   initialValues?: Partial<BlogEntryFormData>;
   submitLabel?: string;
   orgName?: string;
+  isSubmitting?: boolean;
 }
 
 export function BlogEntryForm({
   onSubmit,
   initialValues,
   submitLabel = 'Publish',
-  orgName
+  orgName,
+  isSubmitting = false
 }: BlogEntryFormProps) {
   const form = useForm<BlogEntryFormData>({
     initialValues: {
@@ -142,10 +144,15 @@ export function BlogEntryForm({
 
           {/* Submit */}
           <Group justify="flex-end" mt="md">
-            <Button type="button" variant="light" onClick={() => form.reset()}>
+            <Button
+              type="button"
+              variant="light"
+              onClick={() => form.reset()}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" loading={isSubmitting} disabled={isSubmitting}>
               {submitLabel}
             </Button>
           </Group>
