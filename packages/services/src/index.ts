@@ -76,3 +76,7 @@ export {
   getMeetingSyncStatus,
 } from './calendar-sync';
 export type { MeetingForSync } from './calendar-sync';
+
+// Nextcloud user provisioning
+export { handleUserProvisioning } from './nextcloud-provisioning';
+export type { ProvisioningResult, ProvisioningOptions } from './nextcloud-provisioning';

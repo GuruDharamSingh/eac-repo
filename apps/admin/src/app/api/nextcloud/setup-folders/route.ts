@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { webdavService } from '@/lib/nextcloud';
 import { db } from '@elkdonis/db';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 export async function POST() {
   try {
+    // Auth check - require admin
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await isAdmin(session.user.id))) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     // Get all organizations from database
     const organizations = await db`SELECT id, name FROM organizations`;
 

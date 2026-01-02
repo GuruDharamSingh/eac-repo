@@ -9,11 +9,23 @@ import { PostCard } from "./post-card";
 import { CreateMeetingForm } from "./create-meeting-form";
 import { CreatePostForm } from "./create-post-form";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Drawer,
+  Group,
+  Paper,
+  ScrollArea,
+  Stack,
+  Tabs,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 
 interface FeedClientProps {
   initialFeed: Array<{
@@ -25,8 +37,8 @@ interface FeedClientProps {
 
 export function FeedClient({ initialFeed }: FeedClientProps) {
   const router = useRouter();
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("meeting");
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [activeTab, setActiveTab] = useState<string | null>("meeting");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -34,46 +46,60 @@ export function FeedClient({ initialFeed }: FeedClientProps) {
     router.refresh();
   };
 
-  const closeSheet = () => setSheetOpen(false);
-
   return (
-    <div className="min-h-screen bg-background">
+    <Box mih="100vh" bg="gray.0">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-indigo-600" />
-            <h1 className="text-lg font-semibold">InnerGathering</h1>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-      </header>
+      <Paper
+        shadow="xs"
+        p="md"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          borderBottom: "1px solid var(--mantine-color-gray-2)",
+        }}
+      >
+        <Container>
+          <Group justify="space-between">
+            <Group gap="xs">
+              <ThemeIcon size="md" radius="md" variant="light" color="indigo">
+                <Sparkles size={18} />
+              </ThemeIcon>
+              <Title order={4}>InnerGathering</Title>
+            </Group>
+            <Button
+              variant="subtle"
+              size="sm"
+              color="gray"
+              leftSection={<LogOut size={16} />}
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          </Group>
+        </Container>
+      </Paper>
 
       {/* Main Content */}
-      <main className="container max-w-2xl px-4 py-6">
-        <div className="space-y-6 pb-24">
+      <Container size="sm" py="lg" pb={120}>
+        <Stack gap="lg">
           {/* Page Header */}
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Feed</h2>
-            <p className="text-sm text-muted-foreground">
+            <Title order={2}>Feed</Title>
+            <Text size="sm" c="dimmed">
               Upcoming meetings and community posts
-            </p>
+            </Text>
           </div>
 
-          <Separator />
+          <Divider />
 
           {/* Feed Items */}
           {initialFeed.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No posts or meetings yet. Create one to get started!
-              </p>
-            </div>
+            <Text c="dimmed" ta="center" py="xl">
+              No posts or meetings yet. Create one to get started!
+            </Text>
           ) : (
-            <div className="space-y-4">
+            <Stack gap="md">
               {initialFeed.map((item, index) =>
                 item.type === "meeting" ? (
                   <MeetingCard
@@ -87,59 +113,67 @@ export function FeedClient({ initialFeed }: FeedClientProps) {
                   />
                 )
               )}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
 
         {/* Floating Action Button */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button
-                size="lg"
-                className="h-14 w-14 rounded-full shadow-lg"
-              >
-                <Plus className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[90vh]">
-              <SheetHeader>
-                <SheetTitle>Create New</SheetTitle>
-                <SheetDescription>
-                  Create a new meeting or post for the community
-                </SheetDescription>
-              </SheetHeader>
+        <ActionIcon
+          size={56}
+          radius="xl"
+          variant="filled"
+          color="indigo"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 50,
+            boxShadow: "var(--mantine-shadow-lg)",
+          }}
+          onClick={openDrawer}
+        >
+          <Plus size={24} />
+        </ActionIcon>
 
-              <div className="mt-6">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="meeting" className="gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Meeting
-                    </TabsTrigger>
-                    <TabsTrigger value="post" className="gap-2">
-                      <FileText className="h-4 w-4" />
-                      Post
-                    </TabsTrigger>
-                  </TabsList>
+        {/* Bottom Drawer for Create Forms */}
+        <Drawer
+          opened={drawerOpened}
+          onClose={closeDrawer}
+          position="bottom"
+          size="90%"
+          title={
+            <div>
+              <Title order={4}>Create New</Title>
+              <Text size="sm" c="dimmed">
+                Create a new meeting or post for the community
+              </Text>
+            </div>
+          }
+        >
+          <Tabs value={activeTab} onChange={setActiveTab}>
+            <Tabs.List grow>
+              <Tabs.Tab value="meeting" leftSection={<Calendar size={16} />}>
+                Meeting
+              </Tabs.Tab>
+              <Tabs.Tab value="post" leftSection={<FileText size={16} />}>
+                Post
+              </Tabs.Tab>
+            </Tabs.List>
 
-                  <TabsContent value="meeting" className="mt-6">
-                    <ScrollArea className="h-[calc(90vh-12rem)]">
-                      <CreateMeetingForm onSuccess={closeSheet} />
-                    </ScrollArea>
-                  </TabsContent>
+            <Tabs.Panel value="meeting" pt="md">
+              <ScrollArea h="calc(90vh - 12rem)">
+                <CreateMeetingForm onSuccess={closeDrawer} />
+              </ScrollArea>
+            </Tabs.Panel>
 
-                  <TabsContent value="post" className="mt-6">
-                    <ScrollArea className="h-[calc(90vh-12rem)]">
-                      <CreatePostForm onSuccess={closeSheet} />
-                    </ScrollArea>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </main>
-    </div>
+            <Tabs.Panel value="post" pt="md">
+              <ScrollArea h="calc(90vh - 12rem)">
+                <CreatePostForm onSuccess={closeDrawer} />
+              </ScrollArea>
+            </Tabs.Panel>
+          </Tabs>
+        </Drawer>
+      </Container>
+    </Box>
   );
 }

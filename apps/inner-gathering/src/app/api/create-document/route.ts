@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCollaborativeDocument } from '@elkdonis/services';
+import { getServerSession } from '@elkdonis/auth-server';
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check - require logged in user
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { orgId, meetingTitle, meetingId } = body;
 

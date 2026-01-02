@@ -2,20 +2,21 @@
  * Polls API Routes
  * GET /api/polls - List all polls for user
  * POST /api/polls - Create a new availability poll
- *
- * TODO: Migrate @elkdonis/auth-server from deprecated @supabase/auth-helpers-nextjs
- *       to @supabase/ssr package for proper Next.js 15 support
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, createAvailabilityPoll, getPolls } from '@elkdonis/nextcloud';
+import { getServerSession } from '@elkdonis/auth-server';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add authentication once auth-server is migrated to @supabase/ssr
-    // Currently using admin client as temporary solution
+    // Auth check - require logged in user
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Use admin Nextcloud client
+    // Use admin Nextcloud client (user-specific would require nextcloud credentials)
     const client = getAdminClient();
 
     // Fetch polls from Nextcloud
@@ -33,8 +34,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add authentication once auth-server is migrated to @supabase/ssr
-    // Currently using admin client as temporary solution
+    // Auth check - require logged in user
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await request.json();
     const {

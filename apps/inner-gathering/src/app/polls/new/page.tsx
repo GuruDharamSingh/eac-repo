@@ -5,23 +5,29 @@
 
 import { PollCreator } from '@/components/poll-creator';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, Container, Stack, Text, Title } from '@mantine/core';
 import Link from 'next/link';
 
 export default function NewPollPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Link href="/polls">
-        <Button variant="ghost" size="sm" className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Polls
-        </Button>
-      </Link>
-      <h1 className="text-3xl font-bold mb-2">Create Availability Poll</h1>
-      <p className="text-muted-foreground mb-8">
-        Find the best time for your gathering using Nextcloud Polls
-      </p>
+    <Container size="sm" py="xl">
+      <Button
+        component={Link}
+        href="/polls"
+        variant="subtle"
+        size="sm"
+        leftSection={<ArrowLeft size={16} />}
+        mb="md"
+      >
+        Back to Polls
+      </Button>
+      <Stack gap="xs" mb="xl">
+        <Title order={1}>Create Availability Poll</Title>
+        <Text c="dimmed">
+          Find the best time for your gathering using Nextcloud Polls
+        </Text>
+      </Stack>
       <PollCreator />
-    </div>
+    </Container>
   );
 }

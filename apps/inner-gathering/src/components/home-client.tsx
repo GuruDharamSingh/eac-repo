@@ -14,14 +14,26 @@ import {
   Clock,
   MapPin,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+import {
+  ActionIcon,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Group,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  ThemeIcon,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
 import type { Meeting, Post } from "@elkdonis/types";
-import { supabase } from "@/lib/supabase";
+import { signOut } from "@elkdonis/auth-client";
 
 interface HomeClientProps {
   upcomingMeetings: Array<{
@@ -38,10 +50,10 @@ interface HomeClientProps {
 
 export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState<string | null>("overview");
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/");
     router.refresh();
   };
@@ -51,276 +63,303 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
       title: "New Meeting",
       description: "Schedule a gathering",
       icon: Calendar,
-      color: "bg-blue-50 text-blue-600",
+      color: "blue",
       onClick: () => router.push("/feed?create=meeting"),
     },
     {
       title: "Create Post",
       description: "Share your thoughts",
       icon: MessageCircle,
-      color: "bg-purple-50 text-purple-600",
+      color: "grape",
       onClick: () => router.push("/feed?create=post"),
     },
     {
       title: "View Feed",
       description: "See all activity",
       icon: TrendingUp,
-      color: "bg-green-50 text-green-600",
+      color: "green",
       onClick: () => router.push("/feed"),
     },
     {
       title: "Community",
       description: "Connect with others",
       icon: Users,
-      color: "bg-orange-50 text-orange-600",
+      color: "orange",
       onClick: () => router.push("/community"),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <Box mih="100vh" bg="gray.0">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-8 w-8 text-indigo-600" />
+      <Paper
+        shadow="xs"
+        p="md"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          borderBottom: "1px solid var(--mantine-color-gray-2)",
+        }}
+      >
+        <Container>
+          <Group justify="space-between">
+            <Group gap="sm">
+              <ThemeIcon size="lg" radius="md" variant="light" color="indigo">
+                <Sparkles size={20} />
+              </ThemeIcon>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">InnerGathering</h1>
-                <p className="text-xs text-gray-500">Connect & Grow Together</p>
+                <Title order={4}>InnerGathering</Title>
+                <Text size="xs" c="dimmed">Connect & Grow Together</Text>
               </div>
-            </div>
+            </Group>
             <Button
-              variant="ghost"
+              variant="subtle"
               size="sm"
+              color="gray"
+              leftSection={<LogOut size={16} />}
               onClick={handleLogout}
-              className="text-gray-600"
             >
-              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
-          </div>
-        </div>
-      </header>
+          </Group>
+        </Container>
+      </Paper>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <Container py="lg" pb={120}>
         {/* Welcome Section */}
-        <Card className="mb-6 border-0 shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-          <CardHeader>
-            <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-            <CardDescription className="text-indigo-100">
-              {upcomingMeetings.length} upcoming meetings • {recentPosts.length} new posts
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <Paper
+          radius="lg"
+          p="lg"
+          mb="lg"
+          style={{
+            background: "linear-gradient(135deg, var(--mantine-color-indigo-6), var(--mantine-color-grape-6))",
+          }}
+        >
+          <Title order={2} c="white">Welcome Back!</Title>
+          <Text c="indigo.1" size="sm">
+            {upcomingMeetings.length} upcoming meetings • {recentPosts.length} new posts
+          </Text>
+        </Paper>
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <SimpleGrid cols={2} spacing="sm" mb="lg">
           {quickActions.map((action, index) => (
-            <Card
-              key={index}
-              className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-              onClick={action.onClick}
-            >
-              <CardContent className="p-4">
-                <div className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center mb-3`}>
-                  <action.icon className="h-6 w-6" />
-                </div>
-                <h3 className="font-semibold text-sm mb-1">{action.title}</h3>
-                <p className="text-xs text-gray-500">{action.description}</p>
-              </CardContent>
-            </Card>
+            <UnstyledButton key={index} onClick={action.onClick} style={{ width: "100%" }}>
+              <Paper withBorder radius="md" p="md" style={{ cursor: "pointer" }}>
+                <ThemeIcon
+                  size={48}
+                  radius="md"
+                  variant="light"
+                  color={action.color}
+                  mb="sm"
+                >
+                  <action.icon size={24} />
+                </ThemeIcon>
+                <Text fw={600} size="sm">{action.title}</Text>
+                <Text size="xs" c="dimmed">{action.description}</Text>
+              </Paper>
+            </UnstyledButton>
           ))}
-        </div>
+        </SimpleGrid>
 
         {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onChange={setActiveTab}>
+          <Tabs.List grow mb="md">
+            <Tabs.Tab value="overview">Overview</Tabs.Tab>
+            <Tabs.Tab value="activity">Recent Activity</Tabs.Tab>
+          </Tabs.List>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            {/* Upcoming Meetings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-lg">Upcoming Meetings</CardTitle>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push("/feed")}
-                  >
+          <Tabs.Panel value="overview">
+            <Stack gap="md">
+              {/* Upcoming Meetings */}
+              <Paper withBorder radius="lg" p="md">
+                <Group justify="space-between" mb="md">
+                  <Group gap="xs">
+                    <ThemeIcon size="sm" radius="md" variant="light" color="blue">
+                      <Calendar size={14} />
+                    </ThemeIcon>
+                    <Title order={5}>Upcoming Meetings</Title>
+                  </Group>
+                  <Button variant="subtle" size="xs" onClick={() => router.push("/feed")}>
                     View All
                   </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {upcomingMeetings.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    No upcoming meetings
-                  </p>
-                ) : (
-                  upcomingMeetings.map((item) => {
-                    const meeting = item.data as Meeting;
-                    return (
-                      <div
-                        key={meeting.id}
-                        className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                        onClick={() => router.push(`/meeting/${meeting.id}`)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-sm flex-1">
-                            {meeting.title}
-                          </h4>
-                          <Badge variant="secondary" className="ml-2">
-                            {meeting.visibility}
-                          </Badge>
-                        </div>
-                        {meeting.start_time && (
-                          <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(meeting.start_time).toLocaleDateString()}
-                          </div>
-                        )}
-                        {meeting.location && (
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <MapPin className="h-3 w-3" />
-                            {meeting.location}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Posts */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-purple-600" />
-                    <CardTitle className="text-lg">Recent Posts</CardTitle>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push("/feed")}
-                  >
-                    View All
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {recentPosts.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    No recent posts
-                  </p>
-                ) : (
-                  recentPosts.map((item) => {
-                    const post = item.data as Post;
-                    return (
-                      <div
-                        key={post.id}
-                        className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                        onClick={() => router.push(`/post/${post.id}`)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback>
-                              {post.author_name?.[0]?.toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h4 className="font-semibold text-sm truncate">
-                                {post.title}
-                              </h4>
-                              <Badge variant="secondary" className="ml-2 shrink-0">
-                                {post.visibility}
+                </Group>
+                <Stack gap="sm">
+                  {upcomingMeetings.length === 0 ? (
+                    <Text size="sm" c="dimmed" ta="center" py="md">
+                      No upcoming meetings
+                    </Text>
+                  ) : (
+                    upcomingMeetings.map((item) => {
+                      const meeting = item.data as Meeting;
+                      return (
+                        <UnstyledButton
+                          key={meeting.id}
+                          onClick={() => router.push(`/meeting/${meeting.id}`)}
+                          style={{ width: "100%" }}
+                        >
+                          <Paper bg="gray.0" radius="md" p="sm">
+                            <Group justify="space-between" mb={4}>
+                              <Text fw={600} size="sm" style={{ flex: 1 }}>
+                                {meeting.title}
+                              </Text>
+                              <Badge variant="light" size="sm">
+                                {meeting.visibility}
                               </Badge>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-2">
-                              by {post.author_name || "Anonymous"}
-                            </p>
-                            {post.excerpt && (
-                              <p className="text-sm text-gray-700 line-clamp-2">
-                                {post.excerpt}
-                              </p>
+                            </Group>
+                            {meeting.start_time && (
+                              <Group gap={4} mb={2}>
+                                <Clock size={12} color="var(--mantine-color-gray-6)" />
+                                <Text size="xs" c="dimmed">
+                                  {new Date(meeting.start_time).toLocaleDateString()}
+                                </Text>
+                              </Group>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                            {meeting.location && (
+                              <Group gap={4}>
+                                <MapPin size={12} color="var(--mantine-color-gray-6)" />
+                                <Text size="xs" c="dimmed">{meeting.location}</Text>
+                              </Group>
+                            )}
+                          </Paper>
+                        </UnstyledButton>
+                      );
+                    })
+                  )}
+                </Stack>
+              </Paper>
+
+              {/* Recent Posts */}
+              <Paper withBorder radius="lg" p="md">
+                <Group justify="space-between" mb="md">
+                  <Group gap="xs">
+                    <ThemeIcon size="sm" radius="md" variant="light" color="grape">
+                      <BookOpen size={14} />
+                    </ThemeIcon>
+                    <Title order={5}>Recent Posts</Title>
+                  </Group>
+                  <Button variant="subtle" size="xs" onClick={() => router.push("/feed")}>
+                    View All
+                  </Button>
+                </Group>
+                <Stack gap="sm">
+                  {recentPosts.length === 0 ? (
+                    <Text size="sm" c="dimmed" ta="center" py="md">
+                      No recent posts
+                    </Text>
+                  ) : (
+                    recentPosts.map((item) => {
+                      const post = item.data as Post;
+                      return (
+                        <UnstyledButton
+                          key={post.id}
+                          onClick={() => router.push(`/post/${post.id}`)}
+                          style={{ width: "100%" }}
+                        >
+                          <Paper bg="gray.0" radius="md" p="sm">
+                            <Group gap="sm" align="flex-start">
+                              <Avatar radius="xl" size="md">
+                                {post.author_name?.[0]?.toUpperCase() || "U"}
+                              </Avatar>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <Group justify="space-between" mb={2}>
+                                  <Text fw={600} size="sm" truncate style={{ flex: 1 }}>
+                                    {post.title}
+                                  </Text>
+                                  <Badge variant="light" size="sm">
+                                    {post.visibility}
+                                  </Badge>
+                                </Group>
+                                <Text size="xs" c="dimmed" mb={4}>
+                                  by {post.author_name || "Anonymous"}
+                                </Text>
+                                {post.excerpt && (
+                                  <Text size="sm" c="gray.7" lineClamp={2}>
+                                    {post.excerpt}
+                                  </Text>
+                                )}
+                              </div>
+                            </Group>
+                          </Paper>
+                        </UnstyledButton>
+                      );
+                    })
+                  )}
+                </Stack>
+              </Paper>
+            </Stack>
+          </Tabs.Panel>
 
           {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
-                <CardDescription>
-                  Latest updates from your community
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[...upcomingMeetings, ...recentPosts]
-                    .sort((a, b) =>
-                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                    )
-                    .slice(0, 5)
-                    .map((item, index) => (
-                      <div key={index}>
-                        <div className="flex items-start gap-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${
-                            item.type === "meeting" ? "bg-blue-600" : "bg-purple-600"
-                          }`} />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              {item.type === "meeting"
-                                ? (item.data as Meeting).title
-                                : (item.data as Post).title}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(item.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="shrink-0">
-                            {item.type}
-                          </Badge>
+          <Tabs.Panel value="activity">
+            <Paper withBorder radius="lg" p="md">
+              <Title order={5} mb={4}>Recent Activity</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                Latest updates from your community
+              </Text>
+              <Stack gap="sm">
+                {[...upcomingMeetings, ...recentPosts]
+                  .sort((a, b) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  )
+                  .slice(0, 5)
+                  .map((item, index, arr) => (
+                    <Box key={index}>
+                      <Group gap="sm" align="flex-start">
+                        <Box
+                          w={8}
+                          h={8}
+                          mt={6}
+                          style={{
+                            borderRadius: "50%",
+                            backgroundColor: item.type === "meeting"
+                              ? "var(--mantine-color-blue-6)"
+                              : "var(--mantine-color-grape-6)",
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <Text size="sm" fw={500}>
+                            {item.type === "meeting"
+                              ? (item.data as Meeting).title
+                              : (item.data as Post).title}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </Text>
                         </div>
-                        {index < 4 && <Separator className="my-3" />}
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        <Badge variant="outline" size="sm">
+                          {item.type}
+                        </Badge>
+                      </Group>
+                      {index < arr.length - 1 && <Divider my="sm" />}
+                    </Box>
+                  ))}
+              </Stack>
+            </Paper>
+          </Tabs.Panel>
         </Tabs>
-      </main>
+      </Container>
 
       {/* Floating Action Button - positioned above bottom nav */}
-      <div className="fixed bottom-24 right-6 z-50">
-        <Button
-          size="lg"
-          className="h-14 w-14 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700"
-          onClick={() => router.push("/feed?create=true")}
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
-    </div>
+      <ActionIcon
+        size={56}
+        radius="xl"
+        variant="filled"
+        color="indigo"
+        style={{
+          position: "fixed",
+          bottom: 96,
+          right: 24,
+          zIndex: 50,
+          boxShadow: "var(--mantine-shadow-lg)",
+        }}
+        onClick={() => router.push("/feed?create=true")}
+      >
+        <Plus size={24} />
+      </ActionIcon>
+    </Box>
   );
 }

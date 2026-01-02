@@ -7,15 +7,21 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Group,
+  Paper,
+  Stack,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+} from '@mantine/core';
+import { DatePicker } from '@mantine/dates';
 import { Calendar as CalendarIcon, Plus, X } from 'lucide-react';
-import { format, addMinutes } from 'date-fns';
+import { format } from 'date-fns';
 
 interface TimeSlot {
   id: string;
@@ -100,165 +106,152 @@ export function PollCreator() {
   const sortedSlots = [...timeSlots].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Basic Info */}
-      <Card className="border-2">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
-          <CardTitle className="text-xl">📝 Poll Details</CardTitle>
-          <CardDescription>Give your poll a name and description</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
+    <form onSubmit={handleSubmit}>
+      <Stack gap="lg">
+        {/* Basic Info */}
+        <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
+          <Paper bg="indigo.0" p="md">
+            <Title order={4}>Poll Details</Title>
+            <Text size="sm" c="dimmed">Give your poll a name and description</Text>
+          </Paper>
+          <Stack gap="md" p="md">
+            <TextInput
+              label="Title"
+              required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Weekly Team Meeting"
-              required
             />
-          </div>
-          <div>
-            <Label htmlFor="description">Description (optional)</Label>
             <Textarea
-              id="description"
+              label="Description (optional)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add any additional details about this meeting..."
               rows={3}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </Stack>
+        </Paper>
 
-      {/* Date Selection */}
-      <Card className="border-2">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
-          <CardTitle className="text-xl">📅 Select Dates</CardTitle>
-          <CardDescription>
-            Choose the dates you want to include (click multiple dates)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Calendar
-            mode="multiple"
-            selected={selectedDates}
-            onSelect={(dates) => setSelectedDates(dates || [])}
-            className="rounded-md border"
-          />
-          {selectedDates.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-4">
-              {selectedDates.length} {selectedDates.length === 1 ? 'date' : 'dates'} selected
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Time Slot Builder */}
-      <Card className="border-2">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-          <CardTitle className="text-xl">⏰ Add Time Slots</CardTitle>
-          <CardDescription>
-            Add times for each selected date (e.g., 9:00 AM)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              type="time"
-              value={newSlotTime}
-              onChange={(e) => setNewSlotTime(e.target.value)}
-              disabled={selectedDates.length === 0}
+        {/* Date Selection */}
+        <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
+          <Paper bg="blue.0" p="md">
+            <Title order={4}>Select Dates</Title>
+            <Text size="sm" c="dimmed">
+              Choose the dates you want to include (click multiple dates)
+            </Text>
+          </Paper>
+          <Stack gap="md" p="md">
+            <DatePicker
+              type="multiple"
+              value={selectedDates}
+              onChange={(dates) => setSelectedDates(dates || [])}
             />
-            <Button
-              type="button"
-              onClick={handleAddTimeSlot}
-              disabled={selectedDates.length === 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Time
-            </Button>
-          </div>
+            {selectedDates.length > 0 && (
+              <Text size="sm" c="dimmed">
+                {selectedDates.length} {selectedDates.length === 1 ? 'date' : 'dates'} selected
+              </Text>
+            )}
+          </Stack>
+        </Paper>
 
-          {sortedSlots.length > 0 && (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              <p className="text-sm font-medium">
-                {sortedSlots.length} time {sortedSlots.length === 1 ? 'slot' : 'slots'}:
-              </p>
-              {sortedSlots.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="flex items-center justify-between p-2 border rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {format(slot.date, 'EEE, MMM d, yyyy • h:mm a')}
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveSlot(slot.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Time Slot Builder */}
+        <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
+          <Paper bg="green.0" p="md">
+            <Title order={4}>Add Time Slots</Title>
+            <Text size="sm" c="dimmed">
+              Add times for each selected date (e.g., 9:00 AM)
+            </Text>
+          </Paper>
+          <Stack gap="md" p="md">
+            <Group>
+              <TextInput
+                type="time"
+                value={newSlotTime}
+                onChange={(e) => setNewSlotTime(e.target.value)}
+                disabled={selectedDates.length === 0}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="button"
+                onClick={handleAddTimeSlot}
+                disabled={selectedDates.length === 0}
+                leftSection={<Plus size={16} />}
+              >
+                Add Time
+              </Button>
+            </Group>
 
-      {/* Settings */}
-      <Card className="border-2">
-        <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
-          <CardTitle className="text-xl">⚙️ Poll Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2">
+            {sortedSlots.length > 0 && (
+              <Stack gap="xs" mah={256} style={{ overflowY: 'auto' }}>
+                <Text size="sm" fw={500}>
+                  {sortedSlots.length} time {sortedSlots.length === 1 ? 'slot' : 'slots'}:
+                </Text>
+                {sortedSlots.map((slot) => (
+                  <Paper key={slot.id} withBorder radius="md" p="sm">
+                    <Group justify="space-between">
+                      <Group gap="xs">
+                        <CalendarIcon size={16} color="var(--mantine-color-gray-6)" />
+                        <Text size="sm">
+                          {format(slot.date, 'EEE, MMM d, yyyy • h:mm a')}
+                        </Text>
+                      </Group>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={() => handleRemoveSlot(slot.id)}
+                      >
+                        <X size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Paper>
+
+        {/* Settings */}
+        <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
+          <Paper bg="orange.0" p="md">
+            <Title order={4}>Poll Settings</Title>
+          </Paper>
+          <Stack gap="md" p="md">
             <Checkbox
-              id="allowMaybe"
+              label='Allow "Maybe" responses'
               checked={allowMaybe}
-              onCheckedChange={(checked) => setAllowMaybe(checked === true)}
+              onChange={(e) => setAllowMaybe(e.currentTarget.checked)}
             />
-            <Label htmlFor="allowMaybe" className="cursor-pointer">
-              Allow "Maybe" responses
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
+          </Stack>
+        </Paper>
 
-      {/* Submit */}
-      <Card className="border-2 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
-        <CardContent className="p-4">
-          <div className="flex gap-3">
+        {/* Submit */}
+        <Paper withBorder radius="lg" p="md" bg="indigo.0">
+          <Group>
             <Button
               type="submit"
-              size="lg"
+              size="md"
               disabled={submitting || !title.trim() || timeSlots.length === 0}
-              className="flex-1 text-base font-semibold"
+              style={{ flex: 1 }}
             >
               {submitting ? 'Creating Poll...' : `Create Poll (${timeSlots.length} slots)`}
             </Button>
             <Button
               type="button"
               variant="outline"
-              size="lg"
+              size="md"
               onClick={() => router.back()}
               disabled={submitting}
             >
               Cancel
             </Button>
-          </div>
+          </Group>
           {timeSlots.length === 0 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
+            <Text size="xs" c="dimmed" ta="center" mt="sm">
               Add at least one time slot to create the poll
-            </p>
+            </Text>
           )}
-        </CardContent>
-      </Card>
+        </Paper>
+      </Stack>
     </form>
   );
 }

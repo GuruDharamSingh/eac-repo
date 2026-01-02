@@ -143,6 +143,10 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
 
+      # OAuth2/OIDC Bridge for Nextcloud
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters}
+      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET:-elkdonis-oauth2-secret-change-in-prod}
+
       # Redis
       REDIS_URL: redis://redis:6379
 
@@ -154,7 +158,6 @@ services:
       PORT: 3000
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/.next
     ports:
       - "3000:3000"
@@ -263,6 +266,7 @@ services:
 
       # Nextcloud
       NEXTCLOUD_URL: http://nextcloud-nginx:80
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
       NEXTCLOUD_ADMIN_USER: elkdonis
       NEXTCLOUD_ADMIN_PASSWORD: Ea4thway
 
@@ -272,7 +276,6 @@ services:
       NEXT_PUBLIC_APP_URL: http://localhost:3004
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/apps/inner-gathering/.next
     ports:
       - "3004:3004"

@@ -18,9 +18,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/auth-helpers-nextjs": "^0.8.1",
-    "@supabase/supabase-js": "^2.45.0",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "^2.45.0",
     "next": "^15.1.0"
   },
   "devDependencies": {

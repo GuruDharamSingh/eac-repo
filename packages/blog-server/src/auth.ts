@@ -1,6 +1,5 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerAuth } from '@elkdonis/auth-server';
 import { db } from '@elkdonis/db';
@@ -23,7 +22,7 @@ export interface BlogAuthContext {
 }
 
 export async function requireBlogOwner(config: BlogConfig): Promise<BlogAuthContext> {
-  const supabase = getServerAuth(cookies);
+  const supabase = await getServerAuth();
   const {
     data: { user },
   } = await supabase.auth.getUser();

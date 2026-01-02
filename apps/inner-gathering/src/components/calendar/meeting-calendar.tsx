@@ -1,13 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Badge,
+  Group,
+  Paper,
+  ScrollArea,
+  SimpleGrid,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
+import { DatePicker } from "@mantine/dates";
 import { Calendar as CalendarIcon, MapPin, Video, Clock } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
-import { format, isSameDay, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { format, isSameDay } from "date-fns";
 
 interface MeetingCalendarProps {
   meetings: Meeting[];
@@ -20,8 +29,7 @@ export function MeetingCalendar({
   onSelectDate,
   onSelectMeeting
 }: MeetingCalendarProps) {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
-  const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(new Date());
 
   // Get meetings for selected date
   const selectedDateMeetings = React.useMemo(() => {
@@ -32,7 +40,7 @@ export function MeetingCalendar({
     });
   }, [meetings, selectedDate]);
 
-  // Get dates that have meetings
+  // Get dates that have meetings (for highlighting)
   const meetingDates = React.useMemo(() => {
     return meetings.map((meeting) => {
       const date = meeting.scheduledAt ? new Date(meeting.scheduledAt) : meeting.startTime;
@@ -40,68 +48,71 @@ export function MeetingCalendar({
     }).filter(Boolean) as Date[];
   }, [meetings]);
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = (date: Date | null) => {
     setSelectedDate(date);
     if (date && onSelectDate) {
       onSelectDate(date);
     }
   };
 
+  // Custom day props to show meeting indicators
+  const getDayProps = (date: Date) => {
+    const hasMeeting = meetingDates.some(d => isSameDay(d, date));
+    if (hasMeeting) {
+      return {
+        style: {
+          backgroundColor: 'var(--mantine-color-indigo-1)',
+          borderRadius: 'var(--mantine-radius-sm)',
+        },
+      };
+    }
+    return {};
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row gap-4 w-full">
+    <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
       {/* Calendar */}
-      <Card className="lg:w-2/3">
-        <CardContent className="p-4">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            month={currentMonth}
-            onMonthChange={setCurrentMonth}
-            className="rounded-md border-0"
-            captionLayout="dropdown"
-            modifiers={{
-              hasMeeting: meetingDates,
-            }}
-            modifiersClassNames={{
-              hasMeeting: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-indigo-600",
-            }}
-          />
-        </CardContent>
-      </Card>
+      <Paper withBorder radius="lg" p="md">
+        <DatePicker
+          value={selectedDate}
+          onChange={handleDateSelect}
+          size="md"
+          getDayProps={getDayProps}
+        />
+      </Paper>
 
       {/* Selected Date Events */}
-      <Card className="lg:w-1/3">
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-indigo-600" />
-              <h3 className="font-semibold">
-                {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
-              </h3>
-            </div>
+      <Paper withBorder radius="lg" p="md">
+        <Stack gap="md">
+          <Group gap="xs">
+            <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+              <CalendarIcon size={14} />
+            </ThemeIcon>
+            <Title order={5}>
+              {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+            </Title>
+          </Group>
 
-            {selectedDateMeetings.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                No meetings scheduled for this day
-              </div>
-            ) : (
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-3">
-                  {selectedDateMeetings.map((meeting) => (
-                    <CalendarEventCard
-                      key={meeting.id}
-                      meeting={meeting}
-                      onClick={() => onSelectMeeting?.(meeting)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          {selectedDateMeetings.length === 0 ? (
+            <Text c="dimmed" size="sm" ta="center" py="xl">
+              No meetings scheduled for this day
+            </Text>
+          ) : (
+            <ScrollArea h={400}>
+              <Stack gap="sm">
+                {selectedDateMeetings.map((meeting) => (
+                  <CalendarEventCard
+                    key={meeting.id}
+                    meeting={meeting}
+                    onClick={() => onSelectMeeting?.(meeting)}
+                  />
+                ))}
+              </Stack>
+            </ScrollArea>
+          )}
+        </Stack>
+      </Paper>
+    </SimpleGrid>
   );
 }
 
@@ -115,44 +126,44 @@ function CalendarEventCard({ meeting, onClick }: CalendarEventCardProps) {
   const time = meetingDate ? format(meetingDate, "h:mm a") : "Time TBA";
 
   return (
-    <div
-      onClick={onClick}
-      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-    >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h4 className="font-medium text-sm line-clamp-1">{meeting.title}</h4>
-          {meeting.isOnline && (
-            <Badge variant="secondary" className="shrink-0">
-              <Video className="h-3 w-3 mr-1" />
-              Online
-            </Badge>
+    <UnstyledButton onClick={onClick} style={{ width: '100%' }}>
+      <Paper withBorder radius="md" p="sm" style={{ cursor: 'pointer' }}>
+        <Stack gap="xs">
+          <Group justify="space-between" gap="xs">
+            <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1 }}>
+              {meeting.title}
+            </Text>
+            {meeting.isOnline && (
+              <Badge variant="light" color="cyan" size="sm" leftSection={<Video size={10} />}>
+                Online
+              </Badge>
+            )}
+          </Group>
+
+          <Group gap="md">
+            <Group gap={4}>
+              <Clock size={12} color="var(--mantine-color-gray-6)" />
+              <Text size="xs" c="dimmed">{time}</Text>
+            </Group>
+            {meeting.durationMinutes && (
+              <Text size="xs" c="dimmed">{meeting.durationMinutes} min</Text>
+            )}
+          </Group>
+
+          {meeting.location && (
+            <Group gap={4}>
+              <MapPin size={12} color="var(--mantine-color-gray-6)" />
+              <Text size="xs" c="dimmed">{meeting.location}</Text>
+            </Group>
           )}
-        </div>
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {time}
-          </div>
-          {meeting.durationMinutes && (
-            <span>{meeting.durationMinutes} min</span>
+          {meeting.guide && (
+            <Text size="xs" c="dimmed">
+              Guide: {meeting.guide.displayName}
+            </Text>
           )}
-        </div>
-
-        {meeting.location && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            {meeting.location}
-          </div>
-        )}
-
-        {meeting.guide && (
-          <div className="text-xs text-muted-foreground">
-            Guide: {meeting.guide.displayName}
-          </div>
-        )}
-      </div>
-    </div>
+        </Stack>
+      </Paper>
+    </UnstyledButton>
   );
 }

@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userService } from '@/lib/nextcloud';
 import { db } from '@elkdonis/db';
+import { handleUserProvisioning } from '@elkdonis/services';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    // Auth check - require admin
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await isAdmin(session.user.id))) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     const { userId } = await params;
 
     // Get user from database
@@ -37,25 +47,19 @@ export async function POST(
       );
     }
 
-    // Sync user to Nextcloud
-    const result = await userService.syncUser({
-      id: user.id,
-      email: user.email,
-      displayName: user.display_name,
-      orgId: user.org_ids?.[0], // Use first org
-    });
+    const result = await handleUserProvisioning(
+      user.id,
+      user.email,
+      user.display_name || user.email.split('@')[0],
+      {
+        groups: Array.isArray(user.org_ids)
+          ? user.org_ids.filter((orgId: unknown): orgId is string => typeof orgId === 'string' && orgId.length > 0)
+          : undefined,
+      }
+    );
 
     if (result.success) {
-      // Update database with credentials
-      await db`
-        UPDATE users
-        SET
-          nextcloud_user_id = ${user.id},
-          nextcloud_app_password = ${result.appPassword || null},
-          nextcloud_synced = true,
-          updated_at = NOW()
-        WHERE id = ${user.id}
-      `;
+      await db`UPDATE users SET updated_at = NOW() WHERE id = ${user.id}`;
 
       return NextResponse.json({
         success: true,

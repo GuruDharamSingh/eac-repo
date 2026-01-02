@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mantine/core';
 import { IconShieldLock } from '@tabler/icons-react';
-import { getClientAuth } from '@elkdonis/auth-client';
+import { signInWithPassword } from '@elkdonis/auth-client';
 
 interface BlogLoginFormProps {
   redirectPath?: string;
@@ -28,7 +28,6 @@ export function BlogLoginForm({
 }: BlogLoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = getClientAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -46,13 +45,10 @@ export function BlogLoginForm({
     }
 
     startTransition(async () => {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error: signInError } = await signInWithPassword(email, password);
 
       if (signInError) {
-        setError(signInError.message);
+        setError(signInError);
         return;
       }
 

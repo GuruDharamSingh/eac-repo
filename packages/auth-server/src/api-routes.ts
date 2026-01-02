@@ -6,8 +6,42 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServer } from './index';
-import { db } from '@elkdonis/db';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { resolveSupabasePublicConfig } from './index';
+
+type CookieToSet = {
+  name: string;
+  value: string;
+  options: CookieOptions;
+};
+
+function createRouteSupabaseClient(request: NextRequest) {
+  const cookiesToSet: CookieToSet[] = [];
+  const { supabaseUrl, supabaseAnonKey, storageKey, fetch } = resolveSupabasePublicConfig();
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(newCookies) {
+        cookiesToSet.push(...newCookies);
+      },
+    },
+    auth: {
+      storageKey,
+    },
+    global: {
+      fetch,
+    },
+  });
+
+  function applyCookies(response: NextResponse) {
+    cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+  }
+
+  return { supabase, applyCookies };
+}
 
 /**
  * POST /api/auth/login
@@ -15,77 +49,37 @@ import { db } from '@elkdonis/db';
  */
 export async function handleLogin(request: NextRequest) {
   try {
-    console.log('[AUTH] Login request received');
-    console.log('[AUTH] Environment check:', {
-      supabaseUrl: process.env.SUPABASE_URL,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_KEY,
-    });
-
-    const body = await request.text();
-    console.log('[AUTH] Raw request body:', body);
-
-    const { email, password } = JSON.parse(body);
-    console.log('[AUTH] Parsed credentials:', { email, passwordLength: password?.length });
+    const { email, password } = await request.json();
 
     if (!email || !password) {
-      console.log('[AUTH] Missing email or password');
       return NextResponse.json(
         { error: 'Email and password required' },
         { status: 400 }
       );
     }
 
-    console.log('[AUTH] Creating Supabase client...');
-    const supabase = getSupabaseServer();
-
-    console.log('[AUTH] Calling Supabase signInWithPassword...');
+    const { supabase, applyCookies } = createRouteSupabaseClient(request);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.log('[AUTH] Supabase error:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 401 }
       );
     }
 
-    console.log('[AUTH] Login successful:', { userId: data.user?.id });
-
-    if (!data.session) {
-      return NextResponse.json(
-        { error: 'No session created' },
-        { status: 401 }
-      );
-    }
-
-    // Create response with session
     const response = NextResponse.json({
       user: data.user,
       session: data.session,
     });
-
-    // Set session cookie
-    response.cookies.set('sb-access-token', data.session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: data.session.expires_in,
-    });
-
-    response.cookies.set('sb-refresh-token', data.session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    applyCookies(response);
 
     return response;
   } catch (error: any) {
     console.error('[AUTH] Login error:', error);
-    console.error('[AUTH] Error stack:', error.stack);
     return NextResponse.json(
       { error: error.message || 'Login failed' },
       { status: 500 }
@@ -96,6 +90,7 @@ export async function handleLogin(request: NextRequest) {
 /**
  * POST /api/auth/signup
  * Handle user registration server-side
+ * Automatically provisions user in Nextcloud after signup
  */
 export async function handleSignup(request: NextRequest) {
   try {
@@ -108,9 +103,20 @@ export async function handleSignup(request: NextRequest) {
       );
     }
 
-    const supabase = getSupabaseServer();
+    const { supabase, applyCookies } = createRouteSupabaseClient(request);
 
-    // Create auth user
+    // If a user is already logged in, sign them out first so the new signup
+    // reliably results in a session for the newly created user (prevents
+    // accidental actions under the previous account).
+    try {
+      const { data: existing } = await supabase.auth.getSession();
+      if (existing.session) {
+        await supabase.auth.signOut();
+      }
+    } catch (_err) {
+      // Best-effort; continue with signup.
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -122,6 +128,7 @@ export async function handleSignup(request: NextRequest) {
     });
 
     if (error) {
+      console.error('[Signup] Auth error:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
@@ -135,28 +142,38 @@ export async function handleSignup(request: NextRequest) {
       );
     }
 
-    // Create database user record
-    await db`
-      INSERT INTO users (
-        id,
-        email,
-        display_name,
-        nextcloud_synced
-      ) VALUES (
-        ${data.user.id},
-        ${email},
-        ${displayName || email.split('@')[0]},
-        false
-      )
-      ON CONFLICT (id) DO NOTHING
-    `;
+    console.log(`[Signup] User created: ${data.user.id} (${email})`);
 
-    return NextResponse.json({
+    // Now provision in Nextcloud
+    try {
+      const { handleUserProvisioning } = await import('@elkdonis/services');
+      const provisionResult = await handleUserProvisioning(
+        data.user.id,
+        email,
+        displayName || email.split('@')[0]
+      );
+
+      if (!provisionResult.success) {
+        console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
+        // Don't fail signup if Nextcloud provisioning fails
+        // User can still use the app, just won't have Nextcloud access yet
+      } else {
+        console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
+      }
+    } catch (provisionError) {
+      console.error('[Signup] Provisioning error:', provisionError);
+      // Again, don't fail signup
+    }
+
+    const response = NextResponse.json({
       user: data.user,
+      session: data.session,
       message: 'Signup successful',
     });
+    applyCookies(response);
+    return response;
   } catch (error: any) {
-    console.error('Signup error:', error);
+    console.error('[Signup] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Signup failed' },
       { status: 500 }
@@ -170,7 +187,7 @@ export async function handleSignup(request: NextRequest) {
  */
 export async function handleLogout(request: NextRequest) {
   try {
-    const supabase = getSupabaseServer();
+    const { supabase, applyCookies } = createRouteSupabaseClient(request);
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -180,10 +197,8 @@ export async function handleLogout(request: NextRequest) {
       );
     }
 
-    // Clear cookies
     const response = NextResponse.json({ message: 'Logged out' });
-    response.cookies.delete('sb-access-token');
-    response.cookies.delete('sb-refresh-token');
+    applyCookies(response);
 
     return response;
   } catch (error: any) {
@@ -201,48 +216,19 @@ export async function handleLogout(request: NextRequest) {
  */
 export async function handleGetSession(request: NextRequest) {
   try {
-    const accessToken = request.cookies.get('sb-access-token')?.value;
-    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
+    const { supabase, applyCookies } = createRouteSupabaseClient(request);
+    const { data, error } = await supabase.auth.getSession();
 
-    if (!accessToken) {
+    if (error || !data.session) {
       return NextResponse.json({ user: null, session: null });
     }
 
-    const supabase = getSupabaseServer();
-    const { data, error } = await supabase.auth.getUser(accessToken);
-
-    if (error || !data.user) {
-      // Try to refresh if we have a refresh token
-      if (refreshToken) {
-        const { data: refreshData, error: refreshError } =
-          await supabase.auth.refreshSession({ refresh_token: refreshToken });
-
-        if (refreshError || !refreshData.session) {
-          return NextResponse.json({ user: null, session: null });
-        }
-
-        // Update cookies with new tokens
-        const response = NextResponse.json({
-          user: refreshData.user,
-          session: refreshData.session,
-        });
-
-        response.cookies.set('sb-access-token', refreshData.session.access_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: refreshData.session.expires_in,
-        });
-
-        return response;
-      }
-
-      return NextResponse.json({ user: null, session: null });
-    }
-
-    return NextResponse.json({
-      user: data.user,
+    const response = NextResponse.json({
+      user: data.session.user,
+      session: data.session,
     });
+    applyCookies(response);
+    return response;
   } catch (error: any) {
     console.error('Get session error:', error);
     return NextResponse.json({ user: null, session: null });

@@ -8,6 +8,8 @@ import { Buffer } from 'node:buffer';
 declare const process: any;
 
 const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://localhost:8080';
+// Public URL for browser-accessible share links (different from internal Docker URL)
+const NEXTCLOUD_PUBLIC_URL = process.env.NEXTCLOUD_PUBLIC_URL || 'http://localhost:8080';
 const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
 const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'admin';
 
@@ -361,9 +363,9 @@ export async function createCollaborativeDocument(
       return null;
     }
 
-    // Generate URLs for viewing and editing
-    const viewUrl = `${NEXTCLOUD_URL}/s/${shareToken}`;
-    const editUrl = `${NEXTCLOUD_URL}/s/${shareToken}`;
+    // Generate URLs for viewing and editing (use public URL for browser access)
+    const viewUrl = `${NEXTCLOUD_PUBLIC_URL}/s/${shareToken}`;
+    const editUrl = `${NEXTCLOUD_PUBLIC_URL}/s/${shareToken}`;
 
     console.log(`[Nextcloud] Document URLs - View: ${viewUrl}, Edit: ${editUrl}`);
 

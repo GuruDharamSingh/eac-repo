@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Events } from '@elkdonis/db/events';
-import { isAdmin } from '@elkdonis/auth';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 /**
  * Admin Moderation API
@@ -14,16 +14,25 @@ import { isAdmin } from '@elkdonis/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { action, resourceType, resourceId, userId, reason, newVisibility } = body;
+    // Auth check - derive userId from session, not request body
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const authUserId = session.user.id;
+    const dbUserId = session.user.db_user_id ?? authUserId;
 
     // Check if user is admin
-    if (!userId || !(await isAdmin(userId))) {
+    if (!(await isAdmin(authUserId))) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
       );
     }
+
+    const body = await request.json();
+    const { action, resourceType, resourceId, reason, newVisibility } = body;
 
     // Validate resource type
     if (resourceType !== 'post' && resourceType !== 'meeting') {
@@ -36,27 +45,27 @@ export async function POST(request: NextRequest) {
     // Execute the action
     switch (action) {
       case 'hide':
-        await Events.hideContent(resourceType, resourceId, userId, reason);
+        await Events.hideContent(resourceType, resourceId, dbUserId, reason);
         break;
 
       case 'unhide':
-        await Events.unhideContent(resourceType, resourceId, userId);
+        await Events.unhideContent(resourceType, resourceId, dbUserId);
         break;
 
       case 'pin':
-        await Events.pinContent(resourceType, resourceId, userId);
+        await Events.pinContent(resourceType, resourceId, dbUserId);
         break;
 
       case 'unpin':
-        await Events.unpinContent(resourceType, resourceId, userId);
+        await Events.unpinContent(resourceType, resourceId, dbUserId);
         break;
 
       case 'lock':
-        await Events.lockContent(resourceType, resourceId, userId, reason);
+        await Events.lockContent(resourceType, resourceId, dbUserId, reason);
         break;
 
       case 'unlock':
-        await Events.unlockContent(resourceType, resourceId, userId);
+        await Events.unlockContent(resourceType, resourceId, dbUserId);
         break;
 
       case 'override_visibility':
@@ -70,7 +79,7 @@ export async function POST(request: NextRequest) {
           resourceType,
           resourceId,
           newVisibility,
-          userId,
+          dbUserId,
           reason
         );
         break;
@@ -103,17 +112,22 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    // Auth check - derive userId from session, not query params
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Check if user is admin
-    if (!userId || !(await isAdmin(userId))) {
+    if (!(await isAdmin(session.user.id))) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
       );
     }
+
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     // Get moderation events
     const events = await Events.getAllEvents({

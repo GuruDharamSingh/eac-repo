@@ -57,10 +57,17 @@ const MEDIA_CONFIG: Array<{
 
 export async function POST(request: NextRequest) {
   try {
-    // Extract user ID from request (you may want to use auth headers instead)
+    // Auth check - derive userId from session, not form data
+    const { getServerSession } = await import('@elkdonis/auth-server');
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = session.user.db_user_id ?? session.user.id;
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
     const visibility = (formData.get('visibility') as MeetingVisibility) || 'PUBLIC';
 
     // Validation
@@ -68,13 +75,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
-      );
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
       );
     }
 

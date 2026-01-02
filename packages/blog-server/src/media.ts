@@ -106,6 +106,13 @@ export function createMediaGetHandler() {
     { params }: { params: { path: string[] } }
   ) {
     try {
+      // Auth check - require logged in user to access media
+      const { getServerSession } = await import('@elkdonis/auth-server');
+      const session = await getServerSession();
+      if (!session.user) {
+        return new NextResponse('Unauthorized', { status: 401 });
+      }
+
       const path = params.path.join('/');
       const url = getFileUrl(path);
 
@@ -138,18 +145,22 @@ export function createMediaGetHandler() {
 export function createMediaUploadHandler(config: BlogConfig) {
   return async function POST(request: NextRequest) {
     try {
+      // Auth check - derive userId from session, not form data
+      const { getServerSession } = await import('@elkdonis/auth-server');
+      const session = await getServerSession();
+      if (!session.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      const userId = session.user.db_user_id ?? session.user.id;
+
       const formData = await request.formData();
       const file = formData.get('file') as File | null;
-      const userId = formData.get('userId') as string | null;
       const orgId = (formData.get('orgId') as string | null) || config.orgId;
       const visibility = (formData.get('visibility') as MeetingVisibility) || 'PUBLIC';
 
       if (!file) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-      }
-
-      if (!userId) {
-        return NextResponse.json({ error: 'Missing user context' }, { status: 401 });
       }
 
       const rule = MEDIA_RULES.find((candidate) => candidate.test(file.type));

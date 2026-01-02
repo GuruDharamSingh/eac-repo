@@ -7,9 +7,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import {
+  Badge,
+  Button,
+  Group,
+  Paper,
+  Skeleton,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from '@mantine/core';
 import { Calendar, Clock, Users, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -51,158 +59,139 @@ export function PollsList() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <Stack gap="md">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardContent className="py-8">
-              <div className="animate-pulse space-y-4">
-                <div className="h-5 bg-muted rounded w-3/4"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-                <div className="h-4 bg-muted rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
+          <Paper key={i} withBorder radius="lg" p="lg">
+            <Stack gap="md">
+              <Skeleton height={20} width="75%" />
+              <Skeleton height={16} width="50%" />
+              <Skeleton height={16} width="66%" />
+            </Stack>
+          </Paper>
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (error) {
     return (
-      <Card className="border-destructive/50">
-        <CardContent className="py-12">
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-destructive" />
-            </div>
-            <div>
-              <h3 className="font-semibold mb-1">Failed to load polls</h3>
-              <p className="text-sm text-muted-foreground mb-4">{error}</p>
-            </div>
-            <Button onClick={() => window.location.reload()} variant="outline" size="sm">
-              Try Again
-            </Button>
+      <Paper withBorder radius="lg" p="xl" style={{ borderColor: 'var(--mantine-color-red-3)' }}>
+        <Stack align="center" gap="md">
+          <ThemeIcon size={48} radius="xl" color="red" variant="light">
+            <Calendar size={24} />
+          </ThemeIcon>
+          <div style={{ textAlign: 'center' }}>
+            <Title order={5} mb={4}>Failed to load polls</Title>
+            <Text size="sm" c="dimmed" mb="md">{error}</Text>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </Stack>
+      </Paper>
     );
   }
 
   if (polls.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="py-12">
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create your first availability poll to get started
-              </p>
-            </div>
-            <Link href="/polls/new">
-              <Button>
-                <Calendar className="h-4 w-4 mr-2" />
-                Create Poll
-              </Button>
-            </Link>
+      <Paper withBorder radius="lg" p="xl" style={{ borderStyle: 'dashed' }}>
+        <Stack align="center" gap="md">
+          <ThemeIcon size={64} radius="xl" color="indigo" variant="light">
+            <Calendar size={32} />
+          </ThemeIcon>
+          <div style={{ textAlign: 'center' }}>
+            <Title order={4} mb={8}>No polls yet</Title>
+            <Text size="sm" c="dimmed" mb="md">
+              Create your first availability poll to get started
+            </Text>
           </div>
-        </CardContent>
-      </Card>
+          <Button component={Link} href="/polls/new" leftSection={<Calendar size={16} />}>
+            Create Poll
+          </Button>
+        </Stack>
+      </Paper>
     );
   }
 
   return (
-    <div className="space-y-4 pb-6">
+    <Stack gap="md" pb="lg">
       {polls.map((poll) => {
         const isExpired = poll.expire > 0 && poll.expire * 1000 < Date.now();
         const createdDate = new Date(poll.created * 1000);
         const expireDate = poll.expire > 0 ? new Date(poll.expire * 1000) : null;
 
         return (
-          <Card
+          <Paper
             key={poll.id}
-            className={`hover:shadow-lg transition-all duration-200 ${
-              isExpired ? 'opacity-75 border-muted' : 'border-border hover:border-primary/50'
-            }`}
+            withBorder
+            radius="lg"
+            p="md"
+            style={{ opacity: isExpired ? 0.75 : 1 }}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-start gap-2 flex-wrap">
-                    <CardTitle className="text-lg leading-tight">{poll.title}</CardTitle>
-                    {poll.type === 'datePoll' && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        Time Poll
-                      </Badge>
-                    )}
-                    {isExpired && (
-                      <Badge variant="destructive" className="bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100">
-                        Expired
-                      </Badge>
-                    )}
-                  </div>
-                  {poll.description && (
-                    <CardDescription className="text-sm line-clamp-2">
-                      {poll.description}
-                    </CardDescription>
+            <Stack gap="md">
+              {/* Header */}
+              <div>
+                <Group gap="xs" mb={4} wrap="wrap">
+                  <Title order={5}>{poll.title}</Title>
+                  {poll.type === 'datePoll' && (
+                    <Badge variant="light" color="blue" size="sm" leftSection={<Calendar size={12} />}>
+                      Time Poll
+                    </Badge>
                   )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5" />
-                  <span className="font-medium text-foreground">{poll.ownerDisplayName}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{format(createdDate, 'MMM d, yyyy')}</span>
-                </div>
-                {expireDate && (
-                  <div className={`flex items-center gap-1.5 ${isExpired ? 'text-destructive' : 'text-orange-600 dark:text-orange-400'}`}>
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span className="font-medium">
-                      {isExpired ? 'Expired' : 'Due'} {format(expireDate, 'MMM d')}
-                    </span>
-                  </div>
+                  {isExpired && (
+                    <Badge variant="light" color="red" size="sm">
+                      Expired
+                    </Badge>
+                  )}
+                </Group>
+                {poll.description && (
+                  <Text size="sm" c="dimmed" lineClamp={2}>
+                    {poll.description}
+                  </Text>
                 )}
               </div>
 
+              {/* Meta info */}
+              <Group gap="md" wrap="wrap">
+                <Group gap={6}>
+                  <Users size={14} color="var(--mantine-color-gray-6)" />
+                  <Text size="sm" fw={500}>{poll.ownerDisplayName}</Text>
+                </Group>
+                <Group gap={6}>
+                  <Clock size={14} color="var(--mantine-color-gray-6)" />
+                  <Text size="sm" c="dimmed">{format(createdDate, 'MMM d, yyyy')}</Text>
+                </Group>
+                {expireDate && (
+                  <Group gap={6}>
+                    <Calendar size={14} color={isExpired ? 'var(--mantine-color-red-6)' : 'var(--mantine-color-orange-6)'} />
+                    <Text size="sm" fw={500} c={isExpired ? 'red' : 'orange'}>
+                      {isExpired ? 'Expired' : 'Due'} {format(expireDate, 'MMM d')}
+                    </Text>
+                  </Group>
+                )}
+              </Group>
+
               {poll.allowMaybe === 1 && (
-                <Badge variant="outline" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
+                <Badge variant="outline" size="sm" leftSection={<Clock size={12} />}>
                   Maybe option enabled
                 </Badge>
               )}
 
-              <Link href={`/polls/${poll.id}`} className="block">
-                <Button
-                  className="w-full"
-                  variant={isExpired ? 'outline' : 'default'}
-                  size="lg"
-                >
-                  {isExpired ? (
-                    <>
-                      <Users className="h-4 w-4 mr-2" />
-                      View Results
-                    </>
-                  ) : (
-                    <>
-                      Vote Now
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              <Button
+                component={Link}
+                href={`/polls/${poll.id}`}
+                fullWidth
+                size="md"
+                variant={isExpired ? 'outline' : 'filled'}
+                leftSection={isExpired ? <Users size={16} /> : undefined}
+                rightSection={!isExpired ? <ArrowRight size={16} /> : undefined}
+              >
+                {isExpired ? 'View Results' : 'Vote Now'}
+              </Button>
+            </Stack>
+          </Paper>
         );
       })}
-    </div>
+    </Stack>
   );
 }

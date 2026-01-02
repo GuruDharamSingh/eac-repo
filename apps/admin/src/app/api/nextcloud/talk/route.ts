@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { talkService } from '@/lib/nextcloud';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check - require admin
+    const session = await getServerSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await isAdmin(session.user.id))) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { action } = body;
 

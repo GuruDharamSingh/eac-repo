@@ -21,6 +21,7 @@ export interface TalkRoomProps {
   enableVideo?: boolean;
   enableChat?: boolean;
   height?: string;
+  ssoRedirectUrl?: string; // URL to SSO redirect endpoint (e.g., /api/nextcloud/redirect)
 }
 
 export function TalkRoom({
@@ -29,7 +30,8 @@ export function TalkRoom({
   apiEndpoint = '/api/nextcloud/talk',
   enableVideo = true,
   enableChat = true,
-  height = '600px'
+  height = '600px',
+  ssoRedirectUrl,
 }: TalkRoomProps) {
   const [messages, setMessages] = useState<TalkMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -84,10 +86,18 @@ export function TalkRoom({
   const toggleCall = () => {
     setIsInCall(!isInCall);
     if (!isInCall) {
-      // Open Nextcloud Talk in new window
       const nextcloudUrl = typeof window !== 'undefined' && (window as any).ENV?.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
       const talkUrl = `${nextcloudUrl}/index.php/call/${token}`;
-      window.open(talkUrl, '_blank', 'width=800,height=600');
+
+      if (ssoRedirectUrl) {
+        // Use SSO redirect to authenticate before joining
+        // This ensures the user is logged into Nextcloud with their app account
+        const redirectUrl = `${ssoRedirectUrl}?returnTo=${encodeURIComponent(talkUrl)}`;
+        window.open(redirectUrl, '_blank', 'width=800,height=600');
+      } else {
+        // Fallback: direct link (may result in guest access)
+        window.open(talkUrl, '_blank', 'width=800,height=600');
+      }
     }
   };
 

@@ -5,6 +5,8 @@
  * These use API routes to avoid CORS issues
  */
 
+import { useEffect, useState } from 'react';
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -98,8 +100,6 @@ export async function getSession(): Promise<AuthSession> {
 /**
  * React hook to get current session
  */
-import { useState, useEffect } from 'react';
-
 export function useSession() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);

@@ -5,33 +5,32 @@
 
 import { PollsList } from '@/components/polls-list';
 import { Calendar, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, Container, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import Link from 'next/link';
 
 export default function PollsPage() {
   return (
-    <div className="container mx-auto px-4 py-8 pb-32 max-w-7xl">
+    <Container size="xl" py="xl" pb={128}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Calendar className="h-8 w-8" />
-            Availability Polls
-          </h1>
-          <p className="text-muted-foreground mt-2">
+      <Group justify="space-between" mb="lg">
+        <Stack gap={4}>
+          <Group gap="sm">
+            <ThemeIcon size="lg" variant="light" color="indigo">
+              <Calendar size={24} />
+            </ThemeIcon>
+            <Title order={1}>Availability Polls</Title>
+          </Group>
+          <Text c="dimmed">
             Find the best time for your next gathering
-          </p>
-        </div>
-        <Link href="/polls/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Poll
-          </Button>
-        </Link>
-      </div>
+          </Text>
+        </Stack>
+        <Button component={Link} href="/polls/new" leftSection={<Plus size={16} />}>
+          Create Poll
+        </Button>
+      </Group>
 
       {/* Polls List - Custom UI using Nextcloud API */}
       <PollsList />
-    </div>
+    </Container>
   );
 }

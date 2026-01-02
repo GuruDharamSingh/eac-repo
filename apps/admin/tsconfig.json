@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@elkdonis/types": ["../../packages/types/src"],
       "@elkdonis/ui": ["../../packages/ui/src"],
-      "@elkdonis/db": ["../../packages/db/src"]
+      "@elkdonis/db": ["../../packages/db/src"],
+      "@elkdonis/services": ["../../packages/services/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

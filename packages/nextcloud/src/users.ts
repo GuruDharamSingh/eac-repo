@@ -19,6 +19,7 @@ export interface ProvisionUserOptions {
   email: string;
   displayName: string;
   password?: string; // Optional, will generate if not provided
+  groups?: string[]; // Optional Nextcloud groups to add user to
 }
 
 /**
@@ -39,21 +40,33 @@ export async function provisionUser(
   adminClient: NextcloudClient,
   options: ProvisionUserOptions
 ): Promise<{ userId: string; appPassword: string }> {
-  const { userId, email, displayName, password } = options;
+  const { userId, email, displayName, password, groups } = options;
 
-  // Generate secure password if not provided
+  // Prefer idempotency: if DB already has creds, reuse them.
+  const existingCreds = await readStoredCredentials(userId);
+  if (existingCreds?.nextcloud_user_id && existingCreds?.nextcloud_app_password) {
+    return { userId: existingCreds.nextcloud_user_id, appPassword: existingCreds.nextcloud_app_password };
+  }
+
+  // Generate secure password if not provided.
+  // NOTE: Today this is also used as the API credential stored in DB.
   const userPassword = password || generateSecurePassword();
+  let userCreated = false;
 
   try {
     // Create Nextcloud user via OCS API
-    await adminClient.ocs.post('/cloud/users', {
-      userid: userId,
-      password: userPassword,
-      email: email,
-      displayname: displayName,
+    const formData = new URLSearchParams();
+    formData.set('userid', userId);
+    formData.set('password', userPassword);
+    formData.set('email', email);
+    formData.set('displayname', displayName);
+
+    await adminClient.ocs.post('/cloud/users', formData.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
     console.log(`✅ Created Nextcloud user: ${userId}`);
+    userCreated = true;
   } catch (error: any) {
     // User might already exist, that's okay
     if (error.response?.status === 400) {
@@ -63,18 +76,32 @@ export async function provisionUser(
     }
   }
 
-  // Generate app password for API access
-  // This is more secure than using main password
-  const appPassword = await generateAppPassword(adminClient, userId);
+  // If the user already existed but we don't have stored credentials, set a new password
+  // so server-side integrations can authenticate as that user.
+  if (!userCreated) {
+    const hasPasswordStored = Boolean(existingCreds?.nextcloud_app_password);
+    if (!hasPasswordStored) {
+      await setUserPassword(adminClient, userId, userPassword);
+    }
+  }
+
+  // Generate app password for API access.
+  // For now this falls back to using the same credential we just set, to ensure it is valid.
+  const appPassword = await generateAppPassword(adminClient, userId, userPassword);
 
   // Update your database with credentials
-  await db`
-    UPDATE users
-    SET nextcloud_user_id = ${userId},
-        nextcloud_app_password = ${appPassword},
-        nextcloud_synced = true
-    WHERE id = ${userId}
-  `;
+  await writeStoredCredentials(userId, {
+    nextcloud_user_id: userId,
+    nextcloud_app_password: appPassword,
+    nextcloud_synced: true,
+  });
+
+  if (groups && groups.length > 0) {
+    for (const groupId of groups) {
+      await ensureGroup(adminClient, groupId);
+      await addUserToGroup(adminClient, userId, groupId);
+    }
+  }
 
   return { userId, appPassword };
 }
@@ -89,12 +116,13 @@ export async function provisionUser(
  */
 export async function generateAppPassword(
   _adminClient: NextcloudClient,
-  _userId: string
+  _userId: string,
+  fallbackPassword: string
 ): Promise<string> {
-  // For now, generate a secure password to use as both user password and app password
-  // This is simpler but less secure than proper app passwords
-  // TODO: Implement proper app password generation via Nextcloud API when user session tokens are available
-  return generateSecurePassword();
+  // Today we store the same credential we set on the Nextcloud user.
+  // This keeps server-side WebDAV/OCS/CalDAV calls reliable.
+  // TODO: Implement real app password creation (per-user) and store that instead.
+  return fallbackPassword;
 }
 
 /**
@@ -124,12 +152,11 @@ export async function deleteUser(
   await adminClient.ocs.delete(`/cloud/users/${userId}`);
 
   // Update your database
-  await db`
-    UPDATE users 
-    SET nextcloud_user_id = NULL,
-        nextcloud_synced = false
-    WHERE id = ${userId}
-  `;
+  await writeStoredCredentials(userId, {
+    nextcloud_user_id: null,
+    nextcloud_app_password: null,
+    nextcloud_synced: false,
+  });
 }
 
 /**
@@ -188,4 +215,108 @@ function generateSecurePassword(length: number = 32): string {
   }
   
   return password;
+}
+
+async function setUserPassword(
+  adminClient: NextcloudClient,
+  userId: string,
+  password: string
+): Promise<void> {
+  const formData = new URLSearchParams();
+  formData.set('key', 'password');
+  formData.set('value', password);
+
+  await adminClient.ocs.put(`/cloud/users/${userId}`, formData.toString(), {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+}
+
+async function ensureGroup(adminClient: NextcloudClient, groupId: string): Promise<void> {
+  const formData = new URLSearchParams();
+  formData.set('groupid', groupId);
+
+  try {
+    await adminClient.ocs.post('/cloud/groups', formData.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  } catch (error: any) {
+    if (error.response?.status === 400) return;
+    throw error;
+  }
+}
+
+async function addUserToGroup(
+  adminClient: NextcloudClient,
+  userId: string,
+  groupId: string
+): Promise<void> {
+  const formData = new URLSearchParams();
+  formData.set('groupid', groupId);
+
+  try {
+    await adminClient.ocs.post(`/cloud/users/${userId}/groups`, formData.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  } catch (error: any) {
+    if (error.response?.status === 400) return;
+    throw error;
+  }
+}
+
+async function readStoredCredentials(userId: string): Promise<{
+  id: string;
+  nextcloud_user_id: string | null;
+  nextcloud_app_password: string | null;
+  nextcloud_synced: boolean | null;
+} | null> {
+  const [byId] = await db`
+    SELECT id, nextcloud_user_id, nextcloud_app_password, nextcloud_synced
+    FROM users
+    WHERE id = ${userId}
+  `;
+  if (byId) return byId as any;
+
+  try {
+    const [byAuthUserId] = await db`
+      SELECT id, nextcloud_user_id, nextcloud_app_password, nextcloud_synced
+      FROM users
+      WHERE auth_user_id = ${userId}
+    `;
+    return (byAuthUserId as any) ?? null;
+  } catch (_err) {
+    return null;
+  }
+}
+
+async function writeStoredCredentials(
+  userId: string,
+  fields: {
+    nextcloud_user_id: string | null;
+    nextcloud_app_password: string | null;
+    nextcloud_synced: boolean;
+  }
+): Promise<void> {
+  const [updatedById] = await db`
+    UPDATE users
+    SET
+      nextcloud_user_id = ${fields.nextcloud_user_id},
+      nextcloud_app_password = ${fields.nextcloud_app_password},
+      nextcloud_synced = ${fields.nextcloud_synced}
+    WHERE id = ${userId}
+    RETURNING id
+  `;
+  if (updatedById) return;
+
+  try {
+    await db`
+      UPDATE users
+      SET
+        nextcloud_user_id = ${fields.nextcloud_user_id},
+        nextcloud_app_password = ${fields.nextcloud_app_password},
+        nextcloud_synced = ${fields.nextcloud_synced}
+      WHERE auth_user_id = ${userId}
+    `;
+  } catch (_err) {
+    // Ignore if auth_user_id column doesn't exist.
+  }
 }

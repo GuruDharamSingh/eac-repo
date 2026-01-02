@@ -1,18 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Anchor,
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Group,
+  Image as MantineImage,
+  Paper,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
 import { Calendar, Clock, MapPin, Video, User, FileText, ExternalLink } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
-import { formatDate, formatTime } from "@/lib/utils";
-import { MediaPlayer, DocumentLink } from "@elkdonis/ui";
-import Image from "next/image";
+import { MediaPlayer } from "@elkdonis/ui";
+import NextImage from "next/image";
 
 interface MeetingCardProps {
   meeting: Meeting;
 }
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+
+const formatTime = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 
 export function MeetingCard({ meeting }: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
@@ -27,79 +50,93 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
   const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Paper withBorder radius="lg" style={{ overflow: "hidden" }}>
       {/* Cover Image */}
       {meeting.coverImage?.url && (
-        <div className="relative h-48 w-full overflow-hidden bg-muted">
-          <Image
+        <Box pos="relative" h={192} bg="gray.1">
+          <NextImage
             src={meeting.coverImage.url}
             alt={meeting.coverImage.altText || meeting.title}
             fill
-            className="object-cover"
+            style={{ objectFit: "cover" }}
+            unoptimized
           />
-        </div>
+        </Box>
       )}
 
-      <CardHeader className="space-y-3 pb-4">
+      <Stack gap="md" p="md">
         {/* Title & Badges */}
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold leading-tight">{meeting.title}</h3>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">Meeting</Badge>
+        <Stack gap="xs">
+          <Title order={4}>{meeting.title}</Title>
+          <Group gap="xs">
+            <Badge variant="light" color="indigo">Meeting</Badge>
             {meeting.isOnline && (
-              <Badge variant="secondary" className="bg-cyan-100 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-100">
-                <Video className="h-3 w-3 mr-1" />
+              <Badge variant="light" color="cyan" leftSection={<Video size={12} />}>
                 Online
               </Badge>
             )}
-          </div>
-        </div>
+          </Group>
+        </Stack>
 
         {/* Description */}
         {meeting.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <Text size="sm" c="dimmed" lineClamp={2}>
             {meeting.description}
-          </p>
-        )}
-      </CardHeader>
-
-      <CardContent className="space-y-3 text-sm">
-        {/* Date & Time */}
-        {meeting.scheduledAt && mounted && (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 text-indigo-600" />
-              <span className="font-medium text-foreground">{formatDate(new Date(meeting.scheduledAt))}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4 text-indigo-600" />
-              <span>
-                {formatTime(new Date(meeting.scheduledAt))}
-                {meeting.durationMinutes && <span className="text-xs ml-1">({meeting.durationMinutes}m)</span>}
-              </span>
-            </div>
-          </div>
+          </Text>
         )}
 
-        {/* Location */}
-        {meeting.location && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4 text-indigo-600" />
-            <span>{meeting.location}</span>
-          </div>
-        )}
+        {/* Details */}
+        <Stack gap={6}>
+          {/* Date & Time */}
+          {meeting.scheduledAt && mounted && (
+            <Group gap="lg">
+              <Group gap="xs">
+                <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+                  <Calendar size={14} />
+                </ThemeIcon>
+                <Text size="sm" fw={500}>{formatDate(new Date(meeting.scheduledAt))}</Text>
+              </Group>
+              <Group gap="xs">
+                <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+                  <Clock size={14} />
+                </ThemeIcon>
+                <Text size="sm">
+                  {formatTime(new Date(meeting.scheduledAt))}
+                  {meeting.durationMinutes && (
+                    <Text span size="xs" c="dimmed" ml={4}>({meeting.durationMinutes}m)</Text>
+                  )}
+                </Text>
+              </Group>
+            </Group>
+          )}
 
-        {/* Guide */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <User className="h-4 w-4 text-indigo-600" />
-          <span>Guide: <span className="font-medium text-foreground">{guideName}</span></span>
-        </div>
+          {/* Location */}
+          {meeting.location && (
+            <Group gap="xs">
+              <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+                <MapPin size={14} />
+              </ThemeIcon>
+              <Text size="sm">{meeting.location}</Text>
+            </Group>
+          )}
+
+          {/* Guide */}
+          <Group gap="xs">
+            <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+              <User size={14} />
+            </ThemeIcon>
+            <Text size="sm">
+              Guide: <Text span fw={500}>{guideName}</Text>
+            </Text>
+          </Group>
+        </Stack>
 
         {/* Media Attachments */}
         {attachments.length > 0 && (
-          <div className="space-y-2 pt-2">
-            <h4 className="font-medium text-xs uppercase text-muted-foreground">Media</h4>
-            <div className="space-y-2">
+          <>
+            <Divider />
+            <Stack gap="xs">
+              <Text size="xs" tt="uppercase" fw={500} c="dimmed">Media</Text>
               {attachments.map((media) => {
                 const mediaType = media.type || media.mimeType?.split("/")[0];
 
@@ -115,54 +152,62 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
                 }
 
                 return (
-                  <a
+                  <Anchor
                     key={media.id}
                     href={media.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs hover:text-indigo-600 transition-colors"
+                    size="xs"
                   >
-                    <FileText className="h-3 w-3" />
-                    <span className="truncate">{media.filename || "Download"}</span>
-                    <ExternalLink className="h-3 w-3 ml-auto" />
-                  </a>
+                    <Group gap="xs">
+                      <FileText size={12} />
+                      <Text size="xs" truncate style={{ flex: 1 }}>{media.filename || "Download"}</Text>
+                      <ExternalLink size={12} />
+                    </Group>
+                  </Anchor>
                 );
               })}
-            </div>
-          </div>
+            </Stack>
+          </>
         )}
-      </CardContent>
 
-      {/* Actions Footer */}
-      {(meeting.nextcloudTalkToken || meeting.documentUrl) && (
-        <CardFooter className="flex flex-col gap-2 pt-4 border-t">
-          {meeting.nextcloudTalkToken && (
-            <Button asChild className="w-full" size="sm">
-              <a
-                href={`${nextcloudUrl}/call/${meeting.nextcloudTalkToken}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Video className="h-4 w-4 mr-2" />
-                Join Talk Room
-              </a>
-            </Button>
-          )}
+        {/* Actions Footer */}
+        {(meeting.nextcloudTalkToken || meeting.documentUrl) && (
+          <>
+            <Divider />
+            <Stack gap="xs">
+              {meeting.nextcloudTalkToken && (
+                <Button
+                  component="a"
+                  href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  fullWidth
+                  size="sm"
+                  leftSection={<Video size={16} />}
+                >
+                  Join Talk Room
+                </Button>
+              )}
 
-          {meeting.documentUrl && (
-            <Button asChild variant="outline" className="w-full" size="sm">
-              <a
-                href={meeting.documentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Living Document
-              </a>
-            </Button>
-          )}
-        </CardFooter>
-      )}
-    </Card>
+              {meeting.documentUrl && (
+                <Button
+                  component="a"
+                  href={meeting.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outline"
+                  fullWidth
+                  size="sm"
+                  leftSection={<FileText size={16} />}
+                >
+                  Living Document
+                </Button>
+              )}
+            </Stack>
+          </>
+        )}
+      </Stack>
+    </Paper>
   );
 }

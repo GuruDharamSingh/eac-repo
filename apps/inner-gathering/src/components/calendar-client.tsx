@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MeetingCalendar } from "./calendar/meeting-calendar";
-import { Button } from "@/components/ui/button";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import {
+  Badge,
+  Button,
+  Container,
+  Drawer,
+  Group,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { Calendar as CalendarIcon, Plus, ExternalLink, MapPin, Video, Clock, User, FileText } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { format } from "date-fns";
-import { Badge } from "./ui/badge";
 
 interface CalendarClientProps {
   initialMeetings: Meeting[];
@@ -17,12 +26,12 @@ interface CalendarClientProps {
 export function CalendarClient({ initialMeetings }: CalendarClientProps) {
   const router = useRouter();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
 
   const handleSelectMeeting = (meeting: Meeting) => {
     setSelectedMeeting(meeting);
-    setDrawerOpen(true);
+    openDrawer();
   };
 
   const handleCreateMeeting = () => {
@@ -34,31 +43,36 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
     : selectedMeeting?.startTime;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <Container size="xl" py="xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <Group justify="space-between" mb="lg" wrap="wrap">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <CalendarIcon className="h-8 w-8 text-indigo-600" />
-            Community Calendar
-          </h1>
-          <p className="text-muted-foreground mt-2">
+          <Group gap="xs" mb={4}>
+            <ThemeIcon size="lg" radius="md" variant="light" color="indigo">
+              <CalendarIcon size={20} />
+            </ThemeIcon>
+            <Title order={2}>Community Calendar</Title>
+          </Group>
+          <Text c="dimmed">
             View and manage all community events and gatherings
-          </p>
+          </Text>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <a href={`${nextcloudUrl}/apps/calendar`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Nextcloud
-            </a>
+        <Group gap="xs">
+          <Button
+            component="a"
+            href={`${nextcloudUrl}/apps/calendar`}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outline"
+            leftSection={<ExternalLink size={16} />}
+          >
+            Nextcloud
           </Button>
-          <Button onClick={handleCreateMeeting}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={handleCreateMeeting} leftSection={<Plus size={16} />}>
             Create Meeting
           </Button>
-        </div>
-      </div>
+        </Group>
+      </Group>
 
       {/* Calendar Component */}
       <MeetingCalendar
@@ -67,95 +81,98 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
       />
 
       {/* Meeting Details Drawer */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>{selectedMeeting?.title}</DrawerTitle>
-          </DrawerHeader>
-          {selectedMeeting && (
-            <div className="px-4 pb-6 space-y-4 max-w-2xl">
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
-                {selectedMeeting.isOnline && (
-                  <Badge variant="secondary">
-                    <Video className="h-3 w-3 mr-1" />
-                    Online
-                  </Badge>
-                )}
-                <Badge variant="outline">{selectedMeeting.status}</Badge>
-              </div>
+      <Drawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        position="bottom"
+        size="auto"
+        title={<Title order={4}>{selectedMeeting?.title}</Title>}
+      >
+        {selectedMeeting && (
+          <Stack gap="md" maw={600}>
+            {/* Status Badge */}
+            <Group gap="xs">
+              {selectedMeeting.isOnline && (
+                <Badge variant="light" color="cyan" leftSection={<Video size={12} />}>
+                  Online
+                </Badge>
+              )}
+              <Badge variant="outline">{selectedMeeting.status}</Badge>
+            </Group>
 
-              {/* Date & Time */}
-              {meetingDate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(meetingDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
+            {/* Date & Time */}
+            {meetingDate && (
+              <Group gap="xs">
+                <Clock size={16} color="var(--mantine-color-gray-6)" />
+                <Text size="sm">
+                  {format(meetingDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}
                   {selectedMeeting.durationMinutes && (
-                    <span className="text-muted-foreground">
+                    <Text span c="dimmed" ml={4}>
                       ({selectedMeeting.durationMinutes} minutes)
-                    </span>
+                    </Text>
                   )}
-                </div>
-              )}
+                </Text>
+              </Group>
+            )}
 
-              {/* Location */}
-              {selectedMeeting.location && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{selectedMeeting.location}</span>
-                </div>
-              )}
+            {/* Location */}
+            {selectedMeeting.location && (
+              <Group gap="xs">
+                <MapPin size={16} color="var(--mantine-color-gray-6)" />
+                <Text size="sm">{selectedMeeting.location}</Text>
+              </Group>
+            )}
 
-              {/* Guide */}
-              {selectedMeeting.guide && (
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>Guide: {selectedMeeting.guide.displayName}</span>
-                </div>
-              )}
+            {/* Guide */}
+            {selectedMeeting.guide && (
+              <Group gap="xs">
+                <User size={16} color="var(--mantine-color-gray-6)" />
+                <Text size="sm">Guide: {selectedMeeting.guide.displayName}</Text>
+              </Group>
+            )}
 
-              {/* Description */}
-              {selectedMeeting.description && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Description</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedMeeting.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex flex-col gap-2 pt-4">
-                {selectedMeeting.nextcloudTalkToken && (
-                  <Button asChild className="w-full">
-                    <a
-                      href={`${nextcloudUrl}/call/${selectedMeeting.nextcloudTalkToken}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Video className="h-4 w-4 mr-2" />
-                      Join Talk Room
-                    </a>
-                  </Button>
-                )}
-
-                {selectedMeeting.documentUrl && (
-                  <Button variant="outline" asChild className="w-full">
-                    <a
-                      href={selectedMeeting.documentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Document
-                    </a>
-                  </Button>
-                )}
+            {/* Description */}
+            {selectedMeeting.description && (
+              <div>
+                <Text fw={600} size="sm" mb={4}>Description</Text>
+                <Text size="sm" c="dimmed">
+                  {selectedMeeting.description}
+                </Text>
               </div>
-            </div>
-          )}
-        </DrawerContent>
+            )}
+
+            {/* Actions */}
+            <Stack gap="xs" mt="md">
+              {selectedMeeting.nextcloudTalkToken && (
+                <Button
+                  component="a"
+                  href={`/api/talk/join?token=${selectedMeeting.nextcloudTalkToken}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  fullWidth
+                  leftSection={<Video size={16} />}
+                >
+                  Join Talk Room
+                </Button>
+              )}
+
+              {selectedMeeting.documentUrl && (
+                <Button
+                  component="a"
+                  href={selectedMeeting.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outline"
+                  fullWidth
+                  leftSection={<FileText size={16} />}
+                >
+                  View Document
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+        )}
       </Drawer>
-    </div>
+    </Container>
   );
 }

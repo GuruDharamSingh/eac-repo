@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User } from "lucide-react";
+import {
+  ActionIcon,
+  Box,
+  Drawer,
+  NavLink,
+  Overlay,
+  Stack,
+  Title,
+  Divider,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 
 interface NavItem {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number }>;
   label: string;
   href: string;
   match: (pathname: string) => boolean;
@@ -17,7 +26,7 @@ const navItems: NavItem[] = [
     icon: Home,
     label: "Home",
     href: "/home",
-    match: (pathname) => pathname === "/home" || pathname === "/",
+    match: (pathname) => pathname === "/home",
   },
   {
     icon: Newspaper,
@@ -39,68 +48,88 @@ const navItems: NavItem[] = [
   },
 ];
 
+const accountItem: NavItem = {
+  icon: User,
+  label: "Account",
+  href: "/account",
+  match: (pathname) => pathname.startsWith("/account"),
+};
+
 export function TopNav() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [opened, { open, close }] = useDisclosure(false);
   const pathname = usePathname();
   const router = useRouter();
 
   const handleNavigate = (href: string) => {
     router.push(href);
-    setIsOpen(false);
+    close();
   };
 
   return (
     <>
       {/* Menu Button - Bottom Left */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center justify-center transition-all"
+      <ActionIcon
+        size={56}
+        radius="xl"
+        variant="filled"
+        color="indigo"
+        onClick={opened ? close : open}
         aria-label="Menu"
+        style={{
+          position: "fixed",
+          bottom: 24,
+          left: 24,
+          zIndex: 50,
+          boxShadow: "var(--mantine-shadow-lg)",
+        }}
       >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </button>
+        {opened ? <X size={24} /> : <Menu size={24} />}
+      </ActionIcon>
 
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed top-0 left-0 h-full w-80 bg-background border-r shadow-2xl z-40 transform transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
+      {/* Sidebar Drawer */}
+      <Drawer
+        opened={opened}
+        onClose={close}
+        position="left"
+        size={320}
+        withCloseButton={false}
+        overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
       >
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6 text-indigo-600">InnerGathering</h2>
-          <nav className="space-y-2">
+        <Stack gap="lg" p="md">
+          <Title order={3} c="indigo">InnerGathering</Title>
+          <Stack gap="xs">
             {navItems.map((item) => {
               const isActive = item.match(pathname);
               const Icon = item.icon;
 
               return (
-                <button
+                <NavLink
                   key={item.href}
                   onClick={() => handleNavigate(item.href)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left",
-                    isActive
-                      ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 font-semibold"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-base">{item.label}</span>
-                </button>
+                  label={item.label}
+                  leftSection={<Icon size={20} />}
+                  active={isActive}
+                  variant="light"
+                  color="indigo"
+                  style={{ borderRadius: 8 }}
+                />
               );
             })}
-          </nav>
-        </div>
-      </div>
+          </Stack>
+          <Divider />
+          <Stack gap="xs">
+            <NavLink
+              onClick={() => handleNavigate(accountItem.href)}
+              label={accountItem.label}
+              leftSection={<accountItem.icon size={20} />}
+              active={accountItem.match(pathname)}
+              variant="light"
+              color="indigo"
+              style={{ borderRadius: 8 }}
+            />
+          </Stack>
+        </Stack>
+      </Drawer>
     </>
   );
 }

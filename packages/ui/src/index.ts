@@ -29,3 +29,6 @@ export type { FileBrowserProps, NextcloudFile } from './nextcloud/file-browser';
 
 export { TalkRoom } from './nextcloud/talk-room';
 export type { TalkRoomProps, TalkMessage } from './nextcloud/talk-room';
+
+export { NextcloudLink } from './nextcloud/nextcloud-link';
+export type { NextcloudLinkProps } from './nextcloud/nextcloud-link';

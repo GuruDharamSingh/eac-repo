@@ -169,7 +169,9 @@ function getCalendarUrl(
   client: NextcloudClient,
   calendarName: string = 'eac-meetings'
 ): string {
-  return `${client.config.baseUrl}/remote.php/dav/calendars/${client.config.username}/${calendarName}`;
+  const url = `${client.config.baseUrl}/remote.php/dav/calendars/${client.config.username}/${calendarName}`;
+  console.log(`[Calendar] Generated URL: ${url}`);
+  return url;
 }
 
 /**
@@ -180,9 +182,11 @@ async function calendarExists(
   calendarName: string = 'eac-meetings'
 ): Promise<boolean> {
   const calendarUrl = getCalendarUrl(client, calendarName);
+  console.log(`[Calendar] Checking if calendar exists: ${calendarName}`);
+  console.log(`[Calendar] Using credentials for user: ${client.config.username}`);
 
   try {
-    await axios.request({
+    const response = await axios.request({
       method: 'PROPFIND',
       url: calendarUrl,
       auth: {
@@ -193,11 +197,17 @@ async function calendarExists(
         'Depth': '0',
       },
     });
+    console.log(`[Calendar] PROPFIND response status: ${response.status}`);
     return true;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return false;
+    if (axios.isAxiosError(error)) {
+      console.log(`[Calendar] PROPFIND error status: ${error.response?.status}`);
+      if (error.response?.status === 404) {
+        console.log(`[Calendar] Calendar does not exist: ${calendarName}`);
+        return false;
+      }
     }
+    console.error(`[Calendar] PROPFIND error:`, error);
     // Other errors should be thrown
     throw error;
   }
@@ -213,6 +223,7 @@ async function createCalendar(
   description: string = 'Meetings and gatherings from Elkdonis Arts Collective'
 ): Promise<void> {
   const calendarUrl = getCalendarUrl(client, calendarName);
+  console.log(`[Calendar] Creating calendar: ${calendarName} at ${calendarUrl}`);
 
   const mkcalendarBody = `<?xml version="1.0" encoding="utf-8" ?>
 <C:mkcalendar xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -227,18 +238,33 @@ async function createCalendar(
   </D:set>
 </C:mkcalendar>`;
 
-  await axios.request({
-    method: 'MKCALENDAR',
-    url: calendarUrl,
-    auth: {
-      username: client.config.username,
-      password: client.config.password,
-    },
-    headers: {
-      'Content-Type': 'application/xml; charset=utf-8',
-    },
-    data: mkcalendarBody,
-  });
+  try {
+    const response = await axios.request({
+      method: 'MKCALENDAR',
+      url: calendarUrl,
+      auth: {
+        username: client.config.username,
+        password: client.config.password,
+      },
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+      },
+      data: mkcalendarBody,
+    });
+    console.log(`[Calendar] MKCALENDAR response status: ${response.status}`);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      console.log(`[Calendar] MKCALENDAR error status: ${status}`);
+      // 405 Method Not Allowed or 409 Conflict might mean calendar already exists
+      if (status === 405 || status === 409) {
+        console.log(`[Calendar] Calendar may already exist (status ${status}), ignoring`);
+        return;
+      }
+      console.error(`[Calendar] MKCALENDAR error response:`, error.response?.data);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -248,11 +274,17 @@ export async function ensureCalendarExists(
   client: NextcloudClient,
   calendarName: string = 'eac-meetings'
 ): Promise<void> {
+  console.log(`[Calendar] ensureCalendarExists called for: ${calendarName}`);
+  console.log(`[Calendar] Base URL: ${client.config.baseUrl}`);
+  console.log(`[Calendar] Username: ${client.config.username}`);
+
   const exists = await calendarExists(client, calendarName);
+  console.log(`[Calendar] Calendar exists: ${exists}`);
 
   if (!exists) {
-    console.log(`Creating calendar: ${calendarName}`);
+    console.log(`[Calendar] Creating calendar: ${calendarName}`);
     await createCalendar(client, calendarName);
+    console.log(`[Calendar] Calendar created successfully`);
   }
 }
 
@@ -270,22 +302,34 @@ export async function createCalendarEvent(
   const calendarUrl = getCalendarUrl(client, calendar);
   const eventUrl = `${calendarUrl}/${uid}.ics`;
 
-  // Create event using WebDAV PUT
-  await axios.put(eventUrl, icalData, {
-    auth: {
-      username: client.config.username,
-      password: client.config.password,
-    },
-    headers: {
-      'Content-Type': 'text/calendar; charset=utf-8',
-    },
-  });
+  console.log(`[Calendar] Creating event: ${event.summary}`);
+  console.log(`[Calendar] Event URL: ${eventUrl}`);
 
-  return {
-    ...event,
-    id: uid,
-    url: eventUrl,
-  };
+  try {
+    // Create event using WebDAV PUT
+    const response = await axios.put(eventUrl, icalData, {
+      auth: {
+        username: client.config.username,
+        password: client.config.password,
+      },
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8',
+      },
+    });
+    console.log(`[Calendar] Event created, status: ${response.status}`);
+
+    return {
+      ...event,
+      id: uid,
+      url: eventUrl,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(`[Calendar] Event creation failed, status: ${error.response?.status}`);
+      console.error(`[Calendar] Error response:`, error.response?.data);
+    }
+    throw error;
+  }
 }
 
 /**
