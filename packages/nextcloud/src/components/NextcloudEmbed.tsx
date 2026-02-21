@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 
 export interface NextcloudEmbedProps {
-  /** Nextcloud base URL (e.g., 'http://192.168.2.26:8080') */
+  /** Nextcloud base URL (from NEXT_PUBLIC_NEXTCLOUD_URL env var) */
   baseUrl: string;
   /** Nextcloud app path (e.g., '/apps/polls', '/apps/calendar') */
   appPath: string;

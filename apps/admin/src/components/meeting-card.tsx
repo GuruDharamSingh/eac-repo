@@ -9,6 +9,7 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
+import { stripHtml } from "@/lib/strip-html";
 import {
   Bell,
   Building2,
@@ -113,7 +114,7 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
 
         {meeting.description ? (
           <Text size="sm" c="dimmed">
-            {meeting.description}
+            {stripHtml(meeting.description)}
           </Text>
         ) : null}
 

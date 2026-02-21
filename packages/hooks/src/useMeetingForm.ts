@@ -5,8 +5,16 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
-import type { MeetingVisibility } from '@elkdonis/types';
+import type { MeetingVisibility, MeetingRecurrence, EventPageTableData } from '@elkdonis/types';
 import { slugify, DEFAULT_MEETING_DURATION } from '@elkdonis/utils';
+
+export interface SelectedNextcloudFile {
+  filename: string;
+  basename: string;
+  size: number;
+  mime?: string;
+  url: string;
+}
 
 export interface MeetingFormData {
   title: string;
@@ -22,9 +30,20 @@ export interface MeetingFormData {
   visibility: MeetingVisibility;
   notes: string;
   media: File[];
+  selectedFiles: SelectedNextcloudFile[];
   createDocument: boolean;
   syncToCalendar: boolean;
   createTalkRoom: boolean;
+  showInLiveFeed: boolean;
+  isRSVPEnabled: boolean;
+  rsvpDeadline: Date | null;
+  minAttendees: number | string;
+  notifyOnMinAttendees: boolean;
+  recurrencePattern: MeetingRecurrence;
+  recurrenceCustomRule: string;
+  recurrenceUntil: Date | null;
+  createEventPage: boolean;
+  eventPageTableData: EventPageTableData;
 }
 
 export interface MeetingFormConfig {
@@ -54,6 +73,16 @@ export interface MeetingFormConfig {
     createDocument?: boolean;
     syncToCalendar?: boolean;
     createTalkRoom?: boolean;
+    showInLiveFeed?: boolean;
+    isRSVPEnabled?: boolean;
+    rsvpDeadline?: boolean;
+    minAttendees?: boolean;
+    notifyOnMinAttendees?: boolean;
+    recurrencePattern?: boolean;
+    recurrenceCustomRule?: boolean;
+    recurrenceUntil?: boolean;
+    createEventPage?: boolean;
+    eventPageTableData?: boolean;
   };
   organizationOptions?: Array<{ value: string; label: string }>;
   fixedValues?: Partial<MeetingFormData>;
@@ -117,6 +146,15 @@ const DEFAULT_CONFIG: MeetingFormConfig = {
     createDocument: true,
     syncToCalendar: true,
     createTalkRoom: true,
+    isRSVPEnabled: true,
+    rsvpDeadline: true,
+    minAttendees: true,
+    notifyOnMinAttendees: true,
+    recurrencePattern: true,
+    recurrenceCustomRule: true,
+    recurrenceUntil: true,
+    createEventPage: true,
+    eventPageTableData: true,
   },
 };
 
@@ -143,9 +181,20 @@ export function useMeetingForm(config: MeetingFormConfig = {}): UseMeetingFormRe
     visibility: "PUBLIC",
     notes: "",
     media: [],
+    selectedFiles: [],
     createDocument: false,
     syncToCalendar: true,
     createTalkRoom: true,
+    showInLiveFeed: false,
+    isRSVPEnabled: false,
+    rsvpDeadline: null,
+    minAttendees: "",
+    notifyOnMinAttendees: false,
+    recurrencePattern: "NONE",
+    recurrenceCustomRule: "",
+    recurrenceUntil: null,
+    createEventPage: false,
+    eventPageTableData: { columns: [], rows: [] },
     ...mergedConfig.fixedValues,
   });
 
@@ -222,9 +271,19 @@ export function useMeetingForm(config: MeetingFormConfig = {}): UseMeetingFormRe
       visibility: "PUBLIC",
       notes: "",
       media: [],
+      selectedFiles: [],
       createDocument: false,
       syncToCalendar: true,
       createTalkRoom: true,
+      isRSVPEnabled: false,
+      rsvpDeadline: null,
+      minAttendees: "",
+      notifyOnMinAttendees: false,
+      recurrencePattern: "NONE",
+      recurrenceCustomRule: "",
+      recurrenceUntil: null,
+      createEventPage: false,
+      eventPageTableData: { columns: [], rows: [] },
       ...mergedConfig.fixedValues,
     });
     setError(null);

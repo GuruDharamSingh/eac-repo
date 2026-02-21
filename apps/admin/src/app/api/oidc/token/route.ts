@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
 
   console.log('[token] Request body:', {
     client_id,
-    client_secret: client_secret ? client_secret.substring(0, 10) + '...' : 'none',
     redirect_uri,
     grant_type,
     code: code ? 'present' : 'missing',
@@ -29,12 +28,8 @@ export async function POST(req: NextRequest) {
 
   // 1. Validate Client
   const client = CLIENTS[client_id];
-  console.log('[token] Client found:', !!client);
-  console.log('[token] Expected secret:', client?.secret ? client.secret.substring(0, 10) + '...' : 'none');
-  console.log('[token] Secret match:', client?.secret === client_secret);
-
   if (!client || client.secret !== client_secret) {
-    console.log('[token] Client validation failed');
+    console.log('[token] Client validation failed for:', client_id);
     return NextResponse.json({ error: 'invalid_client' }, { status: 401 });
   }
 

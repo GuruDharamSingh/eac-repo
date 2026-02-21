@@ -4,10 +4,17 @@ import type { BlogConfig } from '../types';
 
 interface BlogHeaderProps {
   config: BlogConfig;
+  isOwner?: boolean; // Whether current user is authenticated owner
 }
 
-export function BlogHeader({ config }: BlogHeaderProps) {
+export function BlogHeader({ config, isOwner = false }: BlogHeaderProps) {
   const { orgName, tagline, navLinks = [], hero } = config;
+
+  // Filter nav links based on owner status
+  const visibleNavLinks = navLinks.filter(link => !link.ownerOnly || isOwner);
+
+  // Check if CTA should be shown
+  const showCta = hero?.ctaHref && hero?.ctaLabel && (!hero.ctaOwnerOnly || isOwner);
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -24,7 +31,7 @@ export function BlogHeader({ config }: BlogHeaderProps) {
         </Stack>
 
         <Group gap="lg">
-          {navLinks.map((link) =>
+          {visibleNavLinks.map((link) =>
             link.external ? (
               <Text
                 key={link.href}
@@ -42,9 +49,9 @@ export function BlogHeader({ config }: BlogHeaderProps) {
               </Text>
             )
           )}
-          {hero?.ctaHref && hero?.ctaLabel ? (
-            <Button component={Link} href={hero.ctaHref} variant="light">
-              {hero.ctaLabel}
+          {showCta ? (
+            <Button component={Link} href={hero!.ctaHref!} variant="light">
+              {hero!.ctaLabel}
             </Button>
           ) : null}
         </Group>

@@ -8,6 +8,7 @@ export interface User {
   displayName?: string;
   avatarUrl?: string;
   bio?: string;
+  commentColor?: string;
   isAdmin: boolean;
   nextcloudUserId?: string;
   nextcloudAppPassword?: string;

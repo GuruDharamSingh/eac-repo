@@ -19,6 +19,8 @@ export interface Meeting {
   timeZone?: string;
   recurrencePattern: MeetingRecurrence;
   recurrenceCustomRule?: string;
+  recurrenceUntil?: Date;
+  hasEventPage?: boolean;
   reminderMinutesBefore?: number;
   coHostIds: string[];
   rsvpDeadline?: Date;
@@ -40,6 +42,13 @@ export interface Meeting {
   documentUrl?: string;
   documentShareToken?: string;
   nextcloudTalkToken?: string; // Talk room token for video conferencing
+
+  // RSVP/Attendance
+  attendeeLimit?: number;
+  attendeeCount?: number;
+
+  // Forum
+  replyCount?: number;
 
   // Relations
   organization?: Organization;

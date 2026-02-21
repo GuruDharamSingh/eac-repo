@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     const force = searchParams.get('force') === 'true';
 
     // Build Nextcloud URL
-    const nextcloudBaseUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+    const nextcloudBaseUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
 
     // If force is true, we first logout from Nextcloud then login
     // This ensures the correct user is logged in

@@ -1,18 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X, User } from "lucide-react";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video } from "lucide-react";
 import {
   ActionIcon,
+  Badge,
   Box,
   Drawer,
+  Group,
+  Indicator,
   NavLink,
-  Overlay,
   Stack,
   Title,
   Divider,
+  Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useRealtimeNotifications } from "@elkdonis/hooks";
+import { supabase } from "@/lib/supabase";
 
 interface NavItem {
   icon: React.ComponentType<{ size?: number }>;
@@ -46,6 +52,18 @@ const navItems: NavItem[] = [
     href: "/calendar",
     match: (pathname) => pathname.startsWith("/calendar"),
   },
+  {
+    icon: FolderOpen,
+    label: "Files",
+    href: "/files",
+    match: (pathname) => pathname.startsWith("/files"),
+  },
+  {
+    icon: Video,
+    label: "Live",
+    href: "/live",
+    match: (pathname) => pathname.startsWith("/live"),
+  },
 ];
 
 const accountItem: NavItem = {
@@ -59,6 +77,42 @@ export function TopNav() {
   const [opened, { open, close }] = useDisclosure(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [userId, setUserId] = useState<string>("");
+
+  // Get the current user ID for notification subscription
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+      }
+    });
+  }, []);
+
+  // Fetch initial unread count
+  const [initialCount, setInitialCount] = useState(0);
+  useEffect(() => {
+    if (!userId) return;
+    fetch("/api/notifications/unread-count")
+      .then((res) => (res.ok ? res.json() : { count: 0 }))
+      .then((data) => setInitialCount(data.count || 0))
+      .catch(() => {});
+  }, [userId]);
+
+  // Realtime notifications
+  const { unreadCount, initializeUnreadCount } = useRealtimeNotifications({
+    client: supabase,
+    userId,
+    enabled: !!userId,
+  });
+
+  // Set initial unread count when fetched
+  useEffect(() => {
+    if (initialCount > 0) {
+      initializeUnreadCount(initialCount);
+    }
+  }, [initialCount, initializeUnreadCount]);
+
+  const totalUnread = unreadCount;
 
   const handleNavigate = (href: string) => {
     router.push(href);
@@ -68,23 +122,33 @@ export function TopNav() {
   return (
     <>
       {/* Menu Button - Bottom Left */}
-      <ActionIcon
-        size={56}
-        radius="xl"
-        variant="filled"
-        color="indigo"
-        onClick={opened ? close : open}
-        aria-label="Menu"
-        style={{
-          position: "fixed",
-          bottom: 24,
-          left: 24,
-          zIndex: 50,
-          boxShadow: "var(--mantine-shadow-lg)",
-        }}
+      <Indicator
+        inline
+        label={totalUnread > 0 ? (totalUnread > 99 ? "99+" : totalUnread) : undefined}
+        size={totalUnread > 0 ? 18 : 0}
+        offset={4}
+        position="top-end"
+        color="red"
+        disabled={totalUnread === 0}
       >
-        {opened ? <X size={24} /> : <Menu size={24} />}
-      </ActionIcon>
+        <ActionIcon
+          size={56}
+          radius="xl"
+          variant="filled"
+          color="indigo"
+          onClick={opened ? close : open}
+          aria-label="Menu"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: 24,
+            zIndex: 50,
+            boxShadow: "var(--mantine-shadow-lg)",
+          }}
+        >
+          {opened ? <X size={24} /> : <Menu size={24} />}
+        </ActionIcon>
+      </Indicator>
 
       {/* Sidebar Drawer */}
       <Drawer
@@ -118,6 +182,25 @@ export function TopNav() {
           </Stack>
           <Divider />
           <Stack gap="xs">
+            {/* Notifications */}
+            <NavLink
+              onClick={() => handleNavigate("/notifications")}
+              label={
+                <Group gap="xs">
+                  <span>Notifications</span>
+                  {totalUnread > 0 && (
+                    <Badge size="sm" color="red" variant="filled" circle>
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </Badge>
+                  )}
+                </Group>
+              }
+              leftSection={<Bell size={20} />}
+              active={pathname.startsWith("/notifications")}
+              variant="light"
+              color="indigo"
+              style={{ borderRadius: 8 }}
+            />
             <NavLink
               onClick={() => handleNavigate(accountItem.href)}
               label={accountItem.label}

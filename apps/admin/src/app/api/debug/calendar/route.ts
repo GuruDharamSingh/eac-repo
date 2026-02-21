@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@elkdonis/auth-server';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 import { createNextcloudClient, ensureCalendarExists, createCalendarEvent } from '@elkdonis/nextcloud';
 
 export const dynamic = 'force-dynamic';
@@ -7,8 +7,14 @@ export const dynamic = 'force-dynamic';
 /**
  * Debug endpoint to test calendar sync
  * GET /api/debug/calendar - Test calendar creation and event sync
+ * Restricted to development mode and admin users only.
  */
 export async function GET(req: NextRequest) {
+  // Only allow in development
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   console.log('[Calendar Debug] Starting calendar sync test');
 
   try {
@@ -20,6 +26,11 @@ export async function GET(req: NextRequest) {
         { error: 'Not authenticated', details: 'No user session found' },
         { status: 401 }
       );
+    }
+
+    // Require admin role
+    if (!(await isAdmin(session.user.id))) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     console.log(`[Calendar Debug] User: ${session.user.email}`);
@@ -77,12 +88,9 @@ export async function GET(req: NextRequest) {
         calendarCreated: true,
         testEventCreated: true,
         eventId: testEvent.id,
-        eventUrl: testEvent.url,
-        nextcloudUrl,
-        nextcloudUser: session.user.nextcloud_user_id,
       },
       instructions: [
-        `Visit ${nextcloudUrl} and log in as ${session.user.nextcloud_user_id}`,
+        'Open Nextcloud and log in',
         'Go to the Calendar app',
         'Look for the "EAC Meetings" calendar',
         'You should see the test event: "EAC Calendar Test Event"',

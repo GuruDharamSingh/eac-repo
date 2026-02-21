@@ -2,7 +2,7 @@ const postgres = require('postgres');
 
 (async () => {
   try {
-    const sql = postgres(process.env.DATABASE_URL || 'postgresql://postgres:Ea4thway@localhost:5432/elkdonis_dev');
+    const sql = postgres(process.env.DATABASE_URL);
 
     console.log('\n📋 Users Table:');
     const users = await sql`SELECT id, email, display_name, is_admin FROM users ORDER BY email`;

@@ -24,6 +24,8 @@ async function createTables() {
       name VARCHAR(255) NOT NULL,
       slug VARCHAR(100) UNIQUE NOT NULL,
       description TEXT,
+      blog_password_hash VARCHAR(128),
+      blog_password_salt VARCHAR(64),
       nextcloud_folder_id VARCHAR(255),
       nextcloud_folder_path VARCHAR(500),
       nextcloud_public_share_token VARCHAR(255),
@@ -41,6 +43,7 @@ async function createTables() {
       bio TEXT,
       is_admin BOOLEAN DEFAULT false,
       nextcloud_user_id VARCHAR(255),
+      comment_color VARCHAR(7),
       nextcloud_synced BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -52,7 +55,7 @@ async function createTables() {
     CREATE TABLE IF NOT EXISTS user_organizations (
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
       org_id VARCHAR(50) REFERENCES organizations(id) ON DELETE CASCADE,
-      role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('guide', 'member', 'viewer')),
+      role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('owner', 'guide', 'member', 'viewer')),
       joined_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (user_id, org_id)
     )

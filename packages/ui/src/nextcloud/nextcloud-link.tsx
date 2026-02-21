@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { Anchor, Button, Loader, Text, Tooltip } from '@mantine/core';
+import { Anchor, Button, Loader, Tooltip } from '@mantine/core';
 import { Cloud, ExternalLink, AlertCircle } from 'lucide-react';
 
 export interface NextcloudLinkProps {
@@ -54,10 +54,10 @@ export function NextcloudLink({
   children,
   label,
   size = 'sm',
-  adminBaseUrl = 'http://localhost:3000',
-  nextcloudBaseUrl = 'http://localhost:8080',
+  adminBaseUrl = process.env.NEXT_PUBLIC_ADMIN_URL || '',
+  nextcloudBaseUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '',
   showLoading = true,
-  onNotSynced,
+  onNotSynced: _onNotSynced,
   directLink = false,
 }: NextcloudLinkProps) {
   const [loading, setLoading] = useState(false);

@@ -57,6 +57,19 @@ export {
   deletePoll,
 } from './availability';
 
+// Question poll services
+export {
+  createQuestionPoll,
+  getQuestionPollById,
+  getQuestionPollsByOrg,
+  voteOnPoll,
+  unvoteOnPoll,
+  getUserVotes,
+  deleteQuestionPoll,
+  closeQuestionPoll,
+} from './question-polls';
+export type { QuestionPoll, PollOption, CreateQuestionPollData } from './question-polls';
+
 // Nextcloud sync services
 export {
   storeNextcloudEvent,

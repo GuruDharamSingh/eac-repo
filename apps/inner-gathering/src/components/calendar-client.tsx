@@ -13,6 +13,7 @@ import {
   Text,
   ThemeIcon,
   Title,
+  TypographyStylesProvider,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Calendar as CalendarIcon, Plus, ExternalLink, MapPin, Video, Clock, User, FileText } from "lucide-react";
@@ -27,7 +28,7 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
   const router = useRouter();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-  const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+  const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
 
   const handleSelectMeeting = (meeting: Meeting) => {
     setSelectedMeeting(meeting);
@@ -135,9 +136,12 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
             {selectedMeeting.description && (
               <div>
                 <Text fw={600} size="sm" mb={4}>Description</Text>
-                <Text size="sm" c="dimmed">
-                  {selectedMeeting.description}
-                </Text>
+                <TypographyStylesProvider>
+                  <div
+                    style={{ color: 'var(--mantine-color-dimmed)', fontSize: 'var(--mantine-font-size-sm)' }}
+                    dangerouslySetInnerHTML={{ __html: selectedMeeting.description }}
+                  />
+                </TypographyStylesProvider>
               </div>
             )}
 

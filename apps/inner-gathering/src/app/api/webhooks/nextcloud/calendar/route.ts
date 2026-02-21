@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       }
 
       nextcloudClient = createNextcloudClient({
-        baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
+        baseUrl: process.env.NEXTCLOUD_URL || '',
         username: user.nextcloud_user_id,
         password: user.nextcloud_app_password,
       });
@@ -116,14 +116,6 @@ export async function POST(request: Request) {
 export async function GET() {
   return NextResponse.json({
     status: 'active',
-    endpoint: '/api/webhooks/nextcloud/calendar',
     message: 'Calendar webhook endpoint ready',
-    requiredHeaders: ['x-nextcloud-webhook-secret'],
-    expectedPayload: {
-      event_type: 'calendar.event.created | calendar.event.updated | calendar.event.deleted',
-      event_id: 'string (calendar event UID)',
-      calendar_id: 'string (optional)',
-      user_id: 'string (optional, Nextcloud username)',
-    },
   });
 }

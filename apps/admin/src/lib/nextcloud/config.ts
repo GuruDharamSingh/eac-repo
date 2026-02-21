@@ -5,11 +5,11 @@
 
 export const nextcloudConfig = {
   // Base URL for Nextcloud instance
-  baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
+  baseUrl: process.env.NEXTCLOUD_URL || '',
 
   // Admin credentials
-  adminUser: process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis',
-  adminPassword: process.env.NEXTCLOUD_ADMIN_PASSWORD || 'Ea4thway',
+  adminUser: process.env.NEXTCLOUD_ADMIN_USER || '',
+  adminPassword: process.env.NEXTCLOUD_ADMIN_PASSWORD || '',
 
   // API endpoints
   api: {

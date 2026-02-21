@@ -5,10 +5,22 @@ export interface PostFormData {
   body: string;
   excerpt: string;
   visibility: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+  media: File[];
+  createTalkRoom: boolean;
+  createDocument: boolean;
 }
 
 export interface PostFormConfig {
   initialData?: Partial<PostFormData>;
+  visibleFields?: {
+    title?: boolean;
+    body?: boolean;
+    excerpt?: boolean;
+    visibility?: boolean;
+    media?: boolean;
+    createTalkRoom?: boolean;
+    createDocument?: boolean;
+  };
 }
 
 export interface UsePostFormResult {
@@ -19,6 +31,7 @@ export interface UsePostFormResult {
   ) => void;
   resetForm: () => void;
   isValid: boolean;
+  config: PostFormConfig;
 }
 
 const DEFAULT_FORM_DATA: PostFormData = {
@@ -26,9 +39,27 @@ const DEFAULT_FORM_DATA: PostFormData = {
   body: '',
   excerpt: '',
   visibility: 'PUBLIC',
+  media: [],
+  createTalkRoom: false,
+  createDocument: false,
+};
+
+const DEFAULT_VISIBLE_FIELDS = {
+  title: true,
+  body: true,
+  excerpt: true,
+  visibility: true,
+  media: true,
+  createTalkRoom: true,
+  createDocument: true,
 };
 
 export function usePostForm(config?: PostFormConfig): UsePostFormResult {
+  const mergedConfig = {
+    ...config,
+    visibleFields: { ...DEFAULT_VISIBLE_FIELDS, ...config?.visibleFields },
+  };
+
   const [formData, setFormData] = useState<PostFormData>({
     ...DEFAULT_FORM_DATA,
     ...config?.initialData,
@@ -52,5 +83,6 @@ export function usePostForm(config?: PostFormConfig): UsePostFormResult {
     updateField,
     resetForm,
     isValid,
+    config: mergedConfig,
   };
 }

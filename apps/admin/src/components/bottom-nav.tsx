@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Paper, Text } from "@mantine/core";
-import { BarChart3, Calendar, Plus } from "lucide-react";
+import { BarChart3, Calendar, Plus, Users } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { label: "Meetings", href: "/", icon: Calendar },
+  { label: "Users", href: "/users", icon: Users },
   { label: "New", href: "/new", icon: Plus },
 ];
 

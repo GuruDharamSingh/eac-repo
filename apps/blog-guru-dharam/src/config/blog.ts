@@ -11,8 +11,8 @@ export const blogConfig: BlogConfig = {
   tagline: 'Teachings, practices, and reflections',
   navLinks: [
     { label: 'Home', href: '/' },
-    { label: 'New Entry', href: '/entry' },
-    { label: 'Admin', href: '/admin' },
+    { label: 'New Entry', href: '/entry', ownerOnly: true },
+    { label: 'Admin', href: '/admin', ownerOnly: true },
   ],
   hero: {
     title: 'Wisdom teachings and guided practices from Guru Dharam',
@@ -20,6 +20,7 @@ export const blogConfig: BlogConfig = {
       'Explore articles, meditations, and resources to support your spiritual journey within the collective.',
     ctaLabel: 'Compose a post',
     ctaHref: '/entry',
+    ctaOwnerOnly: true,
   },
   ownerEmails: ownerEmail ? [ownerEmail] : [],
   ownerUserIds: ownerUserId ? [ownerUserId] : [],

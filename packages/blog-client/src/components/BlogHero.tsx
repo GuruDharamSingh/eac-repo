@@ -4,10 +4,14 @@ import type { BlogHeroConfig } from '../types';
 
 interface BlogHeroProps {
   hero?: BlogHeroConfig;
+  isOwner?: boolean;
 }
 
-export function BlogHero({ hero }: BlogHeroProps) {
+export function BlogHero({ hero, isOwner = false }: BlogHeroProps) {
   if (!hero) return null;
+
+  // Check if CTA should be shown
+  const showCta = hero.ctaHref && hero.ctaLabel && (!hero.ctaOwnerOnly || isOwner);
 
   return (
     <Paper withBorder radius="lg" p="xl" shadow="sm">
@@ -18,9 +22,9 @@ export function BlogHero({ hero }: BlogHeroProps) {
             {hero.description}
           </Text>
         ) : null}
-        {hero.ctaHref && hero.ctaLabel ? (
+        {showCta ? (
           <Box>
-            <Button component={Link} href={hero.ctaHref}>
+            <Button component={Link} href={hero.ctaHref!}>
               {hero.ctaLabel}
             </Button>
           </Box>

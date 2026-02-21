@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@elkdonis/db';
-import { getServerSession } from '@elkdonis/auth-server';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 /**
  * GET /api/meetings
@@ -12,6 +12,9 @@ export async function GET() {
     const session = await getServerSession();
     if (!session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await isAdmin(session.user.id))) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const meetings = await db`

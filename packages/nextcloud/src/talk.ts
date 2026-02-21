@@ -149,7 +149,7 @@ export function getTalkEmbedUrl(
   roomToken: string,
   baseUrl?: string
 ): string {
-  const url = baseUrl || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+  const url = baseUrl || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
   return `${url}/call/${roomToken}`;
 }
 

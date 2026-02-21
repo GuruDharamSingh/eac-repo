@@ -12,6 +12,7 @@ import { db } from '@elkdonis/db';
  * - returnTo: Full URL in Nextcloud to redirect to (e.g., Talk room URL)
  * - target: Path in Nextcloud to redirect to (e.g., /apps/files)
  * - force: If 'true', forces re-authentication
+ * - direct: If 'true', skip OAuth and go directly to destination (for already connected users)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const nextcloudBaseUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+    const nextcloudBaseUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
 
     // Check if user is synced to Nextcloud
     if (!user.nextcloud_synced || !user.nextcloud_user_id) {
@@ -59,9 +60,7 @@ export async function GET(request: NextRequest) {
     const returnTo = searchParams.get('returnTo');
     const target = searchParams.get('target') || '/';
     const force = searchParams.get('force') === 'true';
-
-    // Build the social login URL - this triggers OAuth2 auth with Nextcloud
-    const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
+    const direct = searchParams.get('direct') === 'true';
 
     // Determine the final redirect destination
     let finalDestination: string;
@@ -74,6 +73,15 @@ export async function GET(request: NextRequest) {
     } else {
       finalDestination = nextcloudBaseUrl;
     }
+
+    // If direct mode is requested, just redirect to the destination
+    // This assumes the user already has a valid Nextcloud session
+    if (direct) {
+      return NextResponse.redirect(finalDestination);
+    }
+
+    // Build the social login URL - this triggers OAuth2 auth with Nextcloud
+    const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
 
     // Pass the redirect destination to sociallogin
     socialLoginUrl.searchParams.set('redirect_url', finalDestination);

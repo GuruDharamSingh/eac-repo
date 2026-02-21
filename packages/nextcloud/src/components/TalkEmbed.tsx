@@ -33,7 +33,10 @@ export function TalkEmbed({
   allowMicrophone = true,
   allowScreenShare = true,
 }: TalkEmbedProps) {
-  const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+  const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
+  if (!nextcloudUrl) {
+    console.warn('[TalkEmbed] NEXT_PUBLIC_NEXTCLOUD_URL not set');
+  }
   const embedUrl = `${nextcloudUrl}/call/${roomToken}`;
 
   // Build permissions string

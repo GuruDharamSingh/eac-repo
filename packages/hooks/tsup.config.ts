@@ -8,5 +8,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: 'es2020',
-  external: ['react', 'react-dom', '@elkdonis/utils', '@elkdonis/types'],
+  external: ['react', 'react-dom', '@elkdonis/utils', '@elkdonis/types', '@supabase/supabase-js'],
 });

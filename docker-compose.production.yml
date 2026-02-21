@@ -1,0 +1,301 @@
+version: '3.8'
+
+# Production Docker Compose Configuration
+# Usage: docker-compose -f docker-compose.production.yml up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: eac-postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"  # Only accessible from localhost
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eac-network
+    # Resource limits (prevents memory leaks from crashing server)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+        reservations:
+          memory: 512M
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: eac-redis-prod
+    command: redis-server --appendonly yes --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - eac-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Supabase Auth (GoTrue)
+  supabase-auth:
+    image: supabase/gotrue:v2.151.0
+    container_name: eac-auth-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?search_path=auth
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+    ports:
+      - "127.0.0.1:9999:9999"
+    restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # PostgREST API
+  supabase-rest:
+    image: postgrest/postgrest:v12.0.2
+    container_name: eac-postgrest-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "127.0.0.1:9998:3000"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+  # Supabase Realtime
+  supabase-realtime:
+    image: supabase/realtime:v2.29.15
+    container_name: eac-realtime-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      DB_SSL: "false"
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET}
+      REPLICATION_MODE: RLS
+      REPLICATION_POLL_INTERVAL: 100
+      SECURE_CHANNELS: "true"
+      SLOT_NAME: supabase_realtime_rls
+      TEMPORARY_SLOT: "true"
+    ports:
+      - "127.0.0.1:4000:4000"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+  # Inner Gathering App
+  inner-gathering:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: production
+    image: eac-inner-gathering:production
+    container_name: eac-inner-gathering-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      REDIS_URL: ${REDIS_URL}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      PORT: 3004
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_INNER_GATHERING_URL}
+    ports:
+      - "127.0.0.1:3004:3004"
+    restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Admin App
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        APP_NAME: admin
+    image: eac-admin:production
+    container_name: eac-admin-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      PORT: 3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Blog Sunjay
+  blog-sunjay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        APP_NAME: blog-sunjay
+    image: eac-blog-sunjay:production
+    container_name: eac-blog-sunjay-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      PORT: 3001
+    ports:
+      - "127.0.0.1:3001:3001"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+  # Blog Guru Dharam
+  blog-guru-dharam:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        APP_NAME: blog-guru-dharam
+    image: eac-blog-guru-dharam:production
+    container_name: eac-blog-guru-dharam-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_URL: http://supabase-auth:9999
+      PORT: 3002
+    ports:
+      - "127.0.0.1:3002:3002"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+  # Forum
+  forum:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        APP_NAME: forum
+    image: eac-forum:production
+    container_name: eac-forum-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: 3003
+    ports:
+      - "127.0.0.1:3003:3003"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+  # Elkdonis Arts Collective Landing Page
+  elkdonis-arts-collective:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        APP_NAME: elkdonis-arts-collective
+    image: eac-landing:production
+    container_name: eac-landing-prod
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+    ports:
+      - "127.0.0.1:3005:3005"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  eac-network:
+    driver: bridge
+  nextcloud-network:
+    external: true  # Assumes Nextcloud is running on same server

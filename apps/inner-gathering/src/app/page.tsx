@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Paper,
   TextInput,
@@ -20,7 +19,6 @@ import { Sparkles, AlertCircle } from "lucide-react";
 import { signInWithPassword, signUp } from "@elkdonis/auth-client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +33,6 @@ export default function LoginPage() {
 
     try {
       if (mode === "signup") {
-        // Sign up new user
         const { user, error: signUpError } = await signUp(
           email,
           password,
@@ -45,12 +42,11 @@ export default function LoginPage() {
         if (signUpError) throw new Error(signUpError);
 
         if (user) {
-          // Successfully signed up, redirect to feed
-          router.push("/feed");
-          router.refresh();
+          // Hard redirect ensures fresh page load with new auth cookies
+          window.location.href = "/feed";
+          return;
         }
       } else {
-        // Sign in existing user
         const { user, error: signInError } = await signInWithPassword(
           email,
           password
@@ -59,9 +55,8 @@ export default function LoginPage() {
         if (signInError) throw new Error(signInError);
 
         if (user) {
-          // Successfully signed in, redirect to feed
-          router.push("/feed");
-          router.refresh();
+          window.location.href = "/feed";
+          return;
         }
       }
     } catch (err: any) {

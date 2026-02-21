@@ -24,6 +24,7 @@
     "@elkdonis/types": "workspace:*"
   },
   "devDependencies": {
+    "next": "^16.1.6",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   }

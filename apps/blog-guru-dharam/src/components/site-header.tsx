@@ -8,12 +8,17 @@ import { cn } from '../lib/utils';
 
 interface SiteHeaderProps {
   config: BlogConfig;
-  isAuthenticated?: boolean;
+  isOwner?: boolean; // Whether current user is blog owner
 }
 
-export function SiteHeader({ config, isAuthenticated }: SiteHeaderProps) {
+export function SiteHeader({ config, isOwner = false }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const navLinks = config.navLinks ?? [];
+
+  // Filter nav links based on owner status
+  const navLinks = (config.navLinks ?? []).filter(link => !link.ownerOnly || isOwner);
+
+  // Check if CTA should be shown
+  const showCta = config.hero?.ctaHref && config.hero?.ctaLabel && (!config.hero?.ctaOwnerOnly || isOwner);
 
   return (
     <header className="relative z-20 border-b border-border/80 bg-background/85 backdrop-blur-xl">
@@ -53,14 +58,14 @@ export function SiteHeader({ config, isAuthenticated }: SiteHeaderProps) {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={isAuthenticated ? '/admin' : '/login'}>
-              {isAuthenticated ? 'Admin' : 'Author sign in'}
-            </Link>
-          </Button>
-          {config.hero?.ctaHref && config.hero?.ctaLabel ? (
+          {isOwner ? (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin">Admin</Link>
+            </Button>
+          ) : null}
+          {showCta ? (
             <Button size="sm" asChild>
-              <Link href={config.hero.ctaHref}>{config.hero.ctaLabel}</Link>
+              <Link href={config.hero!.ctaHref!}>{config.hero!.ctaLabel}</Link>
             </Button>
           ) : null}
         </div>
@@ -114,14 +119,14 @@ export function SiteHeader({ config, isAuthenticated }: SiteHeaderProps) {
               ))}
             </div>
             <div className="mt-6 flex flex-col gap-3">
-              <Button variant="outline" onClick={() => setMenuOpen(false)} asChild>
-                <Link href={isAuthenticated ? '/admin' : '/login'}>
-                  {isAuthenticated ? 'Go to admin' : 'Author sign in'}
-                </Link>
-              </Button>
-              {config.hero?.ctaHref && config.hero?.ctaLabel ? (
+              {isOwner ? (
+                <Button variant="outline" onClick={() => setMenuOpen(false)} asChild>
+                  <Link href="/admin">Go to admin</Link>
+                </Button>
+              ) : null}
+              {showCta ? (
                 <Button onClick={() => setMenuOpen(false)} asChild>
-                  <Link href={config.hero.ctaHref}>{config.hero.ctaLabel}</Link>
+                  <Link href={config.hero!.ctaHref!}>{config.hero!.ctaLabel}</Link>
                 </Button>
               ) : null}
             </div>

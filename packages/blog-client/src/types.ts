@@ -2,6 +2,7 @@ export interface BlogNavLink {
   label: string;
   href: string;
   external?: boolean;
+  ownerOnly?: boolean; // Only show to authenticated owner
 }
 
 export interface BlogHeroConfig {
@@ -9,6 +10,7 @@ export interface BlogHeroConfig {
   description?: string;
   ctaLabel?: string;
   ctaHref?: string;
+  ctaOwnerOnly?: boolean; // Only show CTA to authenticated owner
 }
 
 export interface BlogConfig {

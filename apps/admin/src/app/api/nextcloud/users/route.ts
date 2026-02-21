@@ -21,7 +21,6 @@ export async function GET() {
         display_name,
         nextcloud_user_id,
         nextcloud_synced,
-        nextcloud_app_password,
         is_admin,
         trust_level,
         created_at,

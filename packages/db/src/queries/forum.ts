@@ -66,6 +66,7 @@ export interface Reply {
   userAvatar: string | null;
   userInitials: string;
   userTrustLevel: number;
+  commentColor?: string;
   children?: Reply[];
 }
 
@@ -369,6 +370,7 @@ export async function getReplies(threadId: string, threadType: 'post' | 'meeting
       COALESCE(r.reaction_count, 0) AS reaction_count,
       u.display_name AS user_name,
       u.avatar_url AS user_avatar,
+      u.comment_color,
       COALESCE(u.trust_level, 0) AS user_trust_level,
       CONCAT(
         SUBSTRING(SPLIT_PART(u.display_name, ' ', 1), 1, 1),
@@ -376,8 +378,10 @@ export async function getReplies(threadId: string, threadType: 'post' | 'meeting
       ) AS user_initials
     FROM replies r
     JOIN users u ON u.id = r.user_id
-    WHERE r.parent_type = ${threadType}
-      AND r.parent_id = ${threadId}
+    WHERE (
+        r.parent_type = ${threadType}
+        AND r.parent_id = ${threadId}
+      )
       OR (
         r.parent_type = 'reply'
         AND r.parent_id IN (

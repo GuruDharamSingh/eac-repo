@@ -1,10 +1,10 @@
-'use client';
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { MantineProvider, createTheme } from '@mantine/core';
+import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
+import '@mantine/tiptap/styles.css';
 import "./globals.css";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,9 +16,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const theme = createTheme({
-  /** Your theme configuration */
-});
+export const metadata: Metadata = {
+  title: "EAC Admin",
+  description: "Admin dashboard for Elkdonis Arts Collective",
+};
 
 export default function RootLayout({
   children,
@@ -26,13 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        <MantineProvider theme={theme}>
-          {children}
-        </MantineProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

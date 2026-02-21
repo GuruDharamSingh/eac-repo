@@ -2,6 +2,7 @@
 export type {
   BlogNavLink,
   BlogHeroConfig,
+  BlogConfig,
 } from './types';
 
 // Providers
@@ -14,3 +15,4 @@ export { BlogHero } from './components/BlogHero';
 export { BlogPostList } from './components/BlogPostList';
 export { BlogPostEditor } from './components/BlogPostEditor';
 export { BlogLoginForm } from './components/BlogLoginForm';
+export { LoginPrompt } from './components/LoginPrompt';

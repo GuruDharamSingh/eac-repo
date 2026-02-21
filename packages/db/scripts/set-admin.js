@@ -2,7 +2,7 @@ const postgres = require('postgres');
 
 (async () => {
   try {
-    const sql = postgres(process.env.DATABASE_URL || 'postgresql://postgres:Ea4thway@localhost:5432/elkdonis_dev');
+    const sql = postgres(process.env.DATABASE_URL);
 
     console.log('\n🔧 Setting gurudharamsingh@gmail.com as admin...\n');
 

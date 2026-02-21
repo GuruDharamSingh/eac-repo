@@ -1,12 +1,16 @@
 /**
  * Individual Poll API Routes
- * GET /api/polls/[id] - Get poll details with options
+ * GET /api/polls/[id] - Get poll details with responses
  * DELETE /api/polls/[id] - Delete a poll
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createNextcloudClient, getPoll, getPollOptions, deletePoll } from '@elkdonis/nextcloud';
 import { getServerSession } from '@elkdonis/auth-server';
+import {
+  getPollById,
+  getPollResponses,
+  deletePoll,
+} from '@elkdonis/services';
 
 export async function GET(
   request: NextRequest,
@@ -14,32 +18,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const pollId = parseInt(id, 10);
 
-    if (isNaN(pollId)) {
-      return NextResponse.json({ error: 'Invalid poll ID' }, { status: 400 });
-    }
-
-    // Get authenticated user
     const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create Nextcloud client for this user
-    const client = createNextcloudClient({
-      baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
-      username: session.user.nextcloud_user_id,
-      password: session.user.nextcloud_app_password,
-    });
+    const poll = await getPollById(id);
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
+    }
 
-    // Fetch poll and options from Nextcloud
-    const [poll, options] = await Promise.all([
-      getPoll(client, pollId),
-      getPollOptions(client, pollId),
-    ]);
+    const responses = await getPollResponses(id);
 
-    return NextResponse.json({ poll, options });
+    return NextResponse.json({ poll, responses });
   } catch (error) {
     console.error('Failed to fetch poll:', error);
     return NextResponse.json(
@@ -55,27 +47,23 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const pollId = parseInt(id, 10);
 
-    if (isNaN(pollId)) {
-      return NextResponse.json({ error: 'Invalid poll ID' }, { status: 400 });
-    }
-
-    // Get authenticated user
     const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create Nextcloud client for this user
-    const client = createNextcloudClient({
-      baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
-      username: session.user.nextcloud_user_id,
-      password: session.user.nextcloud_app_password,
-    });
+    // Verify poll exists and user is creator
+    const poll = await getPollById(id);
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
+    }
 
-    // Delete the poll in Nextcloud
-    await deletePoll(client, pollId);
+    if (poll.creator_id !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await deletePoll(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

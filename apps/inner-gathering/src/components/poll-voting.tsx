@@ -1,11 +1,12 @@
 /**
  * Poll Voting Component
- * Display poll options and allow voting with When2Meet-style interface
+ * Display poll time slots and allow voting with When2Meet-style interface
+ * Includes live vote result updates via Supabase Realtime
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Badge,
   Button,
@@ -14,70 +15,118 @@ import {
   Stack,
   Text,
   Title,
+  Transition,
 } from '@mantine/core';
-import { Calendar, Clock, Users, CheckCircle2, XCircle, HelpCircle, ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, Clock, Users, CheckCircle2, XCircle, HelpCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { format, addMinutes, eachDayOfInterval, isBefore } from 'date-fns';
 import Link from 'next/link';
+import { useRealtimePollVotes } from '@elkdonis/hooks';
+import { supabase } from '@/lib/supabase';
 
 interface Poll {
-  id: number;
-  type: 'datePoll' | 'textPoll';
+  id: string;
   title: string;
   description?: string;
-  created: number;
-  expire: number;
-  ownerDisplayName: string;
-  allowMaybe: number;
+  start_date: string;
+  end_date: string;
+  earliest_time: string;
+  latest_time: string;
+  time_slot_duration: number;
+  status: 'open' | 'locked' | 'cancelled';
+  allow_maybe: boolean;
+  creator_name?: string;
+  response_count: number;
 }
 
-interface PollOption {
-  id: number;
-  pollId: number;
-  pollOptionText: string;
-  timestamp?: number;
-  order: number;
-  duration: number;
-}
-
-interface VoteResult {
-  option: PollOption;
-  yes: number;
-  no: number;
-  maybe: number;
-  total: number;
-  availabilityScore: number;
+interface SummarySlot {
+  time_slot: string;
+  total_responses: number;
+  yes_count: number;
+  maybe_count: number;
+  no_count: number;
+  availability_score: number;
 }
 
 type VoteAnswer = 'yes' | 'no' | 'maybe';
 
 export function PollVoting({ pollId }: { pollId: string }) {
   const [poll, setPoll] = useState<Poll | null>(null);
-  const [options, setOptions] = useState<PollOption[]>([]);
-  const [results, setResults] = useState<VoteResult[]>([]);
-  const [votes, setVotes] = useState<Map<number, VoteAnswer>>(new Map());
+  const [summary, setSummary] = useState<SummarySlot[]>([]);
+  const [votes, setVotes] = useState<Map<string, VoteAnswer>>(new Map());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
 
+  // Refresh summary when new votes arrive via realtime
+  const refreshSummary = useCallback(async () => {
+    if (!pollId) return;
+    try {
+      const summaryResponse = await fetch(`/api/polls/${pollId}/vote`);
+      if (summaryResponse.ok) {
+        const summaryData = await summaryResponse.json();
+        setSummary(summaryData.summary || []);
+      }
+    } catch {
+      // Silently ignore refresh failures
+    }
+  }, [pollId]);
+
+  // Realtime poll vote subscription
+  const { hasNewVotes, acknowledgeNewVotes } = useRealtimePollVotes({
+    client: supabase,
+    pollId,
+    onNewVote: refreshSummary,
+  });
+
+  // Generate time slots from poll date/time range
+  const timeSlots = useMemo(() => {
+    if (!poll) return [];
+
+    const slots: Date[] = [];
+    const startDate = new Date(poll.start_date);
+    const endDate = new Date(poll.end_date);
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+
+    for (const day of days) {
+      // Parse earliest and latest times
+      const [earliestHour, earliestMinute] = poll.earliest_time.split(':').map(Number);
+      const [latestHour, latestMinute] = poll.latest_time.split(':').map(Number);
+
+      let slotTime = new Date(day);
+      slotTime.setHours(earliestHour, earliestMinute, 0, 0);
+
+      const dayEnd = new Date(day);
+      dayEnd.setHours(latestHour, latestMinute, 0, 0);
+
+      while (isBefore(slotTime, dayEnd) || slotTime.getTime() === dayEnd.getTime()) {
+        slots.push(new Date(slotTime));
+        slotTime = addMinutes(slotTime, poll.time_slot_duration);
+      }
+    }
+
+    return slots;
+  }, [poll]);
+
   useEffect(() => {
     async function fetchPollData() {
       try {
-        const [pollResponse, resultsResponse] = await Promise.all([
+        const [pollResponse, summaryResponse] = await Promise.all([
           fetch(`/api/polls/${pollId}`),
           fetch(`/api/polls/${pollId}/vote`),
         ]);
 
-        if (!pollResponse.ok || !resultsResponse.ok) {
-          throw new Error('Failed to fetch poll data');
+        if (!pollResponse.ok) {
+          throw new Error('Failed to fetch poll');
         }
 
         const pollData = await pollResponse.json();
-        const resultsData = await resultsResponse.json();
-
         setPoll(pollData.poll);
-        setOptions(pollData.options);
-        setResults(resultsData.results);
+
+        if (summaryResponse.ok) {
+          const summaryData = await summaryResponse.json();
+          setSummary(summaryData.summary || []);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load poll');
       } finally {
@@ -88,13 +137,13 @@ export function PollVoting({ pollId }: { pollId: string }) {
     fetchPollData();
   }, [pollId]);
 
-  const handleVote = (optionId: number, answer: VoteAnswer) => {
+  const handleVote = (slotIso: string, answer: VoteAnswer) => {
     setVotes((prev) => {
       const newVotes = new Map(prev);
-      if (newVotes.get(optionId) === answer) {
-        newVotes.delete(optionId); // Toggle off if clicking same answer
+      if (newVotes.get(slotIso) === answer) {
+        newVotes.delete(slotIso);
       } else {
-        newVotes.set(optionId, answer);
+        newVotes.set(slotIso, answer);
       }
       return newVotes;
     });
@@ -108,25 +157,30 @@ export function PollVoting({ pollId }: { pollId: string }) {
 
     setSubmitting(true);
     try {
-      const votesArray = Array.from(votes.entries()).map(([optionId, answer]) => ({
-        optionId,
-        answer,
+      const slotsArray = Array.from(votes.entries()).map(([time_slot, availability]) => ({
+        time_slot,
+        availability,
       }));
 
       const response = await fetch(`/api/polls/${pollId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ votes: votesArray }),
+        body: JSON.stringify({
+          slots: slotsArray,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to submit votes');
       }
 
-      // Refresh results
-      const resultsResponse = await fetch(`/api/polls/${pollId}/vote`);
-      const resultsData = await resultsResponse.json();
-      setResults(resultsData.results);
+      // Refresh summary
+      const summaryResponse = await fetch(`/api/polls/${pollId}/vote`);
+      if (summaryResponse.ok) {
+        const summaryData = await summaryResponse.json();
+        setSummary(summaryData.summary || []);
+      }
       setShowResults(true);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to submit votes');
@@ -156,9 +210,10 @@ export function PollVoting({ pollId }: { pollId: string }) {
     );
   }
 
-  const isExpired = poll.expire > 0 && poll.expire * 1000 < Date.now();
-  const sortedResults = [...results].sort((a, b) => b.availabilityScore - a.availabilityScore);
-  const bestOption = sortedResults[0];
+  const isLocked = poll.status === 'locked';
+  const isCancelled = poll.status === 'cancelled';
+  const sortedSummary = [...summary].sort((a, b) => b.availability_score - a.availability_score);
+  const bestSlot = sortedSummary[0];
 
   return (
     <Stack gap="lg">
@@ -179,18 +234,24 @@ export function PollVoting({ pollId }: { pollId: string }) {
           <Text c="dimmed">{poll.description}</Text>
         )}
         <Group gap="xs" mt="md">
-          <Badge variant="light" leftSection={<Users size={12} />}>
-            By {poll.ownerDisplayName}
-          </Badge>
-          {poll.allowMaybe === 1 && (
+          {poll.creator_name && (
+            <Badge variant="light" leftSection={<Users size={12} />}>
+              By {poll.creator_name}
+            </Badge>
+          )}
+          {poll.allow_maybe && (
             <Badge variant="outline">Maybe allowed</Badge>
           )}
-          {isExpired && <Badge color="red">Expired</Badge>}
+          {isLocked && <Badge color="green">Finalized</Badge>}
+          {isCancelled && <Badge color="red">Cancelled</Badge>}
+          {poll.response_count > 0 && (
+            <Badge variant="outline">{poll.response_count} responses</Badge>
+          )}
         </Group>
       </div>
 
       {/* Toggle View */}
-      {!isExpired && (
+      {!isLocked && !isCancelled && (
         <Group gap="xs">
           <Button
             variant={!showResults ? 'filled' : 'outline'}
@@ -208,7 +269,7 @@ export function PollVoting({ pollId }: { pollId: string }) {
       )}
 
       {/* Voting Interface */}
-      {!showResults && !isExpired && (
+      {!showResults && !isLocked && !isCancelled && (
         <Paper withBorder radius="lg">
           <Stack gap="md" p="md">
             <div>
@@ -218,49 +279,41 @@ export function PollVoting({ pollId }: { pollId: string }) {
               </Text>
             </div>
 
-            {options.map((option) => {
-              const userVote = votes.get(option.id);
-              const optionDate = option.timestamp
-                ? new Date(option.timestamp * 1000)
-                : null;
+            {timeSlots.map((slot) => {
+              const slotIso = slot.toISOString();
+              const userVote = votes.get(slotIso);
 
               return (
-                <Paper key={option.id} withBorder radius="md" p="md">
+                <Paper key={slotIso} withBorder radius="md" p="md">
                   <Stack gap="sm">
                     <Text fw={500}>
-                      {optionDate ? (
-                        <Group gap="xs">
-                          <Calendar size={16} />
-                          {format(optionDate, 'EEEE, MMMM d, yyyy')}
-                          <Text span c="dimmed">•</Text>
-                          <Clock size={16} />
-                          {format(optionDate, 'h:mm a')}
-                          {option.duration > 0 && (
-                            <Text span size="sm" c="dimmed">
-                              ({option.duration} min)
-                            </Text>
-                          )}
-                        </Group>
-                      ) : (
-                        option.pollOptionText
-                      )}
+                      <Group gap="xs">
+                        <Calendar size={16} />
+                        {format(slot, 'EEEE, MMMM d, yyyy')}
+                        <Text span c="dimmed">•</Text>
+                        <Clock size={16} />
+                        {format(slot, 'h:mm a')}
+                        <Text span size="sm" c="dimmed">
+                          ({poll.time_slot_duration} min)
+                        </Text>
+                      </Group>
                     </Text>
                     <Group gap="xs">
                       <Button
                         size="sm"
                         variant={userVote === 'yes' ? 'filled' : 'outline'}
                         color={userVote === 'yes' ? 'green' : 'gray'}
-                        onClick={() => handleVote(option.id, 'yes')}
+                        onClick={() => handleVote(slotIso, 'yes')}
                         leftSection={<CheckCircle2 size={16} />}
                       >
                         Yes
                       </Button>
-                      {poll.allowMaybe === 1 && (
+                      {poll.allow_maybe && (
                         <Button
                           size="sm"
                           variant={userVote === 'maybe' ? 'filled' : 'outline'}
                           color={userVote === 'maybe' ? 'yellow' : 'gray'}
-                          onClick={() => handleVote(option.id, 'maybe')}
+                          onClick={() => handleVote(slotIso, 'maybe')}
                           leftSection={<HelpCircle size={16} />}
                         >
                           Maybe
@@ -270,7 +323,7 @@ export function PollVoting({ pollId }: { pollId: string }) {
                         size="sm"
                         variant={userVote === 'no' ? 'filled' : 'outline'}
                         color={userVote === 'no' ? 'red' : 'gray'}
-                        onClick={() => handleVote(option.id, 'no')}
+                        onClick={() => handleVote(slotIso, 'no')}
                         leftSection={<XCircle size={16} />}
                       >
                         No
@@ -294,79 +347,100 @@ export function PollVoting({ pollId }: { pollId: string }) {
       )}
 
       {/* Results View */}
-      {(showResults || isExpired) && (
+      {(showResults || isLocked || isCancelled) && (
         <Paper withBorder radius="lg">
           <Stack gap="md" p="md">
             <div>
               <Title order={4}>Results</Title>
               <Text size="sm" c="dimmed">
-                {results.length} time slots • {results[0]?.total || 0} responses
+                {summary.length} time slots with votes • {poll.response_count} total responses
               </Text>
             </div>
 
-            {sortedResults.map((result) => {
-              const optionDate = result.option.timestamp
-                ? new Date(result.option.timestamp * 1000)
-                : null;
-              const isBest = result === bestOption && result.total > 0;
-
-              return (
+            {/* Live update indicator */}
+            <Transition mounted={hasNewVotes} transition="fade" duration={200}>
+              {(styles) => (
                 <Paper
-                  key={result.option.id}
-                  withBorder
+                  p="xs"
                   radius="md"
-                  p="md"
                   style={{
-                    borderColor: isBest ? 'var(--mantine-color-green-5)' : undefined,
-                    backgroundColor: isBest ? 'var(--mantine-color-green-0)' : undefined,
+                    ...styles,
+                    backgroundColor: 'var(--mantine-color-green-0)',
+                    borderColor: 'var(--mantine-color-green-4)',
                   }}
+                  withBorder
                 >
-                  <Group justify="space-between" mb="sm">
-                    <Text fw={500}>
-                      {optionDate ? (
+                  <Group justify="center" gap="xs">
+                    <RefreshCw size={14} color="var(--mantine-color-green-6)" />
+                    <Text size="xs" c="green" fw={500}>Results updated live</Text>
+                  </Group>
+                </Paper>
+              )}
+            </Transition>
+
+            {sortedSummary.length === 0 ? (
+              <Text c="dimmed" ta="center" py="xl">
+                No votes yet. Be the first to vote!
+              </Text>
+            ) : (
+              sortedSummary.map((result) => {
+                const slotDate = new Date(result.time_slot);
+                const isBest = result === bestSlot && result.total_responses > 0;
+
+                return (
+                  <Paper
+                    key={result.time_slot}
+                    withBorder
+                    radius="md"
+                    p="md"
+                    style={{
+                      borderColor: isBest ? 'var(--mantine-color-green-5)' : undefined,
+                      backgroundColor: isBest ? 'var(--mantine-color-green-0)' : undefined,
+                    }}
+                  >
+                    <Group justify="space-between" mb="sm">
+                      <Text fw={500}>
                         <Group gap="xs">
                           <Calendar size={16} />
-                          {format(optionDate, 'EEE, MMM d')} •{' '}
-                          {format(optionDate, 'h:mm a')}
+                          {format(slotDate, 'EEE, MMM d')} •{' '}
+                          {format(slotDate, 'h:mm a')}
                           {isBest && (
                             <Badge color="green">Best Time</Badge>
                           )}
                         </Group>
-                      ) : (
-                        result.option.pollOptionText
-                      )}
-                    </Text>
-                    <div style={{ textAlign: 'right' }}>
-                      <Text size="xl" fw={700}>
-                        {result.availabilityScore}%
                       </Text>
-                      <Text size="xs" c="dimmed">
-                        {result.total} {result.total === 1 ? 'vote' : 'votes'}
-                      </Text>
-                    </div>
-                  </Group>
-                  <Stack gap={4}>
-                    <Group gap="xs">
-                      <CheckCircle2 size={16} color="var(--mantine-color-green-6)" />
-                      <Text size="sm" fw={500}>{result.yes}</Text>
-                      <Text size="sm" c="dimmed">Yes</Text>
+                      <div style={{ textAlign: 'right' }}>
+                        <Text size="xl" fw={700}>
+                          {result.availability_score}%
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {result.total_responses} {result.total_responses === 1 ? 'vote' : 'votes'}
+                        </Text>
+                      </div>
                     </Group>
-                    {poll.allowMaybe === 1 && (
+                    <Stack gap={4}>
                       <Group gap="xs">
-                        <HelpCircle size={16} color="var(--mantine-color-yellow-6)" />
-                        <Text size="sm" fw={500}>{result.maybe}</Text>
-                        <Text size="sm" c="dimmed">Maybe</Text>
+                        <CheckCircle2 size={16} color="var(--mantine-color-green-6)" />
+                        <Text size="sm" fw={500}>{result.yes_count}</Text>
+                        <Text size="sm" c="dimmed">Yes</Text>
                       </Group>
-                    )}
-                    <Group gap="xs">
-                      <XCircle size={16} color="var(--mantine-color-red-6)" />
-                      <Text size="sm" fw={500}>{result.no}</Text>
-                      <Text size="sm" c="dimmed">No</Text>
-                    </Group>
-                  </Stack>
-                </Paper>
-              );
-            })}
+                      {poll.allow_maybe && (
+                        <Group gap="xs">
+                          <HelpCircle size={16} color="var(--mantine-color-yellow-6)" />
+                          <Text size="sm" fw={500}>{result.maybe_count}</Text>
+                          <Text size="sm" c="dimmed">Maybe</Text>
+                        </Group>
+                      )}
+                      <Group gap="xs">
+                        <XCircle size={16} color="var(--mantine-color-red-6)" />
+                        <Text size="sm" fw={500}>{result.no_count}</Text>
+                        <Text size="sm" c="dimmed">No</Text>
+                      </Group>
+                    </Stack>
+                  </Paper>
+                );
+              })
+            )}
           </Stack>
         </Paper>
       )}

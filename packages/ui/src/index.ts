@@ -1,3 +1,7 @@
+// Shared Theme
+export { eacTheme } from './theme';
+export type { MantineColorsTuple } from './theme';
+
 // Rich Text Editor
 export { RichTextEditor } from './components/RichTextEditor';
 export type { RichTextEditorProps } from './components/RichTextEditor';
@@ -7,7 +11,7 @@ export { BlogEntryForm } from './components/BlogEntryForm';
 export type { BlogEntryFormData, BlogEntryFormProps } from './components/BlogEntryForm';
 
 export { MediaUpload } from './components/MediaUpload';
-export type { MediaUploadProps } from './components/MediaUpload';
+export type { MediaUploadProps, SelectedNextcloudFile } from './components/MediaUpload';
 
 export { MeetingForm } from './components/MeetingForm';
 export type { MeetingFormProps, MeetingFormData, MeetingFormConfig } from './components/MeetingForm';
@@ -18,6 +22,14 @@ export type { PostFormProps, PostFormData, PostFormConfig } from './components/P
 // Media Player Components
 export { MediaPlayer, MediaGallery } from './components/media-player';
 export type { MediaPlayerProps, MediaGalleryProps } from './components/media-player';
+
+// Image Lightbox
+export { ImageLightbox } from './components/image-lightbox';
+export type { ImageLightboxProps } from './components/image-lightbox';
+
+// Excalidraw Drawing Editor
+export { ExcalidrawEditor } from './components/excalidraw-editor';
+export type { ExcalidrawEditorProps } from './components/excalidraw-editor';
 
 // Document Viewer Components
 export { DocumentViewer, DocumentLink } from './components/document-viewer';

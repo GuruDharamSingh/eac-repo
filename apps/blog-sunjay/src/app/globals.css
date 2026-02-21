@@ -1,0 +1,422 @@
+@import "tailwindcss";
+
+/* Dark Medieval Theme - Stone, Shadow, and Sacred Gold */
+:root {
+  --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(180, 160, 100, 0.12);
+  --curtain-gradient: linear-gradient(180deg, 
+    rgba(25, 25, 35, 0.98) 0%, 
+    rgba(35, 30, 45, 0.92) 20%,
+    rgba(28, 28, 38, 0.95) 80%,
+    rgba(18, 18, 25, 0.99) 100%
+  );
+  --stone-dark: #1a1a24;
+  --stone-medium: #2a2a38;
+  --stone-light: #3a3a4a;
+  --gold-accent: #c9a227;
+  --gold-bright: #e6c040;
+  --parchment: #d4c4a8;
+  --text-primary: #e8e4dc;
+  --text-muted: #9090a0;
+}
+
+@theme inline {
+  --color-background: #12121a;
+  --color-foreground: #e8e4dc;
+  --font-sans: "Cormorant Garamond", "Georgia", serif;
+  --font-serif: "Cormorant Garamond", "Georgia", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #12121a;
+  color: #e8e4dc;
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  min-height: calc(100vh - 140px);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Medieval Curtain Panels */
+.curtain-left,
+.curtain-right {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--curtain-gradient);
+}
+
+.curtain-left {
+  left: 0;
+  border-right: 2px solid rgba(201, 162, 39, 0.25);
+  box-shadow: inset -15px 0 30px rgba(0, 0, 0, 0.6),
+              8px 0 25px rgba(0, 0, 0, 0.5);
+}
+
+.curtain-right {
+  right: 0;
+  border-left: 2px solid rgba(201, 162, 39, 0.25);
+  box-shadow: inset 15px 0 30px rgba(0, 0, 0, 0.6),
+              -8px 0 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Curtain rope/tassel decorations */
+.curtain-left::before,
+.curtain-right::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  width: 8px;
+  height: 60px;
+  background: linear-gradient(180deg, 
+    #8a7020 0%,
+    #c9a227 50%,
+    #8a7020 100%
+  );
+  border-radius: 4px;
+}
+
+.curtain-left::before {
+  right: 15px;
+}
+
+.curtain-right::before {
+  left: 15px;
+}
+
+/* Turret stone texture overlay */
+.curtain-left::after,
+.curtain-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  opacity: 0.08;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      rgba(255,255,255,0.03) 40px,
+      rgba(255,255,255,0.03) 42px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 30px,
+      rgba(0,0,0,0.1) 30px,
+      rgba(0,0,0,0.1) 32px
+    );
+}
+
+/* Stone/parchment card styling */
+.medieval-card {
+  background: linear-gradient(145deg, 
+    #1e1e2a 0%, 
+    #16161e 100%
+  ) !important;
+  border: 1px solid rgba(201, 162, 39, 0.2) !important;
+  box-shadow: var(--shadow-deep);
+  position: relative;
+}
+
+.medieval-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(201, 162, 39, 0.03) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  pointer-events: none;
+}
+
+/* Sacred geometry background pattern */
+.sacred-bg {
+  background-color: #12121a;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(100, 80, 160, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(201, 162, 39, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 20% 50%, rgba(60, 60, 100, 0.06) 0%, transparent 30%);
+}
+
+/* Content wrapper - offset for curtain panels */
+.content-wrapper {
+  margin-left: 80px;
+  margin-right: 80px;
+}
+
+@media (max-width: 1024px) {
+  .content-wrapper {
+    margin-left: 40px;
+    margin-right: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+}
+
+/* Quote styling */
+.quote-block {
+  position: relative;
+  padding: 2rem 2.5rem;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+  border-left: 3px solid hsl(var(--primary));
+  background: linear-gradient(90deg, 
+    rgba(180, 120, 60, 0.08) 0%, 
+    transparent 100%
+  );
+}
+
+.quote-block::before {
+  content: '"';
+  position: absolute;
+  top: 0.5rem;
+  left: 0.75rem;
+  font-size: 3rem;
+  line-height: 1;
+  color: hsl(var(--primary) / 0.4);
+  font-family: "Georgia", serif;
+}
+
+/* Glowing accents */
+.glow-gold {
+  box-shadow: 0 0 30px rgba(180, 130, 60, 0.2),
+              0 0 60px rgba(180, 130, 60, 0.1);
+}
+
+/* Article content styling */
+.article-content {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: hsl(var(--foreground));
+}
+
+.article-content h2,
+.article-content h3,
+.article-content h4 {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  color: hsl(var(--primary));
+  letter-spacing: 0.02em;
+}
+
+.article-content p {
+  margin-bottom: 1.5rem;
+}
+
+.article-content blockquote {
+  margin: 2rem 0;
+  padding: 1.5rem 2rem;
+  border-left: 3px solid hsl(var(--primary));
+  background: hsl(var(--muted) / 0.3);
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+.article-content a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-content a:hover {
+  color: hsl(var(--accent));
+}
+
+/* Bio section */
+.bio-section {
+  display: grid;
+  gap: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+@media (min-width: 768px) {
+  .bio-section {
+    grid-template-columns: 300px 1fr;
+    padding: 3rem;
+  }
+}
+
+/* Responsive curtains */
+@media (max-width: 1024px) {
+  .curtain-left,
+  .curtain-right {
+    width: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .curtain-left,
+  .curtain-right {
+    width: 20px;
+  }
+  
+  .curtain-left::before,
+  .curtain-right::before {
+    display: none;
+  }
+}
+
+/* Smooth transitions */
+button, a, .medieval-card {
+  transition: all 0.3s ease;
+}
+
+/* Mantine Component Overrides for Dark Medieval Theme */
+.mantine-Paper-root {
+  background-color: rgba(30, 30, 42, 0.9) !important;
+  border-color: rgba(201, 162, 39, 0.15) !important;
+}
+
+.mantine-Title-root {
+  color: #e8e4dc !important;
+  font-family: var(--font-cinzel), "Cinzel", Georgia, serif !important;
+}
+
+/* BlogHeader dark styling */
+header.border-b {
+  background: rgba(18, 18, 26, 0.96) !important;
+  border-color: rgba(201, 162, 39, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+header .container {
+  color: #e8e4dc;
+}
+
+/* Navigation links */
+header a {
+  color: #9090a0 !important;
+  transition: color 0.2s ease;
+}
+
+header a:hover {
+  color: #c9a227 !important;
+}
+
+/* Mantine Button styling */
+.mantine-Button-root {
+  background-color: #c9a227 !important;
+  color: #12121a !important;
+  border: none !important;
+}
+
+.mantine-Button-root:hover {
+  background-color: #e6c040 !important;
+}
+
+.mantine-Button-root[data-variant="light"],
+.mantine-Button-root[data-variant="outline"] {
+  background-color: transparent !important;
+  border: 1px solid rgba(201, 162, 39, 0.4) !important;
+  color: #c9a227 !important;
+}
+
+.mantine-Button-root[data-variant="light"]:hover,
+.mantine-Button-root[data-variant="outline"]:hover {
+  background-color: rgba(201, 162, 39, 0.12) !important;
+}
+
+/* Text color overrides */
+.mantine-Text-root[data-c="dimmed"] {
+  color: #9090a0 !important;
+}
+
+/* BlogHero Paper styling */
+.mantine-Paper-root.mantine-Paper-withBorder {
+  background: linear-gradient(135deg, rgba(30, 30, 42, 0.95), rgba(22, 22, 30, 0.98)) !important;
+  border-color: rgba(201, 162, 39, 0.2) !important;
+}
+
+/* Divider styling */
+.mantine-Divider-root {
+  border-color: rgba(201, 162, 39, 0.15) !important;
+}
+
+/* Text input styling - dark red text */
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-Input-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  color: #8b2525 !important;
+  background-color: rgba(30, 30, 42, 0.95) !important;
+  border-color: rgba(201, 162, 39, 0.25) !important;
+}
+
+.mantine-TextInput-input::placeholder,
+.mantine-Textarea-input::placeholder,
+.mantine-Input-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #6a5a5a !important;
+}
+
+/* Rich text editor (TipTap) - bright magenta/rose text (complement of drab green) */
+.tiptap,
+.tiptap-editor,
+.ProseMirror,
+.mantine-RichTextEditor-content,
+.mantine-RichTextEditor-root .ProseMirror,
+[data-rich-text-editor] .ProseMirror,
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror li {
+  color: #e85a8c !important;
+}
+
+.mantine-RichTextEditor-root,
+.mantine-RichTextEditor-content {
+  background-color: #2a3228 !important;
+  border-color: rgba(201, 162, 39, 0.25) !important;
+}
+
+.mantine-RichTextEditor-toolbar {
+  background-color: #232a21 !important;
+  border-color: rgba(201, 162, 39, 0.2) !important;
+}
+
+.ProseMirror {
+  background-color: #2a3228 !important;
+}
+
+.mantine-RichTextEditor-control {
+  color: #9090a0 !important;
+}
+
+.mantine-RichTextEditor-control:hover {
+  background-color: rgba(201, 162, 39, 0.1) !important;
+  color: #c9a227 !important;
+}

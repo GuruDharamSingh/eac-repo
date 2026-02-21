@@ -324,7 +324,7 @@ export default function MeetingsPage() {
                       <Text size="sm">{meeting.location}</Text>
                     )}
                     {meeting.description && (
-                      <Text size="sm" c="dimmed">{meeting.description}</Text>
+                      <Text size="sm" c="dimmed">{meeting.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}</Text>
                     )}
                   </Stack>
                 </Paper>

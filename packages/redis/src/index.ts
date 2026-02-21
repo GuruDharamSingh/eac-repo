@@ -8,7 +8,10 @@ let redisClient: Redis | null = null;
  */
 export function getRedisClient(): Redis {
   if (!redisClient) {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is required');
+    }
     console.log('[redis] Connecting to:', redisUrl);
 
     redisClient = new Redis(redisUrl, {
@@ -175,13 +178,15 @@ export async function invalidateUserSessions(userId: string): Promise<number> {
 }
 
 // ============================================
-// Generic Cache Helpers
+// Generic Cache Helpers (Currently Unused)
 // ============================================
 
 const CACHE_PREFIX = 'cache:';
 
 /**
  * Get or set cache value with loader function
+ *
+ * @deprecated Not currently used in the codebase. Consider removing in future cleanup.
  */
 export async function getOrSet<T>(
   key: string,
@@ -202,6 +207,8 @@ export async function getOrSet<T>(
 
 /**
  * Invalidate cache key
+ *
+ * @deprecated Not currently used in the codebase. Consider removing in future cleanup.
  */
 export async function invalidateCache(key: string): Promise<void> {
   const cacheKey = CACHE_PREFIX + key;

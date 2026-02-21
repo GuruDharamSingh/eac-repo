@@ -1,6 +1,9 @@
 # Multi-stage Dockerfile for Next.js application
 FROM node:20-alpine AS base
 
+# Accept app name as build argument (default: admin)
+ARG APP_NAME=admin
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
@@ -40,6 +43,9 @@ RUN pnpm install --prod --frozen-lockfile
 # Build stage
 FROM base AS build
 
+# Re-declare ARG for this stage
+ARG APP_NAME=admin
+
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml* ./
@@ -58,27 +64,32 @@ RUN pnpm build
 # Production stage
 FROM base AS production
 
+# Re-declare ARG for this stage
+ARG APP_NAME=admin
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 # Copy production dependencies
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/apps/admin/node_modules ./apps/admin/node_modules
+COPY --from=prod-deps /app/apps/${APP_NAME}/node_modules ./apps/${APP_NAME}/node_modules
 COPY --from=prod-deps /app/packages/*/node_modules ./packages/*/node_modules
 
 # Copy built application
-COPY --from=build /app/apps/admin/.next ./apps/admin/.next
-COPY --from=build /app/apps/admin/public ./apps/admin/public
+COPY --from=build /app/apps/${APP_NAME}/.next ./apps/${APP_NAME}/.next
+COPY --from=build /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
 COPY --from=build /app/packages/*/dist ./packages/*/dist
 
 # Copy necessary config files
 COPY package.json ./
 COPY turbo.json ./
-COPY apps/admin/package.json ./apps/admin/
-COPY apps/admin/next.config.* ./apps/admin/
+COPY apps/${APP_NAME}/package.json ./apps/${APP_NAME}/
+COPY apps/${APP_NAME}/next.config.* ./apps/${APP_NAME}/
 COPY packages/*/package.json ./packages/*/
 
 EXPOSE 3000
 
+# Use APP_NAME in start command
+WORKDIR /app/apps/${APP_NAME}
 CMD ["pnpm", "start"]

@@ -95,13 +95,19 @@ export default function NextcloudPage() {
   const loadAppUsers = async () => {
     setLoadingApp(true);
     try {
-      const response = await fetch(`/api/users/by-org?org=${selectedOrg}`);
+      const response = await fetch(`/api/users/by-org?org=${selectedOrg}`, {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
+        console.log('[Users Tab] Loaded app users:', data.users?.length || 0);
         setAppUsers(data.users || []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Users Tab] Error loading app users:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error loading app users:', error);
+      console.error('[Users Tab] Error loading app users:', error);
     } finally {
       setLoadingApp(false);
     }
@@ -110,13 +116,19 @@ export default function NextcloudPage() {
   const loadNextcloudUsers = async () => {
     setLoadingNc(true);
     try {
-      const response = await fetch('/api/nextcloud/nc-users');
+      const response = await fetch('/api/nextcloud/nc-users', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
+        console.log('[Users Tab] Loaded NC users:', data.users?.length || 0);
         setNextcloudUsers(data.users || []);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Users Tab] Error loading NC users:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error loading Nextcloud users:', error);
+      console.error('[Users Tab] Error loading Nextcloud users:', error);
     } finally {
       setLoadingNc(false);
     }
@@ -316,38 +328,45 @@ export default function NextcloudPage() {
                             <Stack align="center" gap="xs">
                               <Check size={24} color="green" />
                               <Text size="sm" c="dimmed">All users synced!</Text>
+                              <Text size="xs" c="dimmed" ta="center">
+                                {syncedUsers.length} members in {selectedOrg}
+                              </Text>
                             </Stack>
                           </Center>
                         ) : (
                           <Stack gap="xs">
                             {unsyncedUsers.map((user) => (
                               <Paper key={user.id} withBorder p="xs" radius="sm">
-                                <Group justify="space-between" wrap="nowrap">
-                                  <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                                    <Avatar size="sm" color="gray" radius="xl">
-                                      {(user.display_name || user.email)[0].toUpperCase()}
-                                    </Avatar>
-                                    <Box style={{ minWidth: 0 }}>
-                                      <Text size="xs" fw={500} truncate>
-                                        {user.display_name || user.email.split('@')[0]}
-                                      </Text>
-                                      <Text size="xs" c="dimmed" truncate>
-                                        {user.email}
-                                      </Text>
-                                    </Box>
+                                <Stack gap={4}>
+                                  <Group justify="space-between" wrap="nowrap">
+                                    <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                                      <Avatar size="sm" color="gray" radius="xl">
+                                        {(user.display_name || user.email)[0].toUpperCase()}
+                                      </Avatar>
+                                      <Box style={{ minWidth: 0 }}>
+                                        <Text size="xs" fw={500} truncate>
+                                          {user.display_name || user.email.split('@')[0]}
+                                        </Text>
+                                      </Box>
+                                    </Group>
                                   </Group>
-                                  <Tooltip label="Sync to Nextcloud">
-                                    <ActionIcon
-                                      size="sm"
-                                      variant="light"
-                                      color="blue"
-                                      onClick={() => syncUser(user.id)}
-                                      loading={syncingUsers.has(user.id)}
-                                    >
-                                      <ArrowRight size={14} />
-                                    </ActionIcon>
-                                  </Tooltip>
-                                </Group>
+                                  {/* Show email prominently */}
+                                  <Text size="xs" c="dimmed" style={{ fontFamily: 'monospace' }}>
+                                    {user.email}
+                                  </Text>
+                                  {/* Manual Sync Button */}
+                                  <Button
+                                    size="xs"
+                                    variant="light"
+                                    color="blue"
+                                    fullWidth
+                                    leftSection={<ArrowRight size={14} />}
+                                    onClick={() => syncUser(user.id)}
+                                    loading={syncingUsers.has(user.id)}
+                                  >
+                                    Sync to Nextcloud
+                                  </Button>
+                                </Stack>
                               </Paper>
                             ))}
                           </Stack>
@@ -378,39 +397,47 @@ export default function NextcloudPage() {
                           <Stack gap="xs">
                             {syncedUsers.map((user) => (
                               <Paper key={user.id} withBorder p="xs" radius="sm" bg="white">
-                                <Group justify="space-between" wrap="nowrap">
-                                  <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                                    <Avatar size="sm" color="green" radius="xl">
-                                      {(user.display_name || user.email)[0].toUpperCase()}
-                                    </Avatar>
-                                    <Box style={{ minWidth: 0 }}>
-                                      <Group gap={4}>
-                                        <Text size="xs" fw={500} truncate>
-                                          {user.display_name || user.email.split('@')[0]}
-                                        </Text>
-                                        {user.is_admin && (
-                                          <Badge size="xs" color="red" variant="light">
-                                            Admin
-                                          </Badge>
-                                        )}
-                                      </Group>
-                                      <Text size="xs" c="dimmed" truncate>
-                                        {user.email}
-                                      </Text>
-                                    </Box>
+                                <Stack gap={4}>
+                                  <Group justify="space-between" wrap="nowrap">
+                                    <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                                      <Avatar size="sm" color="green" radius="xl">
+                                        {(user.display_name || user.email)[0].toUpperCase()}
+                                      </Avatar>
+                                      <Box style={{ minWidth: 0 }}>
+                                        <Group gap={4}>
+                                          <Text size="xs" fw={500} truncate>
+                                            {user.display_name || user.email.split('@')[0]}
+                                          </Text>
+                                          {user.is_admin && (
+                                            <Badge size="xs" color="red" variant="light">
+                                              Admin
+                                            </Badge>
+                                          )}
+                                        </Group>
+                                      </Box>
+                                    </Group>
+                                    <Tooltip label={user.is_admin ? 'Remove admin' : 'Make admin'}>
+                                      <ActionIcon
+                                        size="sm"
+                                        variant="light"
+                                        color={user.is_admin ? 'gray' : 'violet'}
+                                        onClick={() => toggleAdmin(user.id, user.is_admin)}
+                                        loading={togglingAdmin.has(user.id)}
+                                      >
+                                        <Shield size={14} />
+                                      </ActionIcon>
+                                    </Tooltip>
                                   </Group>
-                                  <Tooltip label={user.is_admin ? 'Remove admin' : 'Make admin'}>
-                                    <ActionIcon
-                                      size="sm"
-                                      variant="light"
-                                      color={user.is_admin ? 'gray' : 'violet'}
-                                      onClick={() => toggleAdmin(user.id, user.is_admin)}
-                                      loading={togglingAdmin.has(user.id)}
-                                    >
-                                      <Shield size={14} />
-                                    </ActionIcon>
-                                  </Tooltip>
-                                </Group>
+                                  {/* Show email prominently */}
+                                  <Text size="xs" c="green.7" fw={500} style={{ fontFamily: 'monospace' }}>
+                                    {user.email}
+                                  </Text>
+                                  {user.nextcloud_user_id && (
+                                    <Text size="xs" c="dimmed" truncate>
+                                      NC: {user.nextcloud_user_id.slice(0, 8)}...
+                                    </Text>
+                                  )}
+                                </Stack>
                               </Paper>
                             ))}
                           </Stack>
@@ -435,7 +462,11 @@ export default function NextcloudPage() {
                           <Center h={100}><Loader size="sm" /></Center>
                         ) : nextcloudUsers.length === 0 ? (
                           <Center h={100}>
-                            <Text size="sm" c="dimmed">No Nextcloud users found</Text>
+                            <Stack align="center" gap="xs">
+                              <Users size={24} color="gray" />
+                              <Text size="sm" c="dimmed">No Nextcloud users found</Text>
+                              <Text size="xs" c="dimmed">Check Nextcloud connection</Text>
+                            </Stack>
                           </Center>
                         ) : (
                           <Stack gap="xs">
@@ -445,35 +476,50 @@ export default function NextcloudPage() {
 
                               return (
                                 <Paper key={ncUser.id} withBorder p="xs" radius="sm" bg="white">
-                                  <Group justify="space-between" wrap="nowrap">
-                                    <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                                      <Avatar size="sm" color={isLinked ? 'green' : 'blue'} radius="xl">
-                                        {ncUser.displayName[0].toUpperCase()}
-                                      </Avatar>
-                                      <Box style={{ minWidth: 0 }}>
-                                        <Group gap={4}>
-                                          <Text size="xs" fw={500} truncate>
-                                            {ncUser.displayName}
-                                          </Text>
-                                          {isLinked && (
-                                            <Badge size="xs" color="green" variant="light">
-                                              Linked
-                                            </Badge>
-                                          )}
-                                        </Group>
-                                        <Text size="xs" c="dimmed" truncate>
-                                          {ncUser.email || ncUser.id.slice(0, 16) + '...'}
-                                        </Text>
-                                      </Box>
+                                  <Stack gap={4}>
+                                    <Group justify="space-between" wrap="nowrap">
+                                      <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                                        <Avatar size="sm" color={isLinked ? 'green' : 'blue'} radius="xl">
+                                          {ncUser.displayName[0].toUpperCase()}
+                                        </Avatar>
+                                        <Box style={{ minWidth: 0 }}>
+                                          <Group gap={4}>
+                                            <Text size="xs" fw={500} truncate>
+                                              {ncUser.displayName}
+                                            </Text>
+                                            {isLinked && (
+                                              <Badge size="xs" color="green" variant="light">
+                                                Linked
+                                              </Badge>
+                                            )}
+                                          </Group>
+                                        </Box>
+                                      </Group>
+                                      {!ncUser.enabled && (
+                                        <Tooltip label="Disabled">
+                                          <Badge size="xs" color="red" variant="light">
+                                            <X size={10} />
+                                          </Badge>
+                                        </Tooltip>
+                                      )}
                                     </Group>
-                                    {!ncUser.enabled && (
-                                      <Tooltip label="Disabled">
-                                        <Badge size="xs" color="red" variant="light">
-                                          <X size={10} />
-                                        </Badge>
-                                      </Tooltip>
+                                    {/* Always show email prominently */}
+                                    <Text size="xs" c="blue.7" fw={500} style={{ fontFamily: 'monospace' }}>
+                                      {ncUser.email || matchingAppUser?.email || 'No email set'}
+                                    </Text>
+                                    {ncUser.groups && ncUser.groups.length > 0 && (
+                                      <Group gap={4}>
+                                        {ncUser.groups.slice(0, 3).map((group: string) => (
+                                          <Badge key={group} size="xs" variant="outline" color="gray">
+                                            {group}
+                                          </Badge>
+                                        ))}
+                                        {ncUser.groups.length > 3 && (
+                                          <Text size="xs" c="dimmed">+{ncUser.groups.length - 3}</Text>
+                                        )}
+                                      </Group>
                                     )}
-                                  </Group>
+                                  </Stack>
                                 </Paper>
                               );
                             })}

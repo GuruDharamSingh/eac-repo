@@ -1,4 +1,5 @@
-# CLAUDE.md
+
+22# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -124,12 +125,12 @@ apps/
 ├── forum/               Port 3003 - Cross-org content aggregator (public feed)
 ├── blog-sunjay/         Port 3001 - Personal blog (org: sunjay)
 ├── blog-guru-dharam/    Port 3002 - Personal blog (org: guru-dharam)
-└── inner-gathering/     Port 3004 - Mobile-first community app (org: elkdonis) [DOCKER ONLY]
+└── inner-gathering/     Port 3004 - Mobile-first community app (org: elkdonis) 
 ```
 
 Each app operates independently but queries the same database filtered by its `org_id`.
 
-**IMPORTANT:** The `inner-gathering` app is configured to run ONLY inside Docker (via `docker compose up -d inner-gathering`). It cannot be started with `pnpm dev` because the `dev` script has been removed from its package.json. This ensures it shares the Docker network with other services like Nextcloud, Postgres, and Supabase Auth.
+
 
 ### Shared Packages
 
@@ -309,6 +310,31 @@ When services are running:
   - Created `/api/auth/login`, `/api/auth/signup`, `/api/auth/logout`, `/api/auth/session`
   - Fixes CORS issues by handling auth server-side
   - Same code works in dev and production with separate domains
+- **Profile pictures, comment colors, and guide avatars** (2026-02-13)
+  - Migration 016 adds `comment_color VARCHAR(7)` to users table (`avatar_url` already existed)
+  - Account page (`/account`) now has clickable avatar upload (via existing `/api/upload`) and a `ColorInput` for comment color preference
+  - Account API (`/api/account`) GET returns `commentColor`, PATCH accepts `avatarUrl` and `commentColor`
+  - Meeting queries in `data.ts` now fetch `u.avatar_url as guide_avatar`; `mapMeeting()` passes it to `guide`/`creator`
+  - Meeting cards and event page view show guide avatar (`Avatar` component) instead of generic user icon
+  - Replies API (`/api/meetings/[id]/replies` POST) queries user profile for `display_name`, `avatar_url`, `comment_color` to enrich optimistic replies
+  - `getReplies()` in `packages/db/src/queries/forum.ts` selects `u.comment_color`; `Reply` interface includes `commentColor`
+  - `CommentItem` applies `commentColor` as inline style on the commenter's name
+  - `ReplyData` interfaces across `comment-item.tsx`, `comment-section.tsx`, and `event-page-view.tsx` include `commentColor`
+- **Fullscreen image lightbox, Nextcloud file picker, Excalidraw drawing** (2026-02-14)
+  - **ImageLightbox** (`packages/ui/src/components/image-lightbox.tsx`): Mantine fullscreen Modal for viewing images, exported from `@elkdonis/ui`
+  - **MediaPlayer** now accepts `onImageClick` prop; images get `cursor: pointer` when handler is provided
+  - **MediaGallery** has built-in lightbox support (`enableLightbox` defaults to `true`) — both blog apps get fullscreen images automatically on post detail pages
+  - **MeetingCard** (`meeting-card.tsx`): cover images and image attachments are now clickable for fullscreen viewing
+  - **MediaUpload** (`packages/ui/src/components/MediaUpload.tsx`): now supports Upload/Library tabs via `enableLibrary` + `orgId` props; Library tab integrates `FileBrowser` for selecting existing Nextcloud files
+  - **SelectedNextcloudFile** type added to `@elkdonis/hooks` (`useMeetingForm.ts`) and `@elkdonis/ui`; `MeetingFormData` includes `selectedFiles` array
+  - **MeetingForm** accepts `enableLibrary` and `orgId` props, passed through to MediaUpload
+  - **CreateMeetingForm** in inner-gathering enables library with `orgId="inner_group"`; selected Nextcloud files are included in meeting media alongside uploads
+  - **ExcalidrawEditor** (`packages/ui/src/components/excalidraw-editor.tsx`): shared wrapper around `@excalidraw/excalidraw` with lazy loading, edit/read-only modes, exported from `@elkdonis/ui`
+  - Migration 017 adds `drawing JSONB DEFAULT NULL` column to `event_pages` table
+  - **EventPage** type in `@elkdonis/types` includes optional `drawing` field
+  - **Event page editor** has a toggle to enable drawing canvas (opt-in, not default)
+  - **Event page view** displays saved drawings in read-only mode
+  - Data layer (`data.ts`) and API route (`/api/meetings/[id]/event-page`) handle `drawing` field
 
 **In Progress:**
 - Full Supabase authentication integration

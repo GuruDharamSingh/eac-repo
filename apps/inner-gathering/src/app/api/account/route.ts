@@ -18,6 +18,7 @@ export async function GET() {
         u.display_name,
         u.avatar_url,
         u.bio,
+        u.comment_color,
         u.is_admin,
         u.nextcloud_synced,
         u.nextcloud_user_id,
@@ -53,6 +54,7 @@ export async function GET() {
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
         bio: user.bio,
+        commentColor: user.comment_color,
         isAdmin: user.is_admin,
         nextcloudSynced: user.nextcloud_synced,
         nextcloudUserId: user.nextcloud_user_id,
@@ -82,17 +84,19 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { displayName, bio } = body;
+    const { displayName, bio, avatarUrl, commentColor } = body;
 
-    // Update user profile
+    // Update user profile (convert undefined to null for postgres driver)
     const [updated] = await db`
       UPDATE users
       SET
-        display_name = COALESCE(${displayName}, display_name),
-        bio = COALESCE(${bio}, bio),
+        display_name = COALESCE(${displayName ?? null}, display_name),
+        bio = COALESCE(${bio ?? null}, bio),
+        avatar_url = COALESCE(${avatarUrl ?? null}, avatar_url),
+        comment_color = COALESCE(${commentColor ?? null}, comment_color),
         updated_at = NOW()
       WHERE id = ${session.user.id}
-      RETURNING id, email, display_name, bio, updated_at
+      RETURNING id, email, display_name, bio, avatar_url, comment_color, updated_at
     `;
 
     if (!updated) {
@@ -106,6 +110,8 @@ export async function PATCH(request: Request) {
         email: updated.email,
         displayName: updated.display_name,
         bio: updated.bio,
+        avatarUrl: updated.avatar_url,
+        commentColor: updated.comment_color,
         updatedAt: updated.updated_at,
       },
     });

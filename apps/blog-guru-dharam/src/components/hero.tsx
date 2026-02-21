@@ -7,6 +7,7 @@ import { Badge } from './ui/badge';
 interface HeroProps {
   hero?: BlogHeroConfig;
   orgName: string;
+  isOwner?: boolean;
 }
 
 const highlightCards = [
@@ -24,10 +25,13 @@ const highlightCards = [
   },
 ];
 
-export function Hero({ hero, orgName }: HeroProps) {
+export function Hero({ hero, orgName, isOwner = false }: HeroProps) {
   if (!hero) {
     return null;
   }
+
+  // Check if CTA should be shown
+  const showCta = hero.ctaHref && hero.ctaLabel && (!hero.ctaOwnerOnly || isOwner);
 
   return (
     <section className="space-y-10">
@@ -44,9 +48,9 @@ export function Hero({ hero, orgName }: HeroProps) {
           ) : null}
 
           <div className="mt-8 flex flex-wrap gap-4">
-            {hero.ctaHref && hero.ctaLabel ? (
+            {showCta ? (
               <Button size="lg" asChild>
-                <Link href={hero.ctaHref}>{hero.ctaLabel}</Link>
+                <Link href={hero.ctaHref!}>{hero.ctaLabel}</Link>
               </Button>
             ) : null}
             <Button size="lg" variant="ghost" asChild>

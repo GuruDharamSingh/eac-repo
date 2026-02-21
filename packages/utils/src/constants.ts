@@ -8,6 +8,6 @@ export const VISIBILITY_OPTIONS: { value: MeetingVisibility; label: string }[] =
 
 export const DEFAULT_MEETING_DURATION = 60; // minutes
 
-export const NEXTCLOUD_DEFAULT_URL = 'http://localhost:8080';
+export const NEXTCLOUD_DEFAULT_URL = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
 
 export const POLL_INTERVAL = 5000; // milliseconds for polling updates

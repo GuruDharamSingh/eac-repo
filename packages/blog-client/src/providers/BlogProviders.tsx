@@ -1,6 +1,7 @@
 'use client';
 
 import { MantineProvider, type MantineThemeOverride } from '@mantine/core';
+import { eacTheme } from '@elkdonis/ui';
 
 export interface BlogProvidersProps {
   children: React.ReactNode;
@@ -8,7 +9,9 @@ export interface BlogProvidersProps {
 }
 
 export function BlogProviders({ children, theme }: BlogProvidersProps) {
+  // Use shared EAC theme as default, allow overrides
+  const mergedTheme = theme ? { ...eacTheme, ...theme } : eacTheme;
   return (
-    <MantineProvider theme={theme}>{children}</MantineProvider>
+    <MantineProvider theme={mergedTheme}>{children}</MantineProvider>
   );
 }

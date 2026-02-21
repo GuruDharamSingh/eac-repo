@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LogOut, Sparkles, Calendar, FileText } from "lucide-react";
+import { Plus, LogOut, Sparkles, RefreshCw } from "lucide-react";
 import type { Meeting, Post } from "@elkdonis/types";
+import type { QuestionPoll } from "@elkdonis/services";
+import { useRealtimeFeed } from "@elkdonis/hooks";
 import { MeetingCard } from "./meeting-card";
 import { PostCard } from "./post-card";
-import { CreateMeetingForm } from "./create-meeting-form";
-import { CreatePostForm } from "./create-post-form";
+import { PollCard } from "./poll-card";
+import { CreateContentForm } from "./create-content-form";
+import { AttendeeModal } from "./attendee-modal";
+import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
 import { supabase } from "@/lib/supabase";
 import {
   ActionIcon,
@@ -20,25 +24,50 @@ import {
   Paper,
   ScrollArea,
   Stack,
-  Tabs,
   Text,
   ThemeIcon,
   Title,
+  Transition,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 
 interface FeedClientProps {
   initialFeed: Array<{
-    type: "meeting" | "post";
-    data: Meeting | Post;
+    type: "meeting" | "post" | "poll";
+    data: Meeting | Post | QuestionPoll;
     createdAt: Date;
   }>;
+  recurringMeetings?: Meeting[];
 }
 
-export function FeedClient({ initialFeed }: FeedClientProps) {
+export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-  const [activeTab, setActiveTab] = useState<string | null>("meeting");
+  const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [feed, setFeed] = useState(initialFeed);
+
+  // Sync feed state when server data changes (e.g., after revalidation)
+  useEffect(() => {
+    setFeed(initialFeed);
+  }, [initialFeed]);
+
+  // Realtime feed subscription
+  const { hasNewItems, newItemCount, consumeNewItems, clearNewItems } = useRealtimeFeed({
+    client: supabase,
+    orgId: "inner_group",
+  });
+
+  const handleShowNewItems = useCallback(() => {
+    // Refresh the page to get full hydrated data for new items
+    router.refresh();
+    clearNewItems();
+  }, [router, clearNewItems]);
+
+  const handleViewAttendees = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
+    setAttendeeModalOpened(true);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -93,18 +122,54 @@ export function FeedClient({ initialFeed }: FeedClientProps) {
 
           <Divider />
 
+          {/* Recurring Meetings Carousel */}
+          {recurringMeetings.length > 0 && (
+            <RecurringMeetingsCarousel meetings={recurringMeetings} />
+          )}
+
+          {/* New Items Banner */}
+          <Transition mounted={hasNewItems} transition="slide-down" duration={300}>
+            {(styles) => (
+              <Paper
+                withBorder
+                radius="md"
+                p="sm"
+                style={{
+                  ...styles,
+                  borderColor: "var(--mantine-color-indigo-4)",
+                  backgroundColor: "var(--mantine-color-indigo-0)",
+                  cursor: "pointer",
+                }}
+                onClick={handleShowNewItems}
+              >
+                <Group justify="center" gap="xs">
+                  <RefreshCw size={16} color="var(--mantine-color-indigo-6)" />
+                  <Text size="sm" fw={500} c="indigo">
+                    {newItemCount} new {newItemCount === 1 ? "item" : "items"} available
+                  </Text>
+                </Group>
+              </Paper>
+            )}
+          </Transition>
+
           {/* Feed Items */}
-          {initialFeed.length === 0 ? (
+          {feed.length === 0 ? (
             <Text c="dimmed" ta="center" py="xl">
               No posts or meetings yet. Create one to get started!
             </Text>
           ) : (
             <Stack gap="md">
-              {initialFeed.map((item, index) =>
+              {feed.map((item, index) =>
                 item.type === "meeting" ? (
                   <MeetingCard
                     key={`meeting-${item.data.id}-${index}`}
                     meeting={item.data as Meeting}
+                    onViewAttendees={handleViewAttendees}
+                  />
+                ) : item.type === "poll" ? (
+                  <PollCard
+                    key={`poll-${item.data.id}-${index}`}
+                    poll={item.data as QuestionPoll}
                   />
                 ) : (
                   <PostCard
@@ -135,7 +200,7 @@ export function FeedClient({ initialFeed }: FeedClientProps) {
           <Plus size={24} />
         </ActionIcon>
 
-        {/* Bottom Drawer for Create Forms */}
+        {/* Bottom Drawer for Create Form */}
         <Drawer
           opened={drawerOpened}
           onClose={closeDrawer}
@@ -145,34 +210,22 @@ export function FeedClient({ initialFeed }: FeedClientProps) {
             <div>
               <Title order={4}>Create New</Title>
               <Text size="sm" c="dimmed">
-                Create a new meeting or post for the community
+                Share with the community
               </Text>
             </div>
           }
         >
-          <Tabs value={activeTab} onChange={setActiveTab}>
-            <Tabs.List grow>
-              <Tabs.Tab value="meeting" leftSection={<Calendar size={16} />}>
-                Meeting
-              </Tabs.Tab>
-              <Tabs.Tab value="post" leftSection={<FileText size={16} />}>
-                Post
-              </Tabs.Tab>
-            </Tabs.List>
-
-            <Tabs.Panel value="meeting" pt="md">
-              <ScrollArea h="calc(90vh - 12rem)">
-                <CreateMeetingForm onSuccess={closeDrawer} />
-              </ScrollArea>
-            </Tabs.Panel>
-
-            <Tabs.Panel value="post" pt="md">
-              <ScrollArea h="calc(90vh - 12rem)">
-                <CreatePostForm onSuccess={closeDrawer} />
-              </ScrollArea>
-            </Tabs.Panel>
-          </Tabs>
+          <ScrollArea h="calc(90vh - 8rem)">
+            <CreateContentForm onSuccess={closeDrawer} />
+          </ScrollArea>
         </Drawer>
+
+        {/* Attendee Modal */}
+        <AttendeeModal
+          meeting={selectedMeeting}
+          opened={attendeeModalOpened}
+          onClose={() => setAttendeeModalOpened(false)}
+        />
       </Container>
     </Box>
   );

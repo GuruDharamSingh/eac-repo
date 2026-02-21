@@ -17,6 +17,7 @@ interface CreateMeetingData {
   notes?: string;
   maxAttendees?: number;
   isRSVPEnabled?: boolean;
+  showInLiveFeed?: boolean;
 }
 
 /**
@@ -41,6 +42,7 @@ export async function createMeeting(data: CreateMeetingData): Promise<Meeting> {
       notes,
       max_attendees,
       is_rsvp_enabled,
+      show_in_live_feed,
       status
     ) VALUES (
       ${data.title},
@@ -57,6 +59,7 @@ export async function createMeeting(data: CreateMeetingData): Promise<Meeting> {
       ${data.notes || null},
       ${data.maxAttendees || null},
       ${data.isRSVPEnabled || false},
+      ${data.showInLiveFeed || false},
       'published'
     )
     RETURNING *

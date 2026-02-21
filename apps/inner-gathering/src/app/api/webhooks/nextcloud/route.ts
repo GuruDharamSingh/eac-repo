@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
     const webhookSecret = request.headers.get('x-webhook-secret');
     const expectedSecret = process.env.NEXTCLOUD_WEBHOOK_SECRET;
 
-    if (expectedSecret && webhookSecret !== expectedSecret) {
+    if (!expectedSecret) {
+      console.error('NEXTCLOUD_WEBHOOK_SECRET not configured');
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+    }
+
+    if (webhookSecret !== expectedSecret) {
       console.warn('Invalid webhook secret');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -73,15 +78,11 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint to check webhook status
+ * GET endpoint to check webhook status (no sensitive info exposed)
  */
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
     message: 'Nextcloud webhook endpoint is active',
-    configuration: {
-      hasSecret: !!process.env.NEXTCLOUD_WEBHOOK_SECRET,
-      nextcloudUrl: process.env.NEXT_PUBLIC_NEXTCLOUD_URL,
-    },
   });
 }

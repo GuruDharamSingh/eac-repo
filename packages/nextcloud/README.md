@@ -35,7 +35,7 @@ Already installed in your monorepo! Just import from your apps.
 # Required
 NEXTCLOUD_URL=http://nextcloud-nginx:80  # Docker network URL
 NEXTCLOUD_ADMIN_USER=elkdonis
-NEXTCLOUD_ADMIN_PASSWORD=Ea4thway
+NEXTCLOUD_ADMIN_PASSWORD=<generate-strong-password>  # See scripts/generate-secrets.sh
 
 # For client-side components (browser)
 NEXT_PUBLIC_NEXTCLOUD_URL=http://localhost:8080
@@ -46,7 +46,7 @@ NEXT_PUBLIC_NEXTCLOUD_URL=http://localhost:8080
 ```env
 NEXTCLOUD_URL=https://cloud.yourfriend.com
 NEXTCLOUD_ADMIN_USER=admin
-NEXTCLOUD_ADMIN_PASSWORD=<his-admin-password>
+NEXTCLOUD_ADMIN_PASSWORD=<generate-with-openssl-rand-base64-32>
 NEXT_PUBLIC_NEXTCLOUD_URL=https://cloud.yourfriend.com
 ```
 

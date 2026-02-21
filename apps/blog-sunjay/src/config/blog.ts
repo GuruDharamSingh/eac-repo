@@ -6,20 +6,22 @@ const ownerUserId = process.env.NEXT_PUBLIC_BLOG_SUNJAY_OWNER_ID;
 
 export const blogConfig: BlogConfig = {
   orgId: 'sunjay',
-  orgName: "Sunjay's Teaching Circle",
+  orgName: "Sunjay's Sacred Arts",
   orgSlug: 'blog-sunjay',
-  tagline: 'Personal blog and creative works',
+  tagline: 'Rock Balancing • Qi Gong • Sufi Practices • Conscious Creativity',
   navLinks: [
     { label: 'Home', href: '/' },
-    { label: 'New Entry', href: '/entry' },
-    { label: 'Admin', href: '/admin' },
+    { label: 'Writings', href: '/posts' },
+    { label: 'New Entry', href: '/entry', ownerOnly: true },
+    { label: 'Admin', href: '/admin', ownerOnly: true },
   ],
   hero: {
-    title: 'Sharing teachings, reflections, and creative explorations',
+    title: 'Awakening Through Art, Healing & Presence',
     description:
-      'A living archive of writings, talks, and media from Sunjay. Subscribe for updates and behind-the-scenes insights.',
+      'A living archive of teachings, practices, and creative explorations from Jason Ford — artist, shaman, rock balancer, and Sufi practitioner.',
     ctaLabel: 'Create a new entry',
     ctaHref: '/entry',
+    ctaOwnerOnly: true,
   },
   ownerEmails: ownerEmail ? [ownerEmail] : [],
   ownerUserIds: ownerUserId ? [ownerUserId] : [],

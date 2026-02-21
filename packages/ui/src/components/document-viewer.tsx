@@ -43,11 +43,10 @@ export function DocumentViewer({
   
   if (shareToken && !documentUrl) {
     // Use Nextcloud Text app for collaborative editing
-    // In client components, we can't access process.env at build time
-    // So we'll use window.location.origin or a hardcoded URL
-    const baseUrl = typeof window !== 'undefined' 
-      ? (window.location.port === '3004' ? 'http://localhost:8080' : window.location.origin)
-      : 'http://localhost:8080';
+    // In client components, use NEXT_PUBLIC_NEXTCLOUD_URL from window or env
+    const baseUrl = typeof window !== 'undefined'
+      ? (window as any).__NEXT_PUBLIC_NEXTCLOUD_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || window.location.origin
+      : process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
       
     if (mode === 'edit') {
       // Open Text editor for collaborative editing

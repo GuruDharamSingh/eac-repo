@@ -1,26 +1,26 @@
 /**
  * Polls API Routes
- * GET /api/polls - List all polls for user
+ * GET /api/polls - List all polls for organization
  * POST /api/polls - Create a new availability poll
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminClient, createAvailabilityPoll, getPolls } from '@elkdonis/nextcloud';
 import { getServerSession } from '@elkdonis/auth-server';
+import {
+  createAvailabilityPoll,
+  getPollsByOrg,
+} from '@elkdonis/services';
 
-export async function GET(request: NextRequest) {
+const ORG_ID = 'elkdonis'; // inner-gathering org
+
+export async function GET() {
   try {
-    // Auth check - require logged in user
     const session = await getServerSession();
     if (!session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use admin Nextcloud client (user-specific would require nextcloud credentials)
-    const client = getAdminClient();
-
-    // Fetch polls from Nextcloud
-    const polls = await getPolls(client);
+    const polls = await getPollsByOrg(ORG_ID, { status: 'open' });
 
     return NextResponse.json({ polls });
   } catch (error) {
@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check - require logged in user
     const session = await getServerSession();
     if (!session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,40 +43,37 @@ export async function POST(request: NextRequest) {
     const {
       title,
       description,
-      timeSlots, // Array of ISO date strings
+      startDate,
+      endDate,
+      earliestTime = '09:00',
+      latestTime = '21:00',
+      timeSlotDuration = 30,
       allowMaybe = true,
       deadline,
-      slotDuration = 30,
     } = body;
 
-    // Validate input
-    if (!title || !timeSlots || !Array.isArray(timeSlots)) {
+    if (!title || !startDate || !endDate) {
       return NextResponse.json(
-        { error: 'Missing required fields: title and timeSlots' },
+        { error: 'Missing required fields: title, startDate, endDate' },
         { status: 400 }
       );
     }
 
-    // Use admin Nextcloud client
-    const client = getAdminClient();
-
-    // Convert time slot strings to Date objects
-    const slots = timeSlots.map((slot: string) => new Date(slot));
-
-    // Create the poll in Nextcloud
-    const result = await createAvailabilityPoll(client, {
+    const poll = await createAvailabilityPoll({
+      org_id: ORG_ID,
+      creator_id: session.user.id,
       title,
       description,
-      timeSlots: slots,
-      allowMaybe,
+      start_date: new Date(startDate),
+      end_date: new Date(endDate),
+      earliest_time: earliestTime,
+      latest_time: latestTime,
+      time_slot_duration: timeSlotDuration,
+      allow_maybe: allowMaybe,
       deadline: deadline ? new Date(deadline) : undefined,
-      slotDuration,
     });
 
-    return NextResponse.json({
-      poll: result.poll,
-      options: result.options,
-    });
+    return NextResponse.json({ poll });
   } catch (error) {
     console.error('Failed to create poll:', error);
     return NextResponse.json(

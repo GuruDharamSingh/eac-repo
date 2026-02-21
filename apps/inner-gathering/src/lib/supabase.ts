@@ -9,6 +9,9 @@ const supabaseAuthUrl =
   '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// Realtime WebSocket URL (Supabase Realtime on port 4000)
+const supabaseRealtimeUrl = process.env.NEXT_PUBLIC_SUPABASE_REALTIME_URL || '';
+
 // Custom fetch to route auth requests to the correct service
 const customFetch: typeof fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
@@ -30,5 +33,11 @@ export const supabase = createClient(supabaseRestUrl, supabaseAnonKey, {
   },
   global: {
     fetch: customFetch,
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+    ...(supabaseRealtimeUrl ? { url: supabaseRealtimeUrl } : {}),
   },
 });

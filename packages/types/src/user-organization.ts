@@ -1,7 +1,7 @@
 import type { Organization } from './organization';
 import type { User } from './user';
 
-export type UserOrgRole = 'guide' | 'member' | 'viewer';
+export type UserOrgRole = 'owner' | 'guide' | 'member' | 'viewer';
 
 export interface UserOrganization {
   userId: string;

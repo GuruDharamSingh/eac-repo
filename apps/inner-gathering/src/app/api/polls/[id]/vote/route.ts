@@ -1,16 +1,17 @@
 /**
  * Poll Voting API Routes
- * POST /api/polls/[id]/vote - Submit votes for poll options
- * GET /api/polls/[id]/vote - Get current votes and results
+ * POST /api/polls/[id]/vote - Submit availability response
+ * GET /api/polls/[id]/vote - Get aggregated results
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createNextcloudClient,
-  setVote,
-  getAvailabilityResults,
-} from '@elkdonis/nextcloud';
 import { getServerSession } from '@elkdonis/auth-server';
+import {
+  getPollById,
+  getPollSummary,
+  submitAvailabilityResponse,
+} from '@elkdonis/services';
+import type { AvailabilityStatus } from '@elkdonis/types';
 
 export async function GET(
   request: NextRequest,
@@ -18,29 +19,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const pollId = parseInt(id, 10);
 
-    if (isNaN(pollId)) {
-      return NextResponse.json({ error: 'Invalid poll ID' }, { status: 400 });
-    }
-
-    // Get authenticated user
     const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create Nextcloud client for this user
-    const client = createNextcloudClient({
-      baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
-      username: session.user.nextcloud_user_id,
-      password: session.user.nextcloud_app_password,
-    });
+    const poll = await getPollById(id);
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
+    }
 
-    // Get aggregated results
-    const results = await getAvailabilityResults(client, pollId);
+    const summary = await getPollSummary(id);
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ poll, summary });
   } catch (error) {
     console.error('Failed to fetch poll results:', error);
     return NextResponse.json(
@@ -56,48 +48,51 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const pollId = parseInt(id, 10);
 
-    if (isNaN(pollId)) {
-      return NextResponse.json({ error: 'Invalid poll ID' }, { status: 400 });
-    }
-
-    // Get authenticated user
     const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { votes } = body; // Array of { optionId: number, answer: 'yes' | 'no' | 'maybe' }
+    const poll = await getPollById(id);
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
+    }
 
-    if (!votes || !Array.isArray(votes)) {
+    if (poll.status !== 'open') {
       return NextResponse.json(
-        { error: 'Missing required field: votes' },
+        { error: 'Poll is closed for voting' },
         { status: 400 }
       );
     }
 
-    // Create Nextcloud client for this user
-    const client = createNextcloudClient({
-      baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
-      username: session.user.nextcloud_user_id,
-      password: session.user.nextcloud_app_password,
+    const body = await request.json();
+    const { slots, timezone } = body;
+
+    if (!slots || !Array.isArray(slots) || !timezone) {
+      return NextResponse.json(
+        { error: 'Missing required fields: slots, timezone' },
+        { status: 400 }
+      );
+    }
+
+    const response = await submitAvailabilityResponse({
+      poll_id: id,
+      user_id: session.user.id,
+      user_name: session.user.displayName || session.user.email,
+      user_email: session.user.email,
+      user_timezone: timezone,
+      slots: slots.map((slot: { time_slot: string; availability: AvailabilityStatus }) => ({
+        time_slot: new Date(slot.time_slot),
+        availability: slot.availability,
+      })),
     });
 
-    // Submit all votes to Nextcloud
-    const results = await Promise.all(
-      votes.map(
-        (vote: { optionId: number; answer: 'yes' | 'no' | 'maybe' }) =>
-          setVote(client, pollId, vote.optionId, vote.answer)
-      )
-    );
-
-    return NextResponse.json({ votes: results });
+    return NextResponse.json({ response });
   } catch (error) {
-    console.error('Failed to submit votes:', error);
+    console.error('Failed to submit vote:', error);
     return NextResponse.json(
-      { error: 'Failed to submit votes' },
+      { error: 'Failed to submit vote' },
       { status: 500 }
     );
   }

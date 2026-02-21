@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ImageLightbox } from './image-lightbox';
 
 export interface MediaPlayerProps {
   url: string;
@@ -10,6 +11,7 @@ export interface MediaPlayerProps {
   controls?: boolean;
   autoPlay?: boolean;
   poster?: string;
+  onImageClick?: (url: string) => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function MediaPlayer({
   controls = true,
   autoPlay = false,
   poster,
+  onImageClick,
 }: MediaPlayerProps) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -130,8 +133,10 @@ export function MediaPlayer({
           src={url}
           alt={title || 'Media'}
           className="w-full h-auto rounded-lg"
+          style={onImageClick ? { cursor: 'pointer' } : undefined}
           onError={handleError}
           onLoad={handleLoad}
+          onClick={onImageClick ? () => onImageClick(url) : undefined}
         />
         {title && (
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{title}</p>
@@ -154,9 +159,12 @@ export interface MediaGalleryProps {
     title?: string;
   }>;
   className?: string;
+  enableLightbox?: boolean;
 }
 
-export function MediaGallery({ items, className = '' }: MediaGalleryProps) {
+export function MediaGallery({ items, className = '', enableLightbox = true }: MediaGalleryProps) {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   if (items.length === 0) return null;
 
   return (
@@ -167,8 +175,16 @@ export function MediaGallery({ items, className = '' }: MediaGalleryProps) {
           url={item.url}
           type={item.type}
           title={item.title}
+          onImageClick={enableLightbox && item.type === 'image' ? setLightboxUrl : undefined}
         />
       ))}
+      {enableLightbox && (
+        <ImageLightbox
+          url={lightboxUrl}
+          opened={lightboxUrl !== null}
+          onClose={() => setLightboxUrl(null)}
+        />
+      )}
     </div>
   );
 }

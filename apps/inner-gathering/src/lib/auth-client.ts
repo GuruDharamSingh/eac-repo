@@ -4,7 +4,7 @@
 const AUTH_URL =
   process.env.NEXT_PUBLIC_SUPABASE_AUTH_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'http://localhost:9999';
+  '';
 
 interface AuthResponse {
   user?: any;

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@elkdonis/auth-server';
 
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://localhost:8080';
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
-const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'admin';
+const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || '';
+const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || '';
+const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || '';
 
 function encodeWebdavPath(path: string): string {
   return path

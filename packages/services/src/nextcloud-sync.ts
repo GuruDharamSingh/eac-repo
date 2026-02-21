@@ -9,7 +9,7 @@ import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 
 export interface NextcloudEvent {
-  type: string; // 'poll.created', 'poll.voted', 'calendar.created', etc.
+  type: string; // 'calendar.created', 'calendar.updated', 'talk.recording_ready', etc.
   nextcloudId: string; // ID in Nextcloud
   resourceType?: string; // 'meeting', 'post', etc.
   resourceId?: string; // Our database ID
@@ -51,15 +51,6 @@ export async function processNextcloudEvent(eventId: string): Promise<void> {
   try {
     // Route to appropriate handler based on event type
     switch (event.event_type) {
-      case 'poll.created':
-        await handlePollCreated(event);
-        break;
-      case 'poll.voted':
-        await handlePollVoted(event);
-        break;
-      case 'poll.closed':
-        await handlePollClosed(event);
-        break;
       case 'calendar.created':
         await handleCalendarEventCreated(event);
         break;
@@ -116,87 +107,6 @@ export async function processUnprocessedEvents(): Promise<number> {
 // ============================================================================
 // Event Handlers
 // ============================================================================
-
-/**
- * Handle poll created event
- * If poll is linked to a meeting, update meeting record
- */
-async function handlePollCreated(event: any): Promise<void> {
-  const { nextcloud_id, resource_id, data } = event;
-
-  if (event.resource_type === 'meeting' && resource_id) {
-    await db`
-      UPDATE meetings
-      SET
-        nextcloud_poll_id = ${parseInt(nextcloud_id)},
-        nextcloud_poll_synced = true,
-        updated_at = NOW()
-      WHERE id = ${resource_id}
-    `;
-
-    console.log(`Updated meeting ${resource_id} with poll ${nextcloud_id}`);
-  }
-}
-
-/**
- * Handle poll voted event
- * Update meeting metadata with vote counts
- */
-async function handlePollVoted(event: any): Promise<void> {
-  const { nextcloud_id, data } = event;
-
-  // Find meeting with this poll ID
-  const [meeting] = await db`
-    SELECT id FROM meetings
-    WHERE nextcloud_poll_id = ${parseInt(nextcloud_id)}
-  `;
-
-  if (meeting) {
-    // Update meeting metadata with latest vote data
-    await db`
-      UPDATE meetings
-      SET
-        metadata = jsonb_set(
-          COALESCE(metadata, '{}'::jsonb),
-          '{poll_votes}',
-          ${JSON.stringify(data.votes || {})}::jsonb
-        ),
-        updated_at = NOW()
-      WHERE id = ${meeting.id}
-    `;
-
-    console.log(`Updated meeting ${meeting.id} with poll vote data`);
-  }
-}
-
-/**
- * Handle poll closed event
- * Mark meeting poll as finalized
- */
-async function handlePollClosed(event: any): Promise<void> {
-  const { nextcloud_id, data } = event;
-
-  const [meeting] = await db`
-    SELECT id FROM meetings
-    WHERE nextcloud_poll_id = ${parseInt(nextcloud_id)}
-  `;
-
-  if (meeting) {
-    await db`
-      UPDATE meetings
-      SET
-        metadata = jsonb_set(
-          COALESCE(metadata, '{}'::jsonb),
-          '{poll_closed}',
-          'true'::jsonb
-        ),
-        updated_at = NOW()
-      WHERE id = ${meeting.id}
-    `;
-
-    console.log(`Marked poll closed for meeting ${meeting.id}`);
-  }
-}
 
 /**
  * Handle calendar event created

@@ -24,6 +24,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Reject path traversal attempts
+    if (path.includes('..') || path.includes('\\')) {
+      return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    }
+
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 

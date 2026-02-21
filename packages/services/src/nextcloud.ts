@@ -7,11 +7,14 @@ import { Buffer } from 'node:buffer';
 
 declare const process: any;
 
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://localhost:8080';
+const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL;
+if (!NEXTCLOUD_URL) {
+  console.warn('[nextcloud] NEXTCLOUD_URL not set - Nextcloud features will be unavailable');
+}
 // Public URL for browser-accessible share links (different from internal Docker URL)
-const NEXTCLOUD_PUBLIC_URL = process.env.NEXTCLOUD_PUBLIC_URL || 'http://localhost:8080';
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
-const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'admin';
+const NEXTCLOUD_PUBLIC_URL = process.env.NEXTCLOUD_PUBLIC_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
+const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || '';
+const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || '';
 
 const auth = Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString('base64');
 

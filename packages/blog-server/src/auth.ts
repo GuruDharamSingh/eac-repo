@@ -21,8 +21,73 @@ export interface BlogAuthContext {
   role: string | null;
 }
 
+/**
+ * Check if current user is blog owner (non-throwing)
+ * Returns auth context if owner, null otherwise
+ */
+export async function checkBlogOwner(config: BlogConfig): Promise<BlogAuthContext | null> {
+  try {
+    const supabase = await getServerAuth();
+    if (!supabase?.auth) {
+      return null;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return null;
+    }
+
+    const authEmail = user.email?.toLowerCase() ?? null;
+    const ownerEmails = (config.ownerEmails || []).map((email) => email.toLowerCase());
+    const ownerIds = config.ownerUserIds || [];
+
+    let membershipRole: string | null = null;
+
+    const isOwnerByConfig =
+      (authEmail && ownerEmails.includes(authEmail)) || ownerIds.includes(user.id);
+
+    if (!isOwnerByConfig) {
+      const memberships = await db`
+        SELECT role
+        FROM user_organizations
+        WHERE user_id = ${user.id}
+          AND org_id = ${config.orgId}
+        LIMIT 1
+      `;
+
+      if (!memberships.length) {
+        return null;
+      }
+
+      membershipRole = memberships[0].role;
+
+      if (config.ownerRoles?.length && !config.ownerRoles.includes(membershipRole as any)) {
+        return null;
+      }
+    }
+
+    await ensureAppUserRecord(user.id, authEmail);
+
+    return {
+      supabaseUser: {
+        id: user.id,
+        email: authEmail,
+      },
+      appUserId: user.id,
+      role: membershipRole,
+    };
+  } catch (error) {
+    console.error('[blog-server] checkBlogOwner error:', error);
+    return null;
+  }
+}
+
 export async function requireBlogOwner(config: BlogConfig): Promise<BlogAuthContext> {
   const supabase = await getServerAuth();
+  if (!supabase?.auth) {
+    redirect('/login?message=auth_error');
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

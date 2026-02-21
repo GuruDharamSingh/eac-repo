@@ -286,7 +286,7 @@ class TalkService {
    * Get public link for a room
    */
   getPublicLink(token: string): string {
-    return `${process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080'}/index.php/call/${token}`;
+    return `${process.env.NEXT_PUBLIC_NEXTCLOUD_URL || ''}/index.php/call/${token}`;
   }
 }
 

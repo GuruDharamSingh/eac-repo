@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Clock,
   MapPin,
+  Wifi,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -33,7 +34,9 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import type { Meeting, Post } from "@elkdonis/types";
+import { usePresence } from "@elkdonis/hooks";
 import { signOut } from "@elkdonis/auth-client";
+import { supabase } from "@/lib/supabase";
 
 interface HomeClientProps {
   upcomingMeetings: Array<{
@@ -51,27 +54,47 @@ interface HomeClientProps {
 export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string | null>("overview");
+  const [currentUser, setCurrentUser] = useState<{ userId: string; displayName?: string }>({
+    userId: "",
+  });
+
+  // Get user info for presence tracking
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUser({
+          userId: data.user.id,
+          displayName: data.user.user_metadata?.display_name || data.user.email || undefined,
+        });
+      }
+    });
+  }, []);
+
+  // Presence tracking
+  const { onlineCount } = usePresence({
+    client: supabase,
+    channelName: "inner-gathering",
+    user: currentUser,
+    enabled: !!currentUser.userId,
+  });
 
   const handleLogout = async () => {
     await signOut();
-    router.push("/");
-    router.refresh();
+
+    // Redirect to OIDC provider logout to clear SSO session
+    // Assumes OIDC provider is on port 3000 of the same host
+    const oidcLogoutUrl = `${window.location.protocol}//${window.location.hostname}:3000/api/auth/logout`;
+    const returnTo = encodeURIComponent(window.location.origin);
+    window.location.href = `${oidcLogoutUrl}?post_logout_redirect_uri=${returnTo}`;
   };
 
   const quickActions = [
     {
-      title: "New Meeting",
-      description: "Schedule a gathering",
-      icon: Calendar,
-      color: "blue",
-      onClick: () => router.push("/feed?create=meeting"),
-    },
-    {
-      title: "Create Post",
-      description: "Share your thoughts",
-      icon: MessageCircle,
-      color: "grape",
-      onClick: () => router.push("/feed?create=post"),
+      title: "Create",
+      description: "Post or meeting",
+      icon: Plus,
+      color: "indigo",
+      onClick: () => router.push("/feed?create=true"),
     },
     {
       title: "View Feed",
@@ -79,6 +102,13 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
       icon: TrendingUp,
       color: "green",
       onClick: () => router.push("/feed"),
+    },
+    {
+      title: "Calendar",
+      description: "Upcoming events",
+      icon: Calendar,
+      color: "blue",
+      onClick: () => router.push("/calendar"),
     },
     {
       title: "Community",
@@ -137,10 +167,25 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
             background: "linear-gradient(135deg, var(--mantine-color-indigo-6), var(--mantine-color-grape-6))",
           }}
         >
-          <Title order={2} c="white">Welcome Back!</Title>
-          <Text c="indigo.1" size="sm">
-            {upcomingMeetings.length} upcoming meetings • {recentPosts.length} new posts
-          </Text>
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Title order={2} c="white">Welcome Back!</Title>
+              <Text c="indigo.1" size="sm">
+                {upcomingMeetings.length} upcoming meetings • {recentPosts.length} new posts
+              </Text>
+            </div>
+            {onlineCount > 0 && (
+              <Badge
+                variant="light"
+                color="green"
+                size="lg"
+                leftSection={<Wifi size={14} />}
+                style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "white" }}
+              >
+                {onlineCount} online
+              </Badge>
+            )}
+          </Group>
         </Paper>
 
         {/* Quick Actions Grid */}

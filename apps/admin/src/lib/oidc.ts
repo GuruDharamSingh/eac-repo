@@ -1,8 +1,16 @@
 import { db } from '@elkdonis/db';
 import { SignJWT } from 'jose';
 
-// Configuration - use same default as docker-compose.yml
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-super-secret-jwt-token-with-at-least-32-characters');
+// Configuration - JWT_SECRET is required, no fallbacks for security
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+const JWT_SECRET = getJwtSecret();
 
 export interface OidcClient {
   id: string;
@@ -24,25 +32,38 @@ export interface ValidatedAuthCode {
   codeChallengeMethod?: string;
 }
 
-// Hardcoded clients for now (can be moved to DB later)
+// Get OIDC secret - required, no fallbacks for security
+function getNextcloudOidcSecret(): string {
+  const secret = process.env.NEXTCLOUD_OIDC_SECRET;
+  if (!secret) {
+    throw new Error('NEXTCLOUD_OIDC_SECRET environment variable is required');
+  }
+  return secret;
+}
+
+// Build OIDC redirect URIs dynamically from env vars
+function getOidcRedirectUris(): string[] {
+  const publicUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
+  const internalUrl = process.env.NEXTCLOUD_URL || '';
+  const prodUrl = process.env.NEXTCLOUD_PRODUCTION_URL || '';
+
+  const urls = [publicUrl, internalUrl, prodUrl].filter(Boolean);
+  const paths = [
+    '/apps/sociallogin/custom_oidc/elkdonis',
+    '/apps/sociallogin/custom_oidc/nextcloud',
+    '/apps/sociallogin/custom_oauth2/elkdonis',
+    '/apps/sociallogin/custom_oauth2/nextcloud',
+  ];
+
+  return urls.flatMap((url) => paths.map((path) => `${url}${path}`));
+}
+
+// OIDC clients configuration (can be moved to DB later)
 export const CLIENTS: Record<string, OidcClient> = {
   'nextcloud': {
     id: 'nextcloud',
-    secret: process.env.NEXTCLOUD_OIDC_SECRET || 'nextcloud-secret',
-    redirectUris: [
-      'http://localhost:8080/apps/sociallogin/custom_oidc/elkdonis',
-      'http://localhost:8080/apps/sociallogin/custom_oidc/nextcloud',
-      'http://localhost:8080/apps/sociallogin/custom_oauth2/elkdonis',
-      'http://localhost:8080/apps/sociallogin/custom_oauth2/nextcloud',
-      'http://192.168.0.179:8080/apps/sociallogin/custom_oidc/elkdonis',
-      'http://192.168.0.179:8080/apps/sociallogin/custom_oidc/nextcloud',
-      'http://192.168.0.179:8080/apps/sociallogin/custom_oauth2/elkdonis',
-      'http://192.168.0.179:8080/apps/sociallogin/custom_oauth2/nextcloud',
-      'http://nextcloud-nginx:80/apps/sociallogin/custom_oidc/elkdonis',
-      'http://nextcloud-nginx:80/apps/sociallogin/custom_oauth2/elkdonis',
-      'https://cloud.elkdonis.com/apps/sociallogin/custom_oidc/elkdonis',
-      'https://cloud.elkdonis.com/apps/sociallogin/custom_oauth2/elkdonis'
-    ],
+    secret: getNextcloudOidcSecret(),
+    redirectUris: getOidcRedirectUris(),
     name: 'Nextcloud'
   }
 };

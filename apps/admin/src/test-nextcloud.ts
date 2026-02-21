@@ -73,8 +73,8 @@ async function testNextcloudIntegration() {
     }
 
     console.log('\n✨ Nextcloud integration tests completed!');
-    console.log('\nNextcloud is accessible at: http://localhost:8080');
-    console.log('Login with: elkdonis / Ea4thway');
+    console.log(`\nNextcloud is accessible at: ${process.env.NEXTCLOUD_URL || 'http://localhost:8080'}`);
+    console.log(`Login with: ${process.env.NEXTCLOUD_ADMIN_USER || 'admin'} / <password from env>`);
 
   } catch (error) {
     console.error('❌ Test failed:', error);

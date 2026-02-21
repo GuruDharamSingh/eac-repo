@@ -34,7 +34,9 @@ export function NewMeetingForm({ organizations }: NewMeetingFormProps) {
       scheduledAt:
         formData.scheduledAt instanceof Date
           ? formData.scheduledAt.toISOString()
-          : undefined,
+          : formData.scheduledAt
+            ? new Date(formData.scheduledAt as unknown as string).toISOString()
+            : undefined,
       durationMinutes: isNaN(durationMinutes) ? undefined : durationMinutes,
       location: formData.location.trim(),
       isOnline: formData.isOnline,

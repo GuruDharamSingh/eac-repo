@@ -8,9 +8,9 @@ import type { MeetingVisibility } from '@elkdonis/types';
 import type { BlogConfig } from './auth';
 
 // Nextcloud utilities (copied from services to avoid env initialization issues)
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://localhost:8080';
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
-const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'admin';
+const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || '';
+const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || '';
+const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || '';
 
 const auth = Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString('base64');
 
@@ -114,6 +114,15 @@ export function createMediaGetHandler() {
       }
 
       const path = params.path.join('/');
+
+      // Reject path traversal attempts
+      if (path.includes('..') || path.includes('\\')) {
+        return new NextResponse('Invalid path', { status: 400 });
+      }
+      if (!path.startsWith('EAC-Network/')) {
+        return new NextResponse('Not found', { status: 404 });
+      }
+
       const url = getFileUrl(path);
 
       const response = await fetch(url, {

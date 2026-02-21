@@ -50,7 +50,9 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
 
     const scheduledAt = formData.scheduledAt instanceof Date
       ? formData.scheduledAt
-      : new Date();
+      : formData.scheduledAt
+        ? new Date(formData.scheduledAt)
+        : new Date();
 
     // Upload media if provided
     const uploadedMedia: Array<{
@@ -135,16 +137,50 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
       visibility: formData.visibility || "ORGANIZATION",
       isOnline: formData.isOnline,
       meetingUrl: formData.meetingUrl?.trim() || undefined,
-      media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
+      media: (() => {
+        // Combine uploaded files with selected Nextcloud library files
+        const libraryMedia = (formData.selectedFiles || []).map((f) => {
+          const mimeType = f.mime || 'application/octet-stream';
+          const mediaType = mimeType.startsWith('image/') ? 'image' as const
+            : mimeType.startsWith('video/') ? 'video' as const
+            : mimeType.startsWith('audio/') ? 'audio' as const
+            : 'document' as const;
+          return {
+            fileId: f.filename,
+            path: f.filename,
+            url: f.url,
+            filename: f.basename,
+            mimeType,
+            size: f.size,
+            type: mediaType,
+          };
+        });
+        const allMedia = [...uploadedMedia, ...libraryMedia];
+        return allMedia.length > 0 ? allMedia : undefined;
+      })(),
       nextcloudDocumentId: documentData?.fileId,
       documentUrl: documentData?.url,
       syncToCalendar: formData.syncToCalendar,
       createTalkRoom: formData.createTalkRoom ?? formData.isOnline, // Auto-create Talk room for online meetings
+      showInLiveFeed: formData.showInLiveFeed,
+      isRSVPEnabled: formData.isRSVPEnabled,
+      rsvpDeadline: formData.rsvpDeadline || undefined,
+      minAttendees: formData.minAttendees ? Number(formData.minAttendees) : undefined,
+      notifyOnMinAttendees: formData.notifyOnMinAttendees,
+      recurrencePattern: formData.recurrencePattern !== "NONE" ? formData.recurrencePattern : undefined,
+      recurrenceCustomRule: formData.recurrenceCustomRule?.trim() || undefined,
+      recurrenceUntil: formData.recurrenceUntil || undefined,
+      createEventPage: formData.createEventPage,
+      eventPageTableData: formData.createEventPage && formData.eventPageTableData?.columns?.length > 0
+        ? formData.eventPageTableData
+        : undefined,
     });
   };
 
   return (
     <MeetingForm
+      enableLibrary
+      orgId={ORG_ID}
       config={{
         // Fixed org to inner_group
         fixedValues: {
@@ -167,6 +203,18 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
           notes: true,
           media: true,
           createDocument: true,
+          syncToCalendar: true,
+          createTalkRoom: true,
+          showInLiveFeed: true,
+          isRSVPEnabled: true,
+          rsvpDeadline: true,
+          minAttendees: true,
+          notifyOnMinAttendees: true,
+          recurrencePattern: true,
+          recurrenceCustomRule: true,
+          recurrenceUntil: true,
+          createEventPage: true,
+          eventPageTableData: true,
         },
         requiredFields: {
           title: true,

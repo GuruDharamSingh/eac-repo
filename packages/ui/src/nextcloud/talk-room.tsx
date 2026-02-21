@@ -86,7 +86,7 @@ export function TalkRoom({
   const toggleCall = () => {
     setIsInCall(!isInCall);
     if (!isInCall) {
-      const nextcloudUrl = typeof window !== 'undefined' && (window as any).ENV?.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
+      const nextcloudUrl = typeof window !== 'undefined' && (window as any).ENV?.NEXT_PUBLIC_NEXTCLOUD_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
       const talkUrl = `${nextcloudUrl}/index.php/call/${token}`;
 
       if (ssoRedirectUrl) {

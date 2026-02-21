@@ -16,9 +16,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const nextcloudUrl = process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80';
-    const adminUser = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
-    const adminPassword = process.env.NEXTCLOUD_ADMIN_PASSWORD || 'Ea4thway';
+    const nextcloudUrl = process.env.NEXTCLOUD_URL || '';
+    const adminUser = process.env.NEXTCLOUD_ADMIN_USER || '';
+    const adminPassword = process.env.NEXTCLOUD_ADMIN_PASSWORD || '';
 
     // Fetch users from Nextcloud OCS API
     const response = await fetch(`${nextcloudUrl}/ocs/v1.php/cloud/users?format=json`, {

@@ -16,6 +16,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, path } = body;
 
+    // Reject path traversal attempts
+    if (path && (path.includes('..') || path.includes('\\'))) {
+      return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    }
+
     switch (action) {
       case 'list': {
         const files = await webdavService.listDirectory(path);

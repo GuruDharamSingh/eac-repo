@@ -85,7 +85,7 @@ Already configured! Just verify:
 ```env
 NEXTCLOUD_URL=http://nextcloud-nginx:80
 NEXTCLOUD_ADMIN_USER=elkdonis
-NEXTCLOUD_ADMIN_PASSWORD=Ea4thway
+NEXTCLOUD_ADMIN_PASSWORD=<your-strong-password>  # See scripts/generate-secrets.sh
 NEXT_PUBLIC_NEXTCLOUD_URL=http://localhost:8080
 ```
 
