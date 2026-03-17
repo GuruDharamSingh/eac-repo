@@ -13,7 +13,7 @@ export function PostCard({ post }: PostCardProps) {
   const attachments = (post.media || []).filter((media) => media.id !== coverImageId);
 
   return (
-    <Paper withBorder radius="lg" p="md" shadow="sm" style={{ overflow: 'hidden' }}>
+    <Paper withBorder radius="sm" p="md" shadow="sm" className="parchment-card" style={{ overflow: 'hidden' }}>
       <Stack gap="sm">
         {post.coverImage?.url && (
           <Box style={{ position: 'relative', height: 192, width: '100%', overflow: 'hidden', borderRadius: 8, marginBottom: 8 }}>
@@ -33,7 +33,7 @@ export function PostCard({ post }: PostCardProps) {
               {post.title}
             </Text>
             <Group gap="xs">
-              <Badge variant="light" color="grape" size="sm">
+              <Badge variant="filled" color="ember" size="sm" style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Post
               </Badge>
             </Group>
@@ -101,10 +101,10 @@ export function PostCard({ post }: PostCardProps) {
         )}
 
         <Group gap="xs">
-          <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+          <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
             <User size={14} />
           </ThemeIcon>
-          <Text size="sm">By {authorName}</Text>
+          <Text size="sm" style={{ fontStyle: 'italic', color: '#6b4020' }}>By {authorName}</Text>
         </Group>
       </Stack>
     </Paper>

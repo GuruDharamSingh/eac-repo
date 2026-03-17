@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Group, Paper, Text, Badge, Skeleton } from '@mantine/core';
 import { Clock, Circle, Radio } from 'lucide-react';
-import { VideoPlaylist, type LiveVideo } from '@elkdonis/ui';
+import { VideoPlaylist, type LiveVideo } from './video-playlist';
 
 interface Meeting {
   id: string;

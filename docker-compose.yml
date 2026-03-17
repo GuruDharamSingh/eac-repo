@@ -348,6 +348,40 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Amrit Vela Toronto – Sadhana community site
+  amrit-canada:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-amrit-canada
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
+      NODE_ENV: development
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Owner config
+      NEXT_PUBLIC_AMRIT_CANADA_OWNER_EMAIL: ${AMRIT_CANADA_OWNER_EMAIL:-gurudharamsingh@gmail.com}
+    volumes:
+      - .:/app
+      - /app/apps/amrit-canada/.next
+    ports:
+      - "3006:3006"
+    command: sh -c "cd apps/amrit-canada && pnpm docker:dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
 volumes:
   postgres_data:
   redis_data:

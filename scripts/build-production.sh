@@ -26,6 +26,7 @@ pnpm --filter @elkdonis/db build
 pnpm --filter @elkdonis/types build
 pnpm --filter @elkdonis/utils build
 pnpm --filter @elkdonis/nextcloud build
+pnpm --filter @elkdonis/redis build
 pnpm --filter @elkdonis/auth-client build
 pnpm --filter @elkdonis/auth-server build
 pnpm --filter @elkdonis/services build

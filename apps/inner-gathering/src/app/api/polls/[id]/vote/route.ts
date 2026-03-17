@@ -79,7 +79,7 @@ export async function POST(
     const response = await submitAvailabilityResponse({
       poll_id: id,
       user_id: session.user.id,
-      user_name: session.user.displayName || session.user.email,
+      user_name: session.user.email,
       user_email: session.user.email,
       user_timezone: timezone,
       slots: slots.map((slot: { time_slot: string; availability: AvailabilityStatus }) => ({

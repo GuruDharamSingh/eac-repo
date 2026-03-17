@@ -24,6 +24,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/utils/package.json ./packages/utils/
 COPY packages/hooks/package.json ./packages/hooks/
 COPY packages/nextcloud/package.json ./packages/nextcloud/
+COPY packages/redis/package.json ./packages/redis/
 COPY apps/inner-gathering/package.json ./apps/inner-gathering/
 
 # Install dependencies
@@ -49,6 +50,7 @@ RUN pnpm --filter @elkdonis/db build
 RUN pnpm --filter @elkdonis/types build
 RUN pnpm --filter @elkdonis/utils build
 RUN pnpm --filter @elkdonis/nextcloud build
+RUN pnpm --filter @elkdonis/redis build
 RUN pnpm --filter @elkdonis/auth-client build
 RUN pnpm --filter @elkdonis/auth-server build
 RUN pnpm --filter @elkdonis/services build

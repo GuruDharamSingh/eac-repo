@@ -125,6 +125,9 @@ async function createTables() {
       -- Attachments (stored as JSON array of objects)
       attachments JSONB DEFAULT '[]',
 
+      -- Section (amrit-canada specific)
+      section VARCHAR(30) CHECK (section IN ('amrit_vela', 'yoga', 'gurdwara')),
+
       -- Status and visibility
       status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('scheduled', 'completed', 'draft', 'published', 'archived')),
       visibility VARCHAR(20) DEFAULT 'PUBLIC' CHECK (visibility IN ('PUBLIC', 'ORGANIZATION', 'INVITE_ONLY')),
@@ -157,6 +160,7 @@ async function createTables() {
   await db`CREATE INDEX IF NOT EXISTS idx_meetings_visibility ON meetings(visibility) WHERE status = 'published'`;
   await db`CREATE INDEX IF NOT EXISTS idx_meetings_published ON meetings(published_at DESC) WHERE status = 'published'`;
   await db`CREATE INDEX IF NOT EXISTS idx_meetings_scheduled ON meetings(scheduled_at) WHERE scheduled_at IS NOT NULL`;
+  await db`CREATE INDEX IF NOT EXISTS idx_meetings_section ON meetings(org_id, section, scheduled_at)`;
 
   // Meeting topics
   await db`
@@ -284,6 +288,43 @@ async function createTables() {
   await db`CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id)`;
   await db`CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at DESC)`;
 
+  // Contacts — visitors who expressed interest (not yet authenticated users)
+  await db`
+    CREATE TABLE IF NOT EXISTS contacts (
+      id          TEXT PRIMARY KEY,
+      org_id      TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      name        TEXT,
+      message     TEXT,
+      status      TEXT NOT NULL DEFAULT 'new'
+                    CHECK (status IN ('new', 'contacted', 'joined')),
+      source      TEXT,
+      user_id     UUID REFERENCES users(id) ON DELETE SET NULL,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await db`CREATE INDEX IF NOT EXISTS idx_contacts_org    ON contacts(org_id)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(org_id, status)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_contacts_email  ON contacts(email)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_contacts_user   ON contacts(user_id) WHERE user_id IS NOT NULL`;
+
+  // Guest RSVP responses (no login required)
+  await db`
+    CREATE TABLE IF NOT EXISTS rsvp_responses (
+      id TEXT PRIMARY KEY,
+      meeting_id VARCHAR(21) NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      org_id VARCHAR(50) NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      message TEXT,
+      wants_reminder BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await db`CREATE INDEX IF NOT EXISTS idx_rsvp_meeting ON rsvp_responses(meeting_id)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_rsvp_org ON rsvp_responses(org_id, created_at DESC)`;
+
   console.log('✅ Tables created');
 }
 
@@ -314,6 +355,12 @@ async function seedOrganizations() {
       name: "Guru Dharam's Practice Group",
       slug: 'guru-dharam',
       description: 'Spiritual practice and teachings'
+    },
+    {
+      id: 'amrit_canada',
+      name: 'Amrit Vela Toronto',
+      slug: 'amrit-canada',
+      description: 'Monthly 4 AM sadhana — Jap Ji, Yoga and Kirtan in Toronto'
     }
   ];
 

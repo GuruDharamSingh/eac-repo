@@ -20,7 +20,7 @@ import { handleCalendarWebhook } from '@elkdonis/services';
 export async function POST(request: Request) {
   try {
     // Verify webhook secret for security
-    const headersList = headers();
+    const headersList = await headers();
     const webhookSecret = headersList.get('x-nextcloud-webhook-secret');
     const expectedSecret = process.env.NEXTCLOUD_WEBHOOK_SECRET;
 

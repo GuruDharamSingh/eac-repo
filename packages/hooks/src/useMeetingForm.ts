@@ -275,6 +275,7 @@ export function useMeetingForm(config: MeetingFormConfig = {}): UseMeetingFormRe
       createDocument: false,
       syncToCalendar: true,
       createTalkRoom: true,
+      showInLiveFeed: false,
       isRSVPEnabled: false,
       rsvpDeadline: null,
       minAttendees: "",

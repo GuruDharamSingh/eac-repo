@@ -10,9 +10,28 @@ html,
 body {
   min-height: 100vh;
   overflow-x: hidden;
+  background-color: #fdf6e3;
 }
 
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* 1970s medieval — warm text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Cinzel headings: extra letter-spacing for gravitas */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: 0.05em;
+}
+
+/* Parchment card border glow */
+.parchment-card {
+  border-color: #c8a06a !important;
+  background: linear-gradient(160deg, #fffcf4 0%, #fef5e1 100%) !important;
+  box-shadow: 0 2px 8px rgba(110, 60, 10, 0.12) !important;
 }
