@@ -13,9 +13,7 @@ FROM base AS development
 WORKDIR /app
 
 # Copy all source code (development doesn't need multi-stage optimization)
-COPY --chown=node:node . .
-
-USER node
+COPY . .
 
 # Install dependencies
 RUN pnpm install
@@ -74,23 +72,21 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy production dependencies
-COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=prod-deps --chown=node:node /app/apps/${APP_NAME}/node_modules ./apps/${APP_NAME}/node_modules
-COPY --from=prod-deps --chown=node:node /app/packages/*/node_modules ./packages/*/node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/apps/${APP_NAME}/node_modules ./apps/${APP_NAME}/node_modules
+COPY --from=prod-deps /app/packages/*/node_modules ./packages/*/node_modules
 
 # Copy built application
-COPY --from=build --chown=node:node /app/apps/${APP_NAME}/.next ./apps/${APP_NAME}/.next
-COPY --from=build --chown=node:node /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
-COPY --from=build --chown=node:node /app/packages/*/dist ./packages/*/dist
+COPY --from=build /app/apps/${APP_NAME}/.next ./apps/${APP_NAME}/.next
+COPY --from=build /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
+COPY --from=build /app/packages/*/dist ./packages/*/dist
 
 # Copy necessary config files
-COPY --chown=node:node package.json ./
-COPY --chown=node:node turbo.json ./
-COPY --chown=node:node apps/${APP_NAME}/package.json ./apps/${APP_NAME}/
-COPY --chown=node:node apps/${APP_NAME}/next.config.* ./apps/${APP_NAME}/
-COPY --chown=node:node packages/*/package.json ./packages/*/
-
-USER node
+COPY package.json ./
+COPY turbo.json ./
+COPY apps/${APP_NAME}/package.json ./apps/${APP_NAME}/
+COPY apps/${APP_NAME}/next.config.* ./apps/${APP_NAME}/
+COPY packages/*/package.json ./packages/*/
 
 EXPOSE 3000
 

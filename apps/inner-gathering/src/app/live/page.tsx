@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Stack, Title, Text, Loader, Center, Alert } from '@mantine/core';
-import { Info } from 'lucide-react';
+import { Container, Stack, Title, Text, Loader, Center } from '@mantine/core';
 import { CountdownWidget } from '@/components/countdown-widget';
 import { LiveVideoPlayer } from '@/components/live-video-player';
+import { VideoPlaylist, type LiveVideo } from '@/components/video-playlist';
 
 interface Meeting {
   id: string;
@@ -23,17 +23,21 @@ interface LiveFeedData {
 
 export default function LivePage() {
   const [data, setData] = useState<LiveFeedData | null>(null);
+  const [videos, setVideos] = useState<LiveVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLiveFeed = async () => {
     try {
-      const response = await fetch('/api/live/current');
-      if (!response.ok) {
-        throw new Error('Failed to fetch live feed data');
-      }
-      const result = await response.json();
-      setData(result);
+      const [feedRes, videosRes] = await Promise.all([
+        fetch('/api/live/current'),
+        fetch('/api/live/videos'),
+      ]);
+      if (!feedRes.ok) throw new Error('Failed to fetch live feed data');
+      const feedResult = await feedRes.json();
+      const videosResult = videosRes.ok ? await videosRes.json() : { videos: [] };
+      setData(feedResult);
+      setVideos(videosResult.videos ?? []);
       setError(null);
     } catch (err) {
       console.error('Error fetching live feed:', err);
@@ -69,9 +73,7 @@ export default function LivePage() {
   if (error) {
     return (
       <Container size="lg" py="xl">
-        <Alert icon={<Info size={16} />} title="Error" color="red">
-          {error}
-        </Alert>
+        <Text c="red">{error}</Text>
       </Container>
     );
   }
@@ -91,13 +93,14 @@ export default function LivePage() {
         )}
 
         {data?.status === 'upcoming' && data.meeting && (
-          <CountdownWidget meeting={data.meeting} />
+          <>
+            <CountdownWidget meeting={data.meeting} />
+            <VideoPlaylist videos={videos} />
+          </>
         )}
 
         {data?.status === 'none' && (
-          <Alert icon={<Info size={16} />} title="No Meetings Scheduled" color="blue">
-            There are currently no live meetings or upcoming meetings scheduled.
-          </Alert>
+          <VideoPlaylist videos={videos} />
         )}
       </Stack>
     </Container>

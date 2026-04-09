@@ -103,7 +103,7 @@ export function PollCard({ poll }: PollCardProps) {
     : null;
 
   return (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder radius="sm" p="md" className="parchment-card">
       <Stack gap="md">
         {/* Header */}
         <Group justify="space-between" align="flex-start">
@@ -111,9 +111,10 @@ export function PollCard({ poll }: PollCardProps) {
             <Title order={4}>{currentPoll.question}</Title>
             <Group gap="xs">
               <Badge
-                variant="light"
-                color="violet"
+                variant="filled"
+                color="ember"
                 leftSection={<BarChart3 size={12} />}
+                style={{ letterSpacing: '0.06em' }}
               >
                 Poll
               </Badge>
@@ -160,10 +161,10 @@ export function PollCard({ poll }: PollCardProps) {
                   p="sm"
                   style={{
                     borderColor: isSelected
-                      ? 'var(--mantine-color-indigo-4)'
+                      ? '#c8910a'
                       : undefined,
                     backgroundColor: isSelected
-                      ? 'var(--mantine-color-indigo-0)'
+                      ? '#fff8ec'
                       : undefined,
                   }}
                 >
@@ -172,7 +173,7 @@ export function PollCard({ poll }: PollCardProps) {
                       {isSelected && (
                         <Check
                           size={14}
-                          color="var(--mantine-color-indigo-6)"
+                          color="#c8610a"
                         />
                       )}
                       <Text size="sm" fw={isSelected ? 600 : 400}>
@@ -187,7 +188,7 @@ export function PollCard({ poll }: PollCardProps) {
                     value={pct}
                     size="sm"
                     radius="xl"
-                    color={isSelected ? 'indigo' : 'gray'}
+                    color={isSelected ? 'ember' : 'gray'}
                   />
                 </Paper>
               );

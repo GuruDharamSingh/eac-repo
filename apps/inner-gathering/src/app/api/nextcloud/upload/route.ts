@@ -7,7 +7,7 @@ import { getServerSession } from '@elkdonis/auth-server';
  * Accepts multipart form data with a file and destination path.
  */
 
-const ALLOWED_ROOTS = ['Elkdonis Collective/Inner Gathering'];
+const ALLOWED_ROOTS = ['EAC-Network/inner_group'];
 
 function isAllowedPath(path: string): boolean {
   // Reject path traversal attempts

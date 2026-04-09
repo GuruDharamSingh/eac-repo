@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Create Nextcloud client with user credentials
-    const nextcloudUrl = process.env.NEXTCLOUD_URL || 'http://nextcloud-aio-apache:11000';
+    const nextcloudUrl = process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80';
     console.log(`[Calendar Debug] Nextcloud URL: ${nextcloudUrl}`);
 
     const client = createNextcloudClient({

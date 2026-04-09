@@ -1,16 +1,13 @@
 import { Buffer } from 'node:buffer';
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFile, getProxyFileUrl } from '@elkdonis/services';
+import { uploadFile, getUploadPath, getProxyFileUrl } from '@elkdonis/services';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import type { MeetingVisibility } from '@elkdonis/types';
 
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://nextcloud-aio-apache:11000';
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'eac_intergration';
+const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80';
+const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || 'elkdonis';
 const ORG_ID = 'inner_group';
-
-// Nextcloud folder base for inner-gathering uploads
-const NC_BASE = 'Elkdonis Collective/Inner Gathering';
 
 type MediaCategory = 'image' | 'audio' | 'video' | 'document';
 
@@ -28,31 +25,31 @@ const DOCUMENT_MIME_TYPES = new Set([
 
 const MEDIA_CONFIG: Array<{
   type: MediaCategory;
-  ncFolder: string;
+  folder: string;
   maxSizeMb: number;
   test: (mime: string) => boolean;
 }> = [
   {
     type: 'image',
-    ncFolder: 'Images',
+    folder: 'Media/Images',
     maxSizeMb: 25,
     test: (mime) => mime.startsWith('image/'),
   },
   {
     type: 'audio',
-    ncFolder: 'Documents',
+    folder: 'Media/Audio',
     maxSizeMb: 150,
     test: (mime) => mime.startsWith('audio/'),
   },
   {
     type: 'video',
-    ncFolder: 'Videos',
+    folder: 'Media/Videos',
     maxSizeMb: 500,
     test: (mime) => mime.startsWith('video/'),
   },
   {
     type: 'document',
-    ncFolder: 'Documents',
+    folder: 'Media/Documents',
     maxSizeMb: 50,
     test: (mime) => DOCUMENT_MIME_TYPES.has(mime),
   },
@@ -103,8 +100,11 @@ export async function POST(request: NextRequest) {
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${timestamp}-${sanitizedName}`;
     
-    // Build Nextcloud path: elkdonis collective/inner gathering/{images|videos|documents}/filename
-    const relativePath = `${NC_BASE}/${mediaConfig.ncFolder}/${filename}`;
+    // Determine media type folder
+    const mediaTypeFolder = mediaConfig.folder.split('/')[1] as 'Images' | 'Audio' | 'Videos' | 'Documents';
+    
+    // Use visibility-based path routing
+    const relativePath = getUploadPath(ORG_ID, mediaTypeFolder, filename, visibility);
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();

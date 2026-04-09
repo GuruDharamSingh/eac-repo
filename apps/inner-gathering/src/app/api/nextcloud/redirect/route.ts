@@ -74,11 +74,25 @@ export async function GET(request: NextRequest) {
       finalDestination = nextcloudBaseUrl;
     }
 
-    // Build the social login URL - this triggers OIDC auth with Nextcloud
-    const socialLoginUrl = new URL('/apps/sociallogin/custom_oidc/elkdonis', nextcloudBaseUrl);
+    // If direct mode is requested, just redirect to the destination
+    // This assumes the user already has a valid Nextcloud session
+    if (direct) {
+      return NextResponse.redirect(finalDestination);
+    }
+
+    // Build the social login URL - this triggers OAuth2 auth with Nextcloud
+    const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
 
     // Pass the redirect destination to sociallogin
     socialLoginUrl.searchParams.set('redirect_url', finalDestination);
+
+    // If force logout is requested
+    if (force) {
+      // First logout from Nextcloud, then redirect to sociallogin
+      const logoutUrl = new URL('/logout', nextcloudBaseUrl);
+      logoutUrl.searchParams.set('redirect_url', socialLoginUrl.toString());
+      return NextResponse.redirect(logoutUrl);
+    }
 
     return NextResponse.redirect(socialLoginUrl);
   } catch (error: any) {

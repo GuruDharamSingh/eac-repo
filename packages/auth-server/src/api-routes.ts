@@ -144,7 +144,26 @@ export async function handleSignup(request: NextRequest) {
 
     console.log(`[Signup] User created: ${data.user.id} (${email})`);
 
-    // Nextcloud provisioning is handled manually via admin dashboard (/users page).
+    // Now provision in Nextcloud
+    try {
+      const { handleUserProvisioning } = await import('@elkdonis/services');
+      const provisionResult = await handleUserProvisioning(
+        data.user.id,
+        email,
+        displayName || email.split('@')[0]
+      );
+
+      if (!provisionResult.success) {
+        console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
+        // Don't fail signup if Nextcloud provisioning fails
+        // User can still use the app, just won't have Nextcloud access yet
+      } else {
+        console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
+      }
+    } catch (provisionError) {
+      console.error('[Signup] Provisioning error:', provisionError);
+      // Again, don't fail signup
+    }
 
     const response = NextResponse.json({
       user: data.user,

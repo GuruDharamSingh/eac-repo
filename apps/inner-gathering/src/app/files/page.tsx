@@ -66,7 +66,7 @@ interface StagedFile {
   id: string;
 }
 
-const ORG_ROOT = "Elkdonis Collective/Inner Gathering";
+const ORG_ROOT = "EAC-Network/inner_group";
 
 const MEDIA_CATEGORIES: { value: MediaCategory; label: string; icon: React.ReactNode; color: string; accept: string }[] = [
   { value: "Images", label: "Images", icon: <Image size={18} />, color: "green", accept: "image/*" },
@@ -259,7 +259,7 @@ export default function FilesPage() {
     try {
       for (let i = 0; i < stagedFiles.length; i++) {
         const staged = stagedFiles[i];
-        const uploadPath = `${ORG_ROOT}/${staged.category}/${staged.file.name}`;
+        const uploadPath = `${ORG_ROOT}/Media/${staged.category}/${staged.file.name}`;
 
         const formData = new FormData();
         formData.append("file", staged.file);
@@ -588,7 +588,7 @@ export default function FilesPage() {
               radius="md"
               p="sm"
               style={{ cursor: "pointer", transition: "background-color 150ms" }}
-              onClick={() => setCurrentPath(`${ORG_ROOT}/${cat.value}`)}
+              onClick={() => setCurrentPath(`${ORG_ROOT}/Media/${cat.value}`)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = `var(--mantine-color-${cat.color}-0)`;
               }}

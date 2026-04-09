@@ -17,10 +17,9 @@ const JWT_SECRET = getJwtSecret();
 // Redis client for caching userinfo responses
 // This handles the Hybridauth bug where the second request has an empty Bearer token
 // Cache by user ID (not IP) to prevent serving wrong user's data
-const CACHE_TTL_SECONDS = 300; // 5 min — covers full OAuth flow + retries
+const CACHE_TTL_SECONDS = 60; // Enough time for full OAuth flow
 const CACHE_PREFIX = 'oidc:userinfo:';
 const IP_TO_USER_PREFIX = 'oidc:ip2user:';
-const TOKEN_TO_USER_PREFIX = 'oidc:tok2user:';
 
 // Use globalThis to persist Redis client across hot reloads in Next.js dev mode
 const globalRedis = globalThis as typeof globalThis & {
@@ -58,7 +57,7 @@ async function getRedisClient(): Promise<RedisClientType> {
 async function getCachedResponse(clientIP: string): Promise<object | null> {
   try {
     const redis = await getRedisClient();
-    // Look up which user ID was last used from this IP
+    // First, look up which user ID was last used from this IP (very short-lived)
     const userId = await redis.get(IP_TO_USER_PREFIX + clientIP);
     if (!userId) {
       console.log('[userinfo] No recent user mapping for IP:', clientIP);
@@ -175,16 +174,9 @@ export async function GET(req: NextRequest) {
       preferred_username: user.id // Stable Nextcloud userid
     };
 
-    // Cache the response for a few minutes to handle Hybridauth's duplicate request bug
+    // Cache the response for a few seconds to handle Hybridauth's duplicate request bug
     // Use user ID as key so different users don't get each other's cached data
-    // Also cache a short token prefix as backup lookup for retry requests
     await setCachedResponse(clientIP, user.id, responseData);
-    // Store token→userId mapping (use first 16 chars of token as key for safety)
-    try {
-      const redis = await getRedisClient();
-      const tokenKey = TOKEN_TO_USER_PREFIX + token.substring(0, 16);
-      await redis.setEx(tokenKey, CACHE_TTL_SECONDS, user.id);
-    } catch (_err) { /* ignore redis errors for secondary cache */ }
 
     return NextResponse.json(responseData);
 

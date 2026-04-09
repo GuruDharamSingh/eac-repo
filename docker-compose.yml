@@ -153,11 +153,9 @@ services:
       REDIS_URL: redis://redis:6379
 
       # Nextcloud (external stack via shared network)
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-aio-apache:11000}
-      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-https://cloud.elkdonis-arts.org}
-      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-https://cloud.elkdonis-arts.org}
-      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
-      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXTCLOUD_URL: http://nextcloud-nginx:80
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
 
       # Node environment
       NODE_ENV: development
@@ -167,7 +165,7 @@ services:
       - /app/.next
     ports:
       - "3000:3000"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/admin && pnpm dev"
+    command: sh -c "cd apps/admin && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -192,7 +190,7 @@ services:
       - /app/apps/forum/.next
     ports:
       - "3003:3003"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/forum && pnpm dev"
+    command: sh -c "cd apps/forum && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -226,7 +224,7 @@ services:
       - /app/apps/blog-sunjay/.next
     ports:
       - "3001:3001"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/blog-sunjay && pnpm dev"
+    command: sh -c "cd apps/blog-sunjay && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -260,7 +258,7 @@ services:
       - /app/apps/blog-guru-dharam/.next
     ports:
       - "3002:3002"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/blog-guru-dharam && pnpm dev"
+    command: sh -c "cd apps/blog-guru-dharam && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -294,9 +292,9 @@ services:
       REDIS_URL: redis://redis:6379
 
       # Nextcloud
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-aio-apache:11000}
-      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-https://cloud.elkdonis-arts.org}
-      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-https://cloud.elkdonis-arts.org}
+      NEXTCLOUD_URL: http://nextcloud-nginx:80
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
@@ -311,7 +309,7 @@ services:
       - /app/apps/inner-gathering/.next
     ports:
       - "3004:3004"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/inner-gathering && pnpm docker:dev"
+    command: sh -c "cd apps/inner-gathering && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -345,7 +343,41 @@ services:
       - /app/apps/elkdonis-arts-collective/.next
     ports:
       - "3005:3005"
-    command: sh -c "pnpm --filter '@elkdonis/*' build && cd apps/elkdonis-arts-collective && pnpm dev"
+    command: sh -c "cd apps/elkdonis-arts-collective && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Amrit Vela Toronto – Sadhana community site
+  amrit-canada:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-amrit-canada
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
+      NODE_ENV: development
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Owner config
+      NEXT_PUBLIC_AMRIT_CANADA_OWNER_EMAIL: ${AMRIT_CANADA_OWNER_EMAIL:-gurudharamsingh@gmail.com}
+    volumes:
+      - .:/app
+      - /app/apps/amrit-canada/.next
+    ports:
+      - "3006:3006"
+    command: sh -c "cd apps/amrit-canada && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -359,4 +391,3 @@ networks:
     driver: bridge
   nextcloud-network:
     external: true
-    name : nextcloud-aio

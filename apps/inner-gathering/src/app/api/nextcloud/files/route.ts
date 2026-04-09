@@ -9,7 +9,7 @@ import { getServerSession } from '@elkdonis/auth-server';
  */
 
 // Allowed root paths users can browse
-const ALLOWED_ROOTS = ['Elkdonis Collective/Inner Gathering'];
+const ALLOWED_ROOTS = ['EAC-Network/inner_group'];
 
 function isAllowedPath(path: string): boolean {
   // Reject path traversal attempts

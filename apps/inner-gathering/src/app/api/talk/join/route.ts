@@ -6,19 +6,14 @@ import { SignJWT } from 'jose';
 /**
  * Talk Room Join Redirect
  *
- * Two paths:
- * 1. Direct redirect to Talk room URL (if user likely has NC session)
- * 2. SSO via sociallogin (first-time, triggered by ?sso=1 param)
- *
- * If the user has no NC session, Nextcloud will show its login page which
- * includes the sociallogin "Elkdonis" button for one-click SSO.
+ * Creates a signed JWT with user identity, then redirects to Nextcloud Talk via sociallogin SSO.
+ * The JWT allows the admin OIDC endpoint to authenticate the user without requiring them
+ * to be logged in to the admin app.
  *
  * Usage: /api/talk/join?token=ROOM_TOKEN
- *        /api/talk/join?token=ROOM_TOKEN&sso=1  (force SSO path)
  */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
-  const forceSSO = req.nextUrl.searchParams.get('sso') === '1';
 
   if (!token) {
     return NextResponse.json({ error: 'Missing room token' }, { status: 400 });
@@ -50,20 +45,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(accountUrl);
   }
 
-  const nextcloudUrl = process.env.NEXTCLOUD_PUBLIC_URL || 'https://cloud.elkdonis-arts.org';
-  const talkUrl = `${nextcloudUrl}/call/${token}`;
-
-  // Default path: redirect directly to Talk room URL.
-  // If user has an active NC session (from previous sociallogin or direct login),
-  // the Talk room loads immediately — no SSO overhead.
-  // If no NC session, NC shows its login page which has the sociallogin button.
-  if (!forceSSO) {
-    console.log('[talk/join] Direct redirect to Talk room:', talkUrl);
-    return NextResponse.redirect(talkUrl);
-  }
-
-  // SSO path: create JWT and redirect through sociallogin for first-time auth.
-  // This is triggered by ?sso=1 or can be used as a fallback.
+  // Create signed JWT with user identity
   const secret = new TextEncoder().encode(process.env.INTER_APP_JWT_SECRET);
   const userToken = await new SignJWT({
     userId: user.id,
@@ -73,24 +55,29 @@ export async function GET(req: NextRequest) {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('5m')
+    .setExpirationTime('5m') // Short-lived token
     .setIssuer('inner-gathering')
     .setAudience('admin-oidc')
     .sign(secret);
 
+  const nextcloudUrl = process.env.NEXTCLOUD_PUBLIC_URL || 'http://localhost:8080';
+  const talkUrl = `${nextcloudUrl}/call/${token}`;
+
+  // Redirect to Social Login - set JWT as cookie so OIDC endpoint can read it
   const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudUrl);
   socialLoginUrl.searchParams.set('redirect_url', talkUrl);
 
   const response = NextResponse.redirect(socialLoginUrl);
 
+  // Set JWT as httpOnly cookie (5 min expiry, same as JWT)
   response.cookies.set('eac_user_jwt', userToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 300,
+    maxAge: 300, // 5 minutes
     path: '/',
   });
 
-  console.log('[talk/join] SSO redirect via sociallogin → Talk room:', socialLoginUrl.toString());
+  console.log('[talk/join] Set JWT cookie, redirecting to Social Login');
   return response;
 }

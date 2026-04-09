@@ -12,6 +12,7 @@ import { PollCard } from "./poll-card";
 import { CreateContentForm } from "./create-content-form";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
+import { LiveFeedWidget } from "./live-feed-widget";
 import { supabase } from "@/lib/supabase";
 import {
   ActionIcon,
@@ -76,30 +77,42 @@ export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientPr
   };
 
   return (
-    <Box mih="100vh" bg="gray.0">
+    <Box mih="100vh" style={{ background: '#fdf6e3' }}>
       {/* Header */}
       <Paper
-        shadow="xs"
+        shadow="md"
         p="md"
         style={{
           position: "sticky",
           top: 0,
           zIndex: 50,
-          borderBottom: "1px solid var(--mantine-color-gray-2)",
+          background: 'linear-gradient(135deg, #3d1f0a 0%, #6b3615 50%, #3d1f0a 100%)',
+          borderBottom: '3px solid #c8910a',
+          borderRadius: 0,
         }}
       >
         <Container>
           <Group justify="space-between">
             <Group gap="xs">
-              <ThemeIcon size="md" radius="md" variant="light" color="indigo">
+              <ThemeIcon size="md" radius="sm" variant="filled" color="ember">
                 <Sparkles size={18} />
               </ThemeIcon>
-              <Title order={4}>InnerGathering</Title>
+              <Title
+                order={4}
+                style={{
+                  color: '#fdf0d0',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  fontFamily: "'Cinzel', serif",
+                }}
+              >
+                Inner Gathering
+              </Title>
             </Group>
             <Button
               variant="subtle"
               size="sm"
-              color="gray"
+              style={{ color: '#f0c98a' }}
               leftSection={<LogOut size={16} />}
               onClick={handleLogout}
             >
@@ -114,13 +127,21 @@ export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientPr
         <Stack gap="lg">
           {/* Page Header */}
           <div>
-            <Title order={2}>Feed</Title>
-            <Text size="sm" c="dimmed">
-              Upcoming meetings and community posts
+            <Title
+              order={2}
+              style={{ color: '#4a2c0a', letterSpacing: '0.06em' }}
+            >
+              Feed
+            </Title>
+            <Text size="sm" style={{ color: '#8b6040', fontStyle: 'italic' }}>
+              Upcoming meetings & community posts
             </Text>
           </div>
 
-          <Divider />
+          <Divider color="orange.3" size="sm" />
+
+          {/* Live Channel Widget */}
+          <LiveFeedWidget />
 
           {/* Recurring Meetings Carousel */}
           {recurringMeetings.length > 0 && (
@@ -132,19 +153,19 @@ export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientPr
             {(styles) => (
               <Paper
                 withBorder
-                radius="md"
+                radius="sm"
                 p="sm"
                 style={{
                   ...styles,
-                  borderColor: "var(--mantine-color-indigo-4)",
-                  backgroundColor: "var(--mantine-color-indigo-0)",
-                  cursor: "pointer",
+                  borderColor: '#c8910a',
+                  background: 'linear-gradient(90deg, #fff8ec, #fff3d8)',
+                  cursor: 'pointer',
                 }}
                 onClick={handleShowNewItems}
               >
                 <Group justify="center" gap="xs">
-                  <RefreshCw size={16} color="var(--mantine-color-indigo-6)" />
-                  <Text size="sm" fw={500} c="indigo">
+                  <RefreshCw size={16} color="#c8610a" />
+                  <Text size="sm" fw={600} style={{ color: '#8b3e0a', fontStyle: 'italic' }}>
                     {newItemCount} new {newItemCount === 1 ? "item" : "items"} available
                   </Text>
                 </Group>
@@ -187,13 +208,14 @@ export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientPr
           size={56}
           radius="xl"
           variant="filled"
-          color="indigo"
+          color="ember"
           style={{
-            position: "fixed",
+            position: 'fixed',
             bottom: 24,
             right: 24,
             zIndex: 50,
-            boxShadow: "var(--mantine-shadow-lg)",
+            boxShadow: '0 4px 20px rgba(180, 80, 10, 0.45)',
+            border: '2px solid #f0a040',
           }}
           onClick={openDrawer}
         >

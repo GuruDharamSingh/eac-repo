@@ -361,6 +361,7 @@ export async function createMeeting(params: {
   recurrencePattern?: MeetingRecurrence;
   recurrenceCustomRule?: string;
   recurrenceUntil?: Date;
+  showInLiveFeed?: boolean;
   media?: Array<{
     fileId: string;
     path: string;
@@ -384,7 +385,8 @@ export async function createMeeting(params: {
       is_online, meeting_url, visibility, status,
       nextcloud_file_id, video_url, is_rsvp_enabled, rsvp_deadline,
       min_attendees, notify_on_min_attendees,
-      recurrence_pattern, recurrence_custom_rule, recurrence_until
+      recurrence_pattern, recurrence_custom_rule, recurrence_until,
+      show_in_live_feed
     ) VALUES (
       ${meetingId}, ${ORG_ID}, ${params.userId}, ${params.title},
       ${slug}, ${params.description || null},
@@ -395,7 +397,8 @@ export async function createMeeting(params: {
       ${params.isRSVPEnabled ?? false}, ${params.rsvpDeadline || null},
       ${params.minAttendees || null}, ${params.notifyOnMinAttendees ?? false},
       ${params.recurrencePattern && params.recurrencePattern !== 'NONE' ? params.recurrencePattern : null}, ${params.recurrenceCustomRule || null},
-      ${params.recurrenceUntil || null}
+      ${params.recurrenceUntil || null},
+      ${params.showInLiveFeed ?? false}
     )
     RETURNING *
   `;

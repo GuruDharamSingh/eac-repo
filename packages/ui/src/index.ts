@@ -35,6 +35,14 @@ export type { ExcalidrawEditorProps } from './components/excalidraw-editor';
 export { DocumentViewer, DocumentLink } from './components/document-viewer';
 export type { DocumentViewerProps, DocumentLinkProps } from './components/document-viewer';
 
+// Video Playlist
+export { VideoPlaylist } from './components/video-playlist';
+export type { VideoPlaylistProps, LiveVideo } from './components/video-playlist';
+
+// RSVP Form (guest-friendly, no login required)
+export { RsvpForm } from './components/RsvpForm';
+export type { RsvpFormProps } from './components/RsvpForm';
+
 // Nextcloud Components
 export { FileBrowser } from './nextcloud/file-browser';
 export type { FileBrowserProps, NextcloudFile } from './nextcloud/file-browser';

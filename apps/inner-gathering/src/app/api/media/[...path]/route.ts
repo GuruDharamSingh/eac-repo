@@ -27,11 +27,10 @@ export async function GET(
     const filePath = path.join('/');
 
     // Basic validation/sandboxing: avoid path traversal and restrict to app-controlled subtree.
-    if (!filePath || path.some((segment) => segment === '..' || segment === '.') || filePath.includes('\\')) {
+    if (!filePath || filePath.includes('..') || filePath.includes('\\')) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
-    const allowedPrefixes = ['Elkdonis Collective/', 'elkdonis collective/'];
-    if (!allowedPrefixes.some((p) => filePath.startsWith(p))) {
+    if (!filePath.startsWith('EAC-Network/')) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

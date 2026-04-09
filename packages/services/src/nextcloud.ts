@@ -102,18 +102,20 @@ export async function createPublicShare(
  */
 export async function createOrgFolders(orgId: string): Promise<boolean> {
   const folders = [
-    `Elkdonis Collective/${orgId}`,
+    `EAC-Network/${orgId}`,
     // Public folders (default - shareable via public link)
-    `Elkdonis Collective/${orgId}/Images`,
-    `Elkdonis Collective/${orgId}/Audio`,
-    `Elkdonis Collective/${orgId}/Videos`,
-    `Elkdonis Collective/${orgId}/Documents`,
+    `EAC-Network/${orgId}/Media`,
+    `EAC-Network/${orgId}/Media/Images`,
+    `EAC-Network/${orgId}/Media/Audio`,
+    `EAC-Network/${orgId}/Media/Videos`,
+    `EAC-Network/${orgId}/Media/Documents`,
     // Private folders (for organization-only or invite-only content)
-    `Elkdonis Collective/${orgId}/Private`,
-    `Elkdonis Collective/${orgId}/Private/Images`,
-    `Elkdonis Collective/${orgId}/Private/Audio`,
-    `Elkdonis Collective/${orgId}/Private/Videos`,
-    `Elkdonis Collective/${orgId}/Private/Documents`,
+    `EAC-Network/${orgId}/Private`,
+    `EAC-Network/${orgId}/Private/Media`,
+    `EAC-Network/${orgId}/Private/Media/Images`,
+    `EAC-Network/${orgId}/Private/Media/Audio`,
+    `EAC-Network/${orgId}/Private/Media/Videos`,
+    `EAC-Network/${orgId}/Private/Media/Documents`,
   ];
 
   try {
@@ -128,7 +130,7 @@ export async function createOrgFolders(orgId: string): Promise<boolean> {
     }
 
     // Make the entire org folder publicly accessible by default
-    const orgFolderPath = `Elkdonis Collective/${orgId}`;
+    const orgFolderPath = `EAC-Network/${orgId}`;
     const shareToken = await createPublicShare(orgFolderPath);
 
     // Save share token to database if successful
@@ -196,11 +198,7 @@ export async function listFiles(path: string): Promise<any[]> {
  * This requires authentication
  */
 export function getFileUrl(path: string): string {
-  const encodedPath = path
-    .split('/')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/');
-  return `${NEXTCLOUD_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${encodedPath}`;
+  return `${NEXTCLOUD_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${path}`;
 }
 
 /**
@@ -234,8 +232,8 @@ export function getUploadPath(
   visibility: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY' = 'PUBLIC'
 ): string {
   // Use Private folder only for restricted content
-  const folder = visibility === 'PUBLIC' ? '' : 'Private/';
-  return `Elkdonis Collective/${orgId}/${folder}${mediaType}/${filename}`;
+  const folder = visibility === 'PUBLIC' ? 'Media' : 'Private/Media';
+  return `EAC-Network/${orgId}/${folder}/${mediaType}/${filename}`;
 }
 
 /**
@@ -319,7 +317,7 @@ export async function createCollaborativeDocument(
   try {
     const timestamp = Date.now();
     const filename = `${timestamp}-${meetingId}.md`;
-    const path = `Elkdonis Collective/${orgId}/Documents/${filename}`;
+    const path = `EAC-Network/${orgId}/Media/Documents/${filename}`;
     
     // Create initial document content
     const content = initialContent || `# ${meetingTitle}

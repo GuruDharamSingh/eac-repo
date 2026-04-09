@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@elkdonis/ui","@elkdonis/utils","@elkdonis/hooks"]
+  transpilePackages: ["@elkdonis/ui"],
 };
 
 export default nextConfig;

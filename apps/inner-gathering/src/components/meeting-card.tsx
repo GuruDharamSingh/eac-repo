@@ -194,7 +194,7 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
   };
 
   return (
-    <Paper withBorder radius="lg" style={{ overflow: "hidden" }}>
+    <Paper withBorder radius="sm" className="parchment-card" style={{ overflow: "hidden" }}>
       {/* Cover Image */}
       {meeting.coverImage?.url && (
         <Box
@@ -220,7 +220,7 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
           <Stack gap="xs" style={{ flex: 1 }}>
             <Title order={4}>{meeting.title}</Title>
             <Group gap="xs">
-              <Badge variant="light" color="indigo">Meeting</Badge>
+              <Badge variant="filled" color="ember" style={{ letterSpacing: '0.06em' }}>Meeting</Badge>
               {meeting.isOnline && (
                 <Badge variant="light" color="cyan" leftSection={<Video size={12} />}>
                   Online
@@ -317,13 +317,13 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
             <>
               <Group gap="lg">
                 <Group gap="xs">
-                  <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+                  <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
                     <Calendar size={14} />
                   </ThemeIcon>
                   <Text size="sm" fw={500}>{formatDate(new Date(meeting.scheduledAt))}</Text>
                 </Group>
                 <Group gap="xs">
-                  <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+                  <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
                     <Clock size={14} />
                   </ThemeIcon>
                   <Text size="sm">
@@ -348,7 +348,7 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
           {/* Location */}
           {meeting.location && (
             <Group gap="xs">
-              <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+              <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
                 <MapPin size={14} />
               </ThemeIcon>
               <Text size="sm">{meeting.location}</Text>
@@ -357,7 +357,7 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
 
           {/* Guide */}
           <Group gap="xs">
-            <Avatar src={meeting.guide?.avatarUrl} size="sm" radius="xl" color="indigo">
+            <Avatar src={meeting.guide?.avatarUrl} size="sm" radius="xl" color="ember">
               {guideName[0]}
             </Avatar>
             <Text size="sm">
@@ -481,7 +481,7 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
                   fullWidth
                   size="sm"
                   variant="light"
-                  color="indigo"
+                  color="ember"
                   leftSection={<LayoutGrid size={16} />}
                 >
                   View Event Page

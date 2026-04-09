@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   // If logout succeeded, return HTML that triggers Nextcloud logout
   if (logoutResponse.status === 200) {
-    const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'https://cloud.elkdonis-arts.org';
+    const nextcloudUrl = process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'http://localhost:8080';
 
     const html = `
 <!DOCTYPE html>
