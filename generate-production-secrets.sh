@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "Generating production secrets..."
+echo ""
+echo "# Generated Production Secrets - $(date)"
+echo "# Save these securely!"
+echo ""
+echo "POSTGRES_PASSWORD=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)"
+echo "JWT_SECRET=$(openssl rand -base64 64)"
+echo "REALTIME_SECRET=$(openssl rand -base64 64)"
+echo "NEXTCLOUD_OIDC_SECRET=$(openssl rand -base64 32)"
+echo "NEXTCLOUD_WEBHOOK_SECRET=$(openssl rand -base64 32)"
+echo "INTER_APP_JWT_SECRET=$(openssl rand -base64 32)"

@@ -1,0 +1,32 @@
+{
+  "name": "@elkdonis/blog-server",
+  "version": "1.0.0",
+  "description": "Server-side blog operations and utilities",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

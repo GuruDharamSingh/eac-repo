@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - Production Database
+  postgres-prod:
+    image: postgres:16-alpine
+    container_name: eac-postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - eac-network-prod
+      - nextcloud-network
+
+  # Redis Cache - Production
+  redis-prod:
+    image: redis:alpine
+    container_name: eac-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data_prod:/data
+    ports:
+      - "6380:6379"  # Different port to avoid conflict
+    networks:
+      - eac-network-prod
+
+  # Supabase Auth - Production
+  supabase-auth-prod:
+    image: supabase/gotrue:v2.151.0
+    container_name: eac-supabase-auth-prod
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}?search_path=auth
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP:-true}
+      GOTRUE_MAILER_AUTOCONFIRM: ${MAILER_AUTOCONFIRM:-true}
+      GOTRUE_EXTERNAL_EMAIL_CLIENT: ${EMAIL_CLIENT:-smtp}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+    ports:
+      - "9997:9999"  # Different port to avoid conflict
+    restart: unless-stopped
+    networks:
+      - eac-network-prod
+      - nextcloud-network
+
+  # Supabase PostgREST - Production
+  supabase-rest-prod:
+    image: postgrest/postgrest:v12.0.2
+    container_name: eac-supabase-rest-prod
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
+    ports:
+      - "9996:3000"  # Different port
+    restart: unless-stopped
+    networks:
+      - eac-network-prod
+      - nextcloud-network
+
+  # Supabase Realtime - Production
+  supabase-realtime-prod:
+    image: supabase/realtime:v2.29.15
+    container_name: eac-supabase-realtime-prod
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    environment:
+      APP_NAME: realtime
+      PORT: 4000
+      DB_HOST: postgres-prod
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SSL: "false"
+      SECRET_KEY_BASE: ${REALTIME_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      REPLICATION_MODE: RLS
+      REPLICATION_POLL_INTERVAL: 100
+      SECURE_CHANNELS: "true"
+    ports:
+      - "4001:4000"  # Different port
+    restart: unless-stopped
+    networks:
+      - eac-network-prod
+
+  # Inner Gathering - Production Build
+  inner-gathering-prod:
+    build:
+      context: .
+      dockerfile: apps/inner-gathering/Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: eac-inner-gathering-prod
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+      supabase-auth-prod:
+        condition: service_started
+    environment:
+      # Node
+      NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=512"
+      PORT: 3004
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-prod:5432/${POSTGRES_DB}
+
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth-prod:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Redis
+      REDIS_URL: redis://redis-prod:6379
+
+      # Nextcloud (connects to existing dev Nextcloud via network bridge)
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL}
+      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET}
+      NEXTCLOUD_WEBHOOK_SECRET: ${NEXTCLOUD_WEBHOOK_SECRET}
+
+      # Inter-app
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+
+      # URLs
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_INNER_GATHERING_URL}
+      SITE_URL: ${SITE_URL}
+    ports:
+      - "3014:3004"  # Different external port to avoid conflict
+    restart: unless-stopped
+    mem_limit: 768m
+    memswap_limit: 768m
+    networks:
+      - eac-network-prod
+      - nextcloud-network  # Connect to existing Nextcloud
+
+volumes:
+  postgres_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+
+networks:
+  eac-network-prod:
+    driver: bridge
+  nextcloud-network:
+    external: true
+    name: eac-repo_nextcloud-network

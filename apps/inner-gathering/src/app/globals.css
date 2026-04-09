@@ -1,0 +1,18 @@
+/* Minimal global styles - Mantine handles most styling */
+@tailwind utilities;
+
+/* Base styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

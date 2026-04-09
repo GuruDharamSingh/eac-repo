@@ -1,0 +1,37 @@
+{
+  "name": "@elkdonis/db",
+  "version": "1.0.0",
+  "description": "Database package using PostgreSQL with event-driven architecture",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup && tsc --emitDeclarationOnly --project tsconfig.json",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "db:setup": "tsx -e \"import('./src/schemas.ts').then(m => m.setupDatabase())\"",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "tsx src/seed.ts"
+  },
+  "files": [
+    "dist/**",
+    "migrations/**"
+  ],
+  "dependencies": {
+    "postgres": "^3.4.0",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

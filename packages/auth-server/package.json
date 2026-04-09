@@ -1,0 +1,32 @@
+{
+  "name": "@elkdonis/auth-server",
+  "version": "1.0.0",
+  "description": "Server-side authentication utilities using Supabase",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

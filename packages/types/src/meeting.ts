@@ -1,0 +1,60 @@
+import type { Organization } from './organization';
+import type { MeetingAttendee } from './meeting-attendee';
+import type { User } from './user';
+import type { Media } from './media';
+
+export type MeetingRecurrence = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
+export type MeetingVisibility = 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  scheduledAt: Date;
+  orgId: string;
+  createdBy: User['id'];
+  videoLink?: string;
+  isRSVPEnabled: boolean;
+  location?: string;
+  timeZone?: string;
+  recurrencePattern: MeetingRecurrence;
+  recurrenceCustomRule?: string;
+  recurrenceUntil?: Date;
+  hasEventPage?: boolean;
+  reminderMinutesBefore?: number;
+  coHostIds: string[];
+  rsvpDeadline?: Date;
+  visibility: MeetingVisibility;
+  autoRecord: boolean;
+  tags: string[];
+  attachments: string[];
+  followUpWorkflow: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Additional fields from database
+  guideId?: string;
+  isOnline?: boolean;
+  durationMinutes?: number;
+  
+  // Nextcloud integration
+  nextcloudDocumentId?: string;
+  documentUrl?: string;
+  documentShareToken?: string;
+  nextcloudTalkToken?: string; // Talk room token for video conferencing
+
+  // RSVP/Attendance
+  attendeeLimit?: number;
+  attendeeCount?: number;
+
+  // Forum
+  replyCount?: number;
+
+  // Relations
+  organization?: Organization;
+  creator?: User;
+  guide?: User;
+  attendees?: MeetingAttendee[];
+  media?: Media[];
+  coverImage?: Media;
+}
