@@ -54,7 +54,7 @@ services:
       - "9999:9999"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Supabase PostgREST (REST API for database)
   supabase-rest:
@@ -75,7 +75,7 @@ services:
       - "9998:3000"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Supabase Realtime (for live updates)
   supabase-realtime:
@@ -103,7 +103,7 @@ services:
       - "4000:4000"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Redis for caching (optional but recommended)
   redis:
@@ -152,8 +152,8 @@ services:
       # Redis
       REDIS_URL: redis://redis:6379
 
-      # Nextcloud (external stack via shared network)
-      NEXTCLOUD_URL: http://nextcloud-nginx:80
+      # Nextcloud AIO
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-aio-apache:11000}
       NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
 
@@ -168,7 +168,7 @@ services:
     command: sh -c "cd apps/admin && pnpm dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Forum App (Activity Feed)
   forum:
@@ -193,7 +193,7 @@ services:
     command: sh -c "cd apps/forum && pnpm dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Sunjay's Blog
   blog-sunjay:
@@ -227,7 +227,7 @@ services:
     command: sh -c "cd apps/blog-sunjay && pnpm dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Guru Dharam's Blog
   blog-guru-dharam:
@@ -261,7 +261,7 @@ services:
     command: sh -c "cd apps/blog-guru-dharam && pnpm dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Inner Gathering App
   inner-gathering:
@@ -291,8 +291,8 @@ services:
       # Redis
       REDIS_URL: redis://redis:6379
 
-      # Nextcloud
-      NEXTCLOUD_URL: http://nextcloud-nginx:80
+      # Nextcloud AIO
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-aio-apache:11000}
       NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
@@ -312,7 +312,7 @@ services:
     command: sh -c "cd apps/inner-gathering && pnpm docker:dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Elkdonis Arts Collective Main Site
   elkdonis-arts-collective:
@@ -346,7 +346,7 @@ services:
     command: sh -c "cd apps/elkdonis-arts-collective && pnpm dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
   # Amrit Vela Toronto – Sadhana community site
   amrit-canada:
@@ -380,7 +380,7 @@ services:
     command: sh -c "cd apps/amrit-canada && pnpm docker:dev"
     networks:
       - eac-network
-      - nextcloud-network
+      - nextcloud-aio
 
 volumes:
   postgres_data:
@@ -389,5 +389,5 @@ volumes:
 networks:
   eac-network:
     driver: bridge
-  nextcloud-network:
+  nextcloud-aio:
     external: true
