@@ -117,7 +117,7 @@ export function extractOcsData<T>(response: any): T {
  */
 export async function healthCheck(baseUrl?: string): Promise<boolean> {
   try {
-    const url = baseUrl || process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80';
+    const url = baseUrl || process.env.NEXTCLOUD_URL || 'http://nextcloud-aio-apache:11000';
     const response = await axios.get(`${url}/status.php`);
     return response.data?.installed === true;
   } catch (error) {
