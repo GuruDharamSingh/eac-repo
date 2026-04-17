@@ -18,28 +18,29 @@ export async function GET() {
 
     const meetings = await db`
       SELECT
-        m.id,
-        m.title,
-        m.description,
-        m.scheduled_at,
-        m.location,
-        m.is_online,
-        m.org_id,
-        m.status,
-        m.meeting_url,
-        m.attendee_limit,
-        m.show_on_workshops_page,
-        m.workshop_order,
-        m.subtitle,
-        m.card_colour,
-        m.card_accent_colour,
-        m.metadata,
-        m.created_at
-      FROM meetings m
+        t.id,
+        t.title,
+        t.body AS description,
+        t.scheduled_at,
+        t.location,
+        t.is_online,
+        t.org_id,
+        t.status,
+        t.meeting_url,
+        t.attendee_limit,
+        t.show_on_workshops_page,
+        t.workshop_order,
+        t.subtitle,
+        t.card_colour,
+        t.card_accent_colour,
+        t.metadata,
+        t.created_at
+      FROM threads t
+      WHERE t.kind = 'meeting'
       ORDER BY
-        m.show_on_workshops_page DESC,
-        m.workshop_order ASC NULLS LAST,
-        m.scheduled_at DESC NULLS LAST
+        t.show_on_workshops_page DESC,
+        t.workshop_order ASC NULLS LAST,
+        t.scheduled_at DESC NULLS LAST
       LIMIT 100
     `;
 

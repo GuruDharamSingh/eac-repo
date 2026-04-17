@@ -40,7 +40,7 @@ export async function getPublishedPosts(orgId: string, limit = 20): Promise<Post
       u.display_name AS author_name,
       u.email AS author_email,
       media_list.media_items
-    FROM posts p
+    FROM threads p
     LEFT JOIN users u ON u.id = p.author_id
     LEFT JOIN LATERAL (
       SELECT COALESCE(
@@ -67,10 +67,11 @@ export async function getPublishedPosts(orgId: string, limit = 20): Promise<Post
         '[]'::json
       ) AS media_items
       FROM media m
-      WHERE m.attached_to_type = 'post'
+      WHERE m.attached_to_type = 'thread'
         AND m.attached_to_id = p.id
     ) media_list ON TRUE
-    WHERE p.org_id = ${orgId}
+    WHERE p.kind = 'post'
+      AND p.org_id = ${orgId}
       AND p.status = 'published'
     ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
     LIMIT ${limit}
@@ -86,7 +87,7 @@ export async function getPostBySlug(orgId: string, slug: string): Promise<Post |
       u.display_name AS author_name,
       u.email AS author_email,
       media_list.media_items
-    FROM posts p
+    FROM threads p
     LEFT JOIN users u ON u.id = p.author_id
     LEFT JOIN LATERAL (
       SELECT COALESCE(
@@ -113,10 +114,11 @@ export async function getPostBySlug(orgId: string, slug: string): Promise<Post |
         '[]'::json
       ) AS media_items
       FROM media m
-      WHERE m.attached_to_type = 'post'
+      WHERE m.attached_to_type = 'thread'
         AND m.attached_to_id = p.id
     ) media_list ON TRUE
-    WHERE p.org_id = ${orgId}
+    WHERE p.kind = 'post'
+      AND p.org_id = ${orgId}
       AND p.slug = ${slug}
       AND p.status = 'published'
     LIMIT 1
@@ -141,10 +143,11 @@ export async function createBlogPost(params: CreateBlogPostParams): Promise<Post
   };
 
   const [post] = await db`
-    INSERT INTO posts (
+    INSERT INTO threads (
       id,
       org_id,
       author_id,
+      kind,
       title,
       slug,
       body,
@@ -158,6 +161,7 @@ export async function createBlogPost(params: CreateBlogPostParams): Promise<Post
       ${postId},
       ${params.orgId},
       ${params.authorId},
+      'post',
       ${params.title},
       ${slug},
       ${params.body},
@@ -200,7 +204,7 @@ async function attachMediaToPost(
     await db`
       UPDATE media
       SET
-        attached_to_type = 'post',
+        attached_to_type = 'thread',
         attached_to_id = ${postId},
         uploaded_by = ${authorId}
       WHERE id = ${item.id}

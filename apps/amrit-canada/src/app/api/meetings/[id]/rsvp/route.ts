@@ -19,8 +19,8 @@ export async function POST(
   try {
     // Check meeting exists and RSVP is enabled
     const [meeting] = await db`
-      SELECT id, is_rsvp_enabled FROM meetings
-      WHERE id = ${meetingId} AND status = 'published'
+      SELECT id, is_rsvp_enabled FROM threads
+      WHERE kind = 'meeting' AND id = ${meetingId} AND status = 'published'
       LIMIT 1
     `;
 
@@ -28,11 +28,10 @@ export async function POST(
       return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
     }
 
-    // Upsert RSVP as a reply with parent_type='meeting'
+    // Upsert RSVP via thread_rsvps
     const existing = await db`
-      SELECT id FROM replies
-      WHERE parent_id = ${meetingId}
-        AND parent_type = 'meeting'
+      SELECT thread_id FROM thread_rsvps
+      WHERE thread_id = ${meetingId}
         AND user_id = ${userId}
       LIMIT 1
     `;
@@ -42,8 +41,8 @@ export async function POST(
     }
 
     await db`
-      INSERT INTO replies (id, parent_id, parent_type, user_id, content)
-      VALUES (${nanoid()}, ${meetingId}, 'meeting', ${userId}, 'attending')
+      INSERT INTO thread_rsvps (thread_id, user_id, status)
+      VALUES (${meetingId}, ${userId}, 'yes')
     `;
 
     return NextResponse.json({ status: 'attending' });

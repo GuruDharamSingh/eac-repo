@@ -19,6 +19,18 @@ export type { MeetingFormProps, MeetingFormData, MeetingFormConfig } from './com
 export { PostForm } from './components/PostForm';
 export type { PostFormProps, PostFormData, PostFormConfig } from './components/PostForm';
 
+// Unified content-creation form (progressive post → meeting → event → workshop)
+export { ContentForm, inferKind } from './components/content-form';
+export type {
+  ContentDraft,
+  ContentFormProps,
+  ThreadKind,
+  TierName,
+  KindInferenceResult,
+  ExtraField,
+  WorkshopSessionDraft,
+} from './components/content-form';
+
 // Media Player Components
 export { MediaPlayer, MediaGallery } from './components/media-player';
 export type { MediaPlayerProps, MediaGalleryProps } from './components/media-player';
@@ -42,6 +54,9 @@ export type { VideoPlaylistProps, LiveVideo } from './components/video-playlist'
 // RSVP Form (guest-friendly, no login required)
 export { RsvpForm } from './components/RsvpForm';
 export type { RsvpFormProps } from './components/RsvpForm';
+
+// Workshop Components
+export { DigitalFlyer, GuideBadge, ActionCard, StickyBottomBar } from './components/workshop-ui';
 
 // Nextcloud Components
 export { FileBrowser } from './nextcloud/file-browser';

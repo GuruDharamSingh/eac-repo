@@ -9,9 +9,10 @@ const ORG_ID = siteConfig.orgId;
 export async function GET() {
   try {
     const meetings = await db`
-      SELECT id, title, slug, description, location, scheduled_at, duration_minutes, is_online, meeting_url, status
-      FROM meetings
-      WHERE org_id = ${ORG_ID}
+      SELECT id, title, slug, body AS description, location, scheduled_at, duration_minutes, is_online, meeting_url, status
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = ${ORG_ID}
         AND status = 'published'
         AND (scheduled_at IS NULL OR scheduled_at >= NOW() - INTERVAL '6 hours')
       ORDER BY scheduled_at ASC NULLS LAST
@@ -46,14 +47,15 @@ export async function POST(request: NextRequest) {
       .replace(/(^-|-$)/g, '') + '-' + id.slice(0, 6);
 
     const [meeting] = await db`
-      INSERT INTO meetings (
-        id, org_id, guide_id, title, slug, description, location,
-        scheduled_at, duration_minutes, status, is_rsvp_enabled
+      INSERT INTO threads (
+        id, org_id, author_id, kind, title, slug, body, location,
+        scheduled_at, duration_minutes, status, is_rsvp_enabled, published_at
       )
       VALUES (
         ${id},
         ${ORG_ID},
         ${session.user.db_user_id ?? session.user.id},
+        'meeting',
         ${title},
         ${slug},
         ${description ?? null},
@@ -61,9 +63,10 @@ export async function POST(request: NextRequest) {
         ${scheduled_at ?? null},
         150,
         'published',
-        true
+        true,
+        NOW()
       )
-      RETURNING id, title, slug, description, location, scheduled_at, duration_minutes, status
+      RETURNING id, title, slug, body AS description, location, scheduled_at, duration_minutes, status
     `;
 
     return NextResponse.json(meeting, { status: 201 });

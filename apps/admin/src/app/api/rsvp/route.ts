@@ -27,22 +27,23 @@ export async function GET(req: NextRequest) {
 
   const rows = await db<RsvpRow[]>`
     SELECT
-      r.id,
-      r.meeting_id,
-      m.title as meeting_title,
-      m.section,
-      r.name,
-      r.email,
-      r.phone,
-      r.message,
-      r.wants_reminder,
-      r.created_at
-    FROM rsvp_responses r
-    JOIN meetings m ON m.id = r.meeting_id
-    WHERE r.org_id = 'amrit_canada'
-      ${section ? db`AND m.section = ${section}` : db``}
-      ${meetingId ? db`AND r.meeting_id = ${meetingId}` : db``}
-    ORDER BY r.created_at DESC
+      gs.id,
+      gs.thread_id AS meeting_id,
+      t.title as meeting_title,
+      t.section,
+      gs.name,
+      gs.email,
+      (gs.metadata->>'phone')::text AS phone,
+      gs.message,
+      COALESCE((gs.metadata->>'wants_reminder')::boolean, false) AS wants_reminder,
+      gs.created_at
+    FROM guest_submissions gs
+    JOIN threads t ON t.id = gs.thread_id AND t.kind = 'meeting'
+    WHERE t.org_id = 'amrit_canada'
+      AND gs.kind = 'rsvp'
+      ${section ? db`AND t.section = ${section}` : db``}
+      ${meetingId ? db`AND gs.thread_id = ${meetingId}` : db``}
+    ORDER BY gs.created_at DESC
     LIMIT 500
   `;
 

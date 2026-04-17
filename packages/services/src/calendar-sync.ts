@@ -42,11 +42,11 @@ export async function syncMeetingToNextcloud(
   // Fetch meeting from database
   const [meeting] = await db`
     SELECT
-      id, title, description, scheduled_at,
+      id, title, body AS description, scheduled_at,
       duration_minutes, location, meeting_url,
       nextcloud_calendar_event_id, nextcloud_calendar_synced
-    FROM meetings
-    WHERE id = ${meetingId}
+    FROM threads
+    WHERE kind = 'meeting' AND id = ${meetingId}
   ` as MeetingForSync[];
 
   if (!meeting) {
@@ -86,13 +86,13 @@ export async function syncMeetingToNextcloud(
 
   // Update meeting record
   await db`
-    UPDATE meetings
+    UPDATE threads
     SET
       nextcloud_calendar_event_id = ${eventId},
       nextcloud_calendar_synced = true,
       nextcloud_last_sync = NOW(),
       updated_at = NOW()
-    WHERE id = ${meetingId}
+    WHERE kind = 'meeting' AND id = ${meetingId}
   `;
 
   return eventId;
@@ -108,8 +108,8 @@ export async function deleteMeetingFromCalendar(
   // Fetch meeting to get event ID
   const [meeting] = await db`
     SELECT nextcloud_calendar_event_id
-    FROM meetings
-    WHERE id = ${meetingId}
+    FROM threads
+    WHERE kind = 'meeting' AND id = ${meetingId}
   `;
 
   if (!meeting?.nextcloud_calendar_event_id) {
@@ -140,12 +140,13 @@ export async function syncCalendarEventToMeeting(
     // Event was deleted in Nextcloud
     // Find corresponding meeting and mark as cancelled
     await db`
-      UPDATE meetings
+      UPDATE threads
       SET
         status = 'cancelled',
         nextcloud_calendar_synced = false,
         updated_at = NOW()
       WHERE nextcloud_calendar_event_id = ${eventId}
+        AND kind = 'meeting'
     `;
     return;
   }
@@ -153,8 +154,8 @@ export async function syncCalendarEventToMeeting(
   // Find corresponding meeting
   const [meeting] = await db`
     SELECT id, title, scheduled_at, duration_minutes, location, meeting_url
-    FROM meetings
-    WHERE nextcloud_calendar_event_id = ${eventId}
+    FROM threads
+    WHERE kind = 'meeting' AND nextcloud_calendar_event_id = ${eventId}
   `;
 
   if (!meeting) {
@@ -181,7 +182,7 @@ export async function syncCalendarEventToMeeting(
   if (!hasChanges) {
     // No changes, just update sync timestamp
     await db`
-      UPDATE meetings
+      UPDATE threads
       SET nextcloud_last_sync = NOW()
       WHERE id = ${meeting.id}
     `;
@@ -190,10 +191,10 @@ export async function syncCalendarEventToMeeting(
 
   // Update meeting with calendar changes
   await db`
-    UPDATE meetings
+    UPDATE threads
     SET
       title = ${event.summary},
-      description = ${event.description || meeting.description},
+      body = ${event.description || meeting.description},
       scheduled_at = ${event.start},
       duration_minutes = ${durationMinutes},
       location = ${event.location || meeting.location},
@@ -257,12 +258,13 @@ export async function handleCalendarWebhook(
     case 'calendar.event.deleted':
       // Mark corresponding meeting as cancelled
       await db`
-        UPDATE meetings
+        UPDATE threads
         SET
           status = 'cancelled',
           nextcloud_calendar_synced = false,
           updated_at = NOW()
         WHERE nextcloud_calendar_event_id = ${event_id}
+          AND kind = 'meeting'
       `;
       break;
 
@@ -290,8 +292,9 @@ export async function syncAllMeetingsForOrg(
   // Get all unsynced or out-of-sync meetings
   const meetings = await db`
     SELECT id
-    FROM meetings
-    WHERE org_id = ${orgId}
+    FROM threads
+    WHERE kind = 'meeting'
+      AND org_id = ${orgId}
       AND status IN ('scheduled', 'published')
       AND (
         nextcloud_calendar_synced = false
@@ -333,8 +336,8 @@ export async function getMeetingSyncStatus(
       nextcloud_last_sync,
       nextcloud_calendar_event_id,
       updated_at
-    FROM meetings
-    WHERE id = ${meetingId}
+    FROM threads
+    WHERE kind = 'meeting' AND id = ${meetingId}
   `;
 
   if (!meeting) {

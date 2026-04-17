@@ -49,8 +49,9 @@ export async function PATCH(
     // If claiming a featured slot, ensure it isn't already taken by another meeting
     if (stage === 'featured' && workshopOrder !== null) {
       const conflict = await db`
-        SELECT id FROM meetings
-        WHERE workshop_order = ${workshopOrder}
+        SELECT id FROM threads
+        WHERE kind = 'meeting'
+          AND workshop_order = ${workshopOrder}
           AND id != ${id}
         LIMIT 1
       `;
@@ -72,16 +73,16 @@ export async function PATCH(
     };
 
     await db`
-      UPDATE meetings SET
+      UPDATE threads SET
         show_on_workshops_page = ${showOnPage},
         workshop_order         = ${workshopOrder},
         subtitle               = ${body.subtitle ?? null},
         card_colour            = ${body.card_colour ?? null},
         card_accent_colour     = ${body.card_accent_colour ?? null},
         meeting_url            = ${body.meeting_url ?? null},
-        metadata               = metadata || jsonb_build_object('workshop', ${db.json(workshopMeta)}),
+        metadata               = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('workshop', ${db.json(workshopMeta)}),
         updated_at             = NOW()
-      WHERE id = ${id}
+      WHERE kind = 'meeting' AND id = ${id}
     `;
 
     return NextResponse.json({ ok: true });

@@ -60,17 +60,18 @@ export async function createMeetingAction(payload: {
 
   try {
     const [meeting] = await db`
-      INSERT INTO meetings (
-        id, org_id, guide_id, title, slug, description, location,
+      INSERT INTO threads (
+        id, org_id, author_id, kind, title, slug, body, location,
         scheduled_at, duration_minutes, is_online, meeting_url,
         visibility, status, is_rsvp_enabled, rsvp_deadline,
         attendee_limit, recurrence_pattern, recurrence_custom_rule,
-        recurrence_until, section
+        recurrence_until, section, published_at
       )
       VALUES (
         ${id},
         ${ORG_ID},
         ${payload.userId},
+        'meeting',
         ${payload.title.trim()},
         ${slug},
         ${payload.description?.trim() || null},
@@ -87,7 +88,8 @@ export async function createMeetingAction(payload: {
         ${payload.recurrencePattern && payload.recurrencePattern !== 'NONE' ? payload.recurrencePattern : null},
         ${payload.recurrenceCustomRule || null},
         ${payload.recurrenceUntil || null},
-        ${payload.section || null}
+        ${payload.section || null},
+        NOW()
       )
       RETURNING id, title, slug
     `;
@@ -101,7 +103,7 @@ export async function createMeetingAction(payload: {
             nextcloud_file_id, nextcloud_path, url, type,
             filename, size_bytes, mime_type
           ) VALUES (
-            ${nanoid()}, ${ORG_ID}, ${payload.userId}, 'meeting', ${id},
+            ${nanoid()}, ${ORG_ID}, ${payload.userId}, 'thread', ${id},
             ${media.fileId}, ${media.path}, ${media.url}, ${media.type},
             ${media.filename}, ${media.size}, ${media.mimeType}
           )

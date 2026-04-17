@@ -2,58 +2,55 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
 
-// GET - Get all attendees for a meeting
+// ============================================================================
+// Attendees list backed by thread_rsvps.
+// Migration 030 dropped meeting_attendees and its registered/attended/absent
+// status vocabulary. thread_rsvps uses yes/no/maybe/waitlist. Post-meeting
+// attendance tracking (PATCH to mark attended/absent) is retired here — if
+// reintroduced it would live on a separate table or as metadata on the RSVP.
+// ============================================================================
+
+// GET - All RSVPs for a thread (meeting)
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: meetingId } = await params;
+    const { id: threadId } = await params;
     const session = await getServerSession();
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Must be logged in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Must be logged in" }, { status: 401 });
     }
 
-    const attendees = await db`
+    const rsvps = await db`
       SELECT
-        ma.user_id,
-        ma.attendance_status,
-        ma.registered_at,
+        r.user_id,
+        r.status,
+        r.created_at AS registered_at,
         u.display_name,
         u.avatar_url
-      FROM meeting_attendees ma
-      JOIN users u ON ma.user_id = u.id
-      WHERE ma.meeting_id = ${meetingId}
-      ORDER BY ma.registered_at ASC
+      FROM thread_rsvps r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.thread_id = ${threadId}
+      ORDER BY r.created_at ASC
     `;
 
-    // Get counts by status
-    const summary = {
-      registered: 0,
-      attended: 0,
-      absent: 0,
-    };
-
-    attendees.forEach((a: any) => {
-      if (a.attendance_status in summary) {
-        summary[a.attendance_status as keyof typeof summary]++;
-      }
+    const summary: Record<string, number> = { yes: 0, no: 0, maybe: 0, waitlist: 0 };
+    rsvps.forEach((r: any) => {
+      if (r.status in summary) summary[r.status]++;
     });
 
     return NextResponse.json({
-      attendees: attendees.map((a: any) => ({
-        userId: a.user_id,
-        displayName: a.display_name,
-        avatarUrl: a.avatar_url,
-        status: a.attendance_status,
-        registeredAt: a.registered_at,
+      attendees: rsvps.map((r: any) => ({
+        userId: r.user_id,
+        displayName: r.display_name,
+        avatarUrl: r.avatar_url,
+        status: r.status,
+        registeredAt: r.registered_at,
       })),
       summary,
-      total: attendees.length,
+      total: rsvps.length,
     });
   } catch (error) {
     console.error("Error fetching attendees:", error);
@@ -64,20 +61,18 @@ export async function GET(
   }
 }
 
-// PATCH - Update attendance status (for marking attended/absent after meeting)
+// PATCH - Update RSVP status for another user (organizer action)
+// Retargeted to thread_rsvps status vocabulary (yes/no/maybe/waitlist).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: meetingId } = await params;
+    const { id: threadId } = await params;
     const session = await getServerSession();
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Must be logged in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Must be logged in" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -90,20 +85,17 @@ export async function PATCH(
       );
     }
 
-    if (!["registered", "attended", "absent"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      );
+    if (!["yes", "no", "maybe", "waitlist"].includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    // TODO: Check if current user is the guide/organizer of this meeting
-    // For now, allow any logged-in user to update (should be restricted later)
+    // TODO: verify current user is the thread's author (organizer).
 
     await db`
-      UPDATE meeting_attendees
-      SET attendance_status = ${status}
-      WHERE meeting_id = ${meetingId} AND user_id = ${userId}
+      INSERT INTO thread_rsvps (thread_id, user_id, status)
+      VALUES (${threadId}, ${userId}, ${status})
+      ON CONFLICT (thread_id, user_id)
+      DO UPDATE SET status = ${status}, updated_at = NOW()
     `;
 
     return NextResponse.json({ success: true });

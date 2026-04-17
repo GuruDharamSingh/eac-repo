@@ -6,6 +6,48 @@ import type { QuestionPoll } from "@elkdonis/services";
 // Organization ID for InnerGathering
 const ORG_ID = 'inner_group';
 
+// ============================================================================
+// Unified-threads data layer.
+//
+// All content lives in the `threads` table discriminated by `kind`
+// ('meeting' | 'post' | 'workshop' | 'event'). This module still exposes
+// Meeting / Post / EventPage shapes so UI components don't break — the
+// mappers translate thread rows back into the legacy shapes.
+//
+//   meetings           -> threads WHERE kind = 'meeting'
+//   posts              -> threads WHERE kind = 'post'
+//   meeting.guide_id   -> thread.author_id  (aliased as guide_id in SQL)
+//   meeting.description-> thread.body
+//   meeting_attendees  -> thread_rsvps
+//   event_pages        -> thread.drawing + thread.metadata.event_page
+//   media attached_to  -> 'thread' (migration 030 retargeted the CHECK)
+// ============================================================================
+
+// Shared SELECT fragment for a thread row mapped to a Meeting-ish shape.
+// guide_* and has_event_page aliases keep mapMeeting() untouched.
+const THREAD_MEETING_COLUMNS = `
+  t.id, t.org_id, t.slug, t.title, t.status, t.visibility,
+  t.scheduled_at, t.duration_minutes, t.location, t.is_online,
+  t.meeting_url, t.recurrence_pattern, t.recurrence_custom_rule,
+  t.recurrence_until, t.is_rsvp_enabled, t.rsvp_deadline,
+  t.attendee_limit, t.min_attendees, t.notify_on_min_attendees,
+  t.min_attendees_notified, t.nextcloud_file_id,
+  t.nextcloud_talk_token, t.nextcloud_last_sync, t.document_url,
+  t.video_url, t.show_in_live_feed, t.view_count, t.reply_count,
+  t.metadata, t.created_at, t.published_at, t.updated_at,
+  t.body AS description,
+  t.author_id AS guide_id,
+  COALESCE(((t.metadata->>'event_page')::jsonb->>'isPublished')::boolean, false) AS has_event_page
+`;
+
+const THREAD_POST_COLUMNS = `
+  t.id, t.org_id, t.slug, t.title, t.body, t.excerpt, t.status,
+  t.visibility, t.nextcloud_file_id, t.nextcloud_last_sync,
+  t.metadata, t.created_at, t.published_at, t.updated_at,
+  t.view_count, t.reply_count,
+  t.author_id
+`;
+
 // Get all meetings, posts, and polls for the feed (filtered by inner_group org)
 export async function getFeed() {
   const [meetings, posts, questionPolls] = await Promise.all([
@@ -14,7 +56,6 @@ export async function getFeed() {
     getQuestionPollsByOrg(ORG_ID).catch(() => [] as QuestionPoll[]),
   ]);
 
-  // Combine and sort by created date
   const feedItems = [
     ...meetings.map((m) => ({
       type: "meeting" as const,
@@ -39,86 +80,56 @@ export async function getMeetingsByDateRange(
 ): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
-      m.nextcloud_talk_token,
-      u.display_name as guide_name,
-      u.avatar_url as guide_avatar,
-      (SELECT COUNT(*) FROM meeting_attendees WHERE meeting_id = m.id) as attendee_count,
-      EXISTS(SELECT 1 FROM event_pages ep WHERE ep.meeting_id = m.id AND ep.is_published = true) as has_event_page,
-      cover_media.id as cover_media_id,
-      cover_media.org_id as cover_media_org_id,
-      cover_media.uploaded_by as cover_media_uploaded_by,
-      cover_media.attached_to_type as cover_media_attached_to_type,
-      cover_media.attached_to_id as cover_media_attached_to_id,
-      cover_media.nextcloud_file_id as cover_media_nextcloud_file_id,
-      cover_media.nextcloud_path as cover_media_nextcloud_path,
-      cover_media.url as cover_media_url,
-      cover_media.type as cover_media_type,
-      cover_media.filename as cover_media_filename,
-      cover_media.size_bytes as cover_media_size_bytes,
-      cover_media.mime_type as cover_media_mime_type,
-      cover_media.caption as cover_media_caption,
-      cover_media.alt_text as cover_media_alt_text,
-      cover_media.created_at as cover_media_created_at,
-      media_list.media_items
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
+      ${db.unsafe(THREAD_MEETING_COLUMNS)},
+      u.display_name AS guide_name,
+      u.avatar_url AS guide_avatar,
+      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
     LEFT JOIN LATERAL (
-      SELECT
-        id,
-        org_id,
-        uploaded_by,
-        attached_to_type,
-        attached_to_id,
-        nextcloud_file_id,
-        nextcloud_path,
-        url,
-        type,
-        filename,
-        size_bytes,
-        mime_type,
-        caption,
-        alt_text,
-        created_at
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
       FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-        AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) cover_media ON TRUE
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
     LEFT JOIN LATERAL (
       SELECT COALESCE(
         json_agg(
           json_build_object(
-            'id', id,
-            'orgId', org_id,
-            'uploadedBy', uploaded_by,
-            'attachedToType', attached_to_type,
-            'attachedToId', attached_to_id,
-            'nextcloudFileId', nextcloud_file_id,
-            'nextcloudPath', nextcloud_path,
-            'url', url,
-            'type', type,
-            'filename', filename,
-            'sizeBytes', size_bytes,
-            'mimeType', mime_type,
-            'caption', caption,
-            'altText', alt_text,
-            'createdAt', created_at
+            'id', id, 'orgId', org_id, 'uploadedBy', uploaded_by,
+            'attachedToType', attached_to_type, 'attachedToId', attached_to_id,
+            'nextcloudFileId', nextcloud_file_id, 'nextcloudPath', nextcloud_path,
+            'url', url, 'type', type, 'filename', filename,
+            'sizeBytes', size_bytes, 'mimeType', mime_type,
+            'caption', caption, 'altText', alt_text, 'createdAt', created_at
           ) ORDER BY created_at DESC
         ),
         '[]'::json
       ) AS media_items
-      FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-    ) media_list ON TRUE
-    WHERE m.org_id = ${ORG_ID}
-      AND m.status = 'published'
-      AND m.scheduled_at >= ${startDate}
-      AND m.scheduled_at <= ${endDate}
-    ORDER BY m.scheduled_at ASC
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind = 'meeting'
+      AND t.org_id = ${ORG_ID}
+      AND t.status = 'published'
+      AND t.scheduled_at >= ${startDate}
+      AND t.scheduled_at <= ${endDate}
+    ORDER BY t.scheduled_at ASC
   `;
 
   return meetings.map(mapMeeting);
@@ -128,83 +139,54 @@ export async function getMeetingsByDateRange(
 export async function getMeetings(): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
-      m.nextcloud_talk_token,
-      u.display_name as guide_name,
-      u.avatar_url as guide_avatar,
-      (SELECT COUNT(*) FROM meeting_attendees WHERE meeting_id = m.id) as attendee_count,
-      EXISTS(SELECT 1 FROM event_pages ep WHERE ep.meeting_id = m.id AND ep.is_published = true) as has_event_page,
-      cover_media.id as cover_media_id,
-      cover_media.org_id as cover_media_org_id,
-      cover_media.uploaded_by as cover_media_uploaded_by,
-      cover_media.attached_to_type as cover_media_attached_to_type,
-      cover_media.attached_to_id as cover_media_attached_to_id,
-      cover_media.nextcloud_file_id as cover_media_nextcloud_file_id,
-      cover_media.nextcloud_path as cover_media_nextcloud_path,
-      cover_media.url as cover_media_url,
-      cover_media.type as cover_media_type,
-      cover_media.filename as cover_media_filename,
-      cover_media.size_bytes as cover_media_size_bytes,
-      cover_media.mime_type as cover_media_mime_type,
-      cover_media.caption as cover_media_caption,
-      cover_media.alt_text as cover_media_alt_text,
-      cover_media.created_at as cover_media_created_at,
-      media_list.media_items
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
+      ${db.unsafe(THREAD_MEETING_COLUMNS)},
+      u.display_name AS guide_name,
+      u.avatar_url AS guide_avatar,
+      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
     LEFT JOIN LATERAL (
-      SELECT
-        id,
-        org_id,
-        uploaded_by,
-        attached_to_type,
-        attached_to_id,
-        nextcloud_file_id,
-        nextcloud_path,
-        url,
-        type,
-        filename,
-        size_bytes,
-        mime_type,
-        caption,
-        alt_text,
-        created_at
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
       FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-        AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) cover_media ON TRUE
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
     LEFT JOIN LATERAL (
       SELECT COALESCE(
         json_agg(
           json_build_object(
-            'id', id,
-            'orgId', org_id,
-            'uploadedBy', uploaded_by,
-            'attachedToType', attached_to_type,
-            'attachedToId', attached_to_id,
-            'nextcloudFileId', nextcloud_file_id,
-            'nextcloudPath', nextcloud_path,
-            'url', url,
-            'type', type,
-            'filename', filename,
-            'sizeBytes', size_bytes,
-            'mimeType', mime_type,
-            'caption', caption,
-            'altText', alt_text,
-            'createdAt', created_at
+            'id', id, 'orgId', org_id, 'uploadedBy', uploaded_by,
+            'attachedToType', attached_to_type, 'attachedToId', attached_to_id,
+            'nextcloudFileId', nextcloud_file_id, 'nextcloudPath', nextcloud_path,
+            'url', url, 'type', type, 'filename', filename,
+            'sizeBytes', size_bytes, 'mimeType', mime_type,
+            'caption', caption, 'altText', alt_text, 'createdAt', created_at
           ) ORDER BY created_at DESC
         ),
         '[]'::json
       ) AS media_items
-      FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-    ) media_list ON TRUE
-    WHERE m.org_id = ${ORG_ID} AND m.status = 'published'
-    ORDER BY m.created_at DESC
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind IN ('meeting', 'workshop')
+      AND t.org_id = ${ORG_ID}
+      AND t.status = 'published'
+    ORDER BY t.created_at DESC
     LIMIT 50
   `;
 
@@ -215,42 +197,34 @@ export async function getMeetings(): Promise<Meeting[]> {
 export async function getRecurringMeetings(): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
-      m.nextcloud_talk_token,
-      u.display_name as guide_name,
-      u.avatar_url as guide_avatar,
-      (SELECT COUNT(*) FROM meeting_attendees WHERE meeting_id = m.id) as attendee_count,
-      EXISTS(SELECT 1 FROM event_pages ep WHERE ep.meeting_id = m.id AND ep.is_published = true) as has_event_page,
-      cover_media.id as cover_media_id,
-      cover_media.org_id as cover_media_org_id,
-      cover_media.uploaded_by as cover_media_uploaded_by,
-      cover_media.attached_to_type as cover_media_attached_to_type,
-      cover_media.attached_to_id as cover_media_attached_to_id,
-      cover_media.nextcloud_file_id as cover_media_nextcloud_file_id,
-      cover_media.nextcloud_path as cover_media_nextcloud_path,
-      cover_media.url as cover_media_url,
-      cover_media.type as cover_media_type,
-      cover_media.filename as cover_media_filename,
-      cover_media.size_bytes as cover_media_size_bytes,
-      cover_media.mime_type as cover_media_mime_type,
-      cover_media.caption as cover_media_caption,
-      cover_media.alt_text as cover_media_alt_text,
-      cover_media.created_at as cover_media_created_at,
-      media_list.media_items
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
+      ${db.unsafe(THREAD_MEETING_COLUMNS)},
+      u.display_name AS guide_name,
+      u.avatar_url AS guide_avatar,
+      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
     LEFT JOIN LATERAL (
-      SELECT
-        id, org_id, uploaded_by, attached_to_type, attached_to_id,
-        nextcloud_file_id, nextcloud_path, url, type, filename,
-        size_bytes, mime_type, caption, alt_text, created_at
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
       FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-        AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) cover_media ON TRUE
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
     LEFT JOIN LATERAL (
       SELECT COALESCE(
         json_agg(
@@ -265,15 +239,13 @@ export async function getRecurringMeetings(): Promise<Meeting[]> {
         ),
         '[]'::json
       ) AS media_items
-      FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-    ) media_list ON TRUE
-    WHERE m.org_id = ${ORG_ID}
-      AND m.status = 'published'
-      AND m.recurrence_pattern IS NOT NULL
-      AND m.recurrence_pattern != 'NONE'
-    ORDER BY m.scheduled_at ASC
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind = 'meeting'
+      AND t.org_id = ${ORG_ID}
+      AND t.status = 'published'
+      AND t.recurrence_pattern IS NOT NULL
+    ORDER BY t.scheduled_at ASC
     LIMIT 20
   `;
 
@@ -284,38 +256,35 @@ export async function getRecurringMeetings(): Promise<Meeting[]> {
 export async function getPosts(): Promise<Post[]> {
   const posts = await db`
     SELECT
-      p.*,
-      u.display_name as author_name,
-      cover_media.id as cover_media_id,
-      cover_media.org_id as cover_media_org_id,
-      cover_media.uploaded_by as cover_media_uploaded_by,
-      cover_media.attached_to_type as cover_media_attached_to_type,
-      cover_media.attached_to_id as cover_media_attached_to_id,
-      cover_media.nextcloud_file_id as cover_media_nextcloud_file_id,
-      cover_media.nextcloud_path as cover_media_nextcloud_path,
-      cover_media.url as cover_media_url,
-      cover_media.type as cover_media_type,
-      cover_media.filename as cover_media_filename,
-      cover_media.size_bytes as cover_media_size_bytes,
-      cover_media.mime_type as cover_media_mime_type,
-      cover_media.caption as cover_media_caption,
-      cover_media.alt_text as cover_media_alt_text,
-      cover_media.created_at as cover_media_created_at,
-      media_list.media_items
-    FROM posts p
-    LEFT JOIN users u ON p.author_id = u.id
+      t.id, t.org_id, t.slug, t.title, t.body, t.excerpt, t.status,
+      t.visibility, t.nextcloud_file_id, t.nextcloud_last_sync,
+      t.metadata, t.created_at, t.published_at, t.updated_at,
+      t.view_count, t.reply_count, t.author_id,
+      u.display_name AS author_name,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
     LEFT JOIN LATERAL (
-      SELECT
-        id, org_id, uploaded_by, attached_to_type, attached_to_id,
-        nextcloud_file_id, nextcloud_path, url, type, filename,
-        size_bytes, mime_type, caption, alt_text, created_at
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
       FROM media
-      WHERE attached_to_type = 'post'
-        AND attached_to_id = p.id
-        AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) cover_media ON TRUE
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
     LEFT JOIN LATERAL (
       SELECT COALESCE(
         json_agg(
@@ -330,18 +299,19 @@ export async function getPosts(): Promise<Post[]> {
         ),
         '[]'::json
       ) AS media_items
-      FROM media
-      WHERE attached_to_type = 'post' AND attached_to_id = p.id
-    ) media_list ON TRUE
-    WHERE p.org_id = ${ORG_ID} AND p.status = 'published'
-    ORDER BY p.created_at DESC
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind = 'post'
+      AND t.org_id = ${ORG_ID}
+      AND t.status = 'published'
+    ORDER BY t.created_at DESC
     LIMIT 50
   `;
 
   return posts.map(mapPost);
 }
 
-// Create a new meeting (only title and time required)
+// Create a new meeting (thread with kind='meeting')
 export async function createMeeting(params: {
   userId: string;
   title: string;
@@ -373,34 +343,34 @@ export async function createMeeting(params: {
   }>;
 }): Promise<Meeting> {
   const slug = slugify(params.title);
-
-  const meetingId = generateId();
-
+  const threadId = generateId();
   const scheduledAt = params.scheduledAt;
 
-  const [meeting] = await db`
-    INSERT INTO meetings (
-      id, org_id, guide_id, title, slug,
-      description, scheduled_at, duration_minutes, location,
+  const [thread] = await db`
+    INSERT INTO threads (
+      id, org_id, author_id, kind, title, slug,
+      body, scheduled_at, duration_minutes, location,
       is_online, meeting_url, visibility, status,
       nextcloud_file_id, video_url, is_rsvp_enabled, rsvp_deadline,
       min_attendees, notify_on_min_attendees,
       recurrence_pattern, recurrence_custom_rule, recurrence_until,
-      show_in_live_feed
+      show_in_live_feed, published_at
     ) VALUES (
-      ${meetingId}, ${ORG_ID}, ${params.userId}, ${params.title},
-      ${slug}, ${params.description || null},
+      ${threadId}, ${ORG_ID}, ${params.userId}, 'meeting', ${params.title},
+      ${slug}, ${params.description || ''},
       ${scheduledAt}, ${params.durationMinutes || null}, ${params.location || null},
       ${params.isOnline ?? false}, ${params.meetingUrl || null},
       ${params.visibility || 'PUBLIC'}, 'published',
       ${params.nextcloudDocumentId || null}, ${params.documentUrl || null},
       ${params.isRSVPEnabled ?? false}, ${params.rsvpDeadline || null},
       ${params.minAttendees || null}, ${params.notifyOnMinAttendees ?? false},
-      ${params.recurrencePattern && params.recurrencePattern !== 'NONE' ? params.recurrencePattern : null}, ${params.recurrenceCustomRule || null},
+      ${params.recurrencePattern && params.recurrencePattern !== 'NONE' ? params.recurrencePattern : null},
+      ${params.recurrenceCustomRule || null},
       ${params.recurrenceUntil || null},
-      ${params.showInLiveFeed ?? false}
+      ${params.showInLiveFeed ?? false},
+      NOW()
     )
-    RETURNING *
+    RETURNING *, body AS description, author_id AS guide_id
   `;
 
   // Persist uploaded media, if any
@@ -412,7 +382,7 @@ export async function createMeeting(params: {
           nextcloud_file_id, nextcloud_path, url, type,
           filename, size_bytes, mime_type
         ) VALUES (
-          ${generateId()}, ${ORG_ID}, ${params.userId}, 'meeting', ${meetingId},
+          ${generateId()}, ${ORG_ID}, ${params.userId}, 'thread', ${threadId},
           ${media.fileId}, ${media.path}, ${media.url}, ${media.type},
           ${media.filename}, ${media.size}, ${media.mimeType}
         )
@@ -420,10 +390,10 @@ export async function createMeeting(params: {
     }
   }
 
-  return mapMeeting(meeting);
+  return mapMeeting(thread);
 }
 
-// Create a new post
+// Create a new post (thread with kind='post')
 export async function createPost(params: {
   userId: string;
   title: string;
@@ -444,23 +414,23 @@ export async function createPost(params: {
   }>;
 }): Promise<Post> {
   const slug = slugify(params.title);
-  const postId = generateId();
+  const threadId = generateId();
   const effectiveOrgId = params.orgId || ORG_ID;
 
-  const [post] = await db`
-    INSERT INTO posts (
-      id, org_id, author_id, title, slug, body, excerpt,
-      visibility, status, nextcloud_talk_token, document_url
+  const [thread] = await db`
+    INSERT INTO threads (
+      id, org_id, author_id, kind, title, slug, body, excerpt,
+      visibility, status, nextcloud_talk_token, document_url, published_at
     ) VALUES (
-      ${postId}, ${effectiveOrgId}, ${params.userId}, ${params.title},
+      ${threadId}, ${effectiveOrgId}, ${params.userId}, 'post', ${params.title},
       ${slug}, ${params.body}, ${params.excerpt || null},
       ${params.visibility || 'PUBLIC'}, 'published',
-      ${params.nextcloudTalkToken || null}, ${params.documentUrl || null}
+      ${params.nextcloudTalkToken || null}, ${params.documentUrl || null},
+      NOW()
     )
     RETURNING *
   `;
 
-  // Persist uploaded media, if any
   if (params.media?.length) {
     for (const media of params.media) {
       await db`
@@ -469,7 +439,7 @@ export async function createPost(params: {
           nextcloud_file_id, nextcloud_path, url, type,
           filename, size_bytes, mime_type
         ) VALUES (
-          ${generateId()}, ${effectiveOrgId}, ${params.userId}, 'post', ${postId},
+          ${generateId()}, ${effectiveOrgId}, ${params.userId}, 'thread', ${threadId},
           ${media.fileId}, ${media.path}, ${media.url}, ${media.type},
           ${media.filename}, ${media.size}, ${media.mimeType}
         )
@@ -477,49 +447,41 @@ export async function createPost(params: {
     }
   }
 
-  return mapPost(post);
+  return mapPost(thread);
 }
 
 // Get a single meeting by ID
 export async function getMeetingById(id: string): Promise<Meeting | null> {
   const meetings = await db`
     SELECT
-      m.*,
-      m.nextcloud_talk_token,
-      u.display_name as guide_name,
-      u.avatar_url as guide_avatar,
-      (SELECT COUNT(*) FROM meeting_attendees WHERE meeting_id = m.id) as attendee_count,
-      EXISTS(SELECT 1 FROM event_pages ep WHERE ep.meeting_id = m.id AND ep.is_published = true) as has_event_page,
-      cover_media.id as cover_media_id,
-      cover_media.org_id as cover_media_org_id,
-      cover_media.uploaded_by as cover_media_uploaded_by,
-      cover_media.attached_to_type as cover_media_attached_to_type,
-      cover_media.attached_to_id as cover_media_attached_to_id,
-      cover_media.nextcloud_file_id as cover_media_nextcloud_file_id,
-      cover_media.nextcloud_path as cover_media_nextcloud_path,
-      cover_media.url as cover_media_url,
-      cover_media.type as cover_media_type,
-      cover_media.filename as cover_media_filename,
-      cover_media.size_bytes as cover_media_size_bytes,
-      cover_media.mime_type as cover_media_mime_type,
-      cover_media.caption as cover_media_caption,
-      cover_media.alt_text as cover_media_alt_text,
-      cover_media.created_at as cover_media_created_at,
-      media_list.media_items
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
+      ${db.unsafe(THREAD_MEETING_COLUMNS)},
+      u.display_name AS guide_name,
+      u.avatar_url AS guide_avatar,
+      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
     LEFT JOIN LATERAL (
-      SELECT
-        id, org_id, uploaded_by, attached_to_type, attached_to_id,
-        nextcloud_file_id, nextcloud_path, url, type, filename,
-        size_bytes, mime_type, caption, alt_text, created_at
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
       FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-        AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) cover_media ON TRUE
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
     LEFT JOIN LATERAL (
       SELECT COALESCE(
         json_agg(
@@ -534,11 +496,9 @@ export async function getMeetingById(id: string): Promise<Meeting | null> {
         ),
         '[]'::json
       ) AS media_items
-      FROM media
-      WHERE attached_to_type = 'meeting'
-        AND attached_to_id = m.id
-    ) media_list ON TRUE
-    WHERE m.id = ${id} AND m.org_id = ${ORG_ID}
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind = 'meeting' AND t.id = ${id} AND t.org_id = ${ORG_ID}
     LIMIT 1
   `;
 
@@ -546,35 +506,46 @@ export async function getMeetingById(id: string): Promise<Meeting | null> {
   return mapMeeting(meetings[0]);
 }
 
-// Get event page by meeting ID
+// ============================================================================
+// Event-page API backed by threads.drawing + threads.metadata.event_page.
+// Migration 030 dropped the event_pages table; content/colors/tableData/layout
+// are stashed in the thread's JSONB metadata for now.
+// ============================================================================
+
 export async function getEventPage(meetingId: string): Promise<EventPage | null> {
   const rows = await db`
-    SELECT * FROM event_pages
-    WHERE meeting_id = ${meetingId} AND org_id = ${ORG_ID}
+    SELECT id, metadata, drawing, created_at, updated_at
+    FROM threads
+    WHERE kind = 'meeting' AND id = ${meetingId} AND org_id = ${ORG_ID}
     LIMIT 1
   `;
-
   if (rows.length === 0) return null;
-  return mapEventPage(rows[0]);
+  return mapEventPageFromThread(rows[0]);
 }
 
-// Create event page for a meeting
 export async function createEventPage(
   meetingId: string,
   publish = true,
   tableData?: { columns: string[]; rows: string[][] }
 ): Promise<EventPage> {
-  const id = generateId();
-  const hasTable = tableData && tableData.columns.length > 0;
+  const ep: Record<string, unknown> = { isPublished: publish };
+  if (tableData && tableData.columns.length > 0) ep.tableData = tableData;
+
   const [row] = await db`
-    INSERT INTO event_pages (id, meeting_id, org_id, is_published${hasTable ? db`, table_data` : db``})
-    VALUES (${id}, ${meetingId}, ${ORG_ID}, ${publish}${hasTable ? db`, ${JSON.stringify(tableData)}` : db``})
-    RETURNING *
+    UPDATE threads
+    SET metadata = jsonb_set(
+          COALESCE(metadata, '{}'::jsonb),
+          '{event_page}',
+          ${JSON.stringify(ep)}::jsonb,
+          true
+        ),
+        updated_at = NOW()
+    WHERE kind = 'meeting' AND id = ${meetingId} AND org_id = ${ORG_ID}
+    RETURNING id, metadata, drawing, created_at, updated_at
   `;
-  return mapEventPage(row);
+  return mapEventPageFromThread(row);
 }
 
-// Update event page
 export async function updateEventPage(
   meetingId: string,
   updates: {
@@ -586,54 +557,90 @@ export async function updateEventPage(
     isPublished?: boolean;
   }
 ): Promise<EventPage | null> {
-  const setClauses: string[] = [];
-  const values: Record<string, unknown> = {};
+  // drawing is first-class on threads; everything else merges into metadata.event_page
+  const epPatch: Record<string, unknown> = {};
+  if (updates.content !== undefined) epPatch.content = updates.content;
+  if (updates.colors !== undefined) epPatch.colors = updates.colors;
+  if (updates.tableData !== undefined) epPatch.tableData = updates.tableData;
+  if (updates.layout !== undefined) epPatch.layout = updates.layout;
+  if (updates.isPublished !== undefined) epPatch.isPublished = updates.isPublished;
 
-  if (updates.content !== undefined) values.content = JSON.stringify(updates.content);
-  if (updates.colors !== undefined) values.colors = JSON.stringify(updates.colors);
-  if (updates.tableData !== undefined) values.table_data = JSON.stringify(updates.tableData);
-  if (updates.layout !== undefined) values.layout = updates.layout;
-  if (updates.drawing !== undefined) values.drawing = updates.drawing ? JSON.stringify(updates.drawing) : null;
-  if (updates.isPublished !== undefined) values.is_published = updates.isPublished;
+  const hasEpPatch = Object.keys(epPatch).length > 0;
+  const hasDrawing = updates.drawing !== undefined;
 
-  if (Object.keys(values).length === 0) return getEventPage(meetingId);
+  if (!hasEpPatch && !hasDrawing) return getEventPage(meetingId);
 
-  const rows = await db`
-    UPDATE event_pages SET
-      ${db(values, ...Object.keys(values))}
-    WHERE meeting_id = ${meetingId} AND org_id = ${ORG_ID}
-    RETURNING *
-  `;
+  let rows;
+  if (hasEpPatch && hasDrawing) {
+    rows = await db`
+      UPDATE threads
+      SET drawing = ${updates.drawing ? JSON.stringify(updates.drawing) : null}::jsonb,
+          metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{event_page}',
+            COALESCE(metadata->'event_page', '{}'::jsonb) || ${JSON.stringify(epPatch)}::jsonb,
+            true
+          ),
+          updated_at = NOW()
+      WHERE kind = 'meeting' AND id = ${meetingId} AND org_id = ${ORG_ID}
+      RETURNING id, metadata, drawing, created_at, updated_at
+    `;
+  } else if (hasDrawing) {
+    rows = await db`
+      UPDATE threads
+      SET drawing = ${updates.drawing ? JSON.stringify(updates.drawing) : null}::jsonb,
+          updated_at = NOW()
+      WHERE kind = 'meeting' AND id = ${meetingId} AND org_id = ${ORG_ID}
+      RETURNING id, metadata, drawing, created_at, updated_at
+    `;
+  } else {
+    rows = await db`
+      UPDATE threads
+      SET metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{event_page}',
+            COALESCE(metadata->'event_page', '{}'::jsonb) || ${JSON.stringify(epPatch)}::jsonb,
+            true
+          ),
+          updated_at = NOW()
+      WHERE kind = 'meeting' AND id = ${meetingId} AND org_id = ${ORG_ID}
+      RETURNING id, metadata, drawing, created_at, updated_at
+    `;
+  }
 
   if (rows.length === 0) return null;
-  return mapEventPage(rows[0]);
+  return mapEventPageFromThread(rows[0]);
 }
 
-function mapEventPage(row: any): EventPage {
+function mapEventPageFromThread(row: any): EventPage {
+  const meta = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : (row.metadata || {});
+  const ep = meta.event_page || {};
+  const rawTable = ep.tableData || {};
   return {
     id: row.id,
-    meetingId: row.meeting_id,
-    orgId: row.org_id,
-    content: typeof row.content === 'string' ? JSON.parse(row.content) : (row.content || {}),
-    colors: typeof row.colors === 'string' ? JSON.parse(row.colors) : (row.colors || {}),
-    tableData: (() => {
-      const raw = typeof row.table_data === 'string' ? JSON.parse(row.table_data) : (row.table_data || {});
-      return {
-        columns: Array.isArray(raw.columns) ? raw.columns : [],
-        rows: Array.isArray(raw.rows) ? raw.rows : [],
-      };
-    })(),
-    layout: row.layout || 'default',
+    meetingId: row.id,
+    orgId: ORG_ID,
+    content: ep.content || {},
+    colors: ep.colors || {},
+    tableData: {
+      columns: Array.isArray(rawTable.columns) ? rawTable.columns : [],
+      rows: Array.isArray(rawTable.rows) ? rawTable.rows : [],
+    },
+    layout: ep.layout || 'default',
     drawing: row.drawing
       ? (typeof row.drawing === 'string' ? JSON.parse(row.drawing) : row.drawing)
       : null,
-    isPublished: row.is_published ?? false,
+    isPublished: ep.isPublished ?? false,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
 }
 
-// Helper functions
+// ============================================================================
+// Row-to-shape mappers (unchanged — queries alias thread columns into the
+// legacy field names the mappers expect).
+// ============================================================================
+
 function mapMeeting(row: any): Meeting {
   return {
     id: row.id,
@@ -655,7 +662,7 @@ function mapMeeting(row: any): Meeting {
     recurrencePattern: row.recurrence_pattern || undefined,
     recurrenceCustomRule: row.recurrence_custom_rule || undefined,
     recurrenceUntil: row.recurrence_until ? new Date(row.recurrence_until) : undefined,
-    hasEventPage: row.has_event_page ?? false,
+    hasEventPage: row.has_event_page === true || row.has_event_page === 'true' || row.has_event_page === 't',
     isRSVPEnabled: row.is_rsvp_enabled ?? false,
     rsvpDeadline: row.rsvp_deadline || undefined,
     attendeeLimit: row.attendee_limit || undefined,
@@ -670,7 +677,7 @@ function mapMeeting(row: any): Meeting {
     nextcloudFileId: row.nextcloud_file_id || undefined,
     nextcloudLastSync: row.nextcloud_last_sync || undefined,
     nextcloudTalkToken: row.nextcloud_talk_token || undefined,
-    documentUrl: row.video_url || undefined,
+    documentUrl: row.document_url || undefined,
     nextcloudDocumentId: row.nextcloud_file_id || undefined,
     metadata: row.metadata || undefined,
     createdAt: row.created_at,

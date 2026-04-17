@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
 
     // Confirm meeting exists and is published
     const [meeting] = await db<{ id: string; title: string }[]>`
-      SELECT id, title FROM meetings
-      WHERE id = ${meeting_id} AND org_id = ${ORG_ID} AND status = 'published'
+      SELECT id, title FROM threads
+      WHERE kind = 'meeting' AND id = ${meeting_id} AND org_id = ${ORG_ID} AND status = 'published'
       LIMIT 1
     `;
     if (!meeting) {
@@ -26,16 +26,15 @@ export async function POST(req: NextRequest) {
     const id = nanoid();
 
     await db`
-      INSERT INTO rsvp_responses (id, meeting_id, org_id, name, email, phone, message, wants_reminder)
+      INSERT INTO guest_submissions (id, thread_id, kind, name, email, message, metadata)
       VALUES (
         ${id},
         ${meeting_id},
-        ${ORG_ID},
+        'rsvp',
         ${name.trim()},
         ${email?.trim() || null},
-        ${phone?.trim() || null},
         ${message?.trim() || null},
-        ${wants_reminder ?? false}
+        ${db.json({ phone: phone?.trim() || null, wants_reminder: wants_reminder ?? false })}
       )
     `;
 
@@ -58,7 +57,8 @@ export async function POST(req: NextRequest) {
     }
 
     const [{ count }] = await db<{ count: string }[]>`
-      SELECT COUNT(*) as count FROM rsvp_responses WHERE meeting_id = ${meeting_id}
+      SELECT COUNT(*) as count FROM guest_submissions
+      WHERE thread_id = ${meeting_id} AND kind = 'rsvp'
     `;
 
     return NextResponse.json({ ok: true, rsvp_count: parseInt(count, 10) });

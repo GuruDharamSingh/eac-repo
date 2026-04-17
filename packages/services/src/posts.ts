@@ -19,14 +19,15 @@ interface CreatePostData {
 interface UpdatePostData extends Partial<CreatePostData> {}
 
 /**
- * Create a new post
+ * Create a new post (thread with kind='post')
  */
 export async function createPost(data: CreatePostData): Promise<Post> {
   const slug = data.slug || slugify(data.title);
   const metadata = data.metadata ?? {};
 
   const [post] = await db`
-    INSERT INTO posts (
+    INSERT INTO threads (
+      kind,
       title,
       slug,
       org_id,
@@ -37,8 +38,10 @@ export async function createPost(data: CreatePostData): Promise<Post> {
       visibility,
       nextcloud_file_id,
       nextcloud_last_sync,
-      metadata
+      metadata,
+      published_at
     ) VALUES (
+      'post',
       ${data.title},
       ${slug},
       ${data.orgId},
@@ -49,7 +52,8 @@ export async function createPost(data: CreatePostData): Promise<Post> {
       ${data.visibility || 'org'},
       ${data.nextcloudFileId || null},
       ${data.nextcloudLastSync || null},
-      ${db.json(metadata as any)}
+      ${db.json(metadata as any)},
+      NOW()
     )
     RETURNING *
   `;
@@ -65,12 +69,13 @@ export async function getPostsByOrg(
   limit = 50
 ): Promise<Post[]> {
   const posts = await db`
-    SELECT p.*, u.display_name as author_name, u.email as author_email
-    FROM posts p
-    LEFT JOIN users u ON p.author_id = u.id
-    WHERE p.org_id = ${orgId}
-      AND p.status = 'published'
-    ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
+    SELECT t.*, u.display_name as author_name, u.email as author_email
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'post'
+      AND t.org_id = ${orgId}
+      AND t.status = 'published'
+    ORDER BY t.published_at DESC NULLS LAST, t.created_at DESC
     LIMIT ${limit}
   `;
 
@@ -86,20 +91,22 @@ export async function getRecentPosts(
 ): Promise<Post[]> {
   const posts = await (orgId
     ? db`
-        SELECT p.*, u.display_name as author_name, u.email as author_email
-        FROM posts p
-        LEFT JOIN users u ON p.author_id = u.id
-        WHERE p.org_id = ${orgId}
-          AND p.status = 'published'
-        ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
+        SELECT t.*, u.display_name as author_name, u.email as author_email
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'post'
+          AND t.org_id = ${orgId}
+          AND t.status = 'published'
+        ORDER BY t.published_at DESC NULLS LAST, t.created_at DESC
         LIMIT ${limit}
       `
     : db`
-        SELECT p.*, u.display_name as author_name, u.email as author_email
-        FROM posts p
-        LEFT JOIN users u ON p.author_id = u.id
-        WHERE p.status = 'published'
-        ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
+        SELECT t.*, u.display_name as author_name, u.email as author_email
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'post'
+          AND t.status = 'published'
+        ORDER BY t.published_at DESC NULLS LAST, t.created_at DESC
         LIMIT ${limit}
       `);
 
@@ -115,19 +122,21 @@ export async function getPostBySlug(
 ): Promise<Post | null> {
   const posts = await (orgId
     ? db`
-        SELECT p.*, u.display_name as author_name, u.email as author_email
-        FROM posts p
-        LEFT JOIN users u ON p.author_id = u.id
-        WHERE p.slug = ${slug}
-          AND p.org_id = ${orgId}
-          AND p.status = 'published'
+        SELECT t.*, u.display_name as author_name, u.email as author_email
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'post'
+          AND t.slug = ${slug}
+          AND t.org_id = ${orgId}
+          AND t.status = 'published'
       `
     : db`
-        SELECT p.*, u.display_name as author_name, u.email as author_email
-        FROM posts p
-        LEFT JOIN users u ON p.author_id = u.id
-        WHERE p.slug = ${slug}
-          AND p.status = 'published'
+        SELECT t.*, u.display_name as author_name, u.email as author_email
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'post'
+          AND t.slug = ${slug}
+          AND t.status = 'published'
       `);
 
   const [post] = posts;
@@ -154,9 +163,9 @@ export async function updatePost(
   if (data.metadata !== undefined) updates.metadata = db.json(data.metadata as any);
 
   const [post] = await db`
-    UPDATE posts
+    UPDATE threads
     SET ${db(updates)}, updated_at = NOW()
-    WHERE id = ${id}
+    WHERE kind = 'post' AND id = ${id}
     RETURNING *
   `;
 
@@ -168,9 +177,9 @@ export async function updatePost(
  */
 export async function deletePost(id: string): Promise<void> {
   await db`
-    UPDATE posts
+    UPDATE threads
     SET status = 'archived', updated_at = NOW()
-    WHERE id = ${id}
+    WHERE kind = 'post' AND id = ${id}
   `;
 }
 

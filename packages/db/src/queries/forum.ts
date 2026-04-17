@@ -354,14 +354,13 @@ export async function getThread(slug: string, userId?: string) {
 // REPLIES QUERY
 // ============================================================================
 
-export async function getReplies(threadId: string, threadType: 'post' | 'meeting', sort: 'oldest' | 'newest' | 'reactions' = 'oldest') {
+export async function getReplies(threadId: string, threadType: 'post' | 'meeting' | 'workshop', sort: 'oldest' | 'newest' | 'reactions' = 'oldest') {
   const replies = await db<Reply[]>`
     SELECT
       r.id,
-      CASE
-        WHEN r.parent_type = 'reply' THEN r.parent_id
-        ELSE NULL
-      END AS parent_id,
+      r.thread_id,
+      r.parent_reply_id AS parent_id,
+      r.session_id,
       r.user_id,
       r.content,
       r.created_at,
@@ -378,17 +377,7 @@ export async function getReplies(threadId: string, threadType: 'post' | 'meeting
       ) AS user_initials
     FROM replies r
     JOIN users u ON u.id = r.user_id
-    WHERE (
-        r.parent_type = ${threadType}
-        AND r.parent_id = ${threadId}
-      )
-      OR (
-        r.parent_type = 'reply'
-        AND r.parent_id IN (
-          SELECT id FROM replies
-          WHERE parent_type = ${threadType} AND parent_id = ${threadId}
-        )
-      )
+    WHERE r.thread_id = ${threadId}
     ORDER BY
       ${sort === 'newest' ? db`r.created_at DESC` :
         sort === 'reactions' ? db`r.reaction_count DESC, r.created_at ASC` :

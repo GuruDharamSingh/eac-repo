@@ -17,7 +17,10 @@
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
     "db:setup": "tsx -e \"import('./src/schemas.ts').then(m => m.setupDatabase())\"",
-    "db:migrate": "node scripts/migrate.js",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate:status": "node scripts/migrate.mjs --status",
+    "db:migrate:backfill": "node scripts/migrate.mjs --backfill",
+    "db:migrate:verify": "node scripts/migrate.mjs --verify",
     "db:seed": "tsx src/seed.ts"
   },
   "files": [

@@ -8,29 +8,31 @@ This is a **multi-organization monorepo** built with pnpm, Turborepo, and Next.j
 
 The core architectural concepts are:
 - **Single-Schema Database with org_id Filtering**: A single PostgreSQL database with one schema serves all applications. Content is logically separated using an `org_id` column on each table (simpler than schema-per-org). This makes queries straightforward and aggregation across orgs trivial.
-- **Event-Driven Content Aggregation**: Individual apps (like blogs) operate independently. When a user creates a post with `share_to_forum = true`, it's automatically added to a `forum_queue` table. An admin must approve it via the `admin` app for it to be copied into the `forum_posts` table for display in the central `forum` app.
+- **Direct Forum Aggregation**: Individual apps (like blogs) operate independently. The forum app reads directly from `posts`/`meetings`/`replies` across all orgs — there is NO queue table, NO approval step, and NO content copying. Admins control forum surfacing through moderation actions (hide, pin, lock, visibility override) logged in the `events` table.
 - **Dockerized Environment**: All services (PostgreSQL, Supabase for auth, Nextcloud for storage, Redis, and all Next.js apps) are managed via `docker-compose.yml`.
 
 ## 2. Key Files & Directories
 
 - **`docker-compose.yml`**: Defines the entire development stack. This is the source of truth for what services are running and on which ports.
-- **`SETUP-NEXT-STEPS.md`**: **CRITICAL READ**. This file contains the step-by-step commands to get the project running from scratch.
+- **`CLAUDE.md`**: Primary AI agent guide — architecture, conventions, commands.
 - **`apps/`**: Contains the individual Next.js applications.
-  - `admin`: Central dashboard for monitoring and approving content for the forum.
-  - `forum`: The public, aggregated content feed.
+  - `admin`: Central dashboard for moderation, user management, RSVP review.
+  - `forum`: The public, aggregated content feed (reads cross-org directly).
   - `blog-*`: Individual blog applications for each organization.
+  - `inner-gathering`, `amrit-canada`, `elkdonis-arts-collective`: Community and landing apps.
 - **`packages/`**: Shared libraries used across the monorepo.
   - **`db`**: The most critical package.
-    - `src/schemas.ts`: Defines the database table creation logic (single schema, all tables in public).
-    - `src/events.ts`: Contains the logic for logging events and handling the forum queue/approval workflow.
+    - `src/schemas.ts`: Baseline table definitions (`setupDatabase()`) used for fresh bootstrap. Has drift vs. live DB; see `schema-snapshot-*.sql` for canonical state.
+    - `src/events.ts`: Activity audit log (wide-net logging + admin moderation actions).
     - `src/client.ts`: The PostgreSQL client setup (using the `postgres` npm package).
-    - `src/forum-sync.ts`: Helper functions for the forum app (pagination, replies, search).
-  - **`auth`**: Shared authentication logic (using the self-hosted Supabase instance).
+    - `scripts/migrate.mjs`: Transactional migration runner; tracks applied files in `app_schema_migrations`.
+    - `migrations/*.sql`: Migration source of truth, applied in lex order.
+  - **`auth-server` / `auth-client`**: Shared authentication logic (self-hosted Supabase GoTrue).
   - **`ui`**: Shared Mantine UI components.
 
 ## 3. Critical Developer Workflows
 
-The development workflow is not a simple `pnpm dev`. Follow the steps in `SETUP-NEXT-STEPS.md`. The key commands are:
+The development workflow is Docker-first. See `CLAUDE.md` → "Essential Commands" for the full reference. The key commands are:
 
 1.  **Install Dependencies**:
     ```bash
@@ -96,13 +98,9 @@ const post = {
 await db`INSERT INTO posts ${db(post)}`;
 ```
 
-### Forum Workflow
+### Forum Aggregation
 
-1. User publishes a post with `share_to_forum = true`
-2. Call `Events.submitToForumQueue(postId, orgId)` to add it to the queue
-3. Admin views queue with `Events.getForumQueue()`
-4. Admin approves with `Events.approveForForum(queueId, adminId)` - this copies the post to `forum_posts`
-5. Forum app displays posts from `forum_posts` table
+The forum app reads content directly from `posts`, `meetings`, and `replies` — filtered by visibility and `org_id`. There is no queue, no copy, no approval. To control what surfaces, use the admin moderation actions in `Events` (`hideContent`, `overrideVisibility`, `pinContent`, `lockContent`) which log to the `events` audit table.
 
 ## 5. Code Conventions
 

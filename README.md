@@ -21,11 +21,13 @@ Self-hosted network of interconnected apps with shared authentication and conten
 
 ```
 apps/
-├── inner-gathering/     Port 3004 - Mobile-first community app
-├── forum/               Port 3003 - Cross-org content aggregator
-├── admin/               Port 3000 - Admin dashboard
-├── blog-sunjay/         Port 3001 - Personal blog
-└── blog-guru-dharam/    Port 3002 - Personal blog
+├── admin/                       Port 3000 - Admin dashboard
+├── blog-sunjay/                 Port 3001 - Personal blog (org: sunjay)
+├── blog-guru-dharam/            Port 3002 - Personal blog (org: guru-dharam)
+├── forum/                       Port 3003 - Cross-org content aggregator
+├── inner-gathering/             Port 3004 - Mobile-first community app
+├── elkdonis-arts-collective/    Port 3005 - Public landing + workshops showcase
+└── amrit-canada/                Port 3006 - Community app (org: amrit_canada)
 ```
 
 ## Database Schema
@@ -49,12 +51,13 @@ media                   Nextcloud-backed attachments
 **System tables:**
 ```
 events                  Activity audit log
+app_schema_migrations   Migration runner state (filename + checksum)
 post_topics             Post-tag junction
 meeting_topics          Meeting-tag junction
 meeting_attendees       RSVP tracking
 ```
 
-**Forum tables (migration pending):**
+**Forum engagement tables:**
 ```
 reactions               Likes/upvotes (polymorphic)
 watches                 Thread subscriptions

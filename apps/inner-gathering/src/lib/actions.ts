@@ -186,11 +186,11 @@ export async function createMeetingAction(payload: {
           type: 'public',
         });
 
-        // Update meeting with Talk room token
+        // Update thread (meeting) with Talk room token
         await db`
-          UPDATE meetings
+          UPDATE threads
           SET nextcloud_talk_token = ${room.token}
-          WHERE id = ${meeting.id}
+          WHERE id = ${meeting.id} AND kind = 'meeting'
         `;
 
         talkRoomCreated = true;

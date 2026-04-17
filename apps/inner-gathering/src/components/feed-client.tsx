@@ -9,7 +9,7 @@ import { useRealtimeFeed } from "@elkdonis/hooks";
 import { MeetingCard } from "./meeting-card";
 import { PostCard } from "./post-card";
 import { PollCard } from "./poll-card";
-import { CreateContentForm } from "./create-content-form";
+import { ContentForm } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
 import { LiveFeedWidget } from "./live-feed-widget";
@@ -39,9 +39,10 @@ interface FeedClientProps {
     createdAt: Date;
   }>;
   recurringMeetings?: Meeting[];
+  userId?: string | null;
 }
 
-export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientProps) {
+export function FeedClient({ initialFeed, recurringMeetings = [], userId }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
@@ -238,7 +239,22 @@ export function FeedClient({ initialFeed, recurringMeetings = [] }: FeedClientPr
           }
         >
           <ScrollArea h="calc(90vh - 8rem)">
-            <CreateContentForm onSuccess={closeDrawer} />
+            {userId ? (
+              <ContentForm
+                orgId="inner_group"
+                userId={userId}
+                isCmsSite
+                onPublished={() => {
+                  closeDrawer();
+                  router.refresh();
+                  clearNewItems();
+                }}
+              />
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">
+                Sign in to create content.
+              </Text>
+            )}
           </ScrollArea>
         </Drawer>
 
