@@ -154,21 +154,14 @@ packages/
 
 **Critical package: `@elkdonis/db`**
 - `src/client.ts` - PostgreSQL connection setup
-- `src/schemas.ts` - Database table definitions
-- `src/events.ts` - Event logging and forum queue workflow
-- `src/forum-sync.ts` - Forum-specific helpers (pagination, search)
-- `migrations/*.sql` - Schema migrations
+- `src/schemas.ts` - Baseline table definitions for fresh bootstrap (has drift against live DB; see schema-snapshot-*.sql for canonical state)
+- `src/events.ts` - Activity audit log (wide-net logging + admin veto actions)
+- `scripts/migrate.mjs` - Transactional migration runner (reads `migrations/*.sql`, tracks via `app_schema_migrations`)
+- `migrations/*.sql` - Schema migrations, applied in lex order
 
-### Event-Driven Forum Workflow
+### Forum Content Model
 
-Individual blogs operate independently. When sharing content to the forum:
-
-1. User creates post with `share_to_forum = true`
-2. Call `Events.submitToForumQueue(postId, orgId)` to add to queue
-3. Admin views queue with `Events.getForumQueue()` in admin app
-4. Admin approves with `Events.approveForForum(queueId, adminId)`
-5. Content is copied to `forum_posts` table
-6. Forum app displays aggregated content from `forum_posts`
+Forum surfaces content **directly** from the source tables — there is NO queue, NO copy table, NO approval step. Individual apps write to `posts`/`meetings`/`replies` with `org_id`; the forum app reads across orgs with SQL. Admins exert control through moderation actions on `events` (`content_hidden`, `visibility_override`, `content_pinned`, `content_locked`) rather than gating publication. See `packages/db/EVENT_SYSTEM.md` for the wide-net audit model.
 
 ### Database Schema Patterns
 
@@ -186,8 +179,7 @@ Individual blogs operate independently. When sharing content to the forum:
 
 **System tables:**
 - `events` - Activity audit log for all actions
-- `forum_queue` - Pending content for admin approval
-- `forum_posts` - Approved content displayed in forum app
+- `app_schema_migrations` - Migration runner tracking (filename + SHA-256 checksum)
 
 **Forum engagement tables:**
 - `reactions` - Likes/upvotes (polymorphic)
@@ -276,11 +268,11 @@ pnpm --filter @elkdonis/ui add -D <package>
 ## Important Files
 
 - **`docker-compose.yml`** - Complete stack definition (all services and ports)
-- **`SETUP-NEXT-STEPS.md`** - Step-by-step setup instructions (critical read)
-- **`.github/copilot-instructions.md`** - Detailed AI agent guidance (more context)
 - **`turbo.json`** - Build task configuration
 - **`pnpm-workspace.yaml`** - Workspace definition
-- **`packages/db/src/schemas.ts`** - Database table structure
+- **`packages/db/scripts/migrate.mjs`** - Transactional migration runner
+- **`packages/db/migrations/*.sql`** - Migration source of truth (runner-applied)
+- **`packages/db/schema-snapshot-*.sql`** - pg_dump snapshot, canonical DB state reference
 
 ## Access Points
 
@@ -300,8 +292,8 @@ When services are running:
 - Shared package architecture
 - Docker-based development environment
 - Basic CRUD operations for posts/meetings
-- Event logging system
-- Forum queue/approval workflow structure
+- Event logging system (wide-net audit + admin veto)
+- Transactional migration runner with checksum drift detection (2026-04-11)
 - **Nextcloud user provisioning with app passwords** (2025-11-01)
   - Database migration 006 adds `nextcloud_app_password` column
   - Admin UI shows user table with individual sync buttons
@@ -337,10 +329,10 @@ When services are running:
   - Data layer (`data.ts`) and API route (`/api/meetings/[id]/event-page`) handle `drawing` field
 
 **In Progress:**
+- Unified `threads` schema refactor (migration 030 — consolidates posts/meetings/event_pages)
+- Network app at `network.elkdonis-arts.org` (three-tier product: embed → workshop page → workshop app)
 - Full Supabase authentication integration
 - Media upload to Nextcloud
-- Admin UI for forum queue approval
-- Enhanced forum post display
 - Real-time features (subscriptions, notifications)
 
 ## Troubleshooting

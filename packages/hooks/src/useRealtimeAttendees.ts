@@ -31,16 +31,16 @@ export function useRealtimeAttendees({
   // Listen for new RSVPs
   useRealtimeSubscription<Record<string, unknown>>({
     client,
-    table: 'meeting_attendees',
+    table: 'thread_rsvps',
     event: 'INSERT',
-    filter: `meeting_id=eq.${meetingId}`,
+    filter: `thread_id=eq.${meetingId}`,
     onInsert: (payload) => {
       setAttendeeCount((prev) => (prev !== null ? prev + 1 : null));
       addChange({
-        meetingId: payload.meeting_id as string,
+        meetingId: payload.thread_id as string,
         userId: payload.user_id as string,
         type: 'join',
-        status: payload.attendance_status as string,
+        status: payload.status as string,
         timestamp: new Date(),
       });
     },
@@ -50,13 +50,13 @@ export function useRealtimeAttendees({
   // Listen for RSVP cancellations
   useRealtimeSubscription<Record<string, unknown>>({
     client,
-    table: 'meeting_attendees',
+    table: 'thread_rsvps',
     event: 'DELETE',
-    filter: `meeting_id=eq.${meetingId}`,
+    filter: `thread_id=eq.${meetingId}`,
     onDelete: (payload) => {
       setAttendeeCount((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
       addChange({
-        meetingId: payload.meeting_id as string,
+        meetingId: payload.thread_id as string,
         userId: payload.user_id as string,
         type: 'leave',
         timestamp: new Date(),
@@ -68,15 +68,15 @@ export function useRealtimeAttendees({
   // Listen for attendance status changes
   useRealtimeSubscription<Record<string, unknown>>({
     client,
-    table: 'meeting_attendees',
+    table: 'thread_rsvps',
     event: 'UPDATE',
-    filter: `meeting_id=eq.${meetingId}`,
+    filter: `thread_id=eq.${meetingId}`,
     onUpdate: ({ new: newRow }) => {
       addChange({
-        meetingId: newRow.meeting_id as string,
+        meetingId: newRow.thread_id as string,
         userId: newRow.user_id as string,
         type: 'status_change',
-        status: newRow.attendance_status as string,
+        status: newRow.status as string,
         timestamp: new Date(),
       });
     },

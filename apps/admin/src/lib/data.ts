@@ -29,18 +29,18 @@ function generateId(): string {
 
 export async function createMeeting(params: CreateMeetingParams): Promise<Meeting> {
   const [meeting] = await db`
-    INSERT INTO meetings (
-      id, org_id, guide_id, title, slug, meeting_type,
-      description, scheduled_at, duration_minutes, location,
-      is_online, meeting_url, visibility, status
+    INSERT INTO threads (
+      id, org_id, author_id, kind, title, slug,
+      body, scheduled_at, duration_minutes, location,
+      is_online, meeting_url, visibility, status, published_at
     ) VALUES (
-      ${generateId()}, ${params.orgId}, ${params.guideId}, ${params.title},
-      ${params.slug}, ${params.meetingType}, ${params.description || null},
+      ${generateId()}, ${params.orgId}, ${params.guideId}, 'meeting', ${params.title},
+      ${params.slug}, ${params.description || null},
       ${params.scheduledAt || null}, ${params.durationMinutes || null},
       ${params.location || null}, ${params.isOnline ?? true},
-      ${params.meetingUrl || null}, ${params.visibility || 'org'}, 'draft'
+      ${params.meetingUrl || null}, ${params.visibility || 'org'}, 'draft', NOW()
     )
-    RETURNING *
+    RETURNING *, body AS description, author_id AS guide_id
   `;
 
   return mapMeeting(meeting);
@@ -68,13 +68,14 @@ export async function getOrganizations(): Promise<Organization[]> {
 export async function getMeetings(): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
+      t.*, t.body AS description, t.author_id AS guide_id,
       o.name as org_name,
       u.display_name as guide_name
-    FROM meetings m
-    LEFT JOIN organizations o ON m.org_id = o.id
-    LEFT JOIN users u ON m.guide_id = u.id
-    ORDER BY m.scheduled_at DESC NULLS LAST, m.created_at DESC
+    FROM threads t
+    LEFT JOIN organizations o ON t.org_id = o.id
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'meeting'
+    ORDER BY t.scheduled_at DESC NULLS LAST, t.created_at DESC
   `;
 
   return meetings.map(mapMeeting);
@@ -83,12 +84,12 @@ export async function getMeetings(): Promise<Meeting[]> {
 export async function getMeetingsByGuide(guideId: string): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
+      t.*, t.body AS description, t.author_id AS guide_id,
       o.name as org_name
-    FROM meetings m
-    LEFT JOIN organizations o ON m.org_id = o.id
-    WHERE m.guide_id = ${guideId}
-    ORDER BY m.scheduled_at DESC NULLS LAST, m.created_at DESC
+    FROM threads t
+    LEFT JOIN organizations o ON t.org_id = o.id
+    WHERE t.kind = 'meeting' AND t.author_id = ${guideId}
+    ORDER BY t.scheduled_at DESC NULLS LAST, t.created_at DESC
   `;
 
   return meetings.map(mapMeeting);
@@ -97,12 +98,12 @@ export async function getMeetingsByGuide(guideId: string): Promise<Meeting[]> {
 export async function getMeetingsByOrg(orgId: string): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
-      m.*,
+      t.*, t.body AS description, t.author_id AS guide_id,
       u.display_name as guide_name
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
-    WHERE m.org_id = ${orgId}
-    ORDER BY m.scheduled_at DESC NULLS LAST, m.created_at DESC
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'meeting' AND t.org_id = ${orgId}
+    ORDER BY t.scheduled_at DESC NULLS LAST, t.created_at DESC
   `;
 
   return meetings.map(mapMeeting);
@@ -134,13 +135,13 @@ export async function getUserById(userId: string): Promise<User | null> {
 export async function getMeetingById(meetingId: string): Promise<Meeting | null> {
   const [meeting] = await db`
     SELECT 
-      m.*,
+      t.*, t.body AS description, t.author_id AS guide_id,
       o.name as org_name,
-      u.name as creator_name
-    FROM meetings m
-    LEFT JOIN organizations o ON m.org_id = o.id
-    LEFT JOIN users u ON m.created_by = u.id
-    WHERE m.id = ${meetingId}
+      u.display_name as creator_name
+    FROM threads t
+    LEFT JOIN organizations o ON t.org_id = o.id
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'meeting' AND t.id = ${meetingId}
   `;
 
   if (!meeting) return null;
@@ -187,7 +188,7 @@ function mapMeeting(row: any): Meeting {
     visibility: row.visibility,
     nextcloudFileId: row.nextcloud_file_id || undefined,
     nextcloudLastSync: row.nextcloud_last_sync || undefined,
-    documentUrl: row.video_url || undefined,
+    documentUrl: row.document_url || undefined,
     nextcloudDocumentId: row.nextcloud_file_id || undefined,
     metadata: row.metadata || undefined,
     createdAt: row.created_at,

@@ -3,7 +3,7 @@ import { db } from '@elkdonis/db';
 
 export const dynamic = 'force-dynamic';
 
-interface Meeting {
+interface LiveMeetingRow {
   id: string;
   title: string;
   scheduled_at: Date;
@@ -17,14 +17,14 @@ export async function GET() {
   try {
     const now = new Date();
 
-    // Check for active meetings
     // A meeting is active if: scheduled_at <= now AND (scheduled_at + duration_minutes) >= now
-    const [activeMeeting] = await db<Meeting[]>`
+    const [activeMeeting] = await db<LiveMeetingRow[]>`
       SELECT
         id, title, scheduled_at, duration_minutes, nextcloud_talk_token,
-        location, description
-      FROM meetings
-      WHERE org_id = 'inner_group'
+        location, body AS description
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = 'inner_group'
         AND nextcloud_talk_token IS NOT NULL
         AND scheduled_at IS NOT NULL
         AND duration_minutes IS NOT NULL
@@ -54,13 +54,13 @@ export async function GET() {
       });
     }
 
-    // Check for upcoming meetings
-    const [upcomingMeeting] = await db<Meeting[]>`
+    const [upcomingMeeting] = await db<LiveMeetingRow[]>`
       SELECT
         id, title, scheduled_at, duration_minutes, nextcloud_talk_token,
-        location, description
-      FROM meetings
-      WHERE org_id = 'inner_group'
+        location, body AS description
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = 'inner_group'
         AND nextcloud_talk_token IS NOT NULL
         AND scheduled_at IS NOT NULL
         AND scheduled_at > ${now}
@@ -88,7 +88,6 @@ export async function GET() {
       });
     }
 
-    // No meetings found
     return NextResponse.json({
       status: 'none',
       meeting: null,

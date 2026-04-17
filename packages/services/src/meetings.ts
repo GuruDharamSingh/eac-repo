@@ -21,30 +21,32 @@ interface CreateMeetingData {
 }
 
 /**
- * Create a new meeting
+ * Create a new meeting (thread with kind='meeting')
  */
 export async function createMeeting(data: CreateMeetingData): Promise<Meeting> {
   const slug = data.slug || slugify(data.title);
 
   const [meeting] = await db`
-    INSERT INTO meetings (
+    INSERT INTO threads (
+      kind,
       title,
       slug,
       org_id,
-      guide_id,
-      description,
+      author_id,
+      body,
       scheduled_at,
       duration_minutes,
       location,
       is_online,
       meeting_url,
       visibility,
-      notes,
-      max_attendees,
+      attendee_limit,
       is_rsvp_enabled,
       show_in_live_feed,
-      status
+      status,
+      published_at
     ) VALUES (
+      'meeting',
       ${data.title},
       ${slug},
       ${data.orgId},
@@ -56,13 +58,13 @@ export async function createMeeting(data: CreateMeetingData): Promise<Meeting> {
       ${data.isOnline || false},
       ${data.meetingUrl || null},
       ${data.visibility || 'org'},
-      ${data.notes || null},
       ${data.maxAttendees || null},
       ${data.isRSVPEnabled || false},
       ${data.showInLiveFeed || false},
-      'published'
+      'published',
+      NOW()
     )
-    RETURNING *
+    RETURNING *, body AS description, author_id AS guide_id
   `;
 
   return mapMeetingFromDb(meeting);
@@ -76,12 +78,14 @@ export async function getMeetingsByOrg(
   limit = 50
 ): Promise<Meeting[]> {
   const meetings = await db`
-    SELECT m.*, u.display_name as guide_name
-    FROM meetings m
-    LEFT JOIN users u ON m.guide_id = u.id
-    WHERE m.org_id = ${orgId}
-      AND m.status = 'published'
-    ORDER BY m.scheduled_at DESC NULLS LAST, m.created_at DESC
+    SELECT t.*, t.body AS description, t.author_id AS guide_id,
+           u.display_name as guide_name
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'meeting'
+      AND t.org_id = ${orgId}
+      AND t.status = 'published'
+    ORDER BY t.scheduled_at DESC NULLS LAST, t.created_at DESC
     LIMIT ${limit}
   `;
 
@@ -97,22 +101,26 @@ export async function getUpcomingMeetings(
 ): Promise<Meeting[]> {
   const query = orgId
     ? db`
-        SELECT m.*, u.display_name as guide_name
-        FROM meetings m
-        LEFT JOIN users u ON m.guide_id = u.id
-        WHERE m.org_id = ${orgId}
-          AND m.status = 'published'
-          AND m.scheduled_at > NOW()
-        ORDER BY m.scheduled_at ASC
+        SELECT t.*, t.body AS description, t.author_id AS guide_id,
+               u.display_name as guide_name
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'meeting'
+          AND t.org_id = ${orgId}
+          AND t.status = 'published'
+          AND t.scheduled_at > NOW()
+        ORDER BY t.scheduled_at ASC
         LIMIT ${limit}
       `
     : db`
-        SELECT m.*, u.display_name as guide_name
-        FROM meetings m
-        LEFT JOIN users u ON m.guide_id = u.id
-        WHERE m.status = 'published'
-          AND m.scheduled_at > NOW()
-        ORDER BY m.scheduled_at ASC
+        SELECT t.*, t.body AS description, t.author_id AS guide_id,
+               u.display_name as guide_name
+        FROM threads t
+        LEFT JOIN users u ON t.author_id = u.id
+        WHERE t.kind = 'meeting'
+          AND t.status = 'published'
+          AND t.scheduled_at > NOW()
+        ORDER BY t.scheduled_at ASC
         LIMIT ${limit}
       `;
 
@@ -127,25 +135,23 @@ export async function updateMeeting(
   id: string,
   data: Partial<CreateMeetingData>
 ): Promise<Meeting> {
-  // Build dynamic update query
   const updates: any = {};
 
   if (data.title !== undefined) updates.title = data.title;
   if (data.slug !== undefined) updates.slug = data.slug;
-  if (data.description !== undefined) updates.description = data.description;
+  if (data.description !== undefined) updates.body = data.description;
   if (data.scheduledAt !== undefined) updates.scheduled_at = data.scheduledAt;
   if (data.durationMinutes !== undefined) updates.duration_minutes = data.durationMinutes;
   if (data.location !== undefined) updates.location = data.location;
   if (data.isOnline !== undefined) updates.is_online = data.isOnline;
   if (data.meetingUrl !== undefined) updates.meeting_url = data.meetingUrl;
   if (data.visibility !== undefined) updates.visibility = data.visibility;
-  if (data.notes !== undefined) updates.notes = data.notes;
 
   const [meeting] = await db`
-    UPDATE meetings
+    UPDATE threads
     SET ${db(updates)}, updated_at = NOW()
-    WHERE id = ${id}
-    RETURNING *
+    WHERE kind = 'meeting' AND id = ${id}
+    RETURNING *, body AS description, author_id AS guide_id
   `;
 
   return mapMeetingFromDb(meeting);
@@ -156,9 +162,9 @@ export async function updateMeeting(
  */
 export async function deleteMeeting(id: string): Promise<void> {
   await db`
-    UPDATE meetings
-    SET status = 'cancelled', updated_at = NOW()
-    WHERE id = ${id}
+    UPDATE threads
+    SET status = 'archived', updated_at = NOW()
+    WHERE kind = 'meeting' AND id = ${id}
   `;
 }
 
@@ -169,12 +175,12 @@ function mapMeetingFromDb(row: any): Meeting {
   return {
     id: row.id,
     title: row.title,
-    description: row.description || undefined,
+    description: row.description || row.body || undefined,
     scheduledAt: row.scheduled_at ? new Date(row.scheduled_at) : new Date(),
     durationMinutes: row.duration_minutes || undefined,
     orgId: row.org_id,
-    createdBy: row.guide_id,
-    guideId: row.guide_id,
+    createdBy: row.guide_id || row.author_id,
+    guideId: row.guide_id || row.author_id,
     videoLink: row.video_link || row.meeting_url || undefined,
     isRSVPEnabled: row.is_rsvp_enabled ?? false,
     isOnline: row.is_online ?? false,
@@ -195,7 +201,7 @@ function mapMeetingFromDb(row: any): Meeting {
     organization: undefined,
     creator: row.guide_name
       ? {
-          id: row.guide_id,
+          id: row.guide_id || row.author_id,
           displayName: row.guide_name,
         } as any
       : undefined,

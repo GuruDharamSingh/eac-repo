@@ -1,9 +1,9 @@
 import { use } from 'react';
 import { notFound } from 'next/navigation';
-import { getMeetingById, getEventPage } from '@/lib/data';
+import { getMeetingById } from '@/lib/data';
 import { getReplies } from '@elkdonis/db';
 import { getServerSession } from '@elkdonis/auth-server';
-import { EventPageView } from '@/components/event-page-view';
+import { GatheringDetails } from '@/components/gathering-details';
 
 export default function MeetingPage({
   params,
@@ -17,9 +17,8 @@ export default function MeetingPage({
     notFound();
   }
 
-  const [eventPage, replies, session] = use(
+  const [replies, session] = use(
     Promise.all([
-      getEventPage(id),
       getReplies(id, 'meeting', 'oldest'),
       getServerSession(),
     ])
@@ -37,11 +36,12 @@ export default function MeetingPage({
     : null;
 
   return (
-    <EventPageView
-      meeting={meeting}
-      eventPage={eventPage}
+    <GatheringDetails
+      gathering={meeting}
+      type="meeting"
       replies={serializedReplies}
       currentUser={currentUser}
+      isJoined={false} // Would need logic to check if user is RSVP'd
     />
   );
 }

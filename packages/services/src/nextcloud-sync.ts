@@ -117,12 +117,12 @@ async function handleCalendarEventCreated(event: any): Promise<void> {
 
   if (event.resource_type === 'meeting' && resource_id) {
     await db`
-      UPDATE meetings
+      UPDATE threads
       SET
         nextcloud_calendar_event_id = ${nextcloud_id},
         nextcloud_calendar_synced = true,
         updated_at = NOW()
-      WHERE id = ${resource_id}
+      WHERE kind = 'meeting' AND id = ${resource_id}
     `;
 
     console.log(`Linked meeting ${resource_id} to calendar event ${nextcloud_id}`);
@@ -137,8 +137,8 @@ async function handleCalendarEventUpdated(event: any): Promise<void> {
   const { nextcloud_id, data } = event;
 
   const [meeting] = await db`
-    SELECT id FROM meetings
-    WHERE nextcloud_calendar_event_id = ${nextcloud_id}
+    SELECT id FROM threads
+    WHERE kind = 'meeting' AND nextcloud_calendar_event_id = ${nextcloud_id}
   `;
 
   if (meeting && data) {
@@ -146,14 +146,14 @@ async function handleCalendarEventUpdated(event: any): Promise<void> {
     const updates: any = {};
 
     if (data.title) updates.title = data.title;
-    if (data.description) updates.description = data.description;
+    if (data.description) updates.body = data.description;
     if (data.start) updates.scheduled_at = new Date(data.start);
     if (data.location) updates.location = data.location;
 
     if (Object.keys(updates).length > 0) {
       await db`
-        UPDATE meetings
-        SET ${db(updates, 'title', 'description', 'scheduled_at', 'location')},
+        UPDATE threads
+        SET ${db(updates, 'title', 'body', 'scheduled_at', 'location')},
             updated_at = NOW()
         WHERE id = ${meeting.id}
       `;
@@ -171,7 +171,7 @@ async function handleCalendarEventDeleted(event: any): Promise<void> {
   const { nextcloud_id } = event;
 
   await db`
-    UPDATE meetings
+    UPDATE threads
     SET
       nextcloud_calendar_synced = false,
       metadata = jsonb_set(
@@ -181,6 +181,7 @@ async function handleCalendarEventDeleted(event: any): Promise<void> {
       ),
       updated_at = NOW()
     WHERE nextcloud_calendar_event_id = ${nextcloud_id}
+      AND kind = 'meeting'
   `;
 
   console.log(`Marked calendar sync broken for event ${nextcloud_id}`);
@@ -200,13 +201,13 @@ async function handleTalkRecordingReady(event: any): Promise<void> {
 
   // Find meeting with this Talk token
   const [meeting] = await db`
-    SELECT id FROM meetings
-    WHERE nextcloud_talk_token = ${nextcloud_id}
+    SELECT id FROM threads
+    WHERE kind = 'meeting' AND nextcloud_talk_token = ${nextcloud_id}
   `;
 
   if (meeting) {
     await db`
-      UPDATE meetings
+      UPDATE threads
       SET
         nextcloud_recording_id = ${data.recording_file_id},
         video_url = ${data.recording_url || null},

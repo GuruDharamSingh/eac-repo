@@ -7,10 +7,11 @@ export async function getUpcomingMeetings(limit = 10): Promise<Meeting[]> {
   try {
     const rows = await db<Meeting[]>`
       SELECT
-        id, title, slug, description, location,
+        id, title, slug, body AS description, location,
         scheduled_at, duration_minutes, is_online, meeting_url, status, section
-      FROM meetings
-      WHERE org_id = ${ORG_ID}
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = ${ORG_ID}
         AND status = 'published'
         AND (scheduled_at IS NULL OR scheduled_at >= NOW() - INTERVAL '6 hours')
       ORDER BY scheduled_at ASC NULLS LAST
@@ -27,10 +28,11 @@ export async function getNextMeeting(): Promise<Meeting | null> {
   try {
     const [row] = await db<Meeting[]>`
       SELECT
-        id, title, slug, description, location,
+        id, title, slug, body AS description, location,
         scheduled_at, duration_minutes, is_online, meeting_url, status, section
-      FROM meetings
-      WHERE org_id = ${ORG_ID}
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = ${ORG_ID}
         AND status = 'published'
         AND (scheduled_at IS NULL OR scheduled_at >= NOW() - INTERVAL '6 hours')
       ORDER BY scheduled_at ASC NULLS LAST
@@ -47,10 +49,11 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
   try {
     const [row] = await db<Meeting[]>`
       SELECT
-        id, title, slug, description, location,
+        id, title, slug, body AS description, location,
         scheduled_at, duration_minutes, is_online, meeting_url, status, section
-      FROM meetings
-      WHERE id = ${id}
+      FROM threads
+      WHERE kind = 'meeting'
+        AND id = ${id}
         AND org_id = ${ORG_ID}
       LIMIT 1
     `;
@@ -65,10 +68,11 @@ export async function getMeetingsBySection(section: string, limit = 20): Promise
   try {
     const rows = await db<Meeting[]>`
       SELECT
-        id, title, slug, description, location,
+        id, title, slug, body AS description, location,
         scheduled_at, duration_minutes, is_online, meeting_url, status, section
-      FROM meetings
-      WHERE org_id = ${ORG_ID}
+      FROM threads
+      WHERE kind = 'meeting'
+        AND org_id = ${ORG_ID}
         AND section = ${section}
         AND status = 'published'
         AND (scheduled_at IS NULL OR scheduled_at >= NOW() - INTERVAL '6 hours')
@@ -85,7 +89,8 @@ export async function getMeetingsBySection(section: string, limit = 20): Promise
 export async function getRsvpCount(meetingId: string): Promise<number> {
   try {
     const [row] = await db<{ count: string }[]>`
-      SELECT COUNT(*) as count FROM rsvp_responses WHERE meeting_id = ${meetingId}
+      SELECT COUNT(*) as count FROM guest_submissions
+      WHERE thread_id = ${meetingId} AND kind = 'rsvp'
     `;
     return parseInt(row?.count ?? '0', 10);
   } catch {

@@ -1,0 +1,309 @@
+erDiagram
+    organizations {
+        varchar id PK
+        varchar name
+        varchar slug
+        text description
+        varchar nextcloud_folder_id
+        varchar nextcloud_folder_path
+        varchar blog_password_hash
+    }
+
+    users {
+        uuid id PK
+        varchar email
+        varchar display_name
+        text avatar_url
+        boolean is_admin
+        integer trust_level
+        varchar nextcloud_user_id
+        varchar nextcloud_app_password
+        boolean nextcloud_synced
+        varchar oidc_subject
+    }
+
+    user_organizations {
+        uuid user_id FK
+        varchar org_id FK
+        varchar role
+        timestamptz joined_at
+    }
+
+    threads {
+        varchar id PK
+        varchar org_id FK
+        uuid author_id FK
+        varchar kind
+        text title
+        varchar slug
+        text body
+        varchar status
+        varchar visibility
+        boolean share_to_network
+        boolean pinned
+        boolean locked
+        varchar section
+        timestamptz scheduled_at
+        integer duration_minutes
+        text location
+        boolean is_online
+        boolean is_rsvp_enabled
+        varchar recurrence_pattern
+        varchar nextcloud_talk_token
+        boolean show_in_live_feed
+        integer reply_count
+        integer reaction_count
+        jsonb drawing
+        jsonb metadata
+    }
+
+    replies {
+        varchar id PK
+        varchar thread_id FK
+        varchar parent_reply_id FK
+        varchar session_id FK
+        uuid user_id FK
+        text content
+        integer reaction_count
+        timestamptz edited_at
+    }
+
+    media {
+        varchar id PK
+        varchar org_id FK
+        uuid uploaded_by FK
+        varchar attached_to_type
+        varchar attached_to_id
+        varchar nextcloud_file_id
+        text url
+        varchar type
+        varchar filename
+        varchar mime_type
+    }
+
+    topics {
+        varchar id PK
+        varchar name
+        varchar slug
+        varchar parent_id FK
+    }
+
+    thread_topics {
+        varchar thread_id FK
+        varchar topic_id FK
+    }
+
+    thread_rsvps {
+        varchar thread_id FK
+        uuid user_id FK
+        varchar status
+        timestamptz updated_at
+    }
+
+    reactions {
+        varchar id PK
+        varchar thread_id FK
+        varchar reply_id FK
+        uuid user_id FK
+        varchar kind
+    }
+
+    bookmarks {
+        varchar id PK
+        uuid user_id FK
+        varchar thread_id FK
+        varchar reply_id FK
+    }
+
+    watches {
+        varchar thread_id FK
+        uuid user_id FK
+    }
+
+    notifications {
+        varchar id PK
+        uuid user_id FK
+        varchar kind
+        varchar thread_id FK
+        varchar reply_id FK
+        uuid actor_id FK
+        jsonb data
+        timestamptz read_at
+    }
+
+    flags {
+        varchar id PK
+        varchar target_kind
+        varchar target_id
+        uuid reporter_id FK
+        varchar reason
+        varchar status
+        uuid resolved_by FK
+    }
+
+    moderation_log {
+        varchar id PK
+        uuid moderator_id FK
+        varchar action
+        varchar target_kind
+        varchar target_id
+        text reason
+        jsonb metadata
+    }
+
+    events {
+        varchar id PK
+        varchar org_id FK
+        uuid user_id FK
+        varchar action
+        varchar resource_type
+        varchar resource_id
+        jsonb data
+    }
+
+    contacts {
+        text id PK
+        text org_id FK
+        text email
+        text name
+        text message
+        text status
+        uuid user_id FK
+    }
+
+    content_drafts {
+        varchar id PK
+        uuid user_id FK
+        varchar org_id FK
+        varchar content_type
+        text title
+        text body
+        jsonb meeting_data
+        integer current_step
+    }
+
+    guest_submissions {
+        varchar id PK
+        varchar thread_id FK
+        varchar kind
+        text name
+        varchar email
+        text message
+        uuid linked_user_id FK
+    }
+
+    availability_polls {
+        varchar id PK
+        varchar thread_id FK
+        uuid created_by FK
+        text title
+        varchar status
+    }
+
+    availability_poll_options {
+        varchar id PK
+        varchar poll_id FK
+        timestamptz slot_at
+        integer duration_minutes
+    }
+
+    availability_poll_responses {
+        varchar id PK
+        varchar poll_id FK
+        varchar option_id FK
+        uuid user_id FK
+        varchar availability
+    }
+
+    question_polls {
+        varchar id PK
+        varchar thread_id FK
+        uuid created_by FK
+        text question
+        boolean multi_select
+        varchar status
+        integer total_votes
+    }
+
+    question_poll_options {
+        varchar id PK
+        varchar poll_id FK
+        text label
+        integer vote_count
+    }
+
+    question_poll_votes {
+        varchar id PK
+        varchar poll_id FK
+        varchar option_id FK
+        uuid user_id FK
+    }
+
+    oidc_codes {
+        varchar code PK
+        uuid user_id FK
+        varchar client_id
+        text redirect_uri
+        timestamptz expires_at
+        text code_challenge
+    }
+
+    workshop_sessions {
+        varchar id PK
+        varchar thread_id FK
+    }
+
+    workshop_details {
+        varchar thread_id FK
+    }
+
+    organizations ||--o{ user_organizations : "has members"
+    users ||--o{ user_organizations : "belongs to"
+    organizations ||--o{ threads : "owns"
+    users ||--o{ threads : "authors"
+    threads ||--o{ replies : "has"
+    replies ||--o{ replies : "parent"
+    workshop_sessions ||--o{ replies : "session"
+    users ||--o{ replies : "writes"
+    threads ||--o{ thread_topics : "tagged"
+    topics ||--o{ thread_topics : "applied to"
+    topics ||--o{ topics : "parent"
+    threads ||--o{ thread_rsvps : "rsvps"
+    users ||--o{ thread_rsvps : "rsvps"
+    threads ||--o{ reactions : "receives"
+    replies ||--o{ reactions : "receives"
+    users ||--o{ reactions : "gives"
+    users ||--o{ bookmarks : "saves"
+    threads ||--o{ bookmarks : "bookmarked"
+    replies ||--o{ bookmarks : "bookmarked"
+    users ||--o{ watches : "watches"
+    threads ||--o{ watches : "watched"
+    users ||--o{ notifications : "receives"
+    threads ||--o{ notifications : "triggers"
+    replies ||--o{ notifications : "triggers"
+    users ||--o{ flags : "reports"
+    users ||--o{ moderation_log : "moderates"
+    threads ||--o{ availability_polls : "has"
+    users ||--o{ availability_polls : "creates"
+    availability_polls ||--o{ availability_poll_options : "has slots"
+    availability_polls ||--o{ availability_poll_responses : "receives"
+    availability_poll_options ||--o{ availability_poll_responses : "chosen in"
+    users ||--o{ availability_poll_responses : "submits"
+    threads ||--o{ question_polls : "has"
+    users ||--o{ question_polls : "creates"
+    question_polls ||--o{ question_poll_options : "has"
+    question_poll_options ||--o{ question_poll_votes : "voted on"
+    users ||--o{ question_poll_votes : "votes"
+    organizations ||--o{ events : "logged in"
+    users ||--o{ events : "actor"
+    organizations ||--o{ media : "owns"
+    users ||--o{ media : "uploads"
+    users ||--o{ oidc_codes : "auth"
+    organizations ||--o{ contacts : "receives"
+    users ||--o{ contacts : "linked"
+    threads ||--o{ guest_submissions : "receives"
+    users ||--o{ guest_submissions : "linked"
+    users ||--o{ content_drafts : "drafts"
+    organizations ||--o{ content_drafts : "in"
+    threads ||--o{ workshop_sessions : "has"
+    threads ||--o{ workshop_details : "details"
