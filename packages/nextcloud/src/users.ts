@@ -23,47 +23,12 @@ export interface ProvisionUserOptions {
 }
 
 /**
- * Derive a Nextcloud-compatible username from an email address.
- * Rules: lowercase, letters and numbers only.
- * Example: "Justin.GillisB@gmail.com" → "justingillisb"
- */
-function deriveNextcloudUsername(email: string): string {
-  const local = email.split('@')[0] || email;
-  return local
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');     // letters and numbers only
-}
-
-/**
- * Find an existing Nextcloud user by email address.
- * Returns their userid if found, null otherwise.
- */
-async function findNcUserByEmail(
-  adminClient: NextcloudClient,
-  email: string,
-  allUserIds: string[]
-): Promise<string | null> {
-  for (const uid of allUserIds) {
-    try {
-      const res = await adminClient.ocs.get(`/cloud/users/${encodeURIComponent(uid)}?format=json`);
-      const userData = res.data?.ocs?.data;
-      if (userData?.email?.toLowerCase() === email.toLowerCase()) {
-        return uid;
-      }
-    } catch {
-      // skip users we can't fetch
-    }
-  }
-  return null;
-}
-
-/**
  * Auto-provision a Nextcloud user when they sign up
- *
+ * 
  * Usage in auth callback:
  * ```typescript
  * import { provisionUser } from '@elkdonis/nextcloud/users';
- *
+ * 
  * await provisionUser(adminClient, {
  *   userId: user.id,
  *   email: user.email,
@@ -83,22 +48,6 @@ export async function provisionUser(
     return { userId: existingCreds.nextcloud_user_id, appPassword: existingCreds.nextcloud_app_password };
   }
 
-  // Derive a Nextcloud-friendly username from the email (no spaces, lowercase)
-  let ncUsername = deriveNextcloudUsername(email);
-
-  // Check if a Nextcloud user with this email already exists (e.g. manually created)
-  try {
-    const listRes = await adminClient.ocs.get('/cloud/users?format=json');
-    const allUsers: string[] = listRes.data?.ocs?.data?.users || [];
-    const existingNcUser = await findNcUserByEmail(adminClient, email, allUsers);
-    if (existingNcUser) {
-      console.log(`ℹ️  Found existing Nextcloud user "${existingNcUser}" for email ${email}`);
-      ncUsername = existingNcUser;
-    }
-  } catch {
-    // Non-fatal: fall through to create attempt
-  }
-
   // Generate secure password if not provided.
   // NOTE: Today this is also used as the API credential stored in DB.
   const userPassword = password || generateSecurePassword();
@@ -107,7 +56,7 @@ export async function provisionUser(
   try {
     // Create Nextcloud user via OCS API
     const formData = new URLSearchParams();
-    formData.set('userid', ncUsername);
+    formData.set('userid', userId);
     formData.set('password', userPassword);
     formData.set('email', email);
     formData.set('displayname', displayName);
@@ -116,12 +65,12 @@ export async function provisionUser(
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
-    console.log(`✅ Created Nextcloud user: ${ncUsername} (db: ${userId})`);
+    console.log(`✅ Created Nextcloud user: ${userId}`);
     userCreated = true;
   } catch (error: any) {
     // User might already exist, that's okay
     if (error.response?.status === 400) {
-      console.log(`ℹ️  Nextcloud user already exists: ${ncUsername}`);
+      console.log(`ℹ️  Nextcloud user already exists: ${userId}`);
     } else {
       throw error;
     }
@@ -132,17 +81,17 @@ export async function provisionUser(
   if (!userCreated) {
     const hasPasswordStored = Boolean(existingCreds?.nextcloud_app_password);
     if (!hasPasswordStored) {
-      await setUserPassword(adminClient, ncUsername, userPassword);
+      await setUserPassword(adminClient, userId, userPassword);
     }
   }
 
   // Generate app password for API access.
   // For now this falls back to using the same credential we just set, to ensure it is valid.
-  const appPassword = await generateAppPassword(adminClient, ncUsername, userPassword);
+  const appPassword = await generateAppPassword(adminClient, userId, userPassword);
 
   // Update your database with credentials
   await writeStoredCredentials(userId, {
-    nextcloud_user_id: ncUsername,
+    nextcloud_user_id: userId,
     nextcloud_app_password: appPassword,
     nextcloud_synced: true,
   });
@@ -150,11 +99,11 @@ export async function provisionUser(
   if (groups && groups.length > 0) {
     for (const groupId of groups) {
       await ensureGroup(adminClient, groupId);
-      await addUserToGroup(adminClient, ncUsername, groupId);
+      await addUserToGroup(adminClient, userId, groupId);
     }
   }
 
-  return { userId: ncUsername, appPassword };
+  return { userId, appPassword };
 }
 
 /**

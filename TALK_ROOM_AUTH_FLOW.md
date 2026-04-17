@@ -54,7 +54,7 @@ const userToken = await new SignJWT({
 
 // Redirect to Nextcloud Social Login OAuth2 flow
 const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudUrl);
-socialLoginUrl.searchParams.set('redirect_url', talkUrl);
+socialLoginUrl.searchParams.set('login_redirect_url', talkUrl);
 
 // Set JWT as secure cookie
 response.cookies.set('eac_user_jwt', userToken, {
@@ -68,7 +68,7 @@ response.cookies.set('eac_user_jwt', userToken, {
 
 **Redirect URL:**
 ```
-http://localhost:8080/apps/sociallogin/custom_oauth2/elkdonis?redirect_url=http://localhost:8080/call/ROOM_TOKEN
+http://localhost:8080/apps/sociallogin/custom_oauth2/elkdonis?login_redirect_url=http://localhost:8080/call/ROOM_TOKEN
 ```
 
 ---

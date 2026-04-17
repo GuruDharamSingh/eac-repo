@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
 
     // Pass the redirect destination to sociallogin
-    socialLoginUrl.searchParams.set('redirect_url', finalDestination);
+    socialLoginUrl.searchParams.set('login_redirect_url', finalDestination);
 
     // If force logout is requested
     if (force) {

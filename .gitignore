@@ -53,6 +53,8 @@ yarn-error.log*
 backups/
 *.sql
 *.sql.gz
+!packages/db/migrations/*.sql
+!docker/*.sql
 
 # Logs
 *.log
@@ -60,3 +62,7 @@ logs/
 
 # Claude local settings
 .claude/
+
+# Local Nextcloud / instance-specific overrides
+docker-compose.override.yml
+.local-backup/

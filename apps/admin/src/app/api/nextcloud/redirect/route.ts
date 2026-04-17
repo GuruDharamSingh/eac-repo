@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
       const logoutUrl = new URL('/logout', nextcloudBaseUrl);
       logoutUrl.searchParams.set('requesttoken', ''); // Will need to handle CSRF
-      logoutUrl.searchParams.set('redirect_url', socialLoginUrl.toString());
+      logoutUrl.searchParams.set('login_redirect_url', socialLoginUrl.toString());
 
       return NextResponse.redirect(logoutUrl);
     }
@@ -81,10 +81,10 @@ export async function GET(request: NextRequest) {
     const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
 
     // If there's a target, we need to pass it through
-    // Nextcloud sociallogin supports redirect_url parameter
+    // Nextcloud sociallogin supports login_redirect_url parameter
     if (target && target !== '/') {
       const targetUrl = new URL(target, nextcloudBaseUrl);
-      socialLoginUrl.searchParams.set('redirect_url', targetUrl.toString());
+      socialLoginUrl.searchParams.set('login_redirect_url', targetUrl.toString());
     }
 
     return NextResponse.redirect(socialLoginUrl);

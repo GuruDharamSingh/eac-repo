@@ -151,7 +151,7 @@ export async function createMeetingAction(payload: {
   if (session?.user?.nextcloud_user_id && session?.user?.nextcloud_app_password) {
     // Create Nextcloud client for this user
     const nextcloudClient = createNextcloudClient({
-      baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
+      baseUrl: process.env.NEXTCLOUD_URL || '',
       username: session.user.nextcloud_user_id,
       password: session.user.nextcloud_app_password,
     });
@@ -273,7 +273,7 @@ export async function createPostAction(payload: {
       try {
         const { createTalkRoom } = await import("@elkdonis/nextcloud");
         const client = createNextcloudClient({
-          baseUrl: process.env.NEXTCLOUD_URL || 'http://nextcloud-nginx:80',
+          baseUrl: process.env.NEXTCLOUD_URL || '',
           username: session.user.nextcloud_user_id,
           password: session.user.nextcloud_app_password,
         });
