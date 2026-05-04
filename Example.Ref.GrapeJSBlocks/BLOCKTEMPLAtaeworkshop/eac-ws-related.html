@@ -1,0 +1,57 @@
+<!--
+  eac-ws-related.html
+  =====================
+  Related workshops row. Pulled by matching on discipline,
+  facilitator_id, or overlapping tags. Max 3 cards.
+
+  CMS query:
+    SELECT * FROM workshops
+    WHERE status = 'published'
+      AND id != :current_id
+      AND (
+        discipline = :discipline
+        OR facilitator_id = :facilitator_id
+        OR tags && :tags   -- array overlap
+      )
+    ORDER BY start_date ASC
+    LIMIT 3
+-->
+<section class="eac-ws-related" data-gjs-type="eac-ws-related" id="related">
+  <div class="eac-ws-related__inner">
+
+    <span class="eac-ws-label eac-ws-label--related">related</span>
+
+    <h2 class="eac-ws-related__heading">You might also like</h2>
+
+    <div class="eac-ws-related__grid">
+
+      <!-- Card 1 -->
+      <a class="eac-ws-related__card" href="/workshops/rhythm-and-presence">
+        <div class="eac-ws-related__body">
+          <span class="eac-ws-related__discipline" data-gjs-editable="true">Movement &amp; sound</span>
+          <h3 class="eac-ws-related__title" data-gjs-editable="true">Rhythm &amp; Presence</h3>
+          <p class="eac-ws-related__meta" data-gjs-editable="true">Ario · 4 sessions · $120</p>
+        </div>
+      </a>
+
+      <!-- Card 2 -->
+      <a class="eac-ws-related__card" href="/workshops/self-through-type">
+        <div class="eac-ws-related__body">
+          <span class="eac-ws-related__discipline" data-gjs-editable="true">Enneagram</span>
+          <h3 class="eac-ws-related__title" data-gjs-editable="true">Self Through Type</h3>
+          <p class="eac-ws-related__meta" data-gjs-editable="true">Ario · 1-day intensive · $90</p>
+        </div>
+      </a>
+
+      <!-- Card 3 -->
+      <a class="eac-ws-related__card" href="/workshops/performance-lab">
+        <div class="eac-ws-related__body">
+          <span class="eac-ws-related__discipline" data-gjs-editable="true">Performance</span>
+          <h3 class="eac-ws-related__title" data-gjs-editable="true">Performance Lab</h3>
+          <p class="eac-ws-related__meta" data-gjs-editable="true">Jason · 8 sessions · $240</p>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>

@@ -1,0 +1,129 @@
+/*
+  EAC Glowing CTA Section — Stylesheet
+  ========================================
+  Dark, centripetal composition. Radial glow is pure CSS —
+  no image, no JS. Accent RGB drives both glow and any
+  future accent elements via --eac-cta-accent-rgb.
+*/
+
+.eac-cta-glow {
+  --eac-cta-bg:          #0f172a;
+  --eac-cta-accent-rgb:  59, 130, 246;
+  --eac-cta-glow-opacity: 0.2;
+  --eac-cta-min-height:   52vh;
+
+  position:        relative;
+  min-height:      var(--eac-cta-min-height);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      var(--eac-cta-bg);
+  overflow:        hidden;
+  text-align:      center;
+}
+
+/* ── Background glow ──────────────────────────────────────────── */
+
+.eac-cta-glow__bg {
+  position:       absolute;
+  inset:          0;
+  pointer-events: none;
+}
+
+.eac-cta-glow__glow {
+  position:   absolute;
+  inset:      0;
+  background: radial-gradient(
+    ellipse 65% 60% at 50% 40%,
+    rgba(var(--eac-cta-accent-rgb), var(--eac-cta-glow-opacity)) 0%,
+    transparent 100%
+  );
+}
+
+/* ── Content ──────────────────────────────────────────────────── */
+
+.eac-cta-glow__inner {
+  position:        relative;
+  z-index:         1;
+  max-width:       600px;
+  padding:         80px 40px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+}
+
+/* ── Heading ──────────────────────────────────────────────────── */
+
+.eac-cta-glow__heading {
+  font-size:      clamp(28px, 3.5vw, 48px);
+  font-weight:    700;
+  line-height:    1.12;
+  letter-spacing: -0.025em;
+  color:          #ffffff;
+  margin-bottom:  16px;
+}
+
+/* ── Subhead ──────────────────────────────────────────────────── */
+
+.eac-cta-glow__sub {
+  font-size:     16px;
+  line-height:   1.6;
+  color:         rgba(255, 255, 255, 0.5);
+  max-width:     380px;
+  margin-bottom: 36px;
+}
+
+/* ── Button row ───────────────────────────────────────────────── */
+
+.eac-cta-glow__btn-row {
+  display:         flex;
+  gap:             12px;
+  flex-wrap:       wrap;
+  justify-content: center;
+}
+
+.eac-cta-glow__btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         13px 28px;
+  border-radius:   6px;
+  font-size:       14px;
+  font-weight:     500;
+  text-decoration: none;
+  min-height:      44px;
+  transition:      opacity 0.15s, border-color 0.15s;
+  white-space:     nowrap;
+}
+
+.eac-cta-glow__btn--primary {
+  background: rgba(var(--eac-cta-accent-rgb), 1);
+  color:      #ffffff;
+  border:     none;
+}
+.eac-cta-glow__btn--primary:hover { opacity: 0.88; }
+
+.eac-cta-glow__btn--ghost {
+  background:   transparent;
+  color:        rgba(255, 255, 255, 0.65);
+  border:       0.5px solid rgba(255, 255, 255, 0.2);
+}
+.eac-cta-glow__btn--ghost:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  color:        rgba(255, 255, 255, 0.9);
+}
+
+/* ── Accent presets ───────────────────────────────────────────── */
+
+.eac-cta-glow--accent-blue   { --eac-cta-accent-rgb: 59,  130, 246; }
+.eac-cta-glow--accent-violet { --eac-cta-accent-rgb: 120,  80, 220; }
+.eac-cta-glow--accent-teal   { --eac-cta-accent-rgb:  20, 160, 120; }
+.eac-cta-glow--accent-coral  { --eac-cta-accent-rgb: 200,  80,  40; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-cta-glow__inner    { padding: 60px 24px; }
+  .eac-cta-glow__btn-row  { flex-direction: column; width: 100%; }
+  .eac-cta-glow__btn      { width: 100%; text-align: center; }
+}

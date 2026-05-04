@@ -1,0 +1,54 @@
+<!--
+  EAC Stats / Impact Row — HTML Template
+  =========================================
+  3-column stat grid. Numbers animate on scroll entry via
+  IntersectionObserver + requestAnimationFrame in the component script.
+  Trend indicators (↑ n%) are optional per stat.
+-->
+<section class="eac-stats" data-gjs-type="eac-stats">
+  <div class="eac-stats__inner">
+
+    <div class="eac-stats__grid">
+
+      <div class="eac-stats__item">
+        <div class="eac-stats__number"
+             data-target="240"
+             data-suffix="+"
+             data-gjs-editable="true">
+          240+
+        </div>
+        <div class="eac-stats__label" data-gjs-editable="true">
+          workshops delivered
+        </div>
+        <div class="eac-stats__trend eac-stats__trend--up">↑ 38% this year</div>
+      </div>
+
+      <div class="eac-stats__item">
+        <div class="eac-stats__number"
+             data-target="1400"
+             data-suffix=""
+             data-gjs-editable="true">
+          1,400
+        </div>
+        <div class="eac-stats__label" data-gjs-editable="true">
+          community members
+        </div>
+        <div class="eac-stats__trend eac-stats__trend--up">↑ 22% this year</div>
+      </div>
+
+      <div class="eac-stats__item">
+        <div class="eac-stats__number"
+             data-target="12"
+             data-suffix=""
+             data-gjs-editable="true">
+          12
+        </div>
+        <div class="eac-stats__label" data-gjs-editable="true">
+          disciplines represented
+        </div>
+        <div class="eac-stats__trend" style="visibility:hidden">—</div>
+      </div>
+
+    </div>
+  </div>
+</section>

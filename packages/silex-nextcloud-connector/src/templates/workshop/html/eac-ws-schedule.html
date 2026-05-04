@@ -1,0 +1,66 @@
+<!--
+  eac-ws-schedule.html
+  ======================
+  Session-by-session schedule. First 2 sessions always visible;
+  remaining sessions gated behind public_preview = true
+  (or registration — enforced server-side).
+
+  CMS fields consumed (workshop_sessions child table):
+    sessions.session_number
+    sessions.date
+    sessions.time_start
+    sessions.title
+    sessions.description
+    sessions.public_preview
+-->
+<section class="eac-ws-schedule" data-gjs-type="eac-ws-schedule" id="schedule">
+  <div class="eac-ws-schedule__inner">
+
+    <span class="eac-ws-label eac-ws-label--schedule">schedule</span>
+
+    <div class="eac-ws-schedule__header">
+      <h2 class="eac-ws-schedule__heading">Session breakdown</h2>
+      <a class="eac-ws-schedule__gate-cta" href="#register">
+        Register to see full schedule
+      </a>
+    </div>
+
+    <ol class="eac-ws-schedule__list">
+
+      <!-- Session 1 (always visible) -->
+      <li class="eac-ws-schedule__item">
+        <div class="eac-ws-schedule__date">
+          <span class="eac-ws-schedule__day" data-gjs-editable="true">Sat</span>
+          <span class="eac-ws-schedule__num"  data-gjs-editable="true">Jan 11</span>
+        </div>
+        <div class="eac-ws-schedule__content">
+          <h3 class="eac-ws-schedule__title" data-gjs-editable="true">
+            Opening circle — arriving in language
+          </h3>
+          <p class="eac-ws-schedule__desc" data-gjs-editable="true">
+            Warm-up prompts, group agreements, and free-writing to land in the room.
+          </p>
+        </div>
+        <div class="eac-ws-schedule__time" data-gjs-editable="true">10:00 am</div>
+      </li>
+
+      <!-- Session 2 (always visible) -->
+      <li class="eac-ws-schedule__item">
+        <div class="eac-ws-schedule__date">
+          <span class="eac-ws-schedule__day">Sat</span>
+          <span class="eac-ws-schedule__num">Jan 18</span>
+        </div>
+        <div class="eac-ws-schedule__content">
+          <h3 class="eac-ws-schedule__title" data-gjs-editable="true">
+            The body as archive
+          </h3>
+          <p class="eac-ws-schedule__desc" data-gjs-editable="true">
+            Somatic writing exercises — writing from sensation, memory, and breath.
+          </p>
+        </div>
+        <div class="eac-ws-schedule__time">10:00 am</div>
+      </li>
+
+    </ol>
+  </div>
+</section>

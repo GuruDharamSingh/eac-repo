@@ -2,7 +2,32 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+
+/**
+ * Derive the Domain attribute for auth cookies so a session set on the root
+ * host is also sent on its subdomains.
+ *
+ * Dev: returns `undefined` for `localhost` and `*.localhost` hosts. Chrome
+ *      silently drops cookies whose Domain attribute is a single-label name
+ *      (e.g. `localhost`), so we leave it unset and the cookie is host-only.
+ *      Each subdomain therefore needs its own login (acceptable for dev).
+ * Prod: opt-in via `EAC_COOKIE_DOMAIN` (e.g. `.artscollective.org`). Left
+ *       unset, behavior is host-only cookies.
+ */
+export async function deriveCookieDomain(
+  host: string | null
+): Promise<string | undefined> {
+  if (!host) return undefined;
+  const hostname = host.split(':')[0].toLowerCase();
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    return undefined;
+  }
+  if (process.env.EAC_COOKIE_DOMAIN) {
+    return process.env.EAC_COOKIE_DOMAIN;
+  }
+  return undefined;
+}
 
 function resolveSupabaseUrl(): string {
   return process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
@@ -88,6 +113,8 @@ export function resolveSupabaseAdminConfig() {
 export async function getServerAuth() {
   const { supabaseUrl, supabaseAnonKey, storageKey, fetch } = resolveSupabasePublicConfig();
   const cookieStore = await cookies();
+  const headerStore = await headers();
+  const cookieDomain = await deriveCookieDomain(headerStore.get('host'));
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -96,9 +123,12 @@ export async function getServerAuth() {
       },
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const finalOpts = cookieDomain
+              ? { ...options, domain: cookieDomain }
+              : options;
+            cookieStore.set(name, value, finalOpts);
+          });
         } catch {
           // The `setAll` method was called from a Server Component.
           // This can be ignored if you have middleware refreshing

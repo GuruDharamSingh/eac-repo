@@ -9,8 +9,15 @@ interface ThreadCardProps {
   canDelete: boolean;
 }
 
+const KIND_CONFIG: Record<string, { label: string; icon?: string; color: string }> = {
+  post:     { label: "Discussion", color: "bg-purple-100 text-purple-700" },
+  meeting:  { label: "Gathering",  color: "bg-blue-100 text-blue-700" },
+  workshop: { label: "Workshop",   color: "bg-amber-100 text-amber-700" },
+};
+
 export function ThreadCard({ thread, onDelete, canDelete }: ThreadCardProps) {
-  const isMeeting = thread.type === 'meeting';
+  const isMeeting = thread.kind === 'meeting';
+  const kindCfg = KIND_CONFIG[thread.kind] ?? { label: thread.kind, color: 'bg-secondary text-secondary-foreground' };
 
   return (
     <Link href={`/${thread.slug}`} className="block group">
@@ -47,6 +54,7 @@ export function ThreadCard({ thread, onDelete, canDelete }: ThreadCardProps) {
               <Trash2 className="w-3 h-3" />
             </button>
           )}
+        </div>
 
         {/* Type badge */}
         <div className="mb-3">

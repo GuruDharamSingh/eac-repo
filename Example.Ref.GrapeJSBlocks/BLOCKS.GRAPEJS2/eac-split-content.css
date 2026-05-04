@@ -1,0 +1,114 @@
+/*
+  EAC Split Image / Text — Stylesheet
+  =====================================
+  Add .eac-split--reverse to flip image to the right.
+  Ratio is 45/55 image/text by default — override with
+  --eac-split-img-flex and --eac-split-text-flex.
+*/
+
+.eac-split {
+  --eac-split-img-flex:  0 0 45%;
+  --eac-split-text-flex: 1;
+  padding: 0;
+}
+
+.eac-split__inner {
+  display:     flex;
+  align-items: stretch;
+  min-height:  480px;
+}
+
+/* Reverse variant */
+.eac-split--reverse .eac-split__inner {
+  flex-direction: row-reverse;
+}
+
+/* ── Media column ─────────────────────────────────────────────── */
+
+.eac-split__media {
+  flex:     var(--eac-split-img-flex);
+  overflow: hidden;
+  position: relative;
+}
+
+.eac-split__image {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+  display:    block;
+}
+
+/* ── Text column ──────────────────────────────────────────────── */
+
+.eac-split__content {
+  flex:           var(--eac-split-text-flex);
+  padding:        64px 56px;
+  display:        flex;
+  flex-direction: column;
+  justify-content:center;
+  gap:            0;
+  background:     #ffffff;
+}
+
+/* ── Sub-element 1: Tag ───────────────────────────────────────── */
+
+.eac-split__tag {
+  display:        inline-block;
+  font-size:      11px;
+  font-weight:    600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:          #3b82f6;
+  margin-bottom:  14px;
+}
+
+/* ── Sub-element 2: Heading ───────────────────────────────────── */
+
+.eac-split__heading {
+  font-size:      clamp(24px, 2.8vw, 36px);
+  font-weight:    700;
+  line-height:    1.2;
+  letter-spacing: -0.02em;
+  color:          #111827;
+  margin-bottom:  16px;
+}
+
+/* ── Body ─────────────────────────────────────────────────────── */
+
+.eac-split__body {
+  font-size:     16px;
+  line-height:   1.7;
+  color:         #4b5563;
+  margin-bottom: 28px;
+  max-width:     480px;
+}
+
+/* ── Sub-element 3: Text link ─────────────────────────────────── */
+
+.eac-split__link {
+  display:         inline-flex;
+  align-items:     center;
+  font-size:       15px;
+  font-weight:     500;
+  color:           #3b82f6;
+  text-decoration: none;
+  transition:      gap 0.15s;
+  gap:             4px;
+}
+.eac-split__link:hover { gap: 8px; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .eac-split__inner,
+  .eac-split--reverse .eac-split__inner {
+    flex-direction: column;
+  }
+  .eac-split__media {
+    flex:       0 0 260px;
+    min-height: 260px;
+  }
+  .eac-split__content {
+    padding: 40px 28px;
+  }
+}

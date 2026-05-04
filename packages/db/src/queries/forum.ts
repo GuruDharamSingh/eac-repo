@@ -12,7 +12,7 @@ import { nanoid } from 'nanoid';
 // ============================================================================
 
 export interface ForumThread {
-  type: 'post' | 'meeting';
+  kind: 'post' | 'meeting' | 'workshop';
   id: string;
   title: string;
   excerpt: string;
@@ -92,7 +92,7 @@ export async function getForumFeed(options: ForumFeedOptions) {
   const threads = await db<ForumThread[]>`
     WITH posts_data AS (
       SELECT
-        'post' AS type,
+        'post' AS kind,
         p.id,
         p.title,
         COALESCE(p.excerpt, LEFT(p.body, 200)) AS excerpt,
@@ -136,7 +136,7 @@ export async function getForumFeed(options: ForumFeedOptions) {
     ),
     meetings_data AS (
       SELECT
-        'meeting' AS type,
+        'meeting' AS kind,
         m.id,
         m.title,
         LEFT(COALESCE(m.description, ''), 200) AS excerpt,
@@ -188,18 +188,18 @@ export async function getForumFeed(options: ForumFeedOptions) {
       ${userId ? db`EXISTS(
         SELECT 1 FROM watches w
         WHERE (
-          (w.watchable_type = 'post' AND w.watchable_id = combined.id AND combined.type = 'post')
+          (w.watchable_type = 'post' AND w.watchable_id = combined.id AND combined.kind = 'post')
           OR
-          (w.watchable_type = 'meeting' AND w.watchable_id = combined.id AND combined.type = 'meeting')
+          (w.watchable_type = 'meeting' AND w.watchable_id = combined.id AND combined.kind = 'meeting')
         )
         AND w.user_id = ${userId}
       )` : db`FALSE`} AS is_watching,
       ${userId ? db`EXISTS(
         SELECT 1 FROM bookmarks b
         WHERE (
-          (b.bookmarkable_type = 'post' AND b.bookmarkable_id = combined.id AND combined.type = 'post')
+          (b.bookmarkable_type = 'post' AND b.bookmarkable_id = combined.id AND combined.kind = 'post')
           OR
-          (b.bookmarkable_type = 'meeting' AND b.bookmarkable_id = combined.id AND combined.type = 'meeting')
+          (b.bookmarkable_type = 'meeting' AND b.bookmarkable_id = combined.id AND combined.kind = 'meeting')
         )
         AND b.user_id = ${userId}
       )` : db`FALSE`} AS is_bookmarked
@@ -246,7 +246,7 @@ export async function getThread(slug: string, userId?: string) {
   // Try posts first
   const posts = await db`
     SELECT
-      'post' AS type,
+      'post' AS kind,
       p.id,
       p.title,
       p.body,
@@ -298,7 +298,7 @@ export async function getThread(slug: string, userId?: string) {
   // Try meetings
   const meetings = await db`
     SELECT
-      'meeting' AS type,
+      'meeting' AS kind,
       m.id,
       m.title,
       m.description AS body,
@@ -642,4 +642,16 @@ export async function toggleBookmark(data: {
     `;
     return { bookmarked: true };
   }
+}
+
+export async function deleteThread(threadId: string): Promise<void> {
+  // Try posts first, then meetings — only one will match
+  const postResult = await db`
+    DELETE FROM posts WHERE id = ${threadId} RETURNING id
+  `;
+  if (postResult.length > 0) return;
+
+  await db`
+    DELETE FROM meetings WHERE id = ${threadId}
+  `;
 }

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteThread } from '@/lib/data'; // We will create this function
+import { deleteThread } from '@/lib/data';
 import { getServerSession } from '@elkdonis/auth-server';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Auth check - require logged-in user
     const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: 'Thread ID is required' }, { status: 400 });

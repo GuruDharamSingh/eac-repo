@@ -11,6 +11,7 @@ export type { NextcloudClient, NextcloudConfig } from './client';
 
 // Feature modules (import individually)
 export * from './files';
+export * from './org-folders';
 export * from './users';
 export * from './talk';
 export * from './calendar';

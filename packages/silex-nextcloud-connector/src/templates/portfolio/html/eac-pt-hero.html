@@ -1,0 +1,51 @@
+<!--
+  eac-pt-hero.html  —  Artist Portfolio: full-bleed identity hero
+  Traits: artistName, pronouns, disciplineTag, cityTag, heroImageSrc, heroBgSrc
+-->
+<section class="eac-pt-hero" data-gjs-type="eac-pt-hero">
+
+  <div class="eac-pt-hero__bg" aria-hidden="true">
+    <img class="eac-pt-hero__bg-img"
+         src=""
+         alt=""
+         data-trait="heroBgSrc"
+         loading="eager" />
+    <div class="eac-pt-hero__overlay"></div>
+  </div>
+
+  <div class="eac-pt-hero__inner">
+
+    <div class="eac-pt-hero__portrait-wrap">
+      <img class="eac-pt-hero__portrait"
+           src=""
+           alt="Artist portrait"
+           data-trait="heroImageSrc"
+           loading="eager" />
+    </div>
+
+    <div class="eac-pt-hero__identity">
+
+      <div class="eac-pt-hero__tags" role="list">
+        <span class="eac-pt-hero__tag" data-gjs-editable="true" data-trait="disciplineTag">Painting</span>
+        <span class="eac-pt-hero__tag eac-pt-hero__tag--city" data-gjs-editable="true" data-trait="cityTag">Toronto, ON</span>
+      </div>
+
+      <h1 class="eac-pt-hero__name" data-gjs-editable="true" data-trait="artistName">
+        Artist Name
+      </h1>
+
+      <p class="eac-pt-hero__pronouns" data-gjs-editable="true" data-trait="pronouns">
+        they/them
+      </p>
+
+      <div class="eac-pt-hero__actions">
+        <a class="eac-pt-hero__btn eac-pt-hero__btn--primary" href="#works">View works</a>
+        <a class="eac-pt-hero__btn eac-pt-hero__btn--ghost" href="#commission">Commission</a>
+        <a class="eac-pt-hero__btn eac-pt-hero__btn--ghost" href="#contact">Collaborate</a>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>

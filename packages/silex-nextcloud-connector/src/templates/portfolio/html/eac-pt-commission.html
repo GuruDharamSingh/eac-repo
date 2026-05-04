@@ -1,0 +1,99 @@
+<!--
+  eac-pt-commission.html  —  Artist Portfolio: commission + collaborate block
+  Traits: commissionNote, inquiryEmail, commissionTypes, priceNote
+-->
+<section class="eac-pt-commission" id="commission" data-gjs-type="eac-pt-commission">
+  <div class="eac-pt-commission__inner">
+
+    <div class="eac-pt-commission__header">
+      <span class="eac-pt-commission__eyebrow">Work with me</span>
+      <h2 class="eac-pt-commission__heading">Commission &amp; Collaborate</h2>
+      <p class="eac-pt-commission__intro" data-gjs-editable="true" data-trait="commissionNote">
+        I accept a limited number of commissions each year. Whether you are looking for a
+        new work for your home, an installation for a public or commercial space, or a
+        collaborative project, I'd love to hear from you.
+      </p>
+    </div>
+
+    <!-- Commission type cards: purchase, exhibit, collab, visit -->
+    <div class="eac-pt-commission__types" data-gjs-editable="true" data-trait="commissionTypes">
+
+      <div class="eac-pt-commission__type">
+        <span class="eac-pt-commission__type-icon">◈</span>
+        <h3 class="eac-pt-commission__type-title">Commission a work</h3>
+        <p class="eac-pt-commission__type-desc">
+          Original paintings, drawings, and mixed-media works. Custom size,
+          palette, and subject matter. Typical lead time 6–10 weeks.
+        </p>
+        <a class="eac-pt-commission__type-link" href="#commission-form">Start inquiry &rarr;</a>
+      </div>
+
+      <div class="eac-pt-commission__type">
+        <span class="eac-pt-commission__type-icon">◆</span>
+        <h3 class="eac-pt-commission__type-title">Purchase available work</h3>
+        <p class="eac-pt-commission__type-desc">
+          Select works from the gallery are available for immediate purchase.
+          Shipping available internationally. Payment plans considered.
+        </p>
+        <a class="eac-pt-commission__type-link" href="#works">Browse available &rarr;</a>
+      </div>
+
+      <div class="eac-pt-commission__type">
+        <span class="eac-pt-commission__type-icon">◉</span>
+        <h3 class="eac-pt-commission__type-title">Exhibition &amp; loans</h3>
+        <p class="eac-pt-commission__type-desc">
+          Available for solo and group exhibitions, institutional loans, and
+          public art projects. Portfolio and artist CV available on request.
+        </p>
+        <a class="eac-pt-commission__type-link" href="#contact">Contact for proposal &rarr;</a>
+      </div>
+
+      <div class="eac-pt-commission__type">
+        <span class="eac-pt-commission__type-icon">◎</span>
+        <h3 class="eac-pt-commission__type-title">Collaborate &amp; visit</h3>
+        <p class="eac-pt-commission__type-desc">
+          Open to artist exchanges, residency collaborations, studio visits
+          by appointment, and cross-disciplinary projects.
+        </p>
+        <a class="eac-pt-commission__type-link" href="#contact">Get in touch &rarr;</a>
+      </div>
+
+    </div><!-- /types -->
+
+    <!-- Inquiry form -->
+    <div class="eac-pt-commission__form-wrap" id="commission-form">
+      <h3 class="eac-pt-commission__form-heading">Send an inquiry</h3>
+      <p class="eac-pt-commission__price-note" data-gjs-editable="true" data-trait="priceNote">
+        Commissions start from $800 CAD. Sliding scale available — cost is never a barrier to a conversation.
+      </p>
+      <form class="eac-pt-commission__form" action="/api/contact" method="POST">
+        <div class="eac-pt-commission__form-row">
+          <div class="eac-pt-commission__field">
+            <label class="eac-pt-commission__label" for="pt-name">Your name</label>
+            <input class="eac-pt-commission__input" id="pt-name" name="name" type="text" placeholder="Full name" required />
+          </div>
+          <div class="eac-pt-commission__field">
+            <label class="eac-pt-commission__label" for="pt-email">Email</label>
+            <input class="eac-pt-commission__input" id="pt-email" name="email" type="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <div class="eac-pt-commission__field">
+          <label class="eac-pt-commission__label" for="pt-type">Type of inquiry</label>
+          <select class="eac-pt-commission__input" id="pt-type" name="type">
+            <option value="commission">Commission a new work</option>
+            <option value="purchase">Purchase an existing work</option>
+            <option value="exhibition">Exhibition / loan</option>
+            <option value="collab">Collaboration / visit</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="eac-pt-commission__field">
+          <label class="eac-pt-commission__label" for="pt-message">Message</label>
+          <textarea class="eac-pt-commission__input eac-pt-commission__textarea" id="pt-message" name="message" rows="5" placeholder="Tell me about the project, space, or what you have in mind…" required></textarea>
+        </div>
+        <button class="eac-pt-commission__submit" type="submit">Send inquiry</button>
+      </form>
+    </div>
+
+  </div>
+</section>

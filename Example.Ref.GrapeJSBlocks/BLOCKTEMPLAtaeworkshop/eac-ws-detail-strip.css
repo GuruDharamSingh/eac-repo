@@ -1,0 +1,71 @@
+/*
+  eac-ws-detail-strip.css
+  =========================
+  Horizontal fact bar. Light surface, 6-column grid.
+  Collapses to 3-col on tablet, 2-col on mobile.
+*/
+
+.eac-ws-detail-strip {
+  position:      relative;
+  background:    var(--eac-color-surface);
+  border-bottom: 0.5px solid var(--eac-color-border);
+  padding:       var(--eac-space-4) var(--eac-space-6);
+}
+
+.eac-ws-detail-strip__inner {
+  position:  relative;
+  max-width: var(--eac-max-width-page);
+  margin:    0 auto;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────── */
+
+.eac-ws-detail-strip__grid {
+  display:               grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap:                   0;
+  margin:                0;
+  padding:               0;
+}
+
+.eac-ws-detail-strip__item {
+  padding:      var(--eac-space-3) var(--eac-space-3);
+  border-right: 0.5px solid var(--eac-color-border);
+}
+.eac-ws-detail-strip__item:first-child { padding-left: 0; }
+.eac-ws-detail-strip__item:last-child  {
+  border-right: none;
+  padding-right: 0;
+}
+
+/* ── Label / value ────────────────────────────────────────────── */
+
+.eac-ws-detail-strip__label {
+  font-size:      var(--eac-text-xs);
+  font-weight:    500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color:          var(--eac-color-ink-faint);
+  margin-bottom:  2px;
+}
+
+.eac-ws-detail-strip__value {
+  font-size:   var(--eac-text-sm);
+  font-weight: 500;
+  color:       var(--eac-color-ink);
+  margin:      0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 540px) {
+  .eac-ws-detail-strip { padding: var(--eac-space-4) var(--eac-space-5); }
+  .eac-ws-detail-strip__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .eac-ws-detail-strip__item:nth-child(odd)  { border-right: 0.5px solid var(--eac-color-border); }
+  .eac-ws-detail-strip__item:nth-child(even) { border-right: none; }
+  .eac-ws-detail-strip__item:nth-child(n+3)  { border-top: 0.5px solid var(--eac-color-border); }
+  .eac-ws-detail-strip__item:first-child     { padding-left: var(--eac-space-4); }
+  .eac-ws-detail-strip__item:last-child      { padding-right: var(--eac-space-4); }
+}

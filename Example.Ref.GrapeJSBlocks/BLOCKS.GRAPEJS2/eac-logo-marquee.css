@@ -1,0 +1,109 @@
+/*
+  EAC Logo Marquee — Stylesheet
+  ================================
+  Pure CSS infinite scroll. No JS whatsoever.
+
+  --eac-marquee-speed   animation duration (lower = faster)
+  --eac-marquee-gap     gap between logo items
+
+  To pause on hover: .eac-marquee__track:hover { animation-play-state: paused; }
+*/
+
+.eac-marquee {
+  --eac-marquee-speed: 22s;
+  --eac-marquee-gap:   48px;
+
+  padding:         40px 0;
+  background:      #f9fafb;
+  border-top:      0.5px solid #e5e7eb;
+  border-bottom:   0.5px solid #e5e7eb;
+  overflow:        hidden;
+}
+
+.eac-marquee__inner {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            20px;
+}
+
+/* ── Sub-element 1: Section label ─────────────────────────────── */
+
+.eac-marquee__label {
+  font-size:      11px;
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          #9ca3af;
+  text-align:     center;
+  margin:         0;
+}
+
+/* ── Scrolling track wrapper (clips the overflow) ─────────────── */
+
+.eac-marquee__track-wrap {
+  width:    100%;
+  overflow: hidden;
+  /* Fade edges for polish */
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+}
+
+/* ── Sub-element 2: Logo track (animated) ─────────────────────── */
+
+.eac-marquee__track {
+  display:     flex;
+  gap:         var(--eac-marquee-gap);
+  width:       max-content;
+  animation:   eac-marquee-scroll var(--eac-marquee-speed) linear infinite;
+}
+
+/*
+  The animation shifts the track by exactly 50% — which is the
+  width of one set of logos. Because we duplicated the list,
+  the second set seamlessly replaces the first at the loop point.
+*/
+@keyframes eac-marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Sub-element 3: Individual logo pill ──────────────────────── */
+
+.eac-marquee__logo {
+  display:      inline-flex;
+  align-items:  center;
+  padding:      8px 20px;
+  border:       0.5px solid #e5e7eb;
+  border-radius:6px;
+  font-size:    13px;
+  font-weight:  500;
+  color:        #9ca3af;
+  white-space:  nowrap;
+  background:   #ffffff;
+  /* In production replace text with <img> logo at 24–28px height,
+     filter: grayscale(1) opacity(.5) */
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .eac-marquee__track {
+    animation: none;
+    flex-wrap:  wrap;
+    width:      100%;
+    padding:    0 24px;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,47 @@
+<!--
+  eac-ws-testimonials.html
+  ==========================
+  Workshop-specific testimonials. Filtered from a shared
+  testimonials table by workshop_id.
+
+  CMS: testimonials table (separate from workshop record)
+    testimonials.workshop_id  FK
+    testimonials.quote
+    testimonials.author_name
+    testimonials.author_role
+    testimonials.is_published
+-->
+<section class="eac-ws-testimonials" data-gjs-type="eac-ws-testimonials" id="testimonials">
+  <div class="eac-ws-testimonials__inner">
+
+    <span class="eac-ws-label eac-ws-label--testimonials">testimonials</span>
+
+    <h2 class="eac-ws-testimonials__heading">What past participants say</h2>
+
+    <div class="eac-ws-testimonials__grid">
+
+      <figure class="eac-ws-testimonials__card">
+        <blockquote class="eac-ws-testimonials__quote" data-gjs-editable="true">
+          Dana's workshop cracked something open in my writing I'd been
+          circling for years.
+        </blockquote>
+        <figcaption class="eac-ws-testimonials__attribution">
+          <span class="eac-ws-testimonials__name" data-gjs-editable="true">Priya M.</span>
+          <span class="eac-ws-testimonials__role" data-gjs-editable="true">Past participant</span>
+        </figcaption>
+      </figure>
+
+      <figure class="eac-ws-testimonials__card">
+        <blockquote class="eac-ws-testimonials__quote" data-gjs-editable="true">
+          I came in thinking I wasn't a "real" writer. I left with three
+          pages and a different relationship to the blank page.
+        </blockquote>
+        <figcaption class="eac-ws-testimonials__attribution">
+          <span class="eac-ws-testimonials__name" data-gjs-editable="true">Marcus L.</span>
+          <span class="eac-ws-testimonials__role" data-gjs-editable="true">Past participant</span>
+        </figcaption>
+      </figure>
+
+    </div>
+  </div>
+</section>

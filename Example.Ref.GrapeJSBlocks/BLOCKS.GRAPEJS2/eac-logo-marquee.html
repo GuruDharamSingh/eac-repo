@@ -1,0 +1,36 @@
+<!--
+  EAC Logo Marquee / Trust Bar — HTML Template
+  ================================================
+  Infinite horizontal scroll via CSS only — no JS.
+  The logo list is duplicated in HTML so the loop seam is invisible.
+  Speed and gap are controlled by CSS custom properties.
+-->
+<section class="eac-marquee" data-gjs-type="eac-marquee">
+  <div class="eac-marquee__inner">
+
+    <p class="eac-marquee__label" data-gjs-editable="true" data-trait="labelText">
+      Supported and trusted by
+    </p>
+
+    <div class="eac-marquee__track-wrap" aria-hidden="true">
+      <div class="eac-marquee__track">
+
+        <!-- Original set -->
+        <span class="eac-marquee__logo">Canada Council for the Arts</span>
+        <span class="eac-marquee__logo">Toronto Arts Council</span>
+        <span class="eac-marquee__logo">OCAD University</span>
+        <span class="eac-marquee__logo">Harbourfront Centre</span>
+        <span class="eac-marquee__logo">The Bentway</span>
+
+        <!-- Duplicate set — required for seamless loop -->
+        <span class="eac-marquee__logo" aria-hidden="true">Canada Council for the Arts</span>
+        <span class="eac-marquee__logo" aria-hidden="true">Toronto Arts Council</span>
+        <span class="eac-marquee__logo" aria-hidden="true">OCAD University</span>
+        <span class="eac-marquee__logo" aria-hidden="true">Harbourfront Centre</span>
+        <span class="eac-marquee__logo" aria-hidden="true">The Bentway</span>
+
+      </div>
+    </div>
+
+  </div>
+</section>

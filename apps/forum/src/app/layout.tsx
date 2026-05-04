@@ -1,25 +1,33 @@
-import { ColorSchemeScript } from '@mantine/core';
-import '@mantine/core/styles.css';
+import type { Metadata } from 'next';
+import { Crimson_Pro, Inter } from 'next/font/google';
 import './globals.css';
-import { Providers } from './providers';
+import { TopNav } from '@/components/layout/top-nav';
 
-export const metadata = {
-  title: 'EAC Forum - Community Activity Feed',
-  description: 'Aggregated content from all EAC organizations',
+const crimsonPro = Crimson_Pro({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+export const metadata: Metadata = {
+  title: 'EAC Forum',
+  description: 'Discussions and gatherings across the Elkdonis network',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ColorSchemeScript />
-      </head>
-      <body className="min-h-screen bg-background" suppressHydrationWarning>
-        <Providers>{children}</Providers>
+    <html lang="en" className={`${crimsonPro.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background antialiased" suppressHydrationWarning>
+        <TopNav />
+        {children}
       </body>
     </html>
   );

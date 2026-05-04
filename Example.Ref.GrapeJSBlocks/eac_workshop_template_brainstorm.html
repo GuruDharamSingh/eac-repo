@@ -1,0 +1,517 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-size:14px;color:var(--color-text-primary)}
+.wrap{padding:1rem 0}
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem}
+.tab{padding:9px 16px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--color-text-secondary);border-bottom:2px solid transparent;transition:all .15s}
+.tab.on{color:var(--color-text-primary);border-bottom-color:var(--color-text-primary);font-weight:500}
+.panel{display:none}.panel.on{display:block}
+
+/* PAGE MOCKUP */
+.page-mock{border:0.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden;background:var(--color-background-secondary)}
+.pm-bar{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:8px 14px;display:flex;align-items:center;gap:8px}
+.pm-dot{width:8px;height:8px;border-radius:50%}
+.pm-url{flex:1;background:var(--color-background-secondary);border-radius:4px;height:20px;margin-left:8px;display:flex;align-items:center;padding:0 8px}
+.pm-url span{font-size:10px;color:var(--color-text-secondary)}
+
+.section{padding:20px 24px;border-bottom:0.5px solid var(--color-border-tertiary);position:relative;cursor:pointer;transition:background .12s}
+.section:hover{background:var(--color-background-info)}
+.section:last-child{border-bottom:none}
+.section-label{position:absolute;top:8px;right:10px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:999px}
+.sl-hero{background:#e0e7ff;color:#3730a3}
+.sl-content{background:#d1fae5;color:#065f46}
+.sl-social{background:#fef3c7;color:#92400e}
+.sl-action{background:#fce7f3;color:#9d174d}
+.sl-nav{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+
+/* hero mock */
+.mock-hero{background:#0f172a;border-radius:6px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.mock-eyebrow{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(180,160,255,.7)}
+.mock-h1{font-size:15px;font-weight:600;color:#fff;line-height:1.2}
+.mock-meta{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.mock-pill{font-size:9px;padding:2px 8px;border-radius:999px;border:0.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+.mock-cta{display:flex;gap:6px;margin-top:4px}
+.mock-btn-p{background:#fff;color:#0f172a;font-size:9px;font-weight:600;padding:5px 12px;border-radius:4px}
+.mock-btn-g{background:transparent;color:rgba(255,255,255,.6);font-size:9px;padding:5px 12px;border-radius:4px;border:0.5px solid rgba(255,255,255,.2)}
+
+/* facilitator mock */
+.mock-split{display:flex;gap:10px;align-items:center}
+.mock-avatar{width:48px;height:48px;border-radius:50%;background:#dbeafe;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#1e40af}
+.mock-fac-info{flex:1}
+.mock-fac-name{font-size:12px;font-weight:500}
+.mock-fac-role{font-size:10px;color:var(--color-text-secondary)}
+.mock-fac-bio{font-size:10px;color:var(--color-text-secondary);line-height:1.5;margin-top:4px}
+
+/* schedule mock */
+.mock-sched{display:flex;flex-direction:column;gap:5px}
+.mock-session{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;background:var(--color-background-primary);border-radius:6px;border:0.5px solid var(--color-border-tertiary)}
+.mock-time{font-size:9px;color:var(--color-text-secondary);min-width:52px;padding-top:1px}
+.mock-stitle{font-size:11px;font-weight:500}
+.mock-sdesc{font-size:9px;color:var(--color-text-secondary)}
+
+/* media mock */
+.mock-gallery{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.mock-img{border-radius:4px;background:var(--color-border-tertiary)}
+
+/* register mock */
+.mock-register{background:#0f172a;border-radius:6px;padding:16px;text-align:center}
+.mock-reg-h{font-size:12px;font-weight:600;color:#fff;margin-bottom:4px}
+.mock-reg-price{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px}
+.mock-reg-spots{font-size:9px;color:rgba(255,255,255,.5);margin-bottom:8px}
+.mock-reg-bar{height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin-bottom:10px}
+.mock-reg-fill{height:4px;background:#a78bfa;border-radius:2px}
+.mock-reg-btn{background:#fff;color:#0f172a;font-size:10px;font-weight:600;padding:8px 20px;border-radius:5px;display:inline-block}
+
+/* detail strip */
+.detail-strip{display:flex;gap:12px;flex-wrap:wrap}
+.ds-item{display:flex;flex-direction:column;gap:2px;flex:1;min-width:80px}
+.ds-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary)}
+.ds-val{font-size:11px;font-weight:500}
+
+/* SCHEMA PANEL */
+.schema{display:flex;flex-direction:column;gap:12px}
+.schema-group{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden}
+.sg-head{padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:8px}
+.sg-title{font-size:13px;font-weight:500}
+.sg-badge{font-size:10px;padding:1px 7px;border-radius:999px}
+.sg-fields{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.field{padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;gap:2px}
+.field:nth-child(even){border-right:none}
+.field:last-child,.field:nth-last-child(2):nth-child(odd){border-bottom:none}
+.field-name{font-size:12px;font-weight:500;font-family:var(--font-mono)}
+.field-type{font-size:10px;padding:1px 6px;border-radius:4px;display:inline-block;margin-top:1px;width:fit-content}
+.ft-text{background:#dbeafe;color:#1e40af}
+.ft-rich{background:#e0e7ff;color:#3730a3}
+.ft-num{background:#dcfce7;color:#166534}
+.ft-date{background:#fef3c7;color:#92400e}
+.ft-bool{background:#fce7f3;color:#9d174d}
+.ft-rel{background:#f3f4f6;color:#374151;border:0.5px solid #d1d5db}
+.ft-media{background:#fef3c7;color:#854d0e}
+.ft-enum{background:#f0fdf4;color:#15803d;border:0.5px solid #bbf7d0}
+.field-note{font-size:10px;color:var(--color-text-secondary);margin-top:1px}
+
+/* SECTION MAP */
+.smap{display:flex;flex-direction:column;gap:8px}
+.sm-row{display:flex;gap:8px;align-items:stretch}
+.sm-section{flex:1;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px 12px}
+.sm-name{font-size:12px;font-weight:500;margin-bottom:4px}
+.sm-fields{display:flex;flex-wrap:wrap;gap:4px}
+.sm-field{font-size:10px;padding:1px 6px;border-radius:4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);font-family:var(--font-mono);color:var(--color-text-secondary)}
+.sm-arrow{width:2px;background:var(--color-border-secondary);border-radius:1px;flex-shrink:0;align-self:stretch;min-height:20px}
+</style>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab on" onclick="show('page',this)">Page mockup</button>
+    <button class="tab" onclick="show('schema',this)">CMS schema</button>
+    <button class="tab" onclick="show('map',this)">Section → field map</button>
+  </div>
+
+  <!-- PAGE MOCKUP -->
+  <div id="tab-page" class="panel on">
+    <div class="page-mock">
+      <div class="pm-bar">
+        <div class="pm-dot" style="background:#ef4444"></div>
+        <div class="pm-dot" style="background:#f59e0b"></div>
+        <div class="pm-dot" style="background:#22c55e"></div>
+        <div class="pm-url"><span>eac.studio/workshops/writing-as-practice</span></div>
+      </div>
+
+      <!-- NAV -->
+      <div class="section" onclick="sendPrompt('Tell me more about what should go in the workshop page navigation bar')">
+        <span class="section-label sl-nav">nav</span>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;font-weight:600">EAC</div>
+          <div style="display:flex;gap:12px">
+            <span style="font-size:10px;color:var(--color-text-secondary)">Workshops</span>
+            <span style="font-size:10px;color:var(--color-text-secondary)">Members</span>
+            <span style="font-size:10px;color:var(--color-text-secondary)">About</span>
+            <span style="font-size:10px;font-weight:500;padding:3px 10px;background:#0f172a;color:#fff;border-radius:4px">Register →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO -->
+      <div class="section" onclick="sendPrompt('What CMS fields drive the workshop hero section?')">
+        <span class="section-label sl-hero">hero</span>
+        <div class="mock-hero">
+          <div class="mock-eyebrow">Creative writing · 6-week series</div>
+          <div class="mock-h1">Writing as a Practice,<br>Not a Product</div>
+          <div class="mock-meta">
+            <div class="mock-pill">Saturdays 10am–1pm</div>
+            <div class="mock-pill">EAC Studio, Toronto</div>
+            <div class="mock-pill">8 spots remaining</div>
+          </div>
+          <div class="mock-cta">
+            <div class="mock-btn-p">Register — $180</div>
+            <div class="mock-btn-g">Learn more ↓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL STRIP -->
+      <div class="section" onclick="sendPrompt('What are the key logistics fields for a workshop?')">
+        <span class="section-label sl-content">details</span>
+        <div class="detail-strip">
+          <div class="ds-item"><div class="ds-label">Starts</div><div class="ds-val">Jan 11, 2025</div></div>
+          <div class="ds-item"><div class="ds-label">Sessions</div><div class="ds-val">6 × 3 hrs</div></div>
+          <div class="ds-item"><div class="ds-label">Format</div><div class="ds-val">In-person</div></div>
+          <div class="ds-item"><div class="ds-label">Level</div><div class="ds-val">All levels</div></div>
+          <div class="ds-item"><div class="ds-label">Capacity</div><div class="ds-val">12 people</div></div>
+          <div class="ds-item"><div class="ds-label">Language</div><div class="ds-val">English</div></div>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="section" onclick="sendPrompt('How should the workshop description and about section be structured in the CMS?')">
+        <span class="section-label sl-content">about</span>
+        <div style="max-width:520px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:6px">About this workshop</div>
+          <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.6">This series approaches writing as a living practice — exploratory, embodied, and grounded in the present moment. Participants will move through prompts, response exercises, and group reflection across six weekly sessions…</div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+            <div style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)">Poetry</div>
+            <div style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)">Journaling</div>
+            <div style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)">Somatic writing</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FACILITATOR -->
+      <div class="section" onclick="sendPrompt('How should facilitator information be stored and linked in the CMS?')">
+        <span class="section-label sl-content">facilitator</span>
+        <div class="mock-split">
+          <div class="mock-avatar">DK</div>
+          <div class="mock-fac-info">
+            <div class="mock-fac-name">Dana Kuroda</div>
+            <div class="mock-fac-role">Writer, workshop facilitator — EAC founding member</div>
+            <div class="mock-fac-bio">Dana's practice spans poetry, auto-fiction, and collaborative writing. She has facilitated workshops at Harbourfront Centre and OCAD University, and co-founded the EAC writing circle in 2021.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SESSION SCHEDULE -->
+      <div class="section" onclick="sendPrompt('How should the session schedule be modelled in the CMS — as a repeating field or separate entries?')">
+        <span class="section-label sl-content">schedule</span>
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px">Session breakdown</div>
+        <div class="mock-sched">
+          <div class="mock-session">
+            <div class="mock-time">Sat Jan 11</div>
+            <div><div class="mock-stitle">Opening circle — arriving in language</div><div class="mock-sdesc">Warm-up prompts, establishing group agreements</div></div>
+          </div>
+          <div class="mock-session">
+            <div class="mock-time">Sat Jan 18</div>
+            <div><div class="mock-stitle">The body as archive</div><div class="mock-sdesc">Somatic writing exercises, embodied memory</div></div>
+          </div>
+          <div class="mock-session" style="opacity:.5">
+            <div class="mock-time">+ 4 more</div>
+            <div><div class="mock-sdesc">Sessions 3–6 visible after registration</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEDIA -->
+      <div class="section" onclick="sendPrompt('What media fields should a workshop CMS entry support?')">
+        <span class="section-label sl-social">media</span>
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px">From past sessions</div>
+        <div class="mock-gallery">
+          <div class="mock-img" style="height:56px"></div>
+          <div class="mock-img" style="height:56px"></div>
+        </div>
+      </div>
+
+      <!-- TESTIMONIALS -->
+      <div class="section" onclick="sendPrompt('How should workshop-specific testimonials be handled in the CMS?')">
+        <span class="section-label sl-social">testimonials</span>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--color-text-secondary);line-height:1.5">"Dana's workshop cracked something open in my writing I'd been circling for years."</div>
+            <div style="font-size:10px;font-weight:500;margin-top:4px">— Priya M., past participant</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RELATED -->
+      <div class="section" onclick="sendPrompt('How should related workshops be surfaced from the CMS?')">
+        <span class="section-label sl-content">related</span>
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px">You might also like</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px">
+            <div style="font-size:10px;color:var(--color-text-secondary)">Drum circle</div>
+            <div style="font-size:11px;font-weight:500">Rhythm &amp; Presence</div>
+            <div style="font-size:10px;color:var(--color-text-secondary);margin-top:2px">Ario · 4 sessions</div>
+          </div>
+          <div style="flex:1;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px">
+            <div style="font-size:10px;color:var(--color-text-secondary)">Enneagram</div>
+            <div style="font-size:11px;font-weight:500">Self Through Type</div>
+            <div style="font-size:10px;color:var(--color-text-secondary);margin-top:2px">Ario · 1-day intensive</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="section" onclick="sendPrompt('What fields does the registration/pricing block need from the CMS?')">
+        <span class="section-label sl-action">register</span>
+        <div class="mock-register">
+          <div class="mock-reg-h">Secure your spot</div>
+          <div class="mock-reg-price">$180 <span style="font-size:11px;font-weight:400;opacity:.5">/ 6 sessions</span></div>
+          <div class="mock-reg-spots">8 of 12 spots filled</div>
+          <div class="mock-reg-bar"><div class="mock-reg-fill" style="width:67%"></div></div>
+          <div class="mock-reg-btn">Register now →</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:8px">Sliding scale available — reach out if cost is a barrier.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCHEMA PANEL -->
+  <div id="tab-schema" class="panel">
+    <div class="schema">
+
+      <!-- Core identity -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#dbeafe;color:#1e40af">core</span>
+          <span class="sg-title">Workshop identity</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">slug</div><span class="field-type ft-text">text</span><div class="field-note">URL key · unique · auto-generated from title</div></div>
+          <div class="field"><div class="field-name">title</div><span class="field-type ft-text">text</span><div class="field-note">Display title · shown in hero H1</div></div>
+          <div class="field"><div class="field-name">subtitle</div><span class="field-type ft-text">text</span><div class="field-note">One-line hook · shown below title</div></div>
+          <div class="field"><div class="field-name">discipline</div><span class="field-type ft-enum">enum</span><div class="field-note">writing · movement · sound · visual · hybrid</div></div>
+          <div class="field"><div class="field-name">description_short</div><span class="field-type ft-text">text</span><div class="field-note">2–3 sentences · used in cards and meta</div></div>
+          <div class="field"><div class="field-name">description_long</div><span class="field-type ft-rich">rich text</span><div class="field-note">Full about section · supports formatting</div></div>
+          <div class="field"><div class="field-name">tags</div><span class="field-type ft-text">text[]</span><div class="field-note">Topic tags · e.g. poetry, somatic, journaling</div></div>
+          <div class="field"><div class="field-name">status</div><span class="field-type ft-enum">enum</span><div class="field-note">draft · published · full · archived</div></div>
+        </div>
+      </div>
+
+      <!-- Logistics -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#dcfce7;color:#166534">logistics</span>
+          <span class="sg-title">Scheduling &amp; logistics</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">format</div><span class="field-type ft-enum">enum</span><div class="field-note">in-person · online · hybrid</div></div>
+          <div class="field"><div class="field-name">level</div><span class="field-type ft-enum">enum</span><div class="field-note">all-levels · beginner · intermediate · advanced</div></div>
+          <div class="field"><div class="field-name">start_date</div><span class="field-type ft-date">date</span><div class="field-note">First session date</div></div>
+          <div class="field"><div class="field-name">end_date</div><span class="field-type ft-date">date</span><div class="field-note">Last session date</div></div>
+          <div class="field"><div class="field-name">session_count</div><span class="field-type ft-num">int</span><div class="field-note">Total number of sessions</div></div>
+          <div class="field"><div class="field-name">session_duration_hrs</div><span class="field-type ft-num">float</span><div class="field-note">Length of each session in hours</div></div>
+          <div class="field"><div class="field-name">recurrence</div><span class="field-type ft-text">text</span><div class="field-note">Human-readable · "Saturdays 10am–1pm"</div></div>
+          <div class="field"><div class="field-name">location_name</div><span class="field-type ft-text">text</span><div class="field-note">e.g. EAC Studio · Online via Nextcloud Talk</div></div>
+          <div class="field"><div class="field-name">location_address</div><span class="field-type ft-text">text</span><div class="field-note">Full address · omit for online</div></div>
+          <div class="field"><div class="field-name">language</div><span class="field-type ft-text">text</span><div class="field-note">Default: English</div></div>
+          <div class="field"><div class="field-name">accessibility_notes</div><span class="field-type ft-rich">rich text</span><div class="field-note">Wheelchair access, captions, etc.</div></div>
+        </div>
+      </div>
+
+      <!-- Capacity + pricing -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#fce7f3;color:#9d174d">capacity</span>
+          <span class="sg-title">Capacity &amp; pricing</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">capacity_max</div><span class="field-type ft-num">int</span><div class="field-note">Maximum participants</div></div>
+          <div class="field"><div class="field-name">spots_filled</div><span class="field-type ft-num">int</span><div class="field-note">Computed from registrations table</div></div>
+          <div class="field"><div class="field-name">price_full</div><span class="field-type ft-num">decimal</span><div class="field-note">Full price in CAD</div></div>
+          <div class="field"><div class="field-name">price_sliding_min</div><span class="field-type ft-num">decimal</span><div class="field-note">Sliding scale floor · null if not offered</div></div>
+          <div class="field"><div class="field-name">price_member</div><span class="field-type ft-num">decimal</span><div class="field-note">Member discount price · null if none</div></div>
+          <div class="field"><div class="field-name">sliding_scale_note</div><span class="field-type ft-text">text</span><div class="field-note">e.g. "Reach out if cost is a barrier"</div></div>
+          <div class="field"><div class="field-name">registration_url</div><span class="field-type ft-text">text</span><div class="field-note">External link OR internal form route</div></div>
+          <div class="field"><div class="field-name">registration_deadline</div><span class="field-type ft-date">date</span><div class="field-note">Cutoff for registration</div></div>
+        </div>
+      </div>
+
+      <!-- Facilitator -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#f3f4f6;color:#374151;border:0.5px solid #d1d5db">relation</span>
+          <span class="sg-title">Facilitator (→ Members table)</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">facilitator_id</div><span class="field-type ft-rel">→ members</span><div class="field-note">FK to members table · pulls name, bio, photo</div></div>
+          <div class="field"><div class="field-name">co_facilitators</div><span class="field-type ft-rel">→ members[]</span><div class="field-note">Optional array for co-led workshops</div></div>
+          <div class="field"><div class="field-name">facilitator_note</div><span class="field-type ft-text">text</span><div class="field-note">Context-specific note overriding member bio</div></div>
+        </div>
+      </div>
+
+      <!-- Sessions -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#fef3c7;color:#92400e">child table</span>
+          <span class="sg-title">Sessions (workshop_sessions)</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">workshop_id</div><span class="field-type ft-rel">→ workshops</span><div class="field-note">Parent workshop FK</div></div>
+          <div class="field"><div class="field-name">session_number</div><span class="field-type ft-num">int</span><div class="field-note">Ordering within the workshop</div></div>
+          <div class="field"><div class="field-name">date</div><span class="field-type ft-date">date</span><div class="field-note">Session date</div></div>
+          <div class="field"><div class="field-name">time_start</div><span class="field-type ft-text">time</span><div class="field-note">e.g. 10:00</div></div>
+          <div class="field"><div class="field-name">title</div><span class="field-type ft-text">text</span><div class="field-note">Session theme · shown in schedule</div></div>
+          <div class="field"><div class="field-name">description</div><span class="field-type ft-text">text</span><div class="field-note">1–2 line description</div></div>
+          <div class="field"><div class="field-name">public_preview</div><span class="field-type ft-bool">bool</span><div class="field-note">Show to unregistered visitors?</div></div>
+        </div>
+      </div>
+
+      <!-- Media -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#fef3c7;color:#854d0e">media</span>
+          <span class="sg-title">Media (stored in Nextcloud)</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">cover_image</div><span class="field-type ft-media">Nextcloud path</span><div class="field-note">OG image, hero background</div></div>
+          <div class="field"><div class="field-name">gallery_images</div><span class="field-type ft-media">Nextcloud path[]</span><div class="field-note">Past session photos</div></div>
+          <div class="field"><div class="field-name">promo_video_url</div><span class="field-type ft-text">text</span><div class="field-note">Optional embed URL</div></div>
+        </div>
+      </div>
+
+      <!-- SEO + meta -->
+      <div class="schema-group">
+        <div class="sg-head">
+          <span class="sg-badge" style="background:#e0e7ff;color:#3730a3">meta</span>
+          <span class="sg-title">SEO &amp; social</span>
+        </div>
+        <div class="sg-fields">
+          <div class="field"><div class="field-name">seo_title</div><span class="field-type ft-text">text</span><div class="field-note">Overrides title in &lt;title&gt; tag</div></div>
+          <div class="field"><div class="field-name">seo_description</div><span class="field-type ft-text">text</span><div class="field-note">Meta description · max 160 chars</div></div>
+          <div class="field"><div class="field-name">og_image</div><span class="field-type ft-media">Nextcloud path</span><div class="field-note">Falls back to cover_image</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION → FIELD MAP -->
+  <div id="tab-map" class="panel">
+    <div class="smap">
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">Hero section</div>
+          <div class="sm-fields">
+            <span class="sm-field">title</span>
+            <span class="sm-field">subtitle</span>
+            <span class="sm-field">discipline</span>
+            <span class="sm-field">recurrence</span>
+            <span class="sm-field">location_name</span>
+            <span class="sm-field">spots_filled</span>
+            <span class="sm-field">capacity_max</span>
+            <span class="sm-field">price_full</span>
+            <span class="sm-field">status</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">Detail strip</div>
+          <div class="sm-fields">
+            <span class="sm-field">start_date</span>
+            <span class="sm-field">session_count</span>
+            <span class="sm-field">session_duration_hrs</span>
+            <span class="sm-field">format</span>
+            <span class="sm-field">level</span>
+            <span class="sm-field">capacity_max</span>
+            <span class="sm-field">language</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">About</div>
+          <div class="sm-fields">
+            <span class="sm-field">description_long</span>
+            <span class="sm-field">tags</span>
+            <span class="sm-field">accessibility_notes</span>
+          </div>
+        </div>
+        <div class="sm-section">
+          <div class="sm-name">Facilitator</div>
+          <div class="sm-fields">
+            <span class="sm-field">facilitator_id →</span>
+            <span class="sm-field">co_facilitators →</span>
+            <span class="sm-field">facilitator_note</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">Session schedule</div>
+          <div class="sm-fields">
+            <span class="sm-field">sessions.date</span>
+            <span class="sm-field">sessions.title</span>
+            <span class="sm-field">sessions.description</span>
+            <span class="sm-field">sessions.public_preview</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">Media gallery</div>
+          <div class="sm-fields">
+            <span class="sm-field">cover_image</span>
+            <span class="sm-field">gallery_images[]</span>
+            <span class="sm-field">promo_video_url</span>
+          </div>
+        </div>
+        <div class="sm-section">
+          <div class="sm-name">Testimonials</div>
+          <div class="sm-fields">
+            <span class="sm-field">→ testimonials table</span>
+            <span class="sm-field">filtered by workshop_id</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section">
+          <div class="sm-name">Related workshops</div>
+          <div class="sm-fields">
+            <span class="sm-field">discipline</span>
+            <span class="sm-field">facilitator_id</span>
+            <span class="sm-field">tags</span>
+            <span class="sm-field">status = published</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sm-row">
+        <div class="sm-section" style="border:1.5px solid var(--color-border-info)">
+          <div class="sm-name" style="color:var(--color-text-info)">Registration block (sticky)</div>
+          <div class="sm-fields">
+            <span class="sm-field">price_full</span>
+            <span class="sm-field">price_sliding_min</span>
+            <span class="sm-field">price_member</span>
+            <span class="sm-field">spots_filled</span>
+            <span class="sm-field">capacity_max</span>
+            <span class="sm-field">registration_url</span>
+            <span class="sm-field">registration_deadline</span>
+            <span class="sm-field">sliding_scale_note</span>
+            <span class="sm-field">status</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--color-text-secondary);padding:8px 0">
+        Click any section in the page mockup tab to ask about it.
+        The registration block (highlighted) is the highest-conversion element — its fields are the most critical to get right.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'))
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'))
+  document.getElementById('tab-' + id).classList.add('on')
+  btn.classList.add('on')
+}
+</script>

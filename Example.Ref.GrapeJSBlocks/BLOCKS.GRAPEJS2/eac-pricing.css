@@ -1,0 +1,186 @@
+/*
+  EAC Pricing Table — Stylesheet
+*/
+
+.eac-pricing {
+  padding:    80px 40px;
+  background: #ffffff;
+}
+.eac-pricing__inner {
+  max-width: 1060px;
+  margin:    0 auto;
+}
+.eac-pricing__header {
+  text-align:    center;
+  margin-bottom: 52px;
+}
+.eac-pricing__eyebrow {
+  display:        inline-block;
+  font-size:      11px;
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          #6b7280;
+  margin-bottom:  12px;
+}
+.eac-pricing__heading {
+  font-size:      clamp(26px, 3vw, 38px);
+  font-weight:    700;
+  letter-spacing: -0.02em;
+  color:          #111827;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────── */
+
+.eac-pricing__grid {
+  display:               grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:                   20px;
+  align-items:           start;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+
+.eac-pricing__card {
+  background:    #ffffff;
+  border:        0.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding:       28px;
+  display:       flex;
+  flex-direction:column;
+  position:      relative;
+}
+
+/* Featured card: accent border, scale up, blue-tinted bg */
+.eac-pricing__card--featured {
+  border:     2px solid #3b82f6;
+  background: #eff6ff;
+  transform:  translateY(-6px);
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.1);
+}
+
+/* ── Badge (featured only) ───────────────────────────────────── */
+
+.eac-pricing__badge {
+  position:      absolute;
+  top:           -12px;
+  left:          50%;
+  transform:     translateX(-50%);
+  background:    #3b82f6;
+  color:         #ffffff;
+  font-size:     11px;
+  font-weight:   600;
+  padding:       3px 12px;
+  border-radius: 999px;
+  white-space:   nowrap;
+}
+
+/* ── Sub-element 1: Plan name + price ───────────────────────── */
+
+.eac-pricing__plan-name {
+  font-size:      11px;
+  font-weight:    600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color:          #6b7280;
+  margin-bottom:  10px;
+}
+.eac-pricing__card--featured .eac-pricing__plan-name {
+  color: #1d4ed8;
+}
+
+.eac-pricing__price-row {
+  display:     flex;
+  align-items: baseline;
+  gap:         4px;
+  margin-bottom: 12px;
+}
+.eac-pricing__amount {
+  font-size:   40px;
+  font-weight: 700;
+  color:       #111827;
+  line-height: 1;
+}
+.eac-pricing__period {
+  font-size: 14px;
+  color:     #6b7280;
+}
+
+.eac-pricing__description {
+  font-size:     14px;
+  line-height:   1.6;
+  color:         #4b5563;
+  margin-bottom: 20px;
+  padding-bottom:20px;
+  border-bottom: 0.5px solid #e5e7eb;
+}
+
+/* ── Sub-element 2: Feature checklist ──────────────────────── */
+
+.eac-pricing__features {
+  list-style:    none;
+  padding:       0;
+  margin:        0 0 28px;
+  display:       flex;
+  flex-direction:column;
+  gap:           10px;
+  flex:          1;
+}
+
+.eac-pricing__feature {
+  font-size:   14px;
+  color:       #374151;
+  padding-left:20px;
+  position:    relative;
+  line-height: 1.4;
+}
+.eac-pricing__feature::before {
+  content:  '';
+  position: absolute;
+  left:     0;
+  top:      4px;
+  width:    12px;
+  height:   12px;
+  background: #22c55e;
+  clip-path:  polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+/* ── Sub-element 3: CTA button ─────────────────────────────── */
+
+.eac-pricing__btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         12px 20px;
+  border-radius:   8px;
+  font-size:       14px;
+  font-weight:     500;
+  text-decoration: none;
+  text-align:      center;
+  min-height:      44px;
+  margin-top:      auto;
+  transition:      opacity 0.15s, background 0.15s;
+}
+.eac-pricing__btn--primary {
+  background: #3b82f6;
+  color:      #ffffff;
+}
+.eac-pricing__btn--primary:hover { opacity: 0.88; }
+.eac-pricing__btn--outline {
+  background: transparent;
+  color:      #374151;
+  border:     0.5px solid #d1d5db;
+}
+.eac-pricing__btn--outline:hover { background: #f9fafb; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .eac-pricing { padding: 56px 24px; }
+  .eac-pricing__grid {
+    grid-template-columns: 1fr;
+  }
+  .eac-pricing__card--featured {
+    transform: none;
+  }
+}

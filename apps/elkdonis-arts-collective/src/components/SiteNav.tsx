@@ -4,10 +4,12 @@ import { usePathname } from "next/navigation";
 import styles from "./SiteNav.module.css";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/manifesto", label: "Manifesto" },
-  { href: "/workshops", label: "Workshops" },
-  { href: "/about", label: "About" },
+  { href: "#about", label: "More Info", external: false },
+  {
+    href: "https://directory.elkdonisarts.ca",
+    label: "Artist Directory",
+    external: true,
+  },
 ];
 
 export default function SiteNav() {
@@ -18,16 +20,29 @@ export default function SiteNav() {
         <span className={styles.logoReligath}>EAC</span>
       </Link>
       <ul className={styles.links}>
-        {links.map((l) => (
-          <li key={l.href}>
-            <Link
-              href={l.href}
-              className={`${styles.link} ${pathname === l.href ? styles.active : ""}`}
-            >
-              {l.label}
-            </Link>
-          </li>
-        ))}
+        {links.map((l) =>
+          l.external ? (
+            <li key={l.href}>
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.link}
+              >
+                {l.label}
+              </a>
+            </li>
+          ) : (
+            <li key={l.href}>
+              <a
+                href={l.href}
+                className={`${styles.link} ${pathname === "/" ? styles.active : ""}`}
+              >
+                {l.label}
+              </a>
+            </li>
+          )
+        )}
       </ul>
     </nav>
   );

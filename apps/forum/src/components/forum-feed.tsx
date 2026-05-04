@@ -129,7 +129,7 @@ export function ForumFeed({ initialThreads, pagination, currentSort }: ForumFeed
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {threads.map((thread) => (
             <ThreadCard
-              key={`${thread.type}-${thread.id}`}
+              key={`${thread.kind}-${thread.id}`}
               thread={thread}
               onDelete={handleDelete}
               canDelete={true} // For demonstration, later this will be based on user permissions

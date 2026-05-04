@@ -1,0 +1,87 @@
+<!--
+  eac-ws-about.html
+  ===================
+  Workshop description and topic tags.
+
+  CMS fields consumed:
+    workshop.description_long     → rich text body
+    workshop.tags                 → tag pills
+    workshop.accessibility_notes  → optional accessible info block
+-->
+<section class="eac-ws-about" data-gjs-type="eac-ws-about" id="about">
+  <div class="eac-ws-about__inner">
+
+    <span class="eac-ws-label eac-ws-label--about">about</span>
+
+    <div class="eac-ws-about__header">
+      <h2 class="eac-ws-about__heading">About this workshop</h2>
+    </div>
+
+    <div class="eac-ws-about__body">
+
+      <input
+        class="eac-ws-about__more-toggle"
+        type="checkbox"
+        id="eac-ws-about-more-toggle"
+        data-trait="showLongDescription"
+      >
+
+      <!-- Rich text body — from description_long -->
+      <div class="eac-ws-about__prose"
+           data-gjs-editable="true"
+           data-trait="descriptionLong">
+        <p>
+          This series approaches writing as a living practice — exploratory,
+          embodied, and grounded in the present moment. Participants will move
+          through prompts, response exercises, and group reflection across six
+          weekly sessions.
+        </p>
+        <div class="eac-ws-about__more-body"
+             data-gjs-editable="true"
+             data-trait="descriptionLongExtra">
+          <p>
+            No previous writing experience is necessary. What you bring is enough.
+            The only requirement is a willingness to show up and pay attention.
+          </p>
+        </div>
+      </div>
+
+      <div class="eac-ws-about__controls">
+        <label class="eac-ws-about__more-trigger" for="eac-ws-about-more-toggle">
+          Read more
+        </label>
+
+        <div class="eac-ws-about__meta">
+          <!-- Optional notice; collapsed by default unless the CMS marks it open. -->
+          <details class="eac-ws-about__notice" data-trait="showAccessibilityNotes">
+            <summary class="eac-ws-about__notice-summary">
+              <span class="eac-ws-about__access-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
+                  <path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              Accessibility notes
+            </summary>
+            <div class="eac-ws-about__notice-body"
+                 data-gjs-editable="true"
+                 data-trait="accessibilityNotes">
+              This workshop takes place on the second floor. Unfortunately there is no
+              elevator access at this location. Please get in touch if you have
+              accessibility requirements and we will do our best to accommodate you.
+            </div>
+          </details>
+
+          <!-- Topic tags -->
+          <ul class="eac-ws-about__tags" aria-label="Workshop topics">
+            <li class="eac-ws-about__tag" data-gjs-editable="true">Poetry</li>
+            <li class="eac-ws-about__tag" data-gjs-editable="true">Journaling</li>
+            <li class="eac-ws-about__tag" data-gjs-editable="true">Somatic writing</li>
+            <li class="eac-ws-about__tag" data-gjs-editable="true">Group dialogue</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

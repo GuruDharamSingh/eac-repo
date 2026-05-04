@@ -216,6 +216,51 @@ export async function invalidateCache(key: string): Promise<void> {
 }
 
 // ============================================
+// One-Time Tokens
+// ============================================
+
+const ONE_TIME_TOKEN_PREFIX = 'ott:';
+export const ONE_TIME_TOKEN_DEFAULT_TTL = 60 * 10; // 10 min
+
+/**
+ * Store an arbitrary JSON payload under a caller-supplied key prefix.
+ * The caller is responsible for generating a unique token id (e.g. nanoid).
+ */
+export async function storeOneTimeToken<T>(
+  prefix: string,
+  token: string,
+  payload: T,
+  ttlSeconds: number = ONE_TIME_TOKEN_DEFAULT_TTL
+): Promise<void> {
+  await setJSONex(`${ONE_TIME_TOKEN_PREFIX}${prefix}:${token}`, ttlSeconds, payload);
+}
+
+/**
+ * Consume (read + delete) a one-time token.
+ * Returns null if missing, already consumed, or expired.
+ */
+export async function consumeOneTimeToken<T>(
+  prefix: string,
+  token: string
+): Promise<T | null> {
+  const key = `${ONE_TIME_TOKEN_PREFIX}${prefix}:${token}`;
+  const payload = await getJSON<T>(key);
+  if (!payload) return null;
+  await del(key);
+  return payload;
+}
+
+/**
+ * Peek at a one-time token without consuming it (diagnostics only).
+ */
+export async function peekOneTimeToken<T>(
+  prefix: string,
+  token: string
+): Promise<T | null> {
+  return getJSON<T>(`${ONE_TIME_TOKEN_PREFIX}${prefix}:${token}`);
+}
+
+// ============================================
 // Health Check
 // ============================================
 

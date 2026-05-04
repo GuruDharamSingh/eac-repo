@@ -27,7 +27,8 @@ apps/
 ├── forum/                       Port 3003 - Cross-org content aggregator
 ├── inner-gathering/             Port 3004 - Mobile-first community app
 ├── elkdonis-arts-collective/    Port 3005 - Public landing + workshops showcase
-└── amrit-canada/                Port 3006 - Community app (org: amrit_canada)
+├── amrit-canada/                Port 3006 - Community app (org: amrit_canada)
+└── arts-collective/             Port 3007 - User/Artist network subdomains
 ```
 
 ## Database Schema
@@ -103,9 +104,14 @@ cd apps/inner-gathering && pnpm dev
 ```
 
 **Access:**
-- Inner Gathering: http://localhost:3004
-- Forum: http://localhost:3003
 - Admin: http://localhost:3000
+- Blog Sunjay: http://localhost:3001
+- Blog Guru Dharam: http://localhost:3002
+- Forum: http://localhost:3003
+- Inner Gathering: http://localhost:3004
+- Landing Page: http://localhost:3005
+- Amrit Canada: http://localhost:3006
+- Arts Collective: http://localhost:3007
 - Nextcloud: http://localhost:8080
 - Supabase Auth: http://localhost:9999
 
@@ -188,11 +194,13 @@ docker-compose -f docker-compose.production.yml logs -f
 
 Without domains, access via IP:port:
 - Admin: `http://YOUR_SERVER_IP:3000`
-- Inner Gathering: `http://YOUR_SERVER_IP:3004`
 - Blog Sunjay: `http://YOUR_SERVER_IP:3001`
 - Blog Guru Dharam: `http://YOUR_SERVER_IP:3002`
 - Forum: `http://YOUR_SERVER_IP:3003`
+- Inner Gathering: `http://YOUR_SERVER_IP:3004`
 - Landing Page: `http://YOUR_SERVER_IP:3005`
+- Amrit Canada: `http://YOUR_SERVER_IP:3006`
+- Arts Collective: `http://YOUR_SERVER_IP:3007`
 
 ### Troubleshooting
 

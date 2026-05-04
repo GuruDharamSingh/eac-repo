@@ -1,0 +1,46 @@
+.eac-dossier-intelligence {
+  margin-bottom: 3rem;
+  font-family: var(--eac-dos-typewriter);
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-status-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.eac-dos-status-section {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 23px,
+    #ccc 24px
+  );
+  padding-top: 4px;
+  line-height: 24px;
+}
+
+.eac-dos-status-head {
+  background: var(--eac-dos-paper);
+  padding-right: 10px;
+}
+
+.eac-dos-status-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.eac-dos-status-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 0;
+}
+
+.eac-dos-status-list li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}

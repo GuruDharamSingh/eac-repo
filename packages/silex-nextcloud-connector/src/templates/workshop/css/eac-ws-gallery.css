@@ -1,0 +1,86 @@
+/*
+  eac-ws-gallery.css
+*/
+
+.eac-ws-gallery {
+  position:   relative;
+  padding:    var(--eac-space-6) var(--eac-space-6);
+  background: var(--eac-color-surface-2);
+  border-top: 0.5px solid var(--eac-color-border);
+}
+
+.eac-ws-gallery__inner {
+  position:  relative;
+  max-width: var(--eac-max-width-page);
+  margin:    0 auto;
+}
+
+.eac-ws-gallery__heading {
+  font-size:      var(--eac-text-xs);
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--eac-color-ink-faint);
+  margin-bottom:  var(--eac-space-3);
+}
+
+/* ── Horizontal scroll: 2 visible, scroll for more ─────────── */
+
+.eac-ws-gallery__grid {
+  display:        flex;
+  gap:            var(--eac-space-2);
+  overflow-x:     auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  border-radius:  var(--eac-radius-lg);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.eac-ws-gallery__grid::-webkit-scrollbar { display: none; }
+
+.eac-ws-gallery__item {
+  flex:           0 0 calc(50% - (var(--eac-space-2) / 2));
+  aspect-ratio:   5 / 1;
+  background:     var(--eac-color-surface-3);
+  overflow:       hidden;
+  border-radius:  var(--eac-radius-md);
+  scroll-snap-align: start;
+}
+
+/* Featured modifier kept as no-op to preserve HTML compatibility. */
+.eac-ws-gallery__item--featured { /* noop in scroll layout */ }
+
+.eac-ws-gallery__img {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+  display:    block;
+  transition: transform 0.4s ease;
+}
+/* Hide broken-image icon when src is empty (placeholder state) */
+.eac-ws-gallery__img[src=""],
+.eac-ws-gallery__img:not([src]) { opacity: 0; }
+.eac-ws-gallery__item:hover .eac-ws-gallery__img {
+  transform: scale(1.03);
+}
+
+/* ── Video ────────────────────────────────────────────────────── */
+
+.eac-ws-gallery__video {
+  margin-top:    var(--eac-space-6);
+  border-radius: var(--eac-radius-lg);
+  overflow:      hidden;
+  aspect-ratio:  16 / 9;
+}
+
+.eac-ws-gallery__iframe {
+  width:  100%;
+  height: 100%;
+  border: none;
+}
+
+@media (max-width: 640px) {
+  .eac-ws-gallery { padding: var(--eac-space-6) var(--eac-space-5); }
+  .eac-ws-gallery__item { flex-basis: 80%; }
+}

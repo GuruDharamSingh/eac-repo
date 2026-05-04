@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { resolveSupabasePublicConfig } from './index';
+import { deriveCookieDomain, resolveSupabasePublicConfig } from './index';
 
 type CookieToSet = {
   name: string;
@@ -36,8 +36,12 @@ function createRouteSupabaseClient(request: NextRequest) {
     },
   });
 
-  function applyCookies(response: NextResponse) {
-    cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+  async function applyCookies(response: NextResponse) {
+    const domain = await deriveCookieDomain(request.headers.get('host'));
+    cookiesToSet.forEach(({ name, value, options }) => {
+      const finalOpts = domain ? { ...options, domain } : options;
+      response.cookies.set(name, value, finalOpts);
+    });
   }
 
   return { supabase, applyCookies };
@@ -75,7 +79,7 @@ export async function handleLogin(request: NextRequest) {
       user: data.user,
       session: data.session,
     });
-    applyCookies(response);
+    await applyCookies(response);
 
     return response;
   } catch (error: any) {
@@ -170,7 +174,7 @@ export async function handleSignup(request: NextRequest) {
       session: data.session,
       message: 'Signup successful',
     });
-    applyCookies(response);
+    await applyCookies(response);
     return response;
   } catch (error: any) {
     console.error('[Signup] Error:', error);
@@ -198,7 +202,7 @@ export async function handleLogout(request: NextRequest) {
     }
 
     const response = NextResponse.json({ message: 'Logged out' });
-    applyCookies(response);
+    await applyCookies(response);
 
     return response;
   } catch (error: any) {
@@ -227,7 +231,7 @@ export async function handleGetSession(request: NextRequest) {
       user: data.session.user,
       session: data.session,
     });
-    applyCookies(response);
+    await applyCookies(response);
     return response;
   } catch (error: any) {
     console.error('Get session error:', error);

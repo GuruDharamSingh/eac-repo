@@ -1,0 +1,119 @@
+/*
+  EAC Feature Grid — Stylesheet
+  ================================
+  3-column icon-led feature section. Light background, neutral surface.
+  Icon accent colours are set per-column via modifier classes.
+
+  Custom properties:
+    --eac-fg-cols   number of columns (default 3, set via trait)
+    --eac-fg-bg     section background (default transparent)
+*/
+
+.eac-feature-grid {
+  --eac-fg-cols: 3;
+  --eac-fg-bg:   transparent;
+
+  background: var(--eac-fg-bg);
+  padding:    80px 40px;
+}
+
+.eac-feature-grid__inner {
+  max-width: 1100px;
+  margin:    0 auto;
+}
+
+/* ── Section header ───────────────────────────────────────────── */
+
+.eac-feature-grid__header {
+  text-align:    center;
+  margin-bottom: 56px;
+}
+
+.eac-feature-grid__eyebrow {
+  display:        inline-block;
+  font-size:      11px;
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          #6b7280;
+  margin-bottom:  12px;
+}
+
+.eac-feature-grid__heading {
+  font-size:      clamp(28px, 3.5vw, 40px);
+  font-weight:    700;
+  line-height:    1.15;
+  letter-spacing: -0.02em;
+  color:          #111827;
+  max-width:      560px;
+  margin:         0 auto;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────── */
+
+.eac-feature-grid__grid {
+  display:               grid;
+  grid-template-columns: repeat(var(--eac-fg-cols), minmax(0, 1fr));
+  gap:                   32px;
+}
+
+/* ── Feature item ─────────────────────────────────────────────── */
+
+.eac-feature-grid__item {
+  display:        flex;
+  flex-direction: column;
+  gap:            0;
+}
+
+/* ── Sub-element 1: Icon container ───────────────────────────── */
+
+.eac-feature-grid__icon {
+  width:           44px;
+  height:          44px;
+  border-radius:   10px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  margin-bottom:   16px;
+  flex-shrink:     0;
+}
+
+/* Per-column tint presets */
+.eac-feature-grid__icon--1 { background: #fef3c7; color: #92400e; }
+.eac-feature-grid__icon--2 { background: #dbeafe; color: #1e40af; }
+.eac-feature-grid__icon--3 { background: #dcfce7; color: #166534; }
+/* Extended set for 4-col layouts */
+.eac-feature-grid__icon--4 { background: #fce7f3; color: #9d174d; }
+
+/* ── Sub-element 2: Feature title ────────────────────────────── */
+
+.eac-feature-grid__title {
+  font-size:     17px;
+  font-weight:   600;
+  line-height:   1.3;
+  color:         #111827;
+  margin-bottom: 8px;
+}
+
+/* ── Sub-element 3: Feature body ─────────────────────────────── */
+
+.eac-feature-grid__body {
+  font-size:   15px;
+  line-height: 1.65;
+  color:       #4b5563;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .eac-feature-grid {
+    padding: 56px 24px;
+  }
+  .eac-feature-grid__grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .eac-feature-grid__header {
+    margin-bottom: 40px;
+  }
+}

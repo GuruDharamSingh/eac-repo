@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --eac-dos-bg-desk: #121413;
+  --eac-dos-bg-accent: #1e2220;
+  --eac-dos-manila: #e4cc9a;
+  --eac-dos-paper: #f7f1e3;
+  --eac-dos-ink: #1a1a1a;
+  --eac-dos-typewriter: 'Courier Prime', 'Courier New', Courier, monospace;
+  --eac-dos-gothic: 'UnifrakturMaguntia', 'Old Standard TT', serif;
+  --eac-dos-stamp-red: #8c3b3b;
+  --eac-dos-border: #1a1a1a;
+}

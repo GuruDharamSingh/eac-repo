@@ -1,0 +1,216 @@
+/*
+  EAC Dark Cinematic Hero — Stylesheet
+  ======================================
+  Add to your EAC global CSS bundle, or import in your Next.js
+  global stylesheet. All custom properties are prefixed --eac-hero-*
+  so they don't collide with the rest of the design system.
+
+  Accent colour is controlled by --eac-hero-accent-rgb.
+  Change it per-tenant by overriding on .eac-hero directly.
+
+  Accent presets (RGB triplets for rgba() usage):
+    Violet  → 120, 80,  220
+    Teal    →  20, 160, 120
+    Coral   → 200, 80,   40
+    Amber   → 180, 140,   0
+*/
+
+/* ── Custom properties ─────────────────────────────────────────── */
+
+.eac-hero {
+  --eac-hero-bg:           #0a0a0f;
+  --eac-hero-accent-rgb:   120, 80, 220;   /* violet default */
+  --eac-hero-glow-opacity: 0.18;
+  --eac-hero-min-height:   90vh;
+}
+
+/* ── Section shell ─────────────────────────────────────────────── */
+
+.eac-hero {
+  position:        relative;
+  min-height:      var(--eac-hero-min-height);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background-color: var(--eac-hero-bg);
+  overflow:        hidden;
+  text-align:      center;
+}
+
+/* ── Background layers ─────────────────────────────────────────── */
+
+.eac-hero__bg {
+  position:       absolute;
+  inset:          0;
+  pointer-events: none;
+  z-index:        0;
+}
+
+/*
+  Radial ambient glow.
+  Driven entirely by --eac-hero-accent-rgb — no image, no JS.
+  The GrapesJS accentColor trait updates this variable on the
+  .eac-hero element via the component script.
+*/
+.eac-hero__glow {
+  position:      absolute;
+  inset:         0;
+  background:    radial-gradient(
+    ellipse 70% 55% at 50% 35%,
+    rgba(var(--eac-hero-accent-rgb), var(--eac-hero-glow-opacity)) 0%,
+    transparent 100%
+  );
+}
+
+/*
+  Hairline gradient rule along the bottom edge.
+  Signals section boundary without a hard border.
+*/
+.eac-hero__rule {
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  right:      0;
+  height:     1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+}
+
+/* ── Content column ────────────────────────────────────────────── */
+
+.eac-hero__inner {
+  position:        relative;
+  z-index:         1;
+  max-width:       680px;
+  padding:         80px 40px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+}
+
+/* ── Sub-element 1: Eyebrow ────────────────────────────────────── */
+
+.eac-hero__eyebrow {
+  display:         inline-block;
+  font-size:       11px;
+  font-weight:     500;
+  letter-spacing:  0.12em;
+  text-transform:  uppercase;
+  /* Accent colour at 70% opacity via the RGB variable */
+  color:           rgba(var(--eac-hero-accent-rgb), 0.7);
+  margin-bottom:   20px;
+}
+
+/* ── Sub-element 2: Display headline ──────────────────────────── */
+
+.eac-hero__headline {
+  /*
+    clamp() scales the headline between mobile and wide viewports.
+    Floor: 36px (mobile).  Ceiling: 64px (wide desktop).
+  */
+  font-size:      clamp(36px, 5.5vw, 64px);
+  font-weight:    700;
+  line-height:    1.06;
+  letter-spacing: -0.025em;
+  color:          #ffffff;
+  margin-bottom:  20px;
+}
+
+/*
+  The <em> word inside the headline echoes the eyebrow accent.
+  Wrap whichever word you want accented in <em class="eac-hero__headline-em">.
+*/
+.eac-hero__headline-em {
+  font-style: normal;
+  color:      rgba(var(--eac-hero-accent-rgb), 0.85);
+}
+
+/* ── Sub-element 3: Subheadline ────────────────────────────────── */
+
+.eac-hero__sub {
+  font-size:     16px;
+  line-height:   1.65;
+  color:         rgba(255, 255, 255, 0.45);
+  max-width:     440px;
+  margin-bottom: 36px;
+}
+
+/* ── Sub-element 4: CTA row ────────────────────────────────────── */
+
+.eac-hero__cta-row {
+  display:         flex;
+  gap:             12px;
+  flex-wrap:       wrap;
+  justify-content: center;
+}
+
+/* Shared button base */
+.eac-hero__btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         13px 28px;
+  border-radius:   6px;
+  font-size:       14px;
+  font-weight:     500;
+  text-decoration: none;
+  transition:      opacity 0.15s ease, border-color 0.15s ease;
+  min-height:      44px; /* WCAG 2.5.5 touch target */
+  cursor:          pointer;
+  white-space:     nowrap;
+}
+
+/* Primary: white fill on dark */
+.eac-hero__btn--primary {
+  background: #ffffff;
+  color:      #0a0a0f;
+  border:     none;
+}
+.eac-hero__btn--primary:hover {
+  opacity: 0.88;
+}
+
+/* Ghost: transparent with hairline border */
+.eac-hero__btn--ghost {
+  background:   transparent;
+  color:        rgba(255, 255, 255, 0.6);
+  border:       0.5px solid rgba(255, 255, 255, 0.18);
+}
+.eac-hero__btn--ghost:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color:        rgba(255, 255, 255, 0.8);
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-hero__inner {
+    padding: 64px 24px;
+  }
+
+  .eac-hero__cta-row {
+    flex-direction: column;
+    width:          100%;
+  }
+
+  .eac-hero__btn {
+    width:      100%;
+    text-align: center;
+  }
+}
+
+/* ── Accent colour presets ─────────────────────────────────────── */
+/*
+  Apply these utility classes to .eac-hero to switch accent.
+  The GrapesJS accentColor trait sets one of these classes
+  (or inlines the custom property directly for 'custom' option).
+*/
+
+.eac-hero--accent-violet { --eac-hero-accent-rgb: 120,  80, 220; }
+.eac-hero--accent-teal   { --eac-hero-accent-rgb:  20, 160, 120; }
+.eac-hero--accent-coral  { --eac-hero-accent-rgb: 200,  80,  40; }
+.eac-hero--accent-amber  { --eac-hero-accent-rgb: 180, 140,   0; }

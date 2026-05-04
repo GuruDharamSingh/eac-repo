@@ -1,0 +1,67 @@
+<!--
+  eac-ws-detail-strip.html
+  ==========================
+  Horizontal key-facts bar beneath the hero.
+  Six equal columns: start date, sessions, duration, format, level, language.
+
+  CMS fields consumed:
+    workshop.start_date
+    workshop.session_count
+    workshop.session_duration_hrs
+    workshop.format
+    workshop.level
+    workshop.capacity_max
+    workshop.language
+-->
+<section class="eac-ws-detail-strip" data-gjs-type="eac-ws-detail-strip" id="details">
+  <div class="eac-ws-detail-strip__inner">
+
+    <span class="eac-ws-label eac-ws-label--details">details</span>
+
+    <dl class="eac-ws-detail-strip__grid">
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Starts</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="startDate">
+          Jan 11, 2025
+        </dd>
+      </div>
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Sessions</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="sessionCount">
+          6 sessions
+        </dd>
+      </div>
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Duration</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="sessionDuration">
+          3 hrs each
+        </dd>
+      </div>
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Format</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="format">
+          In-person
+        </dd>
+      </div>
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Level</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="level">
+          All levels
+        </dd>
+      </div>
+
+      <div class="eac-ws-detail-strip__item">
+        <dt class="eac-ws-detail-strip__label">Language</dt>
+        <dd class="eac-ws-detail-strip__value" data-gjs-editable="true" data-trait="language">
+          English
+        </dd>
+      </div>
+
+    </dl>
+  </div>
+</section>

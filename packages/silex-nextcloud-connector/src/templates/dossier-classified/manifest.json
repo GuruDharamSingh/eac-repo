@@ -1,0 +1,116 @@
+{
+  "id": "dossier-classified",
+  "name": "Classified Artist Dossier",
+  "version": "0.1.0",
+  "category": "EAC Dossier Template",
+  "description": "A utilitarian, classified file structure for artist profiles.",
+  "tokens": "../../tokens/dossier-classified.css",
+  "cssOrder": [
+    "css/eac-dossier-nav.css",
+    "css/eac-dossier-identity.css",
+    "css/eac-dossier-operations.css",
+    "css/eac-dossier-intelligence.css",
+    "css/eac-dossier-network.css",
+    "css/eac-dossier-funds.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-dossier-nav",
+      "label": "Dossier Nav",
+      "html": "html/eac-dossier-nav.html",
+      "css": "css/eac-dossier-nav.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [],
+      "traits": ["archiveName", "placeholderText"],
+      "notes": "Global navigation for the archive network."
+    },
+    {
+      "id": "eac-dossier-identity",
+      "label": "Subject Identity",
+      "html": "html/eac-dossier-identity.html",
+      "css": "css/eac-dossier-identity.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "artist_profiles.display_name",
+        "artist_profiles.occupation",
+        "artist_profiles.location",
+        "artist_profiles.dossier_status",
+        "artist_profiles.dossier_notes",
+        "artist_profiles.photo_url"
+      ],
+      "traits": ["aliasName", "occupation", "location", "status", "bioNotes", "photoUrl"],
+      "notes": "Header with paperclip photo and basic metadata."
+    },
+    {
+      "id": "eac-dossier-operations",
+      "label": "Known Operations",
+      "html": "html/eac-dossier-operations.html",
+      "css": "css/eac-dossier-operations.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "artist_profiles.known_operations[].title",
+        "artist_profiles.known_operations[].date",
+        "artist_profiles.known_operations[].details",
+        "artist_profiles.known_operations[].image_url"
+      ],
+      "traits": ["operationsList"],
+      "notes": "JSONB array of recent projects or artifacts. Omit if none."
+    },
+    {
+      "id": "eac-dossier-intelligence",
+      "label": "Intelligence Report",
+      "html": "html/eac-dossier-intelligence.html",
+      "css": "css/eac-dossier-intelligence.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "artist_profiles.current_targets",
+        "artist_profiles.projected_movements"
+      ],
+      "traits": ["currentTargets", "projectedMovements"],
+      "notes": "Displays lists on a lined paper background."
+    },
+    {
+      "id": "eac-dossier-network",
+      "label": "Network & Informants",
+      "html": "html/eac-dossier-network.html",
+      "css": "css/eac-dossier-network.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "artist_profiles.verified_contacts",
+        "artist_profiles.wanted_accomplices"
+      ],
+      "traits": ["verifiedContacts", "wantedAccomplices"],
+      "notes": "Arrays of strings rendering as solid or dashed tags."
+    },
+    {
+      "id": "eac-dossier-funds",
+      "label": "Financial Channels",
+      "html": "html/eac-dossier-funds.html",
+      "css": "css/eac-dossier-funds.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "artist_profiles.financial_channels[].title",
+        "artist_profiles.financial_channels[].description",
+        "artist_profiles.financial_channels[].url"
+      ],
+      "traits": ["financialChannels"],
+      "notes": "Support links (e.g. Patreon, shop) rendered as bordered boxes."
+    }
+  ]
+}

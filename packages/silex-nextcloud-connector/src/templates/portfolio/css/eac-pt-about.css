@@ -1,0 +1,98 @@
+/* eac-pt-about.css — Artist statement */
+
+.eac-pt-about {
+  background: var(--eac-color-surface-2);
+  padding: var(--eac-space-16) 0;
+  border-bottom: 1px solid var(--eac-color-border);
+}
+
+.eac-pt-about__inner {
+  max-width: var(--eac-max-width);
+  margin: 0 auto;
+  padding: 0 var(--eac-space-6);
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--eac-space-16);
+  align-items: start;
+}
+
+.eac-pt-about__portrait-wrap {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--eac-color-surface-3);
+}
+.eac-pt-about__portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.eac-pt-about__portrait-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%);
+}
+.eac-pt-about__portrait[src]:not([src=""]) + .eac-pt-about__portrait-placeholder {
+  display: none;
+}
+
+.eac-pt-about__credit {
+  font-family: var(--eac-font-display);
+  font-size: var(--eac-text-base);
+  color: var(--eac-color-ink);
+  margin-top: var(--eac-space-3);
+}
+.eac-pt-about__pronouns {
+  font-size: var(--eac-text-xs);
+  color: var(--eac-color-ink-faint);
+  font-style: italic;
+  margin-top: var(--eac-space-1);
+  font-family: var(--eac-font-display);
+}
+
+.eac-pt-about__eyebrow {
+  display: block;
+  font-size: var(--eac-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eac-color-ink-faint);
+  margin-bottom: var(--eac-space-5);
+  padding-bottom: var(--eac-space-4);
+  border-bottom: 1px solid var(--eac-color-border);
+}
+
+.eac-pt-about__statement {
+  font-family: var(--eac-font-display);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  line-height: var(--eac-leading-loose);
+  color: var(--eac-color-ink-muted);
+  margin-bottom: var(--eac-space-8);
+}
+.eac-pt-about__statement p + p { margin-top: var(--eac-space-4); }
+
+.eac-pt-about__links {
+  display: flex;
+  gap: var(--eac-space-6);
+  flex-wrap: wrap;
+  border-top: 1px solid var(--eac-color-border);
+  padding-top: var(--eac-space-5);
+}
+.eac-pt-about__link {
+  font-size: var(--eac-text-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--eac-color-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eac-color-border-strong);
+  padding-bottom: 2px;
+  transition: border-color var(--eac-transition);
+}
+.eac-pt-about__link:hover { border-color: var(--eac-color-ink); }
+
+@media (max-width: 720px) {
+  .eac-pt-about__inner { grid-template-columns: 1fr; }
+  .eac-pt-about__portrait-wrap { max-width: 240px; }
+}

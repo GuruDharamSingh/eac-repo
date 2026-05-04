@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     // Verify JWT
     const secret = new TextEncoder().encode(process.env.INTER_APP_JWT_SECRET);
     const { payload } = await jwtVerify(jwt, secret, {
-      issuer: 'inner-gathering',
+      issuer: ['inner-gathering', 'arts-collective'],
       audience: 'admin-oidc',
     });
 

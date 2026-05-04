@@ -348,6 +348,54 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Arts Collective – User/Artist network subdomains
+  arts-collective:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-arts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NODE_ENV: development
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Nextcloud (server-side admin client for reading published Silex HTML).
+      # No defaults — values must come from the env file. Dev uses the
+      # docker-network hostname; prod points at the production Nextcloud.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
+      # Optional browser-reachable Silex editor origin for /edit/{slug} launch.
+      # In prod this should be the reverse-proxied editor origin, e.g.
+      # https://edit.example.com. If unset, dev falls back to port 6805.
+      SILEX_EDITOR_PUBLIC_URL: ${SILEX_EDITOR_PUBLIC_URL:-}
+      SILEX_PUBLIC_URL: ${SILEX_PUBLIC_URL:-}
+      # JWT shared secret for inter-app SSO bridge (Talk room join, etc.)
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+    volumes:
+      - .:/app
+      - /app/apps/arts-collective/.next
+    ports:
+      - "3007:3007"
+    command: sh -c "cd apps/arts-collective && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Amrit Vela Toronto – Sadhana community site
   amrit-canada:
     build:
@@ -382,9 +430,35 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Silex - browser-based static site builder (opt-in custom layout per artist)
+  # Editor is root-mounted at http://localhost:6805. The Arts app owns
+  # /edit/{slug} as an authenticated launch gate; nginx should expose Silex on
+  # a dedicated editor origin so Silex can own /api, /connector, /user, etc.
+  silex:
+    image: silexlabs/silex:latest
+    container_name: eac-silex
+    environment:
+      SILEX_URL: ${SILEX_PUBLIC_URL:-http://localhost:6805}
+      SILEX_PORT: 6805
+      SILEX_DATA_PATH: /silex/data
+      SILEX_HOSTING_PATH: /silex/data/public
+      SILEX_DEFAULT_WEBSITE_ID: default
+      SILEX_SERVER_CONFIG: /silex/extensions/silex-nextcloud-connector/index.js
+      SILEX_CLIENT_CONFIG: /silex/extensions/silex-nextcloud-connector/src/client-config.js
+    volumes:
+      - silex_data:/silex/data
+      - ./packages/silex-nextcloud-connector:/silex/extensions/silex-nextcloud-connector:ro
+    ports:
+      - "6805:6805"
+    restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+
 volumes:
   postgres_data:
   redis_data:
+  silex_data:
 
 networks:
   eac-network:

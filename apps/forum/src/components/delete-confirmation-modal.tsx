@@ -1,6 +1,13 @@
 'use client';
 
-import { Modal, Button, Group, Text } from '@mantine/core';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface DeleteConfirmationModalProps {
   opened: boolean;
@@ -20,19 +27,21 @@ export function DeleteConfirmationModal({
   loading,
 }: DeleteConfirmationModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered>
-      <Text size="sm" mb="md">
-        {description}
-      </Text>
-
-      <Group justify="flex-end" gap="sm">
-        <Button variant="default" onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button color="red" onClick={onConfirm} loading={loading}>
-          Delete
-        </Button>
-      </Group>
-    </Modal>
+    <Dialog open={opened} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-serif">{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-3 mt-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+            {loading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

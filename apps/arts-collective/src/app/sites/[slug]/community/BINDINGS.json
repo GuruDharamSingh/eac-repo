@@ -1,0 +1,208 @@
+{
+  "_note": "Community page template binding map. Each slot identifies a UI location, its data type, proposed API source, and region-awareness. Prepared for the news console aggregator targeting Toronto, Paris, L.A. and future cities.",
+
+  "ticker": {
+    "slot": "Scrolling headline ticker — top of page",
+    "current": "Static hardcoded copy",
+    "bindTo": "GET /api/headlines?region={city}&limit=10",
+    "dataShape": [{ "text": "string", "url": "string|null", "priority": "breaking|normal" }],
+    "regionAware": true,
+    "notes": "Mix network headlines + local arts news RSS + collective announcements. Breaking items float to front."
+  },
+
+  "masthead.leftBanner": {
+    "slot": "Left masthead banner — artist/org spotlight",
+    "current": "Org profile (displayName, discipline, city, bio snippet)",
+    "bindTo": "GET /api/orgs/{orgSlug}/profile",
+    "dataShape": { "displayName": "string", "discipline": "string", "city": "string", "bio": "string", "photoUrl": "string|null" },
+    "regionAware": false,
+    "notes": "This is the org-specific spotlight. Could rotate: daily featured artist from the region."
+  },
+
+  "masthead.rightBanner": {
+    "slot": "Right masthead banner — auth / join CTA",
+    "current": "Static login/signup links (conditional on auth state)",
+    "bindTo": "session — no API needed",
+    "dataShape": { "isLoggedIn": "boolean", "displayName": "string|null" },
+    "regionAware": false,
+    "notes": "No aggregation needed. Could show 'X artists in Toronto joined this month' count."
+  },
+
+  "leftColumn.weather": {
+    "slot": "Left column — Local Weather widget",
+    "current": "Placeholder temperature dash",
+    "bindTo": "GET /api/weather?city={city} (wrap Open-Meteo or similar free API)",
+    "dataShape": { "temp": "number", "unit": "C|F", "condition": "string", "city": "string", "icon": "string" },
+    "regionAware": true,
+    "notes": "City pulled from org.profile.city OR user's region preference. Toronto=C, Paris=C, L.A=F optional."
+  },
+
+  "leftColumn.events": {
+    "slot": "Left column — Events This Week list",
+    "current": "Live from getOrgFeed() filtered by scheduled_at > now",
+    "bindTo": "GET /api/events?org={orgSlug}&region={city}&window=7days",
+    "dataShape": [{ "id": "string", "title": "string", "scheduledAt": "ISO8601", "format": "in_person|online|hybrid", "orgName": "string", "orgSlug": "string" }],
+    "regionAware": true,
+    "notes": "Aggregator should also pull events from OTHER orgs in same city. Tap into a regional events table. Cross-collective."
+  },
+
+  "leftColumn.artistSpotlight": {
+    "slot": "Left column — Artist Spotlight card",
+    "current": "Org profile (hardcoded to current org)",
+    "bindTo": "GET /api/spotlight?region={city}&date={YYYY-MM-DD}",
+    "dataShape": { "artistName": "string", "discipline": "string", "city": "string", "bio": "string", "photoUrl": "string|null", "orgSlug": "string" },
+    "regionAware": true,
+    "notes": "Rotate daily. Could be manually curated via admin console OR auto-selected by activity score."
+  },
+
+  "leftColumn.regionalNews": {
+    "slot": "Left column — Regional Arts news list",
+    "current": "Static placeholder links",
+    "bindTo": "GET /api/rss/arts?region={city}&limit=4",
+    "dataShape": [{ "title": "string", "url": "string", "source": "string", "publishedAt": "ISO8601", "tag": "string" }],
+    "regionAware": true,
+    "notes": "Per-city RSS sources: Toronto Arts Council, Conseil des arts de Paris, LA Arts Commission etc. Admin-configurable per region."
+  },
+
+  "centerColumn.featuredStory": {
+    "slot": "Center column — Featured Article (lead story with image)",
+    "current": "Static copy + placeholder image",
+    "bindTo": "GET /api/content/featured?org={orgSlug}&region={city}",
+    "dataShape": { "title": "string", "excerpt": "string", "imageUrl": "string|null", "author": "string", "publishedAt": "ISO8601", "url": "string", "section": "string" },
+    "regionAware": true,
+    "notes": "PRIORITY SLOT — this is the editorial centrepiece. Should be manually publishable from the news console. Org owners can pin a thread here."
+  },
+
+  "centerColumn.featuredImage": {
+    "slot": "Center column — Featured article image (190px tall placeholder)",
+    "current": "[COMMUNITY PHOTO] placeholder",
+    "bindTo": "GET /api/content/featured-image?org={orgSlug} OR media upload",
+    "dataShape": { "url": "string", "alt": "string", "caption": "string|null" },
+    "regionAware": false,
+    "notes": "Should wire to media upload system. Allow org owners to set via hub. Fall back to org gallery if not set."
+  },
+
+  "centerColumn.joinBlock": {
+    "slot": "Center column — Join / member CTA",
+    "current": "Conditional: Join CTA (logged out) or Member bar (logged in)",
+    "bindTo": "session — no API. Could enrich with: GET /api/stats?region={city}",
+    "dataShape": { "memberCount": "number", "recentJoins": "number" },
+    "regionAware": true,
+    "notes": "Add social proof: 'Join 142 artists in Toronto'. Counter from regional membership stats."
+  },
+
+  "centerColumn.networkFeed": {
+    "slot": "Center column — Latest from the network grid (2-col)",
+    "current": "Live from getCommunityFeed() — cross-org public threads",
+    "bindTo": "GET /api/feed?region={city}&limit=6&status=published",
+    "dataShape": [{ "id": "string", "kind": "post|workshop|event", "title": "string", "excerpt": "string|null", "orgName": "string", "orgSlug": "string", "publishedAt": "ISO8601" }],
+    "regionAware": true,
+    "notes": "Currently global — needs region filter. Toronto shows Toronto collective posts, Paris shows Paris, etc. Cross-city 'Network wide' toggle."
+  },
+
+  "centerColumn.workshopList": {
+    "slot": "Center column — Upcoming workshops & sessions",
+    "current": "Live from orgFeed filtered by kind=workshop|event",
+    "bindTo": "GET /api/workshops?region={city}&status=published&window=30days",
+    "dataShape": [{ "id": "string", "title": "string", "kind": "string", "scheduledAt": "ISO8601|null", "orgName": "string", "price": "number|null", "format": "string" }],
+    "regionAware": true,
+    "notes": "Regional aggregation: show workshops from ALL orgs in the region, not just current org."
+  },
+
+  "rightColumn.artNews": {
+    "slot": "Right column — Art News feed (tagged headlines)",
+    "current": "Static placeholder copy with category tags",
+    "bindTo": "GET /api/rss/art-news?region={city}&limit=5",
+    "dataShape": [{ "title": "string", "tag": "string", "source": "string", "url": "string", "publishedAt": "ISO8601" }],
+    "regionAware": true,
+    "notes": "Per-city art news RSS. Toronto: NOW Mag, Art Toronto; Paris: Le Journal des Arts; L.A: KCRW Arts, Artforum. Admin-configurable."
+  },
+
+  "rightColumn.communityPoll": {
+    "slot": "Right column — Community Pulse poll",
+    "current": "Static HTML poll options (no votes)",
+    "bindTo": "GET /api/poll/active?org={orgSlug} + POST /api/poll/{pollId}/vote",
+    "dataShape": { "id": "string", "question": "string", "options": [{ "id": "string", "label": "string", "votes": "number" }], "totalVotes": "number", "endsAt": "ISO8601|null" },
+    "regionAware": false,
+    "notes": "Polls can be org-specific or network-wide. News console should have a poll builder. Show vote percentages once user has voted."
+  },
+
+  "rightColumn.resources": {
+    "slot": "Right column — Resources list (open calls, grants, spaces)",
+    "current": "Static placeholder links",
+    "bindTo": "GET /api/resources?region={city}&limit=4",
+    "dataShape": [{ "title": "string", "tag": "Resource|Grant|Space|Docs", "url": "string", "deadline": "ISO8601|null" }],
+    "regionAware": true,
+    "notes": "Urgency-sort: resources with approaching deadlines float up. Toronto Arts Council, Conseil des arts de Montréal, etc."
+  },
+
+  "rightColumn.reserveAPlace": {
+    "slot": "Right column — Reserve a place (RSVP upcoming)",
+    "current": "Live from orgFeed upcoming events (max 2)",
+    "bindTo": "GET /api/events/rsvp?org={orgSlug}&limit=2",
+    "dataShape": [{ "id": "string", "title": "string", "scheduledAt": "ISO8601", "rsvpUrl": "string" }],
+    "regionAware": false,
+    "notes": "RSVP links should go to event detail page or inline modal. Track seats remaining."
+  },
+
+  "galleryStrip": {
+    "slot": "Gallery strip — 8 image thumbnails + upload button",
+    "current": "Static colored placeholder tiles",
+    "bindTo": "GET /api/gallery?org={orgSlug}&region={city}&limit=8 + POST /api/gallery/upload",
+    "dataShape": [{ "id": "string", "imageUrl": "string", "title": "string|null", "artistName": "string", "orgSlug": "string" }],
+    "regionAware": true,
+    "notes": "Gallery can mix org-specific + regional collective work. Upload button → media upload API. Consider: curated + member-submitted tiers."
+  },
+
+  "article2": {
+    "slot": "Article 2 — Classic image-left / text-right traditional article",
+    "current": "Static copy + placeholder image",
+    "bindTo": "GET /api/content/article2?org={orgSlug}&region={city}",
+    "dataShape": { "title": "string", "kicker": "string", "excerpt": "string", "imageUrl": "string|null", "imageCaption": "string|null", "author": "string", "publishedAt": "ISO8601", "url": "string" },
+    "regionAware": true,
+    "notes": "Second editorial slot. News console should allow publishing directly here. Different article from featuredStory — complementary content."
+  },
+
+  "_regionConfig": {
+    "Toronto": {
+      "timezone": "America/Toronto",
+      "locale": "en-CA",
+      "currency": "CAD",
+      "weatherUnit": "C",
+      "artNewsRSS": ["https://nowtoronto.com/feed", "https://torontolife.com/arts/feed"],
+      "resourcesOrg": "Toronto Arts Council",
+      "featureColor": "#cc3300"
+    },
+    "Paris": {
+      "timezone": "Europe/Paris",
+      "locale": "fr-FR",
+      "currency": "EUR",
+      "weatherUnit": "C",
+      "artNewsRSS": ["https://www.journaldesarts.fr/feed"],
+      "resourcesOrg": "Conseil des arts de Paris",
+      "featureColor": "#003399"
+    },
+    "L.A.": {
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "currency": "USD",
+      "weatherUnit": "F",
+      "artNewsRSS": ["https://www.kcrw.com/culture/arts/rss.xml", "https://www.artforum.com/feed"],
+      "resourcesOrg": "Department of Cultural Affairs L.A.",
+      "featureColor": "#ff6600"
+    }
+  },
+
+  "_consoleActions": [
+    "Publish featured story (slot: centerColumn.featuredStory)",
+    "Set featured image (slot: centerColumn.featuredImage)",
+    "Pin workshop to workshopList",
+    "Add resource link (slot: rightColumn.resources)",
+    "Create/activate poll (slot: rightColumn.communityPoll)",
+    "Feature artist in spotlight (slot: leftColumn.artistSpotlight)",
+    "Manage gallery images (slot: galleryStrip)",
+    "Publish article 2 (slot: article2)",
+    "Configure regional RSS sources (slots: leftColumn.regionalNews, rightColumn.artNews)",
+    "Set breaking ticker items (slot: ticker)"
+  ]
+}

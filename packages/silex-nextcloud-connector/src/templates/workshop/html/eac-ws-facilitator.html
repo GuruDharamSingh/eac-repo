@@ -1,0 +1,82 @@
+<!--
+  eac-ws-facilitator.html
+  =========================
+  Facilitator bio block. Pulls from the members table via FK.
+  Supports a single facilitator + optional co-facilitators row.
+
+  CMS fields consumed (via facilitator_id → members):
+    members.full_name
+    members.role_title
+    members.bio_short
+    members.photo_path         → Nextcloud
+    members.pronouns           → optional
+    members.website_url        → optional
+  Workshop-specific override:
+    workshop.facilitator_note  → replaces members.bio_short if present
+-->
+<section class="eac-ws-facilitator" data-gjs-type="eac-ws-facilitator" id="facilitator">
+  <div class="eac-ws-facilitator__inner">
+
+    <span class="eac-ws-label eac-ws-label--facilitator">facilitator</span>
+
+    <!-- Primary facilitator -->
+    <div class="eac-ws-facilitator__profile">
+
+      <div class="eac-ws-facilitator__avatar-wrap">
+        <img
+          class="eac-ws-facilitator__avatar"
+          src=""
+          alt="Photo of Dana Kuroda"
+          data-trait="photoPath"
+          width="96" height="96"
+        >
+        <!-- Fallback initials shown when src is empty via CSS -->
+        <span class="eac-ws-facilitator__avatar-initials" aria-hidden="true">DK</span>
+      </div>
+
+      <div class="eac-ws-facilitator__info">
+
+        <div class="eac-ws-facilitator__name-row">
+          <h3 class="eac-ws-facilitator__name"
+              data-gjs-editable="true"
+              data-trait="fullName">
+            Dana Kuroda
+          </h3>
+          <span class="eac-ws-facilitator__pronouns"
+                data-gjs-editable="true"
+                data-trait="pronouns">
+            she/her
+          </span>
+        </div>
+
+        <p class="eac-ws-facilitator__role"
+           data-gjs-editable="true"
+           data-trait="roleTitle">
+          Writer &amp; workshop facilitator — EAC founding member
+        </p>
+
+        <p class="eac-ws-facilitator__bio"
+           data-gjs-editable="true"
+           data-trait="bio">
+          Dana's practice spans poetry, auto-fiction, and collaborative writing.
+          She has facilitated workshops at Harbourfront Centre and OCAD University,
+          and co-founded the EAC writing circle in 2021.
+        </p>
+
+        <a class="eac-ws-facilitator__link"
+           href="#"
+           data-trait="websiteUrl">
+          Visit Dana's website →
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Co-facilitators (optional, hidden if none) -->
+    <div class="eac-ws-facilitator__co" data-trait="showCo" hidden>
+      <p class="eac-ws-facilitator__co-label">Also with</p>
+      <!-- Co-facilitator items injected by component script -->
+    </div>
+
+  </div>
+</section>

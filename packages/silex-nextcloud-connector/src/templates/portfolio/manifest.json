@@ -1,0 +1,137 @@
+{
+  "id": "portfolio",
+  "name": "Artist Portfolio Template",
+  "version": "0.1.0",
+  "category": "EAC Artist Portfolio",
+  "description": "A beautiful, art-focused single-page portfolio for artists. Supports work gallery, commission inquiries, exhibition history, and collaboration CTAs.",
+  "tokens": "../tokens/eac-tokens.css",
+  "cssOrder": [
+    "css/eac-pt-nav.css",
+    "css/eac-pt-hero.css",
+    "css/eac-pt-works.css",
+    "css/eac-pt-about.css",
+    "css/eac-pt-practice.css",
+    "css/eac-pt-exhibitions.css",
+    "css/eac-pt-commission.css",
+    "css/eac-pt-contact.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-pt-nav",
+      "label": "Portfolio nav",
+      "html": "html/eac-pt-nav.html",
+      "css": "css/eac-pt-nav.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": ["artist_profiles.display_name"],
+      "traits": ["artistName", "ctaLabel", "ctaHref"],
+      "notes": "Minimal sticky nav. CTA defaults to commission inquiry anchor."
+    },
+    {
+      "id": "eac-pt-hero",
+      "label": "Hero — identity",
+      "html": "html/eac-pt-hero.html",
+      "css": "css/eac-pt-hero.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "artist_profiles.display_name",
+        "artist_profiles.pronouns",
+        "artist_profiles.disciplines",
+        "artist_profiles.city",
+        "artist_profiles.photo_url"
+      ],
+      "traits": ["artistName", "pronouns", "disciplineTag", "cityTag", "heroImageSrc", "heroBgSrc"],
+      "notes": "Full-bleed image section. heroImageSrc = portrait. heroBgSrc = background artwork."
+    },
+    {
+      "id": "eac-pt-works",
+      "label": "Works gallery",
+      "html": "html/eac-pt-works.html",
+      "css": "css/eac-pt-works.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "workshop_pages.gallery_image_urls"
+      ],
+      "traits": ["galleryItems", "galleryHeading"],
+      "notes": "Masonry/grid gallery. galleryItems = [{url, title, medium, year, available, price}]. Items can link to commission CTA."
+    },
+    {
+      "id": "eac-pt-about",
+      "label": "Artist statement",
+      "html": "html/eac-pt-about.html",
+      "css": "css/eac-pt-about.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "artist_profiles.bio",
+        "artist_profiles.photo_url",
+        "artist_profiles.display_name"
+      ],
+      "traits": ["statementText", "photoSrc", "displayName", "pronouns"],
+      "notes": "Long-form artist statement with portrait image. statementText allows HTML paragraphs."
+    },
+    {
+      "id": "eac-pt-practice",
+      "label": "Practice & medium",
+      "html": "html/eac-pt-practice.html",
+      "css": "css/eac-pt-practice.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "artist_profiles.disciplines",
+        "artist_profiles.goals",
+        "artist_profiles.intent"
+      ],
+      "traits": ["practiceItems", "influences", "processNote"],
+      "notes": "Optional. Disciplines list, process note, influences. practiceItems = [{label, description}]."
+    },
+    {
+      "id": "eac-pt-exhibitions",
+      "label": "Exhibitions & CV",
+      "html": "html/eac-pt-exhibitions.html",
+      "css": "css/eac-pt-exhibitions.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [],
+      "traits": ["exhibitionList"],
+      "notes": "Optional. exhibitionList = [{year, title, venue, city, type}]. type = solo|group|residency|award."
+    },
+    {
+      "id": "eac-pt-commission",
+      "label": "Commission & collaborate",
+      "html": "html/eac-pt-commission.html",
+      "css": "css/eac-pt-commission.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": false,
+      "cmsFields": [],
+      "traits": ["commissionNote", "inquiryEmail", "commissionTypes", "priceNote"],
+      "notes": "Commission info + inquiry form. commissionTypes = [{icon, label, description}]. Can include purchase, visit, exhibit, collab."
+    },
+    {
+      "id": "eac-pt-contact",
+      "label": "Contact & social",
+      "html": "html/eac-pt-contact.html",
+      "css": "css/eac-pt-contact.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "artist_profiles.display_name"
+      ],
+      "traits": ["email", "socialLinks", "studioAddress", "displayName"],
+      "notes": "Footer-style contact section. socialLinks = [{platform, url, label}]."
+    }
+  ]
+}

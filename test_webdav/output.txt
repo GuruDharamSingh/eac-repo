@@ -1,0 +1,15 @@
+1. PROPFIND root:
+HTTP 207
+2. MKCOL /Silex:
+HTTP 201
+3. MKCOL /Silex/_phase1_check:
+HTTP 201
+4. PUT index.html:
+HTTP 201
+5. GET index.html:
+
+6. CLEANUP:
+DELETE file HTTP 204
+DELETE folder HTTP 404
+7. Confirm /Silex exists:
+HTTP 207

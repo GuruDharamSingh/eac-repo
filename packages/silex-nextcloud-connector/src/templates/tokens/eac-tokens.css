@@ -1,0 +1,137 @@
+/*
+  eac-tokens.css
+  ================
+  Global EAC design tokens. Import this first in every
+  stylesheet. All other EAC CSS files consume these variables.
+
+  Scope: :root so tokens cascade everywhere.
+  Block-level overrides live in each block's own CSS file.
+*/
+
+:root {
+
+  /* ── Colour palette ──────────────────────────────────────────── */
+
+  --eac-color-ink:          #111827;   /* near-black text */
+  --eac-color-ink-muted:    #4b5563;   /* secondary text  */
+  --eac-color-ink-faint:    #9ca3af;   /* tertiary / labels */
+
+  --eac-color-surface:      #ffffff;
+  --eac-color-surface-2:    #f9fafb;   /* off-white backgrounds */
+  --eac-color-surface-3:    #f3f4f6;   /* dividers, zebra rows  */
+
+  --eac-color-border:       #e5e7eb;   /* default border */
+  --eac-color-border-strong:#d1d5db;   /* inputs, emphasis */
+
+  /* Brand accent — violet default. Override per-tenant on :root */
+  --eac-accent-rgb:         120, 80, 220;
+  --eac-accent:             rgb(var(--eac-accent-rgb));
+  --eac-accent-light:       rgba(var(--eac-accent-rgb), 0.1);
+
+  /* Semantic */
+  --eac-color-success:      #16a34a;
+  --eac-color-warning:      #d97706;
+  --eac-color-danger:       #dc2626;
+  --eac-color-info:         #2563eb;
+
+  /* ── Typography ──────────────────────────────────────────────── */
+
+  --eac-font-display: 'Garamond', 'EB Garamond', Georgia, serif;
+  --eac-font-body:    system-ui, -apple-system, sans-serif;
+  --eac-font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  --eac-text-xs:   11px;
+  --eac-text-sm:   13px;
+  --eac-text-base: 15px;
+  --eac-text-md:   17px;
+  --eac-text-lg:   20px;
+  --eac-text-xl:   28px;
+  --eac-text-2xl:  36px;
+  --eac-text-3xl:  48px;
+  --eac-text-4xl:  64px;
+
+  --eac-leading-tight:  1.1;
+  --eac-leading-snug:   1.3;
+  --eac-leading-normal: 1.6;
+  --eac-leading-loose:  1.8;
+
+  /* ── Spacing ─────────────────────────────────────────────────── */
+
+  --eac-space-1:  4px;
+  --eac-space-2:  8px;
+  --eac-space-3:  12px;
+  --eac-space-4:  16px;
+  --eac-space-5:  20px;
+  --eac-space-6:  24px;
+  --eac-space-8:  32px;
+  --eac-space-10: 40px;
+  --eac-space-12: 48px;
+  --eac-space-16: 64px;
+  --eac-space-20: 80px;
+
+  /* ── Border radius ───────────────────────────────────────────── */
+
+  --eac-radius-sm:   4px;
+  --eac-radius-md:   8px;
+  --eac-radius-lg:   12px;
+  --eac-radius-xl:   16px;
+  --eac-radius-pill: 999px;
+
+  /* ── Shadows ─────────────────────────────────────────────────── */
+
+  --eac-shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --eac-shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+
+  /* ── Transitions ─────────────────────────────────────────────── */
+
+  --eac-transition: 0.15s ease;
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+
+  --eac-max-width:       1100px;
+  --eac-max-width-prose: 680px;
+  --eac-max-width-page:  860px;
+  --eac-max-width-form:  520px;
+
+  /* ── Workshop-specific tokens ────────────────────────────────── */
+  /* Override these on .eac-ws-page for per-workshop theming */
+
+  --eac-ws-hero-bg:           #0f172a;
+  --eac-ws-hero-accent-rgb:   120, 80, 220;
+  --eac-ws-register-bg:       #0f172a;
+  --eac-ws-register-fill-rgb: 120, 80, 220;
+
+}
+
+/* ── Base reset (minimal) ────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: var(--eac-font-body); }
+img, video { max-width: 100%; display: block; }
+a { color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ── Section labels (design / editor indicators) ─────────────── */
+
+.eac-ws-label {
+  position:       absolute;
+  top:            12px;
+  right:          12px;
+  font-size:      10px;
+  font-weight:    500;
+  padding:        2px 8px;
+  border-radius:  var(--eac-radius-pill);
+  pointer-events: none;
+  z-index:        10;
+  line-height:    1.4;
+}
+
+.eac-ws-label--nav          { background: #f3f4f6; color: #6b7280; border: 0.5px solid #d1d5db; }
+.eac-ws-label--details      { background: #d1fae5; color: #065f46; }
+.eac-ws-label--about        { background: #d1fae5; color: #065f46; }
+.eac-ws-label--facilitator  { background: #d1fae5; color: #065f46; }
+.eac-ws-label--schedule     { background: #d1fae5; color: #065f46; }
+.eac-ws-label--media        { background: #fef3c7; color: #92400e; }
+.eac-ws-label--testimonials { background: #fef3c7; color: #92400e; }
+.eac-ws-label--related      { background: #d1fae5; color: #065f46; }
+.eac-ws-label--register     { background: #fce7f3; color: #9d174d; }

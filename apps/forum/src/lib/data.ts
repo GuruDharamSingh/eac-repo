@@ -31,7 +31,7 @@ export async function fetchThread(slug: string, userId?: string) {
 /**
  * Fetch replies for a thread
  */
-export async function fetchReplies(threadId: string, threadType: 'post' | 'meeting', sort: 'oldest' | 'newest' | 'reactions' = 'oldest'): Promise<Reply[]> {
+export async function fetchReplies(threadId: string, threadType: 'post' | 'meeting' | 'workshop', sort: 'oldest' | 'newest' | 'reactions' = 'oldest'): Promise<Reply[]> {
   return getReplies(threadId, threadType, sort);
 }
 

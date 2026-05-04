@@ -1,0 +1,88 @@
+<!--
+  EAC Contact / Lead Form — HTML Template
+  ==========================================
+  Centred single-column form. Name → Email → Message → Submit.
+  Lowest-friction fields first. Submit label is action-specific.
+  Form action is set via the webhookUrl trait in the component script.
+-->
+<section class="eac-contact" data-gjs-type="eac-contact">
+  <div class="eac-contact__inner">
+
+    <div class="eac-contact__header">
+      <h2 class="eac-contact__heading" data-gjs-editable="true" data-trait="headingText">
+        Get in touch
+      </h2>
+      <p class="eac-contact__sub" data-gjs-editable="true" data-trait="subText">
+        Questions, collaboration ideas, or workshop enquiries — we read everything.
+      </p>
+    </div>
+
+    <form class="eac-contact__form"
+          data-webhook-target
+          novalidate>
+
+      <!-- Sub-element 1: Name field -->
+      <div class="eac-contact__field">
+        <label class="eac-contact__label" for="eac-name">Your name</label>
+        <input
+          class="eac-contact__input"
+          type="text"
+          id="eac-name"
+          name="name"
+          placeholder="Dana Kuroda"
+          autocomplete="name"
+          required
+        >
+      </div>
+
+      <!-- Sub-element 1 (cont): Email field -->
+      <div class="eac-contact__field">
+        <label class="eac-contact__label" for="eac-email">Email address</label>
+        <input
+          class="eac-contact__input"
+          type="email"
+          id="eac-email"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <!-- Sub-element 2: Message textarea -->
+      <div class="eac-contact__field">
+        <label class="eac-contact__label" for="eac-message">Message</label>
+        <textarea
+          class="eac-contact__textarea"
+          id="eac-message"
+          name="message"
+          placeholder="Tell us what's on your mind…"
+          rows="5"
+          required
+        ></textarea>
+      </div>
+
+      <!-- Sub-element 3: Submit + microcopy -->
+      <div class="eac-contact__submit-wrap">
+        <button
+          class="eac-contact__btn"
+          type="submit"
+          data-trait="submitLabel">
+          Send a message
+        </button>
+        <p class="eac-contact__microcopy" data-gjs-editable="true" data-trait="microcopyText">
+          No spam. We reply within 2 business days.
+        </p>
+      </div>
+
+      <!-- Success / error states (shown by script) -->
+      <div class="eac-contact__success" role="status" aria-live="polite" hidden>
+        Message sent — thank you!
+      </div>
+      <div class="eac-contact__error" role="alert" aria-live="assertive" hidden>
+        Something went wrong. Please try again or email us directly.
+      </div>
+
+    </form>
+  </div>
+</section>

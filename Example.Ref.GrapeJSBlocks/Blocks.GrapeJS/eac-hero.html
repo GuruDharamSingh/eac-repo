@@ -1,0 +1,79 @@
+<!--
+  EAC Dark Cinematic Hero — HTML Template
+  ========================================
+  Drop this into Silex as a custom block template, or reference it
+  from your GrapesJS block registration in eac-hero.block.js.
+
+  Editable regions are marked with data-gjs-editable="true".
+  Trait-bound elements carry data-trait and data-href-trait attributes
+  which the component script uses to sync values into the DOM.
+-->
+
+<section class="eac-hero" data-gjs-type="eac-hero">
+
+  <!-- ── Layer 0: decorative background (non-editable) ─────────── -->
+  <div class="eac-hero__bg" aria-hidden="true">
+    <div class="eac-hero__glow"></div>
+    <div class="eac-hero__rule"></div>
+  </div>
+
+  <!-- ── Layer 1: content (editable) ──────────────────────────── -->
+  <div class="eac-hero__inner">
+
+    <!-- Sub-element 1: Eyebrow / kicker -->
+    <span
+      class="eac-hero__eyebrow"
+      data-gjs-editable="true"
+      data-trait="eyebrowText"
+    >
+      Elkdonis Arts Collective
+    </span>
+
+    <!-- Sub-element 2: Display headline -->
+    <!-- The <em> word carries the accent colour — edit its text freely -->
+    <h1
+      class="eac-hero__headline"
+      data-gjs-editable="true"
+      data-trait="headlineText"
+    >
+      Where <em class="eac-hero__headline-em">art</em>
+      finds its community
+    </h1>
+
+    <!-- Sub-element 3: Subheadline -->
+    <p
+      class="eac-hero__sub"
+      data-gjs-editable="true"
+      data-trait="subText"
+    >
+      A home for artists, makers, and creative practitioners across
+      disciplines. Join workshops, connect with collaborators, and
+      grow together.
+    </p>
+
+    <!-- Sub-element 4: CTA row -->
+    <div class="eac-hero__cta-row">
+
+      <a
+        href="/workshops"
+        class="eac-hero__btn eac-hero__btn--primary"
+        data-trait="primaryLabel"
+        data-href-trait="primaryHref"
+      >
+        Explore workshops
+      </a>
+
+      <a
+        href="/about"
+        class="eac-hero__btn eac-hero__btn--ghost"
+        data-trait="ghostLabel"
+        data-href-trait="ghostHref"
+      >
+        Meet the collective
+      </a>
+
+    </div>
+
+  </div>
+
+</section>

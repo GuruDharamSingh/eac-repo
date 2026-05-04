@@ -1,0 +1,82 @@
+<!--
+  eac-ws-register.html
+  ======================
+  Registration / pricing block. Sticky on desktop (CSS position:sticky).
+  The highest-conversion section on the page.
+
+  CMS fields consumed:
+    workshop.price_full
+    workshop.price_sliding_min
+    workshop.price_member
+    workshop.session_count
+    workshop.spots_filled           (computed from registrations)
+    workshop.capacity_max
+    workshop.registration_url
+    workshop.registration_deadline
+    workshop.sliding_scale_note
+    workshop.status                 → controls button state:
+                                      published  → "Register now"
+                                      full       → "Join waitlist"
+                                      archived   → "This workshop has ended"
+-->
+<section class="eac-ws-register" data-gjs-type="eac-ws-register" id="register">
+  <div class="eac-ws-register__card">
+
+    <span class="eac-ws-label eac-ws-label--register">register</span>
+
+    <!-- Heading -->
+    <p class="eac-ws-register__heading">Secure your spot</p>
+
+    <!-- Price display -->
+    <div class="eac-ws-register__price-row">
+      <span class="eac-ws-register__price"
+            data-gjs-editable="true"
+            data-trait="priceFull">
+        $180
+      </span>
+      <span class="eac-ws-register__price-context"
+            data-gjs-editable="true"
+            data-trait="priceContext">
+        / 6 sessions
+      </span>
+    </div>
+
+    <!-- Sliding scale note (hidden if null) -->
+    <p class="eac-ws-register__sliding"
+       data-gjs-editable="true"
+       data-trait="slidingScaleNote"
+       hidden>
+      Sliding scale $90–$180. Reach out if cost is a barrier.
+    </p>
+
+    <!-- Registration metadata -->
+    <div class="eac-ws-register__meta-row">
+      <span class="eac-ws-register__meta-item"
+            data-gjs-editable="true"
+            data-trait="spotsRemaining">
+        4 spots remaining
+      </span>
+      <span class="eac-ws-register__meta-item"
+            data-gjs-editable="true"
+            data-trait="startsIn">
+        Begins in 12 days
+      </span>
+    </div>
+
+    <!-- Primary CTA -->
+    <a class="eac-ws-register__btn"
+       href="#"
+       data-trait="ctaLabel"
+       data-href-trait="registrationUrl">
+      Register now →
+    </a>
+
+    <!-- Fine print / deadline note -->
+    <p class="eac-ws-register__deadline"
+       data-gjs-editable="true"
+       data-trait="deadlineNote">
+      Sliding scale available — reach out if cost is a barrier.
+    </p>
+
+  </div>
+</section>

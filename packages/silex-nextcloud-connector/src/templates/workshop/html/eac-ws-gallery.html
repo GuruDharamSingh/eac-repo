@@ -1,0 +1,42 @@
+<!--
+  eac-ws-gallery.html
+  =====================
+  Past session media grid. Images served from Nextcloud.
+
+  CMS fields consumed:
+    workshop.gallery_image_paths[]
+    workshop.promo_video_url        (optional)
+-->
+<section class="eac-ws-gallery" data-gjs-type="eac-ws-gallery" id="gallery">
+  <div class="eac-ws-gallery__inner">
+
+    <span class="eac-ws-label eac-ws-label--media">media</span>
+
+    <h2 class="eac-ws-gallery__heading">From past sessions</h2>
+
+    <div class="eac-ws-gallery__grid">
+      <div class="eac-ws-gallery__item eac-ws-gallery__item--featured">
+        <img class="eac-ws-gallery__img" src="" alt="Workshop session photo" loading="lazy">
+      </div>
+      <div class="eac-ws-gallery__item">
+        <img class="eac-ws-gallery__img" src="" alt="Workshop session photo" loading="lazy">
+      </div>
+      <div class="eac-ws-gallery__item">
+        <img class="eac-ws-gallery__img" src="" alt="Workshop session photo" loading="lazy">
+      </div>
+    </div>
+
+    <!-- Optional video embed -->
+    <div class="eac-ws-gallery__video" data-trait="promoVideoUrl" hidden>
+      <iframe
+        class="eac-ws-gallery__iframe"
+        src=""
+        title="Workshop promo video"
+        frameborder="0"
+        allow="autoplay; fullscreen"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,195 @@
+{
+  "id": "workshop",
+  "name": "Workshop Template",
+  "version": "0.1.0",
+  "category": "EAC Workshop Template",
+  "description": "Reusable EAC workshop/offering sections for Silex and CMS-backed workshop pages.",
+  "tokens": "../tokens/eac-tokens.css",
+  "cssOrder": [
+    "css/eac-ws-nav.css",
+    "css/eac-ws-hero.css",
+    "css/eac-ws-detail-strip.css",
+    "css/eac-ws-about.css",
+    "css/eac-ws-facilitator.css",
+    "css/eac-ws-schedule.css",
+    "css/eac-ws-gallery.css",
+    "css/eac-ws-testimonials.css",
+    "css/eac-ws-related.css",
+    "css/eac-ws-register.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-ws-nav",
+      "label": "Workshop nav",
+      "html": "html/eac-ws-nav.html",
+      "css": "css/eac-ws-nav.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": ["workshop_pages.registration_url"],
+      "traits": ["ctaLabel", "ctaHref"],
+      "notes": "Platform mark and contact CTA only; not a content navigation menu."
+    },
+    {
+      "id": "eac-ws-hero",
+      "label": "Workshop hero",
+      "html": "html/eac-ws-hero.html",
+      "css": "css/eac-ws-hero.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "workshop_pages.discipline",
+        "workshop_pages.series_label",
+        "threads.title",
+        "workshop_pages.recurrence_label",
+        "threads.location",
+        "threads.attendee_limit",
+        "threads.price",
+        "threads.currency",
+        "workshop_pages.registration_url",
+        "workshop_pages.registration_status",
+        "workshop_pages.cover_image_url"
+      ],
+      "traits": ["eyebrowText", "title", "recurrence", "locationName", "spotsText", "ctaLabel", "registrationUrl"],
+      "notes": "eyebrowText = discipline + ' · ' + series_label. spotsText is computed from attendee_limit minus RSVP count."
+    },
+    {
+      "id": "eac-ws-detail-strip",
+      "label": "Detail strip",
+      "html": "html/eac-ws-detail-strip.html",
+      "css": "css/eac-ws-detail-strip.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.scheduled_at",
+        "workshop_pages.session_count",
+        "workshop_pages.session_duration_hrs",
+        "threads.format",
+        "workshop_pages.level",
+        "threads.attendee_limit",
+        "workshop_pages.language"
+      ],
+      "traits": ["startDate", "sessionCount", "sessionDuration", "format", "level", "language"]
+    },
+    {
+      "id": "eac-ws-about",
+      "label": "About / description",
+      "html": "html/eac-ws-about.html",
+      "css": "css/eac-ws-about.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.body",
+        "threads.tags",
+        "workshop_pages.accessibility_notes"
+      ],
+      "traits": ["descriptionLong", "showAccessibilityNotes", "accessibilityNotes"],
+      "notes": "description_long = threads.body. Read-more expand is CSS clamp only — no separate DB field."
+    },
+    {
+      "id": "eac-ws-facilitator",
+      "label": "Author / facilitator bio",
+      "html": "html/eac-ws-facilitator.html",
+      "css": "css/eac-ws-facilitator.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "artist_profiles.display_name",
+        "artist_profiles.bio",
+        "artist_profiles.photo_url",
+        "artist_profiles.pronouns",
+        "workshop_pages.author_note"
+      ],
+      "traits": ["fullName", "bio", "photoPath", "pronouns", "websiteUrl"],
+      "notes": "Data source is threads.author_id → artist_profiles. workshop_pages.author_note overrides artist_profiles.bio for this workshop only."
+    },
+    {
+      "id": "eac-ws-schedule",
+      "label": "Session schedule",
+      "html": "html/eac-ws-schedule.html",
+      "css": "css/eac-ws-schedule.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "threads.sessions[].id",
+        "threads.sessions[].title",
+        "threads.sessions[].scheduled_at",
+        "threads.sessions[].duration_minutes",
+        "threads.sessions[].location",
+        "workshop_pages.registration_url"
+      ],
+      "traits": ["sessionList", "registrationUrl"],
+      "notes": "sessions JSONB lives on threads. Optional — omit if sessions array is empty."
+    },
+    {
+      "id": "eac-ws-gallery",
+      "label": "Past sessions / media",
+      "html": "html/eac-ws-gallery.html",
+      "css": "css/eac-ws-gallery.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "workshop_pages.gallery_image_urls",
+        "workshop_pages.promo_video_url"
+      ],
+      "traits": ["galleryItems"],
+      "notes": "Optional. gallery_image_urls is JSONB array: [{url, alt, caption}]."
+    },
+    {
+      "id": "eac-ws-testimonials",
+      "label": "Participant quotes",
+      "html": "html/eac-ws-testimonials.html",
+      "css": "css/eac-ws-testimonials.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": ["workshop_testimonials.quote", "workshop_testimonials.name", "workshop_testimonials.role"],
+      "traits": ["testimonialList"],
+      "notes": "Optional. Testimonials table is future work — filtered by thread_id."
+    },
+    {
+      "id": "eac-ws-related",
+      "label": "Related workshops",
+      "html": "html/eac-ws-related.html",
+      "css": "css/eac-ws-related.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": false,
+      "omitWhenEmpty": true,
+      "cmsFields": ["related_threads.title", "related_threads.scheduled_at", "related_threads.slug"],
+      "traits": ["relatedWorkshopList"],
+      "notes": "Optional. Related = same discipline or overlapping tags, status=published. Future computed query."
+    },
+    {
+      "id": "eac-ws-register",
+      "label": "Registration block",
+      "html": "html/eac-ws-register.html",
+      "css": "css/eac-ws-register.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.price",
+        "threads.currency",
+        "workshop_pages.price_sliding_min",
+        "workshop_pages.price_member",
+        "workshop_pages.registration_url",
+        "workshop_pages.registration_deadline",
+        "workshop_pages.sliding_scale_note",
+        "workshop_pages.registration_status",
+        "threads.attendee_limit",
+        "threads.scheduled_at"
+      ],
+      "traits": ["priceFull", "priceSlidingMin", "ctaLabel", "registrationUrl", "spotsRemaining", "startsIn", "slidingScaleNote", "deadlineNote"]
+    }
+  ]
+}

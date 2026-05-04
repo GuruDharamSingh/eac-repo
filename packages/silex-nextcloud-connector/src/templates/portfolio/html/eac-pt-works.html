@@ -1,0 +1,103 @@
+<!--
+  eac-pt-works.html  —  Artist Portfolio: works gallery grid
+  Traits: galleryHeading, galleryItems (rendered server-side)
+-->
+<section class="eac-pt-works" id="works" data-gjs-type="eac-pt-works">
+
+  <div class="eac-pt-works__inner">
+
+    <div class="eac-pt-works__header">
+      <h2 class="eac-pt-works__heading" data-gjs-editable="true" data-trait="galleryHeading">
+        Selected Works
+      </h2>
+      <div class="eac-pt-works__filters" role="list">
+        <button class="eac-pt-works__filter eac-pt-works__filter--active" data-filter="all">All</button>
+        <button class="eac-pt-works__filter" data-filter="available">Available</button>
+        <button class="eac-pt-works__filter" data-filter="sold">Sold</button>
+      </div>
+    </div>
+
+    <!-- galleryItems injected here by renderPortfolioTemplate() -->
+    <div class="eac-pt-works__grid" data-gjs-editable="true" data-trait="galleryItems">
+
+      <!-- Placeholder work item (3 shown as example) -->
+      <article class="eac-pt-works__item" data-available="true">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+          <div class="eac-pt-works__item-overlay">
+            <span class="eac-pt-works__item-tag eac-pt-works__item-tag--avail">Available</span>
+          </div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Untitled No. 1</h3>
+          <p class="eac-pt-works__item-meta">Oil on canvas &middot; 24 &times; 36 in &middot; 2024</p>
+          <a class="eac-pt-works__item-cta" href="#commission">Inquire &rarr;</a>
+        </div>
+      </article>
+
+      <article class="eac-pt-works__item">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+          <div class="eac-pt-works__item-overlay">
+            <span class="eac-pt-works__item-tag">Exhibited</span>
+          </div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Study in Ochre</h3>
+          <p class="eac-pt-works__item-meta">Watercolour &middot; 18 &times; 24 in &middot; 2023</p>
+        </div>
+      </article>
+
+      <article class="eac-pt-works__item" data-available="true">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+          <div class="eac-pt-works__item-overlay">
+            <span class="eac-pt-works__item-tag eac-pt-works__item-tag--avail">Available</span>
+          </div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Field Study III</h3>
+          <p class="eac-pt-works__item-meta">Mixed media &middot; 30 &times; 40 in &middot; 2024</p>
+          <a class="eac-pt-works__item-cta" href="#commission">Inquire &rarr;</a>
+        </div>
+      </article>
+
+      <article class="eac-pt-works__item">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Archive (diptych)</h3>
+          <p class="eac-pt-works__item-meta">Charcoal on paper &middot; 12 &times; 16 in &middot; 2022</p>
+        </div>
+      </article>
+
+      <article class="eac-pt-works__item" data-available="true">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+          <div class="eac-pt-works__item-overlay">
+            <span class="eac-pt-works__item-tag eac-pt-works__item-tag--avail">Available</span>
+          </div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Interior Light</h3>
+          <p class="eac-pt-works__item-meta">Acrylic &middot; 20 &times; 20 in &middot; 2024</p>
+          <a class="eac-pt-works__item-cta" href="#commission">Inquire &rarr;</a>
+        </div>
+      </article>
+
+      <article class="eac-pt-works__item">
+        <div class="eac-pt-works__img-wrap">
+          <div class="eac-pt-works__img-placeholder"></div>
+        </div>
+        <div class="eac-pt-works__item-info">
+          <h3 class="eac-pt-works__item-title">Residue</h3>
+          <p class="eac-pt-works__item-meta">Oil on linen &middot; 36 &times; 48 in &middot; 2023</p>
+        </div>
+      </article>
+
+    </div><!-- /grid -->
+
+  </div>
+
+</section>

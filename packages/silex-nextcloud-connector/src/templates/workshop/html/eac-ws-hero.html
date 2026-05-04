@@ -1,0 +1,75 @@
+<!--
+  eac-ws-hero.html
+  ==================
+  Workshop page hero section.
+  Dark, full-viewport, centred layout.
+
+  CMS fields consumed:
+    workshop.discipline         → eyebrow category label
+    workshop.title              → H1 headline
+    workshop.recurrence         → metadata pill
+    workshop.location_name      → metadata pill
+    workshop.spots_filled       → metadata pill (computed)
+    workshop.capacity_max       → metadata pill (computed)
+    workshop.price_full         → primary CTA label
+    workshop.registration_url   → primary CTA href
+    workshop.status             → controls CTA visibility
+    workshop.cover_image        → optional background image
+-->
+<section class="eac-ws-hero" data-gjs-type="eac-ws-hero">
+
+  <div class="eac-ws-hero__bg" aria-hidden="true">
+    <div class="eac-ws-hero__glow"></div>
+    <div class="eac-ws-hero__rule"></div>
+  </div>
+
+  <div class="eac-ws-hero__inner">
+
+    <!-- Eyebrow: discipline + series format -->
+    <span class="eac-ws-hero__eyebrow"
+          data-gjs-editable="true"
+          data-trait="eyebrowText">
+      Creative writing · 6-week series
+    </span>
+
+    <!-- Display headline -->
+    <h1 class="eac-ws-hero__headline"
+        data-gjs-editable="true"
+        data-trait="title">
+      Writing as a Practice,<br>Not a Product
+    </h1>
+
+    <!-- Metadata pills row -->
+    <div class="eac-ws-hero__meta" role="list">
+      <span class="eac-ws-hero__pill" role="listitem"
+            data-trait="recurrence">
+        Saturdays 10am–1pm
+      </span>
+      <span class="eac-ws-hero__pill" role="listitem"
+            data-trait="locationName">
+        EAC Studio, Toronto
+      </span>
+      <span class="eac-ws-hero__pill eac-ws-hero__pill--spots"
+            role="listitem"
+            data-trait="spotsText">
+        8 spots remaining
+      </span>
+    </div>
+
+    <!-- CTA row -->
+    <div class="eac-ws-hero__cta-row">
+      <a class="eac-ws-hero__btn eac-ws-hero__btn--primary"
+         href="#register"
+         data-trait="ctaLabel"
+         data-href-trait="registrationUrl">
+        Register — $180
+      </a>
+      <a class="eac-ws-hero__btn eac-ws-hero__btn--ghost"
+         href="#about">
+        Learn more ↓
+      </a>
+    </div>
+
+  </div>
+
+</section>

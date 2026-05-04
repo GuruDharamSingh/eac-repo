@@ -1,0 +1,177 @@
+/*
+  eac-ws-register.css
+  =====================
+  Registration block. Dark card, sticky on desktop.
+  Typically rendered in a sidebar layout alongside the main content,
+  or as a full-width section at the bottom of the page.
+*/
+
+.eac-ws-register {
+  position:   relative;
+  padding:    var(--eac-space-8) var(--eac-space-6);
+  background: var(--eac-color-surface-2);
+  border-top: 0.5px solid var(--eac-color-border);
+}
+
+/* When used in a sidebar: set position:sticky;top:72px on .eac-ws-register__card */
+
+.eac-ws-register__card {
+  position:      relative;
+  background:    var(--eac-ws-register-bg, #0f172a);
+  border-radius: var(--eac-radius-xl);
+  padding:       var(--eac-space-6) var(--eac-space-8);
+  max-width:     var(--eac-max-width-page);
+  margin:        0 auto;
+  display:       flex;
+  flex-direction:column;
+  gap:           var(--eac-space-3);
+}
+
+/* ── Heading ─────────────────────────────────────────────────── */
+
+.eac-ws-register__heading {
+  font-size:      var(--eac-text-xs);
+  font-weight:    600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color:          rgba(255, 255, 255, 0.55);
+  margin:         0;
+  text-align:     center;
+}
+
+/* ── Price ────────────────────────────────────────────────────── */
+
+.eac-ws-register__price-row {
+  display:     flex;
+  align-items: baseline;
+  gap:         var(--eac-space-2);
+  justify-content: center;
+}
+
+.eac-ws-register__price {
+  font-size:   var(--eac-text-2xl);
+  font-weight: 700;
+  color:       #ffffff;
+  line-height: 1;
+}
+
+.eac-ws-register__price-context {
+  font-size: var(--eac-text-sm);
+  color:     rgba(255, 255, 255, 0.45);
+}
+
+/* ── Sliding scale + member price ─────────────────────────────── */
+
+.eac-ws-register__sliding,
+.eac-ws-register__member {
+  font-size:   var(--eac-text-xs);
+  color:       rgba(255, 255, 255, 0.55);
+  margin:      0;
+  line-height: var(--eac-leading-normal);
+}
+
+/* ── Registration metadata ───────────────────────────────────── */
+
+.eac-ws-register__meta-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--eac-space-2);
+  flex-wrap:       wrap;
+}
+
+.eac-ws-register__meta-item {
+  display:       inline-flex;
+  align-items:   center;
+  min-height:    24px;
+  padding:       3px 10px;
+  border:        0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--eac-radius-pill);
+  color:         rgba(255, 255, 255, 0.58);
+  font-size:     var(--eac-text-xs);
+  line-height:   1.3;
+}
+
+/* ── CTA button ───────────────────────────────────────────────── */
+
+.eac-ws-register__btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         9px 24px;
+  background:      #ffffff;
+  color:           #0f172a;
+  font-size:       var(--eac-text-sm);
+  font-weight:     700;
+  border-radius:   var(--eac-radius-md);
+  text-decoration: none;
+  min-height:      38px;
+  text-align:      center;
+  transition:      opacity var(--eac-transition);
+}
+.eac-ws-register__btn:hover { opacity: 0.88; }
+
+/* Status variants */
+.eac-ws-register__btn--waitlist {
+  background: transparent;
+  color:      rgba(255, 255, 255, 0.7);
+  border:     0.5px solid rgba(255, 255, 255, 0.25);
+}
+
+.eac-ws-register__btn--ended {
+  background: transparent;
+  color:      rgba(255, 255, 255, 0.35);
+  border:     0.5px solid rgba(255, 255, 255, 0.1);
+  cursor:     default;
+  pointer-events: none;
+}
+
+/* ── Deadline ─────────────────────────────────────────────────── */
+
+.eac-ws-register__deadline {
+  font-size:  var(--eac-text-xs);
+  color:      rgba(255, 255, 255, 0.3);
+  text-align: center;
+  margin:     0;
+}
+
+/* ── Divider ──────────────────────────────────────────────────── */
+
+.eac-ws-register__divider {
+  height:     0.5px;
+  background: rgba(255, 255, 255, 0.1);
+  margin:     var(--eac-space-2) 0;
+}
+
+/* ── Key details summary ──────────────────────────────────────── */
+
+.eac-ws-register__details {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--eac-space-3);
+  margin:         0;
+  padding:        0;
+}
+
+.eac-ws-register__detail-item {
+  display:         flex;
+  justify-content: space-between;
+  font-size:       var(--eac-text-sm);
+}
+
+.eac-ws-register__detail-item dt {
+  color:       rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.eac-ws-register__detail-item dd {
+  color:     rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+  margin:    0;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .eac-ws-register { padding: var(--eac-space-8) var(--eac-space-5); }
+  .eac-ws-register__card { max-width: 100%; }
+}

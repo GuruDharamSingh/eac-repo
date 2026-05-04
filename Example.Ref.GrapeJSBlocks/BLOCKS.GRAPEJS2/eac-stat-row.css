@@ -1,0 +1,76 @@
+/*
+  EAC Stats / Impact Row — Stylesheet
+*/
+
+.eac-stats {
+  padding:    64px 40px;
+  background: #ffffff;
+  border-top: 0.5px solid #f3f4f6;
+}
+
+.eac-stats__inner {
+  max-width: 960px;
+  margin:    0 auto;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────── */
+
+.eac-stats__grid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap:                   0;
+}
+
+.eac-stats__item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  text-align:     center;
+  padding:        32px 24px;
+  border-right:   0.5px solid #f3f4f6;
+}
+.eac-stats__item:last-child {
+  border-right: none;
+}
+
+/* ── Sub-element 1: Animated number ──────────────────────────── */
+
+.eac-stats__number {
+  font-size:      clamp(36px, 5vw, 56px);
+  font-weight:    700;
+  letter-spacing: -0.03em;
+  color:          #111827;
+  line-height:    1;
+  margin-bottom:  8px;
+}
+
+/* ── Sub-element 2: Label ────────────────────────────────────── */
+
+.eac-stats__label {
+  font-size:     14px;
+  color:         #6b7280;
+  line-height:   1.4;
+  margin-bottom: 8px;
+}
+
+/* ── Sub-element 3: Trend indicator ──────────────────────────── */
+
+.eac-stats__trend {
+  font-size:   12px;
+  font-weight: 500;
+  color:       #9ca3af;
+}
+.eac-stats__trend--up   { color: #16a34a; }
+.eac-stats__trend--down { color: #dc2626; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-stats { padding: 48px 24px; }
+  .eac-stats__item {
+    border-right:  none;
+    border-bottom: 0.5px solid #f3f4f6;
+    padding:       28px 16px;
+  }
+  .eac-stats__item:last-child { border-bottom: none; }
+}

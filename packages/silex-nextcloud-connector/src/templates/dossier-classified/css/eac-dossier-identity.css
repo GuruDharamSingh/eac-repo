@@ -1,0 +1,141 @@
+.eac-dossier-identity {
+  position: relative;
+  padding-bottom: 2rem;
+  border-bottom: 1px dashed #999;
+  margin-bottom: 3rem;
+  font-family: var(--eac-dos-typewriter);
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-stamp {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  font-family: var(--eac-dos-gothic);
+  font-size: 1.9rem;
+  font-weight: bold;
+  color: var(--eac-dos-stamp-red);
+  border: 3px double var(--eac-dos-stamp-red);
+  padding: 3px 12px;
+  transform: rotate(-7deg);
+  opacity: 0.8;
+  pointer-events: none;
+  letter-spacing: 1px;
+  z-index: 10;
+}
+
+.eac-dos-header-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+@media (max-width: 600px) {
+  .eac-dos-header-block {
+    flex-direction: column;
+  }
+}
+
+.eac-dos-profile-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.eac-dos-profile-container::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  width: 15px;
+  height: 45px;
+  border: 3px solid #777;
+  border-radius: 10px;
+  z-index: 10;
+  box-shadow: 2px 2px 2px rgba(0,0,0,0.2);
+}
+
+.eac-dos-profile-pic {
+  width: 200px;
+  height: 250px;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(150%) sepia(30%);
+  border: 1px solid #333;
+  padding: 5px;
+  background: #fff;
+  transform: rotate(2deg);
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+}
+
+.eac-dos-header-content {
+  flex-grow: 1;
+}
+
+.eac-dos-alias {
+  font-family: var(--eac-dos-gothic);
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  border-bottom: none;
+  line-height: 1;
+}
+
+.eac-dos-alias::before {
+  content: 'ALIAS/NAME: ';
+  font-family: var(--eac-dos-typewriter);
+  font-size: 1rem;
+  display: block;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.eac-dos-form-row {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.eac-dos-label {
+  font-weight: bold;
+  margin-right: 10px;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.eac-dos-value {
+  flex-grow: 1;
+  border-bottom: 1px dotted #999;
+  padding-bottom: 2px;
+}
+
+.eac-dos-bio {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(0,0,0,0.03);
+  border: 1px solid #ccc;
+  line-height: 1.5;
+}
+
+.eac-dos-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eac-dos-btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: var(--eac-dos-ink);
+  border: 2px solid var(--eac-dos-ink);
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.eac-dos-btn:hover {
+  background: var(--eac-dos-ink);
+  color: var(--eac-dos-paper);
+}

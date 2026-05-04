@@ -1,0 +1,36 @@
+.eac-dossier-network {
+  margin-bottom: 3rem;
+  font-family: var(--eac-dos-typewriter);
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-network-block {
+  margin-bottom: 1.5rem;
+}
+
+.eac-dos-network-sub {
+  font-size: 1rem;
+  border-bottom: none;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.eac-dos-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.eac-dos-tag {
+  border: 1px solid var(--eac-dos-ink);
+  padding: 0.25rem 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  font-weight: bold;
+  background: rgba(0,0,0,0.02);
+}
+
+.eac-dos-tag-wanted {
+  border-style: dashed;
+  background: transparent;
+}

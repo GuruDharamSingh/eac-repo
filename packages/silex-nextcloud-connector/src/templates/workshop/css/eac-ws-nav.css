@@ -1,0 +1,118 @@
+/*
+  eac-ws-nav.css
+  ================
+  Workshop navigation bar.
+  Starts transparent over the hero, transitions to solid on scroll.
+  The JS scroll listener adds .eac-ws-nav--scrolled via eac-ws-nav.block.js.
+*/
+
+.eac-ws-nav {
+  position:   sticky;
+  top:        0;
+  z-index:    100;
+  width:      100%;
+  background: transparent;
+  border-bottom: 0.5px solid transparent;
+  transition: background var(--eac-transition),
+              border-color var(--eac-transition);
+}
+
+/* Solid state — added by scroll listener */
+.eac-ws-nav--scrolled {
+  background:    rgba(15, 23, 42, 0.96);
+  border-color:  rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Inner layout ─────────────────────────────────────────────── */
+
+.eac-ws-nav__inner {
+  width:       100%;
+  max-width:   none;
+  margin:      0 auto;
+  padding:     0 var(--eac-space-6);
+  height:      56px;
+  display:     flex;
+  align-items: center;
+  gap:         var(--eac-space-6);
+  position:    relative;
+}
+
+/* ── Brand / wordmark ─────────────────────────────────────────── */
+
+.eac-ws-nav__brand {
+  text-decoration: none;
+  flex-shrink:     0;
+}
+
+.eac-ws-nav__wordmark {
+  font-size:      15px;
+  font-weight:    700;
+  letter-spacing: 0.06em;
+  color:          var(--eac-color-ink);
+}
+
+.eac-ws-nav--scrolled .eac-ws-nav__wordmark { color: #ffffff; }
+
+/* ── Centre breadcrumb ────────────────────────────────────────── */
+
+.eac-ws-nav__breadcrumb {
+  flex:          1;
+  font-size:     var(--eac-text-sm);
+  color:         var(--eac-color-ink-faint);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  text-align:    center;
+}
+
+.eac-ws-nav--scrolled .eac-ws-nav__breadcrumb {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Right actions ────────────────────────────────────────────── */
+
+.eac-ws-nav__actions {
+  display:     flex;
+  align-items: center;
+  gap:         var(--eac-space-5);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.eac-ws-nav__link {
+  font-size:       var(--eac-text-sm);
+  color:           var(--eac-color-ink-muted);
+  text-decoration: none;
+  transition:      color var(--eac-transition);
+}
+.eac-ws-nav__link:hover { color: var(--eac-color-ink); }
+.eac-ws-nav--scrolled .eac-ws-nav__link { color: rgba(255, 255, 255, 0.6); }
+.eac-ws-nav--scrolled .eac-ws-nav__link:hover { color: #ffffff; }
+
+.eac-ws-nav__cta {
+  display:         inline-flex;
+  align-items:     center;
+  padding:         7px 16px;
+  background:      #0f172a;
+  color:           #ffffff;
+  font-size:       var(--eac-text-sm);
+  font-weight:     600;
+  border-radius:   var(--eac-radius-md);
+  text-decoration: none;
+  transition:      opacity var(--eac-transition);
+  white-space:     nowrap;
+}
+.eac-ws-nav__cta:hover { opacity: 0.88; }
+
+.eac-ws-nav--scrolled .eac-ws-nav__cta {
+  background: #ffffff;
+  color:      #0f172a;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-ws-nav__inner { padding: 0 var(--eac-space-5); }
+}

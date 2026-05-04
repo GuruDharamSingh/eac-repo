@@ -1,0 +1,162 @@
+/*
+  eac-ws-hero.css
+  =================
+  Workshop hero section. Dark, centred, full-viewport.
+  Glow colour is driven by --eac-ws-hero-accent-rgb (set in eac-tokens.css).
+*/
+
+.eac-ws-hero {
+  position:        relative;
+  max-width:       var(--eac-max-width-page);
+  margin:          0 auto;
+  border-radius:   var(--eac-radius-lg);
+  min-height:      0;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      var(--eac-ws-hero-bg, #0f172a);
+  overflow:        hidden;
+  text-align:      center;
+}
+
+/* ── Background layers ────────────────────────────────────────── */
+
+.eac-ws-hero__bg {
+  position:       absolute;
+  inset:          0;
+  pointer-events: none;
+  z-index:        0;
+}
+
+.eac-ws-hero__glow {
+  position:   absolute;
+  inset:      0;
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 35%,
+    rgba(var(--eac-ws-hero-accent-rgb, 120, 80, 220), 0.18) 0%,
+    transparent 100%
+  );
+}
+
+.eac-ws-hero__rule {
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  right:      0;
+  height:     1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
+}
+
+/* ── Content ──────────────────────────────────────────────────── */
+
+.eac-ws-hero__inner {
+  position:        relative;
+  z-index:         1;
+  max-width:       var(--eac-max-width-page);
+  padding:         var(--eac-space-8) var(--eac-space-6);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+}
+
+/* ── Eyebrow ──────────────────────────────────────────────────── */
+
+.eac-ws-hero__eyebrow {
+  display:        inline-block;
+  font-size:      var(--eac-text-xs);
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          rgba(var(--eac-ws-hero-accent-rgb, 120, 80, 220), 0.75);
+  margin-bottom:  var(--eac-space-3);
+}
+
+/* ── Headline ─────────────────────────────────────────────────── */
+
+.eac-ws-hero__headline {
+  font-family:    var(--eac-font-display);
+  font-size:      clamp(26px, 3.8vw, 40px);
+  font-weight:    400;          /* let the serif do the work */
+  line-height:    var(--eac-leading-tight);
+  letter-spacing: -0.01em;
+  color:          #ffffff;
+  margin-bottom:  var(--eac-space-4);
+}
+
+/* ── Metadata pills ───────────────────────────────────────────── */
+
+.eac-ws-hero__meta {
+  display:         flex;
+  gap:             var(--eac-space-2);
+  flex-wrap:       wrap;
+  justify-content: center;
+  margin-bottom:   var(--eac-space-5);
+}
+
+.eac-ws-hero__pill {
+  display:       inline-block;
+  font-size:     var(--eac-text-xs);
+  padding:       4px 12px;
+  border-radius: var(--eac-radius-pill);
+  border:        0.5px solid rgba(255, 255, 255, 0.2);
+  color:         rgba(255, 255, 255, 0.65);
+  white-space:   nowrap;
+}
+
+/* Spots pill gets a subtle warm tint when filling up */
+.eac-ws-hero__pill--spots {
+  border-color: rgba(var(--eac-ws-hero-accent-rgb, 120, 80, 220), 0.4);
+  color:        rgba(var(--eac-ws-hero-accent-rgb, 120, 80, 220), 0.9);
+}
+
+/* ── CTA row ──────────────────────────────────────────────────── */
+
+.eac-ws-hero__cta-row {
+  display:         flex;
+  gap:             var(--eac-space-3);
+  flex-wrap:       wrap;
+  justify-content: center;
+}
+
+.eac-ws-hero__btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         9px 20px;
+  border-radius:   var(--eac-radius-md);
+  font-size:       var(--eac-text-base);
+  font-weight:     600;
+  text-decoration: none;
+  min-height:      36px;
+  transition:      opacity var(--eac-transition), border-color var(--eac-transition);
+  white-space:     nowrap;
+}
+
+.eac-ws-hero__btn--primary {
+  background: #ffffff;
+  color:      #0f172a;
+}
+.eac-ws-hero__btn--primary:hover { opacity: 0.88; }
+
+.eac-ws-hero__btn--ghost {
+  background:   transparent;
+  color:        rgba(255, 255, 255, 0.6);
+  border:       0.5px solid rgba(255, 255, 255, 0.2);
+}
+.eac-ws-hero__btn--ghost:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  color:        rgba(255, 255, 255, 0.9);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-ws-hero__inner   { padding: var(--eac-space-10) var(--eac-space-5); }
+  .eac-ws-hero__cta-row { flex-direction: column; width: 100%; }
+  .eac-ws-hero__btn     { width: 100%; text-align: center; }
+}

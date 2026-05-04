@@ -1,0 +1,80 @@
+/*
+  eac-ws-testimonials.css
+*/
+
+.eac-ws-testimonials {
+  position:   relative;
+  padding:    var(--eac-space-6) var(--eac-space-6);
+  background: var(--eac-color-surface);
+  border-top: 0.5px solid var(--eac-color-border);
+}
+
+.eac-ws-testimonials__inner {
+  position:  relative;
+  max-width: var(--eac-max-width-page);
+  margin:    0 auto;
+}
+
+.eac-ws-testimonials__heading {
+  font-size:      var(--eac-text-xs);
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          var(--eac-color-ink-faint);
+  margin-bottom:  var(--eac-space-3);
+}
+
+.eac-ws-testimonials__grid {
+  display:        flex;
+  gap:            var(--eac-space-5);
+  overflow-x:     auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.eac-ws-testimonials__grid::-webkit-scrollbar { display: none; }
+
+.eac-ws-testimonials__card {
+  flex:              0 0 100%;
+  scroll-snap-align: start;
+  background:        var(--eac-color-surface-2);
+  border:            0.5px solid var(--eac-color-border);
+  border-radius:     var(--eac-radius-lg);
+  padding:           var(--eac-space-4) var(--eac-space-5);
+  margin:            0;
+  display:           flex;
+  flex-direction:    column;
+  gap:               var(--eac-space-3);
+}
+
+.eac-ws-testimonials__quote {
+  font-size:   var(--eac-text-sm);
+  line-height: var(--eac-leading-snug);
+  color:       var(--eac-color-ink-muted);
+  font-style:  italic;
+  margin:      0;
+  flex:        1;
+}
+
+.eac-ws-testimonials__attribution {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.eac-ws-testimonials__name {
+  font-size:   var(--eac-text-sm);
+  font-weight: 600;
+  color:       var(--eac-color-ink);
+}
+
+.eac-ws-testimonials__role {
+  font-size: var(--eac-text-xs);
+  color:     var(--eac-color-ink-faint);
+}
+
+@media (max-width: 640px) {
+  .eac-ws-testimonials { padding: var(--eac-space-6) var(--eac-space-5); }
+}

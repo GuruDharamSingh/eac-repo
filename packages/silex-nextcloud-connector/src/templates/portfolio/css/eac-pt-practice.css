@@ -1,0 +1,14 @@
+/* eac-pt-practice.css */
+.eac-pt-practice { background: var(--eac-color-surface); padding: var(--eac-space-16) 0; border-bottom: 1px solid var(--eac-color-border); }
+.eac-pt-practice__inner { max-width: var(--eac-max-width); margin: 0 auto; padding: 0 var(--eac-space-6); }
+.eac-pt-practice__eyebrow { display: block; font-size: var(--eac-text-xs); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--eac-color-ink-faint); margin-bottom: var(--eac-space-3); }
+.eac-pt-practice__heading { font-family: var(--eac-font-display); font-size: var(--eac-text-xl); font-weight: 400; color: var(--eac-color-ink); letter-spacing: -0.01em; margin-bottom: var(--eac-space-8); border-bottom: 1px solid var(--eac-color-border); padding-bottom: var(--eac-space-5); }
+.eac-pt-practice__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--eac-space-6); margin-bottom: var(--eac-space-10); }
+.eac-pt-practice__item { border-top: 2px solid var(--eac-color-border-strong); padding-top: var(--eac-space-4); }
+.eac-pt-practice__item-label { font-size: var(--eac-text-xs); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--eac-color-ink-faint); margin-bottom: var(--eac-space-2); }
+.eac-pt-practice__item-title { font-family: var(--eac-font-display); font-size: var(--eac-text-base); color: var(--eac-color-ink); margin-bottom: var(--eac-space-2); }
+.eac-pt-practice__item-desc { font-size: var(--eac-text-sm); color: var(--eac-color-ink-muted); line-height: var(--eac-leading-normal); }
+.eac-pt-practice__process { max-width: var(--eac-max-width-prose); }
+.eac-pt-practice__process-label { font-size: var(--eac-text-xs); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--eac-color-ink-faint); margin-bottom: var(--eac-space-3); }
+.eac-pt-practice__process-text { font-family: var(--eac-font-display); font-size: var(--eac-text-md); line-height: var(--eac-leading-loose); color: var(--eac-color-ink-muted); }
+@media (max-width: 640px) { .eac-pt-practice__grid { grid-template-columns: 1fr; } }

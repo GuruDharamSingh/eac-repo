@@ -1,0 +1,50 @@
+/*
+  eac-tokens.css — Workshop page design tokens
+  ================================================
+  Generic design tokens consumed by all workshop template sections.
+  Workshop-specific vars (--eac-ws-*) are overridable via the live CSS editor;
+  their values are merged in from workshop_pages.theme_overrides on the server.
+*/
+
+:root {
+  /* Typography */
+  --eac-font-display: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing / sizing */
+  --eac-max-width-page: 1100px;
+
+  /* Border radius */
+  --eac-radius-sm:   4px;
+  --eac-radius-md:   8px;
+  --eac-radius-lg:   16px;
+  --eac-radius-xl:   24px;
+  --eac-radius-pill: 999px;
+
+  /* Type scale */
+  --eac-text-xs:   0.75rem;
+  --eac-text-sm:   0.875rem;
+  --eac-text-base: 1rem;
+  --eac-text-md:   1.125rem;
+
+  /* Leading */
+  --eac-leading-tight:  1.2;
+  --eac-leading-snug:   1.35;
+  --eac-leading-normal: 1.5;
+  --eac-leading-loose:  1.7;
+
+  /* Motion */
+  --eac-transition: 0.18s ease;
+
+  /* Ink / surface palette */
+  --eac-color-surface:       #0f172a;
+  --eac-color-ink:           rgba(255, 255, 255, 0.9);
+  --eac-color-ink-muted:     rgba(255, 255, 255, 0.6);
+  --eac-color-ink-faint:     rgba(255, 255, 255, 0.3);
+  --eac-color-border:        rgba(255, 255, 255, 0.08);
+  --eac-color-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* ── Workshop-specific theming vars (editable via live CSS editor) ── */
+  --eac-ws-hero-bg:         #0f172a;
+  --eac-ws-hero-accent-rgb: 120, 80, 220;
+  --eac-ws-register-bg:     #0a0f1a;
+}

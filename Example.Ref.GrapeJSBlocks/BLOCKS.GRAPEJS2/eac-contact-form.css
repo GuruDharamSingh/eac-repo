@@ -1,0 +1,144 @@
+/*
+  EAC Contact Form — Stylesheet
+*/
+
+.eac-contact {
+  padding:    80px 40px;
+  background: #f9fafb;
+}
+
+.eac-contact__inner {
+  max-width: 520px;
+  margin:    0 auto;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+
+.eac-contact__header {
+  margin-bottom: 40px;
+}
+
+.eac-contact__heading {
+  font-size:      clamp(26px, 3vw, 36px);
+  font-weight:    700;
+  letter-spacing: -0.02em;
+  color:          #111827;
+  margin-bottom:  10px;
+}
+
+.eac-contact__sub {
+  font-size:   16px;
+  line-height: 1.6;
+  color:       #4b5563;
+}
+
+/* ── Form ─────────────────────────────────────────────────────── */
+
+.eac-contact__form {
+  display:        flex;
+  flex-direction: column;
+  gap:            20px;
+}
+
+/* ── Sub-element 1: Field ─────────────────────────────────────── */
+
+.eac-contact__field {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.eac-contact__label {
+  font-size:   13px;
+  font-weight: 500;
+  color:       #374151;
+}
+
+.eac-contact__input,
+.eac-contact__textarea {
+  width:         100%;
+  padding:       11px 14px;
+  font-size:     15px;
+  color:         #111827;
+  background:    #ffffff;
+  border:        0.5px solid #d1d5db;
+  border-radius: 8px;
+  outline:       none;
+  transition:    border-color 0.15s, box-shadow 0.15s;
+  font-family:   inherit;
+}
+
+.eac-contact__input::placeholder,
+.eac-contact__textarea::placeholder {
+  color: #9ca3af;
+}
+
+.eac-contact__input:focus,
+.eac-contact__textarea:focus {
+  border-color: #3b82f6;
+  box-shadow:   0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* Invalid state (added by script after first submit attempt) */
+.eac-contact__input:invalid.eac-contact--touched,
+.eac-contact__textarea:invalid.eac-contact--touched {
+  border-color: #ef4444;
+}
+
+/* ── Sub-element 2: Textarea ──────────────────────────────────── */
+
+.eac-contact__textarea {
+  resize:     vertical;
+  min-height: 120px;
+  line-height:1.6;
+}
+
+/* ── Sub-element 3: Submit + microcopy ───────────────────────── */
+
+.eac-contact__submit-wrap {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  margin-top:     4px;
+}
+
+.eac-contact__btn {
+  width:         100%;
+  padding:       14px 24px;
+  background:    #111827;
+  color:         #ffffff;
+  font-size:     15px;
+  font-weight:   500;
+  border:        none;
+  border-radius: 8px;
+  cursor:        pointer;
+  min-height:    48px;
+  transition:    opacity 0.15s;
+  font-family:   inherit;
+}
+.eac-contact__btn:hover    { opacity: 0.85; }
+.eac-contact__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.eac-contact__microcopy {
+  font-size:   12px;
+  color:       #9ca3af;
+  text-align:  center;
+}
+
+/* ── Success / error messages ────────────────────────────────── */
+
+.eac-contact__success,
+.eac-contact__error {
+  padding:       14px 16px;
+  border-radius: 8px;
+  font-size:     14px;
+  font-weight:   500;
+}
+.eac-contact__success { background:#dcfce7; color:#166534; }
+.eac-contact__error   { background:#fee2e2; color:#991b1b; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .eac-contact { padding: 56px 24px; }
+}

@@ -1,0 +1,127 @@
+/*
+  EAC Testimonials — Stylesheet
+*/
+
+.eac-testimonials {
+  padding:    80px 40px;
+  background: #f9fafb;
+}
+
+.eac-testimonials__inner {
+  max-width: 1000px;
+  margin:    0 auto;
+}
+
+.eac-testimonials__header {
+  text-align:    center;
+  margin-bottom: 52px;
+}
+
+.eac-testimonials__eyebrow {
+  display:        inline-block;
+  font-size:      11px;
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          #6b7280;
+  margin-bottom:  12px;
+}
+
+.eac-testimonials__heading {
+  font-size:      clamp(26px, 3vw, 36px);
+  font-weight:    700;
+  letter-spacing: -0.02em;
+  color:          #111827;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────── */
+
+.eac-testimonials__grid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap:                   24px;
+  align-items:           stretch;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+
+.eac-testimonials__card {
+  background:    #ffffff;
+  border:        0.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding:       28px;
+  display:       flex;
+  flex-direction:column;
+  gap:           0;
+}
+
+/* ── Sub-element 1: Stars ─────────────────────────────────────── */
+
+.eac-testimonials__stars {
+  display:       flex;
+  gap:           3px;
+  margin-bottom: 16px;
+}
+
+.eac-testimonials__star {
+  display:       inline-block;
+  width:         14px;
+  height:        14px;
+  background:    #f59e0b;
+  clip-path:     polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* ── Sub-element 2: Quote ─────────────────────────────────────── */
+
+.eac-testimonials__quote {
+  font-size:     16px;
+  line-height:   1.7;
+  color:         #374151;
+  margin:        0 0 24px;
+  flex:          1;
+  font-style:    normal;
+}
+
+/* ── Sub-element 3: Attribution ───────────────────────────────── */
+
+.eac-testimonials__attribution {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  margin-top:  auto;
+}
+
+.eac-testimonials__avatar {
+  width:           40px;
+  height:          40px;
+  border-radius:   50%;
+  background:      #dbeafe;
+  color:           #1e40af;
+  font-size:       13px;
+  font-weight:     600;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+}
+
+.eac-testimonials__author {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.eac-testimonials__name {
+  font-size:   14px;
+  font-weight: 600;
+  color:       #111827;
+}
+
+.eac-testimonials__role {
+  font-size: 13px;
+  color:     #6b7280;
+}
+
+@media (max-width: 640px) {
+  .eac-testimonials { padding: 56px 24px; }
+}

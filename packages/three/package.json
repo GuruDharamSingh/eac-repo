@@ -1,0 +1,52 @@
+{
+  "name": "@elkdonis/three",
+  "version": "1.0.0",
+  "description": "Shared Three.js / R3F components for eac-repo apps",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "files": [
+    "dist/**"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "three": ">=0.170.0",
+    "@react-three/fiber": ">=9.0.0",
+    "@react-three/drei": ">=10.0.0",
+    "@react-three/postprocessing": ">=3.0.0"
+  },
+  "dependencies": {
+    "maath": "^0.10.8",
+    "three-custom-shader-material": "^6.4.0",
+    "gl-noise": "^1.6.1",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "leva": "^0.9.35",
+    "r3f-perf": "^7.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.184.0",
+    "@react-three/fiber": "^9.6.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/postprocessing": "^3.0.4",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

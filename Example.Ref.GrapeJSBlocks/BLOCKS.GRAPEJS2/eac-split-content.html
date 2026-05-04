@@ -1,0 +1,42 @@
+<!--
+  EAC Split Image / Text — HTML Template
+  =========================================
+  Two-column layout: media left, text right. Alternate direction
+  by adding .eac-split--reverse to the section for zigzag layouts.
+-->
+<section class="eac-split" data-gjs-type="eac-split">
+  <div class="eac-split__inner">
+
+    <!-- Media column -->
+    <div class="eac-split__media">
+      <img
+        src="https://via.placeholder.com/640x480/f3f4f6/9ca3af?text=EAC"
+        alt="Workshop in progress"
+        class="eac-split__image"
+        data-trait="imageSrc"
+        data-alt-trait="imageAlt"
+      >
+    </div>
+
+    <!-- Text column -->
+    <div class="eac-split__content">
+      <span class="eac-split__tag" data-gjs-editable="true" data-trait="tagText">
+        New workshops
+      </span>
+      <h2 class="eac-split__heading" data-gjs-editable="true" data-trait="headingText">
+        Writing as a practice, not a product
+      </h2>
+      <p class="eac-split__body" data-gjs-editable="true" data-trait="bodyText">
+        Dana's writing workshops approach the craft as a living, evolving
+        practice. No grades. No deadlines. Just the work and the space to
+        do it in.
+      </p>
+      <a href="/workshops/writing"
+         class="eac-split__link"
+         data-trait="linkText" data-href-trait="linkHref">
+        See workshop schedule →
+      </a>
+    </div>
+
+  </div>
+</section>

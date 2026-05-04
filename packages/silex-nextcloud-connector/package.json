@@ -1,0 +1,8 @@
+{
+  "name": "@elkdonis/silex-nextcloud-connector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Silex v3 storage connector that persists websites to per-artist Nextcloud folders, authenticated via the arts-collective one-time token bridge.",
+  "main": "index.js",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,80 @@
+.eac-dossier-nav {
+  background-color: #000;
+  color: #fff;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--eac-dos-stamp-red);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: var(--eac-dos-typewriter);
+}
+
+.eac-dossier-nav-brand {
+  font-family: var(--eac-dos-gothic);
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eac-dossier-nav-brand::before {
+  content: '⬡'; 
+  color: var(--eac-dos-stamp-red);
+  font-size: 1.5rem;
+}
+
+.eac-dossier-nav-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.eac-dossier-nav-search {
+  background: #222;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.875rem;
+  width: 200px;
+}
+
+.eac-dossier-nav-search:focus {
+  outline: none;
+  border-color: var(--eac-dos-stamp-red);
+}
+
+.eac-dossier-nav-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.eac-dossier-nav-link:hover {
+  color: var(--eac-dos-stamp-red);
+}
+
+@media (max-width: 600px) {
+  .eac-dossier-nav {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .eac-dossier-nav-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .eac-dossier-nav-search {
+    width: auto;
+    flex-grow: 1;
+    margin-right: 1rem;
+  }
+}
