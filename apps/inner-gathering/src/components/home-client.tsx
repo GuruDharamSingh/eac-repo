@@ -12,6 +12,7 @@ import {
   MessageCircle,
   TrendingUp,
   Clock,
+  FolderOpen,
   MapPin,
   Wifi,
 } from "lucide-react";
@@ -90,63 +91,64 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
 
   const quickActions = [
     {
-      title: "Create",
+      title: "Make a Notice",
       description: "Post or meeting",
       icon: Plus,
-      color: "indigo",
+      color: "ember",
       onClick: () => router.push("/feed?create=true"),
     },
     {
-      title: "View Feed",
-      description: "See all activity",
+      title: "Read the Table",
+      description: "Recent activity",
       icon: TrendingUp,
-      color: "green",
+      color: "moss",
       onClick: () => router.push("/feed"),
     },
     {
       title: "Calendar",
       description: "Upcoming events",
       icon: Calendar,
-      color: "blue",
+      color: "archive",
       onClick: () => router.push("/calendar"),
     },
     {
-      title: "Community",
-      description: "Connect with others",
-      icon: Users,
-      color: "orange",
-      onClick: () => router.push("/community"),
+      title: "Archive",
+      description: "Files and media",
+      icon: FolderOpen,
+      color: "oxblood",
+      onClick: () => router.push("/files"),
     },
   ];
 
   return (
-    <Box mih="100vh" bg="gray.0">
+    <Box className="archive-shell">
       {/* Header */}
       <Paper
         shadow="xs"
         p="md"
+        className="archive-topbar"
         style={{
           position: "sticky",
           top: 0,
           zIndex: 50,
-          borderBottom: "1px solid var(--mantine-color-gray-2)",
         }}
       >
         <Container>
           <Group justify="space-between">
             <Group gap="sm">
-              <ThemeIcon size="lg" radius="md" variant="light" color="indigo">
+              <ThemeIcon size="lg" radius="sm" className="archive-sigil">
                 <Sparkles size={20} />
               </ThemeIcon>
               <div>
-                <Title order={4}>InnerGathering</Title>
-                <Text size="xs" c="dimmed">Connect & Grow Together</Text>
+                <Title order={4} style={{ color: '#fdf0d0' }}>Inner Gathering</Title>
+                <Text size="xs" style={{ color: '#d9b47a', fontStyle: 'italic' }}>Living archive and gathering table</Text>
               </div>
             </Group>
             <Button
               variant="subtle"
               size="sm"
-              color="gray"
+              color="archive"
+              style={{ color: '#f0c98a' }}
               leftSection={<LogOut size={16} />}
               onClick={handleLogout}
             >
@@ -160,18 +162,17 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
       <Container py="lg" pb={120}>
         {/* Welcome Section */}
         <Paper
-          radius="lg"
+          radius="sm"
           p="lg"
           mb="lg"
-          style={{
-            background: "linear-gradient(135deg, var(--mantine-color-indigo-6), var(--mantine-color-grape-6))",
-          }}
+          className="archive-card-dark"
         >
           <Group justify="space-between" align="flex-start">
             <div>
-              <Title order={2} c="white">Welcome Back!</Title>
-              <Text c="indigo.1" size="sm">
-                {upcomingMeetings.length} upcoming meetings • {recentPosts.length} new posts
+              <Text className="archive-kicker" style={{ color: '#f0c98a' }}>Today at the table</Text>
+              <Title order={2} style={{ color: '#fff8ec' }}>Welcome back</Title>
+              <Text size="sm" style={{ color: '#d9b47a' }}>
+                {upcomingMeetings.length} upcoming meetings / {recentPosts.length} recent posts
               </Text>
             </div>
             {onlineCount > 0 && (
@@ -192,10 +193,10 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
         <SimpleGrid cols={2} spacing="sm" mb="lg">
           {quickActions.map((action, index) => (
             <UnstyledButton key={index} onClick={action.onClick} style={{ width: "100%" }}>
-              <Paper withBorder radius="md" p="md" style={{ cursor: "pointer" }}>
+              <Paper withBorder radius="sm" p="md" className="archive-tile" style={{ cursor: "pointer" }}>
                 <ThemeIcon
                   size={48}
-                  radius="md"
+                  radius="sm"
                   variant="light"
                   color={action.color}
                   mb="sm"
@@ -220,15 +221,15 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
           <Tabs.Panel value="overview">
             <Stack gap="md">
               {/* Upcoming Meetings */}
-              <Paper withBorder radius="lg" p="md">
+              <Paper withBorder radius="sm" p="md" className="archive-card">
                 <Group justify="space-between" mb="md">
                   <Group gap="xs">
-                    <ThemeIcon size="sm" radius="md" variant="light" color="blue">
+                    <ThemeIcon size="sm" radius="sm" variant="light" color="archive">
                       <Calendar size={14} />
                     </ThemeIcon>
                     <Title order={5}>Upcoming Meetings</Title>
                   </Group>
-                  <Button variant="subtle" size="xs" onClick={() => router.push("/feed")}>
+                  <Button variant="subtle" size="xs" color="archive" onClick={() => router.push("/feed")}>
                     View All
                   </Button>
                 </Group>
@@ -246,7 +247,7 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
                           onClick={() => router.push(`/meeting/${meeting.id}`)}
                           style={{ width: "100%" }}
                         >
-                          <Paper bg="gray.0" radius="md" p="sm">
+                          <Paper className="archive-input-panel" radius="sm" p="sm">
                             <Group justify="space-between" mb={4}>
                               <Text fw={600} size="sm" style={{ flex: 1 }}>
                                 {meeting.title}
@@ -278,15 +279,15 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
               </Paper>
 
               {/* Recent Posts */}
-              <Paper withBorder radius="lg" p="md">
+              <Paper withBorder radius="sm" p="md" className="archive-card">
                 <Group justify="space-between" mb="md">
                   <Group gap="xs">
-                    <ThemeIcon size="sm" radius="md" variant="light" color="grape">
+                    <ThemeIcon size="sm" radius="sm" variant="light" color="moss">
                       <BookOpen size={14} />
                     </ThemeIcon>
                     <Title order={5}>Recent Posts</Title>
                   </Group>
-                  <Button variant="subtle" size="xs" onClick={() => router.push("/feed")}>
+                  <Button variant="subtle" size="xs" color="archive" onClick={() => router.push("/feed")}>
                     View All
                   </Button>
                 </Group>
@@ -304,7 +305,7 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
                           onClick={() => router.push(`/post/${post.id}`)}
                           style={{ width: "100%" }}
                         >
-                          <Paper bg="gray.0" radius="md" p="sm">
+                          <Paper className="archive-input-panel" radius="sm" p="sm">
                             <Group gap="sm" align="flex-start">
                               <Avatar radius="xl" size="md">
                                 {post.author_name?.[0]?.toUpperCase() || "U"}
@@ -340,7 +341,7 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
 
           {/* Activity Tab */}
           <Tabs.Panel value="activity">
-            <Paper withBorder radius="lg" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
               <Title order={5} mb={4}>Recent Activity</Title>
               <Text size="sm" c="dimmed" mb="md">
                 Latest updates from your community
@@ -361,8 +362,8 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
                           style={{
                             borderRadius: "50%",
                             backgroundColor: item.type === "meeting"
-                              ? "var(--mantine-color-blue-6)"
-                              : "var(--mantine-color-grape-6)",
+                              ? "var(--ig-gold)"
+                              : "var(--ig-moss)",
                           }}
                         />
                         <div style={{ flex: 1 }}>
@@ -391,15 +392,16 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
       {/* Floating Action Button - positioned above bottom nav */}
       <ActionIcon
         size={56}
-        radius="xl"
+        radius="sm"
         variant="filled"
-        color="indigo"
+        color="ember"
         style={{
           position: "fixed",
           bottom: 96,
           right: 24,
           zIndex: 50,
-          boxShadow: "var(--mantine-shadow-lg)",
+          boxShadow: "0 10px 28px rgba(43, 20, 7, 0.28)",
+          border: "2px solid #f0c98a",
         }}
         onClick={() => router.push("/feed?create=true")}
       >

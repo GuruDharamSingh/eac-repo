@@ -6,9 +6,11 @@ import { Plus, LogOut, Sparkles, RefreshCw } from "lucide-react";
 import type { Meeting, Post } from "@elkdonis/types";
 import type { QuestionPoll } from "@elkdonis/services";
 import { useRealtimeFeed } from "@elkdonis/hooks";
+import { notifications } from "@mantine/notifications";
 import { MeetingCard } from "./meeting-card";
 import { PostCard } from "./post-card";
 import { PollCard } from "./poll-card";
+import { BlackHoleDropzone } from "./black-hole-dropzone";
 import { ContentForm } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
@@ -40,14 +42,16 @@ interface FeedClientProps {
   }>;
   recurringMeetings?: Meeting[];
   userId?: string | null;
+  isAdmin?: boolean;
 }
 
-export function FeedClient({ initialFeed, recurringMeetings = [], userId }: FeedClientProps) {
+export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmin = false }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [feed, setFeed] = useState(initialFeed);
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
 
   // Sync feed state when server data changes (e.g., after revalidation)
   useEffect(() => {
@@ -71,6 +75,45 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
     setAttendeeModalOpened(true);
   };
 
+  const handleDeleteThread = async (threadId: string, itemType: "meeting" | "post") => {
+    const label = itemType === "meeting" ? "thread" : "post";
+    if (!confirm(`Delete this ${label} from the feed?`)) return;
+
+    const previousFeed = feed;
+    setDeletingThreadId(threadId);
+    setFeed((currentFeed) =>
+      currentFeed.filter((item) => item.data.id !== threadId)
+    );
+
+    try {
+      const response = await fetch(`/api/content/${threadId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to delete thread");
+      }
+
+      notifications.show({
+        color: "green",
+        title: itemType === "meeting" ? "Thread deleted" : "Post deleted",
+        message: "The item has been removed from the feed.",
+      });
+      router.refresh();
+      clearNewItems();
+    } catch (error) {
+      setFeed(previousFeed);
+      notifications.show({
+        color: "red",
+        title: "Could not delete thread",
+        message: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setDeletingThreadId(null);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -78,18 +121,16 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
   };
 
   return (
-    <Box mih="100vh" style={{ background: '#fdf6e3' }}>
+    <Box className="archive-shell">
       {/* Header */}
       <Paper
         shadow="md"
         p="md"
+        className="archive-topbar"
         style={{
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: 'linear-gradient(135deg, #3d1f0a 0%, #6b3615 50%, #3d1f0a 100%)',
-          borderBottom: '3px solid #c8910a',
-          borderRadius: 0,
         }}
       >
         <Container>
@@ -127,22 +168,31 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
       <Container size="sm" py="lg" pb={120}>
         <Stack gap="lg">
           {/* Page Header */}
-          <div>
+          <div className="archive-page-header">
+            <Text className="archive-kicker">Gathering table</Text>
             <Title
               order={2}
-              style={{ color: '#4a2c0a', letterSpacing: '0.06em' }}
+              className="archive-title"
             >
               Feed
             </Title>
-            <Text size="sm" style={{ color: '#8b6040', fontStyle: 'italic' }}>
-              Upcoming meetings & community posts
+            <Text size="sm" className="archive-muted" style={{ fontStyle: 'italic' }}>
+              Notices, fragments, meetings, and field notes from the collective
             </Text>
           </div>
 
-          <Divider color="orange.3" size="sm" />
+          <Divider className="archive-divider" size="sm" />
 
           {/* Live Channel Widget */}
           <LiveFeedWidget />
+
+          <BlackHoleDropzone
+            userId={userId ?? null}
+            onPublished={() => {
+              router.refresh();
+              clearNewItems();
+            }}
+          />
 
           {/* Recurring Meetings Carousel */}
           {recurringMeetings.length > 0 && (
@@ -177,7 +227,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
           {/* Feed Items */}
           {feed.length === 0 ? (
             <Text c="dimmed" ta="center" py="xl">
-              No posts or meetings yet. Create one to get started!
+              The table is quiet. Drop the first note, meeting, or fragment when it is ready.
             </Text>
           ) : (
             <Stack gap="md">
@@ -187,6 +237,9 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
                     key={`meeting-${item.data.id}-${index}`}
                     meeting={item.data as Meeting}
                     onViewAttendees={handleViewAttendees}
+                    canDelete={isAdmin}
+                    deleting={deletingThreadId === item.data.id}
+                    onDelete={() => handleDeleteThread(item.data.id, "meeting")}
                   />
                 ) : item.type === "poll" ? (
                   <PollCard
@@ -197,6 +250,9 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
                   <PostCard
                     key={`post-${item.data.id}-${index}`}
                     post={item.data as Post}
+                    canDelete={isAdmin}
+                    deleting={deletingThreadId === item.data.id}
+                    onDelete={() => handleDeleteThread(item.data.id, "post")}
                   />
                 )
               )}
@@ -207,7 +263,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
         {/* Floating Action Button */}
         <ActionIcon
           size={56}
-          radius="xl"
+          radius="sm"
           variant="filled"
           color="ember"
           style={{
@@ -231,9 +287,9 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId }: Feed
           size="90%"
           title={
             <div>
-              <Title order={4}>Create New</Title>
+              <Title order={4}>Make a Notice</Title>
               <Text size="sm" c="dimmed">
-                Share with the community
+                Meeting, note, image, poll, or fragment
               </Text>
             </div>
           }

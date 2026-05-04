@@ -17,6 +17,7 @@ import {
   ThemeIcon,
   Title,
   Loader,
+  Tooltip,
 } from "@mantine/core";
 import { stripHtml } from "@/lib/strip-html";
 import {
@@ -36,6 +37,7 @@ import {
   Radio,
   Repeat,
   LayoutGrid,
+  Trash2,
 } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { useRealtimeAttendees } from "@elkdonis/hooks";
@@ -47,6 +49,9 @@ import Link from "next/link";
 interface MeetingCardProps {
   meeting: Meeting;
   onViewAttendees?: (meeting: Meeting) => void;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: () => void;
 }
 
 const formatDate = (date: Date) =>
@@ -96,7 +101,13 @@ function canStillRsvp(meeting: Meeting): boolean {
   return now < rsvpDeadline;
 }
 
-export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
+export function MeetingCard({
+  meeting,
+  onViewAttendees,
+  canDelete = false,
+  deleting = false,
+  onDelete,
+}: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isAttending, setIsAttending] = useState(false);
   const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
@@ -254,53 +265,70 @@ export function MeetingCard({ meeting, onViewAttendees }: MeetingCardProps) {
             </Group>
           </Stack>
 
-          {/* Meeting Menu */}
-          <Menu shadow="md" width={200} position="bottom-end">
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray" size="sm">
-                <MoreVertical size={16} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {meeting.hasEventPage && (
-                <Menu.Item
-                  component={Link}
-                  href={`/meetings/${meeting.id}`}
-                  leftSection={<LayoutGrid size={14} />}
+          <Group gap={4} wrap="nowrap">
+            {canDelete && (
+              <Tooltip label="Delete thread">
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  aria-label="Delete thread"
+                  disabled={deleting}
+                  onClick={onDelete}
                 >
-                  Go to Event Page
-                </Menu.Item>
-              )}
-              {meeting.isRSVPEnabled && onViewAttendees && (
-                <Menu.Item
-                  leftSection={<ClipboardList size={14} />}
-                  onClick={() => onViewAttendees(meeting)}
-                >
-                  {isPastMeeting ? "Attendance Report" : "View Attendees"}
-                </Menu.Item>
-              )}
-              {meeting.documentUrl && (
-                <Menu.Item
-                  component="a"
-                  href={meeting.documentUrl}
-                  target="_blank"
-                  leftSection={<FileText size={14} />}
-                >
-                  Open Document
-                </Menu.Item>
-              )}
-              {meeting.nextcloudTalkToken && (
-                <Menu.Item
-                  component="a"
-                  href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
-                  target="_blank"
-                  leftSection={<Video size={14} />}
-                >
-                  Join Talk Room
-                </Menu.Item>
-              )}
-            </Menu.Dropdown>
-          </Menu>
+                  <Trash2 size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {/* Meeting Menu */}
+            <Menu shadow="md" width={200} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray" size="sm">
+                  <MoreVertical size={16} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {meeting.hasEventPage && (
+                  <Menu.Item
+                    component={Link}
+                    href={`/meetings/${meeting.id}`}
+                    leftSection={<LayoutGrid size={14} />}
+                  >
+                    Go to Event Page
+                  </Menu.Item>
+                )}
+                {meeting.isRSVPEnabled && onViewAttendees && (
+                  <Menu.Item
+                    leftSection={<ClipboardList size={14} />}
+                    onClick={() => onViewAttendees(meeting)}
+                  >
+                    {isPastMeeting ? "Attendance Report" : "View Attendees"}
+                  </Menu.Item>
+                )}
+                {meeting.documentUrl && (
+                  <Menu.Item
+                    component="a"
+                    href={meeting.documentUrl}
+                    target="_blank"
+                    leftSection={<FileText size={14} />}
+                  >
+                    Open Document
+                  </Menu.Item>
+                )}
+                {meeting.nextcloudTalkToken && (
+                  <Menu.Item
+                    component="a"
+                    href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
+                    target="_blank"
+                    leftSection={<Video size={14} />}
+                  >
+                    Join Talk Room
+                  </Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
         </Group>
 
         {/* Description */}

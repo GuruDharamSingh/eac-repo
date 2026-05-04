@@ -7,7 +7,6 @@ import {
   Box,
   Breadcrumbs,
   Button,
-  Card,
   Container,
   Divider,
   Group,
@@ -24,7 +23,6 @@ import {
   Title,
   Tooltip,
   Anchor,
-  rem,
 } from "@mantine/core";
 import {
   ChevronLeft,
@@ -45,7 +43,6 @@ import {
   Upload,
   Video,
   X,
-  FileIcon,
 } from "lucide-react";
 
 interface NextcloudFile {
@@ -69,10 +66,10 @@ interface StagedFile {
 const ORG_ROOT = "EAC-Network/inner_group";
 
 const MEDIA_CATEGORIES: { value: MediaCategory; label: string; icon: React.ReactNode; color: string; accept: string }[] = [
-  { value: "Images", label: "Images", icon: <Image size={18} />, color: "green", accept: "image/*" },
-  { value: "Audio", label: "Audio", icon: <Mic size={18} />, color: "violet", accept: "audio/*" },
+  { value: "Images", label: "Images", icon: <Image size={18} />, color: "moss", accept: "image/*" },
+  { value: "Audio", label: "Audio", icon: <Mic size={18} />, color: "oxblood", accept: "audio/*" },
   { value: "Videos", label: "Videos", icon: <Video size={18} />, color: "red", accept: "video/*" },
-  { value: "Documents", label: "Documents", icon: <FileText size={18} />, color: "orange", accept: ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.rtf" },
+  { value: "Documents", label: "Documents", icon: <FileText size={18} />, color: "archive", accept: ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.rtf" },
 ];
 
 function detectCategory(file: File): MediaCategory {
@@ -101,12 +98,12 @@ function getFileIcon(file: NextcloudFile) {
 }
 
 function getFileColor(file: NextcloudFile): string {
-  if (file.type === "directory") return "indigo";
+  if (file.type === "directory") return "archive";
   const mime = file.mime || "";
-  if (mime.startsWith("image/")) return "green";
-  if (mime.startsWith("audio/")) return "violet";
+  if (mime.startsWith("image/")) return "moss";
+  if (mime.startsWith("audio/")) return "oxblood";
   if (mime.startsWith("video/")) return "red";
-  if (mime.includes("pdf")) return "orange";
+  if (mime.includes("pdf")) return "archive";
   return "gray";
 }
 
@@ -401,9 +398,11 @@ export default function FilesPage() {
   const fileCount = files.filter((f) => f.type === "file").length;
 
   return (
+    <Box className="archive-shell">
     <Container
       size="md"
       py="lg"
+      pb={120}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -411,11 +410,12 @@ export default function FilesPage() {
     >
       <Stack gap="lg">
         {/* Header */}
-        <Group justify="space-between" align="flex-start">
+        <Group justify="space-between" align="flex-start" className="archive-page-header">
           <div>
-            <Title order={2}>Files</Title>
-            <Text size="sm" c="dimmed">
-              Upload and manage community media &amp; documents
+            <Text className="archive-kicker">Archive room</Text>
+            <Title order={2} className="archive-title">Archive</Title>
+            <Text size="sm" className="archive-muted">
+              Deposit and tend community media, documents, traces, and working files
             </Text>
           </div>
         </Group>
@@ -424,20 +424,21 @@ export default function FilesPage() {
         <Paper
           ref={dropzoneRef}
           withBorder
-          radius="md"
+          radius="sm"
           p="lg"
+          className="archive-card"
           style={{
             borderStyle: "dashed",
             borderWidth: 2,
             borderColor: isDragging
-              ? "var(--mantine-color-indigo-5)"
+              ? "var(--ig-ember)"
               : stagedFiles.length > 0
-              ? "var(--mantine-color-indigo-3)"
-              : "var(--mantine-color-gray-3)",
+              ? "var(--ig-gold)"
+              : "var(--ig-border)",
             backgroundColor: isDragging
-              ? "var(--mantine-color-indigo-0)"
+              ? "rgba(200, 145, 10, 0.12)"
               : stagedFiles.length > 0
-              ? "var(--mantine-color-indigo-0)"
+              ? "rgba(200, 145, 10, 0.08)"
               : undefined,
             transition: "all 200ms ease",
           }}
@@ -445,20 +446,20 @@ export default function FilesPage() {
           {stagedFiles.length === 0 ? (
             /* Empty dropzone state */
             <Stack align="center" gap="sm" py="md">
-              <ThemeIcon size={48} radius="xl" variant="light" color="indigo">
+              <ThemeIcon size={48} radius="sm" variant="light" color="archive">
                 <Upload size={24} />
               </ThemeIcon>
               <Text fw={500} size="lg">
-                {isDragging ? "Drop files here" : "Upload Files"}
+                {isDragging ? "Drop files into the archive" : "Deposit into the archive"}
               </Text>
-              <Text size="sm" c="dimmed" ta="center">
+              <Text size="sm" className="archive-muted" ta="center">
                 Drag &amp; drop files here, or click to browse.
                 <br />
                 Files are auto-sorted into Images, Audio, Videos, or Documents.
               </Text>
               <Button
                 variant="light"
-                color="indigo"
+                color="archive"
                 leftSection={<Upload size={16} />}
                 component="label"
                 mt="xs"
@@ -559,13 +560,13 @@ export default function FilesPage() {
                 <Progress
                   value={uploadProgress}
                   size="sm"
-                  color="indigo"
+                  color="archive"
                   animated
                 />
               )}
 
               <Button
-                color="indigo"
+                color="archive"
                 leftSection={uploading ? <Loader size={16} color="white" /> : <Upload size={16} />}
                 onClick={handleUploadStaged}
                 disabled={uploading}
@@ -585,8 +586,9 @@ export default function FilesPage() {
             <Paper
               key={cat.value}
               withBorder
-              radius="md"
+              radius="sm"
               p="sm"
+              className="archive-tile"
               style={{ cursor: "pointer", transition: "background-color 150ms" }}
               onClick={() => setCurrentPath(`${ORG_ROOT}/Media/${cat.value}`)}
               onMouseEnter={(e) => {
@@ -611,7 +613,7 @@ export default function FilesPage() {
         <Divider />
 
         {/* Toolbar */}
-        <Paper withBorder radius="md" p="sm">
+        <Paper withBorder radius="sm" p="sm" className="archive-card">
           <Group justify="space-between">
             <Group gap="xs">
               <ActionIcon
@@ -666,7 +668,7 @@ export default function FilesPage() {
                     }}
                     autoFocus
                   />
-                  <Button size="xs" onClick={handleCreateFolder}>
+                  <Button size="xs" color="archive" onClick={handleCreateFolder}>
                     Create
                   </Button>
                   <ActionIcon
@@ -682,9 +684,9 @@ export default function FilesPage() {
                 </Group>
               ) : (
                 <Tooltip label="New Folder">
-                  <ActionIcon
-                    variant="light"
-                    color="indigo"
+                    <ActionIcon
+                      variant="light"
+                      color="archive"
                     onClick={() => setShowNewFolder(true)}
                   >
                     <FolderPlus size={18} />
@@ -697,7 +699,7 @@ export default function FilesPage() {
 
         {/* Error */}
         {error && (
-          <Paper withBorder radius="md" p="sm" bg="red.0">
+          <Paper withBorder radius="sm" p="sm" bg="red.0">
             <Group justify="space-between">
               <Text size="sm" c="red">
                 {error}
@@ -718,7 +720,7 @@ export default function FilesPage() {
         {!loading && files.length > 0 && (
           <Group gap="xs">
             {dirCount > 0 && (
-              <Badge variant="light" color="indigo" size="sm">
+              <Badge variant="light" color="archive" size="sm">
                 {dirCount} folder{dirCount !== 1 ? "s" : ""}
               </Badge>
             )}
@@ -733,14 +735,14 @@ export default function FilesPage() {
         {/* File List */}
         {loading ? (
           <Group justify="center" py="xl">
-            <Loader color="indigo" />
+            <Loader color="archive" />
           </Group>
         ) : files.length === 0 ? (
-          <Paper withBorder radius="md" p="xl" ta="center">
+          <Paper withBorder radius="sm" p="xl" ta="center" className="archive-card">
             <Stack align="center" gap="sm">
               <ThemeIcon
                 size={48}
-                radius="xl"
+                radius="sm"
                 variant="light"
                 color="gray"
               >
@@ -758,13 +760,14 @@ export default function FilesPage() {
             </Stack>
           </Paper>
         ) : (
-          <Stack gap={2}>
+          <Stack gap={4}>
             {files.map((file) => (
               <Paper
                 key={file.filename}
                 withBorder
-                radius="md"
+                radius="sm"
                 p="sm"
+                className="archive-tile"
                 style={{
                   cursor:
                     file.type === "directory" ? "pointer" : "default",
@@ -774,7 +777,7 @@ export default function FilesPage() {
                 onMouseEnter={(e) => {
                   if (file.type === "directory") {
                     e.currentTarget.style.backgroundColor =
-                      "var(--mantine-color-indigo-0)";
+                      "rgba(200, 145, 10, 0.1)";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -855,5 +858,6 @@ export default function FilesPage() {
         )}
       </Stack>
     </Container>
+    </Box>
   );
 }

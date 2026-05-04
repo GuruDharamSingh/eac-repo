@@ -61,8 +61,9 @@ export function MeetingCalendar({
     if (hasMeeting) {
       return {
         style: {
-          backgroundColor: 'var(--mantine-color-indigo-1)',
+          backgroundColor: 'rgba(200, 145, 10, 0.18)',
           borderRadius: 'var(--mantine-radius-sm)',
+          color: 'var(--ig-ink)',
         },
       };
     }
@@ -72,7 +73,7 @@ export function MeetingCalendar({
   return (
     <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
       {/* Calendar */}
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder radius="sm" p="md" className="archive-card">
         <DatePicker
           value={selectedDate}
           onChange={handleDateSelect}
@@ -82,10 +83,10 @@ export function MeetingCalendar({
       </Paper>
 
       {/* Selected Date Events */}
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder radius="sm" p="md" className="archive-card">
         <Stack gap="md">
           <Group gap="xs">
-            <ThemeIcon size="sm" radius="md" variant="light" color="indigo">
+            <ThemeIcon size="sm" radius="sm" variant="light" color="archive">
               <CalendarIcon size={14} />
             </ThemeIcon>
             <Title order={5}>
@@ -134,7 +135,7 @@ function CalendarEventCard({ meeting, onClick }: CalendarEventCardProps) {
               {meeting.title}
             </Text>
             {meeting.isOnline && (
-              <Badge variant="light" color="cyan" size="sm" leftSection={<Video size={10} />}>
+              <Badge variant="light" color="moss" size="sm" leftSection={<Video size={10} />}>
                 Online
               </Badge>
             )}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MeetingCalendar } from "./calendar/meeting-calendar";
 import {
   Badge,
+  Box,
   Button,
   Container,
   Drawer,
@@ -44,18 +45,19 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
     : selectedMeeting?.startTime;
 
   return (
-    <Container size="xl" py="xl">
+    <Box className="archive-shell">
+    <Container size="xl" py="xl" pb={128}>
       {/* Header */}
-      <Group justify="space-between" mb="lg" wrap="wrap">
+      <Group justify="space-between" mb="lg" wrap="wrap" className="archive-page-header">
         <div>
           <Group gap="xs" mb={4}>
-            <ThemeIcon size="lg" radius="md" variant="light" color="indigo">
+            <ThemeIcon size="lg" radius="sm" variant="light" color="archive">
               <CalendarIcon size={20} />
             </ThemeIcon>
-            <Title order={2}>Community Calendar</Title>
+            <Title order={2} className="archive-title">Community Calendar</Title>
           </Group>
-          <Text c="dimmed">
-            View and manage all community events and gatherings
+          <Text className="archive-muted">
+            Upcoming gatherings, shared rooms, and scheduled work
           </Text>
         </div>
         <Group gap="xs">
@@ -178,5 +180,6 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
         )}
       </Drawer>
     </Container>
+    </Box>
   );
 }

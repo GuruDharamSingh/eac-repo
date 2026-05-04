@@ -186,7 +186,7 @@ export function PollCreator() {
   );
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="archive-work-surface">
       <Stack gap="lg">
         {/* Poll Type Selector */}
         <SegmentedControl
@@ -212,7 +212,7 @@ export function PollCreator() {
               ),
             },
           ]}
-          color="indigo"
+          color="archive"
           fullWidth
         />
 
@@ -222,14 +222,14 @@ export function PollCreator() {
         {pollMode === 'quick' && (
           <>
             {/* Question */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="indigo.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Your Question</Title>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" className="archive-muted">
                   What do you want to ask the community?
                 </Text>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <TextInput
                   label="Question"
                   required
@@ -249,12 +249,12 @@ export function PollCreator() {
             </Paper>
 
             {/* Options */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="violet.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Group justify="space-between">
                   <div>
                     <Title order={4}>Answer Options</Title>
-                    <Text size="sm" c="dimmed">
+                    <Text size="sm" className="archive-muted">
                       Add 2-10 options for people to choose from
                     </Text>
                   </div>
@@ -262,6 +262,7 @@ export function PollCreator() {
                     type="button"
                     size="xs"
                     variant="light"
+                    color="archive"
                     leftSection={<Plus size={14} />}
                     onClick={handleAddOption}
                     disabled={options.length >= 10}
@@ -269,8 +270,8 @@ export function PollCreator() {
                     Add
                   </Button>
                 </Group>
-              </Paper>
-              <Stack gap="xs" p="md">
+              </div>
+              <Stack gap="xs" pt="md">
                 {options.map((option, index) => (
                   <Group key={index} gap="xs">
                     <TextInput
@@ -296,11 +297,11 @@ export function PollCreator() {
             </Paper>
 
             {/* Settings */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="orange.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Settings</Title>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <Select
                   label="Poll type"
                   data={[
@@ -326,11 +327,12 @@ export function PollCreator() {
             </Paper>
 
             {/* Submit */}
-            <Paper withBorder radius="lg" p="md" bg="indigo.0">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
               <Group>
                 <Button
                   type="submit"
                   size="md"
+                  color="archive"
                   disabled={submitting || !isQuickPollValid}
                   style={{ flex: 1 }}
                 >
@@ -342,6 +344,7 @@ export function PollCreator() {
                   type="button"
                   variant="outline"
                   size="md"
+                  color="archive"
                   onClick={() => router.back()}
                   disabled={submitting}
                 >
@@ -358,14 +361,14 @@ export function PollCreator() {
         {pollMode === 'availability' && (
           <>
             {/* Basic Info */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="indigo.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Poll Details</Title>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" className="archive-muted">
                   Give your poll a name and description
                 </Text>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <TextInput
                   label="Title"
                   required
@@ -384,14 +387,14 @@ export function PollCreator() {
             </Paper>
 
             {/* Date Selection */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="blue.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Select Dates</Title>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" className="archive-muted">
                   Choose the dates you want to include (click multiple dates)
                 </Text>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <DatePicker
                   type="multiple"
                   value={selectedDates}
@@ -407,14 +410,14 @@ export function PollCreator() {
             </Paper>
 
             {/* Time Slot Builder */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="green.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Add Time Slots</Title>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" className="archive-muted">
                   Add times for each selected date (e.g., 9:00 AM)
                 </Text>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <Group>
                   <TextInput
                     type="time"
@@ -427,6 +430,7 @@ export function PollCreator() {
                     type="button"
                     onClick={handleAddTimeSlot}
                     disabled={selectedDates.length === 0}
+                    color="archive"
                     leftSection={<Plus size={16} />}
                   >
                     Add Time
@@ -440,7 +444,7 @@ export function PollCreator() {
                       {sortedSlots.length === 1 ? 'slot' : 'slots'}:
                     </Text>
                     {sortedSlots.map((slot) => (
-                      <Paper key={slot.id} withBorder radius="md" p="sm">
+                      <Paper key={slot.id} withBorder radius="sm" p="sm" className="archive-tile">
                         <Group justify="space-between">
                           <Group gap="xs">
                             <CalendarIcon
@@ -467,11 +471,11 @@ export function PollCreator() {
             </Paper>
 
             {/* Settings */}
-            <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-              <Paper bg="orange.0" p="md">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
+              <div className="archive-page-header">
                 <Title order={4}>Poll Settings</Title>
-              </Paper>
-              <Stack gap="md" p="md">
+              </div>
+              <Stack gap="md" pt="md">
                 <Checkbox
                   label='Allow "Maybe" responses'
                   checked={allowMaybe}
@@ -481,11 +485,12 @@ export function PollCreator() {
             </Paper>
 
             {/* Submit */}
-            <Paper withBorder radius="lg" p="md" bg="indigo.0">
+            <Paper withBorder radius="sm" p="md" className="archive-card">
               <Group>
                 <Button
                   type="submit"
                   size="md"
+                  color="archive"
                   disabled={
                     submitting || !title.trim() || timeSlots.length === 0
                   }
@@ -499,6 +504,7 @@ export function PollCreator() {
                   type="button"
                   variant="outline"
                   size="md"
+                  color="archive"
                   onClick={() => router.back()}
                   disabled={submitting}
                 >

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Stack, Title, Text, Loader, Center } from '@mantine/core';
+import { Box, Container, Stack, Title, Text, Loader, Center } from '@mantine/core';
 import { CountdownWidget } from '@/components/countdown-widget';
 import { LiveVideoPlayer } from '@/components/live-video-player';
 import { VideoPlaylist, type LiveVideo } from '@/components/video-playlist';
@@ -59,32 +59,38 @@ export default function LivePage() {
 
   if (loading) {
     return (
+      <Box className="archive-shell">
       <Container size="lg" py="xl">
         <Center style={{ minHeight: '400px' }}>
           <Stack align="center" gap="md">
-            <Loader size="lg" />
-            <Text>Loading live feed...</Text>
+            <Loader size="lg" color="archive" />
+            <Text className="archive-muted">Tuning the live signal...</Text>
           </Stack>
         </Center>
       </Container>
+      </Box>
     );
   }
 
   if (error) {
     return (
+      <Box className="archive-shell">
       <Container size="lg" py="xl">
         <Text c="red">{error}</Text>
       </Container>
+      </Box>
     );
   }
 
   return (
-    <Container size="lg" py="xl">
+    <Box className="archive-shell">
+    <Container size="lg" py="xl" pb={128}>
       <Stack gap="xl">
-        <div>
-          <Title order={1}>Live Video Feed</Title>
-          <Text c="dimmed" mt="sm">
-            Watch live meetings or see when the next one starts
+        <div className="archive-page-header">
+          <Text className="archive-kicker">Signal room</Text>
+          <Title order={1} className="archive-title">Live Video Feed</Title>
+          <Text className="archive-muted" mt="sm">
+            Watch live meetings or see when the next signal begins
           </Text>
         </div>
 
@@ -104,5 +110,6 @@ export default function LivePage() {
         )}
       </Stack>
     </Container>
+    </Box>
   );
 }

@@ -17,10 +17,10 @@ interface LiveVideoPlayerProps {
 
 export function LiveVideoPlayer({ meeting }: LiveVideoPlayerProps) {
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <Card shadow="sm" padding="lg" radius="sm" withBorder className="archive-card-dark">
       <Stack gap="md">
         <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Title order={3}>{meeting.title}</Title>
+          <Title order={3} style={{ color: '#fff8ec' }}>{meeting.title}</Title>
           <Badge
             color="red"
             size="lg"

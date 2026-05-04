@@ -121,7 +121,7 @@ export function PollsList() {
     return (
       <Stack gap="md">
         {[1, 2, 3].map((i) => (
-          <Paper key={i} withBorder radius="lg" p="lg">
+          <Paper key={i} withBorder radius="sm" p="lg" className="archive-card">
             <Stack gap="md">
               <Skeleton height={20} width="75%" />
               <Skeleton height={16} width="50%" />
@@ -137,12 +137,12 @@ export function PollsList() {
     return (
       <Paper
         withBorder
-        radius="lg"
+        radius="sm"
         p="xl"
         style={{ borderColor: 'var(--mantine-color-red-3)' }}
       >
         <Stack align="center" gap="md">
-          <ThemeIcon size={48} radius="xl" color="red" variant="light">
+          <ThemeIcon size={48} radius="sm" color="red" variant="light">
             <Calendar size={24} />
           </ThemeIcon>
           <div style={{ textAlign: 'center' }}>
@@ -169,12 +169,13 @@ export function PollsList() {
     return (
       <Paper
         withBorder
-        radius="lg"
+        radius="sm"
         p="xl"
+        className="archive-card"
         style={{ borderStyle: 'dashed' }}
       >
         <Stack align="center" gap="md">
-          <ThemeIcon size={64} radius="xl" color="indigo" variant="light">
+          <ThemeIcon size={64} radius="sm" color="archive" variant="light">
             <BarChart3 size={32} />
           </ThemeIcon>
           <div style={{ textAlign: 'center' }}>
@@ -188,6 +189,7 @@ export function PollsList() {
           <Button
             component={Link}
             href="/polls/new"
+            color="archive"
             leftSection={<BarChart3 size={16} />}
           >
             Create Poll
@@ -227,8 +229,9 @@ function QuestionPollCard({ poll }: { poll: QuestionPoll }) {
   return (
     <Paper
       withBorder
-      radius="lg"
+      radius="sm"
       p="md"
+      className="archive-card"
       style={{ opacity: isClosed ? 0.75 : 1 }}
     >
       <Stack gap="md">
@@ -238,7 +241,7 @@ function QuestionPollCard({ poll }: { poll: QuestionPoll }) {
             <Title order={5}>{poll.question}</Title>
             <Badge
               variant="light"
-              color="violet"
+              color="oxblood"
               size="sm"
               leftSection={<BarChart3 size={12} />}
             >
@@ -289,7 +292,7 @@ function QuestionPollCard({ poll }: { poll: QuestionPoll }) {
                     value={pct}
                     size="sm"
                     radius="xl"
-                    color="violet"
+                    color="oxblood"
                     style={{ flex: 1 }}
                   />
                   <Text size="xs" c="dimmed" w={36} ta="right">
@@ -350,7 +353,7 @@ function QuestionPollCard({ poll }: { poll: QuestionPoll }) {
           fullWidth
           size="md"
           variant={isClosed ? 'outline' : 'filled'}
-          color="violet"
+          color="oxblood"
           rightSection={!isClosed ? <ArrowRight size={16} /> : undefined}
           disabled={poll.status === 'cancelled'}
         >
@@ -377,8 +380,9 @@ function AvailabilityPollCard({ poll }: { poll: AvailabilityPoll }) {
   return (
     <Paper
       withBorder
-      radius="lg"
+      radius="sm"
       p="md"
+      className="archive-card"
       style={{ opacity: isLocked || isCancelled ? 0.75 : 1 }}
     >
       <Stack gap="md">
@@ -388,7 +392,7 @@ function AvailabilityPollCard({ poll }: { poll: AvailabilityPoll }) {
             <Title order={5}>{poll.title}</Title>
             <Badge
               variant="light"
-              color="blue"
+              color="archive"
               size="sm"
               leftSection={<Calendar size={12} />}
             >
@@ -485,6 +489,7 @@ function AvailabilityPollCard({ poll }: { poll: AvailabilityPoll }) {
           fullWidth
           size="md"
           variant={isLocked || isCancelled ? 'outline' : 'filled'}
+          color="archive"
           leftSection={isLocked ? <Users size={16} /> : undefined}
           rightSection={
             !isLocked && !isCancelled ? <ArrowRight size={16} /> : undefined

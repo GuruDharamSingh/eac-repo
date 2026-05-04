@@ -1,5 +1,20 @@
-/* Minimal global styles - Mantine handles most styling */
+/* Inner Gathering visual vocabulary over Mantine */
 @tailwind utilities;
+
+:root {
+  --ig-parchment: #fdf6e3;
+  --ig-paper: #fffcf4;
+  --ig-paper-deep: #f4e2bd;
+  --ig-ink: #2b1608;
+  --ig-umber: #5a3216;
+  --ig-muted: #8a6542;
+  --ig-gold: #c8910a;
+  --ig-ember: #d45c08;
+  --ig-moss: #52643a;
+  --ig-oxblood: #70251c;
+  --ig-smoke: #15100c;
+  --ig-border: #c8a06a;
+}
 
 /* Base styles */
 *, *::before, *::after {
@@ -10,7 +25,7 @@ html,
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: #fdf6e3;
+  background-color: var(--ig-parchment);
 }
 
 /* Smooth scrolling */
@@ -18,7 +33,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* 1970s medieval — warm text rendering */
+/* 1970s medieval warm text rendering */
 body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -31,7 +46,135 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Parchment card border glow */
 .parchment-card {
-  border-color: #c8a06a !important;
+  border-color: var(--ig-border) !important;
   background: linear-gradient(160deg, #fffcf4 0%, #fef5e1 100%) !important;
   box-shadow: 0 2px 8px rgba(110, 60, 10, 0.12) !important;
+}
+
+.archive-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% -10%, rgba(200, 145, 10, 0.16), transparent 30rem),
+    linear-gradient(180deg, #fff8ec 0%, var(--ig-parchment) 42%, #f4e5c6 100%);
+  color: var(--ig-ink);
+}
+
+.archive-topbar {
+  background: linear-gradient(135deg, #1b1009 0%, #3d1f0a 52%, #1b1009 100%) !important;
+  border-bottom: 3px double var(--ig-gold) !important;
+  border-radius: 0 !important;
+  color: #fdf0d0;
+}
+
+.archive-page-header {
+  border-bottom: 1px solid rgba(90, 50, 22, 0.18);
+  padding-bottom: 0.9rem;
+}
+
+.archive-kicker {
+  color: var(--ig-ember);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.archive-title {
+  color: var(--ig-ink) !important;
+}
+
+.archive-page-header :is(h1, h2).archive-title,
+.archive-page-header .mantine-Title-root.archive-title {
+  font-size: clamp(2rem, 4vw, 2.75rem) !important;
+  line-height: 1.05 !important;
+}
+
+.archive-muted {
+  color: var(--ig-muted) !important;
+}
+
+.archive-card {
+  border-color: var(--ig-border) !important;
+  background: linear-gradient(160deg, var(--ig-paper) 0%, #f9edcf 100%) !important;
+  box-shadow: 0 8px 24px rgba(72, 37, 11, 0.1) !important;
+}
+
+.archive-card-dark {
+  border-color: #8f641f !important;
+  background:
+    linear-gradient(145deg, rgba(253, 240, 208, 0.06), transparent 45%),
+    linear-gradient(135deg, #17100b 0%, #3a1f10 58%, #5b2b11 100%) !important;
+  color: #fff3d8 !important;
+  box-shadow: 0 12px 34px rgba(43, 20, 7, 0.26) !important;
+}
+
+.archive-tile {
+  border-color: rgba(90, 50, 22, 0.18) !important;
+  background: rgba(255, 252, 244, 0.78) !important;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.archive-tile:hover {
+  border-color: var(--ig-gold) !important;
+  box-shadow: 0 8px 20px rgba(72, 37, 11, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+.archive-divider {
+  border-color: rgba(200, 145, 10, 0.38) !important;
+}
+
+.archive-sigil {
+  background: linear-gradient(160deg, var(--ig-ember), #8c3705) !important;
+  border: 1px solid rgba(255, 236, 216, 0.45) !important;
+  color: #fff8ec !important;
+}
+
+.archive-input-panel {
+  border-color: rgba(90, 50, 22, 0.24) !important;
+  background: rgba(255, 252, 244, 0.68) !important;
+}
+
+.archive-work-surface :is(h4, h5),
+.archive-work-surface .mantine-Title-root {
+  font-size: 1.25rem !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.08em;
+}
+
+.archive-work-surface .mantine-SegmentedControl-label {
+  font-size: 1rem !important;
+}
+
+.archive-work-surface label,
+.archive-work-surface input,
+.archive-work-surface textarea,
+.archive-work-surface button,
+.archive-work-surface [data-combobox-selected] {
+  font-size: 1rem !important;
+}
+
+.archive-work-surface input::placeholder,
+.archive-work-surface textarea::placeholder {
+  font-size: 1rem !important;
+}
+
+.archive-work-surface .mantine-TextInput-label,
+.archive-work-surface .mantine-Textarea-label,
+.archive-work-surface .mantine-Select-label,
+.archive-work-surface .mantine-DateTimePicker-label {
+  font-size: 0.95rem !important;
+}
+
+.archive-work-surface .mantine-Text-root {
+  font-size: 0.96rem;
+}
+
+.archive-button-dark {
+  background: linear-gradient(160deg, var(--ig-ember), #8c3705) !important;
+  border: 1px solid #f0c98a !important;
+  color: #fff8ec !important;
+}
+
+.archive-button-subtle {
+  color: var(--ig-umber) !important;
 }

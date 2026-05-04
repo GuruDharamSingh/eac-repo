@@ -94,7 +94,7 @@ export function LiveFeedWidget() {
 
   if (loading) {
     return (
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder radius="sm" p="sm" className="archive-card">
         <Skeleton height={160} radius="sm" />
       </Paper>
     );
@@ -111,20 +111,20 @@ export function LiveFeedWidget() {
       radius="sm"
       p="xs"
       style={{
-        background: 'var(--mantine-color-indigo-0)',
-        border: '1px solid var(--mantine-color-indigo-2)',
+        background: 'rgba(200, 145, 10, 0.12)',
+        border: '1px solid rgba(200, 145, 10, 0.32)',
       }}
     >
       <Group justify="space-between" wrap="nowrap">
         <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-          <Clock size={14} color="var(--mantine-color-indigo-6)" />
+          <Clock size={14} color="var(--ig-ember)" />
           <Text size="xs" fw={500} truncate>
             {data.meeting!.title}
           </Text>
         </Group>
         <Badge
           variant="light"
-          color="indigo"
+          color="archive"
           size="sm"
           style={{ fontFamily: 'monospace', flexShrink: 0 }}
         >
@@ -172,7 +172,7 @@ export function LiveFeedWidget() {
   const footer = liveBadgeFooter || countdownFooter;
 
   return (
-    <Paper withBorder radius="md" p="sm">
+    <Paper withBorder radius="sm" p="sm" className="archive-card">
       <Box>
         <Group justify="space-between" mb={6}>
           <Group gap={6}>

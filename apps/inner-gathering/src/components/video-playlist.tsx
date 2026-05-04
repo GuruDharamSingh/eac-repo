@@ -51,7 +51,7 @@ export function VideoPlaylist({ videos, compact = false, footer }: VideoPlaylist
   if (videos.length === 0) {
     if (compact) return null;
     return (
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
+      <Card shadow="sm" padding="lg" radius="sm" withBorder className="archive-card">
         <Stack align="center" gap="md" py="xl">
           <Film size={48} opacity={0.3} />
           <Text c="dimmed" ta="center">
@@ -120,7 +120,7 @@ export function VideoPlaylist({ videos, compact = false, footer }: VideoPlaylist
   }
 
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <Card shadow="sm" padding="lg" radius="sm" withBorder className="archive-card">
       <Stack gap="md">
         <Group justify="space-between">
           <Box>
@@ -129,7 +129,7 @@ export function VideoPlaylist({ videos, compact = false, footer }: VideoPlaylist
               {currentIndex + 1} / {videos.length}
             </Text>
           </Box>
-          <Badge color="gray" size="lg" leftSection={<Film size={12} />}>
+          <Badge color="archive" size="lg" leftSection={<Film size={12} />}>
             VIDEO
           </Badge>
         </Group>
@@ -156,9 +156,9 @@ export function VideoPlaylist({ videos, compact = false, footer }: VideoPlaylist
                   withBorder
                   style={{
                     cursor: 'pointer',
-                    borderColor: index === currentIndex ? 'var(--mantine-color-blue-5)' : undefined,
+                    borderColor: index === currentIndex ? 'var(--ig-gold)' : undefined,
                     background:
-                      index === currentIndex ? 'var(--mantine-color-blue-light)' : undefined,
+                      index === currentIndex ? 'rgba(200, 145, 10, 0.12)' : undefined,
                   }}
                   onClick={() => goTo(index)}
                 >

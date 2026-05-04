@@ -66,7 +66,7 @@ export function CountdownWidget({ meeting }: CountdownWidgetProps) {
   };
 
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <Card shadow="sm" padding="lg" radius="sm" withBorder className="archive-card-dark">
       <Stack gap="md">
         <Box style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Clock size={24} />
@@ -74,7 +74,7 @@ export function CountdownWidget({ meeting }: CountdownWidgetProps) {
         </Box>
 
         <Box>
-          <Title order={2} c="blue" style={{ fontFamily: 'monospace', fontSize: '2rem' }}>
+          <Title order={2} style={{ color: '#f0c98a', fontFamily: 'monospace', fontSize: '2rem' }}>
             {formatCountdown()}
           </Title>
           <Text size="sm" c="dimmed" mt="xs">

@@ -41,8 +41,8 @@ const RECURRENCE_LABELS: Record<MeetingRecurrence, string> = {
 
 const RECURRENCE_COLORS: Record<MeetingRecurrence, string> = {
   NONE: "gray",
-  DAILY: "violet",
-  WEEKLY: "indigo",
+  DAILY: "oxblood",
+  WEEKLY: "archive",
   MONTHLY: "teal",
   CUSTOM: "orange",
 };
@@ -123,17 +123,17 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
   }, []);
 
   return (
-    <Paper withBorder radius="md" p="md" bg="indigo.0">
+    <Paper withBorder radius="sm" p="md" className="archive-card">
       <Stack gap="sm">
         <Group justify="space-between">
           <Group gap="xs">
-            <ThemeIcon size="sm" variant="light" color="indigo">
+            <ThemeIcon size="sm" variant="light" color="archive">
               <Repeat size={14} />
             </ThemeIcon>
-            <Title order={5} c="indigo.8">
+            <Title order={5} className="archive-title">
               Recurring Meetings
             </Title>
-            <Badge size="sm" variant="light" color="indigo">
+            <Badge size="sm" variant="light" color="archive">
               {meetings.length}
             </Badge>
           </Group>
@@ -144,7 +144,7 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
               <ActionIcon
                 size="sm"
                 variant="subtle"
-                color="indigo"
+                color="archive"
                 onClick={() => scrollBy("left")}
                 aria-label="Scroll left"
               >
@@ -153,7 +153,7 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
               <ActionIcon
                 size="sm"
                 variant="subtle"
-                color="indigo"
+                color="archive"
                 onClick={() => scrollBy("right")}
                 aria-label="Scroll right"
               >
@@ -180,7 +180,7 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
             paddingBottom: 4,
             scrollBehavior: isDragging ? "auto" : "smooth",
             scrollbarWidth: "thin",
-            scrollbarColor: "var(--mantine-color-indigo-3) transparent",
+            scrollbarColor: "var(--ig-border) transparent",
             WebkitOverflowScrolling: "touch",
           }}
         >
@@ -242,7 +242,7 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
             {RECURRENCE_LABELS[pattern]}
           </Badge>
           {meeting.isOnline && (
-            <Badge size="xs" variant="light" color="blue" leftSection={<Video size={10} />}>
+            <Badge size="xs" variant="light" color="moss" leftSection={<Video size={10} />}>
               Online
             </Badge>
           )}
@@ -306,7 +306,7 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
           <Badge
             size="xs"
             variant="light"
-            color="indigo"
+            color="archive"
             leftSection={<LayoutGrid size={10} />}
             fullWidth
             style={{ cursor: "pointer" }}

@@ -1,13 +1,16 @@
-import { Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box } from "@mantine/core";
-import { FileText, User, ExternalLink } from "lucide-react";
+import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip } from "@mantine/core";
+import { FileText, User, ExternalLink, Trash2 } from "lucide-react";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
 
 interface PostCardProps {
   post: Post;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: () => void;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, canDelete = false, deleting = false, onDelete }: PostCardProps) {
   const authorName = post.author?.displayName || "Unknown";
   const coverImageId = post.coverImage?.id;
   const attachments = (post.media || []).filter((media) => media.id !== coverImageId);
@@ -38,6 +41,20 @@ export function PostCard({ post }: PostCardProps) {
               </Badge>
             </Group>
           </Stack>
+          {canDelete && (
+            <Tooltip label="Delete post">
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                aria-label="Delete post"
+                disabled={deleting}
+                onClick={onDelete}
+              >
+                <Trash2 size={16} />
+              </ActionIcon>
+            </Tooltip>
+          )}
         </Group>
 
         {post.excerpt && (
@@ -74,9 +91,8 @@ export function PostCard({ post }: PostCardProps) {
 
                 // Other file types (documents, etc.)
                 return (
-                  <Group
+                  <Box
                     key={media.id}
-                    gap="xs"
                     component="a"
                     href={media.url}
                     target="_blank"
@@ -88,12 +104,14 @@ export function PostCard({ post }: PostCardProps) {
                       cursor: 'pointer'
                     }}
                   >
-                    <FileText size={12} />
-                    <Text size="xs" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {media.filename || "Download"}
-                    </Text>
-                    <ExternalLink size={12} />
-                  </Group>
+                    <Group gap="xs">
+                      <FileText size={12} />
+                      <Text size="xs" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {media.filename || "Download"}
+                      </Text>
+                      <ExternalLink size={12} />
+                    </Group>
+                  </Box>
                 );
               })}
             </Stack>

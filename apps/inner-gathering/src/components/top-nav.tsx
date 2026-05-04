@@ -41,20 +41,20 @@ const navItems: NavItem[] = [
     match: (pathname) => pathname.startsWith("/feed"),
   },
   {
-    icon: Calendar,
+    icon: BarChart3,
     label: "Polls",
     href: "/polls",
     match: (pathname) => pathname.startsWith("/polls"),
   },
   {
-    icon: BarChart3,
+    icon: Calendar,
     label: "Calendar",
     href: "/calendar",
     match: (pathname) => pathname.startsWith("/calendar"),
   },
   {
     icon: FolderOpen,
-    label: "Files",
+    label: "Archive",
     href: "/files",
     match: (pathname) => pathname.startsWith("/files"),
   },
@@ -133,9 +133,9 @@ export function TopNav() {
       >
         <ActionIcon
           size={56}
-          radius="xl"
+          radius="sm"
           variant="filled"
-          color="indigo"
+          color="ember"
           onClick={opened ? close : open}
           aria-label="Menu"
           style={{
@@ -143,7 +143,8 @@ export function TopNav() {
             bottom: 24,
             left: 24,
             zIndex: 50,
-            boxShadow: "var(--mantine-shadow-lg)",
+            boxShadow: "0 10px 28px rgba(43, 20, 7, 0.35)",
+            border: "2px solid #f0c98a",
           }}
         >
           {opened ? <X size={24} /> : <Menu size={24} />}
@@ -158,9 +159,19 @@ export function TopNav() {
         size={320}
         withCloseButton={false}
         overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
+        styles={{
+          content: {
+            background: "linear-gradient(180deg, #fff8ec 0%, #f4e2bd 100%)",
+            borderRight: "3px double var(--ig-gold)",
+          },
+          body: { padding: 0 },
+        }}
       >
         <Stack gap="lg" p="md">
-          <Title order={3} c="indigo">InnerGathering</Title>
+          <div>
+            <Text className="archive-kicker">Gathering table</Text>
+            <Title order={3} className="archive-title">Inner Gathering</Title>
+          </div>
           <Stack gap="xs">
             {navItems.map((item) => {
               const isActive = item.match(pathname);
@@ -174,8 +185,8 @@ export function TopNav() {
                   leftSection={<Icon size={20} />}
                   active={isActive}
                   variant="light"
-                  color="indigo"
-                  style={{ borderRadius: 8 }}
+                  color="archive"
+                  style={{ borderRadius: 4 }}
                 />
               );
             })}
@@ -198,8 +209,8 @@ export function TopNav() {
               leftSection={<Bell size={20} />}
               active={pathname.startsWith("/notifications")}
               variant="light"
-              color="indigo"
-              style={{ borderRadius: 8 }}
+              color="archive"
+              style={{ borderRadius: 4 }}
             />
             <NavLink
               onClick={() => handleNavigate(accountItem.href)}
@@ -207,8 +218,8 @@ export function TopNav() {
               leftSection={<accountItem.icon size={20} />}
               active={accountItem.match(pathname)}
               variant="light"
-              color="indigo"
-              style={{ borderRadius: 8 }}
+              color="archive"
+              style={{ borderRadius: 4 }}
             />
           </Stack>
         </Stack>
