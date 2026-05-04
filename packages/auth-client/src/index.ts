@@ -43,12 +43,17 @@ export async function signInWithPassword(email: string, password: string): Promi
 /**
  * Sign up with email and password
  */
-export async function signUp(email: string, password: string, displayName?: string): Promise<{ user: AuthUser | null; error: string | null }> {
+export async function signUp(
+  email: string,
+  password: string,
+  displayName?: string,
+  interests?: string[]
+): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
     const response = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, displayName }),
+      body: JSON.stringify({ email, password, displayName, interests }),
     });
 
     const data = await response.json();

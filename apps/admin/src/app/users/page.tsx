@@ -42,6 +42,12 @@ import {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+interface SignupDetails {
+  interests?: string[];
+  signup_at?: string;
+  signup_source?: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -52,7 +58,17 @@ interface User {
   created_at: string;
   role?: string;
   organizations?: string[];
+  signup_details?: SignupDetails | null;
 }
+
+const INTEREST_LABELS: Record<string, string> = {
+  artist_platform: "Artist looking for a platform",
+  group_network: "Group / organization wanting to network",
+  enthusiast_support: "Enthusiast supporting arts and mutual aid",
+  volunteer: "Wants to volunteer",
+  in_need: "In need of support",
+  exploring: "Just exploring",
+};
 
 interface Organization {
   id: string;
@@ -205,7 +221,24 @@ function UsersTab({ organizations }: { organizations: Organization[] }) {
   const openUserModal = async (user: User) => {
     setSelectedUser(user);
     open();
-    await loadUserMemberships(user.id);
+    // Load memberships and full user details (incl. signup_details) in parallel
+    await Promise.all([
+      loadUserMemberships(user.id),
+      (async () => {
+        try {
+          const res = await fetch(`/api/users/${user.id}`, { credentials: 'include' });
+          if (res.ok) {
+            const data = await res.json();
+            const details = data?.user?.signupDetails ?? null;
+            setSelectedUser((prev) =>
+              prev && prev.id === user.id ? { ...prev, signup_details: details } : prev
+            );
+          }
+        } catch (e) {
+          console.error('Error loading user details:', e);
+        }
+      })(),
+    ]);
   };
 
   const toggleSiteAdmin = async () => {
@@ -432,6 +465,43 @@ function UsersTab({ organizations }: { organizations: Organization[] }) {
                 </Group>
               </Group>
             </Paper>
+
+            {selectedUser.signup_details && (
+              <Paper withBorder p="md">
+                <Stack gap="sm">
+                  <Group gap="sm">
+                    <UserCheck size={18} />
+                    <Text fw={600} c="dark">Signup Details</Text>
+                  </Group>
+                  {selectedUser.signup_details.interests && selectedUser.signup_details.interests.length > 0 && (
+                    <Stack gap={4}>
+                      <Text size="xs" c="gray.7" fw={500}>What brings them here</Text>
+                      <Group gap="xs">
+                        {selectedUser.signup_details.interests.map((key) => (
+                          <Badge key={key} color="blue" variant="light" size="md">
+                            {INTEREST_LABELS[key] ?? key}
+                          </Badge>
+                        ))}
+                      </Group>
+                    </Stack>
+                  )}
+                  {selectedUser.signup_details.signup_source && (
+                    <Group gap="xs">
+                      <Text size="xs" c="gray.7" fw={500}>Source:</Text>
+                      <Text size="xs" c="dark">{selectedUser.signup_details.signup_source}</Text>
+                    </Group>
+                  )}
+                  {selectedUser.signup_details.signup_at && (
+                    <Group gap="xs">
+                      <Text size="xs" c="gray.7" fw={500}>Signed up:</Text>
+                      <Text size="xs" c="dark">
+                        {new Date(selectedUser.signup_details.signup_at).toLocaleString()}
+                      </Text>
+                    </Group>
+                  )}
+                </Stack>
+              </Paper>
+            )}
 
             <Paper withBorder p="md">
               <Group justify="space-between">

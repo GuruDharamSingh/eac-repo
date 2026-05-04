@@ -98,7 +98,7 @@ export async function handleLogin(request: NextRequest) {
  */
 export async function handleSignup(request: NextRequest) {
   try {
-    const { email, password, displayName } = await request.json();
+    const { email, password, displayName, interests } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -106,6 +106,10 @@ export async function handleSignup(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const cleanInterests: string[] | undefined = Array.isArray(interests)
+      ? interests.filter((i) => typeof i === 'string' && i.length > 0).slice(0, 12)
+      : undefined;
 
     const { supabase, applyCookies } = createRouteSupabaseClient(request);
 
@@ -127,6 +131,9 @@ export async function handleSignup(request: NextRequest) {
       options: {
         data: {
           display_name: displayName || email.split('@')[0],
+          ...(cleanInterests && cleanInterests.length > 0
+            ? { interests: cleanInterests }
+            : {}),
         },
       },
     });
