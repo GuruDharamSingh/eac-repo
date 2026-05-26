@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Iotadieresis" format="2">
+	<advance width="412"/>
+	<unicode hex="03AA"/>
+	<anchor x="0" y="0" name="bottom"/>
+	<anchor x="0" y="0" name="ogonek"/>
+	<anchor x="0" y="0" name="top"/>
+	<anchor x="0" y="0" name="topleft"/>
+	<outline>
+		<component base="Iota"/>
+		<component base="uni0308.case" xOffset="-45"/>
+	</outline>
+	<lib>
+		<dict>
+			<key>com.schriftgestaltung.Glyphs.ComponentInfo</key>
+			<array>
+				<dict>
+					<key>alignment</key>
+					<integer>-1</integer>
+					<key>index</key>
+					<integer>0</integer>
+					<key>name</key>
+					<string>Iota</string>
+				</dict>
+				<dict>
+					<key>alignment</key>
+					<integer>-1</integer>
+					<key>index</key>
+					<integer>1</integer>
+					<key>name</key>
+					<string>uni0308.case</string>
+				</dict>
+			</array>
+		</dict>
+	</lib>
+</glyph>

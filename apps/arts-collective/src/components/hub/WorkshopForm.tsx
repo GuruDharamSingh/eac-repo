@@ -216,6 +216,9 @@ export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-0">
+        {/* Ensures thread_id is in the RHF submit payload for the UPDATE path */}
+        <input type="hidden" {...register("thread_id")} />
+
         {/* Sticky action bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-6 py-3 backdrop-blur">
           <div className="min-w-0">
@@ -318,7 +321,7 @@ export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
                     type="datetime-local"
                   />
                 </FieldRow>
-                <FieldRow label="Duration (minutes)">
+                <FieldRow label="Duration (minutes)" error={errors.duration_minutes?.message}>
                   <Input
                     {...register("duration_minutes")}
                     type="number"
@@ -390,7 +393,7 @@ export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
                 <FieldRow label="Language">
                   <Input {...register("language")} placeholder="English" />
                 </FieldRow>
-                <FieldRow label="Capacity" hint="Max attendees">
+                <FieldRow label="Capacity" hint="Max attendees" error={errors.attendee_limit?.message}>
                   <Input
                     {...register("attendee_limit")}
                     type="number"
@@ -461,14 +464,14 @@ export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
               />
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <FieldRow label="Number of sessions">
+                <FieldRow label="Number of sessions" error={errors.session_count?.message}>
                   <Input
                     {...register("session_count")}
                     type="number"
                     placeholder="6"
                   />
                 </FieldRow>
-                <FieldRow label="Duration per session (hours)">
+                <FieldRow label="Duration per session (hours)" error={errors.session_duration_hrs?.message}>
                   <Input
                     {...register("session_duration_hrs")}
                     type="number"

@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "Religath";
-  src: url("/fonts/RELIGATH-Demo.otf") format("opentype");
+  font-family: "Venture";
+  src: url("/fonts/Venture-nRqOR.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -40,7 +40,7 @@
 
 .heroLabel {
   display: block;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
@@ -49,7 +49,7 @@
 }
 
 .heroTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(5rem, 14vw, 11rem);
   color: #dde8d0;
   line-height: 0.88;
@@ -65,7 +65,7 @@
 }
 
 .heroPullQuote {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   font-style: italic;
   font-weight: 300;
@@ -75,7 +75,7 @@
 }
 
 .heroAttr {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   letter-spacing: 0.15em;
   color: #4a7a4a;
@@ -99,7 +99,7 @@
 }
 
 .originLabel {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -110,7 +110,7 @@
 }
 
 .originTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   color: #7ac97a;
   margin: 0 0 2rem;
@@ -118,7 +118,7 @@
 }
 
 .originText p {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.3rem;
   line-height: 2;
   color: rgba(221, 232, 208, 0.7);
@@ -142,7 +142,7 @@
 }
 
 .whatTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 4.5vw, 3.5rem);
   color: #7ac97a;
   margin: 0 0 3rem;
@@ -176,7 +176,7 @@
 }
 
 .whatBlock h3 {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -186,7 +186,7 @@
 }
 
 .whatBlock p {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   line-height: 1.85;
   color: rgba(221, 232, 208, 0.55);
@@ -206,7 +206,7 @@
 }
 
 .membersTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 4.5vw, 3.5rem);
   color: #dde8d0;
   margin: 0 0 1rem;
@@ -214,7 +214,7 @@
 }
 
 .membersIntro {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   font-style: italic;
   color: #3a6a3a;
@@ -256,7 +256,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   color: #4a7a4a;
   flex-shrink: 0;
@@ -270,7 +270,7 @@
 }
 
 .memberName {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   color: #dde8d0;
   margin: 0;
@@ -278,7 +278,7 @@
 }
 
 .memberRoles {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -286,14 +286,14 @@
 }
 
 .memberLocation {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   color: #3a5a3a;
   letter-spacing: 0.08em;
 }
 
 .memberAbout {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   line-height: 1.8;
   color: rgba(221, 232, 208, 0.5);
@@ -320,14 +320,14 @@
 }
 
 .cityName {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   color: #dde8d0;
   letter-spacing: 0.04em;
 }
 
 .cityRole {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -350,7 +350,7 @@
 }
 
 .visionQuote {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: clamp(1.1rem, 2.2vw, 1.5rem);
   font-style: italic;
   font-weight: 300;
@@ -363,7 +363,7 @@
 }
 
 .visionCaption {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;

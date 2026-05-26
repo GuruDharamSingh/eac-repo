@@ -311,6 +311,63 @@ export async function getPosts(): Promise<Post[]> {
   return posts.map(mapPost);
 }
 
+// Get a single post (thread with kind='post') by id
+export async function getPostById(id: string): Promise<Post | null> {
+  const posts = await db`
+    SELECT
+      t.id, t.org_id, t.slug, t.title, t.body, t.excerpt, t.status,
+      t.visibility, t.nextcloud_file_id, t.nextcloud_last_sync,
+      t.metadata, t.created_at, t.published_at, t.updated_at,
+      t.view_count, t.reply_count, t.author_id,
+      u.display_name AS author_name,
+      cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
+      cm.uploaded_by AS cover_media_uploaded_by,
+      cm.attached_to_type AS cover_media_attached_to_type,
+      cm.attached_to_id AS cover_media_attached_to_id,
+      cm.nextcloud_file_id AS cover_media_nextcloud_file_id,
+      cm.nextcloud_path AS cover_media_nextcloud_path,
+      cm.url AS cover_media_url, cm.type AS cover_media_type,
+      cm.filename AS cover_media_filename,
+      cm.size_bytes AS cover_media_size_bytes,
+      cm.mime_type AS cover_media_mime_type,
+      cm.caption AS cover_media_caption,
+      cm.alt_text AS cover_media_alt_text,
+      cm.created_at AS cover_media_created_at,
+      ml.media_items
+    FROM threads t
+    LEFT JOIN users u ON t.author_id = u.id
+    LEFT JOIN LATERAL (
+      SELECT id, org_id, uploaded_by, attached_to_type, attached_to_id,
+             nextcloud_file_id, nextcloud_path, url, type, filename,
+             size_bytes, mime_type, caption, alt_text, created_at
+      FROM media
+      WHERE attached_to_type = 'thread' AND attached_to_id = t.id AND type = 'image'
+      ORDER BY created_at DESC LIMIT 1
+    ) cm ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COALESCE(
+        json_agg(
+          json_build_object(
+            'id', id, 'orgId', org_id, 'uploadedBy', uploaded_by,
+            'attachedToType', attached_to_type, 'attachedToId', attached_to_id,
+            'nextcloudFileId', nextcloud_file_id, 'nextcloudPath', nextcloud_path,
+            'url', url, 'type', type, 'filename', filename,
+            'sizeBytes', size_bytes, 'mimeType', mime_type,
+            'caption', caption, 'altText', alt_text, 'createdAt', created_at
+          ) ORDER BY created_at DESC
+        ),
+        '[]'::json
+      ) AS media_items
+      FROM media WHERE attached_to_type = 'thread' AND attached_to_id = t.id
+    ) ml ON TRUE
+    WHERE t.kind = 'post' AND t.id = ${id} AND t.org_id = ${ORG_ID}
+    LIMIT 1
+  `;
+
+  if (posts.length === 0) return null;
+  return mapPost(posts[0]);
+}
+
 // Create a new meeting (thread with kind='meeting')
 export async function createMeeting(params: {
   userId: string;

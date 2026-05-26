@@ -1,35 +1,19 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Box, Container, Paper, Title, Text, TextInput, PasswordInput,
   Button, Stack, Alert,
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { signInWithPassword } from '@elkdonis/auth-client';
+import { useAuthForm } from '@elkdonis/auth-client';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const { user, error: signInError } = await signInWithPassword(email, password);
-      if (signInError) throw new Error(signInError);
-      if (user) {
-        window.location.href = '/admin';
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Shared sign-in logic via the universal auth hook — branding stays local.
+  const f = useAuthForm({
+    onSuccess: () => {
+      window.location.href = '/admin';
+    },
+  });
 
   return (
     <Box
@@ -68,15 +52,15 @@ export default function LoginPage() {
               border: '1px solid rgba(244,196,48,0.5)',
             }}
           >
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => void f.submit(e)}>
               <Stack gap="md">
                 <Title order={3} ta="center" style={{ fontFamily: "'Cinzel', serif", color: '#36454f', fontSize: '1.1rem' }}>
                   Sign In
                 </Title>
 
-                {error && (
+                {f.error && (
                   <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-                    {error}
+                    {f.error}
                   </Alert>
                 )}
 
@@ -85,8 +69,8 @@ export default function LoginPage() {
                   label="Email"
                   placeholder="your@email.com"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.currentTarget.value)}
+                  value={f.email}
+                  onChange={(e) => f.setEmail(e.currentTarget.value)}
                   size="md"
                 />
 
@@ -94,8 +78,8 @@ export default function LoginPage() {
                   required
                   label="Password"
                   placeholder="Your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.currentTarget.value)}
+                  value={f.password}
+                  onChange={(e) => f.setPassword(e.currentTarget.value)}
                   size="md"
                 />
 
@@ -103,7 +87,7 @@ export default function LoginPage() {
                   type="submit"
                   fullWidth
                   size="md"
-                  loading={loading}
+                  loading={f.submitting}
                   style={{
                     background: 'linear-gradient(90deg, #f4c430, #e67e50)',
                     color: '#36454f',

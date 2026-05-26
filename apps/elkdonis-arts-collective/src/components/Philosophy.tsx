@@ -5,23 +5,18 @@ import { useEffect, useRef, useState } from "react";
 const pillars = [
   {
     num: "I",
-    title: "Art is Necessary",
-    body: "We hold that art is not decoration, entertainment, or product — it is a primary means by which human beings make contact with reality. To remove art from a life is to thin the very fabric of that life.",
+    title: "Essentialism",
+    body: "We use recognizable objects to convey emotions and ideas, stripping away unnecessary elements to reveal the essence of the art piece. This reductionist approach allows us to create powerful, abstract works that resonate with viewers.",
   },
   {
     num: "II",
-    title: "Attention is Medium",
-    body: "The quality of presence brought to a work — by its maker and its witness — is the substance of art itself. Technique serves attention; attention is not a by-product of technique.",
+    title: "Timelessness",
+    body: "Our art exists outside the confines of time, inviting viewers to experience the eternal present. By freezing moments in time, we unlock new dimensions of perception and emotional connection.",
   },
   {
     num: "III",
-    title: "Mutual Aid is Practice",
-    body: "We refuse the isolation of the solitary genius. Artists sustain one another through honest exchange, shared labour, and the willingness to be changed by what we encounter in each other's work.",
-  },
-  {
-    num: "IV",
-    title: "Transformation is the Work",
-    body: "Our programming is not aimed at career development or cultural product. It is aimed at the interior development of the human being. We are a Fourth-Way Mutual Aid Society — the work transforms the worker.",
+    title: "Space",
+    body: "We prioritize the viewer's experience, crafting scenes that envelop and engage. Our art establishes a sense of space that transcends physical boundaries, drawing the viewer into a profound relationship with the work.",
   },
 ];
 
@@ -42,8 +37,7 @@ export function Philosophy() {
     <section id="philosophy" ref={ref} className="philosophy-section">
       <div className="section-inner">
         <div className={`reveal ${visible ? "in-view" : ""}`} style={{ textAlign: "center", marginBottom: "4rem" }}>
-          <p className="section-eyebrow">Our Philosophy</p>
-          <h2 className="section-heading">What We Believe</h2>
+          <h2 className="section-heading">Our Philosophy</h2>
           <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem auto" } as React.CSSProperties} />
         </div>
 

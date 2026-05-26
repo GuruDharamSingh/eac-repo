@@ -281,3 +281,108 @@ export function renderWorkshopTemplate(
 
   return parts.join("\n");
 }
+
+// ─── Silex HTML binding ───────────────────────────────────────────────────────
+
+/**
+ * Apply all workshop data-trait substitutions to an arbitrary HTML string.
+ *
+ * Used by SilexLayout to bind live DB data into Silex-published HTML without
+ * re-running the full section-by-section renderWorkshopTemplate. Works on the
+ * full published page in one pass — safe to call on HTML that only has some
+ * of the workshop sections present.
+ */
+export function applyWorkshopTraits(html: string, data: WorkshopPageData): string {
+  const sessions: WorkshopSession[] = Array.isArray(data.sessions) ? data.sessions : [];
+  const eyebrow = [data.discipline, data.series_label].filter(Boolean).join(" · ");
+  const locationName = data.location || data.location_address || "";
+  const regUrl = data.registration_url || "#register";
+  const ctaText = registrationCta(data.registration_status, data.price, data.currency);
+  const priceFull = formatPrice(data.price, data.currency);
+  const regDeadline = data.registration_deadline
+    ? `Registration deadline: ${formatDate(data.registration_deadline)}`
+    : "";
+  const priceContext = data.session_count
+    ? `/ ${data.session_count} session${data.session_count > 1 ? "s" : ""}`
+    : "";
+  const facilitatorBio = data.author_note || data.facilitator_bio || "";
+
+  let h = html;
+
+  // Nav
+  h = setHrefTrait(h, "ctaHref", regUrl);
+
+  // Hero
+  h = setTextTrait(h, "eyebrowText", eyebrow);
+  h = setTextTrait(h, "title", data.title);
+  h = setTextTrait(h, "recurrence", data.recurrence_label || "");
+  h = setTextTrait(h, "locationName", locationName);
+  h = setTextTrait(h, "spotsText", data.attendee_limit ? `${data.attendee_limit} spots` : "");
+  h = setHrefTrait(h, "registrationUrl", regUrl);
+  if (data.cover_image_url) {
+    h = h.replace(
+      /class="eac-ws-hero__bg"/,
+      `class="eac-ws-hero__bg" style="background-image:url('${escAttr(data.cover_image_url)}')"`
+    );
+  }
+
+  // Detail strip
+  h = setTextTrait(h, "startDate", formatDate(data.scheduled_at));
+  h = setTextTrait(h, "sessionCount", data.session_count ? `${data.session_count} sessions` : "");
+  h = setTextTrait(h, "sessionDuration", data.session_duration_hrs ? `${data.session_duration_hrs} hrs each` : "");
+  h = setTextTrait(h, "format", formatFormat(data.format));
+  h = setTextTrait(h, "level", formatLevel(data.level));
+  h = setTextTrait(h, "language", data.language || "English");
+
+  // About
+  if (data.body) {
+    h = h.replace(
+      /(<div[^>]+\bdata-trait="descriptionLong"[^>]*>)\s*<p>[\s\S]*?<\/p>\s*(<div[^>]+\bdata-trait="descriptionLongExtra")/,
+      `$1\n${data.body}\n$2`
+    );
+  }
+  if (data.accessibility_notes) {
+    h = setDivTrait(h, "accessibilityNotes", esc(data.accessibility_notes));
+  }
+
+  // Facilitator
+  h = setTextTrait(h, "fullName", data.facilitator_name || "");
+  h = setTextTrait(h, "pronouns", data.facilitator_pronouns || "");
+  h = setTextTrait(h, "bio", facilitatorBio);
+  if (data.facilitator_photo) {
+    h = setSrcTrait(h, "photoPath", data.facilitator_photo);
+  }
+
+  // Schedule — replace whole section if we have session data
+  if (sessions.length > 0) {
+    const scheduleHtml = buildScheduleHtml(sessions);
+    h = h.replace(
+      /<section[^>]+\bclass="[^"]*eac-ws-schedule\b[^"]*"[\s\S]*?<\/section>/,
+      scheduleHtml
+    );
+  }
+
+  // Gallery — replace whole section if we have media
+  const hasGallery = (data.gallery_image_urls?.length ?? 0) > 0 || Boolean(data.promo_video_url);
+  if (hasGallery) {
+    const galleryHtml = buildGalleryHtml(data.gallery_image_urls ?? [], data.promo_video_url);
+    h = h.replace(
+      /<section[^>]+\bclass="[^"]*eac-ws-gallery\b[^"]*"[\s\S]*?<\/section>/,
+      galleryHtml
+    );
+  }
+
+  // Register
+  h = setTextTrait(h, "priceFull", priceFull);
+  h = setTextTrait(h, "priceContext", priceContext);
+  if (data.sliding_scale_note) {
+    h = setTextTrait(h, "slidingScaleNote", data.sliding_scale_note);
+    h = h.replace(/(<p[^>]+\bdata-trait="slidingScaleNote"[^>]*)\s+hidden/, "$1");
+  }
+  h = setTextTrait(h, "spotsRemaining", data.attendee_limit ? `${data.attendee_limit} spots remaining` : "");
+  h = setTextTrait(h, "startsIn", startsIn(data.scheduled_at));
+  h = setTextTrait(h, "ctaLabel", ctaText);
+  h = setTextTrait(h, "deadlineNote", regDeadline);
+
+  return h;
+}

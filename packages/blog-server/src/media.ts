@@ -1,5 +1,3 @@
-'use server';
-
 import { Buffer } from 'node:buffer';
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';

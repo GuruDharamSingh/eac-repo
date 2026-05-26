@@ -1,0 +1,32 @@
+{
+  "name": "fourth-way-book-readers",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3010 --turbopack",
+    "docker:dev": "next dev -H 0.0.0.0 -p 3010",
+    "docker:start": "next start -H 0.0.0.0 -p 3010",
+    "build": "next build",
+    "start": "next start --port 3010",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/reading-wizard": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "next": "16.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "typescript": "^5"
+  }
+}

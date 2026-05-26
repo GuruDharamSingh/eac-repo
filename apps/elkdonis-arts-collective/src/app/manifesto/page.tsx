@@ -82,7 +82,7 @@ and failure requires commitment and work, driven in large part by human necessit
               Our art invites viewers to experience the eternal present. In doing so, we unlock new dimensions of perception and connection.
  Reductionism typically explores another dimension of time, a dimension which is not
 sequential or “horizontal” but rather — eternal — or “vertical”. This verticality is the same dimension which contains the creative act itself. 
-This has the curious effect of stopping, even for a brief instant, the associative mechanism in a being's head-brain, so that attention may be freed to participate in the sensation of the whole. Nothing is happening in the usual sense, and therefore time does not pass. The result is an enhanced awareness of posture, positioning of visual elements and their inter-relationships.  Freezing the frame, rendering objects static, also has the effect of freeing other forms of awareness, such as feeling (motion through
+This has the curious effect of stopping, even for a brief instant, the associative mechanism in a being&apos;s head-brain, so that attention may be freed to participate in the sensation of the whole. Nothing is happening in the usual sense, and therefore time does not pass. The result is an enhanced awareness of posture, positioning of visual elements and their inter-relationships.  Freezing the frame, rendering objects static, also has the effect of freeing other forms of awareness, such as feeling (motion through
 emotion).
 </p>
           </div>
@@ -94,7 +94,7 @@ emotion).
           <div className={styles.principleContent}>
             <h3 className={styles.principleTitle}>Spaciousness</h3>
             <p className={styles.principleBody}>
-             We prioritize the viewer's experience, crafting scenes that envelop and engage. Our art establishes a sense of spaciousness that transcends physical boundaries, drawing the viewer into a profound relationship with the work.  As the artist strives for communication, scenes are composed for a viewer who is not a voyeur outside the scene but rather a participant who is the reason for the work and necessarily a part of it. Everything in the scene is oriented first and foremost to the viewer, so as to bring the viewer into a relationship with it. Therefore, depth of field is not bounded by the frame: it includes the viewer in a true experience of space. 
+             We prioritize the viewer&apos;s experience, crafting scenes that envelop and engage. Our art establishes a sense of spaciousness that transcends physical boundaries, drawing the viewer into a profound relationship with the work.  As the artist strives for communication, scenes are composed for a viewer who is not a voyeur outside the scene but rather a participant who is the reason for the work and necessarily a part of it. Everything in the scene is oriented first and foremost to the viewer, so as to bring the viewer into a relationship with it. Therefore, depth of field is not bounded by the frame: it includes the viewer in a true experience of space. 
               Thus, the art is only completed by viewing.
 This sense of space is not something filled or measured, but felt—an open stillness that invites presence. The space in the work becomes shared space—between object and observer, stillness and awareness, inside and outside. In this way, the act of viewing is not passive, but collaborative, where meaning unfolds not in the object alone, but in the open field between the viewer and what is seen.
             </p>

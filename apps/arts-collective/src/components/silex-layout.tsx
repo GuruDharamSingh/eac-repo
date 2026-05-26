@@ -1,10 +1,12 @@
 import { unstable_cache } from "next/cache";
 import type { OrgSummary } from "@/lib/org";
+import { getOrgWorkshopForTemplate } from "@/lib/org";
 import {
   downloadPublishedFile,
   parseSilexPublishedRef,
 } from "@/lib/silex-published";
 import { renderSilexHtmlWithEmbeds } from "@/components/silex-embeds";
+import { applyWorkshopTraits } from "@elkdonis/cms-bindings";
 
 /**
  * Strips <script> tags from artist-authored HTML.
@@ -67,7 +69,17 @@ export async function SilexLayout({ org }: { org: OrgSummary }) {
     );
   }
 
-  const safe = stripScripts(rewriteAssetUrls(html, org.slug));
+  let safe = stripScripts(rewriteAssetUrls(html, org.slug));
+
+  // If the published HTML contains workshop data-trait slots, bind live DB
+  // values from the org's primary published workshop into them.
+  if (safe.includes('data-trait=')) {
+    const workshopData = await getOrgWorkshopForTemplate(org.id);
+    if (workshopData) {
+      safe = applyWorkshopTraits(safe, workshopData);
+    }
+  }
+
   const content = await renderSilexHtmlWithEmbeds(safe, org);
 
   return (

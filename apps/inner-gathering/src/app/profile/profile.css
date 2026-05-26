@@ -1,0 +1,545 @@
+/* ─── Profile Page ── baroque/light theme, no Mantine ──────── */
+
+.profile-root {
+  min-height: 100vh;
+  background: #f9f5ee;
+  padding: 1.5rem 1rem 6rem;
+  font-family: 'Crimson Text', Georgia, serif;
+  color: #1e150a;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+/* ─── Save indicator ─────────────────────────────────────────── */
+.save-pill {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 200;
+  padding: 0.3rem 0.9rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.07em;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.save-pill[data-status="idle"] {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.save-pill[data-status="saving"] {
+  opacity: 1;
+  transform: translateY(0);
+  background: rgba(200, 145, 10, 0.12);
+  color: #a97408;
+  border: 1px solid rgba(200, 145, 10, 0.35);
+}
+.save-pill[data-status="saved"] {
+  opacity: 1;
+  transform: translateY(0);
+  background: rgba(82, 100, 58, 0.1);
+  color: #52643a;
+  border: 1px solid rgba(82, 100, 58, 0.3);
+}
+.save-pill[data-status="error"] {
+  opacity: 1;
+  transform: translateY(0);
+  background: rgba(112, 37, 28, 0.1);
+  color: #70251c;
+  border: 1px solid rgba(112, 37, 28, 0.3);
+}
+
+/* ─── Page header ────────────────────────────────────────────── */
+.profile-header {
+  max-width: 780px;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+.profile-header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  color: #1e150a;
+  margin: 0 0 0.4rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+.profile-header .tagline {
+  font-style: italic;
+  color: #6b4620;
+  font-size: 1.05rem;
+  margin: 0;
+}
+.profile-header .profile-own-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a97408;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(200, 145, 10, 0.4);
+  transition: color 0.15s;
+}
+.profile-header .profile-own-link:hover {
+  color: #7a4d0a;
+}
+
+/* ─── Baroque frame ──────────────────────────────────────────── */
+.baroque-frame {
+  position: relative;
+  max-width: 780px;
+  margin: 0 auto 2.75rem;
+  background: #fffdf8;
+  border: 1.5px solid rgba(200, 145, 10, 0.55);
+  padding: 2.25rem 2.25rem 2rem;
+  box-shadow:
+    0 0 0 5px #f9f5ee,
+    0 0 0 6.5px rgba(200, 145, 10, 0.2),
+    0 8px 32px rgba(30, 21, 10, 0.08);
+}
+/* Top-border ornament */
+.baroque-frame::before {
+  content: '✦';
+  position: absolute;
+  top: -0.58em;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f9f5ee;
+  padding: 0 0.45rem;
+  color: #c8910a;
+  font-size: 0.72rem;
+  line-height: 1.1;
+  pointer-events: none;
+}
+
+/* Section title row */
+.frame-head {
+  margin-bottom: 0.2rem;
+}
+.frame-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #c8910a;
+  margin: 0 0 0.2rem;
+  font-weight: 600;
+}
+.frame-note {
+  font-style: italic;
+  color: #7a5430;
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem;
+}
+.frame-rule {
+  border: none;
+  border-top: 1px solid rgba(200, 145, 10, 0.2);
+  margin: 1.5rem 0;
+}
+
+/* ─── Portrait / avatar ──────────────────────────────────────── */
+.portrait-row {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+.avatar-wrap {
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+}
+.avatar-wrap input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.avatar-circle {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 2px solid rgba(200, 145, 10, 0.55);
+  background: #f0e8d5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  color: #c8910a;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 21, 10, 0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.5rem;
+  pointer-events: none;
+}
+.avatar-wrap:hover .avatar-circle {
+  border-color: #c8910a;
+}
+.avatar-wrap:hover .avatar-overlay {
+  opacity: 1;
+}
+.avatar-uploading {
+  position: absolute;
+  inset: 0;
+  background: rgba(200, 145, 10, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a97408;
+  font-size: 0.65rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+}
+
+.portrait-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+/* ─── Field group ────────────────────────────────────────────── */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.field-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.67rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8a6438;
+}
+.field-input,
+.field-textarea {
+  border: none;
+  border-bottom: 1.5px solid rgba(200, 145, 10, 0.38);
+  background: transparent;
+  padding: 0.38rem 0;
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1.05rem;
+  color: #1e150a;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field-input:focus,
+.field-textarea:focus {
+  border-bottom-color: #c8910a;
+}
+.field-input::placeholder,
+.field-textarea::placeholder {
+  color: rgba(90, 50, 22, 0.32);
+  font-style: italic;
+}
+.field-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+.field-hint {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: rgba(100, 60, 20, 0.5);
+  margin-top: 0.1rem;
+}
+
+/* ─── Chip multi-select ──────────────────────────────────────── */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+.chip {
+  padding: 0.28rem 0.85rem;
+  border: 1px solid rgba(200, 145, 10, 0.38);
+  border-radius: 2rem;
+  background: transparent;
+  color: #5a3216;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  line-height: 1.35;
+  transition: all 0.14s;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: rgba(200, 145, 10, 0.7);
+  background: rgba(200, 145, 10, 0.06);
+  color: #3d1f0a;
+}
+.chip.active {
+  border-color: #c8910a;
+  background: rgba(200, 145, 10, 0.16);
+  color: #6b3d08;
+  font-weight: 600;
+}
+
+/* ─── Experience level toggle ────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid rgba(200, 145, 10, 0.35);
+  background: transparent;
+  border-radius: 2px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #5a3216;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.14s;
+  line-height: 1.25;
+}
+.toggle-btn:hover {
+  border-color: rgba(200, 145, 10, 0.7);
+  background: rgba(200, 145, 10, 0.05);
+}
+.toggle-btn.active {
+  border-color: #c8910a;
+  background: rgba(200, 145, 10, 0.15);
+  color: #6b3d08;
+  font-weight: 600;
+}
+.toggle-btn small {
+  display: block;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #7a5430;
+  font-weight: 400;
+  margin-top: 0.1rem;
+}
+.toggle-btn.active small {
+  color: #5a3216;
+}
+
+/* ─── Tag input ──────────────────────────────────────────────── */
+.tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-bottom: 1.5px solid rgba(200, 145, 10, 0.38);
+  padding: 0.38rem 0 0.38rem;
+  min-height: 2.4rem;
+  align-items: center;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+.tag-input-wrap:focus-within {
+  border-bottom-color: #c8910a;
+}
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  background: rgba(200, 145, 10, 0.14);
+  border: 1px solid rgba(200, 145, 10, 0.38);
+  border-radius: 2rem;
+  padding: 0.12rem 0.6rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.88rem;
+  color: #5a3216;
+}
+.tag-pill button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a97408;
+  padding: 0;
+  line-height: 1;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.12s;
+}
+.tag-pill button:hover {
+  color: #70251c;
+}
+.tag-text-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #1e150a;
+  min-width: 110px;
+  flex: 1;
+}
+.tag-text-input::placeholder {
+  color: rgba(90, 50, 22, 0.32);
+  font-style: italic;
+}
+
+/* ─── Custom checkbox ────────────────────────────────────────── */
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+  cursor: pointer;
+}
+.check-box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(200, 145, 10, 0.5);
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: all 0.14s;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: transparent;
+}
+.check-row input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.check-box.checked {
+  background: #c8910a;
+  border-color: #c8910a;
+  color: #fff;
+}
+.check-label {
+  flex: 1;
+}
+.check-label strong {
+  display: block;
+  font-weight: 600;
+  color: #2b1608;
+  font-size: 1rem;
+}
+.check-label span {
+  display: block;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #7a5430;
+}
+
+/* ─── Network links ──────────────────────────────────────────── */
+.network-links {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.network-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border: 1.5px solid rgba(200, 145, 10, 0.5);
+  color: #7a4d0a;
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all 0.14s;
+  background: transparent;
+}
+.network-link:hover {
+  background: rgba(200, 145, 10, 0.09);
+  border-color: #c8910a;
+  color: #5a3216;
+}
+
+/* ─── Status badge (is_stub) ─────────────────────────────────── */
+.profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 2rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.profile-status.listed {
+  background: rgba(82, 100, 58, 0.1);
+  color: #52643a;
+  border: 1px solid rgba(82, 100, 58, 0.3);
+}
+.profile-status.stub {
+  background: rgba(200, 145, 10, 0.1);
+  color: #a97408;
+  border: 1px solid rgba(200, 145, 10, 0.3);
+}
+
+/* ─── Loading state ──────────────────────────────────────────── */
+.profile-loading {
+  max-width: 780px;
+  margin: 4rem auto;
+  text-align: center;
+  font-style: italic;
+  color: #7a5430;
+}
+.profile-loading::after {
+  content: '';
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid rgba(200, 145, 10, 0.3);
+  border-top-color: #c8910a;
+  border-radius: 50%;
+  margin: 1rem auto 0;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .baroque-frame {
+    padding: 1.5rem 1.25rem 1.5rem;
+  }
+  .portrait-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .portrait-fields {
+    width: 100%;
+  }
+  .toggle-row {
+    flex-direction: column;
+  }
+}

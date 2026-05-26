@@ -4,6 +4,7 @@ import { DISCIPLINE_LABELS } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 
 type Artist = {
+  user_id: string;
   org_id: string;
   slug: string;
   name: string;
@@ -15,17 +16,30 @@ type Artist = {
 
 async function getArtists(): Promise<Artist[]> {
   try {
+    // Join on user_id (not org_id) — multiple members share org_id='elkdonis'
+    // Find each user's personal org slug via user_organizations (owner role first, then any)
     return await db<Artist[]>`
       SELECT
-        o.id   AS org_id,
-        o.slug AS slug,
-        o.name AS name,
+        ap.user_id,
+        ap.org_id,
+        COALESCE(own_org.slug, 'elkdonis') AS slug,
+        COALESCE(own_org.name, 'Elkdonis Arts Collective') AS name,
         ap.display_name,
         ap.city,
         ap.bio,
         ap.disciplines
-      FROM organizations o
-      JOIN artist_profiles ap ON ap.org_id = o.id
+      FROM artist_profiles ap
+      LEFT JOIN LATERAL (
+        SELECT o.slug, o.name
+        FROM user_organizations uo
+        JOIN organizations o ON o.id = uo.org_id
+        WHERE uo.user_id = ap.user_id
+          AND uo.role IN ('owner', 'guide')
+          AND o.id != 'elkdonis'
+        LIMIT 1
+      ) own_org ON true
+      WHERE ap.is_stub = false
+        AND ap.display_name IS NOT NULL
       ORDER BY ap.display_name ASC
     `;
   } catch {

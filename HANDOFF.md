@@ -1,157 +1,153 @@
-# Session Handoff — April 27, 2026
+# EAC Monorepo — Agent Handoff
 
-## What was done this session
-
-### 1. DB schema analysis — sidecar decision
-
-Reviewed every field the workshop template HTML files actually consume
-(`data-trait` attributes, CMS field comments in each `eac-ws-*.html`).
-
-**Decision:** workshop template data lives in a `workshop_pages` sidecar
-table (one row per `threads` row where `kind='workshop'`), not as more
-columns on `threads`. This matches the existing `artist_profiles` pattern.
-
-### 2. Field consolidation — duplicates resolved
-
-| Old / ambiguous name | Canonical name | Location |
-|---|---|---|
-| `capacity_max` | `attendee_limit` | `threads.attendee_limit` (already existed) |
-| `spots_remaining` | _(computed)_ | `attendee_limit − rsvp_count` at render time |
-| `price_full` | `price` + `currency` | `threads.price`, `threads.currency` (already existed) |
-| `description_long` | `body` | `threads.body` (already existed) |
-| `description_long_extra` | _(removed)_ | CSS clamp/expand on `threads.body` only — no second field |
-| `format` (in_person/online/hybrid) | `format` | migrated from `threads.is_online` boolean |
-| `registration_url` | `registration_url` | `workshop_pages.registration_url` |
-| `facilitator_*` | `author_id → artist_profiles` | EAC convention: thread author is the facilitator |
-
-### 3. Migration 038 — written and applied
-
-**File:** `packages/db/migrations/038_workshop_pages.sql`
-
-Two changes:
-
-**a. `threads.format` enum**
-- Replaces `threads.is_online` (boolean, now DEPRECATED).
-- Values: `in_person | online | hybrid`, default `online`.
-- Backfilled from existing `is_online` values.
-- `is_online` column kept for one migration cycle; drop in a future cleanup.
-
-**b. `workshop_pages` sidecar table** — new, all fields documented inline:
-- Identity: `subtitle`, `description_short`, `discipline`, `series_label`
-- Logistics: `level`, `language`, `session_count`, `session_duration_hrs`, `recurrence_label`, `location_address`, `accessibility_notes`
-- Pricing: `price_sliding_min`, `price_member`, `sliding_scale_note`
-- Registration: `registration_url`, `registration_deadline`, `registration_status`
-- Author: `author_note` (overrides `artist_profiles.bio` for this workshop only)
-- Media: `cover_image_url`, `gallery_image_urls` (JSONB), `promo_video_url`
-- SEO: `seo_title`, `seo_description`, `og_image_url`
-- Editor state: `optional_sections` (JSONB `{sectionId: boolean}` overrides)
-- `updated_at` trigger, check constraints on `level` and `registration_status`
-
-**Verified live:**
-```
-workshop_pages_pkey PRIMARY KEY btree (thread_id)
-FK: workshop_pages.thread_id → threads(id) ON DELETE CASCADE
-threads.format character varying ✓
-threads.is_online boolean (deprecated) ✓
-```
-
-### 4. Zod schemas updated
-
-**File:** `apps/arts-collective/src/lib/cms/schema.ts`
-
-- `workshopFormSchema`: `is_online: z.boolean()` → `format: z.enum(["in_person","online","hybrid"])`
-- `eventFormSchema`: same replacement
-- New `workshopPageSchema` — covers all `workshop_pages` sidecar fields
-- New `WorkshopPageInput` type exported
-
-### 5. Server action added
-
-**File:** `apps/arts-collective/src/lib/cms/actions.ts`
-
-- `createThreadAction` updated to write `format` instead of `is_online`
-- New `upsertWorkshopPageAction(input: WorkshopPageInput)` — INSERT … ON CONFLICT DO UPDATE, auth-checked, revalidates `/hub` and `/sites/[slug]`
-
-### 6. Create content dialog updated
-
-**File:** `apps/arts-collective/src/components/cms/create-content-dialog.tsx`
-
-- `ScheduleFields` component: online boolean toggle replaced with a 3-option
-  Format select (Online / In person / Hybrid)
-- Location and meeting URL fields conditionally shown based on format selection
-- All call sites updated
-
-### 7. Org feed type updated
-
-**File:** `apps/arts-collective/src/lib/org.ts`
-
-- `OrgFeedItem.is_online: boolean | null` → `format: "in_person" | "online" | "hybrid" | null`
-- Both `getOrgFeed` and `getFeaturedThread` queries updated
-
-### 8. Manifest `cmsFields` canonicalized
-
-**File:** `packages/silex-nextcloud-connector/src/templates/workshop/manifest.json`
-
-All `cmsFields` now use `table.column` notation that matches the actual DB
-schema: `threads.*`, `workshop_pages.*`, `artist_profiles.*`.
-Previously they used inconsistent `workshop.*` dot notation that matched nothing.
-
-### 9. workshop.schema.md rewritten
-
-**File:** `packages/silex-nextcloud-connector/src/templates/workshop/cms/workshop.schema.md`
-
-Full rewrite: naming conventions, per-table field maps, trait cross-reference,
-deferred items (checkout, testimonials, related workshops, discipline enum,
-co-facilitators).
+**Date:** 2026-05-21  
+**Context:** Soft-launch prep session. Summary of all work completed and what still needs doing.
 
 ---
 
-## Next session — Workshop CMS in the hub
+## What Was Completed This Session
 
-The `workshop_pages` sidecar and `upsertWorkshopPageAction` are ready.
-The next session should build the focused workshop editor accessible from the hub.
+### 1. Signup auto-provisioning (`packages/auth-server`)
 
-### Tasks in order
+Every new user who signs up now gets, in a single flow:
+- `user_organizations` rows for both `elkdonis` and `inner_group` (member role)
+- A stub `artist_profiles` row (`is_stub = true`, display_name from signup)
+- A welcome email via SendGrid (`packages/email/src/templates/welcome.tsx`)
 
-**1. Query helper in `org.ts`**
+Relevant files:
+- `packages/auth-server/src/api-routes.ts` — post-signup blocks, look for `Block 1` and `Block 2` comments
+- `packages/auth-server/tsup.config.ts` — `@elkdonis/email` added to `external`
+- `packages/email/src/index.ts` — `sendWelcomeEmail()` export
 
-Add `getWorkshopThreadsForOrg(orgId)` — returns threads where `kind='workshop'`
-left-joined with `workshop_pages` so the list page has all the data it needs.
+### 2. Migration 044 — `artist_profiles` multi-user fix
 
-**2. Route: `/hub/workshops/[orgSlug]`**
+`packages/db/migrations/044_member_signup_defaults.sql`
 
-Server component. Shows:
-- Org name + back link to `/hub`
-- List of existing workshop threads for that org (title, status, scheduled_at, registration_status from sidecar)
-- "New workshop" button — opens the existing `CreateContentDialog` with `defaultKind="workshop"`
-- Each row has an "Edit content" link → `/hub/workshops/[orgSlug]/[threadId]`
+- Dropped UNIQUE index on `artist_profiles(org_id)` (was preventing multiple users in the same org)
+- Added `is_stub BOOLEAN NOT NULL DEFAULT true` column
+- **Applied** ✓
 
-**3. Route: `/hub/workshops/[orgSlug]/[threadId]`**
+### 3. Migration 045 — `site_config` table
 
-The focused CMS form. Server component loads the thread + sidecar, passes to
-a `WorkshopPageForm` client component. Fields in rough tab order:
+`packages/db/migrations/045_site_config.sql`
 
-- **Core** — subtitle, description_short, discipline, series_label, recurrence_label
-- **Details** — level, language, session_count, session_duration_hrs, location_address
-- **Pricing** — price_sliding_min, price_member, sliding_scale_note
-- **Registration** — registration_url, registration_deadline, registration_status
-- **About** — accessibility_notes (the threads.body is edited via the existing rich-text dialog)
-- **Author note** — author_note (bio override)
-- **Optional sections** — toggle switches for schedule / gallery / testimonials / related (maps to `optional_sections` JSONB)
-- Save button calls `upsertWorkshopPageAction`
+- Creates `site_config (org_id, key, value JSONB)` with composite PK
+- Seeds defaults for `fundraising`, `featured_artist`, `initiative` for `org_id = 'elkdonis'`
+- **Applied** ✓
 
-**4. Hub `page.tsx` — add "Workshop content" button**
+### 4. Artists directory query fix (`apps/arts-collective`)
 
-In the "Website editor" section, next to / below the existing
-`SilexSurfaceControls` for each org, add a `Button` linking to
-`/hub/workshops/[org.slug]`. Label: "Workshop content".
-Only show it when the org has at least one workshop thread, or always show as
-an entry point (new workshop is there).
+`apps/arts-collective/src/app/artists/page.tsx`
 
-### Design constraint
-No new DB migrations next session. All fields are live.
-The form saves via `upsertWorkshopPageAction` which is already written and tested.
+Old JOIN `ON ap.org_id = o.id` was broken after multi-user per org. Fixed with LATERAL subquery on `user_id` to find each artist's personal org slug. Now only shows profiles where `is_stub = false`.
 
-### Open question to confirm with user before building the form
-- Should "New workshop" in the hub list page create the thread inline (dialog)
-  and immediately redirect to the sidecar edit form, or keep them as two
-  separate steps?
+### 5. inner-gathering artist profile editor
+
+- **New API:** `apps/inner-gathering/src/app/api/profile/route.ts`  
+  GET returns artist_profiles row for authenticated user.  
+  PATCH upserts the row, sets `is_stub = false`, mirrors display_name to users table.
+
+- **Account page updated:** `apps/inner-gathering/src/app/account/page.tsx`  
+  Added "Artist Directory" Paper section: Listed/Stub badge, city, disciplines MultiSelect (15 options), portfolio URL, Save button.
+
+### 6. `elkdonis-arts-collective` (port 3005) — auth routes
+
+`apps/elkdonis-arts-collective/src/app/api/auth/`
+- `signup/route.ts`, `login/route.ts`, `logout/route.ts`, `session/route.ts`
+
+All delegate to `@elkdonis/auth-server` (same pattern as all other apps).  
+`@elkdonis/auth-server` added to `apps/elkdonis-arts-collective/package.json`.
+
+### 7. `elkdonis-arts-collective` — admin panel
+
+- **API:** `apps/elkdonis-arts-collective/src/app/api/admin/site-config/route.ts`  
+  GET (public): returns single config key if `?key=` param is a known public key  
+  GET (admin): returns all keys (requires admin auth)  
+  PATCH: upserts a config key (admin only)  
+  Admin check: `EAC_ADMIN_EMAILS` env var (comma-separated) or `users.is_admin = true`
+
+- **UI:** `apps/elkdonis-arts-collective/src/app/admin/page.tsx`  
+  Three editable sections: Fundraising (with progress bar preview), Featured Artist, Current Initiative.  
+  Access at `http://localhost:3005/admin`
+
+### 8. `elkdonis-arts-collective` — data-driven landing sections
+
+All three landing sections now fetch live config on mount:
+
+| Component | Endpoint | Fallback |
+|-----------|----------|---------|
+| `FundraisingGoal.tsx` | `?key=fundraising` | Linktree URL, "Support Our Work" |
+| `FeaturedGrantProgram.tsx` | `?key=featured_artist` | Dana McCool / danamccool.jpg |
+| `FeatureInitiative.tsx` | `?key=initiative` | Existing static text |
+
+`FundraisingGoal` also renders a live progress bar when `raised > 0`.
+
+### 9. `JoinSection` component
+
+`apps/elkdonis-arts-collective/src/components/JoinSection.tsx`
+
+- Create Account / Sign In tab toggle
+- Matches the site's dark gold aesthetic (`contact-form` / `form-input` CSS classes)
+- On signup success: shows "Welcome to the Collective" confirmation  
+- On login success: shows "Signed in" + link to inner-gathering (localhost:3004)
+- Inserted into `page.tsx` between `<Philosophy />` and `<ContactForm />`
+
+---
+
+## Environment Variables Needed
+
+| Var | Where | Purpose |
+|-----|-------|---------|
+| `SENDGRID_API_KEY` | `.env` | Welcome emails — confirmed present |
+| `EMAIL_FROM` | `.env` | `info@em6860.elkdonis-arts.org` — confirmed present |
+| `EAC_ADMIN_EMAILS` | `.env` or container env | Comma-separated admin emails for `/admin` page. Falls back to `ADMIN_EMAIL`. |
+
+---
+
+## What Still Needs Doing
+
+### High priority (before soft launch)
+
+1. **Verify container rebuild** — `elkdonis-arts-collective` was rebuilt in this session. If it shows build errors, the most likely cause is pnpm not resolving `@elkdonis/auth-server` workspace symlink inside Docker. Check: `docker compose logs elkdonis-arts-collective`
+
+2. **Inner-gathering link in JoinSection** — `JoinSection.tsx` has the inner-gathering URL hardcoded as `http://localhost:3004`. Before production, replace with the real domain (`NEXT_PUBLIC_INNER_GATHERING_URL` env var).
+
+3. **Test the full signup flow:**
+   - Sign up via `/` on port 3005
+   - Verify welcome email arrives (check SendGrid activity feed)
+   - Sign in to inner-gathering (port 3004), go to `/account`
+   - Confirm "Artist Directory" section shows Stub badge
+   - Fill in city/disciplines, click Save → badge should change to Listed
+   - Verify profile appears on arts-collective artists page (port 3007)
+
+4. **Set `EAC_ADMIN_EMAILS`** in `.env` or in the `elkdonis-arts-collective` service's `environment:` block in `docker-compose.yml`, then test `/admin` at port 3005.
+
+### Medium priority
+
+5. **Workshop console** — No individual workshop detail page exists yet. The intended path is `/workshops/[orgSlug]/[workshopId]` in the arts-collective hub (port 3007), with session list, materials, recordings, and discussion thread. This is the next big build after soft launch.
+
+6. **Artist profile wizard** — There's a wizard in arts-collective (port 3007) but it's incomplete. The new `/api/profile` endpoint in inner-gathering can be the backend; the wizard flow should set `is_stub = false` when the artist submits.
+
+7. **Admin page nav link** — The `/admin` page at 3005 works but has no navigation link. Add a hidden link in `SiteNav` (visible only to logged-in admins) or use the URL directly for now.
+
+---
+
+## Key Architecture Reminders
+
+- **Two "arts" apps exist:**
+  - `elkdonis-arts-collective` (port 3005) — public NFP landing page
+  - `arts-collective` / `eac-arts-network` (port 3007) — member hub (Silex, artist profiles, workshop portal)
+
+- **`is_stub` controls directory visibility:** Only `artist_profiles` rows where `is_stub = false` appear on the public artists page. Every new signup creates a stub row automatically; it becomes a real listing when the artist saves their profile in inner-gathering or the wizard.
+
+- **Docker only** — never `pnpm dev` in this repo. All changes take effect after `docker compose up -d --build <service>`.
+
+- **Migration runner** — `docker compose exec admin pnpm --filter @elkdonis/db db:migrate`. Migrations are transactional; partial failures roll back.
+
+---
+
+## Reference Files
+
+- Full platform synthesis: `eac-repo/EAC_SYSTEM_SYNTHESIS.md`
+- Auth client/server pattern: `packages/auth-server/src/api-routes.ts`, `packages/auth-client/src/hooks.ts`
+- DB queries pattern: always filter by `org_id`; see `CLAUDE.md` for examples

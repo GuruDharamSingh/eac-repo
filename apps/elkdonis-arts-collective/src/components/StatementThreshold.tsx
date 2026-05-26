@@ -154,8 +154,8 @@ export function StatementThreshold({ onDismiss }: { onDismiss: () => void }) {
       // Drift particles
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const pd = particleData[i];
-        let px = posAttr.getX(i) + pd.velocity.x;
-        let py = posAttr.getY(i) + pd.velocity.y;
+        const px = posAttr.getX(i) + pd.velocity.x;
+        const py = posAttr.getY(i) + pd.velocity.y;
         const half = PARTICLE_SPREAD / 2;
         if (px > half || px < -half) pd.velocity.x *= -1;
         if (py > half || py < -half) pd.velocity.y *= -1;
@@ -263,7 +263,7 @@ export function StatementThreshold({ onDismiss }: { onDismiss: () => void }) {
         {/* Main statement */}
         <h1
           style={{
-            fontFamily: '"Cormorant Garamond", Georgia, serif',
+            fontFamily: 'var(--font-sans)',
             fontWeight: 300,
             fontSize: "clamp(2.8rem, 8vw, 7rem)",
             letterSpacing: "0.06em",
@@ -299,7 +299,7 @@ export function StatementThreshold({ onDismiss }: { onDismiss: () => void }) {
         {/* Prompt */}
         <p
           style={{
-            fontFamily: '"Cormorant Garamond", Georgia, serif',
+            fontFamily: 'var(--font-sans)',
             fontWeight: 300,
             fontStyle: "italic",
             fontSize: "clamp(0.85rem, 2vw, 1rem)",

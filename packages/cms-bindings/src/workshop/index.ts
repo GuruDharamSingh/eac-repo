@@ -37,4 +37,5 @@ export {
   buildScheduleHtml,
   buildGalleryHtml,
   renderWorkshopTemplate,
+  applyWorkshopTraits,
 } from "./render";

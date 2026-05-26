@@ -394,14 +394,14 @@ export function HomeClient({ upcomingMeetings, recentPosts }: HomeClientProps) {
         size={56}
         radius="sm"
         variant="filled"
-        color="ember"
+        color="eacSky"
         style={{
           position: "fixed",
           bottom: 96,
           right: 24,
           zIndex: 50,
-          boxShadow: "0 10px 28px rgba(43, 20, 7, 0.28)",
-          border: "2px solid #f0c98a",
+          boxShadow: "0 10px 28px rgba(1, 18, 78, 0.24)",
+          border: "2px solid #b79a55",
         }}
         onClick={() => router.push("/feed?create=true")}
       >

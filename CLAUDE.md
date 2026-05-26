@@ -5,14 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **multi-organization monorepo** for the Elkdonis Arts Collective - a self-hosted network of interconnected Next.js apps with shared authentication and content aggregation. Built for spiritual communities to share teachings, coordinate gatherings, and collaborate.
+This is a **multi-organization monorepo** for the Elkdonis Arts Collective - a self-hosted network of interconnected Next.js apps with shared authentication and content aggregation. Built for spiritual communities, art collectives, and educational groups to share teachings, coordinate gatherings, and collaborate.
 
 **Tech Stack:**
-- Next.js 15 (App Router) + React 19 + TypeScript
+- Next.js 16 (App Router) + React 19 + TypeScript
 - PostgreSQL 16 (single database, multi-tenant via `org_id` filtering)
 - Supabase GoTrue (authentication)
-- Nextcloud 29 (file storage)
+- Nextcloud 29 (file storage & CMS)
 - Redis (cache)
+- Silex (visual site builder integration)
 - Turborepo + pnpm workspaces
 - Mantine 8.3.2 (UI components)
 
@@ -27,7 +28,7 @@ pnpm install
 pnpm --filter @elkdonis/db build
 pnpm --filter @elkdonis/ui build
 
-# Start all Docker services (postgres, auth, apps, etc.)
+# Start all Docker services (postgres, auth, redis, apps, etc.)
 docker-compose up -d
 
 # Run database migrations
@@ -36,14 +37,13 @@ docker-compose exec admin pnpm --filter @elkdonis/db db:migrate
 
 ### Development
 ```bash
-# Start all apps in development mode (EXCEPT inner-gathering)
-# Note: inner-gathering ONLY runs in Docker to share the Docker network
+# Start all apps in development mode (Note: many apps require Docker for network sharing)
 pnpm dev
 
-# Start single app (NOT for inner-gathering)
+# Start single app
 cd apps/admin && pnpm dev
 
-# Start inner-gathering (Docker ONLY)
+# Start specific service in Docker
 docker compose up -d inner-gathering
 
 # Build all apps
@@ -122,22 +122,27 @@ const posts = await db`
 ```
 apps/
 ├── admin/               Port 3000 - Central dashboard for monitoring/approving content
-├── forum/               Port 3003 - Cross-org content aggregator (public feed)
 ├── blog-sunjay/         Port 3001 - Personal blog (org: sunjay)
 ├── blog-guru-dharam/    Port 3002 - Personal blog (org: guru-dharam)
-└── inner-gathering/     Port 3004 - Mobile-first community app (org: elkdonis) 
+├── forum/               Port 3003 - Cross-org content aggregator (public feed)
+├── inner-gathering/     Port 3004 - Mobile-first community app (org: elkdonis)
+├── elkdonis-arts-collective/ Port 3005 - Main collective landing site
+├── amrit-canada/        Port 3006 - Amrit Vela Toronto (org: amrit-vela)
+├── arts-collective/     Port 3007 - Artist network & subdomain management
+├── ifac/                Port 3008 - International Fine Art Collectors (org: ifac)
+├── art-auction/         Port 3009 - Art marketplace and auctions
+├── fourth-way-book-readers/ Port 3010 - Reading groups & book programs (org: fourth-way)
+└── blog-tester/         Port 3011 - Sandbox for blog features
 ```
 
 Each app operates independently but queries the same database filtered by its `org_id`.
-
-
 
 ### Shared Packages
 
 ```
 packages/
 ├── db/                  PostgreSQL client + schema management + migrations
-├── auth/                Supabase authentication wrapper
+├── auth/                Supabase authentication wrapper (deprecated for client/server)
 ├── auth-server/         Server-side auth utilities
 ├── auth-client/         Client-side auth utilities
 ├── types/               Centralized TypeScript definitions
@@ -149,141 +154,44 @@ packages/
 ├── blog-server/         Blog-specific server functionality
 ├── nextcloud/           Nextcloud API client
 ├── config/              Shared ESLint/Prettier config
-└── events/              Event system utilities
+├── email/               SendGrid / SMTP email service
+├── redis/               Redis client and caching logic
+├── commerce/            Shared commerce/checkout logic
+├── payments/            Payment gateway integrations (eTransfer, etc.)
+├── checkout/            Unified checkout UI components
+├── silex-nextcloud-connector/ Silex extension for Nextcloud storage
+├── live-editor/         In-browser site editing components
+├── reading-wizard/      Book reading session logic
+└── three/               Three.js / 3D visualization utilities
 ```
 
 **Critical package: `@elkdonis/db`**
 - `src/client.ts` - PostgreSQL connection setup
-- `src/schemas.ts` - Baseline table definitions for fresh bootstrap (has drift against live DB; see schema-snapshot-*.sql for canonical state)
-- `src/events.ts` - Activity audit log (wide-net logging + admin veto actions)
-- `scripts/migrate.mjs` - Transactional migration runner (reads `migrations/*.sql`, tracks via `app_schema_migrations`)
-- `migrations/*.sql` - Schema migrations, applied in lex order
-
-### Forum Content Model
-
-Forum surfaces content **directly** from the source tables — there is NO queue, NO copy table, NO approval step. Individual apps write to `posts`/`meetings`/`replies` with `org_id`; the forum app reads across orgs with SQL. Admins exert control through moderation actions on `events` (`content_hidden`, `visibility_override`, `content_pinned`, `content_locked`) rather than gating publication. See `packages/db/EVENT_SYSTEM.md` for the wide-net audit model.
-
-### Database Schema Patterns
-
-**Core tables:**
-- `organizations` - Communities within the network
-- `users` - Shared user accounts (UUID from Supabase)
-- `user_organizations` - Membership + roles (guide/member/viewer)
-- `topics` - Hierarchical tags for content
-
-**Content tables (all have `org_id`):**
-- `posts` - Blog posts (title, body, slug, status, visibility, share_to_forum)
-- `meetings` - Events (scheduling, location, RSVP tracking)
-- `replies` - Polymorphic comments (can reply to posts/meetings/replies)
-- `media` - Nextcloud-backed file attachments
-
-**System tables:**
-- `events` - Activity audit log for all actions
-- `app_schema_migrations` - Migration runner tracking (filename + SHA-256 checksum)
-
-**Forum engagement tables:**
-- `reactions` - Likes/upvotes (polymorphic)
-- `watches` - Thread subscriptions
-- `notifications` - User alerts
-- `bookmarks` - Saved content
-- `flags` - Content reports
-- `moderation_log` - Audit trail
-
-## Code Conventions
-
-### Always Filter by org_id
-When querying content tables, **always filter by `org_id`** to ensure data isolation:
-```typescript
-// Good
-const posts = await db`SELECT * FROM posts WHERE org_id = ${orgId}`;
-
-// Bad - will return data from all organizations
-const posts = await db`SELECT * FROM posts`;
-```
-
-### Creating Content
-Always include `org_id` when inserting:
-```typescript
-import { db } from '@elkdonis/db';
-import { nanoid } from 'nanoid';
-
-const post = {
-  id: nanoid(),
-  orgId: 'sunjay',
-  authorId: userId,
-  title: 'My Post',
-  slug: 'my-post',
-  body: 'Content here',
-  status: 'draft',
-  shareToForum: false
-};
-
-await db`INSERT INTO posts ${db(post)}`;
-```
-
-### Using Transactions
-The `postgres` package supports transactions for multi-step operations:
-```typescript
-await db.begin(async (tx) => {
-  await tx`INSERT INTO posts ${db(post)}`;
-  await tx`INSERT INTO post_topics ${db(topicRelations)}`;
-});
-```
-
-### Authentication
-Authentication is handled by `@elkdonis/auth` package using Supabase GoTrue. User identity is stored as UUID from Supabase auth system.
-
-**Note:** Authentication is partially implemented - some areas still use placeholder user IDs.
-
-## Monorepo Workflow
-
-### Turborepo Task Execution
-Tasks defined in `turbo.json`:
-- `build` - Builds packages/apps with dependency graph awareness
-- `dev` - Runs development servers (no caching, persistent)
-- `lint` - Runs ESLint
-- `check-types` - TypeScript type checking
-
-**Key behavior:** Tasks with `dependsOn: ["^build"]` will automatically build dependencies first.
-
-### Adding Dependencies
-```bash
-# Add to workspace root
-pnpm add <package> -w
-
-# Add to specific app/package
-pnpm --filter @elkdonis/admin add <package>
-
-# Add dev dependency
-pnpm --filter @elkdonis/ui add -D <package>
-```
-
-### Creating New Packages
-1. Create directory in `packages/`
-2. Add `package.json` with `name: "@elkdonis/<name>"`
-3. Configure `tsup.config.ts` for build
-4. Export from `src/index.ts`
-5. Build: `pnpm --filter @elkdonis/<name> build`
-
-## Important Files
-
-- **`docker-compose.yml`** - Complete stack definition (all services and ports)
-- **`turbo.json`** - Build task configuration
-- **`pnpm-workspace.yaml`** - Workspace definition
-- **`packages/db/scripts/migrate.mjs`** - Transactional migration runner
-- **`packages/db/migrations/*.sql`** - Migration source of truth (runner-applied)
-- **`packages/db/schema-snapshot-*.sql`** - pg_dump snapshot, canonical DB state reference
+- `src/schemas.ts` - Baseline table definitions
+- `src/events.ts` - Activity audit log
+- `scripts/migrate.mjs` - Transactional migration runner
+- `migrations/*.sql` - Schema migrations
 
 ## Access Points
 
 When services are running:
-- Admin Dashboard: http://localhost:3000
-- Sunjay's Blog: http://localhost:3001
-- Guru Dharam's Blog: http://localhost:3002
-- Forum: http://localhost:3003
-- Inner Gathering: http://localhost:3004
-- Nextcloud: http://localhost:8080
-- Supabase Auth: http://localhost:9999
+- **Admin Dashboard:** http://localhost:3000
+- **Sunjay's Blog:** http://localhost:3001
+- **Guru Dharam's Blog:** http://localhost:3002
+- **Forum:** http://localhost:3003
+- **Inner Gathering:** http://localhost:3004
+- **Main Collective:** http://localhost:3005
+- **Amrit Vela Toronto:** http://localhost:3006
+- **Arts Network:** http://localhost:3007
+- **IFAC:** http://localhost:3008
+- **Art Auction:** http://localhost:3009
+- **Book Readers:** http://localhost:3010
+- **Blog Tester:** http://localhost:3011
+- **Silex Editor:** http://localhost:6805
+- **Nextcloud:** http://localhost:8080
+- **Supabase Auth:** http://localhost:9999
+- **Supabase Rest:** http://localhost:9998
+- **Supabase Realtime:** http://localhost:4000
 
 ## Current Implementation Status
 

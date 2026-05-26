@@ -10,7 +10,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    }
+    },
+    "./eac-theme.css": "./src/eac-theme.css",
+    "./styles.css": "./src/styles.css"
   },
   "scripts": {
     "build": "tsup",
@@ -18,13 +20,16 @@
     "type-check": "tsc --noEmit"
   },
   "files": [
-    "dist/**"
+    "dist/**",
+    "src/**/*.css"
   ],
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@marsidev/react-turnstile": "^1.4.1",
     "@elkdonis/hooks": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
@@ -44,9 +49,14 @@
     "@tiptap/extension-image": "^2.8.0",
     "@tiptap/extension-link": "^2.8.0",
     "@tiptap/extension-placeholder": "^2.8.0",
+    "@tiptap/extension-table": "^2.8.0",
+    "@tiptap/extension-table-cell": "^2.8.0",
+    "@tiptap/extension-table-header": "^2.8.0",
+    "@tiptap/extension-table-row": "^2.8.0",
     "@tiptap/extension-text-align": "^2.8.0",
     "@tiptap/extension-text-style": "^2.8.0",
     "@tiptap/extension-underline": "^2.8.0",
+    "@tiptap/extension-youtube": "^2.8.0",
     "@tiptap/pm": "^2.8.0",
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",

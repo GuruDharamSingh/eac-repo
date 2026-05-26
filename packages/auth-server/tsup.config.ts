@@ -12,6 +12,7 @@ export default defineConfig({
     'next/headers',
     'next/server',
     '@elkdonis/db',
+    '@elkdonis/email',
     '@elkdonis/redis',
   ],
 });

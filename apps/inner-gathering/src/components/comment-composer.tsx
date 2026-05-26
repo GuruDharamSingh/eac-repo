@@ -20,7 +20,10 @@ interface ReplyData {
 }
 
 interface CommentComposerProps {
+  /** Meeting id (when threadKind='meeting') or post id (when 'post'). */
   meetingId: string;
+  /** Which thread kind owns this comment thread. Default 'meeting'. */
+  threadKind?: 'meeting' | 'post';
   parentId?: string | null;
   compact?: boolean;
   onSubmitted: (reply: ReplyData) => void;
@@ -29,6 +32,7 @@ interface CommentComposerProps {
 
 export function CommentComposer({
   meetingId,
+  threadKind = 'meeting',
   parentId = null,
   compact = false,
   onSubmitted,
@@ -45,7 +49,7 @@ export function CommentComposer({
     setError(null);
 
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/replies`, {
+      const res = await fetch(`/api/${threadKind}s/${meetingId}/replies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: content.trim(), parentId }),

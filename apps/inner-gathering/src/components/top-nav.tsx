@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video } from "lucide-react";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video, Palette } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -65,6 +65,13 @@ const navItems: NavItem[] = [
     match: (pathname) => pathname.startsWith("/live"),
   },
 ];
+
+const profileItem: NavItem = {
+  icon: Palette,
+  label: "My Profile",
+  href: "/profile",
+  match: (pathname) => pathname.startsWith("/profile"),
+};
 
 const accountItem: NavItem = {
   icon: User,
@@ -135,7 +142,7 @@ export function TopNav() {
           size={56}
           radius="sm"
           variant="filled"
-          color="ember"
+          color="eacSky"
           onClick={opened ? close : open}
           aria-label="Menu"
           style={{
@@ -143,8 +150,8 @@ export function TopNav() {
             bottom: 24,
             left: 24,
             zIndex: 50,
-            boxShadow: "0 10px 28px rgba(43, 20, 7, 0.35)",
-            border: "2px solid #f0c98a",
+            boxShadow: "0 10px 28px rgba(1, 18, 78, 0.28)",
+            border: "2px solid #b79a55",
           }}
         >
           {opened ? <X size={24} /> : <Menu size={24} />}
@@ -161,7 +168,7 @@ export function TopNav() {
         overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
         styles={{
           content: {
-            background: "linear-gradient(180deg, #fff8ec 0%, #f4e2bd 100%)",
+            background: "linear-gradient(180deg, #fffdf8 0%, #f3eadc 100%)",
             borderRight: "3px double var(--ig-gold)",
           },
           body: { padding: 0 },
@@ -208,6 +215,15 @@ export function TopNav() {
               }
               leftSection={<Bell size={20} />}
               active={pathname.startsWith("/notifications")}
+              variant="light"
+              color="archive"
+              style={{ borderRadius: 4 }}
+            />
+            <NavLink
+              onClick={() => handleNavigate(profileItem.href)}
+              label={profileItem.label}
+              leftSection={<profileItem.icon size={20} />}
+              active={profileItem.match(pathname)}
               variant="light"
               color="archive"
               style={{ borderRadius: 4 }}

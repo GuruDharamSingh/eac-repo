@@ -1,5 +1,3 @@
-'use server';
-
 import { nanoid } from 'nanoid';
 import { db, Events } from '@elkdonis/db';
 import type { Post } from '@elkdonis/types';

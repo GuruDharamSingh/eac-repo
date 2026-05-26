@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LogOut, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, LogOut, Sparkles, RefreshCw, UserCircle } from "lucide-react";
 import type { Meeting, Post } from "@elkdonis/types";
 import type { QuestionPoll } from "@elkdonis/services";
 import { useRealtimeFeed } from "@elkdonis/hooks";
@@ -14,7 +14,7 @@ import { BlackHoleDropzone } from "./black-hole-dropzone";
 import { ContentForm } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
-import { LiveFeedWidget } from "./live-feed-widget";
+import { ProfileModal } from "./profile-modal";
 import { supabase } from "@/lib/supabase";
 import {
   ActionIcon,
@@ -48,10 +48,12 @@ interface FeedClientProps {
 export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmin = false }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [feed, setFeed] = useState(initialFeed);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
 
   // Sync feed state when server data changes (e.g., after revalidation)
   useEffect(() => {
@@ -59,7 +61,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
   }, [initialFeed]);
 
   // Realtime feed subscription
-  const { hasNewItems, newItemCount, consumeNewItems, clearNewItems } = useRealtimeFeed({
+  const { hasNewItems, newItemCount, clearNewItems } = useRealtimeFeed({
     client: supabase,
     orgId: "inner_group",
   });
@@ -114,11 +116,106 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
     }
   };
 
+  const isPinned = (item: { type: "meeting" | "post" | "poll"; data: Meeting | Post | QuestionPoll }) => {
+    if (item.type === "poll") return false;
+    return Boolean((item.data as any).metadata?.feedPinned);
+  };
+
+  const setItemPinned = (
+    currentFeed: typeof feed,
+    threadId: string,
+    pinned: boolean
+  ) => currentFeed.map((item) => {
+    if (item.data.id !== threadId || item.type === "poll") return item;
+    return {
+      ...item,
+      data: {
+        ...(item.data as any),
+        metadata: {
+          ...((item.data as any).metadata ?? {}),
+          feedPinned: pinned,
+        },
+      },
+    };
+  });
+
+  const handleTogglePin = async (threadId: string, nextPinned: boolean) => {
+    const previousFeed = feed;
+    setPinningThreadId(threadId);
+    setFeed((currentFeed) => setItemPinned(currentFeed, threadId, nextPinned));
+
+    try {
+      const response = await fetch(`/api/content/${threadId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedPinned: nextPinned }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to update pinned state");
+      }
+
+      notifications.show({
+        color: "green",
+        title: nextPinned ? "Pinned above feed" : "Unpinned from feature",
+        message: nextPinned ? "This thread is now featured above the feed." : "This thread has returned to the ordinary feed.",
+      });
+      router.refresh();
+      clearNewItems();
+    } catch (error) {
+      setFeed(previousFeed);
+      notifications.show({
+        color: "red",
+        title: "Could not update pin",
+        message: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setPinningThreadId(null);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();
   };
+
+  const pinnedFeed = feed.filter(isPinned);
+  const standardFeed = feed.filter((item) => !isPinned(item));
+
+  const renderFeedItem = (item: (typeof feed)[number], index: number, pinnedSection = false) =>
+    item.type === "meeting" ? (
+      <MeetingCard
+        key={`${pinnedSection ? "pinned" : "meeting"}-${item.data.id}-${index}`}
+        meeting={item.data as Meeting}
+        onViewAttendees={handleViewAttendees}
+        canDelete={isAdmin}
+        deleting={deletingThreadId === item.data.id}
+        onDelete={() => handleDeleteThread(item.data.id, "meeting")}
+        canPin={isAdmin}
+        pinned={isPinned(item)}
+        pinning={pinningThreadId === item.data.id}
+        onTogglePin={() => handleTogglePin(item.data.id, !isPinned(item))}
+      />
+    ) : item.type === "poll" ? (
+      <PollCard
+        key={`poll-${item.data.id}-${index}`}
+        poll={item.data as QuestionPoll}
+      />
+    ) : (
+      <PostCard
+        key={`${pinnedSection ? "pinned" : "post"}-${item.data.id}-${index}`}
+        post={item.data as Post}
+        canDelete={isAdmin}
+        deleting={deletingThreadId === item.data.id}
+        onDelete={() => handleDeleteThread(item.data.id, "post")}
+        canPin={isAdmin}
+        pinned={isPinned(item)}
+        pinning={pinningThreadId === item.data.id}
+        onTogglePin={() => handleTogglePin(item.data.id, !isPinned(item))}
+      />
+    );
 
   return (
     <Box className="archive-shell">
@@ -151,15 +248,28 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
                 Inner Gathering
               </Title>
             </Group>
-            <Button
-              variant="subtle"
-              size="sm"
-              style={{ color: '#f0c98a' }}
-              leftSection={<LogOut size={16} />}
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
+            <Group gap="xs">
+              {userId && (
+                <ActionIcon
+                  variant="subtle"
+                  size="md"
+                  style={{ color: '#f0c98a' }}
+                  onClick={() => setProfileOpen(true)}
+                  title="Edit profile"
+                >
+                  <UserCircle size={20} />
+                </ActionIcon>
+              )}
+              <Button
+                variant="subtle"
+                size="sm"
+                style={{ color: '#f0c98a' }}
+                leftSection={<LogOut size={16} />}
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </Group>
           </Group>
         </Container>
       </Paper>
@@ -183,9 +293,6 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
 
           <Divider className="archive-divider" size="sm" />
 
-          {/* Live Channel Widget */}
-          <LiveFeedWidget />
-
           <BlackHoleDropzone
             userId={userId ?? null}
             onPublished={() => {
@@ -197,6 +304,20 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           {/* Recurring Meetings Carousel */}
           {recurringMeetings.length > 0 && (
             <RecurringMeetingsCarousel meetings={recurringMeetings} />
+          )}
+
+          {pinnedFeed.length > 0 && (
+            <section className="pinned-feed-section" aria-label="Pinned feed feature">
+              <Group justify="space-between" align="end" mb="xs">
+                <Box>
+                  <Text className="archive-kicker">Pinned</Text>
+                  <Title order={3} className="archive-title">Featured from the feed</Title>
+                </Box>
+              </Group>
+              <Stack gap="md">
+                {pinnedFeed.map((item, index) => renderFeedItem(item, index, true))}
+              </Stack>
+            </section>
           )}
 
           {/* New Items Banner */}
@@ -225,37 +346,15 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           </Transition>
 
           {/* Feed Items */}
-          {feed.length === 0 ? (
+          {standardFeed.length === 0 ? (
             <Text c="dimmed" ta="center" py="xl">
-              The table is quiet. Drop the first note, meeting, or fragment when it is ready.
+              {pinnedFeed.length > 0
+                ? "All current feed items are pinned above."
+                : "The table is quiet. Drop the first note, meeting, or fragment when it is ready."}
             </Text>
           ) : (
             <Stack gap="md">
-              {feed.map((item, index) =>
-                item.type === "meeting" ? (
-                  <MeetingCard
-                    key={`meeting-${item.data.id}-${index}`}
-                    meeting={item.data as Meeting}
-                    onViewAttendees={handleViewAttendees}
-                    canDelete={isAdmin}
-                    deleting={deletingThreadId === item.data.id}
-                    onDelete={() => handleDeleteThread(item.data.id, "meeting")}
-                  />
-                ) : item.type === "poll" ? (
-                  <PollCard
-                    key={`poll-${item.data.id}-${index}`}
-                    poll={item.data as QuestionPoll}
-                  />
-                ) : (
-                  <PostCard
-                    key={`post-${item.data.id}-${index}`}
-                    post={item.data as Post}
-                    canDelete={isAdmin}
-                    deleting={deletingThreadId === item.data.id}
-                    onDelete={() => handleDeleteThread(item.data.id, "post")}
-                  />
-                )
-              )}
+              {standardFeed.map((item, index) => renderFeedItem(item, index))}
             </Stack>
           )}
         </Stack>
@@ -265,14 +364,14 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           size={56}
           radius="sm"
           variant="filled"
-          color="ember"
+          color="eacSky"
           style={{
             position: 'fixed',
             bottom: 24,
             right: 24,
             zIndex: 50,
-            boxShadow: '0 4px 20px rgba(180, 80, 10, 0.45)',
-            border: '2px solid #f0a040',
+            boxShadow: '0 4px 20px rgba(1, 18, 78, 0.28)',
+            border: '2px solid #b79a55',
           }}
           onClick={openDrawer}
         >
@@ -285,6 +384,11 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           onClose={closeDrawer}
           position="bottom"
           size="90%"
+          classNames={{
+            content: "create-content-drawer",
+            header: "create-content-drawer__header",
+            body: "create-content-drawer__body",
+          }}
           title={
             <div>
               <Title order={4}>Make a Notice</Title>
@@ -294,18 +398,20 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
             </div>
           }
         >
-          <ScrollArea h="calc(90vh - 8rem)">
+          <ScrollArea h="calc(90vh - 8rem)" className="create-content-scroll">
             {userId ? (
-              <ContentForm
-                orgId="inner_group"
-                userId={userId}
-                isCmsSite
-                onPublished={() => {
-                  closeDrawer();
-                  router.refresh();
-                  clearNewItems();
-                }}
-              />
+              <Box className="create-content-surface">
+                <ContentForm
+                  orgId="inner_group"
+                  userId={userId}
+                  isCmsSite
+                  onPublished={() => {
+                    closeDrawer();
+                    router.refresh();
+                    clearNewItems();
+                  }}
+                />
+              </Box>
             ) : (
               <Text c="dimmed" ta="center" py="xl">
                 Sign in to create content.
@@ -319,6 +425,12 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           meeting={selectedMeeting}
           opened={attendeeModalOpened}
           onClose={() => setAttendeeModalOpened(false)}
+        />
+
+        {/* Profile Modal */}
+        <ProfileModal
+          opened={profileOpen}
+          onClose={() => setProfileOpen(false)}
         />
       </Container>
     </Box>

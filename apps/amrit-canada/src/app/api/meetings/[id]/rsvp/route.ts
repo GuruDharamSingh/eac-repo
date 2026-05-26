@@ -17,10 +17,15 @@ export async function POST(
   const userId = session.user.db_user_id ?? session.user.id;
 
   try {
-    // Check meeting exists and RSVP is enabled
     const [meeting] = await db`
-      SELECT id, is_rsvp_enabled FROM threads
-      WHERE kind = 'meeting' AND id = ${meetingId} AND status = 'published'
+      SELECT
+        t.id, t.title, t.is_rsvp_enabled, t.scheduled_at, t.section,
+        t.author_id AS guide_id,
+        u.email AS guide_email,
+        COALESCE(u.display_name, u.email) AS guide_name
+      FROM threads t
+      LEFT JOIN users u ON u.id = t.author_id
+      WHERE t.kind = 'meeting' AND t.id = ${meetingId} AND t.status = 'published'
       LIMIT 1
     `;
 
@@ -28,11 +33,9 @@ export async function POST(
       return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
     }
 
-    // Upsert RSVP via thread_rsvps
     const existing = await db`
       SELECT thread_id FROM thread_rsvps
-      WHERE thread_id = ${meetingId}
-        AND user_id = ${userId}
+      WHERE thread_id = ${meetingId} AND user_id = ${userId}
       LIMIT 1
     `;
 
@@ -44,6 +47,38 @@ export async function POST(
       INSERT INTO thread_rsvps (thread_id, user_id, status)
       VALUES (${meetingId}, ${userId}, 'yes')
     `;
+
+    // Look up the attendee's display info
+    const [attendee] = await db`
+      SELECT COALESCE(display_name, email) AS name, email
+      FROM users WHERE id = ${userId}
+    `;
+
+    const [{ count }] = await db`
+      SELECT COUNT(*) as count FROM thread_rsvps
+      WHERE thread_id = ${meetingId} AND status = 'yes'
+    `;
+
+    // Notify guide non-blocking
+    void (async () => {
+      try {
+        const { sendRsvpNotification } = await import('@elkdonis/email');
+        const guideEmail = meeting.guide_email as string | null;
+        if (!guideEmail) return;
+
+        await sendRsvpNotification(guideEmail, {
+          guestName: (attendee?.name as string) ?? 'A member',
+          guestEmail: (attendee?.email as string) ?? undefined,
+          meetingTitle: meeting.title as string,
+          section: meeting.section ? String(meeting.section) : undefined,
+          scheduledAt: meeting.scheduled_at ? String(meeting.scheduled_at) : undefined,
+          orgName: 'Amrit Canada',
+          rsvpCount: parseInt(count as string, 10),
+        });
+      } catch (emailErr) {
+        console.error('[amrit-canada] auth rsvp email failed:', emailErr);
+      }
+    })();
 
     return NextResponse.json({ status: 'attending' });
   } catch (err) {

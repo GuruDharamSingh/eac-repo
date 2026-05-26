@@ -35,6 +35,7 @@ coverage
 
 # Build Outputs
 .next/
+.next*/
 out/
 build
 dist
@@ -66,3 +67,6 @@ logs/
 # Local Nextcloud / instance-specific overrides
 docker-compose.override.yml
 .local-backup/
+
+# Playwright test output
+test-results/

@@ -2,9 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 
+interface InitiativeConfig {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  cta?: string;
+}
+
 export function FeatureInitiative() {
   const [visible, setVisible] = useState(false);
+  const [cfg, setCfg] = useState<InitiativeConfig>({});
   const ref = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/site-config?key=initiative')
+      .then((r) => r.json())
+      .then((d) => { if (d.value) setCfg(d.value); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -15,6 +30,11 @@ export function FeatureInitiative() {
     return () => obs.disconnect();
   }, []);
 
+  const eyebrow = cfg.eyebrow ?? "Current Offerings - Spring 2026";
+  const heading = cfg.heading ?? "Residency, Studios, Galleries";
+  const body = cfg.body ?? "The collective has just purchased some beautiful secluded land close to conservation areas, and we are very excited to be developing from the ground up, a permaculture design principles aligned compound. The compound will feature permaculture food forest, artist residences, studios, and galleries. Horseback riding and hiking trails are nearby.";
+  const cta = cfg.cta ?? "Make an Inquiry";
+
   return (
     <section id="initiative" ref={ref} className="initiative-section">
       <div className="section-inner">
@@ -22,39 +42,29 @@ export function FeatureInitiative() {
           className={`reveal ${visible ? "in-view" : ""}`}
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}
         >
-          {/* Text */}
           <div>
-            <p className="section-eyebrow">Featured Initiative</p>
-            <h2 className="section-heading">Paratheatre Lab Series</h2>
+            <p className="section-eyebrow">{eyebrow}</p>
+            <h2 className="section-heading">{heading}</h2>
             <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0" } as React.CSSProperties} />
             <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "1.25rem" }}>
-              A six-session structured laboratory in Paratheatre — the practice of using theatre
-              as a form of inner work. Participants are guided through attention exercises,
-              movement rituals, and sound-based group presence work drawn from the Fourth Way
-              tradition and Grotowski's Theatre of Sources.
-            </p>
-            <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8 }}>
-              Open to artists, seekers, and anyone who has felt the gap between their
-              ordinary life and the quality of experience they know is possible.
-              No prior theatre experience required — presence is the only prerequisite.
+              {body}
             </p>
             <a href="#contact" className="cta-btn" style={{ marginTop: "2rem", display: "inline-flex" }}>
-              Register Interest
+              {cta}
             </a>
           </div>
 
-          {/* Decorative panel */}
           <div className="initiative-panel" aria-hidden="true">
             <div className="initiative-panel-inner">
               <div className="initiative-diamond" />
-              <p className="initiative-stat">6</p>
-              <p className="initiative-stat-label">Sessions</p>
+              <p className="initiative-stat">Food</p>
+              <p className="initiative-stat-label">Forest</p>
               <div className="initiative-divider" />
-              <p className="initiative-stat">12</p>
-              <p className="initiative-stat-label">Participants Max</p>
+              <p className="initiative-stat">Artist</p>
+              <p className="initiative-stat-label">Residences</p>
               <div className="initiative-divider" />
-              <p className="initiative-stat">Sliding</p>
-              <p className="initiative-stat-label">Scale Fee</p>
+              <p className="initiative-stat">Studios</p>
+              <p className="initiative-stat-label">Galleries</p>
             </div>
           </div>
         </div>

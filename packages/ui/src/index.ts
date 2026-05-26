@@ -67,3 +67,24 @@ export type { TalkRoomProps, TalkMessage } from './nextcloud/talk-room';
 
 export { NextcloudLink } from './nextcloud/nextcloud-link';
 export type { NextcloudLinkProps } from './nextcloud/nextcloud-link';
+
+// Universal auth UI (sign-in / sign-up form, authwall modal, RequireAuth gate)
+export { AuthForm, AuthWall, RequireAuth } from './components/AuthForm';
+export type {
+  AuthFormProps,
+  AuthWallProps,
+  RequireAuthProps,
+} from './components/AuthForm';
+
+// Elkdonis Arts Collective shared landing / signup components (Mantine-free)
+export { EacAtmosphere } from './components/EacAtmosphere';
+export type { EacAtmosphereProps } from './components/EacAtmosphere';
+
+export { BaroqueSignup } from './components/BaroqueSignup';
+export type { BaroqueSignupProps } from './components/BaroqueSignup';
+
+export { InquiryPrompt } from './components/InquiryPrompt';
+export type { InquiryPromptProps } from './components/InquiryPrompt';
+
+export { StickyJoinBar } from './components/StickyJoinBar';
+export type { StickyJoinBarProps } from './components/StickyJoinBar';

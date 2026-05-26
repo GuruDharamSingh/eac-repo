@@ -1,0 +1,38 @@
+{
+  "name": "blog-tester",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3011 --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start --port 3011",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/blog-client": "workspace:*",
+    "@elkdonis/blog-server": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "@elkdonis/ui": "workspace:*",
+    "@mantine/core": "^8.3.2",
+    "@mantine/dropzone": "^8.3.4",
+    "@mantine/hooks": "^8.3.2",
+    "@mantine/tiptap": "^8.3.4",
+    "date-fns": "^3.6.0",
+    "nanoid": "^5.0.0",
+    "next": "16.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

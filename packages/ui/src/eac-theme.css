@@ -1,0 +1,440 @@
+/* ================================================================
+   Elkdonis Arts Collective — shared design tokens
+   Imported by: landing (elkdonis-arts-collective), inner-gathering,
+  and any future EAC surface. Warm white background, dark sky blue
+  text, and muted gold trim.
+
+   Fonts: each consuming app must serve
+     /fonts/RELIGATH-Demo.otf
+   from its public/ folder. Cormorant Garamond is loaded from Google.
+================================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap");
+
+@font-face {
+  font-family: "Religath";
+  src: url("/fonts/RELIGATH-Demo.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Surfaces */
+  --eac-bg: #fbf7ef;
+  --eac-bg-warm: #fffdf8;
+  --eac-bg-deep: #d9e5f6;
+  --eac-panel: rgba(255, 253, 248, 0.82);
+  --eac-panel-border: rgba(183, 154, 85, 0.28);
+
+  /* Ink (dark sky blue on bright bg) */
+  --eac-ink: #022278;
+  --eac-ink-soft: #063179;
+  --eac-ink-muted: #104b8C;
+
+  /* Minimal accents */
+  --eac-gilt: #b79a55;
+  --eac-gilt-deep: #8f763c;
+  --eac-gilt-glow: rgba(183, 154, 85, 0.22);
+  --eac-oxblood: #6e5f4d;
+  --eac-moss: #64726a;
+  --eac-ember: #b79a55;
+
+  /* Typography */
+  --eac-font-religath: "Religath", "Cormorant Garamond", Georgia, serif;
+  --eac-font-serif: "Cormorant Garamond", Georgia, serif;
+  --eac-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Layout */
+  --eac-content-max: 1100px;
+  --eac-radius: 6px;
+}
+
+/* ================================================================
+   Shared atmosphere background
+   Warm center, pale concentric ring, cooler outer edge.
+================================================================ */
+
+.eac-atmosphere-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  color: var(--eac-ink);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 253, 248, 0.98) 0 13%, rgba(248, 241, 230, 0.84) 13% 27%, transparent 48%),
+    radial-gradient(circle at 18% 4%, rgba(183, 154, 85, 0.12), transparent 24rem),
+    linear-gradient(180deg, #fffdf8 0%, #fbf7ef 42%, #f3eadc 100%);
+}
+
+.eac-atmosphere-shell::before,
+.eac-atmosphere-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.eac-atmosphere-shell::before {
+  inset: -10rem;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255, 253, 248, 0.72) 0 8rem, rgba(255, 253, 248, 0) 16rem),
+    radial-gradient(circle at 88% 8%, rgba(2, 34, 120, 0.08), transparent 28rem);
+  filter: blur(10px);
+  opacity: 0.72;
+}
+
+.eac-atmosphere-shell::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(183, 154, 85, 0.08), transparent);
+  mix-blend-mode: normal;
+  opacity: 0.5;
+}
+
+.eac-atmosphere-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-atmosphere-shell::before {
+    filter: none;
+  }
+
+  .eac-atmosphere-shell::after {
+    mix-blend-mode: normal;
+  }
+}
+
+/* ================================================================
+   Baroque gilt frame — used by BaroqueSignup and other ceremonial cards.
+================================================================ */
+
+.eac-baroque-frame {
+  position: relative;
+  background: var(--eac-panel);
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid var(--eac-gilt);
+  border-radius: var(--eac-radius);
+  box-shadow:
+    0 0 0 6px var(--eac-bg-warm),
+    0 0 0 7px var(--eac-gilt),
+    0 24px 60px -20px rgba(60, 30, 4, 0.28);
+  background-image:
+    linear-gradient(var(--eac-panel), var(--eac-panel)),
+    linear-gradient(135deg, var(--eac-gilt) 0%, #f0db9d 40%, var(--eac-gilt-deep) 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.eac-baroque-frame::before,
+.eac-baroque-frame::after {
+  content: "";
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  /* Inline gilt corner flourish as data-uri SVG */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56' fill='none'><path d='M2 2 H22 M2 2 V22' stroke='%23c6a45a' stroke-width='1.5'/><path d='M2 2 Q12 12 22 2' stroke='%238b6b1f' stroke-width='0.8' fill='none'/><path d='M2 2 Q12 12 2 22' stroke='%238b6b1f' stroke-width='0.8' fill='none'/><circle cx='14' cy='14' r='2' fill='%23c6a45a'/></svg>");
+}
+
+.eac-baroque-frame::before {
+  top: -4px;
+  left: -4px;
+}
+
+.eac-baroque-frame::after {
+  top: -4px;
+  right: -4px;
+  transform: scaleX(-1);
+}
+
+.eac-baroque-frame > .eac-baroque-corners-bottom {
+  position: absolute;
+  inset: auto -4px -4px -4px;
+  height: 56px;
+  pointer-events: none;
+}
+
+.eac-baroque-corners-bottom::before,
+.eac-baroque-corners-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 56px;
+  height: 56px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56' fill='none'><path d='M2 54 H22 M2 54 V34' stroke='%23c6a45a' stroke-width='1.5'/><path d='M2 54 Q12 44 22 54' stroke='%238b6b1f' stroke-width='0.8' fill='none'/><path d='M2 54 Q12 44 2 34' stroke='%238b6b1f' stroke-width='0.8' fill='none'/><circle cx='14' cy='42' r='2' fill='%23c6a45a'/></svg>");
+}
+
+.eac-baroque-corners-bottom::before {
+  left: 0;
+}
+
+.eac-baroque-corners-bottom::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+/* ================================================================
+   Common building blocks
+================================================================ */
+
+.eac-eyebrow {
+  font-family: var(--eac-font-serif);
+  font-size: 0.75rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--eac-gilt-deep);
+  margin: 0;
+}
+
+.eac-title {
+  font-family: var(--eac-font-religath);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  color: var(--eac-ink);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  margin: 0.5rem 0 1rem;
+  text-align: center;
+}
+
+.eac-subtitle {
+  font-family: var(--eac-font-serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--eac-ink-soft);
+  text-align: center;
+  margin: 0 0 1.5rem;
+  line-height: 1.7;
+}
+
+.eac-gilt-rule {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--eac-gilt), transparent);
+  border: none;
+  margin: 1.5rem auto;
+}
+
+.eac-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.eac-label {
+  font-family: var(--eac-font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eac-ink-soft);
+}
+
+.eac-input,
+.eac-textarea {
+  font-family: var(--eac-font-serif);
+  font-size: 1.05rem;
+  color: var(--eac-ink);
+  background: var(--eac-bg-warm);
+  border: 1px solid var(--eac-panel-border);
+  border-bottom: 1.5px solid var(--eac-gilt);
+  border-radius: 2px;
+  padding: 0.7rem 0.85rem;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  width: 100%;
+}
+
+.eac-input:focus,
+.eac-textarea:focus {
+  outline: none;
+  border-color: var(--eac-gilt-deep);
+  box-shadow: 0 0 0 3px var(--eac-gilt-glow);
+  background: #fff;
+}
+
+.eac-textarea {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.eac-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--eac-font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eac-bg);
+  background: var(--eac-ink);
+  border: 1px solid var(--eac-gilt);
+  border-radius: 2px;
+  padding: 0.9rem 1.6rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.05s;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.eac-cta:hover:not(:disabled) {
+  background: var(--eac-gilt-deep);
+  color: #fff;
+}
+
+.eac-cta:active {
+  transform: translateY(1px);
+}
+
+.eac-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eac-cta--ghost {
+  background: transparent;
+  color: var(--eac-ink);
+}
+
+.eac-cta--ghost:hover:not(:disabled) {
+  background: var(--eac-bg-warm);
+  color: var(--eac-ink);
+}
+
+.eac-error {
+  font-family: var(--eac-font-sans);
+  font-size: 0.85rem;
+  color: var(--eac-oxblood);
+  margin: 0.5rem 0 1rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(139, 26, 26, 0.06);
+  border-left: 3px solid var(--eac-oxblood);
+}
+
+.eac-success-card {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background: rgba(198, 164, 90, 0.08);
+  border: 1px solid var(--eac-gilt);
+  border-radius: var(--eac-radius);
+}
+
+.eac-success-card__title {
+  font-family: var(--eac-font-religath);
+  font-size: 1.6rem;
+  color: var(--eac-gilt-deep);
+  margin: 0 0 0.75rem;
+}
+
+.eac-success-card__body {
+  font-family: var(--eac-font-serif);
+  font-size: 1rem;
+  color: var(--eac-ink-soft);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Mode toggle (sign-in / sign-up tabs) */
+.eac-mode-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--eac-bg-warm);
+  border: 1px solid var(--eac-panel-border);
+  border-radius: 2px;
+  padding: 3px;
+  margin-bottom: 1.5rem;
+}
+
+.eac-mode-toggle__btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.55rem 0.75rem;
+  font-family: var(--eac-font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--eac-ink-muted);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.eac-mode-toggle__btn--active {
+  background: var(--eac-ink);
+  color: var(--eac-bg-warm);
+}
+
+/* Sticky join bar */
+.eac-sticky-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  background: linear-gradient(180deg, rgba(2, 34, 120, 0.97), rgba(1, 18, 78, 0.99));
+  border-top: 1px solid var(--eac-gilt);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.28);
+  padding: 0.9rem clamp(1rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  transform: translateY(0);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  opacity: 1;
+}
+
+.eac-sticky-bar[data-hidden="true"] {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.eac-sticky-bar__copy {
+  font-family: var(--eac-font-religath);
+  font-size: clamp(0.95rem, 2.5vw, 1.2rem);
+  letter-spacing: 0.1em;
+  color: #f0db9d;
+  margin: 0;
+}
+
+.eac-sticky-bar__cta {
+  font-family: var(--eac-font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #161610;
+  background: var(--eac-gilt);
+  border: 1px solid #f0db9d;
+  border-radius: 2px;
+  padding: 0.65rem 1.3rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.eac-sticky-bar__cta:hover {
+  background: #f0db9d;
+}
+
+@media (max-width: 560px) {
+  .eac-sticky-bar {
+    padding: 0.7rem 1rem;
+    gap: 0.75rem;
+  }
+  .eac-sticky-bar__copy {
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+  }
+}

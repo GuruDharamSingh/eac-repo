@@ -1,5 +1,3 @@
-'use server';
-
 // Auth exports
 export { requireBlogOwner, checkBlogOwner } from './auth';
 export type { BlogConfig, BlogAuthContext } from './auth';

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Omicron" format="2">
+	<advance width="824"/>
+	<unicode hex="039F"/>
+	<anchor x="0" y="0" name="bottom"/>
+	<anchor x="0" y="0" name="center"/>
+	<anchor x="0" y="0" name="ogonek"/>
+	<anchor x="0" y="0" name="top"/>
+	<anchor x="0" y="0" name="topleft"/>
+	<anchor x="0" y="0" name="topright"/>
+	<outline>
+		<component base="O"/>
+	</outline>
+	<lib>
+		<dict>
+			<key>com.schriftgestaltung.Glyphs.ComponentInfo</key>
+			<array>
+				<dict>
+					<key>alignment</key>
+					<integer>-1</integer>
+					<key>index</key>
+					<integer>0</integer>
+					<key>name</key>
+					<string>O</string>
+				</dict>
+			</array>
+		</dict>
+	</lib>
+</glyph>

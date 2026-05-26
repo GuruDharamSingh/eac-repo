@@ -1,5 +1,3 @@
-'use server';
-
 import { redirect } from 'next/navigation';
 import { getServerAuth } from '@elkdonis/auth-server';
 import { db } from '@elkdonis/db';

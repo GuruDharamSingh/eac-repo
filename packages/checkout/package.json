@@ -1,0 +1,29 @@
+{
+  "name": "@elkdonis/checkout",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components": "./src/components/index.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/payments": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "next": "^15 || ^16"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5.3.3"
+  }
+}

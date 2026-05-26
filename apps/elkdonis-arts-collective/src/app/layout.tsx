@@ -1,12 +1,21 @@
 import "@mantine/core/styles.css";
+import "@elkdonis/ui/eac-theme.css";
 import "./globals.css";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import type { Metadata } from "next";
+import localFont from "next/font/local";
+import { EacAtmosphere } from "@elkdonis/ui";
+
+const venture = localFont({
+  src: "../../public/fonts/Venture-nRqOR.otf",
+  display: "swap",
+  variable: "--font-venture",
+});
 
 export const metadata: Metadata = {
-  title: "Elkdonis Arts Collective | Fourth-Way Mutual Aid Society",
+  title: "Elkdonis Arts Collective",
   description:
-    "A Fourth-Way Mutual Aid Society. Performance and visual arts group working to restore the necessity of art in life for all.",
+    "Performance and visual arts group working to restore the necessity of art in life for all.",
   keywords: [
     "fourth way",
     "objective art",
@@ -17,7 +26,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Elkdonis Arts Collective",
-    description: "A Fourth-Way Mutual Aid Society for objective artists",
+    description: "Performance and visual arts group working to restore the necessity of art in life for all.",
     type: "website",
   },
 };
@@ -31,32 +40,37 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="dark" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body suppressHydrationWarning>
-        <MantineProvider
-          defaultColorScheme="dark"
-          theme={{
-            primaryColor: "violet",
-            fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
-            headings: {
-              fontFamily:
-                '"Cormorant Garamond", Georgia, "Times New Roman", serif',
-            },
-            defaultRadius: "md",
-          }}
-        >
-          {children}
-        </MantineProvider>
+      <body className={venture.variable} suppressHydrationWarning>
+        <EacAtmosphere>
+          <MantineProvider
+            defaultColorScheme="dark"
+            theme={{
+              primaryColor: "eacSky",
+              colors: {
+                eacSky: [
+                  "#f4f7ff",
+                  "#dce6ff",
+                  "#b8caf5",
+                  "#86a2dd",
+                  "#5278bd",
+                  "#104b8C",
+                  "#063179",
+                  "#022278",
+                  "#01124E",
+                  "#020a2f",
+                ],
+              },
+              fontFamily: 'var(--font-venture), "Venture", serif',
+              headings: {
+                fontFamily: 'var(--font-venture), "Venture", serif',
+              },
+              defaultRadius: "md",
+            }}
+          >
+            {children}
+          </MantineProvider>
+        </EacAtmosphere>
       </body>
     </html>
   );

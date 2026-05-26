@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@elkdonis/db";
+
 const ORG_ID = "elkdonis";
 
 export async function POST(req: NextRequest) {
@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { db } = await import("@elkdonis/db");
+
     await db`
       INSERT INTO contacts (id, org_id, email, name, message, source)
       VALUES (
@@ -38,6 +40,24 @@ export async function POST(req: NextRequest) {
         ${"landing-page"}
       )
     `;
+
+    // Fire email non-blocking
+    void (async () => {
+      try {
+        const { sendContactNotification } = await import("@elkdonis/email");
+        const ownerEmail =
+          process.env.EAC_OWNER_EMAIL ?? "info@elkdonis-arts.org";
+        await sendContactNotification(ownerEmail, {
+          senderName: name?.trim() || trimmed,
+          senderEmail: trimmed,
+          message: message?.trim() || undefined,
+          orgName: "Elkdonis Arts Collective",
+          source: "landing-page",
+        });
+      } catch (emailErr) {
+        console.error("[eac] contact email failed:", emailErr);
+      }
+    })();
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {

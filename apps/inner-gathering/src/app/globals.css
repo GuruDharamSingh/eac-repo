@@ -2,18 +2,18 @@
 @tailwind utilities;
 
 :root {
-  --ig-parchment: #fdf6e3;
-  --ig-paper: #fffcf4;
-  --ig-paper-deep: #f4e2bd;
-  --ig-ink: #2b1608;
-  --ig-umber: #5a3216;
-  --ig-muted: #8a6542;
-  --ig-gold: #c8910a;
-  --ig-ember: #d45c08;
-  --ig-moss: #52643a;
-  --ig-oxblood: #70251c;
-  --ig-smoke: #15100c;
-  --ig-border: #c8a06a;
+  --ig-parchment: #fbf7ef;
+  --ig-paper: #fffdf8;
+  --ig-paper-deep: #f3eadc;
+  --ig-ink: #022278;
+  --ig-umber: #063179;
+  --ig-muted: #104b8C;
+  --ig-gold: #b79a55;
+  --ig-ember: #8f763c;
+  --ig-moss: #64726a;
+  --ig-oxblood: #6e5f4d;
+  --ig-smoke: #01124E;
+  --ig-border: #b79a55;
 }
 
 /* Base styles */
@@ -47,23 +47,27 @@ h1, h2, h3, h4, h5, h6 {
 /* Parchment card border glow */
 .parchment-card {
   border-color: var(--ig-border) !important;
-  background: linear-gradient(160deg, #fffcf4 0%, #fef5e1 100%) !important;
-  box-shadow: 0 2px 8px rgba(110, 60, 10, 0.12) !important;
+  background: linear-gradient(160deg, #fffdf8 0%, #fbf7ef 100%) !important;
+  box-shadow: 0 2px 8px rgba(1, 18, 78, 0.08) !important;
 }
 
 .archive-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% -10%, rgba(200, 145, 10, 0.16), transparent 30rem),
-    linear-gradient(180deg, #fff8ec 0%, var(--ig-parchment) 42%, #f4e5c6 100%);
+    radial-gradient(circle at 12% -10%, rgba(183, 154, 85, 0.12), transparent 30rem),
+    linear-gradient(180deg, #fffdf8 0%, var(--ig-parchment) 48%, #f3eadc 100%);
   color: var(--ig-ink);
 }
 
 .archive-topbar {
-  background: linear-gradient(135deg, #1b1009 0%, #3d1f0a 52%, #1b1009 100%) !important;
-  border-bottom: 3px double var(--ig-gold) !important;
+  background: linear-gradient(90deg, #01124E 0%, #022278 54%, #063179 100%) !important;
+  border-bottom: 1px solid rgba(183, 154, 85, 0.5) !important;
   border-radius: 0 !important;
-  color: #fdf0d0;
+  color: #fffdf8 !important;
+}
+
+.archive-topbar :is(.mantine-Text-root, .mantine-Title-root, .mantine-Button-root, .mantine-ActionIcon-root) {
+  color: #fffdf8 !important;
 }
 
 .archive-page-header {
@@ -72,7 +76,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .archive-kicker {
-  color: var(--ig-ember);
+  color: var(--ig-gold);
   font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -94,17 +98,17 @@ h1, h2, h3, h4, h5, h6 {
 
 .archive-card {
   border-color: var(--ig-border) !important;
-  background: linear-gradient(160deg, var(--ig-paper) 0%, #f9edcf 100%) !important;
-  box-shadow: 0 8px 24px rgba(72, 37, 11, 0.1) !important;
+  background: linear-gradient(160deg, var(--ig-paper) 0%, #fbf7ef 100%) !important;
+  box-shadow: 0 8px 24px rgba(1, 18, 78, 0.08) !important;
 }
 
 .archive-card-dark {
-  border-color: #8f641f !important;
+  border-color: rgba(183, 154, 85, 0.32) !important;
   background:
-    linear-gradient(145deg, rgba(253, 240, 208, 0.06), transparent 45%),
-    linear-gradient(135deg, #17100b 0%, #3a1f10 58%, #5b2b11 100%) !important;
-  color: #fff3d8 !important;
-  box-shadow: 0 12px 34px rgba(43, 20, 7, 0.26) !important;
+    linear-gradient(145deg, rgba(255, 253, 248, 0.06), transparent 45%),
+    linear-gradient(135deg, #022278 0%, #063179 100%) !important;
+  color: #fffdf8 !important;
+  box-shadow: 0 12px 34px rgba(1, 18, 78, 0.18) !important;
 }
 
 .archive-tile {
@@ -115,7 +119,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .archive-tile:hover {
   border-color: var(--ig-gold) !important;
-  box-shadow: 0 8px 20px rgba(72, 37, 11, 0.12) !important;
+  box-shadow: 0 8px 20px rgba(1, 18, 78, 0.1) !important;
   transform: translateY(-1px);
 }
 
@@ -124,9 +128,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .archive-sigil {
-  background: linear-gradient(160deg, var(--ig-ember), #8c3705) !important;
-  border: 1px solid rgba(255, 236, 216, 0.45) !important;
-  color: #fff8ec !important;
+  background: linear-gradient(160deg, var(--ig-gold), #8f763c) !important;
+  border: 1px solid rgba(255, 253, 248, 0.58) !important;
+  color: #01124E !important;
 }
 
 .archive-input-panel {
@@ -170,11 +174,436 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .archive-button-dark {
-  background: linear-gradient(160deg, var(--ig-ember), #8c3705) !important;
-  border: 1px solid #f0c98a !important;
-  color: #fff8ec !important;
+  background: #022278 !important;
+  border: 1px solid var(--ig-gold) !important;
+  color: #fffdf8 !important;
 }
 
 .archive-button-subtle {
   color: var(--ig-umber) !important;
+}
+
+.pinned-feed-section {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(183, 154, 85, 0.36);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.82), rgba(243, 234, 220, 0.64));
+  box-shadow: 0 14px 30px rgba(1, 18, 78, 0.08);
+}
+
+.pinned-feed-section .parchment-card {
+  background: rgba(255, 253, 248, 0.86) !important;
+  border-color: rgba(183, 154, 85, 0.52) !important;
+}
+
+/* ================================================================
+   Minimalist override layer (2026-05-22)
+   Free-form, borderless, padding-reduced. Sections separate via
+   background-color fades rather than hard outlines. Form text uses
+   Basteleur for a hand-set, unhurried feel.
+================================================================ */
+
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Moonlight.woff2") format("woff2"),
+       url("/fonts/Basteleur-Moonlight.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Bold.woff2") format("woff2"),
+       url("/fonts/Basteleur-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --ig-font-basteleur: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  /* Tighter spacing scale */
+  --mantine-spacing-xs: 0.35rem;
+  --mantine-spacing-sm: 0.55rem;
+  --mantine-spacing-md: 0.85rem;
+  --mantine-spacing-lg: 1.1rem;
+  --mantine-spacing-xl: 1.5rem;
+}
+
+/* Soft section fades — wrap a <section className="ig-section ig-section--warm"> etc.
+   to suggest a new area through background, not borders. */
+.ig-section {
+  background: transparent;
+  padding: clamp(1rem, 3vw, 1.75rem) clamp(0.75rem, 3vw, 1.5rem);
+}
+.ig-section--paper { background: var(--ig-paper); }
+.ig-section--parchment { background: var(--ig-parchment); }
+.ig-section--warm { background: #f6efe2; }
+.ig-section--cool { background: #eef3f7; }
+.ig-section--deep { background: #f3eadc; }
+.ig-fade-top {
+  background-image: linear-gradient(180deg, transparent 0%, currentColor 100%);
+}
+.ig-fade-bottom {
+  background-image: linear-gradient(0deg, transparent 0%, currentColor 100%);
+}
+
+/* Strip outlines/shadows on the box-like classes that pervade the app */
+.archive-card,
+.archive-card-dark,
+.archive-tile,
+.archive-input-panel,
+.parchment-card,
+.archive-page-header {
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background-image: none !important;
+}
+
+.archive-card,
+.archive-tile,
+.parchment-card {
+  background: transparent !important;
+}
+.archive-card-dark {
+  background: #022278 !important;
+}
+
+/* Mantine surface defaults: no borders, no shadow, tight radius */
+.mantine-Paper-root,
+.mantine-Card-root {
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* Reduce default Mantine paddings on common containers */
+.mantine-Paper-root,
+.mantine-Card-root,
+.mantine-Container-root {
+  padding: 0.6rem !important;
+}
+
+/* Inputs: no boxes — quiet underline, Basteleur text */
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-PasswordInput-input,
+.mantine-Select-input,
+.mantine-NumberInput-input,
+.mantine-DateInput-input,
+.mantine-DateTimePicker-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+textarea {
+  font-family: var(--ig-font-basteleur) !important;
+  font-size: 1.05rem !important;
+  letter-spacing: 0.01em;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(2, 34, 120, 0.18) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0.4rem 0.25rem !important;
+  transition: border-color 200ms ease;
+}
+
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus,
+.mantine-PasswordInput-input:focus,
+.mantine-Select-input:focus,
+.mantine-NumberInput-input:focus,
+input:focus,
+textarea:focus {
+  outline: none !important;
+  border-bottom-color: var(--ig-gold) !important;
+}
+
+/* Form labels quiet down too */
+.mantine-TextInput-label,
+.mantine-Textarea-label,
+.mantine-Select-label,
+.mantine-PasswordInput-label,
+.mantine-NumberInput-label,
+.mantine-Checkbox-label,
+.mantine-Radio-label {
+  font-family: var(--ig-font-basteleur) !important;
+  font-weight: 400 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ig-muted) !important;
+  margin-bottom: 0.2rem !important;
+}
+
+/* Buttons: still readable but flat */
+.mantine-Button-root {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+.mantine-Button-root[data-variant="outline"],
+.mantine-Button-root[data-variant="default"] {
+  background: transparent !important;
+}
+
+/* Divider lines fade rather than slice */
+.mantine-Divider-root {
+  border-color: rgba(183, 154, 85, 0.24) !important;
+}
+
+/* Modals / popovers lose their card chrome */
+.mantine-Modal-content,
+.mantine-Popover-dropdown,
+.mantine-HoverCard-dropdown {
+  border: 0 !important;
+  box-shadow: 0 12px 40px -20px rgba(1, 18, 78, 0.22) !important;
+  border-radius: 0 !important;
+  background: var(--ig-paper) !important;
+}
+
+/* Avatars stay round (people, not boxes) */
+.mantine-Avatar-root {
+  border: 0 !important;
+}
+
+/* Tighter list/stack gaps by default */
+.mantine-Stack-root {
+  gap: 0.6rem !important;
+}
+.mantine-Group-root {
+  gap: 0.5rem !important;
+}
+
+/* The body itself: gentle warm wash so sections can fade in/out */
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 253, 248, 0.96) 0%, transparent 32rem),
+    linear-gradient(180deg, #fffdf8 0%, var(--ig-parchment) 45%, #f3eadc 100%) !important;
+  color: var(--ig-ink) !important;
+}
+
+.mantine-AppShell-main,
+.mantine-AppShell-root {
+  background: transparent !important;
+  color: var(--ig-ink) !important;
+}
+
+.mantine-Text-root,
+.mantine-Title-root,
+.mantine-Input-input,
+.mantine-Button-root[data-variant="subtle"],
+.mantine-ActionIcon-root[data-variant="subtle"] {
+  color: var(--ig-ink) !important;
+}
+
+/* Custom comment/post body text reads better at slightly larger size in this minimal layout */
+.mantine-Text-root {
+  line-height: 1.55;
+}
+
+/* Requested EAC blue secondary system and earthy-gold feed card trim */
+.parchment-card,
+.archive-card {
+  border: 1px solid rgba(143, 118, 60, 0.5) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 253, 248, 0.64) !important;
+  box-shadow: 0 12px 28px rgba(1, 18, 78, 0.05) !important;
+}
+
+.archive-card-dark {
+  border: 1px solid rgba(183, 154, 85, 0.52) !important;
+  border-radius: 6px !important;
+  background: linear-gradient(135deg, #022278 0%, #063179 100%) !important;
+  box-shadow: 0 14px 32px rgba(1, 18, 78, 0.14) !important;
+}
+
+.archive-topbar,
+.archive-topbar.mantine-Paper-root {
+  background: linear-gradient(90deg, #01124E 0%, #022278 54%, #063179 100%) !important;
+  border-bottom: 1px solid rgba(183, 154, 85, 0.54) !important;
+  box-shadow: 0 10px 26px rgba(1, 18, 78, 0.16) !important;
+}
+
+/* Restore visible menu backgrounds, especially in Create Content */
+.create-content-form .mantine-Select-input,
+.create-content-form .mantine-DateTimePicker-input,
+.create-content-form .mantine-NumberInput-input,
+.create-content-form .mantine-SegmentedControl-root {
+  background: #104b8C !important;
+  border: 1px solid rgba(183, 154, 85, 0.52) !important;
+  border-radius: 6px !important;
+  color: #fffdf8 !important;
+  box-shadow: 0 8px 18px rgba(1, 18, 78, 0.12) !important;
+}
+
+.create-content-form .mantine-Select-input::placeholder,
+.create-content-form .mantine-DateTimePicker-input::placeholder,
+.create-content-form .mantine-NumberInput-input::placeholder {
+  color: rgba(255, 253, 248, 0.78) !important;
+}
+
+.create-content-form .mantine-Select-section,
+.create-content-form .mantine-DateTimePicker-section,
+.create-content-form .mantine-NumberInput-section,
+.create-content-form .mantine-SegmentedControl-label {
+  color: #fffdf8 !important;
+}
+
+.create-content-form .mantine-SegmentedControl-indicator {
+  background: #022278 !important;
+  border: 1px solid rgba(183, 154, 85, 0.46) !important;
+}
+
+.mantine-Select-dropdown,
+.mantine-Combobox-dropdown,
+.mantine-DateTimePicker-dropdown,
+.mantine-Popover-dropdown,
+.mantine-Menu-dropdown {
+  background: #104b8C !important;
+  border: 1px solid rgba(183, 154, 85, 0.56) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 16px 34px rgba(1, 18, 78, 0.24) !important;
+  color: #fffdf8 !important;
+}
+
+.mantine-Combobox-option,
+.mantine-Menu-item,
+.mantine-DatePickerInput-calendarHeaderControl,
+.mantine-DatePickerInput-calendarHeaderLevel,
+.mantine-DatePickerInput-weekday,
+.mantine-DatePickerInput-day {
+  color: #fffdf8 !important;
+}
+
+.mantine-Combobox-option:hover,
+.mantine-Combobox-option[data-combobox-selected],
+.mantine-Menu-item:hover,
+.mantine-DatePickerInput-calendarHeaderControl:hover,
+.mantine-DatePickerInput-day:hover,
+.mantine-DatePickerInput-day[data-selected] {
+  background: #022278 !important;
+  color: #fffdf8 !important;
+}
+
+/* Bottom-right Create Content drawer */
+.create-content-drawer {
+  background: linear-gradient(180deg, #104b8C 0%, #063179 100%) !important;
+  border-top: 1px solid rgba(183, 154, 85, 0.58) !important;
+  box-shadow: 0 -18px 46px rgba(1, 18, 78, 0.28) !important;
+  color: #fffdf8 !important;
+}
+
+.create-content-drawer__header,
+.create-content-drawer__body {
+  background: transparent !important;
+  color: #fffdf8 !important;
+}
+
+.create-content-drawer__header {
+  border-bottom: 1px solid rgba(183, 154, 85, 0.38) !important;
+}
+
+.create-content-drawer :is(.mantine-Title-root, .mantine-Text-root, .mantine-CloseButton-root) {
+  color: #fffdf8 !important;
+}
+
+.create-content-scroll {
+  background: transparent !important;
+}
+
+.create-content-surface {
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border: 1px solid rgba(183, 154, 85, 0.42);
+  border-radius: 8px;
+  background: rgba(1, 18, 78, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 253, 248, 0.12);
+}
+
+.create-content-surface .mantine-Paper-root,
+.create-content-surface .mantine-Card-root {
+  background: rgba(16, 75, 140, 0.72) !important;
+  border: 1px solid rgba(183, 154, 85, 0.42) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 24px rgba(1, 18, 78, 0.14) !important;
+}
+
+.create-content-surface :is(.mantine-Text-root, .mantine-Title-root, .mantine-Divider-label, .mantine-Switch-label, .mantine-Switch-description) {
+  color: #fffdf8 !important;
+}
+
+.create-content-surface .mantine-Divider-root {
+  border-color: rgba(183, 154, 85, 0.44) !important;
+}
+
+.create-content-surface :is(.mantine-TextInput-label, .mantine-Textarea-label, .mantine-NumberInput-label, .mantine-DateTimePicker-label) {
+  color: rgba(255, 253, 248, 0.9) !important;
+}
+
+.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input) {
+  background: rgba(255, 253, 248, 0.94) !important;
+  border: 1px solid rgba(183, 154, 85, 0.46) !important;
+  border-radius: 6px !important;
+  color: #01124E !important;
+  box-shadow: 0 8px 18px rgba(1, 18, 78, 0.12) !important;
+  padding: 0.55rem 0.7rem !important;
+}
+
+.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input)::placeholder {
+  color: rgba(1, 18, 78, 0.58) !important;
+}
+
+.create-content-surface .mantine-SegmentedControl-root {
+  background: rgba(255, 253, 248, 0.2) !important;
+  border: 1px solid rgba(183, 154, 85, 0.5) !important;
+  border-radius: 8px !important;
+  padding: 4px !important;
+}
+
+.create-content-surface .mantine-SegmentedControl-indicator {
+  background: #104b8C !important;
+  border: 1px solid rgba(183, 154, 85, 0.5) !important;
+}
+
+.create-content-surface .mantine-SegmentedControl-label {
+  color: #fffdf8 !important;
+}
+
+.create-content-surface .mantine-Dropzone-root,
+.create-content-surface .mantine-Tabs-list,
+.create-content-surface .mantine-Tabs-panel {
+  background: rgba(16, 75, 140, 0.68) !important;
+  border: 1px solid rgba(183, 154, 85, 0.42) !important;
+  border-radius: 8px !important;
+  color: #fffdf8 !important;
+}
+
+.create-content-surface .mantine-Dropzone-root {
+  min-height: 72px;
+}
+
+.create-content-surface .mantine-Tabs-list {
+  padding: 0.25rem;
+}
+
+.create-content-surface .mantine-Tabs-tab {
+  color: #fffdf8 !important;
+  border-radius: 6px !important;
+}
+
+.create-content-surface .mantine-Tabs-tab[data-active] {
+  background: #022278 !important;
+  border-color: rgba(183, 154, 85, 0.5) !important;
+}
+
+.create-content-surface .mantine-Dropzone-root:hover,
+.create-content-surface .mantine-Tabs-tab:hover {
+  background: rgba(2, 34, 120, 0.72) !important;
 }

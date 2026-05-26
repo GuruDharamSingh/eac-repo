@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/tiptap/styles.css';
+import '@elkdonis/ui/eac-theme.css';
 import "./globals.css";
+import { EacAtmosphere } from '@elkdonis/ui';
 import { Providers } from "./providers";
 
 const geistSans = Geist({
@@ -35,7 +37,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <Providers>{children}</Providers>
+        <EacAtmosphere>
+          <Providers>{children}</Providers>
+        </EacAtmosphere>
       </body>
     </html>
   );

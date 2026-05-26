@@ -23,6 +23,7 @@ interface ReplyData {
 interface CommentItemProps {
   reply: ReplyData;
   meetingId: string;
+  threadKind?: 'meeting' | 'post';
   depth?: number;
   replyingTo: string | null;
   onSetReplyingTo: (id: string | null) => void;
@@ -51,6 +52,7 @@ function formatRelativeTime(dateStr: string): string {
 export function CommentItem({
   reply,
   meetingId,
+  threadKind = 'meeting',
   depth = 0,
   replyingTo,
   onSetReplyingTo,
@@ -113,6 +115,7 @@ export function CommentItem({
           <Box ml={40}>
             <CommentComposer
               meetingId={meetingId}
+              threadKind={threadKind}
               parentId={reply.id}
               compact
               onSubmitted={(newReply) => {
@@ -131,6 +134,7 @@ export function CommentItem({
                 key={child.id}
                 reply={child}
                 meetingId={meetingId}
+                threadKind={threadKind}
                 depth={depth + 1}
                 replyingTo={replyingTo}
                 onSetReplyingTo={onSetReplyingTo}

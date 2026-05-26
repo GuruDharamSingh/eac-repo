@@ -18,6 +18,7 @@
     "@elkdonis/live-editor": "workspace:*"
   },
   "devDependencies": {
+    "@swc/core": "^1.15.33",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }

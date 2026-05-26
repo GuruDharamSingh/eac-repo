@@ -10,7 +10,6 @@ import {
   Title,
   Text,
   TextInput,
-  Textarea,
   Button,
   Group,
   Badge,
@@ -19,9 +18,9 @@ import {
   Avatar,
   Alert,
   Divider,
-  Box,
-  FileButton,
   PasswordInput,
+  MultiSelect,
+  Anchor,
 } from '@mantine/core';
 import {
   User,
@@ -34,11 +33,30 @@ import {
   LogOut,
   AlertCircle,
   CheckCircle,
-  Camera,
   Lock,
   Trash2,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import { signOut } from '@elkdonis/auth-client';
+
+const DISCIPLINE_OPTIONS = [
+  { value: 'visual-art', label: 'Visual Art' },
+  { value: 'music', label: 'Music' },
+  { value: 'writing', label: 'Writing' },
+  { value: 'dance', label: 'Dance / Movement' },
+  { value: 'yoga', label: 'Yoga / Somatic' },
+  { value: 'healing', label: 'Healing Arts' },
+  { value: 'ceramics', label: 'Ceramics / Craft' },
+  { value: 'textile', label: 'Textile / Fibre' },
+  { value: 'film', label: 'Film / Video' },
+  { value: 'photography', label: 'Photography' },
+  { value: 'theatre', label: 'Theatre / Performance' },
+  { value: 'sound', label: 'Sound / Audio' },
+  { value: 'design', label: 'Graphic / Web Design' },
+  { value: 'culinary', label: 'Culinary Arts' },
+  { value: 'other', label: 'Other' },
+];
 
 interface AccountData {
   id: string;
@@ -58,6 +76,16 @@ interface AccountData {
   updatedAt: string;
 }
 
+interface ArtistProfile {
+  user_id: string;
+  display_name: string | null;
+  city: string | null;
+  bio: string | null;
+  disciplines: string[];
+  portfolio_url: string | null;
+  is_stub: boolean;
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -66,11 +94,18 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Artist directory form state
+  const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
+  const [artCity, setArtCity] = useState('');
+  const [artDisciplines, setArtDisciplines] = useState<string[]>([]);
+  const [artPortfolio, setArtPortfolio] = useState('');
+  const [artSaving, setArtSaving] = useState(false);
+  const [artSuccess, setArtSuccess] = useState<string | null>(null);
+  const [artError, setArtError] = useState<string | null>(null);
+
   // Form state
   const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
   const [commentColor, setCommentColor] = useState('');
-  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Blog password management state
   const [managedOrgs, setManagedOrgs] = useState<Array<{
@@ -85,7 +120,50 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchAccount();
+    fetchArtistProfile();
   }, []);
+
+  const fetchArtistProfile = async () => {
+    try {
+      const res = await fetch('/api/profile');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.profile) {
+        setArtistProfile(data.profile);
+        setArtCity(data.profile.city ?? '');
+        setArtDisciplines(data.profile.disciplines ?? []);
+        setArtPortfolio(data.profile.portfolio_url ?? '');
+      }
+    } catch { /* soft fail */ }
+  };
+
+  const handleSaveArtistProfile = async () => {
+    setArtSaving(true);
+    setArtError(null);
+    setArtSuccess(null);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName: displayName || undefined,
+          city: artCity || undefined,
+          disciplines: artDisciplines,
+          portfolioUrl: artPortfolio || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || 'Save failed');
+      }
+      setArtSuccess('Artist profile updated!');
+      fetchArtistProfile();
+    } catch (err: any) {
+      setArtError(err.message);
+    } finally {
+      setArtSaving(false);
+    }
+  };
 
   // Fetch managed orgs for blog password management
   useEffect(() => {
@@ -151,7 +229,6 @@ export default function AccountPage() {
       const data = await response.json();
       setAccount(data.user);
       setDisplayName(data.user.displayName || '');
-      setBio(data.user.bio || '');
       setCommentColor(data.user.commentColor || '');
     } catch (err: any) {
       setError(err.message);
@@ -169,7 +246,7 @@ export default function AccountPage() {
       const response = await fetch('/api/account', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName, bio, commentColor: commentColor || undefined }),
+        body: JSON.stringify({ displayName, commentColor: commentColor || undefined }),
       });
 
       if (!response.ok) {
@@ -183,34 +260,6 @@ export default function AccountPage() {
       setError(err.message);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleAvatarUpload = async (file: File | null) => {
-    if (!file) return;
-    setAvatarUploading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) {
-        const data = await uploadRes.json();
-        throw new Error(data.error || 'Failed to upload avatar');
-      }
-      const { url } = await uploadRes.json();
-      const patchRes = await fetch('/api/account', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarUrl: url }),
-      });
-      if (!patchRes.ok) throw new Error('Failed to save avatar');
-      setSuccess('Profile picture updated!');
-      fetchAccount();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setAvatarUploading(false);
     }
   };
 
@@ -353,52 +402,27 @@ export default function AccountPage() {
         <Paper withBorder radius="lg" p="xl">
           <Stack gap="lg">
             {/* Avatar and basic info */}
-            <Group>
-              <FileButton onChange={handleAvatarUpload} accept="image/*">
-                {(props) => (
-                  <Box pos="relative" style={{ cursor: 'pointer' }} {...props}>
-                    <Avatar
-                      src={account.avatarUrl}
-                      size={80}
-                      radius="xl"
-                      color="indigo"
-                    >
-                      {(account.displayName || account.email)[0].toUpperCase()}
-                    </Avatar>
-                    <Box
-                      pos="absolute"
-                      bottom={0}
-                      right={0}
-                      style={{
-                        background: 'var(--mantine-color-indigo-6)',
-                        borderRadius: '50%',
-                        width: 24,
-                        height: 24,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {avatarUploading ? (
-                        <Loader size={12} color="white" />
-                      ) : (
-                        <Camera size={12} color="white" />
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </FileButton>
-              <Stack gap={4}>
-                <Text size="xl" fw={600}>
-                  {account.displayName || account.email.split('@')[0]}
-                </Text>
-                <Group gap="xs">
-                  <Mail size={14} />
-                  <Text size="sm" c="dimmed">
-                    {account.email}
+            <Group justify="space-between" align="flex-start">
+              <Group>
+                <Avatar src={account.avatarUrl} size={80} radius="xl" color="indigo">
+                  {(account.displayName || account.email)[0].toUpperCase()}
+                </Avatar>
+                <Stack gap={4}>
+                  <Text size="xl" fw={600}>
+                    {account.displayName || account.email.split('@')[0]}
                   </Text>
+                  <Group gap="xs">
+                    <Mail size={14} />
+                    <Text size="sm" c="dimmed">{account.email}</Text>
+                  </Group>
+                </Stack>
+              </Group>
+              <Anchor href="/profile" size="sm" c="dimmed">
+                <Group gap={4}>
+                  Edit profile & photo
+                  <ExternalLink size={12} />
                 </Group>
-              </Stack>
+              </Anchor>
             </Group>
 
             <Divider />
@@ -445,15 +469,6 @@ export default function AccountPage() {
                 leftSection={<User size={16} />}
               />
 
-              <Textarea
-                label="Bio"
-                placeholder="Tell us a little about yourself..."
-                value={bio}
-                onChange={(e) => setBio(e.currentTarget.value)}
-                minRows={3}
-                maxRows={6}
-              />
-
               <ColorInput
                 label="Comment Color"
                 description="Choose a color for your name in comments"
@@ -470,6 +485,78 @@ export default function AccountPage() {
                 Save Changes
               </Button>
             </Stack>
+          </Stack>
+        </Paper>
+
+        {/* Artist Directory */}
+        <Paper withBorder radius="lg" p="xl">
+          <Stack gap="lg">
+            <Stack gap={4}>
+              <Group gap="xs">
+                <BookOpen size={18} />
+                <Title order={4}>Artist Directory</Title>
+                {artistProfile && !artistProfile.is_stub && (
+                  <Badge size="sm" color="green" variant="light">Listed</Badge>
+                )}
+                {artistProfile?.is_stub && (
+                  <Badge size="sm" color="yellow" variant="light">Stub — fill in to appear</Badge>
+                )}
+              </Group>
+              <Text size="sm" c="dimmed">
+                Your entry in the public Elkdonis artist directory. Fill in at least your city
+                and one discipline to appear.{' '}
+                <Anchor size="sm" href="http://localhost:3007/artists" target="_blank">
+                  View directory →
+                </Anchor>
+              </Text>
+            </Stack>
+
+            {artError && (
+              <Alert icon={<AlertCircle size={14} />} color="red" variant="light" py="xs"
+                onClose={() => setArtError(null)} withCloseButton>
+                {artError}
+              </Alert>
+            )}
+            {artSuccess && (
+              <Alert icon={<CheckCircle size={14} />} color="green" variant="light" py="xs"
+                onClose={() => setArtSuccess(null)} withCloseButton>
+                {artSuccess}
+              </Alert>
+            )}
+
+            <TextInput
+              label="City / Location"
+              placeholder="Toronto, ON"
+              value={artCity}
+              onChange={(e) => setArtCity(e.currentTarget.value)}
+            />
+
+            <MultiSelect
+              label="Disciplines"
+              placeholder="Select what you make or practice"
+              data={DISCIPLINE_OPTIONS}
+              value={artDisciplines}
+              onChange={setArtDisciplines}
+              searchable
+              clearable
+              maxValues={6}
+            />
+
+            <TextInput
+              label="Portfolio URL"
+              placeholder="https://yoursite.com"
+              value={artPortfolio}
+              onChange={(e) => setArtPortfolio(e.currentTarget.value)}
+            />
+
+            <Button
+              onClick={handleSaveArtistProfile}
+              loading={artSaving}
+              leftSection={<Save size={16} />}
+              variant="light"
+            >
+              Save to Directory
+            </Button>
           </Stack>
         </Paper>
 

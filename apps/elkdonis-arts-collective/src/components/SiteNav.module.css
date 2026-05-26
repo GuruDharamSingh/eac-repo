@@ -1,13 +1,13 @@
 @font-face {
-  font-family: "Religath";
-  src: url("/fonts/RELIGATH-Demo.otf") format("opentype");
+  font-family: "Venture";
+  src: url("/fonts/Venture-nRqOR.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .nav {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -15,21 +15,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 3rem;
-  background: rgba(5, 5, 5, 0.92);
-  border-bottom: 1px solid rgba(180, 140, 60, 0.2);
-  backdrop-filter: blur(12px);
+  padding: 1rem clamp(1rem, 4vw, 3rem);
+  background:
+    linear-gradient(90deg, rgba(1, 18, 78, 0.97), rgba(2, 34, 120, 0.95) 48%, rgba(6, 49, 121, 0.94)),
+    #01124E;
+  border-bottom: 1px solid rgba(183, 154, 85, 0.52);
+  box-shadow: 0 10px 30px rgba(1, 18, 78, 0.24);
+  backdrop-filter: blur(14px);
 }
 
 .logo {
   text-decoration: none;
 }
 
-.logoReligath {
-  font-family: "Religath", serif;
-  font-size: 1.6rem;
-  color: #c9a962;
-  letter-spacing: 0.08em;
+.logoVenture {
+  font-family: var(--font-sans);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  color: #d6c38e;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 18px rgba(198, 164, 90, 0.22);
 }
 
 .links {
@@ -37,17 +41,19 @@
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 2.5rem;
+  gap: clamp(0.85rem, 3vw, 2.25rem);
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .link {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 0.95rem;
+  font-family: var(--font-sans);
+  font-size: clamp(0.72rem, 1.8vw, 0.95rem);
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9a8a6a;
+  color: #fffdf8;
   text-decoration: none;
   transition: color 0.2s ease;
   position: relative;
@@ -60,12 +66,12 @@
   left: 0;
   width: 0;
   height: 1px;
-  background: #c9a962;
+  background: #b79a55;
   transition: width 0.3s ease;
 }
 
 .link:hover {
-  color: #e8d5a3;
+  color: #d6c38e;
 }
 
 .link:hover::after {
@@ -73,7 +79,59 @@
 }
 
 .active {
-  color: #c9a962;
+  color: #d6c38e;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    align-items: stretch;
+    gap: 0.75rem;
+    flex-direction: column;
+    padding: 0.8rem 1rem;
+    background: #01124E;
+    border-bottom-color: rgba(183, 154, 85, 0.42);
+    box-shadow: 0 10px 30px rgba(1, 18, 78, 0.18);
+  }
+
+  .logoVenture {
+    color: #d6c38e;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    text-shadow: none;
+  }
+
+  .links {
+    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: stretch;
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid rgba(183, 154, 85, 0.32);
+    border-radius: 8px;
+    color: #fffdf8;
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    letter-spacing: 0;
+    text-transform: none;
+    background: rgba(255, 253, 248, 0.06);
+  }
+
+  .link::after {
+    display: none;
+  }
+
+  .link:hover,
+  .active {
+    color: #d6c38e;
+    border-color: rgba(183, 154, 85, 0.58);
+  }
 }
 
 .active::after {

@@ -363,7 +363,7 @@ export function CreateContentForm({
   }, [userId, isFormValid, media, contentType, title, body, excerpt, visibility, orgId, createDocument, createTalkRoom, scheduledAt, durationMinutes, location, isOnline, meetingUrl, syncToCalendar, isRSVPEnabled, rsvpDeadline, minAttendees, notifyOnMinAttendees, recurrencePattern, recurrenceCustomRule, recurrenceUntil, createEventPage, eventPageTableData, blogPassword, notes, onSuccess, draftId]);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="create-content-form" onSubmit={handleSubmit}>
       <Stack gap="sm">
         {/* ─── Type + Org ─── */}
         <Group gap="sm" grow>

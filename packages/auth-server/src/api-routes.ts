@@ -98,13 +98,41 @@ export async function handleLogin(request: NextRequest) {
  */
 export async function handleSignup(request: NextRequest) {
   try {
-    const { email, password, displayName, interests } = await request.json();
+    const { email, password, displayName, interests, turnstileToken } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password required' },
         { status: 400 }
       );
+    }
+
+    // Verify Turnstile token if secret key is configured
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    if (turnstileSecret) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: 'Bot verification required. Please complete the challenge.' },
+          { status: 400 }
+        );
+      }
+      const verifyRes = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          body: new URLSearchParams({
+            secret: turnstileSecret,
+            response: turnstileToken,
+          }),
+        }
+      );
+      const verifyData = await verifyRes.json() as { success: boolean };
+      if (!verifyData.success) {
+        return NextResponse.json(
+          { error: 'Bot verification failed. Please try again.' },
+          { status: 403 }
+        );
+      }
     }
 
     const cleanInterests: string[] | undefined = Array.isArray(interests)
@@ -155,7 +183,7 @@ export async function handleSignup(request: NextRequest) {
 
     console.log(`[Signup] User created: ${data.user.id} (${email})`);
 
-    // Now provision in Nextcloud
+    // Provision in Nextcloud
     try {
       const { handleUserProvisioning } = await import('@elkdonis/services');
       const provisionResult = await handleUserProvisioning(
@@ -166,14 +194,45 @@ export async function handleSignup(request: NextRequest) {
 
       if (!provisionResult.success) {
         console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
-        // Don't fail signup if Nextcloud provisioning fails
-        // User can still use the app, just won't have Nextcloud access yet
       } else {
         console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
       }
     } catch (provisionError) {
       console.error('[Signup] Provisioning error:', provisionError);
-      // Again, don't fail signup
+    }
+
+    // Assign to default orgs + create stub artist profile — all soft-fail
+    try {
+      const { db } = await import('@elkdonis/db');
+      const resolvedName = displayName || email.split('@')[0];
+
+      await db`
+        INSERT INTO user_organizations (user_id, org_id, role, joined_at)
+        VALUES
+          (${data.user.id}, 'elkdonis',    'member', NOW()),
+          (${data.user.id}, 'inner_group', 'member', NOW())
+        ON CONFLICT (user_id, org_id) DO NOTHING
+      `;
+
+      await db`
+        INSERT INTO artist_profiles (user_id, org_id, display_name, is_stub)
+        VALUES (${data.user.id}, 'elkdonis', ${resolvedName}, true)
+        ON CONFLICT (user_id) DO NOTHING
+      `;
+
+      console.log(`[Signup] ✅ Org memberships + stub profile created for ${email}`);
+    } catch (dbError) {
+      console.error('[Signup] DB post-signup error:', dbError);
+    }
+
+    // Send welcome email — soft-fail
+    try {
+      const { sendWelcomeEmail } = await import('@elkdonis/email');
+      const resolvedName = displayName || email.split('@')[0];
+      await sendWelcomeEmail(email, { displayName: resolvedName });
+      console.log(`[Signup] ✅ Welcome email sent to ${email}`);
+    } catch (emailError) {
+      console.error('[Signup] Welcome email error:', emailError);
     }
 
     const response = NextResponse.json({

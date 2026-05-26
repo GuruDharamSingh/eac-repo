@@ -7,11 +7,21 @@ import { z } from "zod";
  * `meeting` is the legacy kind name and is not surfaced in the form.
  */
 
+// HTML number inputs submit "" when empty. Zod's coerce turns "" into 0, which
+// then fails min(1) / min(0.25) constraints, silently blocking form submission.
+// This helper normalises empty/null → undefined before the numeric check runs.
+function optNum(schema: z.ZodNumber) {
+  return z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : typeof v === "number" ? v : Number(v)),
+    schema.optional()
+  );
+}
+
 export const sessionSchema = z.object({
   id: z.string().min(1),
   title: z.string().trim().max(200).optional().or(z.literal("")),
   scheduled_at: z.string().min(1, "Pick a start time"),
-  duration_minutes: z.coerce.number().int().min(5).max(60 * 24).optional(),
+  duration_minutes: optNum(z.number().int().min(5).max(60 * 24)),
   location: z.string().trim().max(200).optional().or(z.literal("")),
   meeting_url: z.string().trim().url().optional().or(z.literal("")),
 });
@@ -44,14 +54,14 @@ export const workshopFormSchema = z.object({
   kind: z.literal("workshop"),
   ...baseFields,
   scheduled_at: z.string().min(1, "Pick a start time"),
-  duration_minutes: z.coerce.number().int().min(5).max(60 * 24).optional(),
+  duration_minutes: optNum(z.number().int().min(5).max(60 * 24)),
   location: z.string().trim().max(200).optional().or(z.literal("")),
   /** Replaces the deprecated is_online boolean. */
   format: z.enum(["in_person", "online", "hybrid"]).default("online"),
   meeting_url: z.string().trim().url().optional().or(z.literal("")),
   is_rsvp_enabled: z.boolean().default(true),
-  attendee_limit: z.coerce.number().int().min(1).max(10000).optional(),
-  price: z.coerce.number().min(0).max(99999).optional(),
+  attendee_limit: optNum(z.number().int().min(1).max(10000)),
+  price: optNum(z.number().min(0).max(99999)),
   currency: z.string().trim().length(3).default("USD"),
   sessions: z.array(sessionSchema).default([]),
 });
@@ -60,13 +70,13 @@ export const eventFormSchema = z.object({
   kind: z.literal("event"),
   ...baseFields,
   scheduled_at: z.string().min(1, "Pick a start time"),
-  duration_minutes: z.coerce.number().int().min(5).max(60 * 24).optional(),
+  duration_minutes: optNum(z.number().int().min(5).max(60 * 24)),
   location: z.string().trim().max(200).optional().or(z.literal("")),
   /** Replaces the deprecated is_online boolean. */
   format: z.enum(["in_person", "online", "hybrid"]).default("online"),
   meeting_url: z.string().trim().url().optional().or(z.literal("")),
   is_rsvp_enabled: z.boolean().default(true),
-  attendee_limit: z.coerce.number().int().min(1).max(10000).optional(),
+  attendee_limit: optNum(z.number().int().min(1).max(10000)),
 });
 
 /**
@@ -85,15 +95,15 @@ export const workshopPageSchema = z.object({
   // Logistics
   level: z.enum(["all_levels", "beginner", "intermediate", "advanced"]).optional(),
   language: z.string().trim().max(60).default("English"),
-  session_count: z.coerce.number().int().min(1).max(999).optional(),
-  session_duration_hrs: z.coerce.number().min(0.25).max(24).optional(),
+  session_count: optNum(z.number().int().min(1).max(999)),
+  session_duration_hrs: optNum(z.number().min(0.25).max(24)),
   recurrence_label: z.string().trim().max(200).optional().or(z.literal("")),
   location_address: z.string().trim().max(500).optional().or(z.literal("")),
   accessibility_notes: z.string().trim().optional().or(z.literal("")),
 
   // Pricing
-  price_sliding_min: z.coerce.number().min(0).max(99999).optional(),
-  price_member: z.coerce.number().min(0).max(99999).optional(),
+  price_sliding_min: optNum(z.number().min(0).max(99999)),
+  price_member: optNum(z.number().min(0).max(99999)),
   sliding_scale_note: z.string().trim().max(300).optional().or(z.literal("")),
 
   // Registration
@@ -141,13 +151,13 @@ export const workshopFullSchema = z.object({
 
   // Thread — schedule & logistics
   scheduled_at: z.string().optional().or(z.literal("")),
-  duration_minutes: z.coerce.number().int().min(5).max(60 * 24).optional(),
+  duration_minutes: optNum(z.number().int().min(5).max(60 * 24)),
   format: z.enum(["in_person", "online", "hybrid"]).default("online"),
   location: z.string().trim().max(200).optional().or(z.literal("")),
   meeting_url: z.string().trim().url().optional().or(z.literal("")),
   is_rsvp_enabled: z.boolean().default(true),
-  attendee_limit: z.coerce.number().int().min(1).max(10000).optional(),
-  price: z.coerce.number().min(0).max(99999).optional(),
+  attendee_limit: optNum(z.number().int().min(1).max(10000)),
+  price: optNum(z.number().min(0).max(99999)),
   currency: z.string().trim().length(3).default("USD"),
   sessions: z.array(sessionSchema).default([]),
   nextcloud_doc_url: z.string().trim().url().optional().or(z.literal("")),
@@ -161,15 +171,15 @@ export const workshopFullSchema = z.object({
   // Sidecar — logistics
   level: z.enum(["all_levels", "beginner", "intermediate", "advanced"]).optional(),
   language: z.string().trim().max(60).default("English"),
-  session_count: z.coerce.number().int().min(1).max(999).optional(),
-  session_duration_hrs: z.coerce.number().min(0.25).max(24).optional(),
+  session_count: optNum(z.number().int().min(1).max(999)),
+  session_duration_hrs: optNum(z.number().min(0.25).max(24)),
   recurrence_label: z.string().trim().max(200).optional().or(z.literal("")),
   location_address: z.string().trim().max(500).optional().or(z.literal("")),
   accessibility_notes: z.string().trim().optional().or(z.literal("")),
 
   // Sidecar — pricing
-  price_sliding_min: z.coerce.number().min(0).max(99999).optional(),
-  price_member: z.coerce.number().min(0).max(99999).optional(),
+  price_sliding_min: optNum(z.number().min(0).max(99999)),
+  price_member: optNum(z.number().min(0).max(99999)),
   sliding_scale_note: z.string().trim().max(300).optional().or(z.literal("")),
 
   // Sidecar — registration

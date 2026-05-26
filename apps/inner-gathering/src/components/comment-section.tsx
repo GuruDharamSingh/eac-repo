@@ -34,6 +34,8 @@ interface ReplyData {
 interface CommentSectionProps {
   initialReplies: ReplyData[];
   meetingId: string;
+  /** Thread kind. Default 'meeting'. */
+  threadKind?: 'meeting' | 'post';
   currentUserId: string | null;
   currentUserName: string | null;
   currentUserInitials: string | null;
@@ -75,6 +77,7 @@ function addReplyToTree(
 export function CommentSection({
   initialReplies,
   meetingId,
+  threadKind = 'meeting',
   currentUserId,
   currentUserName,
   currentUserInitials,
@@ -108,6 +111,7 @@ export function CommentSection({
         {isAuthed && (
           <CommentComposer
             meetingId={meetingId}
+            threadKind={threadKind}
             onSubmitted={handleTopLevelSubmit}
           />
         )}
@@ -123,6 +127,7 @@ export function CommentSection({
                 key={reply.id}
                 reply={reply}
                 meetingId={meetingId}
+                threadKind={threadKind}
                 replyingTo={replyingTo}
                 onSetReplyingTo={setReplyingTo}
                 onReplySubmitted={handleNestedSubmit}

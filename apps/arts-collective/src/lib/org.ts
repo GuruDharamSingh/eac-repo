@@ -339,6 +339,56 @@ export type WorkshopPageDataWithTheme = WorkshopPageData & {
   theme_overrides: Record<string, string> | null;
 };
 
+/**
+ * Returns the primary workshop for an org — pinned first, then latest published.
+ * Used by SilexLayout to bind live DB values into a Silex-published page.
+ */
+export async function getOrgWorkshopForTemplate(
+  orgId: string
+): Promise<WorkshopPageData | null> {
+  try {
+    const rows = await db<(WorkshopPageData & { org_id: string })[]>`
+      SELECT
+        t.id, t.slug, t.title, t.body,
+        t.scheduled_at, t.duration_minutes, t.location, t.format,
+        t.attendee_limit, t.price, t.currency, t.sessions,
+
+        wp.subtitle, wp.description_short, wp.discipline, wp.series_label,
+        wp.level, wp.language,
+        wp.session_count, wp.session_duration_hrs,
+        wp.recurrence_label, wp.location_address, wp.accessibility_notes,
+        wp.price_sliding_min, wp.price_member, wp.sliding_scale_note,
+        wp.registration_url, wp.registration_deadline, wp.registration_status,
+        wp.author_note,
+        wp.cover_image_url, wp.gallery_image_urls, wp.promo_video_url,
+        wp.optional_sections,
+
+        ap.display_name  AS facilitator_name,
+        ap.bio           AS facilitator_bio,
+        ap.photo_url     AS facilitator_photo,
+        ap.pronouns      AS facilitator_pronouns,
+
+        t.org_id
+      FROM threads t
+      LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
+      LEFT JOIN artist_profiles ap ON ap.org_id = t.org_id
+      WHERE t.org_id   = ${orgId}
+        AND t.kind      = 'workshop'
+        AND t.status    = 'published'
+        AND t.visibility = 'PUBLIC'
+      ORDER BY t.pinned DESC, t.published_at DESC
+      LIMIT 1
+    `;
+    const row = rows[0];
+    if (!row) return null;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { org_id: _, ...data } = row;
+    return data as WorkshopPageData;
+  } catch {
+    return null;
+  }
+}
+
 export async function getThreadWithWorkshopPage(
   orgId: string,
   slug: string

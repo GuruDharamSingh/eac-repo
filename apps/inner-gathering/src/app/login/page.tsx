@@ -3,76 +3,26 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Paper,
-  TextInput,
-  PasswordInput,
-  Button,
-  Title,
-  Text,
-  Container,
-  Stack,
-  Anchor,
   Box,
-  Alert,
-  Group,
-  Checkbox,
+  Container,
   Divider,
-  Badge,
+  Group,
+  Paper,
   SimpleGrid,
+  Stack,
+  Text,
+  Title,
 } from "@mantine/core";
-import { AlertCircle, Sparkles, MapPin, Tent, Compass } from "lucide-react";
-import { signInWithPassword, signUp } from "@elkdonis/auth-client";
-
-const INTEREST_OPTIONS: { value: string; label: string }[] = [
-  { value: "artist_platform", label: "I'm an artist looking for a platform" },
-  { value: "group_network", label: "I'm with a group or organization that wants to network" },
-  { value: "enthusiast_support", label: "I'm an enthusiast — here to support arts and mutual aid" },
-  { value: "volunteer", label: "I'd like to help out / volunteer" },
-  { value: "in_need", label: "I'm in need of support (residency, grant, mentorship, community)" },
-  { value: "exploring", label: "Just exploring" },
-];
+import { Sparkles, MapPin, Tent, Compass } from "lucide-react";
+import { BaroqueSignup } from "@elkdonis/ui";
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "signup">("signup");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (mode === "signup") {
-        const { user, error: signUpError } = await signUp(
-          email,
-          password,
-          displayName || email.split("@")[0],
-          interests.length > 0 ? interests : undefined
-        );
-        if (signUpError) throw new Error(signUpError);
-        if (user) {
-          window.location.href = "/feed?welcome=1";
-          return;
-        }
-      } else {
-        const { user, error: signInError } = await signInWithPassword(email, password);
-        if (signInError) throw new Error(signInError);
-        if (user) {
-          window.location.href = "/feed";
-          return;
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || "An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // The left content column is identical between signup and login; the right
+  // column (BaroqueSignup) owns its own mode toggle, so this page no longer
+  // needs to track auth state. We keep this file as a thin server-friendly
+  // wrapper so the marketing content keeps its place.
+  const [mode] = useState<"login" | "signup">("signup");
+  void mode;
 
   return (
     <Box
@@ -85,7 +35,7 @@ export default function LoginPage() {
       <Container size="xl" py={{ base: "lg", md: "xl" }} px={{ base: "md", md: "xl" }}>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: "xl", md: 48 }}>
           {/* Welcome content (left on desktop, top on mobile) */}
-          <Stack gap="xl">
+          <Stack gap="xl" style={{ order: 1 }}>
             <Stack gap="sm">
               <Group gap="xs" align="center">
                 <Sparkles size={20} color="#d45c08" />
@@ -265,134 +215,20 @@ export default function LoginPage() {
           </Stack>
 
           {/* Form (right on desktop, bottom on mobile) */}
-          <Box style={{ position: "relative" }}>
+          <Box style={{ position: "relative", order: 2 }}>
             <Box
               style={{
                 position: "sticky",
                 top: 24,
               }}
             >
-              <Paper
-                radius="md"
-                p={{ base: "lg", md: "xl" }}
-                withBorder
-                shadow="md"
-                style={{ borderColor: "#e8c595" }}
-              >
-                <form onSubmit={handleSubmit}>
-                  <Stack gap="md">
-                    <Stack gap={4}>
-                      <Group justify="space-between" align="center">
-                        <Title
-                          order={2}
-                          size="h3"
-                          style={{ fontFamily: "'Cinzel', serif", color: "#3d1f04" }}
-                        >
-                          {mode === "login" ? "Welcome back" : "Create your account"}
-                        </Title>
-                        {mode === "signup" && (
-                          <Badge color="ember" variant="light" size="sm">
-                            Early member
-                          </Badge>
-                        )}
-                      </Group>
-                      <Text size="sm" c="#6a4520">
-                        {mode === "login"
-                          ? "Sign in to continue."
-                          : "Just an email and a password — the rest can come later."}
-                      </Text>
-                    </Stack>
-
-                    {error && (
-                      <Alert icon={<AlertCircle size={16} />} color="red" variant="light">
-                        {error}
-                      </Alert>
-                    )}
-
-                    {mode === "signup" && (
-                      <TextInput
-                        label="Display name"
-                        placeholder="Your name (optional)"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.currentTarget.value)}
-                        size="md"
-                      />
-                    )}
-
-                    <TextInput
-                      required
-                      label="Email"
-                      placeholder="your@email.com"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.currentTarget.value)}
-                      size="md"
-                    />
-
-                    <PasswordInput
-                      required
-                      label="Password"
-                      placeholder="At least 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.currentTarget.value)}
-                      size="md"
-                      minLength={6}
-                    />
-
-                    {mode === "signup" && (
-                      <Stack gap="xs" mt="xs">
-                        <Text fw={600} size="sm" c="#3d1f04">
-                          What brings you here?{" "}
-                          <Text component="span" c="dimmed" fw={400} size="xs">
-                            (optional — pick any that apply)
-                          </Text>
-                        </Text>
-                        <Checkbox.Group value={interests} onChange={setInterests}>
-                          <Stack gap="xs">
-                            {INTEREST_OPTIONS.map((opt) => (
-                              <Checkbox
-                                key={opt.value}
-                                value={opt.value}
-                                label={opt.label}
-                                styles={{ label: { fontSize: "0.9rem" } }}
-                              />
-                            ))}
-                          </Stack>
-                        </Checkbox.Group>
-                      </Stack>
-                    )}
-
-                    <Button
-                      type="submit"
-                      fullWidth
-                      size="md"
-                      loading={loading}
-                      mt="sm"
-                      color="ember"
-                    >
-                      {mode === "login" ? "Sign in" : "Create account"}
-                    </Button>
-
-                    <Divider color="#e8c595" />
-
-                    <Text ta="center" size="sm" c="#6a4520">
-                      {mode === "login" ? "New to the collective? " : "Already have an account? "}
-                      <Anchor
-                        component="button"
-                        type="button"
-                        onClick={() => {
-                          setMode(mode === "login" ? "signup" : "login");
-                          setError(null);
-                        }}
-                        fw={600}
-                        c="#d45c08"
-                      >
-                        {mode === "login" ? "Create an account" : "Sign in"}
-                      </Anchor>
-                    </Text>
-                  </Stack>
-                </form>
-              </Paper>
+              <BaroqueSignup
+                initialMode="signup"
+                subtitle="Just an email and a password — the rest can come later."
+                onSuccess={({ mode: m }) => {
+                  window.location.href = m === "signup" ? "/feed?welcome=1" : "/feed";
+                }}
+              />
             </Box>
           </Box>
         </SimpleGrid>

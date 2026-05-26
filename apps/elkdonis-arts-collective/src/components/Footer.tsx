@@ -1,8 +1,6 @@
 import { Mail } from "lucide-react";
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
     <footer className="site-footer">
       <div
@@ -35,31 +33,6 @@ export function Footer() {
           className="gold-rule"
           style={{ "--rule-width": "100px" } as React.CSSProperties}
         />
-
-        {/* Sacred space */}
-        <p className="footer-sacred">
-          We consider online spaces to be real sacred spaces held in the minds,
-          hearts, and bodies of the members.
-        </p>
-
-        {/* Welcome */}
-        <p className="footer-welcome">Welcome.</p>
-
-        {/* Legal */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}>
-          <p className="footer-legal">
-            Elkdonis Arts Collective operates as a private membership
-            association. Using this website means you agree to our terms and
-            conditions and privacy policies. The material on this site may not
-            be reproduced, distributed, transmitted, cached, or otherwise used,
-            except with the prior written permission of Elkdonis Arts
-            Collective.
-          </p>
-          <p className="footer-copyright">
-            &copy; 2019&ndash;{currentYear} Elkdonis Arts Collective. All
-            rights reserved.
-          </p>
-        </div>
       </div>
     </footer>
   );

@@ -13,9 +13,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'meeting_id and name are required' }, { status: 400 });
     }
 
-    // Confirm meeting exists and is published
-    const [meeting] = await db<{ id: string; title: string }[]>`
-      SELECT id, title FROM threads
+    const [meeting] = await db<{ id: string; title: string; section: string | null; scheduled_at: string | null }[]>`
+      SELECT id, title, section, scheduled_at FROM threads
       WHERE kind = 'meeting' AND id = ${meeting_id} AND org_id = ${ORG_ID} AND status = 'published'
       LIMIT 1
     `;
@@ -38,7 +37,6 @@ export async function POST(req: NextRequest) {
       )
     `;
 
-    // Upsert into contacts if email provided, so admin can see them
     if (email?.trim()) {
       const contactId = nanoid();
       await db`
@@ -60,8 +58,40 @@ export async function POST(req: NextRequest) {
       SELECT COUNT(*) as count FROM guest_submissions
       WHERE thread_id = ${meeting_id} AND kind = 'rsvp'
     `;
+    const rsvpCount = parseInt(count, 10);
 
-    return NextResponse.json({ ok: true, rsvp_count: parseInt(count, 10) });
+    // Fire emails non-blocking — never let email failure break the RSVP
+    void (async () => {
+      try {
+        const { sendRsvpConfirmation, sendRsvpNotification } = await import('@elkdonis/email');
+        const emailData = {
+          guestName: name.trim(),
+          meetingTitle: meeting.title,
+          section: meeting.section ?? undefined,
+          scheduledAt: meeting.scheduled_at ?? undefined,
+          orgName: 'Amrit Canada',
+        };
+
+        const ownerEmail = process.env.NEXT_PUBLIC_AMRIT_CANADA_OWNER_EMAIL ?? 'gurudharamsingh@gmail.com';
+        await Promise.all([
+          email?.trim()
+            ? sendRsvpConfirmation(email.trim(), emailData)
+            : Promise.resolve(),
+          sendRsvpNotification(ownerEmail, {
+            ...emailData,
+            guestEmail: email?.trim() || undefined,
+            guestPhone: phone?.trim() || undefined,
+            guestMessage: message?.trim() || undefined,
+            wantsReminder: wants_reminder ?? false,
+            rsvpCount,
+          }),
+        ]);
+      } catch (emailErr) {
+        console.error('[amrit-canada] email send failed:', emailErr);
+      }
+    })();
+
+    return NextResponse.json({ ok: true, rsvp_count: rsvpCount });
   } catch (err) {
     console.error('[amrit-canada] POST /api/rsvp error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -16,6 +16,7 @@ const members: Member[] = [
     name: "Jason Ford",
     title: "Founder",
     role: "Director of Operations",
+    photo: "/fnordbalance-1.jpg",
     initials: "JF",
   },
   {
@@ -43,7 +44,7 @@ const members: Member[] = [
     name: "Aeon",
     title: "Executive Producer",
     role: "Music & Video Director",
-    photo: "/fnordbalance-1.jpg",
+    photo: "/IMG-20250719-WA0001-1.jpg",
     initials: "A",
   },
   {
@@ -70,14 +71,8 @@ export function BoardRow() {
   return (
     <section id="board" ref={ref} className="board-section">
       <div className="section-inner">
-        <div className={`reveal ${visible ? "in-view" : ""}`} style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <p className="section-eyebrow">Board of Directors</p>
-          <h2 className="section-heading">The Team</h2>
-          <hr className="gold-rule" style={{ "--rule-width": "50px" } as React.CSSProperties} />
-        </div>
-
         <ul
-          className={`reveal ${visible ? "in-view" : ""}`}
+          className={`board-list reveal ${visible ? "in-view" : ""}`}
           style={{
             listStyle: "none",
             margin: 0,

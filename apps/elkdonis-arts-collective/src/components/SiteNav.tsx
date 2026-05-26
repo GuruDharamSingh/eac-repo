@@ -6,8 +6,8 @@ import styles from "./SiteNav.module.css";
 const links = [
   { href: "#about", label: "More Info", external: false },
   {
-    href: "https://directory.elkdonisarts.ca",
-    label: "Artist Directory",
+    href: "https://meetings.elkdonis-arts.org",
+    label: "Meetings",
     external: true,
   },
 ];
@@ -17,7 +17,7 @@ export default function SiteNav() {
   return (
     <nav className={styles.nav}>
       <Link href="/" className={styles.logo}>
-        <span className={styles.logoReligath}>EAC</span>
+        <span className={styles.logoVenture}>EAC</span>
       </Link>
       <ul className={styles.links}>
         {links.map((l) =>

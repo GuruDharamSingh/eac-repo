@@ -99,6 +99,7 @@ services:
       REPLICATION_POLL_INTERVAL: 100
       SECURE_CHANNELS: "true"
       RLIMIT_NOFILE: 1048576
+      CLUSTER_STRATEGIES: ""
     ports:
       - "4000:4000"
     networks:
@@ -165,7 +166,7 @@ services:
       - /app/.next
     ports:
       - "3000:3000"
-    command: sh -c "cd apps/admin && pnpm dev"
+    command: sh -c "pnpm install && cd apps/admin && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -263,6 +264,40 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Blog Tester
+  blog-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-blog-tester
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${BLOG_TESTER_URL:-http://localhost:3011}
+      NODE_ENV: development
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Redis
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - .:/app
+      - /app/apps/blog-tester/.next
+    ports:
+      - "3011:3011"
+    command: sh -c "cd apps/blog-tester && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Inner Gathering App
   inner-gathering:
     build:
@@ -299,6 +334,12 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
       NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3000}
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # Cloudflare Turnstile
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
 
       # Node environment
       NODE_ENV: development
@@ -309,7 +350,7 @@ services:
       - /app/apps/inner-gathering/.next
     ports:
       - "3004:3004"
-    command: sh -c "cd apps/inner-gathering && pnpm docker:dev"
+    command: sh -c "pnpm install && cd apps/inner-gathering && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -338,12 +379,28 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
       # Redis
       REDIS_URL: redis://redis:6379
+
+      # Nextcloud
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      EAC_OWNER_EMAIL: ${EAC_OWNER_EMAIL:-info@elkdonis-arts.org}
+      # Cloudflare Turnstile
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
     volumes:
       - .:/app
       - /app/apps/elkdonis-arts-collective/.next
     ports:
       - "3005:3005"
-    command: sh -c "cd apps/elkdonis-arts-collective && pnpm dev"
+    command: sh -c "pnpm install && cd apps/elkdonis-arts-collective && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -420,12 +477,135 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
       # Owner config
       NEXT_PUBLIC_AMRIT_CANADA_OWNER_EMAIL: ${AMRIT_CANADA_OWNER_EMAIL:-gurudharamsingh@gmail.com}
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
       - /app/apps/amrit-canada/.next
     ports:
       - "3006:3006"
     command: sh -c "cd apps/amrit-canada && pnpm docker:dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # IFAC - International Fine Art Collectors public site and org admin
+  ifac:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-ifac
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
+      NODE_ENV: development
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      NEXT_PUBLIC_IFAC_OWNER_EMAIL: ${IFAC_OWNER_EMAIL:-info@ifacgroup.com}
+      NEXT_PUBLIC_EAC_ADMIN_URL: ${EAC_ADMIN_URL:-http://localhost:3000}
+      REDIS_URL: redis://redis:6379
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+    volumes:
+      - .:/app
+      - /app/apps/ifac/.next
+    ports:
+      - "3008:3008"
+    command: sh -c "cd apps/ifac && pnpm docker:dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Art-Auction - multi-artist marketplace + timed auctions, eTransfer payment
+  art-auction:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-art-auction
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      NODE_ENV: development
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      REDIS_URL: redis://redis:6379
+      # Nextcloud (for artwork media)
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # Commerce
+      ART_AUCTION_RESERVATION_MINUTES: ${ART_AUCTION_RESERVATION_MINUTES:-15}
+      ART_AUCTION_ETRANSFER_DUE_HOURS: ${ART_AUCTION_ETRANSFER_DUE_HOURS:-72}
+      ART_AUCTION_GALLERY_PAYOUT_EMAIL: ${ART_AUCTION_GALLERY_PAYOUT_EMAIL:-info@elkdonis-arts.org}
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+    volumes:
+      - .:/app
+      - /app/apps/art-auction/.next
+    ports:
+      - "3009:3009"
+    command: sh -c "cd apps/art-auction && pnpm docker:dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # 4th Way Book Readers - reading groups, book programs, notes, newsletters
+  fourth-way-book-readers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-fourth-way-book-readers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${FOURTH_WAY_BOOK_READERS_URL:-http://localhost:3010}
+      NODE_ENV: development
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+    volumes:
+      - .:/app
+      - /app/apps/fourth-way-book-readers/.next
+    ports:
+      - "3010:3010"
+    command: sh -c "cd apps/fourth-way-book-readers && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network

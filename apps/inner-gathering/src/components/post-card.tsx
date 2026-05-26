@@ -1,5 +1,6 @@
-import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip } from "@mantine/core";
-import { FileText, User, ExternalLink, Trash2 } from "lucide-react";
+import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip, Anchor } from "@mantine/core";
+import { FileText, User, ExternalLink, Trash2, MessageCircle, Pin, PinOff } from "lucide-react";
+import Link from "next/link";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
 
@@ -8,9 +9,13 @@ interface PostCardProps {
   canDelete?: boolean;
   deleting?: boolean;
   onDelete?: () => void;
+  canPin?: boolean;
+  pinned?: boolean;
+  pinning?: boolean;
+  onTogglePin?: () => void;
 }
 
-export function PostCard({ post, canDelete = false, deleting = false, onDelete }: PostCardProps) {
+export function PostCard({ post, canDelete = false, deleting = false, onDelete, canPin = false, pinned = false, pinning = false, onTogglePin }: PostCardProps) {
   const authorName = post.author?.displayName || "Unknown";
   const coverImageId = post.coverImage?.id;
   const attachments = (post.media || []).filter((media) => media.id !== coverImageId);
@@ -41,20 +46,36 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete }
               </Badge>
             </Group>
           </Stack>
-          {canDelete && (
-            <Tooltip label="Delete post">
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="sm"
-                aria-label="Delete post"
-                disabled={deleting}
-                onClick={onDelete}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
-          )}
+          <Group gap={4} wrap="nowrap">
+            {canPin && (
+              <Tooltip label={pinned ? "Unpin from feed feature" : "Pin above feed"}>
+                <ActionIcon
+                  variant={pinned ? "filled" : "subtle"}
+                  color="ember"
+                  size="sm"
+                  aria-label={pinned ? "Unpin from feed feature" : "Pin above feed"}
+                  disabled={pinning}
+                  onClick={onTogglePin}
+                >
+                  {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip label="Delete post">
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  aria-label="Delete post"
+                  disabled={deleting}
+                  onClick={onDelete}
+                >
+                  <Trash2 size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
         </Group>
 
         {post.excerpt && (
@@ -118,11 +139,24 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete }
           </Stack>
         )}
 
-        <Group gap="xs">
-          <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
-            <User size={14} />
-          </ThemeIcon>
-          <Text size="sm" style={{ fontStyle: 'italic', color: '#6b4020' }}>By {authorName}</Text>
+        <Group justify="space-between" align="center" mt={4}>
+          <Group gap="xs">
+            <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
+              <User size={14} />
+            </ThemeIcon>
+            <Text size="sm" style={{ fontStyle: 'italic', color: '#6b4020' }}>By {authorName}</Text>
+          </Group>
+          <Anchor
+            component={Link}
+            href={`/posts/${post.id}`}
+            size="sm"
+            fw={600}
+            c="ember"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            <MessageCircle size={14} />
+            Open thread{post.replyCount ? ` (${post.replyCount})` : ''}
+          </Anchor>
         </Group>
       </Stack>
     </Paper>

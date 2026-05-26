@@ -192,24 +192,24 @@ export function BlackHoleDropzone({ userId, onPublished }: BlackHoleDropzoneProp
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       style={{
-        borderColor: dragging ? "#00e5ff" : "#008ca3",
-        background: "#050008",
-        boxShadow: dragging ? "0 0 0 2px rgba(0, 229, 255, 0.42)" : "0 8px 28px rgba(0, 0, 0, 0.34)",
-        color: "#f5fcff",
+        borderColor: dragging ? "#f0a040" : "#3d1f0a",
+        background: "linear-gradient(160deg, #150f0a 0%, #2a160b 58%, #42240f 100%)",
+        boxShadow: dragging ? "0 0 0 2px rgba(240, 160, 64, 0.35)" : "0 8px 28px rgba(45, 20, 8, 0.22)",
+        color: "#fdf0d0",
         overflow: "hidden",
       }}
     >
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
-            <ThemeIcon size="lg" radius="sm" variant="filled" style={{ background: "#00cfe8", color: "#050008" }}>
+            <ThemeIcon size="lg" radius="sm" variant="filled" color="ember">
               <Sparkles size={18} />
             </ThemeIcon>
             <Box>
-              <Text fw={700} style={{ color: "#00e5ff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              <Text fw={700} style={{ color: "#fff3d8", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Black Hole
               </Text>
-              <Text size="xs" style={{ color: "#d7fbff", fontStyle: "italic" }}>
+              <Text size="xs" style={{ color: "#d9b47a", fontStyle: "italic" }}>
                 Links, media, notes, fragments
               </Text>
             </Box>
@@ -218,7 +218,7 @@ export function BlackHoleDropzone({ userId, onPublished }: BlackHoleDropzoneProp
             <Tooltip label="Choose files">
               <ActionIcon
                 variant="subtle"
-                color="cyan"
+                color="orange"
                 aria-label="Choose files"
                 onClick={() => inputRef.current?.click()}
               >
@@ -256,17 +256,11 @@ export function BlackHoleDropzone({ userId, onPublished }: BlackHoleDropzoneProp
           placeholder={userId ? "Drop or paste something..." : "Sign in to drop something..."}
           styles={{
             input: {
-              color: "#2b004f",
-              background: "#f6efff",
-              border: "1px solid #00cfe8",
+              color: "#fff8ec",
+              background: "rgba(255, 252, 244, 0.06)",
+              border: "1px solid rgba(240, 201, 138, 0.22)",
               borderRadius: 6,
               padding: "0.75rem",
-              caretColor: "#2b004f",
-              boxShadow: "inset 0 0 0 1px rgba(43, 0, 79, 0.08)",
-              "&::placeholder": {
-                color: "#5a3d73",
-                opacity: 1,
-              },
             },
           }}
         />
@@ -303,7 +297,7 @@ export function BlackHoleDropzone({ userId, onPublished }: BlackHoleDropzoneProp
         )}
 
         <Group justify="space-between" align="center">
-          <Text size="xs" style={{ color: "#9cefff" }}>
+          <Text size="xs" style={{ color: "#b98955" }}>
             {files.length > 0 ? `${files.length} file${files.length === 1 ? "" : "s"} queued` : "Ready"}
           </Text>
           <Button

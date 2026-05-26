@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Iotatonos" format="2">
+	<advance width="580"/>
+	<unicode hex="038A"/>
+	<anchor x="168" y="0" name="bottom"/>
+	<anchor x="168" y="0" name="ogonek"/>
+	<anchor x="168" y="0" name="top"/>
+	<anchor x="168" y="0" name="topleft"/>
+	<outline>
+		<component base="Iota" xOffset="168"/>
+		<component base="acutecomb" xOffset="-107" yOffset="-70"/>
+	</outline>
+	<lib>
+		<dict>
+			<key>com.schriftgestaltung.Glyphs.ComponentInfo</key>
+			<array>
+				<dict>
+					<key>alignment</key>
+					<integer>-1</integer>
+					<key>index</key>
+					<integer>0</integer>
+					<key>name</key>
+					<string>Iota</string>
+				</dict>
+				<dict>
+					<key>alignment</key>
+					<integer>-1</integer>
+					<key>index</key>
+					<integer>1</integer>
+					<key>name</key>
+					<string>acutecomb</string>
+				</dict>
+			</array>
+		</dict>
+	</lib>
+</glyph>

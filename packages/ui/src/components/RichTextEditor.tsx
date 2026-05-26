@@ -12,10 +12,15 @@ import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Youtube from '@tiptap/extension-youtube';
 import { common, createLowlight } from 'lowlight';
 import { useEffect, useCallback } from 'react';
 import { ActionIcon, Tooltip } from '@mantine/core';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Table as TableIcon, Youtube as YoutubeIcon } from 'lucide-react';
 
 const lowlight = createLowlight(common);
 
@@ -23,7 +28,7 @@ export interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
-  /** When true, shows a compact toolbar without image/code block controls */
+  /** When true, shows a compact toolbar without image/code block/table controls */
   minimal?: boolean;
 }
 
@@ -69,6 +74,17 @@ export function RichTextEditor({
         lowlight,
         defaultLanguage: 'plaintext',
       }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Youtube.configure({
+        HTMLAttributes: {
+          class: 'w-full aspect-video rounded-md',
+        },
+      }),
       ...(placeholderText
         ? [Placeholder.configure({ placeholder: placeholderText })]
         : []),
@@ -91,6 +107,23 @@ export function RichTextEditor({
     const url = window.prompt('Enter image URL');
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
+    }
+  }, [editor]);
+
+  const insertTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }, [editor]);
+
+  const insertYoutube = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt('Enter YouTube URL');
+    if (url) {
+      editor.commands.setYoutubeVideo({
+        src: url,
+        width: 640,
+        height: 480,
+      });
     }
   }, [editor]);
 
@@ -138,7 +171,7 @@ export function RichTextEditor({
           <MantineRTE.Highlight />
         </MantineRTE.ControlsGroup>
 
-        {/* Image & Code Block — hidden in minimal mode */}
+        {/* Media & Advanced — hidden in minimal mode */}
         {!minimal && (
           <MantineRTE.ControlsGroup>
             <Tooltip label="Insert image">
@@ -148,6 +181,24 @@ export function RichTextEditor({
                 onClick={insertImage}
               >
                 <ImagePlus size={14} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Insert Table">
+              <ActionIcon
+                variant="default"
+                size="sm"
+                onClick={insertTable}
+              >
+                <TableIcon size={14} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Insert YouTube">
+              <ActionIcon
+                variant="default"
+                size="sm"
+                onClick={insertYoutube}
+              >
+                <YoutubeIcon size={14} />
               </ActionIcon>
             </Tooltip>
             <MantineRTE.CodeBlock />

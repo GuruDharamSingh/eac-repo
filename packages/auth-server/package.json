@@ -19,11 +19,12 @@
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
     "@elkdonis/redis": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "^2.45.0",
-    "next": "^15.1.0"
+    "next": "^16.1.6"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

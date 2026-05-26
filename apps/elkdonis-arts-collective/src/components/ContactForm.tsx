@@ -6,7 +6,7 @@ type Status = "idle" | "sending" | "done" | "error";
 
 export function ContactForm() {
   const [visible, setVisible] = useState(false);
-  const [fields, setFields] = useState({ name: "", email: "", subject: "", message: "" });
+  const [fields, setFields] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const ref = useRef<HTMLElement>(null);
@@ -51,12 +51,9 @@ export function ContactForm() {
     <section id="contact" ref={ref} className="contact-section">
       <div className="section-inner" style={{ maxWidth: "680px" }}>
         <div className={`reveal ${visible ? "in-view" : ""}`} style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <p className="section-eyebrow">Get In Touch</p>
-          <h2 className="section-heading">Contact Us</h2>
+          <p className="section-eyebrow">Stay in Touch</p>
+          <h2 className="section-heading">Leave a Message</h2>
           <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem auto" } as React.CSSProperties} />
-          <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.7 }}>
-            Interested in joining, collaborating, or supporting our work? We read every message.
-          </p>
         </div>
 
         {status === "done" ? (
@@ -94,24 +91,6 @@ export function ContactForm() {
                 value={fields.email}
                 onChange={(e) => set("email", e.target.value)}
               />
-            </div>
-
-            <div className="form-row">
-              <label className="form-label" htmlFor="cf-subject">Subject</label>
-              <select
-                id="cf-subject"
-                className="form-input"
-                value={fields.subject}
-                onChange={(e) => set("subject", e.target.value)}
-              >
-                <option value="">Select a topic…</option>
-                <option value="general">General Inquiry</option>
-                <option value="membership">Membership</option>
-                <option value="workshop">Workshop / Lab</option>
-                <option value="donation">Donation / Support</option>
-                <option value="artist-directory">Artist Directory Listing</option>
-                <option value="press">Press & Media</option>
-              </select>
             </div>
 
             <div className="form-row">

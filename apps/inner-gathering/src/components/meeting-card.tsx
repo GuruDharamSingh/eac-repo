@@ -37,6 +37,8 @@ import {
   Radio,
   Repeat,
   LayoutGrid,
+  Pin,
+  PinOff,
   Trash2,
 } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
@@ -52,6 +54,10 @@ interface MeetingCardProps {
   canDelete?: boolean;
   deleting?: boolean;
   onDelete?: () => void;
+  canPin?: boolean;
+  pinned?: boolean;
+  pinning?: boolean;
+  onTogglePin?: () => void;
 }
 
 const formatDate = (date: Date) =>
@@ -107,6 +113,10 @@ export function MeetingCard({
   canDelete = false,
   deleting = false,
   onDelete,
+  canPin = false,
+  pinned = false,
+  pinning = false,
+  onTogglePin,
 }: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isAttending, setIsAttending] = useState(false);
@@ -266,6 +276,21 @@ export function MeetingCard({
           </Stack>
 
           <Group gap={4} wrap="nowrap">
+            {canPin && (
+              <Tooltip label={pinned ? "Unpin from feed feature" : "Pin above feed"}>
+                <ActionIcon
+                  variant={pinned ? "filled" : "subtle"}
+                  color="ember"
+                  size="sm"
+                  aria-label={pinned ? "Unpin from feed feature" : "Pin above feed"}
+                  disabled={pinning}
+                  onClick={onTogglePin}
+                >
+                  {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+
             {canDelete && (
               <Tooltip label="Delete thread">
                 <ActionIcon

@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "Religath";
-  src: url("/fonts/RELIGATH-Demo.otf") format("opentype");
+  font-family: "Venture";
+  src: url("/fonts/Venture-nRqOR.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -31,7 +31,7 @@
   position: absolute;
   right: -0.05em;
   bottom: -0.1em;
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: 28vw;
   color: rgba(180, 140, 60, 0.04);
   line-height: 1;
@@ -46,7 +46,7 @@
 
 .heroLabel {
   display: block;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
@@ -55,7 +55,7 @@
 }
 
 .heroTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(3.5rem, 9vw, 7rem);
   color: #e0d4bc;
   line-height: 0.92;
@@ -64,7 +64,7 @@
 }
 
 .heroBody {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.3rem;
   font-style: italic;
   line-height: 1.9;
@@ -101,14 +101,14 @@
 }
 
 .cardNumber {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: 3rem;
   color: rgba(255, 255, 255, 0.07);
   line-height: 1;
 }
 
 .statusBadge {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -132,7 +132,7 @@
 }
 
 .cardTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   color: #f0e8d0;
   margin: 0 0 0.4rem;
@@ -140,7 +140,7 @@
 }
 
 .cardSubtitle {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -156,14 +156,14 @@
 }
 
 .cardMeta span {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   color: rgba(240, 232, 208, 0.4);
   letter-spacing: 0.08em;
 }
 
 .cardDescription {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.3rem;
   line-height: 1.9;
   color: rgba(240, 232, 208, 0.7);
@@ -180,7 +180,7 @@
 }
 
 .cardDetail {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   color: rgba(240, 232, 208, 0.35);
   letter-spacing: 0.08em;
@@ -194,7 +194,7 @@
 }
 
 .cardCta {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   letter-spacing: 0.15em;
   text-decoration: none;
@@ -220,7 +220,7 @@
 }
 
 .upcomingTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 4.5vw, 3.5rem);
   color: #c9a962;
   margin: 0 0 1rem;
@@ -228,7 +228,7 @@
 }
 
 .upcomingIntro {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   font-style: italic;
   color: #7a6a4a;
@@ -243,7 +243,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
 }
 
 .table th {
@@ -297,7 +297,7 @@
 }
 
 .contactTitle {
-  font-family: "Religath", serif;
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 4.5vw, 3.5rem);
   color: #f0e8d0;
   margin: 0 0 1.5rem;
@@ -305,7 +305,7 @@
 }
 
 .contactBody {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.3rem;
   font-style: italic;
   line-height: 1.9;
@@ -314,7 +314,7 @@
 }
 
 .contactLink {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-sans);
   font-size: 1.3rem;
   letter-spacing: 0.1em;
   color: #c9a962;
