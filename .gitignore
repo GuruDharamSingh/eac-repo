@@ -55,6 +55,7 @@ backups/
 *.sql
 *.sql.gz
 !packages/db/migrations/*.sql
+!packages/db/schema-snapshot-*.sql
 !docker/*.sql
 
 # Logs
