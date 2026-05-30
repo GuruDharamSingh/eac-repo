@@ -17,6 +17,8 @@ export interface RsvpGuestEmailProps {
   meetingTitle: string;
   section?: string;
   scheduledAt?: string;
+  location?: string;
+  meetingUrl?: string;
   orgName?: string;
   primaryColor?: string;
 }
@@ -32,6 +34,8 @@ function RsvpGuestEmail({
   meetingTitle,
   section,
   scheduledAt,
+  location,
+  meetingUrl,
   orgName = 'Amrit Canada',
   primaryColor = '#F4C430',
 }: RsvpGuestEmailProps) {
@@ -95,7 +99,7 @@ function RsvpGuestEmail({
               Your RSVP for <strong>{meetingTitle}</strong> has been received. Waheguru!
             </Text>
 
-            {(sectionLabel || dateStr) && (
+            {(sectionLabel || dateStr || location || meetingUrl) && (
               <Section
                 style={{
                   background: '#FDF5E6',
@@ -126,6 +130,16 @@ function RsvpGuestEmail({
                 {dateStr && (
                   <Text style={{ margin: '4px 0 0', fontSize: '14px', color: '#666' }}>
                     {dateStr}
+                  </Text>
+                )}
+                {location && (
+                  <Text style={{ margin: '4px 0 0', fontSize: '14px', color: '#666' }}>
+                    {location}
+                  </Text>
+                )}
+                {meetingUrl && (
+                  <Text style={{ margin: '8px 0 0', fontSize: '14px', color: '#36454f' }}>
+                    Meeting link: <a href={meetingUrl} style={{ color: primaryColor }}>{meetingUrl}</a>
                   </Text>
                 )}
               </Section>

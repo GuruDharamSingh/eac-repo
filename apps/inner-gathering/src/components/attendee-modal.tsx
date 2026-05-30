@@ -13,10 +13,11 @@ import {
   Paper,
   SegmentedControl,
   Stack,
+  Switch,
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import { UserCheck, UserX, UserPlus, Users, Clock } from "lucide-react";
+import { UserCheck, UserX, UserPlus, Users, Clock, Mail } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { useRealtimeAttendees } from "@elkdonis/hooks";
 import { supabase } from "@/lib/supabase";
@@ -44,6 +45,7 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
   // Current user's RSVP status
   const [myRsvpStatus, setMyRsvpStatus] = useState<string | null>(null);
   const [isAttending, setIsAttending] = useState(false);
+  const [receiveEmailNotice, setReceiveEmailNotice] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState(false);
 
   const isPastMeeting = meeting?.scheduledAt && new Date(meeting.scheduledAt) < new Date();
@@ -95,7 +97,11 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
           fetchAttendees(); // Refresh the list
         }
       } else {
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, { method: "POST" });
+        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ receiveEmailNotice }),
+        });
         if (res.ok) {
           const data = await res.json();
           setIsAttending(true);
@@ -184,6 +190,17 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
           <Paper withBorder p="md" radius="md" bg="gray.0">
             <Stack gap="sm">
               <Text size="sm" fw={600}>Your RSVP</Text>
+              {!isAttending && (
+                <Switch
+                  size="xs"
+                  color="teal"
+                  checked={receiveEmailNotice}
+                  onChange={(event) => setReceiveEmailNotice(event.currentTarget.checked)}
+                  label="Email me a confirmation"
+                  thumbIcon={receiveEmailNotice ? <Mail size={10} /> : undefined}
+                  disabled={rsvpLoading}
+                />
+              )}
               <Group grow gap="xs">
                 <Button
                   size="sm"

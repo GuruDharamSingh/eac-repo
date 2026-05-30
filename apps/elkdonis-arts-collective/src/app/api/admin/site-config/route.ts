@@ -19,8 +19,8 @@ async function assertAdmin() {
 export async function GET(req: NextRequest) {
   const key = req.nextUrl.searchParams.get('key');
 
-  // Public read for specific keys (fundraising, featured_artist, initiative, featured_events)
-  const PUBLIC_KEYS = ['fundraising', 'featured_artist', 'initiative', 'featured_events'];
+  // Public read for specific keys used by homepage sections.
+  const PUBLIC_KEYS = ['fundraising', 'featured_artist', 'initiative', 'featured_events', 'image_spaces'];
   if (key && PUBLIC_KEYS.includes(key)) {
     const [row] = await db`
       SELECT value FROM site_config WHERE org_id = ${ORG_ID} AND key = ${key} LIMIT 1

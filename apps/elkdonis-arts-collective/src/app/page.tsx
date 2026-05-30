@@ -5,17 +5,17 @@ import { StatementThreshold } from "@/components/StatementThreshold";
 import SiteNav from "@/components/SiteNav";
 import { BoardRow } from "@/components/BoardRow";
 import { About } from "@/components/About";
-import { QuestionOfInquiry } from "@/components/QuestionOfInquiry";
+import { CurrentWorkQuestion } from "@/components/CurrentWorkQuestion";
+import { ImageSpaceBanner } from "@/components/ImageSpaceBanner";
+import { CitiesVision, VisionStatement } from "@/components/CitiesVision";
 import { GallerySlider } from "@/components/GallerySlider";
 import { FeatureInitiative } from "@/components/FeatureInitiative";
 import { FeaturedEventsTable } from "@/components/FeaturedEventsTable";
 import { FeaturedGrantProgram } from "@/components/FeaturedGrantProgram";
 import { FundraisingGoal } from "@/components/FundraisingGoal";
-import { Philosophy } from "@/components/Philosophy";
 import { JoinSection } from "@/components/JoinSection";
-import { ContactForm } from "@/components/ContactForm";
 import { Footer } from "@/components/Footer";
-import { InquiryPrompt, StickyJoinBar } from "@elkdonis/ui";
+import { StickyJoinBar } from "@elkdonis/ui";
 
 export default function LandingPage() {
   const [thresholdDone, setThresholdDone] = useState(false);
@@ -52,17 +52,11 @@ export default function LandingPage() {
           </div>
         </header>
 
-        {/* ── First inquiry and manifesto excerpt ── */}
-        <section className="inquiry-pair-section" aria-label="First inquiry">
-          <div className="inquiry-pair-grid">
-            <div className="inquiry-response-column">
-              <InquiryPrompt responseLabel={null} />
-            </div>
-            <div className="inquiry-text-column">
-              <QuestionOfInquiry />
-            </div>
-          </div>
-        </section>
+        {/* ── Current Work Question (boxed) + manifesto excerpt below ── */}
+        <CurrentWorkQuestion />
+
+        {/* ── Banner Image Space (admin-selectable) ── */}
+        <ImageSpaceBanner />
 
         {/* ── Join the Collective ── */}
         <JoinSection />
@@ -76,8 +70,6 @@ export default function LandingPage() {
         {/* ── Featured Inner Gathering Events ── */}
         <FeaturedEventsTable />
 
-        {/* ── Philosophy ── */}
-        <Philosophy />
 
         {/* ── Featured Arts ── */}
         <FeaturedGrantProgram />
@@ -88,11 +80,15 @@ export default function LandingPage() {
         {/* ── Gallery ── */}
         <GallerySlider />
 
+        {/* ── Cities + Vision ── */}
+        <CitiesVision />
+
         {/* ── Board of Directors (team — moved to bottom) ── */}
         <BoardRow />
 
         {/* ── Contact ── */}
-        <ContactForm />
+        {/* ── Vision statement ── */}
+        <VisionStatement />
 
         {/* ── Footer ── */}
         <Footer />

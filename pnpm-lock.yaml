@@ -43,6 +43,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1011,6 +1014,12 @@ importers:
       '@elkdonis/auth-server':
         specifier: workspace:*
         version: link:../../packages/auth-server
+      '@elkdonis/checkout':
+        specifier: workspace:*
+        version: link:../../packages/checkout
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db

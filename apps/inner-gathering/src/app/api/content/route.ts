@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
         slug,
         body: payload.body ?? "",
         status,
-        visibility: "PUBLIC",
+        visibility: (payload.visibility as string) || "PUBLIC",
         scheduled_at: payload.scheduledAt ? new Date(payload.scheduledAt) : null,
         duration_minutes: payload.durationMinutes ?? null,
         location: payload.location ?? null,

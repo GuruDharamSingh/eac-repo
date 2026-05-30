@@ -8,6 +8,7 @@ export type MeetingVisibility = 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
 
 export interface Meeting {
   id: string;
+  kind?: 'meeting' | 'workshop' | 'event';
   title: string;
   description?: string;
   scheduledAt: Date;

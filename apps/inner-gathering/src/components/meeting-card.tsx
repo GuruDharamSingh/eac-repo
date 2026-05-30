@@ -10,14 +10,12 @@ import {
   Button,
   Divider,
   Group,
-  Menu,
   Paper,
   Stack,
   Text,
   ThemeIcon,
-  Title,
-  Loader,
   Tooltip,
+  Switch,
 } from "@mantine/core";
 import { stripHtml } from "@/lib/strip-html";
 import {
@@ -25,11 +23,9 @@ import {
   Clock,
   MapPin,
   Video,
-  User,
   FileText,
   ExternalLink,
   Users,
-  MoreVertical,
   UserCheck,
   UserPlus,
   UserX,
@@ -40,6 +36,9 @@ import {
   Pin,
   PinOff,
   Trash2,
+  Mail,
+  Pencil,
+  GraduationCap,
 } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { useRealtimeAttendees } from "@elkdonis/hooks";
@@ -47,6 +46,7 @@ import { MediaPlayer, ImageLightbox } from "@elkdonis/ui";
 import { supabase } from "@/lib/supabase";
 import NextImage from "next/image";
 import Link from "next/link";
+import { JoinWorkshopModal } from "@/components/join-workshop-modal";
 
 interface MeetingCardProps {
   meeting: Meeting;
@@ -58,6 +58,9 @@ interface MeetingCardProps {
   pinned?: boolean;
   pinning?: boolean;
   onTogglePin?: () => void;
+  showPrivateBadge?: boolean;
+  canEdit?: boolean;
+  onEdit?: (meeting: Meeting) => void;
 }
 
 const formatDate = (date: Date) =>
@@ -95,14 +98,12 @@ function isHappeningNow(meeting: Meeting): boolean {
   return now >= start && now <= end;
 }
 
-// Check if RSVP should still be allowed (meeting today or not yet ended)
 function canStillRsvp(meeting: Meeting): boolean {
   if (!meeting.scheduledAt) return true;
   const now = new Date();
   const meetingDate = new Date(meeting.scheduledAt);
   const durationMs = (meeting.durationMinutes || 60) * 60 * 1000;
   const endTime = new Date(meetingDate.getTime() + durationMs);
-  // Allow RSVP until 1 hour after meeting ends
   const rsvpDeadline = new Date(endTime.getTime() + 60 * 60 * 1000);
   return now < rsvpDeadline;
 }
@@ -117,58 +118,53 @@ export function MeetingCard({
   pinned = false,
   pinning = false,
   onTogglePin,
+  showPrivateBadge = false,
+  canEdit = false,
+  onEdit,
 }: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isAttending, setIsAttending] = useState(false);
-  const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [rsvpChecked, setRsvpChecked] = useState(false);
+  const [receiveEmailNotice, setReceiveEmailNotice] = useState(true);
   const [happeningNow, setHappeningNow] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   const guideName = meeting.guide?.displayName || meeting.creator?.displayName || "Unknown";
-  const coverImageId = meeting.coverImage?.id;
-  const attachments = (meeting.media || []).filter((media) => media.id !== coverImageId);
+  const guideInitial = guideName[0]?.toUpperCase() ?? "?";
+  const guideAvatar = meeting.guide?.avatarUrl || meeting.creator?.avatarUrl;
 
-  // Check if meeting is in the past
+  const isWorkshop = meeting.kind === "workshop";
+  const detailHref = isWorkshop ? `/workshops/${meeting.id}` : `/meetings/${meeting.id}`;
+
+  const coverImageId = meeting.coverImage?.id;
+  const attachments = (meeting.media || []).filter((m) => m.id !== coverImageId);
   const isPastMeeting = meeting.scheduledAt && new Date(meeting.scheduledAt) < new Date();
 
-  // Realtime attendee count
   const { attendeeCount, recentChanges, initializeCount } = useRealtimeAttendees({
     client: supabase,
     meetingId: meeting.id,
     enabled: meeting.isRSVPEnabled === true,
   });
 
-  // Initialize the attendee count from server data
   useEffect(() => {
-    if (meeting.attendeeCount !== undefined) {
-      initializeCount(meeting.attendeeCount);
-    }
+    if (meeting.attendeeCount !== undefined) initializeCount(meeting.attendeeCount);
   }, [meeting.attendeeCount, initializeCount]);
 
-  // Live attendee count (prefer realtime, fall back to server)
   const displayAttendeeCount = attendeeCount ?? meeting.attendeeCount ?? 0;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  // Check "happening now" status and update periodically
   useEffect(() => {
     if (!meeting.scheduledAt) return;
     setHappeningNow(isHappeningNow(meeting));
-    const interval = setInterval(() => {
-      setHappeningNow(isHappeningNow(meeting));
-    }, 30000); // Check every 30 seconds
+    const interval = setInterval(() => setHappeningNow(isHappeningNow(meeting)), 30000);
     return () => clearInterval(interval);
   }, [meeting.scheduledAt, meeting.durationMinutes]);
 
-  // Check RSVP status on mount
   useEffect(() => {
-    if (meeting.isRSVPEnabled && !rsvpChecked) {
-      checkRsvpStatus();
-    }
+    if (meeting.isRSVPEnabled && !rsvpChecked) checkRsvpStatus();
   }, [meeting.id, meeting.isRSVPEnabled, rsvpChecked]);
 
   const checkRsvpStatus = async () => {
@@ -177,54 +173,35 @@ export function MeetingCard({
       if (res.ok) {
         const data = await res.json();
         setIsAttending(data.attending);
-        setAttendanceStatus(data.status);
       }
-    } catch (error) {
-      console.error("Error checking RSVP status:", error);
-    } finally {
-      setRsvpChecked(true);
-    }
+    } catch {}
+    finally { setRsvpChecked(true); }
   };
 
   const handleRsvp = async (shouldAttend: boolean) => {
     if (shouldAttend === isAttending) return;
-
     setIsLoading(true);
     try {
       if (!shouldAttend) {
-        // Cancel RSVP
         const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, { method: "DELETE" });
-        if (res.ok) {
-          setIsAttending(false);
-          setAttendanceStatus(null);
-        }
+        if (res.ok) setIsAttending(false);
       } else {
-        // Register RSVP
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, { method: "POST" });
-        if (res.ok) {
-          const data = await res.json();
-          setIsAttending(true);
-          setAttendanceStatus(data.status);
-        }
+        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ receiveEmailNotice }),
+        });
+        if (res.ok) setIsAttending(true);
       }
-    } catch (error) {
-      console.error("Error updating RSVP:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch {}
+    finally { setIsLoading(false); }
   };
 
   return (
-    <Paper withBorder radius="sm" className="parchment-card" style={{ overflow: "hidden" }}>
-      {/* Cover Image */}
+    <Paper withBorder radius="md" className="parchment-card" style={{ overflow: "hidden" }}>
+      {/* Cover image */}
       {meeting.coverImage?.url && (
-        <Box
-          pos="relative"
-          h={192}
-          bg="gray.1"
-          style={{ cursor: "pointer" }}
-          onClick={() => setLightboxUrl(meeting.coverImage!.url)}
-        >
+        <Box pos="relative" h={180} style={{ cursor: "pointer" }} onClick={() => setLightboxUrl(meeting.coverImage!.url)}>
           <NextImage
             src={meeting.coverImage.url}
             alt={meeting.coverImage.altText || meeting.title}
@@ -235,344 +212,322 @@ export function MeetingCard({
         </Box>
       )}
 
-      <Stack gap="md" p="md">
-        {/* Title & Menu */}
-        <Group justify="space-between" align="flex-start">
-          <Stack gap="xs" style={{ flex: 1 }}>
-            <Title order={4}>{meeting.title}</Title>
-            <Group gap="xs">
-              <Badge variant="filled" color="ember" style={{ letterSpacing: '0.06em' }}>Meeting</Badge>
-              {meeting.isOnline && (
-                <Badge variant="light" color="cyan" leftSection={<Video size={12} />}>
-                  Online
-                </Badge>
-              )}
-              {happeningNow && (
-                <Badge
-                  variant="filled"
-                  color="red"
-                  leftSection={<Radio size={12} />}
-                  style={{ animation: "pulse 2s ease-in-out infinite" }}
-                >
-                  Happening Now
-                </Badge>
-              )}
-              {!happeningNow && isPastMeeting && (
-                <Badge variant="light" color="gray">Past</Badge>
-              )}
-              {isAttending && (
-                <Badge variant="light" color="teal" leftSection={<UserCheck size={12} />}>
-                  Attending
-                </Badge>
-              )}
-              {meeting.recurrencePattern && meeting.recurrencePattern !== "NONE" && (
-                <Badge variant="light" color="violet" leftSection={<Repeat size={12} />}>
-                  {meeting.recurrencePattern === "DAILY" ? "Daily" :
-                   meeting.recurrencePattern === "WEEKLY" ? "Weekly" :
-                   meeting.recurrencePattern === "MONTHLY" ? "Monthly" : "Recurring"}
-                </Badge>
-              )}
-            </Group>
+      <Stack gap={0}>
+        {/* Header row: avatar + title + compact meta + admin actions */}
+        <Group p="md" pb="xs" gap="sm" align="flex-start" wrap="nowrap">
+          {/* Guide avatar */}
+          <Avatar
+            src={guideAvatar}
+            size={42}
+            radius="xl"
+            color="ember"
+            style={{ flexShrink: 0, marginTop: 2 }}
+          >
+            {guideInitial}
+          </Avatar>
+
+          {/* Title + tight inline meta (guide · date · time · location) */}
+          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              component={Link}
+              href={detailHref}
+              fw={700}
+              size="md"
+              lh={1.25}
+              style={{
+                color: 'var(--mantine-color-text)',
+                textDecoration: 'none',
+              }}
+            >
+              {meeting.title}
+            </Text>
+            {mounted && (
+              <Group gap={6} wrap="wrap" style={{ rowGap: 2, columnGap: 8 }}>
+                <Text size="xs" c="dimmed" fw={500} truncate>
+                  {guideName}
+                </Text>
+                {meeting.scheduledAt && (
+                  <>
+                    <Text span size="xs" c="dimmed">·</Text>
+                    <Group gap={3} wrap="nowrap">
+                      <Calendar size={11} color="var(--mantine-color-gray-6)" />
+                      <Text size="xs" c="dimmed">{formatDate(new Date(meeting.scheduledAt))}</Text>
+                    </Group>
+                    <Group gap={3} wrap="nowrap">
+                      <Clock size={11} color="var(--mantine-color-gray-6)" />
+                      <Text size="xs" c="dimmed">
+                        {formatTime(new Date(meeting.scheduledAt))}
+                        {meeting.durationMinutes && (
+                          <Text span size="xs" c="dimmed" ml={3}>({meeting.durationMinutes}m)</Text>
+                        )}
+                      </Text>
+                    </Group>
+                  </>
+                )}
+                {meeting.location && (
+                  <Group gap={3} wrap="nowrap" style={{ minWidth: 0, flexShrink: 1 }}>
+                    <MapPin size={11} color="var(--mantine-color-gray-6)" />
+                    <Text size="xs" c="dimmed" truncate style={{ maxWidth: 180 }}>
+                      {meeting.location}
+                    </Text>
+                  </Group>
+                )}
+              </Group>
+            )}
           </Stack>
 
-          <Group gap={4} wrap="nowrap">
+          {/* Admin action icons */}
+          <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
             {canPin && (
-              <Tooltip label={pinned ? "Unpin from feed feature" : "Pin above feed"}>
+              <Tooltip label={pinned ? "Unpin" : "Pin above feed"}>
                 <ActionIcon
                   variant={pinned ? "filled" : "subtle"}
                   color="ember"
                   size="sm"
-                  aria-label={pinned ? "Unpin from feed feature" : "Pin above feed"}
                   disabled={pinning}
                   onClick={onTogglePin}
                 >
-                  {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+                  {pinned ? <PinOff size={15} /> : <Pin size={15} />}
                 </ActionIcon>
               </Tooltip>
             )}
-
             {canDelete && (
-              <Tooltip label="Delete thread">
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  aria-label="Delete thread"
-                  disabled={deleting}
-                  onClick={onDelete}
-                >
-                  <Trash2 size={16} />
+              <Tooltip label="Delete">
+                <ActionIcon variant="subtle" color="red" size="sm" disabled={deleting} onClick={onDelete}>
+                  <Trash2 size={15} />
                 </ActionIcon>
               </Tooltip>
             )}
-
-            {/* Meeting Menu */}
-            <Menu shadow="md" width={200} position="bottom-end">
-              <Menu.Target>
-                <ActionIcon variant="subtle" color="gray" size="sm">
-                  <MoreVertical size={16} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                {meeting.hasEventPage && (
-                  <Menu.Item
-                    component={Link}
-                    href={`/meetings/${meeting.id}`}
-                    leftSection={<LayoutGrid size={14} />}
-                  >
-                    Go to Event Page
-                  </Menu.Item>
-                )}
-                {meeting.isRSVPEnabled && onViewAttendees && (
-                  <Menu.Item
-                    leftSection={<ClipboardList size={14} />}
-                    onClick={() => onViewAttendees(meeting)}
-                  >
-                    {isPastMeeting ? "Attendance Report" : "View Attendees"}
-                  </Menu.Item>
-                )}
-                {meeting.documentUrl && (
-                  <Menu.Item
-                    component="a"
-                    href={meeting.documentUrl}
-                    target="_blank"
-                    leftSection={<FileText size={14} />}
-                  >
-                    Open Document
-                  </Menu.Item>
-                )}
-                {meeting.nextcloudTalkToken && (
-                  <Menu.Item
-                    component="a"
-                    href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
-                    target="_blank"
-                    leftSection={<Video size={14} />}
-                  >
-                    Join Talk Room
-                  </Menu.Item>
-                )}
-              </Menu.Dropdown>
-            </Menu>
           </Group>
+        </Group>
+
+        {/* Badges */}
+        <Group px="md" pb="xs" gap="xs">
+          <Badge
+            variant="filled"
+            color={isWorkshop ? "violet" : "ember"}
+            size="sm"
+            leftSection={isWorkshop ? <GraduationCap size={11} /> : undefined}
+            style={{ letterSpacing: '0.05em' }}
+          >
+            {isWorkshop ? "Workshop" : "Meeting"}
+          </Badge>
+          {meeting.isOnline && (
+            <Badge variant="light" color="cyan" size="sm" leftSection={<Video size={11} />}>Online</Badge>
+          )}
+          {happeningNow && (
+            <Badge variant="filled" color="red" size="sm" leftSection={<Radio size={11} />} style={{ animation: "pulse 2s ease-in-out infinite" }}>
+              Live Now
+            </Badge>
+          )}
+          {!happeningNow && isPastMeeting && (
+            <Badge variant="light" color="gray" size="sm">Past</Badge>
+          )}
+          {isAttending && (
+            <Badge variant="light" color="teal" size="sm" leftSection={<UserCheck size={11} />}>Attending</Badge>
+          )}
+          {showPrivateBadge && meeting.visibility === "ORGANIZATION" && (
+            <Badge variant="outline" color="gray" size="sm">Private</Badge>
+          )}
+          {meeting.recurrencePattern && meeting.recurrencePattern !== "NONE" && (
+            <Badge variant="light" color="grape" size="sm" leftSection={<Repeat size={11} />}>
+              {meeting.recurrencePattern === "DAILY" ? "Daily" :
+               meeting.recurrencePattern === "WEEKLY" ? "Weekly" :
+               meeting.recurrencePattern === "MONTHLY" ? "Monthly" : "Recurring"}
+            </Badge>
+          )}
         </Group>
 
         {/* Description */}
         {meeting.description && (
-          <Text size="sm" c="dimmed" lineClamp={2}>
+          <Text size="sm" c="dimmed" px="md" pb="xs" lineClamp={2}>
             {stripHtml(meeting.description)}
           </Text>
         )}
 
-        {/* Details */}
-        <Stack gap={6}>
-          {/* Date & Time */}
-          {meeting.scheduledAt && mounted && (
-            <>
-              <Group gap="lg">
-                <Group gap="xs">
-                  <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
-                    <Calendar size={14} />
-                  </ThemeIcon>
-                  <Text size="sm" fw={500}>{formatDate(new Date(meeting.scheduledAt))}</Text>
-                </Group>
-                <Group gap="xs">
-                  <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
-                    <Clock size={14} />
-                  </ThemeIcon>
-                  <Text size="sm">
-                    {formatTime(new Date(meeting.scheduledAt))}
-                    {meeting.durationMinutes && (
-                      <Text span size="xs" c="dimmed" ml={4}>({meeting.durationMinutes}m)</Text>
-                    )}
-                  </Text>
-                </Group>
-              </Group>
-              <Group gap={8} ml={2}>
-                {TIMEZONE_DISPLAY.map(({ zone, label }) => (
-                  <Text key={zone} size="xs" c="dimmed">
-                    <Text span size="xs" fw={600}>{label}</Text>{" "}
-                    {formatTimeInZone(new Date(meeting.scheduledAt), zone)}
-                  </Text>
-                ))}
-              </Group>
-            </>
-          )}
-
-          {/* Location */}
-          {meeting.location && (
-            <Group gap="xs">
-              <ThemeIcon size="sm" radius="sm" variant="light" color="ember">
-                <MapPin size={14} />
-              </ThemeIcon>
-              <Text size="sm">{meeting.location}</Text>
-            </Group>
-          )}
-
-          {/* Guide */}
-          <Group gap="xs">
-            <Avatar src={meeting.guide?.avatarUrl} size="sm" radius="xl" color="ember">
-              {guideName[0]}
-            </Avatar>
+        {/* Attendee count */}
+        {meeting.isRSVPEnabled && (
+          <Group gap="xs" px="md" pb="xs">
+            <ThemeIcon size="xs" radius="sm" variant="light" color="teal">
+              <Users size={12} />
+            </ThemeIcon>
             <Text size="sm">
-              Guide: <Text span fw={500}>{guideName}</Text>
+              <Text span fw={500}>{displayAttendeeCount}</Text>
+              {meeting.attendeeLimit
+                ? <Text span c="dimmed"> / {meeting.attendeeLimit} attending</Text>
+                : <Text span c="dimmed"> attending</Text>}
             </Text>
+            {recentChanges.length > 0 && recentChanges[0].type === "join" && (
+              <Badge size="xs" variant="light" color="teal">+1 just RSVP'd</Badge>
+            )}
           </Group>
-
-          {/* Attendee Count (live) */}
-          {meeting.isRSVPEnabled && (
-            <Group gap="xs">
-              <ThemeIcon size="sm" radius="md" variant="light" color="teal">
-                <Users size={14} />
-              </ThemeIcon>
-              <Text size="sm">
-                <Text span fw={500}>{displayAttendeeCount}</Text>
-                {meeting.attendeeLimit ? (
-                  <Text span c="dimmed"> / {meeting.attendeeLimit} attending</Text>
-                ) : (
-                  <Text span c="dimmed"> attending</Text>
-                )}
-              </Text>
-              {recentChanges.length > 0 && recentChanges[0].type === 'join' && (
-                <Badge size="xs" variant="light" color="teal">
-                  +1 just RSVP'd
-                </Badge>
-              )}
-            </Group>
-          )}
-        </Stack>
-
-        {/* Media Attachments */}
-        {attachments.length > 0 && (
-          <>
-            <Divider />
-            <Stack gap="xs">
-              <Text size="xs" tt="uppercase" fw={500} c="dimmed">Media</Text>
-              {attachments.map((media) => {
-                const mediaType = media.type || media.mimeType?.split("/")[0];
-
-                if (mediaType === "video" || mediaType === "audio" || mediaType === "image") {
-                  return (
-                    <MediaPlayer
-                      key={media.id}
-                      url={media.url}
-                      type={mediaType as "video" | "audio" | "image"}
-                      title={media.filename}
-                      onImageClick={mediaType === "image" ? setLightboxUrl : undefined}
-                    />
-                  );
-                }
-
-                return (
-                  <Anchor
-                    key={media.id}
-                    href={media.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="xs"
-                  >
-                    <Group gap="xs">
-                      <FileText size={12} />
-                      <Text size="xs" truncate style={{ flex: 1 }}>{media.filename || "Download"}</Text>
-                      <ExternalLink size={12} />
-                    </Group>
-                  </Anchor>
-                );
-              })}
-            </Stack>
-          </>
         )}
 
-        {/* Actions Footer */}
-        {(meeting.isRSVPEnabled || meeting.nextcloudTalkToken || meeting.documentUrl || meeting.hasEventPage) && (
-          <>
+        {/* Media attachments */}
+        {attachments.length > 0 && (
+          <Stack gap="xs" px="md" pb="xs">
             <Divider />
-            <Stack gap="xs">
-              {/* RSVP Buttons - only for upcoming meetings with RSVP enabled */}
-              {meeting.isRSVPEnabled && !isPastMeeting && (
-                <Group grow gap="xs">
+            <Text size="xs" tt="uppercase" fw={500} c="dimmed">Attachments</Text>
+            {attachments.map((media) => {
+              const mediaType = media.type || media.mimeType?.split("/")[0];
+              if (mediaType === "video" || mediaType === "audio" || mediaType === "image") {
+                return (
+                  <MediaPlayer
+                    key={media.id}
+                    url={media.url}
+                    type={mediaType as "video" | "audio" | "image"}
+                    title={media.filename}
+                    onImageClick={mediaType === "image" ? setLightboxUrl : undefined}
+                  />
+                );
+              }
+              return (
+                <Anchor key={media.id} href={media.url} target="_blank" rel="noopener noreferrer" size="xs">
+                  <Group gap="xs">
+                    <FileText size={12} />
+                    <Text size="xs" truncate style={{ flex: 1 }}>{media.filename || "Download"}</Text>
+                    <ExternalLink size={12} />
+                  </Group>
+                </Anchor>
+              );
+            })}
+          </Stack>
+        )}
+
+        {/* Footer: RSVP + detail link + edit */}
+        <Box px="md" pt="xs" pb="md">
+          <Divider mb="sm" />
+          <Stack gap="xs">
+            {/* RSVP for upcoming meetings */}
+            {meeting.isRSVPEnabled && !isPastMeeting && (
+              <Stack gap={6}>
+                {!isAttending && (
+                  <Switch
+                    size="xs"
+                    color="teal"
+                    checked={receiveEmailNotice}
+                    onChange={(e) => setReceiveEmailNotice(e.currentTarget.checked)}
+                    label="Email me a confirmation"
+                    thumbIcon={receiveEmailNotice ? <Mail size={10} /> : undefined}
+                    disabled={isLoading}
+                  />
+                )}
+                <Group gap="xs" grow>
                   <Button
-                    size="sm"
+                    size="xs"
                     variant={isAttending ? "filled" : "light"}
                     color="teal"
-                    leftSection={isAttending ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                    leftSection={isAttending ? <UserCheck size={14} /> : <UserPlus size={14} />}
                     onClick={() => handleRsvp(true)}
                     disabled={isLoading}
                   >
                     I'm Going
                   </Button>
                   <Button
-                    size="sm"
-                    variant={!isAttending ? "filled" : "light"}
+                    size="xs"
+                    variant={!isAttending ? "light" : "subtle"}
                     color="gray"
-                    leftSection={<UserX size={16} />}
+                    leftSection={<UserX size={14} />}
                     onClick={() => handleRsvp(false)}
                     disabled={isLoading}
                   >
-                    Not Going
+                    Can't Make It
                   </Button>
                 </Group>
-              )}
+              </Stack>
+            )}
 
-              {/* Past meeting - show attendance summary button */}
-              {meeting.isRSVPEnabled && isPastMeeting && onViewAttendees && (
-                <Button
-                  fullWidth
-                  size="sm"
-                  variant="light"
-                  color="gray"
-                  leftSection={<ClipboardList size={16} />}
-                  onClick={() => onViewAttendees(meeting)}
-                >
-                  View Attendance Report
-                </Button>
-              )}
+            {/* Past meeting attendance */}
+            {meeting.isRSVPEnabled && isPastMeeting && onViewAttendees && (
+              <Button
+                size="xs"
+                variant="light"
+                color="gray"
+                leftSection={<ClipboardList size={14} />}
+                onClick={() => onViewAttendees(meeting)}
+              >
+                View Attendance Report
+              </Button>
+            )}
 
-              {meeting.hasEventPage && (
+            {/* Secondary actions row */}
+            <Group gap="xs" justify="space-between">
+              <Group gap="xs">
+                {isWorkshop && !isPastMeeting && (
+                  <Button
+                    size="xs"
+                    variant="filled"
+                    color="ember"
+                    leftSection={<GraduationCap size={13} />}
+                    onClick={() => setJoinOpen(true)}
+                  >
+                    Join Workshop
+                  </Button>
+                )}
+                {meeting.hasEventPage && (
+                  <Button
+                    component={Link}
+                    href={`/meetings/${meeting.id}`}
+                    size="xs"
+                    variant="light"
+                    color="ember"
+                    leftSection={<LayoutGrid size={13} />}
+                  >
+                    Event Page
+                  </Button>
+                )}
+                {meeting.nextcloudTalkToken && (
+                  <Button
+                    component="a"
+                    href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
+                    target="_blank"
+                    size="xs"
+                    variant="outline"
+                    leftSection={<Video size={13} />}
+                  >
+                    Join Room
+                  </Button>
+                )}
+                {meeting.documentUrl && (
+                  <Button
+                    component="a"
+                    href={meeting.documentUrl}
+                    target="_blank"
+                    size="xs"
+                    variant="subtle"
+                    leftSection={<FileText size={13} />}
+                  >
+                    Document
+                  </Button>
+                )}
+
+                {/* View detail page */}
                 <Button
                   component={Link}
-                  href={`/meetings/${meeting.id}`}
-                  fullWidth
-                  size="sm"
+                  href={detailHref}
+                  size="xs"
+                  variant="subtle"
+                  color="gray"
+                >
+                  View details →
+                </Button>
+              </Group>
+
+              {/* Admin edit */}
+              {canEdit && (
+                <Button
+                  size="xs"
                   variant="light"
-                  color="ember"
-                  leftSection={<LayoutGrid size={16} />}
+                  color="blue"
+                  leftSection={<Pencil size={13} />}
+                  onClick={() => onEdit?.(meeting)}
                 >
-                  View Event Page
+                  Edit
                 </Button>
               )}
-
-              {meeting.nextcloudTalkToken && (
-                <Button
-                  component="a"
-                  href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  fullWidth
-                  size="sm"
-                  variant="outline"
-                  leftSection={<Video size={16} />}
-                >
-                  Join Talk Room
-                </Button>
-              )}
-
-              {meeting.documentUrl && (
-                <Button
-                  component="a"
-                  href={meeting.documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outline"
-                  fullWidth
-                  size="sm"
-                  leftSection={<FileText size={16} />}
-                >
-                  Living Document
-                </Button>
-              )}
-            </Stack>
-          </>
-        )}
+            </Group>
+          </Stack>
+        </Box>
       </Stack>
 
       <ImageLightbox
@@ -581,6 +536,22 @@ export function MeetingCard({
         opened={lightboxUrl !== null}
         onClose={() => setLightboxUrl(null)}
       />
+
+      {isWorkshop && (
+        <JoinWorkshopModal
+          workshop={{
+            id: meeting.id,
+            title: meeting.title,
+            price: (meeting as Meeting & { price?: number | null }).price ?? null,
+            scheduledAt: meeting.scheduledAt,
+            durationMinutes: meeting.durationMinutes,
+            location: meeting.location,
+            isOnline: meeting.isOnline,
+          }}
+          opened={joinOpen}
+          onClose={() => setJoinOpen(false)}
+        />
+      )}
     </Paper>
   );
 }

@@ -17,6 +17,7 @@ import {
   UnstyledButton,
   ActionIcon,
 } from "@mantine/core";
+import { RichTextEditor } from "../RichTextEditor";
 import { DateTimePicker } from "@mantine/dates";
 import {
   IconAlertCircle,
@@ -26,171 +27,63 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { useState } from "react";
-import { MediaUpload, type SelectedNextcloudFile } from "../MediaUpload";
-import type {
-  ContentDraft,
-  ContentFormProps,
-  ThreadKind,
-  WorkshopSessionDraft,
-} from "./types";
-
-type PickerKind = "post" | "meeting" | "workshop";
-
-const EMPTY_DRAFT: ContentDraft = {
-  title: "",
-  body: "",
-  isMeeting: false,
-  primaryOrgId: "",
-};
-
-interface UploadedMedia {
-  fileId: string;
-  path: string;
-  url: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-  type: "image" | "video" | "audio" | "document";
-}
+import { MediaUpload } from "../MediaUpload";
+import { useContentDraft } from "@elkdonis/hooks";
+import type { ContentFormProps } from "./types";
 
 export function ContentForm({
   orgId,
   userId,
+  isAdmin = false,
   initialDraft,
   initialThreadId,
   onPublished,
   onSaveDraft,
 }: ContentFormProps) {
-  const [kind, setKind] = useState<PickerKind>("post");
-  const [draft, setDraft] = useState<ContentDraft>(() => ({
-    ...EMPTY_DRAFT,
-    primaryOrgId: orgId,
-    ...initialDraft,
-  }));
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [libraryFiles, setLibraryFiles] = useState<SelectedNextcloudFile[]>([]);
-  const [showIntegrations, setShowIntegrations] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [createTalkRoom, setCreateTalkRoom] = useState(false);
-  const [documentUrl, setDocumentUrl] = useState("");
-  const [savingDraft, setSavingDraft] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
-
-  const update = (patch: Partial<ContentDraft>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
-  };
-
-  // Workshop session helpers
-  const sessions = draft.sessions ?? [];
-  const addSession = () => {
-    const next: WorkshopSessionDraft = {
-      id: `sess_${Date.now()}`,
-      title: "",
-      orderIndex: sessions.length,
-    };
-    update({ sessions: [...sessions, next] });
-  };
-  const updateSession = (id: string, patch: Partial<WorkshopSessionDraft>) => {
-    update({ sessions: sessions.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
-  };
-  const removeSession = (id: string) => {
-    update({ sessions: sessions.filter((s) => s.id !== id) });
-  };
-
-  const uploadMedia = async (files: File[]): Promise<UploadedMedia[]> => {
-    if (files.length === 0) return [];
-    const uploaded: UploadedMedia[] = [];
-    for (const file of files) {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("userId", userId);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`Failed to upload ${file.name}`);
-      const json = await res.json();
-      if (!json?.fileId || !json?.url) throw new Error("Invalid upload response");
-      uploaded.push({
-        fileId: json.fileId,
-        path: json.path,
-        url: json.url,
-        filename: json.filename,
-        mimeType: json.mimeType,
-        size: json.size,
-        type: json.mediaType,
-      });
-    }
-    return uploaded;
-  };
-
-  const buildPayload = (uploadedMedia: UploadedMedia[]): Record<string, unknown> => ({
-    ...draft,
+  const {
     kind,
-    isMeeting: kind === "meeting" || kind === "workshop" ? true : draft.isMeeting,
-    userId,
-    threadId: initialThreadId,
-    media: [
-      ...uploadedMedia,
-      ...libraryFiles.map((f) => ({
-        fileId: f.filename,
-        path: f.basename,
-        url: f.url,
-        filename: f.filename,
-        mimeType: f.mime ?? "application/octet-stream",
-        size: f.size,
-        type: "document" as const,
-      })),
-    ],
-    documentUrl: documentUrl || undefined,
+    setKind,
+    draft,
+    update,
+    addSession,
+    updateSession,
+    removeSession,
+    mediaFiles,
+    setMediaFiles,
+    libraryFiles,
+    addLibraryFile,
+    removeLibraryFile,
     createTalkRoom,
+    setCreateTalkRoom,
+    documentUrl,
+    setDocumentUrl,
+    publishing,
+    savingDraft,
+    error,
+    setError,
+    draftSavedAt,
+    handlePublish,
+    handleSaveDraft,
+  } = useContentDraft({
+    orgId,
+    userId,
+    initialDraft,
+    initialThreadId,
+    onPublished,
+    onSaveDraft,
   });
 
-  const handleSaveDraft = async () => {
-    setError(null);
-    setSavingDraft(true);
-    try {
-      await onSaveDraft?.({ ...draft });
-      setDraftSavedAt(new Date());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save draft");
-    } finally {
-      setSavingDraft(false);
-    }
-  };
+  const [showIntegrations, setShowIntegrations] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handlePublish = async () => {
-    setError(null);
-    if (!draft.title.trim()) {
-      setError("Title is required");
-      return;
-    }
-    setPublishing(true);
-    try {
-      const uploaded = await uploadMedia(mediaFiles);
-      const res = await fetch("/api/content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload(uploaded)),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Publish failed (${res.status})`);
-      }
-      const data = (await res.json()) as { id: string; kind: ThreadKind };
-      onPublished?.(data.id, data.kind);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to publish");
-    } finally {
-      setPublishing(false);
-    }
-  };
+  const sessions = draft.sessions ?? [];
 
   return (
     <Stack gap="md">
       {/* Kind picker */}
       <SegmentedControl
         value={kind}
-        onChange={(v) => setKind(v as PickerKind)}
+        onChange={(v) => setKind(v as typeof kind)}
         data={[
           { label: "Post", value: "post" },
           { label: "Meeting", value: "meeting" },
@@ -213,16 +106,15 @@ export function ContentForm({
         onChange={(e) => update({ title: e.currentTarget.value })}
         required
       />
-      <Textarea
-        label="Body"
-        placeholder={
-          kind === "workshop" ? "The pitch — why join?" : "Write something"
-        }
-        autosize
-        minRows={4}
-        value={draft.body}
-        onChange={(e) => update({ body: e.currentTarget.value })}
-      />
+      <div>
+        <Text size="sm" fw={500} mb={4}>Body</Text>
+        <RichTextEditor
+          content={draft.body ?? ""}
+          onChange={(html) => update({ body: html })}
+          placeholder={kind === "workshop" ? "The pitch — why join?" : "Write something"}
+          minimal={kind === "meeting"}
+        />
+      </div>
 
       {/* Meeting fields */}
       {(kind === "meeting" || kind === "workshop") && (
@@ -261,6 +153,16 @@ export function ContentForm({
             checked={!!draft.isRsvpEnabled}
             onChange={(e) => update({ isRsvpEnabled: e.currentTarget.checked })}
           />
+          {isAdmin && (
+            <Switch
+              label="Admin only (private)"
+              description="Only admins can see this in the feed"
+              checked={draft.visibility === 'ORGANIZATION'}
+              onChange={(e) =>
+                update({ visibility: e.currentTarget.checked ? 'ORGANIZATION' : 'PUBLIC' })
+              }
+            />
+          )}
           {draft.isRsvpEnabled && (
             <Group grow>
               <NumberInput
@@ -353,10 +255,8 @@ export function ContentForm({
         enableLibrary
         orgId={orgId}
         selectedFiles={libraryFiles}
-        onSelectFile={(f) => setLibraryFiles((prev) => [...prev, f])}
-        onRemoveSelectedFile={(i) =>
-          setLibraryFiles((prev) => prev.filter((_, idx) => idx !== i))
-        }
+        onSelectFile={addLibraryFile}
+        onRemoveSelectedFile={removeLibraryFile}
       />
 
       {/* Integrations drawer */}

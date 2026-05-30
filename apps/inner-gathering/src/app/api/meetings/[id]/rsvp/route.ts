@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
+import {
+  EMAIL_TEMPLATE_ORG_ID,
+  RSVP_OWNER_TEMPLATE_KEY,
+  getEmailTemplateSettings,
+} from "@/lib/email-template-settings";
 
 // ============================================================================
 // RSVP via thread_rsvps (meeting_attendees table was dropped in migration 030).
@@ -47,12 +52,14 @@ export async function GET(
 
 // POST - Register attendance (RSVP 'yes')
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: threadId } = await params;
     const session = await getServerSession();
+    const body = await request.json().catch(() => ({}));
+    const receiveEmailNotice = body.receiveEmailNotice !== false;
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -64,6 +71,7 @@ export async function POST(
     const meeting = await db`
       SELECT
         t.id, t.title, t.is_rsvp_enabled, t.attendee_limit, t.scheduled_at,
+        t.location, t.meeting_url,
         t.rsvp_deadline, t.min_attendees, t.notify_on_min_attendees,
         t.min_attendees_notified, t.author_id AS guide_id,
         u.email AS guide_email,
@@ -111,6 +119,9 @@ export async function POST(
       DO UPDATE SET status = 'yes', updated_at = NOW()
     `;
 
+    const rsvpCreatedAt = new Date().toISOString();
+    const threadUrl = new URL(`/meetings/${threadId}`, request.nextUrl.origin).toString();
+
     // Count RSVPs for threshold check + email
     const countResult = await db`
       SELECT COUNT(*) as count FROM thread_rsvps
@@ -153,29 +164,54 @@ export async function POST(
       FROM users WHERE id = ${session.user.id}
     `;
 
+    const ownerTemplateSettings = await getEmailTemplateSettings(
+      EMAIL_TEMPLATE_ORG_ID,
+      RSVP_OWNER_TEMPLATE_KEY
+    ).catch((settingsError) => {
+      console.error('[inner-gathering] failed to load rsvp owner email settings:', settingsError);
+      return null;
+    });
+
     // Fire emails non-blocking
     void (async () => {
       try {
-        const { sendRsvpNotification } = await import('@elkdonis/email');
+        const { sendRsvpConfirmation, sendRsvpNotification } = await import('@elkdonis/email');
         const guideEmail = meeting[0].guide_email as string | null;
-        if (!guideEmail) return;
 
-        const emailData = {
+        const guestEmailData = {
           guestName: (attendee?.name as string) ?? 'A member',
           guestEmail: (attendee?.email as string) ?? undefined,
           meetingTitle: meeting[0].title as string,
           scheduledAt: meeting[0].scheduled_at ? String(meeting[0].scheduled_at) : undefined,
+          location: meeting[0].location ? String(meeting[0].location) : undefined,
+          meetingUrl: meeting[0].meeting_url ? String(meeting[0].meeting_url) : undefined,
           orgName: 'Inner Gathering',
+          primaryColor: '#022278',
           rsvpCount: currentCount,
         };
 
-        const sends: Promise<void>[] = [sendRsvpNotification(guideEmail, emailData)];
+        const ownerEmailData = {
+          ...guestEmailData,
+          rsvpCreatedAt,
+          threadUrl,
+          ...(ownerTemplateSettings?.config ?? {}),
+        };
 
-        if (minAttendeesReached) {
+        const sends: Promise<void>[] = [];
+
+        if (guideEmail) {
+          sends.push(sendRsvpNotification(guideEmail, ownerEmailData));
+        }
+
+        if (receiveEmailNotice && attendee?.email) {
+          sends.push(sendRsvpConfirmation(attendee.email as string, guestEmailData));
+        }
+
+        if (guideEmail && minAttendeesReached) {
           // Second email — explicitly flag the milestone
           sends.push(
             sendRsvpNotification(guideEmail, {
-              ...emailData,
+              ...ownerEmailData,
               guestMessage: `Minimum attendees threshold of ${meeting[0].min_attendees} has been reached!`,
             })
           );
@@ -191,6 +227,9 @@ export async function POST(
       success: true,
       status: "yes",
       minAttendeesReached,
+      authorNotificationQueued: Boolean(meeting[0].guide_email),
+      confirmationEmailRequested: receiveEmailNotice,
+      confirmationEmailQueued: receiveEmailNotice && Boolean(attendee?.email),
     });
   } catch (error) {
     console.error("Error registering RSVP:", error);

@@ -46,9 +46,11 @@ export function FeatureInitiative() {
             <p className="section-eyebrow">{eyebrow}</p>
             <h2 className="section-heading">{heading}</h2>
             <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0" } as React.CSSProperties} />
-            <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "1.25rem" }}>
-              {body}
-            </p>
+            <div style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "1.25rem" }}>
+              {body.split(/\n+/).map((para, i) => (
+                <p key={i} style={{ margin: "0 0 0.75em" }}>{para}</p>
+              ))}
+            </div>
             <a href="#contact" className="cta-btn" style={{ marginTop: "2rem", display: "inline-flex" }}>
               {cta}
             </a>
@@ -57,14 +59,14 @@ export function FeatureInitiative() {
           <div className="initiative-panel" aria-hidden="true">
             <div className="initiative-panel-inner">
               <div className="initiative-diamond" />
-              <p className="initiative-stat">Food</p>
-              <p className="initiative-stat-label">Forest</p>
+              <p className="initiative-stat">Open-Source</p>
+              <p className="initiative-stat-label">Backend</p>
               <div className="initiative-divider" />
-              <p className="initiative-stat">Artist</p>
-              <p className="initiative-stat-label">Residences</p>
+              <p className="initiative-stat">Mutual Aid</p>
+              <p className="initiative-stat-label">Fund</p>
               <div className="initiative-divider" />
-              <p className="initiative-stat">Studios</p>
-              <p className="initiative-stat-label">Galleries</p>
+              <p className="initiative-stat">Artists'</p>
+              <p className="initiative-stat-label">Online Directory</p>
             </div>
           </div>
         </div>

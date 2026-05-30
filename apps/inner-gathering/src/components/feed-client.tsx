@@ -10,11 +10,14 @@ import { notifications } from "@mantine/notifications";
 import { MeetingCard } from "./meeting-card";
 import { PostCard } from "./post-card";
 import { PollCard } from "./poll-card";
-import { BlackHoleDropzone } from "./black-hole-dropzone";
 import { ContentForm } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
+import { WorkQuestionBox } from "./work-question-box";
+import { LatestForumThreads } from "./latest-forum-threads";
+import { HorizontalCarousel } from "./horizontal-carousel";
 import { ProfileModal } from "./profile-modal";
+import type { ForumThreadSummary } from "@/lib/forum";
 import { supabase } from "@/lib/supabase";
 import {
   ActionIcon,
@@ -41,19 +44,27 @@ interface FeedClientProps {
     createdAt: Date;
   }>;
   recurringMeetings?: Meeting[];
+  forumThreads?: ForumThreadSummary[];
   userId?: string | null;
   isAdmin?: boolean;
 }
 
-export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmin = false }: FeedClientProps) {
+export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads = [], userId, isAdmin = false }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] = useDisclosure(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [feed, setFeed] = useState(initialFeed);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
+
+  const handleEditMeeting = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
+    openEditDrawer();
+  };
 
   // Sync feed state when server data changes (e.g., after revalidation)
   useEffect(() => {
@@ -197,6 +208,9 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
         pinned={isPinned(item)}
         pinning={pinningThreadId === item.data.id}
         onTogglePin={() => handleTogglePin(item.data.id, !isPinned(item))}
+        showPrivateBadge={isAdmin}
+        canEdit={isAdmin}
+        onEdit={handleEditMeeting}
       />
     ) : item.type === "poll" ? (
       <PollCard
@@ -293,13 +307,9 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
 
           <Divider className="archive-divider" size="sm" />
 
-          <BlackHoleDropzone
-            userId={userId ?? null}
-            onPublished={() => {
-              router.refresh();
-              clearNewItems();
-            }}
-          />
+          <WorkQuestionBox userId={userId} />
+
+          <LatestForumThreads threads={forumThreads} />
 
           {/* Recurring Meetings Carousel */}
           {recurringMeetings.length > 0 && (
@@ -307,17 +317,17 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
           )}
 
           {pinnedFeed.length > 0 && (
-            <section className="pinned-feed-section" aria-label="Pinned feed feature">
-              <Group justify="space-between" align="end" mb="xs">
-                <Box>
-                  <Text className="archive-kicker">Pinned</Text>
-                  <Title order={3} className="archive-title">Featured from the feed</Title>
-                </Box>
-              </Group>
-              <Stack gap="md">
-                {pinnedFeed.map((item, index) => renderFeedItem(item, index, true))}
-              </Stack>
-            </section>
+            <HorizontalCarousel
+              kicker="Pinned"
+              title="Featured from the feed"
+              count={pinnedFeed.length}
+            >
+              {pinnedFeed.map((item, index) => (
+                <div key={`${item.type}-${item.data.id}-${index}`} className="feed-carousel-item">
+                  {renderFeedItem(item, index, true)}
+                </div>
+              ))}
+            </HorizontalCarousel>
           )}
 
           {/* New Items Banner */}
@@ -404,6 +414,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
                 <ContentForm
                   orgId="inner_group"
                   userId={userId}
+                  isAdmin={isAdmin}
                   isCmsSite
                   onPublished={() => {
                     closeDrawer();
@@ -417,6 +428,60 @@ export function FeedClient({ initialFeed, recurringMeetings = [], userId, isAdmi
                 Sign in to create content.
               </Text>
             )}
+          </ScrollArea>
+        </Drawer>
+
+        {/* Edit drawer */}
+        <Drawer
+          opened={editDrawerOpened}
+          onClose={() => { closeEditDrawer(); setEditingMeeting(null); }}
+          position="bottom"
+          size="90%"
+          classNames={{
+            content: "create-content-drawer",
+            header: "create-content-drawer__header",
+            body: "create-content-drawer__body",
+          }}
+          title={
+            <div>
+              <Title order={4}>Edit {editingMeeting?.kind === "workshop" ? "Workshop" : "Meeting"}</Title>
+              <Text size="sm" c="dimmed">{editingMeeting?.title}</Text>
+            </div>
+          }
+        >
+          <ScrollArea h="calc(90vh - 8rem)" className="create-content-scroll">
+            {userId && editingMeeting ? (
+              <Box className="create-content-surface">
+                <ContentForm
+                  orgId="inner_group"
+                  userId={userId}
+                  isAdmin={isAdmin}
+                  isCmsSite
+                  initialThreadId={editingMeeting.id}
+                  initialDraft={{
+                    title: editingMeeting.title,
+                    body: editingMeeting.description ?? "",
+                    isMeeting: true,
+                    scheduledAt: editingMeeting.scheduledAt
+                      ? new Date(editingMeeting.scheduledAt).toISOString()
+                      : null,
+                    durationMinutes: editingMeeting.durationMinutes ?? null,
+                    location: editingMeeting.location ?? null,
+                    isOnline: editingMeeting.isOnline ?? false,
+                    isRsvpEnabled: editingMeeting.isRSVPEnabled,
+                    attendeeLimit: editingMeeting.attendeeLimit ?? null,
+                    visibility: (editingMeeting.visibility as "PUBLIC" | "ORGANIZATION") ?? "PUBLIC",
+                    primaryOrgId: "inner_group",
+                  }}
+                  onPublished={() => {
+                    closeEditDrawer();
+                    setEditingMeeting(null);
+                    router.refresh();
+                    clearNewItems();
+                  }}
+                />
+              </Box>
+            ) : null}
           </ScrollArea>
         </Drawer>
 

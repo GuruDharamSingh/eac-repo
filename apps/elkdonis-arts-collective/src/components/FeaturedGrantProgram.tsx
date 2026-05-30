@@ -9,17 +9,32 @@ interface FeaturedArtistConfig {
   description?: string;
   image_url?: string;
   cta?: string;
+  goals?: string;
+  link1_label?: string;
+  link1_url?: string;
+  link2_label?: string;
+  link2_url?: string;
 }
 
 export function FeaturedGrantProgram() {
   const [visible, setVisible] = useState(false);
   const [cfg, setCfg] = useState<FeaturedArtistConfig>({});
+  const [imageSpaces, setImageSpaces] = useState<Record<string, { path?: string }>>({});
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch('/api/admin/site-config?key=featured_artist')
       .then((r) => r.json())
       .then((d) => { if (d.value) setCfg(d.value); })
+      .catch(() => {});
+
+    fetch('/api/admin/site-config?key=image_spaces')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.value && typeof d.value === 'object') {
+          setImageSpaces(d.value as Record<string, { path?: string }>);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -35,32 +50,66 @@ export function FeaturedGrantProgram() {
   const eyebrow = cfg.eyebrow ?? "Featured Arts";
   const name = cfg.name ?? "Dana McCool";
   const description = cfg.description ?? "Surrealist Writing";
-  const imageUrl = cfg.image_url ?? "/danamccool.jpg";
+  const featuredArtistImagePath = imageSpaces.featured_artist?.path;
+  const imageUrl = featuredArtistImagePath
+    ? `/api/media/file?path=${encodeURIComponent(featuredArtistImagePath)}`
+    : (cfg.image_url ?? "/danamccool.jpg");
   const cta = cfg.cta ?? "Make an Inquiry";
+  const goals = cfg.goals ?? "";
+  const link1Label = cfg.link1_label ?? "";
+  const link1Url = cfg.link1_url ?? "";
+  const link2Label = cfg.link2_label ?? "";
+  const link2Url = cfg.link2_url ?? "";
 
   return (
     <section id="grant-program" ref={ref} className="grant-section">
-      <div className={`section-inner grant-grid reveal ${visible ? "in-view" : ""}`}>
+      <div className={`section-inner reveal ${visible ? "in-view" : ""}`} style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(120px, 180px) 1fr 1fr",
+        gap: "2.5rem",
+        alignItems: "start",
+      }}>
+        {/* Image */}
         <div className="grant-image">
           <Image
             src={imageUrl}
             alt={name}
             fill
-            sizes="(max-width: 860px) 100vw, 420px"
+            sizes="(max-width: 860px) 100vw, 200px"
             style={{ objectFit: "cover", objectPosition: "top" }}
           />
         </div>
+
+        {/* Left: identity */}
         <div>
           <p className="section-eyebrow">{eyebrow}</p>
           <h2 className="section-heading">{name}</h2>
-          <hr
-            className="gold-rule"
-            style={{ "--rule-width": "50px", margin: "1.5rem 0 2rem" } as React.CSSProperties}
-          />
+          <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0 2rem" } as React.CSSProperties} />
           <p className="grant-body">{description}</p>
           <a href="#contact" className="cta-btn" style={{ marginTop: "1.5rem", display: "inline-flex" }}>
             {cta}
           </a>
+        </div>
+
+        {/* Right: goals + links */}
+        <div style={{ borderLeft: "1px solid rgba(198,164,90,0.18)", paddingLeft: "2rem" }}>
+          <p className="section-eyebrow">Goals &amp; Work</p>
+          <hr className="gold-rule" style={{ "--rule-width": "40px", margin: "1rem 0 1.5rem" } as React.CSSProperties} />
+          {goals && (
+            <p className="grant-body" style={{ marginBottom: "1.5rem" }}>{goals}</p>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {link1Url && link1Label && (
+              <a href={link1Url} target="_blank" rel="noopener noreferrer" className="cta-btn" style={{ display: "inline-flex", fontSize: "0.75rem", height: 40 }}>
+                {link1Label}
+              </a>
+            )}
+            {link2Url && link2Label && (
+              <a href={link2Url} target="_blank" rel="noopener noreferrer" className="cta-btn" style={{ display: "inline-flex", fontSize: "0.75rem", height: 40 }}>
+                {link2Label}
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>

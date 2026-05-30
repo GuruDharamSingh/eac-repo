@@ -12,6 +12,7 @@ import {
   Paper,
   Modal,
   TextInput,
+  Textarea,
   PasswordInput,
   Button,
   Alert,
@@ -29,6 +30,7 @@ import {
   Table,
   Box,
   Tooltip,
+  ScrollArea,
 } from '@mantine/core';
 import {
   Calendar,
@@ -38,6 +40,7 @@ import {
   User,
   MessageSquare,
   ClipboardList,
+  Mail,
   Sparkles,
   Globe,
 } from 'lucide-react';
@@ -83,6 +86,21 @@ interface WorkshopForm {
 
 interface Session {
   user: { id: string; email: string } | null;
+}
+
+interface WorkQuestionResponse {
+  id: string;
+  display_name: string | null;
+  response: string;
+  created_at: string;
+}
+
+interface WorkQuestion {
+  id: string;
+  question: string;
+  is_active: boolean;
+  created_at: string;
+  responses: WorkQuestionResponse[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -181,6 +199,11 @@ export default function MeetingsPage() {
   const [saving, setSaving]         = useState(false);
   const [saveError, setSaveError]   = useState<string | null>(null);
 
+  const [workQuestions, setWorkQuestions] = useState<WorkQuestion[]>([]);
+  const [newQuestion, setNewQuestion]     = useState('');
+  const [savingQuestion, setSavingQuestion] = useState(false);
+  const [questionError, setQuestionError]   = useState<string | null>(null);
+
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   useEffect(() => { checkSession(); }, []);
@@ -191,7 +214,7 @@ export default function MeetingsPage() {
       const data = await res.json();
       setSession(data);
       if (!data.user) setLoginOpen(true);
-      else fetchMeetings();
+      else { fetchMeetings(); fetchWorkQuestions(); }
     } catch {
       setLoginOpen(true);
     } finally {
@@ -208,6 +231,39 @@ export default function MeetingsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch meetings:', err);
+    }
+  };
+
+  const fetchWorkQuestions = async () => {
+    try {
+      const res = await fetch('/api/work-question');
+      if (res.ok) {
+        const data = await res.json();
+        setWorkQuestions(data.questions ?? []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch work questions:', err);
+    }
+  };
+
+  const handleSetQuestion = async () => {
+    if (!newQuestion.trim()) return;
+    setSavingQuestion(true);
+    setQuestionError(null);
+    try {
+      const res = await fetch('/api/work-question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: newQuestion }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setQuestionError(data.error ?? 'Failed to save'); return; }
+      setNewQuestion('');
+      await fetchWorkQuestions();
+    } catch {
+      setQuestionError('Failed to save question');
+    } finally {
+      setSavingQuestion(false);
     }
   };
 
@@ -332,6 +388,7 @@ export default function MeetingsPage() {
                   <Button component={Link} href="/" variant="subtle" size="sm" leftSection={<Calendar size={16} />}>Meetings</Button>
                   <Button component={Link} href="/messages" variant="subtle" size="sm" leftSection={<MessageSquare size={16} />}>Messages</Button>
                   <Button component={Link} href="/rsvp" variant="subtle" size="sm" leftSection={<ClipboardList size={16} />}>RSVPs</Button>
+                  <Button component={Link} href="/email-templates" variant="subtle" size="sm" leftSection={<Mail size={16} />}>Emails</Button>
                   <Button component={Link} href="/nextcloud" variant="subtle" size="sm" leftSection={<Cloud size={16} />}>Nextcloud</Button>
                 </Group>
               </Group>
@@ -434,6 +491,111 @@ export default function MeetingsPage() {
                 ))}
               </Group>
             </div>
+
+            {/* ── Work Questions ───────────────────────────────────────────── */}
+            <div>
+              <Title order={2}>Work Questions</Title>
+              <Text size="sm" c="dimmed">
+                Set the current question shown on the Inner Gathering feed. Members respond freely.
+              </Text>
+            </div>
+
+            {/* Current active question */}
+            {workQuestions.find((q) => q.is_active) && (
+              <Paper withBorder radius="md" p="md" style={{ borderColor: '#c9a962', background: '#fffdf5' }}>
+                <Text size="xs" tt="uppercase" fw={700} c="dimmed" mb={4} style={{ letterSpacing: '0.08em' }}>
+                  Active Question
+                </Text>
+                <Text size="lg" fw={600}>{workQuestions.find((q) => q.is_active)?.question}</Text>
+                <Text size="xs" c="dimmed" mt={4}>
+                  {workQuestions.find((q) => q.is_active)?.responses.length ?? 0} response(s)
+                </Text>
+              </Paper>
+            )}
+
+            {/* Set new question */}
+            <Paper withBorder radius="md" p="md">
+              <Stack gap="sm">
+                <Text fw={600} size="sm">Set a New Work Question</Text>
+                <Textarea
+                  placeholder="e.g. What does it mean to finish a work?"
+                  minRows={2}
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.currentTarget.value)}
+                />
+                {questionError && <Alert color="red" radius="md">{questionError}</Alert>}
+                <Group justify="flex-end">
+                  <Button
+                    color="yellow"
+                    loading={savingQuestion}
+                    disabled={!newQuestion.trim()}
+                    onClick={handleSetQuestion}
+                  >
+                    Publish Question
+                  </Button>
+                </Group>
+              </Stack>
+            </Paper>
+
+            {/* Responses for each question */}
+            {workQuestions.map((q) => (
+              <Paper key={q.id} withBorder radius="md">
+                <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+                  <Group justify="space-between" align="flex-start">
+                    <Stack gap={2}>
+                      <Text fw={600}>{q.question}</Text>
+                      <Text size="xs" c="dimmed">
+                        {new Date(q.created_at).toLocaleDateString('en-CA', {
+                          year: 'numeric', month: 'short', day: 'numeric',
+                        })}
+                      </Text>
+                    </Stack>
+                    {q.is_active
+                      ? <Badge color="yellow" variant="filled">Active</Badge>
+                      : <Badge color="gray" variant="light">Past</Badge>}
+                  </Group>
+                </Box>
+
+                {q.responses.length === 0 ? (
+                  <Box p="md">
+                    <Text size="sm" c="dimmed" fs="italic">No responses yet.</Text>
+                  </Box>
+                ) : (
+                  <ScrollArea.Autosize mah={320}>
+                    <Table striped highlightOnHover verticalSpacing="sm">
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Member</Table.Th>
+                          <Table.Th>Response</Table.Th>
+                          <Table.Th>Date</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {q.responses.map((r) => (
+                          <Table.Tr key={r.id}>
+                            <Table.Td>
+                              <Text size="sm" fw={500}>{r.display_name ?? 'Anonymous'}</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Text size="sm">{r.response}</Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Text size="xs" c="dimmed">
+                                {new Date(r.created_at).toLocaleDateString('en-CA', {
+                                  year: 'numeric', month: 'short', day: 'numeric',
+                                })}
+                              </Text>
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </ScrollArea.Autosize>
+                )}
+              </Paper>
+            ))}
+
+            <Divider />
 
             {/* ── Meetings Table ───────────────────────────────────────────── */}
             <Paper withBorder radius="md">

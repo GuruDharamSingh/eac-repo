@@ -35,6 +35,9 @@
       "@elkdonis/db": [
         "../../packages/db/src"
       ],
+      "@elkdonis/email": [
+        "../../packages/email/src"
+      ],
       "@elkdonis/services": [
         "../../packages/services/src"
       ]

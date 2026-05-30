@@ -1,18 +1,36 @@
 import { sendEmail } from './client';
 import { renderRsvpGuestEmail, type RsvpGuestEmailProps } from './templates/rsvp-guest';
-import { renderRsvpOwnerEmail, type RsvpOwnerEmailProps } from './templates/rsvp-owner';
+import { renderRsvpOwnerEmail, type EmailLinkItem, type EmailMediaItem, type RsvpOwnerEmailProps } from './templates/rsvp-owner';
 import { renderContactOwnerEmail, type ContactOwnerEmailProps } from './templates/contact-owner';
 import { renderOrderInvoiceEmail, type OrderInvoiceEmailProps } from './templates/order-invoice';
 import { renderOrderNotificationEmail, type OrderNotificationEmailProps } from './templates/order-notification';
-import { renderWelcomeEmail, type WelcomeEmailProps } from './templates/welcome';
+import { renderWelcomeEmail, type WelcomeEmailProps, type WelcomeLinkItem, type WelcomeMediaItem } from './templates/welcome';
+import { renderNewsletterEmail, type NewsletterEmailProps, type NewsletterLinkItem, type NewsletterMediaItem } from './templates/newsletter';
 
 export type {
   RsvpGuestEmailProps,
+  EmailLinkItem,
+  EmailMediaItem,
   RsvpOwnerEmailProps,
   ContactOwnerEmailProps,
   OrderInvoiceEmailProps,
   OrderNotificationEmailProps,
   WelcomeEmailProps,
+  WelcomeLinkItem,
+  WelcomeMediaItem,
+  NewsletterEmailProps,
+  NewsletterLinkItem,
+  NewsletterMediaItem,
+};
+
+export {
+  renderRsvpGuestEmail,
+  renderRsvpOwnerEmail,
+  renderContactOwnerEmail,
+  renderOrderInvoiceEmail,
+  renderOrderNotificationEmail,
+  renderWelcomeEmail,
+  renderNewsletterEmail,
 };
 
 export async function sendRsvpConfirmation(
@@ -93,5 +111,18 @@ export async function sendWelcomeEmail(
     to,
     subject: 'Welcome to Elkdonis Arts Collective',
     html,
+  });
+}
+
+export async function sendNewsletterEmail(
+  to: string,
+  data: NewsletterEmailProps
+): Promise<void> {
+  const html = await renderNewsletterEmail(data);
+  await sendEmail({
+    to,
+    subject: data.title ?? 'A Letter From The Collective',
+    html,
+    fromName: data.orgName ?? 'Elkdonis Arts Collective',
   });
 }

@@ -96,17 +96,16 @@ export function PostDetails({ post, replies, currentUser }: PostDetailsProps) {
               )}
 
               {post.body && (
-                <Text
+                <div
+                  className="rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: post.body }}
                   style={{
                     fontFamily: "'Crimson Text', Georgia, serif",
                     fontSize: "1.1rem",
                     lineHeight: 1.75,
                     color: "#2a1a05",
-                    whiteSpace: "pre-wrap",
                   }}
-                >
-                  {post.body}
-                </Text>
+                />
               )}
 
               {attachments.length > 0 && (

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import type { WelcomeEmailProps } from '@elkdonis/email';
 import { deriveCookieDomain, resolveSupabasePublicConfig } from './index';
 
 type CookieToSet = {
@@ -14,6 +15,54 @@ type CookieToSet = {
   value: string;
   options: CookieOptions;
 };
+
+function cleanEditableEmailSettings(value: unknown): Partial<WelcomeEmailProps> {
+  const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const bodyText = typeof source.bodyText === 'string' && source.bodyText.trim()
+    ? source.bodyText.trim()
+    : undefined;
+  const links = Array.isArray(source.links)
+    ? source.links
+        .map((item) => {
+          const link = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+          return {
+            label: typeof link.label === 'string' ? link.label.trim() : '',
+            url: typeof link.url === 'string' ? link.url.trim() : '',
+          };
+        })
+        .filter((item) => item.label && item.url)
+    : undefined;
+  const media = Array.isArray(source.media)
+    ? source.media
+        .map((item) => {
+          const mediaItem = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+          return {
+            url: typeof mediaItem.url === 'string' ? mediaItem.url.trim() : '',
+            alt: typeof mediaItem.alt === 'string' ? mediaItem.alt.trim() : undefined,
+            caption: typeof mediaItem.caption === 'string' ? mediaItem.caption.trim() : undefined,
+          };
+        })
+        .filter((item) => item.url)
+    : undefined;
+
+  return { bodyText, links, media };
+}
+
+async function loadWelcomeEmailSettings(): Promise<Partial<WelcomeEmailProps>> {
+  try {
+    const { db } = await import('@elkdonis/db');
+    const [row] = await db`
+      SELECT config
+      FROM email_template_settings
+      WHERE org_id = 'inner_group' AND template_key = 'welcome'
+    `;
+
+    return cleanEditableEmailSettings(row?.config);
+  } catch (error) {
+    console.error('[Signup] Welcome email settings load error:', error);
+    return {};
+  }
+}
 
 function createRouteSupabaseClient(request: NextRequest) {
   const cookiesToSet: CookieToSet[] = [];
@@ -229,7 +278,8 @@ export async function handleSignup(request: NextRequest) {
     try {
       const { sendWelcomeEmail } = await import('@elkdonis/email');
       const resolvedName = displayName || email.split('@')[0];
-      await sendWelcomeEmail(email, { displayName: resolvedName });
+      const welcomeEmailSettings = await loadWelcomeEmailSettings();
+      await sendWelcomeEmail(email, { displayName: resolvedName, ...welcomeEmailSettings });
       console.log(`[Signup] ✅ Welcome email sent to ${email}`);
     } catch (emailError) {
       console.error('[Signup] Welcome email error:', emailError);

@@ -26,7 +26,7 @@ const ORG_ID = 'inner_group';
 // Shared SELECT fragment for a thread row mapped to a Meeting-ish shape.
 // guide_* and has_event_page aliases keep mapMeeting() untouched.
 const THREAD_MEETING_COLUMNS = `
-  t.id, t.org_id, t.slug, t.title, t.status, t.visibility,
+  t.id, t.kind, t.org_id, t.slug, t.title, t.status, t.visibility,
   t.scheduled_at, t.duration_minutes, t.location, t.is_online,
   t.meeting_url, t.recurrence_pattern, t.recurrence_custom_rule,
   t.recurrence_until, t.is_rsvp_enabled, t.rsvp_deadline,
@@ -49,9 +49,9 @@ const THREAD_POST_COLUMNS = `
 `;
 
 // Get all meetings, posts, and polls for the feed (filtered by inner_group org)
-export async function getFeed() {
+export async function getFeed(isAdmin = false) {
   const [meetings, posts, questionPolls] = await Promise.all([
-    getMeetings(),
+    getMeetings(isAdmin),
     getPosts(),
     getQuestionPollsByOrg(ORG_ID).catch(() => [] as QuestionPoll[]),
   ]);
@@ -136,7 +136,7 @@ export async function getMeetingsByDateRange(
 }
 
 // Get all meetings for inner_group
-export async function getMeetings(): Promise<Meeting[]> {
+export async function getMeetings(isAdmin = false): Promise<Meeting[]> {
   const meetings = await db`
     SELECT
       ${db.unsafe(THREAD_MEETING_COLUMNS)},
@@ -186,6 +186,7 @@ export async function getMeetings(): Promise<Meeting[]> {
     WHERE t.kind IN ('meeting', 'workshop')
       AND t.org_id = ${ORG_ID}
       AND t.status = 'published'
+      AND (t.visibility = 'PUBLIC' OR ${isAdmin})
     ORDER BY t.created_at DESC
     LIMIT 50
   `;
@@ -304,6 +305,14 @@ export async function getPosts(): Promise<Post[]> {
     WHERE t.kind = 'post'
       AND t.org_id = ${ORG_ID}
       AND t.status = 'published'
+      AND (
+        COALESCE(t.pinned, false) = true
+        OR NOT EXISTS (
+          SELECT 1 FROM thread_topics tt
+          JOIN topics tp ON tp.id = tt.topic_id
+          WHERE tt.thread_id = t.id AND tp.slug = 'what-is-art-for'
+        )
+      )
     ORDER BY t.created_at DESC
     LIMIT 50
   `;
@@ -701,6 +710,7 @@ function mapEventPageFromThread(row: any): EventPage {
 function mapMeeting(row: any): Meeting {
   return {
     id: row.id,
+    kind: row.kind,
     orgId: row.org_id,
     createdBy: row.guide_id,
     guideId: row.guide_id,

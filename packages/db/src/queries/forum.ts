@@ -351,71 +351,106 @@ export async function getThread(slug: string, userId?: string) {
 }
 
 // ============================================================================
-// REPLIES QUERY
+// REPLIES — SINGLE SOURCE OF TRUTH
 // ============================================================================
+//
+// Foundation:
+//   - Every reply hangs off a `threads` row via `replies.thread_id` (FK).
+//   - Nesting is self-referential: `replies.parent_reply_id` (FK to replies).
+//   - There is NO polymorphic discriminator. The source `schemas.ts` once
+//     described one (`parent_type` / `parent_id`); that pattern was never
+//     applied to this DB and has been removed from this query layer.
+//
+// Public surface (use these everywhere; do not duplicate):
+//   - `getReplies(threadId, opts?)`       — flat ordered enriched list
+//   - `getRepliesTree(threadId, opts?)`   — same data assembled into a tree
+//   - `createReply({...})`                — insert + atomic activity bump
+//   - `buildReplyTree(replies)`           — helper, client- or server-side
+//
+// The optional `threadType` argument on getReplies/createReply is accepted
+// and ignored. Callers may pass it for documentation, but it is no longer
+// load-bearing — kept for backwards compatibility across apps.
 
-export async function getReplies(threadId: string, threadType: 'post' | 'meeting' | 'workshop', sort: 'oldest' | 'newest' | 'reactions' = 'oldest') {
-  const replies = await db<Reply[]>`
+export interface GetRepliesOptions {
+  sort?: 'oldest' | 'newest';
+  /** No-op; retained for backwards compatibility. */
+  threadType?: 'post' | 'meeting' | 'workshop' | 'thread';
+}
+
+async function fetchRepliesFlat(threadId: string, sort: 'oldest' | 'newest' = 'oldest'): Promise<Reply[]> {
+  return db<Reply[]>`
     SELECT
       r.id,
-      r.thread_id,
       r.parent_reply_id AS parent_id,
-      r.session_id,
       r.user_id,
       r.content,
       r.created_at,
       r.updated_at,
       r.edited_at,
       COALESCE(r.reaction_count, 0) AS reaction_count,
-      u.display_name AS user_name,
-      u.avatar_url AS user_avatar,
+      u.display_name  AS user_name,
+      u.avatar_url    AS user_avatar,
       u.comment_color,
-      COALESCE(u.trust_level, 0) AS user_trust_level,
+      0               AS user_trust_level,
       CONCAT(
-        SUBSTRING(SPLIT_PART(u.display_name, ' ', 1), 1, 1),
-        COALESCE(SUBSTRING(SPLIT_PART(u.display_name, ' ', 2), 1, 1), '')
+        SUBSTRING(SPLIT_PART(COALESCE(u.display_name, '?'), ' ', 1), 1, 1),
+        COALESCE(SUBSTRING(SPLIT_PART(COALESCE(u.display_name, ''), ' ', 2), 1, 1), '')
       ) AS user_initials
     FROM replies r
     JOIN users u ON u.id = r.user_id
     WHERE r.thread_id = ${threadId}
     ORDER BY
-      ${sort === 'newest' ? db`r.created_at DESC` :
-        sort === 'reactions' ? db`r.reaction_count DESC, r.created_at ASC` :
-        db`r.created_at ASC`}
+      ${sort === 'newest' ? db`r.created_at DESC` : db`r.created_at ASC`}
   `;
-
-  // Build nested tree
-  return buildReplyTree(replies, threadId);
 }
 
-function buildReplyTree(replies: Reply[], threadId: string): Reply[] {
+/**
+ * Returns the reply tree for a thread. Backwards-compatible with the
+ * three-positional-argument call sites — `threadType` is ignored.
+ */
+export async function getReplies(
+  threadId: string,
+  threadTypeOrOptions?: 'post' | 'meeting' | 'workshop' | 'thread' | GetRepliesOptions,
+  sortLegacy?: 'oldest' | 'newest' | 'reactions',
+): Promise<Reply[]> {
+  const sort =
+    typeof threadTypeOrOptions === 'object'
+      ? (threadTypeOrOptions.sort ?? 'oldest')
+      : (sortLegacy === 'newest' ? 'newest' : 'oldest');
+  const flat = await fetchRepliesFlat(threadId, sort);
+  return buildReplyTree(flat, threadId);
+}
+
+/** Same data as getReplies, but returned flat (ordered). */
+export async function getRepliesFlat(
+  threadId: string,
+  opts: GetRepliesOptions = {},
+): Promise<Reply[]> {
+  return fetchRepliesFlat(threadId, opts.sort ?? 'oldest');
+}
+
+export function buildReplyTree(replies: Reply[], threadId?: string): Reply[] {
   const replyMap = new Map<string, Reply>();
   const rootReplies: Reply[] = [];
 
-  // First pass: create map
-  replies.forEach(reply => {
-    replyMap.set(reply.id, { ...reply, children: [] });
-  });
+  for (const r of replies) {
+    replyMap.set(r.id, { ...r, children: [] });
+  }
 
-  // Second pass: build tree
-  replies.forEach(reply => {
-    const node = replyMap.get(reply.id)!;
-    
-    if (!reply.parentId || reply.parentId === threadId) {
-      // Root-level reply
+  for (const r of replies) {
+    const node = replyMap.get(r.id)!;
+    if (!r.parentId || r.parentId === threadId) {
       rootReplies.push(node);
     } else {
-      // Nested reply
-      const parent = replyMap.get(reply.parentId);
+      const parent = replyMap.get(r.parentId);
       if (parent) {
         parent.children = parent.children || [];
         parent.children.push(node);
       } else {
-        // Orphaned reply, add to root
         rootReplies.push(node);
       }
     }
-  });
+  }
 
   return rootReplies;
 }
@@ -479,38 +514,74 @@ export async function getUserThreadState(threadId: string, threadType: 'post' | 
 // MUTATIONS
 // ============================================================================
 
+/**
+ * Insert a reply and atomically bump the parent thread's activity
+ * (reply_count + updated_at). Returns an enriched `Reply` with author info
+ * already attached, so API routes don't need a follow-up SELECT.
+ *
+ * `threadType` is accepted for backwards compatibility and ignored.
+ */
 export async function createReply(data: {
   threadId: string;
-  threadType: 'post' | 'meeting';
   parentId: string | null;
   userId: string;
   content: string;
-}) {
-  const { threadId, threadType, parentId, userId, content } = data;
+  /** No-op; retained for backwards compatibility. */
+  threadType?: 'post' | 'meeting' | 'workshop' | 'thread';
+}): Promise<Reply> {
+  const { threadId, parentId, userId, content } = data;
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('Reply content is required.');
+
   const replyId = nanoid();
 
-  const result = await db`
-    INSERT INTO replies (
-      id,
-      parent_type,
-      parent_id,
-      user_id,
-      content,
-      created_at,
-      updated_at
-    ) VALUES (
-      ${replyId},
-      ${parentId ? 'reply' : threadType},
-      ${parentId || threadId},
-      ${userId},
-      ${content},
-      NOW(),
-      NOW()
+  // Single round-trip: CTE inserts the reply, bumps the thread, joins users,
+  // and returns the enriched row. All-or-nothing in one statement.
+  const result = await db<Reply[]>`
+    WITH inserted AS (
+      INSERT INTO replies (
+        id, thread_id, parent_reply_id, user_id, content,
+        created_at, updated_at
+      ) VALUES (
+        ${replyId}, ${threadId}, ${parentId}, ${userId}, ${trimmed},
+        NOW(), NOW()
+      )
+      RETURNING id, thread_id, parent_reply_id, user_id, content,
+                created_at, updated_at, edited_at, reaction_count
+    ),
+    bump AS (
+      UPDATE threads
+      SET reply_count = COALESCE(reply_count, 0) + 1,
+          updated_at  = NOW()
+      WHERE id = ${threadId}
+      RETURNING 1
     )
-    RETURNING *
+    SELECT
+      i.id,
+      i.parent_reply_id AS parent_id,
+      i.user_id,
+      i.content,
+      i.created_at,
+      i.updated_at,
+      i.edited_at,
+      COALESCE(i.reaction_count, 0) AS reaction_count,
+      u.display_name  AS user_name,
+      u.avatar_url    AS user_avatar,
+      u.comment_color,
+      0               AS user_trust_level,
+      CONCAT(
+        SUBSTRING(SPLIT_PART(COALESCE(u.display_name, '?'), ' ', 1), 1, 1),
+        COALESCE(SUBSTRING(SPLIT_PART(COALESCE(u.display_name, ''), ' ', 2), 1, 1), '')
+      ) AS user_initials
+    FROM inserted i
+    JOIN users u ON u.id = i.user_id
+    WHERE EXISTS (SELECT 1 FROM bump)
   `;
 
-  return result[0];
+  if (result.length === 0) {
+    throw new Error('Failed to create reply.');
+  }
+  return { ...result[0], children: [] };
 }
 
 export async function toggleReaction(data: {

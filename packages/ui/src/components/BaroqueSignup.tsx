@@ -72,7 +72,6 @@ export function BaroqueSignup({
   return (
     <div className="eac-baroque-frame">
       <span className="eac-baroque-corners-bottom" />
-      <p className="eac-eyebrow">Become a Member</p>
       <h2 className="eac-title">
         {title ?? (isSignup ? 'Join the Collective' : 'Welcome Back')}
       </h2>

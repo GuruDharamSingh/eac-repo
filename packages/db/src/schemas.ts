@@ -225,21 +225,29 @@ async function createTables() {
     )
   `;
 
-  // Replies
+  // Replies — single foundation. Every reply hangs off a thread row via
+  // `thread_id`; nesting is self-referential via `parent_reply_id`. There is
+  // no polymorphic discriminator — replies always live under a `threads` row,
+  // and the thread's `kind` (post / meeting / workshop / event) is the
+  // discriminator when needed.
   await db`
     CREATE TABLE IF NOT EXISTS replies (
-      id VARCHAR(21) PRIMARY KEY,
-      parent_type VARCHAR(20) NOT NULL CHECK (parent_type IN ('meeting', 'post', 'reply')),
-      parent_id VARCHAR(21) NOT NULL,
-      user_id UUID NOT NULL REFERENCES users(id),
-      content TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      updated_at TIMESTAMPTZ DEFAULT NOW()
+      id              VARCHAR(21) PRIMARY KEY,
+      thread_id       VARCHAR(21) NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+      parent_reply_id VARCHAR(21) REFERENCES replies(id) ON DELETE CASCADE,
+      session_id      VARCHAR(21),
+      user_id         UUID NOT NULL REFERENCES users(id),
+      content         TEXT NOT NULL,
+      reaction_count  INTEGER NOT NULL DEFAULT 0,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      edited_at       TIMESTAMPTZ
     )
   `;
 
-  await db`CREATE INDEX IF NOT EXISTS idx_replies_parent ON replies(parent_type, parent_id)`;
-  await db`CREATE INDEX IF NOT EXISTS idx_replies_user ON replies(user_id)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_replies_thread  ON replies(thread_id)`;
+  await db`CREATE INDEX IF NOT EXISTS idx_replies_parent  ON replies(parent_reply_id) WHERE parent_reply_id IS NOT NULL`;
+  await db`CREATE INDEX IF NOT EXISTS idx_replies_user    ON replies(user_id)`;
   await db`CREATE INDEX IF NOT EXISTS idx_replies_created ON replies(created_at DESC)`;
 
   // Media

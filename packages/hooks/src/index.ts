@@ -1,4 +1,10 @@
 // Form hooks
+export { useContentDraft } from './useContentDraft';
+export type {
+  UseContentDraftConfig,
+  UseContentDraftResult,
+} from './useContentDraft';
+
 export { useMeetingForm } from './useMeetingForm';
 export type {
   MeetingFormData,

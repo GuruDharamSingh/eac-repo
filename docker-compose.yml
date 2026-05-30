@@ -44,6 +44,10 @@ services:
       GOTRUE_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters}
       GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP:-true}
       GOTRUE_MAILER_AUTOCONFIRM: true
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_OAUTH_ENABLED:-false}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:9999/callback}
       GOTRUE_EXTERNAL_EMAIL_CLIENT: ${EMAIL_CLIENT:-smtp}
       GOTRUE_SMTP_HOST: ${SMTP_HOST}
       GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
@@ -159,14 +163,14 @@ services:
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
 
       # Node environment
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3000
     volumes:
       - .:/app
       - /app/.next
     ports:
       - "3000:3000"
-    command: sh -c "pnpm install && cd apps/admin && pnpm dev"
+    command: sh -c "pnpm install && cd apps/admin && pnpm build && pnpm start"
     networks:
       - eac-network
       - nextcloud-network

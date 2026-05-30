@@ -34,7 +34,8 @@ export function JoinSection() {
         <div className="join-auth-column">
           <BaroqueSignup
             initialMode="signup"
-            subtitle="Create an account to access the inner gathering, publish your artist page, and connect with the collective."
+            title="Start Here"
+            subtitle="Let's stay in touch, your account creation here leads to Our Feed where workshops, Meetings and publications will appear."
             onSuccess={({ mode }) => {
               if (mode === "signup") {
                 window.location.href = `${INNER_GATHERING_URL}/feed?welcome=1`;

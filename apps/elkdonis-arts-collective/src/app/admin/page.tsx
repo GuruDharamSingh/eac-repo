@@ -4,15 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 
 type SiteConfig = Record<string, unknown>;
 
-const KEYS = ['fundraising', 'featured_artist', 'initiative', 'featured_events'] as const;
+const KEYS = ['fundraising', 'featured_artist', 'initiative', 'featured_events', 'image_spaces'] as const;
 type ConfigKey = (typeof KEYS)[number];
-
-const KEY_LABELS: Record<ConfigKey, string> = {
-  fundraising: 'Fundraising',
-  featured_artist: 'Featured Artist',
-  initiative: 'Current Initiative',
-  featured_events: 'Featured Events',
-};
 
 interface ThreadOption {
   id: string;
@@ -23,12 +16,30 @@ interface ThreadOption {
   dateTime: string | null;
 }
 
+interface MediaGalleryItem {
+  filename: string;
+  basename: string;
+  size: number;
+  type: 'file' | 'directory';
+  mime?: string;
+}
+
+const IMAGE_SPACE_OPTIONS = [
+  { key: 'intro_banner', label: 'Intro Banner (below Work Question)' },
+  { key: 'featured_artist', label: 'Featured Artist Image' },
+] as const;
+
+type ImageSpaceKey = (typeof IMAGE_SPACE_OPTIONS)[number]['key'];
+
+const IMAGE_EXT_RE = /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i;
+
 export default function AdminPage() {
   const [config, setConfig] = useState<Record<ConfigKey, SiteConfig>>({
     fundraising: {},
     featured_artist: {},
     initiative: {},
     featured_events: {},
+    image_spaces: {},
   });
   const [threadOptions, setThreadOptions] = useState<ThreadOption[]>([]);
   const [threadQuery, setThreadQuery] = useState('');
@@ -37,13 +48,18 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mediaPath, setMediaPath] = useState('EAC-Network');
+  const [mediaItems, setMediaItems] = useState<MediaGalleryItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageSpaceKey, setImageSpaceKey] = useState<ImageSpaceKey>('intro_banner');
 
   const load = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/site-config');
       if (res.status === 401) { setAuthError(true); return; }
       const data = await res.json();
-      const next: Record<ConfigKey, SiteConfig> = { fundraising: {}, featured_artist: {}, initiative: {}, featured_events: {} };
+      const next: Record<ConfigKey, SiteConfig> = { fundraising: {}, featured_artist: {}, initiative: {}, featured_events: {}, image_spaces: {} };
       for (const row of data.config ?? []) {
         if (KEYS.includes(row.key)) next[row.key as ConfigKey] = row.value;
       }
@@ -56,6 +72,32 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadMediaItems = useCallback(async (path: string) => {
+    setMediaLoading(true);
+    try {
+      const res = await fetch('/api/admin/media-gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMediaPath(data.path || path);
+        setMediaItems(Array.isArray(data.files) ? data.files : []);
+      } else {
+        setError(data.error || 'Failed to load media gallery');
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setMediaLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadMediaItems(mediaPath);
+  }, [loadMediaItems]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -108,7 +150,78 @@ export default function AdminPage() {
   const fa = config.featured_artist as any;
   const ini = config.initiative as any;
   const fe = config.featured_events as any;
+  const imageSpaces = (config.image_spaces ?? {}) as Record<string, { path?: string; alt?: string }>;
   const featuredThreadIds = Array.isArray(fe.threadIds) ? fe.threadIds as string[] : [];
+  const selectedSpace = imageSpaces[imageSpaceKey] ?? {};
+
+  const buildMediaSrc = (path?: string) => {
+    if (!path) return '';
+    return `/api/media/file?path=${encodeURIComponent(path)}`;
+  };
+
+  const assignImageToSpace = (path: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      image_spaces: {
+        ...(prev.image_spaces as Record<string, { path?: string; alt?: string }>),
+        [imageSpaceKey]: {
+          path,
+          alt: imageSpaceKey === 'intro_banner'
+            ? 'Collective banner image'
+            : 'Featured artist image',
+        },
+      },
+    }));
+  };
+
+  const clearImageSpace = () => {
+    setConfig((prev) => ({
+      ...prev,
+      image_spaces: {
+        ...(prev.image_spaces as Record<string, { path?: string; alt?: string }>),
+        [imageSpaceKey]: { path: '', alt: '' },
+      },
+    }));
+  };
+
+  const goUpFolder = () => {
+    const parts = mediaPath.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (parts.length <= 1) return;
+    parts.pop();
+    void loadMediaItems(parts.join('/'));
+  };
+
+  const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('path', mediaPath);
+
+      const res = await fetch('/api/admin/media-gallery/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      await loadMediaItems(mediaPath);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
+    }
+  };
+
+  const folderItems = mediaItems.filter((item) => item.type === 'directory');
+  const imageItems = mediaItems.filter((item) => item.type === 'file' && IMAGE_EXT_RE.test(item.basename));
 
   const toggleFeaturedThread = (threadId: string) => {
     const nextIds = featuredThreadIds.includes(threadId)
@@ -173,6 +286,21 @@ export default function AdminPage() {
         <Field label="CTA label">
           <input style={styles.input} value={fa.cta ?? ''} onChange={(e) => set('featured_artist', 'cta', e.target.value)} placeholder="Make an Inquiry" />
         </Field>
+        <Field label="Goals &amp; current work">
+          <textarea style={styles.textarea} value={fa.goals ?? ''} onChange={(e) => set('featured_artist', 'goals', e.target.value)} rows={4} placeholder="Describe the artist's current projects or goals..." />
+        </Field>
+        <Field label="Link 1 — label">
+          <input style={styles.input} value={fa.link1_label ?? ''} onChange={(e) => set('featured_artist', 'link1_label', e.target.value)} placeholder="Visit Website" />
+        </Field>
+        <Field label="Link 1 — URL">
+          <input style={styles.input} type="url" value={fa.link1_url ?? ''} onChange={(e) => set('featured_artist', 'link1_url', e.target.value)} placeholder="https://..." />
+        </Field>
+        <Field label="Link 2 — label">
+          <input style={styles.input} value={fa.link2_label ?? ''} onChange={(e) => set('featured_artist', 'link2_label', e.target.value)} placeholder="Make an Inquiry" />
+        </Field>
+        <Field label="Link 2 — URL">
+          <input style={styles.input} type="url" value={fa.link2_url ?? ''} onChange={(e) => set('featured_artist', 'link2_url', e.target.value)} placeholder="https://..." />
+        </Field>
         <SaveRow keyName="featured_artist" saving={saving} saved={saved} onSave={() => patch('featured_artist', config.featured_artist)} />
       </section>
 
@@ -226,6 +354,91 @@ export default function AdminPage() {
         </div>
         <p style={styles.muted}>{featuredThreadIds.length} selected.</p>
         <SaveRow keyName="featured_events" saving={saving} saved={saved} onSave={() => patch('featured_events', config.featured_events)} />
+      </section>
+
+      {/* ── Image Spaces + Media Gallery ───────────────────── */}
+      <section style={styles.card}>
+        <h2 style={styles.h2}>Homepage Image Spaces</h2>
+        <p style={styles.muted}>Choose images from group folders in Nextcloud for image slots used on the public homepage.</p>
+
+        <Field label="Image space target">
+          <select
+            style={styles.input}
+            value={imageSpaceKey}
+            onChange={(e) => setImageSpaceKey(e.target.value as ImageSpaceKey)}
+          >
+            {IMAGE_SPACE_OPTIONS.map((space) => (
+              <option key={space.key} value={space.key}>{space.label}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Current selected image path">
+          <input style={styles.input} value={selectedSpace.path ?? ''} readOnly placeholder="No image selected" />
+        </Field>
+
+        <div style={styles.folderBar}>
+          <button type="button" onClick={goUpFolder} style={styles.smallBtn}>Up one folder</button>
+          <button type="button" onClick={() => loadMediaItems('EAC-Network')} style={styles.smallBtn}>Go to groups root</button>
+          <label style={uploadingImage ? styles.smallBtnDisabled : styles.smallBtn}>
+            {uploadingImage ? 'Uploading…' : 'Upload image'}
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+              hidden
+              disabled={uploadingImage}
+              onChange={handleGalleryUpload}
+            />
+          </label>
+          <button type="button" onClick={clearImageSpace} style={styles.smallBtnMuted}>Clear target image</button>
+        </div>
+
+        <p style={{ ...styles.muted, marginBottom: '0.35rem' }}>Browsing: {mediaPath}</p>
+        <p style={{ ...styles.muted, marginBottom: '0.75rem' }}>Allowed upload types: JPG, JPEG, PNG, WEBP, GIF, AVIF.</p>
+
+        {mediaLoading ? (
+          <p style={styles.muted}>Loading gallery…</p>
+        ) : (
+          <>
+            <div style={styles.galleryFolderGrid}>
+              {folderItems.map((folder) => (
+                <button
+                  key={folder.filename}
+                  type="button"
+                  style={styles.folderTile}
+                  onClick={() => loadMediaItems(folder.filename.replace(/^\/+/, ''))}
+                >
+                  {folder.basename}
+                </button>
+              ))}
+            </div>
+
+            <div style={styles.galleryImageGrid}>
+              {imageItems.length === 0 ? (
+                <p style={styles.muted}>No image files found in this folder.</p>
+              ) : imageItems.map((file) => {
+                const normalizedPath = file.filename.replace(/^\/+/, '');
+                const assigned = selectedSpace.path === normalizedPath;
+                return (
+                  <div key={file.filename} style={assigned ? styles.galleryCardSelected : styles.galleryCard}>
+                    <img
+                      src={buildMediaSrc(normalizedPath)}
+                      alt={file.basename}
+                      style={styles.galleryThumb}
+                      loading="lazy"
+                    />
+                    <p style={styles.galleryLabel}>{file.basename}</p>
+                    <button type="button" style={styles.smallBtn} onClick={() => assignImageToSpace(normalizedPath)}>
+                      {assigned ? 'Assigned' : 'Use this image'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <SaveRow keyName="image_spaces" saving={saving} saved={saved} onSave={() => patch('image_spaces', config.image_spaces)} />
       </section>
 
       <footer style={{ textAlign: 'center', padding: '3rem 0', color: '#555', fontSize: '0.75rem' }}>
@@ -292,4 +505,15 @@ const styles = {
   threadOption: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid #2a2a2a', borderRadius: 8, background: '#111', cursor: 'pointer' },
   threadOptionSelected: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid #c6a45a', borderRadius: 8, background: '#17140b', cursor: 'pointer' },
   threadOptionMain: { display: 'grid', gap: '0.2rem', minWidth: 0 },
+  folderBar: { display: 'flex', gap: '0.6rem', flexWrap: 'wrap' as const, marginBottom: '1rem' },
+  smallBtn: { background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 6, padding: '0.45rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer' },
+  smallBtnDisabled: { background: '#374151', color: '#9ca3af', border: '1px solid #4b5563', borderRadius: 6, padding: '0.45rem 0.75rem', fontSize: '0.75rem', cursor: 'not-allowed' },
+  smallBtnMuted: { background: '#111827', color: '#d1d5db', border: '1px solid #374151', borderRadius: 6, padding: '0.45rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer' },
+  galleryFolderGrid: { display: 'flex', flexWrap: 'wrap' as const, gap: '0.55rem', marginBottom: '1rem' },
+  folderTile: { background: '#151515', border: '1px solid #2a2a2a', borderRadius: 999, color: '#e5e7eb', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.76rem' },
+  galleryImageGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.8rem' },
+  galleryCard: { background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '0.55rem', display: 'grid', gap: '0.55rem' },
+  galleryCardSelected: { background: '#17140b', border: '1px solid #c6a45a', borderRadius: 8, padding: '0.55rem', display: 'grid', gap: '0.55rem' },
+  galleryThumb: { width: '100%', height: 120, borderRadius: 6, objectFit: 'cover' as const, border: '1px solid #2a2a2a', background: '#080808' },
+  galleryLabel: { margin: 0, fontSize: '0.72rem', color: '#d1d5db', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
 };

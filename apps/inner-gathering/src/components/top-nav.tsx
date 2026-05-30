@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video, Palette } from "lucide-react";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video, Palette, Mail, BookOpen, MessageSquare } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -41,6 +41,12 @@ const navItems: NavItem[] = [
     match: (pathname) => pathname.startsWith("/feed"),
   },
   {
+    icon: MessageSquare,
+    label: "Forum",
+    href: "/forum",
+    match: (pathname) => pathname.startsWith("/forum"),
+  },
+  {
     icon: BarChart3,
     label: "Polls",
     href: "/polls",
@@ -59,10 +65,22 @@ const navItems: NavItem[] = [
     match: (pathname) => pathname.startsWith("/files"),
   },
   {
+    icon: BookOpen,
+    label: "Workshops",
+    href: "/workshops/create",
+    match: (pathname) => pathname.startsWith("/workshops"),
+  },
+  {
     icon: Video,
     label: "Live",
     href: "/live",
     match: (pathname) => pathname.startsWith("/live"),
+  },
+  {
+    icon: Mail,
+    label: "Emails",
+    href: "/email-templates",
+    match: (pathname) => pathname.startsWith("/email-templates"),
   },
 ];
 

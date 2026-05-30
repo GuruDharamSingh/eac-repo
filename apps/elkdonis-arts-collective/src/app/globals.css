@@ -2592,3 +2592,244 @@ details.member-card,
     text-align: center;
   }
 }
+
+/* ================================================================
+   CURRENT WORK QUESTION — boxed inquiry on the landing page
+   ================================================================ */
+
+.cwq-section {
+  padding: var(--section-pad) 0;
+  background: transparent;
+}
+
+.cwq-eyebrow {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #8f763c;
+  text-align: center;
+}
+
+.cwq-title {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(1.85rem, 4.2vw, 2.75rem);
+  line-height: 1.18;
+  letter-spacing: 0.005em;
+  color: #01124E;
+  text-align: center;
+}
+
+.cwq-rule {
+  border: 0;
+  height: 1px;
+  width: 110px;
+  margin: 1.4rem auto 1.75rem;
+  background: linear-gradient(90deg, transparent, #b79a55 50%, transparent);
+}
+
+.cwq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.cwq-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 7.5rem;
+  padding: 0.95rem 1.05rem;
+  font: inherit;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #01124E;
+  background: rgba(255, 253, 248, 0.65);
+  border: 1px solid rgba(183, 154, 85, 0.4);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cwq-textarea::placeholder {
+  color: rgba(1, 18, 78, 0.42);
+  font-style: italic;
+}
+
+.cwq-textarea:focus {
+  border-color: rgba(183, 154, 85, 0.85);
+  background: #fffdf8;
+  box-shadow: 0 0 0 3px rgba(183, 154, 85, 0.18);
+}
+
+.cwq-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8a1c1c;
+}
+
+.cwq-submit {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  padding: 0.85rem 1.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #fffdf8;
+  background: #01124E;
+  border: 1px solid #b79a55;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.cwq-submit:hover:not(:disabled) {
+  background: #022278;
+}
+
+.cwq-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cwq-thanks {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: #01124E;
+  font-size: 1.05rem;
+}
+
+.cwq-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 2rem 0 1.25rem;
+  color: rgba(1, 18, 78, 0.55);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+.cwq-divider span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(183, 154, 85, 0.55), transparent);
+}
+
+.cwq-forum-link {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 auto;
+  width: fit-content;
+  padding: 0.55rem 0.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8f763c;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s ease, border-color 0.18s ease, gap 0.18s ease;
+  text-align: center;
+}
+
+.cwq-forum-link:hover,
+.cwq-forum-link:focus-visible {
+  color: #01124E;
+  border-bottom-color: rgba(183, 154, 85, 0.75);
+  gap: 0.85rem;
+  outline: none;
+}
+
+.cwq-forum-arrow {
+  font-size: 1.1em;
+  opacity: 0.7;
+}
+
+/* ================================================================
+   IMAGE SPACE BANNER — admin-selectable strip below hero inquiry
+   ================================================================ */
+
+.image-space-banner {
+  padding: 0 0 clamp(2rem, 5vw, 3.5rem);
+}
+
+.image-space-banner-inner {
+  width: min(1120px, calc(100% - 2.5rem));
+  margin: 0 auto;
+  border: 1px solid rgba(183, 154, 85, 0.38);
+  border-radius: 2px;
+  overflow: hidden;
+  background: linear-gradient(125deg, rgba(2, 34, 120, 0.85), rgba(1, 18, 78, 0.92));
+  box-shadow: 0 28px 55px rgba(1, 18, 78, 0.24);
+  min-height: clamp(180px, 34vw, 360px);
+}
+
+.image-space-banner-img {
+  display: block;
+  width: 100%;
+  height: clamp(180px, 34vw, 360px);
+  object-fit: cover;
+  object-position: center;
+}
+
+.image-space-banner-fallback {
+  width: 100%;
+  height: clamp(180px, 34vw, 360px);
+  background:
+    radial-gradient(circle at 12% 22%, rgba(183, 154, 85, 0.24), transparent 48%),
+    radial-gradient(circle at 84% 70%, rgba(183, 154, 85, 0.2), transparent 56%),
+    linear-gradient(135deg, rgba(2, 34, 120, 0.95), rgba(1, 18, 78, 0.95));
+}
+
+@media (max-width: 700px) {
+  .cwq-section .section-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .image-space-banner {
+    padding-bottom: 2rem;
+  }
+
+  .image-space-banner-inner {
+    width: calc(100% - 1.5rem);
+  }
+}
+
+
+/* ── Section background overrides ──────────────────────────────── */
+.board-section {
+  background: #01124E !important;
+}
+.gallery-section {
+  background: var(--color-gold, #b79a55) !important;
+  border-color: transparent !important;
+}
+
+/* ── Featured artist: stack to single column on mobile ─────────── */
+@media (max-width: 860px) {
+  #grant-program .section-inner {
+    grid-template-columns: 1fr !important;
+  }
+  #grant-program .section-inner > div:last-child {
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-top: 1px solid rgba(198,164,90,0.18);
+    padding-top: 1.5rem;
+  }
+}

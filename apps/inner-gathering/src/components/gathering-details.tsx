@@ -197,7 +197,8 @@ export function GatheringDetails({
           {/* Unified Forum Feed */}
           <CommentSection
             initialReplies={replies}
-            meetingId={gathering.id} 
+            meetingId={gathering.id}
+            threadKind={type === 'workshop' ? 'workshop' : 'meeting'}
             currentUserId={currentUser?.id ?? null}
             currentUserName={currentUser?.displayName ?? null}
             currentUserInitials={currentUser?.initials ?? null}

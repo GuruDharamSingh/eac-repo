@@ -12,6 +12,8 @@
   "dependencies": {
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/checkout": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/hooks": "workspace:*",

@@ -7,11 +7,12 @@ import { getSession } from "@elkdonis/auth-client";
 
 interface CreateMeetingFormProps {
   onSuccess?: () => void;
+  isAdmin?: boolean;
 }
 
 const ORG_ID = "inner_group";
 
-export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
+export function CreateMeetingForm({ onSuccess, isAdmin = false }: CreateMeetingFormProps) {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -134,7 +135,7 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
       durationMinutes,
       location: formData.location?.trim(),
       description: formData.description?.trim() || undefined,
-      visibility: formData.visibility || "ORGANIZATION",
+      visibility: formData.visibility || "PUBLIC",
       isOnline: formData.isOnline,
       meetingUrl: formData.meetingUrl?.trim() || undefined,
       media: (() => {
@@ -185,7 +186,7 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
         // Fixed org to inner_group
         fixedValues: {
           orgId: ORG_ID,
-          visibility: "PUBLIC",
+          ...(isAdmin ? {} : { visibility: "PUBLIC" }),
         },
         // All fields visible, only title and date/time required
         visibleFields: {
@@ -199,7 +200,7 @@ export function CreateMeetingForm({ onSuccess }: CreateMeetingFormProps) {
           location: true,
           isOnline: true,
           meetingUrl: true,
-          visibility: true,
+          visibility: isAdmin,
           notes: true,
           media: true,
           createDocument: true,

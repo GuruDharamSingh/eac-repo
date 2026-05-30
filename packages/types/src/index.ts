@@ -11,3 +11,4 @@ export * from './event';
 export * from './availability';
 export * from './event-page';
 export * from './workshop';
+export * from './content-form-config';

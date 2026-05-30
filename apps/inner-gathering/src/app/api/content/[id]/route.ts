@@ -22,17 +22,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const [post] = await db`
+    const [thread] = await db`
       SELECT id
       FROM threads
       WHERE id = ${id}
         AND org_id = ${ORG_ID}
-        AND kind = 'post'
       LIMIT 1
     `;
 
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    if (!thread) {
+      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
     await db`
@@ -40,7 +39,6 @@ export async function DELETE(
       SET status = 'archived', updated_at = NOW()
       WHERE id = ${id}
         AND org_id = ${ORG_ID}
-        AND kind = 'post'
     `;
 
     revalidatePath("/feed");

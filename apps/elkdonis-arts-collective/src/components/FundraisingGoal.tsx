@@ -1,6 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Heart, Instagram, BookOpen } from "lucide-react";
+
+const SOCIAL_LINKS = [
+  {
+    label: "GoFundMe",
+    url: "https://www.gofundme.com/f/empowering-artists-in-toronto-and-la",
+    Icon: Heart,
+  },
+  {
+    label: "Instagram",
+    url: "https://www.instagram.com/Elkdonisarts",
+    Icon: Instagram,
+  },
+  {
+    label: "Substack",
+    url: "https://elkdonisarts.substack.com/",
+    Icon: BookOpen,
+  },
+];
 
 interface FundraisingConfig {
   goal?: number;
@@ -31,11 +50,10 @@ export function FundraisingGoal() {
     return () => obs.disconnect();
   }, []);
 
-  const goal = cfg.goal ?? 25000;
   const raised = cfg.raised ?? 0;
+  const goal = cfg.goal ?? 25000;
   const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
-  const url = cfg.url ?? "https://linktr.ee/elkdonisarts";
-  const cta = cfg.cta ?? "Support Our Work";
+  const gofundmeUrl = "https://www.gofundme.com/f/empowering-artists-in-toronto-and-la";
 
   return (
     <section id="fundraising" ref={ref} className="fundraising-section">
@@ -48,16 +66,9 @@ export function FundraisingGoal() {
           <h2 className="section-heading">Fundraising Goal</h2>
           <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem auto" } as React.CSSProperties} />
 
-          {cfg.status ? (
-            <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "2rem" }}>
-              {cfg.status}
-            </p>
-          ) : (
-            <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "2rem" }}>
-              Take a look at our current Fundraiser &amp; follow us to be informed when we
-              launch our first events.
-            </p>
-          )}
+          <p style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "2rem" }}>
+            We Will Specialize in Grant Writing, Finding, and Even Our Own Micro Grants
+          </p>
 
           {raised > 0 && (
             <div style={{ marginBottom: "2rem" }}>
@@ -72,14 +83,46 @@ export function FundraisingGoal() {
           )}
 
           <a
-            href={url}
+            href={gofundmeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="cta-btn"
             style={{ marginTop: "1rem", display: "inline-flex" }}
           >
-            {cta}
+            <Heart size={16} />
+            Support on GoFundMe
           </a>
+
+          {/* Social links */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "1.75rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
+            {SOCIAL_LINKS.map(({ label, url, Icon }) => (
+              <a
+                key={label}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--color-gold, #b79a55)",
+                  textDecoration: "none",
+                  opacity: 0.75,
+                  transition: "opacity 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.75")}
+              >
+                <Icon size={22} strokeWidth={1.4} />
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </section>

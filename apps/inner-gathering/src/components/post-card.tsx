@@ -3,6 +3,7 @@ import { FileText, User, ExternalLink, Trash2, MessageCircle, Pin, PinOff } from
 import Link from "next/link";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
+import { stripHtml } from "@/lib/strip-html";
 
 interface PostCardProps {
   post: Post;
@@ -86,7 +87,7 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete, 
 
         {!post.excerpt && post.body && (
           <Text size="sm" c="dimmed" lineClamp={3}>
-            {post.body}
+            {stripHtml(post.body)}
           </Text>
         )}
 
