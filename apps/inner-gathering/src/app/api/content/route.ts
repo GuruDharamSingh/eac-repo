@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { createNextcloudClient } from "@elkdonis/nextcloud";
 
 // ============================================================================
@@ -60,6 +61,16 @@ interface Payload {
 
   createTalkRoom?: boolean;
   documentUrl?: string;
+
+  media?: Array<{
+    fileId: string;
+    path: string;
+    url: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    type: string;
+  }>;
 }
 
 function slugify(input: string): string {
@@ -148,7 +159,7 @@ export async function POST(request: NextRequest) {
         kind: payload.kind,
         title: payload.title.trim(),
         slug,
-        body: payload.body ?? "",
+        body: sanitizeRichText(payload.body ?? ""),
         status,
         visibility: (payload.visibility as string) || "PUBLIC",
         scheduled_at: payload.scheduledAt ? new Date(payload.scheduledAt) : null,
@@ -238,7 +249,20 @@ export async function POST(request: NextRequest) {
       return { id: threadId, kind: payload.kind, slug, status };
     });
 
+    // Link uploaded media to the thread (upload route pre-creates rows with null attached_to_*)
+    if (payload.media?.length) {
+      for (const m of payload.media) {
+        await db`
+          UPDATE media
+          SET attached_to_type = 'thread', attached_to_id = ${result.id}
+          WHERE nextcloud_file_id = ${m.fileId}
+            AND attached_to_type IS NULL
+        `;
+      }
+    }
+
     // Talk room creation (after transaction so thread exists)
+    // Requires per-user Nextcloud credentials — provision via admin dashboard first.
     let talkRoomCreated = false;
     if (payload.createTalkRoom) {
       try {
@@ -266,7 +290,7 @@ export async function POST(request: NextRequest) {
           talkRoomCreated = true;
           console.log(`✓ Talk room created for thread ${result.id}: ${room.token}`);
         } else {
-          console.warn("⚠ Talk room skipped: no Nextcloud credentials");
+          console.warn("⚠ Talk room skipped: user not provisioned in Nextcloud");
         }
       } catch (talkError) {
         console.error("✗ Failed to create Talk room:", talkError);

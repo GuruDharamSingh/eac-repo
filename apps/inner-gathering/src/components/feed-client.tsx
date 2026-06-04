@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LogOut, Sparkles, RefreshCw, UserCircle } from "lucide-react";
+import { Plus, LogOut, RefreshCw, UserCircle } from "lucide-react";
 import type { Meeting, Post } from "@elkdonis/types";
 import type { QuestionPoll } from "@elkdonis/services";
 import { useRealtimeFeed } from "@elkdonis/hooks";
@@ -10,7 +10,7 @@ import { notifications } from "@mantine/notifications";
 import { MeetingCard } from "./meeting-card";
 import { PostCard } from "./post-card";
 import { PollCard } from "./poll-card";
-import { ContentForm } from "@elkdonis/ui";
+import { ContentForm, BaroqueSignup } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
 import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
 import { WorkQuestionBox } from "./work-question-box";
@@ -31,7 +31,6 @@ import {
   ScrollArea,
   Stack,
   Text,
-  ThemeIcon,
   Title,
   Transition,
 } from "@mantine/core";
@@ -54,6 +53,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] = useDisclosure(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
@@ -62,7 +62,14 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
   const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
 
   const handleEditMeeting = (meeting: Meeting) => {
+    setEditingPost(null);
     setEditingMeeting(meeting);
+    openEditDrawer();
+  };
+
+  const handleEditPost = (post: Post) => {
+    setEditingMeeting(null);
+    setEditingPost(post);
     openEditDrawer();
   };
 
@@ -209,7 +216,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
         pinning={pinningThreadId === item.data.id}
         onTogglePin={() => handleTogglePin(item.data.id, !isPinned(item))}
         showPrivateBadge={isAdmin}
-        canEdit={isAdmin}
+        canEdit={isAdmin || (item.data as Meeting).createdBy === userId}
         onEdit={handleEditMeeting}
       />
     ) : item.type === "poll" ? (
@@ -228,6 +235,8 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
         pinned={isPinned(item)}
         pinning={pinningThreadId === item.data.id}
         onTogglePin={() => handleTogglePin(item.data.id, !isPinned(item))}
+        canEdit={isAdmin || (item.data as Post).authorId === userId}
+        onEdit={() => handleEditPost(item.data as Post)}
       />
     );
 
@@ -244,69 +253,29 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
           zIndex: 50,
         }}
       >
-        <Container>
-          <Group justify="space-between">
-            <Group gap="xs">
-              <ThemeIcon size="md" radius="sm" variant="filled" color="ember">
-                <Sparkles size={18} />
-              </ThemeIcon>
-              <Title
-                order={4}
-                style={{
-                  color: '#fdf0d0',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  fontFamily: "'Cinzel', serif",
-                }}
-              >
-                Inner Gathering
-              </Title>
-            </Group>
-            <Group gap="xs">
-              {userId && (
-                <ActionIcon
-                  variant="subtle"
-                  size="md"
-                  style={{ color: '#f0c98a' }}
-                  onClick={() => setProfileOpen(true)}
-                  title="Edit profile"
-                >
-                  <UserCircle size={20} />
-                </ActionIcon>
-              )}
-              <Button
-                variant="subtle"
-                size="sm"
-                style={{ color: '#f0c98a' }}
-                leftSection={<LogOut size={16} />}
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            </Group>
-          </Group>
+        <Container fluid style={{ position: 'relative' }}>
+          <Title
+            order={2}
+            fw={400}
+            style={{
+              color: '#fdf0d0',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              fontFamily: "'Brothers', 'Cinzel', serif",
+              fontSize: 'clamp(1.98rem, 6.2vw, 4.22rem)',
+              lineHeight: 1.1,
+              margin: 0,
+              textAlign: 'center',
+            }}
+          >
+            Elkdonis Arts Collective
+          </Title>
         </Container>
       </Paper>
 
       {/* Main Content */}
       <Container size="sm" py="lg" pb={120}>
         <Stack gap="lg">
-          {/* Page Header */}
-          <div className="archive-page-header">
-            <Text className="archive-kicker">Gathering table</Text>
-            <Title
-              order={2}
-              className="archive-title"
-            >
-              Feed
-            </Title>
-            <Text size="sm" className="archive-muted" style={{ fontStyle: 'italic' }}>
-              Notices, fragments, meetings, and field notes from the collective
-            </Text>
-          </div>
-
-          <Divider className="archive-divider" size="sm" />
-
           <WorkQuestionBox userId={userId} />
 
           <LatestForumThreads threads={forumThreads} />
@@ -424,9 +393,20 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
                 />
               </Box>
             ) : (
-              <Text c="dimmed" ta="center" py="xl">
-                Sign in to create content.
-              </Text>
+              <Box className="create-content-signin" py="md">
+                <Text c="#fdf0d0" ta="center" mb="sm" fw={600}>
+                  Sign in or create an account to post.
+                </Text>
+                <BaroqueSignup
+                  initialMode="signin"
+                  title="Join the table"
+                  subtitle="Sign in or create an account to share a meeting, note, or fragment."
+                  onSuccess={() => {
+                    closeDrawer();
+                    router.refresh();
+                  }}
+                />
+              </Box>
             )}
           </ScrollArea>
         </Drawer>
@@ -434,7 +414,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
         {/* Edit drawer */}
         <Drawer
           opened={editDrawerOpened}
-          onClose={() => { closeEditDrawer(); setEditingMeeting(null); }}
+          onClose={() => { closeEditDrawer(); setEditingMeeting(null); setEditingPost(null); }}
           position="bottom"
           size="90%"
           classNames={{
@@ -444,8 +424,12 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
           }}
           title={
             <div>
-              <Title order={4}>Edit {editingMeeting?.kind === "workshop" ? "Workshop" : "Meeting"}</Title>
-              <Text size="sm" c="dimmed">{editingMeeting?.title}</Text>
+              <Title order={4}>
+                {editingPost
+                  ? "Edit Post"
+                  : `Edit ${editingMeeting?.kind === "workshop" ? "Workshop" : "Meeting"}`}
+              </Title>
+              <Text size="sm" c="dimmed">{editingPost?.title ?? editingMeeting?.title}</Text>
             </div>
           }
         >
@@ -481,6 +465,29 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
                   }}
                 />
               </Box>
+            ) : userId && editingPost ? (
+              <Box className="create-content-surface">
+                <ContentForm
+                  orgId="inner_group"
+                  userId={userId}
+                  isAdmin={isAdmin}
+                  isCmsSite
+                  initialThreadId={editingPost.id}
+                  initialDraft={{
+                    title: editingPost.title,
+                    body: editingPost.body ?? "",
+                    isMeeting: false,
+                    visibility: (editingPost.visibility as "PUBLIC" | "ORGANIZATION") ?? "PUBLIC",
+                    primaryOrgId: "inner_group",
+                  }}
+                  onPublished={() => {
+                    closeEditDrawer();
+                    setEditingPost(null);
+                    router.refresh();
+                    clearNewItems();
+                  }}
+                />
+              </Box>
             ) : null}
           </ScrollArea>
         </Drawer>
@@ -497,6 +504,15 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
           opened={profileOpen}
           onClose={() => setProfileOpen(false)}
         />
+
+        <Text
+          size="xs"
+          ta="center"
+          mt="xl"
+          style={{ color: 'var(--ig-moss)', opacity: 0.75 }}
+        >
+          Headings set in Brothers, a typeface by Emil Kozole, released under the SIL Open Font License.
+        </Text>
       </Container>
     </Box>
   );

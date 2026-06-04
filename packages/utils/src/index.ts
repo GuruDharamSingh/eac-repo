@@ -11,6 +11,9 @@ export {
 // String utilities
 export { slugify, formatFileSize, truncate } from './strings';
 
+// HTML sanitization for rich-text content
+export { sanitizeRichText } from './sanitize';
+
 // Date utilities
 export { formatTime, formatDate, isPastDate, getRelativeTime } from './dates';
 

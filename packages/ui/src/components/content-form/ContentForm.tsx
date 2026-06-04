@@ -55,8 +55,9 @@ export function ContentForm({
     removeLibraryFile,
     createTalkRoom,
     setCreateTalkRoom,
+    createDocument,
+    setCreateDocument,
     documentUrl,
-    setDocumentUrl,
     publishing,
     savingDraft,
     error,
@@ -125,6 +126,7 @@ export function ContentForm({
               label="Meeting time"
               placeholder="Pick a date and time"
               clearable
+              dropdownType="modal"
               value={draft.scheduledAt ? new Date(draft.scheduledAt) : null}
               onChange={(v) =>
                 update({ scheduledAt: v ? new Date(v as any).toISOString() : null })
@@ -278,12 +280,17 @@ export function ContentForm({
             checked={createTalkRoom}
             onChange={(e) => setCreateTalkRoom(e.currentTarget.checked)}
           />
-          <TextInput
-            label="Living document URL"
-            placeholder="https://…"
-            value={documentUrl}
-            onChange={(e) => setDocumentUrl(e.currentTarget.value)}
+          <Switch
+            label="Create a living document"
+            description="Collaborative Nextcloud document linked to this thread"
+            checked={createDocument}
+            onChange={(e) => setCreateDocument(e.currentTarget.checked)}
           />
+          {createDocument && documentUrl && (
+            <Text size="xs" c="dimmed">
+              Document URL: <a href={documentUrl} target="_blank" rel="noopener noreferrer">{documentUrl}</a>
+            </Text>
+          )}
         </Stack>
       </Collapse>
 
@@ -305,6 +312,7 @@ export function ContentForm({
             description="Leave empty to publish immediately."
             placeholder="Schedule for later"
             clearable
+            dropdownType="modal"
             value={draft.publishAt ? new Date(draft.publishAt) : null}
             onChange={(v) =>
               update({ publishAt: v ? new Date(v as any).toISOString() : null })

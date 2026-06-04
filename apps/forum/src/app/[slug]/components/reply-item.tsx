@@ -1,4 +1,5 @@
 import { Heart } from 'lucide-react';
+import { RichText } from '@elkdonis/ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Reply } from '@/lib/data';
@@ -24,9 +25,9 @@ export function ReplyItem({ reply }: ReplyItemProps) {
             <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(reply.createdAt)}</span>
           </div>
 
-          <div
+          <RichText
             className="prose-forum text-sm"
-            dangerouslySetInnerHTML={{ __html: reply.content }}
+            html={reply.content}
           />
         </div>
 

@@ -8,12 +8,20 @@
 
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
+import { sanitizeRichText } from "@elkdonis/utils";
 import type {
   Cart,
   CartLine,
   Order,
   OrderStatus,
   AuctionLot,
+  ArtistApplicationInput,
+  ArtistProfileUpdateInput,
+  CreateArtworkInput,
+  UpdateArtworkInput,
+  ArtworkMediaInput,
+  MarketplaceArtist,
+  Currency,
 } from "../types";
 import { splitCommission } from "../money";
 import {
@@ -509,4 +517,394 @@ function mapOrder(r: Row): Order {
     fulfilledAt: (r.fulfilled_at as string | null) ?? null,
     cancelledAt: (r.cancelled_at as string | null) ?? null,
   };
+}
+
+// ─── Marketplace artists: apply / review / profile ────────────────────────
+
+const DEFAULT_MARKETPLACE_ORG = "market";
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+function serializeLinks(
+  links: { label: string; url: string }[] | undefined
+): string {
+  if (!links) return "[]";
+  const clean = links
+    .filter((l) => l && typeof l.url === "string" && l.url.trim().length > 0)
+    .map((l) => ({ label: String(l.label ?? l.url).trim(), url: l.url.trim() }));
+  return JSON.stringify(clean);
+}
+
+/**
+ * Artist applies to the marketplace (or resubmits). Creates a `pending` row;
+ * a previously `rejected` applicant is reset to `pending`. Bio is sanitized.
+ */
+export async function applyAsArtist(
+  input: ArtistApplicationInput
+): Promise<MarketplaceArtist> {
+  const bioHtml = input.bioHtml ? sanitizeRichText(input.bioHtml) : null;
+  const rows = (await db`
+    INSERT INTO marketplace_artists (
+      user_id, org_id, payout_email, payout_method, default_currency,
+      status, bio_html, display_name, headline, city, photo_url, links,
+      applied_at
+    ) VALUES (
+      ${input.userId}, ${input.orgId ?? DEFAULT_MARKETPLACE_ORG},
+      ${input.payoutEmail}, ${input.payoutMethod ?? "etransfer"},
+      ${input.defaultCurrency ?? "CAD"}, 'pending', ${bioHtml},
+      ${input.displayName}, ${input.headline ?? null}, ${input.city ?? null},
+      ${input.photoUrl ?? null}, ${serializeLinks(input.links)}::jsonb, NOW()
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      payout_email = EXCLUDED.payout_email,
+      payout_method = EXCLUDED.payout_method,
+      default_currency = EXCLUDED.default_currency,
+      bio_html = EXCLUDED.bio_html,
+      display_name = EXCLUDED.display_name,
+      headline = EXCLUDED.headline,
+      city = EXCLUDED.city,
+      photo_url = EXCLUDED.photo_url,
+      links = EXCLUDED.links,
+      status = CASE
+        WHEN marketplace_artists.status = 'rejected' THEN 'pending'
+        ELSE marketplace_artists.status
+      END,
+      rejection_reason = CASE
+        WHEN marketplace_artists.status = 'rejected' THEN NULL
+        ELSE marketplace_artists.rejection_reason
+      END,
+      applied_at = CASE
+        WHEN marketplace_artists.status = 'rejected' THEN NOW()
+        ELSE marketplace_artists.applied_at
+      END
+    RETURNING user_id
+  `) as unknown as Row[];
+  void rows;
+  const created = await getArtistRow(input.userId);
+  if (!created) throw new Error("Failed to create artist application.");
+  return created;
+}
+
+/** Approved artist edits their own profile. Cannot change status here. */
+export async function updateArtistProfile(
+  userId: string,
+  input: ArtistProfileUpdateInput
+): Promise<void> {
+  const bioHtml =
+    input.bioHtml !== undefined
+      ? input.bioHtml
+        ? sanitizeRichText(input.bioHtml)
+        : null
+      : undefined;
+
+  await db`
+    UPDATE marketplace_artists SET
+      display_name = COALESCE(${input.displayName ?? null}, display_name),
+      headline = ${input.headline !== undefined ? input.headline : db`headline`},
+      city = ${input.city !== undefined ? input.city : db`city`},
+      photo_url = ${input.photoUrl !== undefined ? input.photoUrl : db`photo_url`},
+      bio_html = ${bioHtml !== undefined ? bioHtml : db`bio_html`},
+      payout_email = COALESCE(${input.payoutEmail ?? null}, payout_email),
+      payout_method = COALESCE(${input.payoutMethod ?? null}, payout_method),
+      default_currency = COALESCE(${input.defaultCurrency ?? null}, default_currency),
+      links = ${input.links !== undefined ? db`${serializeLinks(input.links)}::jsonb` : db`links`}
+    WHERE user_id = ${userId}
+  `;
+}
+
+/** Admin approves a pending artist application. */
+export async function approveArtist(
+  userId: string,
+  reviewerId: string
+): Promise<void> {
+  const rows = (await db`
+    UPDATE marketplace_artists SET
+      status = 'active',
+      reviewed_at = NOW(),
+      reviewed_by = ${reviewerId},
+      rejection_reason = NULL,
+      joined_at = COALESCE(joined_at, NOW())
+    WHERE user_id = ${userId} AND status IN ('pending', 'rejected', 'paused')
+    RETURNING user_id
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("Application not found or not reviewable.");
+}
+
+/** Admin rejects a pending artist application with a reason. */
+export async function rejectArtist(
+  userId: string,
+  reviewerId: string,
+  reason: string
+): Promise<void> {
+  const rows = (await db`
+    UPDATE marketplace_artists SET
+      status = 'rejected',
+      reviewed_at = NOW(),
+      reviewed_by = ${reviewerId},
+      rejection_reason = ${reason}
+    WHERE user_id = ${userId} AND status = 'pending'
+    RETURNING user_id
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("Application not found or not pending.");
+}
+
+async function getArtistRow(userId: string): Promise<MarketplaceArtist | null> {
+  const { getMarketplaceArtist } = await import("../queries");
+  return getMarketplaceArtist(userId);
+}
+
+// ─── Artworks: create / update / media / publish ──────────────────────────
+
+async function requireActiveArtist(
+  tx: typeof db,
+  artistUserId: string
+): Promise<{ orgId: string; defaultCurrency: string }> {
+  const rows = (await tx`
+    SELECT org_id, default_currency, status
+    FROM marketplace_artists WHERE user_id = ${artistUserId} LIMIT 1
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("You are not registered as a marketplace artist.");
+  if (rows[0].status !== "active") {
+    throw new Error("Your artist account is not approved yet.");
+  }
+  return {
+    orgId: rows[0].org_id as string,
+    defaultCurrency: rows[0].default_currency as string,
+  };
+}
+
+async function uniqueSlug(
+  tx: typeof db,
+  orgId: string,
+  title: string
+): Promise<string> {
+  const base = slugify(title) || "artwork";
+  const existing = (await tx`
+    SELECT slug FROM artwork WHERE org_id = ${orgId} AND slug = ${base} LIMIT 1
+  `) as unknown as Row[];
+  if (!existing[0]) return base;
+  return `${base}-${nanoid(6).toLowerCase()}`;
+}
+
+/**
+ * Create a draft artwork with one default-priced variant and ordered media.
+ * Ownership: the caller must be an active marketplace artist. Returns the new
+ * artwork id.
+ */
+export async function createArtwork(
+  input: CreateArtworkInput
+): Promise<{ id: string; slug: string }> {
+  const descriptionHtml = input.descriptionHtml
+    ? sanitizeRichText(input.descriptionHtml)
+    : null;
+
+  return db.begin(async (tx) => {
+    const { orgId, defaultCurrency } = await requireActiveArtist(
+      tx as unknown as typeof db,
+      input.artistUserId
+    );
+    const currency = (input.currency ?? defaultCurrency) as Currency;
+    const slug = await uniqueSlug(tx as unknown as typeof db, orgId, input.title);
+
+    const artRows = (await tx`
+      INSERT INTO artwork (
+        org_id, artist_user_id, slug, title, description_html, year_created,
+        medium, style, subject, height_cm, width_cm, depth_cm, weight_kg,
+        kind, certificate_of_authenticity, provenance_notes, status
+      ) VALUES (
+        ${orgId}, ${input.artistUserId}, ${slug}, ${input.title},
+        ${descriptionHtml}, ${input.yearCreated ?? null}, ${input.medium ?? null},
+        ${input.style ?? null}, ${input.subject ?? null}, ${input.heightCm ?? null},
+        ${input.widthCm ?? null}, ${input.depthCm ?? null}, ${input.weightKg ?? null},
+        ${input.kind ?? "original"}, ${input.certificateOfAuthenticity ?? false},
+        ${input.provenanceNotes ?? null}, 'draft'
+      )
+      RETURNING id
+    `) as unknown as Row[];
+    const artworkId = artRows[0]!.id as string;
+
+    // Single default variant.
+    await tx`
+      INSERT INTO artwork_variant (
+        artwork_id, org_id, label, price_minor, currency, inventory_qty, position
+      ) VALUES (
+        ${artworkId}, ${orgId}, 'Default', ${Math.max(0, Math.round(input.priceMinor))},
+        ${currency}, ${input.inventoryQty ?? 1}, 0
+      )
+    `;
+
+    await writeArtworkMedia(
+      tx as unknown as typeof db,
+      artworkId,
+      orgId,
+      input.images ?? []
+    );
+
+    return { id: artworkId, slug };
+  });
+}
+
+/** Update editable fields on an owned artwork (and optionally its price). */
+export async function updateArtwork(
+  artworkId: string,
+  artistUserId: string,
+  input: UpdateArtworkInput
+): Promise<void> {
+  const descriptionHtml =
+    input.descriptionHtml !== undefined
+      ? input.descriptionHtml
+        ? sanitizeRichText(input.descriptionHtml)
+        : null
+      : undefined;
+
+  await db.begin(async (tx) => {
+    const owned = (await tx`
+      SELECT id, org_id FROM artwork
+      WHERE id = ${artworkId} AND artist_user_id = ${artistUserId} LIMIT 1
+    `) as unknown as Row[];
+    if (!owned[0]) throw new Error("Artwork not found or not yours to edit.");
+
+    await tx`
+      UPDATE artwork SET
+        title = COALESCE(${input.title ?? null}, title),
+        description_html = ${descriptionHtml !== undefined ? descriptionHtml : db`description_html`},
+        kind = COALESCE(${input.kind ?? null}, kind),
+        year_created = ${input.yearCreated !== undefined ? input.yearCreated : db`year_created`},
+        medium = ${input.medium !== undefined ? input.medium : db`medium`},
+        style = ${input.style !== undefined ? input.style : db`style`},
+        subject = ${input.subject !== undefined ? input.subject : db`subject`},
+        height_cm = ${input.heightCm !== undefined ? input.heightCm : db`height_cm`},
+        width_cm = ${input.widthCm !== undefined ? input.widthCm : db`width_cm`},
+        depth_cm = ${input.depthCm !== undefined ? input.depthCm : db`depth_cm`},
+        weight_kg = ${input.weightKg !== undefined ? input.weightKg : db`weight_kg`},
+        certificate_of_authenticity = COALESCE(${input.certificateOfAuthenticity ?? null}, certificate_of_authenticity),
+        provenance_notes = ${input.provenanceNotes !== undefined ? input.provenanceNotes : db`provenance_notes`}
+      WHERE id = ${artworkId}
+    `;
+
+    if (input.priceMinor !== undefined || input.inventoryQty !== undefined || input.currency !== undefined) {
+      await tx`
+        UPDATE artwork_variant SET
+          price_minor = COALESCE(${input.priceMinor !== undefined ? Math.max(0, Math.round(input.priceMinor)) : null}, price_minor),
+          inventory_qty = COALESCE(${input.inventoryQty ?? null}, inventory_qty),
+          currency = COALESCE(${input.currency ?? null}, currency)
+        WHERE artwork_id = ${artworkId}
+          AND id = (
+            SELECT id FROM artwork_variant WHERE artwork_id = ${artworkId}
+            ORDER BY position ASC LIMIT 1
+          )
+      `;
+    }
+  });
+}
+
+/**
+ * Replace the media set on an owned artwork with a new ordered list. The first
+ * image becomes the primary. Used by the studio editor (the uploader emits the
+ * full ordered list).
+ */
+export async function setArtworkMedia(
+  artworkId: string,
+  artistUserId: string,
+  images: ArtworkMediaInput[]
+): Promise<void> {
+  await db.begin(async (tx) => {
+    const owned = (await tx`
+      SELECT org_id FROM artwork
+      WHERE id = ${artworkId} AND artist_user_id = ${artistUserId} LIMIT 1
+    `) as unknown as Row[];
+    if (!owned[0]) throw new Error("Artwork not found or not yours to edit.");
+    await writeArtworkMedia(
+      tx as unknown as typeof db,
+      artworkId,
+      owned[0].org_id as string,
+      images
+    );
+  });
+}
+
+/** Internal: delete + reinsert media in order, then point primary at first. */
+async function writeArtworkMedia(
+  tx: typeof db,
+  artworkId: string,
+  orgId: string,
+  images: ArtworkMediaInput[]
+): Promise<void> {
+  // Detach primary first to satisfy the FK before deleting media rows.
+  await tx`UPDATE artwork SET primary_image_id = NULL WHERE id = ${artworkId}`;
+  await tx`DELETE FROM artwork_media WHERE artwork_id = ${artworkId}`;
+
+  let firstId: string | null = null;
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i]!;
+    const rows = (await tx`
+      INSERT INTO artwork_media (
+        artwork_id, org_id, url, nextcloud_file_id, nextcloud_path, alt, role, position
+      ) VALUES (
+        ${artworkId}, ${orgId}, ${img.url}, ${img.nextcloudFileId ?? null},
+        ${img.nextcloudPath ?? null}, ${img.alt ?? null},
+        ${img.role ?? (i === 0 ? "hero" : "detail")}, ${i}
+      )
+      RETURNING id
+    `) as unknown as Row[];
+    if (i === 0) firstId = rows[0]!.id as string;
+  }
+
+  if (firstId) {
+    await tx`UPDATE artwork SET primary_image_id = ${firstId} WHERE id = ${artworkId}`;
+  }
+}
+
+/** Publish a draft artwork. Requires at least one image and a priced variant. */
+export async function publishArtwork(
+  artworkId: string,
+  artistUserId: string
+): Promise<void> {
+  await db.begin(async (tx) => {
+    const owned = (await tx`
+      SELECT id FROM artwork
+      WHERE id = ${artworkId} AND artist_user_id = ${artistUserId} LIMIT 1
+    `) as unknown as Row[];
+    if (!owned[0]) throw new Error("Artwork not found or not yours to publish.");
+
+    const mediaCount = (await tx`
+      SELECT COUNT(*)::int AS n FROM artwork_media WHERE artwork_id = ${artworkId}
+    `) as unknown as Row[];
+    if (num(mediaCount[0]!.n) === 0) {
+      throw new Error("Add at least one image before publishing.");
+    }
+
+    const priced = (await tx`
+      SELECT 1 FROM artwork_variant
+      WHERE artwork_id = ${artworkId} AND price_minor > 0 LIMIT 1
+    `) as unknown as Row[];
+    if (!priced[0]) throw new Error("Set a price before publishing.");
+
+    await tx`
+      UPDATE artwork SET status = 'available'
+      WHERE id = ${artworkId} AND status IN ('draft', 'archived')
+    `;
+  });
+}
+
+/** Archive an owned artwork (removes it from the public storefront). */
+export async function archiveArtwork(
+  artworkId: string,
+  artistUserId: string
+): Promise<void> {
+  const rows = (await db`
+    UPDATE artwork SET status = 'archived'
+    WHERE id = ${artworkId} AND artist_user_id = ${artistUserId}
+      AND status NOT IN ('sold')
+    RETURNING id
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("Artwork not found or cannot be archived.");
 }

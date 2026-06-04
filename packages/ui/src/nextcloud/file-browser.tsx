@@ -34,7 +34,7 @@ export function FileBrowser({
   enableCreateFolder = true,
   apiEndpoint = '/api/nextcloud'
 }: FileBrowserProps) {
-  const [currentPath, setCurrentPath] = useState(initialPath || `EAC-Network/${orgId}`);
+  const [currentPath, setCurrentPath] = useState(initialPath || `EAC_Network/${orgId}`);
   const [files, setFiles] = useState<NextcloudFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -158,7 +158,7 @@ export function FileBrowser({
             <ActionIcon
               variant="subtle"
               onClick={handleGoBack}
-              disabled={currentPath === `/EAC-Network/${orgId}`}
+              disabled={currentPath === `/EAC_Network/${orgId}`}
             >
               <ChevronLeft size={18} />
             </ActionIcon>

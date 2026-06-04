@@ -17,6 +17,7 @@ import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { CommentSection } from "@/components/comment-section";
 
 interface PostDetailsProps {
@@ -98,7 +99,7 @@ export function PostDetails({ post, replies, currentUser }: PostDetailsProps) {
               {post.body && (
                 <div
                   className="rich-text-content"
-                  dangerouslySetInnerHTML={{ __html: post.body }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(post.body) }}
                   style={{
                     fontFamily: "'Crimson Text', Georgia, serif",
                     fontSize: "1.1rem",

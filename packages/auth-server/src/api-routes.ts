@@ -232,22 +232,30 @@ export async function handleSignup(request: NextRequest) {
 
     console.log(`[Signup] User created: ${data.user.id} (${email})`);
 
-    // Provision in Nextcloud
-    try {
-      const { handleUserProvisioning } = await import('@elkdonis/services');
-      const provisionResult = await handleUserProvisioning(
-        data.user.id,
-        email,
-        displayName || email.split('@')[0]
-      );
+    // Provision in Nextcloud — OFF by default. Accounts are synced to Nextcloud
+    // manually via the admin (/3000) per-user toggle, not automatically on
+    // creation. Set NEXTCLOUD_AUTO_PROVISION=true to restore auto-sync.
+    if (process.env.NEXTCLOUD_AUTO_PROVISION === 'true') {
+      try {
+        const { handleUserProvisioning } = await import('@elkdonis/services');
+        const defaultGroup = process.env.NEXTCLOUD_DEFAULT_GROUP || 'EAC_Network';
+        const provisionResult = await handleUserProvisioning(
+          data.user.id,
+          email,
+          displayName || email.split('@')[0],
+          { groups: [defaultGroup] }
+        );
 
-      if (!provisionResult.success) {
-        console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
-      } else {
-        console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
+        if (!provisionResult.success) {
+          console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
+        } else {
+          console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
+        }
+      } catch (provisionError) {
+        console.error('[Signup] Provisioning error:', provisionError);
       }
-    } catch (provisionError) {
-      console.error('[Signup] Provisioning error:', provisionError);
+    } else {
+      console.log(`[Signup] Nextcloud auto-provision disabled; ${email} can be synced manually from /admin`);
     }
 
     // Assign to default orgs + create stub artist profile — all soft-fail

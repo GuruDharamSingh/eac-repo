@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@elkdonis/nextcloud';
 
-const ALLOWED_ROOT = 'EAC-Network/';
+const ALLOWED_ROOT = 'EAC_Network/';
 
 const MIME_BY_EXT: Record<string, string> = {
   jpg: 'image/jpeg',

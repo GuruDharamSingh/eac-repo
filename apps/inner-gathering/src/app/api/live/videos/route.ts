@@ -3,7 +3,7 @@ import { getAdminClient } from '@elkdonis/nextcloud';
 
 export const dynamic = 'force-dynamic';
 
-const VIDEOS_PATH = 'EAC-Network/inner_group/Media/Videos/video playlist';
+const VIDEOS_PATH = 'EAC_Network/inner_group/Media/Videos/video playlist';
 
 // Pre-encode the path for use in proxy URLs (encodes each segment, preserving slashes)
 const VIDEOS_PROXY_PATH = VIDEOS_PATH.split('/')

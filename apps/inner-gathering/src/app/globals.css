@@ -1,6 +1,16 @@
 /* Inner Gathering visual vocabulary over Mantine */
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Brothers';
+  src: url('/fonts/BrothersTypeface-Regular.woff2') format('woff2'),
+       url('/fonts/BrothersTypeface-Regular.woff') format('woff'),
+       url('/fonts/BrothersTypeface-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ig-parchment: #fbf7ef;
   --ig-paper: #fffdf8;
@@ -560,6 +570,40 @@ body {
   color: rgba(1, 18, 78, 0.58) !important;
 }
 
+/* ── Rich text editor inside the dark create/edit drawer ──────── */
+.create-content-surface .mantine-RichTextEditor-root {
+  background: rgba(255, 253, 248, 0.94) !important;
+  border: 1px solid rgba(183, 154, 85, 0.46) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 18px rgba(1, 18, 78, 0.12) !important;
+  overflow: hidden;
+}
+
+.create-content-surface .mantine-RichTextEditor-toolbar {
+  background: rgba(247, 240, 224, 0.96) !important;
+  border-bottom: 1px solid rgba(183, 154, 85, 0.4) !important;
+}
+
+.create-content-surface .mantine-RichTextEditor-control {
+  color: #01124E !important;
+  background: transparent !important;
+  border-color: rgba(183, 154, 85, 0.3) !important;
+}
+
+.create-content-surface .mantine-RichTextEditor-control:hover {
+  background: rgba(16, 75, 140, 0.12) !important;
+}
+
+.create-content-surface .mantine-RichTextEditor-content,
+.create-content-surface .mantine-RichTextEditor-content .ProseMirror {
+  background: transparent !important;
+  color: #01124E !important;
+}
+
+.create-content-surface .mantine-RichTextEditor-content .ProseMirror p.is-editor-empty:first-child::before {
+  color: rgba(1, 18, 78, 0.5) !important;
+}
+
 .create-content-surface .mantine-SegmentedControl-root {
   background: rgba(255, 253, 248, 0.2) !important;
   border: 1px solid rgba(183, 154, 85, 0.5) !important;
@@ -662,6 +706,99 @@ body {
 @keyframes wq-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
+}
+
+/* ── Work question rich text editor — seamless, tasteful blend with paper ── */
+.wq-rte .mantine-RichTextEditor-root {
+  background: rgba(255, 253, 248, 0.55);
+  border: 1px solid rgba(183, 154, 85, 0.35);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'Crimson Text', Georgia, serif;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.wq-rte .mantine-RichTextEditor-root:focus-within {
+  border-color: rgba(183, 154, 85, 0.65);
+  box-shadow: 0 0 0 3px rgba(183, 154, 85, 0.1);
+}
+
+/* Quiet toolbar that reads as part of the paper, not a separate band */
+.wq-rte .mantine-RichTextEditor-toolbar {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(183, 154, 85, 0.18);
+  padding: 0.25rem 0.3rem;
+  gap: 0.1rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.wq-rte .mantine-RichTextEditor-controlsGroup {
+  gap: 0.05rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+  flex-shrink: 0;
+}
+/* Hairline divider between control groups */
+.wq-rte .mantine-RichTextEditor-controlsGroup:not(:first-of-type)::before {
+  content: '';
+  width: 1px;
+  align-self: center;
+  height: 0.9rem;
+  margin: 0 0.25rem 0 0.15rem;
+  background: rgba(183, 154, 85, 0.25);
+}
+
+/* Ghost icon controls — no boxes, just quiet ink that warms on hover */
+.wq-rte .mantine-RichTextEditor-control {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(1, 18, 78, 0.6);
+  width: 1.55rem;
+  height: 1.55rem;
+  min-width: 1.55rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.wq-rte .mantine-RichTextEditor-control:hover {
+  background: rgba(183, 154, 85, 0.16);
+  color: var(--ig-ink, #01124E);
+}
+.wq-rte .mantine-RichTextEditor-control[data-active] {
+  background: rgba(183, 154, 85, 0.22);
+  color: var(--ig-ink, #01124E);
+}
+
+/* Writing surface — same hue and serif as comments */
+.wq-rte .mantine-RichTextEditor-content {
+  background: transparent;
+  font-family: 'Crimson Text', Georgia, serif;
+  color: var(--ig-ink, #01124E);
+}
+.wq-rte .mantine-RichTextEditor-content .ProseMirror {
+  padding: 0.6rem 0.7rem;
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.wq-rte .mantine-RichTextEditor-content .ProseMirror:focus {
+  outline: none;
+}
+.wq-rte .mantine-RichTextEditor-content .ProseMirror blockquote {
+  border-left: 3px solid rgba(183, 154, 85, 0.5);
+  padding-left: 0.85rem;
+  margin-left: 0;
+  color: rgba(1, 18, 78, 0.75);
+  font-style: italic;
+}
+.wq-rte .mantine-RichTextEditor-content .ProseMirror p.is-editor-empty:first-child::before {
+  color: rgba(1, 18, 78, 0.4);
+  font-style: italic;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
 /* ── Horizontal carousel — used for latest forum threads + pinned feed ── */

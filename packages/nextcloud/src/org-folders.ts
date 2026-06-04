@@ -1,7 +1,7 @@
 import { type NextcloudClient } from './client';
 import { createFolder, exists } from './files';
 
-export const DEFAULT_ORG_ROOT_FOLDER = 'EAC-Network';
+export const DEFAULT_ORG_ROOT_FOLDER = 'EAC_Network';
 
 export type EnsureOrgFolderOptions = {
   rootFolder?: string;

@@ -19,6 +19,7 @@ import type {
   Cart,
   CartLine,
   MarketplaceArtist,
+  MarketplaceArtistLink,
   Order,
 } from "../types";
 
@@ -235,58 +236,33 @@ export async function getLotWithArtwork(lotId: string): Promise<AuctionLot | nul
 
 // ─── Artists ────────────────────────────────────────────────────────────────
 
-export async function listMarketplaceArtists(
-  opts: { limit?: number } = {}
-): Promise<MarketplaceArtist[]> {
-  const limit = Math.min(opts.limit ?? 50, 200);
-  const rows = (await db`
-    SELECT
-      ma.*,
-      COALESCE(ap.display_name, u.display_name, u.email) AS display_name,
-      ap.city,
-      ap.photo_url,
-      ap.user_id::text AS slug
-    FROM marketplace_artists ma
-    JOIN users u ON u.id = ma.user_id
-    LEFT JOIN artist_profiles ap ON ap.user_id = ma.user_id
-    WHERE ma.status = 'active'
-    ORDER BY ma.joined_at DESC
-    LIMIT ${limit}
-  `) as unknown as Row[];
-
-  return rows.map((r) => ({
-    userId: r.user_id as string,
-    orgId: r.org_id as string,
-    payoutEmail: r.payout_email as string,
-    payoutMethod: r.payout_method as MarketplaceArtist["payoutMethod"],
-    commissionRate: Number(r.commission_rate),
-    defaultCurrency: r.default_currency as MarketplaceArtist["defaultCurrency"],
-    status: r.status as MarketplaceArtist["status"],
-    bioHtml: opt(r.bio_html),
-    joinedAt: r.joined_at as string,
-    updatedAt: r.updated_at as string,
-    displayName: opt(r.display_name),
-    city: opt(r.city),
-    photoUrl: opt(r.photo_url),
-    slug: opt(r.slug),
-  }));
+function parseArtistLinks(v: unknown): MarketplaceArtistLink[] {
+  if (!v) return [];
+  const arr = typeof v === "string" ? safeJson(v) : v;
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+    .filter((x) => typeof x.url === "string" && x.url.length > 0)
+    .map((x) => ({
+      label: String(x.label ?? x.url),
+      url: String(x.url),
+    }));
 }
 
-export async function getMarketplaceArtist(userId: string): Promise<MarketplaceArtist | null> {
-  const rows = (await db`
-    SELECT
-      ma.*,
-      COALESCE(ap.display_name, u.display_name, u.email) AS display_name,
-      ap.city, ap.photo_url, ap.user_id::text AS slug
-    FROM marketplace_artists ma
-    JOIN users u ON u.id = ma.user_id
-    LEFT JOIN artist_profiles ap ON ap.user_id = ma.user_id
-    WHERE ma.user_id = ${userId}
-    LIMIT 1
-  `) as unknown as Row[];
+function safeJson(v: string): unknown {
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+}
 
-  if (!rows[0]) return null;
-  const r = rows[0];
+/**
+ * Map a marketplace_artists row to the domain type. Display fields prefer the
+ * self-contained columns (migration 054) and fall back to artist_profiles /
+ * users when an older row hasn't been backfilled.
+ */
+function mapMarketplaceArtist(r: Row): MarketplaceArtist {
   return {
     userId: r.user_id as string,
     orgId: r.org_id as string,
@@ -298,11 +274,115 @@ export async function getMarketplaceArtist(userId: string): Promise<MarketplaceA
     bioHtml: opt(r.bio_html),
     joinedAt: r.joined_at as string,
     updatedAt: r.updated_at as string,
-    displayName: opt(r.display_name),
-    city: opt(r.city),
-    photoUrl: opt(r.photo_url),
+    displayName:
+      (opt<string>(r.display_name) ??
+        opt<string>(r.fallback_display_name) ??
+        opt<string>(r.fallback_user_name)) ||
+      null,
+    headline: opt(r.headline),
+    city: opt<string>(r.city) ?? opt<string>(r.fallback_city) ?? null,
+    photoUrl: opt<string>(r.photo_url) ?? opt<string>(r.fallback_photo_url) ?? null,
+    links: parseArtistLinks(r.links),
+    appliedAt: opt(r.applied_at),
+    reviewedAt: opt(r.reviewed_at),
+    reviewedBy: opt(r.reviewed_by),
+    rejectionReason: opt(r.rejection_reason),
     slug: opt(r.slug),
   };
+}
+
+const ARTIST_FALLBACK_SELECT = db`
+  ap.display_name AS fallback_display_name,
+  COALESCE(u.display_name, u.email) AS fallback_user_name,
+  ap.city AS fallback_city,
+  ap.photo_url AS fallback_photo_url,
+  COALESCE(ma.user_id::text) AS slug
+`;
+
+export async function listMarketplaceArtists(
+  opts: { limit?: number } = {}
+): Promise<MarketplaceArtist[]> {
+  const limit = Math.min(opts.limit ?? 50, 200);
+  const rows = (await db`
+    SELECT ma.*, ${ARTIST_FALLBACK_SELECT}
+    FROM marketplace_artists ma
+    JOIN users u ON u.id = ma.user_id
+    LEFT JOIN artist_profiles ap ON ap.user_id = ma.user_id
+    WHERE ma.status = 'active'
+    ORDER BY ma.joined_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+
+  return rows.map(mapMarketplaceArtist);
+}
+
+/**
+ * Fetch a single marketplace artist regardless of status (used by the studio
+ * to show pending/rejected applicants their own record).
+ */
+export async function getMarketplaceArtist(
+  userId: string
+): Promise<MarketplaceArtist | null> {
+  const rows = (await db`
+    SELECT ma.*, ${ARTIST_FALLBACK_SELECT}
+    FROM marketplace_artists ma
+    JOIN users u ON u.id = ma.user_id
+    LEFT JOIN artist_profiles ap ON ap.user_id = ma.user_id
+    WHERE ma.user_id = ${userId}
+    LIMIT 1
+  `) as unknown as Row[];
+
+  if (!rows[0]) return null;
+  return mapMarketplaceArtist(rows[0]);
+}
+
+/** All artworks owned by an artist, any status — for the studio dashboard. */
+export async function listMyArtworks(
+  artistUserId: string
+): Promise<Artwork[]> {
+  const rows = (await db`
+    SELECT
+      a.*,
+      pm.url AS primary_image_url,
+      pm.alt AS primary_image_alt
+    FROM artwork a
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE a.artist_user_id = ${artistUserId}
+    ORDER BY a.created_at DESC
+  `) as unknown as Row[];
+  return rows.map(mapArtwork);
+}
+
+/**
+ * Fetch an artwork for editing, scoped to its owner. Returns null if the
+ * artwork doesn't exist or isn't owned by the given artist (ownership check).
+ */
+export async function getArtworkForEdit(
+  artworkId: string,
+  artistUserId: string
+): Promise<Artwork | null> {
+  const rows = (await db`
+    SELECT a.* FROM artwork a
+    WHERE a.id = ${artworkId} AND a.artist_user_id = ${artistUserId}
+    LIMIT 1
+  `) as unknown as Row[];
+  if (!rows[0]) return null;
+  return hydrateArtwork(mapArtwork(rows[0]));
+}
+
+/** Pending artist applications, oldest first — for the admin review queue. */
+export async function listPendingArtistApplications(): Promise<
+  MarketplaceArtist[]
+> {
+  const rows = (await db`
+    SELECT ma.*, ${ARTIST_FALLBACK_SELECT}
+    FROM marketplace_artists ma
+    JOIN users u ON u.id = ma.user_id
+    LEFT JOIN artist_profiles ap ON ap.user_id = ma.user_id
+    WHERE ma.status = 'pending'
+    ORDER BY ma.applied_at ASC
+  `) as unknown as Row[];
+  return rows.map(mapMarketplaceArtist);
 }
 
 // ─── Auction lots ───────────────────────────────────────────────────────────

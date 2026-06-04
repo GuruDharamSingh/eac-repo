@@ -27,7 +27,7 @@ function getUploadPath(
   visibility: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY' = 'PUBLIC'
 ): string {
   const folder = visibility === 'PUBLIC' ? 'Media' : 'Private/Media';
-  return `EAC-Network/${orgId}/${folder}/${mediaType}/${filename}`;
+  return `EAC_Network/${orgId}/${folder}/${mediaType}/${filename}`;
 }
 
 async function uploadFile(
@@ -117,7 +117,7 @@ export function createMediaGetHandler() {
       if (path.includes('..') || path.includes('\\')) {
         return new NextResponse('Invalid path', { status: 400 });
       }
-      if (!path.startsWith('EAC-Network/')) {
+      if (!path.startsWith('EAC_Network/')) {
         return new NextResponse('Not found', { status: 404 });
       }
 

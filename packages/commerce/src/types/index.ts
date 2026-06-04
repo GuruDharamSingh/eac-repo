@@ -30,6 +30,18 @@ export type ArtworkMediaRole =
   | "wall"
   | "video";
 
+/** Marketplace artist application / membership lifecycle. */
+export type MarketplaceArtistStatus =
+  | "pending"
+  | "active"
+  | "paused"
+  | "rejected";
+
+export interface MarketplaceArtistLink {
+  label: string;
+  url: string;
+}
+
 export interface MarketplaceArtist {
   userId: string;
   orgId: string;
@@ -37,15 +49,107 @@ export interface MarketplaceArtist {
   payoutMethod: "etransfer" | "manual";
   commissionRate: number; // gallery's percentage (0-100)
   defaultCurrency: Currency;
-  status: "active" | "paused";
+  status: MarketplaceArtistStatus;
   bioHtml?: string | null;
   joinedAt: string;
   updatedAt: string;
-  /** Joined from users + artist_profiles when available */
+
+  /** Self-contained marketplace profile fields (migration 054). */
   displayName?: string | null;
+  headline?: string | null;
   city?: string | null;
   photoUrl?: string | null;
+  links: MarketplaceArtistLink[];
+
+  /** Application / review audit trail. */
+  appliedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  rejectionReason?: string | null;
+
+  /** Joined fallback from users + artist_profiles when self fields are null. */
   slug?: string | null;
+}
+
+/** Input for an artist applying to (or updating) their marketplace profile. */
+export interface ArtistApplicationInput {
+  userId: string;
+  orgId?: string;
+  displayName: string;
+  headline?: string | null;
+  city?: string | null;
+  photoUrl?: string | null;
+  bioHtml?: string | null;
+  payoutEmail: string;
+  payoutMethod?: "etransfer" | "manual";
+  defaultCurrency?: Currency;
+  links?: MarketplaceArtistLink[];
+}
+
+/** Subset an approved artist may edit on their own profile. */
+export interface ArtistProfileUpdateInput {
+  displayName?: string;
+  headline?: string | null;
+  city?: string | null;
+  photoUrl?: string | null;
+  bioHtml?: string | null;
+  payoutEmail?: string;
+  payoutMethod?: "etransfer" | "manual";
+  defaultCurrency?: Currency;
+  links?: MarketplaceArtistLink[];
+}
+
+/** A single image attached to an artwork (ordered; first = primary). */
+export interface ArtworkMediaInput {
+  url: string;
+  nextcloudFileId?: string | null;
+  nextcloudPath?: string | null;
+  alt?: string | null;
+  role?: ArtworkMediaRole;
+}
+
+/** Input for creating a new artwork (with images + a single default price). */
+export interface CreateArtworkInput {
+  artistUserId: string;
+  title: string;
+  descriptionHtml?: string | null;
+  kind?: ArtworkKind;
+  yearCreated?: number | null;
+  medium?: string | null;
+  style?: string | null;
+  subject?: string | null;
+  heightCm?: number | null;
+  widthCm?: number | null;
+  depthCm?: number | null;
+  weightKg?: number | null;
+  certificateOfAuthenticity?: boolean;
+  provenanceNotes?: string | null;
+  /** Single default-variant price in minor units. */
+  priceMinor: number;
+  currency?: Currency;
+  inventoryQty?: number;
+  images?: ArtworkMediaInput[];
+}
+
+/** Editable fields on an existing artwork (excludes media + pricing). */
+export interface UpdateArtworkInput {
+  title?: string;
+  descriptionHtml?: string | null;
+  kind?: ArtworkKind;
+  yearCreated?: number | null;
+  medium?: string | null;
+  style?: string | null;
+  subject?: string | null;
+  heightCm?: number | null;
+  widthCm?: number | null;
+  depthCm?: number | null;
+  weightKg?: number | null;
+  certificateOfAuthenticity?: boolean;
+  provenanceNotes?: string | null;
+  /** When provided, updates the default variant's price. */
+  priceMinor?: number;
+  currency?: Currency;
+  inventoryQty?: number;
 }
 
 export interface Artwork {

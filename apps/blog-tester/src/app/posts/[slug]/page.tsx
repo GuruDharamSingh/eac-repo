@@ -3,7 +3,7 @@ import { Title, Text, Divider, Badge } from '@mantine/core';
 import { format } from 'date-fns';
 import { BlogPostList } from '@elkdonis/blog-client';
 import { getPostBySlug, getPublishedPosts } from '@elkdonis/blog-server';
-import { MediaGallery } from '@elkdonis/ui';
+import { MediaGallery, RichText } from '@elkdonis/ui';
 import { blogConfig } from '../../../config/blog';
 
 interface PostPageProps {
@@ -56,9 +56,10 @@ export default async function PostPage({ params }: PostPageProps) {
           <MediaGallery items={mediaItems} className="mt-4 mb-8" />
         ) : null}
 
-        <article
+        <RichText
+          as="article"
           className="article-content"
-          dangerouslySetInnerHTML={{ __html: post.body || '' }}
+          html={post.body || ''}
         />
 
         {post.metadata?.link ? (

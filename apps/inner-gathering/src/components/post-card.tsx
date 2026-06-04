@@ -1,5 +1,5 @@
-import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip, Anchor } from "@mantine/core";
-import { FileText, User, ExternalLink, Trash2, MessageCircle, Pin, PinOff } from "lucide-react";
+import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip, Anchor, Button } from "@mantine/core";
+import { FileText, User, ExternalLink, Trash2, MessageCircle, Pin, PinOff, Pencil, Video, FileEdit } from "lucide-react";
 import Link from "next/link";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
@@ -14,9 +14,11 @@ interface PostCardProps {
   pinned?: boolean;
   pinning?: boolean;
   onTogglePin?: () => void;
+  canEdit?: boolean;
+  onEdit?: () => void;
 }
 
-export function PostCard({ post, canDelete = false, deleting = false, onDelete, canPin = false, pinned = false, pinning = false, onTogglePin }: PostCardProps) {
+export function PostCard({ post, canDelete = false, deleting = false, onDelete, canPin = false, pinned = false, pinning = false, onTogglePin, canEdit = false, onEdit }: PostCardProps) {
   const authorName = post.author?.displayName || "Unknown";
   const coverImageId = post.coverImage?.id;
   const attachments = (post.media || []).filter((media) => media.id !== coverImageId);
@@ -59,6 +61,19 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete, 
                   onClick={onTogglePin}
                 >
                   {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canEdit && (
+              <Tooltip label="Edit post">
+                <ActionIcon
+                  variant="subtle"
+                  color="eacSky"
+                  size="sm"
+                  aria-label="Edit post"
+                  onClick={onEdit}
+                >
+                  <Pencil size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -147,17 +162,49 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete, 
             </ThemeIcon>
             <Text size="sm" style={{ fontStyle: 'italic', color: '#6b4020' }}>By {authorName}</Text>
           </Group>
-          <Anchor
-            component={Link}
-            href={`/posts/${post.id}`}
-            size="sm"
-            fw={600}
-            c="ember"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          >
-            <MessageCircle size={14} />
-            Open thread{post.replyCount ? ` (${post.replyCount})` : ''}
-          </Anchor>
+          <Group gap="xs" wrap="nowrap">
+            {post.nextcloudTalkToken && (
+              <Tooltip label="Join Talk room">
+                <Button
+                  component="a"
+                  href={`/api/talk/join?token=${post.nextcloudTalkToken}`}
+                  size="compact-xs"
+                  variant="light"
+                  color="teal"
+                  leftSection={<Video size={12} />}
+                >
+                  Talk
+                </Button>
+              </Tooltip>
+            )}
+            {post.documentUrl && (
+              <Tooltip label="Open living document">
+                <Button
+                  component="a"
+                  href={post.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="compact-xs"
+                  variant="light"
+                  color="blue"
+                  leftSection={<FileEdit size={12} />}
+                >
+                  Doc
+                </Button>
+              </Tooltip>
+            )}
+            <Anchor
+              component={Link}
+              href={`/posts/${post.id}`}
+              size="sm"
+              fw={600}
+              c="ember"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              <MessageCircle size={14} />
+              Open thread{post.replyCount ? ` (${post.replyCount})` : ''}
+            </Anchor>
+          </Group>
         </Group>
       </Stack>
     </Paper>

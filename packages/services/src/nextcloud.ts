@@ -102,20 +102,20 @@ export async function createPublicShare(
  */
 export async function createOrgFolders(orgId: string): Promise<boolean> {
   const folders = [
-    `EAC-Network/${orgId}`,
+    `EAC_Network/${orgId}`,
     // Public folders (default - shareable via public link)
-    `EAC-Network/${orgId}/Media`,
-    `EAC-Network/${orgId}/Media/Images`,
-    `EAC-Network/${orgId}/Media/Audio`,
-    `EAC-Network/${orgId}/Media/Videos`,
-    `EAC-Network/${orgId}/Media/Documents`,
+    `EAC_Network/${orgId}/Media`,
+    `EAC_Network/${orgId}/Media/Images`,
+    `EAC_Network/${orgId}/Media/Audio`,
+    `EAC_Network/${orgId}/Media/Videos`,
+    `EAC_Network/${orgId}/Media/Documents`,
     // Private folders (for organization-only or invite-only content)
-    `EAC-Network/${orgId}/Private`,
-    `EAC-Network/${orgId}/Private/Media`,
-    `EAC-Network/${orgId}/Private/Media/Images`,
-    `EAC-Network/${orgId}/Private/Media/Audio`,
-    `EAC-Network/${orgId}/Private/Media/Videos`,
-    `EAC-Network/${orgId}/Private/Media/Documents`,
+    `EAC_Network/${orgId}/Private`,
+    `EAC_Network/${orgId}/Private/Media`,
+    `EAC_Network/${orgId}/Private/Media/Images`,
+    `EAC_Network/${orgId}/Private/Media/Audio`,
+    `EAC_Network/${orgId}/Private/Media/Videos`,
+    `EAC_Network/${orgId}/Private/Media/Documents`,
   ];
 
   try {
@@ -130,7 +130,7 @@ export async function createOrgFolders(orgId: string): Promise<boolean> {
     }
 
     // Make the entire org folder publicly accessible by default
-    const orgFolderPath = `EAC-Network/${orgId}`;
+    const orgFolderPath = `EAC_Network/${orgId}`;
     const shareToken = await createPublicShare(orgFolderPath);
 
     // Save share token to database if successful
@@ -233,7 +233,7 @@ export function getUploadPath(
 ): string {
   // Use Private folder only for restricted content
   const folder = visibility === 'PUBLIC' ? 'Media' : 'Private/Media';
-  return `EAC-Network/${orgId}/${folder}/${mediaType}/${filename}`;
+  return `EAC_Network/${orgId}/${folder}/${mediaType}/${filename}`;
 }
 
 /**
@@ -317,7 +317,7 @@ export async function createCollaborativeDocument(
   try {
     const timestamp = Date.now();
     const filename = `${timestamp}-${meetingId}.md`;
-    const path = `EAC-Network/${orgId}/Media/Documents/${filename}`;
+    const path = `EAC_Network/${orgId}/Media/Documents/${filename}`;
     
     // Create initial document content
     const content = initialContent || `# ${meetingTitle}

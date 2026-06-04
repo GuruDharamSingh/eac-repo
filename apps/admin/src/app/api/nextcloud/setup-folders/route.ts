@@ -18,7 +18,7 @@ export async function POST() {
     const organizations = await db`SELECT id, name FROM organizations`;
 
     // Create root folder
-    await webdavService.createDirectory('EAC-Network');
+    await webdavService.createDirectory('EAC_Network');
 
     // Create folder structure for each organization
     for (const org of organizations) {
@@ -27,7 +27,7 @@ export async function POST() {
       // Update organization record with Nextcloud folder path
       await db`
         UPDATE organizations
-        SET nextcloud_folder_path = ${`EAC-Network/${org.id}`}
+        SET nextcloud_folder_path = ${`EAC_Network/${org.id}`}
         WHERE id = ${org.id}
       `;
     }

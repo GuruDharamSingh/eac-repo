@@ -24,7 +24,9 @@ export interface Post {
   updatedAt: Date;
   viewCount: number;
   replyCount: number;
-  
+  nextcloudTalkToken?: string;
+  documentUrl?: string;
+
   // Relations
   organization?: Organization;
   author?: UserSummary;

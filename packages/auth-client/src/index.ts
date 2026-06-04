@@ -70,6 +70,31 @@ export async function signUp(
 }
 
 /**
+ * Begin Google OAuth (Option A — raw GoTrue path).
+ *
+ * GoTrue is exposed without the standard Supabase `/auth/v1` Kong prefix, so we
+ * redirect the browser straight to its root `/authorize` endpoint rather than
+ * using supabase-js (which would call the non-existent `/auth/v1/authorize`).
+ * After Google → GoTrue, the user returns to `redirectTo` (defaults to the
+ * current origin).
+ *
+ * NOTE: this only *initiates* the flow. Completing a logged-in session needs a
+ * callback handler that converts GoTrue's returned tokens into the app's
+ * `sb-eac-auth` cookies — see eac-launch-status notes (not yet implemented).
+ */
+export function signInWithGoogle(redirectTo?: string): void {
+  if (typeof window === 'undefined') return;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) {
+    console.error('[auth] NEXT_PUBLIC_SUPABASE_URL is not set; cannot start Google sign-in.');
+    return;
+  }
+  const dest = redirectTo ?? window.location.origin;
+  window.location.href =
+    `${base.replace(/\/$/, '')}/authorize?provider=google&redirect_to=${encodeURIComponent(dest)}`;
+}
+
+/**
  * Sign out
  */
 export async function signOut(): Promise<{ error: string | null }> {

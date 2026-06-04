@@ -12,7 +12,7 @@ interface FileBrowserProps {
 }
 
 export function FileBrowser({ orgId, onFileSelect, enableUpload = true }: FileBrowserProps) {
-  const [currentPath, setCurrentPath] = useState(`/EAC-Network/${orgId}`);
+  const [currentPath, setCurrentPath] = useState(`/EAC_Network/${orgId}`);
   const [files, setFiles] = useState<NextcloudFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -130,7 +130,7 @@ export function FileBrowser({ orgId, onFileSelect, enableUpload = true }: FileBr
             <ActionIcon
               variant="subtle"
               onClick={handleGoBack}
-              disabled={currentPath === `/EAC-Network/${orgId}`}
+              disabled={currentPath === `/EAC_Network/${orgId}`}
             >
               <ChevronLeft size={18} />
             </ActionIcon>

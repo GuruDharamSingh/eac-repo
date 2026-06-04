@@ -3,7 +3,7 @@ import { Paper, Stack, Title, Text, Divider, Badge } from '@mantine/core';
 import { format } from 'date-fns';
 import { BlogPostList } from '@elkdonis/blog-client';
 import { getPostBySlug, getPublishedPosts } from '@elkdonis/blog-server';
-import { MediaGallery } from '@elkdonis/ui';
+import { MediaGallery, RichText } from '@elkdonis/ui';
 import { blogConfig } from '../../../config/blog';
 
 interface PostPageProps {
@@ -59,9 +59,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
           <Divider />
 
-          <article
+          <RichText
+            as="article"
             className="prose prose-neutral max-w-none"
-            dangerouslySetInnerHTML={{ __html: post.body || '' }}
+            html={post.body || ''}
           />
 
           {post.metadata?.link ? (

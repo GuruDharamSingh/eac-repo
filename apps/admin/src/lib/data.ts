@@ -4,6 +4,8 @@ import type {
   MeetingType,
   MeetingStatus,
   MeetingVisibility,
+  MeetingAttendee,
+  AttendanceStatus,
   Organization,
   User,
 } from "@elkdonis/types";
@@ -107,6 +109,49 @@ export async function getMeetingsByOrg(orgId: string): Promise<Meeting[]> {
   `;
 
   return meetings.map(mapMeeting);
+}
+
+export async function getMeetingsByUser(userId: string): Promise<Meeting[]> {
+  // Meetings authored by this user. Cast author_id (UUID) to text so a
+  // non-UUID placeholder id resolves to an empty set instead of a parse error.
+  const meetings = await db`
+    SELECT
+      t.*, t.body AS description, t.author_id AS guide_id,
+      o.name as org_name,
+      u.display_name as guide_name
+    FROM threads t
+    LEFT JOIN organizations o ON t.org_id = o.id
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.kind = 'meeting' AND t.author_id::text = ${userId}
+    ORDER BY t.scheduled_at DESC NULLS LAST, t.created_at DESC
+  `;
+
+  return meetings.map(mapMeeting);
+}
+
+export async function getRSVPsByUser(userId: string): Promise<MeetingAttendee[]> {
+  // thread_rsvps stores status as yes/no/maybe; map onto the legacy
+  // AttendanceStatus shape the dashboard expects. Cast user_id (UUID) to text
+  // so a non-UUID placeholder id resolves to an empty set, not a parse error.
+  const rows = await db`
+    SELECT thread_id, user_id, status, registered_at
+    FROM thread_rsvps
+    WHERE user_id::text = ${userId}
+    ORDER BY registered_at DESC
+  `;
+
+  const statusMap: Record<string, AttendanceStatus> = {
+    yes: "attended",
+    maybe: "registered",
+    no: "absent",
+  };
+
+  return rows.map((row: any) => ({
+    meetingId: row.thread_id,
+    userId: row.user_id,
+    attendanceStatus: statusMap[row.status] ?? "registered",
+    registeredAt: row.registered_at,
+  }));
 }
 
 export async function getUserById(userId: string): Promise<User | null> {

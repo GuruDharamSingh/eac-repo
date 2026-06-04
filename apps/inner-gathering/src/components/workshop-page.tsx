@@ -38,6 +38,7 @@ import {
   Video,
 } from "lucide-react";
 import Link from "next/link";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { CommentSection } from "@/components/comment-section";
 import { JoinWorkshopModal } from "@/components/join-workshop-modal";
 
@@ -500,7 +501,7 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
                   lineHeight: 1.75,
                   color: "#2a1a05",
                 }}
-                dangerouslySetInnerHTML={{ __html: workshop.pitch ?? workshop.description ?? "" }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(workshop.pitch ?? workshop.description ?? "") }}
               />
             </Paper>
           )}

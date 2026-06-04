@@ -1,0 +1,946 @@
+/* ─── Forum — Mantine-free, agnostic styling ───────────────────── */
+
+.shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% -10%, rgba(140, 170, 235, 0.18), transparent 32rem),
+    radial-gradient(circle at 85% 10%, rgba(183, 154, 85, 0.10), transparent 30rem),
+    linear-gradient(180deg, #15347a 0%, #1d4498 55%, #0f2660 100%);
+  color: #f3ecd6;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2.25rem) 6rem;
+}
+
+.crumbs {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d8b97a;
+  margin: 0 0 1.25rem;
+}
+
+.crumbs a {
+  color: #d8b97a;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.crumbs a:hover {
+  border-color: #d8b97a;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #d8b97a;
+  margin: 0;
+}
+
+.question {
+  margin: 0.5rem 0 1.5rem;
+  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.18;
+  color: #b79a55;
+}
+
+/* Cream shell variant — used on anonymous reflections page so it keeps
+   the lighter parchment background instead of the night-sky gradient. */
+.shellCream {
+  min-height: 100vh;
+  background: #fbf7ec;
+  color: #1a1a1a;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+
+.shellCream .crumbs,
+.shellCream .crumbs a,
+.shellCream .eyebrow,
+.shellCream .anonCount,
+.shellCream .repliesHeading { color: #8f763c; }
+.shellCream .crumbs a:hover { border-color: #8f763c; }
+
+.shellCream .threadHeading { color: #b79a55; }
+.shellCream .anonIntro { color: rgba(1, 18, 78, 0.75); }
+.shellCream .threadByline { color: rgba(1, 18, 78, 0.65); }
+.shellCream .threadBody { color: #1a1a1a; }
+.shellCream .empty {
+  color: rgba(1, 18, 78, 0.65);
+  background: rgba(255, 253, 248, 0.6);
+}
+.shellCream .headerTitle { color: #01124E; }
+.shellCream .secondaryBtn { color: #01124E; }
+.shellCream .newThreadBtn {
+  color: #fffdf8;
+  background: #01124E;
+}
+.shellCream .newThreadBtn:hover { background: #022278; }
+
+.rule {
+  border: 0;
+  height: 1px;
+  width: 110px;
+  margin: 0 0 2rem;
+  background: linear-gradient(90deg, #b79a55, transparent);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 2.5rem 0 1.25rem;
+  flex-wrap: wrap;
+}
+
+.headerTitle {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #fdf0d0;
+}
+
+.newThreadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #01124E;
+  background: #f3ecd6;
+  border: 1px solid #b79a55;
+  border-radius: 2px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.newThreadBtn:hover {
+  background: #fffdf8;
+}
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #f3ecd6;
+  background: transparent;
+  border: 1px solid rgba(183, 154, 85, 0.6);
+  border-radius: 2px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.secondaryBtn:hover {
+  background: rgba(183, 154, 85, 0.12);
+}
+
+.empty {
+  margin: 1rem 0 0;
+  padding: 2rem 1.5rem;
+  border: 1px dashed rgba(183, 154, 85, 0.6);
+  border-radius: 2px;
+  text-align: center;
+  font-family: var(--font-serif, Georgia, serif);
+  font-style: italic;
+  color: rgba(243, 236, 214, 0.75);
+  background: rgba(255, 253, 248, 0.04);
+}
+
+.threadList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.threadCard {
+  position: relative;
+  display: block;
+  padding: 0;
+  background: #fffdf8;
+  border: 1px solid rgba(183, 154, 85, 0.35);
+  border-radius: 2px;
+  color: inherit;
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.threadCard:hover {
+  border-color: rgba(183, 154, 85, 0.75);
+  box-shadow: 0 14px 30px -22px rgba(1, 18, 78, 0.3);
+}
+
+.threadCardPinned {
+  background: linear-gradient(180deg, #fffdf8 0%, rgba(247, 240, 226, 0.55) 100%);
+  border-color: rgba(183, 154, 85, 0.65);
+  border-left-width: 3px;
+}
+
+.threadCardLink,
+.threadCardLink:hover,
+.threadCardLink:visited,
+.threadCardLink * {
+  text-decoration: none;
+}
+
+.threadCardLink {
+  display: block;
+  padding: 1.25rem 1.4rem;
+  color: inherit;
+}
+
+.threadCardLink .threadTitle {
+  text-decoration: underline;
+  text-decoration-color: rgba(183, 154, 85, 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.18s ease;
+}
+
+.threadCardLink:hover .threadTitle {
+  text-decoration-color: rgba(183, 154, 85, 0.95);
+}
+
+.threadCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.4rem;
+}
+
+.pinBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8f763c;
+  background: rgba(183, 154, 85, 0.12);
+  border: 1px solid rgba(183, 154, 85, 0.45);
+  border-radius: 999px;
+}
+
+.pinBtn {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255, 253, 248, 0.9);
+  border: 1px solid rgba(183, 154, 85, 0.4);
+  border-radius: 2px;
+  color: rgba(1, 18, 78, 0.55);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pinBtn:hover {
+  color: #01124E;
+  background: #fffdf8;
+  border-color: rgba(183, 154, 85, 0.85);
+}
+
+.pinBtnActive {
+  color: #8f763c;
+  background: rgba(183, 154, 85, 0.15);
+  border-color: rgba(183, 154, 85, 0.8);
+}
+
+.lastReply {
+  margin: 0.65rem 0 0;
+  padding-top: 0.65rem;
+  border-top: 1px dashed rgba(183, 154, 85, 0.3);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(1, 18, 78, 0.7);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.lastReplyArrow {
+  color: rgba(183, 154, 85, 0.85);
+  font-size: 1em;
+}
+
+.lastReplyAuthor {
+  font-weight: 500;
+  color: #01124E;
+}
+
+.lastReplyTime {
+  font-size: 0.78rem;
+  color: rgba(1, 18, 78, 0.5);
+}
+
+.lastReplyText {
+  flex: 1 1 100%;
+  font-style: italic;
+  color: rgba(1, 18, 78, 0.7);
+}
+
+/* Inline rich-text preview: keep the L.O.V.E.-style marks visible in cards,
+   but flatten block layout and clamp to two lines. */
+.previewRich {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.previewRich :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, pre, div) {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+  font-style: inherit;
+  line-height: inherit;
+}
+
+.previewRich :is(img, iframe) {
+  display: none;
+}
+
+.threadTitle {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #01124E;
+  line-height: 1.3;
+}
+
+.threadExcerpt {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(1, 18, 78, 0.75);
+}
+
+.threadMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: rgba(1, 18, 78, 0.65);
+}
+
+.threadMeta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(183, 154, 85, 0.7);
+}
+
+.threadMetaAuthor {
+  font-weight: 500;
+  color: #01124E;
+}
+
+/* ─── Anonymous Reflections card (forum landing) ─── */
+
+.anonCard {
+  display: block;
+  position: relative;
+  margin: 0 0 1.5rem;
+  padding: 1.5rem 1.6rem;
+  color: #01124E;
+  background: #fffdf8;
+  border: 1px solid rgba(183, 154, 85, 0.45);
+  border-left: 3px solid #b79a55;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.anonCard,
+.anonCard *,
+.anonCard:hover,
+.anonCard:visited {
+  text-decoration: none;
+}
+
+.anonCard:hover {
+  border-color: rgba(1, 18, 78, 0.5);
+  box-shadow: 0 14px 30px -22px rgba(1, 18, 78, 0.4);
+}
+
+.anonCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.5rem;
+}
+
+.anonBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #01124E;
+  background: rgba(1, 18, 78, 0.08);
+  border: 1px solid rgba(1, 18, 78, 0.25);
+  border-radius: 999px;
+}
+
+.anonCard .anonCardTitle {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  font-style: italic;
+  color: #01124E;
+  text-decoration: underline;
+  text-decoration-color: rgba(1, 18, 78, 0.25);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.18s ease;
+}
+
+.anonCard:hover .anonCardTitle {
+  text-decoration-color: rgba(1, 18, 78, 0.7);
+}
+
+.anonCardBody {
+  margin: 0 0 0.85rem;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: rgba(1, 18, 78, 0.75);
+}
+
+.anonCardLatest {
+  margin: 0.65rem 0 0;
+  padding-top: 0.65rem;
+  border-top: 1px dashed rgba(1, 18, 78, 0.2);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(1, 18, 78, 0.7);
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+/* ─── Anonymous Reflections page ─── */
+
+.anonHeader {
+  margin: 0 0 2rem;
+}
+
+.anonIntro {
+  margin: 1rem 0 1.5rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(243, 236, 214, 0.75);
+  max-width: 56ch;
+}
+
+.anonCount {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d8b97a;
+}
+
+.anonList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.anonItem {
+  padding: 1.15rem 1.3rem;
+  background: rgba(255, 253, 248, 0.7);
+  border: 1px solid rgba(1, 18, 78, 0.12);
+  border-left: 2px solid rgba(1, 18, 78, 0.4);
+  border-radius: 0 2px 2px 0;
+}
+
+.anonText {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+}
+
+.anonMeta {
+  margin: 0;
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  font-size: 0.78rem;
+  color: rgba(1, 18, 78, 0.6);
+}
+
+.anonSource {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(1, 18, 78, 0.7);
+  background: rgba(1, 18, 78, 0.06);
+  border: 1px solid rgba(1, 18, 78, 0.18);
+  border-radius: 999px;
+  font-style: normal;
+}
+
+.anonSource[data-source="feed"] {
+  color: #8f763c;
+  background: rgba(183, 154, 85, 0.1);
+  border-color: rgba(183, 154, 85, 0.35);
+}
+
+/* ─── Thread detail ─── */
+
+.threadBody {
+  margin: 0 0 2.5rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #f3ecd6;
+  white-space: pre-wrap;
+}
+
+.threadHeadingRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.5rem;
+}
+
+.threadHeading {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: #fdf0d0;
+}
+
+.threadByline {
+  font-size: 0.85rem;
+  color: rgba(243, 236, 214, 0.65);
+  margin: 0 0 1.5rem;
+}
+
+.repliesHeading {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #d8b97a;
+  margin: 0 0 1rem;
+}
+
+.repliesList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.replyItem {
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 253, 248, 0.7);
+  border-left: 2px solid rgba(183, 154, 85, 0.55);
+  border-radius: 0 2px 2px 0;
+  scroll-margin-top: 80px;
+  transition: background 0.6s ease, box-shadow 0.6s ease;
+}
+
+.replyItem.nested {
+  background: rgba(255, 253, 248, 0.55);
+}
+
+.replyItem[data-depth="1"] {
+  margin-left: clamp(0.9rem, 3.5vw, 2rem);
+}
+
+.replyItem[data-depth="2"] {
+  margin-left: clamp(0.6rem, 2.5vw, 1.25rem);
+  padding-left: 1rem;
+}
+
+.replyItem[data-depth="3"] {
+  margin-left: clamp(0.4rem, 1.8vw, 0.85rem);
+  padding-left: 0.85rem;
+  border-left-color: rgba(183, 154, 85, 0.35);
+}
+
+.replyHighlight {
+  background: rgba(255, 249, 220, 0.95);
+  box-shadow: 0 0 0 2px rgba(183, 154, 85, 0.55), 0 12px 30px -18px rgba(1, 18, 78, 0.35);
+}
+
+.collapseToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin-right: 0.15rem;
+  background: transparent;
+  border: 1px solid rgba(183, 154, 85, 0.35);
+  border-radius: 2px;
+  color: rgba(1, 18, 78, 0.55);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.collapseToggle:hover {
+  color: #01124E;
+  border-color: rgba(183, 154, 85, 0.75);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.replyBacklink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.45rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: rgba(1, 18, 78, 0.6);
+  background: rgba(183, 154, 85, 0.08);
+  border: 1px solid rgba(183, 154, 85, 0.28);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.replyBacklink:hover {
+  color: #01124E;
+  background: rgba(183, 154, 85, 0.18);
+}
+
+/* Reply time as anchor — same look as before but interactive */
+a.replyTime {
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+a.replyTime:hover {
+  color: #01124E;
+  border-bottom-color: rgba(183, 154, 85, 0.55);
+}
+
+.replyHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.replyAuthor {
+  font-weight: 500;
+  color: #01124E;
+}
+
+.replyTime {
+  color: rgba(1, 18, 78, 0.5);
+  font-size: 0.78rem;
+}
+
+.replyBody {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.6;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+}
+
+/* ─── Rendered rich-text (sanitized TipTap HTML) ─── */
+.richText {
+  white-space: normal;
+}
+
+.richText > :first-child { margin-top: 0; }
+.richText > :last-child { margin-bottom: 0; }
+
+.richText p { margin: 0 0 0.65rem; }
+
+.richText a {
+  color: #8f763c;
+  text-decoration: underline;
+}
+
+.richText ul,
+.richText ol {
+  margin: 0 0 0.65rem;
+  padding-left: 1.4rem;
+}
+
+.richText li { margin: 0.15rem 0; }
+
+.richText blockquote {
+  margin: 0 0 0.65rem;
+  padding: 0.25rem 0 0.25rem 0.9rem;
+  border-left: 3px solid rgba(183, 154, 85, 0.6);
+  color: inherit;
+  font-style: italic;
+}
+
+.richText h1,
+.richText h2,
+.richText h3,
+.richText h4 {
+  margin: 0.6rem 0 0.4rem;
+  line-height: 1.3;
+}
+
+.richText pre {
+  margin: 0 0 0.65rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(1, 18, 78, 0.06);
+  border: 1px solid rgba(1, 18, 78, 0.12);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+.richText code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+}
+
+.richText img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.richText table {
+  border-collapse: collapse;
+  margin: 0 0 0.65rem;
+  width: 100%;
+}
+
+.richText th,
+.richText td {
+  border: 1px solid rgba(1, 18, 78, 0.2);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.richText iframe {
+  max-width: 100%;
+  border: 0;
+  border-radius: 6px;
+}
+
+/* Dark thread-body surface keeps its parchment text + softer borders. */
+.threadBody.richText a { color: #e2c98a; }
+.threadBody.richText blockquote { border-left-color: rgba(226, 201, 138, 0.6); }
+.threadBody.richText pre {
+  background: rgba(255, 253, 248, 0.08);
+  border-color: rgba(255, 253, 248, 0.18);
+}
+.threadBody.richText th,
+.threadBody.richText td { border-color: rgba(255, 253, 248, 0.25); }
+
+/* Read-more clamp for long replies (line-based, markup-safe). */
+.replyBodyClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.replyActions {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.linkBtn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: #8f763c;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  color: #01124E;
+  text-decoration: underline;
+}
+
+.moderateDeleteLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: #a23a32;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.moderateDeleteLink:hover {
+  color: #7c241d;
+  text-decoration: underline;
+}
+
+.moderateDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255, 253, 248, 0.9);
+  border: 1px solid rgba(162, 58, 50, 0.4);
+  border-radius: 2px;
+  color: #a23a32;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.moderateDeleteBtn:hover {
+  color: #fffdf8;
+  background: #a23a32;
+  border-color: #7c241d;
+}
+
+/* ─── Forms ─── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+.label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8f763c;
+  margin: 0;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  font: inherit;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #1a1a1a;
+  background: #fffdf8;
+  border: 1px solid rgba(183, 154, 85, 0.45);
+  border-radius: 2px;
+  padding: 0.85rem 1rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: rgba(183, 154, 85, 0.95);
+  box-shadow: 0 0 0 3px rgba(183, 154, 85, 0.18);
+}
+
+.textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.formRow {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.signedOutNote {
+  margin: 1rem 0 0;
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 253, 248, 0.7);
+  border: 1px solid rgba(183, 154, 85, 0.4);
+  border-radius: 2px;
+  font-size: 0.95rem;
+  color: rgba(1, 18, 78, 0.8);
+}
+
+.signedOutNote a {
+  color: #01124E;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(183, 154, 85, 0.6);
+  text-underline-offset: 3px;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8a1c1c;
+}

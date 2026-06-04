@@ -2,11 +2,16 @@ import Link from "next/link";
 import { readCartToken } from "@elkdonis/checkout/server";
 import { getCartByToken } from "@elkdonis/commerce/queries";
 import { siteConfig } from "@/config/site";
+import { getCurrentArtist, getIsAdmin } from "@/lib/marketplace-auth";
 
 export async function SiteHeader() {
   const token = await readCartToken();
   const cart = token ? await getCartByToken(token) : null;
   const count = cart?.lines?.length ?? 0;
+
+  const [artist, admin] = await Promise.all([getCurrentArtist(), getIsAdmin()]);
+  const studioHref =
+    artist?.status === "active" ? "/studio" : artist ? "/studio/apply" : "/studio/apply";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
@@ -24,6 +29,17 @@ export async function SiteHeader() {
           <Link href="/artists" className="underline-offset-4 hover:underline">
             Artists
           </Link>
+          <Link href={studioHref} className="underline-offset-4 hover:underline">
+            {artist?.status === "active" ? "Studio" : "Sell"}
+          </Link>
+          {admin && (
+            <Link
+              href="/admin/applications"
+              className="underline-offset-4 hover:underline"
+            >
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="flex items-center gap-4 text-sm">
           <Link href="/login" className="underline-offset-4 hover:underline">

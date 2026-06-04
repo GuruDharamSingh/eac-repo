@@ -815,6 +815,8 @@ function mapPost(row: any): Post {
     updatedAt: row.updated_at,
     viewCount: row.view_count ?? 0,
     replyCount: row.reply_count ?? 0,
+    nextcloudTalkToken: row.nextcloud_talk_token || undefined,
+    documentUrl: row.document_url || undefined,
     author: row.author_name ? { displayName: row.author_name } : undefined,
     coverImage: row.cover_media_id
       ? {

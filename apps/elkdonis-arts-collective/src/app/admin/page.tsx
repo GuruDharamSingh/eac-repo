@@ -48,7 +48,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [mediaPath, setMediaPath] = useState('EAC-Network');
+  const [mediaPath, setMediaPath] = useState('EAC_Network');
   const [mediaItems, setMediaItems] = useState<MediaGalleryItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -379,7 +379,7 @@ export default function AdminPage() {
 
         <div style={styles.folderBar}>
           <button type="button" onClick={goUpFolder} style={styles.smallBtn}>Up one folder</button>
-          <button type="button" onClick={() => loadMediaItems('EAC-Network')} style={styles.smallBtn}>Go to groups root</button>
+          <button type="button" onClick={() => loadMediaItems('EAC_Network')} style={styles.smallBtn}>Go to groups root</button>
           <label style={uploadingImage ? styles.smallBtnDisabled : styles.smallBtn}>
             {uploadingImage ? 'Uploading…' : 'Upload image'}
             <input

@@ -31,7 +31,7 @@ export const nextcloudConfig = {
 
   // Organization folder structure
   folderStructure: {
-    root: 'EAC-Network',
+    root: 'EAC_Network',
     subfolders: [
       'Media',
       'Media/Images',

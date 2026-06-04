@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { createReply, getForumThread } from "@/lib/forum";
 
 export async function POST(
@@ -33,7 +34,7 @@ export async function POST(
       threadId: thread.id,
       parentId: parentReplyId,
       userId: session.user.id,
-      content,
+      content: sanitizeRichText(content),
     });
 
     return NextResponse.json({ reply });

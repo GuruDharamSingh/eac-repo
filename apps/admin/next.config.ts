@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/commerce",
     "@elkdonis/db",
     "@elkdonis/types",
+    "@elkdonis/nextcloud",
   ],
 };
 

@@ -1,4 +1,4 @@
-import { Events } from '@elkdonis/db/events';
+import { Events } from '@elkdonis/db';
 import { Container, Stack, Title, Text, Paper, Group, Badge, Select, Table, ActionIcon, Tooltip } from '@mantine/core';
 import { Activity, Filter, Eye, EyeOff, Lock, Unlock, Pin, PinOff } from 'lucide-react';
 import dayjs from 'dayjs';

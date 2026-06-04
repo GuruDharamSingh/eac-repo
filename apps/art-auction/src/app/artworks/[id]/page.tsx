@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getArtworkById } from "@elkdonis/commerce/queries";
 import { PriceBlock, BuyNowButton } from "@elkdonis/commerce/components";
 import { formatMoney } from "@elkdonis/commerce/money";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { ArtworkGallery } from "@/components/artwork-gallery";
 import { addArtworkToCart } from "@/app/actions";
 
@@ -134,7 +135,7 @@ export default async function ArtworkDetailPage({
               <h2 className="font-serif text-xl">About this work</h2>
               <div
                 className="mt-2 text-sm leading-relaxed text-foreground/90"
-                dangerouslySetInnerHTML={{ __html: artwork.descriptionHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(artwork.descriptionHtml) }}
               />
             </div>
           )}

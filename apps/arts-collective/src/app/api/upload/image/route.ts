@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const filename = `${timestamp}-${safeName}`;
   const subfolder = kind === "image" ? "covers" : "videos";
-  const folderPath = `EAC-Network/${orgSlug}/Workshops/${subfolder}`;
+  const folderPath = `EAC_Network/${orgSlug}/Workshops/${subfolder}`;
   const filePath = `${folderPath}/${filename}`;
 
   // Ensure folder tree exists

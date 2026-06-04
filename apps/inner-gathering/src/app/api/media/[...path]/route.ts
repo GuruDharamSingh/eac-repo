@@ -16,7 +16,7 @@ function encodeWebdavPath(path: string): string {
  * Proxy route for serving Nextcloud media files
  * Handles authentication server-side so videos/images/audio can be served to any client
  *
- * Usage: /api/media/EAC-Network/inner_group/Media/Videos/video.mp4
+ * Usage: /api/media/EAC_Network/inner_group/Media/Videos/video.mp4
  */
 export async function GET(
   request: NextRequest,
@@ -30,7 +30,7 @@ export async function GET(
     if (!filePath || filePath.includes('..') || filePath.includes('\\')) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
-    if (!filePath.startsWith('EAC-Network/')) {
+    if (!filePath.startsWith('EAC_Network/')) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

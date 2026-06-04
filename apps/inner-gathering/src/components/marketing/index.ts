@@ -1,0 +1,12 @@
+export { Hero } from "./Hero";
+export { About } from "./About";
+export { Features } from "./Features";
+export { Team } from "./Team";
+export { Footer } from "./Footer";
+export { StatementThreshold } from "./StatementThreshold";
+export { BoardRow } from "./BoardRow";
+export { FeatureInitiative } from "./FeatureInitiative";
+export { FundraisingGoal } from "./FundraisingGoal";
+export { Philosophy } from "./Philosophy";
+export { ContactForm } from "./ContactForm";
+export { ArtistDirectoryCTA } from "./ArtistDirectoryCTA";

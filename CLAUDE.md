@@ -237,6 +237,7 @@ When services are running:
   - Data layer (`data.ts`) and API route (`/api/meetings/[id]/event-page`) handle `drawing` field
 
 **In Progress:**
+- **EAC → Inner-Gathering merge + Nextcloud media pipeline** — execution brief at `/mnt/pool1/home/guru/eac/NEXT_AGENT_BRIEF.md`. Folds `apps/elkdonis-arts-collective` (public marketing landing) into `apps/inner-gathering` as a public `/` (route groups: dark `(marketing)` + light `(app)`), and hardens image upload/display against production Nextcloud (`eac_integration` account).
 - Unified `threads` schema refactor (migration 030 — consolidates posts/meetings/event_pages)
 - Network app at `network.elkdonis-arts.org` (three-tier product: embed → workshop page → workshop app)
 - Full Supabase authentication integration

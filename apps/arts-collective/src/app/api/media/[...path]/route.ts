@@ -21,7 +21,7 @@ export async function GET(
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  if (!filePath.startsWith("EAC-Network/")) {
+  if (!filePath.startsWith("EAC_Network/")) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

@@ -5,11 +5,11 @@ import { getServerSession } from '@elkdonis/auth-server';
 /**
  * Nextcloud Files API for inner-gathering users.
  * Supports list, createFolder, delete, download actions.
- * Uses admin credentials to access EAC-Network org folders.
+ * Uses admin credentials to access EAC_Network org folders.
  */
 
 // Allowed root paths users can browse
-const ALLOWED_ROOTS = ['EAC-Network/inner_group'];
+const ALLOWED_ROOTS = ['EAC_Network/inner_group'];
 
 function isAllowedPath(path: string): boolean {
   // Reject path traversal attempts

@@ -2,6 +2,7 @@
 
 import { RichTextEditor as MantineRTE } from '@mantine/tiptap';
 import { useEditor } from '@tiptap/react';
+import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
@@ -19,10 +20,40 @@ import TableHeader from '@tiptap/extension-table-header';
 import Youtube from '@tiptap/extension-youtube';
 import { common, createLowlight } from 'lowlight';
 import { useEffect, useCallback } from 'react';
-import { ActionIcon, Tooltip } from '@mantine/core';
-import { ImagePlus, Table as TableIcon, Youtube as YoutubeIcon } from 'lucide-react';
+import { ActionIcon, Tooltip, Menu } from '@mantine/core';
+import { ImagePlus, Table as TableIcon, Youtube as YoutubeIcon, Type } from 'lucide-react';
 
 const lowlight = createLowlight(common);
+
+/** Lightweight font-size mark built on top of TextStyle. */
+const FontSize = Extension.create({
+  name: 'fontSize',
+  addOptions() {
+    return { types: ['textStyle'] };
+  },
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element: HTMLElement) => element.style.fontSize || null,
+            renderHTML: (attributes: { fontSize?: string | null }) =>
+              attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
+          },
+        },
+      },
+    ];
+  },
+});
+
+const FONT_SIZES: { label: string; value: string | null }[] = [
+  { label: 'Small', value: '0.85rem' },
+  { label: 'Normal', value: null },
+  { label: 'Large', value: '1.35rem' },
+  { label: 'Huge', value: '1.75rem' },
+];
 
 export interface RichTextEditorProps {
   content: string;
@@ -30,6 +61,13 @@ export interface RichTextEditorProps {
   placeholder?: string;
   /** When true, shows a compact toolbar without image/code block/table controls */
   minimal?: boolean;
+  /**
+   * When true, shows a tasteful reduced toolbar suited to short comment/reflection
+   * boxes: bold, italic, underline, blockquote, lists, link. Implies `minimal`.
+   */
+  compact?: boolean;
+  /** Minimum height of the editing area in pixels. Defaults to 320 (120 when compact). */
+  minHeight?: number;
 }
 
 const HIGHLIGHT_COLORS = [
@@ -43,6 +81,8 @@ export function RichTextEditor({
   onChange,
   placeholder: placeholderText,
   minimal = false,
+  compact = false,
+  minHeight,
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -61,6 +101,7 @@ export function RichTextEditor({
         types: ['heading', 'paragraph'],
       }),
       TextStyle,
+      FontSize,
       Color,
       Highlight.configure({
         multicolor: true,
@@ -126,6 +167,71 @@ export function RichTextEditor({
       });
     }
   }, [editor]);
+
+  const setFontSize = useCallback(
+    (size: string | null) => {
+      if (!editor) return;
+      const chain = editor.chain().focus() as unknown as {
+        setMark: (name: string, attrs: Record<string, unknown>) => typeof chain;
+        run: () => boolean;
+      };
+      chain.setMark('textStyle', { fontSize: size }).run();
+    },
+    [editor],
+  );
+
+  const resolvedMinHeight = minHeight ?? (compact ? 120 : 320);
+
+  if (compact) {
+    return (
+      <MantineRTE editor={editor}>
+        <MantineRTE.Toolbar>
+          <MantineRTE.ControlsGroup>
+            <MantineRTE.Bold />
+            <MantineRTE.Italic />
+            <MantineRTE.Underline />
+          </MantineRTE.ControlsGroup>
+
+          <MantineRTE.ControlsGroup>
+            <MantineRTE.BulletList />
+            <MantineRTE.OrderedList />
+            <MantineRTE.Blockquote />
+          </MantineRTE.ControlsGroup>
+
+          <MantineRTE.ControlsGroup>
+            <Menu shadow="md" width={140} position="bottom-start" withinPortal>
+              <Menu.Target>
+                <Tooltip label="Font size">
+                  <ActionIcon variant="subtle" size="sm" aria-label="Font size">
+                    <Type size={15} />
+                  </ActionIcon>
+                </Tooltip>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {FONT_SIZES.map((s) => (
+                  <Menu.Item key={s.label} onClick={() => setFontSize(s.value)}>
+                    {s.label}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+            <MantineRTE.ColorPicker colors={HIGHLIGHT_COLORS} />
+          </MantineRTE.ControlsGroup>
+
+          <MantineRTE.ControlsGroup>
+            <MantineRTE.Link />
+          </MantineRTE.ControlsGroup>
+
+          <MantineRTE.ControlsGroup>
+            <MantineRTE.Undo />
+            <MantineRTE.Redo />
+          </MantineRTE.ControlsGroup>
+        </MantineRTE.Toolbar>
+
+        <MantineRTE.Content style={{ minHeight: resolvedMinHeight }} />
+      </MantineRTE>
+    );
+  }
 
   return (
     <MantineRTE editor={editor}>
@@ -211,7 +317,7 @@ export function RichTextEditor({
         </MantineRTE.ControlsGroup>
       </MantineRTE.Toolbar>
 
-      <MantineRTE.Content style={{ minHeight: 200 }} />
+      <MantineRTE.Content style={{ minHeight: resolvedMinHeight }} />
     </MantineRTE>
   );
 }

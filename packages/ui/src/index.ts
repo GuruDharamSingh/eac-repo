@@ -6,6 +6,10 @@ export type { MantineColorsTuple } from './theme';
 export { RichTextEditor } from './components/RichTextEditor';
 export type { RichTextEditorProps } from './components/RichTextEditor';
 
+// Rich Text renderer (sanitized HTML display)
+export { RichText } from './components/RichText';
+export type { RichTextProps } from './components/RichText';
+
 // Blog Entry Components
 export { BlogEntryForm } from './components/BlogEntryForm';
 export type { BlogEntryFormData, BlogEntryFormProps } from './components/BlogEntryForm';

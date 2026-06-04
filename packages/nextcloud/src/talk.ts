@@ -51,10 +51,12 @@ export async function createTalkRoom(
     'public': 3,
   }[type];
 
-  // Create room
-  const response = await client.ocs.post('/apps/spreed/api/v4/room', {
-    roomType,
-    roomName: name,
+  // Create room — Talk v4 requires form-encoded, not JSON
+  const body = new URLSearchParams();
+  body.set('roomType', String(roomType));
+  body.set('roomName', name);
+  const response = await client.ocs.post('/apps/spreed/api/v4/room', body.toString(), {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
   const room = extractOcsData<TalkRoom>(response);

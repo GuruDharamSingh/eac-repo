@@ -49,6 +49,8 @@ export interface UseContentDraftResult {
 
   createTalkRoom: boolean;
   setCreateTalkRoom: Dispatch<SetStateAction<boolean>>;
+  createDocument: boolean;
+  setCreateDocument: Dispatch<SetStateAction<boolean>>;
   documentUrl: string;
   setDocumentUrl: Dispatch<SetStateAction<string>>;
 
@@ -84,6 +86,7 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [libraryFiles, setLibraryFiles] = useState<SelectedNextcloudFile[]>([]);
   const [createTalkRoom, setCreateTalkRoom] = useState(false);
+  const [createDocument, setCreateDocument] = useState(false);
   const [documentUrl, setDocumentUrl] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -152,7 +155,7 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     return uploaded;
   };
 
-  const buildPayload = (uploadedMedia: UploadedMedia[]): Record<string, unknown> => ({
+  const buildPayload = (uploadedMedia: UploadedMedia[], resolvedDocUrl?: string): Record<string, unknown> => ({
     ...draft,
     kind,
     isMeeting: kind === "meeting" || kind === "workshop" ? true : draft.isMeeting,
@@ -170,7 +173,7 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
         type: "document" as const,
       })),
     ],
-    documentUrl: documentUrl || undefined,
+    documentUrl: resolvedDocUrl || documentUrl || undefined,
     createTalkRoom,
   });
 
@@ -183,11 +186,32 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     }
     setPublishing(true);
     try {
+      // Create living document if requested (before publishing so we have the URL)
+      let resolvedDocumentUrl = documentUrl;
+      if (createDocument && draft.title.trim()) {
+        const docRes = await fetch("/api/create-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orgId,
+            meetingTitle: draft.title.trim(),
+            meetingId: `${kind}-${Date.now()}`,
+          }),
+        });
+        if (docRes.ok) {
+          const docData = await docRes.json();
+          if (docData.success && docData.url) {
+            resolvedDocumentUrl = docData.url;
+            setDocumentUrl(docData.url);
+          }
+        }
+      }
+
       const uploaded = await uploadMedia(mediaFiles);
       const res = await fetch(publishEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload(uploaded)),
+        body: JSON.stringify(buildPayload(uploaded, resolvedDocumentUrl)),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -230,6 +254,8 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     removeLibraryFile,
     createTalkRoom,
     setCreateTalkRoom,
+    createDocument,
+    setCreateDocument,
     documentUrl,
     setDocumentUrl,
     publishing,

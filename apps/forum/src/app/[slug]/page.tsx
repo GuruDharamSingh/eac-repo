@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Calendar, MapPin, Pin, Lock, Eye, Heart, MessageCircle } from 'lucide-react';
+import { RichText } from '@elkdonis/ui';
 import { fetchThread, fetchReplies } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -92,9 +93,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         <Separator className="mb-5" />
 
         {'content' in thread && thread.content ? (
-          <div
+          <RichText
             className="prose-forum min-h-[80px]"
-            dangerouslySetInnerHTML={{ __html: thread.content as string }}
+            html={thread.content as string}
           />
         ) : thread.excerpt ? (
           <p className="text-foreground/90 leading-relaxed">{thread.excerpt}</p>

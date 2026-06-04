@@ -23,7 +23,7 @@ export function useNextcloudFiles({
   apiEndpoint = '/api/nextcloud',
   autoLoad = true,
 }: UseNextcloudFilesOptions) {
-  const [currentPath, setCurrentPath] = useState(initialPath || `EAC-Network/${orgId}`);
+  const [currentPath, setCurrentPath] = useState(initialPath || `EAC_Network/${orgId}`);
   const [files, setFiles] = useState<NextcloudFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

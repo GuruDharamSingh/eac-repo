@@ -28,6 +28,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { Meeting, EventPage } from "@elkdonis/types";
+import { sanitizeRichText } from "@elkdonis/utils";
 import Link from "next/link";
 import { CommentSection } from "./comment-section";
 
@@ -170,7 +171,7 @@ export function EventPageView({ meeting, eventPage, replies = [], currentUser }:
                 <TypographyStylesProvider>
                   <div
                     style={{ color: 'var(--mantine-color-dimmed)' }}
-                    dangerouslySetInnerHTML={{ __html: meeting.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(meeting.description) }}
                   />
                 </TypographyStylesProvider>
               )}
@@ -243,7 +244,7 @@ export function EventPageView({ meeting, eventPage, replies = [], currentUser }:
           {hasContent && htmlContent && (
             <Paper withBorder radius="lg" p="xl">
               <TypographyStylesProvider>
-                <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(htmlContent) }} />
               </TypographyStylesProvider>
             </Paper>
           )}

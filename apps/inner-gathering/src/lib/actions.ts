@@ -209,12 +209,7 @@ export async function createMeetingAction(payload: {
       }
     }
   } else {
-    console.warn('⚠ Nextcloud integration skipped: No user credentials available', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      hasNextcloudUserId: !!session?.user?.nextcloud_user_id,
-      hasAppPassword: !!session?.user?.nextcloud_app_password,
-    });
+    console.warn('⚠ Nextcloud integration skipped: user not provisioned in Nextcloud');
   }
   // ============ End Nextcloud Integration ============
 

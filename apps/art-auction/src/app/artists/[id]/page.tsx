@@ -5,6 +5,7 @@ import {
   listArtworks,
 } from "@elkdonis/commerce/queries";
 import { ArtworkGrid } from "@elkdonis/commerce/components";
+import { sanitizeRichText } from "@elkdonis/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export default async function ArtistPage({
       {artist.bioHtml && (
         <div
           className="prose prose-sm mb-10 max-w-2xl text-foreground/90"
-          dangerouslySetInnerHTML={{ __html: artist.bioHtml }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(artist.bioHtml) }}
         />
       )}
 

@@ -38,7 +38,7 @@ export function createReadingWizardState(): ReadingWizardState {
     intervalDays: 7,
     meetingTime: "19:00",
     timeZone: "America/Toronto",
-    nextcloudFolder: "EAC-Network/fourth_way_book_readers/Reading",
+    nextcloudFolder: "EAC_Network/fourth_way_book_readers/Reading",
     units,
   };
 }

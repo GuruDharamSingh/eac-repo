@@ -19,6 +19,7 @@ import {
   StickyBottomBar 
 } from '@elkdonis/ui';
 import type { Workshop, Meeting, WorkshopSession, WorkshopResource } from '@elkdonis/types';
+import { sanitizeRichText } from '@elkdonis/utils';
 import { CommentSection } from './comment-section';
 
 interface GatheringDetailsProps {
@@ -129,7 +130,7 @@ export function GatheringDetails({
             <TypographyStylesProvider>
               <div 
                 style={{ fontSize: '1.1rem', lineHeight: 1.7 }}
-                dangerouslySetInnerHTML={{ __html: (gathering as any).pitch || gathering.description || '' }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText((gathering as any).pitch || gathering.description || '') }} 
               />
             </TypographyStylesProvider>
           </Paper>

@@ -337,6 +337,10 @@ services:
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+      # OIDC provider (now hosted on this app — must match Nextcloud sociallogin clientSecret)
+      JWT_SECRET: ${JWT_SECRET}
+      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET}
+      NEXTCLOUD_DEFAULT_GROUP: ${NEXTCLOUD_DEFAULT_GROUP:-EAC_Network}
       NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3000}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
@@ -355,6 +359,7 @@ services:
     ports:
       - "3004:3004"
     command: sh -c "pnpm install && cd apps/inner-gathering && pnpm docker:dev"
+    restart: unless-stopped
     networks:
       - eac-network
       - nextcloud-network
@@ -649,3 +654,4 @@ networks:
     driver: bridge
   nextcloud-network:
     external: true
+    name: nextcloud-aio

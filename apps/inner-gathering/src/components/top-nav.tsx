@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, Bell, FolderOpen, Video, Palette, Mail, BookOpen, MessageSquare } from "lucide-react";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, FolderOpen, Video, Palette, Mail, BookOpen, MessageSquare } from "lucide-react";
 import {
   ActionIcon,
-  Badge,
   Box,
   Drawer,
   Group,
@@ -19,12 +18,15 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { useRealtimeNotifications } from "@elkdonis/hooks";
 import { supabase } from "@/lib/supabase";
+import { ProfileModal } from "./profile-modal";
 
 interface NavItem {
   icon: React.ComponentType<{ size?: number }>;
   label: string;
   href: string;
   match: (pathname: string) => boolean;
+  /** Visible only to guides/owners or site admins. */
+  guideOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -33,6 +35,7 @@ const navItems: NavItem[] = [
     label: "Home",
     href: "/home",
     match: (pathname) => pathname === "/home",
+    guideOnly: true,
   },
   {
     icon: Newspaper,
@@ -51,6 +54,7 @@ const navItems: NavItem[] = [
     label: "Polls",
     href: "/polls",
     match: (pathname) => pathname.startsWith("/polls"),
+    guideOnly: true,
   },
   {
     icon: Calendar,
@@ -63,24 +67,28 @@ const navItems: NavItem[] = [
     label: "Archive",
     href: "/files",
     match: (pathname) => pathname.startsWith("/files"),
+    guideOnly: true,
   },
   {
     icon: BookOpen,
     label: "Workshops",
     href: "/workshops/create",
     match: (pathname) => pathname.startsWith("/workshops"),
+    guideOnly: true,
   },
   {
     icon: Video,
     label: "Live",
     href: "/live",
     match: (pathname) => pathname.startsWith("/live"),
+    guideOnly: true,
   },
   {
     icon: Mail,
     label: "Emails",
     href: "/email-templates",
     match: (pathname) => pathname.startsWith("/email-templates"),
+    guideOnly: true,
   },
 ];
 
@@ -103,6 +111,12 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [userId, setUserId] = useState<string>("");
+  // Guides/owners and site admins see the full nav; everyone else (incl.
+  // logged-out) sees the trimmed set. Defaults to false so restricted items
+  // never flash before the role check resolves.
+  const [canManage, setCanManage] = useState(false);
+  // "My Profile" opens as a modal over the current page (not a /profile route).
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   // Get the current user ID for notification subscription
   useEffect(() => {
@@ -112,6 +126,16 @@ export function TopNav() {
       }
     });
   }, []);
+
+  // Resolve role for nav gating (guide/owner/admin).
+  useEffect(() => {
+    fetch("/api/me/role")
+      .then((res) => (res.ok ? res.json() : { isAdmin: false, isGuide: false }))
+      .then((data) => setCanManage(Boolean(data.isAdmin || data.isGuide)))
+      .catch(() => setCanManage(false));
+  }, []);
+
+  const visibleNavItems = navItems.filter((item) => !item.guideOnly || canManage);
 
   // Fetch initial unread count
   const [initialCount, setInitialCount] = useState(0);
@@ -198,7 +222,7 @@ export function TopNav() {
             <Title order={3} className="archive-title">Inner Gathering</Title>
           </div>
           <Stack gap="xs">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = item.match(pathname);
               const Icon = item.icon;
 
@@ -218,30 +242,13 @@ export function TopNav() {
           </Stack>
           <Divider />
           <Stack gap="xs">
-            {/* Notifications */}
             <NavLink
-              onClick={() => handleNavigate("/notifications")}
-              label={
-                <Group gap="xs">
-                  <span>Notifications</span>
-                  {totalUnread > 0 && (
-                    <Badge size="sm" color="red" variant="filled" circle>
-                      {totalUnread > 99 ? "99+" : totalUnread}
-                    </Badge>
-                  )}
-                </Group>
-              }
-              leftSection={<Bell size={20} />}
-              active={pathname.startsWith("/notifications")}
-              variant="light"
-              color="archive"
-              style={{ borderRadius: 4 }}
-            />
-            <NavLink
-              onClick={() => handleNavigate(profileItem.href)}
+              onClick={() => {
+                setProfileModalOpen(true);
+                close();
+              }}
               label={profileItem.label}
               leftSection={<profileItem.icon size={20} />}
-              active={profileItem.match(pathname)}
               variant="light"
               color="archive"
               style={{ borderRadius: 4 }}
@@ -258,6 +265,11 @@ export function TopNav() {
           </Stack>
         </Stack>
       </Drawer>
+
+      <ProfileModal
+        opened={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
     </>
   );
 }

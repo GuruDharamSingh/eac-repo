@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Events } from '@elkdonis/db/events';
+import { Events } from '@elkdonis/db';
 import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 
 /**

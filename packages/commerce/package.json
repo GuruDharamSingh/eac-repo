@@ -20,6 +20,7 @@
   "dependencies": {
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
     "nanoid": "^5.1.6"
   },
   "peerDependencies": {

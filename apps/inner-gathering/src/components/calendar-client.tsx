@@ -19,6 +19,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { Calendar as CalendarIcon, Plus, ExternalLink, MapPin, Video, Clock, User, FileText } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { format } from "date-fns";
 
 interface CalendarClientProps {
@@ -141,7 +142,7 @@ export function CalendarClient({ initialMeetings }: CalendarClientProps) {
                 <TypographyStylesProvider>
                   <div
                     style={{ color: 'var(--mantine-color-dimmed)', fontSize: 'var(--mantine-font-size-sm)' }}
-                    dangerouslySetInnerHTML={{ __html: selectedMeeting.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(selectedMeeting.description) }}
                   />
                 </TypographyStylesProvider>
               </div>

@@ -9,7 +9,9 @@
 
 import { db } from "@elkdonis/db";
 import { isAdmin } from "@elkdonis/auth-server";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { nanoid } from "nanoid";
+import { stripHtml } from "./strip-html";
 
 // Re-export the canonical reply types/helpers from @elkdonis/db so callers
 // inside the forum can stay against a single source of truth.
@@ -36,7 +38,8 @@ export interface ForumLastReply {
   userName: string;
   userInitials: string;
   commentColor: string | null;
-  excerpt: string;
+  /** Full rich-text HTML of the latest reply (sanitized + clamped at render). */
+  html: string;
   createdAt: Date;
 }
 
@@ -312,7 +315,7 @@ export async function listForumThreads(): Promise<ForumThreadSummary[]> {
     id: r.id,
     slug: r.slug,
     title: r.title,
-    excerpt: r.excerpt ?? (r.body ? r.body.slice(0, 200) : null),
+    excerpt: stripHtml(r.excerpt ?? r.body ?? "").slice(0, 200) || null,
     body: r.body ?? "",
     authorId: r.author_id,
     authorName: r.display_name ?? "Member",
@@ -328,7 +331,7 @@ export async function listForumThreads(): Promise<ForumThreadSummary[]> {
             userName: r.last_reply_user_name ?? "Member",
             userInitials: initialsFor(r.last_reply_user_name),
             commentColor: r.last_reply_comment_color,
-            excerpt: r.last_reply_content.slice(0, 120),
+            html: r.last_reply_content,
             createdAt: r.last_reply_created_at,
           }
         : null,
@@ -409,15 +412,15 @@ export async function createForumThread(params: {
 }): Promise<{ id: string; slug: string }> {
   const topicId = await ensureForumTopicId();
   const trimmedTitle = params.title.trim();
-  const trimmedBody = params.body.trim();
+  const sanitizedBody = sanitizeRichText(params.body).trim();
   if (trimmedTitle.length < 3) throw new Error("Title must be at least 3 characters.");
-  if (trimmedBody.length < 1) throw new Error("Body is required.");
+  if (stripHtml(sanitizedBody).trim().length < 1) throw new Error("Body is required.");
 
   // Slug with short collision suffix; uniqueness is per (org_id, slug).
   const baseSlug = slugify(trimmedTitle).slice(0, 80) || "thread";
   const slug = `${baseSlug}-${nanoid(6).toLowerCase()}`;
   const threadId = nanoid();
-  const excerpt = trimmedBody.slice(0, 200);
+  const excerpt = stripHtml(sanitizedBody).slice(0, 200);
 
   await db`
     INSERT INTO threads (
@@ -426,7 +429,7 @@ export async function createForumThread(params: {
     ) VALUES (
       ${threadId}, ${ORG_ID}, ${params.authorId}, 'post',
       ${trimmedTitle}, ${slug},
-      ${trimmedBody}, ${excerpt},
+      ${sanitizedBody}, ${excerpt},
       'published', 'PUBLIC',
       NOW()
     )
@@ -447,6 +450,56 @@ export async function setThreadPinned(
 ): Promise<void> {
   await db`UPDATE threads SET pinned = ${pinned} WHERE id = ${threadId}`;
 }
+
+/**
+ * Soft-delete a forum thread (admin moderation). Sets status='archived' so it
+ * drops out of every published read path. Replies are left in place but become
+ * unreachable since the thread no longer renders.
+ */
+export async function deleteForumThread(threadId: string): Promise<void> {
+  await db`
+    UPDATE threads
+    SET status = 'archived', updated_at = NOW()
+    WHERE id = ${threadId}
+  `;
+}
+
+/**
+ * Hard-delete a forum reply and all of its descendants (admin moderation), then
+ * correct the parent thread's reply_count. Returns the number of rows removed.
+ */
+export async function deleteForumReply(replyId: string): Promise<number> {
+  return db.begin(async (tx) => {
+    const [target] = await tx<{ thread_id: string }[]>`
+      SELECT thread_id FROM replies WHERE id = ${replyId} LIMIT 1
+    `;
+    if (!target) return 0;
+
+    const removed = await tx<{ id: string }[]>`
+      WITH RECURSIVE descendants AS (
+        SELECT id FROM replies WHERE id = ${replyId}
+        UNION ALL
+        SELECT r.id FROM replies r
+        JOIN descendants d ON r.parent_reply_id = d.id
+      )
+      DELETE FROM replies
+      WHERE id IN (SELECT id FROM descendants)
+      RETURNING id
+    `;
+
+    const count = removed.length;
+    if (count > 0) {
+      await tx`
+        UPDATE threads
+        SET reply_count = GREATEST(COALESCE(reply_count, 0) - ${count}, 0),
+            updated_at = NOW()
+        WHERE id = ${target.thread_id}
+      `;
+    }
+    return count;
+  });
+}
+
 
 // createForumReply removed — use `createReply` re-exported from @elkdonis/db
 // (`import { createReply } from "@/lib/forum"`).

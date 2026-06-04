@@ -106,13 +106,13 @@ function StepFeed() {
             <ActionIcon
               size={44}
               radius="sm"
-              color="ember"
+              color="eacSky"
               variant="filled"
               aria-label="Menu"
               style={{
                 flexShrink: 0,
-                boxShadow: "0 10px 28px rgba(43, 20, 7, 0.22)",
-                border: "2px solid #f0c98a",
+                boxShadow: "0 10px 28px rgba(1, 18, 78, 0.28)",
+                border: "2px solid #b79a55",
                 pointerEvents: "none",
               }}
             >
@@ -126,13 +126,13 @@ function StepFeed() {
             <ActionIcon
               size={44}
               radius="sm"
-              color="ember"
+              color="eacSky"
               variant="filled"
               aria-label="Add post"
               style={{
                 flexShrink: 0,
-                boxShadow: "0 4px 20px rgba(180, 80, 10, 0.32)",
-                border: "2px solid #f0a040",
+                boxShadow: "0 10px 28px rgba(1, 18, 78, 0.28)",
+                border: "2px solid #b79a55",
                 pointerEvents: "none",
               }}
             >

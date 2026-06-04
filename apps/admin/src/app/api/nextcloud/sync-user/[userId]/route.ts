@@ -47,15 +47,12 @@ export async function POST(
       );
     }
 
+    const defaultGroup = process.env.NEXTCLOUD_DEFAULT_GROUP || 'EAC_Network';
     const result = await handleUserProvisioning(
       user.id,
       user.email,
       user.display_name || user.email.split('@')[0],
-      {
-        groups: Array.isArray(user.org_ids)
-          ? user.org_ids.filter((orgId: unknown): orgId is string => typeof orgId === 'string' && orgId.length > 0)
-          : undefined,
-      }
+      { groups: [defaultGroup] }
     );
 
     if (result.success) {

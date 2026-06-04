@@ -12,7 +12,7 @@ async function testNextcloudIntegration() {
     // Test 1: WebDAV - Create folder structure
     console.log('📁 Test 1: Creating organization folders...');
     try {
-      await webdavService.createDirectory('EAC-Network');
+      await webdavService.createDirectory('EAC_Network');
       await webdavService.createOrgFolders('elkdonis');
       await webdavService.createOrgFolders('sunjay');
       await webdavService.createOrgFolders('guru-dharam');
@@ -60,7 +60,7 @@ async function testNextcloudIntegration() {
 
     // Test 5: Check specific organization folder
     console.log('🔍 Test 5: Checking elkdonis organization folder...');
-    const orgPath = 'EAC-Network/elkdonis';
+    const orgPath = 'EAC_Network/elkdonis';
     const exists = await webdavService.exists(orgPath);
     if (exists) {
       const orgContents = await webdavService.listDirectory(orgPath);
