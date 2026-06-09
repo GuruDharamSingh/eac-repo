@@ -1,0 +1,27 @@
+/* eac-enn-pullquote — centered serif epigraph. */
+
+.eac-enn-pullquote {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink);
+  font-family: var(--eac-enn-display);
+  margin: 0;
+  padding: clamp(40px, 7vw, 80px) 24px;
+  text-align: center;
+}
+
+.eac-enn-pullquote__text {
+  margin: 0 auto;
+  max-width: 40rem;
+  font-style: italic;
+  font-size: clamp(22px, 3.4vw, 32px);
+  line-height: 1.4;
+}
+
+.eac-enn-pullquote__cite {
+  margin-top: 20px;
+  font-family: var(--eac-enn-body);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--eac-enn-ink-muted);
+}

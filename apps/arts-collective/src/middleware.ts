@@ -32,6 +32,7 @@ const PASSTHROUGH_PATHS = new Set([
   "artists",
   "commitments",
   "sites",
+  "directory",
 ]);
 
 function extractSubdomain(hostHeader: string | null): string | null {

@@ -1,0 +1,38 @@
+{
+  "name": "hidden-enneagram",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3012 --turbopack",
+    "docker:dev": "next dev -H 0.0.0.0 -p 3012",
+    "docker:start": "next start -H 0.0.0.0 -p 3012",
+    "build": "next build",
+    "start": "next start --port 3012",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/cms-bindings": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
+    "@elkdonis/silex-render": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "@marsidev/react-turnstile": "^1.4.1",
+    "next": "16.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

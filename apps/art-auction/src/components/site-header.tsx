@@ -1,17 +1,26 @@
 import Link from "next/link";
 import { readCartToken } from "@elkdonis/checkout/server";
 import { getCartByToken } from "@elkdonis/commerce/queries";
+import { getUnreadCount } from "@elkdonis/messaging/queries";
 import { siteConfig } from "@/config/site";
-import { getCurrentArtist, getIsAdmin } from "@/lib/marketplace-auth";
+import {
+  getCurrentArtist,
+  getCurrentUser,
+  getIsAdmin,
+} from "@/lib/marketplace-auth";
 
 export async function SiteHeader() {
   const token = await readCartToken();
   const cart = token ? await getCartByToken(token) : null;
   const count = cart?.lines?.length ?? 0;
 
-  const [artist, admin] = await Promise.all([getCurrentArtist(), getIsAdmin()]);
-  const studioHref =
-    artist?.status === "active" ? "/studio" : artist ? "/studio/apply" : "/studio/apply";
+  const [user, artist, admin] = await Promise.all([
+    getCurrentUser(),
+    getCurrentArtist(),
+    getIsAdmin(),
+  ]);
+  const unread = user ? await getUnreadCount(user.id) : 0;
+  const studioHref = artist?.status === "active" ? "/studio" : "/studio/apply";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
@@ -33,18 +42,38 @@ export async function SiteHeader() {
             {artist?.status === "active" ? "Studio" : "Sell"}
           </Link>
           {admin && (
-            <Link
-              href="/admin/applications"
-              className="underline-offset-4 hover:underline"
-            >
+            <Link href="/admin" className="underline-offset-4 hover:underline">
               Admin
             </Link>
           )}
         </nav>
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/login" className="underline-offset-4 hover:underline">
-            Sign in
-          </Link>
+          {user && (
+            <Link
+              href="/messages"
+              className="relative inline-flex items-center underline-offset-4 hover:underline"
+            >
+              Messages
+              {unread > 0 && (
+                <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
+                  {unread}
+                </span>
+              )}
+            </Link>
+          )}
+          {user ? (
+            <Link
+              href={artist?.status === "active" ? "/studio" : "/account"}
+              className="underline-offset-4 hover:underline"
+              title={user.email ?? undefined}
+            >
+              {user.displayName?.trim() || "Account"}
+            </Link>
+          ) : (
+            <Link href="/login" className="underline-offset-4 hover:underline">
+              Sign in
+            </Link>
+          )}
           <Link
             href="/cart"
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 underline-offset-4 hover:bg-muted"

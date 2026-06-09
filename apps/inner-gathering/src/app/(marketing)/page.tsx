@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { StatementThreshold } from "@/components/marketing/StatementThreshold";
 import { BoardRow } from "@/components/marketing/BoardRow";
 import { About } from "@/components/marketing/About";
 import { WorkQuestionBox } from "@/components/work-question-box";
@@ -17,23 +15,10 @@ import { Footer } from "@/components/marketing/Footer";
 import { MarketingStickyBar } from "@/components/marketing/MarketingStickyBar";
 
 export default function LandingPage() {
-  const [thresholdDone, setThresholdDone] = useState(false);
-
   return (
     <>
-      {/* Statement Threshold — covers everything until dismissed */}
-      {!thresholdDone && (
-        <StatementThreshold onDismiss={() => setThresholdDone(true)} />
-      )}
-
-      {/* Main page — rendered underneath; scrolling begins once threshold clears */}
-      <div
-        style={{
-          opacity: thresholdDone ? 1 : 0,
-          transition: "opacity 0.8s ease",
-          pointerEvents: thresholdDone ? "auto" : "none",
-        }}
-      >
+      {/* Main page */}
+      <div>
         {/* ── Hero banner ── */}
         <header className="landing-hero">
           <div className="landing-hero-inner">
@@ -62,11 +47,10 @@ export default function LandingPage() {
             <aside className="cwq-excerpt">
               <p
                 style={{
-                  fontFamily: "var(--font-serif)",
+                  fontFamily: '"Basteleur", serif',
                   fontSize: "clamp(1rem, 1.4vw, 1.1rem)",
                   lineHeight: 1.85,
                   color: "var(--eac-ink, #01124E)",
-                  fontStyle: "italic",
                   margin: 0,
                 }}
               >

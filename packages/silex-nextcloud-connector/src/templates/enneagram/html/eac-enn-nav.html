@@ -1,0 +1,21 @@
+<!--
+  eac-enn-nav.html — top bar: hamburger (left) + centered enneagram mark.
+  Brand/links are owner-editable in Silex; not a content menu by default.
+-->
+<header class="eac-enn-nav" data-gjs-type="eac-enn-nav">
+  <button class="eac-enn-nav__menu" type="button" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <a class="eac-enn-nav__mark" href="/" aria-label="Home">
+    <svg class="eac-enn-glyph" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true">
+      <circle cx="50" cy="50" r="42"></circle>
+      <path d="M84.6 70 L15.4 70 L50 8 Z"></path>
+      <path d="M75.7 19.4 L63.7 87.6 L89.4 43.1 L24.3 19.4 L36.3 87.6 L10.6 43.1 Z"></path>
+    </svg>
+  </a>
+
+  <nav class="eac-enn-nav__links">
+    <a href="#" data-gjs-editable="true">Menu</a>
+  </nav>
+</header>

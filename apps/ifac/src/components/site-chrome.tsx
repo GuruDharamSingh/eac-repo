@@ -34,7 +34,7 @@ export function SiteHeader() {
         </a>
         <nav className="main-nav" aria-label="Primary navigation">
           <a href="/">Home</a>
-          <a href="/#about">About</a>
+          <a href="/about">About</a>
           <a href="/#artists">Artists</a>
           <a href="/#dealers">Dealers</a>
           <a href="/#blog">Blog</a>

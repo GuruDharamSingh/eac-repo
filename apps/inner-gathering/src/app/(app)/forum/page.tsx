@@ -51,15 +51,9 @@ export default async function ForumPage() {
               ? "Be the first to begin a thread."
               : `${threads.length} thread${threads.length === 1 ? "" : "s"}`}
           </h2>
-          {isAuthed ? (
-            <Link href="/forum/new" className={styles.newThreadBtn}>
-              Start a thread
-            </Link>
-          ) : (
-            <Link href="/login?next=/forum/new" className={styles.secondaryBtn}>
-              Sign in to post
-            </Link>
-          )}
+          <Link href="/forum/new" className={styles.newThreadBtn}>
+            Start a thread
+          </Link>
         </div>
 
         <Link href="/forum/anonymous" className={styles.anonCard}>

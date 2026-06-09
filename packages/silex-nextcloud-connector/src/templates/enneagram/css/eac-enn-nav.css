@@ -1,0 +1,65 @@
+/* eac-enn-nav — sticky dark bar, centered enneagram glyph. */
+
+.eac-enn-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 28px;
+  background: rgba(10, 10, 12, 0.86);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--eac-enn-line-soft);
+  font-family: var(--eac-enn-body);
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-nav__menu {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 30px;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  justify-self: start;
+}
+.eac-enn-nav__menu span {
+  display: block;
+  height: 1px;
+  width: 26px;
+  background: var(--eac-enn-ink-soft);
+}
+
+.eac-enn-nav__mark {
+  justify-self: center;
+  color: var(--eac-enn-ink);
+  text-decoration: none;
+}
+.eac-enn-glyph {
+  display: block;
+  width: 30px;
+  height: 30px;
+  opacity: 0.92;
+}
+
+.eac-enn-nav__links {
+  justify-self: end;
+  display: flex;
+  gap: 22px;
+}
+.eac-enn-nav__links a {
+  color: var(--eac-enn-ink-muted);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+.eac-enn-nav__links a:hover { color: var(--eac-enn-accent); }
+
+@media (max-width: 600px) {
+  .eac-enn-nav__links { display: none; }
+}

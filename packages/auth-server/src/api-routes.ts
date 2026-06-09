@@ -145,7 +145,21 @@ export async function handleLogin(request: NextRequest) {
  * Handle user registration server-side
  * Automatically provisions user in Nextcloud after signup
  */
-export async function handleSignup(request: NextRequest) {
+export interface SignupOrgOptions {
+  /**
+   * Orgs the new user joins. Defaults to the EAC network
+   * (elkdonis + inner_group) as `member`. Per-org apps (e.g. hiddenenneagram.com)
+   * pass their own org so signups stay scoped to that group.
+   */
+  defaultOrgs?: { id: string; role: string }[];
+  /** Org the stub artist profile is created under. Defaults to 'elkdonis'. */
+  profileOrgId?: string;
+}
+
+export async function handleSignup(
+  request: NextRequest,
+  options: SignupOrgOptions = {}
+) {
   try {
     const { email, password, displayName, interests, turnstileToken } = await request.json();
 
@@ -258,22 +272,28 @@ export async function handleSignup(request: NextRequest) {
       console.log(`[Signup] Nextcloud auto-provision disabled; ${email} can be synced manually from /admin`);
     }
 
-    // Assign to default orgs + create stub artist profile — all soft-fail
+    // Assign to orgs + create stub artist profile — all soft-fail
     try {
       const { db } = await import('@elkdonis/db');
       const resolvedName = displayName || email.split('@')[0];
 
-      await db`
-        INSERT INTO user_organizations (user_id, org_id, role, joined_at)
-        VALUES
-          (${data.user.id}, 'elkdonis',    'member', NOW()),
-          (${data.user.id}, 'inner_group', 'member', NOW())
-        ON CONFLICT (user_id, org_id) DO NOTHING
-      `;
+      const defaultOrgs = options.defaultOrgs ?? [
+        { id: 'elkdonis', role: 'member' },
+        { id: 'inner_group', role: 'member' },
+      ];
+      const profileOrgId = options.profileOrgId ?? 'elkdonis';
+
+      for (const org of defaultOrgs) {
+        await db`
+          INSERT INTO user_organizations (user_id, org_id, role, joined_at)
+          VALUES (${data.user.id}, ${org.id}, ${org.role}, NOW())
+          ON CONFLICT (user_id, org_id) DO NOTHING
+        `;
+      }
 
       await db`
         INSERT INTO artist_profiles (user_id, org_id, display_name, is_stub)
-        VALUES (${data.user.id}, 'elkdonis', ${resolvedName}, true)
+        VALUES (${data.user.id}, ${profileOrgId}, ${resolvedName}, true)
         ON CONFLICT (user_id) DO NOTHING
       `;
 

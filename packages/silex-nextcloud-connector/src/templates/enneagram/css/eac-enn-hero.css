@@ -1,0 +1,39 @@
+/* eac-enn-hero — big centered serif title on near-black. */
+
+.eac-enn-hero {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink);
+  font-family: var(--eac-enn-body);
+  padding: clamp(72px, 12vw, 140px) 24px clamp(40px, 7vw, 80px);
+  text-align: center;
+}
+
+.eac-enn-hero__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-hero__kicker {
+  margin: 0 0 28px;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--eac-enn-ink-muted);
+}
+
+.eac-enn-hero__title {
+  margin: 0;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(40px, 8vw, 76px);
+  line-height: 1.04;
+  letter-spacing: 0.01em;
+}
+
+.eac-enn-hero__lead {
+  margin: 26px auto 0;
+  max-width: 38rem;
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--eac-enn-ink-soft);
+}

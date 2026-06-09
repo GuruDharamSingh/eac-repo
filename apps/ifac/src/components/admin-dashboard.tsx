@@ -127,6 +127,10 @@ export function AdminDashboard({
         <div className="stat-tile">{rsvpTotal} event RSVPs</div>
       </div>
 
+      <p style={{ marginBottom: "1rem" }}>
+        <a className="button" href="/admin/directory">Manage artists &amp; dealers →</a>
+      </p>
+
       <div className="admin-grid">
         <section className="admin-panel">
           <h2>Edit one site area</h2>

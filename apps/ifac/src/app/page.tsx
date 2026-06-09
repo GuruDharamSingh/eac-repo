@@ -1,4 +1,5 @@
 import { getSiteContent, getUpcomingEvents, formatEventDate } from "@/lib/data";
+import { listDirectory } from "@/lib/directory";
 import { SignupForm } from "@/components/signup-form";
 import { RsvpForm } from "@/components/rsvp-form";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
@@ -7,7 +8,16 @@ import type { GalleryItem, SiteLink } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [content, events] = await Promise.all([getSiteContent(), getUpcomingEvents()]);
+  const [content, events, directoryArtists, directoryDealers] = await Promise.all([
+    getSiteContent(),
+    getUpcomingEvents(),
+    listDirectory("artist"),
+    listDirectory("dealer"),
+  ]);
+
+  // Special non-roster campaign tiles (e.g. "Vote For Andre") still come from
+  // the editable gallery section.
+  const campaignItems = content.gallery.items.filter((item) => item.id === "andre-pace-vote");
 
   return (
     <div className="site-shell">
@@ -25,14 +35,19 @@ export default async function HomePage() {
         <section id="artists" className="ifac-panel">
           <h2>{content.gallery.title}</h2>
           <div className="directory-links artist-links">
-            {content.gallery.items.map((item) => <ArtistLink key={item.id} item={item} />)}
+            {directoryArtists.map((artist) => (
+              <DirectoryLink key={artist.slug} link={{ label: artist.name, href: `/artists/${artist.slug}` }} />
+            ))}
+            {campaignItems.map((item) => <ArtistLink key={item.id} item={item} />)}
           </div>
         </section>
 
         <section id="dealers" className="ifac-panel">
           <h2>{content.dealers.title}</h2>
           <div className="directory-links">
-            {content.dealers.links.map((link) => <DirectoryLink key={link.href} link={link} />)}
+            {directoryDealers.map((dealer) => (
+              <DirectoryLink key={dealer.slug} link={{ label: dealer.name, href: `/dealers/${dealer.slug}` }} />
+            ))}
           </div>
         </section>
 

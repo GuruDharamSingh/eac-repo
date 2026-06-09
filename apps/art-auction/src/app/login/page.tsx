@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuthForm } from "@elkdonis/auth-client";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -29,9 +29,14 @@ function Field({
 }
 
 function LoginInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo");
+  // Accept both `next` (used by the studio/admin guards) and `returnTo`.
+  // Only honour same-origin relative paths to avoid open redirects.
+  const rawReturn = searchParams.get("next") ?? searchParams.get("returnTo");
+  const returnTo =
+    rawReturn && rawReturn.startsWith("/") && !rawReturn.startsWith("//")
+      ? rawReturn
+      : null;
   const initialMode =
     searchParams.get("mode") === "signup" ? "signup" : "signin";
 
@@ -40,13 +45,9 @@ function LoginInner() {
     initialMode,
     collectDisplayName: true,
     onSuccess: () => {
-      if (returnTo) {
-        // Full-page nav so the freshly set session cookie is sent.
-        window.location.href = returnTo;
-      } else {
-        router.push("/");
-        router.refresh();
-      }
+      // Full-page nav so the freshly set session cookie is sent with the next
+      // request (server-rendered guards rely on it).
+      window.location.href = returnTo ?? "/";
     },
   });
 

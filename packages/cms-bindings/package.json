@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./workshop": "./src/workshop/index.ts"
+    "./workshop": "./src/workshop/index.ts",
+    "./dossier": "./src/dossier/index.ts"
   },
   "scripts": {
     "build": "tsup",

@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "@elkdonis/auth-server";
 import { getActiveWorkQuestion } from "@/lib/forum";
 import styles from "../forum.module.css";
 import { NewThreadForm } from "./new-thread-form";
@@ -8,11 +6,7 @@ import { NewThreadForm } from "./new-thread-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewThreadPage() {
-  const session = await getServerSession();
-  if (!session?.user) {
-    redirect("/login?next=/forum/new");
-  }
-
+  // Open to everyone — signed-out visitors post as a stable anonymous guest.
   const question = await getActiveWorkQuestion();
 
   return (

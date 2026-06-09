@@ -18,7 +18,27 @@ function formatRelative(date: Date): string {
 }
 
 export function LatestForumThreads({ threads }: { threads: ForumThreadSummary[] }) {
-  if (threads.length === 0) return null;
+  // Anyone can post — signed in or not. Empty state still offers the CTA.
+  if (threads.length === 0) {
+    return (
+      <section className="feed-carousel">
+        <header className="feed-carousel__header">
+          <div className="feed-carousel__heading">
+            <p className="feed-carousel__kicker">From the forum</p>
+            <h3 className="feed-carousel__title">Latest threads</h3>
+          </div>
+          <div className="feed-carousel__controls">
+            <Link href="/forum/new" className="feed-carousel__all-link">
+              Start a thread
+            </Link>
+          </div>
+        </header>
+        <p style={{ margin: "0.5rem 0 0", opacity: 0.7, fontSize: "0.9rem" }}>
+          No threads yet — be the first to begin one. You can post anonymously.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <HorizontalCarousel
@@ -26,9 +46,14 @@ export function LatestForumThreads({ threads }: { threads: ForumThreadSummary[] 
       title="Latest threads"
       count={threads.length}
       headerRight={
-        <Link href="/forum" className="feed-carousel__all-link">
-          View all
-        </Link>
+        <>
+          <Link href="/forum/new" className="feed-carousel__all-link">
+            Start a thread
+          </Link>
+          <Link href="/forum" className="feed-carousel__all-link">
+            View all
+          </Link>
+        </>
       }
     >
       {threads.map((t) => (

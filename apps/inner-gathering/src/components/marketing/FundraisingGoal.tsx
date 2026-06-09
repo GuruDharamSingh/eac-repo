@@ -214,7 +214,7 @@ export function FundraisingGoal() {
                       onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "transparent")}
                     >
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontFamily: "var(--font-serif)", fontSize: "0.88rem", fontWeight: 500, color: "#01124E", margin: "0 0 0.2rem", lineHeight: 1.35 }}>
+                        <p style={{ fontFamily: '"Basteleur", serif', fontSize: "1rem", fontWeight: 500, color: "#01124E", margin: "0 0 0.2rem", lineHeight: 1.35, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                           {post.title}
                         </p>
                         <p style={{ fontFamily: "var(--font-sans)", fontSize: "0.65rem", color: "#6b6250", margin: 0 }}>

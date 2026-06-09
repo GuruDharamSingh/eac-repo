@@ -890,3 +890,251 @@ nextjs-portal {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================
+   Profile pages — artist + dealer + about
+   ===================================================== */
+
+.profile-intro {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 18px 0 0;
+}
+
+.profile-back {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #20d7ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.profile-back:hover {
+  color: #fff;
+}
+
+.profile-name {
+  margin: 0 0 4px;
+  color: #ff8c00;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.profile-role {
+  margin: 0 0 14px;
+  color: #20d7ff;
+  font-size: 1rem;
+}
+
+.profile-body {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+  align-items: start;
+}
+
+.profile-sidebar {
+  border: 2px solid #9c40d8;
+  background: #050505;
+  padding: 14px;
+  color: #e8e3e4;
+}
+
+.profile-portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  margin-bottom: 14px;
+  border: 1px solid #40215c;
+}
+
+.profile-bio p {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #e8e3e4;
+}
+
+.profile-email {
+  display: inline-block;
+  margin-top: 4px;
+  margin-bottom: 12px;
+  color: #20d7ff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.profile-email:hover {
+  color: #fff;
+}
+
+.profile-links {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-links li {
+  display: block;
+}
+
+.profile-links a {
+  color: #20d7ff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.profile-links a:hover {
+  color: #fff;
+}
+
+.profile-gallery {
+  border: 2px solid #9c40d8;
+  background: #050505;
+  padding: 14px;
+  min-height: 200px;
+}
+
+.artwork-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.artwork-card {
+  margin: 0;
+  border: 1px solid #40215c;
+  background: #020202;
+  overflow: hidden;
+}
+
+.artwork-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #111;
+}
+
+.artwork-card figcaption {
+  padding: 7px 8px;
+  color: #e8e3e4;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.profile-no-work {
+  color: #bca7cf;
+  font-size: 1rem;
+}
+
+@media (max-width: 760px) {
+  .profile-body {
+    grid-template-columns: 1fr;
+  }
+
+  .artwork-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .artwork-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* About page */
+
+.about-body {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+}
+
+.about-statement {
+  border: 2px solid #9c40d8;
+  background: #050505;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.about-statement p {
+  margin: 0 0 12px;
+  color: #e8e3e4;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  max-width: 740px;
+}
+
+.about-statement p:last-child {
+  margin-bottom: 0;
+}
+
+.about-sig {
+  color: #ff8c00 !important;
+  font-weight: 700;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px 14px;
+  border: 2px solid #40215c;
+  background: #050505;
+  text-align: center;
+  text-decoration: none;
+  color: #e8e3e4;
+  transition: border-color 0.15s ease;
+}
+
+a.team-card:hover {
+  border-color: #20d7ff;
+}
+
+.team-photo {
+  display: block;
+  width: 107px;
+  height: 107px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #40215c;
+  margin-bottom: 10px;
+  background: #111;
+}
+
+a.team-card:hover .team-photo {
+  border-color: #20d7ff;
+}
+
+.team-name {
+  margin: 0 0 4px;
+  color: #e8e3e4;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.team-role {
+  margin: 0;
+  color: #bca7cf;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

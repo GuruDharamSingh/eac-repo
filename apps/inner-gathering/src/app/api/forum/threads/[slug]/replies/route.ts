@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
 import { sanitizeRichText } from "@elkdonis/utils";
-import { createReply, getForumThread } from "@/lib/forum";
+import { createReply, getForumThread, resolveForumAuthorId } from "@/lib/forum";
 
 export async function POST(
   request: NextRequest,
@@ -9,10 +9,8 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+    // Open to everyone — signed-out visitors reply as a stable anonymous guest.
     const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const body = await request.json().catch(() => ({}));
     const content = typeof body.content === "string" ? body.content : "";
@@ -30,10 +28,11 @@ export async function POST(
       return NextResponse.json({ error: "Thread not found." }, { status: 404 });
     }
 
+    const userId = await resolveForumAuthorId(session?.user?.id);
     const reply = await createReply({
       threadId: thread.id,
       parentId: parentReplyId,
-      userId: session.user.id,
+      userId,
       content: sanitizeRichText(content),
     });
 

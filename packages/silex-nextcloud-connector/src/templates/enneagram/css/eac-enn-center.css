@@ -1,0 +1,87 @@
+/* eac-enn-center — centered concept card with its own glow orb. */
+
+.eac-enn-center {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(48px, 8vw, 88px) 24px;
+  border-top: 1px solid var(--eac-enn-line-soft);
+  text-align: center;
+}
+
+.eac-enn-center__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-center__orb {
+  width: min(200px, 52vw);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto 32px;
+  border-radius: 6px;
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(60, 60, 66, 0.35) 46%,
+      rgba(10, 10, 12, 0) 78%
+    ),
+    #050506;
+}
+
+.eac-enn-center__title {
+  margin: 0;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.1;
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-center__subtitle {
+  margin: 8px 0 0;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--eac-enn-ink-muted);
+}
+
+.eac-enn-center__types {
+  margin: 6px 0 28px;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--eac-enn-accent);
+}
+
+.eac-enn-center__need {
+  margin: 0 auto 24px;
+  max-width: 36rem;
+  font-size: 18px;
+  line-height: 1.75;
+}
+.eac-enn-center__need strong { color: var(--eac-enn-ink); }
+
+.eac-enn-center__list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 36rem;
+  text-align: left;
+}
+.eac-enn-center__list li {
+  position: relative;
+  padding: 12px 0 12px 22px;
+  font-size: 17px;
+  line-height: 1.6;
+  border-bottom: 1px solid var(--eac-enn-line-soft);
+}
+.eac-enn-center__list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 22px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--eac-enn-accent);
+}

@@ -14,6 +14,7 @@ import {
   createEtransferOrder,
   placeBid,
   removeCartLine,
+  setArtworkFavorite,
 } from "@elkdonis/commerce/server";
 import { siteConfig } from "@/config/site";
 
@@ -47,6 +48,26 @@ export async function addArtworkToCart(input: {
 export async function removeFromCart(lineId: string): Promise<void> {
   await removeCartLine({ lineId });
   revalidatePath("/cart");
+}
+
+/**
+ * Toggle whether the signed-in user has favourited an artwork. Returns the new
+ * state, or `needsAuth` when the visitor isn't signed in so the UI can prompt.
+ */
+export async function toggleFavoriteAction(input: {
+  artworkId: string;
+  favorited: boolean;
+}): Promise<{ ok: boolean; favorited?: boolean; needsAuth?: boolean }> {
+  const userId = await currentUserId();
+  if (!userId) return { ok: false, needsAuth: true };
+  const res = await setArtworkFavorite({
+    userId,
+    artworkId: input.artworkId,
+    favorited: input.favorited,
+  });
+  revalidatePath("/account");
+  revalidatePath(`/artworks/${input.artworkId}`);
+  return { ok: true, favorited: res.favorited };
 }
 
 /** Convert the current cart into an eTransfer order, then go to confirmation. */

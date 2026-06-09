@@ -1,0 +1,34 @@
+/* eac-enn-footer — quiet centered footer. */
+
+.eac-enn-footer {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-muted);
+  font-family: var(--eac-enn-body);
+  padding: clamp(56px, 9vw, 96px) 24px;
+  border-top: 1px solid var(--eac-enn-line-soft);
+  text-align: center;
+}
+
+.eac-enn-footer__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.eac-enn-footer__glyph {
+  width: 34px;
+  height: 34px;
+  opacity: 0.55;
+  margin-bottom: 10px;
+}
+
+.eac-enn-footer__copy,
+.eac-enn-footer__rights {
+  margin: 0;
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}

@@ -7,7 +7,11 @@ const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || "http://nextcloud-nginx:80";
 const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || "elkdonis";
 const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || "";
 
-const DEFAULT_ORG = "market";
+// Root folder (under the Nextcloud account's home) that holds the marketplace.
+// Every artist gets their own subfolder beneath it, so artwork media lives at:
+//   <MARKETPLACE_NEXTCLOUD_ROOT>/<artistFolder>/Images/<file>
+// Env-driven so dev and prod can point at different roots/instances.
+const MARKETPLACE_ROOT = process.env.MARKETPLACE_NEXTCLOUD_ROOT || "marketplace";
 const MAX_IMAGE_MB = 25;
 
 function encodeWebdavPath(path: string): string {
@@ -17,10 +21,43 @@ function encodeWebdavPath(path: string): string {
     .join("/");
 }
 
+function davUrl(path: string): string {
+  return `${NEXTCLOUD_URL}/remote.php/dav/files/${encodeURIComponent(
+    NEXTCLOUD_USER
+  )}/${encodeWebdavPath(path)}`;
+}
+
+function authHeader(): string {
+  return `Basic ${Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString("base64")}`;
+}
+
+/**
+ * Idempotently create each folder in a relative path via WebDAV MKCOL.
+ * Nextcloud returns 405 (Method Not Allowed) when a collection already exists,
+ * which we treat as success. Without this, the first PUT into a fresh artist
+ * folder would 409 because the parent collection doesn't exist yet.
+ */
+async function ensureFolderTree(relativeDir: string): Promise<void> {
+  const segments = relativeDir.split("/").filter(Boolean);
+  let current = "";
+  for (const seg of segments) {
+    current = current ? `${current}/${seg}` : seg;
+    const res = await fetch(davUrl(current), {
+      method: "MKCOL",
+      headers: { Authorization: authHeader() },
+    });
+    // 201 created, 405 already exists → both fine. Anything else: surface it.
+    if (res.status !== 201 && res.status !== 405) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`MKCOL ${current} failed ${res.status}: ${text}`);
+    }
+  }
+}
+
 /**
  * Multi-image artwork upload. Auth-gated: only signed-in marketplace artists may
- * upload. Files land in the artist's org folder on Nextcloud (admin-credentialed
- * WebDAV) and are served back through the /api/media proxy.
+ * upload. Files land in the artist's own subfolder under the marketplace root on
+ * Nextcloud (admin-credentialed WebDAV) and are served back through /api/media.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,15 +67,24 @@ export async function POST(request: NextRequest) {
     }
     const userId = session.user.db_user_id ?? session.user.id;
 
-    // Scope uploads to the artist's org folder (falls back to the neutral org).
-    let orgId = DEFAULT_ORG;
+    // Each artist gets a personal folder under the marketplace root. We key it
+    // by the marketplace_artists user_id (stable + unique). Only approved
+    // marketplace artists may upload here.
+    let artistFolder: string | null = null;
     try {
       const rows = (await db`
-        SELECT org_id FROM marketplace_artists WHERE user_id = ${userId} LIMIT 1
-      `) as unknown as Array<{ org_id: string }>;
-      if (rows[0]?.org_id) orgId = rows[0].org_id;
+        SELECT user_id::text AS uid FROM marketplace_artists
+        WHERE user_id = ${userId} LIMIT 1
+      `) as unknown as Array<{ uid: string }>;
+      if (rows[0]?.uid) artistFolder = rows[0].uid;
     } catch {
-      // keep default org
+      // fall through to the 403 below
+    }
+    if (!artistFolder) {
+      return NextResponse.json(
+        { error: "Only marketplace artists can upload artwork media." },
+        { status: 403 }
+      );
     }
 
     const formData = await request.formData();
@@ -62,22 +108,19 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const filename = `${timestamp}-${sanitizedName}`;
-    const relativePath = `EAC_Network/${orgId}/Media/Images/${filename}`;
+    const relativeDir = `${MARKETPLACE_ROOT}/${artistFolder}/Images`;
+    const relativePath = `${relativeDir}/${filename}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const auth = Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString(
-      "base64"
-    );
-    const url = `${NEXTCLOUD_URL}/remote.php/dav/files/${encodeURIComponent(
-      NEXTCLOUD_USER
-    )}/${encodeWebdavPath(relativePath)}`;
+    // Make sure marketplace/<artist>/Images exists before the PUT.
+    await ensureFolderTree(relativeDir);
 
-    const res = await fetch(url, {
+    const res = await fetch(davUrl(relativePath), {
       method: "PUT",
       headers: {
-        Authorization: `Basic ${auth}`,
+        Authorization: authHeader(),
         "Content-Type": file.type,
       },
       body: buffer,

@@ -462,6 +462,47 @@ services:
       - eac-network
       - nextcloud-network
 
+  # ArtDirect — standalone Online Artist Directory (OAD) app.
+  # The network's public commons / front door. Shares the substrate: same
+  # Postgres (directory_profiles, org_id='oad'), same Supabase auth, same
+  # @elkdonis/cms-bindings dossier rendering. arts-collective /directory
+  # redirects here.
+  artdirect:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-artdirect
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NODE_ENV: development
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Places autocomplete: self-hosted Photon (see `photon` service, profile geo).
+      # Until the OSM index is imported, dev uses offline fixtures via `mock`.
+      GEO_PROVIDER: ${GEO_PROVIDER:-mock}
+      PHOTON_URL: ${PHOTON_URL:-http://photon:2322}
+    volumes:
+      - .:/app
+      - /app/apps/artdirect/.next
+    ports:
+      - "3013:3013"
+    command: sh -c "cd apps/artdirect && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Amrit Vela Toronto – Sadhana community site
   amrit-canada:
     build:
@@ -619,6 +660,54 @@ services:
       - eac-network
       - nextcloud-network
 
+  # The Hidden Enneagram - dedicated app on hiddenenneagram.com.
+  # Renders the friend's Silex-published site (shared @elkdonis/silex-render)
+  # with its own org-scoped login/signup. Cookies stay host-only (no
+  # EAC_COOKIE_DOMAIN) so the session is independent to his domain.
+  hidden-enneagram:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-hidden-enneagram
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NODE_ENV: development
+      PORT: 3012
+      NEXT_PUBLIC_APP_URL: ${HIDDEN_ENNEAGRAM_URL:-http://localhost:3012}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      REDIS_URL: redis://redis:6379
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      EAC_OWNER_EMAIL: ${HIDDEN_ENNEAGRAM_OWNER_EMAIL:-}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+    volumes:
+      - .:/app
+      - /app/apps/hidden-enneagram/.next
+    ports:
+      - "3012:3012"
+    command: sh -c "pnpm install && cd apps/hidden-enneagram && pnpm docker:dev"
+    restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Silex - browser-based static site builder (opt-in custom layout per artist)
   # Editor is root-mounted at http://localhost:6805. The Arts app owns
   # /edit/{slug} as an authenticated launch gate; nginx should expose Silex on
@@ -644,14 +733,42 @@ services:
       - eac-network
       - nextcloud-network
 
+  # ── Photon: self-hosted places-autocomplete geocoder (OpenStreetMap) ────────
+  # Powers the artist-directory location search (city / neighbourhood / region /
+  # postal code) without Google or any external API.
+  #
+  # NOTE: first `up` downloads a prebuilt OSM search index for REGION — multi-GB
+  # (a country is a few GB; the planet is ~75GB+). It is therefore behind a
+  # compose profile so it does NOT start with the normal stack. Bring it up
+  # explicitly once, then point the app at it:
+  #   docker compose --profile geo up -d photon
+  #   (arts-collective) GEO_PROVIDER=photon  PHOTON_URL=http://photon:2322
+  # Host access for local `next dev`: http://localhost:2322
+  photon:
+    image: rtuszik/photon-docker:latest
+    container_name: eac-photon
+    profiles: ["geo"]
+    environment:
+      # Country/region extract to index, e.g. "ca" (Canada), "us", or "planet".
+      REGION: ${PHOTON_REGION:-ca}
+      UPDATE_STRATEGY: PARALLEL
+    volumes:
+      - photon_data:/photon/photon_data
+    ports:
+      - "2322:2322"
+    restart: unless-stopped
+    networks:
+      - eac-network
+
 volumes:
   postgres_data:
   redis_data:
   silex_data:
+  photon_data:
 
 networks:
   eac-network:
     driver: bridge
   nextcloud-network:
     external: true
-    name: nextcloud-aio
+    name: nextcloud-network

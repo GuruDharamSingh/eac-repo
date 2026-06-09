@@ -81,7 +81,6 @@ export default async function ThreadPage({
         <RepliesThread
           replies={replies}
           threadSlug={thread.slug}
-          isAuthed={isAuthed}
           canModerate={canModerate}
         />
       </div>

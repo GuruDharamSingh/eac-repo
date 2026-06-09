@@ -1,0 +1,28 @@
+{
+  "name": "@elkdonis/silex-render",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared renderer for Silex/Nextcloud-published org sites: fetch → bind → live React embeds. Consumed as source via transpilePackages.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/cms-bindings": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

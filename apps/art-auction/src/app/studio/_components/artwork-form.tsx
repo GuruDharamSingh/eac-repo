@@ -31,6 +31,7 @@ export type ArtworkFormInitial = {
   certificateOfAuthenticity?: boolean;
   provenanceNotes?: string | null;
   price?: number;
+  currency?: "CAD" | "USD" | "EUR";
   inventoryQty?: number;
   status?: string;
   images?: UploadedImage[];
@@ -81,6 +82,9 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
   const [price, setPrice] = React.useState(
     initial?.price != null ? String(initial.price) : ""
   );
+  const [currency, setCurrency] = React.useState<ArtworkFormInput["currency"]>(
+    initial?.currency ?? "CAD"
+  );
   const [inventory, setInventory] = React.useState(
     initial?.inventoryQty != null ? String(initial.inventoryQty) : "1"
   );
@@ -104,6 +108,7 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
       certificateOfAuthenticity: coa,
       provenanceNotes: provenance.trim() || null,
       price: Number(price) || 0,
+      currency,
       inventoryQty: numOrNull(inventory) ?? 1,
       images: images.map((img) => ({
         url: img.url,
@@ -222,18 +227,32 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
 
         <div>
           <label className={labelCls} htmlFor="price">
-            Price (CAD)
+            Price
           </label>
-          <input
-            id="price"
-            type="number"
-            min="0"
-            step="0.01"
-            className={inputCls}
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-          />
+          <div className="flex gap-2">
+            <input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              className={inputCls}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
+            />
+            <select
+              aria-label="Currency"
+              className={`${inputCls} w-28 shrink-0`}
+              value={currency}
+              onChange={(e) =>
+                setCurrency(e.target.value as ArtworkFormInput["currency"])
+              }
+            >
+              <option value="CAD">CAD</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
         </div>
 
         <div>

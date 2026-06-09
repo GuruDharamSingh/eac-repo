@@ -14,6 +14,8 @@ const {
   readWorkshopTemplateRegistry,
   readDossierTemplateCss,
   readDossierTemplateRegistry,
+  readEnneagramTemplateCss,
+  readEnneagramTemplateRegistry,
 } = require("./workshopTemplateRegistry");
 
 const CSS_URL = "/eac-blocks.css";
@@ -21,7 +23,17 @@ const WORKSHOP_TEMPLATE_URL = "/eac-workshop-template.json";
 const WORKSHOP_CSS_URL = "/eac-workshop-template.css";
 const DOSSIER_TEMPLATE_URL = "/eac-dossier-classified.json";
 const DOSSIER_CSS_URL = "/eac-dossier-classified.css";
-const ASSET_ROUTES = [CSS_URL, WORKSHOP_TEMPLATE_URL, WORKSHOP_CSS_URL, DOSSIER_TEMPLATE_URL, DOSSIER_CSS_URL];
+const ENNEAGRAM_TEMPLATE_URL = "/eac-enneagram.json";
+const ENNEAGRAM_CSS_URL = "/eac-enneagram.css";
+const ASSET_ROUTES = [
+  CSS_URL,
+  WORKSHOP_TEMPLATE_URL,
+  WORKSHOP_CSS_URL,
+  DOSSIER_TEMPLATE_URL,
+  DOSSIER_CSS_URL,
+  ENNEAGRAM_TEMPLATE_URL,
+  ENNEAGRAM_CSS_URL,
+];
 const CSS_FILE = path.join(__dirname, "eac-blocks.css");
 
 function registerEditorAssets(app) {
@@ -85,11 +97,37 @@ function registerEditorAssets(app) {
     }
   }
 
+  function eacEnneagramTemplate(req, res, next) {
+    try {
+      const body = JSON.stringify(readEnneagramTemplateRegistry());
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read enneagram template", err);
+      next(err);
+    }
+  }
+
+  function eacEnneagramCss(req, res, next) {
+    try {
+      const body = readEnneagramTemplateCss();
+      res.set("Content-Type", "text/css; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read enneagram css", err);
+      next(err);
+    }
+  }
+
   app.get(CSS_URL, eacEditorAssets);
   app.get(WORKSHOP_TEMPLATE_URL, eacWorkshopTemplate);
   app.get(WORKSHOP_CSS_URL, eacWorkshopCss);
   app.get(DOSSIER_TEMPLATE_URL, eacDossierTemplate);
   app.get(DOSSIER_CSS_URL, eacDossierCss);
+  app.get(ENNEAGRAM_TEMPLATE_URL, eacEnneagramTemplate);
+  app.get(ENNEAGRAM_CSS_URL, eacEnneagramCss);
 }
 
 module.exports = {
@@ -99,5 +137,7 @@ module.exports = {
   WORKSHOP_TEMPLATE_URL,
   DOSSIER_CSS_URL,
   DOSSIER_TEMPLATE_URL,
+  ENNEAGRAM_CSS_URL,
+  ENNEAGRAM_TEMPLATE_URL,
   registerEditorAssets,
 };

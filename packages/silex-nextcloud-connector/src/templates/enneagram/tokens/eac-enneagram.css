@@ -1,0 +1,38 @@
+/*
+  eac-enneagram.css — design tokens for "The Hidden Enneagram" template.
+  ======================================================================
+  Dark, near-black, mystical, high-contrast serif. Variable names are
+  namespaced --eac-enn-* so they never collide with the global EAC tokens
+  or the workshop / dossier templates. Loaded first (manifest.tokens).
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --eac-enn-bg:         #0a0a0c;   /* page near-black */
+  --eac-enn-bg-soft:    #111116;   /* raised panels */
+  --eac-enn-bg-card:    #131319;
+
+  /* ── Ink ──────────────────────────────────────────────────── */
+  --eac-enn-ink:        #ece7dd;   /* warm off-white */
+  --eac-enn-ink-soft:   #bcb6aa;   /* body copy */
+  --eac-enn-ink-muted:  #807a6e;   /* labels, captions */
+
+  /* ── Accent (the teal used for links on the source site) ──── */
+  --eac-enn-accent:     #3aa99c;
+  --eac-enn-accent-deep:#0f766e;
+
+  /* ── Lines ────────────────────────────────────────────────── */
+  --eac-enn-line:       rgba(236, 231, 221, 0.14);
+  --eac-enn-line-soft:  rgba(236, 231, 221, 0.07);
+
+  /* ── Type ─────────────────────────────────────────────────── */
+  --eac-enn-display: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --eac-enn-body:    'EB Garamond', Garamond, Georgia, serif;
+
+  /* ── Layout ───────────────────────────────────────────────── */
+  --eac-enn-maxw:       720px;
+  --eac-enn-maxw-wide:  960px;
+  --eac-enn-pad-y:      96px;
+}

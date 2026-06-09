@@ -1,0 +1,20 @@
+<!--
+  eac-enn-inquiry.html — the contact / inquiry section. The <eac-embed> is a
+  LIVE React slot: arts-collective replaces it with the InquiryForm island on
+  the public site (it emails the org owner). In the editor it shows a placeholder.
+-->
+<section class="eac-enn-inquiry" data-gjs-type="eac-enn-inquiry">
+  <div class="eac-enn-inquiry__inner">
+    <h2 class="eac-enn-inquiry__heading" data-gjs-editable="true">Get in Touch</h2>
+    <p class="eac-enn-inquiry__lead" data-gjs-editable="true">
+      Whether you have a question, an idea, or just want to say hello, feel free to
+      reach out.
+    </p>
+    <eac-embed data-eac-component="inquiry" data-variant="inline" data-title="Send your inquiry">
+      <div class="eac-editor-placeholder">
+        <strong>Inquiry form</strong>
+        <span>The live contact form renders on the public site.</span>
+      </div>
+    </eac-embed>
+  </div>
+</section>

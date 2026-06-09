@@ -38,8 +38,8 @@ export function FeatureInitiative() {
   }
 
   const eyebrow = cfg.eyebrow ?? "Current Offerings - Spring 2026";
-  const heading = cfg.heading ?? "Residency, Studios, Galleries";
-  const body = cfg.body ?? "The collective has just purchased some beautiful secluded land close to conservation areas, and we are very excited to be developing from the ground up, a permaculture design principles aligned compound. The compound will feature permaculture food forest, artist residences, studios, and galleries. Horseback riding and hiking trails are nearby.";
+  const heading = cfg.heading ?? "Web Portal";
+  const body = cfg.body ?? "Excited to share our site with you that is now being soft launched as Inquiry in to What Is Art For, and facilitated on our web portal. This is an example of what's to come as an offering to anyone wishing to have something similar for their groups!";
   const cta = cfg.cta ?? "Make an Inquiry";
 
   return (
@@ -51,9 +51,9 @@ export function FeatureInitiative() {
         >
           <div className="initiative-copy">
             <p className="section-eyebrow">{eyebrow}</p>
-            <h2 className="section-heading">{heading}</h2>
+            <h2 className="section-heading" style={{ fontFamily: '"Brothers", var(--font-brothers), sans-serif' }}>{heading}</h2>
             <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0" } as React.CSSProperties} />
-            <div style={{ fontFamily: "var(--font-sans)", color: "#9ca3af", lineHeight: 1.8, marginBottom: "1.25rem" }}>
+            <div style={{ fontFamily: '"Basteleur", serif', color: "#9ca3af", lineHeight: 1.8, marginBottom: "1.25rem" }}>
               {body.split(/\n+/).map((para, i) => (
                 <p key={i} style={{ margin: "0 0 0.75em" }}>{para}</p>
               ))}

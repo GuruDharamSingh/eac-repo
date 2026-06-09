@@ -49,10 +49,6 @@
   overflow-x: hidden;
 }
 
-.marketing-root,
-.marketing-root *:not(svg):not(svg *) {
-  font-family: var(--font-sans) !important;
-}
 
 /* Hero Background Animation */
 @keyframes gradient-shift {
@@ -533,7 +529,7 @@ body::before {
 }
 
 .about-lead {
-  font-family: var(--font-serif);
+  font-family: "Basteleur", serif;
   font-size: 1.3rem;
   line-height: 1.8;
   color: #d1d5db;
@@ -1204,6 +1200,8 @@ details.member-card[open] .member-bio-wrap {
   .landing-title {
     font-size: clamp(3rem, 18vw, 6rem);
     letter-spacing: 0.03em;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 
   .landing-subtitle {

@@ -173,6 +173,8 @@ export interface Artwork {
   status: ArtworkStatus;
   primaryImageId?: string | null;
   metadata: Record<string, unknown>;
+  /** Denormalised detail-page view counter (migration 057). */
+  viewCount: number;
   createdAt: string;
   updatedAt: string;
 

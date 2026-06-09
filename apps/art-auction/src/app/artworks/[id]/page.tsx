@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getArtworkById } from "@elkdonis/commerce/queries";
+import {
+  getArtworkById,
+  incrementArtworkView,
+  isArtworkFavorited,
+} from "@elkdonis/commerce/queries";
 import { PriceBlock, BuyNowButton } from "@elkdonis/commerce/components";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { ArtworkGallery } from "@/components/artwork-gallery";
+import { FavoriteButton } from "@/components/favorite-button";
+import { MessageArtistButton } from "@/components/message-artist-button";
 import { addArtworkToCart } from "@/app/actions";
+import { getCurrentUserId } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +35,14 @@ export default async function ArtworkDetailPage({
   const { id } = await params;
   const artwork = await getArtworkById(id);
   if (!artwork) notFound();
+
+  // Count this view (fire-and-forget; never blocks render).
+  void incrementArtworkView(artwork.id);
+
+  const userId = await getCurrentUserId();
+  const favorited = userId
+    ? await isArtworkFavorited(userId, artwork.id)
+    : false;
 
   const variant = artwork.variants?.[0];
   const lot = artwork.lot;
@@ -85,10 +100,38 @@ export default async function ArtworkDetailPage({
             )}
           </div>
 
-          <PriceBlock artwork={artwork} variant={variant} lot={lot} size="lg" />
+          <div className="flex items-start justify-between gap-4">
+            <PriceBlock artwork={artwork} variant={variant} lot={lot} size="lg" />
+            <FavoriteButton
+              artworkId={artwork.id}
+              initialFavorited={favorited}
+              variant="full"
+            />
+          </div>
 
-          {/* Purchase / auction action */}
-          {lot ? (
+          {/* Purchase / auction action — buy-now is the primary path; a live
+              auction (if any) is offered as a secondary option below. */}
+          {variant && artwork.status === "available" ? (
+            <div className="flex flex-col gap-3">
+              <BuyNowButton
+                artwork={artwork}
+                variant={variant}
+                onAdd={addArtworkToCart}
+              />
+              {lot && lot.status === "live" && (
+                <p className="text-sm text-muted-foreground">
+                  Prefer to bid?{" "}
+                  <Link
+                    href={`/lots/${lot.id}`}
+                    className="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+                  >
+                    This piece is also at live auction
+                  </Link>{" "}
+                  — ends {new Date(lot.endAt).toLocaleDateString("en-CA")}.
+                </p>
+              )}
+            </div>
+          ) : lot ? (
             <div className="rounded-lg border border-border bg-accent/30 p-5">
               <p className="font-medium">This piece is being sold at auction.</p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -104,12 +147,6 @@ export default async function ArtworkDetailPage({
                 View auction & bid
               </Link>
             </div>
-          ) : variant && artwork.status === "available" ? (
-            <BuyNowButton
-              artwork={artwork}
-              variant={variant}
-              onAdd={addArtworkToCart}
-            />
           ) : (
             <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
               {artwork.status === "sold"
@@ -118,6 +155,14 @@ export default async function ArtworkDetailPage({
                 ? "This piece is reserved pending payment."
                 : "This piece is not currently available for purchase."}
             </div>
+          )}
+
+          {/* Ask the artist (hidden on your own piece) */}
+          {userId !== artwork.artistUserId && (
+            <MessageArtistButton
+              artworkId={artwork.id}
+              artistName={artwork.artistName ?? null}
+            />
           )}
 
           {/* Specs */}

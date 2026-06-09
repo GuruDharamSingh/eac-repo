@@ -7,11 +7,62 @@
  * Read access is public; write access is checked at the API/page level.
  */
 
+import { randomUUID } from "crypto";
+import { cookies } from "next/headers";
 import { db } from "@elkdonis/db";
 import { isAdmin } from "@elkdonis/auth-server";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { nanoid } from "nanoid";
 import { stripHtml } from "./strip-html";
+
+// Anonymous forum participation
+// ─────────────────────────────────────────────────────────────────────────────
+// Anyone can post to the forum, signed in or not. A signed-out visitor is given
+// a lightweight "guest" user row (display name "Anonymous 4821") so the existing
+// `JOIN users` read paths keep working unchanged. The guest's id is stashed in
+// an httpOnly cookie so the same browser keeps one stable anonymous identity
+// across threads and replies until cookies are cleared.
+const GUEST_COOKIE = "ig_guest_id";
+const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function getOrCreateGuestUserId(): Promise<string> {
+  const jar = await cookies();
+  const existing = jar.get(GUEST_COOKIE)?.value;
+  if (existing && UUID_RE.test(existing)) {
+    const rows = await db<{ id: string }[]>`
+      SELECT id FROM users WHERE id = ${existing} LIMIT 1
+    `;
+    if (rows.length > 0) return rows[0].id;
+  }
+
+  const id = randomUUID();
+  const displayName = `Anonymous ${Math.floor(1000 + Math.random() * 9000)}`;
+  await db`
+    INSERT INTO users (id, email, display_name)
+    VALUES (${id}, ${`guest-${id}@anon.invalid`}, ${displayName})
+  `;
+
+  jar.set(GUEST_COOKIE, id, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: GUEST_COOKIE_MAX_AGE,
+  });
+  return id;
+}
+
+/**
+ * Resolve the author id for a forum write. Logged-in users post as themselves;
+ * signed-out visitors post as a stable per-browser anonymous guest.
+ */
+export async function resolveForumAuthorId(
+  sessionUserId: string | null | undefined
+): Promise<string> {
+  if (sessionUserId) return sessionUserId;
+  return getOrCreateGuestUserId();
+}
 
 // Re-export the canonical reply types/helpers from @elkdonis/db so callers
 // inside the forum can stay against a single source of truth.

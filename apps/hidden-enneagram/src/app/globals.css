@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/*
+  Dark theme tokens so the shared embed shells (which use Tailwind color
+  utilities like bg-card / border-border / text-muted-foreground / bg-primary)
+  resolve to enneagram-appropriate values. The published site brings its own
+  CSS; this only backs the app chrome + any non-inline embeds.
+*/
+@theme {
+  --color-background: #0a0a0c;
+  --color-foreground: #ece7dd;
+  --color-card: #131319;
+  --color-border: rgba(236, 231, 221, 0.14);
+  --color-muted: #16161c;
+  --color-muted-foreground: #8a857b;
+  --color-accent: #16161c;
+  --color-primary: #3aa99c;
+  --color-primary-foreground: #04130f;
+  --color-destructive: #e07a7a;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-cormorant: "Cormorant Garamond", Georgia, serif;
+  --font-eb-garamond: "EB Garamond", Georgia, serif;
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}

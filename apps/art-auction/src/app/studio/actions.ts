@@ -94,6 +94,7 @@ export type ArtworkFormInput = {
   provenanceNotes?: string | null;
   /** Price in major units (dollars); converted to minor units here. */
   price: number;
+  currency?: Currency;
   inventoryQty?: number;
   images: ArtworkMediaInput[];
 };
@@ -124,6 +125,7 @@ export async function createArtworkAction(
       certificateOfAuthenticity: input.certificateOfAuthenticity ?? false,
       provenanceNotes: input.provenanceNotes ?? null,
       priceMinor: toMinor(input.price),
+      currency: input.currency,
       inventoryQty: input.inventoryQty ?? 1,
       images: input.images,
     });
@@ -154,6 +156,7 @@ export async function updateArtworkAction(
       certificateOfAuthenticity: input.certificateOfAuthenticity ?? false,
       provenanceNotes: input.provenanceNotes ?? null,
       priceMinor: toMinor(input.price),
+      currency: input.currency,
       inventoryQty: input.inventoryQty ?? undefined,
     });
     await setArtworkMedia(artworkId, userId, input.images);

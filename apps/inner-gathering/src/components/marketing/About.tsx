@@ -26,7 +26,7 @@ export function About() {
           className={`reveal ${isVisible ? "in-view" : ""}`}
           style={{ textAlign: "center", marginBottom: "4rem" }}
         >
-          <h2 className="section-heading">A Mutual Aid Society</h2>
+          <h2 className="section-heading" style={{ fontFamily: 'var(--font-brothers, "Brothers"), sans-serif', fontSize: 'clamp(3.75rem, 7.5vw, 5.625rem)' }}>A Mutual Aid Society</h2>
           <hr
             className="gold-rule"
             style={{ "--rule-width": "60px" } as React.CSSProperties}

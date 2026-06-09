@@ -15,7 +15,7 @@ function artist(id: string, name: string, href: string, status = "Artist profile
 }
 
 export const defaultGalleryItems: GalleryItem[] = [
-  artist("andre-pace", "Andre Pace", "https://ifacgroup.com/artists/andrepace/", "Featured artist"),
+  artist("andre-pace", "Andre Pace", "/artists/andrepace", "Featured artist"),
   {
     id: "andre-pace-vote",
     title: "Vote For Andre",
@@ -26,27 +26,27 @@ export const defaultGalleryItems: GalleryItem[] = [
     linkUrl: "https://peoplesartist.org/2026/andre-pace/",
     status: "Campaign link",
   },
-  artist("carla-woody", "Carla Woody", "https://ifacgroup.com/artists/carlawoody/"),
-  artist("cathleen-clapper", "CathleenAclapper", "https://ifacgroup.com/artists/cathleenclapper/"),
-  artist("dana-mccool", "Dana McCool", "https://ifacgroup.com/artists/danamccool/"),
-  artist("ej-gold", "E.J. Gold", "https://ifacgroup.com/artists/ejgold/"),
-  artist("eric-brummel", "Eric Brummel", "https://ifacgroup.com/artists/ericbrummel/", "Artist and dealer"),
-  artist("jaswant-bains", "Jaswant Bains", "https://ifacgroup.com/artists/jaswantbains/"),
-  artist("jim-hodgkinson", "Jim Hodgkinson", "https://ifacgroup.com/artists/jimhodgkinson/"),
-  artist("gerald-porter", "Gerald Porter", "https://ifacgroup.com/artists/geraldporter/"),
-  artist("lavonne-petridis", "LaVonne Petridis", "https://ifacgroup.com/artists/lavonnepetridis/"),
-  artist("michele-deparis", "Michele DeParis", "https://ifacgroup.com/artists/micheledeparis/"),
-  artist("nadija-szram", "Nadija Szram", "https://ifacgroup.com/artists/nadijaszram/"),
-  artist("yanesh-griffith", "Yanesh Griffith", "https://ifacgroup.com/artists/yaneshgriffith/"),
+  artist("carla-woody", "Carla Woody", "/artists/carlawoody"),
+  artist("cathleen-clapper", "Cathleen Clapper", "/artists/cathleenclapper"),
+  artist("dana-mccool", "Dana McCool", "/artists/danamccool"),
+  artist("ej-gold", "E.J. Gold", "/artists/ejgold"),
+  artist("eric-brummel", "Eric Brummel", "/artists/ericbrummel", "Artist and dealer"),
+  artist("jaswant-bains", "Jaswant Bains", "/artists/jaswantbains"),
+  artist("jim-hodgkinson", "Jim Hodgkinson", "/artists/jimhodgkinson"),
+  artist("gerald-porter", "Gerald Porter", "/artists/geraldporter"),
+  artist("lavonne-petridis", "LaVonne Petridis", "/artists/lavonnepetridis"),
+  artist("michele-deparis", "Michele DeParis", "/artists/micheledeparis"),
+  artist("nadija-szram", "Nadija Szram", "/artists/nadijaszram"),
+  artist("yanesh-griffith", "Yanesh Griffith", "/artists/yaneshgriffith"),
 ];
 
 export const defaultDealerLinks: SiteLink[] = [
-  { label: "Berni Laplante", href: "https://ifacgroup.com/dealers/bernilaplante/" },
-  { label: "William Albin", href: "https://ifacgroup.com/dealers/billalbin/" },
-  { label: "Hans Maack", href: "https://ifacgroup.com/dealers/hansmaack/" },
-  { label: "Eric Brummel", href: "https://ifacgroup.com/artists/ericbrummel/" },
-  { label: "Kevin Meadows", href: "https://ifacgroup.com/dealers/kevinmeadows/" },
-  { label: "Michael McDonnell", href: "https://ifacgroup.com/dealers/mmcdonnell/" },
+  { label: "Berni Laplante", href: "/dealers/bernilaplante" },
+  { label: "William Albin", href: "/dealers/billalbin" },
+  { label: "Hans Maack", href: "/dealers/hansmaack" },
+  { label: "Eric Brummel", href: "/artists/ericbrummel" },
+  { label: "Kevin Meadows", href: "/dealers/kevinmeadows" },
+  { label: "Michael McDonnell", href: "/dealers/mmcdonnell" },
 ];
 
 export const defaultSocialLinks: SiteLink[] = [

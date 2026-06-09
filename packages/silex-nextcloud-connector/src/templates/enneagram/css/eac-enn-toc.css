@@ -1,0 +1,30 @@
+/* eac-enn-toc — centered link list with hairline rules between rows. */
+
+.eac-enn-toc {
+  background: var(--eac-enn-bg);
+  font-family: var(--eac-enn-body);
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--eac-enn-line-soft);
+}
+
+.eac-enn-toc__item {
+  display: block;
+  text-align: center;
+  padding: 20px 8px;
+  color: var(--eac-enn-ink-soft);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--eac-enn-line-soft);
+  transition: color 0.2s ease, letter-spacing 0.2s ease;
+}
+
+.eac-enn-toc__item:hover {
+  color: var(--eac-enn-accent);
+  letter-spacing: 0.26em;
+}

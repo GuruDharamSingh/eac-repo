@@ -17,6 +17,7 @@
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/messaging": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/payments": "workspace:*",
     "@elkdonis/redis": "workspace:*",

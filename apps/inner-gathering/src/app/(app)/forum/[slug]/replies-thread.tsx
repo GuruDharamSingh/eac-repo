@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { ChevronDown, ChevronRight, CornerUpLeft, Trash2 } from "lucide-react";
 import { RichText } from "@elkdonis/ui";
 import type { Reply } from "@/lib/forum";
@@ -12,7 +11,6 @@ import styles from "../forum.module.css";
 interface RepliesThreadProps {
   replies: Reply[];
   threadSlug: string;
-  isAuthed: boolean;
   canModerate?: boolean;
 }
 
@@ -105,7 +103,6 @@ function ReplyItem({
   depth: number;
   ancestorMap: Map<string, ReplyNode>;
   threadSlug: string;
-  isAuthed: boolean;
   canModerate: boolean;
   onDelete: (id: string) => void;
   highlightedId: string | null;
@@ -160,28 +157,24 @@ function ReplyItem({
         </a>
       </div>
       <ReplyBody content={node.content} />
-      {(isAuthed || canModerate) && (
-        <div className={styles.replyActions}>
-          {isAuthed && (
-            <button
-              type="button"
-              className={styles.linkBtn}
-              onClick={() => setReplying((s) => !s)}
-            >
-              {replying ? "Cancel" : "Reply"}
-            </button>
-          )}
-          {canModerate && (
-            <button
-              type="button"
-              className={styles.moderateDeleteLink}
-              onClick={() => onDelete(node.id)}
-            >
-              <Trash2 size={12} aria-hidden="true" /> Delete
-            </button>
-          )}
-        </div>
-      )}
+      <div className={styles.replyActions}>
+        <button
+          type="button"
+          className={styles.linkBtn}
+          onClick={() => setReplying((s) => !s)}
+        >
+          {replying ? "Cancel" : "Reply"}
+        </button>
+        {canModerate && (
+          <button
+            type="button"
+            className={styles.moderateDeleteLink}
+            onClick={() => onDelete(node.id)}
+          >
+            <Trash2 size={12} aria-hidden="true" /> Delete
+          </button>
+        )}
+      </div>
       {replying && (
         <div style={{ marginTop: "0.75rem" }}>
           <ReplyForm
@@ -201,7 +194,6 @@ function ReplyItem({
               depth={depth + 1}
               ancestorMap={ancestorMap}
               threadSlug={threadSlug}
-              isAuthed={isAuthed}
               canModerate={canModerate}
               onDelete={onDelete}
               highlightedId={highlightedId}
@@ -226,7 +218,6 @@ function TopLevelReply({
   node: ReplyNode;
   ancestorMap: Map<string, ReplyNode>;
   threadSlug: string;
-  isAuthed: boolean;
   canModerate: boolean;
   onDelete: (id: string) => void;
   highlightedId: string | null;
@@ -289,15 +280,13 @@ function TopLevelReply({
       </div>
       <ReplyBody content={node.content} />
       <div className={styles.replyActions}>
-        {isAuthed && (
-          <button
-            type="button"
-            className={styles.linkBtn}
-            onClick={() => setReplying((s) => !s)}
-          >
-            {replying ? "Cancel" : "Reply"}
-          </button>
-        )}
+        <button
+          type="button"
+          className={styles.linkBtn}
+          onClick={() => setReplying((s) => !s)}
+        >
+          {replying ? "Cancel" : "Reply"}
+        </button>
         {canModerate && (
           <button
             type="button"
@@ -336,7 +325,6 @@ function TopLevelReply({
               depth={1}
               ancestorMap={ancestorMap}
               threadSlug={threadSlug}
-              isAuthed={isAuthed}
               canModerate={canModerate}
               onDelete={onDelete}
               highlightedId={highlightedId}
@@ -358,7 +346,7 @@ function flattenAncestorMap(roots: ReplyNode[]): Map<string, ReplyNode> {
   return map;
 }
 
-export function RepliesThread({ replies, threadSlug, isAuthed, canModerate = false }: RepliesThreadProps) {
+export function RepliesThread({ replies, threadSlug, canModerate = false }: RepliesThreadProps) {
   const router = useRouter();
   const tree = buildReplyTree(replies);
   const ancestorMap = flattenAncestorMap(tree);
@@ -406,7 +394,6 @@ export function RepliesThread({ replies, threadSlug, isAuthed, canModerate = fal
               node={r}
               ancestorMap={ancestorMap}
               threadSlug={threadSlug}
-              isAuthed={isAuthed}
               canModerate={canModerate}
               onDelete={handleDelete}
               highlightedId={highlightedId}
@@ -415,16 +402,7 @@ export function RepliesThread({ replies, threadSlug, isAuthed, canModerate = fal
         </ul>
       )}
 
-      {isAuthed ? (
-        <ReplyForm threadSlug={threadSlug} />
-      ) : (
-        <p className={styles.signedOutNote}>
-          <Link href={`/login?next=/forum/${encodeURIComponent(threadSlug)}`}>
-            Sign in
-          </Link>{" "}
-          to add to the conversation.
-        </p>
-      )}
+      <ReplyForm threadSlug={threadSlug} />
     </section>
   );
 }

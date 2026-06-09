@@ -1,0 +1,75 @@
+/* eac-enn-offering — centered offering card with glow + price + CTA. */
+
+.eac-enn-offering {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(40px, 7vw, 80px) 24px;
+  border-top: 1px solid var(--eac-enn-line-soft);
+  text-align: center;
+}
+
+.eac-enn-offering__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-offering__orb {
+  width: min(220px, 56vw);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto 28px;
+  border-radius: 6px;
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(60, 60, 66, 0.35) 46%,
+      rgba(10, 10, 12, 0) 78%
+    ),
+    #050506;
+}
+
+.eac-enn-offering__title {
+  margin: 0;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.08;
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-offering__price {
+  margin: 12px 0 24px;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--eac-enn-accent);
+}
+
+.eac-enn-offering__body {
+  margin: 0 auto 28px;
+  max-width: 36rem;
+  text-align: left;
+}
+.eac-enn-offering__body p {
+  margin: 0 0 16px;
+  font-size: 17px;
+  line-height: 1.72;
+}
+
+.eac-enn-offering__cta {
+  display: inline-block;
+  padding: 13px 30px;
+  border: 1px solid var(--eac-enn-line);
+  border-radius: 999px;
+  color: var(--eac-enn-ink);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.eac-enn-offering__cta:hover {
+  background: var(--eac-enn-accent);
+  border-color: var(--eac-enn-accent);
+  color: #04130f;
+}

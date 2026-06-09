@@ -40,6 +40,10 @@ out/
 build
 dist
 
+# Raw drop / scratch staging (large source dumps; useful assets get copied into apps)
+/drop for new things./
+/drop*/
+
 
 # Debug
 npm-debug.log*

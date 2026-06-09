@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 import { getMarketplaceArtist } from "@elkdonis/commerce/queries";
 import type { MarketplaceArtist } from "@elkdonis/commerce/types";
+import { db } from "@elkdonis/db";
 
 /** Internal database user id (users.id), or null when signed out. */
 export async function getCurrentUserId(): Promise<string | null> {
@@ -9,6 +10,34 @@ export async function getCurrentUserId(): Promise<string | null> {
     const session = await getServerSession();
     if (!session.user) return null;
     return session.user.db_user_id ?? session.user.id;
+  } catch {
+    return null;
+  }
+}
+
+export interface CurrentUser {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+}
+
+/** Lightweight signed-in user info for the header / account page, or null. */
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  try {
+    const session = await getServerSession();
+    const user = session.user;
+    if (!user) return null;
+    const id = user.db_user_id ?? user.id;
+    let displayName: string | null = null;
+    try {
+      const rows = (await db`
+        SELECT display_name FROM users WHERE id = ${id} LIMIT 1
+      `) as unknown as Array<{ display_name: string | null }>;
+      displayName = rows[0]?.display_name ?? null;
+    } catch {
+      // non-fatal — fall back to email in the UI
+    }
+    return { id, email: user.email ?? null, displayName };
   } catch {
     return null;
   }

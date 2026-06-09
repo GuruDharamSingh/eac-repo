@@ -44,6 +44,7 @@ export default async function EditArtworkPage({
           certificateOfAuthenticity: artwork.certificateOfAuthenticity,
           provenanceNotes: artwork.provenanceNotes,
           price: defaultVariant ? defaultVariant.priceMinor / 100 : 0,
+          currency: (defaultVariant?.currency ?? "CAD") as "CAD" | "USD" | "EUR",
           inventoryQty: defaultVariant?.inventoryQty ?? 1,
           status: artwork.status,
           images: (artwork.media ?? []).map((m) => ({

@@ -1,0 +1,217 @@
+{
+  "id": "enneagram",
+  "name": "The Hidden Enneagram",
+  "version": "0.1.0",
+  "category": "EAC Enneagram Template",
+  "description": "Dark, serif, mystical teaching site for Enneagram material — pages, concept cards, type pages, and a bookable typing/consultation offering with a live inquiry form.",
+  "tokens": "tokens/eac-enneagram.css",
+  "cssOrder": [
+    "css/eac-enn-nav.css",
+    "css/eac-enn-hero.css",
+    "css/eac-enn-orb.css",
+    "css/eac-enn-toc.css",
+    "css/eac-enn-prose.css",
+    "css/eac-enn-center.css",
+    "css/eac-enn-type-header.css",
+    "css/eac-enn-qualities.css",
+    "css/eac-enn-triad.css",
+    "css/eac-enn-typenav.css",
+    "css/eac-enn-offering.css",
+    "css/eac-enn-inquiry.css",
+    "css/eac-enn-pullquote.css",
+    "css/eac-enn-footer.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-enn-nav",
+      "label": "Nav (glyph)",
+      "html": "html/eac-enn-nav.html",
+      "css": "css/eac-enn-nav.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["brandName"],
+      "notes": "Hamburger + centered enneagram glyph. Sticky top bar."
+    },
+    {
+      "id": "eac-enn-hero",
+      "label": "Page hero / title",
+      "html": "html/eac-enn-hero.html",
+      "css": "css/eac-enn-hero.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title"],
+      "notes": "Centered serif page title with kicker + lead."
+    },
+    {
+      "id": "eac-enn-orb",
+      "label": "Glow orb",
+      "html": "html/eac-enn-orb.html",
+      "css": "css/eac-enn-orb.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Decorative radial glow between sections."
+    },
+    {
+      "id": "eac-enn-toc",
+      "label": "Link stack (TOC)",
+      "html": "html/eac-enn-toc.html",
+      "css": "css/eac-enn-toc.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Vertical navigation link list with hairline dividers."
+    },
+    {
+      "id": "eac-enn-prose",
+      "label": "Prose section",
+      "html": "html/eac-enn-prose.html",
+      "css": "css/eac-enn-prose.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Heading + long-form body copy."
+    },
+    {
+      "id": "eac-enn-center",
+      "label": "Center concept card",
+      "html": "html/eac-enn-center.html",
+      "css": "css/eac-enn-center.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Gut/Heart/Head card: title, subtitle, types, Core Need, bullets, orb."
+    },
+    {
+      "id": "eac-enn-type-header",
+      "label": "Type header",
+      "html": "html/eac-enn-type-header.html",
+      "css": "css/eac-enn-type-header.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["title"],
+      "notes": "Type title + epithet + intro prose."
+    },
+    {
+      "id": "eac-enn-qualities",
+      "label": "Bulleted list (Key Qualities)",
+      "html": "html/eac-enn-qualities.html",
+      "css": "css/eac-enn-qualities.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Re-label heading for Key Qualities / Type Story / Wings."
+    },
+    {
+      "id": "eac-enn-triad",
+      "label": "Triad group",
+      "html": "html/eac-enn-triad.html",
+      "css": "css/eac-enn-triad.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Kicker + term + definition + Body/Image/Mind trio."
+    },
+    {
+      "id": "eac-enn-typenav",
+      "label": "Core Types grid",
+      "html": "html/eac-enn-typenav.html",
+      "css": "css/eac-enn-typenav.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Nine type chips + back link."
+    },
+    {
+      "id": "eac-enn-offering",
+      "label": "Offering card (paid)",
+      "html": "html/eac-enn-offering.html",
+      "css": "css/eac-enn-offering.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": ["title", "priceFull", "ctaLabel", "registrationUrl"],
+      "notes": "Typing/consultation offering. CTA binds to a workshop registration URL via data-*-trait."
+    },
+    {
+      "id": "eac-enn-inquiry",
+      "label": "Inquiry form (live)",
+      "html": "html/eac-enn-inquiry.html",
+      "css": "css/eac-enn-inquiry.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Live React slot (eac-embed data-eac-component=inquiry) — emails the owner on the public site."
+    },
+    {
+      "id": "eac-enn-pullquote",
+      "label": "Pull quote",
+      "html": "html/eac-enn-pullquote.html",
+      "css": "css/eac-enn-pullquote.css",
+      "required": false,
+      "repeatable": true,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Centered italic epigraph."
+    },
+    {
+      "id": "eac-enn-footer",
+      "label": "Footer",
+      "html": "html/eac-enn-footer.html",
+      "css": "css/eac-enn-footer.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Centered glyph + copyright."
+    }
+  ],
+  "pages": [
+    {
+      "id": "home",
+      "label": "Home page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-pullquote", "eac-enn-toc", "eac-enn-orb", "eac-enn-prose", "eac-enn-prose", "eac-enn-footer"]
+    },
+    {
+      "id": "introduction",
+      "label": "Introduction page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-prose", "eac-enn-toc", "eac-enn-center", "eac-enn-center", "eac-enn-center", "eac-enn-prose", "eac-enn-footer"]
+    },
+    {
+      "id": "centers",
+      "label": "Centers of Energy page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-prose", "eac-enn-center", "eac-enn-center", "eac-enn-center", "eac-enn-footer"]
+    },
+    {
+      "id": "triads",
+      "label": "Triads page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-toc", "eac-enn-triad", "eac-enn-triad", "eac-enn-triad", "eac-enn-footer"]
+    },
+    {
+      "id": "type",
+      "label": "Type page (template)",
+      "sections": ["eac-enn-nav", "eac-enn-type-header", "eac-enn-qualities", "eac-enn-prose", "eac-enn-triad", "eac-enn-triad", "eac-enn-typenav", "eac-enn-footer"]
+    },
+    {
+      "id": "services",
+      "label": "Services / Inquiries page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-offering", "eac-enn-offering", "eac-enn-prose", "eac-enn-inquiry", "eac-enn-footer"]
+    },
+    {
+      "id": "contact",
+      "label": "Contact page",
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-inquiry", "eac-enn-footer"]
+    }
+  ]
+}

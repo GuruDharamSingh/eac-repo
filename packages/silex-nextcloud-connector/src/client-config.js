@@ -25,17 +25,22 @@ const TEMPLATE_CATEGORY = "EAC Templates";
 const CONTENT_CATEGORY = "EAC Content";
 const WORKSHOP_CATEGORY = "EAC Workshop Template";
 const DOSSIER_CATEGORY = "EAC Dossier Template";
+const ENNEAGRAM_CATEGORY = "EAC Enneagram Template";
 
 const CSS_PATH = "/eac-blocks.css";
 const WORKSHOP_CSS_PATH = "/eac-workshop-template.css";
 const WORKSHOP_TEMPLATE_PATH = "/eac-workshop-template.json";
 const DOSSIER_CSS_PATH = "/eac-dossier-classified.css";
 const DOSSIER_TEMPLATE_PATH = "/eac-dossier-classified.json";
+const ENNEAGRAM_CSS_PATH = "/eac-enneagram.css";
+const ENNEAGRAM_TEMPLATE_PATH = "/eac-enneagram.json";
 
 let workshopTemplatePromise = null;
 let workshopCssPromise = null;
 let dossierTemplatePromise = null;
 let dossierCssPromise = null;
+let enneagramTemplatePromise = null;
+let enneagramCssPromise = null;
 
 function sameOriginUrl(path) {
   return (typeof window !== "undefined" && window.location ? window.location.origin : "") + path;
@@ -105,6 +110,34 @@ function loadDossierCss() {
   return dossierCssPromise;
 }
 
+function loadEnneagramTemplate() {
+  if (enneagramTemplatePromise) return enneagramTemplatePromise;
+  enneagramTemplatePromise = fetch(sameOriginUrl(ENNEAGRAM_TEMPLATE_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load enneagram template", err);
+      return null;
+    });
+  return enneagramTemplatePromise;
+}
+
+function loadEnneagramCss() {
+  if (enneagramCssPromise) return enneagramCssPromise;
+  enneagramCssPromise = fetch(sameOriginUrl(ENNEAGRAM_CSS_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.text();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load enneagram css", err);
+      return "";
+    });
+  return enneagramCssPromise;
+}
+
 function traitLabel(name) {
   return String(name || "")
     .replace(/^data-/, "")
@@ -130,6 +163,7 @@ const liveSlotBlocks = [
   { id: "eac-slot-poll", label: "Poll Slot", content: slot("poll", { "data-title": "Community poll", "data-question": "What should we offer next?", "data-options": "Practice|Workshop|Open studio" }) },
   { id: "eac-slot-live", label: "Live Slot", content: slot("live", { "data-title": "Live channel", "data-status": "Upcoming" }) },
   { id: "eac-slot-resources", label: "Resource Slot", content: slot("resources", { "data-title": "Resources", "data-items": "Notes|Replay|Worksheet" }) },
+  { id: "eac-slot-inquiry", label: "Inquiry Form Slot", content: slot("inquiry", { "data-title": "Send your inquiry" }) },
 ];
 
 const structureBlocks = [
@@ -246,6 +280,7 @@ function registerEmbedType(editor) {
               { id: "countdown", name: "Countdown" },
               { id: "live", name: "Live room" },
               { id: "resources", name: "Resources" },
+              { id: "inquiry", name: "Inquiry form" },
             ],
           },
           { type: "text", name: "data-title", label: "Title" },
@@ -442,6 +477,36 @@ function registerDossierTypes(editor, registry) {
   }
 }
 
+function registerEnneagramTypes(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.DomComponents || !editor.DomComponents.addType) return;
+  if (editor.__eacEnneagramTypesInstalled) return;
+  editor.__eacEnneagramTypesInstalled = true;
+
+  for (const section of registry.sections) {
+    if (!section || !section.id) continue;
+    editor.DomComponents.addType(section.id, {
+      isComponent(el) {
+        if (!el) return false;
+        if (el.getAttribute && el.getAttribute("data-gjs-type") === section.id) return true;
+        return hasClass(el, section.id);
+      },
+      model: {
+        defaults: {
+          name: section.label || section.id,
+          droppable: false,
+          copyable: true,
+          traits: (section.traits || []).map((trait) => ({
+            type: "text",
+            name: trait,
+            label: traitLabel(trait),
+          })),
+        },
+      },
+    });
+  }
+}
+
 function addWorkshopBlocks(editor, registry) {
   if (!registry || !Array.isArray(registry.sections)) return;
   if (!editor.BlockManager || !editor.BlockManager.add) return;
@@ -497,6 +562,47 @@ function addDossierBlocks(editor, registry) {
     editor.BlockManager.add(blockId, {
       label: section.label || section.id,
       category: DOSSIER_CATEGORY,
+      content: section.htmlContent,
+    });
+  }
+}
+
+function addEnneagramBlocks(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.BlockManager || !editor.BlockManager.add) return;
+
+  // id → section markup, so page compositions can be stitched together.
+  const sectionHtml = {};
+  for (const section of registry.sections) {
+    if (section && section.id) sectionHtml[section.id] = section.htmlContent || "";
+  }
+
+  // One block per page composition (Home page, Type page, …).
+  const pages = Array.isArray(registry.pages) ? registry.pages : [];
+  for (const page of pages) {
+    if (!page || !page.id || !Array.isArray(page.sections)) continue;
+    const blockId = `eac-enn-page-${page.id}`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    const content = page.sections
+      .map((id) => sectionHtml[id] || "")
+      .filter(Boolean)
+      .join("\n");
+    if (!content) continue;
+    editor.BlockManager.add(blockId, {
+      label: page.label || page.id,
+      category: ENNEAGRAM_CATEGORY,
+      content,
+    });
+  }
+
+  // One block per reusable section.
+  for (const section of registry.sections) {
+    if (!section || !section.id || !section.htmlContent) continue;
+    const blockId = `${section.id}--block`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    editor.BlockManager.add(blockId, {
+      label: section.label || section.id,
+      category: ENNEAGRAM_CATEGORY,
       content: section.htmlContent,
     });
   }
@@ -586,6 +692,35 @@ function seedDossierCssIntoEditor(editor, cssText) {
   }
 }
 
+function seedEnneagramCssIntoEditor(editor, cssText) {
+  if (!editor || !editor.Css || typeof editor.Css.addRules !== "function") return;
+  if (editor.__eacEnneagramCssSeeded) return;
+  editor.__eacEnneagramCssSeeded = true;
+
+  const existingRules = typeof editor.Css.getAll === "function" ? editor.Css.getAll() : null;
+  const alreadyHasEnneagramRules = existingRules
+    ? existingRules.some((rule) => {
+        if (!rule || typeof rule.getSelectorsString !== "function") return false;
+        const sel = rule.getSelectorsString();
+        return typeof sel === "string" && sel.indexOf(".eac-enn-") !== -1;
+      })
+    : false;
+  if (alreadyHasEnneagramRules) {
+    console.info("[eac-client-config] enneagram css already in project, skipping seed");
+    return;
+  }
+
+  if (!cssText) return;
+  try {
+    editor.Css.addRules(cssText);
+    console.info("[eac-client-config] enneagram css seeded into editor", {
+      bytes: cssText.length,
+    });
+  } catch (err) {
+    console.warn("[eac-client-config] failed to seed enneagram css", err);
+  }
+}
+
 function openBlocksPanelIfSimpleMode(editor) {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -604,7 +739,15 @@ function installTypesOnEditor(editor) {
   registerStructureTypes(editor);
 }
 
-function installBlocksOnEditor(editor, workshopRegistry, workshopCss, dossierRegistry, dossierCss) {
+function installBlocksOnEditor(
+  editor,
+  workshopRegistry,
+  workshopCss,
+  dossierRegistry,
+  dossierCss,
+  enneagramRegistry,
+  enneagramCss
+) {
   if (editor.__eacBlocksInstalled) return;
   editor.__eacBlocksInstalled = true;
 
@@ -633,9 +776,17 @@ function installBlocksOnEditor(editor, workshopRegistry, workshopCss, dossierReg
     console.info("[eac-client-config] dossier template installed");
   }
 
+  if (enneagramRegistry && !editor.__eacEnneagramBlocksInstalled) {
+    editor.__eacEnneagramBlocksInstalled = true;
+    registerEnneagramTypes(editor, enneagramRegistry);
+    addEnneagramBlocks(editor, enneagramRegistry);
+    if (enneagramCss) seedEnneagramCssIntoEditor(editor, enneagramCss);
+    console.info("[eac-client-config] enneagram template installed");
+  }
+
   console.info("[eac-client-config] installed", {
     blocks: editor.BlockManager.getAll().length,
-    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, SLOT_CATEGORY],
+    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, SLOT_CATEGORY],
   });
 
   setTimeout(() => openBlocksPanelIfSimpleMode(editor), 250);
@@ -659,11 +810,20 @@ export default async function eacClientConfig(config /*, _options */) {
     });
   } catch (_) { /* never throw out of a plugin entry */ }
 
-  const [initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss] = await Promise.all([
+  const [
+    initialWorkshopTemplate,
+    initialWorkshopCss,
+    initialDossierTemplate,
+    initialDossierCss,
+    initialEnneagramTemplate,
+    initialEnneagramCss,
+  ] = await Promise.all([
     loadWorkshopTemplate(),
     loadWorkshopCss(),
     loadDossierTemplate(),
     loadDossierCss(),
+    loadEnneagramTemplate(),
+    loadEnneagramCss(),
   ]);
 
   // Expose a global hook so we (or DevTools) can manually re-install blocks
@@ -677,7 +837,7 @@ export default async function eacClientConfig(config /*, _options */) {
           console.warn("[eac-client-config] no editor available for manual install");
           return null;
         }
-        installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss);
+        installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
         return editor.BlockManager.getAll().length;
       };
     }
@@ -697,7 +857,7 @@ export default async function eacClientConfig(config /*, _options */) {
     // different base URI than the parent (about:srcdoc / blob: / data:), in
     // which case relative paths like "/eac-blocks.css" silently fail to
     // resolve and the canvas renders without our grid/column styles.
-    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH]) {
+    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH]) {
       for (const candidate of [cssPath, sameOriginUrl(cssPath)]) {
         if (candidate && !styles.includes(candidate)) styles.push(candidate);
       }
@@ -711,6 +871,7 @@ export default async function eacClientConfig(config /*, _options */) {
       installTypesOnEditor(editor);
       registerWorkshopTypes(editor, initialWorkshopTemplate);
       registerDossierTypes(editor, initialDossierTemplate);
+      registerEnneagramTypes(editor, initialEnneagramTemplate);
     });
     gjs.plugins = plugins;
   });
@@ -722,13 +883,13 @@ export default async function eacClientConfig(config /*, _options */) {
       console.warn("[eac-client-config] grapesjs:end fired but no editor available");
       return;
     }
-    installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss);
+    installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
   });
 
   // Safety net: also try at startup:end. If grapesjs:end already fired, the
   // idempotent guard inside installBlocksOnEditor makes this a no-op.
   config.on("silex:startup:end", () => {
     const editor = typeof config.getEditor === "function" ? config.getEditor() : null;
-    if (editor) installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss);
+    if (editor) installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
   });
 }

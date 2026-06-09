@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
-import { createForumThread } from "@/lib/forum";
+import { createForumThread, resolveForumAuthorId } from "@/lib/forum";
 
 export async function POST(request: NextRequest) {
   try {
+    // Open to everyone — signed-out visitors post as a stable anonymous guest.
     const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const body = await request.json().catch(() => ({}));
     const title = typeof body.title === "string" ? body.title : "";
@@ -23,8 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Body is required." }, { status: 400 });
     }
 
+    const authorId = await resolveForumAuthorId(session?.user?.id);
     const thread = await createForumThread({
-      authorId: session.user.id,
+      authorId,
       title,
       body: content,
     });

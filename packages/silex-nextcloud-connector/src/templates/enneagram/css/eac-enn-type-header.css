@@ -1,0 +1,42 @@
+/* eac-enn-type-header — type title, epithet, intro prose. */
+
+.eac-enn-type {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(64px, 10vw, 120px) 24px clamp(32px, 5vw, 56px);
+  text-align: center;
+}
+
+.eac-enn-type__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-type__title {
+  margin: 0;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(38px, 7vw, 68px);
+  line-height: 1.05;
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-type__epithet {
+  margin: 18px auto 0;
+  max-width: 34rem;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--eac-enn-ink-muted);
+}
+
+.eac-enn-type__body {
+  margin-top: 36px;
+  text-align: left;
+}
+.eac-enn-type__body p {
+  margin: 0 0 20px;
+  font-size: 18px;
+  line-height: 1.78;
+}

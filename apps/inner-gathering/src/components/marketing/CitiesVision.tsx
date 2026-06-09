@@ -67,9 +67,8 @@ export function VisionStatement() {
     >
       <blockquote
         style={{
-          fontFamily: "var(--font-sans)",
+          fontFamily: '"Basteleur", serif',
           fontSize: "clamp(1.1rem, 2.2vw, 1.5rem)",
-          fontStyle: "italic",
           fontWeight: 300,
           lineHeight: 1.9,
           color: "rgba(198,221,255,0.78)",

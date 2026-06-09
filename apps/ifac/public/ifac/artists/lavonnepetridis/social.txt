@@ -1,0 +1,53 @@
+document.write("		<nav class="yit-navbar navbar navbar-expand-md navbar-dark bg-black">
+			<div class="container">
+				<ul class="yit-social">
+					<li><a href="https://www.facebook.com/groups/ifacgroup/" target="new" rel="noopener noreferrer" class="social-media-link-item-small"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="" d="M0,0v24h24V0H0z M17.1,6.4h-2.4c-0.6,0-1,0.5-1,1c0,0,0,0,0,0v2.4h3.4v3.4h-3.4V21h-3.4v-7.9H7V9.8h3.4V8.3 c0-1.4,0.4-2.8,1.3-4C12.4,3.5,13.6,3,14.8,3h2.4V6.4z"></path></svg></a></li>
+					<li><a href="https://twitter.com/IFAC_Group" target="_blank" rel="noopener noreferrer" class="social-media-link-item-small"><img src="../../images/x-twitter.png" width="24px" height="24px"  alt="X"></a></a></li>
+								
+					
+					<li><a href="https://www.youtube.com/@ifacgroup/playlists" target="new" rel="noopener noreferrer" class="social-media-link-item-small"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill=""><polygon points="10.1,14.6 15,12 10.1,9.5 	"></polygon><path d="M0,0v24h24V0H0z M21,12.9c0,1-0.1,2-0.2,2.9c-0.1,0.7-0.3,1.3-0.7,1.8c-0.5,0.5-1.1,0.8-1.8,0.8c-2.5,0.2-6.3,0.2-6.3,0.2 s-4.7,0-6.1-0.2c-0.7,0-1.4-0.3-2-0.8c-0.4-0.5-0.6-1.1-0.7-1.8c-0.1-1-0.2-2-0.2-2.9v-1.4c0-1,0.1-2,0.2-2.9 c0.1-0.7,0.3-1.3,0.7-1.8C4.4,6.3,5,6,5.7,6C8.2,5.8,12,5.8,12,5.8h0c0,0,3.8,0,6.3,0.2c0.7,0,1.3,0.3,1.8,0.8 c0.4,0.5,0.6,1.1,0.7,1.8c0.1,1,0.2,2,0.2,2.9V12.9z"></path></g></svg></a></li>
+		
+		
+					<li>
+<a href="https://www.instagram.com/ifac_group" target="new" rel="noopener noreferrer" class="social-media-link-item-small">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <rect width="24" height="24" fill=""/>
+    <path fill="black" d="M7 2C4.24 2 2 4.24 2 7v10c0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5V7c0-2.76-2.24-5-5-5H7zm10 2c1.66 0 3 1.34 3 3v10c0 
+    1.66-1.34 3-3 3H7c-1.66 0-3-1.34-3-3V7c0-1.66 1.34-3 3-3h10zm-5 3a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 
+    3 3 0 010-6zm4.5-.75a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0z"/>
+  </svg>
+</a>
+					</li>
+						
+				
+					<li>
+		<a href="https://bsky.app/profile/ifacgroup.bsky.social" target="new" rel="noopener noreferrer" class="social-media-link-item-small">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
+    <rect width="512" height="512" fill=""/>
+    <path fill="black" d="M256 287.9c-30.6-61.6-112.4-179-183.4-224.1C36.6 41.7 0 32 0 32s0 82.6 47.1 153.5C92.8 250 195.6 312.3 256 344.1c60.4-31.8 163.2-94.1 208.9-158.6C512 114.6 512 32 512 32s-36.6 9.7-72.6 31.8C368.4 108.9 286.6 226.3 256 287.9z"/>
+  </svg>
+</a>   </li>
+
+								
+					
+					<li><a href="mailto:info@ifacgroup.com" target="new" rel="noopener noreferrer" class="social-media-link-item-small"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="" data-name="email" d="M24,24H0V0h24V24z M4,3C2.8,3.1,1.9,4.1,2,5.3l0,13.5c-0.1,1.2,0.8,2.2,2,2.3h16c1.2-0.1,2.1-1.1,2-2.3V5.3 c0.1-1.2-0.8-2.2-2-2.3H4z M12,13.1L12,13.1L4,7.5V5.3l8,5.6l8-5.6v2.3L12,13.1L12,13.1z"></path></svg></a></li>
+				</ul>
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarSupportedContent">
+					<ul class="navbar-nav mr-auto">
+						<li class="nav-item">
+							<a class="nav-link active" title="Home" href="../../">Home</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" title="About" href="../../about/">About</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" title="Blog" href="https://ifacgroupteam.blogspot.com" target="blank">Blog</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		</nav>
+    </header>");document.close();

@@ -1,0 +1,54 @@
+/* eac-enn-triad — labeled definition group with a nested trio. */
+
+.eac-enn-triad {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(40px, 7vw, 80px) 24px;
+  border-top: 1px solid var(--eac-enn-line-soft);
+}
+
+.eac-enn-triad__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-triad__kicker {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--eac-enn-accent);
+}
+
+.eac-enn-triad__term {
+  margin: 0 0 16px;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.12;
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-triad__def {
+  margin: 0 0 24px;
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.eac-enn-triad__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.eac-enn-triad__list li {
+  padding: 16px 18px;
+  font-size: 16px;
+  line-height: 1.6;
+  background: var(--eac-enn-bg-soft);
+  border: 1px solid var(--eac-enn-line-soft);
+  border-radius: 8px;
+}
+.eac-enn-triad__list strong { color: var(--eac-enn-ink); }

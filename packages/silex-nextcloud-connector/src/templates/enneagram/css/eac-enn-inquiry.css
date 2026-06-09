@@ -1,0 +1,45 @@
+/* eac-enn-inquiry — wrapper styling for the live form slot. The form's own
+   fields are styled by arts-collective's InquiryForm island; this just frames
+   the section and the in-editor placeholder. */
+
+.eac-enn-inquiry {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(48px, 8vw, 96px) 24px;
+  border-top: 1px solid var(--eac-enn-line-soft);
+}
+
+.eac-enn-inquiry__inner {
+  max-width: var(--eac-enn-maxw-form, 520px);
+  margin: 0 auto;
+}
+
+.eac-enn-inquiry__heading {
+  margin: 0 0 14px;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.1;
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-inquiry__lead {
+  margin: 0 0 32px;
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--eac-enn-ink-soft);
+}
+
+/* In-editor placeholder for the live slot. */
+.eac-enn-inquiry .eac-editor-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 28px;
+  border: 1px dashed var(--eac-enn-line);
+  border-radius: 10px;
+  background: var(--eac-enn-bg-soft);
+}
+.eac-enn-inquiry .eac-editor-placeholder strong { color: var(--eac-enn-ink); }
+.eac-enn-inquiry .eac-editor-placeholder span { color: var(--eac-enn-ink-muted); font-size: 14px; }

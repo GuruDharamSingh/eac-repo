@@ -35,11 +35,10 @@ export function ArtworkCard({
   renderImage,
   className,
 }: ArtworkCardProps) {
-  const href = hrefBuilder
-    ? hrefBuilder(artwork)
-    : artwork.lot
-    ? `/lots/${artwork.lot.id}`
-    : `/artworks/${artwork.id}`;
+  // Buy-now-first: every card opens the artwork detail page, where purchase is
+  // the primary action and any live auction is offered as a secondary option.
+  // (The auction badge still surfaces here via `showAuctionBadge`.)
+  const href = hrefBuilder ? hrefBuilder(artwork) : `/artworks/${artwork.id}`;
   const artistHref = artistHrefBuilder
     ? artistHrefBuilder(artwork)
     : artwork.artistSlug

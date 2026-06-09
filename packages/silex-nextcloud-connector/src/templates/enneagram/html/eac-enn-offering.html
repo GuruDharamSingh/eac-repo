@@ -1,0 +1,31 @@
+<!--
+  eac-enn-offering.html — a paid offering card (typing session, consultation).
+  The CTA binds to a workshop's registration URL/label via data-*-trait when a
+  workshop_pages row exists; otherwise it is an owner-editable link. Pair with a
+  workshop-cards / rsvp live slot for on-platform booking.
+-->
+<section class="eac-enn-offering" data-gjs-type="eac-enn-offering">
+  <div class="eac-enn-offering__inner">
+    <div class="eac-enn-offering__orb" aria-hidden="true"></div>
+    <h2 class="eac-enn-offering__title" data-gjs-editable="true" data-trait="title">Complete Typing</h2>
+    <p class="eac-enn-offering__price" data-gjs-editable="true" data-trait="priceFull">$100.00</p>
+    <div class="eac-enn-offering__body" data-gjs-editable="true">
+      <p>
+        Use the link below for a one-on-one typing session. During the session you
+        will be asked questions to uncover your Core Motivation, Core Wound, and Core
+        Identity Question as expressed through the Enneagram.
+      </p>
+      <p>
+        Sessions run roughly 30&ndash;90 minutes and include a short Q&amp;A. Within a
+        few days you will receive a document detailing your specific type.
+      </p>
+    </div>
+    <a class="eac-enn-offering__cta"
+       href="#register"
+       data-gjs-editable="true"
+       data-trait="ctaLabel"
+       data-href-trait="registrationUrl">
+      Book a session
+    </a>
+  </div>
+</section>

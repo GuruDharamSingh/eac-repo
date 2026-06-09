@@ -1,0 +1,44 @@
+/* eac-enn-qualities — small-caps heading + clean bulleted list. */
+
+.eac-enn-qualities {
+  background: var(--eac-enn-bg);
+  color: var(--eac-enn-ink-soft);
+  font-family: var(--eac-enn-body);
+  padding: clamp(32px, 6vw, 64px) 24px;
+}
+
+.eac-enn-qualities__inner {
+  max-width: var(--eac-enn-maxw);
+  margin: 0 auto;
+}
+
+.eac-enn-qualities__heading {
+  margin: 0 0 22px;
+  font-family: var(--eac-enn-display);
+  font-weight: 500;
+  font-size: clamp(24px, 3.6vw, 34px);
+  color: var(--eac-enn-ink);
+}
+
+.eac-enn-qualities__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.eac-enn-qualities__list li {
+  position: relative;
+  padding: 12px 0 12px 24px;
+  font-size: 17px;
+  line-height: 1.65;
+  border-bottom: 1px solid var(--eac-enn-line-soft);
+}
+.eac-enn-qualities__list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 22px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--eac-enn-accent);
+}

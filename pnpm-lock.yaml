@@ -258,6 +258,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/messaging':
+        specifier: workspace:*
+        version: link:../../packages/messaging
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
@@ -359,6 +362,55 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  apps/artdirect:
+    dependencies:
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../../packages/auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/cms-bindings':
+        specifier: workspace:*
+        version: link:../../packages/cms-bindings
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@elkdonis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   apps/arts-collective:
     dependencies:
       '@elkdonis/auth-client':
@@ -373,6 +425,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../../packages/live-editor
@@ -382,6 +437,9 @@ importers:
       '@elkdonis/redis':
         specifier: workspace:*
         version: link:../../packages/redis
+      '@elkdonis/silex-render':
+        specifier: workspace:*
+        version: link:../../packages/silex-render
       '@elkdonis/three':
         specifier: workspace:*
         version: link:../../packages/three
@@ -969,6 +1027,73 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  apps/hidden-enneagram:
+    dependencies:
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../../packages/auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/cms-bindings':
+        specifier: workspace:*
+        version: link:../../packages/cms-bindings
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
+      '@elkdonis/silex-render':
+        specifier: workspace:*
+        version: link:../../packages/silex-render
+      '@elkdonis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@marsidev/react-turnstile':
+        specifier: ^1.4.1
+        version: 1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.13
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.13
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   apps/ifac:
     dependencies:
       '@elkdonis/auth-client':
@@ -1080,6 +1205,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.39.0
         version: 2.75.0
+      '@tabler/icons-react':
+        specifier: ^3.0.0
+        version: 3.35.0(react@19.1.0)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1101,12 +1232,18 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      tw-animate-css:
+        specifier: ^1.2.0
+        version: 1.4.0
     devDependencies:
       '@elkdonis/config':
         specifier: workspace:^
@@ -1449,6 +1586,16 @@ importers:
         specifier: ^5.3.3
         version: 5.9.2
 
+  packages/messaging:
+    dependencies:
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
   packages/nextcloud:
     dependencies:
       axios:
@@ -1556,6 +1703,34 @@ importers:
         version: 5.9.2
 
   packages/silex-nextcloud-connector: {}
+
+  packages/silex-render:
+    dependencies:
+      '@elkdonis/cms-bindings':
+        specifier: workspace:*
+        version: link:../cms-bindings
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../email
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../nextcloud
+      next:
+        specifier: ^16.0.0
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      react:
+        specifier: ^18.0.0 || ^19.0.0
+        version: 19.1.0
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.2
 
   packages/studio-ui:
     dependencies:

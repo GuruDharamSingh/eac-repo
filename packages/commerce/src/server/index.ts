@@ -106,6 +106,30 @@ export async function removeCartLine(input: { lineId: string }): Promise<void> {
 }
 
 /**
+ * Favourite / un-favourite an artwork for a user. Idempotent. Returns the new
+ * favourited state so the caller can update the UI.
+ */
+export async function setArtworkFavorite(input: {
+  userId: string;
+  artworkId: string;
+  favorited: boolean;
+}): Promise<{ favorited: boolean }> {
+  if (input.favorited) {
+    await db`
+      INSERT INTO artwork_favorite (user_id, artwork_id)
+      VALUES (${input.userId}, ${input.artworkId})
+      ON CONFLICT (user_id, artwork_id) DO NOTHING
+    `;
+  } else {
+    await db`
+      DELETE FROM artwork_favorite
+      WHERE user_id = ${input.userId} AND artwork_id = ${input.artworkId}
+    `;
+  }
+  return { favorited: input.favorited };
+}
+
+/**
  * Create an active reservation on a variant for a cart. 15-min default hold.
  */
 export async function createReservation(input: {

@@ -1,0 +1,23 @@
+/* eac-enn-orb — soft square radial glow on a dark field. */
+
+.eac-enn-orb {
+  background: var(--eac-enn-bg);
+  display: flex;
+  justify-content: center;
+  padding: 28px 24px;
+}
+
+.eac-enn-orb__glow {
+  width: min(280px, 64vw);
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(214, 210, 200, 0.45) 18%,
+      rgba(60, 60, 66, 0.35) 48%,
+      rgba(10, 10, 12, 0) 78%
+    ),
+    #050506;
+}
