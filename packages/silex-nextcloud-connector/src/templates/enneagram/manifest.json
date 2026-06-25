@@ -1,7 +1,7 @@
 {
   "id": "enneagram",
   "name": "The Hidden Enneagram",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "category": "EAC Enneagram Template",
   "description": "Dark, serif, mystical teaching site for Enneagram material — pages, concept cards, type pages, and a bookable typing/consultation offering with a live inquiry form.",
   "tokens": "tokens/eac-enneagram.css",
@@ -68,25 +68,58 @@
     },
     {
       "id": "eac-enn-prose",
-      "label": "Prose section",
+      "label": "Prose — What is the Enneagram?",
       "html": "html/eac-enn-prose.html",
       "css": "css/eac-enn-prose.css",
       "required": false,
       "repeatable": true,
       "defaultVisible": true,
       "traits": [],
-      "notes": "Heading + long-form body copy."
+      "notes": "Intro prose: What is the Enneagram?"
     },
     {
-      "id": "eac-enn-center",
-      "label": "Center concept card",
-      "html": "html/eac-enn-center.html",
-      "css": "css/eac-enn-center.css",
+      "id": "eac-enn-prose-b",
+      "label": "Prose — Core Fixation",
+      "html": "html/eac-enn-prose-b.html",
+      "css": "css/eac-enn-prose.css",
       "required": false,
       "repeatable": true,
       "defaultVisible": true,
       "traits": [],
-      "notes": "Gut/Heart/Head card: title, subtitle, types, Core Need, bullets, orb."
+      "notes": "Second prose: Core Fixation overview."
+    },
+    {
+      "id": "eac-enn-center",
+      "label": "Center — Gut (8, 9, 1)",
+      "html": "html/eac-enn-center.html",
+      "css": "css/eac-enn-center.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Gut Center concept card."
+    },
+    {
+      "id": "eac-enn-center-heart",
+      "label": "Center — Heart (2, 3, 4)",
+      "html": "html/eac-enn-center-heart.html",
+      "css": "css/eac-enn-center.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Heart Center concept card."
+    },
+    {
+      "id": "eac-enn-center-head",
+      "label": "Center — Head (5, 6, 7)",
+      "html": "html/eac-enn-center-head.html",
+      "css": "css/eac-enn-center.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Head Center concept card."
     },
     {
       "id": "eac-enn-type-header",
@@ -112,14 +145,36 @@
     },
     {
       "id": "eac-enn-triad",
-      "label": "Triad group",
+      "label": "Triad — Attachment (3, 6, 9)",
       "html": "html/eac-enn-triad.html",
       "css": "css/eac-enn-triad.css",
       "required": false,
-      "repeatable": true,
+      "repeatable": false,
       "defaultVisible": true,
       "traits": [],
-      "notes": "Kicker + term + definition + Body/Image/Mind trio."
+      "notes": "Object Relations: Attachment triad."
+    },
+    {
+      "id": "eac-enn-triad-frustration",
+      "label": "Triad — Frustration (1, 4, 7)",
+      "html": "html/eac-enn-triad-frustration.html",
+      "css": "css/eac-enn-triad.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Object Relations: Frustration triad."
+    },
+    {
+      "id": "eac-enn-triad-rejection",
+      "label": "Triad — Rejection (2, 5, 8)",
+      "html": "html/eac-enn-triad-rejection.html",
+      "css": "css/eac-enn-triad.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Object Relations: Rejection triad."
     },
     {
       "id": "eac-enn-typenav",
@@ -134,14 +189,25 @@
     },
     {
       "id": "eac-enn-offering",
-      "label": "Offering card (paid)",
+      "label": "Offering — Complete Typing",
       "html": "html/eac-enn-offering.html",
       "css": "css/eac-enn-offering.css",
       "required": false,
-      "repeatable": true,
+      "repeatable": false,
       "defaultVisible": true,
       "traits": ["title", "priceFull", "ctaLabel", "registrationUrl"],
-      "notes": "Typing/consultation offering. CTA binds to a workshop registration URL via data-*-trait."
+      "notes": "Complete Typing session card ($100). CTA binds to workshop registration URL."
+    },
+    {
+      "id": "eac-enn-offering-consultation",
+      "label": "Offering — Consultation",
+      "html": "html/eac-enn-offering-consultation.html",
+      "css": "css/eac-enn-offering.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": [],
+      "notes": "Consultation session card ($100)."
     },
     {
       "id": "eac-enn-inquiry",
@@ -181,32 +247,32 @@
     {
       "id": "home",
       "label": "Home page",
-      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-pullquote", "eac-enn-toc", "eac-enn-orb", "eac-enn-prose", "eac-enn-prose", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-pullquote", "eac-enn-toc", "eac-enn-orb", "eac-enn-prose", "eac-enn-prose-b", "eac-enn-footer"]
     },
     {
       "id": "introduction",
       "label": "Introduction page",
-      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-prose", "eac-enn-toc", "eac-enn-center", "eac-enn-center", "eac-enn-center", "eac-enn-prose", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-prose", "eac-enn-toc", "eac-enn-center", "eac-enn-center-heart", "eac-enn-center-head", "eac-enn-prose-b", "eac-enn-footer"]
     },
     {
       "id": "centers",
       "label": "Centers of Energy page",
-      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-prose", "eac-enn-center", "eac-enn-center", "eac-enn-center", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-prose-b", "eac-enn-center", "eac-enn-center-heart", "eac-enn-center-head", "eac-enn-footer"]
     },
     {
       "id": "triads",
       "label": "Triads page",
-      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-toc", "eac-enn-triad", "eac-enn-triad", "eac-enn-triad", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-prose-b", "eac-enn-triad", "eac-enn-triad-frustration", "eac-enn-triad-rejection", "eac-enn-footer"]
     },
     {
       "id": "type",
       "label": "Type page (template)",
-      "sections": ["eac-enn-nav", "eac-enn-type-header", "eac-enn-qualities", "eac-enn-prose", "eac-enn-triad", "eac-enn-triad", "eac-enn-typenav", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-type-header", "eac-enn-qualities", "eac-enn-prose", "eac-enn-triad-frustration", "eac-enn-triad", "eac-enn-typenav", "eac-enn-footer"]
     },
     {
       "id": "services",
       "label": "Services / Inquiries page",
-      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-offering", "eac-enn-offering", "eac-enn-prose", "eac-enn-inquiry", "eac-enn-footer"]
+      "sections": ["eac-enn-nav", "eac-enn-hero", "eac-enn-orb", "eac-enn-offering", "eac-enn-offering-consultation", "eac-enn-inquiry", "eac-enn-footer"]
     },
     {
       "id": "contact",

@@ -86,6 +86,16 @@ export async function GET(
       isPrivate ? 'private, no-store' : 'public, max-age=31536000, immutable'
     );
 
+    // Uploaded files are untrusted: no type sniffing, and only known-passive
+    // media renders inline — scriptable types (SVG/HTML/XML) download instead.
+    headers.set('X-Content-Type-Options', 'nosniff');
+    const mediaType = (response.headers.get('content-type') ?? '').toLowerCase();
+    const inlineSafe =
+      /^(image\/(jpeg|png|gif|webp|avif|bmp|x-icon)|video\/|audio\/|application\/pdf|font\/)/.test(
+        mediaType
+      );
+    headers.set('Content-Disposition', inlineSafe ? 'inline' : 'attachment');
+
     return new NextResponse(response.body, { status: response.status, headers });
   } catch (error) {
     console.error('[Media Proxy] Error:', error);

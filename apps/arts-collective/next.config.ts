@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-server",
     "@elkdonis/three",
     "@elkdonis/silex-render",
+    "@elkdonis/utils",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick up the stray
   // /home/elkdonis/pnpm-lock.yaml as the "workspace root".

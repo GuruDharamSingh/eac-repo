@@ -438,10 +438,9 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
       # Redis
       REDIS_URL: redis://redis:6379
-      # Nextcloud (server-side admin client for reading published Silex HTML).
-      # No defaults — values must come from the env file. Dev uses the
-      # docker-network hostname; prod points at the production Nextcloud.
-      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      # Nextcloud — arts-collective is on nextcloud-network (not nextcloud-aio),
+      # so it uses the public URL for WebDAV rather than the internal AIO hostname.
+      NEXTCLOUD_URL: ${NEXTCLOUD_PUBLIC_URL:-https://cloud.elkdonis-arts.org}
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
@@ -498,7 +497,7 @@ services:
       - /app/apps/artdirect/.next
     ports:
       - "3013:3013"
-    command: sh -c "cd apps/artdirect && pnpm dev"
+    command: sh -c "pnpm install && cd apps/artdirect && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network

@@ -15,7 +15,8 @@
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
-    "@elkdonis/nextcloud": "workspace:*"
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/utils": "workspace:*"
   },
   "peerDependencies": {
     "next": "^16.0.0",

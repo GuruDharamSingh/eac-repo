@@ -210,23 +210,7 @@ export function BaroqueSignup({
 
       {enableGoogle && (
         <>
-          <div
-            aria-hidden="true"
-            style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}
-          >
-            <span style={{ flex: 1, height: 1, background: 'rgba(201,162,77,0.4)' }} />
-            <span
-              style={{
-                fontSize: 12,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                opacity: 0.7,
-              }}
-            >
-              or
-            </span>
-            <span style={{ flex: 1, height: 1, background: 'rgba(201,162,77,0.4)' }} />
-          </div>
+          <div style={{ height: 8 }} />
 
           <button
             type="button"

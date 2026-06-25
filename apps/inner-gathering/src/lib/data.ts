@@ -23,8 +23,22 @@ const ORG_ID = 'inner_group';
 //   media attached_to  -> 'thread' (migration 030 retargeted the CHECK)
 // ============================================================================
 
+// End of the most recent occurrence that has fully passed (recurring meetings
+// only) — the JS twin lives in ./recurrence.ts as lastOccurrenceEnd(). Events
+// and RSVPs older than this don't count for the current cycle.
+const CYCLE_CUTOFF_SQL = `
+  t.scheduled_at
+    + make_interval(secs =>
+        FLOOR(EXTRACT(EPOCH FROM (NOW() - t.scheduled_at - make_interval(mins => COALESCE(t.duration_minutes, 60))))
+          / (CASE t.recurrence_pattern WHEN 'DAILY' THEN 86400 WHEN 'MONTHLY' THEN 2592000 ELSE 604800 END))
+        * (CASE t.recurrence_pattern WHEN 'DAILY' THEN 86400 WHEN 'MONTHLY' THEN 2592000 ELSE 604800 END))
+    + make_interval(mins => COALESCE(t.duration_minutes, 60))
+`;
+
 // Shared SELECT fragment for a thread row mapped to a Meeting-ish shape.
 // guide_* and has_event_page aliases keep mapMeeting() untouched.
+// cycle_* columns derive confirm/cancel state from thread_cycle_events:
+// the latest guide event within the current cycle wins.
 const THREAD_MEETING_COLUMNS = `
   t.id, t.kind, t.org_id, t.slug, t.title, t.status, t.visibility,
   t.scheduled_at, t.duration_minutes, t.location, t.is_online,
@@ -33,11 +47,40 @@ const THREAD_MEETING_COLUMNS = `
   t.attendee_limit, t.min_attendees, t.notify_on_min_attendees,
   t.min_attendees_notified, t.nextcloud_file_id,
   t.nextcloud_talk_token, t.nextcloud_last_sync, t.document_url,
-  t.video_url, t.show_in_live_feed, t.view_count, t.reply_count,
+  t.video_url, t.video_link, t.show_in_live_feed, t.view_count, t.reply_count,
   t.metadata, t.created_at, t.published_at, t.updated_at,
   t.body AS description,
   t.author_id AS guide_id,
-  COALESCE(((t.metadata->>'event_page')::jsonb->>'isPublished')::boolean, false) AS has_event_page
+  COALESCE(((t.metadata->>'event_page')::jsonb->>'isPublished')::boolean, false) AS has_event_page,
+  (SELECT e.action FROM thread_cycle_events e
+    WHERE e.thread_id = t.id
+      AND (t.recurrence_pattern IS NULL OR e.created_at > ${CYCLE_CUTOFF_SQL})
+    ORDER BY e.created_at DESC LIMIT 1) AS cycle_status,
+  (SELECT COUNT(DISTINCT e.user_id) FROM thread_cycle_events e
+    WHERE e.thread_id = t.id AND e.action = 'confirmed'
+      AND (t.recurrence_pattern IS NULL OR e.created_at > ${CYCLE_CUTOFF_SQL})) AS cycle_confirm_count,
+  (SELECT COUNT(*) FROM thread_cycle_events e
+    WHERE e.thread_id = t.id AND e.action = 'cancelled'
+      AND (t.recurrence_pattern IS NULL OR e.created_at > ${CYCLE_CUTOFF_SQL})) AS cycle_cancel_count
+`;
+
+// Cycle-aware RSVP count: for recurring meetings, an RSVP only counts if it
+// was (re)affirmed after the last occurrence ended — so the count resets each
+// cycle (daily/weekly/monthly), mirroring isWithinCurrentCycle() in
+// ./recurrence.ts. Non-recurring meetings count all 'yes' RSVPs.
+const ATTENDEE_COUNT_SQL = `
+  (SELECT COUNT(*) FROM thread_rsvps r
+    WHERE r.thread_id = t.id AND r.status = 'yes'
+      AND (
+        t.recurrence_pattern IS NULL
+        OR r.updated_at > t.scheduled_at
+          + make_interval(secs =>
+              FLOOR(EXTRACT(EPOCH FROM (NOW() - t.scheduled_at - make_interval(mins => COALESCE(t.duration_minutes, 60))))
+                / (CASE t.recurrence_pattern WHEN 'DAILY' THEN 86400 WHEN 'MONTHLY' THEN 2592000 ELSE 604800 END))
+              * (CASE t.recurrence_pattern WHEN 'DAILY' THEN 86400 WHEN 'MONTHLY' THEN 2592000 ELSE 604800 END))
+          + make_interval(mins => COALESCE(t.duration_minutes, 60))
+      )
+  ) AS attendee_count
 `;
 
 const THREAD_POST_COLUMNS = `
@@ -83,7 +126,7 @@ export async function getMeetingsByDateRange(
       ${db.unsafe(THREAD_MEETING_COLUMNS)},
       u.display_name AS guide_name,
       u.avatar_url AS guide_avatar,
-      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      ${db.unsafe(ATTENDEE_COUNT_SQL)},
       cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
       cm.uploaded_by AS cover_media_uploaded_by,
       cm.attached_to_type AS cover_media_attached_to_type,
@@ -142,7 +185,7 @@ export async function getMeetings(isAdmin = false): Promise<Meeting[]> {
       ${db.unsafe(THREAD_MEETING_COLUMNS)},
       u.display_name AS guide_name,
       u.avatar_url AS guide_avatar,
-      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      ${db.unsafe(ATTENDEE_COUNT_SQL)},
       cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
       cm.uploaded_by AS cover_media_uploaded_by,
       cm.attached_to_type AS cover_media_attached_to_type,
@@ -201,7 +244,7 @@ export async function getRecurringMeetings(): Promise<Meeting[]> {
       ${db.unsafe(THREAD_MEETING_COLUMNS)},
       u.display_name AS guide_name,
       u.avatar_url AS guide_avatar,
-      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      ${db.unsafe(ATTENDEE_COUNT_SQL)},
       cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
       cm.uploaded_by AS cover_media_uploaded_by,
       cm.attached_to_type AS cover_media_attached_to_type,
@@ -388,6 +431,7 @@ export async function createMeeting(params: {
   visibility?: MeetingVisibility;
   isOnline?: boolean;
   meetingUrl?: string;
+  videoLink?: string;
   nextcloudDocumentId?: string;
   documentUrl?: string;
   isRSVPEnabled?: boolean;
@@ -416,7 +460,7 @@ export async function createMeeting(params: {
     INSERT INTO threads (
       id, org_id, author_id, kind, title, slug,
       body, scheduled_at, duration_minutes, location,
-      is_online, meeting_url, visibility, status,
+      is_online, meeting_url, video_link, visibility, status,
       nextcloud_file_id, video_url, is_rsvp_enabled, rsvp_deadline,
       min_attendees, notify_on_min_attendees,
       recurrence_pattern, recurrence_custom_rule, recurrence_until,
@@ -425,7 +469,7 @@ export async function createMeeting(params: {
       ${threadId}, ${ORG_ID}, ${params.userId}, 'meeting', ${params.title},
       ${slug}, ${params.description || ''},
       ${scheduledAt}, ${params.durationMinutes || null}, ${params.location || null},
-      ${params.isOnline ?? false}, ${params.meetingUrl || null},
+      ${params.isOnline ?? false}, ${params.meetingUrl || null}, ${params.videoLink || null},
       ${params.visibility || 'PUBLIC'}, 'published',
       ${params.nextcloudDocumentId || null}, ${params.documentUrl || null},
       ${params.isRSVPEnabled ?? false}, ${params.rsvpDeadline || null},
@@ -523,7 +567,7 @@ export async function getMeetingById(id: string): Promise<Meeting | null> {
       ${db.unsafe(THREAD_MEETING_COLUMNS)},
       u.display_name AS guide_name,
       u.avatar_url AS guide_avatar,
-      (SELECT COUNT(*) FROM thread_rsvps WHERE thread_id = t.id AND status = 'yes') AS attendee_count,
+      ${db.unsafe(ATTENDEE_COUNT_SQL)},
       cm.id AS cover_media_id, cm.org_id AS cover_media_org_id,
       cm.uploaded_by AS cover_media_uploaded_by,
       cm.attached_to_type AS cover_media_attached_to_type,
@@ -725,7 +769,13 @@ function mapMeeting(row: any): Meeting {
     isOnline: row.is_online ?? true,
     meetingUrl: row.meeting_url || undefined,
     videoUrl: row.video_url || undefined,
-    videoLink: row.video_link || undefined,
+    videoLink: row.video_link || row.meeting_url || undefined,
+    // Cycle status derived from thread_cycle_events (latest event this cycle wins)
+    cycleStatus: (row.cycle_status as 'confirmed' | 'cancelled' | null) || null,
+    isConfirmedThisWeek: row.cycle_status === 'confirmed',
+    isCancelledThisCycle: row.cycle_status === 'cancelled',
+    cycleConfirmCount: parseInt(row.cycle_confirm_count) || 0,
+    cycleCancelCount: parseInt(row.cycle_cancel_count) || 0,
     recurrencePattern: row.recurrence_pattern || undefined,
     recurrenceCustomRule: row.recurrence_custom_rule || undefined,
     recurrenceUntil: row.recurrence_until ? new Date(row.recurrence_until) : undefined,
@@ -734,6 +784,7 @@ function mapMeeting(row: any): Meeting {
     rsvpDeadline: row.rsvp_deadline || undefined,
     attendeeLimit: row.attendee_limit || undefined,
     coHostIds: Array.isArray(row.co_host_ids) ? row.co_host_ids : [],
+    coGuideIds: Array.isArray(row.metadata?.coGuideIds) ? row.metadata.coGuideIds : [],
     reminderMinutesBefore: row.reminder_minutes_before || undefined,
     autoRecord: row.auto_record ?? false,
     followUpWorkflow: row.follow_up_workflow ?? false,

@@ -1,5 +1,5 @@
-import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip, Anchor, Button } from "@mantine/core";
-import { FileText, User, ExternalLink, Trash2, MessageCircle, Pin, PinOff, Pencil, Video, FileEdit } from "lucide-react";
+import { ActionIcon, Paper, Text, Group, Stack, Badge, ThemeIcon, Image, Box, Tooltip, Anchor, Button, Menu } from "@mantine/core";
+import { FileText, User, ExternalLink, Trash2, MessageCircle, MoreHorizontal, Pin, PinOff, Pencil, Video, FileEdit } from "lucide-react";
 import Link from "next/link";
 import type { Post } from "@elkdonis/types";
 import { MediaPlayer } from "@elkdonis/ui";
@@ -49,49 +49,36 @@ export function PostCard({ post, canDelete = false, deleting = false, onDelete, 
               </Badge>
             </Group>
           </Stack>
-          <Group gap={4} wrap="nowrap">
-            {canPin && (
-              <Tooltip label={pinned ? "Unpin from feed feature" : "Pin above feed"}>
-                <ActionIcon
-                  variant={pinned ? "filled" : "subtle"}
-                  color="ember"
-                  size="sm"
-                  aria-label={pinned ? "Unpin from feed feature" : "Pin above feed"}
-                  disabled={pinning}
-                  onClick={onTogglePin}
-                >
-                  {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+          {(canPin || canEdit || canDelete) && (
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Post actions">
+                  <MoreHorizontal size={16} />
                 </ActionIcon>
-              </Tooltip>
-            )}
-            {canEdit && (
-              <Tooltip label="Edit post">
-                <ActionIcon
-                  variant="subtle"
-                  color="eacSky"
-                  size="sm"
-                  aria-label="Edit post"
-                  onClick={onEdit}
-                >
-                  <Pencil size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {canDelete && (
-              <Tooltip label="Delete post">
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  aria-label="Delete post"
-                  disabled={deleting}
-                  onClick={onDelete}
-                >
-                  <Trash2 size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {canPin && (
+                  <Menu.Item
+                    leftSection={pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                    disabled={pinning}
+                    onClick={onTogglePin}
+                  >
+                    {pinned ? "Unpin" : "Pin above feed"}
+                  </Menu.Item>
+                )}
+                {canEdit && (
+                  <Menu.Item leftSection={<Pencil size={14} />} onClick={onEdit}>
+                    Edit
+                  </Menu.Item>
+                )}
+                {canDelete && (
+                  <Menu.Item color="red" leftSection={<Trash2 size={14} />} disabled={deleting} onClick={onDelete}>
+                    Delete
+                  </Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          )}
         </Group>
 
         {post.excerpt && (

@@ -37,6 +37,10 @@ interface Payload {
   durationMinutes?: number | null;
   location?: string | null;
   isOnline?: boolean;
+  videoLink?: string | null;
+  recurrencePattern?: string | null;
+  recurrenceCustomRule?: string | null;
+  recurrenceUntil?: string | null;
 
   isRsvpEnabled?: boolean;
   attendeeLimit?: number | null;
@@ -167,6 +171,13 @@ export async function POST(request: NextRequest) {
         location: payload.location ?? null,
         is_online: payload.isOnline ?? false,
         is_meeting: payload.isMeeting ?? false,
+        meeting_url: payload.videoLink ?? null,
+        video_link: payload.videoLink ?? null,
+        recurrence_pattern: (payload.recurrencePattern && payload.recurrencePattern !== 'NONE')
+          ? payload.recurrencePattern
+          : null,
+        recurrence_custom_rule: payload.recurrenceCustomRule ?? null,
+        recurrence_until: payload.recurrenceUntil ? new Date(payload.recurrenceUntil) : null,
         is_rsvp_enabled: payload.isRsvpEnabled ?? false,
         attendee_limit: payload.attendeeLimit ?? null,
         rsvp_deadline: payload.rsvpDeadline ? new Date(payload.rsvpDeadline) : null,

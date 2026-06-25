@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, LogOut, RefreshCw, UserCircle } from "lucide-react";
 import type { Meeting, Post } from "@elkdonis/types";
@@ -12,12 +12,15 @@ import { PostCard } from "./post-card";
 import { PollCard } from "./poll-card";
 import { ContentForm, BaroqueSignup } from "@elkdonis/ui";
 import { AttendeeModal } from "./attendee-modal";
-import { RecurringMeetingsCarousel } from "./recurring-meetings-carousel";
+import { FeaturedRow } from "./featured-row";
+import { FeedTabsBar } from "./feed-tabs-bar";
+import { ForumFeedCard } from "./forum-feed-card";
+import { SubstackFeedCard } from "./substack-feed-card";
 import { WorkQuestionBox } from "./work-question-box";
-import { LatestForumThreads } from "./latest-forum-threads";
-import { HorizontalCarousel } from "./horizontal-carousel";
 import { ProfileModal } from "./profile-modal";
 import type { ForumThreadSummary } from "@/lib/forum";
+import type { SubstackPost } from "@/lib/substack";
+import { type FeedTabKey, DEFAULT_TAB_ORDER, normalizeTabOrder } from "@/lib/feed-tabs";
 import { supabase } from "@/lib/supabase";
 import {
   ActionIcon,
@@ -44,11 +47,13 @@ interface FeedClientProps {
   }>;
   recurringMeetings?: Meeting[];
   forumThreads?: ForumThreadSummary[];
+  substackPosts?: SubstackPost[];
+  tabOrder?: FeedTabKey[];
   userId?: string | null;
   isAdmin?: boolean;
 }
 
-export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads = [], userId, isAdmin = false }: FeedClientProps) {
+export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads = [], substackPosts = [], tabOrder, userId, isAdmin = false }: FeedClientProps) {
   const router = useRouter();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] = useDisclosure(false);
@@ -60,6 +65,14 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
   const [feed, setFeed] = useState(initialFeed);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
+
+  // Feed tabs. Order is admin-configurable; default tab is the first in order.
+  const [order, setOrder] = useState<FeedTabKey[]>(
+    tabOrder && tabOrder.length ? normalizeTabOrder(tabOrder) : DEFAULT_TAB_ORDER
+  );
+  const [activeTab, setActiveTab] = useState<FeedTabKey>(
+    (tabOrder && tabOrder.length ? normalizeTabOrder(tabOrder) : DEFAULT_TAB_ORDER)[0]
+  );
 
   const handleEditMeeting = (meeting: Meeting) => {
     setEditingPost(null);
@@ -202,6 +215,73 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
   const pinnedFeed = feed.filter(isPinned);
   const standardFeed = feed.filter((item) => !isPinned(item));
 
+  const meetingKindOf = (item: (typeof feed)[number]) =>
+    item.type === "meeting" ? ((item.data as Meeting).kind ?? "meeting") : null;
+
+  // Per-tab content. Meetings/Workshops show native cards (pinned inline, since
+  // the featured strip lives only on All). Publications + All also fold in
+  // forum threads and Substack posts, merged by date (newest first).
+  type MergedEntry =
+    | { sort: number; key: string; kind: "feed"; item: (typeof feed)[number] }
+    | { sort: number; key: string; kind: "forum"; thread: ForumThreadSummary }
+    | { sort: number; key: string; kind: "substack"; post: SubstackPost };
+
+  const dateMs = (d: Date | string | undefined) => {
+    const t = d ? new Date(d).getTime() : 0;
+    return Number.isNaN(t) ? 0 : t;
+  };
+
+  const { meetingsTab, workshopsTab, publicationsTab, allTab } = useMemo(() => {
+    const meetings = feed.filter((i) => meetingKindOf(i) === "meeting");
+    const workshops = feed.filter((i) => {
+      const k = meetingKindOf(i);
+      return k === "workshop" || k === "event";
+    });
+
+    const forumEntries: MergedEntry[] = forumThreads.map((t) => ({
+      sort: dateMs(t.lastActivityAt ?? t.createdAt),
+      key: `forum-${t.id}`,
+      kind: "forum",
+      thread: t,
+    }));
+    const substackEntries: MergedEntry[] = substackPosts.map((p, i) => ({
+      sort: dateMs(p.pubDate),
+      key: `substack-${i}`,
+      kind: "substack",
+      post: p,
+    }));
+
+    const postEntries: MergedEntry[] = feed
+      .filter((i) => i.type === "post")
+      .map((item) => ({ sort: dateMs(item.createdAt), key: `post-${item.data.id}`, kind: "feed", item }));
+
+    const publications = [...postEntries, ...forumEntries, ...substackEntries].sort((a, b) => b.sort - a.sort);
+
+    // All = every non-pinned native item + forum + substack, interleaved.
+    const nativeEntries: MergedEntry[] = standardFeed.map((item) => ({
+      sort: dateMs(item.createdAt),
+      key: `feed-${item.type}-${item.data.id}`,
+      kind: "feed",
+      item,
+    }));
+    const all = [...nativeEntries, ...forumEntries, ...substackEntries].sort((a, b) => b.sort - a.sort);
+
+    return { meetingsTab: meetings, workshopsTab: workshops, publicationsTab: publications, allTab: all };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feed, forumThreads, substackPosts]);
+
+  const tabCounts: Partial<Record<FeedTabKey, number>> = {
+    meetings: meetingsTab.length,
+    workshops: workshopsTab.length,
+    publications: publicationsTab.length,
+  };
+
+  const renderMergedEntry = (entry: MergedEntry, index: number) => {
+    if (entry.kind === "forum") return <ForumFeedCard key={entry.key} thread={entry.thread} />;
+    if (entry.kind === "substack") return <SubstackFeedCard key={entry.key} post={entry.post} />;
+    return renderFeedItem(entry.item, index);
+  };
+
   const renderFeedItem = (item: (typeof feed)[number], index: number, pinnedSection = false) =>
     item.type === "meeting" ? (
       <MeetingCard
@@ -218,6 +298,8 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
         showPrivateBadge={isAdmin}
         canEdit={isAdmin || (item.data as Meeting).createdBy === userId}
         onEdit={handleEditMeeting}
+        currentUserId={userId}
+        isAdmin={isAdmin}
       />
     ) : item.type === "poll" ? (
       <PollCard
@@ -276,28 +358,17 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
       {/* Main Content */}
       <Container size="sm" py="lg" pb={120}>
         <Stack gap="lg">
-          <WorkQuestionBox userId={userId} />
+          <WorkQuestionBox userId={userId} hideAnonymousNote />
 
-          <LatestForumThreads threads={forumThreads} />
-
-          {/* Recurring Meetings Carousel */}
-          {recurringMeetings.length > 0 && (
-            <RecurringMeetingsCarousel meetings={recurringMeetings} />
-          )}
-
-          {pinnedFeed.length > 0 && (
-            <HorizontalCarousel
-              kicker="Pinned"
-              title="Featured from the feed"
-              count={pinnedFeed.length}
-            >
-              {pinnedFeed.map((item, index) => (
-                <div key={`${item.type}-${item.data.id}-${index}`} className="feed-carousel-item">
-                  {renderFeedItem(item, index, true)}
-                </div>
-              ))}
-            </HorizontalCarousel>
-          )}
+          {/* Tabs — admin-reorderable; default tab is the first in order */}
+          <FeedTabsBar
+            order={order}
+            value={activeTab}
+            onChange={setActiveTab}
+            isAdmin={isAdmin}
+            counts={tabCounts}
+            onOrderSaved={(next) => setOrder(next)}
+          />
 
           {/* New Items Banner */}
           <Transition mounted={hasNewItems} transition="slide-down" duration={300}>
@@ -324,17 +395,56 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
             )}
           </Transition>
 
-          {/* Feed Items */}
-          {standardFeed.length === 0 ? (
-            <Text c="dimmed" ta="center" py="xl">
-              {pinnedFeed.length > 0
-                ? "All current feed items are pinned above."
-                : "The table is quiet. Drop the first note, meeting, or fragment when it is ready."}
-            </Text>
-          ) : (
-            <Stack gap="md">
-              {standardFeed.map((item, index) => renderFeedItem(item, index))}
-            </Stack>
+          {/* ── All ── featured strip + interleaved everything ── */}
+          {activeTab === "all" && (
+            <>
+              <FeaturedRow
+                pinnedItems={
+                  pinnedFeed.filter((item) => item.type !== "poll") as Array<
+                    { type: "meeting"; data: Meeting } | { type: "post"; data: Post }
+                  >
+                }
+                recurringMeetings={recurringMeetings}
+                userId={userId}
+                isAdmin={isAdmin}
+                pinningThreadId={pinningThreadId}
+                onTogglePin={handleTogglePin}
+              />
+              {allTab.length === 0 ? (
+                <Text c="dimmed" ta="center" py="xl">
+                  The table is quiet. Drop the first note, meeting, or fragment when it is ready.
+                </Text>
+              ) : (
+                <Stack gap="md">{allTab.map((entry, i) => renderMergedEntry(entry, i))}</Stack>
+              )}
+            </>
+          )}
+
+          {/* ── Meetings ── */}
+          {activeTab === "meetings" && (
+            meetingsTab.length === 0 ? (
+              <Text c="dimmed" ta="center" py="xl">No meetings yet.</Text>
+            ) : (
+              <Stack gap="md">{meetingsTab.map((item, i) => renderFeedItem(item, i))}</Stack>
+            )
+          )}
+
+          {/* ── Workshops ── */}
+          {activeTab === "workshops" && (
+            workshopsTab.length === 0 ? (
+              <Text c="dimmed" ta="center" py="xl">No workshops or events yet.</Text>
+            ) : (
+              <Stack gap="md">{workshopsTab.map((item, i) => renderFeedItem(item, i))}</Stack>
+            )
+          )}
+
+          {/* ── Publications ── posts + forum + Substack ── */}
+          {activeTab === "publications" && (
+            publicationsTab.length === 0 ? (
+              <Text c="dimmed" ta="center" py="xl">No publications yet.</Text>
+            ) : (
+              <Stack gap="md">{publicationsTab.map((entry, i) => renderMergedEntry(entry, i))}</Stack>
+            )
           )}
         </Stack>
 

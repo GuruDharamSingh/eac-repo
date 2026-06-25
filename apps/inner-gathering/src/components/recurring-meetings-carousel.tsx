@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import {
   Badge,
   Box,
+  Button,
   Group,
   Paper,
   Stack,
@@ -11,12 +12,15 @@ import {
   ThemeIcon,
   Title,
   ActionIcon,
+  Tooltip,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { stripHtml } from "@/lib/strip-html";
 import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  CheckCircle,
   Clock,
   MapPin,
   Repeat,
@@ -29,6 +33,8 @@ import type { Meeting, MeetingRecurrence } from "@elkdonis/types";
 
 interface RecurringMeetingsCarouselProps {
   meetings: Meeting[];
+  userId?: string | null;
+  isAdmin?: boolean;
 }
 
 const RECURRENCE_LABELS: Record<MeetingRecurrence, string> = {
@@ -60,7 +66,7 @@ const formatTime = (date: Date) =>
     minute: "2-digit",
   }).format(new Date(date));
 
-export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouselProps) {
+export function RecurringMeetingsCarousel({ meetings, userId, isAdmin = false }: RecurringMeetingsCarouselProps) {
   if (meetings.length === 0) return null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -190,6 +196,8 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
               meeting={meeting}
               preventClick={wasDragged}
               mounted={mounted}
+              userId={userId}
+              isAdmin={isAdmin}
             />
           ))}
         </Box>
@@ -198,8 +206,49 @@ export function RecurringMeetingsCarousel({ meetings }: RecurringMeetingsCarouse
   );
 }
 
-function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Meeting; preventClick: boolean; mounted: boolean }) {
+function RecurringMeetingCard({
+  meeting,
+  preventClick,
+  mounted,
+  userId,
+  isAdmin,
+}: {
+  meeting: Meeting;
+  preventClick: boolean;
+  mounted: boolean;
+  userId?: string | null;
+  isAdmin?: boolean;
+}) {
   const pattern = meeting.recurrencePattern || "WEEKLY";
+  const [confirmed, setConfirmed] = useState(meeting.isConfirmedThisWeek ?? false);
+  const [toggling, setToggling] = useState(false);
+
+  const canConfirm = isAdmin || (userId && meeting.createdBy === userId);
+
+  const handleConfirmToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canConfirm || toggling) return;
+    setToggling(true);
+    const next = !confirmed;
+    try {
+      const res = await fetch(`/api/content/${meeting.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmed: next }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      setConfirmed(next);
+      notifications.show({
+        color: next ? "teal" : "gray",
+        message: next ? "Meeting confirmed for this week" : "Confirmation removed",
+      });
+    } catch {
+      notifications.show({ color: "red", message: "Could not update confirmation" });
+    } finally {
+      setToggling(false);
+    }
+  };
 
   return (
     <Paper
@@ -217,6 +266,7 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
         transition: "box-shadow 150ms ease, transform 150ms ease",
         textDecoration: "none",
         color: "inherit",
+        borderColor: confirmed ? "var(--mantine-color-teal-4)" : undefined,
       }}
       onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
         e.currentTarget.style.boxShadow = "var(--mantine-shadow-md)";
@@ -231,6 +281,14 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
       }}
     >
       <Stack gap="xs">
+        {/* Confirmed banner */}
+        {confirmed && (
+          <Group gap={5} px={4} py={2} style={{ background: "var(--mantine-color-teal-0)", borderRadius: 4 }}>
+            <CheckCircle size={12} color="var(--mantine-color-teal-6)" />
+            <Text size="xs" fw={600} c="teal.7">Confirmed this week</Text>
+          </Group>
+        )}
+
         {/* Header with recurrence badge */}
         <Group justify="space-between" gap="xs">
           <Badge
@@ -241,11 +299,29 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
           >
             {RECURRENCE_LABELS[pattern]}
           </Badge>
-          {meeting.isOnline && (
-            <Badge size="xs" variant="light" color="moss" leftSection={<Video size={10} />}>
-              Online
-            </Badge>
-          )}
+          <Group gap={4}>
+            {(meeting.videoLink) && (
+              <Tooltip label="Join video">
+                <ActionIcon
+                  component="a"
+                  href={(meeting.videoLink)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="xs"
+                  variant="light"
+                  color="teal"
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                >
+                  <Video size={11} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {meeting.isOnline && !(meeting.videoLink) && (
+              <Badge size="xs" variant="light" color="moss" leftSection={<Video size={10} />}>
+                Online
+              </Badge>
+            )}
+          </Group>
         </Group>
 
         {/* Title */}
@@ -313,6 +389,21 @@ function RecurringMeetingCard({ meeting, preventClick, mounted }: { meeting: Mee
           >
             Has Event Page
           </Badge>
+        )}
+
+        {/* Confirm toggle (creator or admin only) */}
+        {canConfirm && (
+          <Button
+            size="compact-xs"
+            variant={confirmed ? "filled" : "light"}
+            color={confirmed ? "teal" : "gray"}
+            leftSection={<CheckCircle size={11} />}
+            loading={toggling}
+            onClick={handleConfirmToggle}
+            fullWidth
+          >
+            {confirmed ? "Confirmed ✓" : "Confirm this week"}
+          </Button>
         )}
       </Stack>
     </Paper>

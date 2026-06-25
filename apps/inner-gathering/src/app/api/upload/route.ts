@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile, getUploadPath, getProxyFileUrl } from '@elkdonis/services';
+import { validateUploadBuffer } from '@elkdonis/utils';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import type { MeetingVisibility } from '@elkdonis/types';
@@ -109,6 +110,14 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Verify actual bytes match the declared category (client MIME is spoofable)
+    const validation = validateUploadBuffer(buffer, [mediaConfig.type], {
+      allowText: file.type === 'text/plain',
+    });
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.reason }, { status: 415 });
+    }
 
     // Upload to Nextcloud
     console.log(`Uploading file to: ${relativePath}`);

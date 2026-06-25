@@ -3,8 +3,11 @@ import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
 import {
   createNextcloudClient,
-  ensureOrgFolder,
   ensureOrgFolderPath,
+  getAdminClient,
+  grantOrgAccess,
+  provisionOrgOnNextcloud,
+  resolveReceivedOrgPath,
 } from "@elkdonis/nextcloud";
 import { canEditOrgSite } from "@/lib/org";
 import {
@@ -34,16 +37,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!user.nextcloud_user_id || !user.nextcloud_app_password) {
+  const dbUserId = user.db_user_id ?? user.id;
+
+  // OAuth signups skip the email/password auto-provisioning path, so users
+  // can land here without Nextcloud credentials. Provision lazily (idempotent)
+  // instead of dead-ending with a 409.
+  let ncUserId = user.nextcloud_user_id;
+  let ncAppPassword = user.nextcloud_app_password;
+  if (!ncUserId || !ncAppPassword) {
+    try {
+      const { handleUserProvisioning } = await import("@elkdonis/services");
+      const result = await handleUserProvisioning(
+        dbUserId,
+        user.email!,
+        user.email?.split("@")[0] || "User",
+        { groups: [process.env.NEXTCLOUD_DEFAULT_GROUP || "EAC_Network"] }
+      );
+      if (result.success && result.nextcloudUserId && result.appPassword) {
+        ncUserId = result.nextcloudUserId;
+        ncAppPassword = result.appPassword;
+      }
+    } catch (err) {
+      console.error("lazy nextcloud provisioning failed:", err);
+    }
+  }
+  if (!ncUserId || !ncAppPassword) {
     return NextResponse.json(
       {
         error:
-          "No Nextcloud credentials on this account. Complete Nextcloud provisioning before entering Silex mode.",
+          "Could not provision Nextcloud credentials for this account. Try again or contact an admin.",
       },
       { status: 409 }
     );
   }
-  const dbUserId = user.db_user_id ?? user.id;
 
   let body: unknown;
   try {
@@ -91,29 +117,55 @@ export async function POST(req: Request) {
 
   const nextcloudClient = createNextcloudClient({
     baseUrl: nextcloudBaseUrl,
-    username: user.nextcloud_user_id,
-    password: user.nextcloud_app_password,
+    username: ncUserId,
+    password: ncAppPassword,
   });
 
+  // Service-account model (default): the org folder lives under the service
+  // account at EAC_Network/{orgId} and is shared read/write to the editor.
+  // The token carries the RECIPIENT-relative path of that share, since Silex
+  // connects with the user's own credentials.
+  //
+  // Legacy escape hatch: orgs whose folder path points elsewhere (e.g.
+  // hidden-enneagram's `eac/...` seeded under a personal account) keep the
+  // old behavior — the folder is ensured under the user's own account —
+  // until they're migrated by scripts/backfill-org-nextcloud.mjs.
+  const isLegacyUserOwned =
+    nextcloudFolderPath !== "" &&
+    !/^EAC[_-]Network\//.test(nextcloudFolderPath);
+
   try {
-    if (nextcloudFolderPath) {
+    if (isLegacyUserOwned) {
       nextcloudFolderPath = await ensureOrgFolderPath(
         nextcloudClient,
         nextcloudFolderPath
       );
     } else {
-      nextcloudFolderPath = await ensureOrgFolder(nextcloudClient, org.id);
-      await db`
-        UPDATE organizations
-        SET nextcloud_folder_path = ${nextcloudFolderPath}
-        WHERE id = ${org.id}
-      `;
+      const admin = getAdminClient();
+      const { orgFolderPath } = await provisionOrgOnNextcloud(admin, org.id);
+      if (org.nextcloud_folder_path !== orgFolderPath) {
+        await db`
+          UPDATE organizations
+          SET nextcloud_folder_path = ${orgFolderPath}
+          WHERE id = ${org.id}
+        `;
+      }
+
+      await grantOrgAccess(admin, org.id, ncUserId, "owner");
+
+      const receivedPath = await resolveReceivedOrgPath(
+        admin,
+        nextcloudClient,
+        org.id,
+        ncUserId
+      );
+      nextcloudFolderPath = (receivedPath ?? `/${org.id}`).replace(/^\/+/, "");
     }
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
       {
-        error: "Could not create user-owned Nextcloud org folder",
+        error: "Could not provision the org's Nextcloud folder",
         detail,
       },
       { status: 502 }
@@ -124,8 +176,8 @@ export async function POST(req: Request) {
     userId: dbUserId,
     orgId: org.id,
     slug,
-    ncUser: user.nextcloud_user_id,
-    ncPass: user.nextcloud_app_password,
+    ncUser: ncUserId,
+    ncPass: ncAppPassword,
     nextcloudFolderPath,
   });
 

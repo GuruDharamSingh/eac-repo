@@ -32,21 +32,21 @@ export function CitiesVision() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", padding: "1.5rem 4rem" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Toronto</span>
+          <span style={{ fontFamily: '"Basteleur Bold", "Basteleur", serif', fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Toronto</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(221,232,208,0.4)" }}>Operations · Technology · Performance</span>
         </div>
 
         <div style={{ width: 1, height: 60, background: "rgba(221,232,208,0.15)", alignSelf: "center" }} />
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", padding: "1.5rem 4rem" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Los Angeles</span>
+          <span style={{ fontFamily: '"Basteleur Bold", "Basteleur", serif', fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Los Angeles</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(221,232,208,0.4)" }}>Music · Education · Outreach</span>
         </div>
 
         <div style={{ width: 1, height: 60, background: "rgba(221,232,208,0.15)", alignSelf: "center" }} />
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", padding: "1.5rem 4rem" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Paris</span>
+          <span style={{ fontFamily: '"Basteleur Bold", "Basteleur", serif', fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", color: "#dde8d0", letterSpacing: "0.04em" }}>Paris</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(221,232,208,0.4)" }}>Research · Writing · European Networks</span>
         </div>
       </section>

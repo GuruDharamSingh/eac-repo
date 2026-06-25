@@ -41,8 +41,7 @@ interface EmailPreview {
 const sampleDate = new Date("2026-06-21T14:00:00-04:00").toISOString();
 const sampleDueDate = new Date("2026-06-24T17:00:00-04:00").toISOString();
 
-const defaultWelcomeBody =
-  "Welcome to the collective. Your member account is ready, and the Inner Gathering is open for workshops, posts, meetings, and shared updates.";
+const defaultWelcomeBody = "This is an email to confirm your sign up.\n\nThanks.";
 
 const defaultWelcomeLinks = [
   { label: "Enter the Gathering", url: "http://localhost:3004/feed?welcome=1" },

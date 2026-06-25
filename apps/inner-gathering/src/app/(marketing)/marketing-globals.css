@@ -2672,6 +2672,227 @@ details.member-card,
   max-width: 760px;
 }
 
+/* ── Slim login / redirect bar under the Current Work Question ──── */
+.cwq-login-bar {
+  margin-top: 1.1rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(183, 154, 85, 0.28);
+}
+
+.cwq-login-prompt {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ig-muted, #4b5f85);
+  font-weight: 600;
+}
+
+.cwq-login-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-left: auto;
+}
+
+.cwq-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.cwq-login-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cwq-login-btn--google {
+  background: #ffffff;
+  color: #3c4043;
+  border: 1px solid rgba(60, 64, 67, 0.22);
+}
+
+.cwq-login-btn--google:hover {
+  border-color: rgba(60, 64, 67, 0.4);
+}
+
+.cwq-login-btn--primary {
+  background: var(--ig-ink, #01124e);
+  color: #fffdf8;
+  border: 1px solid var(--ig-gold, #b79a55);
+}
+
+.cwq-login-btn--primary:hover {
+  background: #022278;
+}
+
+.cwq-login-link {
+  background: none;
+  border: none;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ig-gold, #8f763c);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.cwq-login-link:hover {
+  color: var(--ig-ink, #01124e);
+  border-bottom-color: rgba(183, 154, 85, 0.7);
+}
+
+@media (max-width: 560px) {
+  .cwq-login-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .cwq-login-btn--google {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Mini feed in the Featured Initiative panel slot ───────────── */
+.initiative-feed-panel {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.initiative-feed-inner {
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  border-radius: 6px;
+  padding: 1.75rem 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.initiative-feed-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold, #b79a55);
+  margin: 0;
+}
+
+.initiative-feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.initiative-feed-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(201, 169, 98, 0.16);
+  border-radius: 5px;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.initiative-feed-card:hover {
+  border-color: rgba(201, 169, 98, 0.45);
+  background: rgba(201, 169, 98, 0.06);
+  transform: translateY(-1px);
+}
+
+.initiative-feed-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.initiative-feed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold, #b79a55);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.initiative-feed-title {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 400;
+  color: #f4f1e8;
+  line-height: 1.3;
+}
+
+.initiative-feed-blurb {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #9ca3af;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.initiative-feed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.85rem;
+  font-size: 0.72rem;
+  color: #8a8f99;
+}
+
+.initiative-feed-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.initiative-feed-all {
+  margin-top: 0.1rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-gold, #b79a55);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.initiative-feed-all:hover {
+  color: #f4f1e8;
+}
+
+@media (max-width: 860px) {
+  .initiative-feed-inner {
+    max-width: 100%;
+  }
+}
+
 /* Keep the "Go to Forum" link inline with the toggles on small screens */
 @media (max-width: 560px) {
   .wq-toggles {

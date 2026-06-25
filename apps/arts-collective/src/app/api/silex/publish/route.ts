@@ -5,6 +5,7 @@ import {
   exists,
   getAdminClient,
 } from "@elkdonis/nextcloud";
+import { sanitizeSilexHtml } from "@elkdonis/utils";
 import { requireUser } from "@/lib/session";
 import { isOrgOwner } from "@/lib/org";
 
@@ -57,6 +58,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Owner-authored HTML is untrusted: strip scripts/event handlers before it
+  // ever reaches storage. Render-time sanitization in silex-render is the
+  // second layer of the same defense.
+  const safeHtml = sanitizeSilexHtml(html);
+
   const folder = `/Silex/${slug}`;
   const path = `${folder}/index.html`;
 
@@ -80,7 +86,7 @@ export async function POST(req: Request) {
     if (!(await exists(admin, folder))) {
       await createFolder(admin, folder);
     }
-    await admin.webdav.putFileContents(path, Buffer.from(html, "utf8"), {
+    await admin.webdav.putFileContents(path, Buffer.from(safeHtml, "utf8"), {
       overwrite: true,
     });
   } catch (err) {

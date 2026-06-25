@@ -44,6 +44,10 @@ export function joinPublishedAssetPath(entryPath: string, parts: string[]): stri
 }
 
 export async function downloadPublishedFile(ref: SilexPublishedRef): Promise<Buffer | null> {
+  const baseUrl = process.env.NEXTCLOUD_URL;
+  if (!baseUrl) return null;
+
+  // Try the owner's stored app-password first.
   const rows = await db<
     { nextcloud_user_id: string | null; nextcloud_app_password: string | null }[]
   >`
@@ -53,16 +57,16 @@ export async function downloadPublishedFile(ref: SilexPublishedRef): Promise<Buf
     LIMIT 1
   `;
   const owner = rows[0];
-  if (!owner?.nextcloud_user_id || !owner.nextcloud_app_password) return null;
 
-  const baseUrl = process.env.NEXTCLOUD_URL;
-  if (!baseUrl) return null;
+  // Fall back to the admin service account for files seeded/published under it.
+  const username =
+    owner?.nextcloud_user_id ?? process.env.NEXTCLOUD_ADMIN_USER ?? null;
+  const password =
+    owner?.nextcloud_app_password ?? process.env.NEXTCLOUD_ADMIN_PASSWORD ?? null;
 
-  const client = createNextcloudClient({
-    baseUrl,
-    username: owner.nextcloud_user_id,
-    password: owner.nextcloud_app_password,
-  });
+  if (!username || !password) return null;
+
+  const client = createNextcloudClient({ baseUrl, username, password });
 
   try {
     return await downloadFile(client, ref.path);

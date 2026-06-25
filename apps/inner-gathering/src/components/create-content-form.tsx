@@ -16,6 +16,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Switch,
   Table,
   Text,
   Textarea,
@@ -74,7 +75,6 @@ export function CreateContentForm({
   // Collapsible sections
   const [showSchedule, setShowSchedule] = useState(true);
   const [showRsvp, setShowRsvp] = useState(false);
-  const [showRecurrence, setShowRecurrence] = useState(false);
   const [showEventPage, setShowEventPage] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -117,6 +117,7 @@ export function CreateContentForm({
   const [location, setLocation] = useState("");
   const [isOnline, setIsOnline] = useState(false);
   const [meetingUrl, setMeetingUrl] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
   const [syncToCalendar, setSyncToCalendar] = useState(true);
   const [isRSVPEnabled, setIsRSVPEnabled] = useState(false);
   const [rsvpDeadline, setRsvpDeadline] = useState<Date | null>(null);
@@ -211,7 +212,7 @@ export function CreateContentForm({
       scheduledAt: scheduledAt?.toISOString() ?? null,
       durationMinutes, location, isOnline, meetingUrl, syncToCalendar,
       isRSVPEnabled, rsvpDeadline: rsvpDeadline?.toISOString() ?? null,
-      minAttendees, notifyOnMinAttendees, recurrencePattern, recurrenceCustomRule,
+      minAttendees, notifyOnMinAttendees, isRecurring, recurrencePattern, recurrenceCustomRule,
       recurrenceUntil: recurrenceUntil?.toISOString() ?? null,
       createEventPage, eventPageTableData, notes, guideId,
     },
@@ -252,7 +253,10 @@ export function CreateContentForm({
     if (md.isOnline !== undefined) setIsOnline(md.isOnline as boolean);
     if (md.meetingUrl) setMeetingUrl(md.meetingUrl as string);
     if (md.isRSVPEnabled !== undefined) setIsRSVPEnabled(md.isRSVPEnabled as boolean);
-    if (md.recurrencePattern) setRecurrencePattern(md.recurrencePattern as string);
+    if (md.recurrencePattern && md.recurrencePattern !== "NONE") {
+      setRecurrencePattern(md.recurrencePattern as string);
+      setIsRecurring(true);
+    }
     if (md.createEventPage !== undefined) setCreateEventPage(md.createEventPage as boolean);
     if (md.notes) setNotes(md.notes as string);
     if (md.guideId) setGuideId(md.guideId as string);
@@ -326,9 +330,9 @@ export function CreateContentForm({
           syncToCalendar, createTalkRoom: createTalkRoom || isOnline, isRSVPEnabled,
           rsvpDeadline: rsvpDeadline || undefined,
           minAttendees: minAttendees ? Number(minAttendees) : undefined, notifyOnMinAttendees,
-          recurrencePattern: recurrencePattern !== "NONE" ? (recurrencePattern as any) : undefined,
-          recurrenceCustomRule: recurrenceCustomRule.trim() || undefined,
-          recurrenceUntil: recurrenceUntil || undefined, createEventPage,
+          recurrencePattern: isRecurring && recurrencePattern !== "NONE" ? (recurrencePattern as any) : undefined,
+          recurrenceCustomRule: isRecurring ? recurrenceCustomRule.trim() || undefined : undefined,
+          recurrenceUntil: isRecurring ? recurrenceUntil || undefined : undefined, createEventPage,
           eventPageTableData: createEventPage && eventPageTableData.columns.length > 0 ? eventPageTableData : undefined,
           blogPassword: blogPassword || undefined,
         });
@@ -360,7 +364,7 @@ export function CreateContentForm({
     } finally {
       setIsSubmitting(false);
     }
-  }, [userId, isFormValid, media, contentType, title, body, excerpt, visibility, orgId, createDocument, createTalkRoom, scheduledAt, durationMinutes, location, isOnline, meetingUrl, syncToCalendar, isRSVPEnabled, rsvpDeadline, minAttendees, notifyOnMinAttendees, recurrencePattern, recurrenceCustomRule, recurrenceUntil, createEventPage, eventPageTableData, blogPassword, notes, onSuccess, draftId]);
+  }, [userId, isFormValid, media, contentType, title, body, excerpt, visibility, orgId, createDocument, createTalkRoom, scheduledAt, durationMinutes, location, isOnline, meetingUrl, syncToCalendar, isRSVPEnabled, rsvpDeadline, minAttendees, notifyOnMinAttendees, isRecurring, recurrencePattern, recurrenceCustomRule, recurrenceUntil, createEventPage, eventPageTableData, blogPassword, notes, onSuccess, draftId]);
 
   return (
     <form className="create-content-form" onSubmit={handleSubmit}>
@@ -493,13 +497,19 @@ export function CreateContentForm({
               <Collapse in={showSchedule}>
                 <Stack gap="xs" pt={4}>
                   <SimpleGrid cols={2} spacing="xs">
-                    <DateTimePicker placeholder="Date & time *" required value={scheduledAt} onChange={(value) => setScheduledAt(value ? new Date(value) : null)} size="xs" />
+                    <DateTimePicker placeholder={isRecurring ? "Start date & time *" : "Date & time *"} required value={scheduledAt} onChange={(value) => setScheduledAt(value ? new Date(value) : null)} size="xs" />
                     <NumberInput placeholder="Duration (min)" min={5} value={durationMinutes} onChange={(value) => setDurationMinutes(value || 60)} size="xs" rightSection={<Text size="xs" c="dimmed" pr={4}>min</Text>} />
                   </SimpleGrid>
                   {scheduledAt && <TimezonePreview date={scheduledAt} />}
-                  <TextInput placeholder="Location" value={location} onChange={(e) => setLocation(e.currentTarget.value)} size="xs" />
+                  <TextInput placeholder="Location (optional)" value={location} onChange={(e) => setLocation(e.currentTarget.value)} size="xs" />
+                  <TextInput
+                    placeholder="Video link (Zoom, Meet, etc.)"
+                    value={meetingUrl}
+                    onChange={(e) => setMeetingUrl(e.currentTarget.value)}
+                    size="xs"
+                    leftSection={<Video size={13} />}
+                  />
                   <Checkbox label="Online meeting" checked={isOnline} onChange={(e) => setIsOnline(e.currentTarget.checked)} size="xs" />
-                  {isOnline && <TextInput placeholder="Meeting URL (https://...)" required value={meetingUrl} onChange={(e) => setMeetingUrl(e.currentTarget.value)} size="xs" />}
                 </Stack>
               </Collapse>
             </Stack>
@@ -529,16 +539,53 @@ export function CreateContentForm({
           </Paper>
         )}
 
-        {/* ─── Recurrence (Meeting) ─── */}
+        {/* ─── Recurring toggle (Meeting) ─── */}
         {contentType === "meeting" && (
           <Paper withBorder radius="sm" p="xs">
             <Stack gap="xs">
-              <SectionToggle label="Recurrence" icon={<Repeat size={13} />} opened={showRecurrence} onToggle={() => setShowRecurrence((o) => !o)} />
-              <Collapse in={showRecurrence}>
+              <Group gap="xs">
+                <Repeat size={13} color="var(--mantine-color-grape-6)" />
+                <Switch
+                  label={<Text size="xs" fw={600} c="dimmed" tt="uppercase" lts={0.5}>Recurring meeting</Text>}
+                  checked={isRecurring}
+                  onChange={(e) => {
+                    setIsRecurring(e.currentTarget.checked);
+                    if (!e.currentTarget.checked) setRecurrencePattern("NONE");
+                    else if (recurrencePattern === "NONE") setRecurrencePattern("WEEKLY");
+                  }}
+                  size="xs"
+                  color="grape"
+                />
+              </Group>
+              <Collapse in={isRecurring}>
                 <Stack gap="xs" pt={4}>
-                  <Select placeholder="Repeat..." data={[{ value: "NONE", label: "Does not repeat" }, { value: "DAILY", label: "Daily" }, { value: "WEEKLY", label: "Weekly" }, { value: "MONTHLY", label: "Monthly" }, { value: "CUSTOM", label: "Custom..." }]} value={recurrencePattern} onChange={(value) => setRecurrencePattern(value || "NONE")} size="xs" />
-                  {recurrencePattern === "CUSTOM" && <TextInput placeholder='e.g. "Every 2 weeks on Tuesday"' value={recurrenceCustomRule} onChange={(e) => setRecurrenceCustomRule(e.currentTarget.value)} size="xs" />}
-                  {recurrencePattern !== "NONE" && <DateTimePicker placeholder="End date (optional)" value={recurrenceUntil} onChange={(value) => setRecurrenceUntil(value ? new Date(value) : null)} size="xs" clearable />}
+                  <Select
+                    placeholder="Repeat..."
+                    data={[
+                      { value: "DAILY", label: "Daily" },
+                      { value: "WEEKLY", label: "Weekly" },
+                      { value: "MONTHLY", label: "Monthly" },
+                      { value: "CUSTOM", label: "Custom..." },
+                    ]}
+                    value={recurrencePattern === "NONE" ? "WEEKLY" : recurrencePattern}
+                    onChange={(value) => setRecurrencePattern(value || "WEEKLY")}
+                    size="xs"
+                  />
+                  {recurrencePattern === "CUSTOM" && (
+                    <TextInput
+                      placeholder='e.g. "Every 2 weeks on Tuesday"'
+                      value={recurrenceCustomRule}
+                      onChange={(e) => setRecurrenceCustomRule(e.currentTarget.value)}
+                      size="xs"
+                    />
+                  )}
+                  <DateTimePicker
+                    placeholder="Ends on (optional)"
+                    value={recurrenceUntil}
+                    onChange={(value) => setRecurrenceUntil(value ? new Date(value) : null)}
+                    size="xs"
+                    clearable
+                  />
                 </Stack>
               </Collapse>
             </Stack>

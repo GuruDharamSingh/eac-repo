@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@elkdonis/nextcloud";
+import { validateUploadBuffer } from "@elkdonis/utils";
 import { requireUser } from "@/lib/session";
 
 const LIMITS: Record<string, number> = {
@@ -63,6 +64,14 @@ export async function POST(request: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Verify the actual bytes match the declared category — the client MIME
+  // type is attacker-controlled.
+  const validation = validateUploadBuffer(buffer, [kind]);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.reason }, { status: 415 });
+  }
+
   try {
     await admin.webdav.putFileContents(`/${filePath}`, buffer, {
       overwrite: true,

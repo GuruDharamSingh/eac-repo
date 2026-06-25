@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
+import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
 
 const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || "http://nextcloud-nginx:80";
@@ -113,6 +114,12 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Verify actual bytes are a raster image (client MIME is spoofable).
+    const validation = validateUploadBuffer(buffer, ["image"]);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.reason }, { status: 415 });
+    }
 
     // Make sure marketplace/<artist>/Images exists before the PUT.
     await ensureFolderTree(relativeDir);

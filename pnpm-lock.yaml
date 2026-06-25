@@ -437,6 +437,9 @@ importers:
       '@elkdonis/redis':
         specifier: workspace:*
         version: link:../../packages/redis
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/silex-render':
         specifier: workspace:*
         version: link:../../packages/silex-render
@@ -446,6 +449,9 @@ importers:
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
@@ -1718,6 +1724,9 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../nextcloud
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
       next:
         specifier: ^16.0.0
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)

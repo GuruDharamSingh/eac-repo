@@ -48,5 +48,19 @@ export async function GET(
   }
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
+  // Uploaded files are untrusted: never let the browser sniff types, and only
+  // render known-passive media inline. Anything scriptable when navigated to
+  // directly (SVG, HTML, XML, ...) downloads instead of rendering.
+  headers.set("X-Content-Type-Options", "nosniff");
+  const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+  const inlineSafe =
+    /^(image\/(jpeg|png|gif|webp|avif|bmp|x-icon)|video\/|audio\/|application\/pdf|font\/)/.test(
+      contentType
+    );
+  headers.set(
+    "Content-Disposition",
+    inlineSafe ? "inline" : "attachment"
+  );
+
   return new NextResponse(response.body, { status: response.status, headers });
 }

@@ -33,9 +33,43 @@ export interface WelcomeEmailProps {
   media?: WelcomeMediaItem[];
 }
 
-const defaultBodyText = `You're now part of Elkdonis Arts Collective — a mutual aid network for artists, healers, and community builders rooted in Toronto and growing outward.
+// Public origin where the brand fonts are served (/fonts/*).
+const FONT_BASE_URL = 'https://elkdonis-arts.org/fonts';
 
-A member profile has been created for you in the artist directory. You can fill it in at any time — tell us about your practice, your work, what you're looking for, and what you bring.`;
+// Brothers — the display face used for landing-page titles.
+// Basteleur — the body face used for landing-page body copy.
+const fontFaceCss = `
+@font-face {
+  font-family: 'Brothers';
+  src: url('${FONT_BASE_URL}/BrothersTypeface-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Basteleur';
+  src: url('${FONT_BASE_URL}/Basteleur-Moonlight.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Basteleur';
+  src: url('${FONT_BASE_URL}/Basteleur-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+`;
+
+// Font stacks: custom face first, then graceful fallbacks for clients
+// (e.g. Gmail) that strip @font-face.
+const brothersStack = "'Brothers', 'Arial Narrow', Arial, sans-serif";
+const basteleurStack = "'Basteleur', 'Cormorant Garamond', Georgia, serif";
+
+const defaultBodyText = `This is an email to confirm your sign up.
+
+Thanks.`;
 
 function paragraphsFromText(value?: string) {
   return (value?.trim() || defaultBodyText)
@@ -56,7 +90,9 @@ function WelcomeEmail({
 
   return (
     <Html lang="en">
-      <Head />
+      <Head>
+        <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} />
+      </Head>
       <Preview>Welcome to Elkdonis Arts Collective</Preview>
       <Body style={{ backgroundColor: '#0f0f0f', fontFamily: 'Arial, Helvetica, sans-serif', margin: 0, padding: 0 }}>
         <Container style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
@@ -71,10 +107,11 @@ function WelcomeEmail({
             <Text
               style={{
                 color: '#c9a84c',
-                fontSize: '11px',
-                fontFamily: 'Arial, sans-serif',
+                fontSize: '30px',
+                fontFamily: brothersStack,
                 textTransform: 'uppercase' as const,
-                letterSpacing: '0.2em',
+                letterSpacing: '0.08em',
+                lineHeight: '1.2',
                 margin: '0 0 12px',
               }}
             >
@@ -83,8 +120,8 @@ function WelcomeEmail({
             <Heading
               style={{
                 color: '#f0ece4',
-                fontSize: '28px',
-                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '20px',
+                fontFamily: basteleurStack,
                 fontWeight: 'normal',
                 margin: 0,
                 lineHeight: '1.3',
@@ -103,12 +140,12 @@ function WelcomeEmail({
               borderTop: 'none',
             }}
           >
-            <Text style={{ fontSize: '16px', color: '#d4cfc7', marginTop: 0, lineHeight: '1.7' }}>
+            <Text style={{ fontSize: '17px', color: '#d4cfc7', fontFamily: basteleurStack, marginTop: 0, lineHeight: '1.7' }}>
               Hello {displayName} —
             </Text>
 
             {bodyParagraphs.map((paragraph, index) => (
-              <Text key={index} style={{ fontSize: '16px', color: '#d4cfc7', lineHeight: '1.7' }}>
+              <Text key={index} style={{ fontSize: '17px', color: '#d4cfc7', fontFamily: basteleurStack, lineHeight: '1.7' }}>
                 {paragraph}
               </Text>
             ))}
@@ -162,7 +199,7 @@ function WelcomeEmail({
 
             <Hr style={{ border: 'none', borderTop: '1px solid #2a2a2a', margin: '32px 0' }} />
 
-            <Text style={{ fontSize: '14px', color: '#888', lineHeight: '1.7', margin: 0 }}>
+            <Text style={{ fontSize: '15px', color: '#888', fontFamily: basteleurStack, lineHeight: '1.7', margin: 0 }}>
               The Inner Gathering is where members connect, share upcoming events,
               and participate in the ongoing life of the collective. We're glad
               you're here.

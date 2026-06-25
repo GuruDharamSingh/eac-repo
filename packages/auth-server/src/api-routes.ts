@@ -382,3 +382,90 @@ export async function handleGetSession(request: NextRequest) {
     return NextResponse.json({ user: null, session: null });
   }
 }
+
+/**
+ * GET /api/auth/callback
+ *
+ * Completes a Google (or any GoTrue external provider) PKCE OAuth flow.
+ * GoTrue redirects here with ?code=<auth_code> after the provider auth.
+ * The server reads the PKCE verifier from the `eac_pkce_cv` cookie, exchanges
+ * the code for tokens via GoTrue's /token?grant_type=pkce endpoint, sets the
+ * session cookies, then redirects to `eac_pkce_dest` (or /).
+ */
+export async function handleOAuthCallback(request: NextRequest): Promise<NextResponse> {
+  // Behind NPM the internal request.url is http://0.0.0.0:<port>/..., so we
+  // rebuild the public origin from forwarded headers before any redirect.
+  const fwdProto = request.headers.get('x-forwarded-proto') ?? 'https';
+  const fwdHost  = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
+  const publicOrigin = `${fwdProto.split(',')[0].trim()}://${fwdHost}`;
+
+  const redirect = (path: string) => NextResponse.redirect(`${publicOrigin}${path}`);
+
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const oauthError = url.searchParams.get('error');
+  const oauthErrorDesc = url.searchParams.get('error_description');
+
+  if (oauthError) {
+    const msg = encodeURIComponent(oauthErrorDesc ?? oauthError);
+    return redirect(`/login?error=${msg}`);
+  }
+  if (!code) {
+    return redirect('/login?error=missing_code');
+  }
+
+  const verifier = request.cookies.get('eac_pkce_cv')?.value;
+  if (!verifier) {
+    return redirect('/login?error=missing_pkce_verifier');
+  }
+
+  // Exchange the auth code for tokens via GoTrue's PKCE endpoint.
+  // Server-side SUPABASE_URL is the internal Docker URL (no /auth/v1 prefix on GoTrue).
+  const gotrueBase = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+  if (!gotrueBase) {
+    console.error('[oauth] SUPABASE_URL is not set');
+    return redirect('/login?error=server_config');
+  }
+
+  let tokenData: { access_token?: string; refresh_token?: string; error?: string; error_description?: string };
+  try {
+    const tokenRes = await fetch(`${gotrueBase}/token?grant_type=pkce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
+    });
+    const raw = await tokenRes.text();
+    console.log('[oauth] token exchange status:', tokenRes.status, 'body:', raw.slice(0, 300));
+    tokenData = JSON.parse(raw) as typeof tokenData;
+  } catch (err) {
+    console.error('[oauth] PKCE token exchange fetch failed:', err);
+    return redirect('/login?error=token_exchange_failed');
+  }
+
+  if (tokenData.error || !tokenData.access_token || !tokenData.refresh_token) {
+    const msg = encodeURIComponent(tokenData.error_description ?? tokenData.error ?? 'auth_failed');
+    console.error('[oauth] Token exchange error:', tokenData.error, tokenData.error_description);
+    return redirect(`/login?error=${msg}`);
+  }
+
+  // Install the session in supabase-ssr cookies.
+  const { supabase, applyCookies } = createRouteSupabaseClient(request);
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+  });
+  if (sessionError) {
+    console.error('[oauth] setSession error:', sessionError.message);
+    return redirect('/login?error=session_failed');
+  }
+
+  const rawDest = request.cookies.get('eac_pkce_dest')?.value;
+  const dest = rawDest ? decodeURIComponent(rawDest) : '/';
+  const destUrl = dest.startsWith('http') ? dest : `${publicOrigin}${dest}`;
+
+  const response = NextResponse.redirect(destUrl);
+  response.cookies.set('eac_pkce_cv', '', { maxAge: 0, path: '/' });
+  response.cookies.set('eac_pkce_dest', '', { maxAge: 0, path: '/' });
+  await applyCookies(response);
+  return response;
+}

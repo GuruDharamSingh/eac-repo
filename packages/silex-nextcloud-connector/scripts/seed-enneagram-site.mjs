@@ -40,6 +40,7 @@ import fs from "fs";
 const require = createRequire(import.meta.url);
 const { readEnneagramTemplateRegistry, readEnneagramTemplateCss } = require("../src/workshopTemplateRegistry");
 const { createWebdavClient } = require("../src/webdav");
+const { TYPE_DATA } = require("../src/templates/enneagram/type-data");
 
 // ── args / config ────────────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
@@ -142,15 +143,34 @@ function publishedFragment(ids) {
   );
 }
 
-/** Swap the text of the type-header H1 (data-trait="title") to an ordinal. */
-function setTypeTitle(html, title) {
-  return html.replace(
+/**
+ * Inject all per-type content (title, epithet, body description, key qualities)
+ * into the composed type page HTML.
+ */
+function applyTypeData(html, typeData) {
+  // H1 title (data-trait="title")
+  html = html.replace(
     /(<h1\b[^>]*\bdata-trait="title"[^>]*>)[\s\S]*?(<\/h1>)/,
-    `$1\n      ${title}\n    $2`
+    `$1\n      ${typeData.title}\n    $2`
   );
+  // Epithet paragraph
+  html = html.replace(
+    /(<p class="eac-enn-type__epithet"[^>]*>)[\s\S]*?(<\/p>)/,
+    `$1\n      ${typeData.epithet}\n    $2`
+  );
+  // Body prose div
+  html = html.replace(
+    /(<div class="eac-enn-type__body"[^>]*>)[\s\S]*?(<\/div>)/,
+    `$1\n    ${typeData.body.trim()}\n    $2`
+  );
+  // Key Qualities list
+  const liItems = typeData.qualities.map((q) => `      <li>${q}</li>`).join("\n");
+  html = html.replace(
+    /(<ul class="eac-enn-qualities__list"[^>]*>)[\s\S]*?(<\/ul>)/,
+    `$1\n${liItems}\n    $2`
+  );
+  return html;
 }
-
-const ORDINALS = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 
 // Conceptual pages → output filename + nice name.
 const conceptPages = [
@@ -172,8 +192,9 @@ for (const cp of conceptPages) {
   outputs.push({ file: cp.file, name: cp.name, html: publishedFragment(p.sections) });
 }
 for (let i = 0; i < 9; i++) {
-  const html = setTypeTitle(publishedFragment(typeComposition), ORDINALS[i]);
-  outputs.push({ file: `type-${i + 1}.html`, name: `Type ${i + 1}`, html });
+  const typeData = TYPE_DATA[i];
+  const html = applyTypeData(publishedFragment(typeComposition), typeData);
+  outputs.push({ file: `type-${i + 1}.html`, name: `Type ${i + 1} — ${typeData.ordinal}`, html });
 }
 
 const combinedCss = readEnneagramTemplateCss();

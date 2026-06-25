@@ -15,6 +15,8 @@ export * from './org-folders';
 export * from './users';
 export * from './talk';
 export * from './calendar';
+export * from './shares';
+export * from './org-provisioning';
 
 // React components (optional)
 export * from './components';

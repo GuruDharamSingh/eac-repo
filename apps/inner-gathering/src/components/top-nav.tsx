@@ -19,6 +19,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useRealtimeNotifications } from "@elkdonis/hooks";
 import { supabase } from "@/lib/supabase";
 import { ProfileModal } from "./profile-modal";
+import { NotificationsPanel } from "./notifications-panel";
 
 interface NavItem {
   icon: React.ComponentType<{ size?: number }>;
@@ -221,6 +222,13 @@ export function TopNav() {
             <Text className="archive-kicker">Gathering table</Text>
             <Title order={3} className="archive-title">Inner Gathering</Title>
           </div>
+          {userId && (
+            <>
+              {/* Re-mount on each open so the list is fresh */}
+              {opened && <NotificationsPanel onNavigate={close} />}
+              <Divider />
+            </>
+          )}
           <Stack gap="xs">
             {visibleNavItems.map((item) => {
               const isActive = item.match(pathname);

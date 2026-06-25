@@ -10,23 +10,26 @@ import {
   Button,
   Divider,
   Group,
+  Menu,
   Paper,
   Stack,
   Text,
   ThemeIcon,
-  Tooltip,
   Switch,
 } from "@mantine/core";
 import { stripHtml } from "@/lib/strip-html";
 import {
   Calendar,
+  CheckCircle,
   Clock,
   MapPin,
+  MoreHorizontal,
   Video,
   FileText,
   ExternalLink,
   Users,
   UserCheck,
+  UserCog,
   UserPlus,
   UserX,
   ClipboardList,
@@ -39,8 +42,12 @@ import {
   Mail,
   Pencil,
   GraduationCap,
+  XCircle,
 } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
+import { nextOccurrence } from "@/lib/recurrence";
+import { useCycleStatus } from "./use-cycle-status";
+import { ManageGuidesModal } from "./manage-guides-modal";
 import { useRealtimeAttendees } from "@elkdonis/hooks";
 import { MediaPlayer, ImageLightbox } from "@elkdonis/ui";
 import { supabase } from "@/lib/supabase";
@@ -61,6 +68,8 @@ interface MeetingCardProps {
   showPrivateBadge?: boolean;
   canEdit?: boolean;
   onEdit?: (meeting: Meeting) => void;
+  currentUserId?: string | null;
+  isAdmin?: boolean;
 }
 
 const formatDate = (date: Date) =>
@@ -92,7 +101,8 @@ const formatTimeInZone = (date: Date, timeZone: string) =>
 function isHappeningNow(meeting: Meeting): boolean {
   if (!meeting.scheduledAt) return false;
   const now = new Date();
-  const start = new Date(meeting.scheduledAt);
+  // nextOccurrence handles recurring meetings (returns scheduledAt when not recurring)
+  const start = nextOccurrence(new Date(meeting.scheduledAt), meeting.recurrencePattern, meeting.durationMinutes);
   const durationMs = (meeting.durationMinutes || 60) * 60 * 1000;
   const end = new Date(start.getTime() + durationMs);
   return now >= start && now <= end;
@@ -121,6 +131,8 @@ export function MeetingCard({
   showPrivateBadge = false,
   canEdit = false,
   onEdit,
+  currentUserId,
+  isAdmin = false,
 }: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isAttending, setIsAttending] = useState(false);
@@ -130,6 +142,9 @@ export function MeetingCard({
   const [happeningNow, setHappeningNow] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
+
+  const cycle = useCycleStatus(meeting);
 
   const guideName = meeting.guide?.displayName || meeting.creator?.displayName || "Unknown";
   const guideInitial = guideName[0]?.toUpperCase() ?? "?";
@@ -140,7 +155,18 @@ export function MeetingCard({
 
   const coverImageId = meeting.coverImage?.id;
   const attachments = (meeting.media || []).filter((m) => m.id !== coverImageId);
-  const isPastMeeting = meeting.scheduledAt && new Date(meeting.scheduledAt) < new Date();
+  const isRecurring = Boolean(meeting.recurrencePattern && meeting.recurrencePattern !== "NONE");
+
+  // Guide permissions for confirm/cancel + co-guide management
+  const isGuide = Boolean(currentUserId && (meeting.createdBy === currentUserId || (meeting.coGuideIds ?? []).includes(currentUserId)));
+  const canGuide = isRecurring && (isAdmin || isGuide);
+  const canManageGuides = isAdmin || (currentUserId && meeting.createdBy === currentUserId);
+
+  // Recurring meetings always have a next occurrence, so they're never "past"
+  const displayDate = meeting.scheduledAt
+    ? nextOccurrence(new Date(meeting.scheduledAt), meeting.recurrencePattern, meeting.durationMinutes)
+    : null;
+  const isPastMeeting = !isRecurring && meeting.scheduledAt && new Date(meeting.scheduledAt) < new Date();
 
   const { attendeeCount, recentChanges, initializeCount } = useRealtimeAttendees({
     client: supabase,
@@ -246,17 +272,20 @@ export function MeetingCard({
                 <Text size="xs" c="dimmed" fw={500} truncate>
                   {guideName}
                 </Text>
-                {meeting.scheduledAt && (
+                {displayDate && (
                   <>
                     <Text span size="xs" c="dimmed">·</Text>
                     <Group gap={3} wrap="nowrap">
                       <Calendar size={11} color="var(--mantine-color-gray-6)" />
-                      <Text size="xs" c="dimmed">{formatDate(new Date(meeting.scheduledAt))}</Text>
+                      <Text size="xs" c="dimmed">
+                        {isRecurring && <Text span size="xs" c="dimmed" mr={3}>Next:</Text>}
+                        {formatDate(displayDate)}
+                      </Text>
                     </Group>
                     <Group gap={3} wrap="nowrap">
                       <Clock size={11} color="var(--mantine-color-gray-6)" />
                       <Text size="xs" c="dimmed">
-                        {formatTime(new Date(meeting.scheduledAt))}
+                        {formatTime(displayDate)}
                         {meeting.durationMinutes && (
                           <Text span size="xs" c="dimmed" ml={3}>({meeting.durationMinutes}m)</Text>
                         )}
@@ -276,29 +305,42 @@ export function MeetingCard({
             )}
           </Stack>
 
-          {/* Admin action icons */}
-          <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
-            {canPin && (
-              <Tooltip label={pinned ? "Unpin" : "Pin above feed"}>
-                <ActionIcon
-                  variant={pinned ? "filled" : "subtle"}
-                  color="ember"
-                  size="sm"
-                  disabled={pinning}
-                  onClick={onTogglePin}
-                >
-                  {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+          {/* Admin/guide overflow menu */}
+          {(canPin || canDelete || canEdit || canManageGuides) && (
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray" size="sm" style={{ flexShrink: 0 }}>
+                  <MoreHorizontal size={16} />
                 </ActionIcon>
-              </Tooltip>
-            )}
-            {canDelete && (
-              <Tooltip label="Delete">
-                <ActionIcon variant="subtle" color="red" size="sm" disabled={deleting} onClick={onDelete}>
-                  <Trash2 size={15} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {canPin && (
+                  <Menu.Item
+                    leftSection={pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                    disabled={pinning}
+                    onClick={onTogglePin}
+                  >
+                    {pinned ? "Unpin" : "Pin above feed"}
+                  </Menu.Item>
+                )}
+                {canManageGuides && (
+                  <Menu.Item leftSection={<UserCog size={14} />} onClick={() => setGuidesOpen(true)}>
+                    Manage guides
+                  </Menu.Item>
+                )}
+                {canEdit && (
+                  <Menu.Item leftSection={<Pencil size={14} />} onClick={() => onEdit?.(meeting)}>
+                    Edit
+                  </Menu.Item>
+                )}
+                {canDelete && (
+                  <Menu.Item color="red" leftSection={<Trash2 size={14} />} disabled={deleting} onClick={onDelete}>
+                    Delete
+                  </Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          )}
         </Group>
 
         {/* Badges */}
@@ -334,6 +376,16 @@ export function MeetingCard({
               {meeting.recurrencePattern === "DAILY" ? "Daily" :
                meeting.recurrencePattern === "WEEKLY" ? "Weekly" :
                meeting.recurrencePattern === "MONTHLY" ? "Monthly" : "Recurring"}
+            </Badge>
+          )}
+          {cycle.status === "confirmed" && (
+            <Badge variant="filled" color="teal" size="sm" leftSection={<CheckCircle size={11} />}>
+              Confirmed{cycle.confirmCount > 1 ? ` (${cycle.confirmCount})` : ""}
+            </Badge>
+          )}
+          {cycle.status === "cancelled" && (
+            <Badge variant="filled" color="red" size="sm" leftSection={<XCircle size={11} />}>
+              Cancelled
             </Badge>
           )}
         </Group>
@@ -398,6 +450,46 @@ export function MeetingCard({
         <Box px="md" pt="xs" pb="md">
           <Divider mb="sm" />
           <Stack gap="xs">
+            {/* Guide cycle controls (recurring meetings) */}
+            {canGuide && (
+              <Stack gap={6}>
+                <Group gap="xs" grow>
+                  <Button
+                    size="xs"
+                    variant={cycle.status === "confirmed" ? "filled" : "outline"}
+                    color="teal"
+                    leftSection={<CheckCircle size={14} />}
+                    loading={cycle.busy}
+                    onClick={cycle.confirm}
+                  >
+                    {cycle.status === "confirmed" ? "Confirmed for this cycle" : "Confirm meeting"}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={cycle.status === "cancelled" ? "filled" : "outline"}
+                    color="red"
+                    leftSection={<XCircle size={14} />}
+                    loading={cycle.busy}
+                    onClick={cycle.cancel}
+                  >
+                    {cycle.status === "cancelled" ? "Cancelled" : "Cancel"}
+                  </Button>
+                </Group>
+                {(cycle.confirmCount > 0 || cycle.cancelCount > 0) && (
+                  <Group gap="md">
+                    {cycle.confirmCount > 0 && (
+                      <Text size="xs" c="dimmed">
+                        <Text span fw={600} c="teal">{cycle.confirmCount}</Text> guide{cycle.confirmCount !== 1 ? "s" : ""} confirmed this cycle
+                      </Text>
+                    )}
+                    {cycle.cancelCount > 0 && (
+                      <Text size="xs" c="dimmed">{cycle.cancelCount} cancelled</Text>
+                    )}
+                  </Group>
+                )}
+              </Stack>
+            )}
+
             {/* RSVP for upcoming meetings */}
             {meeting.isRSVPEnabled && !isPastMeeting && (
               <Stack gap={6}>
@@ -450,28 +542,55 @@ export function MeetingCard({
               </Button>
             )}
 
-            {/* Secondary actions row */}
-            <Group gap="xs" justify="space-between">
+            {/* Primary actions: video + details (workshop join takes precedence) */}
+            <Group gap="xs" grow>
+              {isWorkshop && !isPastMeeting && (
+                <Button
+                  size="xs"
+                  variant="filled"
+                  color="ember"
+                  leftSection={<GraduationCap size={13} />}
+                  onClick={() => setJoinOpen(true)}
+                >
+                  Join Workshop
+                </Button>
+              )}
+              {meeting.videoLink && (
+                <Button
+                  component="a"
+                  href={meeting.videoLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="xs"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<Video size={13} />}
+                >
+                  Join Video
+                </Button>
+              )}
+              <Button
+                component={Link}
+                href={detailHref}
+                size="xs"
+                variant="light"
+                color="ember"
+              >
+                View Details →
+              </Button>
+            </Group>
+
+            {/* Tertiary links: event page, talk room, document */}
+            {(meeting.hasEventPage || meeting.nextcloudTalkToken || meeting.documentUrl) && (
               <Group gap="xs">
-                {isWorkshop && !isPastMeeting && (
-                  <Button
-                    size="xs"
-                    variant="filled"
-                    color="ember"
-                    leftSection={<GraduationCap size={13} />}
-                    onClick={() => setJoinOpen(true)}
-                  >
-                    Join Workshop
-                  </Button>
-                )}
                 {meeting.hasEventPage && (
                   <Button
                     component={Link}
                     href={`/meetings/${meeting.id}`}
-                    size="xs"
-                    variant="light"
+                    size="compact-xs"
+                    variant="subtle"
                     color="ember"
-                    leftSection={<LayoutGrid size={13} />}
+                    leftSection={<LayoutGrid size={12} />}
                   >
                     Event Page
                   </Button>
@@ -481,11 +600,12 @@ export function MeetingCard({
                     component="a"
                     href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
                     target="_blank"
-                    size="xs"
-                    variant="outline"
-                    leftSection={<Video size={13} />}
+                    size="compact-xs"
+                    variant="subtle"
+                    color="teal"
+                    leftSection={<Video size={12} />}
                   >
-                    Join Room
+                    Talk Room
                   </Button>
                 )}
                 {meeting.documentUrl && (
@@ -493,39 +613,16 @@ export function MeetingCard({
                     component="a"
                     href={meeting.documentUrl}
                     target="_blank"
-                    size="xs"
+                    size="compact-xs"
                     variant="subtle"
-                    leftSection={<FileText size={13} />}
+                    color="gray"
+                    leftSection={<FileText size={12} />}
                   >
                     Document
                   </Button>
                 )}
-
-                {/* View detail page */}
-                <Button
-                  component={Link}
-                  href={detailHref}
-                  size="xs"
-                  variant="subtle"
-                  color="gray"
-                >
-                  View details →
-                </Button>
               </Group>
-
-              {/* Admin edit */}
-              {canEdit && (
-                <Button
-                  size="xs"
-                  variant="light"
-                  color="blue"
-                  leftSection={<Pencil size={13} />}
-                  onClick={() => onEdit?.(meeting)}
-                >
-                  Edit
-                </Button>
-              )}
-            </Group>
+            )}
           </Stack>
         </Box>
       </Stack>
@@ -536,6 +633,10 @@ export function MeetingCard({
         opened={lightboxUrl !== null}
         onClose={() => setLightboxUrl(null)}
       />
+
+      {canManageGuides && (
+        <ManageGuidesModal meetingId={meeting.id} opened={guidesOpen} onClose={() => setGuidesOpen(false)} />
+      )}
 
       {isWorkshop && (
         <JoinWorkshopModal

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
+import {
+  getAdminClient,
+  grantOrgAccess,
+  provisionOrgOnNextcloud,
+} from "@elkdonis/nextcloud";
 import { requireUser } from "@/lib/session";
 
 const RESERVED = new Set([
@@ -111,6 +116,30 @@ export async function POST(req: Request) {
       { error: "Could not create org", detail: msg },
       { status: 500 }
     );
+  }
+
+  // Best-effort Nextcloud provisioning: org folder tree under the service
+  // account, shared read/write to the owner if they already have NC
+  // credentials. Failures don't block org creation — the Silex token route
+  // re-runs the same idempotent provisioning on first editor launch.
+  try {
+    const admin = getAdminClient();
+    const { orgFolderPath } = await provisionOrgOnNextcloud(admin, subdomain);
+    await db`
+      UPDATE organizations
+      SET nextcloud_folder_path = ${orgFolderPath}
+      WHERE id = ${subdomain}
+    `;
+
+    const owners = await db<{ nextcloud_user_id: string | null }[]>`
+      SELECT nextcloud_user_id FROM users WHERE id = ${user.id} LIMIT 1
+    `;
+    const ncUserId = owners[0]?.nextcloud_user_id;
+    if (ncUserId) {
+      await grantOrgAccess(admin, subdomain, ncUserId, "owner");
+    }
+  } catch (err) {
+    console.warn("org nextcloud provisioning deferred:", err);
   }
 
   return NextResponse.json({ ok: true, slug: subdomain });

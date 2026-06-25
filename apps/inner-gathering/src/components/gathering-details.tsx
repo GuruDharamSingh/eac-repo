@@ -21,6 +21,7 @@ import {
 import type { Workshop, Meeting, WorkshopSession, WorkshopResource } from '@elkdonis/types';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { CommentSection } from './comment-section';
+import { CycleHistory } from './cycle-history';
 
 interface GatheringDetailsProps {
   gathering: Workshop | Meeting;
@@ -191,6 +192,14 @@ export function GatheringDetails({
                 ))}
               </Stack>
             </Stack>
+          )}
+
+          {/* Cycle history for recurring meetings */}
+          {!isWorkshop && asMeeting.recurrencePattern && asMeeting.recurrencePattern !== 'NONE' && (
+            <>
+              <Divider my="xl" label="Recurring" labelPosition="center" />
+              <CycleHistory meetingId={gathering.id} />
+            </>
           )}
 
           <Divider my="xl" label="Discussion" labelPosition="center" />

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
     "@elkdonis/silex-render",
+    "@elkdonis/utils",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),

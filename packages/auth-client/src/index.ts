@@ -70,28 +70,51 @@ export async function signUp(
 }
 
 /**
- * Begin Google OAuth (Option A — raw GoTrue path).
+ * Begin Google OAuth via GoTrue PKCE flow.
  *
- * GoTrue is exposed without the standard Supabase `/auth/v1` Kong prefix, so we
- * redirect the browser straight to its root `/authorize` endpoint rather than
- * using supabase-js (which would call the non-existent `/auth/v1/authorize`).
- * After Google → GoTrue, the user returns to `redirectTo` (defaults to the
- * current origin).
+ * Generates a PKCE code verifier + challenge client-side, stores the verifier
+ * in a short-lived cookie so the server-side /api/auth/callback can complete
+ * the token exchange, then redirects to GoTrue's /authorize endpoint.
  *
- * NOTE: this only *initiates* the flow. Completing a logged-in session needs a
- * callback handler that converts GoTrue's returned tokens into the app's
- * `sb-eac-auth` cookies — see eac-launch-status notes (not yet implemented).
+ * The `afterLoginUrl` param is where the user lands once the callback sets
+ * cookies (defaults to the app root). It is separate from the GoTrue
+ * callback URL, which is always `<origin>/api/auth/callback`.
  */
-export function signInWithGoogle(redirectTo?: string): void {
+export async function signInWithGoogle(afterLoginUrl?: string): Promise<void> {
   if (typeof window === 'undefined') return;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!base) {
     console.error('[auth] NEXT_PUBLIC_SUPABASE_URL is not set; cannot start Google sign-in.');
     return;
   }
-  const dest = redirectTo ?? window.location.origin;
-  window.location.href =
-    `${base.replace(/\/$/, '')}/authorize?provider=google&redirect_to=${encodeURIComponent(dest)}`;
+
+  // Generate PKCE verifier (32 random bytes, base64url-encoded).
+  const raw = new Uint8Array(32);
+  crypto.getRandomValues(raw);
+  const verifier = btoa(String.fromCharCode(...raw))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+  // SHA-256 challenge.
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+  // Store verifier + destination in short-lived (5 min) non-httpOnly cookies
+  // so the server-side callback can read them.
+  const expires = new Date(Date.now() + 5 * 60 * 1000).toUTCString();
+  document.cookie = `eac_pkce_cv=${verifier}; path=/; expires=${expires}; samesite=lax`;
+  if (afterLoginUrl) {
+    document.cookie = `eac_pkce_dest=${encodeURIComponent(afterLoginUrl)}; path=/; expires=${expires}; samesite=lax`;
+  }
+
+  const callbackUrl = `${window.location.origin}/api/auth/callback`;
+  window.location.href = [
+    `${base.replace(/\/$/, '')}/authorize`,
+    `?provider=google`,
+    `&redirect_to=${encodeURIComponent(callbackUrl)}`,
+    `&code_challenge=${challenge}`,
+    `&code_challenge_method=S256`,
+  ].join('');
 }
 
 /**

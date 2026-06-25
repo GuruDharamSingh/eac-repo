@@ -44,6 +44,17 @@ export interface Meeting {
   documentShareToken?: string;
   nextcloudTalkToken?: string; // Talk room token for video conferencing
 
+  // Recurring cycle state — derived from thread_cycle_events for the current
+  // occurrence. A guide confirms or cancels each cycle; counts reset per cycle.
+  cycleStatus?: 'confirmed' | 'cancelled' | null;
+  isConfirmedThisWeek?: boolean;
+  isCancelledThisCycle?: boolean;
+  cycleConfirmCount?: number;
+  cycleCancelCount?: number;
+
+  // Co-guides who can also confirm/cancel (stored in metadata.coGuideIds)
+  coGuideIds?: string[];
+
   // RSVP/Attendance
   attendeeLimit?: number;
   attendeeCount?: number;

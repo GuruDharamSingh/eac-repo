@@ -9,6 +9,7 @@ import {
   NumberInput,
   Paper,
   SegmentedControl,
+  Select,
   Stack,
   Switch,
   Text,
@@ -24,7 +25,9 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconPlus,
+  IconRepeat,
   IconTrash,
+  IconVideo,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { MediaUpload } from "../MediaUpload";
@@ -123,7 +126,12 @@ export function ContentForm({
           <Divider label="When & where" labelPosition="left" />
           <Group grow>
             <DateTimePicker
-              label="Meeting time"
+              label={draft.recurrencePattern && draft.recurrencePattern !== "NONE" ? "Start date & time" : "Meeting time"}
+              description={
+                draft.recurrencePattern && draft.recurrencePattern !== "NONE"
+                  ? "When the series begins — the card shows the next occurrence."
+                  : undefined
+              }
               placeholder="Pick a date and time"
               clearable
               dropdownType="modal"
@@ -145,11 +153,62 @@ export function ContentForm({
             value={draft.location ?? ""}
             onChange={(e) => update({ location: e.currentTarget.value || null })}
           />
+          <TextInput
+            label="Video link"
+            description="Zoom, Meet, or any video URL — shown as a join button on the card"
+            placeholder="https://..."
+            leftSection={<IconVideo size={14} />}
+            value={draft.videoLink ?? ""}
+            onChange={(e) => update({ videoLink: e.currentTarget.value || null })}
+          />
           <Switch
             label="This is online"
             checked={!!draft.isOnline}
             onChange={(e) => update({ isOnline: e.currentTarget.checked })}
           />
+
+          {/* Recurring toggle */}
+          <Divider label={<Group gap={4}><IconRepeat size={14} /><span>Recurring</span></Group>} labelPosition="left" />
+          <Switch
+            label="This is a recurring meeting"
+            checked={!!draft.recurrencePattern && draft.recurrencePattern !== 'NONE'}
+            onChange={(e) => {
+              update({ recurrencePattern: e.currentTarget.checked ? 'WEEKLY' : 'NONE' });
+              if (!e.currentTarget.checked) update({ recurrenceCustomRule: null, recurrenceUntil: null });
+            }}
+          />
+          <Collapse in={!!draft.recurrencePattern && draft.recurrencePattern !== 'NONE'}>
+            <Stack gap="sm">
+              <Select
+                label="Repeats"
+                data={[
+                  { value: 'DAILY', label: 'Daily' },
+                  { value: 'WEEKLY', label: 'Weekly' },
+                  { value: 'MONTHLY', label: 'Monthly' },
+                  { value: 'CUSTOM', label: 'Custom…' },
+                ]}
+                value={draft.recurrencePattern ?? 'WEEKLY'}
+                onChange={(v) => update({ recurrencePattern: (v as any) ?? 'WEEKLY' })}
+              />
+              {draft.recurrencePattern === 'CUSTOM' && (
+                <TextInput
+                  label="Custom schedule"
+                  placeholder='e.g. "Every 2 weeks on Tuesday"'
+                  value={draft.recurrenceCustomRule ?? ""}
+                  onChange={(e) => update({ recurrenceCustomRule: e.currentTarget.value || null })}
+                />
+              )}
+              <DateTimePicker
+                label="Ends on (optional)"
+                placeholder="No end date"
+                clearable
+                dropdownType="modal"
+                value={draft.recurrenceUntil ? new Date(draft.recurrenceUntil) : null}
+                onChange={(v) => update({ recurrenceUntil: v ? new Date(v as any).toISOString() : null })}
+              />
+            </Stack>
+          </Collapse>
+
           <Switch
             label="Open RSVPs"
             checked={!!draft.isRsvpEnabled}

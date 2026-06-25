@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MarketingMiniFeed } from "./MarketingMiniFeed";
 
 interface InitiativeConfig {
   eyebrow?: string;
@@ -74,19 +75,23 @@ export function FeatureInitiative() {
             </div>
           </div>
 
-          <div className="initiative-panel" aria-hidden="true">
-            <div className="initiative-panel-inner">
-              <div className="initiative-diamond" />
-              <p className="initiative-stat">Open-Source</p>
-              <p className="initiative-stat-label">Backend</p>
-              <div className="initiative-divider" />
-              <p className="initiative-stat">Mutual Aid</p>
-              <p className="initiative-stat-label">Fund</p>
-              <div className="initiative-divider" />
-              <p className="initiative-stat">Artists'</p>
-              <p className="initiative-stat-label">Online Directory</p>
-            </div>
-          </div>
+          <MarketingMiniFeed
+            fallback={
+              <div className="initiative-panel" aria-hidden="true">
+                <div className="initiative-panel-inner">
+                  <div className="initiative-diamond" />
+                  <p className="initiative-stat">Open-Source</p>
+                  <p className="initiative-stat-label">Backend</p>
+                  <div className="initiative-divider" />
+                  <p className="initiative-stat">Mutual Aid</p>
+                  <p className="initiative-stat-label">Fund</p>
+                  <div className="initiative-divider" />
+                  <p className="initiative-stat">Artists'</p>
+                  <p className="initiative-stat-label">Online Directory</p>
+                </div>
+              </div>
+            }
+          />
         </div>
       </div>
     </section>

@@ -24,6 +24,7 @@ export type {
 };
 
 export {
+  sendEmail,
   renderRsvpGuestEmail,
   renderRsvpOwnerEmail,
   renderContactOwnerEmail,

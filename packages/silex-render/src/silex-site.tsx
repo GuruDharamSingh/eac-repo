@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { applyWorkshopTraits } from "@elkdonis/cms-bindings";
+import { sanitizeSilexHtml } from "@elkdonis/utils";
 import {
   getOrgBySlug,
   getOrgWorkshopForTemplate,
@@ -19,17 +20,9 @@ import { renderSilexHtmlWithEmbeds } from "./embeds";
  * also carries its own (rewritten) CSS link, so this is belt-and-suspenders.
  */
 
-function stripScripts(html: string): string {
-  return html
-    // Strip HTML comments first: authored template comments can contain literal
-    // "<eac-embed>" text, which would otherwise be mis-parsed as a real embed and
-    // swallow following markup up to the next </eac-embed>.
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
-    .replace(/\son\w+\s*=\s*'[^']*'/gi, "")
-    .replace(/javascript:/gi, "");
-}
+// DOMPurify-based sanitization (sanitizeSilexHtml) also strips HTML comments,
+// which matters here: authored template comments can contain literal
+// "<eac-embed>" text that would otherwise be mis-parsed as a real embed.
 
 async function fetchPublishedHtml(ref: string): Promise<string | null> {
   const parsed = parseSilexPublishedRef(ref);
@@ -103,7 +96,7 @@ export async function SilexSite({
     );
   }
 
-  let safe = stripScripts(rewriteAssetUrls(html, org.slug));
+  let safe = sanitizeSilexHtml(rewriteAssetUrls(html, org.slug));
 
   // If the published HTML contains workshop data-trait slots, bind live DB
   // values from the org's primary published workshop into them.

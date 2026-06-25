@@ -24,9 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
     }
 
-    const sessionDisplayName = session?.user?.user_metadata?.display_name
-      ?? session?.user?.email
-      ?? null;
+    const sessionDisplayName = session?.user?.user_metadata?.display_name ?? null;
 
     const displayName = signedNameClean ?? sessionDisplayName;
 

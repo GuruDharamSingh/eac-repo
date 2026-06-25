@@ -31,6 +31,10 @@ export interface ContentDraft {
   durationMinutes?: number | null;
   location?: string | null;
   isOnline?: boolean;
+  videoLink?: string | null;
+  recurrencePattern?: 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM' | null;
+  recurrenceCustomRule?: string | null;
+  recurrenceUntil?: string | null;
 
   // rsvp
   isRsvpEnabled?: boolean;

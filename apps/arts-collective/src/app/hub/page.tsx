@@ -69,6 +69,13 @@ export default async function HubPage() {
     getEditableOrgsForUser(user.id),
   ]);
 
+  // Network member who has never provisioned an org on Arts Collective.
+  // Redirect to the onboarding choice page so they can decide whether to
+  // start an org or browse as an org-agnostic member.
+  if (editableOrgs.length === 0) {
+    redirect("/onboarding");
+  }
+
   return (
     <SiteShell>
       <div className="mx-auto w-full max-w-6xl px-6 py-12">

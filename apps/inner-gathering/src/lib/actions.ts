@@ -61,6 +61,7 @@ export async function createMeetingAction(payload: {
   visibility?: MeetingVisibility;
   isOnline?: boolean;
   meetingUrl?: string;
+  videoLink?: string;
   nextcloudDocumentId?: string;
   documentUrl?: string;
   syncToCalendar?: boolean;
@@ -117,7 +118,8 @@ export async function createMeetingAction(payload: {
     description: payload.description?.trim(),
     visibility: payload.visibility,
     isOnline: payload.isOnline,
-    meetingUrl: payload.meetingUrl?.trim(),
+    meetingUrl: (payload.meetingUrl || payload.videoLink)?.trim(),
+    videoLink: (payload.videoLink || payload.meetingUrl)?.trim(),
     nextcloudDocumentId: payload.nextcloudDocumentId,
     documentUrl: payload.documentUrl,
     media: payload.media,

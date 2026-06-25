@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
+import { isWithinCurrentCycle } from "@/lib/recurrence";
 import {
   EMAIL_TEMPLATE_ORG_ID,
   RSVP_OWNER_TEMPLATE_KEY,
@@ -27,19 +28,31 @@ export async function GET(
     }
 
     const result = await db`
-      SELECT status, created_at
-      FROM thread_rsvps
-      WHERE thread_id = ${threadId} AND user_id = ${session.user.id}
+      SELECT r.status, r.created_at, r.updated_at,
+             t.scheduled_at, t.recurrence_pattern, t.duration_minutes
+      FROM thread_rsvps r
+      JOIN threads t ON t.id = r.thread_id
+      WHERE r.thread_id = ${threadId} AND r.user_id = ${session.user.id}
     `;
 
     if (result.length === 0) {
       return NextResponse.json({ attending: false, status: null });
     }
 
+    // For recurring meetings the RSVP expires once the occurrence it was made
+    // for has passed — the member re-confirms each cycle.
+    const row = result[0];
+    const currentCycle = !row.scheduled_at || isWithinCurrentCycle(
+      new Date(row.updated_at),
+      new Date(row.scheduled_at),
+      row.recurrence_pattern,
+      row.duration_minutes
+    );
+
     return NextResponse.json({
-      attending: result[0].status === 'yes',
-      status: result[0].status,
-      registeredAt: result[0].created_at,
+      attending: row.status === 'yes' && currentCycle,
+      status: currentCycle ? row.status : null,
+      registeredAt: row.created_at,
     });
   } catch (error) {
     console.error("Error checking RSVP status:", error);
@@ -122,6 +135,21 @@ export async function POST(
     const rsvpCreatedAt = new Date().toISOString();
     const threadUrl = new URL(`/meetings/${threadId}`, request.nextUrl.origin).toString();
 
+    // In-app heads-up to the guide that someone's interested (skip self-RSVP).
+    if (meeting[0].guide_id && meeting[0].guide_id !== session.user.id) {
+      await db`
+        INSERT INTO notifications (id, user_id, kind, thread_id, actor_id, data)
+        VALUES (
+          ${`notif_${Date.now()}_${Math.random().toString(36).substring(7)}`},
+          ${meeting[0].guide_id},
+          'meeting_rsvp',
+          ${threadId},
+          ${session.user.id},
+          ${JSON.stringify({ title: meeting[0].title })}::jsonb
+        )
+      `.catch((e: unknown) => console.error("[inner-gathering] rsvp notification failed:", e));
+    }
+
     // Count RSVPs for threshold check + email
     const countResult = await db`
       SELECT COUNT(*) as count FROM thread_rsvps
@@ -145,14 +173,14 @@ export async function POST(
       `;
 
       await db`
-        INSERT INTO notifications (id, user_id, type, title, body, data, created_at)
+        INSERT INTO notifications (id, user_id, kind, thread_id, actor_id, data, created_at)
         VALUES (
           ${`notif_${Date.now()}_${Math.random().toString(36).substring(7)}`},
           ${meeting[0].guide_id},
           'meeting_min_attendees',
-          'Minimum attendees reached!',
-          ${`Your meeting "${meeting[0].title}" has reached the minimum of ${meeting[0].min_attendees} attendees.`},
-          ${JSON.stringify({ threadId, attendeeCount: currentCount })},
+          ${threadId},
+          ${session.user.id},
+          ${JSON.stringify({ title: meeting[0].title, minAttendees: meeting[0].min_attendees, attendeeCount: currentCount })},
           NOW()
         )
       `;
