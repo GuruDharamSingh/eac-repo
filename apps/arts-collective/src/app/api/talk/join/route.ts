@@ -9,13 +9,14 @@ import { db } from "@elkdonis/db";
  * Strategy: ensure the user has a Nextcloud browser session before opening
  * the Talk room, so they appear as themselves rather than a guest.
  *
- *   1. Require an arts-collective session.
- *   2. Require the user to have synced their Nextcloud account.
- *   3. If they completed OAuth in the last 2 minutes (cookie), direct redirect.
- *   4. Otherwise route through Nextcloud Social Login (custom_oauth2/elkdonis)
- *      with a short-lived signed JWT so admin's /api/oidc/authorize can
- *      authenticate them without a password prompt. After OAuth, Nextcloud
- *      redirects to the Talk room itself (login_redirect_url).
+ *   1. Not logged in, or logged in but not synced — guest join, no login wall.
+ *   2. If they completed OAuth in the last 2 minutes (cookie), direct redirect.
+ *   3. Otherwise route through Nextcloud's /login with redirect_url:
+ *      a live NC session redirects straight to the Talk room, while a fresh
+ *      one is auto-forwarded (sociallogin auto_login=1) to our OIDC authorize
+ *      endpoint, which reads the short-lived eac_user_jwt cookie and signs
+ *      them in without a password prompt. Hitting the sociallogin endpoint
+ *      directly errors ("account already connected") when a session exists.
  *
  * Usage: /api/talk/join?token=ROOM_TOKEN
  */
@@ -27,11 +28,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing room token" }, { status: 400 });
   }
 
+  const nextcloudUrl =
+    process.env.NEXTCLOUD_PUBLIC_URL ||
+    process.env.NEXT_PUBLIC_NEXTCLOUD_URL ||
+    "http://localhost:8080";
+  const talkPath = `/call/${token}`;
+  const talkUrl = `${nextcloudUrl.replace(/\/$/, "")}${talkPath}`;
+
   const session = await getServerSession();
   if (!session.user) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    loginUrl.searchParams.set("returnTo", req.url);
-    return NextResponse.redirect(loginUrl);
+    // Not logged into the app at all — still let them into the room as a guest.
+    return NextResponse.redirect(talkUrl);
   }
 
   const [user] = await db<
@@ -53,21 +60,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  // No Nextcloud account yet — same guest fallback. Once they sync, the SSO
+  // flow below takes over and joins them as their real account instead.
   if (!user.nextcloud_synced || !user.nextcloud_user_id) {
-    const accountUrl = new URL("/hub", req.nextUrl.origin);
-    accountUrl.searchParams.set("error", "nextcloud_not_synced");
-    accountUrl.searchParams.set(
-      "message",
-      "Please sync your Nextcloud account to join Talk rooms"
-    );
-    return NextResponse.redirect(accountUrl);
+    return NextResponse.redirect(talkUrl);
   }
-
-  const nextcloudUrl =
-    process.env.NEXTCLOUD_PUBLIC_URL ||
-    process.env.NEXT_PUBLIC_NEXTCLOUD_URL ||
-    "http://localhost:8080";
-  const talkUrl = `${nextcloudUrl.replace(/\/$/, "")}/call/${token}`;
 
   const oauthTimestamp = req.cookies.get("eac_nc_oauth_ts")?.value;
   const now = Date.now();
@@ -101,11 +98,8 @@ export async function GET(req: NextRequest) {
     .setAudience("admin-oidc")
     .sign(secret);
 
-  const socialLoginUrl = new URL(
-    "/apps/sociallogin/custom_oauth2/elkdonis",
-    nextcloudUrl
-  );
-  socialLoginUrl.searchParams.set("login_redirect_url", talkUrl);
+  const socialLoginUrl = new URL("/login", nextcloudUrl);
+  socialLoginUrl.searchParams.set("redirect_url", talkPath);
 
   const response = NextResponse.redirect(socialLoginUrl);
   response.cookies.set("eac_user_jwt", userToken, {

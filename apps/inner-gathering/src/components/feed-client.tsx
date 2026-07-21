@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Plus, LogOut, RefreshCw, UserCircle } from "lucide-react";
-import type { Meeting, Post } from "@elkdonis/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, LogOut, RefreshCw } from "lucide-react";
+import type { Meeting, Post, ContentDraft, ContentFormKind, ThreadKind } from "@elkdonis/types";
 import type { QuestionPoll } from "@elkdonis/services";
 import { useRealtimeFeed } from "@elkdonis/hooks";
 import { notifications } from "@mantine/notifications";
@@ -55,12 +55,31 @@ interface FeedClientProps {
 
 export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads = [], substackPosts = [], tabOrder, userId, isAdmin = false }: FeedClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] = useDisclosure(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  // Authoritative draft loaded from GET /api/content/[id] — includes the stored
+  // kind and workshop details/sessions so an edit round-trip doesn't wipe them.
+  const [editingDraft, setEditingDraft] = useState<{
+    id: string;
+    kind: ThreadKind;
+    draft: Partial<ContentDraft>;
+  } | null>(null);
+  const [editingDraftError, setEditingDraftError] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [attendeeModalOpened, setAttendeeModalOpened] = useState(false);
+  const [showWorkQuestion, setShowWorkQuestion] = useState(false);
+  // Revealed via the "Current Work Question" nav item (site-header.tsx),
+  // which pushes here as /feed?wq=1 — same mechanism as ?welcome=1 for the
+  // WelcomePopup, so it works whether you're already on /feed or arriving
+  // from another page.
+  useEffect(() => {
+    if (searchParams.get("wq") === "1") setShowWorkQuestion(true);
+  }, [searchParams]);
+
+  const [createKind, setCreateKind] = useState<ContentFormKind>("post");
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [feed, setFeed] = useState(initialFeed);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
@@ -74,17 +93,54 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
     (tabOrder && tabOrder.length ? normalizeTabOrder(tabOrder) : DEFAULT_TAB_ORDER)[0]
   );
 
+  const loadEditingDraft = useCallback(async (threadId: string) => {
+    setEditingDraft(null);
+    setEditingDraftError(null);
+    try {
+      const res = await fetch(`/api/content/${threadId}`);
+      if (!res.ok) throw new Error(`Failed to load content (${res.status})`);
+      const data = await res.json();
+      setEditingDraft({ id: data.id, kind: data.kind, draft: data.draft });
+    } catch (err) {
+      setEditingDraftError(err instanceof Error ? err.message : "Failed to load content");
+    }
+  }, []);
+
   const handleEditMeeting = (meeting: Meeting) => {
+    // Workshops get their own dedicated editor page, not the shared drawer.
+    if (meeting.kind === "workshop") {
+      router.push(`/workshops/${meeting.id}/edit`);
+      return;
+    }
     setEditingPost(null);
     setEditingMeeting(meeting);
     openEditDrawer();
+    void loadEditingDraft(meeting.id);
   };
 
   const handleEditPost = (post: Post) => {
     setEditingMeeting(null);
     setEditingPost(post);
     openEditDrawer();
+    void loadEditingDraft(post.id);
   };
+
+  // ?create=<kind> opens the same drawer the "+" button uses, pre-set to a
+  // kind — used by calendar-client.tsx ("meeting") and home-client.tsx
+  // ("true", meaning just open it). Workshops have their own dedicated
+  // /workshops/create page now, not this drawer.
+  useEffect(() => {
+    const createParam = searchParams.get("create");
+    if (createParam === "meeting" || createParam === "post") {
+      setCreateKind(createParam as ContentFormKind);
+      openDrawer();
+      router.replace("/feed");
+    } else if (createParam === "true") {
+      openDrawer();
+      router.replace("/feed");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Sync feed state when server data changes (e.g., after revalidation)
   useEffect(() => {
@@ -213,7 +269,6 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
   };
 
   const pinnedFeed = feed.filter(isPinned);
-  const standardFeed = feed.filter((item) => !isPinned(item));
 
   const meetingKindOf = (item: (typeof feed)[number]) =>
     item.type === "meeting" ? ((item.data as Meeting).kind ?? "meeting") : null;
@@ -257,8 +312,10 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
 
     const publications = [...postEntries, ...forumEntries, ...substackEntries].sort((a, b) => b.sort - a.sort);
 
-    // All = every non-pinned native item + forum + substack, interleaved.
-    const nativeEntries: MergedEntry[] = standardFeed.map((item) => ({
+    // All = every native item (pinned items stay in the normal flow here —
+    // pinning only lifts them into the Featured strip above, it doesn't pull
+    // them out of the regular feed) + forum + substack, interleaved.
+    const nativeEntries: MergedEntry[] = feed.map((item) => ({
       sort: dateMs(item.createdAt),
       key: `feed-${item.type}-${item.data.id}`,
       kind: "feed",
@@ -324,41 +381,10 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
 
   return (
     <Box className="archive-shell">
-      {/* Header */}
-      <Paper
-        shadow="md"
-        p="md"
-        className="archive-topbar"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <Container fluid style={{ position: 'relative' }}>
-          <Title
-            order={2}
-            fw={400}
-            style={{
-              color: '#fdf0d0',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              fontFamily: "'Brothers', 'Cinzel', serif",
-              fontSize: 'clamp(1.98rem, 6.2vw, 4.22rem)',
-              lineHeight: 1.1,
-              margin: 0,
-              textAlign: 'center',
-            }}
-          >
-            Elkdonis Arts Collective
-          </Title>
-        </Container>
-      </Paper>
-
       {/* Main Content */}
       <Container size="sm" py="lg" pb={120}>
         <Stack gap="lg">
-          <WorkQuestionBox userId={userId} hideAnonymousNote />
+          {showWorkQuestion && <WorkQuestionBox userId={userId} hideAnonymousNote />}
 
           {/* Tabs — admin-reorderable; default tab is the first in order */}
           <FeedTabsBar
@@ -495,6 +521,7 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
                   userId={userId}
                   isAdmin={isAdmin}
                   isCmsSite
+                  initialKind={createKind}
                   onPublished={() => {
                     closeDrawer();
                     router.refresh();
@@ -524,7 +551,13 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
         {/* Edit drawer */}
         <Drawer
           opened={editDrawerOpened}
-          onClose={() => { closeEditDrawer(); setEditingMeeting(null); setEditingPost(null); }}
+          onClose={() => {
+            closeEditDrawer();
+            setEditingMeeting(null);
+            setEditingPost(null);
+            setEditingDraft(null);
+            setEditingDraftError(null);
+          }}
           position="bottom"
           size="90%"
           classNames={{
@@ -535,70 +568,47 @@ export function FeedClient({ initialFeed, recurringMeetings = [], forumThreads =
           title={
             <div>
               <Title order={4}>
-                {editingPost
-                  ? "Edit Post"
-                  : `Edit ${editingMeeting?.kind === "workshop" ? "Workshop" : "Meeting"}`}
+                {editingDraft
+                  ? `Edit ${editingDraft.kind === "workshop"
+                      ? "Workshop"
+                      : editingDraft.kind === "meeting" || editingDraft.kind === "event"
+                        ? "Meeting"
+                        : "Post"}`
+                  : "Edit"}
               </Title>
-              <Text size="sm" c="dimmed">{editingPost?.title ?? editingMeeting?.title}</Text>
+              <Text size="sm" c="dimmed">{editingPost?.title ?? editingMeeting?.title ?? editingDraft?.draft?.title}</Text>
             </div>
           }
         >
           <ScrollArea h="calc(90vh - 8rem)" className="create-content-scroll">
-            {userId && editingMeeting ? (
+            {editingDraftError ? (
+              <Text c="red" ta="center" py="xl">{editingDraftError}</Text>
+            ) : userId && editingDraft ? (
               <Box className="create-content-surface">
                 <ContentForm
-                  orgId="inner_group"
+                  key={editingDraft.id}
+                  orgId={editingDraft.draft.primaryOrgId ?? "inner_group"}
                   userId={userId}
                   isAdmin={isAdmin}
                   isCmsSite
-                  initialThreadId={editingMeeting.id}
-                  initialDraft={{
-                    title: editingMeeting.title,
-                    body: editingMeeting.description ?? "",
-                    isMeeting: true,
-                    scheduledAt: editingMeeting.scheduledAt
-                      ? new Date(editingMeeting.scheduledAt).toISOString()
-                      : null,
-                    durationMinutes: editingMeeting.durationMinutes ?? null,
-                    location: editingMeeting.location ?? null,
-                    isOnline: editingMeeting.isOnline ?? false,
-                    isRsvpEnabled: editingMeeting.isRSVPEnabled,
-                    attendeeLimit: editingMeeting.attendeeLimit ?? null,
-                    visibility: (editingMeeting.visibility as "PUBLIC" | "ORGANIZATION") ?? "PUBLIC",
-                    primaryOrgId: "inner_group",
-                  }}
+                  initialThreadId={editingDraft.id}
+                  initialKind={
+                    (editingDraft.kind === "event" ? "meeting" : editingDraft.kind) as ContentFormKind
+                  }
+                  initialDraft={editingDraft.draft}
                   onPublished={() => {
                     closeEditDrawer();
                     setEditingMeeting(null);
-                    router.refresh();
-                    clearNewItems();
-                  }}
-                />
-              </Box>
-            ) : userId && editingPost ? (
-              <Box className="create-content-surface">
-                <ContentForm
-                  orgId="inner_group"
-                  userId={userId}
-                  isAdmin={isAdmin}
-                  isCmsSite
-                  initialThreadId={editingPost.id}
-                  initialDraft={{
-                    title: editingPost.title,
-                    body: editingPost.body ?? "",
-                    isMeeting: false,
-                    visibility: (editingPost.visibility as "PUBLIC" | "ORGANIZATION") ?? "PUBLIC",
-                    primaryOrgId: "inner_group",
-                  }}
-                  onPublished={() => {
-                    closeEditDrawer();
                     setEditingPost(null);
+                    setEditingDraft(null);
                     router.refresh();
                     clearNewItems();
                   }}
                 />
               </Box>
-            ) : null}
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">Loading…</Text>
+            )}
           </ScrollArea>
         </Drawer>
 

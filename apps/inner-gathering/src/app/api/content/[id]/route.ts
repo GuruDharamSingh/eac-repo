@@ -4,6 +4,11 @@ import { nanoid } from "nanoid";
 import { db } from "@elkdonis/db";
 import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 import { lastOccurrenceEnd } from "@/lib/recurrence";
+import {
+  RSVP_GUEST_TEMPLATE_KEY,
+  getEmailTemplateSettings,
+  threadTemplateKey,
+} from "@/lib/email-template-settings";
 
 const ORG_ID = "inner_group";
 
@@ -12,6 +17,142 @@ const ORG_ID = "inner_group";
 function meetingGuideIds(thread: any): string[] {
   const coGuides = Array.isArray(thread.metadata?.coGuideIds) ? thread.metadata.coGuideIds : [];
   return Array.from(new Set<string>([thread.author_id, ...coGuides]));
+}
+
+// GET /api/content/[id] — full editable draft for the content form.
+// Returns the thread's stored kind plus a ContentDraft-shaped object,
+// including workshop details/sessions so an edit round-trip doesn't wipe them.
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [thread] = await db`
+      SELECT id, kind, org_id, author_id, title, body, status, visibility,
+             scheduled_at, duration_minutes, location, is_online, is_meeting,
+             video_link, meeting_url,
+             recurrence_pattern, recurrence_custom_rule, recurrence_until,
+             is_rsvp_enabled, attendee_limit, rsvp_deadline, min_attendees,
+             reminder_minutes_before,
+             published_at, document_url
+      FROM threads
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+    // No org filter: My Offerings edits span all orgs the author publishes
+    // in — access is enforced by the author/admin check below.
+
+    if (!thread) {
+      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+    }
+
+    const admin = await isAdmin(session.user.id);
+    if (thread.author_id !== session.user.id && !admin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    let pitch: string | null = null;
+    let price: number | null = null;
+    let flyerUrl: string | null = null;
+    let sessions: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      scheduledAt?: string;
+      durationMinutes?: number;
+      isOnline?: boolean;
+      location?: string;
+      videoConferenceUrl?: string;
+      mediaUrl?: string | null;
+      orderIndex: number;
+    }> = [];
+
+    if (thread.kind === "workshop") {
+      const [page] = await db`
+        SELECT description_short, price_member, cover_image_url
+        FROM workshop_pages WHERE thread_id = ${id}
+      `;
+      if (page) {
+        pitch = (page.description_short as string) ?? null;
+        price = page.price_member != null ? Number(page.price_member) : null;
+        flyerUrl = (page.cover_image_url as string) ?? null;
+      }
+      const sessionRows = await db`
+        SELECT id, session_number, topic, scheduled_at, duration_minutes, notes
+        FROM workshop_sessions
+        WHERE thread_id = ${id}
+        ORDER BY session_number
+      `;
+      sessions = sessionRows.map((s: any) => ({
+        id: s.id,
+        title: s.topic ?? "",
+        description: s.notes?.description ?? "",
+        scheduledAt: s.scheduled_at ? new Date(s.scheduled_at).toISOString() : undefined,
+        durationMinutes: s.duration_minutes ?? undefined,
+        isOnline: s.notes?.isOnline ?? true,
+        location: s.notes?.location ?? "",
+        videoConferenceUrl: s.notes?.videoConferenceUrl ?? "",
+        mediaUrl: s.notes?.mediaUrl ?? null,
+        orderIndex: (s.session_number ?? 1) - 1,
+      }));
+    }
+
+    // Thread-scoped RSVP confirmation copy (empty when using the org default)
+    const rsvpTemplate = thread.is_rsvp_enabled
+      ? await getEmailTemplateSettings(
+          thread.org_id,
+          threadTemplateKey(RSVP_GUEST_TEMPLATE_KEY, id)
+        ).catch(() => null)
+      : null;
+
+    return NextResponse.json({
+      id: thread.id,
+      kind: thread.kind,
+      draft: {
+        title: thread.title,
+        body: thread.body ?? "",
+        publishAt: thread.status === "scheduled" && thread.published_at
+          ? new Date(thread.published_at).toISOString()
+          : null,
+        isMeeting: thread.is_meeting ?? false,
+        scheduledAt: thread.scheduled_at ? new Date(thread.scheduled_at).toISOString() : null,
+        durationMinutes: thread.duration_minutes ?? null,
+        location: thread.location ?? null,
+        isOnline: thread.is_online ?? false,
+        videoLink: thread.video_link ?? thread.meeting_url ?? null,
+        recurrencePattern: thread.recurrence_pattern ?? "NONE",
+        recurrenceCustomRule: thread.recurrence_custom_rule ?? null,
+        recurrenceUntil: thread.recurrence_until
+          ? new Date(thread.recurrence_until).toISOString()
+          : null,
+        isRsvpEnabled: thread.is_rsvp_enabled ?? false,
+        attendeeLimit: thread.attendee_limit ?? null,
+        rsvpDeadline: thread.rsvp_deadline ? new Date(thread.rsvp_deadline).toISOString() : null,
+        minAttendees: thread.min_attendees ?? null,
+        reminderMinutesBefore: thread.reminder_minutes_before ?? 60,
+        rsvpEmailBody: rsvpTemplate?.config.bodyText ?? null,
+        pitch,
+        price,
+        flyerUrl,
+        sessions,
+        visibility: thread.visibility ?? "PUBLIC",
+        primaryOrgId: thread.org_id,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to load content draft:", error);
+    return NextResponse.json(
+      { error: "Failed to load content" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(

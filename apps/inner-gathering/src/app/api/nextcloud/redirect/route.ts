@@ -80,11 +80,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(finalDestination);
     }
 
-    // Build the social login URL - this triggers OAuth2 auth with Nextcloud
-    const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudBaseUrl);
-
-    // Pass the redirect destination to sociallogin
-    socialLoginUrl.searchParams.set('login_redirect_url', finalDestination);
+    // Route through Nextcloud's /login: a live NC session redirects straight
+    // to the destination; otherwise sociallogin's auto_login forwards to our
+    // OIDC provider. Hitting the sociallogin endpoint directly errors
+    // ("account already connected") when a session already exists.
+    const destPath = finalDestination.startsWith(nextcloudBaseUrl)
+      ? finalDestination.slice(nextcloudBaseUrl.replace(/\/$/, '').length) || '/'
+      : finalDestination;
+    const socialLoginUrl = new URL('/login', nextcloudBaseUrl);
+    socialLoginUrl.searchParams.set('redirect_url', destPath);
 
     // If force logout is requested
     if (force) {

@@ -1,18 +1,7 @@
 import * as React from 'react';
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Section,
-  Heading,
-  Text,
-  Hr,
-  Button,
-  Img,
-  Preview,
-} from '@react-email/components';
+import { Section, Text, Button, Img } from '@react-email/components';
 import { render } from '@react-email/render';
+import { EmailShell, getEmailPalette } from '../components/EmailShell';
 
 export interface EmailLinkItem {
   label: string;
@@ -26,6 +15,8 @@ export interface EmailMediaItem {
 }
 
 export interface RsvpOwnerEmailProps {
+  /** 'reconfirmed' — guest re-affirmed attendance after a reminder trigger email. */
+  variant?: 'new' | 'reconfirmed';
   guestName: string;
   guestEmail?: string;
   guestPhone?: string;
@@ -36,6 +27,10 @@ export interface RsvpOwnerEmailProps {
   scheduledAt?: string;
   rsvpCreatedAt?: string;
   threadUrl?: string;
+  /** Nextcloud Talk room join link, when the thread has one. */
+  talkRoomUrl?: string;
+  /** Link to the thread's materials (workshops with a provisioned folder). */
+  materialsUrl?: string;
   orgName?: string;
   rsvpCount?: number;
   bodyText?: string;
@@ -44,6 +39,7 @@ export interface RsvpOwnerEmailProps {
 }
 
 function RsvpOwnerEmail({
+  variant = 'new',
   guestName,
   guestEmail,
   guestPhone,
@@ -54,12 +50,16 @@ function RsvpOwnerEmail({
   scheduledAt,
   rsvpCreatedAt,
   threadUrl,
-  orgName = 'Amrit Canada',
+  talkRoomUrl,
+  materialsUrl,
   rsvpCount,
-  bodyText = 'A new presence has crossed the threshold and answered yes. The circle has brightened; tend the gathering thread when you are ready.',
+  bodyText,
   links = [],
   media = [],
 }: RsvpOwnerEmailProps) {
+  const isReconfirm = variant === 'reconfirmed';
+  const palette = getEmailPalette(true);
+
   let dateStr: string | null = null;
   if (scheduledAt) {
     try {
@@ -93,242 +93,176 @@ function RsvpOwnerEmail({
   }
 
   const allLinks = threadUrl
-    ? [{ label: 'Open the gathering thread', url: threadUrl }, ...links]
+    ? [{ label: 'Open the thread', url: threadUrl }, ...links]
     : links;
 
   const bodyParagraphs = bodyText
-    .split('\n')
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+    ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
+    : [];
 
   return (
-    <Html lang="en">
-      <Head />
-      <Preview>
-        New RSVP from {guestName} — {meetingTitle}
-      </Preview>
-      <Body style={{ backgroundColor: '#07112f', fontFamily: 'Georgia, serif', margin: 0, padding: 0 }}>
-        <Container style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-          <Section
+    <EmailShell
+      previewText={
+        isReconfirm
+          ? `${guestName} reconfirmed — ${meetingTitle}`
+          : `New RSVP from ${guestName} — ${meetingTitle}`
+      }
+      kicker={isReconfirm ? 'RSVP Reconfirmed' : 'New RSVP'}
+      dark
+      showNfpFooter
+      footerText={
+        <Text style={{ fontSize: '12px', color: palette.textMuted, margin: 0 }}>
+          Sent via Elkdonis Arts Collective.
+        </Text>
+      }
+    >
+      <Text style={{ margin: '0 0 18px', fontSize: '20px', color: palette.textPrimary, fontWeight: 'bold' as const }}>
+        {meetingTitle}
+      </Text>
+
+      {/* Data first: who, when, for what. */}
+      <Section
+        style={{
+          background: palette.boxBg,
+          border: `1px solid ${palette.boxBorder}`,
+          borderLeft: `4px solid ${palette.accent}`,
+          padding: '18px 20px',
+          margin: '0 0 20px',
+        }}
+      >
+        <Text style={{ margin: '0 0 4px', fontSize: '11px', color: palette.textMuted, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
+          Guest
+        </Text>
+        <Text style={{ margin: '0 0 10px', fontSize: '16px', fontWeight: 'bold' as const, color: palette.textPrimary }}>
+          {guestName}
+          {guestEmail && <span style={{ fontWeight: 'normal' as const, color: palette.textBody }}> · {guestEmail}</span>}
+        </Text>
+        {guestPhone && (
+          <Text style={{ margin: '0 0 10px', fontSize: '14px', color: palette.textBody }}>
+            {guestPhone}
+          </Text>
+        )}
+        {rsvpTimeStr && (
+          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
+            <strong>RSVP date:</strong> {rsvpTimeStr}
+          </Text>
+        )}
+        <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
+          <strong>Thread:</strong> {meetingTitle}
+          {section && <> · {section}</>}
+        </Text>
+        {dateStr && (
+          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
+            <strong>Meeting date:</strong> {dateStr}
+          </Text>
+        )}
+        {rsvpCount !== undefined && (
+          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
+            <strong>Total RSVPs:</strong> {rsvpCount}
+          </Text>
+        )}
+        {wantsReminder && (
+          <Text style={{ margin: '6px 0 0', fontSize: '13px', color: palette.accent }}>
+            Requested a reminder.
+          </Text>
+        )}
+      </Section>
+
+      <Text style={{ fontSize: '15px', color: palette.textBody, marginTop: 0, lineHeight: '1.6' }}>
+        {isReconfirm
+          ? <>{guestName} confirmed they&apos;re still coming to <strong>{meetingTitle}</strong> after your reminder.</>
+          : <>{guestName} has RSVP&apos;d yes for <strong>{meetingTitle}</strong>.</>}
+      </Text>
+
+      {(talkRoomUrl || materialsUrl) && (
+        <Section style={{ margin: '16px 0 0' }}>
+          {talkRoomUrl && (
+            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
+              Talk room: <a href={talkRoomUrl} style={{ color: palette.accent }}>Join the Talk room</a>
+            </Text>
+          )}
+          {materialsUrl && (
+            <Text style={{ margin: 0, fontSize: '14px', color: palette.textBody }}>
+              Materials: <a href={materialsUrl} style={{ color: palette.accent }}>View materials</a>
+            </Text>
+          )}
+        </Section>
+      )}
+
+      {bodyParagraphs.length > 0 && (
+        <Section style={{ margin: '20px 0 0' }}>
+          {bodyParagraphs.map((paragraph, index) => (
+            <Text key={index} style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.7' }}>
+              {paragraph}
+            </Text>
+          ))}
+        </Section>
+      )}
+
+      {guestMessage && (
+        <Text
+          style={{
+            margin: '16px 0 0',
+            fontSize: '14px',
+            color: palette.textBody,
+            fontStyle: 'italic' as const,
+            borderLeft: `3px solid ${palette.accent}`,
+            paddingLeft: '16px',
+          }}
+        >
+          {guestMessage}
+        </Text>
+      )}
+
+      {allLinks.length > 0 && (
+        <Section style={{ margin: '24px 0 0' }}>
+          <Button
+            href={allLinks[0].url}
             style={{
-              background: 'linear-gradient(135deg, #fffaf0 0%, #dce6ff 45%, #b79a55 100%)',
-              borderRadius: '10px 10px 0 0',
-              padding: '34px 36px',
-              textAlign: 'center' as const,
-              border: '1px solid #d6c38e',
-              borderBottom: 'none',
+              backgroundColor: palette.accent,
+              color: '#0b0e18',
+              padding: '12px 22px',
+              fontFamily: 'Arial, sans-serif',
+              fontSize: '13px',
+              fontWeight: 'bold' as const,
+              textDecoration: 'none',
+              display: 'inline-block',
             }}
           >
-            <Text
-              style={{
-                margin: '0 0 10px',
-                color: '#022278',
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '11px',
-                fontWeight: 'bold' as const,
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.16em',
-              }}
-            >
-              A new RSVP has arrived
+            {allLinks[0].label}
+          </Button>
+          {allLinks.slice(1).map((link) => (
+            <Text key={`${link.label}-${link.url}`} style={{ margin: '10px 0 0', fontSize: '13px' }}>
+              <a href={link.url} style={{ color: palette.accent }}>{link.label}</a>
             </Text>
-            <Heading
-              style={{
-                margin: 0,
-                color: '#01124E',
-                fontSize: '26px',
-                lineHeight: '1.25',
-                fontFamily: 'Georgia, serif',
-                fontWeight: 'normal' as const,
-              }}
-            >
-              {meetingTitle}
-            </Heading>
-          </Section>
+          ))}
+        </Section>
+      )}
 
-          <Section
-            style={{
-              background: '#fffdf8',
-              padding: '38px',
-              borderRadius: '0 0 10px 10px',
-              border: '1px solid #d6c38e',
-              borderTop: 'none',
-            }}
-          >
-            <Text style={{ fontSize: '16px', color: '#374238', marginTop: 0, lineHeight: '1.7' }}>
-              A soft signal has come through the veil: <strong>{guestName}</strong> is going.
-            </Text>
-
-            {bodyParagraphs.map((paragraph, index) => (
-              <Text key={index} style={{ fontSize: '15px', color: '#374238', lineHeight: '1.75' }}>
-                {paragraph}
-              </Text>
-            ))}
-
-            <Section
-              style={{
-                background: 'linear-gradient(180deg, #f4f7ff 0%, #fffaf0 100%)',
-                borderRadius: '8px',
-                padding: '20px',
-                margin: '22px 0',
-                border: '1px solid #dce6ff',
-                borderLeft: '4px solid #b79a55',
-              }}
-            >
-              <Text
+      {media.length > 0 && (
+        <Section style={{ margin: '24px 0 0' }}>
+          {media.map((item) => (
+            <Section key={item.url} style={{ margin: '0 0 16px' }}>
+              <Img
+                src={item.url}
+                alt={item.alt ?? ''}
                 style={{
-                  margin: '0 0 8px',
-                  fontSize: '11px',
-                  color: '#8f763c',
-                  fontFamily: 'Arial, sans-serif',
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.12em',
+                  width: '100%',
+                  maxWidth: '520px',
+                  border: `1px solid ${palette.boxBorder}`,
+                  display: 'block',
                 }}
-              >
-                Guest
-              </Text>
-              <Text style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 'bold' as const, color: '#01124E' }}>
-                {guestName}
-              </Text>
-              {guestEmail && (
-                <Text style={{ margin: '0 0 4px', fontSize: '14px', color: '#4f5d54' }}>
-                  {guestEmail}
-                </Text>
-              )}
-              {guestPhone && (
-                <Text style={{ margin: '0 0 4px', fontSize: '14px', color: '#4f5d54' }}>
-                  {guestPhone}
-                </Text>
-              )}
-              {wantsReminder && (
-                <Text style={{ margin: '6px 0 0', fontSize: '13px', color: '#E67E50' }}>
-                  ★ Wants a reminder
+              />
+              {item.caption && (
+                <Text style={{ margin: '8px 0 0', fontSize: '12px', color: palette.textMuted, fontStyle: 'italic' as const }}>
+                  {item.caption}
                 </Text>
               )}
             </Section>
-
-            {(guestMessage || rsvpTimeStr || dateStr || rsvpCount !== undefined) && (
-              <Section style={{ margin: '16px 0' }}>
-                <Text
-                  style={{
-                    margin: '0 0 8px',
-                    fontSize: '11px',
-                    color: '#8f763c',
-                    fontFamily: 'Arial, sans-serif',
-                    textTransform: 'uppercase' as const,
-                    letterSpacing: '0.12em',
-                  }}
-                >
-                  Thread signals
-                </Text>
-                {rsvpTimeStr && (
-                  <Text style={{ margin: '0 0 6px', fontSize: '14px', color: '#374238' }}>
-                    <strong>RSVP received:</strong> {rsvpTimeStr}
-                  </Text>
-                )}
-                {dateStr && (
-                  <Text style={{ margin: '0 0 6px', fontSize: '14px', color: '#374238' }}>
-                    <strong>Meeting date:</strong> {dateStr}
-                  </Text>
-                )}
-                {rsvpCount !== undefined && (
-                  <Text style={{ margin: '0 0 6px', fontSize: '14px', color: '#374238' }}>
-                    <strong>Total RSVPs:</strong> {rsvpCount}
-                  </Text>
-                )}
-                {guestMessage && (
-                  <Text
-                    style={{
-                      margin: '12px 0 0',
-                      fontSize: '15px',
-                      color: '#374238',
-                      fontStyle: 'italic' as const,
-                      borderLeft: '3px solid #b79a55',
-                      paddingLeft: '16px',
-                    }}
-                  >
-                    {guestMessage}
-                  </Text>
-                )}
-              </Section>
-            )}
-
-            {allLinks.length > 0 && (
-              <Section style={{ margin: '24px 0' }}>
-                <Button
-                  href={allLinks[0].url}
-                  style={{
-                    backgroundColor: '#022278',
-                    color: '#fffdf8',
-                    padding: '12px 22px',
-                    borderRadius: '4px',
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: '13px',
-                    fontWeight: 'bold' as const,
-                    textDecoration: 'none',
-                    display: 'inline-block',
-                  }}
-                >
-                  {allLinks[0].label}
-                </Button>
-                {allLinks.slice(1).map((link) => (
-                  <Text key={`${link.label}-${link.url}`} style={{ margin: '10px 0 0', fontSize: '13px' }}>
-                    <a href={link.url} style={{ color: '#022278' }}>{link.label}</a>
-                  </Text>
-                ))}
-              </Section>
-            )}
-
-            {media.length > 0 && (
-              <Section style={{ margin: '24px 0' }}>
-                {media.map((item) => (
-                  <Section key={item.url} style={{ margin: '0 0 16px' }}>
-                    <Img
-                      src={item.url}
-                      alt={item.alt ?? ''}
-                      style={{
-                        width: '100%',
-                        maxWidth: '520px',
-                        borderRadius: '8px',
-                        border: '1px solid #d6c38e',
-                        display: 'block',
-                      }}
-                    />
-                    {item.caption && (
-                      <Text style={{ margin: '8px 0 0', fontSize: '12px', color: '#8f763c', fontStyle: 'italic' as const }}>
-                        {item.caption}
-                      </Text>
-                    )}
-                  </Section>
-                ))}
-              </Section>
-            )}
-
-            <Hr style={{ border: 'none', borderTop: '1px solid #eadcb8', margin: '28px 0' }} />
-
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: '#555' }}>
-              <strong>Meeting:</strong> {meetingTitle}
-            </Text>
-            {section && (
-              <Text style={{ margin: '0 0 6px', fontSize: '14px', color: '#555' }}>
-                <strong>Section:</strong> {section}
-              </Text>
-            )}
-          </Section>
-
-          <Text
-            style={{
-              fontSize: '11px',
-              color: '#d6c38e',
-              textAlign: 'center' as const,
-              marginTop: '16px',
-            }}
-          >
-            {orgName} · Sent via Elkdonis Arts Collective
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+          ))}
+        </Section>
+      )}
+    </EmailShell>
   );
 }
 

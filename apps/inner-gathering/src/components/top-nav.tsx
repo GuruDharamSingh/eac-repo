@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, FolderOpen, Video, Palette, Mail, BookOpen, MessageSquare } from "lucide-react";
+import { Home, Newspaper, Calendar, BarChart3, Menu, X, User, FolderOpen, Video, Palette, Mail, BookOpen, MessageSquare, Sparkles, HelpCircle } from "lucide-react";
 import {
   ActionIcon,
   Box,
@@ -78,6 +78,12 @@ const navItems: NavItem[] = [
     guideOnly: true,
   },
   {
+    icon: Sparkles,
+    label: "My Offerings",
+    href: "/offerings",
+    match: (pathname) => pathname.startsWith("/offerings"),
+  },
+  {
     icon: Video,
     label: "Live",
     href: "/live",
@@ -105,6 +111,15 @@ const accountItem: NavItem = {
   label: "Account",
   href: "/account",
   match: (pathname) => pathname.startsWith("/account"),
+};
+
+// Reopens the WelcomePopup tour — same mechanism as landing on /feed fresh
+// from signup (?welcome=1), just triggered on demand instead of once.
+const helpItem: NavItem = {
+  icon: HelpCircle,
+  label: "Help",
+  href: "/feed?welcome=1",
+  match: () => false,
 };
 
 export function TopNav() {
@@ -266,6 +281,14 @@ export function TopNav() {
               label={accountItem.label}
               leftSection={<accountItem.icon size={20} />}
               active={accountItem.match(pathname)}
+              variant="light"
+              color="archive"
+              style={{ borderRadius: 4 }}
+            />
+            <NavLink
+              onClick={() => handleNavigate(helpItem.href)}
+              label={helpItem.label}
+              leftSection={<helpItem.icon size={20} />}
               variant="light"
               color="archive"
               style={{ borderRadius: 4 }}

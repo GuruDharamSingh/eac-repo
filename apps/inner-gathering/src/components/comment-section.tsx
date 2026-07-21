@@ -35,7 +35,7 @@ interface CommentSectionProps {
   initialReplies: ReplyData[];
   meetingId: string;
   /** Thread kind. Default 'meeting'. */
-  threadKind?: 'meeting' | 'post';
+  threadKind?: 'meeting' | 'post' | 'workshop';
   currentUserId: string | null;
   currentUserName: string | null;
   currentUserInitials: string | null;

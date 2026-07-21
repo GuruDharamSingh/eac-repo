@@ -17,6 +17,11 @@ export type { BlogEntryFormData, BlogEntryFormProps } from './components/BlogEnt
 export { MediaUpload } from './components/MediaUpload';
 export type { MediaUploadProps, SelectedNextcloudFile } from './components/MediaUpload';
 
+export { SingleImageField } from './components/SingleImageField';
+export type { SingleImageFieldProps } from './components/SingleImageField';
+
+export { WorkshopMaterials } from './components/WorkshopMaterials';
+
 export { MeetingForm } from './components/MeetingForm';
 export type { MeetingFormProps, MeetingFormData, MeetingFormConfig } from './components/MeetingForm';
 

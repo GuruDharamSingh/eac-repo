@@ -15,6 +15,7 @@ async function getWorkshop(id: string) {
         t.org_id,
         t.status,
         t.visibility,
+        t.nextcloud_talk_token,
         u.display_name AS guide_display_name,
         u.avatar_url   AS guide_avatar_url,
         o.name         AS org_name,
@@ -25,8 +26,10 @@ async function getWorkshop(id: string) {
         wp.price_member                AS price,
         wp.session_count,
         wp.cover_image_url,
+        wp.banner_image_url,
+        wp.hero_media_url,
+        wp.hero_media_type,
         wp.promo_video_url,
-        t.metadata,
         t.created_at,
         t.published_at
       FROM threads t
@@ -35,27 +38,50 @@ async function getWorkshop(id: string) {
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
       WHERE t.id = ${id}
         AND t.kind = 'workshop'
-        AND t.org_id = 'inner_group'
       LIMIT 1
     `;
 
     if (rows.length === 0) return null;
     const row = rows[0];
 
-    const meta = (row.metadata as Record<string, unknown>) ?? {};
+    // Sessions live in workshop_sessions — shared with /api/workshops and the
+    // Content Form, so sessions added via either path show up here.
+    const sessionRows = await db`
+      SELECT id, session_number, topic, scheduled_at, duration_minutes, notes
+      FROM workshop_sessions
+      WHERE thread_id = ${id}
+      ORDER BY session_number ASC
+    `.catch(() => []);
+
     return {
       id: row.id,
       title: row.title,
       description: row.description,
+      guideId: row.guide_id as string,
+      orgId: row.org_id as string,
       coverImage: row.cover_image_url ? { url: row.cover_image_url } : undefined,
+      bannerImageUrl: (row.banner_image_url as string) ?? null,
+      heroMediaUrl: (row.hero_media_url as string) ?? null,
+      heroMediaType: (row.hero_media_type as 'image' | 'video' | null) ?? null,
       guide: {
         displayName: row.guide_display_name ?? 'Guide',
         avatarUrl: row.guide_avatar_url ?? undefined,
       },
       organization: { name: row.org_name ?? 'InnerGathering' },
       price: row.price ?? undefined,
-      nextcloudTalkToken: (meta.nextcloudTalkToken as string) ?? undefined,
-      sessions: (meta.sessions as object[]) ?? [],
+      nextcloudTalkToken: (row.nextcloud_talk_token as string) ?? undefined,
+      sessions: sessionRows.map((s: any) => ({
+        id: s.id,
+        title: s.topic ?? '',
+        description: s.notes?.description ?? '',
+        scheduledAt: s.scheduled_at ? new Date(s.scheduled_at).toISOString() : new Date().toISOString(),
+        durationMinutes: s.duration_minutes ?? 90,
+        isOnline: s.notes?.isOnline ?? true,
+        location: s.notes?.location ?? '',
+        videoConferenceUrl: s.notes?.videoConferenceUrl ?? '',
+        mediaUrl: s.notes?.mediaUrl ?? null,
+        orderIndex: s.session_number - 1,
+      })),
     };
   } catch {
     // DB not migrated yet — return null so the page 404s cleanly
@@ -85,16 +111,19 @@ export default async function WorkshopDetailPage({
       }
     : null;
 
-  // Enrolled = logged-in member of inner_group org
+  // Enrolled = RSVP'd yes or has a paid join request. Owner = the author.
+  const isOwner = Boolean(session?.user && workshop.guideId === session.user.id);
   let isEnrolled = false;
-  if (session?.user) {
-    const membership = await db`
-      SELECT 1 FROM user_organizations
-      WHERE user_id = ${session.user.id}
-        AND org_id = 'inner_group'
+  if (session?.user && !isOwner) {
+    const enrolment = await db`
+      SELECT 1 FROM thread_rsvps
+      WHERE thread_id = ${id} AND user_id = ${session.user.id} AND status = 'yes'
+      UNION ALL
+      SELECT 1 FROM workshop_join_requests
+      WHERE workshop_id = ${id} AND user_id = ${session.user.id} AND status = 'paid'
       LIMIT 1
     `.catch(() => []);
-    isEnrolled = membership.length > 0;
+    isEnrolled = enrolment.length > 0;
   }
 
   const serializedReplies = JSON.parse(JSON.stringify(replies));
@@ -103,7 +132,8 @@ export default async function WorkshopDetailPage({
     <WorkshopPage
       workshop={workshop}
       currentUser={currentUser}
-      isEnrolled={isEnrolled}
+      isEnrolled={isEnrolled || isOwner}
+      isOwner={isOwner}
       replies={serializedReplies}
     />
   );

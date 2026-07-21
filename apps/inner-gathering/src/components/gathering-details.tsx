@@ -12,12 +12,14 @@ import {
   Divider,
   Group
 } from '@mantine/core';
-import { 
-  DigitalFlyer, 
-  GuideBadge, 
-  ActionCard, 
-  StickyBottomBar 
+import {
+  DigitalFlyer,
+  GuideBadge,
+  ActionCard,
+  StickyBottomBar
 } from '@elkdonis/ui';
+import { Button, ThemeIcon } from '@mantine/core';
+import { MessageCircle, FileText } from 'lucide-react';
 import type { Workshop, Meeting, WorkshopSession, WorkshopResource } from '@elkdonis/types';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { CommentSection } from './comment-section';
@@ -124,6 +126,69 @@ export function GatheringDetails({
                 {formatTime(asMeeting.scheduledAt)}
               </Text>
             </Paper>
+          )}
+
+          {/* Talk Room / living document — anyone can join the Talk room as a
+              guest, no enrollment gate (unlike workshop discussion rooms) */}
+          {!isWorkshop && (asMeeting.nextcloudTalkToken || (asMeeting as any).documentUrl) && (
+            <Stack gap="sm">
+              {asMeeting.nextcloudTalkToken && (
+                <Paper withBorder radius="md" p="md" style={{ background: '#f0fdfa', borderColor: '#5eead4' }}>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Group gap="sm">
+                      <ThemeIcon color="teal" variant="light" radius="xl" size="lg">
+                        <MessageCircle size={18} />
+                      </ThemeIcon>
+                      <Stack gap={0}>
+                        <Text fw={700} size="sm">Talk Room</Text>
+                        <Text size="xs" c="dimmed">Join the live video call — no account needed to sit in as a guest</Text>
+                      </Stack>
+                    </Group>
+                    <Button
+                      component="a"
+                      href={`/api/talk/join?token=${asMeeting.nextcloudTalkToken}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="filled"
+                      color="teal"
+                      size="sm"
+                      radius="xl"
+                      leftSection={<MessageCircle size={14} />}
+                    >
+                      Join Talk Room
+                    </Button>
+                  </Group>
+                </Paper>
+              )}
+              {(asMeeting as any).documentUrl && (
+                <Paper withBorder radius="md" p="md" style={{ background: '#f0fdfa', borderColor: '#5eead4' }}>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Group gap="sm">
+                      <ThemeIcon color="teal" variant="light" radius="xl" size="lg">
+                        <FileText size={18} />
+                      </ThemeIcon>
+                      <Stack gap={0}>
+                        <Text fw={700} size="sm">Living Document</Text>
+                        <Text size="xs" c="dimmed">Shared notes for this gathering</Text>
+                      </Stack>
+                    </Group>
+                    <Button
+                      component="a"
+                      href={(asMeeting as any).documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="filled"
+                      color="teal"
+                      size="sm"
+                      radius="xl"
+                      leftSection={<FileText size={14} />}
+                    >
+                      Open Document
+                    </Button>
+                  </Group>
+                </Paper>
+              )}
+            </Stack>
           )}
 
           {/* The Pitch / Description */}

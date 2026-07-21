@@ -183,13 +183,29 @@ export default function NextcloudPage() {
     }
   };
 
+  // An email match means the accounts correspond even if `nextcloud_synced`
+  // hasn't been backfilled yet (e.g. a manually-created Nextcloud account
+  // that predates any app-side sync action).
+  const ncEmailToId = new Map(
+    nextcloudUsers
+      .filter(u => u.email)
+      .map(u => [u.email.trim().toLowerCase(), u.id] as const)
+  );
+  const isEffectivelySynced = (u: AppUser) =>
+    u.nextcloud_synced || (!!u.email && ncEmailToId.has(u.email.trim().toLowerCase()));
+
   // Filter users
-  const syncedUsers = appUsers.filter(u => u.nextcloud_synced);
-  const unsyncedUsers = appUsers.filter(u => !u.nextcloud_synced);
+  const syncedUsers = appUsers.filter(isEffectivelySynced);
+  const unsyncedUsers = appUsers.filter(u => !isEffectivelySynced(u));
 
   // Check if NC user exists in app
-  const getMatchingAppUser = (ncUserId: string) => {
-    return appUsers.find(u => u.nextcloud_user_id === ncUserId || u.id === ncUserId);
+  const getMatchingAppUser = (ncUser: NextcloudUser) => {
+    return appUsers.find(
+      u =>
+        u.nextcloud_user_id === ncUser.id ||
+        u.id === ncUser.id ||
+        (!!u.email && !!ncUser.email && u.email.trim().toLowerCase() === ncUser.email.trim().toLowerCase())
+    );
   };
 
   return (
@@ -471,7 +487,7 @@ export default function NextcloudPage() {
                         ) : (
                           <Stack gap="xs">
                             {nextcloudUsers.map((ncUser) => {
-                              const matchingAppUser = getMatchingAppUser(ncUser.id);
+                              const matchingAppUser = getMatchingAppUser(ncUser);
                               const isLinked = !!matchingAppUser;
 
                               return (

@@ -23,7 +23,7 @@ interface ReplyData {
 interface CommentItemProps {
   reply: ReplyData;
   meetingId: string;
-  threadKind?: 'meeting' | 'post';
+  threadKind?: 'meeting' | 'post' | 'workshop';
   depth?: number;
   replyingTo: string | null;
   onSetReplyingTo: (id: string | null) => void;

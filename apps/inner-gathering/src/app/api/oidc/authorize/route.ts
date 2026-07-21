@@ -120,6 +120,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
   }
 
+  // Completing this flow means Nextcloud's sociallogin is about to log the
+  // user into (and auto-create, if needed) the account identified by
+  // "elkdonis-<user.id>" — this is the one moment we can trust that account
+  // exists, since it's the user's own live session doing the creating, not
+  // an API call. Record it, but never touch an already-linked account (e.g.
+  // one manually linked to a pre-existing Nextcloud username).
+  try {
+    await db`
+      UPDATE users
+      SET nextcloud_user_id = COALESCE(nextcloud_user_id, ${'elkdonis-' + user.id}),
+          nextcloud_synced = true
+      WHERE id = ${user.id} AND nextcloud_synced IS NOT TRUE
+    `;
+  } catch (err) {
+    console.error('[oidc/authorize] Failed to record Nextcloud sync state:', err);
+  }
+
   const code = await createAuthCode(user.id, clientId, redirectUri, {
     nonce,
     codeChallenge,

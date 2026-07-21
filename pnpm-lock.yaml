@@ -1196,6 +1196,9 @@ importers:
       '@mantine/dates':
         specifier: ^8.3.2
         version: 8.3.2(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(dayjs@1.11.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@mantine/dropzone':
+        specifier: ^8.3.2
+        version: 8.3.4(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@mantine/form':
         specifier: ^8.3.5
         version: 8.3.5(react@19.1.0)

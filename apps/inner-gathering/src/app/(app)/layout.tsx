@@ -19,6 +19,13 @@ const theme = createTheme({
       "#fffdf8", "#f7f1df", "#eadcb8", "#d6c38e", "#c3ad6a",
       "#b79a55", "#9f8444", "#8f763c", "#705b2b", "#473918",
     ] as any,
+    // Widely referenced across components (color="ember") but never actually
+    // registered — same ramp as mutedGold, whose [7] (#8f763c) matches the
+    // --ig-ember CSS variable in globals.css that this was clearly meant to be.
+    ember: [
+      "#fffdf8", "#f7f1df", "#eadcb8", "#d6c38e", "#c3ad6a",
+      "#b79a55", "#9f8444", "#8f763c", "#705b2b", "#473918",
+    ] as any,
     archive: [
       "#fffdf8", "#fbf7ef", "#f3eadc", "#e5d8bf", "#d6c38e",
       "#b79a55", "#8f763c", "#104b8C", "#063179", "#022278",

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 });
   }
 
-  const id = nanoid();
+  const id = `th_${nanoid(18)}`;
   const baseSlug = slugify(title);
 
   // Ensure unique slug within inner_group
@@ -58,48 +58,64 @@ export async function POST(request: NextRequest) {
     INSERT INTO threads (
       id, org_id, author_id, kind,
       title, slug, body,
-      status, visibility,
+      status, visibility, nextcloud_talk_token,
       created_at, updated_at
     ) VALUES (
       ${id}, 'inner_group', ${session.user.id}, 'workshop',
       ${title.trim()}, ${slug}, ${description},
-      ${status}, 'ORGANIZATION',
+      ${status}, 'PUBLIC', ${nextcloudTalkToken || null},
       NOW(), NOW()
     )
   `;
 
-  // Insert workshop_pages sidecar if columns exist
-  try {
+  // workshop_pages — shared sidecar table with /api/content and the detail page
+  await db`
+    INSERT INTO workshop_pages (
+      thread_id, cover_image_url, price_member
+    ) VALUES (
+      ${id},
+      ${coverImageUrl || null},
+      ${price != null ? String(price) : null}
+    )
+    ON CONFLICT (thread_id) DO UPDATE
+      SET cover_image_url = EXCLUDED.cover_image_url,
+          price_member    = EXCLUDED.price_member,
+          updated_at      = NOW()
+  `;
+
+  // Sessions — same table /api/content writes, so both editors see each other's sessions
+  for (let i = 0; i < sessions.length; i++) {
+    const s = sessions[i];
     await db`
-      INSERT INTO workshop_pages (
-        thread_id, cover_image_url, price_member
-      ) VALUES (
-        ${id},
-        ${coverImageUrl || null},
-        ${price != null ? String(price) : null}
-      )
-      ON CONFLICT (thread_id) DO UPDATE
-        SET cover_image_url = EXCLUDED.cover_image_url,
-            price_member    = EXCLUDED.price_member,
-            updated_at      = NOW()
+      INSERT INTO workshop_sessions ${db({
+        id: `ws_${nanoid(16)}`,
+        thread_id: id,
+        session_number: i + 1,
+        topic: s.title,
+        scheduled_at: s.scheduledAt ? new Date(s.scheduledAt) : null,
+        duration_minutes: s.durationMinutes ?? null,
+        notes: JSON.stringify({
+          description: s.description ?? '',
+          isOnline: s.isOnline ?? true,
+          location: s.location ?? '',
+          videoConferenceUrl: s.videoConferenceUrl ?? '',
+          mediaUrl: s.mediaUrl ?? null,
+        }),
+      })}
     `;
-  } catch {
-    // workshop_pages table may not exist yet; skip gracefully
   }
 
-  // Store sessions as child threads (or in metadata for now)
-  // MVP: persist sessions in thread metadata JSONB field if available,
-  // otherwise skip – sessions are defined in workshop_pages optional_sections
-  if (sessions.length > 0) {
-    try {
-      await db`
-        UPDATE threads
-        SET metadata = ${JSON.stringify({ sessions, nextcloudTalkToken })}::jsonb
-        WHERE id = ${id}
-      `;
-    } catch {
-      // metadata column may not exist yet
+  // Materials folder — same as /api/content's workshop path, on every save
+  try {
+    const { getAdminClient, ensureWorkshopMaterialsFolder, grantMaterialsAccess } =
+      await import('@elkdonis/nextcloud');
+    const serviceClient = getAdminClient();
+    await ensureWorkshopMaterialsFolder(serviceClient, 'inner_group', id);
+    if (session.user.nextcloud_user_id) {
+      await grantMaterialsAccess(serviceClient, 'inner_group', id, session.user.nextcloud_user_id, 'author');
     }
+  } catch (materialsErr) {
+    console.error('Workshop materials folder provisioning failed:', materialsErr);
   }
 
   return NextResponse.json({ workshop: { id, slug } }, { status: 201 });

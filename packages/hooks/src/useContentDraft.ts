@@ -19,10 +19,34 @@ const EMPTY_DRAFT: ContentDraft = {
   primaryOrgId: "",
 };
 
+/**
+ * Infer the form kind from a draft's filled fields (most specific wins).
+ * Mirrors packages/ui content-form/inference.ts but collapses 'event' into
+ * 'meeting' since the form's SegmentedControl has no event option.
+ */
+function inferFormKind(draft: Partial<ContentDraft>): ContentFormKind {
+  if ((draft.sessions?.length ?? 0) > 0) return "workshop";
+  if (draft.pitch?.trim() || draft.price != null || draft.flyerUrl) return "workshop";
+  if (
+    draft.isMeeting ||
+    draft.isRsvpEnabled ||
+    draft.attendeeLimit != null ||
+    draft.rsvpDeadline ||
+    draft.minAttendees != null ||
+    draft.meetingTimeLabel?.trim() ||
+    draft.scheduledAt
+  ) {
+    return "meeting";
+  }
+  return "post";
+}
+
 export interface UseContentDraftConfig {
   orgId: string;
   userId: string;
   initialDraft?: Partial<ContentDraft>;
+  /** Explicit starting kind (e.g. the thread's stored kind when editing). Wins over inference. */
+  initialKind?: ContentFormKind;
   initialThreadId?: string;
   uploadEndpoint?: string;
   publishEndpoint?: string;
@@ -33,6 +57,9 @@ export interface UseContentDraftConfig {
 export interface UseContentDraftResult {
   kind: ContentFormKind;
   setKind: (k: ContentFormKind) => void;
+
+  /** Set once a save/publish succeeds — the thread this draft is now saved as. */
+  threadId: string | undefined;
 
   draft: ContentDraft;
   update: (patch: Partial<ContentDraft>) => void;
@@ -70,6 +97,7 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     orgId,
     userId,
     initialDraft,
+    initialKind,
     initialThreadId,
     uploadEndpoint = "/api/upload",
     publishEndpoint = "/api/content",
@@ -77,7 +105,13 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     onSaveDraft,
   } = config;
 
-  const [kind, setKind] = useState<ContentFormKind>("post");
+  const [kind, setKind] = useState<ContentFormKind>(
+    () => initialKind ?? (initialDraft ? inferFormKind(initialDraft) : "post"),
+  );
+  // Internal state, not just the initial prop — after the first save this
+  // gets set to the newly-created thread's id, so a second "save draft" or
+  // "publish" click updates that same thread instead of creating a duplicate.
+  const [threadId, setThreadId] = useState<string | undefined>(initialThreadId);
   const [draft, setDraft] = useState<ContentDraft>(() => ({
     ...EMPTY_DRAFT,
     primaryOrgId: orgId,
@@ -155,12 +189,17 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     return uploaded;
   };
 
-  const buildPayload = (uploadedMedia: UploadedMedia[], resolvedDocUrl?: string): Record<string, unknown> => ({
+  const buildPayload = (
+    uploadedMedia: UploadedMedia[],
+    resolvedDocUrl: string | undefined,
+    saveStatus: "draft" | "publish"
+  ): Record<string, unknown> => ({
     ...draft,
     kind,
     isMeeting: kind === "meeting" || kind === "workshop" ? true : draft.isMeeting,
     userId,
-    threadId: initialThreadId,
+    threadId,
+    saveStatus,
     media: [
       ...uploadedMedia,
       ...libraryFiles.map((f) => ({
@@ -177,14 +216,26 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
     createTalkRoom,
   });
 
-  const handlePublish = async () => {
+  // Shared by handlePublish and handleSaveDraft — both actually hit the API
+  // and persist. threadId is updated from the response so a second save
+  // updates the same thread instead of creating a duplicate.
+  const submit = async (saveStatus: "draft" | "publish") => {
     setError(null);
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+    if (saveStatus === "publish") {
+      const validationError = validate();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    } else if (!draft.title.trim()) {
+      // Drafts still need a title to have somewhere to save to, but skip the
+      // rest of validate() — an incomplete draft is the whole point.
+      setError("Title is required");
       return;
     }
-    setPublishing(true);
+
+    const setBusy = saveStatus === "publish" ? setPublishing : setSavingDraft;
+    setBusy(true);
     try {
       // Create living document if requested (before publishing so we have the URL)
       let resolvedDocumentUrl = documentUrl;
@@ -211,37 +262,34 @@ export function useContentDraft(config: UseContentDraftConfig): UseContentDraftR
       const res = await fetch(publishEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload(uploaded, resolvedDocumentUrl)),
+        body: JSON.stringify(buildPayload(uploaded, resolvedDocumentUrl, saveStatus)),
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || `Publish failed (${res.status})`);
+        throw new Error(text || `${saveStatus === "publish" ? "Publish" : "Save"} failed (${res.status})`);
       }
       const data = (await res.json()) as { id: string; kind: ThreadKind };
-      onPublished?.(data.id, data.kind);
+      setThreadId(data.id);
+      if (saveStatus === "publish") {
+        onPublished?.(data.id, data.kind);
+      } else {
+        setDraftSavedAt(new Date());
+        await onSaveDraft?.({ ...draft });
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to publish");
+      setError(e instanceof Error ? e.message : `Failed to ${saveStatus === "publish" ? "publish" : "save"}`);
     } finally {
-      setPublishing(false);
+      setBusy(false);
     }
   };
 
-  const handleSaveDraft = async () => {
-    setError(null);
-    setSavingDraft(true);
-    try {
-      await onSaveDraft?.({ ...draft });
-      setDraftSavedAt(new Date());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save draft");
-    } finally {
-      setSavingDraft(false);
-    }
-  };
+  const handlePublish = () => submit("publish");
+  const handleSaveDraft = () => submit("draft");
 
   return {
     kind,
     setKind,
+    threadId,
     draft,
     update,
     addSession,

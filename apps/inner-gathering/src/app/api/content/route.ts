@@ -3,18 +3,30 @@ import { nanoid } from "nanoid";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
 import { sanitizeRichText } from "@elkdonis/utils";
-import { createNextcloudClient } from "@elkdonis/nextcloud";
+import { getAdminClient } from "@elkdonis/nextcloud";
+import {
+  RSVP_GUEST_TEMPLATE_KEY,
+  deleteEmailTemplateSettings,
+  getEmailTemplateSettings,
+  saveEmailTemplateSettings,
+  threadTemplateKey,
+} from "@/lib/email-template-settings";
 
 // ============================================================================
 // Unified content publish endpoint (content-form backend).
-// Writes threads + workshop_details + workshop_sessions + thread_orgs +
+// Writes threads + workshop_pages + workshop_sessions + thread_orgs +
 // thread_references in one transaction. On kind transition of an existing
 // thread, writes a thread_revisions snapshot.
 //
+// workshop_pages is the single sidecar table for workshop kind — also used
+// by /api/workshops (the deep-edit view) and read by the detail page, so
+// fields set here (price, cover image, pitch) show up there too and vice
+// versa. workshop_details is a legacy duplicate table, no longer written.
+//
 // Field mapping notes (ContentDraft → schema):
-//   pitch      → workshop_details.materials   (no dedicated pitch column yet)
-//   price      → workshop_details.pricing     (JSONB: { amount, currency })
-//   flyerUrl   → workshop_details.cover_image_url
+//   pitch      → workshop_pages.description_short
+//   price      → workshop_pages.price_member
+//   flyerUrl   → workshop_pages.cover_image_url
 //   sessions[].title       → workshop_sessions.topic
 //   sessions[].description → workshop_sessions.notes (JSONB: { description })
 //   sessions[].orderIndex  → workshop_sessions.session_number
@@ -26,6 +38,8 @@ interface Payload {
   threadId?: string;
   kind: ThreadKind;
   userId: string;
+  /** "draft" saves without publishing (threads.status='draft'); omitted/"publish" publishes normally. */
+  saveStatus?: "draft" | "publish";
 
   title: string;
   body: string;
@@ -46,6 +60,9 @@ interface Payload {
   attendeeLimit?: number | null;
   rsvpDeadline?: string | null;
   minAttendees?: number | null;
+  rsvpEmailBody?: string | null;
+  reminderMinutesBefore?: number | null;
+  visibility?: string;
 
   pitch?: string | null;
   price?: number | null;
@@ -56,6 +73,10 @@ interface Payload {
     description?: string;
     scheduledAt?: string;
     durationMinutes?: number;
+    isOnline?: boolean;
+    location?: string;
+    videoConferenceUrl?: string;
+    mediaUrl?: string | null;
     orderIndex: number;
   }>;
 
@@ -119,11 +140,28 @@ export async function POST(request: NextRequest) {
     }
 
     const authorId = session.user.id;
+
+    // Access control: author must belong to the target org (any role) or be a
+    // site admin. Without this, any logged-in user could publish into any org.
+    const [membership] = await db`
+      SELECT 1 FROM user_organizations
+      WHERE user_id = ${authorId} AND org_id = ${payload.primaryOrgId}
+      UNION ALL
+      SELECT 1 FROM users WHERE id = ${authorId} AND is_admin = true
+      LIMIT 1
+    `;
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You are not a member of that organization" },
+        { status: 403 }
+      );
+    }
     const now = new Date();
     const publishedAt = payload.publishAt ? new Date(payload.publishAt) : now;
     const isScheduledPost =
       payload.kind === "post" && payload.publishAt && new Date(payload.publishAt) > now;
-    const status = isScheduledPost ? "scheduled" : "published";
+    const status =
+      payload.saveStatus === "draft" ? "draft" : isScheduledPost ? "scheduled" : "published";
 
     const result = await db.begin(async (tx) => {
       const isUpdate = !!payload.threadId;
@@ -182,6 +220,7 @@ export async function POST(request: NextRequest) {
         attendee_limit: payload.attendeeLimit ?? null,
         rsvp_deadline: payload.rsvpDeadline ? new Date(payload.rsvpDeadline) : null,
         min_attendees: payload.minAttendees ?? null,
+        reminder_minutes_before: payload.reminderMinutesBefore ?? 60,
         published_at: status === "published" ? publishedAt : null,
         document_url: payload.documentUrl ?? null,
       };
@@ -197,22 +236,21 @@ export async function POST(request: NextRequest) {
         `;
       }
 
-      // workshop_details (1:1)
+      // workshop_pages (1:1) — shared with /api/workshops and the detail page
       if (payload.kind === "workshop") {
-        const pricing = payload.price != null ? { amount: payload.price, currency: "USD" } : null;
-        const detailFields = {
+        const pageFields = {
           thread_id: threadId,
-          materials: payload.pitch ?? null,
-          pricing: pricing ? JSON.stringify(pricing) : null,
+          description_short: payload.pitch ?? null,
+          price_member: payload.price != null ? String(payload.price) : null,
           cover_image_url: payload.flyerUrl ?? null,
         };
         await tx`
-          INSERT INTO workshop_details ${tx(detailFields)}
+          INSERT INTO workshop_pages ${tx(pageFields)}
           ON CONFLICT (thread_id) DO UPDATE SET
-            materials = EXCLUDED.materials,
-            pricing = EXCLUDED.pricing,
-            cover_image_url = EXCLUDED.cover_image_url,
-            updated_at = NOW()
+            description_short = EXCLUDED.description_short,
+            price_member      = EXCLUDED.price_member,
+            cover_image_url   = EXCLUDED.cover_image_url,
+            updated_at        = NOW()
         `;
 
         // Replace sessions wholesale (simpler than diffing for v1)
@@ -226,7 +264,13 @@ export async function POST(request: NextRequest) {
               topic: s.title,
               scheduled_at: s.scheduledAt ? new Date(s.scheduledAt) : null,
               duration_minutes: s.durationMinutes ?? null,
-              notes: JSON.stringify({ description: s.description ?? "" }),
+              notes: JSON.stringify({
+                description: s.description ?? "",
+                isOnline: s.isOnline ?? true,
+                location: s.location ?? "",
+                videoConferenceUrl: s.videoConferenceUrl ?? "",
+                mediaUrl: s.mediaUrl ?? null,
+              }),
             })}
           `;
         }
@@ -272,37 +316,80 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Talk room creation (after transaction so thread exists)
-    // Requires per-user Nextcloud credentials — provision via admin dashboard first.
+    // Per-publication RSVP confirmation copy. A non-empty body upserts the
+    // thread-scoped template (preserving any links/media added on the Email
+    // Templates page); an empty body removes the override so the publication
+    // reverts to the org default.
+    if (payload.isRsvpEnabled !== undefined) {
+      const scopedKey = threadTemplateKey(RSVP_GUEST_TEMPLATE_KEY, result.id);
+      const bodyText = payload.rsvpEmailBody?.trim();
+      try {
+        if (payload.isRsvpEnabled && bodyText) {
+          const existing = await getEmailTemplateSettings(payload.primaryOrgId, scopedKey);
+          await saveEmailTemplateSettings({
+            orgId: payload.primaryOrgId,
+            templateKey: scopedKey,
+            config: { ...(existing?.config ?? {}), bodyText },
+            userId: authorId,
+          });
+        } else if (payload.rsvpEmailBody !== undefined && !bodyText) {
+          await deleteEmailTemplateSettings(payload.primaryOrgId, scopedKey);
+        }
+      } catch (templateErr) {
+        // Non-fatal — the publication is live; email falls back to the org default.
+        console.error("Failed to save per-publication RSVP email template:", templateErr);
+      }
+    }
+
+    // Workshop materials folder — service-account folder + RW share to the
+    // author. Fire-and-forget: the publication is live either way.
+    if (payload.kind === "workshop") {
+      void (async () => {
+        try {
+          const { getAdminClient, ensureWorkshopMaterialsFolder, grantMaterialsAccess } =
+            await import("@elkdonis/nextcloud");
+          const serviceClient = getAdminClient();
+          await ensureWorkshopMaterialsFolder(serviceClient, payload.primaryOrgId, result.id);
+          if (session.user.nextcloud_user_id) {
+            await grantMaterialsAccess(
+              serviceClient,
+              payload.primaryOrgId,
+              result.id,
+              session.user.nextcloud_user_id,
+              "author"
+            );
+          }
+        } catch (materialsErr) {
+          console.error("Workshop materials folder provisioning failed:", materialsErr);
+        }
+      })();
+    }
+
+    // Talk room creation (after transaction so thread exists). Uses the
+    // shared service account (eac_intergration) — same model as workshop
+    // materials folders and org folders above. Per-member Nextcloud
+    // credentials can't be relied on here: the self-service SSO connect flow
+    // (the only working provisioning path — see NC provisioning notes) only
+    // ever sets nextcloud_user_id/nextcloud_synced, never
+    // nextcloud_app_password, so gating on the member's own credentials
+    // silently skipped room creation for every SSO-provisioned user.
     let talkRoomCreated = false;
     if (payload.createTalkRoom) {
       try {
-        if (
-          session.user.nextcloud_user_id &&
-          session.user.nextcloud_app_password
-        ) {
-          const nextcloudClient = createNextcloudClient({
-            baseUrl: process.env.NEXTCLOUD_URL || "http://nextcloud-nginx:80",
-            username: session.user.nextcloud_user_id,
-            password: session.user.nextcloud_app_password,
-          });
+        const serviceClient = getAdminClient();
+        const { createTalkRoom } = await import("@elkdonis/nextcloud/talk");
+        const room = await createTalkRoom(serviceClient, {
+          name: payload.title.trim().slice(0, 80),
+          type: "public",
+        });
 
-          const { createTalkRoom } = await import("@elkdonis/nextcloud/talk");
-          const room = await createTalkRoom(nextcloudClient, {
-            name: payload.title.trim().slice(0, 80),
-            type: "public",
-          });
-
-          await db`
-            UPDATE threads
-            SET nextcloud_talk_token = ${room.token}
-            WHERE id = ${result.id}
-          `;
-          talkRoomCreated = true;
-          console.log(`✓ Talk room created for thread ${result.id}: ${room.token}`);
-        } else {
-          console.warn("⚠ Talk room skipped: user not provisioned in Nextcloud");
-        }
+        await db`
+          UPDATE threads
+          SET nextcloud_talk_token = ${room.token}
+          WHERE id = ${result.id}
+        `;
+        talkRoomCreated = true;
+        console.log(`✓ Talk room created for thread ${result.id}: ${room.token}`);
       } catch (talkError) {
         console.error("✗ Failed to create Talk room:", talkError);
         // Non-fatal — thread is already published

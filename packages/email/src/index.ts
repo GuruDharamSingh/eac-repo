@@ -6,6 +6,8 @@ import { renderOrderInvoiceEmail, type OrderInvoiceEmailProps } from './template
 import { renderOrderNotificationEmail, type OrderNotificationEmailProps } from './templates/order-notification';
 import { renderWelcomeEmail, type WelcomeEmailProps, type WelcomeLinkItem, type WelcomeMediaItem } from './templates/welcome';
 import { renderNewsletterEmail, type NewsletterEmailProps, type NewsletterLinkItem, type NewsletterMediaItem } from './templates/newsletter';
+import { renderReminderEmail, type ReminderEmailProps } from './templates/reminder';
+import { renderMeetingTriggerEmail, type MeetingTriggerEmailProps, type MeetingTriggerType } from './templates/meeting-trigger';
 
 export type {
   RsvpGuestEmailProps,
@@ -21,6 +23,9 @@ export type {
   NewsletterEmailProps,
   NewsletterLinkItem,
   NewsletterMediaItem,
+  ReminderEmailProps,
+  MeetingTriggerEmailProps,
+  MeetingTriggerType,
 };
 
 export {
@@ -32,7 +37,37 @@ export {
   renderOrderNotificationEmail,
   renderWelcomeEmail,
   renderNewsletterEmail,
+  renderReminderEmail,
+  renderMeetingTriggerEmail,
 };
+
+export async function sendReminderEmail(
+  to: string,
+  data: ReminderEmailProps
+): Promise<void> {
+  const html = await renderReminderEmail(data);
+  await sendEmail({
+    to,
+    subject: `Starting soon — ${data.meetingTitle}`,
+    html,
+    fromName: data.orgName,
+  });
+}
+
+export async function sendMeetingTriggerEmail(
+  to: string,
+  data: MeetingTriggerEmailProps
+): Promise<void> {
+  const html = await renderMeetingTriggerEmail(data);
+  const subject = data.type === 'cancellation'
+    ? `Cancelled — ${data.meetingTitle}`
+    : `Reminder — ${data.meetingTitle}`;
+  await sendEmail({
+    to,
+    subject,
+    html,
+  });
+}
 
 export async function sendRsvpConfirmation(
   to: string,
@@ -52,9 +87,10 @@ export async function sendRsvpNotification(
   data: RsvpOwnerEmailProps
 ): Promise<void> {
   const html = await renderRsvpOwnerEmail(data);
+  const subjectPrefix = data.variant === 'reconfirmed' ? 'Confirmed' : 'New RSVP';
   await sendEmail({
     to,
-    subject: `New RSVP: ${data.guestName} — ${data.meetingTitle}`,
+    subject: `${subjectPrefix}: ${data.guestName} — ${data.meetingTitle}`,
     html,
     ...(data.guestEmail ? { replyTo: data.guestEmail } : {}),
   });

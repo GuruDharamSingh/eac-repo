@@ -13,6 +13,10 @@ export interface WorkshopSessionDraft {
   description?: string;
   scheduledAt?: string;
   durationMinutes?: number;
+  isOnline?: boolean;
+  location?: string;
+  videoConferenceUrl?: string;
+  mediaUrl?: string | null;
   orderIndex: number;
 }
 
@@ -41,6 +45,11 @@ export interface ContentDraft {
   attendeeLimit?: number | null;
   rsvpDeadline?: string | null;
   minAttendees?: number | null;
+  /** Author-editable body of the RSVP confirmation email for this publication.
+   *  Stored as email_template_settings row `rsvp-guest:<threadId>`. */
+  rsvpEmailBody?: string | null;
+  /** Minutes before scheduled_at to email attendees a reminder (null = 60). */
+  reminderMinutesBefore?: number | null;
 
   // workshop
   pitch?: string | null;

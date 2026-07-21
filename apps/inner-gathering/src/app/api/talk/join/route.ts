@@ -9,14 +9,16 @@ import { SignJWT } from 'jose';
  * SSO bridge from IG into a Nextcloud Talk room.
  *
  * Flow:
- *  1. Verify user is logged in to IG.
- *  2. Verify user is synced to Nextcloud (has credentials).
- *  3. Sign a short-lived JWT and set it as eac_user_jwt cookie (same domain as
- *     our OIDC authorize endpoint — no cross-origin cookie problem).
- *  4. Redirect to Nextcloud sociallogin, which starts the OAuth2 flow back to
+ *  1. Not logged in, or logged in but not synced to Nextcloud — send straight
+ *     into the room's own guest-join screen (Nextcloud Talk supports joining
+ *     public rooms by name, no account required). No forced login wall.
+ *  2. Logged in AND synced — sign a short-lived JWT and set it as eac_user_jwt
+ *     cookie (same domain as our OIDC authorize endpoint — no cross-origin
+ *     cookie problem).
+ *  3. Redirect to Nextcloud's /login, which starts the OAuth2 flow back to
  *     our /api/oidc/authorize endpoint. The authorize reads the cookie, issues
- *     an auth code, and Nextcloud logs the user in.
- *  5. After auth, Nextcloud respects login_redirect_url and lands on the Talk room.
+ *     an auth code, and Nextcloud logs the user in as themselves.
+ *  4. After auth, Nextcloud respects redirect_url and lands on the Talk room.
  */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
@@ -24,11 +26,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing room token' }, { status: 400 });
   }
 
+  const nextcloudUrl = process.env.NEXTCLOUD_PUBLIC_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
+  const talkPath = `/call/${token}`;
+  const guestJoin = () => NextResponse.redirect(new URL(talkPath, nextcloudUrl));
+
   const session = await getServerSession();
   if (!session.user) {
-    const loginUrl = new URL('/login', req.nextUrl.origin);
-    loginUrl.searchParams.set('returnTo', req.url);
-    return NextResponse.redirect(loginUrl);
+    // Not logged into the app at all — still let them into the room as a guest.
+    return guestJoin();
   }
 
   const [user] = await db`
@@ -40,21 +45,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
+  // No Nextcloud account yet — same guest fallback. Once they sync, the SSO
+  // branch below takes over and joins them as their real account instead.
   if (!user.nextcloud_synced || !user.nextcloud_user_id) {
-    const accountUrl = new URL('/account', req.nextUrl.origin);
-    accountUrl.searchParams.set('error', 'nextcloud_not_synced');
-    return NextResponse.redirect(accountUrl);
-  }
-
-  const nextcloudUrl = process.env.NEXTCLOUD_PUBLIC_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || '';
-  const talkUrl = `${nextcloudUrl}/call/${token}`;
-
-  // If user has a recent Nextcloud session (tracked by cookie we set after SSO),
-  // go directly to the Talk room — re-running sociallogin on an existing session
-  // causes "this account is already connected" errors.
-  const hasNcSession = req.cookies.get('eac_nc_session')?.value === '1';
-  if (hasNcSession) {
-    return NextResponse.redirect(talkUrl);
+    return guestJoin();
   }
 
   // Sign a 5-minute JWT — same domain as /api/oidc/authorize so the cookie
@@ -73,12 +67,17 @@ export async function GET(req: NextRequest) {
     .setAudience('admin-oidc')
     .sign(secret);
 
-  // Redirect to Nextcloud sociallogin — it will redirect back to our authorize
-  // endpoint, which reads the eac_user_jwt cookie to identify the user.
-  const socialLoginUrl = new URL('/apps/sociallogin/custom_oauth2/elkdonis', nextcloudUrl);
-  socialLoginUrl.searchParams.set('login_redirect_url', talkUrl);
+  // Route through Nextcloud's /login rather than the sociallogin endpoint:
+  //  - live NC session  → /login redirects straight to redirect_url (the Talk
+  //    room). Hitting sociallogin with an existing session errors with
+  //    "this account is already connected" and strands the user.
+  //  - no NC session    → sociallogin's auto_login=1 forwards the login page to
+  //    our OIDC authorize endpoint (preserving redirect_url), which reads the
+  //    eac_user_jwt cookie and completes SSO into the room.
+  const loginUrl = new URL('/login', nextcloudUrl);
+  loginUrl.searchParams.set('redirect_url', talkPath);
 
-  const response = NextResponse.redirect(socialLoginUrl);
+  const response = NextResponse.redirect(loginUrl);
 
   response.cookies.set('eac_user_jwt', jwt, {
     httpOnly: true,

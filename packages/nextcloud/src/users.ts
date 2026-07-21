@@ -48,18 +48,46 @@ export async function provisionUser(
     return { userId: existingCreds.nextcloud_user_id, appPassword: existingCreds.nextcloud_app_password };
   }
 
+  // A manually-created (or otherwise pre-existing) Nextcloud account with this
+  // email should be linked to, not shadowed by a second account named after
+  // our internal user id.
+  const existingNcUserId = existingCreds?.nextcloud_user_id || (await findNextcloudUserIdByEmail(adminClient, email));
+  if (existingNcUserId) {
+    if (groups && groups.length > 0) {
+      for (const groupId of groups) {
+        await ensureGroup(adminClient, groupId);
+        await addUserToGroup(adminClient, existingNcUserId, groupId);
+      }
+    }
+    // We don't know this account's real password, so we can't mint a usable
+    // app password for server-side calls — record the link without one.
+    await writeStoredCredentials(userId, {
+      nextcloud_user_id: existingNcUserId,
+      nextcloud_app_password: existingCreds?.nextcloud_app_password ?? null,
+      nextcloud_synced: true,
+    });
+    console.log(`ℹ️  Linked existing Nextcloud user by email: ${existingNcUserId}`);
+    return { userId: existingNcUserId, appPassword: existingCreds?.nextcloud_app_password ?? '' };
+  }
+
   // Generate secure password if not provided.
   // NOTE: Today this is also used as the API credential stored in DB.
   const userPassword = password || generateSecurePassword();
   let userCreated = false;
 
   try {
-    // Create Nextcloud user via OCS API
+    // Create Nextcloud user via OCS API. Groups must be included on the
+    // create call itself: a subadmin (rather than full admin) account is
+    // only permitted to create users into groups it manages, and Nextcloud
+    // checks that at creation time — adding groups afterward 403s for them.
     const formData = new URLSearchParams();
     formData.set('userid', userId);
     formData.set('password', userPassword);
     formData.set('email', email);
     formData.set('displayname', displayName);
+    for (const groupId of groups ?? []) {
+      formData.append('groups[]', groupId);
+    }
 
     await adminClient.ocs.post('/cloud/users', formData.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -96,7 +124,9 @@ export async function provisionUser(
     nextcloud_synced: true,
   });
 
-  if (groups && groups.length > 0) {
+  // Groups were already set at creation time; this only covers the
+  // "already existed" branch above, where creation (and its groups[]) was skipped.
+  if (!userCreated && groups && groups.length > 0) {
     for (const groupId of groups) {
       await ensureGroup(adminClient, groupId);
       await addUserToGroup(adminClient, userId, groupId);
@@ -104,6 +134,35 @@ export async function provisionUser(
   }
 
   return { userId, appPassword };
+}
+
+/**
+ * Find an existing Nextcloud account by email. The OCS `search` param
+ * doesn't match on email in this instance, so this lists all users and
+ * checks each one's profile — fine at our current user counts, but not
+ * something to call in a hot path.
+ */
+async function findNextcloudUserIdByEmail(
+  adminClient: NextcloudClient,
+  email: string
+): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const listResponse = await adminClient.ocs.get('/cloud/users');
+  const userIds: string[] = extractOcsData<any>(listResponse)?.users || [];
+
+  for (const id of userIds) {
+    try {
+      const user = await getUser(adminClient, id);
+      if (user.email?.trim().toLowerCase() === normalized) {
+        return id;
+      }
+    } catch {
+      // Skip users we can't read details for.
+    }
+  }
+  return null;
 }
 
 /**

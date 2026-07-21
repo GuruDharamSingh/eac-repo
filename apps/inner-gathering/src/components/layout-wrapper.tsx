@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { TopNav } from "./top-nav";
+import { SiteHeader } from "./site-header";
 import { WelcomePopup } from "./welcome-popup";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      {showNav && <SiteHeader />}
       {showNav && <TopNav />}
       {children}
       <Suspense fallback={null}>

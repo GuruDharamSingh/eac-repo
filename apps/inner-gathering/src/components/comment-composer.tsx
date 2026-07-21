@@ -20,10 +20,10 @@ interface ReplyData {
 }
 
 interface CommentComposerProps {
-  /** Meeting id (when threadKind='meeting') or post id (when 'post'). */
+  /** Meeting/post/workshop id — whichever threadKind names. */
   meetingId: string;
   /** Which thread kind owns this comment thread. Default 'meeting'. */
-  threadKind?: 'meeting' | 'post';
+  threadKind?: 'meeting' | 'post' | 'workshop';
   parentId?: string | null;
   compact?: boolean;
   onSubmitted: (reply: ReplyData) => void;

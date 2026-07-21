@@ -1,4 +1,4 @@
-import type { ThreadKind, ContentDraft } from "@elkdonis/types";
+import type { ThreadKind, ContentDraft, ContentFormKind } from "@elkdonis/types";
 
 export type {
   ThreadKind,
@@ -23,6 +23,8 @@ export interface ContentFormProps {
   userId: string;
   isAdmin?: boolean;
   initialDraft?: Partial<ContentDraft>;
+  /** Starting kind when editing an existing thread — prevents defaulting back to 'post'. */
+  initialKind?: ContentFormKind;
   initialThreadId?: string;
   onPublished?: (threadId: string, kind: ThreadKind) => void;
   onSaveDraft?: (draft: ContentDraft) => void;

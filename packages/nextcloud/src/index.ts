@@ -17,6 +17,7 @@ export * from './talk';
 export * from './calendar';
 export * from './shares';
 export * from './org-provisioning';
+export * from './workshop-materials';
 
 // React components (optional)
 export * from './components';

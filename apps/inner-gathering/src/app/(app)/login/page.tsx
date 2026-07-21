@@ -118,6 +118,7 @@ export default function LoginPage() {
             >
               <BaroqueSignup
                 initialMode="signup"
+                googleRedirectTo={returnTo || "/feed"}
                 onSuccess={({ mode: m }) => {
                   if (returnTo) {
                     window.location.href = returnTo;

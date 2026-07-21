@@ -1,37 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Badge,
   Box,
   Button,
-  Collapse,
   Container,
   Divider,
   Group,
   Paper,
+  Image,
   Progress,
   Stack,
+  Tabs,
   Text,
   ThemeIcon,
   Title,
   Tooltip,
-  UnstyledButton,
   rem,
 } from "@mantine/core";
 import {
   ArrowLeft,
   BookOpen,
   Calendar,
-  ChevronDown,
-  ChevronUp,
   Clock,
   ExternalLink,
   FileText,
   Link as LinkIcon,
   Lock,
   MessageCircle,
+  Pencil,
   Play,
   Sparkles,
   Users,
@@ -41,6 +40,8 @@ import Link from "next/link";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { CommentSection } from "@/components/comment-section";
 import { JoinWorkshopModal } from "@/components/join-workshop-modal";
+import { WorkshopOwnerEditor } from "@/components/workshop-owner-editor";
+import { WorkshopMaterials } from "@elkdonis/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ interface Session {
   orderIndex: number;
   videoConferenceUrl?: string;
   nextcloudTalkToken?: string;
+  mediaUrl?: string | null;
   resources?: Resource[];
 }
 
@@ -78,6 +80,9 @@ interface Workshop {
   description?: string;
   pitch?: string;
   coverImage?: { url: string; alt?: string };
+  bannerImageUrl?: string | null;
+  heroMediaUrl?: string | null;
+  heroMediaType?: "image" | "video" | null;
   guide?: Guide;
   organization?: { name: string };
   price?: number;
@@ -94,22 +99,39 @@ interface WorkshopPageProps {
     initials: string | null;
   } | null;
   isEnrolled: boolean;
+  isOwner?: boolean;
   replies: any[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Pinned so server-rendered markup matches the client's re-render — the
+// server runs in UTC, so leaving this to the runtime default causes a
+// hydration mismatch on every visitor whose browser isn't also UTC.
 function fmt(date: string | Date, opts: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("en-CA", opts).format(new Date(date));
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", ...opts }).format(new Date(date));
 }
 
-function sessionStatus(scheduledAt: string | Date, durationMinutes = 90): "upcoming" | "live" | "past" {
+function sessionStatus(scheduledAt: string | Date, durationMinutes: number | undefined, now: number): "upcoming" | "live" | "past" {
   const start = new Date(scheduledAt).getTime();
-  const end = start + durationMinutes * 60_000;
-  const now = Date.now();
+  const end = start + (durationMinutes ?? 90) * 60_000;
   if (now < start) return "upcoming";
   if (now < end) return "live";
   return "past";
+}
+
+// `now` is only known on the client (an SSR render can't know the true
+// current time without also causing a hydration mismatch), so this starts
+// null and fills in after mount, refreshing periodically to keep live/past
+// badges current.
+function useMountedNow(intervalMs = 30_000): number | null {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
 }
 
 // ─── Resource Row ─────────────────────────────────────────────────────────────
@@ -167,170 +189,159 @@ const STATUS_CONFIG = {
   past:     { color: "#6b7280", label: "Completed", bg: "#f9fafb" },
 };
 
-function ModuleCard({ session, index, isEnrolled }: { session: Session; index: number; isEnrolled: boolean }) {
-  const [open, setOpen] = useState(false);
-  const status = sessionStatus(session.scheduledAt, session.durationMinutes);
+/** Tab header: number bubble + title + live indicator. */
+function SessionTabLabel({ session, index, now }: { session: Session; index: number; now: number | null }) {
+  const status = now === null ? "upcoming" : sessionStatus(session.scheduledAt, session.durationMinutes, now);
+  const sc = STATUS_CONFIG[status];
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <Box
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          backgroundColor: sc.color,
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "'Cinzel', serif",
+          fontWeight: 700,
+          fontSize: "0.7rem",
+          flexShrink: 0,
+        }}
+      >
+        {index + 1}
+      </Box>
+      <Text size="sm" fw={600} lineClamp={1} style={{ maxWidth: 140 }}>
+        {session.title || `Session ${index + 1}`}
+      </Text>
+      {status === "live" && (
+        <Box w={8} h={8} style={{ borderRadius: "50%", background: "#c0392b", animation: "pulse 2s infinite", flexShrink: 0 }} />
+      )}
+    </Group>
+  );
+}
+
+/** Tab panel: everything about one session. */
+function SessionPanelContent({ session, isEnrolled, now }: { session: Session; isEnrolled: boolean; now: number | null }) {
+  const status = now === null ? "upcoming" : sessionStatus(session.scheduledAt, session.durationMinutes, now);
   const sc = STATUS_CONFIG[status];
   const resources = session.resources ?? [];
   const hasVideoConf = !!(session.videoConferenceUrl || session.nextcloudTalkToken);
 
   return (
-    <Paper
-      withBorder
-      radius="md"
-      shadow={open ? "md" : "xs"}
-      style={{
-        borderLeft: `4px solid ${sc.color}`,
-        background: open ? sc.bg : "white",
-        transition: "all 0.2s",
-      }}
-    >
-      <UnstyledButton
-        onClick={() => setOpen((o) => !o)}
-        p="md"
-        w="100%"
-      >
-        <Group justify="space-between" wrap="nowrap" align="flex-start">
-          <Group gap="sm" align="flex-start" style={{ flex: 1 }}>
-            {/* Module number bubble */}
-            <Box
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                backgroundColor: sc.color,
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "'Cinzel', serif",
-                fontWeight: 700,
-                fontSize: "0.85rem",
-                flexShrink: 0,
-              }}
-            >
-              {index + 1}
-            </Box>
-
-            <Stack gap={4} style={{ flex: 1 }}>
-              <Group gap="xs" wrap="nowrap">
-                <Text fw={700} size="md" style={{ color: "#3d1f04", fontFamily: "'Cinzel', serif" }}>
-                  {session.title}
+    <Paper withBorder radius="md" p="md" style={{ borderLeft: `4px solid ${sc.color}`, background: sc.bg }}>
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Stack gap={4}>
+            <Title order={4} style={{ color: "#3d1f04", fontFamily: "'Cinzel', serif" }}>
+              {session.title}
+            </Title>
+            <Group gap="md">
+              <Group gap={4}>
+                <Calendar size={13} color="#9a7650" />
+                <Text size="xs" c="dimmed">
+                  {fmt(session.scheduledAt, { month: "short", day: "numeric", year: "numeric" })}
                 </Text>
-                {status === "live" && (
-                  <Badge color="red" size="xs" variant="filled" style={{ animation: "pulse 2s infinite" }}>
-                    ● Live
-                  </Badge>
-                )}
               </Group>
-              <Group gap="md">
+              {session.durationMinutes && (
                 <Group gap={4}>
-                  <Calendar size={13} color="#9a7650" />
-                  <Text size="xs" c="dimmed">
-                    {fmt(session.scheduledAt, { month: "short", day: "numeric", year: "numeric" })}
-                  </Text>
+                  <Clock size={13} color="#9a7650" />
+                  <Text size="xs" c="dimmed">{session.durationMinutes} min</Text>
                 </Group>
-                {session.durationMinutes && (
-                  <Group gap={4}>
-                    <Clock size={13} color="#9a7650" />
-                    <Text size="xs" c="dimmed">{session.durationMinutes} min</Text>
-                  </Group>
-                )}
-                {resources.length > 0 && (
-                  <Group gap={4}>
-                    <BookOpen size={13} color="#9a7650" />
-                    <Text size="xs" c="dimmed">{resources.length} resource{resources.length !== 1 ? "s" : ""}</Text>
-                  </Group>
-                )}
-              </Group>
-            </Stack>
-          </Group>
-
-          <Box mt={4} style={{ flexShrink: 0 }}>
-            {open ? <ChevronUp size={18} color="#9a7650" /> : <ChevronDown size={18} color="#9a7650" />}
-          </Box>
-        </Group>
-      </UnstyledButton>
-
-      <Collapse in={open}>
-        <Divider mx="md" />
-        <Stack gap="md" p="md" pt="sm">
-          {session.description && (
-            <Text size="sm" c="#5a3e28" style={{ lineHeight: 1.7 }}>
-              {session.description}
-            </Text>
-          )}
-
-          {/* Video conference button */}
-          {hasVideoConf && (
-            <Group>
-              {session.nextcloudTalkToken ? (
-                <Button
-                  component="a"
-                  href={`/api/talk/join?token=${session.nextcloudTalkToken}`}
-                  leftSection={<Video size={16} />}
-                  color="red"
-                  variant={isEnrolled ? "filled" : "light"}
-                  radius="xl"
-                  disabled={!isEnrolled}
-                >
-                  {isEnrolled ? "Join Talk Room" : "Enroll to Join"}
-                </Button>
-              ) : session.videoConferenceUrl ? (
-                <Button
-                  component="a"
-                  href={isEnrolled ? session.videoConferenceUrl : "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  leftSection={<Video size={16} />}
-                  variant={isEnrolled ? "filled" : "light"}
-                  color="indigo"
-                  radius="xl"
-                  disabled={!isEnrolled}
-                >
-                  {isEnrolled ? "Join Video Session" : "Enroll to Join"}
-                </Button>
-              ) : null}
-
-              {!isEnrolled && (
-                <Text size="xs" c="dimmed" fs="italic">
-                  Enroll to access live sessions
-                </Text>
               )}
             </Group>
+          </Stack>
+          {status === "live" && (
+            <Badge color="red" size="sm" variant="filled" style={{ animation: "pulse 2s infinite" }}>
+              ● Live
+            </Badge>
           )}
+        </Group>
 
-          {/* Materials */}
-          {resources.length > 0 && (
-            <Stack gap="xs">
-              <Text size="xs" fw={700} tt="uppercase" lts={1} c="dimmed">
-                Materials
+        {session.mediaUrl && (
+          <Image src={session.mediaUrl} alt={session.title} radius="sm" mah={280} fit="cover" />
+        )}
+
+        {session.description && (
+          <Text size="sm" c="#5a3e28" style={{ lineHeight: 1.7 }}>
+            {session.description}
+          </Text>
+        )}
+
+        {/* Video conference button */}
+        {hasVideoConf && (
+          <Group>
+            {session.nextcloudTalkToken ? (
+              <Button
+                component="a"
+                href={`/api/talk/join?token=${session.nextcloudTalkToken}`}
+                leftSection={<Video size={16} />}
+                color="red"
+                variant={isEnrolled ? "filled" : "light"}
+                radius="xl"
+                disabled={!isEnrolled}
+              >
+                {isEnrolled ? "Join Talk Room" : "Enroll to Join"}
+              </Button>
+            ) : session.videoConferenceUrl ? (
+              <Button
+                component="a"
+                href={isEnrolled ? session.videoConferenceUrl : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                leftSection={<Video size={16} />}
+                variant={isEnrolled ? "filled" : "light"}
+                color="indigo"
+                radius="xl"
+                disabled={!isEnrolled}
+              >
+                {isEnrolled ? "Join Video Session" : "Enroll to Join"}
+              </Button>
+            ) : null}
+
+            {!isEnrolled && (
+              <Text size="xs" c="dimmed" fs="italic">
+                Enroll to access live sessions
               </Text>
-              {resources.map((res) => (
-                <ResourceRow key={res.id} res={res} isEnrolled={isEnrolled} />
-              ))}
-            </Stack>
-          )}
+            )}
+          </Group>
+        )}
 
-          {/* Location for in-person */}
-          {!session.isOnline && session.location && (
-            <Group gap="xs">
-              <Text size="xs" c="dimmed">📍 {session.location}</Text>
-            </Group>
-          )}
-        </Stack>
-      </Collapse>
+        {/* Materials */}
+        {resources.length > 0 && (
+          <Stack gap="xs">
+            <Text size="xs" fw={700} tt="uppercase" lts={1} c="dimmed">
+              Materials
+            </Text>
+            {resources.map((res) => (
+              <ResourceRow key={res.id} res={res} isEnrolled={isEnrolled} />
+            ))}
+          </Stack>
+        )}
+
+        {/* Location for in-person */}
+        {!session.isOnline && session.location && (
+          <Group gap="xs">
+            <Text size="xs" c="dimmed">📍 {session.location}</Text>
+          </Group>
+        )}
+      </Stack>
     </Paper>
   );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: WorkshopPageProps) {
+export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = false, replies }: WorkshopPageProps) {
   const [joinOpen, setJoinOpen] = useState(false);
   const sessions = [...(workshop.sessions ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
-  const pastCount = sessions.filter((s) => sessionStatus(s.scheduledAt, s.durationMinutes) === "past").length;
+  const now = useMountedNow();
+  const pastCount = now === null ? 0 : sessions.filter((s) => sessionStatus(s.scheduledAt, s.durationMinutes, now) === "past").length;
   const progressPct = sessions.length > 0 ? Math.round((pastCount / sessions.length) * 100) : 0;
+  // Banner slot falls back to the card cover image
+  const bannerUrl = workshop.bannerImageUrl || workshop.coverImage?.url;
 
   return (
     <Box
@@ -340,8 +351,8 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
         paddingBottom: rem(100),
       }}
     >
-      {/* ── Cover image hero ── */}
-      {workshop.coverImage?.url && (
+      {/* ── Banner hero ── */}
+      {bannerUrl && (
         <Box
           style={{
             width: "100%",
@@ -351,8 +362,8 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
           }}
         >
           <img
-            src={workshop.coverImage.url}
-            alt={workshop.coverImage.alt ?? workshop.title}
+            src={bannerUrl}
+            alt={workshop.coverImage?.alt ?? workshop.title}
             style={{
               width: "100%",
               height: "100%",
@@ -421,7 +432,7 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
 
         <Stack gap="xl">
           {/* ── Meta strip ── */}
-          {!workshop.coverImage?.url && (
+          {!bannerUrl && (
             <Title order={1} style={{ fontFamily: "'Cinzel', serif", color: "#3d1f04" }}>
               {workshop.title}
             </Title>
@@ -447,16 +458,62 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
                 </Group>
               )}
             </Group>
-            <button
-              type="button"
-              className="jwm__submit"
-              onClick={() => setJoinOpen(true)}
-              style={{ margin: 0 }}
-            >
-              <Sparkles size={14} />
-              Join Workshop
-            </button>
+            <Group gap="sm">
+              {isOwner && (
+                <>
+                  <Button
+                    component={Link}
+                    href={`/workshops/${workshop.id}/edit`}
+                    variant="light"
+                    color="orange"
+                    size="xs"
+                    leftSection={<Pencil size={13} />}
+                  >
+                    Edit content
+                  </Button>
+                  <WorkshopOwnerEditor
+                    workshopId={workshop.id}
+                    initial={{
+                      title: workshop.title,
+                      price: workshop.price,
+                      bannerImageUrl: workshop.bannerImageUrl ?? null,
+                      heroMediaUrl: workshop.heroMediaUrl ?? null,
+                      heroMediaType: workshop.heroMediaType ?? null,
+                      coverImageUrl: workshop.coverImage?.url ?? null,
+                    }}
+                  />
+                </>
+              )}
+              <button
+                type="button"
+                className="jwm__submit"
+                onClick={() => setJoinOpen(true)}
+                style={{ margin: 0 }}
+              >
+                <Sparkles size={14} />
+                Join Workshop
+              </button>
+            </Group>
           </Group>
+
+          {/* ── Main media (hero slot) ── */}
+          {workshop.heroMediaUrl && (
+            <Box style={{ borderRadius: 8, overflow: "hidden" }}>
+              {workshop.heroMediaType === "video" ? (
+                <video
+                  src={workshop.heroMediaUrl}
+                  controls
+                  style={{ width: "100%", display: "block" }}
+                />
+              ) : (
+                <img
+                  src={workshop.heroMediaUrl}
+                  alt={workshop.title}
+                  style={{ width: "100%", display: "block" }}
+                />
+              )}
+            </Box>
+          )}
 
           <JoinWorkshopModal
             workshop={{
@@ -490,6 +547,9 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
               </Stack>
             </Paper>
           )}
+
+          {/* ── Materials (enrolled users + author; server enforces) ── */}
+          {(isEnrolled || isOwner) && <WorkshopMaterials workshopId={workshop.id} />}
 
           {/* ── Description ── */}
           {(workshop.pitch || workshop.description) && (
@@ -557,14 +617,20 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, replies }: Wor
                 <Text size="sm" c="dimmed">{sessions.length} sessions</Text>
               </Group>
 
-              {sessions.map((session, i) => (
-                <ModuleCard
-                  key={session.id}
-                  session={session}
-                  index={i}
-                  isEnrolled={isEnrolled}
-                />
-              ))}
+              <Tabs defaultValue={sessions[0]?.id} variant="pills" color="ember">
+                <Tabs.List style={{ flexWrap: "wrap" }}>
+                  {sessions.map((session, i) => (
+                    <Tabs.Tab key={session.id} value={session.id}>
+                      <SessionTabLabel session={session} index={i} now={now} />
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+                {sessions.map((session) => (
+                  <Tabs.Panel key={session.id} value={session.id} pt="md">
+                    <SessionPanelContent session={session} isEnrolled={isEnrolled} now={now} />
+                  </Tabs.Panel>
+                ))}
+              </Tabs>
             </Stack>
           )}
 

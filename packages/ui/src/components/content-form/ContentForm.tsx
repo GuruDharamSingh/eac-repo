@@ -16,7 +16,6 @@ import {
   Textarea,
   TextInput,
   UnstyledButton,
-  ActionIcon,
 } from "@mantine/core";
 import { RichTextEditor } from "../RichTextEditor";
 import { DateTimePicker } from "@mantine/dates";
@@ -24,9 +23,7 @@ import {
   IconAlertCircle,
   IconChevronDown,
   IconChevronRight,
-  IconPlus,
   IconRepeat,
-  IconTrash,
   IconVideo,
 } from "@tabler/icons-react";
 import { useState } from "react";
@@ -34,11 +31,14 @@ import { MediaUpload } from "../MediaUpload";
 import { useContentDraft } from "@elkdonis/hooks";
 import type { ContentFormProps } from "./types";
 
+// Post and Meeting only — Workshop has its own dedicated page
+// (/workshops/create) with a layout built for sessions/pricing/materials.
 export function ContentForm({
   orgId,
   userId,
   isAdmin = false,
   initialDraft,
+  initialKind,
   initialThreadId,
   onPublished,
   onSaveDraft,
@@ -48,9 +48,6 @@ export function ContentForm({
     setKind,
     draft,
     update,
-    addSession,
-    updateSession,
-    removeSession,
     mediaFiles,
     setMediaFiles,
     libraryFiles,
@@ -72,6 +69,7 @@ export function ContentForm({
     orgId,
     userId,
     initialDraft,
+    initialKind,
     initialThreadId,
     onPublished,
     onSaveDraft,
@@ -80,18 +78,17 @@ export function ContentForm({
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const sessions = draft.sessions ?? [];
-
   return (
     <Stack gap="md">
-      {/* Kind picker */}
+      {/* Kind picker — Workshop isn't here on purpose: it has its own
+          dedicated page (/workshops/create) with a layout built specifically
+          for sessions, pricing, and materials, not this shared drawer. */}
       <SegmentedControl
         value={kind}
         onChange={(v) => setKind(v as typeof kind)}
         data={[
           { label: "Post", value: "post" },
           { label: "Meeting", value: "meeting" },
-          { label: "Workshop", value: "workshop" },
         ]}
         fullWidth
       />
@@ -115,13 +112,13 @@ export function ContentForm({
         <RichTextEditor
           content={draft.body ?? ""}
           onChange={(html) => update({ body: html })}
-          placeholder={kind === "workshop" ? "The pitch — why join?" : "Write something"}
+          placeholder="Write something"
           minimal={kind === "meeting"}
         />
       </div>
 
       {/* Meeting fields */}
-      {(kind === "meeting" || kind === "workshop") && (
+      {kind === "meeting" && (
         <>
           <Divider label="When & where" labelPosition="left" />
           <Group grow>
@@ -153,14 +150,16 @@ export function ContentForm({
             value={draft.location ?? ""}
             onChange={(e) => update({ location: e.currentTarget.value || null })}
           />
-          <TextInput
-            label="Video link"
-            description="Zoom, Meet, or any video URL — shown as a join button on the card"
-            placeholder="https://..."
-            leftSection={<IconVideo size={14} />}
-            value={draft.videoLink ?? ""}
-            onChange={(e) => update({ videoLink: e.currentTarget.value || null })}
-          />
+          {kind === "meeting" && (
+            <TextInput
+              label="Video link"
+              description="Zoom, Meet, or any video URL — shown as a join button on the card"
+              placeholder="https://..."
+              leftSection={<IconVideo size={14} />}
+              value={draft.videoLink ?? ""}
+              onChange={(e) => update({ videoLink: e.currentTarget.value || null })}
+            />
+          )}
           <Switch
             label="This is online"
             checked={!!draft.isOnline}
@@ -240,71 +239,27 @@ export function ContentForm({
               />
             </Group>
           )}
-        </>
-      )}
-
-      {/* Workshop fields */}
-      {kind === "workshop" && (
-        <>
-          <Divider label="Workshop" labelPosition="left" />
-          <Group grow>
+          {draft.isRsvpEnabled && (
+            <Textarea
+              label="RSVP confirmation email"
+              description="Sent to each person when they RSVP. Leave empty to use your organization's default wording. You can refine it later from the Email Templates page."
+              placeholder="Thanks for signing up! Here's what to expect…"
+              autosize
+              minRows={3}
+              value={draft.rsvpEmailBody ?? ""}
+              onChange={(e) => update({ rsvpEmailBody: e.currentTarget.value || null })}
+            />
+          )}
+          {draft.isRsvpEnabled && (
             <NumberInput
-              label="Price"
-              prefix="$"
+              label="Reminder email (minutes before start)"
+              description="Attendees get a 'starting soon' email this many minutes before the session. Set 0 to disable."
               min={0}
-              value={draft.price ?? ""}
-              onChange={(v) => update({ price: v === "" ? null : Number(v) })}
+              max={10080}
+              value={draft.reminderMinutesBefore ?? 60}
+              onChange={(v) => update({ reminderMinutesBefore: v === "" ? null : Number(v) })}
             />
-            <TextInput
-              label="Flyer image URL"
-              placeholder="https://…"
-              value={draft.flyerUrl ?? ""}
-              onChange={(e) => update({ flyerUrl: e.currentTarget.value || null })}
-            />
-          </Group>
-
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Text fw={500}>Sessions</Text>
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<IconPlus size={14} />}
-                onClick={addSession}
-              >
-                Add session
-              </Button>
-            </Group>
-            {sessions.length === 0 && (
-              <Text size="xs" c="dimmed">
-                Optional — add sessions to structure the workshop into parts.
-              </Text>
-            )}
-            {sessions.map((s, i) => (
-              <Paper key={s.id} withBorder p="sm" radius="sm">
-                <Stack gap="xs">
-                  <Group justify="space-between">
-                    <Text size="sm" c="dimmed">Session {i + 1}</Text>
-                    <ActionIcon color="red" variant="subtle" onClick={() => removeSession(s.id)}>
-                      <IconTrash size={14} />
-                    </ActionIcon>
-                  </Group>
-                  <TextInput
-                    placeholder="Session title"
-                    value={s.title}
-                    onChange={(e) => updateSession(s.id, { title: e.currentTarget.value })}
-                  />
-                  <Textarea
-                    placeholder="What happens in this session?"
-                    autosize
-                    minRows={2}
-                    value={s.description ?? ""}
-                    onChange={(e) => updateSession(s.id, { description: e.currentTarget.value })}
-                  />
-                </Stack>
-              </Paper>
-            ))}
-          </Stack>
+          )}
         </>
       )}
 

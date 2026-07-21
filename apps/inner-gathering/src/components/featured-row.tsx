@@ -28,6 +28,7 @@ import {
   Users,
   Video,
   XCircle,
+  MessageCircle,
 } from "lucide-react";
 import type { Meeting, Post, MeetingRecurrence } from "@elkdonis/types";
 import { stripHtml } from "@/lib/strip-html";
@@ -302,7 +303,7 @@ function CompactMeetingCard({
           )}
         </Group>
 
-        {/* Primary actions: RSVP + Video */}
+        {/* Primary actions: RSVP + Video + Talk Room */}
         <Group gap={6} grow mt="auto">
           {meeting.isRSVPEnabled && (
             <Button
@@ -328,6 +329,20 @@ function CompactMeetingCard({
               leftSection={<Video size={13} />}
             >
               Video
+            </Button>
+          )}
+          {meeting.nextcloudTalkToken && (
+            <Button
+              component="a"
+              href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="compact-sm"
+              variant="filled"
+              color="teal"
+              leftSection={<MessageCircle size={13} />}
+            >
+              Talk Room
             </Button>
           )}
         </Group>
@@ -358,9 +373,11 @@ function CompactMeetingCard({
           </Group>
         )}
 
-        <Button component={Link} href={detailHref} size="compact-xs" variant="subtle" color="ember">
-          Details →
-        </Button>
+        <Group gap={6} wrap="nowrap">
+          <Button component={Link} href={detailHref} size="compact-xs" variant="subtle" color="ember">
+            Details →
+          </Button>
+        </Group>
       </Stack>
 
       {canManageGuides && (

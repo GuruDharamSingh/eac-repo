@@ -23,6 +23,19 @@ export function WelcomePopup() {
     }
   }, [pathname, searchParams]);
 
+  // Fresh Google/SSO signup — quietly provision Nextcloud in a background tab
+  // (same mechanism as the /account "Connect Nextcloud Account" button).
+  // Runs once per landing, regardless of which page the OAuth callback sent
+  // them to, then strips the param so a refresh doesn't reopen the tab.
+  useEffect(() => {
+    if (searchParams.get("nc_connect") !== "1") return;
+    window.open("/api/nextcloud/connect", "_blank");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("nc_connect");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [pathname, searchParams, router]);
+
   const handleClose = () => {
     setOpened(false);
     router.replace("/feed");
@@ -158,9 +171,9 @@ function StepNextcloud() {
             Nextcloud — your collective storage
           </Text>
           <Text size="sm" c="#3d2412" style={{ fontFamily: "'Crimson Text', serif", lineHeight: 1.6 }}>
-            We&apos;ve provisioned you a private Nextcloud account on the same login. Upload photos,
-            recordings, drafts — they live in <em>your</em> folder, and you choose what to share
-            into the feed.
+            Confirm your email (check the link we sent at signup) and you&apos;ll get a private
+            Nextcloud account on the same login. Upload photos, recordings, drafts — they live in{" "}
+            <em>your</em> folder, and you choose what to share into the feed.
           </Text>
         </Stack>
       </Group>

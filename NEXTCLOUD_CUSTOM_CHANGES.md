@@ -105,3 +105,23 @@ Ensure `.env` has:
 ```
 NEXTCLOUD_URL=http://nextcloud-aio-apache:11000
 ```
+
+---
+
+## System Config: social_login_auto_redirect (2026-07-11)
+
+```
+occ config:system:set social_login_auto_redirect --value=true --type=boolean
+```
+
+**Reason:** Talk-room SSO now routes through `/login?redirect_url=/call/<token>`
+instead of hitting `/apps/sociallogin/custom_oauth2/elkdonis` directly (which
+errors with "account already connected" when a Nextcloud session already
+exists). With this flag, a logged-out user on /login is auto-forwarded to the
+Elkdonis OIDC provider; a logged-in user is redirected straight to the target.
+
+- Native NC login form remains reachable at `/login?noredir=1`.
+- App-side changes: `apps/inner-gathering/src/app/api/talk/join/route.ts`,
+  `apps/inner-gathering/src/app/api/nextcloud/redirect/route.ts`,
+  `apps/arts-collective/src/app/api/talk/join/route.ts`.
+- The `eac_nc_session` cookie heuristic in talk/join was removed.

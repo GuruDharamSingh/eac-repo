@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { WelcomeEmailProps } from '@elkdonis/email';
-import { deriveCookieDomain, resolveSupabasePublicConfig } from './index';
+import { deriveCookieDomain, resolveSupabasePublicConfig, getSupabaseServer } from './index';
 
 type CookieToSet = {
   name: string;
@@ -46,6 +46,38 @@ function cleanEditableEmailSettings(value: unknown): Partial<WelcomeEmailProps> 
     : undefined;
 
   return { bodyText, links, media };
+}
+
+/**
+ * Generates a real GoTrue email-confirmation link (not a custom token — reuses
+ * Nextcloud's own verify/confirm flow, which marks auth.users.email_confirmed_at
+ * natively). Landing back on `${publicOrigin}/feed?nc_connect=1` re-triggers the
+ * same background-tab Nextcloud provisioning used for the Google-signup path —
+ * confirming email is now the only trigger for Nextcloud sync, replacing the
+ * immediate on-signup attempt.
+ */
+async function generateConfirmationLink(
+  email: string,
+  password: string,
+  publicOrigin: string
+): Promise<string | null> {
+  try {
+    const admin = getSupabaseServer();
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: 'signup',
+      email,
+      password,
+      options: { redirectTo: `${publicOrigin}/feed?nc_connect=1` },
+    });
+    if (error || !data?.properties?.action_link) {
+      console.error('[Signup] generateLink failed:', error?.message);
+      return null;
+    }
+    return data.properties.action_link;
+  } catch (err) {
+    console.error('[Signup] generateConfirmationLink error:', err);
+    return null;
+  }
 }
 
 async function loadWelcomeEmailSettings(): Promise<Partial<WelcomeEmailProps>> {
@@ -246,31 +278,10 @@ export async function handleSignup(
 
     console.log(`[Signup] User created: ${data.user.id} (${email})`);
 
-    // Provision in Nextcloud — OFF by default. Accounts are synced to Nextcloud
-    // manually via the admin (/3000) per-user toggle, not automatically on
-    // creation. Set NEXTCLOUD_AUTO_PROVISION=true to restore auto-sync.
-    if (process.env.NEXTCLOUD_AUTO_PROVISION === 'true') {
-      try {
-        const { handleUserProvisioning } = await import('@elkdonis/services');
-        const defaultGroup = process.env.NEXTCLOUD_DEFAULT_GROUP || 'EAC_Network';
-        const provisionResult = await handleUserProvisioning(
-          data.user.id,
-          email,
-          displayName || email.split('@')[0],
-          { groups: [defaultGroup] }
-        );
-
-        if (!provisionResult.success) {
-          console.warn(`[Signup] Nextcloud provisioning failed for ${email}:`, provisionResult.error);
-        } else {
-          console.log(`[Signup] ✅ Nextcloud provisioned for ${email}`);
-        }
-      } catch (provisionError) {
-        console.error('[Signup] Provisioning error:', provisionError);
-      }
-    } else {
-      console.log(`[Signup] Nextcloud auto-provision disabled; ${email} can be synced manually from /admin`);
-    }
+    // Nextcloud provisioning happens when the user confirms their email (see
+    // the confirmation-link email below) — that's the one moment Nextcloud's
+    // SSO account-creation gate can actually be passed (a live browser
+    // session), so there's nothing to trigger here at signup time itself.
 
     // Assign to orgs + create stub artist profile — all soft-fail
     try {
@@ -302,13 +313,27 @@ export async function handleSignup(
       console.error('[Signup] DB post-signup error:', dbError);
     }
 
-    // Send welcome email — soft-fail
+    // Send welcome email (with the real confirm-email link as the primary CTA) — soft-fail
     try {
       const { sendWelcomeEmail } = await import('@elkdonis/email');
       const resolvedName = displayName || email.split('@')[0];
       const welcomeEmailSettings = await loadWelcomeEmailSettings();
-      await sendWelcomeEmail(email, { displayName: resolvedName, ...welcomeEmailSettings });
-      console.log(`[Signup] ✅ Welcome email sent to ${email}`);
+
+      const fwdProto = (request.headers.get('x-forwarded-proto') ?? 'https').split(',')[0].trim();
+      const fwdHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
+      const publicOrigin = `${fwdProto}://${fwdHost}`;
+      const confirmUrl = await generateConfirmationLink(email, password, publicOrigin);
+
+      await sendWelcomeEmail(email, {
+        displayName: resolvedName,
+        ...welcomeEmailSettings,
+        // Confirming email is what triggers Nextcloud provisioning — this
+        // link always wins over any org-customized welcome links.
+        ...(confirmUrl
+          ? { links: [{ label: 'Confirm Your Email', url: confirmUrl }] }
+          : {}),
+      });
+      console.log(`[Signup] ✅ Welcome/confirmation email sent to ${email}`);
     } catch (emailError) {
       console.error('[Signup] Welcome email error:', emailError);
     }
@@ -450,7 +475,7 @@ export async function handleOAuthCallback(request: NextRequest): Promise<NextRes
 
   // Install the session in supabase-ssr cookies.
   const { supabase, applyCookies } = createRouteSupabaseClient(request);
-  const { error: sessionError } = await supabase.auth.setSession({
+  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
   });
@@ -459,11 +484,70 @@ export async function handleOAuthCallback(request: NextRequest): Promise<NextRes
     return redirect('/login?error=session_failed');
   }
 
-  const rawDest = request.cookies.get('eac_pkce_dest')?.value;
-  const dest = rawDest ? decodeURIComponent(rawDest) : '/';
-  const destUrl = dest.startsWith('http') ? dest : `${publicOrigin}${dest}`;
+  // GoTrue sets created_at and last_sign_in_at to (near) the same instant
+  // only on a brand-new account's very first session — a reliable "this is
+  // a fresh signup" signal without a separate public.users lookup.
+  const authUser = sessionData?.session?.user;
+  const isNewSignup =
+    !!authUser?.created_at &&
+    !!authUser?.last_sign_in_at &&
+    Math.abs(new Date(authUser.created_at).getTime() - new Date(authUser.last_sign_in_at).getTime()) < 10_000;
 
-  const response = NextResponse.redirect(destUrl);
+  // Fresh Google signup — mirror what handleSignup does for password signups
+  // (org memberships, a stub profile, a welcome email). Google already
+  // verifies the email, so there's no confirm-gate: Nextcloud sync fires
+  // unconditionally below via nc_connect.
+  if (isNewSignup && authUser?.email) {
+    const resolvedName =
+      (authUser.user_metadata?.display_name as string | undefined) ||
+      (authUser.user_metadata?.full_name as string | undefined) ||
+      (authUser.user_metadata?.name as string | undefined) ||
+      authUser.email.split('@')[0];
+
+    try {
+      const { db } = await import('@elkdonis/db');
+      const defaultOrgs = [
+        { id: 'elkdonis', role: 'member' },
+        { id: 'inner_group', role: 'member' },
+      ];
+      for (const org of defaultOrgs) {
+        await db`
+          INSERT INTO user_organizations (user_id, org_id, role, joined_at)
+          VALUES (${authUser.id}, ${org.id}, ${org.role}, NOW())
+          ON CONFLICT (user_id, org_id) DO NOTHING
+        `;
+      }
+      await db`
+        INSERT INTO artist_profiles (user_id, org_id, display_name, is_stub)
+        VALUES (${authUser.id}, 'elkdonis', ${resolvedName}, true)
+        ON CONFLICT (user_id) DO NOTHING
+      `;
+      console.log(`[oauth] ✅ Org memberships + stub profile created for ${authUser.email}`);
+    } catch (dbError) {
+      console.error('[oauth] DB post-signup error:', dbError);
+    }
+
+    try {
+      const { sendWelcomeEmail } = await import('@elkdonis/email');
+      const welcomeEmailSettings = await loadWelcomeEmailSettings();
+      await sendWelcomeEmail(authUser.email, { displayName: resolvedName, ...welcomeEmailSettings });
+      console.log(`[oauth] ✅ Welcome email sent to ${authUser.email}`);
+    } catch (emailError) {
+      console.error('[oauth] Welcome email error:', emailError);
+    }
+  }
+
+  const rawDest = request.cookies.get('eac_pkce_dest')?.value;
+  // Default new signups to /feed (inside the (app) layout, where the
+  // nc_connect handler is actually mounted) instead of the marketing root —
+  // landing on "/" silently drops nc_connect since that page doesn't render it.
+  const dest = rawDest ? decodeURIComponent(rawDest) : isNewSignup ? '/feed' : '/';
+  const destUrl = new URL(dest.startsWith('http') ? dest : `${publicOrigin}${dest}`);
+  if (isNewSignup) {
+    destUrl.searchParams.set('nc_connect', '1');
+  }
+
+  const response = NextResponse.redirect(destUrl.toString());
   response.cookies.set('eac_pkce_cv', '', { maxAge: 0, path: '/' });
   response.cookies.set('eac_pkce_dest', '', { maxAge: 0, path: '/' });
   await applyCookies(response);

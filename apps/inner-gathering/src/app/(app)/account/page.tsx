@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ColorInput,
   Container,
@@ -88,10 +88,18 @@ interface ArtistProfile {
 
 export default function AccountPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [account, setAccount] = useState<AccountData | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('error') === 'email_not_confirmed') {
+      setError('Please confirm your email first — check your inbox for the link from signup, then Nextcloud will connect automatically.');
+      router.replace('/account');
+    }
+  }, [searchParams, router]);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Artist directory form state
@@ -451,9 +459,22 @@ export default function AccountPage() {
             {/* Nextcloud info for non-synced users */}
             {!account.nextcloudSynced && (
               <Alert icon={<Cloud size={16} />} color="blue" variant="light">
-                <Text size="sm">
-                  Your account is not yet connected to Nextcloud. Contact an administrator to enable access to shared files, documents, and video calls.
-                </Text>
+                <Stack gap="xs">
+                  <Text size="sm">
+                    Your account is not yet connected to Nextcloud, which gives access to shared files, documents, and video calls.
+                    Confirming your email (check the link we sent at signup) connects it automatically — or use this once you&apos;ve confirmed:
+                  </Text>
+                  <Button
+                    component="a"
+                    href="/api/nextcloud/connect"
+                    size="xs"
+                    variant="light"
+                    leftSection={<Cloud size={14} />}
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    Connect Nextcloud Account
+                  </Button>
+                </Stack>
               </Alert>
             )}
 

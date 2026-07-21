@@ -17,6 +17,7 @@ import {
   ThemeIcon,
   Switch,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { stripHtml } from "@/lib/strip-html";
 import {
   Calendar,
@@ -43,6 +44,7 @@ import {
   Pencil,
   GraduationCap,
   XCircle,
+  MessageCircle,
 } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
 import { nextOccurrence } from "@/lib/recurrence";
@@ -143,6 +145,8 @@ export function MeetingCard({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
   const [guidesOpen, setGuidesOpen] = useState(false);
+  const [triggerOpen, setTriggerOpen] = useState(false);
+  const [triggering, setTriggering] = useState(false);
 
   const cycle = useCycleStatus(meeting);
 
@@ -161,6 +165,7 @@ export function MeetingCard({
   const isGuide = Boolean(currentUserId && (meeting.createdBy === currentUserId || (meeting.coGuideIds ?? []).includes(currentUserId)));
   const canGuide = isRecurring && (isAdmin || isGuide);
   const canManageGuides = isAdmin || (currentUserId && meeting.createdBy === currentUserId);
+  const canTriggerEmail = (isAdmin || isGuide) && meeting.isRSVPEnabled === true;
 
   // Recurring meetings always have a next occurrence, so they're never "past"
   const displayDate = meeting.scheduledAt
@@ -202,6 +207,36 @@ export function MeetingCard({
       }
     } catch {}
     finally { setRsvpChecked(true); }
+  };
+
+  const handleTriggerEmail = async (type: "reminder" | "cancellation") => {
+    if (type === "cancellation" && !confirm(`Send a cancellation notice to everyone RSVP'd for "${meeting.title}"?`)) {
+      return;
+    }
+    setTriggering(true);
+    try {
+      const res = await fetch(`/api/meetings/${meeting.id}/trigger-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to send");
+      notifications.show({
+        color: "green",
+        title: type === "cancellation" ? "Cancellation sent" : "Reminder sent",
+        message: `Sent to ${data.sent} attendee${data.sent === 1 ? "" : "s"}.`,
+      });
+      setTriggerOpen(false);
+    } catch (err) {
+      notifications.show({
+        color: "red",
+        title: "Could not send",
+        message: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setTriggering(false);
+    }
   };
 
   const handleRsvp = async (shouldAttend: boolean) => {
@@ -490,6 +525,55 @@ export function MeetingCard({
               </Stack>
             )}
 
+            {/* Guide: trigger a reminder/cancellation email to everyone RSVP'd yes */}
+            {canTriggerEmail && (
+              <Stack gap={6}>
+                {!triggerOpen ? (
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color="ember"
+                    leftSection={<Mail size={14} />}
+                    onClick={() => setTriggerOpen(true)}
+                  >
+                    Trigger email to attendees
+                  </Button>
+                ) : (
+                  <Group gap="xs" grow>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color="teal"
+                      leftSection={<Clock size={14} />}
+                      loading={triggering}
+                      onClick={() => handleTriggerEmail("reminder")}
+                    >
+                      Send reminder
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color="red"
+                      leftSection={<XCircle size={14} />}
+                      loading={triggering}
+                      onClick={() => handleTriggerEmail("cancellation")}
+                    >
+                      Send cancellation
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="subtle"
+                      color="gray"
+                      disabled={triggering}
+                      onClick={() => setTriggerOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </Group>
+                )}
+              </Stack>
+            )}
+
             {/* RSVP for upcoming meetings */}
             {meeting.isRSVPEnabled && !isPastMeeting && (
               <Stack gap={6}>
@@ -569,6 +653,34 @@ export function MeetingCard({
                   Join Video
                 </Button>
               )}
+              {meeting.nextcloudTalkToken && (
+                <Button
+                  component="a"
+                  href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="xs"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<MessageCircle size={13} />}
+                >
+                  Join Talk Room
+                </Button>
+              )}
+              {meeting.documentUrl && (
+                <Button
+                  component="a"
+                  href={meeting.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="xs"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<FileText size={13} />}
+                >
+                  Living Document
+                </Button>
+              )}
               <Button
                 component={Link}
                 href={detailHref}
@@ -580,47 +692,19 @@ export function MeetingCard({
               </Button>
             </Group>
 
-            {/* Tertiary links: event page, talk room, document */}
-            {(meeting.hasEventPage || meeting.nextcloudTalkToken || meeting.documentUrl) && (
+            {/* Secondary links: event page */}
+            {meeting.hasEventPage && (
               <Group gap="xs">
-                {meeting.hasEventPage && (
-                  <Button
-                    component={Link}
-                    href={`/meetings/${meeting.id}`}
-                    size="compact-xs"
-                    variant="subtle"
-                    color="ember"
-                    leftSection={<LayoutGrid size={12} />}
-                  >
-                    Event Page
-                  </Button>
-                )}
-                {meeting.nextcloudTalkToken && (
-                  <Button
-                    component="a"
-                    href={`/api/talk/join?token=${meeting.nextcloudTalkToken}`}
-                    target="_blank"
-                    size="compact-xs"
-                    variant="subtle"
-                    color="teal"
-                    leftSection={<Video size={12} />}
-                  >
-                    Talk Room
-                  </Button>
-                )}
-                {meeting.documentUrl && (
-                  <Button
-                    component="a"
-                    href={meeting.documentUrl}
-                    target="_blank"
-                    size="compact-xs"
-                    variant="subtle"
-                    color="gray"
-                    leftSection={<FileText size={12} />}
-                  >
-                    Document
-                  </Button>
-                )}
+                <Button
+                  component={Link}
+                  href={`/meetings/${meeting.id}`}
+                  size="compact-xs"
+                  variant="subtle"
+                  color="ember"
+                  leftSection={<LayoutGrid size={12} />}
+                >
+                  Event Page
+                </Button>
               </Group>
             )}
           </Stack>
