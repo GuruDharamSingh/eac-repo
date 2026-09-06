@@ -1,19 +1,20 @@
 <!--
   eac-ws-schedule.html
   ======================
-  Session-by-session schedule. First 2 sessions always visible;
-  remaining sessions gated behind public_preview = true
-  (or registration — enforced server-side).
+  Session-by-session schedule, one row per entry in the workshop's `sessions`
+  array. The whole section is dropped when there are no sessions.
 
-  CMS fields consumed (workshop_sessions child table):
-    sessions.session_number
-    sessions.date
-    sessions.time_start
-    sessions.title
-    sessions.description
-    sessions.public_preview
+  The <ol> is the list container (data-trait="sessions"); its first <li> is the
+  row template — the engine clones it once per session. Everything a designer
+  needs to restyle a row lives here, not in a TypeScript string builder.
+
+  CMS fields consumed (threads.sessions JSONB):
+    sessions[].scheduled_at  → sessionWeekday / sessionDate / sessionTime
+    sessions[].title         → sessionTitle
+    sessions[].location      → sessionDesc
 -->
-<section class="eac-ws-schedule" data-gjs-type="eac-ws-schedule" id="schedule">
+<section class="eac-ws-schedule" data-gjs-type="eac-ws-schedule" id="schedule"
+         data-trait="scheduleSection">
   <div class="eac-ws-schedule__inner">
 
     <span class="eac-ws-label eac-ws-label--schedule">schedule</span>
@@ -25,40 +26,22 @@
       </a>
     </div>
 
-    <ol class="eac-ws-schedule__list">
+    <ol class="eac-ws-schedule__list" data-trait="sessions">
 
-      <!-- Session 1 (always visible) -->
       <li class="eac-ws-schedule__item">
         <div class="eac-ws-schedule__date">
-          <span class="eac-ws-schedule__day" data-gjs-editable="true">Sat</span>
-          <span class="eac-ws-schedule__num"  data-gjs-editable="true">Jan 11</span>
+          <span class="eac-ws-schedule__day" data-trait="sessionWeekday">Sat</span>
+          <span class="eac-ws-schedule__num" data-trait="sessionDate">Jan 11</span>
         </div>
         <div class="eac-ws-schedule__content">
-          <h3 class="eac-ws-schedule__title" data-gjs-editable="true">
+          <h3 class="eac-ws-schedule__title" data-trait="sessionTitle">
             Opening circle — arriving in language
           </h3>
-          <p class="eac-ws-schedule__desc" data-gjs-editable="true">
+          <p class="eac-ws-schedule__desc" data-trait="sessionDesc">
             Warm-up prompts, group agreements, and free-writing to land in the room.
           </p>
         </div>
-        <div class="eac-ws-schedule__time" data-gjs-editable="true">10:00 am</div>
-      </li>
-
-      <!-- Session 2 (always visible) -->
-      <li class="eac-ws-schedule__item">
-        <div class="eac-ws-schedule__date">
-          <span class="eac-ws-schedule__day">Sat</span>
-          <span class="eac-ws-schedule__num">Jan 18</span>
-        </div>
-        <div class="eac-ws-schedule__content">
-          <h3 class="eac-ws-schedule__title" data-gjs-editable="true">
-            The body as archive
-          </h3>
-          <p class="eac-ws-schedule__desc" data-gjs-editable="true">
-            Somatic writing exercises — writing from sensation, memory, and breath.
-          </p>
-        </div>
-        <div class="eac-ws-schedule__time">10:00 am</div>
+        <div class="eac-ws-schedule__time" data-trait="sessionTime">10:00 am</div>
       </li>
 
     </ol>

@@ -1,3 +1,4 @@
+import { getServerSession } from "@elkdonis/auth-server";
 import { siteConfig } from "@/config/site";
 import type { IfacSiteContent } from "@/lib/types";
 
@@ -11,11 +12,13 @@ const headerSocialLinks = [
   { label: "Email", href: "mailto:info@ifacgroup.com" },
 ];
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = await getServerSession();
+
   return (
     <header className="site-header">
       <div className="social-bar" aria-label="IFAC social links">
-        <img src="https://ifacgroup.com/images/socialicons.png" alt="IFAC social media" />
+        <img src="/ifac/images/socialshort.png" alt="IFAC social media" />
         <div className="social-bar-links">
           {headerSocialLinks.map((link) => (
             <a key={link.href} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel={link.href.startsWith("http") ? "noreferrer" : undefined}>
@@ -40,9 +43,8 @@ export function SiteHeader() {
           <a href="/#blog">Blog</a>
           <a href="/#videos">Videos</a>
           <a href="/#social">Social</a>
-          <a href="/#events">RSVP</a>
           <a href="/#signup">Sign up</a>
-          <a href="/admin">Admin</a>
+          {session.user ? <a href="/hub">Hub</a> : <a href="/login">Sign in</a>}
         </nav>
       </div>
     </header>

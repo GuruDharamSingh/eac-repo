@@ -2,39 +2,42 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@elkdonis/db";
+import {
+  createUnclaimedProfile,
+  updateProfile,
+  canEditProfile,
+  requestClaim,
+  approveClaim,
+  vouchForProfile,
+  setProfileVerified,
+  getProfileBySlug,
+  type SocialLink,
+} from "@elkdonis/services";
 import { getCurrentUser } from "@/lib/session";
-import { OAD_ORG_ID, getDossierMeta, isOadSteward } from "@/lib/oad";
+import { getDossierMeta, isOadSteward } from "@/lib/oad";
 
 export type ActionState = { error?: string; ok?: boolean };
 
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function paragraphs(text: string): string[] {
+function paragraphs(text: string): string {
   return text
     .split(/\n\s*\n/)
     .map((p) => p.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function lines(text: string): string[] {
   return text.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
-function parseLinks(text: string): { label: string; href: string }[] {
+function parseLinks(text: string): SocialLink[] {
   return lines(text)
     .map((line) => {
       const i = line.indexOf("|");
-      if (i === -1) return { label: line, href: line };
-      return { label: line.slice(0, i).trim(), href: line.slice(i + 1).trim() };
+      if (i === -1) return { label: null, url: line };
+      return { label: line.slice(0, i).trim() || null, url: line.slice(i + 1).trim() };
     })
-    .filter((l) => l.href);
+    .filter((l) => l.url);
 }
 
 type DossierFields = {
@@ -47,11 +50,11 @@ type DossierFields = {
   lat: number | null;
   lng: number | null;
   location: string;
-  bio: string[];
+  bio: string;
   portrait_url: string;
   website: string;
   email: string;
-  links: { label: string; href: string }[];
+  links: SocialLink[];
   source_note: string;
 };
 
@@ -85,6 +88,14 @@ function readFields(form: FormData): DossierFields | { error: string } {
   };
 }
 
+/** links + website + email folded into one social_links list — see oad.ts's read-side split. */
+function socialLinksFor(fields: DossierFields): SocialLink[] {
+  const out = [...fields.links];
+  if (fields.email) out.push({ label: "Email", url: `mailto:${fields.email}` });
+  if (fields.website) out.push({ label: "Website", url: fields.website });
+  return out;
+}
+
 // ─── create ──────────────────────────────────────────────────────────────────
 
 export async function createDossier(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -94,41 +105,32 @@ export async function createDossier(_prev: ActionState, form: FormData): Promise
   const fields = readFields(form);
   if ("error" in fields) return fields;
 
-  const base = slugify(fields.name);
-  if (!base) return { error: "Could not derive a URL from that name." };
-
-  let slug = base;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      await db`
-        INSERT INTO directory_profiles
-          (org_id, slug, kind, name, role, location, city, region, country, postal_code, lat, lng,
-           bio, portrait_url, website, email, links,
-           status, claim_status, verified, created_by, source_note)
-        VALUES (
-          ${OAD_ORG_ID}, ${slug}, 'artist', ${fields.name}, ${fields.occupation || null},
-          ${fields.location || null}, ${fields.city || null}, ${fields.region || null}, ${fields.country || null},
-          ${fields.postal_code || null}, ${fields.lat}, ${fields.lng},
-          ${db.json(fields.bio)}, ${fields.portrait_url || null}, ${fields.website || null},
-          ${fields.email || null}, ${db.json(fields.links)},
-          'published', 'unclaimed', false, ${user.id}, ${fields.source_note || null}
-        )
-      `;
-      break;
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (/unique|duplicate/i.test(msg)) {
-        slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
-        if (attempt === 4) return { error: "Could not generate a unique URL — try a more specific name." };
-        continue;
-      }
-      console.error("[oad] createDossier error:", error);
-      return { error: "Could not save the dossier." };
-    }
+  const result = await createUnclaimedProfile({
+    displayName: fields.name,
+    headline: fields.occupation || null,
+    bio: fields.bio || null,
+    avatarUrl: fields.portrait_url || null,
+    city: fields.city || null,
+    region: fields.region || null,
+    country: fields.country || null,
+    postalCode: fields.postal_code || null,
+    lat: fields.lat,
+    lng: fields.lng,
+    socialLinks: socialLinksFor(fields),
+    sourceNote: fields.source_note || null,
+    oadDossier: fields.location ? { location: fields.location } : {},
+    createdBy: user.id,
+  });
+  if (!result.ok) {
+    // TS fails to narrow this discriminated union across the package
+    // boundary here (moduleResolution: bundler resolving @elkdonis/services'
+    // types through more than one import path within this app) — confirmed
+    // correct at runtime; the cast just states what's already true.
+    return { error: (result as { error: string }).error };
   }
 
   revalidatePath("/");
-  redirect(`/${slug}`);
+  redirect(`/${result.slug}`);
 }
 
 // ─── edit (wiki-open: any signed-in member) ──────────────────────────────────
@@ -140,36 +142,36 @@ export async function updateDossier(_prev: ActionState, form: FormData): Promise
   const slug = String(form.get("slug") ?? "");
   if (!slug) return { error: "Missing dossier reference." };
 
+  const profile = await getProfileBySlug(slug);
+  if (!profile) return { error: "Dossier not found." };
+
+  // ArtDirect is wiki-open by design (any signed-in member may improve an
+  // unclaimed dossier), which is broader than canEditProfile's "self or
+  // admin" rule — so a claimed profile still requires the owner or a
+  // steward, but an unclaimed/pending one accepts any signed-in edit.
+  if (profile.claimStatus === "claimed") {
+    const allowed = (await canEditProfile(user.id, profile.userId)) || (await isOadSteward(user.id));
+    if (!allowed) return { error: "This dossier has been claimed — only its owner can edit it now." };
+  }
+
   const fields = readFields(form);
   if ("error" in fields) return fields;
 
-  try {
-    const rows = await db`
-      UPDATE directory_profiles SET
-        name = ${fields.name},
-        role = ${fields.occupation || null},
-        location = ${fields.location || null},
-        city = ${fields.city || null},
-        region = ${fields.region || null},
-        country = ${fields.country || null},
-        postal_code = ${fields.postal_code || null},
-        lat = ${fields.lat},
-        lng = ${fields.lng},
-        bio = ${db.json(fields.bio)},
-        portrait_url = ${fields.portrait_url || null},
-        website = ${fields.website || null},
-        email = ${fields.email || null},
-        links = ${db.json(fields.links)},
-        source_note = ${fields.source_note || null},
-        updated_at = NOW()
-      WHERE org_id = ${OAD_ORG_ID} AND slug = ${slug}
-      RETURNING id
-    `;
-    if (rows.length === 0) return { error: "Dossier not found." };
-  } catch (error) {
-    console.error("[oad] updateDossier error:", error);
-    return { error: "Could not save changes." };
-  }
+  await updateProfile(profile.userId, {
+    displayName: fields.name,
+    headline: fields.occupation || null,
+    bio: fields.bio || null,
+    avatarUrl: fields.portrait_url || null,
+    city: fields.city || null,
+    region: fields.region || null,
+    country: fields.country || null,
+    postalCode: fields.postal_code || null,
+    lat: fields.lat,
+    lng: fields.lng,
+    socialLinks: socialLinksFor(fields),
+    sourceNote: fields.source_note || null,
+    oadDossier: { ...profile.oadDossier, location: fields.location || undefined },
+  });
 
   revalidatePath(`/${slug}`);
   revalidatePath("/");
@@ -186,16 +188,9 @@ export async function claimDossier(slug: string): Promise<ActionState> {
   if (!meta) return { error: "Dossier not found." };
   if (meta.claim_status === "claimed") return { error: "This dossier is already claimed." };
 
-  try {
-    await db`
-      UPDATE directory_profiles
-      SET claim_status = 'pending', claimed_by = ${user.id}, updated_at = NOW()
-      WHERE org_id = ${OAD_ORG_ID} AND slug = ${slug}
-    `;
-  } catch (error) {
-    console.error("[oad] claimDossier error:", error);
-    return { error: "Could not submit claim." };
-  }
+  const result = await requestClaim(meta.id, user.id);
+  if (!result.ok) return { error: result.error };
+
   revalidatePath(`/${slug}`);
   return { ok: true };
 }
@@ -209,16 +204,9 @@ export async function vouchForDossier(slug: string): Promise<ActionState> {
   const meta = await getDossierMeta(slug);
   if (!meta) return { error: "Dossier not found." };
 
-  try {
-    await db`
-      INSERT INTO directory_vouches (profile_id, user_id)
-      VALUES (${meta.id}, ${user.id})
-      ON CONFLICT (profile_id, user_id) DO NOTHING
-    `;
-  } catch (error) {
-    console.error("[oad] vouchForDossier error:", error);
-    return { error: "Could not record your vouch." };
-  }
+  const result = await vouchForProfile(meta.id, user.id);
+  if (!result.ok) return { error: result.error };
+
   revalidatePath(`/${slug}`);
   return { ok: true };
 }
@@ -233,21 +221,17 @@ export async function reviewDossier(
   if (!user) return { error: "Sign in required." };
   if (!(await isOadSteward(user.id))) return { error: "Only collective stewards can review dossiers." };
 
-  try {
-    if (action === "verify") {
-      await db`UPDATE directory_profiles SET verified = true, verified_at = NOW(), updated_at = NOW()
-               WHERE org_id = ${OAD_ORG_ID} AND slug = ${slug}`;
-    } else if (action === "unverify") {
-      await db`UPDATE directory_profiles SET verified = false, verified_at = NULL, updated_at = NOW()
-               WHERE org_id = ${OAD_ORG_ID} AND slug = ${slug}`;
-    } else if (action === "approve_claim") {
-      await db`UPDATE directory_profiles SET claim_status = 'claimed', updated_at = NOW()
-               WHERE org_id = ${OAD_ORG_ID} AND slug = ${slug} AND claim_status = 'pending'`;
-    }
-  } catch (error) {
-    console.error("[oad] reviewDossier error:", error);
-    return { error: "Could not apply review." };
+  const meta = await getDossierMeta(slug);
+  if (!meta) return { error: "Dossier not found." };
+
+  if (action === "verify" || action === "unverify") {
+    const result = await setProfileVerified(meta.id, user.id, action === "verify");
+    if (!result.ok) return { error: result.error };
+  } else if (action === "approve_claim") {
+    const result = await approveClaim(meta.id, user.id);
+    if (!result.ok) return { error: result.error };
   }
+
   revalidatePath(`/${slug}`);
   return { ok: true };
 }

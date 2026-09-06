@@ -160,6 +160,7 @@ export async function getOrgWorkshopForTemplate(
         ap.bio           AS facilitator_bio,
         ap.photo_url     AS facilitator_photo,
         ap.pronouns      AS facilitator_pronouns,
+        ap.role_title    AS facilitator_role,
 
         t.org_id
       FROM threads t

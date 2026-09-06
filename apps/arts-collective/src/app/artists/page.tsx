@@ -1,54 +1,13 @@
-import { db } from "@elkdonis/db";
 import { SiteShell } from "@/components/site-shell";
 import { DISCIPLINE_LABELS } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
-
-type Artist = {
-  user_id: string;
-  org_id: string;
-  slug: string;
-  name: string;
-  display_name: string;
-  city: string;
-  bio: string;
-  disciplines: string[];
-};
-
-async function getArtists(): Promise<Artist[]> {
-  try {
-    // Join on user_id (not org_id) — multiple members share org_id='elkdonis'
-    // Find each user's personal org slug via user_organizations (owner role first, then any)
-    return await db<Artist[]>`
-      SELECT
-        ap.user_id,
-        ap.org_id,
-        COALESCE(own_org.slug, 'elkdonis') AS slug,
-        COALESCE(own_org.name, 'Elkdonis Arts Collective') AS name,
-        ap.display_name,
-        ap.city,
-        ap.bio,
-        ap.disciplines
-      FROM artist_profiles ap
-      LEFT JOIN LATERAL (
-        SELECT o.slug, o.name
-        FROM user_organizations uo
-        JOIN organizations o ON o.id = uo.org_id
-        WHERE uo.user_id = ap.user_id
-          AND uo.role IN ('owner', 'guide')
-          AND o.id != 'elkdonis'
-        LIMIT 1
-      ) own_org ON true
-      WHERE ap.is_stub = false
-        AND ap.display_name IS NOT NULL
-      ORDER BY ap.display_name ASC
-    `;
-  } catch {
-    return [];
-  }
-}
+import { getMemberRoster } from "@/lib/network";
+import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 
 export default async function ArtistsPage() {
-  const artists = await getArtists();
+  // getMemberRoster generalized this page's own query (see lib/network.ts) —
+  // 500 as an effectively-unlimited cap for a full directory listing.
+  const [artists, homes] = await Promise.all([getMemberRoster(500), orgHomeUrlMap()]);
 
   return (
     <SiteShell>
@@ -106,7 +65,7 @@ export default async function ArtistsPage() {
                 )}
                 <div className="mt-4 pt-2">
                   <Button asChild size="sm" variant="outline">
-                    <a href={`//${a.slug}.localhost:3007`}>Visit site</a>
+                    <a href={orgHomeUrl(homes, a.slug)}>Visit site</a>
                   </Button>
                 </div>
               </li>

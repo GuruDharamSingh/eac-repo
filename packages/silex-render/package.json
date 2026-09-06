@@ -12,10 +12,12 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/utils": "workspace:*"
   },
   "peerDependencies": {

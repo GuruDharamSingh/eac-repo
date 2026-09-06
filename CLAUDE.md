@@ -127,7 +127,7 @@ apps/
 ├── forum/               Port 3003 - Cross-org content aggregator (public feed)
 ├── inner-gathering/     Port 3004 - Mobile-first community app (org: elkdonis)
 ├── elkdonis-arts-collective/ Port 3005 - Main collective landing site
-├── amrit-canada/        Port 3006 - Amrit Vela Toronto (org: amrit-vela)
+├── amrit-canada/        Port 3006 - Amrit Canada (org: amrit_canada)
 ├── arts-collective/     Port 3007 - Artist network & subdomain management
 ├── ifac/                Port 3008 - International Fine Art Collectors (org: ifac)
 ├── art-auction/         Port 3009 - Art marketplace and auctions

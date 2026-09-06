@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
-  getMarketplaceArtist,
+  getStoreByHandle,
   listArtworks,
 } from "@elkdonis/commerce/queries";
 import { ArtworkGrid } from "@elkdonis/commerce/components";
@@ -15,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const artist = await getMarketplaceArtist(id);
+  const artist = await getStoreByHandle(id);
   return { title: artist?.displayName ?? "Artist" };
 }
 
@@ -25,11 +25,13 @@ export default async function ArtistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const artist = await getMarketplaceArtist(id);
+  const artist = await getStoreByHandle(id);
   if (!artist) notFound();
 
+  // Scoped by store, not by the URL param — `id` may be a slug, and an
+  // org-owned store has no artist user id to filter on at all.
   const artworks = await listArtworks({
-    artistUserId: id,
+    storeId: artist.id,
     status: ["available", "reserved", "sold"],
     limit: 60,
   });

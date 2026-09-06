@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/session";
 import { canEditOrgSite } from "@/lib/org";
 import { SiteShell } from "@/components/site-shell";
 import { WorkshopForm } from "@/components/hub/WorkshopForm";
+import { resolveOrgHomeUrl } from "@/lib/org-url.server";
 import { db } from "@elkdonis/db";
 import type { WorkshopFullInput } from "@/lib/cms/schema";
 
@@ -163,7 +164,11 @@ export default async function EditWorkshopPage({
             </a>
           )}
         </div>
-        <WorkshopForm orgSlug={orgSlug} defaultValues={defaults} />
+        <WorkshopForm
+          orgSlug={orgSlug}
+          orgHomeUrl={await resolveOrgHomeUrl(orgSlug)}
+          defaultValues={defaults}
+        />
       </div>
     </SiteShell>
   );

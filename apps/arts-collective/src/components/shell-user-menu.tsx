@@ -56,7 +56,7 @@ export function ShellUserMenu({ email }: { email: string }) {
             <p className="truncate text-xs text-muted-foreground">{email}</p>
           </div>
           <nav className="py-1 text-sm" role="none">
-            <MenuLink href="/hub">Onboarding Hub</MenuLink>
+            <MenuLink href="/hub">Hub</MenuLink>
             <MenuLink href="/account">Account</MenuLink>
             <MenuLink href="/commitments">Commitments</MenuLink>
             <MenuLink href="/artists">Explore artists</MenuLink>

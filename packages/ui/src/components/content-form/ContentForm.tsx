@@ -6,6 +6,7 @@ import {
   Collapse,
   Divider,
   Group,
+  MultiSelect,
   NumberInput,
   Paper,
   SegmentedControl,
@@ -24,9 +25,9 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconRepeat,
-  IconVideo,
+  IconUsers,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MediaUpload } from "../MediaUpload";
 import { useContentDraft } from "@elkdonis/hooks";
 import type { ContentFormProps } from "./types";
@@ -46,6 +47,7 @@ export function ContentForm({
   const {
     kind,
     setKind,
+    threadId,
     draft,
     update,
     mediaFiles,
@@ -77,6 +79,30 @@ export function ContentForm({
 
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Org member roster for the "multiple guides" picker — lazily loaded the
+  // first time that section is expanded, keyed off threadId (falls back to
+  // "new" pre-publish, which the API treats as "no thread yet, list everyone").
+  const [guideOptions, setGuideOptions] = useState<{ value: string; label: string }[]>([]);
+  const [guideOptionsLoaded, setGuideOptionsLoaded] = useState(false);
+  const hasCoGuides = Array.isArray(draft.coGuideIds);
+
+  useEffect(() => {
+    if (!hasCoGuides || guideOptionsLoaded) return;
+    let cancelled = false;
+    fetch(`/api/meetings/${threadId ?? "new"}/guides`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setGuideOptions((data.members ?? []).map((m: { id: string; name: string }) => ({ value: m.id, label: m.name })));
+      })
+      .finally(() => {
+        if (!cancelled) setGuideOptionsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasCoGuides, guideOptionsLoaded, threadId]);
 
   return (
     <Stack gap="md">
@@ -144,27 +170,20 @@ export function ContentForm({
               onChange={(v) => update({ durationMinutes: v === "" ? null : Number(v) })}
             />
           </Group>
-          <TextInput
-            label="Location"
-            placeholder="Address, room, or 'online'"
-            value={draft.location ?? ""}
-            onChange={(e) => update({ location: e.currentTarget.value || null })}
-          />
-          {kind === "meeting" && (
-            <TextInput
-              label="Video link"
-              description="Zoom, Meet, or any video URL — shown as a join button on the card"
-              placeholder="https://..."
-              leftSection={<IconVideo size={14} />}
-              value={draft.videoLink ?? ""}
-              onChange={(e) => update({ videoLink: e.currentTarget.value || null })}
-            />
-          )}
           <Switch
             label="This is online"
+            description="Meeting happens over video (Talk room or uploaded media), not in person"
             checked={!!draft.isOnline}
             onChange={(e) => update({ isOnline: e.currentTarget.checked })}
           />
+          <Collapse in={!draft.isOnline}>
+            <TextInput
+              label="Location"
+              placeholder="Address, room, or building"
+              value={draft.location ?? ""}
+              onChange={(e) => update({ location: e.currentTarget.value || null })}
+            />
+          </Collapse>
 
           {/* Recurring toggle */}
           <Divider label={<Group gap={4}><IconRepeat size={14} /><span>Recurring</span></Group>} labelPosition="left" />
@@ -208,6 +227,26 @@ export function ContentForm({
             </Stack>
           </Collapse>
 
+          {/* Multiple guides */}
+          <Divider label={<Group gap={4}><IconUsers size={14} /><span>Guides</span></Group>} labelPosition="left" />
+          <Switch
+            label="Multiple guides"
+            description="Other members chosen here can also publish updates and confirm/cancel recurring cycles"
+            checked={hasCoGuides}
+            onChange={(e) => update({ coGuideIds: e.currentTarget.checked ? [] : null })}
+          />
+          <Collapse in={hasCoGuides}>
+            <MultiSelect
+              label="Other guides"
+              placeholder={guideOptionsLoaded ? "Choose members" : "Loading members…"}
+              data={guideOptions}
+              disabled={!guideOptionsLoaded}
+              searchable
+              value={draft.coGuideIds ?? []}
+              onChange={(v) => update({ coGuideIds: v })}
+            />
+          </Collapse>
+
           <Switch
             label="Open RSVPs"
             checked={!!draft.isRsvpEnabled}
@@ -239,6 +278,14 @@ export function ContentForm({
               />
             </Group>
           )}
+          {draft.isRsvpEnabled && draft.minAttendees != null && (
+            <Switch
+              label="RSVP when minimum attendees reached"
+              description="Email the guide(s) as soon as the minimum attendee count is hit"
+              checked={!!draft.notifyOnMinAttendees}
+              onChange={(e) => update({ notifyOnMinAttendees: e.currentTarget.checked })}
+            />
+          )}
           {draft.isRsvpEnabled && (
             <Textarea
               label="RSVP confirmation email"
@@ -258,6 +305,23 @@ export function ContentForm({
               max={10080}
               value={draft.reminderMinutesBefore ?? 60}
               onChange={(v) => update({ reminderMinutesBefore: v === "" ? null : Number(v) })}
+            />
+          )}
+
+          {/* Paid entry */}
+          <Switch
+            label="Paid entry"
+            checked={draft.price != null}
+            onChange={(e) => update({ price: e.currentTarget.checked ? 0 : null })}
+          />
+          {draft.price != null && (
+            <NumberInput
+              label="Price"
+              prefix="$"
+              min={0}
+              decimalScale={2}
+              value={draft.price ?? ""}
+              onChange={(v) => update({ price: v === "" ? 0 : Number(v) })}
             />
           )}
         </>

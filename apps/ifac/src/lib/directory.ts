@@ -1,4 +1,8 @@
-import { db } from "@elkdonis/db";
+import {
+  listOrgProfiles,
+  getOrgProfileBySlug,
+  type OrgProfile,
+} from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import {
   artists as staticArtists,
@@ -10,82 +14,118 @@ import {
 
 export type { IFACProfile, Artwork, ExternalLink };
 
-type DirectoryRow = {
-  slug: string;
-  kind: "artist" | "dealer";
-  name: string;
+// Backed by users + org_profiles (migration 084/085) rather than the
+// now-legacy directory_profiles table — see packages/services/src/profiles.ts
+// for the identity/publish split, and migration 085 for why "artist" vs
+// "dealer" lives in org_profiles.tags instead of a `kind` column: it's
+// IFAC's own categorization, not something every org has.
+type ProfileRow = {
+  user_id: string;
+  slug: string | null;
+  tags: string[];
+  name: string | null;
   role: string | null;
-  bio: unknown;
+  bio: string | null;
   portrait_url: string | null;
   artworks: unknown;
-  links: unknown;
-  email: string | null;
-  website: string | null;
-  status: "draft" | "published";
+  social_links: unknown;
+  claim_status: "unclaimed" | "pending" | "claimed";
 };
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((v): v is string => typeof v === "string");
-}
 
 function asArtworks(value: unknown): Artwork[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((w) =>
-      w && typeof w === "object" && "url" in w
-        ? { filename: String((w as { url: unknown }).url), title: String((w as { title?: unknown }).title ?? "") }
-        : null
-    )
+    .map((w): Artwork | null => {
+      if (!w || typeof w !== "object" || !("url" in w)) return null;
+      const r = w as Record<string, unknown>;
+      const num = (v: unknown) => (typeof v === "number" ? v : undefined);
+      return {
+        filename: String(r.url),
+        title: String(r.title ?? ""),
+        id: typeof r.id === "string" ? r.id : undefined,
+        x: num(r.x), y: num(r.y), w: num(r.w), h: num(r.h),
+      };
+    })
     .filter((w): w is Artwork => w !== null);
 }
 
-function asLinks(value: unknown): ExternalLink[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((l) =>
-      l && typeof l === "object" && "href" in l
-        ? { label: String((l as { label?: unknown }).label ?? ""), href: String((l as { href: unknown }).href) }
-        : null
-    )
-    .filter((l): l is ExternalLink => l !== null);
+/**
+ * social_links carries the artist's real links plus, when present, one
+ * "Email" (mailto:) and one "Website" entry — reusing the generic link list
+ * rather than adding IFAC-only email/website columns to `users`. Split back
+ * out here so the rest of the app keeps the same IFACProfile shape it always
+ * had.
+ */
+function splitLinks(value: unknown): { links: ExternalLink[]; email?: string; website?: string } {
+  const raw = Array.isArray(value) ? value : [];
+  const links: ExternalLink[] = [];
+  let email: string | undefined;
+  let website: string | undefined;
+
+  for (const l of raw) {
+    if (!l || typeof l !== "object" || !("url" in l)) continue;
+    const label = String((l as { label?: unknown }).label ?? "");
+    const url = String((l as { url: unknown }).url);
+    if (label === "Email" && url.startsWith("mailto:")) {
+      email = url.slice("mailto:".length);
+    } else if (label === "Website") {
+      website = url;
+    } else {
+      links.push({ label, href: url });
+    }
+  }
+  return { links, email, website };
 }
 
-function rowToProfile(row: DirectoryRow): IFACProfile {
+function rowToProfile(row: ProfileRow, kind: "artist" | "dealer"): IFACProfile {
+  const { links, email, website } = splitLinks(row.social_links);
   return {
-    slug: row.slug,
-    name: row.name,
-    kind: row.kind,
+    userId: row.user_id,
+    slug: row.slug ?? "",
+    name: row.name ?? "",
+    kind,
     role: row.role ?? "",
-    bio: asStringArray(row.bio),
+    bio: row.bio ? row.bio.split("\n\n") : [],
     portrait: row.portrait_url ?? "",
     artworks: asArtworks(row.artworks),
-    links: asLinks(row.links),
-    email: row.email ?? undefined,
-    website: row.website ?? undefined,
+    links,
+    email,
+    website,
+    claimStatus: row.claim_status,
   };
 }
 
-const SELECT_COLS = `slug, kind, name, role, bio, portrait_url, artworks, links, email, website, status`;
+/**
+ * The shared profile service returns camelCase OrgProfile; everything below
+ * this file already speaks the snake_case ProfileRow shape. Adapting here
+ * rather than rewriting rowToProfile keeps the rendered page byte-identical
+ * while the data source moves onto @elkdonis/services.
+ */
+function serviceToRow(p: OrgProfile): ProfileRow {
+  return {
+    user_id: p.userId,
+    slug: p.slug,
+    tags: p.tags,
+    name: p.displayName,
+    role: p.roleTitle,
+    bio: p.bio,
+    portrait_url: p.avatarUrl,
+    artworks: p.portfolio,
+    social_links: p.socialLinks,
+    claim_status: p.claimStatus,
+  };
+}
 
 /**
  * List published profiles of a kind. Falls back to the bundled static roster
  * if the DB is empty or unreachable, so the site never renders blank.
  */
 export async function listDirectory(kind: "artist" | "dealer"): Promise<IFACProfile[]> {
-  try {
-    const rows = await db<DirectoryRow[]>`
-      SELECT slug, kind, name, role, bio, portrait_url, artworks, links, email, website, status
-      FROM directory_profiles
-      WHERE org_id = ${siteConfig.orgId}
-        AND kind = ${kind}
-        AND status = 'published'
-      ORDER BY sort_order ASC, name ASC
-    `;
-    if (rows.length > 0) return rows.map(rowToProfile);
-  } catch (error) {
-    console.error("[ifac] listDirectory error:", error);
-  }
+  const rows = await listOrgProfiles(siteConfig.orgId, {
+    onlyPublic: true,
+    tags: [kind],
+  });
+  if (rows.length > 0) return rows.map((r) => rowToProfile(serviceToRow(r), kind));
   return kind === "artist" ? staticArtists : staticDealers;
 }
 
@@ -93,18 +133,10 @@ export async function listDirectory(kind: "artist" | "dealer"): Promise<IFACProf
  * Fetch one profile by slug (artist or dealer). DB first, static fallback.
  */
 export async function getDirectoryProfile(slug: string): Promise<IFACProfile | undefined> {
-  try {
-    const rows = await db<DirectoryRow[]>`
-      SELECT slug, kind, name, role, bio, portrait_url, artworks, links, email, website, status
-      FROM directory_profiles
-      WHERE org_id = ${siteConfig.orgId}
-        AND slug = ${slug}
-        AND status = 'published'
-      LIMIT 1
-    `;
-    if (rows[0]) return rowToProfile(rows[0]);
-  } catch (error) {
-    console.error("[ifac] getDirectoryProfile error:", error);
+  const row = await getOrgProfileBySlug(siteConfig.orgId, slug);
+  if (row && row.isPublic) {
+    const kind = row.tags.includes("dealer") ? "dealer" : "artist";
+    return rowToProfile(serviceToRow(row), kind);
   }
   return (
     staticArtists.find((p) => p.slug === slug) ??
@@ -114,14 +146,11 @@ export async function getDirectoryProfile(slug: string): Promise<IFACProfile | u
 
 /** All slugs of a kind — used for generateStaticParams. */
 export async function listDirectorySlugs(kind: "artist" | "dealer"): Promise<string[]> {
-  try {
-    const rows = await db<{ slug: string }[]>`
-      SELECT slug FROM directory_profiles
-      WHERE org_id = ${siteConfig.orgId} AND kind = ${kind}
-    `;
-    if (rows.length > 0) return rows.map((r) => r.slug);
-  } catch {
-    // fall through to static
-  }
+  const rows = await listOrgProfiles(siteConfig.orgId, {
+    onlyPublic: true,
+    tags: [kind],
+  });
+  const slugs = rows.map((r) => r.slug).filter((s): s is string => Boolean(s));
+  if (slugs.length > 0) return slugs;
   return (kind === "artist" ? staticArtists : staticDealers).map((p) => p.slug);
 }

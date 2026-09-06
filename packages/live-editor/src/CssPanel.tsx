@@ -47,6 +47,30 @@ export function CssPanel({ cssVars, initialOverrides, onSave, onClose }: Props) 
     return () => document.removeEventListener("mousedown", h);
   }, [onClose]);
 
+  /**
+   * Back to how it looks with no theme at all.
+   *
+   * Saves an EMPTY override set rather than saving each variable at its
+   * default value. Those look identical today but are not the same thing: an
+   * empty set genuinely inherits, so if the site palette changes later this
+   * scope follows it instead of being pinned to today's colours.
+   */
+  function handleResetAll() {
+    setError(null);
+    setSaved(false);
+    setValues(Object.fromEntries(cssVars.map((v) => [v.name, v.default])));
+    startTransition(async () => {
+      const result = await onSave({});
+      if ("error" in result && result.error) setError(result.error);
+      else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    });
+  }
+
+  const isDirtyOverall = cssVars.some((v) => values[v.name] !== v.default);
+
   function handleSave() {
     setError(null);
     setSaved(false);
@@ -104,6 +128,20 @@ export function CssPanel({ cssVars, initialOverrides, onSave, onClose }: Props) 
       {/* Footer */}
       <div style={panelFooter}>
         {error && <span style={{ fontSize: 11, color: "#f87171", marginRight: "auto" }}>{error}</span>}
+        <button
+          type="button"
+          onClick={handleResetAll}
+          disabled={isPending || !isDirtyOverall}
+          title="Clear every override and go back to the default look"
+          style={{
+            ...cancelBtnStyle,
+            marginRight: "auto",
+            opacity: isDirtyOverall ? 1 : 0.4,
+            cursor: isDirtyOverall ? "pointer" : "default",
+          }}
+        >
+          Reset all
+        </button>
         <button type="button" onClick={onClose} style={cancelBtnStyle}>Cancel</button>
         <button
           type="button"

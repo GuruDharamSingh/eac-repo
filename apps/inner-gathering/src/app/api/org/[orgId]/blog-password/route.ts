@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from '@elkdonis/auth-server';
+import { getServerSession, isAdmin } from '@elkdonis/auth-server';
 import { db } from '@elkdonis/db';
+import { getOrgRole, hasOrgRole } from '@elkdonis/services';
 import { createHash, randomBytes } from 'crypto';
 
 function hashPassword(password: string, salt: string): string {
   return createHash('sha256').update(password + salt).digest('hex');
+}
+
+async function isOwnerOrGuideOrAdmin(userId: string, orgId: string): Promise<boolean> {
+  if (await hasOrgRole(userId, orgId, ['owner', 'guide'])) return true;
+  return isAdmin(userId);
 }
 
 /**
@@ -34,19 +40,10 @@ export async function GET(
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    // Check user's role in this org
-    const [membership] = await db`
-      SELECT role FROM user_organizations
-      WHERE user_id = ${session.user.id} AND org_id = ${orgId}
-    `;
-
-    // Check if user is a global admin
-    const [user] = await db`
-      SELECT is_admin FROM users WHERE id = ${session.user.id}
-    `;
-
-    const role = membership?.role || null;
-    const isOwnerOrGuide = role === 'owner' || role === 'guide' || user?.is_admin;
+    const [role, isOwnerOrGuide] = await Promise.all([
+      getOrgRole(session.user.id, orgId),
+      isOwnerOrGuideOrAdmin(session.user.id, orgId),
+    ]);
 
     return NextResponse.json({
       orgId: org.id,
@@ -81,20 +78,7 @@ export async function PUT(
 
     const { orgId } = await params;
 
-    // Verify user is owner/guide of this org or global admin
-    const [membership] = await db`
-      SELECT role FROM user_organizations
-      WHERE user_id = ${session.user.id} AND org_id = ${orgId}
-    `;
-
-    const [user] = await db`
-      SELECT is_admin FROM users WHERE id = ${session.user.id}
-    `;
-
-    const role = membership?.role;
-    const isOwnerOrGuide = role === 'owner' || role === 'guide' || user?.is_admin;
-
-    if (!isOwnerOrGuide) {
+    if (!(await isOwnerOrGuideOrAdmin(session.user.id, orgId))) {
       return NextResponse.json(
         { error: 'Only organization owners, guides, or admins can set the blog password' },
         { status: 403 }
@@ -147,20 +131,7 @@ export async function DELETE(
 
     const { orgId } = await params;
 
-    // Verify user is owner/guide of this org or global admin
-    const [membership] = await db`
-      SELECT role FROM user_organizations
-      WHERE user_id = ${session.user.id} AND org_id = ${orgId}
-    `;
-
-    const [user] = await db`
-      SELECT is_admin FROM users WHERE id = ${session.user.id}
-    `;
-
-    const role = membership?.role;
-    const isOwnerOrGuide = role === 'owner' || role === 'guide' || user?.is_admin;
-
-    if (!isOwnerOrGuide) {
+    if (!(await isOwnerOrGuideOrAdmin(session.user.id, orgId))) {
       return NextResponse.json(
         { error: 'Only organization owners, guides, or admins can remove the blog password' },
         { status: 403 }

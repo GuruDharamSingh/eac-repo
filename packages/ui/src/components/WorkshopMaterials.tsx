@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Group, Paper, Stack, Text, Title, Anchor } from "@mantine/core";
+import { Badge, Group, Paper, Stack, Text, Title } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import { FileText, FolderOpen, Upload as UploadIcon } from "lucide-react";
 
@@ -89,13 +89,6 @@ export function WorkshopMaterials({ workshopId }: { workshopId: string }) {
             </Badge>
           )}
         </Group>
-        <Anchor
-          href="/api/nextcloud/redirect?target=/apps/files"
-          size="sm"
-          c="#7a5230"
-        >
-          Open in Files
-        </Anchor>
       </Group>
 
       {files.length === 0 ? (
@@ -107,15 +100,21 @@ export function WorkshopMaterials({ workshopId }: { workshopId: string }) {
       ) : (
         <Stack gap={6} mb={isAuthor ? "sm" : 0}>
           {files.map((f) => (
-            <Group key={f.name} gap="sm" wrap="nowrap">
-              <FileText size={14} color="#9a7650" style={{ flexShrink: 0 }} />
-              <Text size="sm" style={{ flex: 1, minWidth: 0 }} truncate>
-                {f.name}
-              </Text>
-              <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
-                {fmtSize(f.size)}
-              </Text>
-            </Group>
+            <a
+              key={f.name}
+              href={`/api/workshops/${workshopId}/materials/${encodeURIComponent(f.name)}`}
+              style={{ textDecoration: "none", cursor: "pointer", color: "inherit" }}
+            >
+              <Group gap="sm" wrap="nowrap">
+                <FileText size={14} color="#9a7650" style={{ flexShrink: 0 }} />
+                <Text size="sm" c="#3d1f04" style={{ flex: 1, minWidth: 0 }} truncate>
+                  {f.name}
+                </Text>
+                <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+                  {fmtSize(f.size)}
+                </Text>
+              </Group>
+            </a>
           ))}
         </Stack>
       )}

@@ -29,7 +29,7 @@ export { PostForm } from './components/PostForm';
 export type { PostFormProps, PostFormData, PostFormConfig } from './components/PostForm';
 
 // Unified content-creation form (progressive post → meeting → event → workshop)
-export { ContentForm, inferKind } from './components/content-form';
+export { ContentForm, inferKind, RsvpTier } from './components/content-form';
 export type {
   ContentDraft,
   ContentFormProps,
@@ -47,6 +47,21 @@ export type { MediaPlayerProps, MediaGalleryProps } from './components/media-pla
 // Image Lightbox
 export { ImageLightbox } from './components/image-lightbox';
 export type { ImageLightboxProps } from './components/image-lightbox';
+
+// Mantine-free fullscreen lightbox — for apps that don't otherwise depend on
+// Mantine (see the component's own doc comment).
+export { SimpleLightbox } from './components/simple-lightbox';
+export type { SimpleLightboxProps, LightboxImage } from './components/simple-lightbox';
+
+// Drag-reorder, drag-resize profile gallery grid (react-grid-layout-based).
+export { ProfileGallery } from './components/profile-gallery';
+export type { ProfileGalleryProps, GalleryItem } from './components/profile-gallery';
+
+// Re-exported so consuming apps need only this one added dependency for the
+// full "owner can edit their own page in place" toolkit (pin-based field
+// editing + the gallery above). See @elkdonis/live-editor for the source.
+export { LiveEditor } from '@elkdonis/live-editor';
+export type { LiveEditorProps, FieldDef, SaveResult, SaveFieldPayload } from '@elkdonis/live-editor';
 
 // Excalidraw Drawing Editor
 export { ExcalidrawEditor } from './components/excalidraw-editor';

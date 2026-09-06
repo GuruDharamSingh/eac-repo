@@ -4,15 +4,14 @@
   Facilitator bio block. Pulls from the members table via FK.
   Supports a single facilitator + optional co-facilitators row.
 
-  CMS fields consumed (via facilitator_id → members):
-    members.full_name
-    members.role_title
-    members.bio_short
-    members.photo_path         → Nextcloud
-    members.pronouns           → optional
-    members.website_url        → optional
+  CMS fields consumed (via threads.author_id → artist_profiles):
+    artist_profiles.display_name  → fullName
+    artist_profiles.role_title    → roleTitle (optional)
+    artist_profiles.bio           → bio
+    artist_profiles.photo_url     → photoPath / alt (optional)
+    artist_profiles.pronouns      → pronouns (optional)
   Workshop-specific override:
-    workshop.facilitator_note  → replaces members.bio_short if present
+    workshop_pages.author_note    → replaces artist_profiles.bio if present
 -->
 <section class="eac-ws-facilitator" data-gjs-type="eac-ws-facilitator" id="facilitator">
   <div class="eac-ws-facilitator__inner">
@@ -62,12 +61,6 @@
           She has facilitated workshops at Harbourfront Centre and OCAD University,
           and co-founded the EAC writing circle in 2021.
         </p>
-
-        <a class="eac-ws-facilitator__link"
-           href="#"
-           data-trait="websiteUrl">
-          Visit Dana's website →
-        </a>
 
       </div>
     </div>

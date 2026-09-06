@@ -17,12 +17,13 @@
   },
   "dependencies": {
     "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/blog-server": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/ui": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@mantine/core": "^8.3.2",
-    "@tabler/icons-react": "^3.21.0",
     "@supabase/auth-helpers-react": "^0.4.2",
+    "@tabler/icons-react": "^3.21.0",
     "date-fns": "^3.6.0"
   },
   "peerDependencies": {

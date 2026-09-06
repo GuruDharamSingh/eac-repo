@@ -20,6 +20,8 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
+  Archive,
+  ArchiveRestore,
   BookOpen,
   Calendar,
   FileText,
@@ -76,6 +78,7 @@ const STATUS_COLOR: Record<string, string> = {
   published: "green",
   scheduled: "yellow",
   draft: "gray",
+  archived: "dark",
 };
 
 function detailHref(offering: Offering): string {
@@ -140,6 +143,31 @@ export function OfferingsClient({ offerings, userId, isAdmin = false }: Offering
     draft: Partial<ContentDraft>;
   } | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState<string | null>(null);
+
+  const toggleArchive = useCallback(
+    async (offering: Offering) => {
+      const action = offering.status === "archived" ? "restore" : "archive";
+      if (action === "archive" && !window.confirm(`Archive "${offering.title}"? It'll come off the feed but stay here, marked as archived.`)) {
+        return;
+      }
+      setArchiving(offering.id);
+      try {
+        const res = await fetch(`/api/content/${offering.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        });
+        if (!res.ok) throw new Error(`Failed (${res.status})`);
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to update");
+      } finally {
+        setArchiving(null);
+      }
+    },
+    [router]
+  );
 
   const openEdit = useCallback(
     async (offering: Offering) => {
@@ -308,15 +336,28 @@ export function OfferingsClient({ offerings, userId, isAdmin = false }: Offering
                         </Group>
                       )}
                     </Stack>
-                    <Button
-                      variant="light"
-                      size="xs"
-                      leftSection={<Pencil size={13} />}
-                      onClick={() => openEdit(offering)}
-                      style={{ flexShrink: 0 }}
-                    >
-                      Edit
-                    </Button>
+                    <Group gap="xs" style={{ flexShrink: 0 }}>
+                      <Button
+                        variant="light"
+                        size="xs"
+                        leftSection={<Pencil size={13} />}
+                        onClick={() => openEdit(offering)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="subtle"
+                        color="gray"
+                        size="xs"
+                        loading={archiving === offering.id}
+                        leftSection={
+                          offering.status === "archived" ? <ArchiveRestore size={13} /> : <Archive size={13} />
+                        }
+                        onClick={() => toggleArchive(offering)}
+                      >
+                        {offering.status === "archived" ? "Restore" : "Archive"}
+                      </Button>
+                    </Group>
                   </Group>
                 </Paper>
               );

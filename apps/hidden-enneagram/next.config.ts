@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-server",
     "@elkdonis/silex-render",
     "@elkdonis/utils",
+    "@elkdonis/email",
+    "@elkdonis/services",
+    "@elkdonis/commerce",
+    "@elkdonis/checkout",
+    "@elkdonis/payments",
+    "@elkdonis/cms-ui",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),

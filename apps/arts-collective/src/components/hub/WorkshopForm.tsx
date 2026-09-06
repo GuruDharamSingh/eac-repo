@@ -110,11 +110,14 @@ function SectionHeader({ title, description }: { title: string; description?: st
 
 export type WorkshopFormProps = {
   orgSlug: string;
+  /** The org's public home (custom domain or network subdomain), resolved by
+   *  the server page — a client component can't look it up itself. */
+  orgHomeUrl: string;
   /** Present when editing an existing workshop. */
   defaultValues?: Partial<WorkshopFullInput>;
 };
 
-export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
+export function WorkshopForm({ orgSlug, orgHomeUrl, defaultValues }: WorkshopFormProps) {
   const router = useRouter();
   const isEditing = Boolean(defaultValues?.thread_id);
 
@@ -173,7 +176,7 @@ export function WorkshopForm({ orgSlug, defaultValues }: WorkshopFormProps) {
     } else {
       const published = data.status === "published";
       const publicUrl = published
-        ? `http://${orgSlug}.localhost:3007/${result.slug}`
+        ? `${orgHomeUrl}/${result.slug}`
         : null;
       toast.success(
         published

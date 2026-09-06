@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  applyAsArtist,
-  updateArtistProfile,
+  applyForStore,
+  updateStore,
   createArtwork,
   updateArtwork,
   setArtworkMedia,
@@ -37,7 +37,10 @@ export async function applyArtistAction(
     return { ok: false, error: "A payout email is required." };
 
   try {
-    await applyAsArtist({
+    // applyForStore refuses non-members — surface its reason rather than
+    // reporting a generic failure, since "you aren't in the collective yet" is
+    // something the applicant can act on.
+    const result = await applyForStore({
       userId,
       displayName: input.displayName.trim(),
       headline: input.headline?.trim() || null,
@@ -48,6 +51,8 @@ export async function applyArtistAction(
       defaultCurrency: input.defaultCurrency,
       links: input.links,
     });
+    if (!result.ok) return { ok: false, error: result.error };
+
     revalidatePath("/studio");
     revalidatePath("/studio/apply");
     return { ok: true };
@@ -59,9 +64,9 @@ export async function applyArtistAction(
 export async function updateProfileAction(
   input: ApplyArtistInput
 ): Promise<{ ok: boolean; error?: string }> {
-  const { userId } = await requireApprovedArtist();
+  const { userId, store } = await requireApprovedArtist();
   try {
-    await updateArtistProfile(userId, {
+    await updateStore(store.id, {
       displayName: input.displayName?.trim() || undefined,
       headline: input.headline?.trim() ?? null,
       city: input.city?.trim() ?? null,
@@ -70,7 +75,7 @@ export async function updateProfileAction(
       payoutEmail: input.payoutEmail?.trim() || undefined,
       defaultCurrency: input.defaultCurrency,
       links: input.links,
-    });
+    }, userId);
     revalidatePath("/studio/profile");
     revalidatePath(`/artists/${userId}`);
     return { ok: true };

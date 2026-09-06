@@ -11,6 +11,7 @@ import {
   saveEmailTemplateSettings,
   threadTemplateKey,
 } from "@/lib/email-template-settings";
+import { REMINDER_TEMPLATE_KEY } from "@/lib/reminders";
 
 // ============================================================================
 // Unified content publish endpoint (content-form backend).
@@ -55,18 +56,27 @@ interface Payload {
   recurrencePattern?: string | null;
   recurrenceCustomRule?: string | null;
   recurrenceUntil?: string | null;
+  coGuideIds?: string[] | null;
 
   isRsvpEnabled?: boolean;
   attendeeLimit?: number | null;
   rsvpDeadline?: string | null;
   minAttendees?: number | null;
+  notifyOnMinAttendees?: boolean | null;
   rsvpEmailBody?: string | null;
   reminderMinutesBefore?: number | null;
+  reminderEmailBody?: string | null;
   visibility?: string;
 
   pitch?: string | null;
   price?: number | null;
   flyerUrl?: string | null;
+  bannerImageUrl?: string | null;
+  bannerFocalY?: number | null;
+  heroMediaUrl?: string | null;
+  heroMediaType?: "image" | "video" | null;
+  heroText?: string | null;
+  backgroundColor?: string | null;
   sessions?: Array<{
     id: string;
     title: string;
@@ -77,6 +87,9 @@ interface Payload {
     location?: string;
     videoConferenceUrl?: string;
     mediaUrl?: string | null;
+    videoUrl?: string | null;
+    resources?: Array<{ id: string; title: string; type: string; url: string; isPublic: boolean; description?: string }>;
+    backgroundColor?: string | null;
     orderIndex: number;
   }>;
 
@@ -216,13 +229,23 @@ export async function POST(request: NextRequest) {
           : null,
         recurrence_custom_rule: payload.recurrenceCustomRule ?? null,
         recurrence_until: payload.recurrenceUntil ? new Date(payload.recurrenceUntil) : null,
-        is_rsvp_enabled: payload.isRsvpEnabled ?? false,
+        // Workshops are always "RSVP-able" via the Join button, even though
+        // that form never surfaces an explicit RSVP toggle — without this,
+        // every workshop publishes with is_rsvp_enabled=false, which quietly
+        // excludes them from lib/reminders.ts's reminder tick despite it
+        // already querying kind IN (..., 'workshop').
+        is_rsvp_enabled: payload.kind === "workshop" ? true : (payload.isRsvpEnabled ?? false),
         attendee_limit: payload.attendeeLimit ?? null,
         rsvp_deadline: payload.rsvpDeadline ? new Date(payload.rsvpDeadline) : null,
         min_attendees: payload.minAttendees ?? null,
+        notify_on_min_attendees: payload.notifyOnMinAttendees ?? false,
         reminder_minutes_before: payload.reminderMinutesBefore ?? 60,
         published_at: status === "published" ? publishedAt : null,
         document_url: payload.documentUrl ?? null,
+        // threads.price is the shared column across kinds — workshop also
+        // mirrors it into workshop_pages.price_member below (that sidecar
+        // table is the source of truth for the workshop detail page).
+        price: payload.price ?? null,
       };
 
       if (isUpdate) {
@@ -236,6 +259,25 @@ export async function POST(request: NextRequest) {
         `;
       }
 
+      // Co-guides — merged into metadata (not a plain field) so this write
+      // doesn't clobber other metadata keys (e.g. feedPinned). The author is
+      // always implicitly a guide and is never stored as a co-guide.
+      if ((payload.kind === "meeting" || payload.kind === "workshop") && Array.isArray(payload.coGuideIds)) {
+        const coGuideIds = Array.from(
+          new Set(payload.coGuideIds.filter((g) => g && g !== authorId))
+        );
+        await tx`
+          UPDATE threads
+          SET metadata = jsonb_set(
+                COALESCE(metadata, '{}'::jsonb),
+                '{coGuideIds}',
+                ${JSON.stringify(coGuideIds)}::jsonb,
+                true
+              )
+          WHERE id = ${threadId}
+        `;
+      }
+
       // workshop_pages (1:1) — shared with /api/workshops and the detail page
       if (payload.kind === "workshop") {
         const pageFields = {
@@ -243,6 +285,12 @@ export async function POST(request: NextRequest) {
           description_short: payload.pitch ?? null,
           price_member: payload.price != null ? String(payload.price) : null,
           cover_image_url: payload.flyerUrl ?? null,
+          banner_image_url: payload.bannerImageUrl ?? null,
+          banner_focal_y: payload.bannerFocalY ?? 50,
+          hero_media_url: payload.heroMediaUrl ?? null,
+          hero_media_type: payload.heroMediaUrl ? (payload.heroMediaType ?? "image") : null,
+          hero_text: payload.heroText ?? null,
+          background_color: payload.backgroundColor ?? null,
         };
         await tx`
           INSERT INTO workshop_pages ${tx(pageFields)}
@@ -250,6 +298,12 @@ export async function POST(request: NextRequest) {
             description_short = EXCLUDED.description_short,
             price_member      = EXCLUDED.price_member,
             cover_image_url   = EXCLUDED.cover_image_url,
+            banner_image_url  = EXCLUDED.banner_image_url,
+            banner_focal_y    = EXCLUDED.banner_focal_y,
+            hero_media_url    = EXCLUDED.hero_media_url,
+            hero_media_type   = EXCLUDED.hero_media_type,
+            hero_text         = EXCLUDED.hero_text,
+            background_color  = EXCLUDED.background_color,
             updated_at        = NOW()
         `;
 
@@ -264,13 +318,22 @@ export async function POST(request: NextRequest) {
               topic: s.title,
               scheduled_at: s.scheduledAt ? new Date(s.scheduledAt) : null,
               duration_minutes: s.durationMinutes ?? null,
-              notes: JSON.stringify({
+              // Plain object, not JSON.stringify(...) — postgres.js already
+              // serializes JS objects for jsonb columns itself. Pre-stringifying
+              // here double-encodes it: the column ends up holding a jsonb
+              // *string* containing JSON text, so every s.notes?.field read
+              // back silently comes out undefined (property access on a
+              // string). Confirmed empirically against this exact driver.
+              notes: {
                 description: s.description ?? "",
                 isOnline: s.isOnline ?? true,
                 location: s.location ?? "",
                 videoConferenceUrl: s.videoConferenceUrl ?? "",
                 mediaUrl: s.mediaUrl ?? null,
-              }),
+                videoUrl: s.videoUrl ?? null,
+                resources: s.resources ?? [],
+                backgroundColor: s.backgroundColor ?? null,
+              },
             })}
           `;
         }
@@ -316,15 +379,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Per-publication RSVP confirmation copy. A non-empty body upserts the
-    // thread-scoped template (preserving any links/media added on the Email
-    // Templates page); an empty body removes the override so the publication
-    // reverts to the org default.
-    if (payload.isRsvpEnabled !== undefined) {
+    // Per-publication RSVP confirmation ("welcome") copy. A non-empty body
+    // upserts the thread-scoped template (preserving any links/media added
+    // on the Email Templates page); an empty body removes the override so
+    // the publication reverts to the org default. Workshops are always
+    // RSVP-enabled (see is_rsvp_enabled above) even though their form has no
+    // explicit toggle, so they're included here too.
+    const rsvpEnabledForTemplate = payload.kind === "workshop" ? true : payload.isRsvpEnabled;
+    if (rsvpEnabledForTemplate !== undefined) {
       const scopedKey = threadTemplateKey(RSVP_GUEST_TEMPLATE_KEY, result.id);
       const bodyText = payload.rsvpEmailBody?.trim();
       try {
-        if (payload.isRsvpEnabled && bodyText) {
+        if (rsvpEnabledForTemplate && bodyText) {
           const existing = await getEmailTemplateSettings(payload.primaryOrgId, scopedKey);
           await saveEmailTemplateSettings({
             orgId: payload.primaryOrgId,
@@ -338,6 +404,28 @@ export async function POST(request: NextRequest) {
       } catch (templateErr) {
         // Non-fatal — the publication is live; email falls back to the org default.
         console.error("Failed to save per-publication RSVP email template:", templateErr);
+      }
+    }
+
+    // Per-publication reminder copy, same pattern — read by lib/reminders.ts's
+    // getEmailTemplateSettingsForThread(..., REMINDER_TEMPLATE_KEY, threadId).
+    if (payload.kind === "workshop" && payload.reminderEmailBody !== undefined) {
+      const scopedReminderKey = threadTemplateKey(REMINDER_TEMPLATE_KEY, result.id);
+      const reminderBodyText = payload.reminderEmailBody?.trim();
+      try {
+        if (reminderBodyText) {
+          const existing = await getEmailTemplateSettings(payload.primaryOrgId, scopedReminderKey);
+          await saveEmailTemplateSettings({
+            orgId: payload.primaryOrgId,
+            templateKey: scopedReminderKey,
+            config: { ...(existing?.config ?? {}), bodyText: reminderBodyText },
+            userId: authorId,
+          });
+        } else {
+          await deleteEmailTemplateSettings(payload.primaryOrgId, scopedReminderKey);
+        }
+      } catch (templateErr) {
+        console.error("Failed to save per-publication reminder email template:", templateErr);
       }
     }
 

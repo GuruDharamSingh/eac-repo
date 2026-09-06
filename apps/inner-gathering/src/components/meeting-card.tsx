@@ -50,7 +50,7 @@ import type { Meeting } from "@elkdonis/types";
 import { nextOccurrence } from "@/lib/recurrence";
 import { useCycleStatus } from "./use-cycle-status";
 import { ManageGuidesModal } from "./manage-guides-modal";
-import { useRealtimeAttendees } from "@elkdonis/hooks";
+import { useRealtimeAttendees, useThreadRsvp } from "@elkdonis/hooks";
 import { MediaPlayer, ImageLightbox } from "@elkdonis/ui";
 import { supabase } from "@/lib/supabase";
 import NextImage from "next/image";
@@ -137,9 +137,6 @@ export function MeetingCard({
   isAdmin = false,
 }: MeetingCardProps) {
   const [mounted, setMounted] = useState(false);
-  const [isAttending, setIsAttending] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [rsvpChecked, setRsvpChecked] = useState(false);
   const [receiveEmailNotice, setReceiveEmailNotice] = useState(true);
   const [happeningNow, setHappeningNow] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -179,6 +176,8 @@ export function MeetingCard({
     enabled: meeting.isRSVPEnabled === true,
   });
 
+  const { isAttending, isLoading, rsvp } = useThreadRsvp(meeting.id, { enabled: meeting.isRSVPEnabled === true });
+
   useEffect(() => {
     if (meeting.attendeeCount !== undefined) initializeCount(meeting.attendeeCount);
   }, [meeting.attendeeCount, initializeCount]);
@@ -193,21 +192,6 @@ export function MeetingCard({
     const interval = setInterval(() => setHappeningNow(isHappeningNow(meeting)), 30000);
     return () => clearInterval(interval);
   }, [meeting.scheduledAt, meeting.durationMinutes]);
-
-  useEffect(() => {
-    if (meeting.isRSVPEnabled && !rsvpChecked) checkRsvpStatus();
-  }, [meeting.id, meeting.isRSVPEnabled, rsvpChecked]);
-
-  const checkRsvpStatus = async () => {
-    try {
-      const res = await fetch(`/api/meetings/${meeting.id}/rsvp`);
-      if (res.ok) {
-        const data = await res.json();
-        setIsAttending(data.attending);
-      }
-    } catch {}
-    finally { setRsvpChecked(true); }
-  };
 
   const handleTriggerEmail = async (type: "reminder" | "cancellation") => {
     if (type === "cancellation" && !confirm(`Send a cancellation notice to everyone RSVP'd for "${meeting.title}"?`)) {
@@ -237,25 +221,6 @@ export function MeetingCard({
     } finally {
       setTriggering(false);
     }
-  };
-
-  const handleRsvp = async (shouldAttend: boolean) => {
-    if (shouldAttend === isAttending) return;
-    setIsLoading(true);
-    try {
-      if (!shouldAttend) {
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, { method: "DELETE" });
-        if (res.ok) setIsAttending(false);
-      } else {
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ receiveEmailNotice }),
-        });
-        if (res.ok) setIsAttending(true);
-      }
-    } catch {}
-    finally { setIsLoading(false); }
   };
 
   return (
@@ -594,7 +559,7 @@ export function MeetingCard({
                     variant={isAttending ? "filled" : "light"}
                     color="teal"
                     leftSection={isAttending ? <UserCheck size={14} /> : <UserPlus size={14} />}
-                    onClick={() => handleRsvp(true)}
+                    onClick={() => rsvp(true, receiveEmailNotice)}
                     disabled={isLoading}
                   >
                     I'm Going
@@ -604,7 +569,7 @@ export function MeetingCard({
                     variant={!isAttending ? "light" : "subtle"}
                     color="gray"
                     leftSection={<UserX size={14} />}
-                    onClick={() => handleRsvp(false)}
+                    onClick={() => rsvp(false)}
                     disabled={isLoading}
                   >
                     Can't Make It

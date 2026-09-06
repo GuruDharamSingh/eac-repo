@@ -3,12 +3,22 @@
 import Link from "next/link";
 import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 
+/**
+ * What an org can make and manage from its hub.
+ *
+ * This started as "Publish" — the four things you can create — and is now the
+ * org's whole toolkit, because the hub is where an org goes to *do* something:
+ * make an offering, look at its public site, write to its members, ask them a
+ * question. Cards that aren't built yet say so rather than being left off, so
+ * the shape of what's coming is visible in one place.
+ */
+
 type PublishCard = {
   id: string;
   icon: string;
   title: string;
   blurb: string;
-  action: "dialog-post" | "dialog-event" | "dialog-workshop-event" | "link";
+  action: "dialog-post" | "dialog-event" | "dialog-workshop-event" | "link" | "external";
   href?: string;
   locked?: boolean;
 };
@@ -43,6 +53,37 @@ const PUBLISH_CARDS: PublishCard[] = [
     action: "dialog-workshop-event",
   },
   {
+    id: "public_site",
+    icon: "◱",
+    title: "Your Public Site",
+    blurb: "Your subdomain as visitors meet it — offering, profile, and the wider community.",
+    action: "external",
+  },
+  {
+    id: "workshop_email",
+    icon: "✉",
+    title: "Workshop Emails",
+    blurb: "Confirmation and reminder emails for the people who sign up to your workshops.",
+    action: "link",
+    locked: true,
+  },
+  {
+    id: "questionnaire",
+    icon: "◎",
+    title: "Questionnaires",
+    blurb: "Ask your members something and read the results. Answers stay private to you.",
+    action: "link",
+    locked: true,
+  },
+  {
+    id: "drafts",
+    icon: "▤",
+    title: "Drafts & Review",
+    blurb: "Everything written but not yet published, in one place to finish or retire.",
+    action: "link",
+    locked: true,
+  },
+  {
     id: "webpage_design",
     icon: "◫",
     title: "Webpage Design Ideas",
@@ -52,19 +93,40 @@ const PUBLISH_CARDS: PublishCard[] = [
   },
 ];
 
-export function PublishSection({ orgSlug }: { orgSlug: string }) {
+export function PublishSection({
+  orgSlug,
+  orgHomeUrl,
+}: {
+  orgSlug: string;
+  /** The org's public home — resolved server-side, since a client component
+   *  can't look up its custom domain. */
+  orgHomeUrl?: string;
+}) {
   return (
     <div className="-mx-6 overflow-x-auto px-6 pb-4">
       <div className="flex gap-4">
         {PUBLISH_CARDS.map((card) => (
-          <PublishCard key={card.id} card={card} orgSlug={orgSlug} />
+          <PublishCard
+            key={card.id}
+            card={card}
+            orgSlug={orgSlug}
+            orgHomeUrl={orgHomeUrl}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function PublishCard({ card, orgSlug }: { card: PublishCard; orgSlug: string }) {
+function PublishCard({
+  card,
+  orgSlug,
+  orgHomeUrl,
+}: {
+  card: PublishCard;
+  orgSlug: string;
+  orgHomeUrl?: string;
+}) {
   const base =
     "relative flex w-[220px] shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 text-left";
 
@@ -86,10 +148,24 @@ function PublishCard({ card, orgSlug }: { card: PublishCard; orgSlug: string }) 
   );
 
   if (card.locked) {
+    return <div className={`${base} opacity-50`}>{inner}</div>;
+  }
+
+  if (card.action === "external") {
+    // Only the public-site card, and only once its URL is known.
+    if (!orgHomeUrl) return <div className={`${base} opacity-50`}>{inner}</div>;
     return (
-      <div className={`${base} opacity-50`}>
+      <a
+        href={orgHomeUrl}
+        target="_blank"
+        rel="noopener"
+        className={`${base} transition-colors hover:border-foreground/30 hover:bg-muted/30`}
+      >
         {inner}
-      </div>
+        <span className="mt-auto text-xs text-muted-foreground underline-offset-2 hover:underline">
+          Visit ↗
+        </span>
+      </a>
     );
   }
 

@@ -6,7 +6,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./theme": "./src/ThemeStyle.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
@@ -21,5 +22,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@elkdonis/services": "workspace:*"
   }
 }

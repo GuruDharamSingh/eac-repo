@@ -8,7 +8,7 @@ import {
   rejectApplicationAction,
 } from "./actions";
 
-export function ApplicationActions({ artistUserId }: { artistUserId: string }) {
+export function ApplicationActions({ storeId }: { storeId: string }) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
   const [rejecting, setRejecting] = React.useState(false);
@@ -17,9 +17,9 @@ export function ApplicationActions({ artistUserId }: { artistUserId: string }) {
   async function approve() {
     setPending(true);
     try {
-      const res = await approveApplicationAction(artistUserId);
+      const res = await approveApplicationAction(storeId);
       if (!res.ok) return toast.error(res.error ?? "Failed.");
-      toast.success("Artist approved.");
+      toast.success("Store approved.");
       router.refresh();
     } finally {
       setPending(false);
@@ -30,7 +30,7 @@ export function ApplicationActions({ artistUserId }: { artistUserId: string }) {
     if (!reason.trim()) return toast.error("Enter a reason.");
     setPending(true);
     try {
-      const res = await rejectApplicationAction(artistUserId, reason);
+      const res = await rejectApplicationAction(storeId, reason);
       if (!res.ok) return toast.error(res.error ?? "Failed.");
       toast.success("Application declined.");
       setRejecting(false);

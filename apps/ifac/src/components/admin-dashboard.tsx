@@ -205,12 +205,21 @@ export function AdminDashboard({
       <div className="admin-grid" style={{ marginTop: "1rem" }}>
         <section className="table-panel">
           <h2>User management</h2>
-          <p className="small-note">IFAC-specific roles reuse the central `users` and `user_organizations` tables. Full network tools remain in central admin.</p>
+          <p className="small-note">
+            This sets each person&apos;s <strong>access role within IFAC</strong> — viewer
+            (read-only), member (default — can participate), or guide (can edit and manage
+            IFAC content). It reuses the network&apos;s shared `user_organizations` table, so
+            the same three levels mean the same thing in every org, not just here. It is
+            not the public byline shown on someone&apos;s profile — that&apos;s the
+            &quot;Display title&quot; field on the <a href="/admin/directory">Directory</a>{" "}
+            screen. And it can never grant network-wide admin — that flag lives only in
+            central admin, below.
+          </p>
           <p><a className="button-secondary" href={`${siteConfig.centralAdminUrl}/users`}>Open central user admin</a></p>
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>User</th><th>Role</th><th>Change role</th></tr>
+                <tr><th>User</th><th>Access role</th><th>Change access role</th></tr>
               </thead>
               <tbody>
                 {users.map((user) => (

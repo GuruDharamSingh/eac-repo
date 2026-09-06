@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerAuth } from '@elkdonis/auth-server';
 import { db } from '@elkdonis/db';
+import { getOrgRole } from '@elkdonis/services';
 
 export interface BlogConfig {
   orgId: string;
@@ -45,19 +46,11 @@ export async function checkBlogOwner(config: BlogConfig): Promise<BlogAuthContex
       (authEmail && ownerEmails.includes(authEmail)) || ownerIds.includes(user.id);
 
     if (!isOwnerByConfig) {
-      const memberships = await db`
-        SELECT role
-        FROM user_organizations
-        WHERE user_id = ${user.id}
-          AND org_id = ${config.orgId}
-        LIMIT 1
-      `;
+      membershipRole = await getOrgRole(user.id, config.orgId);
 
-      if (!memberships.length) {
+      if (!membershipRole) {
         return null;
       }
-
-      membershipRole = memberships[0].role;
 
       if (config.ownerRoles?.length && !config.ownerRoles.includes(membershipRole as any)) {
         return null;
@@ -104,19 +97,11 @@ export async function requireBlogOwner(config: BlogConfig): Promise<BlogAuthCont
     (authEmail && ownerEmails.includes(authEmail)) || ownerIds.includes(user.id);
 
   if (!isOwnerByConfig) {
-    const memberships = await db`
-      SELECT role
-      FROM user_organizations
-      WHERE user_id = ${user.id}
-        AND org_id = ${config.orgId}
-      LIMIT 1
-    `;
+    membershipRole = await getOrgRole(user.id, config.orgId);
 
-    if (!memberships.length) {
+    if (!membershipRole) {
       redirect('/login?message=unauthorized');
     }
-
-    membershipRole = memberships[0].role;
 
     if (config.ownerRoles?.length && !config.ownerRoles.includes(membershipRole as any)) {
       redirect('/login?message=unauthorized');

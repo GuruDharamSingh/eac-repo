@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./client": "./client.ts",
     "./components": "./src/components/index.ts",
-    "./talk": "./src/talk.ts"
+    "./talk": "./src/talk.ts",
+    "./deck": "./src/deck.ts"
   },
   "scripts": {
     "build": "tsup",

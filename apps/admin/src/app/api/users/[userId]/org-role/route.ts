@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@elkdonis/db';
 import { getServerSession, isAdmin } from '@elkdonis/auth-server';
+import { listUserMemberships, setOrgRole, removeOrgMember, type OrgRole } from '@elkdonis/services';
 
 /**
  * GET /api/users/[userId]/org-role
@@ -21,20 +22,16 @@ export async function GET(
     }
 
     const { userId } = await params;
+    const memberships = await listUserMemberships(userId);
 
-    const memberships = await db`
-      SELECT 
-        uo.org_id,
-        uo.role,
-        uo.joined_at,
-        o.name as org_name
-      FROM user_organizations uo
-      JOIN organizations o ON o.id = uo.org_id
-      WHERE uo.user_id = ${userId}
-      ORDER BY o.name
-    `;
-
-    return NextResponse.json({ memberships });
+    return NextResponse.json({
+      memberships: memberships.map((m) => ({
+        org_id: m.orgId,
+        role: m.role,
+        joined_at: m.joinedAt,
+        org_name: m.orgName,
+      })),
+    });
   } catch (error: any) {
     console.error('Error fetching user org roles:', error);
     return NextResponse.json(
@@ -74,7 +71,7 @@ export async function PUT(
       );
     }
 
-    const validRoles = ['guide', 'member', 'viewer'];
+    const validRoles: OrgRole[] = ['guide', 'member', 'viewer'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
@@ -94,23 +91,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    // Upsert the membership
-    const [membership] = await db`
-      INSERT INTO user_organizations (user_id, org_id, role, joined_at)
-      VALUES (${userId}, ${orgId}, ${role}, NOW())
-      ON CONFLICT (user_id, org_id)
-      DO UPDATE SET role = ${role}
-      RETURNING user_id, org_id, role, joined_at
-    `;
+    const membership = await setOrgRole(userId, orgId, role);
 
     return NextResponse.json({
       success: true,
-      membership: {
-        userId: membership.user_id,
-        orgId: membership.org_id,
-        role: membership.role,
-        joinedAt: membership.joined_at,
-      },
+      membership,
       message: `User ${user.email} is now a ${role} in ${org.name}`,
     });
   } catch (error: any) {
@@ -149,14 +134,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'orgId is required' }, { status: 400 });
     }
 
-    // Delete the membership
-    const result = await db`
-      DELETE FROM user_organizations
-      WHERE user_id = ${userId} AND org_id = ${orgId}
-      RETURNING user_id, org_id
-    `;
-
-    if (result.length === 0) {
+    const removed = await removeOrgMember(userId, orgId);
+    if (!removed) {
       return NextResponse.json(
         { error: 'Membership not found' },
         { status: 404 }

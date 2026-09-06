@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createMeeting, createPost, createEventPage } from "./data";
 import type { MeetingVisibility, MeetingRecurrence } from "@elkdonis/types";
-import { getServerSession } from "@elkdonis/auth-server";
+import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 import { createNextcloudClient } from "@elkdonis/nextcloud";
-import { syncMeetingToNextcloud } from "@elkdonis/services";
+import { syncMeetingToNextcloud, hasOrgRole } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { createHash } from "crypto";
 
@@ -18,18 +18,10 @@ import { createHash } from "crypto";
  * - The provided blogPassword matches the org's stored hash
  */
 async function verifyOrgAccess(userId: string, orgId: string, blogPassword?: string): Promise<boolean> {
-  // Check user's role in this org
-  const [membership] = await db`
-    SELECT role FROM user_organizations
-    WHERE user_id = ${userId} AND org_id = ${orgId}
-  `;
-
-  const [user] = await db`
-    SELECT is_admin FROM users WHERE id = ${userId}
-  `;
-
-  const role = membership?.role;
-  if (role === 'owner' || role === 'guide' || user?.is_admin) {
+  if (await hasOrgRole(userId, orgId, ['owner', 'guide'])) {
+    return true;
+  }
+  if (await isAdmin(userId)) {
     return true;
   }
 

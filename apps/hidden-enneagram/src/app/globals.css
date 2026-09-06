@@ -1,29 +1,168 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/*
-  Dark theme tokens so the shared embed shells (which use Tailwind color
-  utilities like bg-card / border-border / text-muted-foreground / bg-primary)
-  resolve to enneagram-appropriate values. The published site brings its own
-  CSS; this only backs the app chrome + any non-inline embeds.
-*/
-@theme {
-  --color-background: #0a0a0c;
-  --color-foreground: #ece7dd;
-  --color-card: #131319;
-  --color-border: rgba(236, 231, 221, 0.14);
-  --color-muted: #16161c;
-  --color-muted-foreground: #8a857b;
-  --color-accent: #16161c;
-  --color-primary: #3aa99c;
-  --color-primary-foreground: #04130f;
-  --color-destructive: #e07a7a;
+/* Tailwind v4 auto-detection skips node_modules, so workspace packages that
+   ship their own markup must be named explicitly or their utility classes
+   are silently dropped from the build. */
+@source "../../../../packages/cms-ui/src";
+
+/* ==========================================================================
+   The Hidden Enneagram — single dark theme (the site never switches to
+   light, so there's no .dark block; the shadcn tokens below just resolve
+   the same colours a shadcn app would toggle between).
+
+   HSL triplets converted from the original flat hex palette so shadcn
+   primitives (button, card, badge, etc.) and @elkdonis/checkout's
+   PaymentInstructionsCard — both of which read hsl(var(--x)) tokens — drop
+   in without a second theme. The --color-* names in @theme inline are kept
+   stable: the shared embed shells (Tailwind utilities like bg-card /
+   border-border / bg-primary) already depend on those exact names.
+   ========================================================================== */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: 240 9% 4%;          /* #0a0a0c */
+  --foreground: 40 28% 90%;         /* #ece7dd */
+
+  --card: 240 14% 9%;               /* #131319 */
+  --card-foreground: 40 28% 90%;
+
+  --popover: 240 14% 9%;
+  --popover-foreground: 40 28% 90%;
+
+  --primary: 173 49% 45%;           /* teal #3aa99c */
+  --primary-foreground: 164 65% 5%; /* #04130f */
+
+  --secondary: 240 12% 11%;
+  --secondary-foreground: 40 28% 90%;
+
+  --muted: 240 12% 10%;             /* #16161c */
+  --muted-foreground: 40 6% 51%;    /* #8a857b */
+
+  --accent: 240 12% 10%;
+  --accent-foreground: 40 28% 90%;
+
+  --destructive: 0 62% 68%;         /* #e07a7a */
+  --destructive-foreground: 164 65% 5%;
+
+  --border: 40 4% 16%;              /* flattened rgba(236,231,221,.14) on bg */
+  --input: 240 10% 12%;
+  --ring: 173 49% 45%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
   --font-serif: "Cormorant Garamond", Georgia, serif;
   --font-cormorant: "Cormorant Garamond", Georgia, serif;
   --font-eb-garamond: "EB Garamond", Georgia, serif;
+  --font-sans: "EB Garamond", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 html,
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* ==========================================================================
+   Rich text — the Tiptap editor pane and the published output.
+
+   @tailwindcss/typography is not installed (same as amrit-canada), so the
+   editor's `prose` classes are no-ops on their own: pressing "Heading 2"
+   would change the HTML and nothing on screen, which reads as a broken
+   editor. These rules style both surfaces identically so what an author sees
+   while typing is honest about what a reader gets.
+   ========================================================================== */
+
+.tiptap-content :where(h2),
+.prose-enneagram :where(h2) {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin: 1.6rem 0 0.6rem;
+  line-height: 1.25;
+}
+.tiptap-content :where(h3),
+.prose-enneagram :where(h3) {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 1.2rem 0 0.4rem;
+}
+.tiptap-content :where(p),
+.prose-enneagram :where(p) {
+  margin: 0.65rem 0;
+  line-height: 1.75;
+}
+.tiptap-content :where(ul, ol),
+.prose-enneagram :where(ul, ol) {
+  margin: 0.65rem 0 0.65rem 1.35rem;
+  list-style: revert;
+}
+.tiptap-content :where(li),
+.prose-enneagram :where(li) {
+  margin-bottom: 0.3rem;
+}
+.tiptap-content :where(li p),
+.prose-enneagram :where(li p) {
+  margin: 0;
+}
+.tiptap-content :where(a),
+.prose-enneagram :where(a) {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content :where(blockquote),
+.prose-enneagram :where(blockquote) {
+  border-left: 2px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+.tiptap-content :where(strong),
+.prose-enneagram :where(strong) {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.tiptap-content :where(hr),
+.prose-enneagram :where(hr) {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+  margin: 2rem 0;
+}
+
+/* Only renders when the document is genuinely empty. */
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground));
 }

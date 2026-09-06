@@ -41,7 +41,6 @@ export default function MeetingPage({
       type="meeting"
       replies={serializedReplies}
       currentUser={currentUser}
-      isJoined={false} // Would need logic to check if user is RSVP'd
     />
   );
 }

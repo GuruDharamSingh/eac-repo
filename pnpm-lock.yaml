@@ -49,6 +49,9 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -161,6 +164,15 @@ importers:
 
   apps/amrit-canada:
     dependencies:
+      '@dnd-kit/core':
+        specifier: ^6.1.0
+        version: 6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@dnd-kit/sortable':
+        specifier: ^8.0.0
+        version: 8.0.0(@dnd-kit/core@6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.1.0)
       '@elkdonis/auth-client':
         specifier: workspace:*
         version: link:../../packages/auth-client
@@ -173,49 +185,109 @@ importers:
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@elkdonis/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@mantine/core':
-        specifier: ^8.3.2
-        version: 8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/dates':
-        specifier: ^8.3.2
-        version: 8.3.2(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(dayjs@1.11.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/form':
-        specifier: ^8.3.5
-        version: 8.3.5(react@19.1.0)
-      '@mantine/hooks':
-        specifier: ^8.3.2
-        version: 8.3.2(react@19.1.0)
-      '@mantine/notifications':
-        specifier: ^8.3.14
-        version: 8.3.14(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/tiptap':
-        specifier: ^8.3.2
-        version: 8.3.4(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(@tiptap/extension-link@3.6.6)(@tiptap/react@2.26.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tabler/icons-react':
-        specifier: ^3.34.0
-        version: 3.35.0(react@19.1.0)
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@hookform/resolvers':
+        specifier: ^3.10.0
+        version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
+      '@radix-ui/react-checkbox':
+        specifier: ^1.1.2
+        version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-label':
+        specifier: ^2.1.0
+        version: 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-radio-group':
+        specifier: ^1.2.1
+        version: 1.3.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-select':
+        specifier: ^2.1.2
+        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-separator':
+        specifier: ^1.1.0
+        version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.1.0
+        version: 1.2.4(@types/react@19.2.14)(react@19.1.0)
+      '@tiptap/extension-link':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-placeholder':
+        specifier: ^2.8.0
+        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-underline':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
+      '@tiptap/pm':
+        specifier: ^2.8.0
+        version: 2.26.4
+      '@tiptap/react':
+        specifier: ^2.8.0
+        version: 2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/starter-kit':
+        specifier: ^2.8.0
+        version: 2.26.4
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
       nanoid:
         specifier: ^5.0.0
         version: 5.1.6
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      react-hook-form:
+        specifier: ^7.73.1
+        version: 7.73.1(react@19.1.0)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
+      tw-animate-css:
+        specifier: ^1.2.0
+        version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.13
       '@types/node':
         specifier: ^20
         version: 20.19.17
@@ -379,9 +451,24 @@ importers:
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@elkdonis/live-editor':
+        specifier: workspace:*
+        version: link:../../packages/live-editor
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@elkdonis/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
@@ -422,6 +509,12 @@ importers:
       '@elkdonis/cms-bindings':
         specifier: workspace:*
         version: link:../../packages/cms-bindings
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../../packages/cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -449,6 +542,9 @@ importers:
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@elkdonis/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -1041,9 +1137,18 @@ importers:
       '@elkdonis/auth-server':
         specifier: workspace:*
         version: link:../../packages/auth-server
+      '@elkdonis/checkout':
+        specifier: workspace:*
+        version: link:../../packages/checkout
       '@elkdonis/cms-bindings':
         specifier: workspace:*
         version: link:../../packages/cms-bindings
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../../packages/cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -1053,27 +1158,84 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
+      '@elkdonis/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@elkdonis/redis':
         specifier: workspace:*
         version: link:../../packages/redis
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/silex-render':
         specifier: workspace:*
         version: link:../../packages/silex-render
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@marsidev/react-turnstile':
         specifier: ^1.4.1
         version: 1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/extension-link':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-placeholder':
+        specifier: ^2.8.0
+        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-underline':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
+      '@tiptap/pm':
+        specifier: ^2.8.0
+        version: 2.26.4
+      '@tiptap/react':
+        specifier: ^2.8.0
+        version: 2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/starter-kit':
+        specifier: ^2.8.0
+        version: 2.26.4
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
+      tw-animate-css:
+        specifier: ^1.2.0
+        version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -1114,9 +1276,24 @@ importers:
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@elkdonis/live-editor':
+        specifier: workspace:*
+        version: link:../../packages/live-editor
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@elkdonis/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       nanoid:
         specifier: ^5.0.0
         version: 5.1.6
@@ -1145,6 +1322,9 @@ importers:
       eslint-config-next:
         specifier: 16.1.6
         version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      tsx:
+        specifier: ^4.0.0
+        version: 4.20.6
       typescript:
         specifier: ^5
         version: 5.9.2
@@ -1285,6 +1465,160 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  apps/pigeonshoot:
+    dependencies:
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../../packages/auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
+      '@elkdonis/studio-ui':
+        specifier: workspace:*
+        version: link:../../packages/studio-ui
+      '@elkdonis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@elkdonis/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@hookform/resolvers':
+        specifier: ^3.10.0
+        version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
+      '@radix-ui/react-checkbox':
+        specifier: ^1.1.2
+        version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-label':
+        specifier: ^2.1.0
+        version: 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-radio-group':
+        specifier: ^1.2.1
+        version: 1.3.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-select':
+        specifier: ^2.1.2
+        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-separator':
+        specifier: ^1.1.0
+        version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.1.0
+        version: 1.2.4(@types/react@19.2.14)(react@19.1.0)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: ^3.6.0
+        version: 3.6.0
+      exifr:
+        specifier: ^7.1.3
+        version: 7.1.3
+      leaflet:
+        specifier: ^1.9.4
+        version: 1.9.4
+      leaflet.markercluster:
+        specifier: ^1.5.3
+        version: 1.5.3(leaflet@1.9.4)
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+      react-hook-form:
+        specifier: ^7.73.1
+        version: 7.73.1(react@19.1.0)
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
+      tw-animate-css:
+        specifier: ^1.2.0
+        version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.36.0
+        version: 9.36.0
+      '@next/eslint-plugin-next':
+        specifier: ^16.1.6
+        version: 16.1.6
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.13
+      '@types/leaflet':
+        specifier: ^1.9.12
+        version: 1.9.21
+      '@types/leaflet.markercluster':
+        specifier: ^1.5.4
+        version: 1.5.6
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.45.0
+        version: 8.59.3(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      globals:
+        specifier: ^16.4.0
+        version: 16.4.0
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.13
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   packages/auth-client:
     dependencies:
       react:
@@ -1337,6 +1671,9 @@ importers:
       '@elkdonis/auth-client':
         specifier: workspace:*
         version: link:../auth-client
+      '@elkdonis/blog-server':
+        specifier: workspace:*
+        version: link:../blog-server
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../types
@@ -1395,6 +1732,9 @@ importers:
       nanoid:
         specifier: ^5.0.0
         version: 5.1.6
+      next:
+        specifier: ^16.0.0
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -1433,13 +1773,38 @@ importers:
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../live-editor
+      node-html-parser:
+        specifier: ^9.0.3
+        version: 9.0.3
     devDependencies:
       '@swc/core':
         specifier: ^1.15.33
         version: 1.15.33(@swc/helpers@0.5.15)
+      '@types/node':
+        specifier: ^26.4.1
+        version: 26.4.1
       tsup:
         specifier: ^8.0.1
         version: 8.5.0(@swc/core@1.15.33(@swc/helpers@0.5.15))(jiti@2.6.0)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.2)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
+  packages/cms-ui:
+    dependencies:
+      next:
+        specifier: ^15 || ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.51.0)
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       typescript:
         specifier: ^5.3.3
         version: 5.9.2
@@ -1452,6 +1817,9 @@ importers:
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../email
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1578,6 +1946,10 @@ importers:
         version: 5.9.2
 
   packages/live-editor:
+    dependencies:
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
     devDependencies:
       '@types/react':
         specifier: 19.2.14
@@ -1715,6 +2087,9 @@ importers:
 
   packages/silex-render:
     dependencies:
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../auth-server
       '@elkdonis/cms-bindings':
         specifier: workspace:*
         version: link:../cms-bindings
@@ -1727,6 +2102,9 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../nextcloud
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1856,6 +2234,9 @@ importers:
       '@elkdonis/hooks':
         specifier: workspace:*
         version: link:../hooks
+      '@elkdonis/live-editor':
+        specifier: workspace:*
+        version: link:../live-editor
       '@elkdonis/types':
         specifier: workspace:*
         version: link:../types
@@ -1958,6 +2339,9 @@ importers:
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.1.0)
+      react-grid-layout:
+        specifier: ^2.2.4
+        version: 2.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     devDependencies:
       '@types/react':
         specifier: 19.2.14
@@ -2173,6 +2557,28 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
+
+  '@dnd-kit/accessibility@3.1.1':
+    resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
+    peerDependencies:
+      react: '>=16.8.0'
+
+  '@dnd-kit/core@6.3.1':
+    resolution: {integrity: sha512-xkGBRQQab4RLwgXxoqETICr6S5JlogafbhNsidmrkVv2YRs5MLwpjoF2qpiGjQt8S9AoxtIV603s0GIUpY5eYQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@dnd-kit/sortable@8.0.0':
+    resolution: {integrity: sha512-U3jk5ebVXe1Lr7c2wU7SBZjcWdQP+j7peHJfCspnA81enlu88Mgd7CC8Q+pub9ubP7eKVETzJW+IBAhsqbSu/g==}
+    peerDependencies:
+      '@dnd-kit/core': ^6.1.0
+      react: '>=16.8.0'
+
+  '@dnd-kit/utilities@3.2.2':
+    resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   '@emnapi/core@1.5.0':
     resolution: {integrity: sha512-sbP8GzB1WDzacS8fgNPpHlp6C9VZe+SJP3F90W9rLemaQj2PzIuTEl1qDOYQf58YIpyjViI24y9aPWCjEzY2cg==}
@@ -4757,6 +5163,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/geojson@7946.0.16':
+    resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
@@ -4765,6 +5174,12 @@ packages:
 
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+
+  '@types/leaflet.markercluster@1.5.6':
+    resolution: {integrity: sha512-I7hZjO2+isVXGYWzKxBp8PsCzAYCJBc29qBdFpquOCkS7zFDqUsUvkEOyQHedsk/Cy5tocQzf+Ndorm5W9YKTQ==}
+
+  '@types/leaflet@1.9.21':
+    resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
 
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
@@ -4783,6 +5198,9 @@ packages:
 
   '@types/node@20.19.17':
     resolution: {integrity: sha512-gfehUI8N1z92kygssiuWvLiwcbOB3IRktR6hTDgJlXMYh5OvkPSRmgfoBUmfZt+vhwJtX7v1Yw4KvvAf7c5QKQ==}
+
+  '@types/node@26.4.1':
+    resolution: {integrity: sha512-k97ENvZWtvA6yqz5/FS6a7duDgOPEeOQOc2iKS/nY6mX6qJUKtLnWzQS+Xj6tXweyj6ZcTAK2Qecetnvi9nCLA==}
 
   '@types/offscreencanvas@2019.7.3':
     resolution: {integrity: sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A==}
@@ -5202,6 +5620,9 @@ packages:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
 
+  boolbase@1.0.0:
+    resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
+
   brace-expansion@1.1.12:
     resolution: {integrity: sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==}
 
@@ -5381,9 +5802,16 @@ packages:
   crypt@0.0.2:
     resolution: {integrity: sha512-mCxBlsHFYh9C+HVpiEacem8FEBnMXgU9gy4zmNC+SXAZNB/1idgp/aulFJ4FgCi7GPEVbfyng092GqL2k2rmow==}
 
+  css-select@5.2.2:
+    resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
+
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
+
+  css-what@6.2.2:
+    resolution: {integrity: sha512-u/O3vwbptzhMs3L1fQE82ZSLHQQfto5gyZzwteVIEyeaY5Fc7R4dapF/BvRoSYFeqfBk4m0V1Vafq5Pjv25wvA==}
+    engines: {node: '>= 6'}
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
@@ -5862,6 +6290,7 @@ packages:
   eslint@9.34.0:
     resolution: {integrity: sha512-RNCHRX5EwdrESy3Jc9o8ie8Bog+PeYvvSR8sDGoZxNFTvZ4dlxUB3WzQ3bQMztFrSRODGrLLj8g6OFuGY/aiQg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5892,6 +6321,9 @@ packages:
   eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
 
+  exifr@7.1.3:
+    resolution: {integrity: sha512-g/aje2noHivrRSLbAUtBPWFbxKdKhgj/xr1vATDdUXPOFYJlQ62Ft0oy+72V6XLIpDJfHs6gXLbBLAolqOXYRw==}
+
   extend-shallow@2.0.1:
     resolution: {integrity: sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug==}
     engines: {node: '>=0.10.0'}
@@ -5905,6 +6337,9 @@ packages:
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
+
+  fast-equals@4.0.3:
+    resolution: {integrity: sha512-G3BSX9cfKttjr+2o1O22tYMLq0DPluZnYtq1rXumE1SpL/F/SLIfHx08WYQoWSIpeMYf8sRbJ8++71+v6Pnxfg==}
 
   fast-glob@3.3.1:
     resolution: {integrity: sha512-kNFPyjhh5cKjrUltxs+wFx+ZkbRaxxmZ+X0ZU31SOsxCEtP9VPgtq2teZw1DebupL5GmDaNQ6yKMMVcM41iqDg==}
@@ -6477,6 +6912,14 @@ packages:
   leac@0.6.0:
     resolution: {integrity: sha512-y+SqErxb8h7nE/fiEX07jsbuhrpO9lL8eca7/Y1nuWV2moNlXhyd59iDGcRf6moVyDMbmTNzL40SUyrFU/yDpg==}
 
+  leaflet.markercluster@1.5.3:
+    resolution: {integrity: sha512-vPTw/Bndq7eQHjLBVlWpnGeLa3t+3zGiuM7fJwCkiMFq+nmRuG3RI3f7f4N4TDX7T4NpbAXpR2+NTRSEGfCSeA==}
+    peerDependencies:
+      leaflet: ^1.3.1
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
+
   leva@0.9.36:
     resolution: {integrity: sha512-mzzxZzpPdN1bugl6LXCLgK5PS4rU1NdRX7CWnXjVelK49OP8bdoMHhDDweo/uWIk4UHgwpO1sj9CD5Dai+Pvrg==}
     peerDependencies:
@@ -6884,6 +7327,9 @@ packages:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  node-html-parser@9.0.3:
+    resolution: {integrity: sha512-iaQ9rokcYNp99IY0h82q04Wtc27SObRT+OEytdJh0bFv2IN0fypnU63KUNVavkPSiwsmIELG1eUenajGhzrvpg==}
+
   node-releases@2.0.21:
     resolution: {integrity: sha512-5b0pgg78U3hwXkCM8Z9b2FJdPZlr9Psr9V2gQPESdGHqbntyFJKFW4r5TeWGFzafGY3hzs1JC62VEQMbl1JFkw==}
 
@@ -6897,6 +7343,9 @@ packages:
   normalize-range@0.1.2:
     resolution: {integrity: sha512-bdok/XvKII3nUpklnV6P2hxtMNrCboOjAcyBuQnWEhO665FwrSNRxU+AqpsyvO6LgGYPspN+lu5CLtw4jPRKNA==}
     engines: {node: '>=0.10.0'}
+
+  nth-check@2.1.1:
+    resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -7229,6 +7678,12 @@ packages:
     peerDependencies:
       react: ^19.1.0
 
+  react-draggable@4.7.1:
+    resolution: {integrity: sha512-wa3tzfFnYt3yaZLuyU58fl1TNunfWfBekDgWhZA1+gb2jnp42wZ0ymuopR6M5kqDYmm4hKmzGlcKWjZf3Zb6RQ==}
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
+
   react-dropzone@12.1.0:
     resolution: {integrity: sha512-iBYHA1rbopIvtzokEX4QubO6qk5IF/x3BtKGu74rF2JkQDXnwC4uO/lHKpaw4PJIV6iIAYOlwLv2FpiGyqHNog==}
     engines: {node: '>= 10.13'}
@@ -7240,6 +7695,12 @@ packages:
     engines: {node: '>= 10.13'}
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
+
+  react-grid-layout@2.2.4:
+    resolution: {integrity: sha512-Eb57FsgOMYOfsUGrMI1ku/FFR+dPNPrE8qo+3hwZubpqVSy4GO9v52DeX50Tl3JDYAlCypP4rmw7Vrqk/zOIvA==}
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
 
   react-hook-form@7.73.1:
     resolution: {integrity: sha512-VAfVYOPcx3piiEVQy95vyFmBwbVUsP/AUIN+mpFG8h11yshDd444nn0VyfaGWSRnhOLVgiDu7HIuBtAIzxn9dA==}
@@ -7278,6 +7739,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-resizable@3.2.0:
+    resolution: {integrity: sha512-3NKQ0SLZV7rs3LQHeXlOzDSRQfFrkX6TVet77/Qk03zqiZyee37b7N8/gwDJAA8UUjRz7PdWCCy49hcso45SMQ==}
+    peerDependencies:
+      react: '>= 16.3'
+      react-dom: '>= 16.3'
 
   react-style-singleton@2.2.3:
     resolution: {integrity: sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ==}
@@ -7351,6 +7818,9 @@ packages:
 
   requires-port@1.0.0:
     resolution: {integrity: sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==}
+
+  resize-observer-polyfill@1.5.1:
+    resolution: {integrity: sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==}
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -7495,6 +7965,7 @@ packages:
 
   sliced@1.0.1:
     resolution: {integrity: sha512-VZBmZP8WU3sMOZm1bdgTadsQbcscK0UM8oKxKVBs4XAhUo2Xxzm/OFMGBkPusxw9xL3Uy8LrzEqGqJhclsr0yA==}
+    deprecated: Unsupported
 
   sonner@2.0.7:
     resolution: {integrity: sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w==}
@@ -7876,6 +8347,9 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
   undici@7.27.1:
     resolution: {integrity: sha512-UDdpiex+mzigiyrXrGbiUaF4HzTNhKbh2vRNFaTMzcqmLIPrZxaCtwo/1TMSuWoM1Xz3WiTo9KdgI3kRqYzJGg==}
     engines: {node: '>=20.18.1'}
@@ -7960,6 +8434,7 @@ packages:
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uvu@0.5.6:
@@ -8356,6 +8831,31 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.0': {}
 
+  '@dnd-kit/accessibility@3.1.1(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      tslib: 2.8.1
+
+  '@dnd-kit/core@6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@dnd-kit/accessibility': 3.1.1(react@19.1.0)
+      '@dnd-kit/utilities': 3.2.2(react@19.1.0)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      tslib: 2.8.1
+
+  '@dnd-kit/sortable@8.0.0(@dnd-kit/core@6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@dnd-kit/utilities': 3.2.2(react@19.1.0)
+      react: 19.1.0
+      tslib: 2.8.1
+
+  '@dnd-kit/utilities@3.2.2(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      tslib: 2.8.1
+
   '@emnapi/core@1.5.0':
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
@@ -8617,8 +9117,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@img/colour@1.0.0':
-    optional: true
+  '@img/colour@1.0.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -10891,6 +11390,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/geojson@7946.0.16': {}
+
   '@types/hast@3.0.4':
     dependencies:
       '@types/unist': 3.0.3
@@ -10898,6 +11399,14 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
+
+  '@types/leaflet.markercluster@1.5.6':
+    dependencies:
+      '@types/leaflet': 1.9.21
+
+  '@types/leaflet@1.9.21':
+    dependencies:
+      '@types/geojson': 7946.0.16
 
   '@types/linkify-it@5.0.0': {}
 
@@ -10917,6 +11426,10 @@ snapshots:
   '@types/node@20.19.17':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/node@26.4.1':
+    dependencies:
+      undici-types: 8.3.0
 
   '@types/offscreencanvas@2019.7.3': {}
 
@@ -11375,6 +11888,8 @@ snapshots:
 
   binary-extensions@2.3.0: {}
 
+  boolbase@1.0.0: {}
+
   brace-expansion@1.1.12:
     dependencies:
       balanced-match: 1.0.2
@@ -11540,10 +12055,20 @@ snapshots:
 
   crypt@0.0.2: {}
 
+  css-select@5.2.2:
+    dependencies:
+      boolbase: 1.0.0
+      css-what: 6.2.2
+      domhandler: 5.0.3
+      domutils: 3.2.2
+      nth-check: 2.1.1
+
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
+
+  css-what@6.2.2: {}
 
   csstype@3.2.3: {}
 
@@ -12297,6 +12822,8 @@ snapshots:
 
   eventemitter3@4.0.7: {}
 
+  exifr@7.1.3: {}
+
   extend-shallow@2.0.1:
     dependencies:
       is-extendable: 0.1.1
@@ -12309,6 +12836,8 @@ snapshots:
   fast-deep-equal@2.0.1: {}
 
   fast-deep-equal@3.1.3: {}
+
+  fast-equals@4.0.3: {}
 
   fast-glob@3.3.1:
     dependencies:
@@ -12878,6 +13407,12 @@ snapshots:
 
   leac@0.6.0: {}
 
+  leaflet.markercluster@1.5.3(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+
+  leaflet@1.9.4: {}
+
   leva@0.9.36(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@radix-ui/react-portal': 1.0.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -13357,6 +13892,11 @@ snapshots:
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
 
+  node-html-parser@9.0.3:
+    dependencies:
+      css-select: 5.2.2
+      entities: 8.0.0
+
   node-releases@2.0.21: {}
 
   non-layered-tidy-tree-layout@2.0.2: {}
@@ -13364,6 +13904,10 @@ snapshots:
   normalize-path@3.0.0: {}
 
   normalize-range@0.1.2: {}
+
+  nth-check@2.1.1:
+    dependencies:
+      boolbase: 1.0.0
 
   object-assign@4.1.1: {}
 
@@ -13776,6 +14320,13 @@ snapshots:
       react: 19.1.0
       scheduler: 0.26.0
 
+  react-draggable@4.7.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      clsx: 2.1.1
+      prop-types: 15.8.1
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+
   react-dropzone@12.1.0(react@19.1.0):
     dependencies:
       attr-accept: 2.2.5
@@ -13789,6 +14340,17 @@ snapshots:
       file-selector: 2.1.2
       prop-types: 15.8.1
       react: 19.1.0
+
+  react-grid-layout@2.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      clsx: 2.1.1
+      fast-equals: 4.0.3
+      prop-types: 15.8.1
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-draggable: 4.7.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react-resizable: 3.2.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      resize-observer-polyfill: 1.5.1
 
   react-hook-form@7.73.1(react@19.1.0):
     dependencies:
@@ -13823,6 +14385,13 @@ snapshots:
       use-sidecar: 1.1.3(@types/react@19.2.14)(react@19.1.0)
     optionalDependencies:
       '@types/react': 19.2.14
+
+  react-resizable@3.2.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      prop-types: 15.8.1
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-draggable: 4.7.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   react-style-singleton@2.2.3(@types/react@19.2.14)(react@19.1.0):
     dependencies:
@@ -13906,6 +14475,8 @@ snapshots:
   require-from-string@2.0.2: {}
 
   requires-port@1.0.0: {}
+
+  resize-observer-polyfill@1.5.1: {}
 
   resolve-from@4.0.0: {}
 
@@ -14080,7 +14651,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -14532,6 +15102,8 @@ snapshots:
       which-boxed-primitive: 1.1.1
 
   undici-types@6.21.0: {}
+
+  undici-types@8.3.0: {}
 
   undici@7.27.1: {}
 

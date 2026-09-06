@@ -12,6 +12,9 @@ type Props = {
   kind?: MediaKind;
   value?: string;
   onChange: (url: string | undefined) => void;
+  /** Nextcloud subfolder under the org, e.g. "directory" for a business
+   *  logo. Defaults to the route's original "workshops" behaviour. */
+  context?: string;
 };
 
 const CONFIG: Record<MediaKind, { accept: string; label: string; hint: string; maxMb: number; Icon: React.ElementType }> = {
@@ -31,7 +34,7 @@ const CONFIG: Record<MediaKind, { accept: string; label: string; hint: string; m
   },
 };
 
-export function CoverImageUpload({ orgSlug, kind = "image", value, onChange }: Props) {
+export function CoverImageUpload({ orgSlug, kind = "image", value, onChange, context }: Props) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -46,6 +49,7 @@ export function CoverImageUpload({ orgSlug, kind = "image", value, onChange }: P
       const form = new FormData();
       form.append("file", file);
       form.append("orgSlug", orgSlug);
+      if (context) form.append("context", context);
       const res = await fetch("/api/upload/image", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) {

@@ -111,3 +111,40 @@ export function sanitizeRichText(html: string | null | undefined): string {
     FORBID_ATTR: ['onerror', 'onload', 'onclick'],
   });
 }
+
+/**
+ * Sanitize a compiled post body: the rich-text subset above, plus the
+ * <eac-embed> markers that renderSilexHtmlWithEmbeds swaps for live
+ * components.
+ *
+ * Why a third profile rather than reusing one of the existing two:
+ *
+ *   sanitizeRichText   strips <eac-embed> as an unknown element, so every
+ *                      component in a post would silently vanish.
+ *   sanitizeSilexHtml  keeps embeds but opens the allowlist up to full-page
+ *                      design markup (layout containers, positioning, fonts).
+ *                      That breadth is right for a Silex-published site and
+ *                      much too wide for a blog post.
+ *
+ * A marker carries no content of its own — the renderer replaces the whole
+ * element — so only the attributes that select and configure a component need
+ * to survive. Everything inside a marker is discarded downstream anyway.
+ */
+export function sanitizePostBody(html: string | null | undefined): string {
+  if (!html) return '';
+  registerHooks();
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [...ALLOWED_TAGS, 'eac-embed'],
+    ALLOWED_ATTR,
+    ADD_ATTR: ['target'],
+    ALLOW_DATA_ATTR: true,
+    FORBID_ATTR: ['onerror', 'onload', 'onclick'],
+    // <eac-embed> is a custom element; without this DOMPurify drops it
+    // regardless of the allowlist.
+    CUSTOM_ELEMENT_HANDLING: {
+      tagNameCheck: /^eac-embed$/,
+      attributeNameCheck: /^data-[a-z-]+$/,
+      allowCustomizedBuiltInElements: false,
+    },
+  });
+}

@@ -1,3 +1,11 @@
+export {
+  EMBED_COMPONENTS,
+  findComponentByTag,
+  findComponentById,
+  componentToEmbedMarker,
+} from "./components";
+export type { EmbedComponent, EmbedProp, EmbedPropKind } from "./components";
+
 export { SilexSite, SilexSiteBySlug } from "./silex-site";
 export { renderSilexHtmlWithEmbeds } from "./embeds";
 export { InquiryForm } from "./inquiry-form";

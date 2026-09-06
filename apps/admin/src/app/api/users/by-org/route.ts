@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@elkdonis/db';
 import { getServerSession, isAdmin } from '@elkdonis/auth-server';
+import { listOrgMembers } from '@elkdonis/services';
 
 /**
  * GET /api/users/by-org?org=inner_group
@@ -41,22 +42,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Get users for specific org
-    const users = await db`
-      SELECT
-        u.id,
-        u.email,
-        u.display_name,
-        u.is_admin,
-        u.nextcloud_synced,
-        u.nextcloud_user_id,
-        u.created_at,
-        uo.role,
-        uo.joined_at
-      FROM users u
-      JOIN user_organizations uo ON u.id = uo.user_id
-      WHERE uo.org_id = ${orgId}
-      ORDER BY uo.joined_at DESC
-    `;
+    const members = await listOrgMembers(orgId);
+    const users = members.map((m) => ({
+      id: m.userId,
+      email: m.email,
+      display_name: m.displayName,
+      is_admin: m.isAdmin,
+      nextcloud_synced: m.nextcloudSynced,
+      nextcloud_user_id: m.nextcloudUserId,
+      created_at: m.createdAt,
+      role: m.role,
+      joined_at: m.joinedAt,
+    }));
 
     return NextResponse.json({ users, orgId });
   } catch (error: any) {

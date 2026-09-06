@@ -7,16 +7,22 @@ import type { ContentDraft } from "../types";
 interface RsvpTierProps {
   draft: ContentDraft;
   onChange: (patch: Partial<ContentDraft>) => void;
+  /** Skip the "Open RSVPs" switch — for threads (like workshops) that are
+   *  always RSVP-able via their own join flow, where the toggle would be
+   *  inert (the backend forces isRsvpEnabled regardless of this field). */
+  hideEnabledToggle?: boolean;
 }
 
-export function RsvpTier({ draft, onChange }: RsvpTierProps) {
+export function RsvpTier({ draft, onChange, hideEnabledToggle }: RsvpTierProps) {
   return (
     <Stack gap="sm">
-      <Switch
-        label="Open RSVPs"
-        checked={!!draft.isRsvpEnabled}
-        onChange={(e) => onChange({ isRsvpEnabled: e.currentTarget.checked })}
-      />
+      {!hideEnabledToggle && (
+        <Switch
+          label="Open RSVPs"
+          checked={!!draft.isRsvpEnabled}
+          onChange={(e) => onChange({ isRsvpEnabled: e.currentTarget.checked })}
+        />
+      )}
       <Group grow>
         <NumberInput
           label="Attendee cap"

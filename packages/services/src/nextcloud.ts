@@ -280,12 +280,18 @@ export async function createTalkRoom(
   type: 'group' | 'public' = 'group'
 ): Promise<string | null> {
   try {
-    const response = await fetch(`${NEXTCLOUD_URL}/ocs/v2.php/apps/spreed/api/v4/room`, {
+    // `format=json` is load-bearing: OCS answers in XML by default, so without
+    // it response.json() throws, the catch below swallows it, and this returns
+    // null as though Nextcloud had refused. The room is actually created — it
+    // just gets orphaned, silently. (The shares call below avoids this by
+    // reading the response as text.)
+    const response = await fetch(`${NEXTCLOUD_URL}/ocs/v2.php/apps/spreed/api/v4/room?format=json`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
         'OCS-APIRequest': 'true',
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         roomType: type === 'public' ? 3 : 2,

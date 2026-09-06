@@ -9,6 +9,7 @@ const KIND_COLOR: Record<ThreadKind, string> = {
   meeting: "ember",
   event: "orange",
   workshop: "grape",
+  service: "teal",
 };
 
 const KIND_LABEL: Record<ThreadKind, string> = {
@@ -16,6 +17,7 @@ const KIND_LABEL: Record<ThreadKind, string> = {
   meeting: "Meeting",
   event: "Event",
   workshop: "Workshop",
+  service: "Service",
 };
 
 interface KindBadgeProps {

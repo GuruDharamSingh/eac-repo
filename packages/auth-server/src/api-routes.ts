@@ -184,8 +184,6 @@ export interface SignupOrgOptions {
    * pass their own org so signups stay scoped to that group.
    */
   defaultOrgs?: { id: string; role: string }[];
-  /** Org the stub artist profile is created under. Defaults to 'elkdonis'. */
-  profileOrgId?: string;
 }
 
 export async function handleSignup(
@@ -283,16 +281,14 @@ export async function handleSignup(
     // SSO account-creation gate can actually be passed (a live browser
     // session), so there's nothing to trigger here at signup time itself.
 
-    // Assign to orgs + create stub artist profile — all soft-fail
+    // Assign to orgs + create a draft org_profiles row per org — all soft-fail
     try {
       const { db } = await import('@elkdonis/db');
-      const resolvedName = displayName || email.split('@')[0];
 
       const defaultOrgs = options.defaultOrgs ?? [
         { id: 'elkdonis', role: 'member' },
         { id: 'inner_group', role: 'member' },
       ];
-      const profileOrgId = options.profileOrgId ?? 'elkdonis';
 
       for (const org of defaultOrgs) {
         await db`
@@ -300,15 +296,20 @@ export async function handleSignup(
           VALUES (${data.user.id}, ${org.id}, ${org.role}, NOW())
           ON CONFLICT (user_id, org_id) DO NOTHING
         `;
+        // is_public defaults false — same "not on the roster until someone
+        // publishes it" behaviour the old is_stub artist_profiles row had,
+        // but per-org now instead of capped at one org for life. The
+        // public.users row itself already exists (handle_new_user trigger,
+        // migration 052), so there's no separate profile row for the
+        // identity — just the org's publish switch.
+        await db`
+          INSERT INTO org_profiles (org_id, user_id)
+          VALUES (${org.id}, ${data.user.id})
+          ON CONFLICT (org_id, user_id) DO NOTHING
+        `;
       }
 
-      await db`
-        INSERT INTO artist_profiles (user_id, org_id, display_name, is_stub)
-        VALUES (${data.user.id}, ${profileOrgId}, ${resolvedName}, true)
-        ON CONFLICT (user_id) DO NOTHING
-      `;
-
-      console.log(`[Signup] ✅ Org memberships + stub profile created for ${email}`);
+      console.log(`[Signup] ✅ Org memberships + draft org profiles created for ${email}`);
     } catch (dbError) {
       console.error('[Signup] DB post-signup error:', dbError);
     }
@@ -417,7 +418,20 @@ export async function handleGetSession(request: NextRequest) {
  * the code for tokens via GoTrue's /token?grant_type=pkce endpoint, sets the
  * session cookies, then redirects to `eac_pkce_dest` (or /).
  */
-export async function handleOAuthCallback(request: NextRequest): Promise<NextResponse> {
+export interface OAuthCallbackOptions {
+  /**
+   * Orgs a FRESH Google signup joins. Defaults to the EAC network
+   * (elkdonis + inner_group), same as handleSignup's default — per-org apps
+   * (e.g. ifac.com) pass their own org so a first-time Google sign-in scopes
+   * to that group instead of the wider network.
+   */
+  defaultOrgs?: { id: string; role: string }[];
+}
+
+export async function handleOAuthCallback(
+  request: NextRequest,
+  options: OAuthCallbackOptions = {}
+): Promise<NextResponse> {
   // Behind NPM the internal request.url is http://0.0.0.0:<port>/..., so we
   // rebuild the public origin from forwarded headers before any redirect.
   const fwdProto = request.headers.get('x-forwarded-proto') ?? 'https';
@@ -506,7 +520,7 @@ export async function handleOAuthCallback(request: NextRequest): Promise<NextRes
 
     try {
       const { db } = await import('@elkdonis/db');
-      const defaultOrgs = [
+      const defaultOrgs = options.defaultOrgs ?? [
         { id: 'elkdonis', role: 'member' },
         { id: 'inner_group', role: 'member' },
       ];
@@ -516,13 +530,13 @@ export async function handleOAuthCallback(request: NextRequest): Promise<NextRes
           VALUES (${authUser.id}, ${org.id}, ${org.role}, NOW())
           ON CONFLICT (user_id, org_id) DO NOTHING
         `;
+        await db`
+          INSERT INTO org_profiles (org_id, user_id)
+          VALUES (${org.id}, ${authUser.id})
+          ON CONFLICT (org_id, user_id) DO NOTHING
+        `;
       }
-      await db`
-        INSERT INTO artist_profiles (user_id, org_id, display_name, is_stub)
-        VALUES (${authUser.id}, 'elkdonis', ${resolvedName}, true)
-        ON CONFLICT (user_id) DO NOTHING
-      `;
-      console.log(`[oauth] ✅ Org memberships + stub profile created for ${authUser.email}`);
+      console.log(`[oauth] ✅ Org memberships + draft org profiles created for ${authUser.email}`);
     } catch (dbError) {
       console.error('[oauth] DB post-signup error:', dbError);
     }

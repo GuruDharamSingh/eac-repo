@@ -2,8 +2,10 @@
  * Silex client config — the idiomatic Silex extension surface.
  *
  * Loaded via the SILEX_CLIENT_CONFIG env var. Silex serves this file at
- * /.silex-client.js and the @silexlabs/silex-plugins runtime imports it
- * with dynamic import(), reading our default export as the plugin.
+ * /silex.js (constants.CLIENT_CONFIG_FILE_NAME) and the @silexlabs/silex-plugins
+ * runtime imports it with dynamic import(), reading our default export as the
+ * plugin. Verified against Silex 3.9: the client still emits the
+ * silex:grapesjs:start / silex:grapesjs:end / silex:startup:end hooks below.
  *
  * Responsibilities:
  *   1. Push our editor stylesheet into GrapesJS canvas.styles BEFORE init,

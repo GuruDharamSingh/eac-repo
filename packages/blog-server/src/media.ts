@@ -43,7 +43,13 @@ async function uploadFile(
         'Authorization': `Basic ${auth}`,
         'Content-Type': contentType,
       },
-      body: file,
+      // Node's Buffer is a Uint8Array subclass, but it is not part of the
+      // BodyInit union these fetch types resolve to. Blob is, and Node's fetch
+      // accepts it, so normalise before sending.
+      // `new Uint8Array(buffer)` copies into a plain ArrayBuffer. The
+      // zero-copy view is typed ArrayBufferLike, which BlobPart rejects
+      // because it might be a SharedArrayBuffer.
+      body: Buffer.isBuffer(file) ? new Blob([new Uint8Array(file)]) : file,
     });
     return response.ok;
   } catch (error) {

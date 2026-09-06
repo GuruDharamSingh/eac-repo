@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile, getUploadPath, getProxyFileUrl } from '@elkdonis/services';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
-import { getServerSession } from '@elkdonis/auth-server';
+import { getApiEditor } from '@/lib/auth';
 import { siteConfig } from '@/config/site';
 import type { MeetingVisibility } from '@elkdonis/types';
 
@@ -57,12 +57,14 @@ const MEDIA_CONFIG: Array<{
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user || !siteConfig.ownerEmails.includes(session.user.email)) {
+    // Owner/guide only, resolved from user_organizations rather than the
+    // hardcoded email allowlist this route used before the rebuild.
+    const editor = await getApiEditor();
+    if (!editor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.db_user_id ?? session.user.id;
+    const userId = editor.userId;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

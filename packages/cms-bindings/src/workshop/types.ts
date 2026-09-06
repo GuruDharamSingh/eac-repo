@@ -17,9 +17,10 @@ export type GalleryImage = {
  * All data needed to render a workshop page template.
  * Combines fields from: threads, workshop_pages, artist_profiles.
  *
- * This is the canonical contract between the CMS data layer and the
- * template rendering layer. Any consumer (arts-collective, inner-gathering,
- * future apps) should hydrate this type before calling renderWorkshopTemplate.
+ * This is the canonical contract between the CMS data layer and the template
+ * rendering layer. A consumer hydrates this type, wraps it with
+ * `toWorkshopContext`, and passes it to the binding engine
+ * (`applyManifestBindings`).
  */
 export type WorkshopPageData = {
   // From threads
@@ -65,21 +66,6 @@ export type WorkshopPageData = {
   facilitator_bio: string | null;
   facilitator_photo: string | null;
   facilitator_pronouns: string | null;
-};
-
-/**
- * Pre-read HTML strings for each workshop template section.
- * The caller (app) handles filesystem reading; this package handles rendering.
- */
-export type WorkshopTemplates = {
-  nav: string;
-  hero: string;
-  detailStrip: string;
-  about: string;
-  facilitator: string;
-  schedule: string;
-  gallery: string;
-  testimonials: string;
-  related: string;
-  register: string;
+  /** artist_profiles.role_title — e.g. "Writer & workshop facilitator". */
+  facilitator_role: string | null;
 };

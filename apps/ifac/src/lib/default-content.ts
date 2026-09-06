@@ -22,7 +22,7 @@ export const defaultGalleryItems: GalleryItem[] = [
     artist: "Andre Pace",
     medium: "People's Artist campaign",
     region: "United States",
-    imageUrl: "https://ifacgroup.com/images/voteandre.png",
+    imageUrl: "/ifac/artists/andrepace/voteandre.png",
     linkUrl: "https://peoplesartist.org/2026/andre-pace/",
     status: "Campaign link",
   },
@@ -85,7 +85,7 @@ export const defaultSiteContent: IfacSiteContent = {
     eyebrow: "IFAC",
     title: siteConfig.orgName,
     subtitle: siteConfig.tagline,
-    imageUrl: "https://ifacgroup.com/images/img-banner.jpg",
+    imageUrl: "/ifac/images/img-banner.jpg",
     primaryCta: "Join the collector list",
     secondaryCta: "View gallery",
   },
@@ -114,8 +114,8 @@ export const defaultSiteContent: IfacSiteContent = {
   },
   blog: {
     title: "IFAC BLOG",
-    href: "https://ifacgroupteam.blogspot.com/",
-    embedUrl: "https://ifacgroupteam.blogspot.com/",
+    href: "https://ifacgroup.blogspot.com/",
+    embedUrl: "https://ifacgroup.blogspot.com/",
   },
   videos: {
     title: "IFAC VIDEOS",
@@ -124,7 +124,7 @@ export const defaultSiteContent: IfacSiteContent = {
   },
   social: {
     title: "IFAC SOCIAL",
-    iconUrl: "https://ifacgroup.com/images/socialicons.png",
+    iconUrl: "/ifac/images/socialshort.png",
     links: defaultSocialLinks,
   },
   embeds: {

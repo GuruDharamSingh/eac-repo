@@ -1,10 +1,58 @@
 import type { DossierProfileData, DossierOperation, DossierChannel } from "./types";
-import {
-  setTextTrait,
-  setDivTrait,
-  setHrefTrait,
-  setSrcTrait,
-} from "../workshop/render";
+
+// ─── regex trait setters ────────────────────────────────────────────────────
+// Inlined from the former workshop/render.ts (deleted 2026-09-06 when the
+// workshop template moved to the binding engine). The dossier template still
+// uses the regex approach pending its own migration to a manifest `bindings`
+// map — see SILEX_3.9_UPGRADE_BRIEF.md "Phase 1 follow-ups".
+
+function reEsc(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Replace the text content of a leaf element carrying `data-trait="name"`. */
+function setTextTrait(html: string, trait: string, value: string): string {
+  if (!value) return html;
+  const tag = `(?:span|h1|h2|h3|h4|h5|h6|p|dd|dt|li|a|button|label)`;
+  return html.replace(
+    new RegExp(`(<${tag}\\b[^>]*\\bdata-trait="${reEsc(trait)}"[^>]*>)[\\s\\S]*?(<\\/${tag}>)`, "g"),
+    `$1${esc(value)}$2`
+  );
+}
+
+/** Replace the innerHTML of a div carrying `data-trait="name"`. */
+function setDivTrait(html: string, trait: string, value: string): string {
+  if (!value) return html;
+  return html.replace(
+    new RegExp(`(<div\\b[^>]*\\bdata-trait="${reEsc(trait)}"[^>]*>)[\\s\\S]*?(<\\/div>)`, "g"),
+    (_, open, close) => `${open}${value}${close}`
+  );
+}
+
+/** Replace the href on anchors carrying `data-href-trait="name"`. */
+function setHrefTrait(html: string, trait: string, href: string): string {
+  if (!href) return html;
+  const safe = escAttr(href);
+  let out = html.replace(
+    new RegExp(`(data-href-trait="${reEsc(trait)}"[^>]*)\\bhref="[^"]*"`, "g"),
+    `$1 href="${safe}"`
+  );
+  out = out.replace(
+    new RegExp(`(\\bhref="[^"]*"[^>]*\\bdata-href-trait="${reEsc(trait)}")`, "g"),
+    (match) => match.replace(/href="[^"]*"/, `href="${safe}"`)
+  );
+  return out;
+}
+
+/** Replace the src on img elements carrying `data-trait="name"`. */
+function setSrcTrait(html: string, trait: string, src: string): string {
+  if (!src) return html;
+  const safe = escAttr(src);
+  return html.replace(
+    new RegExp(`(<img\\b[^>]*\\bdata-trait="${reEsc(trait)}"[^>]*\\bsrc=")[^"]*"`, "g"),
+    `$1${safe}"`
+  );
+}
 
 // ─── escaping ───────────────────────────────────────────────────────────────
 

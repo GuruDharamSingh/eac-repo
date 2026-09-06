@@ -1,16 +1,14 @@
-import { getSiteContent, getUpcomingEvents, formatEventDate } from "@/lib/data";
+import { getSiteContent } from "@/lib/data";
 import { listDirectory } from "@/lib/directory";
 import { SignupForm } from "@/components/signup-form";
-import { RsvpForm } from "@/components/rsvp-form";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { GalleryItem, SiteLink } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [content, events, directoryArtists, directoryDealers] = await Promise.all([
+  const [content, directoryArtists, directoryDealers] = await Promise.all([
     getSiteContent(),
-    getUpcomingEvents(),
     listDirectory("artist"),
     listDirectory("dealer"),
   ]);
@@ -68,7 +66,7 @@ export default async function HomePage() {
             ))}
           </div>
           <a className="more-videos" href={content.videos.playlistUrl} target="_blank" rel="noreferrer">
-            <img src="https://ifacgroup.com/images/morevideos1.png" alt="More IFAC videos" />
+            More IFAC videos &rarr;
           </a>
         </section>
 
@@ -77,21 +75,6 @@ export default async function HomePage() {
           <img className="social-icons-strip" src={content.social.iconUrl} alt="IFAC social media" />
           <div className="directory-links social-links">
             {content.social.links.map((link) => <DirectoryLink key={link.href} link={link} />)}
-          </div>
-        </section>
-
-        <section id="events" className="ifac-panel live-panel">
-          <h2>{content.rsvp.title}</h2>
-          <p>{content.rsvp.body}</p>
-          <RsvpForm events={events} />
-          <div className="event-list">
-            {events.map((event) => (
-              <article className="event-card" key={event.id}>
-                <strong>{event.title}</strong>
-                <span>{formatEventDate(event.scheduled_at)}</span>
-                <span>{event.location || "Location TBA"} / {event.rsvp_count} RSVP</span>
-              </article>
-            ))}
           </div>
         </section>
 

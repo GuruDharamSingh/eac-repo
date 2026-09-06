@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
+    "@elkdonis/live-editor",
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
     "@elkdonis/cms-bindings",

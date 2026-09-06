@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-server",
     "@elkdonis/three",
     "@elkdonis/silex-render",
+    "@elkdonis/live-editor",
+    "@elkdonis/cms-bindings",
+    "@elkdonis/cms-ui",
     "@elkdonis/utils",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick up the stray

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Avatar,
   Badge,
@@ -10,42 +11,30 @@ import {
   Divider,
   Group,
   Paper,
-  Image,
-  Progress,
   Stack,
-  Tabs,
   Text,
-  ThemeIcon,
   Title,
-  Tooltip,
   rem,
 } from "@mantine/core";
 import {
+  Archive,
   ArrowLeft,
   BookOpen,
-  Calendar,
-  Clock,
-  ExternalLink,
-  FileText,
-  Link as LinkIcon,
-  Lock,
   MessageCircle,
   Pencil,
-  Play,
   Sparkles,
   Users,
-  Video,
 } from "lucide-react";
 import Link from "next/link";
-import { sanitizeRichText } from "@elkdonis/utils";
+import { useThreadRsvp } from "@elkdonis/hooks";
 import { CommentSection } from "@/components/comment-section";
 import { JoinWorkshopModal } from "@/components/join-workshop-modal";
-import { WorkshopOwnerEditor } from "@/components/workshop-owner-editor";
-import { WorkshopMaterials } from "@elkdonis/ui";
+import { WorkshopSectionsNav } from "@/components/workshop-sections-nav";
+import { sessionStatus } from "@/lib/workshop-session-status";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Resource {
+export interface Resource {
   id: string;
   title: string;
   type: "link" | "pdf" | "video" | "audio" | "doc" | "other";
@@ -54,7 +43,7 @@ interface Resource {
   description?: string;
 }
 
-interface Session {
+export interface Session {
   id: string;
   title: string;
   description?: string;
@@ -66,12 +55,15 @@ interface Session {
   videoConferenceUrl?: string;
   nextcloudTalkToken?: string;
   mediaUrl?: string | null;
+  videoUrl?: string | null;
+  backgroundColor?: string | null;
   resources?: Resource[];
 }
 
 interface Guide {
   displayName: string;
   avatarUrl?: string;
+  guideId?: string;
 }
 
 interface Workshop {
@@ -81,12 +73,17 @@ interface Workshop {
   pitch?: string;
   coverImage?: { url: string; alt?: string };
   bannerImageUrl?: string | null;
+  bannerFocalY?: number | null;
   heroMediaUrl?: string | null;
   heroMediaType?: "image" | "video" | null;
+  heroText?: string | null;
+  backgroundColor?: string | null;
   guide?: Guide;
   organization?: { name: string };
   price?: number;
   attendeeCount?: number;
+  attendeeLimit?: number | null;
+  rsvpDeadline?: string | null;
   sessions?: Session[];
   nextcloudTalkToken?: string;
 }
@@ -100,25 +97,12 @@ interface WorkshopPageProps {
   } | null;
   isEnrolled: boolean;
   isOwner?: boolean;
+  /** Free (or still-pending-payment) RSVPs can self-cancel; a paid enrollment can't. */
+  canCancelRsvp?: boolean;
   replies: any[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Pinned so server-rendered markup matches the client's re-render — the
-// server runs in UTC, so leaving this to the runtime default causes a
-// hydration mismatch on every visitor whose browser isn't also UTC.
-function fmt(date: string | Date, opts: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", ...opts }).format(new Date(date));
-}
-
-function sessionStatus(scheduledAt: string | Date, durationMinutes: number | undefined, now: number): "upcoming" | "live" | "past" {
-  const start = new Date(scheduledAt).getTime();
-  const end = start + (durationMinutes ?? 90) * 60_000;
-  if (now < start) return "upcoming";
-  if (now < end) return "live";
-  return "past";
-}
 
 // `now` is only known on the client (an SSR render can't know the true
 // current time without also causing a hydration mismatch), so this starts
@@ -134,208 +118,73 @@ function useMountedNow(intervalMs = 30_000): number | null {
   return now;
 }
 
-// ─── Resource Row ─────────────────────────────────────────────────────────────
-
-const TYPE_ICON: Record<string, React.ReactNode> = {
-  video: <Video size={14} />,
-  pdf: <FileText size={14} />,
-  doc: <BookOpen size={14} />,
-  link: <LinkIcon size={14} />,
-  audio: <Play size={14} />,
-};
-
-function ResourceRow({ res, isEnrolled }: { res: Resource; isEnrolled: boolean }) {
-  const locked = !res.isPublic && !isEnrolled;
-  return (
-    <Group
-      gap="sm"
-      p="xs"
-      style={{
-        borderRadius: 8,
-        backgroundColor: locked ? "var(--mantine-color-gray-1)" : "rgba(93,73,55,0.07)",
-        cursor: locked ? "not-allowed" : "pointer",
-        opacity: locked ? 0.7 : 1,
-      }}
-      component={locked ? "div" : "a"}
-      href={locked ? undefined : res.url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <ThemeIcon variant="light" color={locked ? "gray" : "orange"} size="sm" radius="xl">
-        {locked ? <Lock size={12} /> : (TYPE_ICON[res.type] ?? <FileText size={12} />)}
-      </ThemeIcon>
-      <Stack gap={0} style={{ flex: 1 }}>
-        <Text size="sm" fw={locked ? 400 : 600} c={locked ? "dimmed" : "#3d1f04"}>
-          {res.title}
-        </Text>
-        {res.description && (
-          <Text size="xs" c="dimmed">{res.description}</Text>
-        )}
-      </Stack>
-      {locked ? (
-        <Badge size="xs" color="gray" variant="outline">Members only</Badge>
-      ) : (
-        <ExternalLink size={12} color="var(--mantine-color-gray-6)" />
-      )}
-    </Group>
-  );
-}
-
-// ─── Module Card ─────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG = {
-  live:     { color: "#c0392b", label: "Live Now",  bg: "#fdf2f2" },
-  upcoming: { color: "#7f5a2f", label: "Upcoming",  bg: "#fffaf0" },
-  past:     { color: "#6b7280", label: "Completed", bg: "#f9fafb" },
-};
-
-/** Tab header: number bubble + title + live indicator. */
-function SessionTabLabel({ session, index, now }: { session: Session; index: number; now: number | null }) {
-  const status = now === null ? "upcoming" : sessionStatus(session.scheduledAt, session.durationMinutes, now);
-  const sc = STATUS_CONFIG[status];
-  return (
-    <Group gap="xs" wrap="nowrap">
-      <Box
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          backgroundColor: sc.color,
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "'Cinzel', serif",
-          fontWeight: 700,
-          fontSize: "0.7rem",
-          flexShrink: 0,
-        }}
-      >
-        {index + 1}
-      </Box>
-      <Text size="sm" fw={600} lineClamp={1} style={{ maxWidth: 140 }}>
-        {session.title || `Session ${index + 1}`}
+/** "Led by {name}" — links to the facilitator's profile when we have their id. */
+function GuideByline({ guide }: { guide: Guide }) {
+  const content = (
+    <Group gap="sm" mt="xs" style={{ width: "fit-content" }}>
+      <Avatar src={guide.avatarUrl} size="sm" radius="xl" color="orange">
+        {guide.displayName[0]}
+      </Avatar>
+      <Text size="sm" c="rgba(255,255,255,0.9)" fs="italic">
+        Led by {guide.displayName}
       </Text>
-      {status === "live" && (
-        <Box w={8} h={8} style={{ borderRadius: "50%", background: "#c0392b", animation: "pulse 2s infinite", flexShrink: 0 }} />
-      )}
     </Group>
   );
-}
-
-/** Tab panel: everything about one session. */
-function SessionPanelContent({ session, isEnrolled, now }: { session: Session; isEnrolled: boolean; now: number | null }) {
-  const status = now === null ? "upcoming" : sessionStatus(session.scheduledAt, session.durationMinutes, now);
-  const sc = STATUS_CONFIG[status];
-  const resources = session.resources ?? [];
-  const hasVideoConf = !!(session.videoConferenceUrl || session.nextcloudTalkToken);
-
+  if (!guide.guideId) return content;
   return (
-    <Paper withBorder radius="md" p="md" style={{ borderLeft: `4px solid ${sc.color}`, background: sc.bg }}>
-      <Stack gap="md">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Stack gap={4}>
-            <Title order={4} style={{ color: "#3d1f04", fontFamily: "'Cinzel', serif" }}>
-              {session.title}
-            </Title>
-            <Group gap="md">
-              <Group gap={4}>
-                <Calendar size={13} color="#9a7650" />
-                <Text size="xs" c="dimmed">
-                  {fmt(session.scheduledAt, { month: "short", day: "numeric", year: "numeric" })}
-                </Text>
-              </Group>
-              {session.durationMinutes && (
-                <Group gap={4}>
-                  <Clock size={13} color="#9a7650" />
-                  <Text size="xs" c="dimmed">{session.durationMinutes} min</Text>
-                </Group>
-              )}
-            </Group>
-          </Stack>
-          {status === "live" && (
-            <Badge color="red" size="sm" variant="filled" style={{ animation: "pulse 2s infinite" }}>
-              ● Live
-            </Badge>
-          )}
-        </Group>
-
-        {session.mediaUrl && (
-          <Image src={session.mediaUrl} alt={session.title} radius="sm" mah={280} fit="cover" />
-        )}
-
-        {session.description && (
-          <Text size="sm" c="#5a3e28" style={{ lineHeight: 1.7 }}>
-            {session.description}
-          </Text>
-        )}
-
-        {/* Video conference button */}
-        {hasVideoConf && (
-          <Group>
-            {session.nextcloudTalkToken ? (
-              <Button
-                component="a"
-                href={`/api/talk/join?token=${session.nextcloudTalkToken}`}
-                leftSection={<Video size={16} />}
-                color="red"
-                variant={isEnrolled ? "filled" : "light"}
-                radius="xl"
-                disabled={!isEnrolled}
-              >
-                {isEnrolled ? "Join Talk Room" : "Enroll to Join"}
-              </Button>
-            ) : session.videoConferenceUrl ? (
-              <Button
-                component="a"
-                href={isEnrolled ? session.videoConferenceUrl : "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                leftSection={<Video size={16} />}
-                variant={isEnrolled ? "filled" : "light"}
-                color="indigo"
-                radius="xl"
-                disabled={!isEnrolled}
-              >
-                {isEnrolled ? "Join Video Session" : "Enroll to Join"}
-              </Button>
-            ) : null}
-
-            {!isEnrolled && (
-              <Text size="xs" c="dimmed" fs="italic">
-                Enroll to access live sessions
-              </Text>
-            )}
-          </Group>
-        )}
-
-        {/* Materials */}
-        {resources.length > 0 && (
-          <Stack gap="xs">
-            <Text size="xs" fw={700} tt="uppercase" lts={1} c="dimmed">
-              Materials
-            </Text>
-            {resources.map((res) => (
-              <ResourceRow key={res.id} res={res} isEnrolled={isEnrolled} />
-            ))}
-          </Stack>
-        )}
-
-        {/* Location for in-person */}
-        {!session.isOnline && session.location && (
-          <Group gap="xs">
-            <Text size="xs" c="dimmed">📍 {session.location}</Text>
-          </Group>
-        )}
-      </Stack>
-    </Paper>
+    <Link href={`/profile/${guide.guideId}`} style={{ textDecoration: "none" }}>
+      {content}
+    </Link>
   );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = false, replies }: WorkshopPageProps) {
+export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = false, canCancelRsvp = false, replies }: WorkshopPageProps) {
+  const router = useRouter();
   const [joinOpen, setJoinOpen] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+
+  const deadlinePassed = Boolean(workshop.rsvpDeadline && new Date(workshop.rsvpDeadline) < new Date());
+  const atCapacity = Boolean(
+    workshop.attendeeLimit != null &&
+    typeof workshop.attendeeCount === "number" &&
+    workshop.attendeeCount >= workshop.attendeeLimit
+  );
+  const rsvpClosed = deadlinePassed || atCapacity;
+
+  // Thread-agnostic RSVP hook (same one meetings use) — seeded from the
+  // server-computed isEnrolled so there's no redundant client-side status
+  // check; only used here for the cancel action + its loading state.
+  const { isLoading: cancelling, rsvp } = useThreadRsvp(workshop.id, {
+    enabled: false,
+    initialIsAttending: isEnrolled,
+  });
+
+  const handleCancelRsvp = async () => {
+    if (!window.confirm("Cancel your RSVP for this workshop?")) return;
+    await rsvp(false);
+    router.refresh();
+  };
+
+  const handleArchive = async () => {
+    if (!window.confirm(`Archive "${workshop.title}"? It'll come off the feed but stay in My Offerings, marked as archived.`)) {
+      return;
+    }
+    setArchiving(true);
+    try {
+      const res = await fetch(`/api/content/${workshop.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "archive" }),
+      });
+      if (!res.ok) throw new Error(`Failed (${res.status})`);
+      router.push("/offerings");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to archive");
+      setArchiving(false);
+    }
+  };
   const sessions = [...(workshop.sessions ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
   const now = useMountedNow();
   const pastCount = now === null ? 0 : sessions.filter((s) => sessionStatus(s.scheduledAt, s.durationMinutes, now) === "past").length;
@@ -346,7 +195,7 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
   return (
     <Box
       style={{
-        background: "var(--eac-bg, #fffaf0)",
+        background: workshop.backgroundColor || "#fffaf0",
         minHeight: "100vh",
         paddingBottom: rem(100),
       }}
@@ -368,6 +217,7 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
               width: "100%",
               height: "100%",
               objectFit: "cover",
+              objectPosition: `center ${workshop.bannerFocalY ?? 50}%`,
               filter: "brightness(0.7)",
             }}
           />
@@ -378,6 +228,27 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
               background: "linear-gradient(to bottom, transparent 40%, rgba(30,15,5,0.75) 100%)",
             }}
           />
+          {/* Compact nav — this hero replaces the site header on this page
+              (see layout-wrapper.tsx), so it carries the minimal "get back
+              to the app" links itself. */}
+          <Group
+            justify="space-between"
+            style={{ position: "absolute", top: rem(16), left: rem(24), right: rem(24) }}
+          >
+            <Link
+              href="/feed"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.9)", textDecoration: "none", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em" }}
+            >
+              <ArrowLeft size={14} />
+              Feed
+            </Link>
+            <Link
+              href={currentUser ? "/account" : "/login"}
+              style={{ color: "rgba(255,255,255,0.9)", textDecoration: "none", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em" }}
+            >
+              {currentUser ? "Account" : "Login"}
+            </Link>
+          </Group>
           <Box
             style={{
               position: "absolute",
@@ -398,14 +269,7 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
               {workshop.title}
             </Title>
             {workshop.guide && (
-              <Group gap="sm" mt="xs">
-                <Avatar src={workshop.guide.avatarUrl} size="sm" radius="xl" color="orange">
-                  {workshop.guide.displayName[0]}
-                </Avatar>
-                <Text size="sm" c="rgba(255,255,255,0.9)" fs="italic">
-                  Led by {workshop.guide.displayName}
-                </Text>
-              </Group>
+              <GuideByline guide={workshop.guide} />
             )}
           </Box>
         </Box>
@@ -454,8 +318,17 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
               {typeof workshop.attendeeCount === "number" && (
                 <Group gap={4}>
                   <Users size={15} color="#9a7650" />
-                  <Text size="sm" c="dimmed">{workshop.attendeeCount} enrolled</Text>
+                  <Text size="sm" c="dimmed">
+                    {workshop.attendeeCount}
+                    {workshop.attendeeLimit ? ` / ${workshop.attendeeLimit}` : ""} enrolled
+                  </Text>
                 </Group>
+              )}
+              {deadlinePassed && !isEnrolled && (
+                <Badge color="gray" variant="outline" size="sm">RSVP closed</Badge>
+              )}
+              {atCapacity && !deadlinePassed && !isEnrolled && (
+                <Badge color="gray" variant="outline" size="sm">Workshop full</Badge>
               )}
             </Group>
             <Group gap="sm">
@@ -469,36 +342,49 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
                     size="xs"
                     leftSection={<Pencil size={13} />}
                   >
-                    Edit content
+                    Edit workshop
                   </Button>
-                  <WorkshopOwnerEditor
-                    workshopId={workshop.id}
-                    initial={{
-                      title: workshop.title,
-                      price: workshop.price,
-                      bannerImageUrl: workshop.bannerImageUrl ?? null,
-                      heroMediaUrl: workshop.heroMediaUrl ?? null,
-                      heroMediaType: workshop.heroMediaType ?? null,
-                      coverImageUrl: workshop.coverImage?.url ?? null,
-                    }}
-                  />
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    size="xs"
+                    loading={archiving}
+                    leftSection={<Archive size={13} />}
+                    onClick={handleArchive}
+                  >
+                    Archive
+                  </Button>
                 </>
               )}
-              <button
-                type="button"
-                className="jwm__submit"
-                onClick={() => setJoinOpen(true)}
-                style={{ margin: 0 }}
-              >
-                <Sparkles size={14} />
-                Join Workshop
-              </button>
+              {!isOwner && isEnrolled && canCancelRsvp && (
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  size="xs"
+                  loading={cancelling}
+                  onClick={handleCancelRsvp}
+                >
+                  Cancel RSVP
+                </Button>
+              )}
+              {!isEnrolled && (
+                <button
+                  type="button"
+                  className="jwm__submit"
+                  onClick={() => setJoinOpen(true)}
+                  disabled={rsvpClosed}
+                  style={{ margin: 0, opacity: rsvpClosed ? 0.5 : 1, cursor: rsvpClosed ? "not-allowed" : "pointer" }}
+                >
+                  <Sparkles size={14} />
+                  Join Workshop
+                </button>
+              )}
             </Group>
           </Group>
 
           {/* ── Main media (hero slot) ── */}
           {workshop.heroMediaUrl && (
-            <Box style={{ borderRadius: 8, overflow: "hidden" }}>
+            <Box style={{ borderRadius: 8, overflow: "hidden", position: "relative" }}>
               {workshop.heroMediaType === "video" ? (
                 <video
                   src={workshop.heroMediaUrl}
@@ -511,6 +397,31 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
                   alt={workshop.title}
                   style={{ width: "100%", display: "block" }}
                 />
+              )}
+              {workshop.heroText && (
+                <Box
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "flex-end",
+                    padding: rem(20),
+                    background: "linear-gradient(to top, rgba(20,10,0,0.6), transparent 55%)",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Title
+                    order={2}
+                    style={{
+                      color: "white",
+                      fontFamily: "'Cinzel', serif",
+                      fontSize: "clamp(1.1rem, 3vw, 1.8rem)",
+                      textShadow: "0 2px 10px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    {workshop.heroText}
+                  </Title>
+                </Box>
               )}
             </Box>
           )}
@@ -535,104 +446,31 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
             }
           />
 
-          {/* ── Progress (enrolled only) ── */}
-          {isEnrolled && sessions.length > 0 && (
-            <Paper withBorder radius="md" p="md" style={{ background: "#fffbf3" }}>
-              <Stack gap="xs">
-                <Group justify="space-between">
-                  <Text size="sm" fw={600} c="#7a5230">Your Progress</Text>
-                  <Text size="xs" c="dimmed">{pastCount} / {sessions.length} sessions</Text>
-                </Group>
-                <Progress value={progressPct} color="orange" radius="xl" size="md" />
-              </Stack>
-            </Paper>
-          )}
-
-          {/* ── Materials (enrolled users + author; server enforces) ── */}
-          {(isEnrolled || isOwner) && <WorkshopMaterials workshopId={workshop.id} />}
-
-          {/* ── Description ── */}
-          {(workshop.pitch || workshop.description) && (
-            <Paper withBorder radius="lg" p="xl" style={{ background: "white" }}>
-              <Text
-                style={{
-                  fontFamily: "'Crimson Text', Georgia, serif",
-                  fontSize: "1.1rem",
-                  lineHeight: 1.75,
-                  color: "#2a1a05",
-                }}
-                dangerouslySetInnerHTML={{ __html: sanitizeRichText(workshop.pitch ?? workshop.description ?? "") }}
-              />
-            </Paper>
-          )}
-
-          {/* ── Nextcloud Talk for the whole workshop ── */}
-          {workshop.nextcloudTalkToken && (
-            <Paper
-              withBorder
-              radius="md"
-              p="md"
-              style={{ background: isEnrolled ? "#fff8ef" : "#f9fafb", borderColor: isEnrolled ? "#e5a84a" : undefined }}
-            >
-              <Group justify="space-between" wrap="nowrap">
-                <Group gap="sm">
-                  <ThemeIcon color="orange" variant="light" radius="xl" size="lg">
-                    <MessageCircle size={18} />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text fw={700} size="sm" c="#7a5230">Workshop Discussion Room</Text>
-                    <Text size="xs" c="dimmed">Live group chat on Nextcloud Talk</Text>
-                  </Stack>
-                </Group>
-                <Tooltip label={isEnrolled ? undefined : "Enroll to access"} disabled={isEnrolled}>
-                  <Button
-                    component="a"
-                    href={isEnrolled ? `/api/talk/join?token=${workshop.nextcloudTalkToken}` : "#"}
-                    target={isEnrolled ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    variant={isEnrolled ? "filled" : "light"}
-                    color="orange"
-                    size="sm"
-                    radius="xl"
-                    disabled={!isEnrolled}
-                    leftSection={<MessageCircle size={14} />}
-                  >
-                    {isEnrolled ? "Open Room" : "Members Only"}
-                  </Button>
-                </Tooltip>
-              </Group>
-            </Paper>
-          )}
-
-          {/* ── Modules / Sessions ── */}
-          {sessions.length > 0 && (
-            <Stack gap="md">
-              <Group justify="space-between" align="flex-end">
-                <Stack gap={0}>
-                  <Text size="xs" fw={700} tt="uppercase" lts={1} c="#9a7650">Curriculum</Text>
-                  <Title order={3} style={{ fontFamily: "'Cinzel', serif", color: "#3d1f04" }}>
-                    Course Modules
-                  </Title>
-                </Stack>
-                <Text size="sm" c="dimmed">{sessions.length} sessions</Text>
-              </Group>
-
-              <Tabs defaultValue={sessions[0]?.id} variant="pills" color="ember">
-                <Tabs.List style={{ flexWrap: "wrap" }}>
-                  {sessions.map((session, i) => (
-                    <Tabs.Tab key={session.id} value={session.id}>
-                      <SessionTabLabel session={session} index={i} now={now} />
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
-                {sessions.map((session) => (
-                  <Tabs.Panel key={session.id} value={session.id} pt="md">
-                    <SessionPanelContent session={session} isEnrolled={isEnrolled} now={now} />
-                  </Tabs.Panel>
-                ))}
-              </Tabs>
-            </Stack>
-          )}
+          {/* ── Sections: Overview + one entry per session ── */}
+          {/* Breaks out of the page's size="sm" Container so the sidebar
+              layout gets more of the window width, per the request — the
+              rest of the page stays narrow and readable. */}
+          <Box
+            style={{
+              marginLeft: "calc(50% - 50vw)",
+              marginRight: "calc(50% - 50vw)",
+              paddingLeft: "clamp(1rem, 4vw, 3rem)",
+              paddingRight: "clamp(1rem, 4vw, 3rem)",
+            }}
+          >
+            <WorkshopSectionsNav
+              workshopId={workshop.id}
+              pitch={workshop.pitch}
+              description={workshop.description}
+              nextcloudTalkToken={workshop.nextcloudTalkToken}
+              sessions={sessions}
+              isEnrolled={isEnrolled}
+              isOwner={isOwner}
+              now={now}
+              pastCount={pastCount}
+              progressPct={progressPct}
+            />
+          </Box>
 
           {/* ── Discussion ── */}
           <Divider
@@ -685,8 +523,18 @@ export function WorkshopPage({ workshop, currentUser, isEnrolled, isOwner = fals
                 {typeof workshop.price === "number" && workshop.price > 0 && (
                   <Text fw={800} size="lg" c="#b07d2a">${workshop.price}</Text>
                 )}
-                <Button radius="xl" color="orange" size="md">
-                  {typeof workshop.price === "number" && workshop.price === 0 ? "Join Free" : "Enroll Now"}
+                <Button
+                  radius="xl"
+                  color="orange"
+                  size="md"
+                  disabled={rsvpClosed}
+                  onClick={() => setJoinOpen(true)}
+                >
+                  {rsvpClosed
+                    ? (deadlinePassed ? "RSVP Closed" : "Workshop Full")
+                    : typeof workshop.price === "number" && workshop.price === 0
+                      ? "Join Free"
+                      : "Enroll Now"}
                 </Button>
               </Group>
             </Group>

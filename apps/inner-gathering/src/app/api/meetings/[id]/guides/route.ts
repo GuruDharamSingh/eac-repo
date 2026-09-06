@@ -18,36 +18,43 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [meeting] = await db`
-      SELECT id, author_id, metadata FROM threads
-      WHERE id = ${id} AND org_id = ${ORG_ID} AND kind IN ('meeting', 'workshop')
-      LIMIT 1
-    `;
-    if (!meeting) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    // "new" = the content form calling this before the thread exists yet
+    // (create flow). There's no author-of-record to check against besides
+    // the caller themselves, and no stored co-guides.
+    let authorId = session.user.id;
+    let coGuideIds: string[] = [];
 
-    const admin = await isAdmin(session.user.id);
-    if (!admin && meeting.author_id !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    if (id !== "new") {
+      const [meeting] = await db`
+        SELECT id, author_id, metadata FROM threads
+        WHERE id = ${id} AND org_id = ${ORG_ID} AND kind IN ('meeting', 'workshop')
+        LIMIT 1
+      `;
+      if (!meeting) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
 
-    const coGuideIds: string[] = Array.isArray(meeting.metadata?.coGuideIds)
-      ? meeting.metadata.coGuideIds
-      : [];
+      const admin = await isAdmin(session.user.id);
+      if (!admin && meeting.author_id !== session.user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      authorId = meeting.author_id;
+      coGuideIds = Array.isArray(meeting.metadata?.coGuideIds) ? meeting.metadata.coGuideIds : [];
+    }
 
     // Roster: org members minus the author (always a guide). Capped for the picker.
     const members = await db`
       SELECT DISTINCT u.id, COALESCE(u.display_name, u.email) AS name, u.avatar_url
       FROM users u
       JOIN user_organizations uo ON uo.user_id = u.id
-      WHERE uo.org_id = ${ORG_ID} AND u.id <> ${meeting.author_id}
+      WHERE uo.org_id = ${ORG_ID} AND u.id <> ${authorId}
       ORDER BY name
       LIMIT 200
     `;
 
     return NextResponse.json({
-      authorId: meeting.author_id,
+      authorId,
       coGuideIds,
       members: members.map((m: any) => ({ id: m.id, name: m.name, avatarUrl: m.avatar_url })),
     });

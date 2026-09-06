@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { listMyArtworks, listLotsForArtist } from "@elkdonis/commerce/queries";
+import { listStoreArtworks, listLotsForArtist } from "@elkdonis/commerce/queries";
 import {
   listConversationsForUser,
   getUnreadCount,
@@ -61,13 +61,13 @@ function SectionHeader({
 }
 
 export default async function StudioPage() {
-  const { artist } = await requireApprovedArtist();
+  const { userId, store: artist } = await requireApprovedArtist();
   const [user, artworks, lots, conversations, unread] = await Promise.all([
     getCurrentUser(),
-    listMyArtworks(artist.userId),
-    listLotsForArtist(artist.userId),
-    listConversationsForUser(artist.userId, { limit: 6 }),
-    getUnreadCount(artist.userId),
+    listStoreArtworks(artist.id),
+    listLotsForArtist(userId),
+    listConversationsForUser(userId, { limit: 6 }),
+    getUnreadCount(userId),
   ]);
 
   const listed = artworks.filter((a) => a.status === "available").length;
@@ -299,7 +299,7 @@ export default async function StudioPage() {
                         )}
                         {c.lastMessagePreview && (
                           <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                            {c.lastMessageSenderId === artist.userId
+                            {c.lastMessageSenderId === userId
                               ? "You: "
                               : ""}
                             {c.lastMessagePreview}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession, isAdmin } from "@elkdonis/auth-server";
-import { getMarketplaceArtist } from "@elkdonis/commerce/queries";
-import type { MarketplaceArtist } from "@elkdonis/commerce/types";
+import { getStoreForUser } from "@elkdonis/commerce/queries";
+import type { Store } from "@elkdonis/commerce/types";
 import { db } from "@elkdonis/db";
 
 /** Internal database user id (users.id), or null when signed out. */
@@ -43,12 +43,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
 }
 
-/** The signed-in user's marketplace artist record (any status), or null. */
-export async function getCurrentArtist(): Promise<MarketplaceArtist | null> {
+/** The signed-in user's own store (any status), or null. */
+export async function getCurrentStore(): Promise<Store | null> {
   const userId = await getCurrentUserId();
   if (!userId) return null;
-  return getMarketplaceArtist(userId);
+  return getStoreForUser(userId);
 }
+
+/** @deprecated Use {@link getCurrentStore}. */
+export const getCurrentArtist = getCurrentStore;
 
 /** Whether the signed-in user is a platform admin. */
 export async function getIsAdmin(): Promise<boolean> {
@@ -62,19 +65,25 @@ export async function getIsAdmin(): Promise<boolean> {
 }
 
 /**
- * Guard for studio pages: requires an approved (active) marketplace artist.
+ * Guard for studio pages: requires an approved (active) store.
  * Redirects unauthenticated users to /login and non-approved users to the
  * apply/status page.
+ *
+ * Returns the store as well as the user id — writes key off `store.id` since
+ * migration 094, because a person can hold one store per marketplace and a
+ * user id alone no longer names one.
  */
 export async function requireApprovedArtist(): Promise<{
   userId: string;
-  artist: MarketplaceArtist;
+  store: Store;
+  /** @deprecated Same object as `store`. */
+  artist: Store;
 }> {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login?next=/studio");
-  const artist = await getMarketplaceArtist(userId);
-  if (!artist || artist.status !== "active") redirect("/studio/apply");
-  return { userId, artist };
+  const store = await getStoreForUser(userId);
+  if (!store || store.status !== "active") redirect("/studio/apply");
+  return { userId, store, artist: store };
 }
 
 /** Guard for admin pages. Redirects non-admins away. */

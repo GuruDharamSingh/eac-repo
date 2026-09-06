@@ -1,4 +1,8 @@
-export type FieldInputType =
+/**
+ * Input types @elkdonis/live-editor can render as in-place edit popovers.
+ * This union must stay assignable to live-editor's own FieldInputType.
+ */
+export type LiveEditorInputType =
   | "text"
   | "textarea"
   | "url"
@@ -9,6 +13,29 @@ export type FieldInputType =
   | "image"
   | "compound"
   | "readonly";
+
+/**
+ * The full authoring union. A superset of LiveEditorInputType: the wizard can
+ * render richer controls than a live-editor popover can, so the extra members
+ * are filtered out at the live-editor boundary (see editor-config.ts) rather
+ * than being split into a second registry. One registry, two renderers.
+ */
+export type FieldInputType =
+  | LiveEditorInputType
+  | "color"
+  | "gallery"
+  | "media"
+  | "boolean";
+
+/** Runtime guard for the narrowing described above. */
+const LIVE_EDITOR_INPUTS = new Set<string>([
+  "text", "textarea", "url", "number", "datetime",
+  "date", "select", "image", "compound", "readonly",
+]);
+
+export function isLiveEditorInput(input: FieldInputType): input is LiveEditorInputType {
+  return LIVE_EDITOR_INPUTS.has(input);
+}
 
 export type FieldTable = "threads" | "workshop_pages" | "artist_profiles";
 
@@ -39,6 +66,25 @@ export interface FieldMeta {
   options?: SelectOption[];
   /** For compound inputs — list every underlying field in order. */
   compound?: CompoundField[];
+
+  // ── Wizard metadata ───────────────────────────────────────────────────────
+  // Consumed by buildWorkshopWizardSteps(); ignored by the live editor.
+
+  /**
+   * Platform fields describe how the workshop *operates* (publishing, RSVP,
+   * media slots) rather than what a template renders. They are offered by the
+   * wizard regardless of which template is active, so they are exempt from
+   * the manifest cmsFields filter.
+   */
+  platform?: boolean;
+  /** Blocks step completion when empty. Only `title` is a hard DB requirement. */
+  required?: boolean;
+  /**
+   * Show this field only when another field has a value. `equals` narrows
+   * further. Drives conditional disclosure — e.g. sliding-scale copy is
+   * pointless until a minimum price exists.
+   */
+  visibleWhen?: { col: string; equals?: string | number | boolean };
 }
 
 /**
@@ -52,6 +98,7 @@ export const fieldRegistry: Record<string, FieldMeta> = {
     input: "text",
     table: "threads",
     col: "title",
+    required: true,
     hint: "Main headline shown in the hero section",
   },
   eyebrowText: {
@@ -205,12 +252,26 @@ export const fieldRegistry: Record<string, FieldMeta> = {
     hint: "e.g. she/her · they/them",
   },
   roleTitle: {
+    // READONLY DELIBERATELY (2026-09-01). This mapped to
+    // artist_profiles.display_name — the same column as `fullName` — so saving
+    // a role title through the live editor overwrote the facilitator's name.
+    // The correct target is org_profiles.role_title (migration 084), but
+    // arts-collective's updateWorkshopFieldAction has no org_profiles arm, and
+    // pointing at it would trade data loss for a silent no-op. Readonly until
+    // the facilitator fields move off artist_profiles as a set.
     label: "Facilitator Role Title",
-    input: "text",
+    input: "readonly",
     table: "artist_profiles",
     col: "display_name",
     dataKey: "facilitator_name",
-    hint: "Role or title shown under the facilitator name",
+    hint: "Edited on the facilitator's profile, not per workshop",
+  },
+  facilitatorBio: {
+    label: "Facilitator Bio (profile)",
+    input: "textarea",
+    table: "artist_profiles",
+    col: "bio",
+    hint: "The facilitator's standing bio, shared across their workshops",
   },
   bio: {
     label: "Facilitator Bio (this workshop)",
@@ -243,6 +304,7 @@ export const fieldRegistry: Record<string, FieldMeta> = {
     input: "text",
     table: "workshop_pages",
     col: "sliding_scale_note",
+    visibleWhen: { col: "price_sliding_min" },
     hint: "e.g. 'Pay what you can: $80–$180'",
   },
   startsIn: {
@@ -293,6 +355,145 @@ export const fieldRegistry: Record<string, FieldMeta> = {
     table: "workshop_pages",
     col: "optional_sections",
     hint: "Visibility toggle — edit via the optional sections panel",
+  },
+
+  // ── Added 2026-09-01: authorable columns the trait list never covered ─────
+  // The manifest's `traits` arrays were written for the live editor's DOM
+  // binding and are narrower than its `cmsFields` contract; the wizard drives
+  // off cmsFields, so every consumed column needs an entry here.
+
+  subtitle: {
+    label: "Subtitle",
+    input: "text",
+    table: "workshop_pages",
+    col: "subtitle",
+    hint: "Short line under the title, e.g. 'A 6-week series'",
+  },
+  descriptionShort: {
+    label: "Short Description",
+    input: "textarea",
+    table: "workshop_pages",
+    col: "description_short",
+    hint: "One or two sentences used in listings and previews",
+  },
+  locationAddress: {
+    label: "Full Address",
+    input: "text",
+    table: "workshop_pages",
+    col: "location_address",
+    visibleWhen: { col: "format" },
+    hint: "Street address shown to registered attendees",
+  },
+  registrationStatus: {
+    label: "Registration Status",
+    input: "select",
+    table: "workshop_pages",
+    col: "registration_status",
+    hint: "Controls the registration block's state",
+    options: [
+      { value: "open", label: "Open" },
+      { value: "waitlist", label: "Waitlist" },
+      { value: "full", label: "Full" },
+      { value: "closed", label: "Closed" },
+    ],
+  },
+  priceSlidingMin: {
+    label: "Sliding Scale Minimum",
+    input: "number",
+    table: "workshop_pages",
+    col: "price_sliding_min",
+    hint: "Lowest price you will accept — leave empty for a fixed price",
+  },
+  priceMember: {
+    label: "Member Price",
+    input: "number",
+    table: "workshop_pages",
+    col: "price_member",
+    hint: "Price for organisation members",
+  },
+  galleryItems: {
+    label: "Gallery",
+    input: "gallery",
+    table: "workshop_pages",
+    col: "gallery_image_urls",
+    hint: "Images from past sessions — each takes an optional alt text and caption",
+  },
+
+  // ── Platform fields: how the workshop operates, template-independent ──────
+
+  coverImage: {
+    label: "Cover Image",
+    input: "image",
+    table: "workshop_pages",
+    col: "cover_image_url",
+    platform: true,
+    hint: "Used in listings and feeds",
+  },
+  bannerImage: {
+    label: "Banner Image",
+    input: "image",
+    table: "workshop_pages",
+    col: "banner_image_url",
+    platform: true,
+    hint: "Wide header image on the workshop page",
+  },
+  bannerFocalY: {
+    label: "Banner Crop (vertical)",
+    input: "number",
+    table: "workshop_pages",
+    col: "banner_focal_y",
+    platform: true,
+    visibleWhen: { col: "banner_image_url" },
+    hint: "0 = top of the image, 100 = bottom. Default 50.",
+  },
+  heroMedia: {
+    label: "Hero Media",
+    input: "media",
+    table: "workshop_pages",
+    col: "hero_media_url",
+    platform: true,
+    hint: "Image or video shown across the top of the page",
+  },
+  heroText: {
+    label: "Hero Text",
+    input: "textarea",
+    table: "workshop_pages",
+    col: "hero_text",
+    platform: true,
+    visibleWhen: { col: "hero_media_url" },
+    hint: "Overlaid across the hero media",
+  },
+  backgroundColor: {
+    label: "Background Colour",
+    input: "color",
+    table: "workshop_pages",
+    col: "background_color",
+    platform: true,
+    hint: "Page background — leave empty to inherit the template",
+  },
+  seoTitle: {
+    label: "SEO Title",
+    input: "text",
+    table: "workshop_pages",
+    col: "seo_title",
+    platform: true,
+    hint: "Overrides the workshop title in search results and link previews",
+  },
+  seoDescription: {
+    label: "SEO Description",
+    input: "textarea",
+    table: "workshop_pages",
+    col: "seo_description",
+    platform: true,
+    hint: "Up to 160 characters, shown under the title in search results",
+  },
+  ogImage: {
+    label: "Social Share Image",
+    input: "image",
+    table: "workshop_pages",
+    col: "og_image_url",
+    platform: true,
+    hint: "Shown when the page is shared — falls back to the cover image",
   },
 };
 

@@ -1,37 +1,135 @@
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Amrit Canada palette — saffron, terracotta, cream, charcoal.
+   Carried forward from the pre-rebuild theme so the site stays recognisable;
+   re-expressed as HSL shadcn tokens to match the arts-collective standard.
+   See docs/2026-07-26-brand-and-information-architecture.md.
+   ========================================================================== */
 
 :root {
-  /* Warm Natural Cloth Colors from Original */
-  --saffron-bright: #F4C430;
-  --saffron-medium: #E6B422;
-  --saffron-light: #F7D858;
+  --radius: 0.625rem;
 
-  --terracotta-bright: #E67E50;
-  --terracotta-medium: #D16B47;
-  --terracotta-light: #F2A080;
+  --background: 39 67% 95%;          /* cream    #FDF5E6 */
+  --foreground: 203 18% 26%;         /* charcoal #36454F */
 
-  --cream: #FDF5E6;
-  --linen: #FAF0E6;
-  --charcoal: #36454F;
+  --card: 30 43% 96%;                /* linen    #FAF0E6 */
+  --card-foreground: 203 18% 26%;
 
-  --primary-color: var(--saffron-bright);
-  --secondary-color: var(--terracotta-medium);
-  --background-color: var(--cream);
-  --text-color: var(--charcoal);
+  --popover: 30 43% 96%;
+  --popover-foreground: 203 18% 26%;
 
-  /* Section accent colors */
-  --yoga-green: #5a8a6a;
-  --yoga-green-dim: rgba(90, 138, 106, 0.15);
-  --gurdwara-crimson: #8B2E2E;
-  --gurdwara-crimson-dim: rgba(139, 46, 46, 0.15);
+  --primary: 45 79% 52%;             /* saffron medium #E6B422 — buttons, rings */
+  --primary-foreground: 203 24% 16%;
+
+  /* Warm sand, not terracotta. Secondary is what shadcn badges and quiet
+     buttons land on by default, and bright terracotta there shouted over the
+     content. Terracotta is kept below as a deliberate accent instead. */
+  --secondary: 38 44% 88%;
+  --secondary-foreground: 203 20% 24%;
+
+  --muted: 36 33% 90%;
+  --muted-foreground: 203 12% 42%;
+
+  --accent: 45 88% 66%;              /* saffron light #F7D858 — hovers */
+  --accent-foreground: 203 24% 16%;
+
+  /* Terracotta, used on purpose: links, italic subheads, second-tier accents. */
+  --terracotta: 17 73% 61%;          /* #E67E50 */
+  --terracotta-deep: 14 60% 55%;     /* #D16B47 */
+
+  --destructive: 0 52% 36%;          /* shares the gurdwara crimson family */
+  --destructive-foreground: 39 67% 95%;
+
+  --border: 34 30% 82%;
+  --input: 34 30% 82%;
+  --ring: 45 79% 52%;
+
+  /* Per-feed accents. org_feeds.accent is the source of truth and is applied
+     inline as --feed on the page wrapper, so adding a fourth section needs a
+     database row, not a CSS change. These are the fallbacks. */
+  --feed-amrit-vela: 45 79% 52%;     /* saffron  #E6B422 */
+  --feed-yoga: 140 21% 45%;          /* green    #5A8A6A */
+  --feed-gurdwara: 0 50% 36%;        /* crimson  #8B2E2E */
+}
+
+.dark {
+  --background: 203 24% 11%;
+  --foreground: 39 40% 92%;
+
+  --card: 203 20% 15%;
+  --card-foreground: 39 40% 92%;
+
+  --popover: 203 20% 15%;
+  --popover-foreground: 39 40% 92%;
+
+  --primary: 45 84% 60%;
+  --primary-foreground: 203 24% 12%;
+
+  --secondary: 17 60% 55%;
+  --secondary-foreground: 203 24% 12%;
+
+  --muted: 203 14% 20%;
+  --muted-foreground: 39 16% 70%;
+
+  --accent: 45 40% 28%;
+  --accent-foreground: 39 44% 92%;
+
+  --destructive: 0 55% 52%;
+  --destructive-foreground: 39 67% 95%;
+
+  --border: 203 12% 24%;
+  --input: 203 12% 24%;
+  --ring: 45 84% 60%;
+
+  --feed-amrit-vela: 45 84% 60%;
+  --feed-yoga: 140 26% 55%;
+  --feed-gurdwara: 0 55% 55%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Set by the feed page wrapper from org_feeds.accent. */
+  --color-feed: var(--feed, hsl(var(--primary)));
+
+  --font-serif: var(--font-cinzel);
+  --font-sans: var(--font-lora);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
 body {
   min-height: 100vh;
-  background: linear-gradient(145deg, var(--cream) 0%, var(--linen) 100%);
-  color: var(--charcoal);
-  overflow-x: hidden;
 }
 
 html {
@@ -39,55 +137,73 @@ html {
 }
 
 body {
+  /* The original cream→linen wash, not a flat fill. */
+  background: linear-gradient(145deg, #fdf5e6 0%, #faf0e6 100%);
+  background-attachment: fixed;
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), Georgia, serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-family: 'Lora', Georgia, serif;
+  overflow-x: hidden;
 }
 
-/* Original Project's Card Style */
+.dark body {
+  background: linear-gradient(145deg, hsl(203 24% 11%) 0%, hsl(203 22% 14%) 100%);
+}
+
+/* ==========================================================================
+   Decorative layer carried over from the pre-rebuild site.
+   These are the things that made it look like itself — the saffron-bordered
+   glowing cards, the dark charcoal chrome, the pull-quotes — kept verbatim
+   rather than redrawn in utility classes.
+   ========================================================================== */
+
+/* Cards: cream gradient, saffron border, warm glow, lift on hover. */
 .card-natural {
-  background: linear-gradient(145deg, var(--cream) 0%, var(--linen) 100%) !important;
-  border: 2px solid var(--saffron-medium) !important;
-  border-radius: 16px !important;
-  box-shadow: 
+  background: linear-gradient(145deg, #fdf5e6 0%, #faf0e6 100%);
+  border: 2px solid #e6b422;
+  border-radius: 16px;
+  box-shadow:
     0 8px 32px rgba(244, 196, 48, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(10px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-natural:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 16px 48px rgba(244, 196, 48, 0.3),
     0 0 0 3px rgba(244, 196, 48, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* Legacy support for old class name */
-.sadhana-card {
-  @apply card-natural;
+.dark .card-natural {
+  background: linear-gradient(145deg, hsl(203 20% 15%) 0%, hsl(203 18% 18%) 100%);
+  border-color: rgba(230, 180, 34, 0.55);
 }
 
-/* Section divider with saffron gradient */
+/* Charcoal chrome — header, footer, section banners. */
+.bg-header-footer {
+  background: linear-gradient(135deg, #36454f 0%, #2c3e50 100%);
+}
+
 .saffron-divider {
   height: 3px;
-  background: linear-gradient(90deg, transparent, var(--saffron-bright), transparent);
+  background: linear-gradient(90deg, transparent, #f4c430, transparent);
   border: none;
   margin: 2rem 0;
 }
 
-/* Original Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, var(--saffron-bright), var(--terracotta-light));
+  background: linear-gradient(135deg, #f4c430, #f2a080);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Pull-quote style adapted to match original aesthetic */
 blockquote.amrit-quote {
-  border-left: 5px solid var(--saffron-bright);
+  border-left: 5px solid #f4c430;
   background: linear-gradient(90deg, rgba(244, 196, 48, 0.12) 0%, transparent 100%);
   padding: 1.5rem 2rem;
   margin: 2rem 0;
@@ -95,142 +211,115 @@ blockquote.amrit-quote {
   font-style: italic;
   font-size: 1.2rem;
   line-height: 1.8;
-  color: var(--charcoal);
-  box-shadow: 4px 4px 15px rgba(0,0,0,0.05);
+  color: hsl(var(--foreground));
+  box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-/* Header/Footer Gradients from Original */
-.bg-header-footer {
-  background: linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%) !important;
-}
-
-/* Hero Banner Carousel Styles */
-.hero-container {
-  position: relative;
-  height: 450px;
-  overflow: hidden;
-  background-color: var(--charcoal);
-}
-
-.hero-slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.8s ease-in-out;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.hero-slide.active {
-  opacity: 1;
-}
-
-/* Special handling for third slide like original */
-.hero-slide:nth-child(3) {
-  background-size: contain;
-  background-position: center;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(244, 196, 48, 0.3) 0%,
-    rgba(230, 126, 91, 0.4) 50%,
-    rgba(54, 69, 79, 0.6) 100%
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-content {
-  text-align: center;
-  color: white;
-  z-index: 5;
-  max-width: 900px;
-  padding: 0 2rem;
-}
-
-.carousel-controls {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-  z-index: 10;
-}
-
-.carousel-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid rgba(244, 196, 48, 0.7);
-}
-
-.carousel-dot.active {
-  background: var(--saffron-bright);
-  transform: scale(1.3);
-  box-shadow: 0 0 12px rgba(244, 196, 48, 0.8);
-}
-
-.nav-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(244, 196, 48, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-}
-
-.nav-button:hover {
-  background: var(--saffron-bright);
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 4px 16px rgba(244, 196, 48, 0.6);
-}
-
-.nav-button.prev { left: 20px; }
-.nav-button.next { right: 20px; }
-
-@media (max-width: 768px) {
-  .hero-container { height: 350px; }
-  .nav-button { width: 40px; height: 40px; }
-}
-
-/* Portal tiles (home page section grid) */
+/* Portal tiles on the home page. The glow colour comes from the feed's own
+   accent (--feed), so a new section gets the treatment without new CSS. */
 .portal-tile {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
+
 .portal-tile:hover {
   transform: translateY(-6px);
+  box-shadow: 0 16px 40px var(--feed-glow, rgba(244, 196, 48, 0.3));
 }
-.portal-tile--sadhana:hover {
-  box-shadow: 0 16px 40px rgba(244, 196, 48, 0.3);
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  letter-spacing: 0.01em;
 }
-.portal-tile--yoga:hover {
-  box-shadow: 0 16px 40px rgba(90, 138, 106, 0.3);
+
+/* ==========================================================================
+   Rich text — both the editor pane and the published output.
+
+   The editor markup asks for Tailwind's `prose` classes, but
+   @tailwindcss/typography isn't installed, so those were no-ops: pressing
+   "Heading 2" changed the HTML and nothing on screen, which reads as a broken
+   editor. Styling both surfaces with the same rules keeps what an author sees
+   while typing honest about what visitors get.
+   ========================================================================== */
+.tiptap-content :where(h2) {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 1.2rem 0 0.5rem;
 }
-.portal-tile--gurdwara:hover {
-  box-shadow: 0 16px 40px rgba(139, 46, 46, 0.3);
+.tiptap-content :where(h3) {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+}
+.tiptap-content :where(p) {
+  margin: 0.5rem 0;
+  line-height: 1.65;
+}
+.tiptap-content :where(ul, ol) {
+  margin: 0.5rem 0 0.5rem 1.35rem;
+  list-style: revert;
+}
+.tiptap-content :where(li) {
+  margin-bottom: 0.25rem;
+}
+.tiptap-content :where(li p) {
+  margin: 0;
+}
+.tiptap-content :where(a) {
+  color: hsl(var(--terracotta-deep));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 0.9rem;
+  margin: 0.8rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+.tiptap-content :where(strong) {
+  font-weight: 700;
+}
+
+/* The placeholder only renders when the document is genuinely empty. */
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Published output. */
+.prose-amrit :where(p) {
+  margin-bottom: 0.85rem;
+  line-height: 1.7;
+}
+.prose-amrit :where(h2, h3) {
+  margin: 1.6rem 0 0.6rem;
+  font-weight: 600;
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+}
+.prose-amrit :where(ul, ol) {
+  margin: 0 0 0.85rem 1.25rem;
+  list-style: revert;
+}
+.prose-amrit :where(li) {
+  margin-bottom: 0.3rem;
+}
+.prose-amrit :where(a) {
+  color: hsl(var(--secondary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-amrit :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1.2rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
 }

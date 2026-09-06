@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // The root config sets "strict": false. Without strictNullChecks,
+    // TypeScript cannot narrow a discriminated union at all, so the
+    // { ok: true } | { ok: false, reason } results this app returns from
+    // upload validation, rate limiting and guest checks are unusable — every
+    // `if (!res.ok) res.reason` is an error. Turning it on here is scoped to
+    // this app and does not affect the other twelve.
+    "strict": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

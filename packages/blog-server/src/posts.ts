@@ -1,7 +1,6 @@
-import { nanoid } from 'nanoid';
 import { db, Events } from '@elkdonis/db';
-import type { Post } from '@elkdonis/types';
-import { slugify } from '@elkdonis/utils';
+import type { Post, PostStatus } from '@elkdonis/types';
+import { createPost } from '@elkdonis/services';
 
 export interface UploadedMedia {
   id: string;
@@ -18,6 +17,8 @@ export interface BlogPostSubmission {
   title: string;
   body: string;
   excerpt?: string;
+  /** Defaults to 'published'. Blog apps had no way to save a draft before. */
+  status?: PostStatus;
   link?: string;
   tags: string[];
   createForumThread: boolean;
@@ -126,11 +127,21 @@ export async function getPostBySlug(orgId: string, slug: string): Promise<Post |
   return mapPostFromDb(rows[0]);
 }
 
+/**
+ * Create a blog post.
+ *
+ * The thread insert now goes through @elkdonis/services createPost rather than
+ * a second hand-rolled INSERT. What stays here is genuinely blog-specific: the
+ * metadata shape, media attachment, and the activity event.
+ *
+ * Delegating fixes three things the local insert got wrong:
+ *   - the slug was slugify(title) with no uniqueness check, so a repeated
+ *     title violated UNIQUE (org_id, slug) and surfaced to the author as a 500
+ *   - status was hardcoded 'published', so blog authors could not save a draft
+ *   - published_at was stamped unconditionally
+ */
 export async function createBlogPost(params: CreateBlogPostParams): Promise<Post> {
-  const postId = nanoid();
-  const slug = slugify(params.title);
-
-  const excerpt = params.excerpt || generateExcerpt(params.body);
+  const status: PostStatus = params.status ?? 'published';
 
   const metadata = {
     ...(params.metadata || {}),
@@ -140,56 +151,36 @@ export async function createBlogPost(params: CreateBlogPostParams): Promise<Post
     forumThreadTitle: params.forumThreadTitle || null,
   };
 
-  const [post] = await db`
-    INSERT INTO threads (
-      id,
-      org_id,
-      author_id,
-      kind,
-      title,
-      slug,
-      body,
-      excerpt,
-      status,
-      visibility,
-      metadata,
-      published_at,
-      created_at
-    ) VALUES (
-      ${postId},
-      ${params.orgId},
-      ${params.authorId},
-      'post',
-      ${params.title},
-      ${slug},
-      ${params.body},
-      ${excerpt},
-      'published',
-      'PUBLIC',
-      ${db.json(metadata as any)},
-      NOW(),
-      NOW()
-    )
-    RETURNING *
-  `;
+  const post = await createPost({
+    title: params.title,
+    orgId: params.orgId,
+    authorId: params.authorId,
+    body: params.body,
+    excerpt: params.excerpt,
+    status,
+    // Blog posts are public by definition; these blogs have no members-only view.
+    visibility: 'PUBLIC',
+    metadata,
+  });
 
   if (params.media?.length) {
-    await attachMediaToPost(params.media, params.orgId, postId, params.authorId);
+    await attachMediaToPost(params.media, params.orgId, post.id, params.authorId);
   }
 
-  await Events.log(
-    params.orgId,
-    params.authorId,
-    'post_published',
-    'post',
-    postId,
-    {
-      title: params.title,
-      excerpt,
-    }
-  );
+  // Only an actual publish is a publish. Logging a draft as 'post_published'
+  // would put unpublished work into the network activity feed.
+  if (status === 'published') {
+    await Events.log(
+      params.orgId,
+      params.authorId,
+      'post_published',
+      'post',
+      post.id,
+      { title: params.title, excerpt: post.excerpt ?? '' }
+    );
+  }
 
-  return mapPostFromDb(post);
+  return post;
 }
 
 async function attachMediaToPost(
@@ -263,8 +254,3 @@ function mapPostFromDb(row: any): Post {
   } as Post;
 }
 
-function generateExcerpt(html: string, length = 200): string {
-  if (!html) return '';
-  const stripped = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  return stripped.length > length ? `${stripped.slice(0, length - 3)}...` : stripped;
-}

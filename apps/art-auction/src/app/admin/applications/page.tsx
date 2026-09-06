@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { listPendingArtistApplications } from "@elkdonis/commerce/queries";
+import { listPendingStoreApplications } from "@elkdonis/commerce/queries";
 import { requireAdmin } from "@/lib/marketplace-auth";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { ApplicationActions } from "./application-actions";
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Artist applications · Admin" };
 
 export default async function ApplicationsPage() {
   await requireAdmin();
-  const applications = await listPendingArtistApplications();
+  const applications = await listPendingStoreApplications();
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
@@ -30,7 +30,7 @@ export default async function ApplicationsPage() {
         <ul className="space-y-6">
           {applications.map((a) => (
             <li
-              key={a.userId}
+              key={a.id}
               className="rounded-lg border border-border p-6"
             >
               <div className="flex items-start gap-4">
@@ -66,7 +66,7 @@ export default async function ApplicationsPage() {
                 </div>
               </div>
               <div className="mt-4 flex justify-end">
-                <ApplicationActions artistUserId={a.userId} />
+                <ApplicationActions storeId={a.id} />
               </div>
             </li>
           ))}

@@ -16,7 +16,12 @@
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/live-editor": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/types": "workspace:*",
+    "@elkdonis/ui": "workspace:*",
+    "nanoid": "^5.0.0",
     "next": "16.1.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"

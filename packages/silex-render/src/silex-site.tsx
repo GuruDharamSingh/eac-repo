@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
-import { applyWorkshopTraits } from "@elkdonis/cms-bindings";
+import { applyManifestBindings, toWorkshopContext } from "@elkdonis/cms-bindings";
+import { loadTemplateManifest } from "@elkdonis/cms-bindings/node";
 import { sanitizeSilexHtml } from "@elkdonis/utils";
 import {
   getOrgBySlug,
@@ -96,17 +97,27 @@ export async function SilexSite({
     );
   }
 
-  let safe = sanitizeSilexHtml(rewriteAssetUrls(html, org.slug));
+  // Bind first, sanitize after. Bindings write real values into the document —
+  // a workshop body is authored rich text — so they must pass through DOMPurify
+  // too. The previous order sanitized and *then* injected, which left everything
+  // a binding wrote unsanitized.
+  let bound = rewriteAssetUrls(html, org.slug);
 
-  // If the published HTML contains workshop data-trait slots, bind live DB
-  // values from the org's primary published workshop into them.
-  if (safe.includes("data-trait=")) {
+  // If the published HTML carries template hooks, fill them from the org's
+  // primary published workshop. Which hook takes which field is declared in the
+  // template manifest, not here — see @elkdonis/cms-bindings/engine.
+  if (bound.includes("data-trait=")) {
     const workshopData = await getOrgWorkshopForTemplate(org.id);
     if (workshopData) {
-      safe = applyWorkshopTraits(safe, workshopData);
+      bound = applyManifestBindings(
+        bound,
+        loadTemplateManifest("workshop").sections,
+        toWorkshopContext(workshopData)
+      );
     }
   }
 
+  const safe = sanitizeSilexHtml(bound);
   const content = await renderSilexHtmlWithEmbeds(safe, org);
 
   return (

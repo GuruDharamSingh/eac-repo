@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@elkdonis/auth-server";
 import { canManageIfac } from "@/lib/data";
-import { listAllDirectory } from "@/lib/directory-admin";
+import { listAllDirectory, listAssignableMembers } from "@/lib/directory-admin";
 import { DirectoryManager } from "@/components/directory-manager";
 
 export const metadata = { title: "IFAC Directory Admin" };
@@ -13,7 +13,7 @@ export default async function DirectoryAdminPage() {
     redirect("/login");
   }
 
-  const profiles = await listAllDirectory();
+  const [profiles, assignableMembers] = await Promise.all([listAllDirectory(), listAssignableMembers()]);
 
-  return <DirectoryManager initialProfiles={profiles} />;
+  return <DirectoryManager initialProfiles={profiles} initialAssignableMembers={assignableMembers} />;
 }

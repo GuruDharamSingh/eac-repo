@@ -64,7 +64,7 @@ export default async function AccountPage() {
           </Link>
           {owner && (
             <Link
-              href="/admin"
+              href="/manage"
               style={{
                 padding: "10px 24px",
                 border: "1px solid #3aa99c",

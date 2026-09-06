@@ -9,14 +9,19 @@
     "build": "next build",
     "start": "next start --port 3008",
     "lint": "eslint",
-    "seed:directory": "node --experimental-strip-types scripts/seed-directory.ts"
+    "seed:directory": "tsx scripts/seed-directory.ts"
   },
   "dependencies": {
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/live-editor": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/types": "workspace:*",
+    "@elkdonis/ui": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
     "nanoid": "^5.0.0",
     "next": "16.1.6",
     "react": "19.1.0",
@@ -28,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "tsx": "^4.0.0",
     "typescript": "^5"
   }
 }

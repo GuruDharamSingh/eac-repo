@@ -1,6 +1,14 @@
 export type Artwork = {
   filename: string;
   title: string;
+  /** Gallery grid layout, carried through from users.portfolio for the
+   *  editable gallery (see ProfileGallery) — absent on the bundled static
+   *  roster and on any item never rearranged. */
+  id?: string;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
 };
 
 export type ExternalLink = {
@@ -9,6 +17,8 @@ export type ExternalLink = {
 };
 
 export type IFACProfile = {
+  /** users.id — absent on the bundled static roster, which has no account behind it. */
+  userId?: string;
   slug: string;
   name: string;
   kind: "artist" | "dealer";
@@ -19,6 +29,13 @@ export type IFACProfile = {
   links: ExternalLink[];
   email?: string;
   website?: string;
+  /**
+   * Absent on the bundled static roster (no backing account to claim, and
+   * that fallback only ever renders if the DB is empty/unreachable) — pages
+   * should treat a missing value as effectively claimed, i.e. don't show a
+   * claim prompt.
+   */
+  claimStatus?: "unclaimed" | "pending" | "claimed";
 };
 
 function imgUrl(kind: "artist" | "dealer", slug: string, filename: string): string {
@@ -327,7 +344,7 @@ export const dealers: IFACProfile[] = [
       a("dealer", "bernilaplante")("Bernardo birabent - COGORNO SANTIAGO MUJERES RETOZANDO.jpg", "Women in Paradise"),
       a("dealer", "bernilaplante")("Bernardo birabent - GARCIA URIBURU NICOLAS DELFINES.jpg", "Dolphins"),
       a("dealer", "bernilaplante")("Bernardo birabent - GARCIA URIBURU NICOLAS OMBUES AL VIENTO.jpg", "Windy Ombu"),
-      a("dealer", "bernilaplante")("Bernardo birabent - PAEZ VILARO CARLOS MUJERESGATOS.jpg", "Cats"),
+      a("dealer", "bernilaplante")("Bernardo birabent - PAEZ VILARO CARLOS  MUJERESGATOS.jpg", "Cats"),
       a("dealer", "bernilaplante")("Bernardo birabent - TESTA CLORINDO MUTANTES.jpg", "Untitled"),
     ],
     links: [],

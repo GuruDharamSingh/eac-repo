@@ -10,6 +10,11 @@ import {
 } from "@/lib/oad";
 import { getCurrentUser } from "@/lib/session";
 import { DossierActions } from "@/components/oad/DossierActions";
+import { DossierActivity } from "@/components/oad/DossierActivity";
+import { StandardProfile } from "@/components/oad/StandardProfile";
+import { ThemeStyle } from "@elkdonis/live-editor/theme";
+import { getProfileBySlug } from "@elkdonis/services";
+import { resolveLayout } from "@/lib/profile-layouts";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +49,40 @@ export default async function DossierPage({ params }: Props) {
     user ? hasVouched(meta.id, user.id) : Promise.resolve(false),
   ]);
 
-  const html = renderDossier(profile, { archiveName: "ArtDirect" });
+  // The person chooses how their own page is rendered — users.profile_layout.
+  // resolveLayout falls back rather than throwing, so a value written before a
+  // layout was retired still renders something.
+  const identity = await getProfileBySlug(slug);
+  const layout = resolveLayout(identity?.profileLayout);
+  const useTemplate = layout !== "standard";
+
+  const html = useTemplate ? renderDossier(profile, { archiveName: "ArtDirect" }) : null;
 
   return (
     <>
-      {/* eslint-disable-next-line @next/next/no-head-element */}
-      <link rel="stylesheet" href="/api/silex/templates/dossier.css" />
-      <div style={{ paddingBottom: 64 }} dangerouslySetInnerHTML={{ __html: html }} />
+      {/* The dossier template carries its own fixed look, so a person's palette
+          only reaches the standard page. Injected either way — harmless when
+          the template ignores it, and it still themes DossierActivity below. */}
+      <ThemeStyle userId={identity?.userId ?? null} precedence="user" />
+      {useTemplate ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-head-element */}
+          <link rel="stylesheet" href="/api/silex/templates/dossier.css" />
+          <div dangerouslySetInnerHTML={{ __html: html! }} />
+        </>
+      ) : (
+        identity && (
+          <StandardProfile
+            profile={identity}
+            isSelf={Boolean(identity.userId && user?.id === identity.userId)}
+          />
+        )
+      )}
+      {/* Identity comes from the dossier template above; this is what they
+          have actually published across the network. meta.id is the user id. */}
+      <div style={{ paddingBottom: 64 }}>
+        <DossierActivity userId={meta.id} viewerId={user?.id} />
+      </div>
       <DossierActions
         slug={slug}
         signedIn={Boolean(user)}

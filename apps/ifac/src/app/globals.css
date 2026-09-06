@@ -776,6 +776,9 @@ nextjs-portal {
 .more-videos {
   display: inline-flex;
   margin-top: 12px;
+  color: #ff8c00;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .more-videos img,
@@ -926,6 +929,24 @@ nextjs-portal {
   margin: 0 0 14px;
   color: #20d7ff;
   font-size: 1rem;
+}
+
+.claim-prompt {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid #9c40d8;
+  background: rgba(156, 64, 216, 0.08);
+  font-size: 0.9rem;
+  color: #e8e3e4;
+}
+
+.claim-prompt a {
+  color: #20d7ff;
+  font-weight: 700;
+}
+
+.claim-prompt a:hover {
+  color: #fff;
 }
 
 .profile-body {
@@ -1137,4 +1158,439 @@ a.team-card:hover .team-photo {
   .team-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ==========================================================================
+   Members' hub
+   Uses the existing palette (--paper/--surface/--line/--ink and the five
+   accents) so the hub reads as the same publication as the public site
+   rather than an admin tool bolted on.
+   ========================================================================== */
+
+.hub {
+  background: var(--paper);
+}
+
+.hub-hero {
+  min-height: min(340px, 38vh);
+}
+
+.hub-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hub-welcome {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 44px 24px 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.hub-welcome h1 {
+  margin: 6px 0 0;
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.hub-welcome-sub {
+  margin: 10px 0 0;
+  max-width: 52ch;
+  color: var(--ink-soft);
+}
+
+/* --- announcements ------------------------------------------------------- */
+
+.hub-announcements,
+.hub-wide {
+  max-width: 1180px;
+  margin: 24px auto 0;
+  padding: 0 24px;
+}
+
+.hub-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hub-panel-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hub-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.hub-talk-frame {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+
+.hub-empty {
+  margin: 0;
+  max-width: 58ch;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* --- the two-column tile grid ------------------------------------------- */
+
+.hub-grid {
+  max-width: 1180px;
+  margin: 28px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.hub-col {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+@media (max-width: 820px) {
+  .hub-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- tiles -------------------------------------------------------------- */
+
+.hub-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  /* Square, but never so tall on a narrow screen that one tile fills it. */
+  aspect-ratio: 1 / 1;
+  max-height: 320px;
+  width: 100%;
+  padding: 22px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.hub-card:hover,
+.hub-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent-color, var(--ink));
+  outline: none;
+}
+
+.hub-card--wide {
+  aspect-ratio: auto;
+  max-height: none;
+  min-height: 132px;
+}
+
+.hub-card-glyph {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--accent-color, var(--ink));
+}
+
+.hub-card-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hub-card-blurb {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
+.hub-card-cue {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.hub-card--ink      { --accent-color: var(--ink); }
+.hub-card--oxide    { --accent-color: var(--oxide); }
+.hub-card--moss     { --accent-color: var(--moss); }
+.hub-card--blue     { --accent-color: var(--blue); }
+.hub-card--gold     { --accent-color: var(--gold); }
+.hub-card--charcoal { --accent-color: var(--charcoal); }
+
+/* A hairline in the tile's accent, so the grid reads as varied without
+   colouring whole cards. */
+.hub-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--accent-color, var(--ink));
+  border-radius: 4px 4px 0 0;
+  opacity: 0.85;
+}
+
+/* --- modal -------------------------------------------------------------- */
+
+.hub-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: min(560px, calc(100vw - 32px));
+  width: 100%;
+}
+
+.hub-dialog::backdrop {
+  background: rgba(23, 22, 21, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.hub-dialog-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.hub-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hub-dialog-head h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.hub-dialog-close {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hub-dialog-close:hover {
+  border-color: var(--ink);
+}
+
+.hub-dialog-body {
+  padding: 20px;
+}
+
+/* --- stub panels -------------------------------------------------------- */
+
+.hub-stub-what {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.hub-stub ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.hub-stub-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.hub-stub-flag {
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--oxide);
+}
+
+/* --- drawer ------------------------------------------------------------- */
+
+.hub-drawer-toggle {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hub-drawer-toggle:hover {
+  border-color: var(--ink);
+}
+
+.hub-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 22, 21, 0.38);
+  z-index: 40;
+}
+
+.hub-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 86vw);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  z-index: 41;
+  transform: translateX(100%);
+  transition: transform 180ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-drawer.is-open {
+  transform: translateX(0);
+}
+
+.hub-drawer-head {
+  position: relative;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hub-drawer-head .hub-dialog-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.hub-drawer-name {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.hub-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.hub-drawer-nav a {
+  padding: 13px 20px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.hub-drawer-nav a:hover {
+  background: var(--paper);
+}
+
+.hub-drawer-nav a em {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-style: normal;
+}
+
+.hub-drawer-signout {
+  margin-top: auto;
+  color: var(--oxide) !important;
+}
+
+/* --- hub appearance controls -------------------------------------------- */
+
+.hub-appearance {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 22px;
+}
+
+.hub-appearance-note {
+  margin: 0 0 16px;
+  max-width: 60ch;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.hub-appearance-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-appearance-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.hub-appearance-controls select,
+.hub-appearance-controls button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.hub-appearance-controls button:hover,
+.hub-appearance-controls select:hover {
+  border-color: var(--ink);
 }

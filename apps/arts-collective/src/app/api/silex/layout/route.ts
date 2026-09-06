@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import {
-  createNextcloudClient,
   downloadFile,
   ensureOrgFolder,
   ensureOrgFolderPath,
+  getAdminClient,
   type NextcloudClient,
 } from "@elkdonis/nextcloud";
 import { getServerSession } from "@elkdonis/auth-server";
@@ -102,25 +102,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, mode: "default" });
   }
 
-  if (!user.nextcloud_user_id || !user.nextcloud_app_password) {
+  // Read as the SERVICE account, not as the signed-in user.
+  //
+  // `organizations.nextcloud_folder_path` is a path in the service account's
+  // space (EAC_Network/<org>) — a member only ever sees it as a received
+  // share at a different path, so authenticating as them looked in the wrong
+  // place. Worse, `users.nextcloud_app_password` is not a real app password
+  // (users.ts's generateAppPassword returns the account password it just set)
+  // and goes stale: the account that reported this returned 401 against
+  // Nextcloud, which this route surfaced as an unexplained 502.
+  //
+  // Nothing here needs to act as the user. Authority was already established
+  // by canEditOrgSite above; this is a read of the org's own folder plus a
+  // column update. The sibling /api/silex/token route still provisions and
+  // shares as admin for the same reason — Silex itself is what needs the
+  // user's credentials, not this.
+  let admin: NextcloudClient;
+  try {
+    admin = getAdminClient();
+  } catch (err) {
     return NextResponse.json(
-      { error: "No Nextcloud credentials on this account." },
-      { status: 409 }
-    );
-  }
-  const baseUrl = process.env.NEXTCLOUD_URL;
-  if (!baseUrl) {
-    return NextResponse.json(
-      { error: "NEXTCLOUD_URL environment variable is required" },
+      { error: "Nextcloud service account is not configured", detail: String(err) },
       { status: 500 }
     );
   }
-
-  const nextcloudClient = createNextcloudClient({
-    baseUrl,
-    username: user.nextcloud_user_id,
-    password: user.nextcloud_app_password,
-  });
+  const nextcloudClient = admin;
 
   let nextcloudFolderPath = org.nextcloud_folder_path?.trim() ?? "";
   try {
@@ -159,7 +165,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const publishedRef = makeSilexPublishedRef(user.nextcloud_user_id, entryPath);
+  // The file lives in the service account's space, so the ref names it.
+  // downloadPublishedFile falls back to the admin account anyway, but naming
+  // the actual owner keeps the ref honest.
+  const publishedRef = makeSilexPublishedRef(
+    process.env.NEXTCLOUD_ADMIN_USER ?? "admin",
+    entryPath
+  );
   await db`
     UPDATE organizations
     SET layout_mode = 'silex',

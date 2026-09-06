@@ -14,6 +14,8 @@ import {
   type WorkshopPageInput,
   type WorkshopFullInput,
 } from "@/lib/cms/schema";
+import { deriveExcerpt } from "@elkdonis/utils";
+import { ensureUniqueThreadSlug } from "@elkdonis/services";
 
 export type CreateThreadResult =
   | { ok: true; id: string; slug: string }
@@ -54,7 +56,7 @@ export async function createThreadAction(
   // Generate id and slug (with collision retry).
   const id = nanoid(21);
   const baseSlug = slugifyTitle(data.title);
-  const slug = await ensureUniqueSlug(org.id, baseSlug);
+  const slug = await ensureUniqueThreadSlug(org.id, baseSlug);
 
   const isScheduled = data.kind === "workshop" || data.kind === "event";
   const scheduledAt =
@@ -170,26 +172,6 @@ export async function togglePinAction(
 
 // ---------- helpers ----------
 
-async function ensureUniqueSlug(
-  orgId: string,
-  base: string,
-  attempt = 0
-): Promise<string> {
-  const candidate = attempt === 0 ? base : `${base}-${nanoid(5).toLowerCase()}`;
-  const collision = await db<{ id: string }[]>`
-    SELECT id FROM threads WHERE org_id = ${orgId} AND slug = ${candidate} LIMIT 1
-  `;
-  if (collision.length === 0) return candidate;
-  if (attempt > 4) return `${base}-${nanoid(8).toLowerCase()}`;
-  return ensureUniqueSlug(orgId, base, attempt + 1);
-}
-
-function deriveExcerpt(body: string | null | undefined): string | null {
-  if (!body) return null;
-  const text = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  if (!text) return null;
-  return text.length > 220 ? text.slice(0, 217).trimEnd() + "…" : text;
-}
 
 /**
  * Create a Nextcloud Talk room scoped to the current user. Pulled inline so
@@ -579,7 +561,7 @@ export async function saveWorkshopAction(
     // ── CREATE ─────────────────────────────────────────────────────────────
     threadId = nanoid(21);
     const baseSlug = slugifyTitle(data.title);
-    slug = await ensureUniqueSlug(org.id, baseSlug);
+    slug = await ensureUniqueThreadSlug(org.id, baseSlug);
 
     await db`
       INSERT INTO threads (

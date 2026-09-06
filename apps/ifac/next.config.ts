@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
     "@elkdonis/db",
+    "@elkdonis/live-editor",
     "@elkdonis/email",
     "@elkdonis/types",
   ],

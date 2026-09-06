@@ -19,7 +19,7 @@ import {
 } from "@mantine/core";
 import { UserCheck, UserX, UserPlus, Users, Clock, Mail } from "lucide-react";
 import type { Meeting } from "@elkdonis/types";
-import { useRealtimeAttendees } from "@elkdonis/hooks";
+import { useRealtimeAttendees, useThreadRsvp } from "@elkdonis/hooks";
 import { supabase } from "@/lib/supabase";
 
 interface Attendee {
@@ -42,11 +42,7 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   
-  // Current user's RSVP status
-  const [myRsvpStatus, setMyRsvpStatus] = useState<string | null>(null);
-  const [isAttending, setIsAttending] = useState(false);
   const [receiveEmailNotice, setReceiveEmailNotice] = useState(true);
-  const [rsvpLoading, setRsvpLoading] = useState(false);
 
   const isPastMeeting = meeting?.scheduledAt && new Date(meeting.scheduledAt) < new Date();
 
@@ -60,7 +56,6 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
   useEffect(() => {
     if (opened && meeting) {
       fetchAttendees();
-      checkMyRsvpStatus();
     }
   }, [opened, meeting?.id]);
 
@@ -70,51 +65,6 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
       fetchAttendees();
     }
   }, [recentChanges.length]);
-
-  const checkMyRsvpStatus = async () => {
-    if (!meeting) return;
-    try {
-      const res = await fetch(`/api/meetings/${meeting.id}/rsvp`);
-      if (res.ok) {
-        const data = await res.json();
-        setIsAttending(data.attending);
-        setMyRsvpStatus(data.status);
-      }
-    } catch (error) {
-      console.error("Error checking RSVP status:", error);
-    }
-  };
-
-  const handleRsvp = async (shouldAttend: boolean) => {
-    if (!meeting || shouldAttend === isAttending) return;
-    setRsvpLoading(true);
-    try {
-      if (!shouldAttend) {
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, { method: "DELETE" });
-        if (res.ok) {
-          setIsAttending(false);
-          setMyRsvpStatus(null);
-          fetchAttendees(); // Refresh the list
-        }
-      } else {
-        const res = await fetch(`/api/meetings/${meeting.id}/rsvp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ receiveEmailNotice }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setIsAttending(true);
-          setMyRsvpStatus(data.status);
-          fetchAttendees(); // Refresh the list
-        }
-      }
-    } catch (error) {
-      console.error("Error updating RSVP:", error);
-    } finally {
-      setRsvpLoading(false);
-    }
-  };
 
   const fetchAttendees = async () => {
     if (!meeting) return;
@@ -149,6 +99,11 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
       console.error("Error updating attendee status:", error);
     }
   };
+
+  const { isAttending, isLoading: rsvpLoading, rsvp } = useThreadRsvp(meeting?.id ?? "", {
+    enabled: opened && !!meeting,
+    onChange: () => fetchAttendees(),
+  });
 
   const filteredAttendees = attendees.filter((a) => {
     if (filter === "all") return true;
@@ -207,17 +162,17 @@ export function AttendeeModal({ meeting, opened, onClose }: AttendeeModalProps) 
                   variant={isAttending ? "filled" : "light"}
                   color="teal"
                   leftSection={isAttending ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                  onClick={() => handleRsvp(true)}
+                  onClick={() => rsvp(true, receiveEmailNotice)}
                   loading={rsvpLoading}
                 >
                   {isAttending ? "I'm Going ✓" : "I'm Going"}
                 </Button>
                 <Button
                   size="sm"
-                  variant={!isAttending && myRsvpStatus === null ? "light" : isAttending ? "light" : "filled"}
+                  variant={isAttending ? "light" : "filled"}
                   color="gray"
                   leftSection={<UserX size={16} />}
-                  onClick={() => handleRsvp(false)}
+                  onClick={() => rsvp(false)}
                   loading={rsvpLoading}
                   disabled={!isAttending}
                 >

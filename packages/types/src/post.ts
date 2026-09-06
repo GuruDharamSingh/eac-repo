@@ -4,7 +4,12 @@ import type { Topic } from './topic';
 import type { Media } from './media';
 
 export type PostStatus = 'draft' | 'published' | 'archived';
-export type PostVisibility = 'org' | 'network' | 'public';
+/**
+ * Must match threads_visibility_check in the database. These are the literal
+ * column values, not friendly names — the previous 'org' | 'network' | 'public'
+ * matched nothing the CHECK allows, so any insert using them was rejected.
+ */
+export type PostVisibility = 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
 
 export interface Post {
   id: string;

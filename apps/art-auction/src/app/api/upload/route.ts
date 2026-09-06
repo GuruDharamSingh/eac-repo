@@ -69,13 +69,13 @@ export async function POST(request: NextRequest) {
     const userId = session.user.db_user_id ?? session.user.id;
 
     // Each artist gets a personal folder under the marketplace root. We key it
-    // by the marketplace_artists user_id (stable + unique). Only approved
-    // marketplace artists may upload here.
+    // by the store owner's user id (stable + unique). Only people who already
+    // have a store may upload here.
     let artistFolder: string | null = null;
     try {
       const rows = (await db`
-        SELECT user_id::text AS uid FROM marketplace_artists
-        WHERE user_id = ${userId} LIMIT 1
+        SELECT owner_user_id::text AS uid FROM store
+        WHERE owner_user_id = ${userId} LIMIT 1
       `) as unknown as Array<{ uid: string }>;
       if (rows[0]?.uid) artistFolder = rows[0].uid;
     } catch {

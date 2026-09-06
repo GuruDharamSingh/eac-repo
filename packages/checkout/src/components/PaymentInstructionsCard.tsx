@@ -5,6 +5,8 @@ import { cn } from "./cn";
 export interface PaymentInstructionsCardProps {
   display: PaymentDisplay;
   className?: string;
+  /** What's being held for the buyer — defaults to "artwork". */
+  itemNoun?: string;
 }
 
 /**
@@ -12,14 +14,14 @@ export interface PaymentInstructionsCardProps {
  * Currently supports the eTransfer kind in detail; Stripe/manual fall back
  * to plain text or the Stripe Elements mount point (left to consumers).
  */
-export function PaymentInstructionsCard({ display, className }: PaymentInstructionsCardProps) {
+export function PaymentInstructionsCard({ display, className, itemNoun = "artwork" }: PaymentInstructionsCardProps) {
   if (display.kind === "etransfer_instructions") {
     const due = new Date(display.dueAt);
     return (
       <div className={cn("rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--accent))]/30 p-6", className)}>
         <h2 className="mb-2 font-serif text-2xl">Send your eTransfer</h2>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          Your artwork is reserved. Complete the transfer below to confirm your order.
+          Your {itemNoun} is reserved. Complete the transfer below to confirm your order.
         </p>
 
         <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">

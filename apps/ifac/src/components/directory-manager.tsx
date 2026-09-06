@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { AdminDirectoryRow } from "@/lib/directory-admin";
+import type { AdminDirectoryRow, AssignableMember } from "@/lib/directory-admin";
+import { ImageUploadField } from "@/components/image-upload-field";
 
 type Draft = {
   id: string | null;
@@ -65,6 +66,12 @@ function parsePiped(text: string): { a: string; b: string }[] {
     });
 }
 
+/** Matches the API route's own slugify — used client-side only to name the
+ *  Nextcloud upload folder before a not-yet-saved draft has a real slug. */
+function slugify(value: string): string {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
 function draftToPayload(d: Draft) {
   const bio = d.bioText.split(/\n\s*\n/).map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
   const artworks = parsePiped(d.artworksText).map(({ a, b }) => ({ filename: a, title: b }));
@@ -86,8 +93,15 @@ function draftToPayload(d: Draft) {
   };
 }
 
-export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDirectoryRow[] }) {
+export function DirectoryManager({
+  initialProfiles,
+  initialAssignableMembers,
+}: {
+  initialProfiles: AdminDirectoryRow[];
+  initialAssignableMembers: AssignableMember[];
+}) {
   const [profiles, setProfiles] = useState(initialProfiles);
+  const [assignableMembers, setAssignableMembers] = useState(initialAssignableMembers);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
@@ -116,7 +130,31 @@ export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDi
     if (res.ok) {
       const data = await res.json();
       setProfiles(data.profiles ?? []);
+      setAssignableMembers(data.assignableMembers ?? []);
     }
+  }
+
+  /**
+   * "This unclaimed row is actually this real, signed-up member" — confirmed
+   * by the admin rather than requiring the artist to click claim on ArtDirect
+   * themself. Merges immediately (see adminAssignProfile).
+   */
+  async function assignMember(row: AdminDirectoryRow, memberId: string) {
+    if (!memberId) return;
+    setNotice("");
+    const res = await fetch("/api/admin/directory", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: row.id, action: "assign", memberId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setNotice(data.error || "Could not match this profile.");
+      return;
+    }
+    setProfiles(data.profiles ?? []);
+    setAssignableMembers(data.assignableMembers ?? []);
+    setNotice(`${row.name} matched to a member account.`);
   }
 
   async function save() {
@@ -199,8 +237,13 @@ export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDi
             </div>
 
             <div className="field">
-              <label htmlFor="d-role">Role</label>
+              <label htmlFor="d-role">Display title</label>
               <input id="d-role" value={draft.role} onChange={(e) => set("role", e.currentTarget.value)} placeholder="Artist · Painter" />
+              <p className="small-note">
+                The public byline shown on their profile — not an access level. To change
+                what someone is allowed to do in IFAC, use{" "}
+                <a href="/admin">User management</a> instead.
+              </p>
             </div>
 
             <div className="field-grid">
@@ -215,8 +258,22 @@ export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDi
             </div>
 
             <div className="field">
-              <label htmlFor="d-portrait">Portrait image URL</label>
-              <input id="d-portrait" value={draft.portrait_url} onChange={(e) => set("portrait_url", e.currentTarget.value)} placeholder="/ifac/artists/slug/photo.jpg or https://…" />
+              <label htmlFor="d-portrait">Portrait</label>
+              {draft.portrait_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={draft.portrait_url} alt="" style={{ maxWidth: 120, display: "block", marginBottom: "0.4rem" }} />
+              )}
+              <ImageUploadField
+                memberSlug={draft.slug || slugify(draft.name)}
+                onUploaded={(url) => set("portrait_url", url)}
+              />
+              <input
+                id="d-portrait"
+                value={draft.portrait_url}
+                onChange={(e) => set("portrait_url", e.currentTarget.value)}
+                placeholder="or paste a URL directly"
+                style={{ marginTop: "0.4rem" }}
+              />
             </div>
 
             <div className="field">
@@ -226,7 +283,14 @@ export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDi
 
             <div className="field">
               <label htmlFor="d-artworks">Artworks — one per line: <code>image-url | Title</code></label>
-              <textarea id="d-artworks" value={draft.artworksText} onChange={(e) => set("artworksText", e.currentTarget.value)} rows={6} placeholder="/ifac/artists/slug/painting.jpg | Sunrise Study" />
+              <ImageUploadField
+                memberSlug={draft.slug || slugify(draft.name)}
+                label="Upload an artwork"
+                onUploaded={(url, filename) =>
+                  set("artworksText", (draft.artworksText ? draft.artworksText + "\n" : "") + `${url} | ${filename.replace(/\.[^.]+$/, "")}`)
+                }
+              />
+              <textarea id="d-artworks" value={draft.artworksText} onChange={(e) => set("artworksText", e.currentTarget.value)} rows={6} placeholder="/ifac/artists/slug/painting.jpg | Sunrise Study" style={{ marginTop: "0.4rem" }} />
             </div>
 
             <div className="field">
@@ -255,9 +319,25 @@ export function DirectoryManager({ initialProfiles }: { initialProfiles: AdminDi
             <button className="button-secondary" type="button" onClick={() => startNew("dealer")}>+ New dealer</button>
           </div>
 
-          <RosterTable title={`Artists (${artists.length})`} rows={artists} onEdit={startEdit} onDelete={remove} editingId={draft.id} />
+          <RosterTable
+            title={`Artists (${artists.length})`}
+            rows={artists}
+            onEdit={startEdit}
+            onDelete={remove}
+            editingId={draft.id}
+            assignableMembers={assignableMembers}
+            onAssign={assignMember}
+          />
           <div style={{ height: "1rem" }} />
-          <RosterTable title={`Dealers (${dealers.length})`} rows={dealers} onEdit={startEdit} onDelete={remove} editingId={draft.id} />
+          <RosterTable
+            title={`Dealers (${dealers.length})`}
+            rows={dealers}
+            onEdit={startEdit}
+            onDelete={remove}
+            editingId={draft.id}
+            assignableMembers={assignableMembers}
+            onAssign={assignMember}
+          />
         </section>
       </div>
     </div>
@@ -270,19 +350,23 @@ function RosterTable({
   onEdit,
   onDelete,
   editingId,
+  assignableMembers,
+  onAssign,
 }: {
   title: string;
   rows: AdminDirectoryRow[];
   onEdit: (row: AdminDirectoryRow) => void;
   onDelete: (row: AdminDirectoryRow) => void;
   editingId: string | null;
+  assignableMembers: AssignableMember[];
+  onAssign: (row: AdminDirectoryRow, memberId: string) => void;
 }) {
   return (
     <div className="table-wrap">
       <h3 style={{ color: "#ff8c00", marginBottom: "0.4rem" }}>{title}</h3>
       <table>
         <thead>
-          <tr><th>Name</th><th>Works</th><th>Status</th><th></th></tr>
+          <tr><th>Name</th><th>Works</th><th>Status</th><th>Claim</th><th></th></tr>
         </thead>
         <tbody>
           {rows.map((row) => (
@@ -293,13 +377,49 @@ function RosterTable({
               </td>
               <td>{row.artworks.length}</td>
               <td>{row.status === "published" ? "Live" : "Draft"}</td>
+              <td>
+                {row.claimStatus === "claimed" ? (
+                  <span className="small-note">✓ Claimed</span>
+                ) : (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      const memberId = e.currentTarget.value;
+                      if (memberId && confirm(`Confirm this profile is ${row.name}'s account? This merges them permanently.`)) {
+                        onAssign(row, memberId);
+                      }
+                      e.currentTarget.value = "";
+                    }}
+                    title="Confirm which signed-up member this profile actually is — same effect as them claiming it themself on ArtDirect."
+                  >
+                    <option value="">
+                      {row.claimStatus === "pending" ? "Pending claim — or match…" : "Match to a member…"}
+                    </option>
+                    {assignableMembers.map((m) => (
+                      <option key={m.userId} value={m.userId}>
+                        {m.displayName || m.email}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </td>
               <td style={{ whiteSpace: "nowrap" }}>
                 <button className="button-secondary" type="button" onClick={() => onEdit(row)} style={{ marginRight: "0.4rem" }}>Edit</button>
+                <a
+                  className="button-secondary"
+                  href={`${process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "http://localhost:3013"}/${row.slug}/edit`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ marginRight: "0.4rem", display: "inline-block" }}
+                  title="Bio, photo, links and portfolio are edited on the artist's own ArtDirect page — this console only controls role and publish status here."
+                >
+                  Edit on ArtDirect ↗
+                </a>
                 <button className="button-secondary" type="button" onClick={() => onDelete(row)}>Delete</button>
               </td>
             </tr>
           ))}
-          {rows.length === 0 ? <tr><td colSpan={4} className="small-note">None yet.</td></tr> : null}
+          {rows.length === 0 ? <tr><td colSpan={5} className="small-note">None yet.</td></tr> : null}
         </tbody>
       </table>
     </div>

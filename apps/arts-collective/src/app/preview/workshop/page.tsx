@@ -53,6 +53,7 @@ const PLACEHOLDER: import("@elkdonis/cms-bindings").WorkshopPageData = {
   facilitator_bio: "Dana's practice spans poetry, auto-fiction, and collaborative writing. She has facilitated workshops at Harbourfront Centre and OCAD University.",
   facilitator_photo: null,
   facilitator_pronouns: "she/her",
+  facilitator_role: "Writer & workshop facilitator",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

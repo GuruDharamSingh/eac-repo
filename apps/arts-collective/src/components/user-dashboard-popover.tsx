@@ -99,7 +99,7 @@ export function UserDashboardPopover({
             </MenuLink>
             {isOwner && (
               <MenuLink href={`${rootBase}/hub`}>
-                Your onboarding hub
+                Your hub
               </MenuLink>
             )}
           </nav>

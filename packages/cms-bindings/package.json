@@ -8,18 +8,27 @@
   "exports": {
     ".": "./src/index.ts",
     "./workshop": "./src/workshop/index.ts",
-    "./dossier": "./src/dossier/index.ts"
+    "./dossier": "./src/dossier/index.ts",
+    "./engine": "./src/engine/index.ts",
+    "./node": "./src/node.ts"
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:engine": "tsx scripts/engine-smoke.mts",
+    "audit:template": "tsx scripts/audit-workshop-template.mts",
+    "validate:template": "tsx scripts/validate-template.mts",
+    "check-types": "tsc --noEmit && pnpm run validate:template",
+    "test": "pnpm run test:engine && pnpm run validate:template"
   },
   "dependencies": {
-    "@elkdonis/live-editor": "workspace:*"
+    "@elkdonis/live-editor": "workspace:*",
+    "node-html-parser": "^9.0.3"
   },
   "devDependencies": {
     "@swc/core": "^1.15.33",
+    "@types/node": "^26.4.1",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }

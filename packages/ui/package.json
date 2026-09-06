@@ -12,7 +12,8 @@
       "require": "./dist/index.js"
     },
     "./eac-theme.css": "./src/eac-theme.css",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./rgl-theme.css": "./src/rgl-theme.css"
   },
   "scripts": {
     "build": "tsup",
@@ -31,6 +32,7 @@
     "@elkdonis/auth-client": "workspace:*",
     "@marsidev/react-turnstile": "^1.4.1",
     "@elkdonis/hooks": "workspace:*",
+    "@elkdonis/live-editor": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@excalidraw/excalidraw": "^0.18.0",
@@ -63,7 +65,8 @@
     "clsx": "^2.0.0",
     "highlight.js": "^11.0.0",
     "lowlight": "^3.0.0",
-    "lucide-react": "^0.544.0"
+    "lucide-react": "^0.544.0",
+    "react-grid-layout": "^2.2.4"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

@@ -44,7 +44,6 @@ export default async function OfferingsPage() {
       ON ets.org_id = t.org_id
      AND ets.template_key = 'rsvp-guest:' || t.id
     WHERE t.author_id = ${userId}
-      AND t.status <> 'archived'
       AND t.kind IN ('post', 'meeting', 'event', 'workshop')
     ORDER BY COALESCE(t.scheduled_at, t.published_at, t.created_at) DESC
     LIMIT 200

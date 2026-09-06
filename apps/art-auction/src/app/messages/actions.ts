@@ -6,7 +6,10 @@ import {
   markConversationRead,
   getOrCreateDirectConversation,
 } from "@elkdonis/messaging/server";
-import { getArtworkById } from "@elkdonis/commerce/queries";
+import {
+  getArtworkById,
+  getArtworkContactUserId,
+} from "@elkdonis/commerce/queries";
 import { getCurrentUserId } from "@/lib/marketplace-auth";
 
 /** Post a message into a conversation the signed-in user belongs to. */
@@ -53,7 +56,14 @@ export async function messageArtistAction(input: {
 
   const artwork = await getArtworkById(input.artworkId);
   if (!artwork) return { ok: false, error: "Artwork not found." };
-  if (artwork.artistUserId === userId) {
+
+  // Not necessarily the maker: an org store may sell work with no individual
+  // attribution, in which case the person to talk to is whoever runs the store.
+  const contactUserId = await getArtworkContactUserId(input.artworkId);
+  if (!contactUserId) {
+    return { ok: false, error: "This seller has nobody to contact right now." };
+  }
+  if (contactUserId === userId) {
     return { ok: false, error: "That's your own piece." };
   }
   if (!input.body.trim()) return { ok: false, error: "Message is empty." };
@@ -61,7 +71,7 @@ export async function messageArtistAction(input: {
   try {
     const { conversationId } = await getOrCreateDirectConversation({
       userA: userId,
-      userB: artwork.artistUserId,
+      userB: contactUserId,
       context: { type: "artwork", id: artwork.id },
       subject: artwork.title,
     });

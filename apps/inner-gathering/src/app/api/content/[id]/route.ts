@@ -9,6 +9,7 @@ import {
   getEmailTemplateSettings,
   threadTemplateKey,
 } from "@/lib/email-template-settings";
+import { parseSessionNotes } from "@/lib/workshop-session-notes";
 
 const ORG_ID = "inner_group";
 
@@ -40,7 +41,7 @@ export async function GET(
              video_link, meeting_url,
              recurrence_pattern, recurrence_custom_rule, recurrence_until,
              is_rsvp_enabled, attendee_limit, rsvp_deadline, min_attendees,
-             reminder_minutes_before,
+             notify_on_min_attendees, reminder_minutes_before, price, metadata,
              published_at, document_url
       FROM threads
       WHERE id = ${id}
@@ -59,8 +60,17 @@ export async function GET(
     }
 
     let pitch: string | null = null;
-    let price: number | null = null;
+    // threads.price is the shared cross-kind column; workshop's dedicated
+    // workshop_pages.price_member (below) is that kind's source of truth and
+    // overrides this default.
+    let price: number | null = thread.price != null ? Number(thread.price) : null;
     let flyerUrl: string | null = null;
+    let bannerImageUrl: string | null = null;
+    let bannerFocalY: number | null = null;
+    let heroMediaUrl: string | null = null;
+    let heroMediaType: "image" | "video" | null = null;
+    let heroText: string | null = null;
+    let backgroundColor: string | null = null;
     let sessions: Array<{
       id: string;
       title: string;
@@ -71,18 +81,28 @@ export async function GET(
       location?: string;
       videoConferenceUrl?: string;
       mediaUrl?: string | null;
+      videoUrl?: string | null;
+      resources?: Array<{ id: string; title: string; type: string; url: string; isPublic: boolean; description?: string }>;
+      backgroundColor?: string | null;
       orderIndex: number;
     }> = [];
 
     if (thread.kind === "workshop") {
       const [page] = await db`
-        SELECT description_short, price_member, cover_image_url
+        SELECT description_short, price_member, cover_image_url,
+               banner_image_url, banner_focal_y, hero_media_url, hero_media_type, hero_text, background_color
         FROM workshop_pages WHERE thread_id = ${id}
       `;
       if (page) {
         pitch = (page.description_short as string) ?? null;
         price = page.price_member != null ? Number(page.price_member) : null;
         flyerUrl = (page.cover_image_url as string) ?? null;
+        bannerImageUrl = (page.banner_image_url as string) ?? null;
+        bannerFocalY = page.banner_focal_y != null ? Number(page.banner_focal_y) : null;
+        heroMediaUrl = (page.hero_media_url as string) ?? null;
+        heroMediaType = (page.hero_media_type as "image" | "video" | null) ?? null;
+        heroText = (page.hero_text as string) ?? null;
+        backgroundColor = (page.background_color as string) ?? null;
       }
       const sessionRows = await db`
         SELECT id, session_number, topic, scheduled_at, duration_minutes, notes
@@ -90,18 +110,24 @@ export async function GET(
         WHERE thread_id = ${id}
         ORDER BY session_number
       `;
-      sessions = sessionRows.map((s: any) => ({
-        id: s.id,
-        title: s.topic ?? "",
-        description: s.notes?.description ?? "",
-        scheduledAt: s.scheduled_at ? new Date(s.scheduled_at).toISOString() : undefined,
-        durationMinutes: s.duration_minutes ?? undefined,
-        isOnline: s.notes?.isOnline ?? true,
-        location: s.notes?.location ?? "",
-        videoConferenceUrl: s.notes?.videoConferenceUrl ?? "",
-        mediaUrl: s.notes?.mediaUrl ?? null,
-        orderIndex: (s.session_number ?? 1) - 1,
-      }));
+      sessions = sessionRows.map((s: any) => {
+        const notes = parseSessionNotes(s.notes);
+        return {
+          id: s.id,
+          title: s.topic ?? "",
+          description: notes.description ?? "",
+          scheduledAt: s.scheduled_at ? new Date(s.scheduled_at).toISOString() : undefined,
+          durationMinutes: s.duration_minutes ?? undefined,
+          isOnline: notes.isOnline ?? true,
+          location: notes.location ?? "",
+          videoConferenceUrl: notes.videoConferenceUrl ?? "",
+          mediaUrl: notes.mediaUrl ?? null,
+          videoUrl: notes.videoUrl ?? null,
+          resources: notes.resources ?? [],
+          backgroundColor: notes.backgroundColor ?? null,
+          orderIndex: (s.session_number ?? 1) - 1,
+        };
+      });
     }
 
     // Thread-scoped RSVP confirmation copy (empty when using the org default)
@@ -136,11 +162,19 @@ export async function GET(
         attendeeLimit: thread.attendee_limit ?? null,
         rsvpDeadline: thread.rsvp_deadline ? new Date(thread.rsvp_deadline).toISOString() : null,
         minAttendees: thread.min_attendees ?? null,
+        notifyOnMinAttendees: thread.notify_on_min_attendees ?? false,
         reminderMinutesBefore: thread.reminder_minutes_before ?? 60,
         rsvpEmailBody: rsvpTemplate?.config.bodyText ?? null,
+        coGuideIds: Array.isArray(thread.metadata?.coGuideIds) ? thread.metadata.coGuideIds : null,
         pitch,
         price,
         flyerUrl,
+        bannerImageUrl,
+        bannerFocalY,
+        heroMediaUrl,
+        heroMediaType,
+        heroText,
+        backgroundColor,
         sessions,
         visibility: thread.visibility ?? "PUBLIC",
         primaryOrgId: thread.org_id,
@@ -218,6 +252,32 @@ export async function PATCH(
     const userId = session.user.id;
     const admin = await isAdmin(userId);
     const body = await request.json();
+
+    // Author archive/restore — takes the thread off the public feed (feed
+    // only shows status='published') while keeping it in My Offerings,
+    // marked as archived. Restore just republishes it.
+    if (body.action === "archive" || body.action === "restore") {
+      const [thread] = await db`
+        SELECT author_id FROM threads WHERE id = ${id} LIMIT 1
+      `;
+      if (!thread) {
+        return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      }
+      if (thread.author_id !== userId && !admin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const newStatus = body.action === "archive" ? "archived" : "published";
+      await db`
+        UPDATE threads
+        SET status = ${newStatus}, updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      revalidatePath("/feed");
+      revalidatePath("/offerings");
+      return NextResponse.json({ success: true, id, status: newStatus });
+    }
 
     // feedPinned: admin-only
     if (typeof body.feedPinned === "boolean") {

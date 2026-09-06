@@ -1,6 +1,14 @@
 import { notFound } from "next/navigation";
+import { getServerSession } from "@elkdonis/auth-server";
+import { canEditProfile } from "@elkdonis/services";
 import { getDirectoryProfile, listDirectorySlugs } from "@/lib/directory";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { ClaimPrompt } from "@/components/claim-prompt";
+import { ProfileEditorPanel } from "@/components/profile-editor-panel";
+import { ThemeStyle } from "@elkdonis/live-editor/theme";
+import { getThemeOverrides } from "@elkdonis/services";
+import { siteConfig } from "@/config/site";
+import { GalleryPanel } from "@/components/gallery-panel";
 import { defaultSiteContent } from "@/lib/default-content";
 import type { Metadata } from "next";
 
@@ -25,22 +33,51 @@ export default async function DealerPage({ params }: Props) {
   const profile = await getDirectoryProfile(slug);
   if (!profile || profile.kind !== "dealer") notFound();
 
+  // Owner (or global admin) gets the inline editor — everyone else gets the
+  // same page, read-only. Mirrors apps/ifac/src/app/artists/[slug]/page.tsx.
+  const session = await getServerSession();
+  const viewerId = session.user ? (session.user.db_user_id ?? session.user.id) : null;
+  const editable = Boolean(profile.userId && viewerId && (await canEditProfile(viewerId, profile.userId)));
+  // canEditProfile is true for admins too; the palette is only the person's own.
+  const isSelf = Boolean(profile.userId && viewerId && profile.userId === viewerId);
+  const themeOverrides = profile.userId
+    ? await getThemeOverrides({ userId: profile.userId })
+    : {};
+
+  const galleryItems = profile.artworks.map((w, i) => ({
+    id: w.id ?? `${slug}-${i}`,
+    url: w.filename,
+    title: w.title,
+    x: w.x, y: w.y, w: w.w, h: w.h,
+  }));
+
   return (
     <div className="site-shell">
+      {/* Site palette, then this person's own. Rendered for every visitor, not
+          just the owner — an artist's chosen colours are part of their page,
+          the same as their portrait. */}
+      <ThemeStyle orgId={siteConfig.orgId} userId={profile.userId ?? null} />
       <SiteHeader />
       <main>
         <div className="profile-intro">
           <a className="profile-back" href="/#dealers">← Art Dealers</a>
           <h1 className="profile-name">{profile.name}</h1>
           <p className="profile-role">{profile.role}</p>
+          <ClaimPrompt slug={profile.slug} claimStatus={profile.claimStatus} />
         </div>
+
+        {editable && profile.userId && (
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px" }}>
+            <ProfileEditorPanel profileUserId={profile.userId} slug={profile.slug} bio={profile.bio.join("\n\n")} avatarUrl={profile.portrait} themeOverrides={themeOverrides} isSelf={isSelf} />
+          </div>
+        )}
 
         <div className="profile-body">
           <aside className="profile-sidebar">
             {profile.portrait && (
               <img src={profile.portrait} alt={profile.name} className="profile-portrait" />
             )}
-            <div className="profile-bio">
+            <div className="profile-bio" data-trait="bio">
               {profile.bio.map((p, i) => <p key={i}>{p}</p>)}
             </div>
             {profile.email && (
@@ -60,15 +97,8 @@ export default async function DealerPage({ params }: Props) {
           </aside>
 
           <section className="profile-gallery">
-            {profile.artworks.length > 0 ? (
-              <div className="artwork-grid">
-                {profile.artworks.map((work) => (
-                  <figure className="artwork-card" key={work.filename}>
-                    <img src={work.filename} alt={work.title} loading="lazy" />
-                    <figcaption>{work.title}</figcaption>
-                  </figure>
-                ))}
-              </div>
+            {galleryItems.length > 0 || editable ? (
+              <GalleryPanel profileUserId={profile.userId ?? ""} slug={profile.slug} items={galleryItems} editable={editable} />
             ) : (
               <p className="profile-no-work">Featured works coming soon.</p>
             )}

@@ -9,10 +9,14 @@ export {
 } from './api-response';
 
 // String utilities
-export { slugify, formatFileSize, truncate } from './strings';
+export { slugify, formatFileSize, truncate, deriveExcerpt } from './strings';
+
+// Slugs no person or org may take — shared by users.slug, organizations.slug,
+// and the arts-collective middleware's reserved subdomains (pure, Edge-safe).
+export { RESERVED_SLUGS, isReservedSlug } from './reserved-slugs';
 
 // HTML sanitization for rich-text content
-export { sanitizeRichText } from './sanitize';
+export { sanitizeRichText, sanitizePostBody } from './sanitize';
 
 // HTML sanitization for Silex-published org sites
 export { sanitizeSilexHtml } from './sanitize-silex';
@@ -37,3 +41,12 @@ export {
   NEXTCLOUD_DEFAULT_URL,
   POLL_INTERVAL
 } from './constants';
+
+// Recurring-meeting cycle math (pure — safe to import from client components)
+export {
+  recurrenceIntervalMs,
+  lastOccurrenceEnd,
+  nextOccurrence,
+  isWithinCurrentCycle,
+  type RecurrencePattern,
+} from './recurrence';

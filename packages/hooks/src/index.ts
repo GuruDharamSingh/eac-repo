@@ -27,6 +27,9 @@ export type { TalkMessage } from './useNextcloudTalk';
 export { useNextcloudFiles } from './useNextcloudFiles';
 export type { NextcloudFile } from './useNextcloudFiles';
 
+export { useThreadRsvp } from './useThreadRsvp';
+export type { UseThreadRsvpOptions } from './useThreadRsvp';
+
 // Realtime hooks
 export { useRealtimeSubscription } from './useRealtimeSubscription';
 export { useRealtimeFeed } from './useRealtimeFeed';

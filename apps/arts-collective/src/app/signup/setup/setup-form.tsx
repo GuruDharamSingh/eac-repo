@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { networkHostLabel } from "@/lib/org-url";
 
 const schema = z.object({
   subdomain: z
@@ -36,7 +37,15 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
-export function SetupForm() {
+export type SetupTier = "free" | "supported" | "partner";
+
+/**
+ * Creates the org. `tier` is what the person is asking for; the org starts
+ * unconfirmed on every tier and an admin confirms it after the intake
+ * conversation, so a supported/partner request is a real org from the first
+ * minute — not a dead-end link.
+ */
+export function SetupForm({ tier = "free" }: { tier?: SetupTier }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +56,7 @@ export function SetupForm() {
   });
 
   const subdomainLive = form.watch("subdomain");
+  const host = networkHostLabel();
 
   const onSubmit = async (values: Values) => {
     setError(null);
@@ -54,7 +64,7 @@ export function SetupForm() {
     const res = await fetch("/api/org/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subdomain: values.subdomain, title: values.subdomain }),
+      body: JSON.stringify({ subdomain: values.subdomain, title: values.subdomain, tier }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -62,7 +72,8 @@ export function SetupForm() {
       setSubmitting(false);
       return;
     }
-    router.push("/hub");
+    const slug = typeof data?.slug === "string" ? data.slug : values.subdomain;
+    router.push(`/hub/organization?org=${encodeURIComponent(slug)}`);
     router.refresh();
   };
 
@@ -93,7 +104,7 @@ export function SetupForm() {
                   <FormDescription>
                     Your site will live at{" "}
                     <code className="font-mono text-foreground">
-                      {subdomainLive || "your-name"}.artscollective.org
+                      {subdomainLive || "your-name"}.{host}
                     </code>
                     . You can change this later from your account.
                   </FormDescription>
@@ -112,7 +123,11 @@ export function SetupForm() {
               disabled={submitting}
               aria-busy={submitting}
             >
-              {submitting ? "Setting up..." : "Continue to your hub"}
+              {submitting
+                ? "Setting up..."
+                : tier === "free"
+                ? "Continue to your hub"
+                : "Set it up and start the conversation"}
             </Button>
           </form>
         </Form>

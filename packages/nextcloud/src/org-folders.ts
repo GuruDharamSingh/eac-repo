@@ -86,3 +86,37 @@ export async function ensureOrgFolder(
     includeStandardMediaFolders: options.includeStandardMediaFolders,
   });
 }
+
+/**
+ * A folder for one member/profile's media within an org — e.g. IFAC's
+ * per-artist galleries (Media/Images/<slug>), first consumer being the
+ * migration off the artists shipping their images as committed files
+ * under apps/ifac/public/. Nests under the org's own Media tree rather than
+ * getting a top-level slot, so it inherits that org's existing share/backup
+ * boundary instead of needing its own.
+ */
+export async function ensureMemberMediaFolder(
+  client: NextcloudClient,
+  orgId: string,
+  memberSlug: string,
+  options: Pick<EnsureOrgFolderOptions, 'rootFolder'> = {}
+): Promise<string> {
+  const orgFolder = await ensureOrgFolder(client, orgId, { rootFolder: options.rootFolder });
+  const memberFolder = cleanPath(`${orgFolder}/Media/Images/${memberSlug}`);
+  await ensureFolderTree(client, memberFolder);
+  return memberFolder;
+}
+
+/**
+ * A person's own media folder, org-agnostic — ArtDirect has no org_id to key
+ * off of (a person's identity spans every org they belong to), so this
+ * treats "artdirect" as a fixed pseudo-org root and reuses the same
+ * org-folder tree-creation rather than inventing a second folder scheme.
+ */
+export async function ensurePersonMediaFolder(
+  client: NextcloudClient,
+  userSlug: string,
+  options: Pick<EnsureOrgFolderOptions, 'rootFolder'> = {}
+): Promise<string> {
+  return ensureMemberMediaFolder(client, 'artdirect', userSlug, options);
+}

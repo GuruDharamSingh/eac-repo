@@ -134,6 +134,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-admin
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,6 +190,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-forum
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,6 +202,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FORUM_URL:-http://localhost:3003}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
     volumes:
       - .:/app
       - /app/node_modules
@@ -210,6 +224,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-blog-sunjay
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -219,6 +238,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${BLOG_SUNJAY_URL:-http://localhost:3001}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -244,6 +267,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-blog-guru-dharam
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -253,6 +281,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${BLOG_GURU_DHARAM_URL:-http://localhost:3002}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -278,6 +310,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-blog-tester
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -287,6 +324,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${BLOG_TESTER_URL:-http://localhost:3011}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -312,6 +353,9 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-inner-gathering
+    # Production mode: the ceiling has to clear `next build` (the peak), not
+    # steady state. Serving afterwards is a fraction of this.
+    mem_limit: 6g
     depends_on:
       postgres:
         condition: service_healthy
@@ -353,15 +397,26 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
 
       # Node environment
-      NODE_ENV: development
+      NODE_ENV: production
+      # Sized for `next build`, which is the memory-hungry phase; the
+      # `next start` runtime that follows sits far below this because it
+      # serves prebuilt output instead of holding a live module graph.
+      NODE_OPTIONS: --max-old-space-size=5120
       PORT: 3004
       NEXT_PUBLIC_APP_URL: ${INNER_GATHERING_URL:-http://localhost:3004}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
     volumes:
       - .:/app
       - /app/apps/inner-gathering/.next
     ports:
       - "3004:3004"
-    command: sh -c "pnpm install && cd apps/inner-gathering && pnpm docker:dev"
+    # Build only when there is no build to serve, then start. `next start`
+    # serves prebuilt output — no dev compiler, no module graph held in memory,
+    # which is the whole point of the switch. Rebuilding on every restart would
+    # make a crash-restart take minutes instead of seconds.
+    # (mem_limit below is a ceiling, not a reservation: it has to clear the
+    # occasional rebuild, while steady-state serving sits far under it.)
+    command: sh -c "cd apps/inner-gathering && { [ -f .next/BUILD_ID ] || pnpm build; } && pnpm docker:start"
     restart: unless-stopped
     networks:
       - eac-network
@@ -374,6 +429,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-arts-collective
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -383,6 +443,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${EAC_URL:-http://localhost:3005}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -424,6 +488,16 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-arts-network
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container.
+    #
+    # Bumped 3g → 5g (2026-09-05): the org subdomain grew from one page to
+    # four (offering / profile / community / workshop workspace) and Next's
+    # dev server started logging "approaching the used memory threshold,
+    # restarting..." mid-session while compiling them on demand. Same class
+    # of OOM, and same fix, as the artdirect bump below.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -432,7 +506,17 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      # The network's own host (no scheme). Org subdomains hang off it, and the
+      # middleware treats it as the root; NEXT_PUBLIC_ so middleware, server and
+      # client code all see the same value.
+      NEXT_PUBLIC_NETWORK_HOST: ${NETWORK_HOST:-localhost:3007}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -475,6 +559,14 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-artdirect
+    restart: unless-stopped
+    # Bumped from 3g (2026-09-04): adding the inline profile editor pulled in
+    # @elkdonis/ui's full barrel (ProfileGallery/LiveEditor drag in Excalidraw,
+    # Mantine dropzone/tiptap transitively) — the exact same class of OOM ifac
+    # hit compiling /[slug] the first time (see ifac's own mem_limit note
+    # below), silently SIGKILLing the container mid-compile with no JS-level
+    # error, just a clean-looking exit code 0 and a restart loop.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -483,7 +575,12 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -495,6 +592,13 @@ services:
       # Until the OSM index is imported, dev uses offline fixtures via `mock`.
       GEO_PROVIDER: ${GEO_PROVIDER:-mock}
       PHOTON_URL: ${PHOTON_URL:-http://photon:2322}
+      # Nextcloud — profile avatar/gallery uploads. The service is already
+      # on nextcloud-network; it was missing only these.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
     volumes:
       - .:/app
       - /app/apps/artdirect/.next
@@ -512,6 +616,16 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-amrit-canada
+    restart: unless-stopped
+    # Switched to production mode (2026-09-05), same shape as inner-gathering
+    # below: still the "development" build target (full monorepo + pnpm, not
+    # the multi-stage Dockerfile `production` stage — that stage assumes a
+    # slim standalone runtime this deployment doesn't use), just driven with
+    # NODE_ENV=production and `next build && next start` instead of the dev
+    # server. The ceiling has to clear `next build` (the peak, briefly held
+    # while compiling+prerendering), not steady-state serving, which is a
+    # fraction of this once `next start` is just serving prebuilt output.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -520,7 +634,13 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
-      NODE_ENV: development
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NODE_ENV: production
+      PORT: 3006
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -528,7 +648,23 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
       # Owner config
-      NEXT_PUBLIC_AMRIT_CANADA_OWNER_EMAIL: ${AMRIT_CANADA_OWNER_EMAIL:-gurudharamsingh@gmail.com}
+      AMRIT_CANADA_OWNER_EMAIL: ${AMRIT_CANADA_OWNER_EMAIL:-gurudharamsingh@gmail.com}
+      # Nextcloud — media library, collaborative documents, Talk rooms.
+      # The service is already on nextcloud-network; it was missing only these.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # Pipeline hub tile — surfaces the real, existing Nextcloud Deck board
+      # ("Agenda", owned by stephan) rather than a parallel one. An env var,
+      # never a literal in code: this points at someone else's live board,
+      # which could be recreated with a new id independent of any deploy
+      # here. Writes stay off until the read path is verified live.
+      NEXTCLOUD_PIPELINE_BOARD_ID: ${NEXTCLOUD_PIPELINE_BOARD_ID:-14}
+      NEXTCLOUD_PIPELINE_WRITES_ENABLED: ${NEXTCLOUD_PIPELINE_WRITES_ENABLED:-false}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
@@ -537,7 +673,77 @@ services:
       - /app/apps/amrit-canada/.next
     ports:
       - "3006:3006"
-    command: sh -c "cd apps/amrit-canada && pnpm docker:dev"
+    # Build only when there is no build to serve, then start — matches
+    # inner-gathering's pattern below. `next start` serves prebuilt output,
+    # so a crash-restart is seconds, not a multi-minute rebuild.
+    # Checks prerender-manifest.json, not BUILD_ID: this service's .next
+    # volume carried over from dev mode on its first switch to production,
+    # and `next dev` (webpack, non-Turbopack) writes its own BUILD_ID too —
+    # the check passed, skipped the build, and next start crashed missing
+    # prerender-manifest.json, which only `next build` ever produces.
+    command: sh -c "cd apps/amrit-canada && { [ -f .next/prerender-manifest.json ] || pnpm build; } && pnpm docker:start"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Pigeonshoot — Toronto street pigeons, crowdsourced as trading cards
+  pigeonshoot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-pigeonshoot
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${PIGEONSHOOT_URL:-http://localhost:3014}
+      NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Nextcloud — REQUIRED. Every photo on this site lives there, and the
+      # WebDAV auth header in packages/services/src/nextcloud.ts is built at
+      # module load: missing credentials produce silent 401s on upload rather
+      # than a startup error.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # Signs the anonymous contributor cookie (src/lib/guest.ts). An unsigned
+      # guest id would be a trivial rate-limit bypass and would let anyone
+      # claim someone else's cards.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+      # Owner config
+      PIGEONSHOOT_OWNER_EMAIL: ${PIGEONSHOOT_OWNER_EMAIL:-justin.gillisb@gmail.com}
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+    volumes:
+      - .:/app
+      - /app/apps/pigeonshoot/.next
+    ports:
+      - "3014:3014"
+    # `pnpm install` first: this app adds sharp, exifr and leaflet, and the
+    # bind mount above shadows the image's node_modules. Installing in the
+    # container also links sharp's musl binary rather than the host's glibc one.
+    command: sh -c "pnpm install && cd apps/pigeonshoot && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -549,6 +755,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-ifac
+    restart: unless-stopped
+    # ifac serves a live public domain. It OOM'd against a 3g cap with a
+    # 1GB JS heap, so the overhead is Turbopack native + file watching,
+    # not JS. Give the one public site room; dev-only apps keep 3g.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -558,6 +769,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
@@ -565,10 +780,17 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
       NEXT_PUBLIC_IFAC_OWNER_EMAIL: ${IFAC_OWNER_EMAIL:-info@ifacgroup.com}
       NEXT_PUBLIC_EAC_ADMIN_URL: ${EAC_ADMIN_URL:-http://localhost:3000}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       REDIS_URL: redis://redis:6379
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # Nextcloud (external stack via shared network) — member media storage
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
     volumes:
       - .:/app
       - /app/apps/ifac/.next
@@ -586,6 +808,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-art-auction
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -595,6 +822,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
@@ -631,6 +862,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-fourth-way-book-readers
+    restart: unless-stopped
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -640,6 +876,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FOURTH_WAY_BOOK_READERS_URL:-http://localhost:3010}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
@@ -672,6 +912,10 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: eac-hidden-enneagram
+    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
+    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
+    # real headroom while still bounding a runaway to one service.
+    mem_limit: 3g
     depends_on:
       postgres:
         condition: service_healthy
@@ -680,6 +924,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NODE_ENV: development
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
       PORT: 3012
       NEXT_PUBLIC_APP_URL: ${HIDDEN_ENNEAGRAM_URL:-http://localhost:3012}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
@@ -710,23 +958,30 @@ services:
       - eac-network
       - nextcloud-network
 
-  # Silex - browser-based static site builder (opt-in custom layout per artist)
-  # Editor is root-mounted at http://localhost:6805. The Arts app owns
-  # /edit/{slug} as an authenticated launch gate; nginx should expose Silex on
-  # a dedicated editor origin so Silex can own /api, /connector, /user, etc.
+  # Silex 3.9 - browser-based visual site builder (opt-in custom layout per org).
+  # Built from silexlabs/silex-platform:3.9.0 (the current canonical image;
+  # `silexlabs/silex` is a deprecated Autobuild name frozen at 3.7.0) with our
+  # deploy-config override baked in. See packages/silex/Dockerfile +
+  # SILEX_3.9_UPGRADE_BRIEF.md. Editor is root-mounted at http://localhost:6805;
+  # arts-collective owns /edit/{slug} as the authenticated launch gate and nginx
+  # should expose Silex on a dedicated editor origin (it owns /api, /silex.js, …).
   silex:
-    image: silexlabs/silex:latest
+    build:
+      context: .
+      dockerfile: packages/silex/Dockerfile
     container_name: eac-silex
     environment:
       SILEX_URL: ${SILEX_PUBLIC_URL:-http://localhost:6805}
       SILEX_PORT: 6805
-      SILEX_DATA_PATH: /silex/data
-      SILEX_HOSTING_PATH: /silex/data/public
-      SILEX_DEFAULT_WEBSITE_ID: default
+      SILEX_SESSION_SECRET: ${SILEX_SESSION_SECRET:-eac-dev-silex-session-secret-change-me}
+      # Server plugin (Nextcloud storage/hosting + one-time token bridge) and
+      # client plugin (editor blocks/templates). Bind-mounted so they can be
+      # iterated without an image rebuild.
       SILEX_SERVER_CONFIG: /silex/extensions/silex-nextcloud-connector/index.js
       SILEX_CLIENT_CONFIG: /silex/extensions/silex-nextcloud-connector/src/client-config.js
+      # Where the connector redeems one-time editor tokens (see src/auth.js).
+      ARTS_INTERNAL_URL: ${ARTS_INTERNAL_URL:-http://arts-collective:3007}
     volumes:
-      - silex_data:/silex/data
       - ./packages/silex-nextcloud-connector:/silex/extensions/silex-nextcloud-connector:ro
     ports:
       - "6805:6805"
@@ -765,7 +1020,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  silex_data:
   photon_data:
 
 networks:

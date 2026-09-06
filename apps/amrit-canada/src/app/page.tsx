@@ -1,253 +1,208 @@
-import { Container, Stack, Title, Text, Paper, Group, Image, Box, Grid, GridCol } from '@mantine/core';
-import Link from 'next/link';
-import { HeroBanner } from '@/components/hero-banner';
-import { SadhanaCard } from '@/components/sadhana-card';
-import { getNextMeeting } from '@/lib/data';
-
-// Component constants from original project
-const HERO_TITLE = 'Amrit Vela Sadhana';
-const HERO_SUBTITLE = 'A 4:00 AM, 2.5 hour journey of Jap Ji, Yoga and Kirtan';
-const HERO_DESCRIPTION = 'Crown yourself in the Early Hours of the Morning. We follow a Sikh Dharma tradition rising 4 hours before sunrise in the hour known as the Amrit Vela.';
-const MEETING_INFO = 'We meet once a month, either in a Church or on a Ski Hill in Etobicoke. Check above to see which and when.';
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { listOrgFeeds } from "@elkdonis/services";
+import { Button } from "@/components/ui/button";
+import { CycleBadge } from "@/components/cycle-badge";
+import { ThreadCard } from "@/components/thread-card";
+import { HeroBanner } from "@/components/hero-banner";
+import { getAttendanceCount, getCycleStatus, getNextInFeed, getSiteSections } from "@/lib/data";
+import { hexToHslTriplet } from "@/lib/color";
+import { formatDate, formatTime } from "@/lib/format";
+import { siteConfig } from "@/config/site";
 
 export default async function HomePage() {
-  const nextMeeting = await getNextMeeting();
+  const [feeds, sections] = await Promise.all([
+    listOrgFeeds(siteConfig.orgId).catch(() => []),
+    getSiteSections(),
+  ]);
+
+  // One preview per feed. The first (Amrit Vela) leads, because "is sadhana
+  // on?" is the question most visitors arrive with.
+  const previews = await Promise.all(
+    feeds.map(async (feed) => {
+      const thread = await getNextInFeed(feed.slug);
+      return {
+        feed,
+        thread,
+        cycleStatus: thread?.scheduledAt ? await getCycleStatus(thread) : undefined,
+        attendanceCount: thread?.isRsvpEnabled ? await getAttendanceCount(thread) : undefined,
+      };
+    })
+  );
+
+  const lead = previews[0];
+  const hero = sections.hero;
+  const about = sections.about;
 
   return (
     <>
-      {/* Hero Banner Section - Matches original carousel intent */}
       <HeroBanner />
 
-      {/* Main Content Section - Adheres to original structure */}
-      <div className="body-container" style={{ padding: '4rem 0', background: 'transparent' }}>
-        <Container size="lg">
-          <Stack gap="xl">
-            {/* Main Call to Action Section */}
-            <Box style={{ textAlign: 'center' }} mb="2rem">
-              <Title
-                className="gradient-text"
-                style={{
-                  fontSize: '2.8rem',
-                  fontFamily: "'Cinzel', serif",
-                  marginBottom: '1.5rem',
-                }}
+      {/* Intro — the site's own words, editable from /manage/pages. */}
+      <section className="mx-auto max-w-4xl px-5 py-14 text-center">
+        <h1 className="font-serif text-[clamp(1.8rem,5vw,2.6rem)] leading-tight">
+          {hero?.title ?? siteConfig.orgName}
+        </h1>
+        <p className="mt-3 text-lg italic text-[#d16b47]">
+          {hero?.subtitle ?? siteConfig.tagline}
+        </p>
+        {hero?.body && (
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed">{hero.body}</p>
+        )}
+        {hero?.note && (
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">{hero.note}</p>
+        )}
+
+        {lead?.thread && (
+          <div className="card-natural mx-auto mt-10 max-w-2xl p-6 text-left">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Next {lead.feed.name}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl">
+              <Link
+                href={`/${lead.feed.slug}/${lead.thread.slug}`}
+                className="underline-offset-4 hover:underline"
               >
-                {HERO_TITLE}
-              </Title>
-              <Text
-                style={{
-                  fontSize: '1.4rem',
-                  color: 'var(--terracotta-medium)',
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  marginBottom: '2rem',
-                }}
-              >
-                {HERO_SUBTITLE}
-              </Text>
-              
-              <Container size="sm">
-                <Text
-                  style={{
-                    fontSize: '1.2rem',
-                    color: 'var(--charcoal)',
-                    lineHeight: 1.8,
-                    marginBottom: '1.5rem',
-                  }}
-                >
-                  {HERO_DESCRIPTION}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: '1.1rem',
-                    color: 'var(--charcoal)',
-                    lineHeight: 1.8,
-                    marginBottom: '2.5rem',
-                  }}
-                >
-                  {MEETING_INFO}
-                </Text>
-              </Container>
-            </Box>
-
-            {/* Next Session RSVP Card */}
-            <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-              <SadhanaCard meeting={nextMeeting} />
-            </div>
-
-            <hr className="saffron-divider" />
-
-            {/* Three Section Portal Tiles */}
-            <Box mb="2rem">
-              <Title
-                order={2}
-                ta="center"
-                mb="1.5rem"
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  color: 'var(--charcoal)',
-                  fontSize: '1.8rem',
-                  fontWeight: 700,
-                }}
-              >
-                Our Practices
-              </Title>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: '1.5rem',
-                }}
-              >
-                {/* Amrit Vela portal */}
-                <Link href="/sadhana" style={{ textDecoration: 'none' }}>
-                  <Paper
-                    p="xl"
-                    className="portal-tile portal-tile--sadhana"
-                    style={{
-                      background: 'linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%)',
-                      border: '2px solid rgba(244,196,48,0.5)',
-                      borderRadius: '20px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack gap="sm">
-                      <Text style={{ fontSize: '2rem' }}>🌅</Text>
-                      <Title order={3} style={{ color: 'var(--saffron-bright)', fontFamily: "'Cinzel', serif", fontSize: '1.2rem' }}>
-                        Amrit Vela Sadhana
-                      </Title>
-                      <Text size="sm" style={{ color: 'rgba(244,196,48,0.75)', lineHeight: 1.6 }}>
-                        4 AM morning practice — Jap Ji, Yoga & Kirtan
-                      </Text>
-                      <Text size="xs" style={{ color: 'var(--saffron-bright)', fontWeight: 700, letterSpacing: '0.05em' }}>
-                        View schedule →
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Link>
-
-                {/* Yoga Classes portal */}
-                <Link href="/yoga" style={{ textDecoration: 'none' }}>
-                  <Paper
-                    p="xl"
-                    className="portal-tile portal-tile--yoga"
-                    style={{
-                      background: 'linear-gradient(135deg, #1a2e1f 0%, #2d4a35 100%)',
-                      border: '2px solid rgba(90,138,106,0.5)',
-                      borderRadius: '20px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack gap="sm">
-                      <Text style={{ fontSize: '2rem' }}>🧘</Text>
-                      <Title order={3} style={{ color: 'var(--yoga-green, #5a8a6a)', fontFamily: "'Cinzel', serif", fontSize: '1.2rem' }}>
-                        Yoga Classes
-                      </Title>
-                      <Text size="sm" style={{ color: 'rgba(90,138,106,0.8)', lineHeight: 1.6 }}>
-                        Kundalini Yoga with Guru Dharam Singh
-                      </Text>
-                      <Text size="xs" style={{ color: 'var(--yoga-green, #5a8a6a)', fontWeight: 700, letterSpacing: '0.05em' }}>
-                        View schedule →
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Link>
-
-                {/* Gurdwara portal */}
-                <Link href="/gurdwara" style={{ textDecoration: 'none' }}>
-                  <Paper
-                    p="xl"
-                    className="portal-tile portal-tile--gurdwara"
-                    style={{
-                      background: 'linear-gradient(135deg, #1e0a0a 0%, #3a1212 100%)',
-                      border: '2px solid rgba(139,46,46,0.5)',
-                      borderRadius: '20px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack gap="sm">
-                      <Text style={{ fontSize: '2rem' }}>🕌</Text>
-                      <Title order={3} style={{ color: '#e89898', fontFamily: "'Cinzel', serif", fontSize: '1.2rem' }}>
-                        Gurdwara & Langar
-                      </Title>
-                      <Text size="sm" style={{ color: 'rgba(232,152,152,0.7)', lineHeight: 1.6 }}>
-                        Sangat & communal meal at Guru Ram Das Ashram
-                      </Text>
-                      <Text size="xs" style={{ color: '#e89898', fontWeight: 700, letterSpacing: '0.05em' }}>
-                        View schedule →
-                      </Text>
-                    </Stack>
-                  </Paper>
-                </Link>
+                {lead.thread.title}
+              </Link>
+            </h2>
+            {lead.thread.nextOccurrenceAt && (
+              <p className="mt-2 text-sm">
+                {formatDate(lead.thread.nextOccurrenceAt)} at{" "}
+                {formatTime(lead.thread.nextOccurrenceAt)}
+                <span className="text-muted-foreground"> · Toronto time</span>
+              </p>
+            )}
+            {lead.cycleStatus && (
+              <div className="mt-4">
+                <CycleBadge status={lead.cycleStatus} />
               </div>
-            </Box>
+            )}
+            {typeof lead.attendanceCount === "number" && lead.attendanceCount > 0 && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                {lead.attendanceCount}{" "}
+                {lead.attendanceCount === 1 ? "person is" : "people are"} coming.
+              </p>
+            )}
+            <Button asChild size="sm" className="mt-5">
+              <Link href={`/${lead.feed.slug}/${lead.thread.slug}`}>
+                Details and RSVP <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </Button>
+          </div>
+        )}
+      </section>
 
-            <hr className="saffron-divider" />
+      {/* Our Practices — the dark portal tiles, one per feed from org_feeds. */}
+      <section className="mx-auto max-w-6xl px-5 pb-16">
+        <h2 className="text-center font-serif text-3xl">Our Practices</h2>
+        <hr className="saffron-divider mx-auto max-w-xs" />
 
-            {/* Our Tradition Section */}
-            <Container size="lg" mt="2rem">
-              <Grid gutter="xl" align="center">
-                <GridCol span={12}>
-                  <Title
-                    order={2}
-                    mb="2rem"
-                    style={{
-                      fontSize: '2.4rem',
-                      color: 'var(--charcoal)',
-                      fontFamily: "'Cinzel', serif",
-                      fontWeight: 700
-                    }}
-                  >
-                    Our Tradition
-                  </Title>
-                </GridCol>
+        <div className="mt-8 grid gap-6 md:grid-cols-3">
+          {feeds.map((feed) => {
+            const accent = hexToHslTriplet(feed.accent);
+            const accentColor = accent ? `hsl(${accent})` : "#f4c430";
+            return (
+              <Link
+                key={feed.slug}
+                href={`/${feed.slug}`}
+                className="portal-tile group flex flex-col rounded-2xl border-2 p-7 text-center"
+                style={
+                  {
+                    // Dark tile tinted with the feed's own colour, replacing the
+                    // three hardcoded gradients the original had.
+                    background: `linear-gradient(135deg, color-mix(in srgb, ${accentColor} 12%, #1a1a1a) 0%, color-mix(in srgb, ${accentColor} 22%, #2c3e50) 100%)`,
+                    borderColor: `color-mix(in srgb, ${accentColor} 50%, transparent)`,
+                    ["--feed-glow" as string]: `color-mix(in srgb, ${accentColor} 30%, transparent)`,
+                  } as React.CSSProperties
+                }
+              >
+                <h3
+                  className="font-serif text-2xl font-bold tracking-wide"
+                  style={{ color: accentColor, textShadow: "1px 1px 6px rgba(0,0,0,0.5)" }}
+                >
+                  {feed.name}
+                </h3>
+                {feed.tagline && (
+                  <p className="mt-3 text-sm leading-relaxed text-[#fdf5e6]/85">
+                    {feed.tagline}
+                  </p>
+                )}
+                <span
+                  className="mt-auto pt-6 text-sm underline-offset-4 group-hover:underline"
+                  style={{ color: accentColor }}
+                >
+                  View schedule →
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
-                {/* Image Column */}
-                <GridCol span={{ base: 12, md: 5, lg: 4 }}>
-                  <Image
-                    src="/GD4to5 for Lotus.JPG"
-                    alt="Guru Fatha Singh Ji"
-                    style={{
-                      width: '100%',
-                      height: '350px',
-                      objectFit: 'cover',
-                      borderRadius: '20px',
-                      border: '4px solid var(--saffron-bright)',
-                      boxShadow: '0 12px 32px rgba(244, 196, 48, 0.3)'
-                    }}
+      {/* What's next elsewhere — the lead is already shown above. */}
+      {previews.slice(1).some((p) => p.thread) && (
+        <section className="mx-auto max-w-5xl px-5 pb-16">
+          <h2 className="font-serif text-2xl">Coming up</h2>
+          <div className="mt-5 grid gap-6 sm:grid-cols-2">
+            {previews.slice(1).map(
+              ({ thread, cycleStatus, attendanceCount }) =>
+                thread && (
+                  <ThreadCard
+                    key={thread.id}
+                    thread={thread}
+                    cycleStatus={cycleStatus}
+                    attendanceCount={attendanceCount}
                   />
-                </GridCol>
+                )
+            )}
+          </div>
+        </section>
+      )}
 
-                {/* Text Content Column */}
-                <GridCol span={{ base: 12, md: 7, lg: 8 }}>
-                  <Box style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    height: '100%',
-                    paddingLeft: '2rem'
-                  }}>
-                    <Text
-                      size="lg"
-                      style={{
-                        color: 'var(--charcoal)',
-                        lineHeight: 1.8,
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      <strong style={{ color: 'var(--terracotta-medium)' }}>Guru Fatha Singh Ji</strong>{' '}
-                      (<a href="https://www.gurufathasingh.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--terracotta-medium)', fontWeight: 600 }}>see his website here</a>){' '}
-                      began this Sadhana and we&apos;ve been carrying it on for the last decade.{' '}
-                      Guru Dharam Singh has carried on the responsibility of ensuring its success since 2023.{' '}
-                      You can find Guru Dharam&apos;s related effort on this site, including Yoga Classes, and Gurdwara at Guru Ram Das Ashram.
-                    </Text>
-                  </Box>
-                </GridCol>
-              </Grid>
-            </Container>
-          </Stack>
-        </Container>
-      </div>
+      {/* Our Tradition — Guru Fatha Singh's lineage and the handover in 2023. */}
+      {about && (
+        <section className="border-t-2 border-[#e6b422]/30 py-16">
+          <div className="mx-auto max-w-5xl px-5">
+            <h2 className="text-center font-serif text-3xl">{about.title ?? "Our Tradition"}</h2>
+            <hr className="saffron-divider mx-auto max-w-xs" />
+
+            <div className="mt-8 grid items-center gap-10 md:grid-cols-2">
+              {about.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={about.imageUrl}
+                  alt={about.imageAlt ?? ""}
+                  className="w-full rounded-2xl border-4 border-[#f4c430] object-cover shadow-[0_12px_32px_rgba(244,196,48,0.3)]"
+                />
+              )}
+              <div>
+                <p className="text-lg leading-relaxed">
+                  {about.linkUrl ? (
+                    <>
+                      <strong>Guru Fatha Singh Ji</strong>{" "}
+                      <a
+                        href={about.linkUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-[#d16b47] underline underline-offset-2"
+                      >
+                        ({about.linkLabel ?? "see his website here"})
+                      </a>{" "}
+                      {about.body?.replace(/^Guru Fatha Singh Ji\s*/, "")}
+                    </>
+                  ) : (
+                    about.body
+                  )}
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-6">
+                  <Link href="/about">Meet the teachers</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

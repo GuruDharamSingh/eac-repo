@@ -50,7 +50,17 @@ export function SiteHeader() {
               textAlign: 'center',
             }}
           >
-            Elkdonis Arts Collective
+            {process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ? (
+              <a
+                href={process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL}
+                style={{ color: 'inherit', textDecoration: 'none' }}
+                title="Elkdonis Arts Collective — the network"
+              >
+                Elkdonis Arts Collective
+              </a>
+            ) : (
+              'Elkdonis Arts Collective'
+            )}
           </Title>
           <Group justify="center" gap="lg" mt="xs" wrap="wrap">
             {!isFeed && (

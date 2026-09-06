@@ -21,6 +21,7 @@ import {
 import { Button, ThemeIcon } from '@mantine/core';
 import { MessageCircle, FileText } from 'lucide-react';
 import type { Workshop, Meeting, WorkshopSession, WorkshopResource } from '@elkdonis/types';
+import { useThreadRsvp } from '@elkdonis/hooks';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { CommentSection } from './comment-section';
 import { CycleHistory } from './cycle-history';
@@ -28,7 +29,6 @@ import { CycleHistory } from './cycle-history';
 interface GatheringDetailsProps {
   gathering: Workshop | Meeting;
   type: 'workshop' | 'meeting' | 'event';
-  isJoined?: boolean;
   currentUser?: {
     id: string;
     displayName: string | null;
@@ -37,20 +37,34 @@ interface GatheringDetailsProps {
   replies?: any[];
 }
 
-export function GatheringDetails({ 
-  gathering, 
+export function GatheringDetails({
+  gathering,
   type,
-  isJoined = false, 
   currentUser,
   replies = []
 }: GatheringDetailsProps) {
-  
+  const isRsvpEnabled = (gathering as Meeting).isRSVPEnabled === true;
+  const { isAttending: isJoined, isLoading: rsvpLoading, error: rsvpError, rsvp } = useThreadRsvp(
+    gathering.id,
+    { enabled: isRsvpEnabled }
+  );
+
+  const rsvpDeadline = (gathering as Meeting).rsvpDeadline;
+  const attendeeLimit = gathering.attendeeLimit;
+  const deadlinePassed = Boolean(rsvpDeadline && new Date(rsvpDeadline) < new Date());
+  const atCapacity = Boolean(
+    attendeeLimit != null &&
+    typeof gathering.attendeeCount === "number" &&
+    gathering.attendeeCount >= attendeeLimit
+  );
+  const rsvpClosed = deadlinePassed || atCapacity;
+
   const handleJoin = () => {
-    // Logic for joining/RSVP would go here
-    console.log('Join clicked');
+    if (rsvpClosed && !isJoined) return;
+    rsvp(!isJoined);
   };
 
-  const formatDate = (date: Date) => 
+  const formatDate = (date: Date) =>
     new Intl.DateTimeFormat('en-US', { 
       month: 'short', 
       day: 'numeric', 
@@ -111,9 +125,21 @@ export function GatheringDetails({
               </Text>
               <Text size="sm" c="dimmed">•</Text>
               <Text size="sm" c="dimmed">
-                {gathering.attendeeCount || 0} participants
+                {gathering.attendeeCount || 0}
+                {attendeeLimit ? ` / ${attendeeLimit}` : ""} participants
               </Text>
+              {isRsvpEnabled && !isJoined && rsvpClosed && (
+                <>
+                  <Text size="sm" c="dimmed">•</Text>
+                  <Text size="sm" c="red">
+                    {deadlinePassed ? "RSVP closed" : "At capacity"}
+                  </Text>
+                </>
+              )}
             </Group>
+            {rsvpError && (
+              <Text size="xs" c="red">{rsvpError}</Text>
+            )}
           </Stack>
 
           {/* Date for single events */}
@@ -282,12 +308,20 @@ export function GatheringDetails({
       </Container>
 
       {/* Persistent CTA */}
-      <StickyBottomBar 
-        label={gathering.title}
-        price={(gathering as any).price ? `$${(gathering as any).price}` : 'Free'}
-        isJoined={isJoined}
-        onAction={handleJoin}
-      />
+      {isRsvpEnabled && (
+        <StickyBottomBar
+          label={gathering.title}
+          price={(gathering as any).price ? `$${(gathering as any).price}` : 'Free'}
+          isJoined={isJoined}
+          loading={rsvpLoading}
+          disabled={rsvpClosed}
+          onAction={handleJoin}
+          joinLabel={isWorkshop ? 'Join Workshop' : 'RSVP'}
+          joinedLabel={isWorkshop ? 'Enter Workshop' : "Can't Make It"}
+          joinedEyebrow={isWorkshop ? 'You are enrolled' : "You're going"}
+          closedLabel={deadlinePassed ? 'RSVP Closed' : 'At Capacity'}
+        />
+      )}
     </Box>
   );
 }

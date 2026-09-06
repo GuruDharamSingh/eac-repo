@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import { canEditOrgSite } from "@/lib/org";
 import { SiteShell } from "@/components/site-shell";
 import { WorkshopForm } from "@/components/hub/WorkshopForm";
+import { resolveOrgHomeUrl } from "@/lib/org-url.server";
 import { db } from "@elkdonis/db";
 import Link from "next/link";
 
@@ -34,7 +35,7 @@ export default async function NewWorkshopPage({
             ← Workshops
           </Link>
         </div>
-        <WorkshopForm orgSlug={orgSlug} />
+        <WorkshopForm orgSlug={orgSlug} orgHomeUrl={await resolveOrgHomeUrl(orgSlug)} />
       </div>
     </SiteShell>
   );

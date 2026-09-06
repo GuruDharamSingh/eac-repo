@@ -8,6 +8,5 @@ import { handleSignup } from "@elkdonis/auth-server";
 export async function POST(req: NextRequest) {
   return handleSignup(req, {
     defaultOrgs: [{ id: "hidden-enneagram", role: "member" }],
-    profileOrgId: "hidden-enneagram",
   });
 }

@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { getOrgRole, hasOrgRole } from "@elkdonis/services";
 import type { ArtistProfileRow } from "@/lib/profile";
 
 export type OrgSummary = {
@@ -10,6 +11,11 @@ export type OrgSummary = {
   silex_project_path: string | null;
   silex_published_path: string | null;
   silex_published_at: string | null;
+  subdomain_confirmed: boolean;
+  tier: string;
+  /** Service-account path (EAC_Network/<org>). Null until first provisioning —
+   *  the hub shows that state rather than pretending the folder exists. */
+  nextcloud_folder_path: string | null;
   profile: ArtistProfileRow | null;
 };
 
@@ -25,6 +31,9 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
           silex_project_path: string | null;
           silex_published_path: string | null;
           silex_published_at: string | null;
+          subdomain_confirmed: boolean;
+          tier: string;
+          nextcloud_folder_path: string | null;
         }
       | undefined;
 
@@ -39,6 +48,9 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
           silex_project_path: string | null;
           silex_published_path: string | null;
           silex_published_at: string | null;
+          subdomain_confirmed: boolean;
+          tier: string;
+          nextcloud_folder_path: string | null;
         }[]
       >`
         SELECT
@@ -49,7 +61,10 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
           layout_mode,
           silex_project_path,
           silex_published_path,
-          silex_published_at
+          silex_published_at,
+          subdomain_confirmed,
+          tier,
+          nextcloud_folder_path
         FROM organizations
         WHERE slug = ${slug}
         LIMIT 1
@@ -73,6 +88,9 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
           silex_project_path: null,
           silex_published_path: null,
           silex_published_at: null,
+          subdomain_confirmed: true,
+          tier: "free",
+          nextcloud_folder_path: null,
         };
       }
     }
@@ -95,6 +113,11 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
       silex_project_path: org.silex_project_path ?? null,
       silex_published_path: org.silex_published_path ?? null,
       silex_published_at: org.silex_published_at ?? null,
+      // Default TRUE on a pre-082 database: the gate is opt-in, and a missing
+      // column must never hide a site that is already live.
+      subdomain_confirmed: org.subdomain_confirmed ?? true,
+      tier: org.tier ?? "free",
+      nextcloud_folder_path: org.nextcloud_folder_path ?? null,
       profile,
     };
   } catch {
@@ -107,46 +130,25 @@ export async function isOrgOwner(
   orgId: string
 ): Promise<boolean> {
   try {
-    const rows = await db<{ role: string }[]>`
-      SELECT role FROM user_organizations
-      WHERE user_id = ${userId} AND org_id = ${orgId}
-      LIMIT 1
-    `;
-    if (rows[0]?.role === "owner") return true;
-
-    const mappedRows = await db<{ role: string }[]>`
-      SELECT uo.role
-      FROM users u
-      JOIN user_organizations uo ON uo.user_id = u.id
-      WHERE u.auth_user_id = ${userId} AND uo.org_id = ${orgId}
-      LIMIT 1
-    `;
-    return mappedRows[0]?.role === "owner";
+    return (await getOrgRole(userId, orgId)) === "owner";
   } catch {
     return false;
   }
 }
 
+/**
+ * Owners and guides can edit/post on the org's behalf — guide is the "next
+ * higher" role an owner promotes a member to (edit/post rights, short of
+ * full ownership). This previously checked for a role value of 'admin',
+ * which the database's own CHECK constraint never allowed (owner/guide/
+ * member/viewer only) — that branch could never match anything.
+ */
 export async function canEditOrgSite(
   userId: string,
   orgId: string
 ): Promise<boolean> {
   try {
-    const rows = await db<{ role: string }[]>`
-      SELECT role FROM user_organizations
-      WHERE user_id = ${userId} AND org_id = ${orgId}
-      LIMIT 1
-    `;
-    if (rows[0]?.role === "owner" || rows[0]?.role === "admin") return true;
-
-    const mappedRows = await db<{ role: string }[]>`
-      SELECT uo.role
-      FROM users u
-      JOIN user_organizations uo ON uo.user_id = u.id
-      WHERE u.auth_user_id = ${userId} AND uo.org_id = ${orgId}
-      LIMIT 1
-    `;
-    return mappedRows[0]?.role === "owner" || mappedRows[0]?.role === "admin";
+    return await hasOrgRole(userId, orgId, ["owner", "guide"]);
   } catch {
     return false;
   }
@@ -156,7 +158,7 @@ export type EditableOrg = {
   id: string;
   name: string;
   slug: string;
-  role: "owner" | "admin";
+  role: "owner" | "guide";
   nextcloud_folder_path: string | null;
   layout_mode: "default" | "silex";
   silex_published_path: string | null;
@@ -167,11 +169,6 @@ export async function getEditableOrgsForUser(
 ): Promise<EditableOrg[]> {
   try {
     return await db<EditableOrg[]>`
-      WITH candidate_users AS (
-        SELECT ${userId}::text AS id
-        UNION
-        SELECT id FROM users WHERE auth_user_id = ${userId}
-      )
       SELECT DISTINCT ON (o.id)
         o.id,
         o.name,
@@ -182,34 +179,14 @@ export async function getEditableOrgsForUser(
         o.silex_published_path
       FROM user_organizations uo
       JOIN organizations o ON o.id = uo.org_id
-      WHERE uo.user_id IN (SELECT id FROM candidate_users)
-        AND uo.role IN ('owner', 'admin')
+      WHERE uo.user_id = ${userId}
+        AND uo.role IN ('owner', 'guide')
       ORDER BY
         o.id,
-        CASE uo.role WHEN 'owner' THEN 2 WHEN 'admin' THEN 1 ELSE 0 END DESC
+        CASE uo.role WHEN 'owner' THEN 2 WHEN 'guide' THEN 1 ELSE 0 END DESC
     `;
   } catch {
-    try {
-      return await db<EditableOrg[]>`
-        SELECT DISTINCT ON (o.id)
-          o.id,
-          o.name,
-          o.slug,
-          uo.role,
-          o.nextcloud_folder_path,
-          o.layout_mode,
-          o.silex_published_path
-        FROM user_organizations uo
-        JOIN organizations o ON o.id = uo.org_id
-        WHERE uo.user_id = ${userId}
-          AND uo.role IN ('owner', 'admin')
-        ORDER BY
-          o.id,
-          CASE uo.role WHEN 'owner' THEN 2 WHEN 'admin' THEN 1 ELSE 0 END DESC
-      `;
-    } catch {
-      return [];
-    }
+    return [];
   }
 }
 
@@ -275,6 +252,42 @@ export async function getOrgFeed(
   }
 }
 
+/**
+ * The org's one featured thread — what /offering promotes.
+ *
+ * Pinned wins; with nothing pinned it falls back to the most recent published
+ * thread, so an org's landing page is never blank just because nobody has
+ * used the pin toggle yet (at the time this was written, no org in the
+ * network had pinned anything at all). Pinning stays the deliberate override.
+ */
+export async function getOfferingThread(
+  orgId: string
+): Promise<OrgFeedItem | null> {
+  const pinned = await getFeaturedThread(orgId);
+  if (pinned) return pinned;
+  try {
+    const rows = await db<OrgFeedItem[]>`
+      SELECT
+        id, slug, title, kind, excerpt, body, pinned,
+        scheduled_at, duration_minutes, location, format, meeting_url,
+        is_rsvp_enabled, attendee_limit,
+        price, currency, sessions, share_to_network,
+        published_at, created_at,
+        view_count, reply_count,
+        nextcloud_talk_token, nextcloud_doc_url
+      FROM threads
+      WHERE org_id = ${orgId}
+        AND status = 'published'
+        AND visibility = 'PUBLIC'
+      ORDER BY COALESCE(published_at, created_at) DESC
+      LIMIT 1
+    `;
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getFeaturedThread(
   orgId: string
 ): Promise<OrgFeedItem | null> {
@@ -299,6 +312,43 @@ export async function getFeaturedThread(
     return rows[0] ?? null;
   } catch {
     return null;
+  }
+}
+
+export type OrgAnnouncement = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string | null;
+  pinned: boolean;
+  published_at: string | null;
+  created_at: string;
+};
+
+/**
+ * Guide/owner-only announcements for an org. Reuses `threads` with
+ * kind='post', visibility='ORGANIZATION' rather than a dedicated table —
+ * the existing CreateContentDialog + createThreadAction already write and
+ * gate this shape (canEditOrgSite), so no migration is needed.
+ */
+export async function getOrgAnnouncements(
+  orgId: string,
+  limit: number = 10
+): Promise<OrgAnnouncement[]> {
+  try {
+    return await db<OrgAnnouncement[]>`
+      SELECT id, slug, title, excerpt, body, pinned, published_at, created_at
+      FROM threads
+      WHERE org_id = ${orgId}
+        AND kind = 'post'
+        AND visibility = 'ORGANIZATION'
+        AND status = 'published'
+      ORDER BY pinned DESC, COALESCE(published_at, created_at) DESC
+      LIMIT ${limit}
+    `;
+  } catch {
+    return [];
   }
 }
 

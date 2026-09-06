@@ -1,5 +1,5 @@
 import type { FieldDef, CssVarDef } from "@elkdonis/live-editor";
-import { fieldRegistry, themeVarRegistry } from "./field-registry";
+import { fieldRegistry, themeVarRegistry, isLiveEditorInput } from "./field-registry";
 import type { WorkshopPageData } from "./types";
 
 /**
@@ -17,6 +17,10 @@ export function workshopFieldDefs(data: WorkshopPageData): FieldDef[] {
 
   for (const [trait, meta] of Object.entries(fieldRegistry)) {
     if (meta.input === "readonly") continue;
+    // The registry's input union is wider than what a live-editor popover can
+    // render (gallery, colour, media pickers). Those fields are wizard-only —
+    // skip them here rather than emitting a FieldDef the editor can't display.
+    if (!isLiveEditorInput(meta.input)) continue;
 
     // Deduplicate: e.g. spotsText and spotsRemaining map to the same field.
     // We keep the first occurrence.

@@ -1,8 +1,19 @@
 /**
- * Seed directory_profiles for org 'ifac' from the canonical static roster in
- * src/lib/artists.ts. Idempotent: upserts on (org_id, slug), preserving any
- * admin edits to fields not derived from the static source would be lost, so
- * this is intended for first-time seeding / re-seeding from source of truth.
+ * Seed users + org_profiles for org 'ifac' from the canonical static roster
+ * in src/lib/artists.ts.
+ *
+ * Superseded directory_profiles (migration 084 merged it into users +
+ * org_profiles — see packages/services/src/profiles.ts). Each roster member
+ * with no matching account becomes their own sentinel `users` row
+ * (claim_status='unclaimed', self-referential auth_user_id — same pattern
+ * as the pigeonshoot anonymous author, migration 077) rather than a shared
+ * placeholder, so each can independently be claimed later.
+ *
+ * Idempotent by slug: an existing sentinel (or claimed) row for that slug is
+ * updated in place rather than duplicated. Portrait/artworks paths still
+ * point at the bundled /ifac/... static files — the Nextcloud media
+ * migration (packages/db or apps/ifac/scripts/migrate-media-to-nextcloud.ts)
+ * repoints them once the files are uploaded.
  *
  * Run:
  *   DATABASE_URL=... node --experimental-strip-types apps/ifac/scripts/seed-directory.ts
@@ -28,44 +39,55 @@ async function seed() {
 
   for (let i = 0; i < all.length; i++) {
     const p = all[i];
-    const artworks = p.artworks.map((w) => ({ url: w.filename, title: w.title }));
-    const links = p.links.map((l) => ({ label: l.label, href: l.href }));
+
+    const portfolio = p.artworks.map((w) => ({ url: w.filename, title: w.title }));
+    const socialLinks: { label: string; url: string }[] = p.links.map((l) => ({
+      label: l.label,
+      url: l.href,
+    }));
+    if (p.email) socialLinks.push({ label: "Email", url: `mailto:${p.email}` });
+    if (p.website) socialLinks.push({ label: "Website", url: p.website });
+
+    const [existing] = await sql<{ id: string }[]>`
+      SELECT id FROM users WHERE slug = ${p.slug} LIMIT 1
+    `;
+
+    let userId: string;
+    if (existing) {
+      userId = existing.id;
+      await sql`
+        UPDATE users SET
+          display_name = ${p.name}, bio = ${p.bio.join("\n\n") || null},
+          avatar_url = ${p.portrait || null}, social_links = ${sql.json(socialLinks)},
+          portfolio = ${sql.json(portfolio)}, updated_at = NOW()
+        WHERE id = ${userId}
+      `;
+    } else {
+      // auth_user_id must equal id (users_auth_user_id_matches_id check) — a
+      // sentinel row that can never log in, same convention as the
+      // pigeonshoot anonymous-author user (migration 077). Generated once in
+      // JS so both columns get the identical value.
+      const newId = crypto.randomUUID();
+      const rows = await sql<{ id: string }[]>`
+        INSERT INTO users (id, auth_user_id, display_name, bio, avatar_url, slug, social_links, portfolio, claim_status)
+        VALUES (${newId}, ${newId}, ${p.name}, ${p.bio.join("\n\n") || null}, ${p.portrait || null},
+                ${p.slug}, ${sql.json(socialLinks)}, ${sql.json(portfolio)}, 'unclaimed')
+        RETURNING id
+      `;
+      userId = rows[0].id;
+    }
 
     await sql`
-      INSERT INTO directory_profiles
-        (org_id, slug, kind, name, role, bio, portrait_url, artworks, links, email, website, sort_order, status)
-      VALUES (
-        ${ORG_ID},
-        ${p.slug},
-        ${p.kind},
-        ${p.name},
-        ${p.role},
-        ${sql.json(p.bio)},
-        ${p.portrait},
-        ${sql.json(artworks)},
-        ${sql.json(links)},
-        ${p.email ?? null},
-        ${p.website ?? null},
-        ${i},
-        'published'
-      )
-      ON CONFLICT (org_id, slug) DO UPDATE SET
-        kind = EXCLUDED.kind,
-        name = EXCLUDED.name,
-        role = EXCLUDED.role,
-        bio = EXCLUDED.bio,
-        portrait_url = EXCLUDED.portrait_url,
-        artworks = EXCLUDED.artworks,
-        links = EXCLUDED.links,
-        email = EXCLUDED.email,
-        website = EXCLUDED.website,
-        sort_order = EXCLUDED.sort_order,
-        updated_at = NOW()
+      INSERT INTO org_profiles (org_id, user_id, role_title, sort_order, is_public, tags)
+      VALUES (${ORG_ID}, ${userId}, ${p.role}, ${i}, true, ${sql.array([p.kind])})
+      ON CONFLICT (org_id, user_id) DO UPDATE SET
+        role_title = EXCLUDED.role_title, sort_order = EXCLUDED.sort_order,
+        is_public = true, tags = EXCLUDED.tags, updated_at = NOW()
     `;
     n++;
   }
 
-  console.log(`✓ Seeded ${n} directory profiles for org '${ORG_ID}'`);
+  console.log(`✓ Seeded ${n} profiles for org '${ORG_ID}'`);
   await sql.end();
 }
 

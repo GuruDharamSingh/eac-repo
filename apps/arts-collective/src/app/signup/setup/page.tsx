@@ -1,26 +1,13 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
-import { db } from "@elkdonis/db";
+import { getOwnedOrgId } from "@elkdonis/services";
 import { SiteShell } from "@/components/site-shell";
 import { SetupForm } from "./setup-form";
 
-async function hasOrgAsOwner(userId: string): Promise<boolean> {
-  try {
-    const rows = await db<{ org_id: string }[]>`
-      SELECT org_id FROM user_organizations
-      WHERE user_id = ${userId} AND role = 'owner'
-      LIMIT 1
-    `;
-    return rows.length > 0;
-  } catch {
-    return false;
-  }
-}
-
 export default async function SignupSetupPage() {
   const user = await requireUser();
-  if (await hasOrgAsOwner(user.id)) {
-    redirect("/hub");
+  if (await getOwnedOrgId(user.id)) {
+    redirect("/hub/organization");
   }
 
   return (

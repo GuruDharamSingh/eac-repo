@@ -1,156 +1,145 @@
-'use client';
+"use client";
 
-import { Box, Container, Group, Text, Anchor, Title, Burger, Drawer, Stack } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import Link from 'next/link';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 
-const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Amrit Vela', href: '/sadhana' },
-  { label: 'Yoga Classes', href: '/yoga' },
-  { label: 'Gurdwara', href: '/gurdwara' },
-];
+interface NavFeed {
+  slug: string;
+  name: string;
+}
 
-export function SiteHeader() {
-  const [opened, { toggle, close }] = useDisclosure(false);
+interface SiteHeaderProps {
+  /** From org_feeds — nav is data, so a new section needs no code change. */
+  feeds: NavFeed[];
+  signedIn: boolean;
+  canEdit: boolean;
+}
 
+export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  const links = [
+    ...feeds.map((f) => ({ href: `/${f.slug}`, label: f.name })),
+    { href: "/about", label: "About" },
+    { href: "/resources", label: "Resources" },
+  ];
+
+  // Charcoal gradient with a saffron rule underneath — the original chrome.
   return (
-    <Box
-      component="header"
-      style={{
-        background: 'linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%)',
-        borderBottom: '3px solid var(--saffron-bright)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
-      }}
-    >
-      <Container size="lg" py="md">
-        <Group justify="space-between" align="center">
-          {/* Brand */}
-          <Anchor component={Link} href="/" underline="never">
-            <Stack gap={2}>
-              <Title
-                order={1}
-                style={{
-                  color: 'var(--saffron-bright)',
-                  fontSize: '1.6rem',
-                  fontFamily: "'Cinzel', serif",
-                  textShadow: '2px 2px 4px rgba(0, 0, 0, 0.4)',
-                  lineHeight: 1.2,
-                  letterSpacing: '-0.5px',
-                }}
-              >
-                Amrit Vela Toronto
-              </Title>
-              <Text
-                size="xs"
-                style={{
-                  color: 'var(--saffron-medium)',
-                  fontStyle: 'italic',
-                  fontWeight: 300,
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.3)',
-                }}
-              >
-                Crown your self in the early hours of the morning
-              </Text>
-            </Stack>
-          </Anchor>
+    <header className="bg-header-footer sticky top-0 z-40 border-b-[3px] border-[#f4c430] shadow-[0_4px_15px_rgba(0,0,0,0.15)]">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+        <Link href="/" className="flex flex-col leading-tight" onClick={() => setOpen(false)}>
+          <span className="font-serif text-lg font-semibold tracking-wide text-[#f4c430]">
+            {siteConfig.orgName}
+          </span>
+          <span className="text-[0.7rem] uppercase tracking-[0.18em] text-[#fdf5e6]/60">
+            {siteConfig.city}
+          </span>
+        </Link>
 
-          {/* Desktop nav */}
-          <Group gap="md" visibleFrom="sm">
-            {navLinks.map((link) => (
-              <Anchor
+        <nav className="hidden items-center gap-1 md:flex">
+          {links.map((link) => {
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
                 key={link.href}
-                component={Link}
                 href={link.href}
-                underline="never"
-                style={{
-                  color: 'var(--saffron-bright)',
-                  fontSize: '0.95rem',
-                  padding: '0.7rem 1.2rem',
-                  borderRadius: '12px',
-                  background: 'rgba(244, 196, 48, 0.15)',
-                  border: '1px solid rgba(244, 196, 48, 0.4)',
-                  backdropFilter: 'blur(10px)',
-                  fontFamily: "'Lora', serif",
-                  fontWeight: 500,
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(244, 196, 48, 0.25)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(244, 196, 48, 0.4)';
-                  e.currentTarget.style.borderColor = 'var(--saffron-bright)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(244, 196, 48, 0.15)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.borderColor = 'rgba(244, 196, 48, 0.4)';
-                }}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm transition-colors hover:bg-[#f4c430]/15",
+                  active ? "font-medium text-[#f4c430]" : "text-[#fdf5e6]/80 hover:text-[#f4c430]"
+                )}
               >
                 {link.label}
-              </Anchor>
-            ))}
-          </Group>
-
-          {/* Mobile burger */}
-          <Burger
-            opened={opened}
-            onClick={toggle}
-            color="var(--saffron-bright)"
-            hiddenFrom="sm"
+              </Link>
+            );
+          })}
+          {signedIn && (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-[#fdf5e6]/80 hover:bg-[#f4c430]/15 hover:text-[#f4c430]"
+            >
+              <Link href="/hub">Hub</Link>
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-[#fdf5e6]/80 hover:bg-[#f4c430]/15 hover:text-[#f4c430]"
+            >
+              <Link href="/manage">Manage</Link>
+            </Button>
+          )}
+          <Button
+            asChild
             size="sm"
-          />
-        </Group>
-      </Container>
+            className="border border-[#f4c430]/50 bg-[#f4c430]/15 text-[#f4c430] hover:bg-[#f4c430]/25"
+          >
+            <Link href={signedIn ? "/account" : "/login"}>
+              {signedIn ? "Account" : "Sign in"}
+            </Link>
+          </Button>
+        </nav>
 
-      {/* Mobile drawer */}
-      <Drawer
-        opened={opened}
-        onClose={close}
-        title="Menu"
-        position="right"
-        size="xs"
-        styles={{
-          header: { 
-            background: 'linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%)', 
-            color: 'var(--saffron-bright)',
-            borderBottom: '1px solid rgba(244, 196, 48, 0.2)'
-          },
-          body: { 
-            background: 'linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%)',
-            padding: '20px'
-          },
-          close: { color: 'var(--saffron-bright)' },
-        }}
-      >
-        <Stack gap="md" pt="md">
-          {navLinks.map((link) => (
-            <Anchor
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="rounded-md p-2 text-[#f4c430] md:hidden"
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+        >
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+      </div>
+
+      {open && (
+        <nav className="border-t border-[#f4c430]/30 px-5 pb-4 md:hidden">
+          {links.map((link) => (
+            <Link
               key={link.href}
-              component={Link}
               href={link.href}
-              underline="never"
-              onClick={close}
-              style={{
-                color: 'var(--saffron-bright)',
-                fontSize: '1.1rem',
-                fontFamily: "'Lora', serif",
-                padding: '12px 16px',
-                borderRadius: '12px',
-                background: 'rgba(244, 196, 48, 0.1)',
-                border: '1px solid rgba(244, 196, 48, 0.2)',
-                fontWeight: 500,
-              }}
+              onClick={() => setOpen(false)}
+              className="block py-2.5 text-sm text-[#fdf5e6]/80"
             >
               {link.label}
-            </Anchor>
+            </Link>
           ))}
-        </Stack>
-      </Drawer>
-    </Box>
+          {signedIn && (
+            <Link
+              href="/hub"
+              onClick={() => setOpen(false)}
+              className="block py-2.5 text-sm text-[#fdf5e6]/80"
+            >
+              Hub
+            </Link>
+          )}
+          {canEdit && (
+            <Link
+              href="/manage"
+              onClick={() => setOpen(false)}
+              className="block py-2.5 text-sm text-[#fdf5e6]/80"
+            >
+              Manage
+            </Link>
+          )}
+          <Link
+            href={signedIn ? "/account" : "/login"}
+            onClick={() => setOpen(false)}
+            className="block py-2.5 text-sm font-medium text-[#f4c430]"
+          >
+            {signedIn ? "Account" : "Sign in"}
+          </Link>
+        </nav>
+      )}
+    </header>
   );
 }

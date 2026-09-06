@@ -34,6 +34,12 @@ export async function POST(request: NextRequest) {
     description = '',
     price,
     coverImageUrl,
+    bannerImageUrl,
+    bannerFocalY,
+    heroMediaUrl,
+    heroMediaType,
+    heroText,
+    backgroundColor,
     nextcloudTalkToken,
     sessions = [],
     status = 'draft',
@@ -71,16 +77,29 @@ export async function POST(request: NextRequest) {
   // workshop_pages — shared sidecar table with /api/content and the detail page
   await db`
     INSERT INTO workshop_pages (
-      thread_id, cover_image_url, price_member
+      thread_id, cover_image_url, price_member,
+      banner_image_url, banner_focal_y, hero_media_url, hero_media_type, hero_text, background_color
     ) VALUES (
       ${id},
       ${coverImageUrl || null},
-      ${price != null ? String(price) : null}
+      ${price != null ? String(price) : null},
+      ${bannerImageUrl || null},
+      ${bannerFocalY ?? 50},
+      ${heroMediaUrl || null},
+      ${heroMediaUrl ? (heroMediaType || 'image') : null},
+      ${heroText || null},
+      ${backgroundColor || null}
     )
     ON CONFLICT (thread_id) DO UPDATE
-      SET cover_image_url = EXCLUDED.cover_image_url,
-          price_member    = EXCLUDED.price_member,
-          updated_at      = NOW()
+      SET cover_image_url  = EXCLUDED.cover_image_url,
+          price_member     = EXCLUDED.price_member,
+          banner_image_url = EXCLUDED.banner_image_url,
+          banner_focal_y   = EXCLUDED.banner_focal_y,
+          hero_media_url   = EXCLUDED.hero_media_url,
+          hero_media_type  = EXCLUDED.hero_media_type,
+          hero_text        = EXCLUDED.hero_text,
+          background_color = EXCLUDED.background_color,
+          updated_at       = NOW()
   `;
 
   // Sessions — same table /api/content writes, so both editors see each other's sessions
@@ -94,13 +113,18 @@ export async function POST(request: NextRequest) {
         topic: s.title,
         scheduled_at: s.scheduledAt ? new Date(s.scheduledAt) : null,
         duration_minutes: s.durationMinutes ?? null,
-        notes: JSON.stringify({
+        // Plain object — postgres.js serializes JS objects for jsonb columns
+        // itself; pre-stringifying double-encodes it (see api/content/route.ts).
+        notes: {
           description: s.description ?? '',
           isOnline: s.isOnline ?? true,
           location: s.location ?? '',
           videoConferenceUrl: s.videoConferenceUrl ?? '',
           mediaUrl: s.mediaUrl ?? null,
-        }),
+          videoUrl: s.videoUrl ?? null,
+          resources: s.resources ?? [],
+          backgroundColor: s.backgroundColor ?? null,
+        },
       })}
     `;
   }

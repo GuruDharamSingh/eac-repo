@@ -31,9 +31,9 @@ import {
   MessageCircle,
 } from "lucide-react";
 import type { Meeting, Post, MeetingRecurrence } from "@elkdonis/types";
+import { useThreadRsvp } from "@elkdonis/hooks";
 import { stripHtml } from "@/lib/strip-html";
 import { nextOccurrence } from "@/lib/recurrence";
-import { useRsvp } from "./use-rsvp";
 import { useCycleStatus } from "./use-cycle-status";
 import { ManageGuidesModal } from "./manage-guides-modal";
 
@@ -174,7 +174,7 @@ function CompactMeetingCard({
 
   const [guidesOpen, setGuidesOpen] = useState(false);
   const { status, confirmCount, cancelCount, busy, confirm, cancel } = useCycleStatus(meeting);
-  const { isAttending, isLoading, rsvp } = useRsvp(meeting.id, meeting.isRSVPEnabled === true);
+  const { isAttending, isLoading, rsvp } = useThreadRsvp(meeting.id, { enabled: meeting.isRSVPEnabled === true });
 
   const confirmed = status === "confirmed";
   const cancelled = status === "cancelled";

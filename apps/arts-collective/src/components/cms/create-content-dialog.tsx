@@ -47,6 +47,7 @@ type Props = {
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   triggerSize?: React.ComponentProps<typeof Button>["size"];
   defaultKind?: Kind;
+  defaultVisibility?: "PUBLIC" | "ORGANIZATION" | "INVITE_ONLY";
 };
 
 export function CreateContentDialog({
@@ -55,6 +56,7 @@ export function CreateContentDialog({
   triggerVariant = "default",
   triggerSize = "sm",
   defaultKind = "post",
+  defaultVisibility = "PUBLIC",
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -66,7 +68,7 @@ export function CreateContentDialog({
   const [body, setBody] = React.useState("");
   const [visibility, setVisibility] = React.useState<
     "PUBLIC" | "ORGANIZATION" | "INVITE_ONLY"
-  >("PUBLIC");
+  >(defaultVisibility);
   const [shareToNetwork, setShareToNetwork] = React.useState(false);
   const [docUrl, setDocUrl] = React.useState("");
 

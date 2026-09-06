@@ -1,56 +1,67 @@
-import '@mantine/core/styles.css';
-import '@mantine/notifications/styles.css';
-import '@mantine/dates/styles.css';
-import '@mantine/tiptap/styles.css';
-import './globals.css';
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
-import type { Metadata } from 'next';
-import { amritTheme } from '@/lib/theme';
-import { SiteHeader } from '@/components/site-header';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Cinzel, Lora } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { siteConfig } from "@/config/site";
+import { getSiteSections } from "@/lib/data";
+import { getViewer } from "@/lib/auth";
+import { listOrgFeeds } from "@elkdonis/services";
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-lora",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: 'Amrit Vela Toronto',
-  description: 'A 4:00 AM, 2.5 hour journey of Jap Ji, Yoga and Kirtan',
+  title: {
+    default: siteConfig.orgName,
+    template: `%s · ${siteConfig.orgName}`,
+  },
+  description: siteConfig.tagline,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Every page is rendered per request.
+ *
+ * The header reads the session to decide between "Sign in" and "Account", and
+ * the whole site is database-driven (feeds, gatherings, cycle status), so
+ * there is nothing meaningful to prerender. Saying so explicitly avoids Next
+ * attempting static generation and failing on the cookie read.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Nav is built from org_feeds, so adding a section to the site is a database
+  // row rather than a code change.
+  const [feeds, viewer, sections] = await Promise.all([
+    listOrgFeeds(siteConfig.orgId).catch(() => []),
+    getViewer().catch(() => null),
+    getSiteSections(),
+  ]);
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ColorSchemeScript />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"
-          rel="stylesheet"
+    <html lang="en" suppressHydrationWarning className={`${cinzel.variable} ${lora.variable}`}>
+      <body suppressHydrationWarning className="flex min-h-screen flex-col">
+        <SiteHeader
+          feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
+          signedIn={Boolean(viewer)}
+          canEdit={Boolean(viewer?.canEdit)}
         />
-      </head>
-      <body suppressHydrationWarning>
-        <MantineProvider theme={amritTheme}>
-          <Notifications position="top-right" />
-          <SiteHeader />
-          <main>
-            {children}
-          </main>
-          <footer
-            style={{
-              background: 'linear-gradient(135deg, var(--charcoal) 0%, #2C3E50 100%)',
-              borderTop: '3px solid var(--saffron-bright)',
-              padding: '2.5rem 1.5rem',
-              textAlign: 'center',
-              color: 'var(--saffron-bright)',
-              boxShadow: '0 -4px 15px rgba(0, 0, 0, 0.15)',
-            }}
-          >
-            <p style={{ margin: 0, fontSize: '1rem', fontWeight: 500, letterSpacing: '0.5px' }}>
-              Crown yourself in the early hours of the morning 🙏
-            </p>
-            <p style={{ margin: '0.75rem 0 0', fontSize: '0.85rem', opacity: 0.7, color: 'var(--cream)' }}>
-              © {new Date().getFullYear()} Amrit Vela Toronto – Guru Dharam Singh. All rights reserved.
-            </p>
-          </footer>
-        </MantineProvider>
+        <main className="flex-1">{children}</main>
+        <SiteFooter content={sections.footer} />
+        <Toaster position="top-right" />
       </body>
     </html>
   );

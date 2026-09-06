@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Shared authoring UI (wizard, field controls) — styled with hsl(var(--token)). */
+@source "../../../../packages/cms-ui/src";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

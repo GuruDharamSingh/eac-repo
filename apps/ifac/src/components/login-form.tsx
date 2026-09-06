@@ -1,41 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { signInWithPassword } from "@elkdonis/auth-client";
+import { useSearchParams } from "next/navigation";
+import { BaroqueSignup } from "@elkdonis/ui";
+import "@elkdonis/ui/eac-theme.css";
 
+/**
+ * The shared platform signup/signin card (same component amrit-canada uses)
+ * — real account creation, password login, and Google OAuth all in one,
+ * posting to THIS app's own /api/auth/login, /api/auth/signup and
+ * /api/auth/callback (all now scoped to join 'ifac', not the network
+ * defaults — see those routes' comments).
+ *
+ * Replaces a hand-rolled login-only form that had no signup path at all —
+ * the public "Join IFAC list" form on the homepage only ever wrote to
+ * `contacts` (a mailing-list interest form), never created a real account.
+ * A signed-in member is what lets someone claim their own roster profile.
+ *
+ * A login here is a network login: one GoTrue instance keyed on email serves
+ * every site. Signing in does not by itself grant any role on this site —
+ * that comes from user_organizations (see src/lib/data.ts's canManageIfac).
+ */
 export function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setStatus("");
-    const result = await signInWithPassword(email, password);
-    setLoading(false);
-    if (result.error) {
-      setStatus(result.error);
-      return;
-    }
-    window.location.href = "/admin";
-  }
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin";
 
   return (
-    <form className="form-shell" onSubmit={submit}>
-      <div className="field">
-        <label htmlFor="email">Email</label>
-        <input id="email" type="email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} required />
-      </div>
-      <div className="field">
-        <label htmlFor="password">Password</label>
-        <input id="password" type="password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} required />
-      </div>
-      <button className="button" type="submit" disabled={loading}>
-        {loading ? "Signing in" : "Sign in"}
-      </button>
-      <div className="form-status" aria-live="polite">{status}</div>
-    </form>
+    <BaroqueSignup
+      key={initialMode}
+      initialMode={initialMode}
+      title="IFAC"
+      subtitle="Sign in to manage the site, or create an account to claim your artist or dealer profile."
+      googleRedirectTo={next ?? "/hub"}
+      onSuccess={() => {
+        window.location.href = next ?? "/hub";
+      }}
+    />
   );
 }

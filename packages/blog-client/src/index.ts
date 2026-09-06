@@ -16,3 +16,7 @@ export { BlogPostList } from './components/BlogPostList';
 export { BlogPostEditor } from './components/BlogPostEditor';
 export { BlogLoginForm } from './components/BlogLoginForm';
 export { LoginPrompt } from './components/LoginPrompt';
+
+// Shared route bodies — see pages/ for why these live here.
+export { BlogAdminPage } from './pages/BlogAdminPage';
+export { BlogPostPage } from './pages/BlogPostPage';

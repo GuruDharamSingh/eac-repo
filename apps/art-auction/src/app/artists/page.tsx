@@ -1,12 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { listMarketplaceArtists } from "@elkdonis/commerce/queries";
+import { listStores } from "@elkdonis/commerce/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Artists" };
 
 export default async function ArtistsPage() {
-  const artists = await listMarketplaceArtists({ limit: 100 });
+  // This page is the artist directory, so it shows people's stores only —
+  // an org-owned store (migration 094) has no person behind it to link to.
+  const artists = (await listStores({ limit: 100 })).filter(
+    (s) => s.ownerKind === "user" && s.ownerUserId
+  );
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
@@ -24,9 +28,9 @@ export default async function ArtistsPage() {
       ) : (
         <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {artists.map((a) => (
-            <li key={a.userId}>
+            <li key={a.id}>
               <Link
-                href={`/artists/${a.userId}`}
+                href={`/artists/${a.slug}`}
                 className="group flex items-center gap-4"
               >
                 <span className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted">

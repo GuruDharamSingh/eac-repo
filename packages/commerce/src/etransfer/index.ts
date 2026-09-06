@@ -20,6 +20,8 @@ export interface EtransferInstructionsInput {
   /** Optional security question / answer the buyer should use */
   securityQuestion?: string;
   securityAnswer?: string;
+  /** What is being held for the buyer — "artwork" (default) or e.g. "booking". */
+  itemNoun?: string;
 }
 
 export interface EtransferInstructions {
@@ -55,7 +57,7 @@ export function buildEtransferInstructions(
       : `Tip: turn on Autodeposit on the artist's account to skip the security question.`,
     "",
     `Payment is due by ${due}. If we don't receive the transfer by then, the`,
-    `reservation on this artwork will be released and the order cancelled.`,
+    `reservation on this ${input.itemNoun ?? "artwork"} will be released and the order cancelled.`,
   ]
     .filter(Boolean)
     .join("\n");

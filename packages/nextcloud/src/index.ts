@@ -14,6 +14,7 @@ export * from './files';
 export * from './org-folders';
 export * from './users';
 export * from './talk';
+export * from './deck';
 export * from './calendar';
 export * from './shares';
 export * from './org-provisioning';

@@ -1,79 +1,49 @@
 /**
- * Arts-collective adapter: reads workshop HTML/CSS from the filesystem and
- * delegates rendering to @elkdonis/cms-bindings.
+ * Arts-collective adapter for the standalone workshop page (OfferingPage,
+ * /preview/workshop, /sites/[slug]/[contentSlug]).
  *
- * The pure types and render logic live in packages/cms-bindings — this file
- * only knows about filesystem paths.
+ * Rendering is the manifest-driven binding engine — the same one that binds
+ * Silex-published pages. This file only resolves filesystem paths; the engine,
+ * the manifest and the formatters live in @elkdonis/cms-bindings.
  */
-import fs from "fs";
 import path from "path";
 import {
-  renderWorkshopTemplate as _render,
-  type WorkshopTemplates,
+  applyManifestBindings,
+  toWorkshopContext,
+  type WorkshopPageData,
 } from "@elkdonis/cms-bindings";
+import {
+  loadTemplateManifest,
+  readTemplateFile,
+  templateDir,
+} from "@elkdonis/cms-bindings/node";
+import fs from "fs";
 
 // Re-export the canonical type so callers can import it from here.
 export type { WorkshopPageData } from "@elkdonis/cms-bindings";
 
-// ─── Template path resolution ─────────────────────────────────────────────────
-
-function resolveTemplateDir(): string {
-  const candidates = [
-    path.join(process.cwd(), "../../packages/silex-nextcloud-connector/src/templates/workshop"),
-    path.join(process.cwd(), "../../../packages/silex-nextcloud-connector/src/templates/workshop"),
-    path.join(process.cwd(), "packages/silex-nextcloud-connector/src/templates/workshop"),
-  ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
-  }
-  throw new Error(`Workshop template dir not found. cwd=${process.cwd()}`);
-}
-
-let _dir: string | null = null;
-function templateDir(): string {
-  if (!_dir) _dir = resolveTemplateDir();
-  return _dir;
-}
-
-function read(file: string): string {
-  return fs.readFileSync(path.join(templateDir(), file), "utf-8");
-}
-
-function loadTemplates(): WorkshopTemplates {
-  return {
-    nav: read("html/eac-ws-nav.html"),
-    hero: read("html/eac-ws-hero.html"),
-    detailStrip: read("html/eac-ws-detail-strip.html"),
-    about: read("html/eac-ws-about.html"),
-    facilitator: read("html/eac-ws-facilitator.html"),
-    schedule: read("html/eac-ws-schedule.html"),
-    gallery: read("html/eac-ws-gallery.html"),
-    testimonials: read("html/eac-ws-testimonials.html"),
-    related: read("html/eac-ws-related.html"),
-    register: read("html/eac-ws-register.html"),
-  };
-}
+const TEMPLATE_ID = "workshop";
 
 export function readWorkshopCss(): string {
-  const tokenPath = path.join(templateDir(), "../tokens/eac-tokens.css");
-  const sections = [
-    "css/eac-ws-nav.css",
-    "css/eac-ws-hero.css",
-    "css/eac-ws-detail-strip.css",
-    "css/eac-ws-about.css",
-    "css/eac-ws-facilitator.css",
-    "css/eac-ws-schedule.css",
-    "css/eac-ws-gallery.css",
-    "css/eac-ws-testimonials.css",
-    "css/eac-ws-related.css",
-    "css/eac-ws-register.css",
-  ];
+  const manifest = loadTemplateManifest(TEMPLATE_ID);
+  const dir = templateDir(TEMPLATE_ID);
+  const tokenRel = manifest.tokens ?? "../tokens/eac-tokens.css";
+  const tokenPath = path.join(dir, tokenRel);
   const tokens = fs.existsSync(tokenPath) ? fs.readFileSync(tokenPath, "utf-8") : "";
-  return [tokens, ...sections.map((f) => read(f))].join("\n");
+  const order = manifest.cssOrder ?? manifest.sections.map((s) => s.css).filter(Boolean);
+  const sections = (order as string[]).map((rel) => readTemplateFile(TEMPLATE_ID, rel));
+  return [tokens, ...sections].join("\n");
 }
 
-export function renderWorkshopTemplate(
-  data: import("@elkdonis/cms-bindings").WorkshopPageData
-): string {
-  return _render(data, loadTemplates());
+/**
+ * Compose the workshop page from its section HTML in manifest order, then bind
+ * the org's workshop data into it. The output is a fragment for
+ * `dangerouslySetInnerHTML` — callers already wrap it and load `readWorkshopCss`.
+ */
+export function renderWorkshopTemplate(data: WorkshopPageData): string {
+  const manifest = loadTemplateManifest(TEMPLATE_ID);
+  const page = manifest.sections
+    .map((section) => readTemplateFile(TEMPLATE_ID, section.html))
+    .join("\n");
+  return applyManifestBindings(page, manifest.sections, toWorkshopContext(data));
 }

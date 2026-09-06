@@ -311,14 +311,30 @@ interface StickyBottomBarProps {
   onAction: () => void;
   showAfterPx?: number;
   isJoined?: boolean;
+  loading?: boolean;
+  /** Disables the action button — e.g. RSVP deadline passed or at capacity. */
+  disabled?: boolean;
+  /** Overrides the button/eyebrow copy for non-workshop threads (meetings, events, ...). */
+  joinLabel?: string;
+  joinedLabel?: string;
+  joinedEyebrow?: string;
+  openEyebrow?: string;
+  closedLabel?: string;
 }
 
-export function StickyBottomBar({ 
-  label, 
-  price, 
-  onAction, 
+export function StickyBottomBar({
+  label,
+  price,
+  onAction,
   showAfterPx = 400,
-  isJoined = false 
+  isJoined = false,
+  loading = false,
+  disabled = false,
+  joinLabel = 'Join Workshop',
+  joinedLabel = 'Enter Workshop',
+  joinedEyebrow = 'You are enrolled',
+  openEyebrow = 'Limited Spaces',
+  closedLabel = 'Closed',
 }: StickyBottomBarProps) {
   const [scroll] = useWindowScroll();
   const visible = scroll.y > showAfterPx;
@@ -348,25 +364,27 @@ export function StickyBottomBar({
             <Group justify="space-between">
               <Stack gap={0}>
                 <Text size="xs" fw={700} tt="uppercase" lts={1} c="dimmed">
-                  {isJoined ? 'You are enrolled' : 'Limited Spaces'}
+                  {isJoined ? joinedEyebrow : disabled ? closedLabel : openEyebrow}
                 </Text>
                 <Title order={4} size="h5">{label}</Title>
               </Stack>
-              
+
               <Group gap="md">
                 {price && !isJoined && (
                   <Text fw={700} size="xl" c="indigo">
                     {price}
                   </Text>
                 )}
-                <Button 
-                  size="md" 
-                  radius="xl" 
+                <Button
+                  size="md"
+                  radius="xl"
                   onClick={onAction}
+                  loading={loading}
+                  disabled={disabled && !isJoined}
                   color={isJoined ? 'teal' : 'indigo'}
                   leftSection={isJoined ? <CheckCircle2 size={18} /> : undefined}
                 >
-                  {isJoined ? 'Enter Workshop' : 'Join Workshop'}
+                  {disabled && !isJoined ? closedLabel : isJoined ? joinedLabel : joinLabel}
                 </Button>
               </Group>
             </Group>

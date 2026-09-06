@@ -1,0 +1,279 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Pigeonshoot palette.
+
+   Pigeon grey and slate ink, with one loud accent lifted off the iridescent
+   patch on a rock dove's neck — that teal-to-violet sheen is the only colour
+   the birds actually own, so it's the only saturated thing on the page.
+
+   Token NAMES are stock shadcn on purpose: every file under
+   src/components/ui/ was copied unmodified from the amrit-canada template and
+   must keep working untouched. Only the values are ours.
+   ========================================================================== */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: 210 8% 96%;          /* wet pavement, just off-white */
+  --foreground: 213 22% 18%;         /* slate ink */
+
+  --card: 0 0% 100%;
+  --card-foreground: 213 22% 18%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 213 22% 18%;
+
+  --primary: 178 55% 36%;            /* neck iridescence, teal side */
+  --primary-foreground: 180 40% 97%;
+
+  --secondary: 210 12% 90%;          /* feather grey */
+  --secondary-foreground: 213 20% 24%;
+
+  --muted: 210 10% 92%;
+  --muted-foreground: 213 10% 44%;
+
+  --accent: 178 48% 92%;             /* pale teal wash for hovers */
+  --accent-foreground: 178 60% 20%;
+
+  /* The violet half of the iridescence. Used for emphasis, never for chrome. */
+  --iridescent: 282 44% 52%;
+
+  --destructive: 4 62% 46%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 210 14% 85%;
+  --input: 210 14% 85%;
+  --ring: 178 55% 36%;
+
+  /* Rarity tier fallbacks.
+     pigeon_tiers.accent_hex is the source of truth and arrives inline as
+     --tier on each card, so adding a sixth tier is a database row, not a CSS
+     change. These exist so a card with an unknown tier_slug still renders. */
+  --tier: 210 6% 54%;
+  --tier-street: 210 6% 54%;
+  --tier-common: 145 20% 58%;
+  --tier-uncommon: 214 48% 56%;
+  --tier-rare: 282 44% 59%;
+  --tier-legendary: 42 82% 51%;
+}
+
+.dark {
+  --background: 213 24% 10%;         /* under the overpass */
+  --foreground: 210 16% 92%;
+
+  --card: 213 20% 14%;
+  --card-foreground: 210 16% 92%;
+
+  --popover: 213 20% 14%;
+  --popover-foreground: 210 16% 92%;
+
+  --primary: 178 52% 48%;
+  --primary-foreground: 213 24% 10%;
+
+  --secondary: 213 14% 22%;
+  --secondary-foreground: 210 16% 92%;
+
+  --muted: 213 14% 20%;
+  --muted-foreground: 210 10% 66%;
+
+  --accent: 178 34% 24%;
+  --accent-foreground: 178 44% 88%;
+
+  --iridescent: 282 52% 68%;
+
+  --destructive: 4 62% 56%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 213 12% 26%;
+  --input: 213 12% 26%;
+  --ring: 178 52% 48%;
+
+  --tier: 210 6% 62%;
+  --tier-street: 210 6% 62%;
+  --tier-common: 145 22% 62%;
+  --tier-uncommon: 214 52% 64%;
+  --tier-rare: 282 48% 68%;
+  --tier-legendary: 42 86% 60%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-iridescent: hsl(var(--iridescent));
+  /* Set per-card from pigeon_tiers.accent_hex. */
+  --color-tier: hsl(var(--tier));
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Faint concrete texture, so the grey reads as pavement rather than as an
+   unstyled page. One repeating gradient, no image request. */
+.bg-pavement {
+  background-image:
+    radial-gradient(hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ==========================================================================
+   The trading card.
+
+   One CSS custom property does the theming: --tier, set inline on the card
+   from pigeon_tiers.accent_hex as an HSL triplet. Adding a sixth rarity is a
+   database row; only the four frame TREATMENTS below are code, because they
+   are genuinely different physical materials rather than different colours.
+   ========================================================================== */
+
+.ps-card {
+  --tier-c: hsl(var(--tier));
+  perspective: 1200px;
+}
+
+.ps-card__flipper {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ps-card[data-flipped="true"] .ps-card__flipper {
+  transform: rotateY(180deg);
+}
+
+.ps-card__face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.ps-card__face--back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
+/* ── frame treatments ───────────────────────────────────────────────────── */
+
+.ps-frame {
+  padding: 3px;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--tier-c) 55%, transparent);
+}
+
+.ps-frame--metal {
+  background: linear-gradient(
+    135deg,
+    var(--tier-c) 0%,
+    color-mix(in srgb, var(--tier-c) 40%, white) 28%,
+    var(--tier-c) 52%,
+    color-mix(in srgb, var(--tier-c) 55%, white) 76%,
+    var(--tier-c) 100%
+  );
+}
+
+@property --ps-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.ps-frame--foil,
+.ps-frame--holo {
+  background: conic-gradient(
+    from var(--ps-angle),
+    var(--tier-c),
+    color-mix(in srgb, var(--tier-c) 30%, white),
+    hsl(var(--iridescent)),
+    color-mix(in srgb, var(--tier-c) 30%, white),
+    var(--tier-c)
+  );
+  animation: ps-spin 7s linear infinite;
+}
+
+@keyframes ps-spin {
+  to {
+    --ps-angle: 360deg;
+  }
+}
+
+/* Holo adds a sheen that tracks the pointer. --mx/--my are set by a tiny
+   client handler; with no JS they simply stay at the centre. */
+.ps-holo-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.8rem;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  opacity: 0.55;
+  background: radial-gradient(
+    circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%),
+    hsl(var(--iridescent) / 0.85) 0%,
+    transparent 55%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-frame--foil,
+  .ps-frame--holo {
+    animation: none;
+  }
+  .ps-card__flipper {
+    transition: none;
+  }
+}

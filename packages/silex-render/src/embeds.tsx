@@ -6,6 +6,7 @@ import {
   type OrgSummary,
 } from "./queries";
 import { InquiryForm } from "./inquiry-form";
+import { MediaUploadWidget } from "./media-upload";
 
 type EmbedAttrs = Record<string, string>;
 
@@ -452,6 +453,225 @@ function InquiryEmbed({ org, attrs }: { org: OrgSummary; attrs: EmbedAttrs }) {
   });
 }
 
+/**
+ * Sign-in state for this org, rendered server-side.
+ *
+ * A published Silex page is static HTML in Nextcloud, so it cannot know who is
+ * looking at it. This embed is the seam: the session is read on the server at
+ * request time, which means no auth flash, no client bundle, and the page still
+ * works with JavaScript disabled.
+ */
+async function LoginEmbed({
+  org,
+  attrs,
+}: {
+  org: OrgSummary;
+  attrs: EmbedAttrs;
+}) {
+  const { getServerSession } = await import("@elkdonis/auth-server");
+  const session = await getServerSession().catch(() => ({ user: null }));
+  const user = session.user;
+  const orgParam = encodeURIComponent(org.slug);
+
+  const content = user ? (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border bg-card p-5">
+      <div className="min-w-0">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+          Signed in
+        </p>
+        <p className="truncate text-sm font-medium text-foreground">
+          {user.email}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <a
+          href="/account"
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-accent"
+        >
+          Account
+        </a>
+        <a
+          href="/api/auth/logout"
+          className="inline-flex min-h-11 items-center justify-center rounded-md px-4 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Sign out
+        </a>
+      </div>
+    </div>
+  ) : (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border bg-card p-5">
+      <p className="min-w-0 text-sm text-muted-foreground">
+        {attrs["data-description"] ||
+          `Sign in to RSVP, comment, and see member updates from ${org.name}.`}
+      </p>
+      <div className="flex shrink-0 items-center gap-2">
+        <a
+          href={`/login?org=${orgParam}`}
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-accent"
+        >
+          Sign in
+        </a>
+        <a
+          href={`/login?mode=signup&org=${orgParam}`}
+          className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Join
+        </a>
+      </div>
+    </div>
+  );
+
+  return maybeWrap(attrs, content, {
+    eyebrow: "Members",
+    title: attrs["data-title"] || (user ? "Your account" : "Members"),
+  });
+}
+
+/**
+ * Media upload for org members.
+ *
+ * Three states, decided on the server: signed out, signed in but not a member,
+ * and permitted. Only the last one ships the client widget. The upload route
+ * repeats both checks — this gate controls what is shown, not what is allowed.
+ */
+async function MediaUploadEmbed({
+  org,
+  attrs,
+}: {
+  org: OrgSummary;
+  attrs: EmbedAttrs;
+}) {
+  const shell = {
+    eyebrow: "Media",
+    title: attrs["data-title"] || "Upload media",
+  };
+
+  const { getServerSession } = await import("@elkdonis/auth-server");
+  const session = await getServerSession().catch(() => ({ user: null }));
+  const user = session.user;
+
+  if (!user) {
+    return maybeWrap(
+      attrs,
+      <EmptyEmbed>
+        <a
+          href={`/login?org=${encodeURIComponent(org.slug)}`}
+          className="underline underline-offset-4"
+        >
+          Sign in
+        </a>{" "}
+        to add photos or video to {org.name}.
+      </EmptyEmbed>,
+      shell
+    );
+  }
+
+  const { hasOrgRole } = await import("@elkdonis/services");
+  const userId = user.db_user_id ?? user.id;
+  const permitted = await hasOrgRole(userId, org.id, [
+    "owner",
+    "guide",
+    "member",
+  ]).catch(() => false);
+
+  if (!permitted) {
+    return maybeWrap(
+      attrs,
+      <EmptyEmbed>
+        Uploading is open to members of {org.name}. Ask an organiser to add you.
+      </EmptyEmbed>,
+      shell
+    );
+  }
+
+  return maybeWrap(
+    attrs,
+    <MediaUploadWidget
+      orgSlug={org.slug}
+      accept={attrs["data-accept"] || "image/*,video/*"}
+    />,
+    shell
+  );
+}
+
+/**
+ * The people published on this org, read live from org_profiles.
+ *
+ * This is the block that makes a visual page builder viable for a directory:
+ * hand-placing artist cards would fork the roster away from the database the
+ * moment someone joins. Here, adding a member is a row — every page carrying
+ * this embed updates, portrait included.
+ *
+ * `onlyPublic` matters: signup drafts an org_profile for everyone who joins,
+ * so an unfiltered list would expose people the org has not chosen to publish.
+ */
+async function DirectoryEmbed({
+  org,
+  attrs,
+}: {
+  org: OrgSummary;
+  attrs: EmbedAttrs;
+}) {
+  const { listOrgProfiles } = await import("@elkdonis/services");
+  const limit = normalizeLimit(attrs["data-limit"], 8);
+  const tags = parseList(attrs["data-tags"], []);
+
+  const people = await listOrgProfiles(org.id, {
+    onlyPublic: true,
+    tags: tags.length ? tags : undefined,
+  }).catch(() => []);
+
+  const shown = people.slice(0, limit);
+
+  const content =
+    shown.length === 0 ? (
+      <EmptyEmbed>No one has been published to this directory yet.</EmptyEmbed>
+    ) : (
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {shown.map((p) => (
+          <article
+            key={p.userId}
+            className="flex items-center gap-3 rounded-md border border-border bg-card p-4"
+          >
+            {p.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={p.avatarUrl}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-sm text-muted-foreground">
+                {(p.displayName || "?").charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {p.slug ? (
+                  <a className="hover:underline" href={`/${p.slug}`}>
+                    {p.displayName}
+                  </a>
+                ) : (
+                  p.displayName
+                )}
+              </p>
+              {p.roleTitle && (
+                <p className="truncate text-xs text-muted-foreground">
+                  {p.roleTitle}
+                </p>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    );
+
+  return maybeWrap(attrs, content, {
+    eyebrow: "Directory",
+    title: attrs["data-title"] || "Members",
+  });
+}
+
 async function renderEmbed(attrs: EmbedAttrs, org: OrgSummary, key: string) {
   const component = attrs["data-eac-component"];
   if (component === "workshop-cards") {
@@ -477,6 +697,15 @@ async function renderEmbed(attrs: EmbedAttrs, org: OrgSummary, key: string) {
   }
   if (component === "resources") {
     return <ResourcesEmbed key={key} attrs={attrs} />;
+  }
+  if (component === "login") {
+    return <LoginEmbed key={key} org={org} attrs={attrs} />;
+  }
+  if (component === "media-upload") {
+    return <MediaUploadEmbed key={key} org={org} attrs={attrs} />;
+  }
+  if (component === "directory") {
+    return <DirectoryEmbed key={key} org={org} attrs={attrs} />;
   }
   return <OrgFeedEmbed key={key} org={org} attrs={attrs} />;
 }

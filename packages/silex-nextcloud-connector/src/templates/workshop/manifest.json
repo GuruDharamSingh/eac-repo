@@ -26,9 +26,28 @@
       "required": true,
       "repeatable": false,
       "defaultVisible": true,
-      "cmsFields": ["workshop_pages.registration_url"],
-      "traits": ["ctaLabel", "ctaHref"],
-      "notes": "Platform mark and contact CTA only; not a content navigation menu."
+      "cmsFields": [
+        "workshop_pages.registration_url"
+      ],
+      "traits": [
+        "ctaLabel"
+      ],
+      "bindings": {
+        "ctaLabel": {
+          "kind": "text",
+          "fallback": "Stay in touch"
+        },
+        "ctaHref": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "workshop.registration_url",
+          "fallback": "#register"
+        }
+      },
+      "notes": "Platform mark and contact CTA only; not a content navigation menu.",
+      "wizard": {
+        "skip": true
+      }
     },
     {
       "id": "eac-ws-hero",
@@ -51,8 +70,68 @@
         "workshop_pages.registration_status",
         "workshop_pages.cover_image_url"
       ],
-      "traits": ["eyebrowText", "title", "recurrence", "locationName", "spotsText", "ctaLabel", "registrationUrl"],
-      "notes": "eyebrowText = discipline + ' · ' + series_label. spotsText is computed from attendee_limit minus RSVP count."
+      "traits": [
+        "ctaLabel",
+        "eyebrowText",
+        "locationName",
+        "recurrence",
+        "spotsText",
+        "title"
+      ],
+      "bindings": {
+        "eyebrowText": {
+          "kind": "text",
+          "from": [
+            "workshop.discipline",
+            "workshop.series_label"
+          ],
+          "join": " · "
+        },
+        "title": {
+          "kind": "text",
+          "from": "workshop.title"
+        },
+        "recurrence": {
+          "kind": "text",
+          "from": "workshop.recurrence_label",
+          "omitWhenEmpty": true
+        },
+        "locationName": {
+          "kind": "text",
+          "from": [
+            "workshop.location",
+            "workshop.location_address"
+          ],
+          "format": "first",
+          "omitWhenEmpty": true
+        },
+        "spotsText": {
+          "kind": "text",
+          "from": "workshop.attendee_limit",
+          "format": "spots",
+          "omitWhenEmpty": true
+        },
+        "ctaLabel": {
+          "kind": "text",
+          "from": [
+            "workshop.registration_status",
+            "workshop.price",
+            "workshop.currency"
+          ],
+          "format": "registrationCta"
+        },
+        "registrationUrl": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "workshop.registration_url",
+          "fallback": "#register"
+        }
+      },
+      "notes": "eyebrowText = discipline + ' · ' + series_label. spotsText is computed from attendee_limit minus RSVP count.",
+      "wizard": {
+        "label": "The basics",
+        "description": "Title, discipline and the headline details people see first."
+      }
     },
     {
       "id": "eac-ws-detail-strip",
@@ -71,7 +150,56 @@
         "threads.attendee_limit",
         "workshop_pages.language"
       ],
-      "traits": ["startDate", "sessionCount", "sessionDuration", "format", "level", "language"]
+      "traits": [
+        "format",
+        "language",
+        "level",
+        "sessionCount",
+        "sessionDuration",
+        "startDate"
+      ],
+      "bindings": {
+        "startDate": {
+          "kind": "text",
+          "from": "workshop.scheduled_at",
+          "format": "date"
+        },
+        "sessionCount": {
+          "kind": "text",
+          "from": "workshop.session_count",
+          "format": "sessionCount",
+          "omitWhenEmpty": true
+        },
+        "sessionDuration": {
+          "kind": "text",
+          "from": "workshop.session_duration_hrs",
+          "format": "sessionDuration",
+          "omitWhenEmpty": true
+        },
+        "format": {
+          "kind": "text",
+          "from": "workshop.format",
+          "format": "format"
+        },
+        "level": {
+          "kind": "text",
+          "from": "workshop.level",
+          "format": "level"
+        },
+        "language": {
+          "kind": "text",
+          "from": "workshop.language",
+          "fallback": "English"
+        }
+      },
+      "wizard": {
+        "label": "Format & schedule",
+        "description": "When it runs, how it is delivered, and who it is for.",
+        "claims": [
+          "threads.scheduled_at",
+          "threads.format"
+        ]
+      }
     },
     {
       "id": "eac-ws-about",
@@ -83,11 +211,34 @@
       "defaultVisible": true,
       "cmsFields": [
         "threads.body",
-        "threads.tags",
         "workshop_pages.accessibility_notes"
       ],
-      "traits": ["descriptionLong", "showAccessibilityNotes", "accessibilityNotes"],
-      "notes": "description_long = threads.body. Read-more expand is CSS clamp only — no separate DB field."
+      "traits": [
+        "accessibilityNotes",
+        "descriptionLong",
+        "descriptionLongExtra",
+        "showAccessibilityNotes",
+        "showLongDescription"
+      ],
+      "bindings": {
+        "descriptionLong": {
+          "kind": "html",
+          "from": "workshop.body"
+        },
+        "accessibilityNotes": {
+          "kind": "text",
+          "from": "workshop.accessibility_notes"
+        },
+        "showAccessibilityNotes": {
+          "kind": "show",
+          "from": "workshop.accessibility_notes"
+        }
+      },
+      "notes": "description_long = threads.body. Read-more expand is CSS clamp only — no separate DB field. (threads.tags was listed here until 2026-09-01; no such column exists.)",
+      "wizard": {
+        "label": "Description",
+        "description": "The full description of the workshop."
+      }
     },
     {
       "id": "eac-ws-facilitator",
@@ -99,13 +250,67 @@
       "defaultVisible": true,
       "cmsFields": [
         "artist_profiles.display_name",
+        "artist_profiles.role_title",
         "artist_profiles.bio",
         "artist_profiles.photo_url",
         "artist_profiles.pronouns",
         "workshop_pages.author_note"
       ],
-      "traits": ["fullName", "bio", "photoPath", "pronouns", "websiteUrl"],
-      "notes": "Data source is threads.author_id → artist_profiles. workshop_pages.author_note overrides artist_profiles.bio for this workshop only."
+      "traits": [
+        "bio",
+        "fullName",
+        "photoPath",
+        "pronouns",
+        "roleTitle",
+        "showCo"
+      ],
+      "bindings": {
+        "fullName": {
+          "kind": "text",
+          "from": "facilitator.name"
+        },
+        "pronouns": {
+          "kind": "text",
+          "from": "facilitator.pronouns",
+          "omitWhenEmpty": true
+        },
+        "roleTitle": {
+          "kind": "text",
+          "from": "facilitator.roleTitle",
+          "omitWhenEmpty": true
+        },
+        "bio": {
+          "kind": "text",
+          "from": [
+            "workshop.author_note",
+            "facilitator.bio"
+          ],
+          "format": "first"
+        },
+        "photoPath": [
+          {
+            "kind": "attr",
+            "attr": "src",
+            "from": "facilitator.photo",
+            "omitWhenEmpty": true
+          },
+          {
+            "kind": "attr",
+            "attr": "alt",
+            "from": "facilitator.name",
+            "template": "Photo of {}"
+          }
+        ],
+        "showCo": {
+          "kind": "show",
+          "from": "facilitator.co"
+        }
+      },
+      "notes": "Data source is threads.author_id → artist_profiles. workshop_pages.author_note overrides artist_profiles.bio for this workshop only.",
+      "wizard": {
+        "label": "Facilitator",
+        "description": "Who is leading this workshop."
+      }
     },
     {
       "id": "eac-ws-schedule",
@@ -124,8 +329,52 @@
         "threads.sessions[].location",
         "workshop_pages.registration_url"
       ],
-      "traits": ["sessionList", "registrationUrl"],
-      "notes": "sessions JSONB lives on threads. Optional — omit if sessions array is empty."
+      "notes": "sessions JSONB lives on threads. Optional — omit if sessions array is empty.",
+      "wizard": {
+        "skip": true
+      },
+      "bindings": {
+        "scheduleSection": {
+          "kind": "show",
+          "from": "workshop.sessions"
+        },
+        "sessions": {
+          "kind": "list",
+          "from": "workshop.sessions",
+          "whenEmpty": "remove",
+          "item": {
+            "sessionWeekday": {
+              "kind": "text",
+              "from": "item.scheduled_at",
+              "format": "weekday"
+            },
+            "sessionDate": {
+              "kind": "text",
+              "from": "item.scheduled_at",
+              "format": "date"
+            },
+            "sessionTime": {
+              "kind": "text",
+              "from": "item.scheduled_at",
+              "format": "time",
+              "omitWhenEmpty": true
+            },
+            "sessionTitle": {
+              "kind": "text",
+              "from": "item.title",
+              "fallback": "Session"
+            },
+            "sessionDesc": {
+              "kind": "text",
+              "from": "item.location",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "traits": [
+        "sessions"
+      ]
     },
     {
       "id": "eac-ws-gallery",
@@ -140,8 +389,59 @@
         "workshop_pages.gallery_image_urls",
         "workshop_pages.promo_video_url"
       ],
-      "traits": ["galleryItems"],
-      "notes": "Optional. gallery_image_urls is JSONB array: [{url, alt, caption}]."
+      "traits": [
+        "galleryImages",
+        "promoVideo"
+      ],
+      "bindings": {
+        "gallerySection": {
+          "kind": "show",
+          "from": [
+            "workshop.gallery_image_urls",
+            "workshop.promo_video_url"
+          ]
+        },
+        "galleryImages": {
+          "kind": "list",
+          "from": "workshop.gallery_image_urls",
+          "limit": 4,
+          "firstClass": "eac-ws-gallery__item--featured",
+          "whenEmpty": "remove",
+          "item": {
+            "imgSrc": [
+              {
+                "kind": "attr",
+                "attr": "src",
+                "from": "item.url"
+              },
+              {
+                "kind": "attr",
+                "attr": "alt",
+                "from": [
+                  "item.alt",
+                  "item.caption"
+                ],
+                "format": "first",
+                "fallback": "Workshop session photo"
+              }
+            ]
+          }
+        },
+        "promoVideo": {
+          "kind": "show",
+          "from": "workshop.promo_video_url"
+        },
+        "promoVideoSrc": {
+          "kind": "attr",
+          "attr": "src",
+          "from": "workshop.promo_video_url"
+        }
+      },
+      "notes": "Optional. gallery_image_urls is JSONB array: [{url, alt, caption}].",
+      "wizard": {
+        "label": "Gallery",
+        "description": "Images and video from past sessions."
+      }
     },
     {
       "id": "eac-ws-testimonials",
@@ -152,9 +452,15 @@
       "repeatable": false,
       "defaultVisible": true,
       "omitWhenEmpty": true,
-      "cmsFields": ["workshop_testimonials.quote", "workshop_testimonials.name", "workshop_testimonials.role"],
-      "traits": ["testimonialList"],
-      "notes": "Optional. Testimonials table is future work — filtered by thread_id."
+      "cmsFields": [
+        "workshop_testimonials.quote",
+        "workshop_testimonials.name",
+        "workshop_testimonials.role"
+      ],
+      "notes": "Optional. Testimonials table is future work — filtered by thread_id.",
+      "wizard": {
+        "skip": true
+      }
     },
     {
       "id": "eac-ws-related",
@@ -165,9 +471,15 @@
       "repeatable": false,
       "defaultVisible": false,
       "omitWhenEmpty": true,
-      "cmsFields": ["related_threads.title", "related_threads.scheduled_at", "related_threads.slug"],
-      "traits": ["relatedWorkshopList"],
-      "notes": "Optional. Related = same discipline or overlapping tags, status=published. Future computed query."
+      "cmsFields": [
+        "related_threads.title",
+        "related_threads.scheduled_at",
+        "related_threads.slug"
+      ],
+      "notes": "Optional. Related = same discipline or overlapping tags, status=published. Future computed query.",
+      "wizard": {
+        "skip": true
+      }
     },
     {
       "id": "eac-ws-register",
@@ -189,7 +501,84 @@
         "threads.attendee_limit",
         "threads.scheduled_at"
       ],
-      "traits": ["priceFull", "priceSlidingMin", "ctaLabel", "registrationUrl", "spotsRemaining", "startsIn", "slidingScaleNote", "deadlineNote"]
+      "traits": [
+        "ctaLabel",
+        "deadlineNote",
+        "priceContext",
+        "priceFull",
+        "slidingScaleNote",
+        "spotsRemaining",
+        "startsIn"
+      ],
+      "bindings": {
+        "priceFull": {
+          "kind": "text",
+          "from": [
+            "workshop.price",
+            "workshop.currency"
+          ],
+          "format": "price"
+        },
+        "priceContext": {
+          "kind": "text",
+          "from": "workshop.session_count",
+          "format": "sessionCountSuffix",
+          "omitWhenEmpty": true
+        },
+        "slidingScaleNote": {
+          "kind": "text",
+          "from": "workshop.sliding_scale_note",
+          "omitWhenEmpty": true
+        },
+        "spotsRemaining": {
+          "kind": "text",
+          "from": "workshop.attendee_limit",
+          "format": "spotsRemaining",
+          "omitWhenEmpty": true
+        },
+        "startsIn": {
+          "kind": "text",
+          "from": "workshop.scheduled_at",
+          "format": "startsIn",
+          "omitWhenEmpty": true
+        },
+        "ctaLabel": {
+          "kind": "text",
+          "from": [
+            "workshop.registration_status",
+            "workshop.price",
+            "workshop.currency"
+          ],
+          "format": "registrationCta"
+        },
+        "registrationUrl": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "workshop.registration_url",
+          "fallback": "#register"
+        },
+        "deadlineNote": {
+          "kind": "text",
+          "from": "workshop.registration_deadline",
+          "format": "deadline",
+          "omitWhenEmpty": true
+        }
+      },
+      "wizard": {
+        "label": "Pricing & registration",
+        "description": "What it costs and how people sign up.",
+        "claims": [
+          "threads.price",
+          "threads.currency",
+          "threads.attendee_limit",
+          "workshop_pages.registration_url",
+          "workshop_pages.registration_status",
+          "workshop_pages.registration_deadline",
+          "workshop_pages.sliding_scale_note",
+          "workshop_pages.price_sliding_min",
+          "workshop_pages.price_member"
+        ]
+      }
     }
   ]
 }

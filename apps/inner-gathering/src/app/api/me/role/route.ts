@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from '@elkdonis/auth-server';
-import { db } from '@elkdonis/db';
+import { getServerSession, isAdmin as checkIsAdmin } from '@elkdonis/auth-server';
+import { hasAnyOrgRole } from '@elkdonis/services';
 
 /**
  * GET /api/me/role
@@ -15,16 +15,10 @@ export async function GET() {
       return NextResponse.json({ isAdmin: false, isGuide: false });
     }
 
-    const [user] = await db`
-      SELECT is_admin FROM users WHERE id = ${session.user.id}
-    `;
-    const roles = await db`
-      SELECT role FROM user_organizations WHERE user_id = ${session.user.id}
-    `;
-
-    const roleSet = new Set(roles.map((r: { role: string }) => r.role));
-    const isAdmin = user?.is_admin === true;
-    const isGuide = roleSet.has('guide') || roleSet.has('owner');
+    const [isAdmin, isGuide] = await Promise.all([
+      checkIsAdmin(session.user.id),
+      hasAnyOrgRole(session.user.id, ['guide', 'owner']),
+    ]);
 
     return NextResponse.json({ isAdmin, isGuide });
   } catch (error) {

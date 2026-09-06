@@ -1,5 +1,10 @@
 import type { OrgFeedItem } from "@/lib/org";
 import type { CommunityFeedItem } from "@/lib/community-feed";
+import type {
+  MemberRosterItem,
+  NetworkEvent,
+  NetworkFeedItem,
+} from "@/lib/network";
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
@@ -764,5 +769,230 @@ export function buildPortalHtml(opts: BuildOpts): string {
 <div class="ep-foot">
   <span>Elkdonis Arts Collective &bull; Community Edition &bull; ${esc(orgName)}</span>
   <span>&copy; ${new Date().getFullYear()} &bull; <a href="/">Home</a> &bull; <a href="/hub">Hub</a></span>
+</div></div>`;
+}
+
+// ─── Newsroom (network-wide landing page) ──────────────────────────────────
+// Same masthead/3-col visual language as buildPortalHtml above, reusing
+// PORTAL_CSS/esc/shortDate, but scoped to the whole network rather than one
+// org — no single "featured artist," no Silex embed hydration (there's no
+// owning org to bind embeds to).
+
+export type NewsroomOpts = {
+  memberOrgs: MemberRosterItem[];
+  /** org slug → public home URL, resolved by the caller (org_domains first,
+   *  network subdomain otherwise). This renderer builds a string, so it can't
+   *  look them up itself. */
+  orgHomeUrls: Record<string, string>;
+  eventsByCity: Record<string, NetworkEvent[]>;
+  feed: NetworkFeedItem[];
+  isUserLoggedIn: boolean;
+  userDisplayName: string | null;
+  loginUrl: string;
+  signupUrl: string;
+};
+
+export function buildNewsroomHtml(opts: NewsroomOpts): string {
+  const {
+    memberOrgs, orgHomeUrls, eventsByCity, feed,
+    isUserLoggedIn, userDisplayName, loginUrl, signupUrl,
+  } = opts;
+
+  const today = new Date().toLocaleDateString("en-CA", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+
+  const lead = feed[0] ?? null;
+  const rest = feed.slice(1, 7);
+
+  const feedHtml = rest.length
+    ? `<div class="ep-feed">${rest.map((i) =>
+        `<div class="ep-feed__i">
+          <div class="ep-feed__kind">${esc(i.kind)}<em>${esc(i.org_name)}</em></div>
+          <div class="ep-feed__title">${esc(i.title)}</div>
+          ${i.excerpt ? `<div class="ep-feed__exc">${esc(i.excerpt)}</div>` : ""}
+        </div>`
+      ).join("")}</div>`
+    : `<div style="padding:10px;font-size:11px;color:var(--ink-4);font-style:italic">The network is quiet right now. As orgs publish, it will appear here.</div>`;
+
+  const orgListHtml = memberOrgs.length
+    ? `<ul class="ep-list">${memberOrgs.slice(0, 8).map((m) =>
+        `<li>
+          <span class="ep-list__tag">${esc(m.disciplines?.[0] ?? "Member")}</span>
+          <a href="${esc(orgHomeUrls[m.slug] ?? `//${m.slug}`)}" target="_blank" rel="noopener">${esc(m.display_name || m.name)}</a>
+          ${m.city ? ` &mdash; ${esc(m.city)}` : ""}
+        </li>`
+      ).join("")}</ul>`
+    : `<p style="font-size:11px;color:var(--ink-4);font-style:italic">No member orgs listed yet.</p>`;
+
+  const cityKeys = Object.keys(eventsByCity).sort((a, b) =>
+    a === "Elsewhere" ? 1 : b === "Elsewhere" ? -1 : a.localeCompare(b)
+  );
+  const eventsHtml = cityKeys.length
+    ? cityKeys.slice(0, 5).map((city) => {
+        const evs = eventsByCity[city].slice(0, 3);
+        return `<div style="margin-bottom:8px">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);margin-bottom:3px">${esc(city)}</div>
+          <ul class="ep-ev">${evs.map((e) => {
+            const d = new Date(e.scheduled_at);
+            return `<li class="ep-ev__i">
+              <div class="ep-ev__date">
+                <span class="ep-ev__day">${d.getDate()}</span>
+                <span class="ep-ev__mon">${d.toLocaleString("default",{month:"short"})}</span>
+              </div>
+              <div>
+                <div class="ep-ev__name">${esc(e.title)}</div>
+                <div class="ep-ev__meta">${e.format ?? "Event"} &middot; ${esc(e.org_name)}</div>
+              </div>
+            </li>`;
+          }).join("")}</ul>
+        </div>`;
+      }).join("")
+    : `<p style="font-size:11px;color:var(--ink-4);font-style:italic">No upcoming events yet. Check back soon.</p>`;
+
+  const joinHtml = isUserLoggedIn
+    ? `<div class="ep-member-bar">
+        <span>Signed in as <strong>${esc(userDisplayName ?? "member")}</strong> &mdash; <a href="/hub">your hub</a></span>
+        <span class="ep-ok">&#10003; Network member</span>
+      </div>`
+    : `<div class="ep-join">
+        <p class="ep-join__t">Join the Elkdonis Collective</p>
+        <p class="ep-join__s">One account. Every collective site.</p>
+        <div class="ep-join__r">
+          <a href="${signupUrl}" class="ep-join__b ep-join__b--p">Create account</a>
+          <a href="${loginUrl}"  class="ep-join__b ep-join__b--g">Sign in</a>
+        </div>
+      </div>`;
+
+  return `<div id="ep-root">
+
+<!-- Ticker -->
+<div class="ep-ticker">
+  <div class="ep-ticker__label">&#9679; Network</div>
+  <div class="ep-ticker__scroll">
+    Elkdonis Arts Collective &bull; A network of independent artist and community sites &bull;
+    Workshops, residencies &amp; gatherings across the region &bull;
+    Every member keeps their own corner &bull; Create &bull; Share &bull; Gather &bull;
+  </div>
+</div>
+
+<!-- Masthead -->
+<div class="ep-masthead">
+
+  <div class="ep-mast-side ep-mast-side--l">
+    <div>
+      <div class="ep-mast-side__eyebrow">Member orgs</div>
+      <div class="ep-mast-side__name">${memberOrgs.length} &amp; growing</div>
+      <div class="ep-mast-side__sub">Each on their own subdomain, sharing one network.</div>
+    </div>
+    <a class="ep-mast-link" href="/artists">Browse directory &rarr;</a>
+  </div>
+
+  <div class="ep-mast-center">
+    <div class="ep-mast-top">
+      <span>${today}</span>
+      <span>Network Edition</span>
+    </div>
+    <h1 class="ep-mast-title">The Network</h1>
+    <p class="ep-mast-tagline">Arts &bull; Community &bull; Every city &bull; One collective</p>
+    <div class="ep-mast-rule"></div>
+  </div>
+
+  <div class="ep-mast-side ep-mast-side--r">
+    ${isUserLoggedIn
+      ? `<div>
+          <div class="ep-mast-side__eyebrow">Signed in</div>
+          <div class="ep-mast-side__name">${esc(userDisplayName ?? "member")}</div>
+          <div class="ep-mast-side__sub">Elkdonis Arts Collective</div>
+        </div>
+        <a class="ep-mast-link" href="/hub">Your hub &rarr;</a>`
+      : `<div>
+          <div class="ep-mast-side__eyebrow">Join the network</div>
+          <div class="ep-mast-side__sub" style="margin-bottom:8px">One account, every collective site.</div>
+          <a class="ep-mast-btn ep-mast-btn--p" href="${signupUrl}">Create account</a>
+          <a class="ep-mast-btn ep-mast-btn--g" href="${loginUrl}">Sign in</a>
+        </div>`}
+  </div>
+
+</div>
+
+<!-- Nav -->
+<nav class="ep-nav">
+  <a href="/hub">Hub</a>
+  <a href="/artists">Directory</a>
+  <a href="#events">Events</a>
+  <a href="#feed">Network feed</a>
+  <a href="/hub">Elkdonis</a>
+</nav>
+
+<!-- 3-col body -->
+<div class="ep-body">
+
+  <aside class="ep-col-l">
+    <div class="ep-blk">
+      <div class="ep-blk__h ep-blk__h--dark">&#9733; Member Orgs</div>
+      <div class="ep-blk__b">${orgListHtml}</div>
+    </div>
+    <div class="ep-blk">
+      <div class="ep-blk__h">About Elkdonis</div>
+      <div class="ep-blk__b">
+        <p style="margin-bottom:6px">
+          Elkdonis Arts Collective is the not-for-profit behind this network &mdash;
+          group support in creating something for the benefit of all beings.
+        </p>
+        <a class="ep-mast-link" href="/hub">Learn more &amp; get involved &rarr;</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="ep-col-c">
+
+    ${lead ? `<div class="ep-feat">
+      <div class="ep-feat__section">Leading the network</div>
+      <div class="ep-feat__img" role="img">
+        <span style="font-family:var(--mono);font-size:13px;letter-spacing:0.06em;opacity:0.4">[NETWORK PHOTO]</span>
+      </div>
+      <h2 class="ep-feat__h">${esc(lead.title)}</h2>
+      ${lead.excerpt ? `<p class="ep-feat__p">${esc(lead.excerpt)}</p>` : ""}
+      <div class="ep-feat__by">
+        <strong>${esc(lead.org_name)}</strong> &bull; ${lead.kind} &bull; ${today}
+      </div>
+    </div>` : ""}
+
+    ${joinHtml}
+
+    <div class="ep-blk" id="feed" style="border-top:3px solid var(--navy)">
+      <div class="ep-blk__h">
+        Latest from the network
+        <a href="/artists">All orgs &rarr;</a>
+      </div>
+      ${feedHtml}
+    </div>
+
+  </main>
+
+  <aside class="ep-col-r">
+    <div class="ep-blk" id="events">
+      <div class="ep-blk__h ep-blk__h--green">&#9654; Upcoming, by city</div>
+      <div class="ep-blk__b">${eventsHtml}</div>
+    </div>
+    <div class="ep-blk">
+      <div class="ep-blk__h ep-blk__h--green">&#10022; Get Involved</div>
+      <div class="ep-blk__b">
+        <ul class="ep-list">
+          <li><a href="${signupUrl}">&#8594; Join the network</a></li>
+          <li><a href="/artists">&#8594; Discover artists</a></li>
+          <li><a href="/hub">&#8594; Your hub</a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Footer -->
+<div class="ep-foot">
+  <span>Elkdonis Arts Collective &bull; Network Edition</span>
+  <span>&copy; ${new Date().getFullYear()} &bull; <a href="/hub">Hub</a> &bull; <a href="/artists">Directory</a></span>
 </div></div>`;
 }

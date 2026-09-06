@@ -14,13 +14,14 @@ import {
   ActionIcon,
   Tooltip,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
 import { stripHtml } from "@/lib/strip-html";
+import { useCycleStatus } from "./use-cycle-status";
 import {
   Calendar,
   ChevronLeft,
   ChevronRight,
   CheckCircle,
+  XCircle,
   Clock,
   MapPin,
   Repeat,
@@ -220,35 +221,12 @@ function RecurringMeetingCard({
   isAdmin?: boolean;
 }) {
   const pattern = meeting.recurrencePattern || "WEEKLY";
-  const [confirmed, setConfirmed] = useState(meeting.isConfirmedThisWeek ?? false);
-  const [toggling, setToggling] = useState(false);
+  const cycle = useCycleStatus(meeting);
 
-  const canConfirm = isAdmin || (userId && meeting.createdBy === userId);
-
-  const handleConfirmToggle = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!canConfirm || toggling) return;
-    setToggling(true);
-    const next = !confirmed;
-    try {
-      const res = await fetch(`/api/content/${meeting.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmed: next }),
-      });
-      if (!res.ok) throw new Error("Failed to update");
-      setConfirmed(next);
-      notifications.show({
-        color: next ? "teal" : "gray",
-        message: next ? "Meeting confirmed for this week" : "Confirmation removed",
-      });
-    } catch {
-      notifications.show({ color: "red", message: "Could not update confirmation" });
-    } finally {
-      setToggling(false);
-    }
-  };
+  const isGuide = Boolean(
+    userId && (meeting.createdBy === userId || (meeting.coGuideIds ?? []).includes(userId))
+  );
+  const canConfirm = isAdmin || isGuide;
 
   return (
     <Paper
@@ -266,7 +244,12 @@ function RecurringMeetingCard({
         transition: "box-shadow 150ms ease, transform 150ms ease",
         textDecoration: "none",
         color: "inherit",
-        borderColor: confirmed ? "var(--mantine-color-teal-4)" : undefined,
+        borderColor:
+          cycle.status === "confirmed"
+            ? "var(--mantine-color-teal-4)"
+            : cycle.status === "cancelled"
+            ? "var(--mantine-color-red-4)"
+            : undefined,
       }}
       onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
         e.currentTarget.style.boxShadow = "var(--mantine-shadow-md)";
@@ -281,11 +264,19 @@ function RecurringMeetingCard({
       }}
     >
       <Stack gap="xs">
-        {/* Confirmed banner */}
-        {confirmed && (
+        {/* Confirmed / cancelled banner */}
+        {cycle.status === "confirmed" && (
           <Group gap={5} px={4} py={2} style={{ background: "var(--mantine-color-teal-0)", borderRadius: 4 }}>
             <CheckCircle size={12} color="var(--mantine-color-teal-6)" />
-            <Text size="xs" fw={600} c="teal.7">Confirmed this week</Text>
+            <Text size="xs" fw={600} c="teal.7">
+              Confirmed{cycle.confirmCount > 1 ? ` (${cycle.confirmCount})` : ""}
+            </Text>
+          </Group>
+        )}
+        {cycle.status === "cancelled" && (
+          <Group gap={5} px={4} py={2} style={{ background: "var(--mantine-color-red-0)", borderRadius: 4 }}>
+            <XCircle size={12} color="var(--mantine-color-red-6)" />
+            <Text size="xs" fw={600} c="red.7">Cancelled this cycle</Text>
           </Group>
         )}
 
@@ -391,19 +382,38 @@ function RecurringMeetingCard({
           </Badge>
         )}
 
-        {/* Confirm toggle (creator or admin only) */}
+        {/* Confirm / cancel (guides + admin only) */}
         {canConfirm && (
-          <Button
-            size="compact-xs"
-            variant={confirmed ? "filled" : "light"}
-            color={confirmed ? "teal" : "gray"}
-            leftSection={<CheckCircle size={11} />}
-            loading={toggling}
-            onClick={handleConfirmToggle}
-            fullWidth
-          >
-            {confirmed ? "Confirmed ✓" : "Confirm this week"}
-          </Button>
+          <Group gap={6} grow wrap="nowrap">
+            <Button
+              size="compact-xs"
+              variant={cycle.status === "confirmed" ? "filled" : "light"}
+              color="teal"
+              leftSection={<CheckCircle size={11} />}
+              loading={cycle.busy}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                cycle.confirm();
+              }}
+            >
+              {cycle.status === "confirmed" ? "Confirmed ✓" : "Confirm"}
+            </Button>
+            <Button
+              size="compact-xs"
+              variant={cycle.status === "cancelled" ? "filled" : "light"}
+              color="red"
+              leftSection={<XCircle size={11} />}
+              loading={cycle.busy}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                cycle.cancel();
+              }}
+            >
+              {cycle.status === "cancelled" ? "Cancelled" : "Cancel"}
+            </Button>
+          </Group>
         )}
       </Stack>
     </Paper>

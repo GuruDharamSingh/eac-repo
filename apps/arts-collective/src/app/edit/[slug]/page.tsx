@@ -2,6 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { canEditOrgSite, getOrgBySlug } from "@/lib/org";
+import { networkHostWithPort } from "@/lib/domain";
 import { requireUser } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
@@ -71,7 +72,7 @@ export default async function SilexEditPage({
   const token = firstValue(query.t);
 
   if (token) {
-    const host = h.get("host") ?? "localhost:3007";
+    const host = h.get("host") ?? networkHostWithPort();
     const proto = h.get("x-forwarded-proto") ?? "http";
     const silexEditorUrl = resolveSilexEditorUrl(host, proto);
     redirect(buildSilexEditorUrl(silexEditorUrl, slug, query));

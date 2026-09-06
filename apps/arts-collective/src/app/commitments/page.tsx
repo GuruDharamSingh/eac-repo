@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getCommitmentsForUser, type Commitment } from "@/lib/commitments";
+import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 
 function groupByKind(items: Commitment[]) {
   const groups = {
@@ -24,7 +25,7 @@ function groupByKind(items: Commitment[]) {
 
 export default async function CommitmentsPage() {
   const user = await requireUser();
-  const items = await getCommitmentsForUser(user.id);
+  const [items, homes] = await Promise.all([getCommitmentsForUser(user.id), orgHomeUrlMap()]);
   const groups = groupByKind(items);
   const total = items.length;
 
@@ -82,7 +83,7 @@ export default async function CommitmentsPage() {
                       </p>
                     </div>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`//${c.orgSlug}.localhost:3007`}>Visit</a>
+                      <a href={orgHomeUrl(homes, c.orgSlug)}>Visit</a>
                     </Button>
                   </li>
                 )

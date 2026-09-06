@@ -12,7 +12,9 @@
     "./queries": "./src/queries/index.ts",
     "./components": "./src/components/index.ts",
     "./server": "./src/server/index.ts",
-    "./etransfer": "./src/etransfer/index.ts"
+    "./etransfer": "./src/etransfer/index.ts",
+    "./settlement": "./src/server/settlement.ts",
+    "./ledger": "./src/server/ledger.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
@@ -20,6 +22,7 @@
   "dependencies": {
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "nanoid": "^5.1.6"
   },

@@ -505,6 +505,26 @@ body {
   color: #fffdf8 !important;
 }
 
+/* DateTimePicker's embedded time-of-day fields (hour/minute/AM-PM spinners).
+   Nothing elsewhere in this file gives them an explicit color, so they fall
+   through to whatever --input-color the ambient surface leaves inherited —
+   the same class of bug as the Select "blue on blue" fix above, just harder
+   to spot because only the minute field (the one that keeps focus/selection
+   after typing) exposes it. Pin both dropdown contexts explicitly. */
+.mantine-DateTimePicker-dropdown .mantine-TimePicker-field,
+.mantine-Popover-dropdown .mantine-TimePicker-field {
+  color: #fffdf8 !important;
+}
+.mantine-Modal-content .mantine-TimePicker-field {
+  color: var(--ig-ink) !important;
+}
+.mantine-TimePicker-field {
+  min-width: 1.6em;
+}
+.mantine-TimePicker-fieldsRoot {
+  overflow: visible !important;
+}
+
 .mantine-Combobox-option:hover,
 .mantine-Combobox-option[data-combobox-selected],
 .mantine-Menu-item:hover,
@@ -565,11 +585,11 @@ body {
   border-color: rgba(183, 154, 85, 0.44) !important;
 }
 
-.create-content-surface :is(.mantine-TextInput-label, .mantine-Textarea-label, .mantine-NumberInput-label, .mantine-DateTimePicker-label) {
+.create-content-surface :is(.mantine-TextInput-label, .mantine-Textarea-label, .mantine-NumberInput-label, .mantine-DateTimePicker-label, .mantine-Select-label, .mantine-MultiSelect-label) {
   color: rgba(255, 253, 248, 0.9) !important;
 }
 
-.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input) {
+.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input, .mantine-Select-input, .mantine-MultiSelect-input) {
   background: rgba(255, 253, 248, 0.94) !important;
   border: 1px solid rgba(183, 154, 85, 0.46) !important;
   border-radius: 6px !important;
@@ -578,7 +598,7 @@ body {
   padding: 0.55rem 0.7rem !important;
 }
 
-.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input)::placeholder {
+.create-content-surface :is(.mantine-TextInput-input, .mantine-Textarea-input, .mantine-NumberInput-input, .mantine-DateTimePicker-input, .mantine-Select-input, .mantine-MultiSelect-input)::placeholder {
   color: rgba(1, 18, 78, 0.58) !important;
 }
 
@@ -1464,4 +1484,467 @@ body {
   .jwm__pay-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================================
+   Workshop sections nav (sidebar) — workshop-sections-nav.tsx
+   Deliberately plain CSS, not Mantine, so the active-section switching and
+   the desktop-sidebar/mobile-scroll-row layout aren't fighting a component
+   library's own API.
+   ============================================================================ */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.wsn {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.wsn__nav-wrap {
+  flex: 0 0 240px;
+  position: sticky;
+  top: 1rem;
+}
+
+.wsn__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wsn__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 0.95rem;
+  color: #5a3e28;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wsn__nav-item:hover {
+  background: rgba(154, 118, 80, 0.08);
+}
+
+.wsn__nav-item--active {
+  background: rgba(232, 141, 40, 0.1);
+  border-left-color: #d97706;
+  font-weight: 700;
+  color: #3d1f04;
+}
+
+.wsn__nav-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #9a7650;
+  color: white;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.wsn__nav-bubble--overview {
+  background: #7a5230;
+}
+
+.wsn__nav-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wsn__live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c0392b;
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.wsn__content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 780px) {
+  .wsn {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .wsn__nav-wrap {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+  .wsn__nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wsn__nav-item {
+    flex: none;
+    width: auto;
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 8px 8px 0 0;
+  }
+  .wsn__nav-item--active {
+    border-bottom-color: #d97706;
+  }
+  .wsn__nav-label {
+    max-width: 140px;
+  }
+}
+
+/* Overview pane */
+.wsn__overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.wsn__progress {
+  padding: 1rem;
+  background: #fffbf3;
+  border: 1px solid rgba(183, 154, 85, 0.3);
+  border-radius: 8px;
+}
+
+.wsn__progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.wsn__progress-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a5230;
+}
+
+.wsn__progress-count {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.wsn__progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(154, 118, 80, 0.15);
+  overflow: hidden;
+}
+
+.wsn__progress-fill {
+  height: 100%;
+  background: #e8590c;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.wsn__section {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.wsn__section-toggle {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wsn__section-toggle-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7a5230;
+}
+
+.wsn__section-chevron {
+  color: #7a5230;
+  transition: transform 0.2s ease;
+}
+
+.wsn__section-chevron--open {
+  transform: rotate(180deg);
+}
+
+.wsn__section-body {
+  padding: 0 1.4rem 1.4rem;
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: #2a1a05;
+}
+
+.wsn__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(183, 154, 85, 0.3);
+  background: #f9fafb;
+}
+
+.wsn__card--enrolled {
+  background: #fff8ef;
+  border-color: #e5a84a;
+}
+
+.wsn__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(232, 141, 40, 0.12);
+  color: #c2650a;
+  flex-shrink: 0;
+}
+
+.wsn__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.wsn__card-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #7a5230;
+}
+
+.wsn__card-sub {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.wsn__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.wsn__btn--filled {
+  background: #e8590c;
+  color: white;
+}
+
+.wsn__btn--filled:hover {
+  opacity: 0.9;
+}
+
+.wsn__btn--filled-red {
+  background: #c0392b;
+  color: white;
+}
+
+.wsn__btn--filled-red:hover {
+  opacity: 0.9;
+}
+
+.wsn__btn--disabled {
+  background: rgba(0, 0, 0, 0.06);
+  color: #999;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Session pane */
+.wsn__pane {
+  border-left: 4px solid transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wsn__pane-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.wsn__pane-title {
+  margin: 0 0 4px;
+  font-family: 'Cinzel', serif;
+  color: #3d1f04;
+  font-size: 1.15rem;
+}
+
+.wsn__pane-meta {
+  display: flex;
+  gap: 14px;
+}
+
+.wsn__pane-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.wsn__pane-image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.wsn__pane-video {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.wsn__pane-desc {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #5a3e28;
+}
+
+.wsn__pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wsn__badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wsn__badge--live {
+  background: #c0392b;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.wsn__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #999;
+}
+
+.wsn__resources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wsn__resources-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #999;
+}
+
+.wsn__resource-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.wsn__resource {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(93, 73, 55, 0.07);
+}
+
+.wsn__resource--locked {
+  background: #f1f1f1;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.wsn__resource-icon {
+  display: flex;
+  color: #9a7650;
+  flex-shrink: 0;
+}
+
+.wsn__resource--locked .wsn__resource-icon {
+  color: #999;
+}
+
+.wsn__resource-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #3d1f04;
+}
+
+.wsn__resource--locked .wsn__resource-title {
+  font-weight: 400;
+  color: #888;
+}
+
+.wsn__resource-badge {
+  font-size: 0.68rem;
+  border: 1px solid #ccc;
+  color: #888;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
 }

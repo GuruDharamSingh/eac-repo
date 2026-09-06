@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { listUserMemberships } from "@elkdonis/services";
 
 export type Commitment =
   | {
@@ -38,29 +39,19 @@ export async function getCommitmentsForUser(
   const out: Commitment[] = [];
 
   try {
-    const memberships = await db<
-      {
-        org_id: string;
-        role: string;
-        joined_at: string;
-        name: string;
-        slug: string;
-      }[]
-    >`
-      SELECT uo.org_id, uo.role, uo.joined_at, o.name, o.slug
-      FROM user_organizations uo
-      JOIN organizations o ON o.id = uo.org_id
-      WHERE uo.user_id = ${userId}
-      ORDER BY uo.joined_at DESC
-    `;
+    // listUserMemberships orders by org name (its own general-purpose
+    // default); this view wants most-recently-joined first, so re-sort here.
+    const memberships = [...(await listUserMemberships(userId))].sort(
+      (a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime()
+    );
     for (const m of memberships) {
       out.push({
         kind: "membership",
-        orgId: m.org_id,
-        orgName: m.name,
-        orgSlug: m.slug,
+        orgId: m.orgId,
+        orgName: m.orgName,
+        orgSlug: m.orgSlug,
         role: m.role,
-        since: m.joined_at,
+        since: typeof m.joinedAt === "string" ? m.joinedAt : m.joinedAt.toISOString(),
       });
     }
   } catch {

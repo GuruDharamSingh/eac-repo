@@ -2,12 +2,19 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { ShellUserMenu } from "@/components/shell-user-menu";
 
+/**
+ * The network's own chrome. The other two centralising sites — ArtDirect (the
+ * people directory) and the market — are separate apps on their own hosts, so
+ * they are plain links, shown only when their URL is configured.
+ */
 export async function SiteShell({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  const directoryUrl = process.env.NEXT_PUBLIC_ARTDIRECT_URL;
+  const marketUrl = process.env.NEXT_PUBLIC_ART_AUCTION_URL;
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -19,9 +26,19 @@ export async function SiteShell({
           >
             Elkdonis Arts Collective
           </Link>
-          {user && (
-            <ShellUserMenu email={user.email} />
-          )}
+          <nav className="flex items-center gap-5 text-sm text-muted-foreground">
+            {directoryUrl && (
+              <a href={directoryUrl} className="hover:text-foreground">
+                Directory
+              </a>
+            )}
+            {marketUrl && (
+              <a href={marketUrl} className="hover:text-foreground">
+                Market
+              </a>
+            )}
+            {user && <ShellUserMenu email={user.email} />}
+          </nav>
         </div>
       </header>
       <main className="flex-1">

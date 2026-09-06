@@ -2,6 +2,14 @@ import { MantineProvider, createTheme } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 
+/**
+ * Every route in this group sits behind auth and reads per-request state
+ * (session, org membership, the member's own data), so none of them can be
+ * statically prerendered. Without this the production build fails at export
+ * on the first page that touches a session — dev never exercises that path.
+ */
+export const dynamic = 'force-dynamic';
+
 const theme = createTheme({
   primaryColor: "eacSky",
   fontFamily: "'Crimson Text', Georgia, 'Times New Roman', serif",

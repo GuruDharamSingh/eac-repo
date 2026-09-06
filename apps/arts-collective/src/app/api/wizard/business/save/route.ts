@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
+import { getOwnedOrgId } from "@elkdonis/services";
 import { requireUser } from "@/lib/session";
 import { businessWizardSchema } from "@/lib/business-schema";
 
@@ -24,11 +25,7 @@ export async function POST(req: Request) {
   }
   const a = parsed.data;
 
-  const orgRows = await db<{ org_id: string }[]>`
-    SELECT org_id FROM user_organizations
-    WHERE user_id = ${user.id} AND role = 'owner' LIMIT 1
-  `;
-  const orgId = orgRows[0]?.org_id;
+  const orgId = await getOwnedOrgId(user.id);
   if (!orgId) {
     return NextResponse.json({ error: "No org" }, { status: 400 });
   }

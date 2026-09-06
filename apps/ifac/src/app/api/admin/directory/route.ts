@@ -7,6 +7,8 @@ import {
   createProfile,
   updateProfile,
   deleteProfile,
+  listAssignableMembers,
+  assignProfile,
   type DirectoryInput,
 } from "@/lib/directory-admin";
 
@@ -82,7 +84,8 @@ export async function GET() {
   if (!(await canManageIfac(session))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json({ profiles: await listAllDirectory() });
+  const [profiles, assignableMembers] = await Promise.all([listAllDirectory(), listAssignableMembers()]);
+  return NextResponse.json({ profiles, assignableMembers });
 }
 
 export async function POST(request: NextRequest) {
@@ -116,6 +119,20 @@ export async function PATCH(request: NextRequest) {
   const id = String(body.id ?? "");
   if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
+  // "This unclaimed row is actually this real, signed-up member" — the
+  // admin-confirmed counterpart to the artist claiming it themself on
+  // ArtDirect. Merges immediately; no separate consent step, matching how
+  // this admin console already treats every other roster edit.
+  if (body.action === "assign") {
+    const memberId = String(body.memberId ?? "");
+    if (!memberId) return NextResponse.json({ error: "memberId is required." }, { status: 400 });
+    const result = await assignProfile(id, memberId);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    revalidate();
+    const [profiles, assignableMembers] = await Promise.all([listAllDirectory(), listAssignableMembers()]);
+    return NextResponse.json({ ok: true, profiles, assignableMembers });
+  }
+
   const parsed = parseInput(body);
   if ("error" in parsed) return NextResponse.json(parsed, { status: 400 });
 
@@ -126,6 +143,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ profile });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    if (msg === "reserved_slug") {
+      return NextResponse.json({ error: `"${parsed.slug}" is a reserved word and can't be a profile URL.` }, { status: 400 });
+    }
+    if (msg === "invalid_slug") {
+      return NextResponse.json({ error: "Could not derive a valid slug." }, { status: 400 });
+    }
     if (/unique|duplicate/i.test(msg)) {
       return NextResponse.json({ error: `A profile with slug "${parsed.slug}" already exists.` }, { status: 409 });
     }

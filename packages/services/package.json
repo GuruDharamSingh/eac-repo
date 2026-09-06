@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./agreements": {
+      "types": "./dist/agreements.d.ts",
+      "import": "./dist/agreements.mjs",
+      "require": "./dist/agreements.js"
     }
   },
   "scripts": {

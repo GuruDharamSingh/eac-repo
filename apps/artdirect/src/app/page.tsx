@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { listDossiers, listDirectoryFacets } from "@/lib/oad";
+import type { EntityType } from "@elkdonis/services";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ region?: string }> };
+type Props = { searchParams: Promise<{ region?: string; entity?: string }> };
 
 export default async function ArtDirectHome({ searchParams }: Props) {
-  const { region } = await searchParams;
-  const [dossiers, facets] = await Promise.all([listDossiers({ region }), listDirectoryFacets()]);
+  const { region, entity } = await searchParams;
+  const entityType: EntityType | undefined = entity === "organization" ? "organization" : entity === "person" ? "person" : undefined;
+  const [dossiers, facets] = await Promise.all([listDossiers({ region, entityType }), listDirectoryFacets()]);
 
   const chip = (active: boolean): React.CSSProperties => ({
     display: "inline-block",
@@ -27,7 +29,17 @@ export default async function ArtDirectHome({ searchParams }: Props) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
           <div>
             <p style={{ fontSize: 12, letterSpacing: 3, textTransform: "uppercase", color: "#8c3b3b", margin: 0 }}>
-              ArtDirect · an Elkdonis commons
+              {process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ? (
+                <a
+                  href={process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                  title="Elkdonis Arts Collective — the network"
+                >
+                  ArtDirect · an Elkdonis commons
+                </a>
+              ) : (
+                "ArtDirect · an Elkdonis commons"
+              )}
             </p>
             <h1 style={{ fontSize: "2.6rem", margin: "0.5rem 0 0.25rem", letterSpacing: 1 }}>THE ARTIST DIRECTORY</h1>
             <p style={{ maxWidth: 640, color: "#cbbf9d", lineHeight: 1.6 }}>
@@ -60,6 +72,22 @@ export default async function ArtDirectHome({ searchParams }: Props) {
           {region && <Link href="/" style={chip(false)}>Clear</Link>}
         </form>
 
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+          {([
+            [undefined, "All"],
+            ["person", "Artists"],
+            ["organization", "Organizations"],
+          ] as const).map(([value, label]) => (
+            <Link
+              key={label}
+              href={{ pathname: "/", query: { ...(region ? { region } : {}), ...(value ? { entity: value } : {}) } }}
+              style={chip(entityType === value)}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
         {dossiers.length === 0 ? (
           <p style={{ marginTop: "2rem", color: "#cbbf9d" }}>
             No dossiers on file yet. <Link href="/new" style={{ color: "#e08a8a" }}>Open the first file →</Link>
@@ -81,10 +109,15 @@ export default async function ArtDirectHome({ searchParams }: Props) {
               >
                 <div style={{ display: "flex", gap: "0.9rem", alignItems: "center" }}>
                   <img
-                    src={d.portrait_url || "https://placehold.co/64x80/e4cc9a/1a1a1a?text=?"}
+                    src={
+                      d.portrait_url ||
+                      (d.entity_type === "organization"
+                        ? "https://placehold.co/64x64/e4cc9a/1a1a1a?text=%E2%97%86"
+                        : "https://placehold.co/64x80/e4cc9a/1a1a1a?text=?")
+                    }
                     alt={d.name}
-                    width={56}
-                    height={70}
+                    width={d.entity_type === "organization" ? 64 : 56}
+                    height={d.entity_type === "organization" ? 64 : 70}
                     style={{ objectFit: "cover", border: "1px solid #000", flexShrink: 0 }}
                   />
                   <div style={{ minWidth: 0 }}>
