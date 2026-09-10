@@ -1,0 +1,207 @@
+{
+  "id": "brochure",
+  "name": "Old-Style Brochure",
+  "version": "0.1.0",
+  "category": "EAC Brochure Template",
+  "description": "A tri-fold letterpress brochure aesthetic — kraft paper, ruled dividers, seals, ledgers and torn edges — carrying live org feed, RSVP/calendar, directory, video and audio embeds. Two page compositions share one section library: an org profile (org-profile) and a single-offering promo page (offering).",
+  "tokens": "tokens/eac-brochure-tokens.css",
+  "cssOrder": [
+    "css/eac-br-nav.css",
+    "css/eac-br-hero.css",
+    "css/eac-br-mission.css",
+    "css/eac-br-services.css",
+    "css/eac-br-ledger.css",
+    "css/eac-br-gallery.css",
+    "css/eac-br-media.css",
+    "css/eac-br-dispatch.css",
+    "css/eac-br-almanac.css",
+    "css/eac-br-directory.css",
+    "css/eac-br-testimonial.css",
+    "css/eac-br-cta.css",
+    "css/eac-br-footer.css"
+  ],
+  "pages": [
+    {
+      "id": "org-profile",
+      "label": "Organization profile",
+      "sections": [
+        "eac-br-nav",
+        "eac-br-hero",
+        "eac-br-mission",
+        "eac-br-services",
+        "eac-br-ledger",
+        "eac-br-dispatch",
+        "eac-br-almanac",
+        "eac-br-directory",
+        "eac-br-testimonial",
+        "eac-br-cta",
+        "eac-br-footer"
+      ]
+    },
+    {
+      "id": "offering",
+      "label": "Single offering / product",
+      "sections": [
+        "eac-br-nav",
+        "eac-br-hero",
+        "eac-br-ledger",
+        "eac-br-mission",
+        "eac-br-media",
+        "eac-br-gallery",
+        "eac-br-testimonial",
+        "eac-br-almanac",
+        "eac-br-cta",
+        "eac-br-footer"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "eac-br-nav",
+      "label": "Masthead ribbon",
+      "html": "html/eac-br-nav.html",
+      "css": "css/eac-br-nav.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["orgName", "ctaLabel"],
+      "notes": "Sticky ribbon-shaped bar: crest mark, org name, in-page nav, and a join/RSVP CTA."
+    },
+    {
+      "id": "eac-br-hero",
+      "label": "Broadsheet hero",
+      "html": "html/eac-br-hero.html",
+      "css": "css/eac-br-hero.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title", "datelineLeft", "datelineRight", "lede", "ctaPrimaryLabel", "ctaSecondaryLabel"],
+      "notes": "Masthead-style headline framed by double rules with a torn lower edge. Works for either an org name or a single offering's title."
+    },
+    {
+      "id": "eac-br-mission",
+      "label": "Mission cartouche",
+      "html": "html/eac-br-mission.html",
+      "css": "css/eac-br-mission.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title", "body"],
+      "notes": "Ornamental-corner panel with a drop-cap opening. 'Who we are' on the org page, 'about this offering' on the product page."
+    },
+    {
+      "id": "eac-br-services",
+      "label": "Services medallions",
+      "html": "html/eac-br-services.html",
+      "css": "css/eac-br-services.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "traits": ["eyebrowText", "title", "serviceItems"],
+      "notes": "Summarized services as circular seal badges in a grid. Org-profile use; skip on single-offering pages."
+    },
+    {
+      "id": "eac-br-ledger",
+      "label": "Ledger of particulars",
+      "html": "html/eac-br-ledger.html",
+      "css": "css/eac-br-ledger.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title", "rowOneValue", "rowTwoValue", "rowThreeValue", "rowFourValue"],
+      "notes": "Dotted-leader fact rows. Org-profile: impact figures. Offering: price/date/format/capacity — retitle the rows in the editor."
+    },
+    {
+      "id": "eac-br-gallery",
+      "label": "Torn-edge gallery",
+      "html": "html/eac-br-gallery.html",
+      "css": "css/eac-br-gallery.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "traits": ["eyebrowText", "title", "galleryItems"],
+      "notes": "Rotated, deckle-edged photo frames. Drop to a single frame for one piece of art on an offering page."
+    },
+    {
+      "id": "eac-br-media",
+      "label": "Video & audio panel",
+      "html": "html/eac-br-media.html",
+      "css": "css/eac-br-media.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "traits": ["eyebrowText", "title", "videoCaption", "audioCaption"],
+      "notes": "The embed spot for video (speaker-grille framed iframe) and music (gramophone-disc framed <audio>). Swap the iframe src and audio source in the editor."
+    },
+    {
+      "id": "eac-br-dispatch",
+      "label": "Dispatches (feed)",
+      "html": "html/eac-br-dispatch.html",
+      "css": "css/eac-br-dispatch.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title"],
+      "notes": "Live org-feed embed styled as newspaper columns with a single featured 'blog post' above the grid (data-limit=1). The embed spot for feed and blog post."
+    },
+    {
+      "id": "eac-br-almanac",
+      "label": "Almanac (calendar / RSVP)",
+      "html": "html/eac-br-almanac.html",
+      "css": "css/eac-br-almanac.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title"],
+      "notes": "Live countdown + RSVP embeds housed in torn calendar-page cards. The embed spot for calendar."
+    },
+    {
+      "id": "eac-br-directory",
+      "label": "Roster / directory",
+      "html": "html/eac-br-directory.html",
+      "css": "css/eac-br-directory.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "traits": ["eyebrowText", "title"],
+      "notes": "Live directory embed, themed as a committee/roster list. Org-profile use."
+    },
+    {
+      "id": "eac-br-testimonial",
+      "label": "Wax-seal quote",
+      "html": "html/eac-br-testimonial.html",
+      "css": "css/eac-br-testimonial.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["quote", "attribution"],
+      "notes": "Single pull-quote beside a stamped wax-seal ornament."
+    },
+    {
+      "id": "eac-br-cta",
+      "label": "Ticket-stub CTA",
+      "html": "html/eac-br-cta.html",
+      "css": "css/eac-br-cta.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["eyebrowText", "title", "subtitle"],
+      "notes": "Ticket-shaped band, perforated between an info half and an inquiry-embed stub half."
+    },
+    {
+      "id": "eac-br-footer",
+      "label": "Back-panel footer",
+      "html": "html/eac-br-footer.html",
+      "css": "css/eac-br-footer.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "traits": ["orgName", "tagline", "copyrightLine"],
+      "notes": "Dashed fold-line footer with three columns and a small repeated crest."
+    }
+  ]
+}

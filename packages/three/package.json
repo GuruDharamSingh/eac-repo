@@ -10,6 +10,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./endless-runner": {
+      "types": "./dist/endless-runner/index.d.ts",
+      "import": "./dist/endless-runner/index.mjs",
+      "require": "./dist/endless-runner/index.js"
+    },
+    "./inner-temple": {
+      "types": "./dist/inner-temple/index.d.ts",
+      "import": "./dist/inner-temple/index.mjs",
+      "require": "./dist/inner-temple/index.js"
     }
   },
   "scripts": {

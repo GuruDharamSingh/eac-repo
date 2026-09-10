@@ -1,6 +1,8 @@
 import { db } from '@elkdonis/db';
 import { ensureUniqueThreadSlug as ensureUniqueSlug } from './thread-slug';
 import { nanoid } from 'nanoid';
+import { createOrgFolder, deleteOrgFile, listOrgFiles, resolveOrgPath } from './org-storage';
+import { davPut } from './dav';
 
 // ============================================================================
 // Workshop offerings — the org-agnostic read/write layer for workshops.
@@ -14,9 +16,15 @@ import { nanoid } from 'nanoid';
 //   workshop — threads.kind='workshop', RSVP-based, plus workshop_sessions
 //              rows, a Nextcloud materials folder, and a shared Talk room.
 //
-// This is the layer every app reuses unchanged — inner-gathering (Mantine),
-// hidden-enneagram / amrit-canada / arts-collective (shadcn) all differ only
-// in their form UI and site config, not in how a workshop is stored.
+// This is the layer every app reuses unchanged — innergathering,
+// hidden-enneagram, amrit-canada and arts-collective all differ only in their
+// form UI and site config, not in how a workshop is stored. arts-collective
+// kept its own INSERT/UPDATE against these same tables until 2026-09-10;
+// folding it in brought four columns this function did not write
+// (share_to_network, meeting_url, nextcloud_doc_url, and a derived excerpt)
+// and two behaviours it could not express: registration handled off-platform
+// (isRsvpEnabled) and a slug that must not move when a published workshop is
+// retitled (keepSlug).
 //
 // Price is written to BOTH threads.price and workshop_pages.price_member on
 // purpose: inner-gathering's existing readers (its detail page and the paid
@@ -201,9 +209,38 @@ export interface WorkshopOfferingInput {
   /** CSS custom property overrides, e.g. `--eac-ws-hero-bg`. */
   themeOverrides?: Record<string, string>;
   status: 'draft' | 'published';
-  visibility?: 'PUBLIC' | 'ORGANIZATION';
-  /** org_feeds slug this workshop appears under. Defaults to 'workshops'. */
-  section?: string;
+  visibility?: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+  /**
+   * org_feeds slug this workshop appears under. Defaults to 'workshops';
+   * pass null for an app that addresses workshops by their own route rather
+   * than by feed (arts-collective's /sites/<org>/workshop/<slug>).
+   */
+  section?: string | null;
+  /**
+   * The listing summary. Defaults to `descriptionShort` — pass it when the
+   * app derives one from the body instead, so a workshop with a long
+   * description still gets a sensible card.
+   */
+  excerpt?: string | null;
+  /** Offer this workshop to the network feed as well as the org's own site. */
+  shareToNetwork?: boolean;
+  /** Zoom/Meet/Jitsi link, when the room is not a Nextcloud Talk one. */
+  meetingUrl?: string | null;
+  /** A collaborative Nextcloud document attached to the workshop. */
+  nextcloudDocUrl?: string | null;
+  /**
+   * Whether people register through the platform. Defaults to true, which is
+   * what a workshop normally wants; an offering that registers elsewhere
+   * (registrationUrl) passes false.
+   */
+  isRsvpEnabled?: boolean;
+  /**
+   * Keep the slug the thread already has instead of re-deriving it from the
+   * title. Editing the title of a PUBLISHED workshop otherwise moves its URL
+   * and breaks every link to it, so an app that publishes to a stable address
+   * should pass true on update.
+   */
+  keepSlug?: boolean;
   sessions?: WorkshopSessionInput[];
 }
 
@@ -474,10 +511,22 @@ export async function upsertWorkshopOffering(
   input: WorkshopOfferingInput,
   threadId?: string
 ): Promise<{ id: string; slug: string }> {
-  const section = input.section ?? 'workshops';
-  const slug = await ensureUniqueSlug(orgId, slugify(input.title), threadId);
+  const section = input.section === undefined ? 'workshops' : input.section;
   const publishedAt = input.status === 'published' ? new Date() : null;
   const id = threadId ?? nanoid(21);
+
+  // `keepSlug` reads the stored one rather than deriving a new one, so a
+  // title edit does not move a published URL. Falls through to deriving when
+  // there is nothing stored yet.
+  let slug = '';
+  if (threadId && input.keepSlug) {
+    const [row] = await db<{ slug: string }[]>`
+      SELECT slug FROM threads WHERE id = ${threadId} AND org_id = ${orgId} LIMIT 1
+    `;
+    slug = row?.slug ?? '';
+  }
+  if (!slug) slug = await ensureUniqueSlug(orgId, slugify(input.title), threadId);
+
   const price = input.price ?? null;
   // price_member is inner-gathering's canonical read; when the caller does not
   // distinguish a member rate, it mirrors the headline price.
@@ -497,7 +546,7 @@ export async function upsertWorkshopOffering(
           title           = ${input.title},
           slug            = ${slug},
           body            = ${input.body || null},
-          excerpt         = ${input.descriptionShort || null},
+          excerpt         = ${input.excerpt ?? input.descriptionShort ?? null},
           status          = ${input.status},
           visibility      = ${input.visibility ?? 'PUBLIC'},
           price           = ${price},
@@ -506,11 +555,14 @@ export async function upsertWorkshopOffering(
           scheduled_at    = ${input.scheduledAt ? new Date(input.scheduledAt) : null},
           duration_minutes = ${input.durationMinutes ?? null},
           location        = ${input.location || null},
+          meeting_url     = ${input.meetingUrl || null},
           attendee_limit  = ${input.attendeeLimit ?? null},
           rsvp_deadline   = ${input.rsvpDeadline ? new Date(input.rsvpDeadline) : null},
           min_attendees   = ${input.minAttendees ?? null},
           reminder_minutes_before = ${input.reminderMinutesBefore ?? 60},
-          is_rsvp_enabled = TRUE,
+          is_rsvp_enabled = ${input.isRsvpEnabled ?? true},
+          share_to_network = ${input.shareToNetwork ?? false},
+          nextcloud_doc_url = ${input.nextcloudDocUrl || null},
           published_at    = COALESCE(published_at, ${publishedAt}),
           updated_at      = NOW()
         WHERE id = ${threadId} AND org_id = ${orgId}
@@ -520,20 +572,23 @@ export async function upsertWorkshopOffering(
         INSERT INTO threads (
           id, org_id, author_id, kind, section, title, slug, body, excerpt,
           status, visibility, price, currency, format,
-          scheduled_at, duration_minutes, location,
+          scheduled_at, duration_minutes, location, meeting_url,
           attendee_limit, rsvp_deadline, min_attendees, reminder_minutes_before,
-          is_rsvp_enabled, published_at
+          is_rsvp_enabled, share_to_network, nextcloud_doc_url, published_at
         ) VALUES (
           ${id}, ${orgId}, ${authorId}, 'workshop', ${section},
-          ${input.title}, ${slug}, ${input.body || null}, ${input.descriptionShort || null},
+          ${input.title}, ${slug}, ${input.body || null},
+          ${input.excerpt ?? input.descriptionShort ?? null},
           ${input.status}, ${input.visibility ?? 'PUBLIC'},
           ${price}, ${input.currency ?? 'CAD'}, ${input.format ?? null},
           ${input.scheduledAt ? new Date(input.scheduledAt) : null},
           ${input.durationMinutes ?? null}, ${input.location || null},
+          ${input.meetingUrl || null},
           ${input.attendeeLimit ?? null},
           ${input.rsvpDeadline ? new Date(input.rsvpDeadline) : null},
           ${input.minAttendees ?? null}, ${input.reminderMinutesBefore ?? 60},
-          TRUE, ${publishedAt}
+          ${input.isRsvpEnabled ?? true}, ${input.shareToNetwork ?? false},
+          ${input.nextcloudDocUrl || null}, ${publishedAt}
         )
       `;
     }
@@ -645,6 +700,58 @@ export async function upsertWorkshopOffering(
   return { id, slug };
 }
 
+/**
+ * Replace a workshop's sessions, without touching anything else about it.
+ *
+ * `upsertWorkshopOffering` is the whole workshop; this is for a caller that
+ * has already written the thread its own way and only needs the sessions to
+ * land where they are read. Same wholesale-replace semantics, same `notes`
+ * shape — so the two cannot drift.
+ */
+export async function replaceWorkshopSessions(
+  orgId: string,
+  threadId: string,
+  sessions: WorkshopSessionInput[]
+): Promise<boolean> {
+  try {
+    const [thread] = await db<{ id: string }[]>`
+      SELECT id FROM threads
+      WHERE id = ${threadId} AND org_id = ${orgId} AND kind = 'workshop'
+      LIMIT 1
+    `;
+    if (!thread) return false;
+
+    await db.begin(async (tx) => {
+      await tx`DELETE FROM workshop_sessions WHERE thread_id = ${threadId}`;
+      for (const [i, s] of sessions.entries()) {
+        const notes = {
+          description: s.description ?? '',
+          isOnline: s.isOnline ?? true,
+          location: s.location ?? '',
+          videoConferenceUrl: s.videoConferenceUrl ?? '',
+          mediaUrl: s.mediaUrl ?? null,
+          videoUrl: s.videoUrl ?? null,
+          resources: s.resources ?? [],
+          backgroundColor: s.backgroundColor ?? null,
+        };
+        await tx`
+          INSERT INTO workshop_sessions (
+            id, thread_id, session_number, topic, scheduled_at, duration_minutes, notes
+          ) VALUES (
+            ${`ws_${nanoid(16)}`}, ${threadId}, ${i + 1}, ${s.title},
+            ${s.scheduledAt ? new Date(s.scheduledAt) : null},
+            ${s.durationMinutes ?? null}, ${tx.json(notes)}
+          )
+        `;
+      }
+    });
+    return true;
+  } catch (err) {
+    console.error(`[workshop-offerings] replaceWorkshopSessions(${orgId}, ${threadId}):`, err);
+    return false;
+  }
+}
+
 /** Archive a workshop — takes it off public feeds, keeps it in the author's list. */
 export async function archiveWorkshopOffering(orgId: string, threadId: string): Promise<boolean> {
   try {
@@ -705,4 +812,117 @@ export async function deleteWorkshopOffering(orgId: string, threadId: string): P
     console.error(`[workshop-offerings] deleteWorkshopOffering(${orgId}, ${threadId}):`, err);
     return false;
   }
+}
+
+// ============================================================================
+// Materials — the workshop's own folder in the org's storage.
+//
+// `EAC_Network/<org>/workshops/<threadId>/materials`. @elkdonis/nextcloud's
+// workshop-materials.ts creates and SHARES this folder (author read/write,
+// attendee read-only, so it also appears in their own Nextcloud); this is
+// the platform-side view of the same folder, read and written over the
+// service account like every other org file, and served through /api/media
+// where media-authz gates it on enrolment.
+//
+// Filenames are kept as uploaded (after sanitising), not timestamped like
+// the media library: a reading list is referred to by name, and "week-3.pdf"
+// replacing "week-3.pdf" is the behaviour a guide expects.
+// ============================================================================
+
+export interface WorkshopMaterial {
+  name: string;
+  /** Platform URL — `/api/media/...`, gated per viewer. */
+  url: string;
+  size: number;
+  mimeType: string | null;
+  lastModified: string | null;
+}
+
+export function workshopMaterialsFolder(threadId: string): string {
+  if (!threadId || /[/\\]|\.\./.test(threadId)) {
+    throw new Error(`workshopMaterialsFolder: invalid threadId ${JSON.stringify(threadId)}`);
+  }
+  return `workshops/${threadId}/materials`;
+}
+
+/** The files in a workshop's materials folder. Empty when the folder is absent. */
+export async function listWorkshopMaterials(
+  orgId: string,
+  threadId: string
+): Promise<WorkshopMaterial[]> {
+  try {
+    const entries = await listOrgFiles(orgId, workshopMaterialsFolder(threadId));
+    return entries
+      .filter((e) => !e.isFolder)
+      .map((e) => ({
+        name: e.name,
+        url: e.url,
+        size: e.size,
+        mimeType: e.mimeType,
+        lastModified: e.lastModified,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err) {
+    console.error(`[workshop-offerings] listWorkshopMaterials(${orgId}, ${threadId}):`, err);
+    return [];
+  }
+}
+
+/** Create the folder if it is missing. Idempotent; false only on a DAV failure. */
+export async function ensureWorkshopMaterialsFolder(orgId: string, threadId: string): Promise<boolean> {
+  const ok = await createOrgFolder(orgId, `workshops/${threadId}`);
+  return (await createOrgFolder(orgId, workshopMaterialsFolder(threadId))) || ok;
+}
+
+/**
+ * Put one file in the folder. The caller has already decided this person may
+ * (an org editor), and has already sniffed the bytes — this only stores.
+ */
+export async function uploadWorkshopMaterial(
+  orgId: string,
+  threadId: string,
+  filename: string,
+  data: Uint8Array,
+  mimeType: string,
+  uploaderId: string
+): Promise<WorkshopMaterial | null> {
+  const safeName = filename.replace(/[/\\:*?"<>|\0]/g, '_').replace(/^\.+/, '').slice(0, 180);
+  if (!safeName) return null;
+  // uploadOrgFile timestamps; materials keep their names (see header).
+  await ensureWorkshopMaterialsFolder(orgId, threadId);
+  const path = `${resolveOrgPath(orgId, workshopMaterialsFolder(threadId))}/${safeName}`;
+  if (!(await davPut(path, data, mimeType))) return null;
+  // Indexed in `media` like any other upload so it shows in audits and usage;
+  // the row is not what serves it, so a failure here is logged, not fatal.
+  try {
+    await db`
+      INSERT INTO media (
+        id, org_id, uploaded_by, nextcloud_file_id, url, type,
+        filename, size_bytes, mime_type, nextcloud_path
+      ) VALUES (
+        ${nanoid()}, ${orgId}, ${uploaderId}, '', ${`/api/media/${path}`},
+        ${mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('audio/') ? 'audio' : mimeType.startsWith('video/') ? 'video' : 'document'},
+        ${safeName}, ${data.byteLength}, ${mimeType}, ${path}
+      )
+      ON CONFLICT DO NOTHING
+    `;
+  } catch (err) {
+    console.error('[workshop-offerings] materials media row:', err);
+  }
+  return {
+    name: safeName,
+    url: `/api/media/${path}`,
+    size: data.byteLength,
+    mimeType,
+    lastModified: new Date().toISOString(),
+  };
+}
+
+export async function deleteWorkshopMaterial(
+  orgId: string,
+  threadId: string,
+  filename: string
+): Promise<boolean> {
+  if (!filename || filename.includes('/') || filename.includes('..')) return false;
+  return deleteOrgFile(orgId, `${workshopMaterialsFolder(threadId)}/${filename}`);
 }

@@ -1,57 +1,19 @@
 import { NextResponse } from "next/server";
-import { db } from "@elkdonis/db";
-import { listFiles } from "@elkdonis/services";
+import { listOrgMediaLibrary } from "@elkdonis/services";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
-export interface LibraryItem {
-  url: string;
-  filename: string;
-  type: string;
-  source: "upload" | "nextcloud";
-}
-
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
-
+/**
+ * The org's media library, for the picker.
+ *
+ * The listing is shared (`listOrgMediaLibrary` in @elkdonis/services); the
+ * editor gate stays here, because authorization is the part that must not be
+ * made uniform by accident.
+ */
 export async function GET() {
   const editor = await getApiEditor();
   if (!editor) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
-  const items = new Map<string, LibraryItem>();
-
-  try {
-    const rows = await db<{ url: string; filename: string; type: string }[]>`
-      SELECT url, filename, type
-      FROM media
-      WHERE org_id = ${siteConfig.orgId} AND type = 'image'
-      ORDER BY created_at DESC
-      LIMIT 200
-    `;
-    for (const row of rows) {
-      if (row.url) {
-        items.set(row.url, { url: row.url, filename: row.filename, type: row.type, source: "upload" });
-      }
-    }
-  } catch (err) {
-    console.error("[hidden-enneagram] media library (db):", err);
-  }
-
-  try {
-    const folder = `EAC_Network/${siteConfig.orgId}/Media/Images`;
-    const files = await listFiles(folder);
-    for (const file of files) {
-      const name: string | undefined =
-        typeof file === "string" ? file : (file?.name ?? file?.basename ?? file?.filename);
-      if (!name || !IMAGE_EXT.test(name)) continue;
-
-      const url = `/api/media/${folder}/${name}`;
-      if (!items.has(url)) {
-        items.set(url, { url, filename: name, type: "image", source: "nextcloud" });
-      }
-    }
-  } catch (err) {
-    console.error("[hidden-enneagram] media library (nextcloud):", err);
-  }
-
-  return NextResponse.json({ items: [...items.values()] });
+  const items = await listOrgMediaLibrary(siteConfig.orgId);
+  return NextResponse.json({ items });
 }

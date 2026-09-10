@@ -15,10 +15,15 @@
  *      types (so traits show up in the Settings panel) and add our blocks
  *      to the BlockManager.
  *
- * Phase 1 keeps the existing <eac-embed> live-slot type. Phase 2 will
- * replace that single polymorphic type with proper Web Component
- * registrations (eac-org-feed, eac-rsvp, …) and Phase 3 will drop
- * eac-embed entirely.
+ * On <eac-embed>: it stays. An earlier note here planned to replace it with
+ * per-component Web Components (eac-org-feed, eac-rsvp, …) and drop it — that
+ * plan was superseded by the component catalogue in @elkdonis/silex-render
+ * (components.data.json). <eac-embed> is the wire format; what changed is that
+ * it is now *generated* from one catalogue rather than hand-written in three
+ * places. The catalogue has three consumers: the renderer, a content compiler
+ * (componentToEmbedMarker), and this file's block panel — fetched at
+ * /eac-components.json, because a browser-served client config cannot import
+ * TypeScript.
  */
 
 const SLOT_CATEGORY = "Arts Live Slots";
@@ -28,6 +33,7 @@ const CONTENT_CATEGORY = "EAC Content";
 const WORKSHOP_CATEGORY = "EAC Workshop Template";
 const DOSSIER_CATEGORY = "EAC Dossier Template";
 const ENNEAGRAM_CATEGORY = "EAC Enneagram Template";
+const BROCHURE_CATEGORY = "EAC Brochure Template";
 
 const CSS_PATH = "/eac-blocks.css";
 const WORKSHOP_CSS_PATH = "/eac-workshop-template.css";
@@ -36,6 +42,9 @@ const DOSSIER_CSS_PATH = "/eac-dossier-classified.css";
 const DOSSIER_TEMPLATE_PATH = "/eac-dossier-classified.json";
 const ENNEAGRAM_CSS_PATH = "/eac-enneagram.css";
 const ENNEAGRAM_TEMPLATE_PATH = "/eac-enneagram.json";
+const BROCHURE_CSS_PATH = "/eac-brochure-template.css";
+const BROCHURE_TEMPLATE_PATH = "/eac-brochure-template.json";
+const COMPONENTS_PATH = "/eac-components.json";
 
 let workshopTemplatePromise = null;
 let workshopCssPromise = null;
@@ -43,6 +52,9 @@ let dossierTemplatePromise = null;
 let dossierCssPromise = null;
 let enneagramTemplatePromise = null;
 let enneagramCssPromise = null;
+let componentsPromise = null;
+let brochureTemplatePromise = null;
+let brochureCssPromise = null;
 
 function sameOriginUrl(path) {
   return (typeof window !== "undefined" && window.location ? window.location.origin : "") + path;
@@ -140,6 +152,88 @@ function loadEnneagramCss() {
   return enneagramCssPromise;
 }
 
+function loadBrochureTemplate() {
+  if (brochureTemplatePromise) return brochureTemplatePromise;
+  brochureTemplatePromise = fetch(sameOriginUrl(BROCHURE_TEMPLATE_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load brochure template", err);
+      return null;
+    });
+  return brochureTemplatePromise;
+}
+
+function loadBrochureCss() {
+  if (brochureCssPromise) return brochureCssPromise;
+  brochureCssPromise = fetch(sameOriginUrl(BROCHURE_CSS_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.text();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load brochure css", err);
+      return "";
+    });
+  return brochureCssPromise;
+}
+
+/**
+ * The live-component catalogue. Returns [] on failure, which makes the block
+ * panel fall back to FALLBACK_SLOT_BLOCKS below rather than losing live slots
+ * entirely — a missing mount should degrade, not break the editor.
+ */
+function loadComponents() {
+  if (componentsPromise) return componentsPromise;
+  componentsPromise = fetch(sameOriginUrl(COMPONENTS_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((list) => (Array.isArray(list) ? list : []))
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load component catalogue", err);
+      return [];
+    });
+  return componentsPromise;
+}
+
+/** Sensible starting values so a dropped block shows something real. */
+const SLOT_DEFAULTS = {
+  "org-feed": { "data-limit": "4" },
+  "workshop-cards": { "data-limit": "3" },
+  "rsvp": { "data-limit": "3" },
+  "community-feed": { "data-limit": "4" },
+  "directory": { "data-limit": "8" },
+  "poll": {
+    "data-question": "What should we offer next?",
+    "data-options": "Practice|Workshop|Open studio",
+  },
+  "live": { "data-status": "Upcoming" },
+  "resources": { "data-items": "Notes|Replay|Worksheet" },
+};
+
+/**
+ * One block per catalogue entry, so every component the renderer can draw is
+ * placeable. This replaced a hardcoded list of 7 that had drifted behind a
+ * catalogue of 12 — countdown, directory, login and media-upload rendered fine
+ * but could not be placed without hand-writing the raw marker.
+ */
+function slotBlocksFromCatalogue(components) {
+  return components
+    .filter((component) => component && component.id && component.memberSafe !== false)
+    .map((component) => ({
+      id: `eac-slot-${component.id}`,
+      label: component.label || component.id,
+      content: slot(component.id, {
+        "data-title": component.label || component.id,
+        ...(SLOT_DEFAULTS[component.id] || {}),
+      }),
+    }));
+}
+
 function traitLabel(name) {
   return String(name || "")
     .replace(/^data-/, "")
@@ -158,7 +252,8 @@ function slot(component, attrs) {
   return out;
 }
 
-const liveSlotBlocks = [
+/** Used only when /eac-components.json is unreachable. */
+const FALLBACK_SLOT_BLOCKS = [
   { id: "eac-slot-feed", label: "Feed Slot", content: slot("org-feed", { "data-title": "Latest updates", "data-limit": "4" }) },
   { id: "eac-slot-workshops", label: "Workshop Slot", content: slot("workshop-cards", { "data-title": "Workshop sessions", "data-limit": "3" }) },
   { id: "eac-slot-rsvp", label: "RSVP Slot", content: slot("rsvp", { "data-title": "Reserve your place", "data-limit": "3" }) },
@@ -509,6 +604,111 @@ function registerEnneagramTypes(editor, registry) {
   }
 }
 
+function registerBrochureTypes(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.DomComponents || !editor.DomComponents.addType) return;
+  if (editor.__eacBrochureTypesInstalled) return;
+  editor.__eacBrochureTypesInstalled = true;
+
+  for (const section of registry.sections) {
+    if (!section || !section.id) continue;
+    editor.DomComponents.addType(section.id, {
+      isComponent(el) {
+        if (!el) return false;
+        if (el.getAttribute && el.getAttribute("data-gjs-type") === section.id) return true;
+        return hasClass(el, section.id);
+      },
+      model: {
+        defaults: {
+          name: section.label || section.id,
+          droppable: false,
+          copyable: true,
+          traits: (section.traits || []).map((trait) => ({
+            type: "text",
+            name: trait,
+            label: traitLabel(trait),
+          })),
+        },
+      },
+    });
+  }
+}
+
+function addBrochureBlocks(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.BlockManager || !editor.BlockManager.add) return;
+
+  // id → section markup, so page compositions can be stitched together.
+  const sectionHtml = {};
+  for (const section of registry.sections) {
+    if (section && section.id) sectionHtml[section.id] = section.htmlContent || "";
+  }
+
+  // One block per page composition (Organization profile, Single offering).
+  // Wrapped in <main class="eac-br-page eac-br-page-<id>"> so the paper
+  // background and the embed/placeholder theming in eac-brochure-tokens.css
+  // and eac-br-dispatch.css / eac-br-directory.css (which key off
+  // .eac-br-page as an ancestor) actually apply.
+  const pages = Array.isArray(registry.pages) ? registry.pages : [];
+  for (const page of pages) {
+    if (!page || !page.id || !Array.isArray(page.sections)) continue;
+    const blockId = `eac-br-page-${page.id}`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    const inner = page.sections
+      .map((id) => sectionHtml[id] || "")
+      .filter(Boolean)
+      .join("\n");
+    if (!inner) continue;
+    const content = `<main class="eac-br-page eac-br-page-${page.id}">\n${inner}\n</main>`;
+    editor.BlockManager.add(blockId, {
+      label: page.label || page.id,
+      category: BROCHURE_CATEGORY,
+      content,
+    });
+  }
+
+  // One block per reusable section, for building a custom composition.
+  for (const section of registry.sections) {
+    if (!section || !section.id || !section.htmlContent) continue;
+    const blockId = `${section.id}--block`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    editor.BlockManager.add(blockId, {
+      label: section.label || section.id,
+      category: BROCHURE_CATEGORY,
+      content: section.htmlContent,
+    });
+  }
+}
+
+function seedBrochureCssIntoEditor(editor, cssText) {
+  if (!editor || !editor.Css || typeof editor.Css.addRules !== "function") return;
+  if (editor.__eacBrochureCssSeeded) return;
+  editor.__eacBrochureCssSeeded = true;
+
+  const existingRules = typeof editor.Css.getAll === "function" ? editor.Css.getAll() : null;
+  const alreadyHasBrochureRules = existingRules
+    ? existingRules.some((rule) => {
+        if (!rule || typeof rule.getSelectorsString !== "function") return false;
+        const sel = rule.getSelectorsString();
+        return typeof sel === "string" && sel.indexOf(".eac-br-") !== -1;
+      })
+    : false;
+  if (alreadyHasBrochureRules) {
+    console.info("[eac-client-config] brochure css already in project, skipping seed");
+    return;
+  }
+
+  if (!cssText) return;
+  try {
+    editor.Css.addRules(cssText);
+    console.info("[eac-client-config] brochure css seeded into editor", {
+      bytes: cssText.length,
+    });
+  } catch (err) {
+    console.warn("[eac-client-config] failed to seed brochure css", err);
+  }
+}
+
 function addWorkshopBlocks(editor, registry) {
   if (!registry || !Array.isArray(registry.sections)) return;
   if (!editor.BlockManager || !editor.BlockManager.add) return;
@@ -743,12 +943,15 @@ function installTypesOnEditor(editor) {
 
 function installBlocksOnEditor(
   editor,
+  slotBlocks,
   workshopRegistry,
   workshopCss,
   dossierRegistry,
   dossierCss,
   enneagramRegistry,
-  enneagramCss
+  enneagramCss,
+  brochureRegistry,
+  brochureCss
 ) {
   if (editor.__eacBlocksInstalled) return;
   editor.__eacBlocksInstalled = true;
@@ -757,7 +960,7 @@ function installBlocksOnEditor(
   // didn't fire (e.g. config.grapesJsConfig was replaced wholesale).
   installTypesOnEditor(editor);
 
-  addBlocks(editor, liveSlotBlocks, SLOT_CATEGORY);
+  addBlocks(editor, slotBlocks && slotBlocks.length ? slotBlocks : FALLBACK_SLOT_BLOCKS, SLOT_CATEGORY);
   addBlocks(editor, structureBlocks, LAYOUT_CATEGORY);
   addBlocks(editor, contentBlocks, CONTENT_CATEGORY);
   addBlocks(editor, templateBlocks, TEMPLATE_CATEGORY);
@@ -786,9 +989,17 @@ function installBlocksOnEditor(
     console.info("[eac-client-config] enneagram template installed");
   }
 
+  if (brochureRegistry && !editor.__eacBrochureBlocksInstalled) {
+    editor.__eacBrochureBlocksInstalled = true;
+    registerBrochureTypes(editor, brochureRegistry);
+    addBrochureBlocks(editor, brochureRegistry);
+    if (brochureCss) seedBrochureCssIntoEditor(editor, brochureCss);
+    console.info("[eac-client-config] brochure template installed");
+  }
+
   console.info("[eac-client-config] installed", {
     blocks: editor.BlockManager.getAll().length,
-    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, SLOT_CATEGORY],
+    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, BROCHURE_CATEGORY, SLOT_CATEGORY],
   });
 
   setTimeout(() => openBlocksPanelIfSimpleMode(editor), 250);
@@ -813,20 +1024,32 @@ export default async function eacClientConfig(config /*, _options */) {
   } catch (_) { /* never throw out of a plugin entry */ }
 
   const [
+    initialComponents,
     initialWorkshopTemplate,
     initialWorkshopCss,
     initialDossierTemplate,
     initialDossierCss,
     initialEnneagramTemplate,
     initialEnneagramCss,
+    initialBrochureTemplate,
+    initialBrochureCss,
   ] = await Promise.all([
+    loadComponents(),
     loadWorkshopTemplate(),
     loadWorkshopCss(),
     loadDossierTemplate(),
     loadDossierCss(),
     loadEnneagramTemplate(),
     loadEnneagramCss(),
+    loadBrochureTemplate(),
+    loadBrochureCss(),
   ]);
+
+  const initialSlotBlocks = slotBlocksFromCatalogue(initialComponents);
+  console.info("[eac-client-config] live-slot blocks from catalogue", {
+    components: initialComponents.length,
+    blocks: initialSlotBlocks.length,
+  });
 
   // Expose a global hook so we (or DevTools) can manually re-install blocks
   // against an existing editor instance. Useful when diagnosing whether the
@@ -839,7 +1062,7 @@ export default async function eacClientConfig(config /*, _options */) {
           console.warn("[eac-client-config] no editor available for manual install");
           return null;
         }
-        installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
+        installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
         return editor.BlockManager.getAll().length;
       };
     }
@@ -859,7 +1082,7 @@ export default async function eacClientConfig(config /*, _options */) {
     // different base URI than the parent (about:srcdoc / blob: / data:), in
     // which case relative paths like "/eac-blocks.css" silently fail to
     // resolve and the canvas renders without our grid/column styles.
-    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH]) {
+    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH, BROCHURE_CSS_PATH]) {
       for (const candidate of [cssPath, sameOriginUrl(cssPath)]) {
         if (candidate && !styles.includes(candidate)) styles.push(candidate);
       }
@@ -874,6 +1097,7 @@ export default async function eacClientConfig(config /*, _options */) {
       registerWorkshopTypes(editor, initialWorkshopTemplate);
       registerDossierTypes(editor, initialDossierTemplate);
       registerEnneagramTypes(editor, initialEnneagramTemplate);
+      registerBrochureTypes(editor, initialBrochureTemplate);
     });
     gjs.plugins = plugins;
   });
@@ -885,13 +1109,13 @@ export default async function eacClientConfig(config /*, _options */) {
       console.warn("[eac-client-config] grapesjs:end fired but no editor available");
       return;
     }
-    installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
+    installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
   });
 
   // Safety net: also try at startup:end. If grapesjs:end already fired, the
   // idempotent guard inside installBlocksOnEditor makes this a no-op.
   config.on("silex:startup:end", () => {
     const editor = typeof config.getEditor === "function" ? config.getEditor() : null;
-    if (editor) installBlocksOnEditor(editor, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss);
+    if (editor) installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
   });
 }

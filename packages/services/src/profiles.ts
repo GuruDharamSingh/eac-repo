@@ -84,6 +84,7 @@ export interface Profile {
   claimedBy: string | null;
   createdBy: string | null;
   verified: boolean;
+  directoryListed: boolean;
   /** Wiki-style attribution note — who/what sourced this entry, for account-less profiles. */
   sourceNote: string | null;
   /** Template-specific display extras (e.g. ArtDirect's "Classified Dossier"). Opaque to shared code. */
@@ -122,6 +123,7 @@ interface UserRow {
   claimed_by: string | null;
   created_by: string | null;
   verified: boolean;
+  directory_listed: boolean;
   source_note: string | null;
   oad_dossier: unknown;
 }
@@ -211,6 +213,7 @@ function mapUser(row: UserRow): Profile {
     claimedBy: row.claimed_by,
     createdBy: row.created_by,
     verified: row.verified,
+    directoryListed: row.directory_listed ?? true,
     sourceNote: row.source_note,
     oadDossier: asDossier(row.oad_dossier),
   };
@@ -227,8 +230,8 @@ function mapOrgProfile(row: OrgProfileRow): OrgProfile {
   };
 }
 
-const USER_COLS = `id, entity_type, slug, display_name, headline, bio, avatar_url, pronouns, city, region, country, postal_code, lat, lng, social_links, portfolio_url, portfolio, claim_status, claimed_by, created_by, verified, source_note, oad_dossier, profile_layout`;
-const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, u.portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.source_note, u.oad_dossier, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
+const USER_COLS = `id, entity_type, slug, display_name, headline, bio, avatar_url, pronouns, city, region, country, postal_code, lat, lng, social_links, portfolio_url, portfolio, claim_status, claimed_by, created_by, verified, directory_listed, source_note, oad_dossier, profile_layout`;
+const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, u.portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.directory_listed, u.source_note, u.oad_dossier, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
 
 /** A person's global identity, independent of any org. */
 export async function getProfile(userId: string): Promise<Profile | null> {
@@ -617,6 +620,48 @@ export async function requestClaim(sentinelUserId: string, claimantUserId: strin
  * (reactions, RSVPs, poll votes, etc.) are left to cascade-delete, since a
  * sentinel — never having had a session — cannot genuinely hold any.
  */
+
+/**
+ * Tables whose rows would be destroyed, not moved, by the DELETE at the end of
+ * mergeProfile — every one has a user_id FK with ON DELETE CASCADE.
+ *
+ * mergeProfile carries org_profiles, org_intake and user_organizations, and
+ * reassigns threads.author_id / media.uploaded_by. Everything below is simply
+ * lost. That is harmless for a sentinel (it has never logged in, so all of
+ * these are empty — verified 0 rows across every unclaimed profile on
+ * 2026-09-07), but adminAssignProfile also merges two REAL accounts, and there
+ * the loss would be silent and unrecoverable — including
+ * `org_agreement_acceptances`, which is the consent record the payout model
+ * depends on.
+ *
+ * Rather than move seventeen tables with seventeen different unique
+ * constraints and semantics, the merge refuses when any of them is non-empty.
+ * A loud failure that names the tables is recoverable; silent deletion is not.
+ */
+const UNCARRIED_ON_MERGE = [
+  'thread_rsvps', 'org_agreement_acceptances', 'org_followers', 'store_member',
+  'content_drafts', 'questionnaire_responses', 'question_poll_votes',
+  'availability_poll_responses', 'artwork_favorite', 'bookmarks', 'watches',
+  'reactions', 'notifications', 'conversation_participant',
+  'thread_cycle_events', 'artist_profiles',
+] as const;
+
+/** Tables where `sentinelUserId` still holds rows the merge cannot carry. */
+async function uncarriedRows(sentinelUserId: string): Promise<string[]> {
+  const found: string[] = [];
+  for (const table of UNCARRIED_ON_MERGE) {
+    try {
+      const [row] = await db<{ n: number }[]>`
+        SELECT COUNT(*)::int AS n FROM ${db.unsafe(table)} WHERE user_id = ${sentinelUserId}
+      `;
+      if ((row?.n ?? 0) > 0) found.push(`${table} (${row.n})`);
+    } catch {
+      // Table absent in this deployment — not a reason to block a merge.
+    }
+  }
+  return found;
+}
+
 export async function mergeProfile(sentinelUserId: string, targetUserId: string): Promise<{ ok: boolean; error?: string }> {
   if (sentinelUserId === targetUserId) return { ok: false, error: 'Cannot merge a profile into itself.' };
 
@@ -624,6 +669,16 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
   const [target] = await db<{ id: string }[]>`SELECT id FROM users WHERE id = ${targetUserId} LIMIT 1`;
   if (!sentinel) return { ok: false, error: 'Profile not found.' };
   if (!target) return { ok: false, error: 'Target account not found.' };
+
+  const stranded = await uncarriedRows(sentinelUserId);
+  if (stranded.length > 0) {
+    return {
+      ok: false,
+      error:
+        `This profile still holds rows the merge cannot move, and they would be ` +
+        `deleted: ${stranded.join(', ')}. Move or clear them first.`,
+    };
+  }
 
   // Free the sentinel's slug first — slug is globally unique, so if the
   // target is about to claim it below, the sentinel can't be still holding
@@ -660,6 +715,26 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
     SELECT org_id, ${targetUserId}, answers FROM org_intake WHERE user_id = ${sentinelUserId}
     ON CONFLICT (org_id, user_id) DO NOTHING
   `;
+  // Memberships and roles, kept at the STRONGER of the two.
+  //
+  // Without this the sentinel's `user_organizations` rows were destroyed rather
+  // than moved: the DELETE below cascades (user_organizations_user_id_fkey is
+  // ON DELETE CASCADE), so anyone who claimed a profile silently lost every org
+  // role that profile held. An org whose only owner was an unclaimed sentinel
+  // became unadministrable the moment that person signed up.
+  await db`
+    INSERT INTO user_organizations (user_id, org_id, role)
+    SELECT ${targetUserId}, org_id, role
+    FROM user_organizations WHERE user_id = ${sentinelUserId}
+    ON CONFLICT (user_id, org_id) DO UPDATE
+      SET role = CASE
+        WHEN 'owner'  IN (user_organizations.role, EXCLUDED.role) THEN 'owner'
+        WHEN 'guide'  IN (user_organizations.role, EXCLUDED.role) THEN 'guide'
+        WHEN 'member' IN (user_organizations.role, EXCLUDED.role) THEN 'member'
+        ELSE 'viewer'
+      END
+  `;
+  await db`DELETE FROM user_organizations WHERE user_id = ${sentinelUserId}`;
   await db`DELETE FROM org_profiles WHERE user_id = ${sentinelUserId}`;
   await db`DELETE FROM org_intake WHERE user_id = ${sentinelUserId}`;
 
@@ -729,6 +804,7 @@ export async function listPublicProfiles(
       FROM users u
       LEFT JOIN (SELECT subject_id, COUNT(*) AS n FROM profile_vouches GROUP BY subject_id) v ON v.subject_id = u.id
       WHERE u.slug IS NOT NULL
+        AND u.directory_listed
         ${opts.region ? db`AND u.region = ${opts.region}` : db``}
         ${opts.entityType ? db`AND u.entity_type = ${opts.entityType}` : db``}
       ORDER BY u.verified DESC, vouch_count DESC, u.display_name ASC
@@ -744,11 +820,11 @@ export async function listPublicProfiles(
 export async function listProfileGeoFacets(): Promise<{ cities: string[]; regions: string[]; countries: string[] }> {
   try {
     const rows = await db<{ kind: 'city' | 'region' | 'country'; value: string }[]>`
-      SELECT 'city' AS kind, city AS value FROM users WHERE slug IS NOT NULL AND city IS NOT NULL AND city <> ''
+      SELECT 'city' AS kind, city AS value FROM users WHERE slug IS NOT NULL AND directory_listed AND city IS NOT NULL AND city <> ''
       UNION
-      SELECT 'region' AS kind, region AS value FROM users WHERE slug IS NOT NULL AND region IS NOT NULL AND region <> ''
+      SELECT 'region' AS kind, region AS value FROM users WHERE slug IS NOT NULL AND directory_listed AND region IS NOT NULL AND region <> ''
       UNION
-      SELECT 'country' AS kind, country AS value FROM users WHERE slug IS NOT NULL AND country IS NOT NULL AND country <> ''
+      SELECT 'country' AS kind, country AS value FROM users WHERE slug IS NOT NULL AND directory_listed AND country IS NOT NULL AND country <> ''
       ORDER BY value ASC
     `;
     return {

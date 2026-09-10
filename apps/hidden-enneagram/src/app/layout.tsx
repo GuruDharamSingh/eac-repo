@@ -1,4 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { listOrgFeeds } from "@elkdonis/services";
+import { getViewer } from "@/lib/auth";
+import { siteConfig } from "@/config/site";
+import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import "./globals.css";
 
 // Fonts are loaded via a CSS @import in globals.css (browser-side) rather than
@@ -16,11 +20,19 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const viewer = await getViewer().catch(() => null);
+  const canEdit = Boolean(viewer?.canEdit);
+
+  // Editors compose into private feeds too; visitors only see public ones.
+  const feeds = await listOrgFeeds(siteConfig.orgId, {
+    includePrivate: canEdit,
+  }).catch(() => []);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -30,7 +42,18 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=EB+Garamond:wght@400;500&display=swap"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {/* One surface system for the whole site: a listing card on a feed
+            page and a hub tile open into the same dialog. */}
+        <HubSurfaces
+          signedIn={Boolean(viewer)}
+          canEdit={canEdit}
+          displayName={viewer?.email.split("@")[0] ?? null}
+          feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
+        >
+          {children}
+        </HubSurfaces>
+      </body>
     </html>
   );
 }

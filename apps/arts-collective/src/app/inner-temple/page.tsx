@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { useWebGLFallback } from '@elkdonis/three';
 
 const TempleExperience = dynamic(
-  () => import('@elkdonis/three').then((m) => ({ default: m.TempleExperience })),
+  () => import('@elkdonis/three/inner-temple').then((m) => ({ default: m.TempleExperience })),
   { ssr: false },
 );
 

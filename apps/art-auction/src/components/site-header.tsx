@@ -4,7 +4,7 @@ import { getCartByToken } from "@elkdonis/commerce/queries";
 import { getUnreadCount } from "@elkdonis/messaging/queries";
 import { siteConfig } from "@/config/site";
 import {
-  getCurrentArtist,
+  listActableStores,
   getCurrentUser,
   getIsAdmin,
 } from "@/lib/marketplace-auth";
@@ -14,13 +14,15 @@ export async function SiteHeader() {
   const cart = token ? await getCartByToken(token) : null;
   const count = cart?.lines?.length ?? 0;
 
-  const [user, artist, admin] = await Promise.all([
+  const [user, stores, admin] = await Promise.all([
     getCurrentUser(),
-    getCurrentArtist(),
+    listActableStores(),
     getIsAdmin(),
   ]);
   const unread = user ? await getUnreadCount(user.id) : 0;
-  const studioHref = artist?.status === "active" ? "/studio" : "/studio/apply";
+  // Any store the person can act for — their own or an org's — opens the studio.
+  const seller = stores.some((s) => s.status === "active");
+  const studioHref = seller ? "/studio" : "/studio/apply";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
@@ -39,7 +41,7 @@ export async function SiteHeader() {
             Artists
           </Link>
           <Link href={studioHref} className="underline-offset-4 hover:underline">
-            {artist?.status === "active" ? "Studio" : "Sell"}
+            {seller ? "Studio" : "Sell"}
           </Link>
           {admin && (
             <Link href="/admin" className="underline-offset-4 hover:underline">
@@ -63,7 +65,7 @@ export async function SiteHeader() {
           )}
           {user ? (
             <Link
-              href={artist?.status === "active" ? "/studio" : "/account"}
+              href={seller ? "/studio" : "/account"}
               className="underline-offset-4 hover:underline"
               title={user.email ?? undefined}
             >

@@ -1,0 +1,185 @@
+/*
+  fields.css — the field controls, in plain CSS.
+
+  Every input the wizard and the composer render, styled once with custom
+  properties so they set correctly in the Tailwind apps AND in ifac/artdirect,
+  which are not Tailwind at all. Tokens fall back to the surface system's
+  (--sf-*) when surface.css is loaded, and to neutral values when it is not.
+
+  Import once per app, after surface.css if you use both:
+      @import "@elkdonis/cms-ui/fields.css";
+*/
+
+.eac-field {
+  --fld-fg: var(--eac-field-fg, var(--sf-fg, var(--ink, #16181d)));
+  --fld-muted: var(--eac-field-muted, var(--sf-muted, var(--ink-soft, #5e667a)));
+  --fld-line: var(--eac-field-line, var(--sf-rule, var(--sf-line, var(--line, #b9c0c9))));
+  --fld-bg: var(--eac-field-bg, var(--sf-bg, var(--paper, #fff)));
+  --fld-bg-soft: var(--eac-field-bg-soft, var(--sf-bg-soft, #f2f3f1));
+  --fld-accent: var(--eac-field-accent, var(--sf-kind, var(--sf-accent, #5b45a8)));
+  --fld-on-accent: var(--eac-field-on-accent, var(--sf-on-kind, #fff));
+  --fld-danger: var(--eac-field-danger, var(--sf-danger, #ae3a31));
+  --fld-radius: var(--eac-field-radius, var(--sf-radius-sm, 3px));
+  --fld-record: var(--eac-font-record, var(--sf-font-record, ui-monospace, Menlo, monospace));
+
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--fld-fg);
+}
+
+.eac-field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.eac-field-req { color: var(--fld-danger); }
+.eac-field-hint { margin: 0; font-size: 0.78rem; line-height: 1.45; color: var(--fld-muted); }
+.eac-field-error { margin: 0; font-size: 0.78rem; color: var(--fld-danger); }
+
+/* The input, in every native form it takes. */
+.eac-input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--fld-line);
+  border-radius: var(--fld-radius);
+  background: var(--fld-bg);
+  color: var(--fld-fg);
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+.eac-input::placeholder { color: var(--fld-muted); opacity: 0.8; }
+.eac-input:focus-visible { outline: 2px solid var(--fld-accent); outline-offset: 1px; border-color: var(--fld-accent); }
+.eac-input:disabled { opacity: 0.6; }
+.eac-input--textarea { resize: vertical; min-height: 5.5em; }
+.eac-input--short { max-width: 9ch; }
+select.eac-input {
+  appearance: none;
+  padding-right: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--fld-muted) 50%), linear-gradient(135deg, var(--fld-muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* Checkbox and radio rows */
+.eac-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.eac-check input { width: 16px; height: 16px; accent-color: var(--fld-accent); margin: 0; }
+.eac-check span { color: var(--fld-muted); }
+.eac-choice-list { display: grid; gap: 8px; }
+
+/* Toggle: a switch, for the yes/no that opens something up (RSVPs, a room). */
+.eac-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fld-fg);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+.eac-toggle-track {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--fld-line);
+  transition: background 160ms ease;
+}
+.eac-toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--fld-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 160ms ease;
+}
+.eac-toggle[aria-checked="true"] .eac-toggle-track { background: var(--fld-accent); }
+.eac-toggle[aria-checked="true"] .eac-toggle-track::after { transform: translateX(16px); }
+.eac-toggle:focus-visible .eac-toggle-track { outline: 2px solid var(--fld-accent); outline-offset: 2px; }
+.eac-toggle-text { color: var(--fld-muted); }
+.eac-toggle[aria-checked="true"] .eac-toggle-text { color: var(--fld-fg); }
+
+/* Colour */
+.eac-color { display: flex; gap: 8px; align-items: center; }
+.eac-color input[type="color"] { width: 44px; height: 38px; padding: 2px; border: 1px solid var(--fld-line); border-radius: var(--fld-radius); background: var(--fld-bg); cursor: pointer; }
+
+/* ── Duration: a slider over the sensible lengths, with the exact number beside it. */
+.eac-duration {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 14px;
+  align-items: center;
+}
+.eac-duration-readout {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--fld-record);
+  font-size: 0.74rem;
+  color: var(--fld-muted);
+}
+.eac-duration-readout b { font: inherit; font-size: 1.05rem; color: var(--fld-fg); font-weight: 500; }
+.eac-duration input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--fld-accent);
+  cursor: pointer;
+}
+.eac-duration-num { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--fld-muted); }
+.eac-duration-num .eac-input { width: 7ch; padding: 6px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.eac-duration-ticks {
+  grid-column: 1 / 2;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-family: var(--fld-record);
+  font-size: 0.62rem;
+  color: var(--fld-muted);
+}
+
+/* ── When: a date and a time, and the sentence they make. */
+.eac-when { display: grid; gap: 6px; }
+.eac-when-inputs { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 8px; }
+.eac-when-readout {
+  font-family: var(--fld-record);
+  font-size: 0.74rem;
+  color: var(--fld-muted);
+  min-height: 1.2em;
+}
+.eac-when-readout b { color: var(--fld-fg); font-weight: 500; }
+
+/* Two or three fields on one line. */
+.eac-field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 14px;
+  align-items: start;
+}
+.eac-field-row > .eac-field { min-width: 0; }
+
+.eac-field-missing { font-size: 0.8rem; color: var(--fld-muted); font-style: italic; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-toggle-track, .eac-toggle-track::after { transition: none; }
+}

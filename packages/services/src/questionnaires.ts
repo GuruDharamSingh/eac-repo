@@ -19,7 +19,6 @@ import { nanoid } from 'nanoid';
 
 export type QuestionnaireScope = 'user' | 'org';
 export type ResponseStatus = 'draft' | 'submitted' | 'reviewed' | 'returned';
-export type NetworkTier = 'member' | 'host' | 'partner';
 
 export interface Questionnaire {
   key: string;
@@ -27,8 +26,6 @@ export interface Questionnaire {
   description: string | null;
   version: number;
   scope: QuestionnaireScope;
-  /** network_tier a passed review may promote the answerer to. */
-  gatesTier: NetworkTier | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -50,10 +47,8 @@ export interface QuestionnaireResponse {
 /** A row in the admin review queue, with enough context to judge it. */
 export interface PendingReview extends QuestionnaireResponse {
   questionnaireTitle: string;
-  gatesTier: NetworkTier | null;
   userEmail: string;
   userDisplayName: string;
-  userNetworkTier: string;
   orgName: string | null;
 }
 
@@ -91,7 +86,6 @@ export async function listQuestionnaires(
       description: q.description,
       version: q.version,
       scope: q.scope,
-      gatesTier: q.gates_tier,
       sortOrder: q.sort_order,
       isActive: q.is_active,
     }));
@@ -216,9 +210,8 @@ export async function submitResponse(
 export async function listPendingReviews(limit = 100): Promise<PendingReview[]> {
   try {
     const rows = await db<Array<Record<string, any>>>`
-      SELECT r.*, q.title AS questionnaire_title, q.gates_tier,
+      SELECT r.*, q.title AS questionnaire_title,
              u.email AS user_email, u.display_name AS user_display_name,
-             u.network_tier AS user_network_tier,
              o.name AS org_name
       FROM questionnaire_responses r
       JOIN questionnaires q ON q.key = r.questionnaire_key
@@ -231,10 +224,8 @@ export async function listPendingReviews(limit = 100): Promise<PendingReview[]> 
     return rows.map((r) => ({
       ...mapResponse(r),
       questionnaireTitle: r.questionnaire_title,
-      gatesTier: r.gates_tier,
       userEmail: r.user_email,
       userDisplayName: r.user_display_name,
-      userNetworkTier: r.user_network_tier,
       orgName: r.org_name,
     }));
   } catch (err) {
@@ -246,51 +237,33 @@ export async function listPendingReviews(limit = 100): Promise<PendingReview[]> 
 /**
  * Record an Elkdonis review.
  *
- * `promote` is opt-in even when the questionnaire declares a gates_tier: a
- * passed review and an advancement are different decisions, and an admin
- * should be able to accept someone's answers without moving their standing in
- * the network. Demotion is never automatic — this only ever raises a tier.
+ * There is no promotion arm any more. `users.network_tier` and
+ * `questionnaires.gates_tier` were removed (migration 104): the tier was
+ * written here and displayed in the vetting queue and read by nothing — no
+ * route, feed, media check or store check ever consulted it — and in the
+ * network's whole history it never moved a single row off `member`. Standing
+ * that gates nothing is not standing; per-org role (`user_organizations.role`)
+ * is what actually governs what a person may do.
  */
 export async function reviewResponse(
   responseId: string,
   reviewerId: string,
   outcome: 'reviewed' | 'returned',
-  opts: { note?: string; promote?: boolean } = {}
-): Promise<{ ok: boolean; promotedTo?: NetworkTier; error?: string }> {
-  const TIER_ORDER: NetworkTier[] = ['member', 'host', 'partner'];
+  opts: { note?: string } = {}
+): Promise<{ ok: boolean; error?: string }> {
   try {
-    return await db.begin(async (tx) => {
-      const [row] = await tx<Array<Record<string, any>>>`
-        UPDATE questionnaire_responses
-        SET status = ${outcome},
-            reviewed_by = ${reviewerId},
-            reviewed_at = NOW(),
-            review_note = ${opts.note ?? null},
-            updated_at = NOW()
-        WHERE id = ${responseId} AND status = 'submitted'
-        RETURNING user_id, questionnaire_key
-      `;
-      if (!row) return { ok: false, error: 'Not found, or already reviewed' };
-
-      if (outcome !== 'reviewed' || !opts.promote) return { ok: true };
-
-      const [q] = await tx<Array<{ gates_tier: NetworkTier | null }>>`
-        SELECT gates_tier FROM questionnaires WHERE key = ${row.questionnaire_key}
-      `;
-      const target = q?.gates_tier;
-      if (!target) return { ok: true };
-
-      const [u] = await tx<Array<{ network_tier: NetworkTier }>>`
-        SELECT network_tier FROM users WHERE id = ${row.user_id}
-      `;
-      // Only ever raise. A second questionnaire gating 'host' must not pull a
-      // partner back down.
-      if (u && TIER_ORDER.indexOf(target) > TIER_ORDER.indexOf(u.network_tier)) {
-        await tx`UPDATE users SET network_tier = ${target} WHERE id = ${row.user_id}`;
-        return { ok: true, promotedTo: target };
-      }
-      return { ok: true };
-    });
+    const [row] = await db<Array<Record<string, any>>>`
+      UPDATE questionnaire_responses
+      SET status = ${outcome},
+          reviewed_by = ${reviewerId},
+          reviewed_at = NOW(),
+          review_note = ${opts.note ?? null},
+          updated_at = NOW()
+      WHERE id = ${responseId} AND status = 'submitted'
+      RETURNING user_id
+    `;
+    if (!row) return { ok: false, error: 'Not found, or already reviewed' };
+    return { ok: true };
   } catch (err) {
     console.error(`[questionnaires] reviewResponse(${responseId}):`, err);
     return { ok: false, error: 'Review failed' };
@@ -325,8 +298,21 @@ export interface QuestionnaireField {
   options?: string[];
 }
 
-export type ResultsVisibility = 'admins' | 'members';
+/**
+ * `respondents` is what makes a poll a poll — answering shows you the tally.
+ * `public` is a poll published on an org's own subdomain, where the results
+ * are the content (migration 103).
+ */
+export type ResultsVisibility = 'admins' | 'members' | 'respondents' | 'public';
 export type QuestionnaireStatus = 'draft' | 'open' | 'closed';
+
+/**
+ * Only presentation differs: a `poll` renders its single question as a ballot
+ * with a result bar, a `questionnaire` renders one form, a `wizard` paginates
+ * the same fields into steps. Storage is identical — that is the point of
+ * collapsing them (migration 103).
+ */
+export type QuestionnaireKind = 'questionnaire' | 'poll' | 'wizard';
 
 export interface OrgQuestionnaire extends Questionnaire {
   orgId: string | null;
@@ -334,6 +320,14 @@ export interface OrgQuestionnaire extends Questionnaire {
   fields: QuestionnaireField[];
   resultsVisibility: ResultsVisibility;
   status: QuestionnaireStatus;
+  kind: QuestionnaireKind;
+  /**
+   * When set, this questionnaire IS a piece of content: it inherits the
+   * thread's publishing, feed placement, org scoping and subdomain rendering
+   * rather than re-implementing each. NULL for hub workbooks, which should
+   * never appear in a feed.
+   */
+  threadId: string | null;
   closesAt: string | null;
   responseCount: number;
 }
@@ -345,7 +339,6 @@ function mapOrgQuestionnaire(q: Record<string, any>): OrgQuestionnaire {
     description: q.description,
     version: q.version,
     scope: q.scope,
-    gatesTier: q.gates_tier,
     sortOrder: q.sort_order,
     isActive: q.is_active,
     orgId: q.org_id,
@@ -353,6 +346,8 @@ function mapOrgQuestionnaire(q: Record<string, any>): OrgQuestionnaire {
     fields: Array.isArray(q.fields) ? (q.fields as QuestionnaireField[]) : [],
     resultsVisibility: q.results_visibility,
     status: q.status,
+    kind: q.kind ?? 'questionnaire',
+    threadId: q.thread_id ?? null,
     closesAt: q.closes_at,
     responseCount: Number(q.response_count ?? 0),
   };
@@ -425,6 +420,10 @@ export interface CreateOrgQuestionnaireInput {
   resultsVisibility?: ResultsVisibility;
   status?: QuestionnaireStatus;
   closesAt?: string | null;
+  /** Presentation only — storage is identical. See migration 103. */
+  kind?: QuestionnaireKind;
+  /** Set to publish this as content on the org's site rather than a hub form. */
+  threadId?: string | null;
 }
 
 export async function createOrgQuestionnaire(
@@ -448,12 +447,13 @@ export async function createOrgQuestionnaire(
     await db`
       INSERT INTO questionnaires
         (key, title, description, scope, org_id, created_by, fields,
-         results_visibility, status, closes_at)
+         results_visibility, status, closes_at, kind, thread_id)
       VALUES
         (${key}, ${input.title.trim()}, ${input.description ?? null}, 'org',
          ${orgId}, ${createdBy}, ${db.json(input.fields as any)},
          ${input.resultsVisibility ?? 'admins'}, ${input.status ?? 'open'},
-         ${input.closesAt ?? null})
+         ${input.closesAt ?? null}, ${input.kind ?? 'questionnaire'},
+         ${input.threadId ?? null})
     `;
     return { ok: true, key };
   } catch (err) {

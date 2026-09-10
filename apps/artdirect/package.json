@@ -8,30 +8,35 @@
     "docker:start": "next start -H 0.0.0.0 -p 3013",
     "build": "next build",
     "start": "next start --port 3013",
+    "check-types": "tsc --noEmit --incremental false",
     "lint": "eslint"
   },
   "dependencies": {
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/live-editor": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/services": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
     "@elkdonis/types": "workspace:*",
-    "@elkdonis/ui": "workspace:*",
     "nanoid": "^5.0.0",
     "next": "16.1.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

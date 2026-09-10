@@ -12,7 +12,6 @@ import { sanitizeRichText } from "@elkdonis/utils";
 import type {
   Cart,
   CartLine,
-  Order,
   AuctionLot,
   ArtistApplicationInput,
   ArtistProfileUpdateInput,
@@ -26,18 +25,9 @@ import type {
   StoreMemberRole,
   Currency,
 } from "../types";
-import { splitCommission } from "../money";
-import {
-  buildEtransferInstructions,
-  generateOrderNumber,
-} from "../etransfer";
-import { mapOrder } from "./map-order";
-import {
-  HOST_PAYOUT_EMAIL,
-  resolveSettlement,
-  type LineSettlement,
-} from "./settlement";
-import { writeEntry, releaseOnPayoutAccountReady } from "./ledger";
+import { releaseOnPayoutAccountReady } from "./ledger";
+import { requireArtworkAccess } from "./access";
+import { jsonb } from "./map-order";
 
 type Row = Record<string, unknown>;
 const num = (v: unknown): number => (v == null ? 0 : Number(v));
@@ -45,6 +35,42 @@ const num = (v: unknown): number => (v == null ? 0 : Number(v));
 // Service (thread-kind) orders — the no-cart "book now" rail.
 export { createThreadOrder, createServiceOrder, PURCHASABLE_THREAD_KINDS } from "./service-orders";
 export { resolveSettlement, HOST_PAYOUT_EMAIL } from "./settlement";
+
+// Artwork orders — create on either rail, confirm, cancel, expire, fulfil.
+export {
+  createOrder,
+  createOrderFromCart,
+  createEtransferOrder,
+  switchOrderToEtransfer,
+  recordStripeCheckout,
+  confirmOrderPaid,
+  confirmEtransferReceived,
+  cancelOrder,
+  releaseExpiredOrders,
+  markOrderFulfilled,
+  refundOrder,
+  loadCartItems,
+  loadVariantItem,
+  UNPAID_ORDER_STATUSES,
+  STRIPE_GRACE_MINUTES,
+} from "./orders";
+export type {
+  OrderRail,
+  SellableItem,
+  OrderCustomer,
+  CreateOrderInput,
+  ConfirmOrderPaidInput,
+} from "./orders";
+
+// Auction lots — create, withdraw, settle.
+export { createLot, cancelLot, settleExpiredLots } from "./auctions";
+export type { CreateLotInput, SettleResult } from "./auctions";
+
+// Authority.
+export { requireArtworkAccess, canActForOrder, isOrderCustomer } from "./access";
+
+// Presentation — a front showing pieces another store sells (migration 112).
+export { presentArtwork, unpresentArtwork, isPresentedBy } from "./presentation";
 export {
   writeEntry,
   getBalance,
@@ -93,6 +119,12 @@ export async function addToCart(input: {
   artworkVariantId: string;
   quantity?: number;
   notes?: string | null;
+  /**
+   * The presenting store the buyer came through, when it is not the piece's
+   * own (migration 112). Recorded on the line so the order logs the window,
+   * and so that front's owning org is the split counterparty.
+   */
+  viaStoreId?: string | null;
 }): Promise<CartLine> {
   const cartRows = (await db`
     SELECT * FROM cart WHERE token = ${input.cartToken} LIMIT 1
@@ -114,6 +146,34 @@ export async function addToCart(input: {
   if (variant.store_status !== "active") {
     throw new Error("This store is not currently selling.");
   }
+  // A blank price is "price on request": the piece is listed, not buyable.
+  if (num(variant.price_minor) <= 0) {
+    throw new Error("This piece is priced on request — message the artist to arrange a sale.");
+  }
+  // A window is only a window if the store actually presents the piece.
+  let viaStoreId: string | null = null;
+  if (input.viaStoreId && input.viaStoreId !== (variant.store_id as string)) {
+    const [pres] = (await db`
+      SELECT 1 FROM store_presentation sp
+      JOIN store s ON s.id = sp.store_id AND s.status = 'active'
+      WHERE sp.store_id = ${input.viaStoreId} AND sp.artwork_id = (
+        SELECT artwork_id FROM artwork_variant WHERE id = ${input.artworkVariantId}
+      )
+      LIMIT 1
+    `) as unknown as Row[];
+    if (pres) viaStoreId = input.viaStoreId;
+  }
+  // While a lot is open the lot is the only way to own the piece; letting a
+  // buy-now through would sell a piece somebody may already be winning.
+  const openLot = (await db`
+    SELECT 1 FROM auction_lot
+    WHERE artwork_variant_id = ${input.artworkVariantId}
+      AND status IN ('scheduled', 'live')
+    LIMIT 1
+  `) as unknown as Row[];
+  if (openLot[0]) {
+    throw new Error("This piece is at auction — place a bid on it instead.");
+  }
 
   // One cart per store (decided 2026-09-05). An order has to map to exactly
   // one payee for a destination charge to be possible, so the basket is where
@@ -131,10 +191,10 @@ export async function addToCart(input: {
   }
 
   const lineRows = (await db`
-    INSERT INTO cart_line (cart_id, artwork_variant_id, quantity, unit_price_minor, currency, notes)
+    INSERT INTO cart_line (cart_id, artwork_variant_id, quantity, unit_price_minor, currency, notes, via_store_id)
     VALUES (
       ${cartId}, ${input.artworkVariantId}, ${input.quantity ?? 1},
-      ${num(variant.price_minor)}, ${variant.currency as string}, ${input.notes ?? null}
+      ${num(variant.price_minor)}, ${variant.currency as string}, ${input.notes ?? null}, ${viaStoreId}
     )
     RETURNING *
   `) as unknown as Row[];
@@ -148,6 +208,7 @@ export async function addToCart(input: {
     unitPriceMinor: num(lr.unit_price_minor),
     currency: lr.currency as CartLine["currency"],
     notes: (lr.notes as string | null) ?? null,
+    viaStoreId: (lr.via_store_id as string | null) ?? null,
     createdAt: lr.created_at as string,
   };
 }
@@ -206,387 +267,6 @@ export async function createReservation(input: {
     RETURNING id, expires_at
   `) as unknown as Row[];
   return { id: rows[0]!.id as string, expiresAt: rows[0]!.expires_at as string };
-}
-
-/**
- * Convert a cart into an eTransfer order. Locks the artwork, snapshots prices,
- * computes per-line artist/gallery splits, and returns the new order with
- * payment instructions ready to display.
- */
-export async function createEtransferOrder(input: {
-  cartToken: string;
-  customerEmail: string;
-  customerName?: string | null;
-  customerId?: string | null;
-  shippingAddress?: Order["shippingAddress"];
-  billingAddress?: Order["billingAddress"];
-  notes?: string | null;
-  etransferDueHours?: number;
-}): Promise<Order> {
-  const cartRows = (await db`
-    SELECT * FROM cart WHERE token = ${input.cartToken} LIMIT 1
-  `) as unknown as Row[];
-  if (!cartRows[0]) throw new Error("Cart not found");
-  const cart = cartRows[0];
-  const cartId = cart.id as string;
-
-  const lineRows = (await db`
-    SELECT
-      cl.*,
-      a.id AS art_id, a.title AS art_title, a.artist_user_id AS art_artist_user_id, a.org_id AS art_org_id,
-      st.id AS store_id,
-      -- The org that may claim a cut: the front's owner when an org owns it,
-      -- otherwise the marketplace the front trades in. Whether it actually
-      -- gets one is decided by the maker's agreements, not by this row.
-      COALESCE(st.owner_org_id, st.org_id) AS counterparty_org_id,
-      -- Payout identity belongs to the maker (migration 096), not the front.
-      maker.payout_email AS maker_payout_email,
-      COALESCE(maker.display_name, maker.email) AS maker_name,
-      COALESCE(o.name, owner.display_name, owner.email) AS front_name
-    FROM cart_line cl
-    JOIN artwork_variant av ON av.id = cl.artwork_variant_id
-    JOIN artwork a ON a.id = av.artwork_id
-    JOIN store st ON st.id = a.store_id
-    LEFT JOIN users maker ON maker.id = a.artist_user_id
-    LEFT JOIN users owner ON owner.id = st.owner_user_id
-    LEFT JOIN organizations o ON o.id = st.owner_org_id
-    WHERE cl.cart_id = ${cartId}
-  `) as unknown as Row[];
-
-  if (lineRows.length === 0) throw new Error("Cart is empty");
-
-  // One payee per order. addToCart pins the basket to a store, so this is now
-  // a belt-and-braces check on data that should already be impossible rather
-  // than the place a buyer first learns their basket cannot be sold to them.
-  const storeIds = new Set(lineRows.map((l) => l.store_id as string));
-  if (storeIds.size > 1) {
-    throw new Error(
-      "This basket spans several sellers. Please check out one seller at a time."
-    );
-  }
-  const firstLine = lineRows[0]!;
-  const storeId = firstLine.store_id as string;
-
-  // Who is actually paid, resolved by the shared settlement rules rather than
-  // by this rail's own idea of a payee — see ./settlement.ts for why all three
-  // purchase rails now go through one answer.
-  const settlements = new Map<string, LineSettlement>();
-  for (const l of lineRows) {
-    const maker = (l.art_artist_user_id as string | null) ?? null;
-    const orgId = l.counterparty_org_id as string;
-    const key = `${maker ?? "-"}:${orgId}`;
-    if (settlements.has(key)) continue;
-    settlements.set(
-      key,
-      await resolveSettlement({
-        makerUserId: maker,
-        orgId,
-        // The percentage is what an agreement fixes, so the amount passed here
-        // only has to be representative; each line splits at its own total.
-        amountMinor: num(l.unit_price_minor) * num(l.quantity),
-      })
-    );
-  }
-
-  const makerUserId = (firstLine.art_artist_user_id as string | null) ?? null;
-  const headline = settlements.get(
-    `${makerUserId ?? "-"}:${firstLine.counterparty_org_id as string}`
-  )!;
-  const artistName = headline.payeeName;
-  const payoutEmail = headline.payoutEmail;
-
-  const lineSplits = lineRows.map((l) => {
-    const unit = num(l.unit_price_minor);
-    const qty = num(l.quantity);
-    const total = unit * qty;
-    const maker = (l.art_artist_user_id as string | null) ?? null;
-    const orgId = l.counterparty_org_id as string;
-    const r = settlements.get(`${maker ?? "-"}:${orgId}`)!;
-    // Split at this line's own total so rounding lands per line, rather than
-    // apportioning a basket-level figure back across them.
-    const split = splitCommission(total, r.orgSharePercent);
-    return {
-      row: l,
-      unit,
-      qty,
-      makerUserId: maker,
-      orgId,
-      orgSharePercent: r.orgSharePercent,
-      agreementId: r.agreementId,
-      // splitCommission names these artist/gallery; here they are maker and
-      // the org's earmarked cut. Same arithmetic, honest names.
-      makerShareMinor: split.artistShareMinor,
-      orgShareMinor: split.galleryShareMinor,
-    };
-  });
-
-  const subtotalMinor = lineRows.reduce(
-    (s, l) => s + num(l.unit_price_minor) * num(l.quantity),
-    0
-  );
-  const currency = firstLine.currency as Order["currency"];
-  const totalMinor = subtotalMinor; // shipping + tax computed separately later
-
-  const orderNumber = generateOrderNumber();
-  const dueHours = input.etransferDueHours ?? 72;
-  const instructions = buildEtransferInstructions({
-    orderNumber,
-    totalMinor,
-    currency,
-    artistName,
-    payoutEmail,
-    paymentDueAt: new Date(Date.now() + dueHours * 3600_000).toISOString(),
-  });
-
-  // Insert order + lines + reservations in one transaction
-  const order = await db.begin(async (tx) => {
-    const orderRows = (await tx`
-      INSERT INTO commerce_order (
-        number, store_id, customer_id, customer_email, customer_name, status,
-        payment_method, payment_reference, payment_instructions,
-        payment_due_at, subtotal_minor, total_minor, currency,
-        shipping_address, billing_address, notes
-      ) VALUES (
-        ${orderNumber}, ${storeId}, ${input.customerId ?? null}, ${input.customerEmail},
-        ${input.customerName ?? null}, 'awaiting_etransfer',
-        'etransfer', ${instructions.paymentReference}, ${instructions.buyerInstructions},
-        NOW() + (${dueHours} || ' hours')::interval,
-        ${subtotalMinor}, ${totalMinor}, ${currency},
-        ${input.shippingAddress ? JSON.stringify(input.shippingAddress) : null}::jsonb,
-        ${input.billingAddress ? JSON.stringify(input.billingAddress) : null}::jsonb,
-        ${input.notes ?? null}
-      )
-      RETURNING *
-    `) as unknown as Row[];
-    const orderRow = orderRows[0]!;
-    const orderId = orderRow.id as string;
-
-    for (const sp of lineSplits) {
-      const l = sp.row;
-
-      // The line records what it was, who made it, which front showed it, and
-      // which agreement authorised the org's cut — so the settlement can be
-      // re-derived years later without trusting rows that have been edited
-      // since. A NULL agreement_id is meaningful: nothing authorised a split.
-      await tx`
-        INSERT INTO commerce_order_line (
-          order_id, artwork_variant_id, artwork_id, artist_user_id, org_id,
-          description, quantity, unit_price_minor,
-          artist_share_minor, gallery_share_minor, currency,
-          agreement_id, org_share_percent, payee_org_id, presented_store_id
-        ) VALUES (
-          ${orderId}, ${l.artwork_variant_id as string}, ${l.art_id as string},
-          ${sp.makerUserId}, ${l.art_org_id as string},
-          ${l.art_title as string}, ${sp.qty}, ${sp.unit},
-          ${sp.makerShareMinor}, ${sp.orgShareMinor}, ${l.currency as string},
-          ${sp.agreementId}, ${sp.orgSharePercent},
-          ${sp.orgShareMinor > 0 ? sp.orgId : null}, ${l.store_id as string}
-        )
-      `;
-
-      // Reserve the variant for the eTransfer window
-      await tx`
-        INSERT INTO reservation (artwork_variant_id, cart_id, expires_at, status)
-        VALUES (
-          ${l.artwork_variant_id as string}, ${cartId},
-          NOW() + (${dueHours} || ' hours')::interval, 'active'
-        )
-      `;
-      // Mark the artwork as reserved
-      await tx`UPDATE artwork SET status = 'reserved' WHERE id = ${l.art_id as string}`;
-    }
-
-    return orderRow;
-  });
-
-  // Reuses the splits written to the order lines rather than recomputing them,
-  // so an invoice can never disagree with what was actually recorded.
-  const emailItems = lineSplits.map((sp) => ({
-    description: sp.row.art_title as string,
-    quantity: sp.qty,
-    unitPriceMinor: sp.unit,
-    artistShareMinor: sp.makerShareMinor,
-    galleryShareMinor: sp.orgShareMinor,
-    currency: sp.row.currency as string,
-  }));
-
-  // Fire emails non-blocking — order is already committed
-  const paymentDueAt = (order.payment_due_at as string | null) ?? null;
-  void (async () => {
-    try {
-      const { sendOrderInvoice, sendOrderNotification } = await import('@elkdonis/email');
-      const galleryEmail = HOST_PAYOUT_EMAIL;
-
-      await Promise.all([
-        sendOrderInvoice(input.customerEmail, {
-          orderNumber,
-          customerName: input.customerName ?? null,
-          items: emailItems,
-          totalMinor,
-          currency,
-          paymentInstructions: instructions.buyerInstructions,
-          artistName,
-          artistPayoutEmail: payoutEmail,
-          paymentDueAt,
-        }),
-        sendOrderNotification(payoutEmail, {
-          role: 'artist',
-          orderNumber,
-          customerName: input.customerName ?? null,
-          customerEmail: input.customerEmail,
-          artistName,
-          items: emailItems,
-          totalMinor,
-          currency,
-          paymentDueAt,
-        }),
-        sendOrderNotification(galleryEmail, {
-          role: 'platform',
-          orderNumber,
-          customerName: input.customerName ?? null,
-          customerEmail: input.customerEmail,
-          artistName,
-          items: emailItems,
-          totalMinor,
-          currency,
-          paymentDueAt,
-        }),
-      ]);
-    } catch (emailErr) {
-      console.error('[commerce] order email failed:', emailErr);
-    }
-  })();
-
-  return mapOrder(order);
-}
-
-/**
- * Admin/artist action: mark an eTransfer order as paid.
- * Decrements inventory, marks artwork sold, creates a payout record.
- */
-export async function confirmEtransferReceived(input: {
-  orderId: string;
-  confirmedByUserId: string;
-  paymentReference?: string;
-  notes?: string;
-}): Promise<Order> {
-  const result = await db.begin(async (tx) => {
-    const orderRows = (await tx`
-      UPDATE commerce_order
-      SET status = 'paid',
-          paid_at = NOW(),
-          payment_confirmed_at = NOW(),
-          payment_confirmed_by = ${input.confirmedByUserId},
-          payment_reference = COALESCE(${input.paymentReference ?? null}, payment_reference),
-          notes = COALESCE(notes || E'\n', '') || ${input.notes ? `[confirmed] ${input.notes}` : "[confirmed]"}
-      WHERE id = ${input.orderId} AND status IN ('awaiting_etransfer', 'payment_received', 'pending_payment')
-      RETURNING *
-    `) as unknown as Row[];
-    if (!orderRows[0]) throw new Error("Order is not in a state where it can be marked paid.");
-    const order = orderRows[0];
-
-    const lineRows = (await tx`
-      SELECT * FROM commerce_order_line WHERE order_id = ${input.orderId}
-    `) as unknown as Row[];
-
-    for (const l of lineRows) {
-      // Inventory and reservations only exist for artwork lines; a service or
-      // workshop line has no variant, and these match nothing.
-      await tx`
-        UPDATE artwork_variant
-        SET inventory_qty = GREATEST(inventory_qty - ${num(l.quantity)}, 0)
-        WHERE id = ${l.artwork_variant_id as string}
-      `;
-      await tx`UPDATE artwork SET status = 'sold' WHERE id = ${l.artwork_id as string}`;
-      await tx`
-        UPDATE reservation SET status = 'converted'
-        WHERE artwork_variant_id = ${l.artwork_variant_id as string}
-          AND status = 'active'
-      `;
-
-      const currency = l.currency as string;
-      const lineId = l.id as string;
-      const makerUserId = (l.artist_user_id as string | null) ?? null;
-      const makerShare = num(l.artist_share_minor);
-      const orgShare = num(l.gallery_share_minor);
-      const payeeOrgId = (l.payee_org_id as string | null) ?? null;
-
-      // The maker's share. With eTransfer the buyer paid them directly, so
-      // this accrues and is settled in the same breath — the ledger still
-      // records both halves, because "it was owed and then it was paid" is the
-      // history an audit needs, not a net of zero appearing from nowhere.
-      if (makerUserId && makerShare > 0) {
-        const payout = (await tx`
-          INSERT INTO payout (
-            artist_user_id, order_id, amount_minor, currency,
-            method, reference, status, sent_at, notes
-          ) VALUES (
-            ${makerUserId}, ${input.orderId},
-            ${makerShare}, ${currency},
-            'etransfer', ${order.payment_reference as string}, 'received', NOW(),
-            'Buyer sent eTransfer directly to the maker'
-          )
-          RETURNING id
-        `) as unknown as Row[];
-
-        await writeEntry(
-          {
-            party: { kind: "user", userId: makerUserId },
-            entryType: "accrual",
-            amountMinor: makerShare,
-            currency,
-            orderId: input.orderId,
-            orderLineId: lineId,
-            note: "Sale proceeds",
-            createdBy: input.confirmedByUserId,
-          },
-          tx as unknown as typeof db
-        );
-        await writeEntry(
-          {
-            party: { kind: "user", userId: makerUserId },
-            entryType: "payout",
-            amountMinor: -makerShare,
-            currency,
-            orderId: input.orderId,
-            orderLineId: lineId,
-            payoutId: payout[0]!.id as string,
-            note: "Paid directly by the buyer via eTransfer",
-            createdBy: input.confirmedByUserId,
-          },
-          tx as unknown as typeof db
-        );
-      }
-
-      // The org's share. It has no connected account and receives no transfer
-      // — this accrual IS the earmark inside the host account, and until now
-      // it was computed onto the line and then simply lost.
-      if (payeeOrgId && orgShare > 0) {
-        await writeEntry(
-          {
-            party: { kind: "org", orgId: payeeOrgId },
-            entryType: "accrual",
-            amountMinor: orgShare,
-            currency,
-            orderId: input.orderId,
-            orderLineId: lineId,
-            agreementId: (l.agreement_id as string | null) ?? null,
-            // Held from birth: the money is with the collective, and drawing
-            // it down is a deliberate act, not an automatic one.
-            holdReason: "dispute_window",
-            note: makerUserId
-              ? "Org share under an accepted agreement"
-              : "Org-owned work, no maker",
-            createdBy: input.confirmedByUserId,
-          },
-          tx as unknown as typeof db
-        );
-      }
-    }
-    return order;
-  });
-
-  return mapOrder(result);
 }
 
 /**
@@ -717,14 +397,19 @@ function slugify(input: string): string {
     .slice(0, 60);
 }
 
+/**
+ * Clean a links list for storage. Pass the result through `jsonb()` — a JSON
+ * string cast with `::jsonb` gets JSON-encoded a second time by the driver
+ * (see map-order.ts), which is why `parseArtistLinks` had to learn to read a
+ * string.
+ */
 function serializeLinks(
   links: { label: string; url: string }[] | undefined
-): string {
-  if (!links) return "[]";
-  const clean = links
+): Array<{ label: string; url: string }> {
+  if (!links) return [];
+  return links
     .filter((l) => l && typeof l.url === "string" && l.url.trim().length > 0)
     .map((l) => ({ label: String(l.label ?? l.url).trim(), url: l.url.trim() }));
-  return JSON.stringify(clean);
 }
 
 /**
@@ -753,7 +438,13 @@ export type ApplyResult = {
 export async function canClaimStore(userId: string): Promise<boolean> {
   try {
     const [row] = await db`
-      SELECT 1 FROM user_organizations WHERE user_id = ${userId} LIMIT 1
+      SELECT 1 FROM user_organizations
+      WHERE user_id = ${userId}
+        -- Excludes 'viewer', which the ungated self-join route hands out:
+        -- claiming a store is a commitment to the collective, not something
+        -- you should be able to grant yourself by POSTing an org slug.
+        AND role <> 'viewer'
+      LIMIT 1
     `;
     return Boolean(row);
   } catch (err) {
@@ -873,7 +564,7 @@ export async function applyForStore(
       ${input.userId}, ${orgId},
       ${input.payoutEmail}, ${input.payoutMethod ?? "etransfer"},
       ${input.defaultCurrency ?? "CAD"}, 'pending', ${bioHtml},
-      ${serializeLinks(input.links)}::jsonb, NOW()
+      ${jsonb(serializeLinks(input.links))}, NOW()
     )
     ON CONFLICT (org_id, owner_user_id) WHERE owner_user_id IS NOT NULL
     DO UPDATE SET
@@ -948,7 +639,7 @@ export async function openOrgStore(
         ${input.ownerOrgId}, ${orgId},
         ${input.payoutEmail ?? null}, ${input.payoutMethod ?? "etransfer"},
         ${input.defaultCurrency ?? "CAD"}, 'active', ${bioHtml},
-        ${serializeLinks(input.links)}::jsonb, NOW(), NOW(), ${input.actorUserId}
+        ${jsonb(serializeLinks(input.links))}, NOW(), NOW(), ${input.actorUserId}
       )
       ON CONFLICT (org_id, owner_org_id) WHERE owner_org_id IS NOT NULL
       DO UPDATE SET
@@ -1063,6 +754,24 @@ export async function setPayoutIdentity(
   }
 }
 
+/**
+ * Stamp every person holding this connected account as onboarded. Called when
+ * Stripe reports `payouts_enabled`; routes through `setPayoutIdentity` so the
+ * held-funds release fires from the one place it lives.
+ */
+export async function markStripeAccountOnboarded(accountId: string): Promise<number> {
+  const rows = (await db`
+    SELECT id FROM users WHERE stripe_account_id = ${accountId} AND stripe_onboarded_at IS NULL
+  `) as unknown as Row[];
+  for (const r of rows) {
+    await setPayoutIdentity(r.id as string, {
+      stripeOnboardedAt: new Date().toISOString(),
+      payoutMethod: "stripe",
+    });
+  }
+  return rows.length;
+}
+
 /** A person's payout identity, or null if they have no user row. */
 export async function getPayoutIdentity(
   userId: string
@@ -1089,10 +798,15 @@ export async function getPayoutIdentity(
 /**
  * A store's owner edits it. Cannot change status here.
  *
- * Payout fields are deliberately NOT written to the store: since migration 096
- * they live on the owner, so `ownerUserId` routes them to `setPayoutIdentity`.
- * Writing them here as well would leave two payout emails disagreeing, with
- * the dead one on the row that used to matter.
+ * Identity (name, headline, city, photo) is written to the OWNER — `users`
+ * for a person's store — the home migration 084 gave it, not to the store
+ * row. The store's own identity columns are deprecated (092) and are no longer
+ * written: two copies of a name is how a seller's name here drifted from
+ * their name everywhere else. An org store's identity is the organisation's
+ * and is edited on the org hub, so only the store-local fields apply there.
+ *
+ * Payout fields are likewise the owner's (096) and route to
+ * `setPayoutIdentity`.
  */
 export async function updateStore(
   storeId: string,
@@ -1105,6 +819,16 @@ export async function updateStore(
       payoutMethod: input.payoutMethod,
     });
   }
+  if (ownerUserId) {
+    await db`
+      UPDATE users SET
+        display_name = COALESCE(NULLIF(${input.displayName ?? null}, ''), display_name),
+        headline   = ${input.headline !== undefined ? input.headline : db`headline`},
+        city       = ${input.city !== undefined ? input.city : db`city`},
+        avatar_url = ${input.photoUrl !== undefined ? (input.photoUrl || null) : db`avatar_url`}
+      WHERE id = ${ownerUserId}
+    `;
+  }
   const bioHtml =
     input.bioHtml !== undefined
       ? input.bioHtml
@@ -1114,13 +838,9 @@ export async function updateStore(
 
   await db`
     UPDATE store SET
-      display_name = COALESCE(${input.displayName ?? null}, display_name),
-      headline = ${input.headline !== undefined ? input.headline : db`headline`},
-      city = ${input.city !== undefined ? input.city : db`city`},
-      photo_url = ${input.photoUrl !== undefined ? input.photoUrl : db`photo_url`},
       bio_html = ${bioHtml !== undefined ? bioHtml : db`bio_html`},
       default_currency = COALESCE(${input.defaultCurrency ?? null}, default_currency),
-      links = ${input.links !== undefined ? db`${serializeLinks(input.links)}::jsonb` : db`links`}
+      links = ${input.links !== undefined ? db`${jsonb(serializeLinks(input.links))}` : db`links`}
     WHERE id = ${storeId}
   `;
 }
@@ -1141,6 +861,19 @@ export async function approveStore(
     RETURNING id
   `) as unknown as Row[];
   if (!rows[0]) throw new Error("Application not found or not reviewable.");
+}
+
+/**
+ * Admin pauses an active store: its work drops out of browse and cannot be
+ * added to a cart, but nothing is deleted. `approveStore` reopens it.
+ */
+export async function pauseStore(storeId: string, reviewerId: string): Promise<void> {
+  const rows = (await db`
+    UPDATE store SET status = 'paused', reviewed_at = NOW(), reviewed_by = ${reviewerId}
+    WHERE id = ${storeId} AND status = 'active'
+    RETURNING id
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("Only an active store can be paused.");
 }
 
 /** Admin rejects a pending store application with a reason. */
@@ -1207,32 +940,6 @@ async function requireActiveStore(
     orgId: rows[0].org_id as string,
     defaultCurrency: rows[0].default_currency as string,
   };
-}
-
-/**
- * Whether this person may write to this artwork, resolved through the store
- * that sells it rather than through `artist_user_id`.
- *
- * The old check was `WHERE artist_user_id = $actor`, which cannot express an
- * org store at all: its artwork has no maker to compare against, and the
- * people entitled to edit it are its store members.
- */
-async function requireArtworkAccess(
-  tx: typeof db,
-  artworkId: string,
-  actorUserId: string
-): Promise<{ orgId: string; storeId: string }> {
-  const rows = (await tx`
-    SELECT a.id, a.org_id, a.store_id
-    FROM artwork a
-    JOIN store s ON s.id = a.store_id
-    LEFT JOIN store_member sm ON sm.store_id = s.id AND sm.user_id = ${actorUserId}
-    WHERE a.id = ${artworkId}
-      AND (s.owner_user_id = ${actorUserId} OR sm.user_id IS NOT NULL)
-    LIMIT 1
-  `) as unknown as Row[];
-  if (!rows[0]) throw new Error("Artwork not found.");
-  return { orgId: rows[0].org_id as string, storeId: rows[0].store_id as string };
 }
 
 async function uniqueSlug(
@@ -1411,7 +1118,11 @@ async function writeArtworkMedia(
   }
 }
 
-/** Publish a draft artwork. Requires at least one image and a priced variant. */
+/**
+ * Publish a draft artwork. Requires at least one image. A variant priced at
+ * zero is allowed and means "price on request": the piece is shown, cannot be
+ * added to a cart, and the buyer is pointed at messaging the artist.
+ */
 export async function publishArtwork(
   artworkId: string,
   artistUserId: string
@@ -1425,12 +1136,6 @@ export async function publishArtwork(
     if (num(mediaCount[0]!.n) === 0) {
       throw new Error("Add at least one image before publishing.");
     }
-
-    const priced = (await tx`
-      SELECT 1 FROM artwork_variant
-      WHERE artwork_id = ${artworkId} AND price_minor > 0 LIMIT 1
-    `) as unknown as Row[];
-    if (!priced[0]) throw new Error("Set a price before publishing.");
 
     await tx`
       UPDATE artwork SET status = 'available'

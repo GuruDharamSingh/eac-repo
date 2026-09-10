@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 const wrap: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#0a0a0c",
-  color: "#ece7dd",
+  background: "hsl(var(--band))",
+  color: "hsl(var(--band-foreground))",
   padding: "96px 24px",
   fontFamily: "var(--font-eb-garamond), Georgia, serif",
 };
@@ -25,7 +25,7 @@ export default async function AccountPage() {
             fontSize: 12,
             letterSpacing: "0.28em",
             textTransform: "uppercase",
-            color: "#8a857b",
+            color: "hsl(var(--band-muted))",
           }}
         >
           Your account
@@ -41,7 +41,7 @@ export default async function AccountPage() {
         >
           Welcome
         </h1>
-        <p style={{ marginTop: 14, fontSize: 18, color: "#bcb6aa" }}>
+        <p style={{ marginTop: 14, fontSize: 18, color: "hsl(var(--band-muted))" }}>
           Signed in as {user.email}. This is your member area — booking history
           and member content will live here.
         </p>
@@ -53,7 +53,7 @@ export default async function AccountPage() {
               padding: "10px 24px",
               border: "1px solid rgba(236,231,221,0.18)",
               borderRadius: 999,
-              color: "#ece7dd",
+              color: "hsl(var(--band-foreground))",
               textDecoration: "none",
               fontSize: 12,
               letterSpacing: "0.2em",
@@ -67,9 +67,9 @@ export default async function AccountPage() {
               href="/manage"
               style={{
                 padding: "10px 24px",
-                border: "1px solid #3aa99c",
+                border: "1px solid hsl(var(--band-primary))",
                 borderRadius: 999,
-                color: "#3aa99c",
+                color: "hsl(var(--band-primary))",
                 textDecoration: "none",
                 fontSize: 12,
                 letterSpacing: "0.2em",

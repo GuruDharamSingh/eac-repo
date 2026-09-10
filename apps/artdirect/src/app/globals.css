@@ -1,5 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=UnifrakturMaguntia&display=swap');
 
+/* ---------------------------------------------------------------------------
+   Tailwind v4 — theme + utilities only, deliberately WITHOUT preflight.
+
+   ArtDirect's look is hand-written plain CSS (this file, cms-ui/profile.css,
+   the dossier template). Preflight would zero every heading margin and font
+   size underneath it. Utilities alone give every shared component that is
+   written in Tailwind (commerce cards, cms-ui panels, live-editor chrome) a
+   working style here, and let new ArtDirect UI be written the way the rest
+   of the network's apps are, without touching what already renders.
+
+   The @theme block maps ArtDirect's palette onto Tailwind colour names, so
+   `bg-paper text-ink border-line text-gold` mean the same thing as the
+   --paper/--ink/--line/--gold variables ThemeStyle injects per person — a
+   member's chosen colours reach Tailwind classes too.
+   ------------------------------------------------------------------------ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Shared packages ship Tailwind class names in their source; Tailwind only
+   scans this app by default, so point it at them or their classes are
+   never generated (same pattern as amrit-canada / arts-collective). */
+@source "../../../../packages/commerce/src";
+@source "../../../../packages/cms-ui/src";
+@source "../../../../packages/live-editor/src";
+@source "../../../../packages/checkout/src";
+
+@theme {
+  --color-paper: var(--paper, #121413);
+  --color-ink: var(--ink, #f7f1e3);
+  --color-ink-soft: var(--ink-soft, #a9a293);
+  --color-line: var(--line, #35322c);
+  --color-gold: var(--gold, #c79a42);
+  --font-mono: 'Courier Prime', 'Courier New', Courier, monospace;
+  --font-blackletter: 'UnifrakturMaguntia', serif;
+}
+
+@import "@elkdonis/cms-ui/profile.css";
+/* Drag-to-arrange gallery grid. artdirect never imported the old
+   @elkdonis/ui/rgl-theme.css, so its ProfileGallery had no grid styles. */
+@import "@elkdonis/cms-ui/gallery.css";
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -12,136 +53,9 @@ html, body {
 
 a { color: inherit; }
 
-/* ==========================================================================
-   Standard profile layout
-   The plain alternative to the dossier template (users.profile_layout).
-   Every colour goes through a custom property so a person's own palette
-   (users.theme, injected by ThemeStyle) actually reaches it — which is the
-   reason this layout exists at all, since the dossier template ships a fixed
-   look. The fallbacks reproduce the current dark ArtDirect defaults, so an
-   unthemed page is unchanged.
-   ========================================================================== */
-
-.oad-standard {
-  --oad-bg: var(--paper, #121413);
-  --oad-fg: var(--ink, #f7f1e3);
-  --oad-muted: var(--ink-soft, #a9a293);
-  --oad-line: var(--line, #35322c);
-  --oad-accent: var(--gold, #c79a42);
-
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 48px 20px 80px;
-  color: var(--oad-fg);
-}
-
-.oad-standard-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 26px;
-  align-items: flex-end;
-  padding-bottom: 26px;
-  border-bottom: 1px solid var(--oad-line);
-}
-
-.oad-standard-portrait {
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
-  border: 1px solid var(--oad-line);
-}
-
-.oad-standard-portrait--empty {
-  display: grid;
-  place-items: center;
-  font-size: 3rem;
-  color: var(--oad-muted);
-}
-
-.oad-standard-id h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  line-height: 1.1;
-}
-
-.oad-standard-headline {
-  margin: 8px 0 0;
-  color: var(--oad-accent);
-}
-
-.oad-standard-meta {
-  margin: 10px 0 0;
-  color: var(--oad-muted);
-  font-size: 0.9rem;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.oad-standard-verified {
-  border: 1px solid var(--oad-accent);
-  color: var(--oad-accent);
-  padding: 2px 8px;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.oad-standard-bio {
-  margin-top: 30px;
-  max-width: 68ch;
-  line-height: 1.75;
-}
-
-.oad-standard-work,
-.oad-standard-links {
-  margin-top: 44px;
-}
-
-.oad-standard-work h2,
-.oad-standard-links h2 {
-  margin: 0 0 16px;
-  font-size: 0.82rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--oad-muted);
-}
-
-.oad-standard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.oad-standard-grid figure {
-  margin: 0;
-}
-
-.oad-standard-grid img {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border: 1px solid var(--oad-line);
-}
-
-.oad-standard-grid figcaption {
-  margin-top: 6px;
-  font-size: 0.8rem;
-  color: var(--oad-muted);
-}
-
-.oad-standard-links ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 20px;
-}
-
-.oad-standard-links a {
-  color: var(--oad-accent);
-}
+/* The standard profile layout now lives in @elkdonis/cms-ui/profile so
+   arts-collective renders the same page. Imported above; only ArtDirect-
+   specific editing chrome remains below. */
 
 /* Owner-only editing chrome — see ProfileEditorPanel. */
 .oad-editor {

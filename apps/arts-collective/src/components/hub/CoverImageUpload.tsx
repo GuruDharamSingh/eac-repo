@@ -17,7 +17,7 @@ type Props = {
   context?: string;
 };
 
-const CONFIG: Record<MediaKind, { accept: string; label: string; hint: string; maxMb: number; Icon: React.ElementType }> = {
+const CONFIG: Record<MediaKind, { accept: string; label: string; hint: string; maxMb: number; Icon: React.ComponentType<{ className?: string }> }> = {
   image: {
     accept: "image/*",
     label: "Drop an image or click to upload",

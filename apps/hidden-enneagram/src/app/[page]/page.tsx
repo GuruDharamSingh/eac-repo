@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SilexSiteBySlug } from "@elkdonis/silex-render";
 import { canViewFeed, getOrgFeed } from "@elkdonis/services";
-import { AuthNav } from "@/components/auth-nav";
+import { SiteNav } from "@/components/site-nav";
 import { FeedListing } from "@/components/feed-listing";
 import { getViewer } from "@/lib/auth";
 import { ORG_SLUG } from "@/lib/session";
@@ -67,11 +67,12 @@ export default async function SitePage({ params }: PageProps) {
   if (SILEX_PAGES.has(page)) {
     return (
       <>
-        <AuthNav />
+        <SiteNav />
         <SilexSiteBySlug
           slug={ORG_SLUG}
           page={page}
           cssLinks={["/api/silex/templates/enneagram.css"]}
+          omitSections={["eac-enn-nav"]}
         />
       </>
     );

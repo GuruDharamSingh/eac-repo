@@ -1,0 +1,271 @@
+/*
+  eac-art-reading.css
+  ===================
+  The reading environment, for the STATIC artifact.
+
+  This is deliberately the same system as @elkdonis/cms-ui/article.css: the
+  same --read-* token names, the same measure, rhythm and apparatus placement.
+  A post must read identically whether it is served from the database by
+  ArticleView or from a published file by silex-render — a reader should not
+  be able to tell which, and an org that re-themes should not have to do it
+  twice.
+
+  What differs is only what has to: this file ships INSIDE the artifact, so it
+  carries its own token defaults rather than inheriting the app's, and it is
+  written for the Silex editor (data-gjs-* hooks, editable regions).
+
+  Voices are chosen with data-reading on the article element — journal
+  (default), gazette, quiet — exactly as in the app.
+*/
+
+.eac-art {
+  --read-measure: 63ch;
+  --read-size: 20px;
+  --read-leading: 1.62;
+
+  --read-face-prose: "EB Garamond", Garamond, Georgia, "Times New Roman", serif;
+  --read-face-record: ui-monospace, "SF Mono", Menlo, monospace;
+  --read-face-title: var(--read-face-prose);
+
+  --read-title-size: clamp(2rem, 4.6vw, 2.9rem);
+  --read-title-weight: 500;
+  --read-title-tracking: -0.02em;
+  --read-lede-size: 1.22rem;
+
+  --read-cap-size: 3.5em;
+  --read-rule-weight: 1px;
+  --read-label-tracking: 0.13em;
+  --read-label-size: 0.66rem;
+  --read-record-size: 0.78rem;
+
+  --read-ink: var(--eac-color-ink, #16181d);
+  --read-muted: var(--eac-color-ink-muted, #5a6070);
+  --read-faint: var(--eac-color-ink-faint, #8b90a0);
+  --read-rule: var(--eac-color-border, #e1e3ea);
+  --read-accent: var(--eac-accent, #5b45a8);
+
+  max-width: var(--read-measure);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4.5rem) 1.25rem;
+  color: var(--read-ink);
+  font-family: var(--read-face-prose);
+  font-size: var(--read-size);
+  line-height: var(--read-leading);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Voices ─────────────────────────────────────────────────────────────── */
+
+.eac-art[data-reading="gazette"] {
+  --read-face-title: var(--read-face-record);
+  --read-title-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  --read-lede-size: 1.1rem;
+  --read-cap-size: 0;
+  --read-rule-weight: 2px;
+  --read-label-tracking: 0.18em;
+  --read-leading: 1.55;
+}
+
+.eac-art[data-reading="quiet"] {
+  --read-face-prose: system-ui, -apple-system, sans-serif;
+  --read-face-title: var(--read-face-prose);
+  --read-face-record: var(--read-face-prose);
+  --read-size: 18px;
+  --read-leading: 1.7;
+  --read-title-weight: 600;
+  --read-cap-size: 0;
+  --read-rule-weight: 0px;
+  --read-label-tracking: 0.09em;
+}
+
+/* ── Masthead ───────────────────────────────────────────────────────────── */
+
+.eac-art__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin-bottom: 1.4rem;
+}
+
+.eac-art__label {
+  font-family: var(--read-face-record);
+  font-size: var(--read-label-size);
+  font-weight: 500;
+  letter-spacing: var(--read-label-tracking);
+  text-transform: uppercase;
+  color: var(--read-faint);
+  margin: 0;
+}
+
+.eac-art__label--org { color: var(--read-accent); }
+.eac-art__label a { color: inherit; text-decoration: none; }
+
+.eac-art__title {
+  margin: 0 0 0.9rem;
+  font-family: var(--read-face-title);
+  font-size: var(--read-title-size);
+  font-weight: var(--read-title-weight);
+  line-height: 1.06;
+  letter-spacing: var(--read-title-tracking);
+  text-wrap: balance;
+  color: var(--read-ink);
+}
+
+.eac-art__lede {
+  font-size: var(--read-lede-size);
+  line-height: 1.5;
+  color: var(--read-muted);
+  margin: 0 0 1.8rem;
+}
+
+.eac-art__byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.9rem;
+  padding: 0.85rem 0;
+  border-top: var(--read-rule-weight) solid var(--read-rule);
+  border-bottom: var(--read-rule-weight) solid var(--read-rule);
+  margin-bottom: 2.4rem;
+  font-family: var(--read-face-record);
+  font-size: var(--read-record-size);
+  color: var(--read-muted);
+}
+
+.eac-art__byline strong { color: var(--read-ink); font-weight: 500; }
+.eac-art__sep { color: var(--read-faint); }
+
+.eac-art__cover {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 0 2rem;
+  border-radius: 2px;
+}
+
+/* ── Prose ──────────────────────────────────────────────────────────────── */
+
+.eac-art__body > * { max-width: var(--read-measure); }
+.eac-art__body p { margin: 0 0 1.15em; }
+
+.eac-art__body > p:first-of-type::first-letter {
+  font-size: var(--read-cap-size);
+  font-weight: 500;
+  color: var(--read-ink);
+}
+
+.eac-art:not([data-reading="gazette"]):not([data-reading="quiet"])
+  .eac-art__body > p:first-of-type::first-letter {
+  float: left;
+  line-height: 0.82;
+  padding: 0.06em 0.09em 0 0;
+}
+
+.eac-art__body h2,
+.eac-art__body h3 {
+  margin: 2.4rem 0 0.7rem;
+  font-family: var(--read-face-title);
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.eac-art__body h2 { font-size: 1.5rem; }
+.eac-art__body h3 { font-size: 1.24rem; }
+
+.eac-art__body a {
+  color: var(--read-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.eac-art__body blockquote {
+  margin: 2rem 0;
+  padding-left: 1.4rem;
+  border-left: 2px solid var(--read-rule);
+  font-style: italic;
+  color: var(--read-muted);
+}
+
+.eac-art__body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem 0;
+}
+
+.eac-art__body ul,
+.eac-art__body ol { margin: 0 0 1.15em; padding-left: 1.4em; }
+.eac-art__body li { margin-bottom: 0.35em; }
+
+/* ── Colophon ───────────────────────────────────────────────────────────── */
+
+.eac-art__colophon {
+  margin-top: 3rem;
+  border-top: 2px solid var(--read-ink);
+  padding-top: 1.1rem;
+  font-family: var(--read-face-record);
+  font-size: 0.74rem;
+  line-height: 1.75;
+  color: var(--read-muted);
+}
+
+.eac-art__colophon dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: 0.15rem 1.5rem;
+}
+
+.eac-art__colophon dt { color: var(--read-faint); }
+.eac-art__colophon dd { margin: 0; color: var(--read-ink); }
+
+@media (max-width: 30rem) {
+  .eac-art__colophon dl { grid-template-columns: 1fr; }
+  .eac-art__colophon dt { margin-top: 0.5rem; }
+}
+
+/* ── Continue reading ───────────────────────────────────────────────────── */
+
+.eac-art__more {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--read-rule);
+}
+
+.eac-art__more-label {
+  font-family: var(--read-face-record);
+  font-size: var(--read-label-size);
+  letter-spacing: var(--read-label-tracking);
+  text-transform: uppercase;
+  color: var(--read-faint);
+  margin: 0 0 1rem;
+}
+
+.eac-art__more-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.eac-art__more-item a {
+  color: var(--read-ink);
+  text-decoration: none;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.eac-art__more-item a:hover .eac-art__more-title { text-decoration: underline; }
+
+.eac-art__more-title {
+  font-size: 1.06rem;
+  line-height: 1.3;
+}
+
+.eac-art__more-meta {
+  font-family: var(--read-face-record);
+  font-size: 0.7rem;
+  color: var(--read-faint);
+}

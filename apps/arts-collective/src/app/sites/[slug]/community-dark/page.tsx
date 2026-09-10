@@ -929,7 +929,9 @@ export default async function CommunityDarkPage({
 
   const html = build({
     orgName: org.name, orgSlug: slug,
-    discipline: profile?.disciplines?.[0] ?? null,
+    // Orgs have no field/discipline of their own yet — it lived on
+    // artist_profiles, which is a per-person table. Null until orgs get one.
+    discipline: null,
     bio: profile?.bio ?? org.description ?? null,
     displayName: profile?.display_name ?? null,
     city: profile?.city ?? null,

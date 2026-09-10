@@ -18,3 +18,4 @@ export { AuctionStatusBadge, type AuctionStatusBadgeProps } from "./AuctionStatu
 export { CountdownTimer, type CountdownTimerProps } from "./CountdownTimer";
 export { BuyNowButton, type BuyNowButtonProps } from "./BuyNowButton";
 export { BidWidget, type BidWidgetProps } from "./BidWidget";
+export { StoreShowcase, type StoreShowcaseProps } from "./StoreShowcase";

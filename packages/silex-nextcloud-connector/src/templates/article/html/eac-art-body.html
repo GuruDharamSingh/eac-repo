@@ -1,0 +1,30 @@
+<!--
+  eac-art-body.html
+  =================
+  The writing. One column at the reading measure, nothing beside it.
+
+  The drop cap on the first paragraph marks where reading starts, which is
+  what a reader scanning past the apparatus is looking for. It is a token
+  (--read-cap-size: 0 removes it), not a hardcoded rule, so a voice that does
+  not want one simply does not have one.
+
+  CMS fields consumed:
+    threads.body  → rich text, sanitized server-side before it reaches here
+-->
+<div class="eac-art__body"
+     data-gjs-type="eac-art-body"
+     data-gjs-editable="true"
+     data-trait="body">
+  <p>
+    Most publishing systems treat a post as a row that happens to contain prose.
+    The row has a title, a body, a timestamp; the page renders them in whatever
+    the framework's default stylesheet says. The result is legible and
+    completely anonymous.
+  </p>
+  <p>
+    The difference between that and something worth reading is not decoration.
+    It is a small number of measurements, held consistently: line length near
+    sixty-five characters, leading generous enough that the paragraph reads as a
+    block of grey, type large enough that nobody leans in.
+  </p>
+</div>

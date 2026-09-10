@@ -7,7 +7,23 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./wizard": "./src/wizard/index.ts"
+    "./wizard": "./src/wizard/index.ts",
+    "./compose": "./src/compose/index.ts",
+    "./article": "./src/article/index.ts",
+    "./article.css": "./src/article/article.css",
+    "./reading-theme.css": "./src/article/reading-theme.css",
+    "./profile": "./src/profile/index.ts",
+    "./profile.css": "./src/profile/profile.css",
+    "./files": "./src/files/index.ts",
+    "./files-card.css": "./src/files/files-card.css",
+    "./auth": "./src/auth/index.ts",
+    "./baroque-signup.css": "./src/auth/baroque-signup.css",
+    "./gallery": "./src/gallery/index.ts",
+    "./gallery.css": "./src/gallery/gallery.css",
+    "./surface": "./src/surface/index.ts",
+    "./surface.css": "./src/surface/surface.css",
+    "./fields.css": "./src/wizard/fields.css",
+    "./compose.css": "./src/compose/compose.css"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
@@ -19,6 +35,13 @@
   },
   "devDependencies": {
     "@types/react": "^19",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@types/node": "^20"
+  },
+  "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@marsidev/react-turnstile": "^1.3.0",
+    "react-grid-layout": "^2.2.4",
+    "@elkdonis/utils": "workspace:*"
   }
 }

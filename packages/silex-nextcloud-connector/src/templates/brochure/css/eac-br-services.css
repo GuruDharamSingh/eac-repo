@@ -1,0 +1,85 @@
+/*
+  eac-br-services.css
+  ====================
+  Medallion grid. Each seal is a double-ring circle with a small ribbon
+  tail (::after) so it reads as a stamped badge rather than an icon tile.
+*/
+
+.eac-br-services {
+  padding: 72px 24px;
+  background: var(--eac-br-paper-2);
+}
+
+.eac-br-services__head {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto 40px;
+  text-align: center;
+}
+.eac-br-services__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 30px);
+  margin: 6px 0 0;
+}
+
+.eac-br-services__grid {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px 24px;
+}
+
+.eac-br-medallion {
+  text-align: center;
+  padding: 0 8px;
+}
+
+.eac-br-medallion__seal {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 3px solid var(--eac-br-ink);
+  box-shadow: 0 0 0 4px var(--eac-br-paper-2), 0 0 0 5px var(--eac-br-ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--eac-br-paper);
+}
+.eac-br-medallion__seal span {
+  font-family: var(--eac-br-font-display);
+  font-size: 22px;
+  color: var(--eac-br-oxblood);
+}
+/* Ribbon tail beneath the seal */
+.eac-br-medallion__seal::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  width: 14px;
+  height: 16px;
+  transform: translateX(-50%);
+  background: var(--eac-br-oxblood);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+
+.eac-br-medallion h3 {
+  font-family: var(--eac-br-font-display);
+  font-size: 17px;
+  margin: 8px 0 6px;
+}
+.eac-br-medallion p {
+  font-size: 14px;
+  color: var(--eac-br-ink-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .eac-br-services__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .eac-br-services__grid { grid-template-columns: 1fr; gap: 28px; }
+}

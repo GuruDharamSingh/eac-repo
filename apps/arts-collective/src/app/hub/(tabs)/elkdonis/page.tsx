@@ -15,6 +15,13 @@ import { HUB_CARDS, SITE_PANELS, type CardStatus } from "@/lib/hub-cards";
 import { Button } from "@/components/ui/button";
 import { YourSubmissions } from "@/components/hub/YourSubmissions";
 
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function ElkdonisTabPage() {
   const user = await requireUser();
   const [profile, editableOrgs, homes] = await Promise.all([

@@ -36,6 +36,44 @@ export interface CalendarEventResponse extends CalendarEvent {
 }
 
 /**
+ * Escape a text value for iCalendar (RFC 5545 §3.3.11).
+ *
+ * Backslash, semicolon, comma and newline are delimiters in the format. An
+ * unescaped comma in a title used to split SUMMARY into two values and produce
+ * an ICS Nextcloud silently refused to parse.
+ */
+function escapeICalText(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+/**
+ * Fold a content line to 75 octets (RFC 5545 §3.1).
+ *
+ * Long descriptions are common and a single over-length line invalidates the
+ * whole VCALENDAR, so this is not optional politeness.
+ */
+function foldLine(line: string): string {
+  const bytes = Buffer.from(line, 'utf8');
+  if (bytes.length <= 75) return line;
+  const out: string[] = [];
+  let start = 0;
+  let limit = 75;
+  while (start < bytes.length) {
+    // Never split a multi-byte character: walk back to a lead byte.
+    let end = Math.min(start + limit, bytes.length);
+    while (end > start && end < bytes.length && (bytes[end] & 0xc0) === 0x80) end--;
+    out.push(bytes.subarray(start, end).toString('utf8'));
+    start = end;
+    limit = 74; // continuation lines carry a leading space
+  }
+  return out.join('\r\n ');
+}
+
+/**
  * Convert CalendarEvent to iCalendar format (RFC 5545)
  */
 function eventToICalendar(event: CalendarEvent): string {
@@ -54,15 +92,15 @@ function eventToICalendar(event: CalendarEvent): string {
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${dtstart}`,
     `DTEND:${dtend}`,
-    `SUMMARY:${event.summary}`,
+    `SUMMARY:${escapeICalText(event.summary)}`,
   ];
 
   if (event.description) {
-    ical.push(`DESCRIPTION:${event.description.replace(/\n/g, '\\n')}`);
+    ical.push(`DESCRIPTION:${escapeICalText(event.description)}`);
   }
 
   if (event.location) {
-    ical.push(`LOCATION:${event.location}`);
+    ical.push(`LOCATION:${escapeICalText(event.location)}`);
   }
 
   if (event.status) {
@@ -99,7 +137,7 @@ function eventToICalendar(event: CalendarEvent): string {
   ical.push('END:VEVENT');
   ical.push('END:VCALENDAR');
 
-  return ical.join('\r\n');
+  return ical.map(foldLine).join('\r\n');
 }
 
 /**
@@ -169,7 +207,11 @@ function getCalendarUrl(
   client: NextcloudClient,
   calendarName: string = 'eac-meetings'
 ): string {
-  const url = `${client.config.baseUrl}/remote.php/dav/calendars/${client.config.username}/${calendarName}`;
+  // Encode both segments: a calendar uri is org-derived and a username is
+  // env-derived, and neither is guaranteed to be URL-safe.
+  const url =
+    `${client.config.baseUrl}/remote.php/dav/calendars/` +
+    `${encodeURIComponent(client.config.username)}/${encodeURIComponent(calendarName)}`;
   console.log(`[Calendar] Generated URL: ${url}`);
   return url;
 }
@@ -213,6 +255,15 @@ async function calendarExists(
   }
 }
 
+/** Escape a value for interpolation into a DAV request body. */
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 /**
  * Create a calendar in Nextcloud using CalDAV MKCALENDAR
  */
@@ -229,8 +280,8 @@ async function createCalendar(
 <C:mkcalendar xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
   <D:set>
     <D:prop>
-      <D:displayname>${displayName}</D:displayname>
-      <C:calendar-description>${description}</C:calendar-description>
+      <D:displayname>${escapeXml(displayName)}</D:displayname>
+      <C:calendar-description>${escapeXml(description)}</C:calendar-description>
       <C:supported-calendar-component-set>
         <C:comp name="VEVENT"/>
       </C:supported-calendar-component-set>
@@ -272,7 +323,9 @@ async function createCalendar(
  */
 export async function ensureCalendarExists(
   client: NextcloudClient,
-  calendarName: string = 'eac-meetings'
+  calendarName: string = 'eac-meetings',
+  displayName?: string,
+  description?: string
 ): Promise<void> {
   console.log(`[Calendar] ensureCalendarExists called for: ${calendarName}`);
   console.log(`[Calendar] Base URL: ${client.config.baseUrl}`);
@@ -283,7 +336,14 @@ export async function ensureCalendarExists(
 
   if (!exists) {
     console.log(`[Calendar] Creating calendar: ${calendarName}`);
-    await createCalendar(client, calendarName);
+    // Previously called without these, so every per-org calendar provisioned
+    // showed up in Nextcloud titled "EAC Meetings" no matter its uri.
+    await createCalendar(
+      client,
+      calendarName,
+      displayName ?? calendarName,
+      description ?? `Events published by ${displayName ?? calendarName}.`
+    );
     console.log(`[Calendar] Calendar created successfully`);
   }
 }
@@ -518,4 +578,127 @@ export async function updateMeetingInCalendar(
   });
 
   await updateCalendarEvent(client, eventId, updates);
+}
+
+// ─── Calendar sharing ────────────────────────────────────────────────────────
+//
+// This did not exist. The OCS `files_sharing` API in shares.ts cannot do it —
+// a CalDAV collection is not a file — so calendars were provisioned and then
+// visible to nobody but the service account.
+//
+// Live-tested against Nextcloud 33 / calendar 6.5.3 on 2026-09-07, verifying
+// every result in `oc_dav_shares` rather than trusting the status code:
+//
+//   principal:principals/users/<uid>     → 200, persisted
+//   principal:principals/groups/<gid>    → 200, persisted
+//   principal:principals/circles/<id>    → 200, PERSISTED NOTHING
+//
+// A Circle cannot receive a calendar share, and the silent success is the trap:
+// every variant returns 200. Callers must therefore fan out per user principal
+// and treat their own database as the membership authority — see
+// packages/services/src/org-calendar.ts.
+
+/** Principal href for a Nextcloud user. */
+function userPrincipal(uid: string): string {
+  return `principal:principals/users/${uid}`;
+}
+
+/**
+ * Share a calendar with one Nextcloud user.
+ *
+ * `readWrite` sends the documented element, BUT on this instance it makes no
+ * difference: tested 2026-09-07, every variant — `<o:read/>`, `<o:read-write/>`,
+ * and omitting the element entirely — lands as `access = 3` (read-write) in
+ * `oc_dav_shares`. Read-only shares exist there (access 2) but are not
+ * reachable through this endpoint, so callers must NOT rely on a share being
+ * read-only. The parameter is kept because it is the correct wire form and a
+ * future Nextcloud may honour it.
+ *
+ * The consequence for a projected calendar: a member CAN edit the mirror, and
+ * their edit will be overwritten the next time the source thread is pushed.
+ * Say so in the UI rather than pretending the calendar is locked.
+ */
+export async function shareCalendarWithUser(
+  client: NextcloudClient,
+  calendarName: string,
+  uid: string,
+  readWrite = false
+): Promise<void> {
+  const body = `<?xml version="1.0" encoding="utf-8" ?>
+<o:share xmlns:D="DAV:" xmlns:o="http://owncloud.org/ns">
+  <o:set>
+    <D:href>${escapeXml(userPrincipal(uid))}</D:href>
+    <o:${readWrite ? 'read-write' : 'read'}/>
+  </o:set>
+</o:share>`;
+
+  await axios.request({
+    method: 'POST',
+    url: getCalendarUrl(client, calendarName),
+    auth: { username: client.config.username, password: client.config.password },
+    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    data: body,
+  });
+}
+
+/** Remove one user's share of a calendar. */
+export async function unshareCalendarWithUser(
+  client: NextcloudClient,
+  calendarName: string,
+  uid: string
+): Promise<void> {
+  const body = `<?xml version="1.0" encoding="utf-8" ?>
+<o:share xmlns:D="DAV:" xmlns:o="http://owncloud.org/ns">
+  <o:remove>
+    <D:href>${escapeXml(userPrincipal(uid))}</D:href>
+  </o:remove>
+</o:share>`;
+
+  await axios.request({
+    method: 'POST',
+    url: getCalendarUrl(client, calendarName),
+    auth: { username: client.config.username, password: client.config.password },
+    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    data: body,
+  });
+}
+
+/**
+ * The uids a calendar is currently shared with.
+ *
+ * Needed to reconcile rather than blindly re-share: without a read there is no
+ * way to revoke access for someone who left the org.
+ */
+export async function listCalendarShares(
+  client: NextcloudClient,
+  calendarName: string
+): Promise<string[]> {
+  const body = `<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:" xmlns:oc="http://owncloud.org/ns">
+  <D:prop><oc:invite/></D:prop>
+</D:propfind>`;
+
+  try {
+    const response = await axios.request<string>({
+      method: 'PROPFIND',
+      url: getCalendarUrl(client, calendarName),
+      auth: { username: client.config.username, password: client.config.password },
+      headers: { Depth: '0', 'Content-Type': 'application/xml; charset=utf-8' },
+      data: body,
+      responseType: 'text',
+    });
+
+    const uids = new Set<string>();
+    // Hrefs come back as `principal:principals/users/<uid>`; anything else
+    // (groups, and the calendar owner's own href) is not ours to reconcile.
+    const re = /principal:principals\/users\/([^<\s]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(response.data ?? '')) !== null) {
+      uids.add(decodeURIComponent(match[1]));
+    }
+    return [...uids];
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return [];
+    throw error;
+  }
 }

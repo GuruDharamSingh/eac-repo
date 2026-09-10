@@ -277,7 +277,7 @@ export async function uploadFile(
  */
 export async function createTalkRoom(
   name: string,
-  type: 'group' | 'public' = 'group'
+  type: 'group' | 'public' = 'public'
 ): Promise<string | null> {
   try {
     // `format=json` is load-bearing: OCS answers in XML by default, so without

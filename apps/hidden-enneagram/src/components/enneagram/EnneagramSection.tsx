@@ -29,7 +29,7 @@ export function EnneagramSection({
           className="text-3xl md:text-4xl text-center mb-10"
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
-            color: "#ece7dd",
+            color: "hsl(var(--band-foreground))",
             fontWeight: 400,
           }}
         >

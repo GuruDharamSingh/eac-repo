@@ -28,10 +28,12 @@
   "dependencies": {
     "@elkdonis/db": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@supabase/supabase-js": "^2.39.0",
-    "nanoid": "^5.0.0"
+    "nanoid": "^5.0.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20.19.17",

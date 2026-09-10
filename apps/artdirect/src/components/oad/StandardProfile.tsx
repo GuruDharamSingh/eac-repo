@@ -1,29 +1,50 @@
 import type { Profile } from "@elkdonis/services";
+import type { StoreShowcase as StoreShowcaseData } from "@elkdonis/commerce/queries";
+import { StoreShowcase } from "@elkdonis/commerce/components";
+import { ProfileView } from "@elkdonis/cms-ui/profile";
 import { ProfileEditorPanel } from "./ProfileEditorPanel";
 import { GalleryPanel } from "./GalleryPanel";
 
 /**
- * The plain alternative to the dossier template.
+ * ArtDirect's adapter over the shared ProfileView.
  *
- * Uses CSS custom properties rather than fixed colours so a person's own
- * palette (users.theme, injected by ThemeStyle) actually reaches it — the
- * dossier template ships its own hard-coded look, which is precisely why some
- * artists will want this instead.
+ * The page itself now lives in @elkdonis/cms-ui so arts-collective can render
+ * the same profile once the directory is folded in. Everything app-specific
+ * stays here: mapping @elkdonis/services' Profile onto ProfileView's narrow
+ * prop shape, and supplying the two interactive panels, which are bound to
+ * ArtDirect's own server actions (see lib/profile-editor-actions) and cannot
+ * be shared as-is.
  *
- * `isSelf` gates the inline editor (bio + avatar via ProfileEditorPanel, the
- * portfolio grid via GalleryPanel with editable=true) — mirrors the pattern
- * built for apps/ifac's /artists/[slug]. GalleryPanel/ProfileGallery renders
- * unconditionally either way (editable=false for visitors), since it already
- * degrades to a plain read-only grid with no second code path needed.
+ * `isSelf` gates the inline editor. The gallery renders either way —
+ * ProfileGallery already degrades to a plain read-only grid — except when a
+ * visitor would be shown an empty one, which is just noise.
  */
-export function StandardProfile({ profile, isSelf = false }: { profile: Profile; isSelf?: boolean }) {
-  const paragraphs = (profile.bio ?? "")
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+export function StandardProfile({
+  profile,
+  isSelf = false,
+  store = null,
+  hasStore = false,
+  storeSectionOn = false,
+  marketplaceUrl,
+}: {
+  profile: Profile;
+  isSelf?: boolean;
+  /**
+   * The person's marketplace store with its listed work — rendered only when
+   * they have switched the "store" section on (users.profile_sections). The
+   * store is a front for this profile (its name and photo come from here),
+   * so the profile is where a visitor learns the work is for sale.
+   */
+  store?: StoreShowcaseData | null;
+  /** Whether they have an active store at all (drives the owner's toggle). */
+  hasStore?: boolean;
+  storeSectionOn?: boolean;
+  marketplaceUrl: string;
+}) {
+  const key = profile.slug ?? profile.userId;
 
   const galleryItems = profile.portfolio.map((item, i) => ({
-    id: item.id ?? `${profile.slug ?? profile.userId}-${i}`,
+    id: item.id ?? `${key}-${i}`,
     url: item.url,
     title: item.title,
     x: item.x,
@@ -32,78 +53,52 @@ export function StandardProfile({ profile, isSelf = false }: { profile: Profile;
     h: item.h,
   }));
 
+  const showGallery = galleryItems.length > 0 || isSelf;
+
   return (
-    <article className="oad-standard">
-      <header className="oad-standard-head">
-        {profile.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="oad-standard-portrait" src={profile.avatarUrl} alt="" />
-        ) : (
-          <div className="oad-standard-portrait oad-standard-portrait--empty" aria-hidden>
-            {profile.displayName.charAt(0).toUpperCase()}
-          </div>
-        )}
-
-        <div className="oad-standard-id">
-          <h1>{profile.displayName}</h1>
-          {profile.headline && <p className="oad-standard-headline">{profile.headline}</p>}
-          <p className="oad-standard-meta">
-            {[profile.pronouns, profile.city].filter(Boolean).join(" · ")}
-            {profile.verified && <span className="oad-standard-verified">Verified</span>}
-          </p>
-        </div>
-      </header>
-
-      {isSelf && (
+    <ProfileView
+      person={{
+        displayName: profile.displayName,
+        headline: profile.headline,
+        bio: profile.bio,
+        avatarUrl: profile.avatarUrl,
+        pronouns: profile.pronouns,
+        city: profile.city,
+        verified: profile.verified,
+        portfolioUrl: profile.portfolioUrl,
+        socialLinks: profile.socialLinks,
+      }}
+      isSelf={isSelf}
+      editor={
         <ProfileEditorPanel
           profileUserId={profile.userId}
-          slug={profile.slug ?? profile.userId}
+          slug={key}
           bio={profile.bio ?? ""}
           avatarUrl={profile.avatarUrl ?? ""}
+          hasStore={hasStore}
+          storeSectionOn={storeSectionOn}
+          marketplaceUrl={marketplaceUrl}
         />
-      )}
-
-      {(paragraphs.length > 0 || isSelf) && (
-        <section className="oad-standard-bio" data-trait="bio">
-          {paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </section>
-      )}
-
-      {(galleryItems.length > 0 || isSelf) && (
-        <section className="oad-standard-work">
-          <h2>Work</h2>
+      }
+      gallery={
+        showGallery ? (
           <GalleryPanel
             profileUserId={profile.userId}
-            slug={profile.slug ?? profile.userId}
+            slug={key}
             items={galleryItems}
             editable={isSelf}
           />
-        </section>
+        ) : undefined
+      }
+    >
+      {store && (
+        <StoreShowcase
+          store={store.store}
+          artworks={store.artworks}
+          marketplaceUrl={marketplaceUrl}
+          className="eac-profile-store"
+        />
       )}
-
-      {(profile.socialLinks.length > 0 || profile.portfolioUrl) && (
-        <section className="oad-standard-links">
-          <h2>Elsewhere</h2>
-          <ul>
-            {profile.portfolioUrl && (
-              <li>
-                <a href={profile.portfolioUrl} target="_blank" rel="noreferrer">
-                  Portfolio
-                </a>
-              </li>
-            )}
-            {profile.socialLinks.map((l) => (
-              <li key={l.url}>
-                <a href={l.url} target="_blank" rel="noreferrer">
-                  {l.label || l.url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </article>
+    </ProfileView>
   );
 }

@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/session";
-import { getOrgBySlug, getThreadWithWorkshopPage, isOrgOwner } from "@/lib/org";
+import {
+  getOrgBySlug,
+  getPublicThread,
+  getThreadOrgs,
+  getThreadWithWorkshopPage,
+  isOrgOwner,
+} from "@/lib/org";
+import { ArticleBody } from "@/components/ArticleBody";
 import { renderWorkshopTemplate, readWorkshopCss } from "@/lib/cms/workshop-render";
 import { workshopFieldDefs, workshopCssVarDefs } from "@elkdonis/cms-bindings";
 import { WorkshopLiveEditor } from "@/components/WorkshopLiveEditor";
@@ -19,7 +26,16 @@ export default async function ContentSlugPage({
   if (!org) notFound();
 
   const workshopData = await getThreadWithWorkshopPage(org.id, contentSlug);
-  if (!workshopData) notFound();
+
+  // Not a workshop — render it as a piece of writing rather than 404ing.
+  // Every post, meeting and service on the network used to die here, because
+  // this route only ever asked for workshops while /profile linked to all of
+  // them. Workshops keep the bound template below; everything else reads.
+  if (!workshopData) {
+    const thread = await getPublicThread(org.id, contentSlug);
+    if (!thread) notFound();
+    return <ArticleBody org={org} thread={thread} orgs={await getThreadOrgs(thread.id)} />;
+  }
 
   const user = await getCurrentUser();
   const isOwner = user ? await isOrgOwner(user.id, org.id) : false;

@@ -1,0 +1,1262 @@
+/*
+  surface.css — one popup for the whole network.
+
+  A FACE and a SURFACE are the same object at two sizes. The face is the card
+  that sits in a grid (a hub tile, a calendar day, a feed strip); the surface is
+  that object expanded — the meeting with its RSVP, the day with its events,
+  the post with its prose, the gallery with its lightbox. Clicking a face opens
+  its surface in ONE <dialog> per app, and surfaces stack inside it (calendar →
+  day → add an event → the event you just made) so a flow reads as one thing
+  opening rather than four popups.
+
+  Plain CSS with custom properties, NOT Tailwind utilities: ifac and artdirect
+  carry their own stylesheets and utility classes would render unstyled there.
+  Same posture as article.css, profile.css and files-card.css.
+
+  ── How an org makes it theirs ──────────────────────────────────────────────
+
+  Set any --eac-surface-* token in your own :root, after importing this file:
+
+      :root {
+        --eac-surface-bg:     hsl(var(--card));
+        --eac-surface-fg:     hsl(var(--foreground));
+        --eac-surface-line:   hsl(var(--border));
+        --eac-surface-accent: hsl(var(--primary));
+        --eac-kind-meeting:   hsl(var(--feed-amrit-vela));
+      }
+
+  Everything falls back, so an org that sets nothing still gets a correct,
+  neutral surface. Per-kind accents (--eac-kind-*) colour the hairline, the
+  glyph and the primary action, so a meeting and a piece of writing are told
+  apart before a word is read. A kind whose accent is dark sets
+  --eac-kind-<k>-on too, so the text on its filled button and on today's date
+  stays legible.
+*/
+
+/* ── The interface ──────────────────────────────────────────────────────── */
+
+:root {
+  --sf-bg: var(--eac-surface-bg, var(--paper, var(--surface, #ffffff)));
+  --sf-bg-soft: var(--eac-surface-bg-soft, color-mix(in srgb, var(--sf-fg) 4%, var(--sf-bg)));
+  --sf-fg: var(--eac-surface-fg, var(--ink, #16181d));
+  --sf-muted: var(--eac-surface-muted, var(--ink-soft, #5e667a));
+  --sf-faint: var(--eac-surface-faint, color-mix(in srgb, var(--sf-muted) 60%, var(--sf-bg)));
+  --sf-line: var(--eac-surface-line, var(--line, #cfd4db));
+  --sf-accent: var(--eac-surface-accent, var(--eac-accent, #5b45a8));
+  --sf-scrim: var(--eac-surface-scrim, rgba(20, 18, 16, 0.46));
+  --sf-danger: var(--eac-surface-danger, #ae3a31);
+
+  --sf-radius: var(--eac-surface-radius, 6px);
+  --sf-radius-sm: max(2px, calc(var(--sf-radius) - 3px));
+  /* Strong rule: heads, feet and section titles sit on this, not on --sf-line. */
+  --sf-rule: var(--eac-surface-rule, color-mix(in srgb, var(--sf-fg) 55%, var(--sf-line)));
+  --sf-shadow: var(
+    --eac-surface-shadow,
+    0 28px 70px -24px rgba(0, 0, 0, 0.38),
+    0 2px 10px rgba(0, 0, 0, 0.08)
+  );
+
+  /* Type. The record voice is monospace, like article.css's apparatus: the
+     kicker, the facts and the dateline are registry entries around the thing,
+     not the thing. */
+  --sf-font-record: var(--eac-font-record, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --sf-font-title: var(--eac-font-title, var(--font-serif, inherit));
+  --sf-font-body: var(--eac-font-body, inherit);
+
+  /* The four widths. A surface declares which one it is; it never picks a
+     number. */
+  --sf-w-compact: 440px;
+  --sf-w-standard: 640px;
+  --sf-w-wide: 940px;
+  --sf-w-full: 1180px;
+
+  /* Per-kind accents. Unset ones fall back to the surface accent. */
+  --sf-kind-post: var(--eac-kind-post, var(--sf-accent));
+  --sf-kind-event: var(--eac-kind-event, var(--sf-accent));
+  --sf-kind-meeting: var(--eac-kind-meeting, var(--sf-accent));
+  --sf-kind-workshop: var(--eac-kind-workshop, var(--sf-accent));
+  --sf-kind-service: var(--eac-kind-service, var(--sf-accent));
+  --sf-kind-product: var(--eac-kind-product, var(--sf-accent));
+  --sf-kind-questionnaire: var(--eac-kind-questionnaire, var(--sf-accent));
+  --sf-kind-poll: var(--eac-kind-poll, var(--sf-accent));
+  --sf-kind-calendar: var(--eac-kind-calendar, var(--sf-accent));
+  --sf-kind-gallery: var(--eac-kind-gallery, var(--sf-accent));
+  --sf-kind-board: var(--eac-kind-board, var(--sf-accent));
+  --sf-kind-forum: var(--eac-kind-forum, var(--sf-accent));
+  --sf-kind-compose: var(--eac-kind-compose, var(--sf-accent));
+  --sf-kind-neutral: var(--eac-kind-neutral, var(--sf-muted));
+}
+
+/* The kind an element carries decides its accent. Set once, read everywhere
+   below as --sf-kind. */
+[data-kind="post"] { --sf-kind: var(--sf-kind-post); --sf-on-kind: var(--eac-kind-post-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="event"] { --sf-kind: var(--sf-kind-event); --sf-on-kind: var(--eac-kind-event-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="meeting"] { --sf-kind: var(--sf-kind-meeting); --sf-on-kind: var(--eac-kind-meeting-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="workshop"] { --sf-kind: var(--sf-kind-workshop); --sf-on-kind: var(--eac-kind-workshop-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="service"] { --sf-kind: var(--sf-kind-service); --sf-on-kind: var(--eac-kind-service-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="product"] { --sf-kind: var(--sf-kind-product); --sf-on-kind: var(--eac-kind-product-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="questionnaire"] { --sf-kind: var(--sf-kind-questionnaire); --sf-on-kind: var(--eac-kind-questionnaire-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="poll"] { --sf-kind: var(--sf-kind-poll); --sf-on-kind: var(--eac-kind-poll-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="calendar"] { --sf-kind: var(--sf-kind-calendar); --sf-on-kind: var(--eac-kind-calendar-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="board"] { --sf-kind: var(--sf-kind-board); --sf-on-kind: var(--eac-kind-board-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="forum"] { --sf-kind: var(--sf-kind-forum); --sf-on-kind: var(--eac-kind-forum-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="gallery"] { --sf-kind: var(--sf-kind-gallery); --sf-on-kind: var(--eac-kind-gallery-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="compose"] { --sf-kind: var(--sf-kind-compose); --sf-on-kind: var(--eac-kind-compose-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="neutral"],
+[data-kind=""]              { --sf-kind: var(--sf-kind-neutral); --sf-on-kind: var(--eac-kind-neutral-on, var(--sf-bg)); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FACE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-face-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.eac-face {
+  /* --sf-kind comes from the [data-kind] rules above; a default here would
+     out-rank them (same specificity, later in the file). */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 210px;
+  padding: 20px;
+  color: var(--sf-fg);
+  background: var(--eac-face-bg, var(--sf-bg));
+  border: 1px solid var(--sf-rule);
+  border-radius: var(--sf-radius);
+  text-align: left;
+  font: inherit;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+/* The hairline: three pixels of the kind's colour along the top. It is the
+   thing the surface's masthead repeats, which is what makes the expansion
+   read as the same object getting larger. */
+.eac-face::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--sf-kind);
+  border-radius: var(--sf-radius) var(--sf-radius) 0 0;
+  opacity: 0.9;
+}
+
+.eac-face:not(.is-disabled):hover,
+.eac-face:not(.is-disabled):focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.28);
+  border-color: color-mix(in srgb, var(--sf-kind) 55%, var(--sf-line));
+}
+
+.eac-face--wide { grid-column: 1 / -1; min-height: 132px; }
+.eac-face--small { min-height: 0; padding: 14px 16px; gap: 4px; }
+.eac-face.is-disabled { opacity: 0.55; }
+
+/* The whole face is a target, but the content stays inert so the face can
+   carry live regions (a month grid, a chat tail) that take clicks back. An
+   anchor cannot contain anchors and a button cannot contain buttons; a
+   stretched hit-area behind inert content can contain anything. */
+.eac-face-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-radius: inherit;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.eac-face-hit:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 2px;
+}
+.eac-face.is-disabled .eac-face-hit { cursor: default; }
+
+.eac-face > :not(.eac-face-hit, .eac-face-glyph, .eac-face-cue) {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+.eac-face > .eac-face-glyph,
+.eac-face > .eac-face-cue {
+  z-index: 1;
+  pointer-events: none;
+}
+/* Opt a region back in — the day cells of a calendar face, say. */
+.eac-face .eac-face-live,
+.eac-face .eac-face-live * { pointer-events: auto; }
+
+.eac-face-glyph {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--sf-kind);
+}
+.eac-face--small .eac-face-glyph { position: static; font-size: 1.1rem; margin-bottom: 4px; }
+
+.eac-face-cue {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  font-family: var(--sf-font-record);
+  font-size: 0.95rem;
+  color: var(--sf-muted);
+  transition: color 160ms ease, transform 160ms ease;
+}
+.eac-face:hover .eac-face-cue { color: var(--sf-kind); transform: translateX(1px); }
+
+.eac-face-kicker {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  font-weight: 600;
+}
+
+.eac-face-title {
+  font-family: var(--sf-font-title);
+  font-size: 1.2rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+.eac-face--small .eac-face-title { font-size: 1rem; }
+
+.eac-face-blurb {
+  color: var(--sf-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  max-width: 36ch;
+}
+
+.eac-face-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 4px;
+  font-size: 0.84rem;
+}
+.eac-face-preview:empty { display: none; }
+
+/* Preview vocabulary — small, so faces agree on what a line looks like. */
+.eac-preview-line { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.eac-preview-line > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-preview-date {
+  flex: none;
+  font-family: var(--sf-font-record);
+  font-size: 0.7rem;
+  color: var(--sf-kind);
+  min-width: 5.2ch;
+}
+.eac-preview-cue {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-kind) 14%, transparent);
+  color: var(--sf-fg);
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+.eac-preview-empty { color: var(--sf-faint); font-style: italic; }
+/* A small action offered on a face, for the case where the face's own surface
+   is the wrong destination — "create one" when there is nothing to open.
+   Only reachable inside .eac-face-live. */
+.eac-preview-action {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.eac-preview-action:hover,
+.eac-preview-action:focus-visible {
+  border-color: var(--sf-kind);
+  outline: none;
+}
+.eac-preview-cover {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  border-radius: var(--sf-radius-sm);
+  margin-bottom: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE SURFACE (the dialog)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+dialog.eac-surface {
+  /* Tailwind's preflight zeroes dialog margins, which un-centres a modal.
+     Say it explicitly so the surface centres in every app. */
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sf-fg);
+  max-width: none;
+  max-height: none;
+  width: min(var(--sf-width, var(--sf-w-standard)), calc(100vw - 32px));
+  overflow: visible;
+}
+dialog.eac-surface[data-size="compact"]  { --sf-width: var(--sf-w-compact); }
+dialog.eac-surface[data-size="standard"] { --sf-width: var(--sf-w-standard); }
+dialog.eac-surface[data-size="wide"]     { --sf-width: var(--sf-w-wide); }
+dialog.eac-surface[data-size="full"]     { --sf-width: var(--sf-w-full); }
+
+dialog.eac-surface::backdrop {
+  background: var(--sf-scrim);
+  backdrop-filter: blur(3px);
+}
+
+/* Enter: rise and settle. Leave: fall away. Discrete transitions on `display`
+   and `overlay` let a native <dialog> animate at all. */
+dialog.eac-surface {
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    display 220ms allow-discrete,
+    overlay 220ms allow-discrete;
+}
+dialog.eac-surface[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  dialog.eac-surface[open] {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+dialog.eac-surface::backdrop {
+  opacity: 0;
+  transition: opacity 200ms ease, display 220ms allow-discrete, overlay 220ms allow-discrete;
+}
+dialog.eac-surface[open]::backdrop { opacity: 1; }
+@starting-style {
+  dialog.eac-surface[open]::backdrop { opacity: 0; }
+}
+
+.eac-surface-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "head" "body" "foot";
+  max-height: min(88vh, 920px);
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-rule);
+  border-radius: var(--sf-radius);
+  box-shadow: var(--sf-shadow);
+  overflow: hidden;
+  font-family: var(--sf-font-body);
+}
+
+/* ── masthead ── */
+
+.eac-surface-head {
+  grid-area: head;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 18px;
+  border-bottom: 2px solid var(--sf-kind);
+}
+
+.eac-surface-glyph {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-kind) 14%, transparent);
+  color: var(--sf-kind);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.eac-surface-headings { min-width: 0; }
+
+.eac-surface-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eac-surface-kicker .eac-surface-crumb {
+  color: var(--sf-fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--sf-fg) 30%, transparent);
+  text-underline-offset: 3px;
+}
+.eac-surface-kicker .eac-surface-crumb:hover { text-decoration-color: var(--sf-kind); }
+.eac-surface-kicker .eac-surface-sep { color: var(--sf-faint); }
+
+.eac-surface-title {
+  margin: 2px 0 0;
+  font-family: var(--sf-font-title);
+  font-size: 1.22rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-surface-controls { display: flex; gap: 6px; align-items: center; }
+
+.eac-surface-iconbtn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.eac-surface-iconbtn:hover { border-color: var(--sf-fg); }
+.eac-surface-iconbtn:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+
+/* ── body (+ optional rail) ── */
+
+.eac-surface-body {
+  grid-area: body;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+.eac-surface-body.has-rail {
+  grid-template-columns: minmax(0, 1fr) 272px;
+}
+@media (max-width: 760px) {
+  .eac-surface-body.has-rail { grid-template-columns: minmax(0, 1fr); }
+}
+
+.eac-surface-main { padding: 20px 22px 22px; min-width: 0; }
+.eac-surface-main.is-flush { padding: 0; }
+
+.eac-surface-rail {
+  padding: 20px 20px 22px;
+  border-left: 1px solid var(--sf-line);
+  background: var(--sf-bg-soft);
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  /* Stacked, the rail comes FIRST: when/where/who before the long description,
+     and a selected day's entries before six rows of grid. */
+  .eac-surface-rail { order: -1; border-left: 0; border-bottom: 1px solid var(--sf-line); }
+}
+
+/* ── footer / action bar ── */
+
+.eac-surface-foot {
+  grid-area: foot;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--sf-rule);
+  background: var(--sf-bg-soft);
+}
+.eac-surface-foot:empty { display: none; }
+.eac-surface-status {
+  font-family: var(--sf-font-record);
+  font-size: 0.74rem;
+  color: var(--sf-muted);
+  min-width: 0;
+}
+.eac-surface-status.is-error { color: var(--sf-danger); }
+.eac-surface-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+
+/* ── phones: a bottom sheet, same component ── */
+
+@media (max-width: 640px) {
+  dialog.eac-surface {
+    width: 100vw;
+    max-width: 100vw;
+    margin: auto 0 0;
+    transform: translateY(24px);
+  }
+  dialog.eac-surface[open] { transform: none; }
+  @starting-style {
+    dialog.eac-surface[open] { transform: translateY(24px); }
+  }
+  .eac-surface-panel {
+    max-height: 92dvh;
+    border-radius: var(--sf-radius) var(--sf-radius) 0 0;
+    border-bottom: 0;
+  }
+  .eac-surface-head { padding: 12px 12px 12px 16px; }
+  .eac-surface-title { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.eac-surface, dialog.eac-surface::backdrop, .eac-face, .eac-face-cue {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VOCABULARY inside a surface
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Buttons. Two weights and a quiet one; the primary takes the kind's colour. */
+.eac-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.eac-btn:hover { border-color: var(--sf-fg); }
+.eac-btn:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-btn:disabled, .eac-btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+.eac-btn--primary {
+  background: var(--sf-kind);
+  border-color: var(--sf-kind);
+  color: var(--sf-on-kind, #fff);
+}
+.eac-btn--primary:hover { filter: brightness(0.94); border-color: var(--sf-kind); }
+.eac-btn--quiet { border-color: transparent; color: var(--sf-muted); }
+.eac-btn--quiet:hover { border-color: transparent; color: var(--sf-fg); background: var(--sf-bg-soft); }
+.eac-btn--danger { color: var(--sf-danger); }
+.eac-btn--danger:hover { border-color: var(--sf-danger); }
+.eac-btn--done {
+  background: color-mix(in srgb, var(--sf-kind) 14%, transparent);
+  border-color: color-mix(in srgb, var(--sf-kind) 40%, transparent);
+}
+
+/* Facts: the registry entry about a thing — when, where, who is coming. */
+.eac-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.eac-facts dt {
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  font-weight: 600;
+  padding-top: 3px;
+}
+.eac-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.eac-facts dd .eac-chip { margin-left: 8px; }
+
+.eac-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-kind) 14%, transparent);
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+}
+.eac-chip--warn { background: color-mix(in srgb, var(--sf-danger) 14%, transparent); color: var(--sf-danger); }
+
+.eac-surface-cover {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: var(--sf-radius-sm);
+  margin-bottom: 16px;
+}
+
+.eac-surface-lede {
+  margin: 0 0 14px;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--sf-muted);
+}
+
+.eac-surface-section {
+  margin: 0 0 18px;
+}
+.eac-surface-section > h3 {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sf-rule);
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  font-weight: 600;
+}
+
+/* Prose inside a surface borrows the reading layer's tokens when article.css
+   is loaded, and falls back to sane values when it is not. */
+.eac-surface-prose {
+  font-family: var(--read-face-prose, var(--sf-font-body));
+  font-size: var(--eac-surface-prose-size, 1.02rem);
+  line-height: var(--read-leading, 1.6);
+  color: var(--sf-fg);
+  max-width: var(--read-measure, 66ch);
+}
+.eac-surface-prose > * + * { margin-top: 0.9em; }
+.eac-surface-prose p { margin: 0; }
+.eac-surface-prose img { max-width: 100%; border-radius: var(--sf-radius-sm); }
+.eac-surface-prose a { color: var(--sf-kind); }
+.eac-surface-prose h2, .eac-surface-prose h3 { font-family: var(--sf-font-title); line-height: 1.25; }
+.eac-surface-prose blockquote {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--sf-kind);
+  color: var(--sf-muted);
+}
+
+.eac-surface-record {
+  font-family: var(--sf-font-record);
+  font-size: 0.74rem;
+  color: var(--sf-muted);
+  letter-spacing: 0.02em;
+}
+
+.eac-surface-muted { color: var(--sf-muted); font-size: 0.9rem; }
+.eac-surface-error { color: var(--sf-danger); font-size: 0.88rem; }
+
+/* Loading: the head paints from the face's preview at once; the body shows
+   its shape while the record arrives. */
+.eac-skeleton {
+  display: grid;
+  gap: 10px;
+}
+.eac-skeleton > span {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--sf-bg-soft), color-mix(in srgb, var(--sf-fg) 9%, var(--sf-bg)), var(--sf-bg-soft));
+  background-size: 200% 100%;
+  animation: eac-shimmer 1.3s ease-in-out infinite;
+}
+.eac-skeleton > span:nth-child(2) { width: 82%; }
+.eac-skeleton > span:nth-child(3) { width: 64%; }
+.eac-skeleton > span.is-block { height: 120px; border-radius: var(--sf-radius-sm); }
+@keyframes eac-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .eac-skeleton > span { animation: none; } }
+
+/* Empty state, shared. */
+.eac-surface-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--sf-muted);
+  font-size: 0.92rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OPTION GRID — the compose picker, and any "choose one of these" pane
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eac-options .eac-face { min-height: 118px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CALENDAR
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-cal { display: flex; flex-direction: column; gap: 10px; }
+
+.eac-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.eac-cal-head h3 {
+  margin: 0;
+  font-family: var(--sf-font-title);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.eac-cal-nav { display: flex; gap: 4px; }
+
+.eac-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.eac-cal-weekday {
+  text-align: center;
+  padding: 2px 0 6px;
+  border-bottom: 1px solid var(--sf-rule);
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  font-weight: 600;
+}
+.eac-cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-height: 64px;
+  padding: 6px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.eac-cal-day.is-pad { border-color: transparent; background: transparent; cursor: default; }
+.eac-cal-day.is-empty { background: var(--sf-bg-soft); }
+.eac-cal-day.is-past .eac-cal-num { color: var(--sf-faint); }
+.eac-cal-day:not(.is-pad):hover { border-color: color-mix(in srgb, var(--sf-kind) 60%, var(--sf-line)); }
+.eac-cal-day.is-selected { border-color: var(--sf-kind); box-shadow: inset 0 0 0 1px var(--sf-kind); }
+.eac-cal-day:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 1px; }
+
+.eac-cal-num {
+  font-family: var(--sf-font-record);
+  font-size: 0.72rem;
+  color: var(--sf-muted);
+  line-height: 1;
+}
+.eac-cal-day.has-events .eac-cal-num { color: var(--sf-fg); font-weight: 600; }
+.eac-cal-day.is-today .eac-cal-num {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sf-kind);
+  color: var(--sf-on-kind, #fff);
+  font-weight: 600;
+}
+
+.eac-cal-pip {
+  display: block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sf-kind) 16%, transparent);
+  border-left: 2px solid var(--sf-kind);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eac-cal-more { font-family: var(--sf-font-record); font-size: 0.62rem; color: var(--sf-muted); }
+
+@media (max-width: 640px) {
+  .eac-cal-day { min-height: 46px; padding: 4px; }
+  .eac-cal-pip { font-size: 0; height: 4px; padding: 0; border-left: 0; border-radius: 2px; }
+}
+
+/* Compact density — the face's month, dots instead of titles. */
+.eac-cal--compact .eac-cal-grid { gap: 1px; }
+.eac-cal--compact .eac-cal-day {
+  min-height: 0;
+  height: 26px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+}
+.eac-cal--compact .eac-cal-day.is-empty { background: transparent; }
+.eac-cal--compact .eac-cal-day.has-events:hover { background: color-mix(in srgb, var(--sf-kind) 14%, transparent); }
+.eac-cal--compact .eac-cal-num { font-size: 0.66rem; }
+.eac-cal--compact .eac-cal-day.is-today .eac-cal-num { width: 16px; height: 16px; }
+.eac-cal--compact .eac-cal-dots { display: flex; gap: 2px; height: 4px; align-items: center; }
+.eac-cal--compact .eac-cal-dots > i { width: 4px; height: 4px; border-radius: 50%; background: var(--sf-kind); }
+.eac-cal--compact .eac-cal-weekday { font-size: 0.55rem; padding: 0 0 2px; }
+.eac-cal--compact .eac-cal-head h3 { font-size: 0.8rem; font-family: var(--sf-font-record); }
+
+/* The rail beside a calendar: one day's entries. */
+.eac-cal-rail-date {
+  margin: 0 0 12px;
+  font-family: var(--sf-font-title);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+.eac-occ-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.eac-occ {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.eac-occ:hover { border-color: color-mix(in srgb, var(--sf-kind) 60%, var(--sf-line)); }
+.eac-occ:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-occ-glyph { color: var(--sf-kind); font-size: 1rem; line-height: 1.2; }
+.eac-occ-title { display: block; font-weight: 500; font-size: 0.92rem; line-height: 1.3; }
+.eac-occ-meta { display: block; margin-top: 2px; font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GALLERY
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-gal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+.eac-gal-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  overflow: hidden;
+  cursor: pointer;
+}
+.eac-gal-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 200ms ease; }
+.eac-gal-tile:hover img { transform: scale(1.03); }
+.eac-gal-tile:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-gal-tile.is-selected { box-shadow: inset 0 0 0 3px var(--sf-kind); }
+.eac-gal-tile.is-selected::after {
+  content: "✓";
+  position: absolute;
+  top: 6px; right: 6px;
+  display: grid; place-items: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--sf-kind);
+  color: var(--sf-on-kind, #fff);
+  font-size: 0.8rem;
+}
+.eac-gal-upload {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed color-mix(in srgb, var(--sf-kind) 60%, var(--sf-line));
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-kind) 6%, transparent);
+  color: var(--sf-kind);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  padding: 8px;
+}
+.eac-gal-upload.is-dragging { background: color-mix(in srgb, var(--sf-kind) 16%, transparent); }
+.eac-gal-upload input { display: none; }
+.eac-gal-upload > b { font-size: 1.4rem; font-weight: 400; line-height: 1; }
+.eac-gal-name {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 14px 8px 6px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  color: #fff;
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.eac-gal-tile:hover .eac-gal-name, .eac-gal-tile:focus-visible .eac-gal-name { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPOSE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-compose-tier {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+.eac-compose-tier button {
+  border: 0;
+  background: none;
+  padding: 6px 10px;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-bottom: 1px dashed var(--sf-line);
+}
+.eac-compose-tier button:hover { color: var(--sf-fg); border-bottom-color: var(--sf-fg); }
+
+.eac-compose-prefill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 6px 10px;
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-kind) 10%, transparent);
+  font-family: var(--sf-font-record);
+  font-size: 0.72rem;
+  color: var(--sf-fg);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE WRITING ROOM — words on the left, the page on the right
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-write {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: min(72vh, 760px);
+}
+.eac-write-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--sf-line);
+  background: var(--sf-bg-soft);
+}
+.eac-seg { display: inline-flex; border: 1px solid var(--sf-line); border-radius: 999px; padding: 2px; background: var(--sf-bg); }
+.eac-seg-btn {
+  border: 0;
+  background: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.eac-seg-btn.is-on { background: var(--sf-kind); color: var(--sf-on-kind, #fff); }
+.eac-seg-btn:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 1px; }
+
+.eac-write-panes { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.eac-write[data-view="split"] .eac-write-panes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.eac-write-editor { padding: 26px 26px 30px; min-width: 0; display: grid; gap: 14px; align-content: start; }
+.eac-write-preview {
+  min-width: 0;
+  padding: 30px 30px 40px;
+  border-left: 1px solid var(--sf-line);
+  background: var(--eac-write-preview-bg, var(--sf-bg));
+  overflow: auto;
+}
+.eac-write[data-view="preview"] .eac-write-preview { border-left: 0; }
+.eac-write-preview .eac-article { margin: 0 auto; }
+
+@media (max-width: 999px) {
+  .eac-write[data-view="split"] .eac-write-panes { grid-template-columns: minmax(0, 1fr); }
+  .eac-write[data-view="split"] .eac-write-preview { display: none; }
+  .eac-seg-btn--wide-only { display: none; }
+}
+
+/* Title and lede: fields that look like a page, not like inputs. */
+.eac-write-title,
+.eac-write-lede {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--sf-fg);
+  resize: none;
+  outline: none;
+  overflow: hidden;
+}
+.eac-write-title {
+  font-family: var(--sf-font-title);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.eac-write-lede {
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: var(--sf-muted);
+}
+.eac-write-title::placeholder, .eac-write-lede::placeholder { color: var(--sf-faint); }
+.eac-write-body { min-height: 260px; }
+.eac-write-settings { margin-top: 10px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE PAGE — the same object, at page size
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-surface-page { display: grid; gap: 12px; }
+.eac-surface-page-crumb { font-size: 0.9rem; color: var(--sf-muted); }
+.eac-surface-page-crumb a { color: inherit; text-decoration: none; }
+.eac-surface-page-crumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.eac-surface-panel--page { max-height: none; box-shadow: none; }
+.eac-surface-panel--page .eac-surface-body { overflow: visible; }
+.eac-surface-panel--page .eac-surface-title { white-space: normal; font-size: clamp(1.5rem, 3.2vw, 2.1rem); }
+.eac-surface-panel--page .eac-surface-head { padding: 18px 22px; align-items: start; }
+.eac-surface-panel--page .eac-surface-glyph { margin-top: 4px; }
+.eac-surface-panel--page .eac-surface-main { padding: 24px 26px 28px; }
+.eac-surface-panel--page .eac-surface-cover { max-height: 420px; }
+@media (max-width: 760px) { .eac-surface-panel--page .eac-surface-rail { order: -1; } }
+
+/* A row face: the feed listing's card, same vocabulary as a tile. */
+.eac-face--row { min-height: 0; justify-content: flex-start; gap: 8px; padding: 18px 20px 18px 24px; }
+.eac-face--row .eac-face-glyph { position: static; font-size: 1rem; margin-bottom: 2px; }
+.eac-face--row .eac-face-title { font-size: 1.35rem; }
+.eac-face--row .eac-face-blurb { max-width: 68ch; }
+.eac-face--row .eac-face-preview { margin: 0 0 4px; }
+.eac-face--row::before { inset: 0 auto 0 0; width: 4px; height: auto; border-radius: var(--sf-radius) 0 0 var(--sf-radius); }
+.eac-face-cover { width: 100%; aspect-ratio: 21 / 8; object-fit: cover; border-radius: var(--sf-radius-sm); margin: 0 0 6px; }
+.eac-face-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; font-family: var(--sf-font-record); font-size: 0.72rem; color: var(--sf-muted); }
+.eac-face-meta b { color: var(--sf-fg); font-weight: 600; }
+.eac-face-actions { display: flex; gap: 8px; margin-top: 10px; }
+.eac-face .eac-face-actions, .eac-face .eac-face-actions * { pointer-events: auto; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BOARD — the org's Kanban (Deck), as a surface and as a face preview
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-board {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  min-height: min(62vh, 640px);
+}
+.eac-board-col {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 264px;
+  min-width: 0;
+  border: 2px solid color-mix(in srgb, var(--sf-fg) 28%, var(--sf-line));
+  border-radius: var(--sf-radius);
+  background: var(--sf-bg-soft);
+}
+.eac-board-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--sf-fg);
+  background: var(--sf-bg);
+  border-radius: var(--sf-radius) var(--sf-radius) 0 0;
+}
+.eac-board-col-head h3 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-family: var(--sf-font-record);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eac-board-count {
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: var(--sf-fg);
+  color: var(--sf-bg);
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.eac-board-cards { display: grid; gap: 8px; padding: 10px; align-content: start; flex: 1; }
+.eac-board-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--sf-fg) 35%, var(--sf-line));
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.eac-board-card:hover { border-color: var(--sf-kind); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.3); }
+.eac-board-card:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-board-card.is-done .eac-board-card-title { text-decoration: line-through; color: var(--sf-muted); }
+.eac-board-card-title { font-weight: 500; font-size: 0.92rem; line-height: 1.35; }
+.eac-board-labels { display: flex; flex-wrap: wrap; gap: 4px; }
+.eac-board-label { padding: 1px 6px; border-radius: 3px; font-size: 0.66rem; font-weight: 600; line-height: 1.4; }
+.eac-board-card-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-family: var(--sf-font-record); font-size: 0.68rem; color: var(--sf-muted); }
+.eac-board-card-meta .is-overdue { color: var(--sf-danger); font-weight: 600; }
+.eac-board-empty { padding: 14px 6px; font-size: 0.8rem; color: var(--sf-muted); font-style: italic; }
+.eac-board-add {
+  margin: 0 10px 10px;
+  padding: 8px 10px;
+  border: 1px dashed color-mix(in srgb, var(--sf-fg) 35%, var(--sf-line));
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+.eac-board-add:hover { color: var(--sf-fg); border-color: var(--sf-fg); }
+.eac-board-add-form { display: grid; gap: 6px; margin: 0 10px 10px; }
+
+/* Face preview: the board at a glance — columns as bars, counts as numbers. */
+.eac-board-mini { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; align-items: end; min-height: 84px; }
+.eac-board-mini-col { display: grid; gap: 4px; align-content: end; min-width: 0; }
+.eac-board-mini-card { height: 9px; border-radius: 2px; background: color-mix(in srgb, var(--sf-fg) 78%, var(--sf-bg)); border-left: 2px solid var(--sf-kind); }
+.eac-board-mini-card.is-done { opacity: 0.35; }
+.eac-board-mini-name {
+  font-family: var(--sf-font-record);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sf-fg);
+  font-weight: 600;
+  border-top: 2px solid var(--sf-fg);
+  padding-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eac-board-mini-name b { float: right; font-weight: 700; }
+
+/* Card detail */
+.eac-board-detail { display: grid; gap: 14px; }
+.eac-board-comments { display: grid; gap: 10px; }
+.eac-board-comment { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--sf-line); border-radius: var(--sf-radius-sm); background: var(--sf-bg-soft); }
+.eac-board-comment-meta { font-family: var(--sf-font-record); font-size: 0.68rem; color: var(--sf-muted); }
+.eac-board-comment p { margin: 0; font-size: 0.92rem; white-space: pre-wrap; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FORUM
+   The board seen from outside itself: a hub tile, and the popup it opens.
+   The board proper lives in @elkdonis/forum-ui and styles itself.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-forum { display: grid; gap: 4px; }
+
+.eac-forum-unread {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; margin-bottom: 10px; border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-kind, var(--sf-accent)) 10%, transparent);
+  font-size: 0.9rem;
+}
+.eac-forum-unread b { font-variant-numeric: tabular-nums; }
+.eac-forum-unread-tools { display: flex; gap: 6px; }
+
+.eac-forum-feeds { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.eac-forum-feed {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 6px 10px; border-left: 3px solid var(--eac-forum-feed, var(--sf-line));
+}
+.eac-forum-feed:hover { background: color-mix(in srgb, var(--sf-fg) 3%, transparent); }
+.eac-forum-feed-name { font-weight: 600; text-decoration: none; color: inherit; min-width: 0; }
+.eac-forum-feed.is-unread .eac-forum-feed-name { font-weight: 700; }
+.eac-forum-feed-count { font-family: var(--sf-font-record); font-size: 0.72rem; color: var(--sf-muted); white-space: nowrap; }
+.eac-forum-feed-count b { color: var(--sf-kind, var(--sf-accent)); font-weight: 600; }
+.eac-forum-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px;
+  background: var(--sf-kind, var(--sf-accent)); vertical-align: middle;
+}
+
+.eac-forum-rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.eac-forum-row { border-bottom: 1px solid var(--sf-line); }
+.eac-forum-row:last-child { border-bottom: 0; }
+.eac-forum-row-hit {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: baseline;
+  width: 100%; padding: 9px 6px; background: none; border: 0; font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+}
+.eac-forum-row-hit:hover { background: color-mix(in srgb, var(--sf-fg) 3%, transparent); }
+.eac-forum-row-glyph { color: var(--sf-kind, var(--sf-muted)); text-align: center; }
+.eac-forum-row-main { min-width: 0; display: grid; gap: 2px; }
+.eac-forum-row-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-forum-row.is-unread .eac-forum-row-title { font-weight: 700; }
+.eac-forum-row.is-unread .eac-forum-row-title::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 6px; background: var(--sf-accent); vertical-align: middle;
+}
+.eac-forum-row-meta { font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
+.eac-forum-row-when { font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-faint); white-space: nowrap; }
+
+/* ── the face preview ───────────────────────────────────────────────────── */
+
+/* The face's glyph is absolutely positioned at its top-left, so a preview
+   that reaches the top of the card must clear it — the board's mini does the
+   same by bottom-aligning inside a fixed box. */
+.eac-forum-mini { display: grid; gap: 4px; min-height: 84px; align-content: end; padding-top: 22px; }
+.eac-forum-mini-row { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; align-items: baseline; font-size: 0.82rem; }
+.eac-forum-mini-glyph { color: var(--sf-kind, var(--sf-muted)); font-size: 0.75rem; }
+.eac-forum-mini-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sf-fg); }
+.eac-forum-mini-row.is-unread .eac-forum-mini-title { font-weight: 700; }
+.eac-forum-mini-feeds {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px;
+  font-family: var(--sf-font-record); font-size: 0.66rem; color: var(--sf-faint);
+}
+.eac-forum-mini-feeds .is-unread { color: var(--sf-accent); }

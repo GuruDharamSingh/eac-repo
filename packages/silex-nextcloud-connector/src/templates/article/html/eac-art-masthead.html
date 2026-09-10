@@ -1,0 +1,47 @@
+<!--
+  eac-art-masthead.html
+  ====================
+  The apparatus above the writing: what kind of thing this is, whose it is,
+  what it is called, and who stands behind it.
+
+  Set in monospace on purpose — a byline and a dateline are the registry entry
+  around the writing rather than writing, and the difference should be visible
+  at a glance. That distinction is where "official" comes from.
+
+  CMS fields consumed:
+    threads.kind          → the kind label, in the reader's words
+    organizations.name    → the masthead line
+    threads.title         → headline
+    threads.excerpt       → standfirst
+    users.display_name    → byline
+    threads.published_at  → dateline
+    metadata.coverImageUrl → cover
+-->
+<header class="eac-art__masthead" data-gjs-type="eac-art-masthead">
+
+  <div class="eac-art__eyebrow">
+    <p class="eac-art__label" data-trait="kindLabel">Essay</p>
+    <p class="eac-art__label eac-art__label--org">
+      <a href="/" data-trait="orgName">Elkdonis Arts Collective</a>
+    </p>
+  </div>
+
+  <h1 class="eac-art__title" data-gjs-editable="true" data-trait="title">
+    What we owe a piece of writing
+  </h1>
+
+  <p class="eac-art__lede" data-gjs-editable="true" data-trait="lede">
+    A collective that publishes has made a promise about care. The typography is
+    where the reader finds out whether it was kept.
+  </p>
+
+  <div class="eac-art__byline">
+    <span><strong data-trait="authorName">Dana McCool</strong></span>
+    <span class="eac-art__sep" aria-hidden="true">·</span>
+    <span data-trait="publishedAt">7 September 2026</span>
+    <span class="eac-art__sep" aria-hidden="true">·</span>
+    <span data-trait="readingTime">6 min</span>
+  </div>
+
+  <img class="eac-art__cover" src="" alt="" data-trait="coverImage" hidden>
+</header>

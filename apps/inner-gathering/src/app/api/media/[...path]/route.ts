@@ -34,14 +34,21 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
+    // Drives the Cache-Control choice below: private media must never be
+    // stored by a shared cache.
     const isPrivate = filePath.includes('/Private/');
 
-    // Only require EAC session for Private media.
-    if (isPrivate) {
-      const session = await getServerSession();
-      if (!session.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    // Public media stays public; private media now requires affiliation with
+    // the owning org or person, not merely "any session at all" — which used
+    // to let any signed-in user read every org's private files by path.
+    const { canReadMedia } = await import('@elkdonis/services');
+    const session = await getServerSession();
+    const viewerId = session.user?.db_user_id ?? session.user?.id ?? null;
+    if (!(await canReadMedia(viewerId, filePath))) {
+      return NextResponse.json(
+        { error: session.user ? 'Not found' : 'Unauthorized' },
+        { status: session.user ? 404 : 401 }
+      );
     }
     
     // Construct the Nextcloud WebDAV URL

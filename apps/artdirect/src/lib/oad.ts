@@ -18,12 +18,15 @@ import type {
  * ArtDirect / Online Artist Directory (OAD) data layer.
  *
  * Backed by users + org_profiles (migration 084/086) rather than
- * directory_profiles: "having a global slug" is what makes someone show up
- * here, whether that slug came from opening an unclaimed file on ArtDirect
- * itself, or from being published on any org's own site (IFAC, amrit_canada,
- * ...). See packages/services/src/profiles.ts for the full model — this is
- * the org-agnostic global directory view of it, rendered through the
- * "Classified Artist Dossier" template via @elkdonis/cms-bindings.
+ * directory_profiles. Every principal has a global slug — it is the profile
+ * URL and the Nextcloud folder name — so listing is gated separately on
+ * users.directory_listed (migration 100). That split is what lets sentinel
+ * and system accounts hold a stable slug without appearing here. A slug
+ * itself may have come from signup, from opening an unclaimed file on
+ * ArtDirect, or from being published on any org's own site (IFAC,
+ * amrit_canada, ...). See packages/services/src/profiles.ts for the full
+ * model — this is the org-agnostic global directory view of it, rendered
+ * through the "Classified Artist Dossier" template via @elkdonis/cms-bindings.
  */
 
 function bioToString(bio: string | null): string | null {

@@ -12,11 +12,12 @@ import {
   updateProfile,
   upsertOrgProfile,
   ensureUniqueUserSlug,
+  setStandingMeeting,
   type OrgRole,
 } from "@elkdonis/services";
 import { requireOrgEditor } from "@/lib/auth";
 import { contentFormSchema, slugifyTitle, type ContentFormValues } from "@/lib/cms/schema";
-import { torontoInputToDate } from "@/lib/format";
+import { zonedInputToDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { deriveExcerpt } from "@elkdonis/utils";
 import { ensureUniqueThreadSlug } from "@elkdonis/services";
@@ -161,13 +162,19 @@ export async function saveContentAction(
 
   // Cover image rides in metadata — threads has no cover_image_url column
   // (see the note in lib/data.ts).
-  const metadata = data.coverImageUrl ? { coverImageUrl: data.coverImageUrl } : {};
+  const timeZone = isMeeting && data.timeZone ? data.timeZone : null;
+  // Record<string, string>, not <string, unknown>: db.json takes a JSONValue,
+  // and `unknown` is not assignable to it. Both entries here are strings.
+  const metadata: Record<string, string> = {};
+  if (data.coverImageUrl) metadata.coverImageUrl = data.coverImageUrl;
+  if (timeZone) metadata.timeZone = timeZone;
 
-  // Times are entered as Toronto wall-clock; convert rather than letting the
-  // server's own timezone (UTC in the container) decide what they meant.
-  const scheduledAt = isMeeting ? torontoInputToDate(data.scheduledAt) : null;
-  const recurrenceUntil = isMeeting ? torontoInputToDate(data.recurrenceUntil ?? "") : null;
-  const rsvpDeadline = isMeeting ? torontoInputToDate(data.rsvpDeadline ?? "") : null;
+  // Times are entered as wall-clock in the chosen zone (Toronto by default);
+  // convert rather than letting the server's own timezone (UTC in the
+  // container) decide what they meant.
+  const scheduledAt = isMeeting ? zonedInputToDate(data.scheduledAt, timeZone) : null;
+  const recurrenceUntil = isMeeting ? zonedInputToDate(data.recurrenceUntil ?? "", timeZone) : null;
+  const rsvpDeadline = isMeeting ? zonedInputToDate(data.rsvpDeadline ?? "", timeZone) : null;
 
   // The DB CHECK allows DAILY/WEEKLY/MONTHLY/CUSTOM or NULL — "NONE" is the
   // form's way of saying "doesn't repeat" and must be stored as NULL, not
@@ -265,6 +272,40 @@ export async function saveContentAction(
     console.error("[amrit-canada] saveContentAction:", err);
     return { ok: false, error: "Could not save. Try again." };
   }
+}
+
+/**
+ * Flag (or unflag) a gathering as the one the hub leads with.
+ *
+ * Without a flag the hub infers: a weekly series if there is one, otherwise
+ * whatever is soonest. That inference is wrong on a site whose standing
+ * gathering is monthly, and only a person can settle it — hence this.
+ *
+ * The thread is verified to belong to this org before the flag is written, so
+ * a stray id cannot point the hub at another site's content.
+ */
+export async function setStandingMeetingAction(
+  threadId: string | null
+): Promise<ActionResult> {
+  await requireOrgEditor();
+
+  if (threadId) {
+    const [thread] = await db<Array<{ id: string }>>`
+      SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG}
+    `;
+    if (!thread) return { ok: false, error: "Not found" };
+  }
+
+  try {
+    await setStandingMeeting(ORG, threadId);
+  } catch (error) {
+    console.error("[amrit-canada] setStandingMeetingAction:", error);
+    return { ok: false, error: "Could not update." };
+  }
+
+  revalidatePath("/hub");
+  revalidatePath("/manage");
+  return { ok: true };
 }
 
 export async function deleteContentAction(threadId: string): Promise<ActionResult> {

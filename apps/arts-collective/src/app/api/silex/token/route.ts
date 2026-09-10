@@ -2,33 +2,53 @@ import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
 import { getServerSession } from "@elkdonis/auth-server";
 import {
-  createNextcloudClient,
-  ensureOrgFolderPath,
   getAdminClient,
-  grantOrgAccess,
+  getOrgFolderPath,
   provisionOrgOnNextcloud,
-  resolveReceivedOrgPath,
 } from "@elkdonis/nextcloud";
 import { canEditOrgSite } from "@/lib/org";
-import {
-  mintSilexToken,
-  SILEX_TOKEN_TTL_SECONDS,
-} from "@/lib/silex-tokens";
+import { mintSilexToken, SILEX_TOKEN_TTL_SECONDS } from "@/lib/silex-tokens";
 
 /**
  * POST /api/silex/token
  *
  * Body: { slug: string, mode?: "full" | "simple" }
- *
- * Mints a one-time Silex auth-bridge token scoped to the authenticated
- * per-user Nextcloud credentials for a per-org owner/admin.
- *
  * Response: { token, editorUrl, expiresInSeconds }
  *
- * The returned editorUrl points at the owner-gated `/edit/{slug}` launch route,
- * which redirects to the dedicated Silex editor origin. Clients should treat
- * the token as opaque; only the Silex connector should redeem it, exactly once,
- * via GET /api/silex/auth.
+ * Mints a one-time auth-bridge token for the Silex editor, scoped to one org's
+ * folder.
+ *
+ * ── Access is a ROLE, not a credential (2026-09-07) ─────────────────────────
+ *
+ * This route used to require the caller's own Nextcloud credentials, and
+ * lazily provision them when absent. That model could not work:
+ *
+ *   * `generateAppPassword()` returns the account password it was given, so a
+ *     stored credential is not an app password at all.
+ *   * The one credential in the database returns 401.
+ *   * Admin-API user creation is refused by Nextcloud 33's password-
+ *     confirmation middleware, so the lazy path 403s and falls through to a
+ *     409 — which is what every user got.
+ *
+ * Net effect: 1 of 35 people had a stored credential, it did not work, and the
+ * editor was unusable by everyone.
+ *
+ * So authorisation is now `canEditOrgSite` — owner or guide of THIS org — and
+ * the editor connects to Nextcloud as the service account, which is the same
+ * account every media proxy and `/api/silex/layout` already use. Who may edit
+ * is a question about the org, and answering it with "do you happen to hold a
+ * working WebDAV password" was never the same question.
+ *
+ * Containment is by path, not by credential: the token carries one folder, and
+ * `/api/silex/auth` derives exactly two paths from it —
+ * `<folder>/silex/project` and `<folder>/silex/published`. The connector reads
+ * and writes those and never browses a root, so a guide of one org cannot
+ * reach another's files even though the underlying account could.
+ *
+ * Also gone: `grantOrgAccess(... ncUserId ...)`, which added the caller to the
+ * `EAC_Network` group. That group backs a groupfolder granting
+ * read/write/share/delete across EVERY org's files, so opening the editor was
+ * quietly handing out network-wide storage access.
  */
 export async function POST(req: Request) {
   const session = await getServerSession();
@@ -39,38 +59,6 @@ export async function POST(req: Request) {
 
   const dbUserId = user.db_user_id ?? user.id;
 
-  // OAuth signups skip the email/password auto-provisioning path, so users
-  // can land here without Nextcloud credentials. Provision lazily (idempotent)
-  // instead of dead-ending with a 409.
-  let ncUserId = user.nextcloud_user_id;
-  let ncAppPassword = user.nextcloud_app_password;
-  if (!ncUserId || !ncAppPassword) {
-    try {
-      const { handleUserProvisioning } = await import("@elkdonis/services");
-      const result = await handleUserProvisioning(
-        dbUserId,
-        user.email!,
-        user.email?.split("@")[0] || "User",
-        { groups: [process.env.NEXTCLOUD_DEFAULT_GROUP || "EAC_Network"] }
-      );
-      if (result.success && result.nextcloudUserId && result.appPassword) {
-        ncUserId = result.nextcloudUserId;
-        ncAppPassword = result.appPassword;
-      }
-    } catch (err) {
-      console.error("lazy nextcloud provisioning failed:", err);
-    }
-  }
-  if (!ncUserId || !ncAppPassword) {
-    return NextResponse.json(
-      {
-        error:
-          "Could not provision Nextcloud credentials for this account. Try again or contact an admin.",
-      },
-      { status: 409 }
-    );
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -80,17 +68,12 @@ export async function POST(req: Request) {
 
   const { slug, mode } = (body as { slug?: unknown; mode?: unknown }) ?? {};
   if (typeof slug !== "string" || !slug) {
-    return NextResponse.json(
-      { error: "slug is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "slug is required" }, { status: 400 });
   }
 
   const editorMode = mode === "simple" ? "simple" : "full";
 
-  const orgs = await db<
-    { id: string; nextcloud_folder_path: string | null }[]
-  >`
+  const orgs = await db<{ id: string; nextcloud_folder_path: string | null }[]>`
     SELECT id, nextcloud_folder_path
     FROM organizations
     WHERE slug = ${slug}
@@ -101,83 +84,63 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Org not found" }, { status: 404 });
   }
 
-  const canEdit = await canEditOrgSite(dbUserId, org.id);
-  if (!canEdit) {
+  // Owner or guide of this org. The whole gate.
+  if (!(await canEditOrgSite(dbUserId, org.id))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let nextcloudFolderPath = org.nextcloud_folder_path?.trim() ?? "";
-  const nextcloudBaseUrl = process.env.NEXTCLOUD_URL;
-  if (!nextcloudBaseUrl) {
+  const ncUser = process.env.NEXTCLOUD_ADMIN_USER;
+  const ncPass = process.env.NEXTCLOUD_ADMIN_PASSWORD;
+  if (!process.env.NEXTCLOUD_URL || !ncUser || !ncPass) {
     return NextResponse.json(
-      { error: "NEXTCLOUD_URL environment variable is required" },
+      { error: "Nextcloud is not configured on the server" },
       { status: 500 }
     );
   }
 
-  const nextcloudClient = createNextcloudClient({
-    baseUrl: nextcloudBaseUrl,
-    username: ncUserId,
-    password: ncAppPassword,
-  });
+  // The service account's own view of the org folder. `getOrgFolderPath`
+  // rather than a hardcoded `EAC_Network/${id}` literal: that literal appears
+  // 127 times across the repo and is why orgs on a divergent path have media
+  // no proxy can serve.
+  let nextcloudFolderPath = org.nextcloud_folder_path?.trim() || "";
 
-  // Service-account model (default): the org folder lives under the service
-  // account at EAC_Network/{orgId} and is shared read/write to the editor.
-  // The token carries the RECIPIENT-relative path of that share, since Silex
-  // connects with the user's own credentials.
-  //
-  // Legacy escape hatch: orgs whose folder path points elsewhere (e.g.
-  // hidden-enneagram's `eac/...` seeded under a personal account) keep the
-  // old behavior — the folder is ensured under the user's own account —
-  // until they're migrated by scripts/backfill-org-nextcloud.mjs.
-  const isLegacyUserOwned =
-    nextcloudFolderPath !== "" &&
-    !/^EAC[_-]Network\//.test(nextcloudFolderPath);
+  // Legacy escape hatch, unchanged: an org whose recorded path is not under
+  // the network root (hidden-enneagram's `eac/…`, seeded under a personal
+  // account before the groupfolder existed) keeps that path until it is
+  // migrated. The service account can read it, so the editor still works.
+  const isLegacyPath =
+    nextcloudFolderPath !== "" && !/^EAC[_-]Network\//.test(nextcloudFolderPath);
 
-  try {
-    if (isLegacyUserOwned) {
-      nextcloudFolderPath = await ensureOrgFolderPath(
-        nextcloudClient,
-        nextcloudFolderPath
-      );
-    } else {
+  if (!isLegacyPath) {
+    try {
       const admin = getAdminClient();
       const { orgFolderPath } = await provisionOrgOnNextcloud(admin, org.id);
-      if (org.nextcloud_folder_path !== orgFolderPath) {
+      nextcloudFolderPath = orgFolderPath || getOrgFolderPath(org.id);
+
+      if (org.nextcloud_folder_path !== nextcloudFolderPath) {
+        // Keep the column honest — it is the only record of where an org's
+        // files actually live, and it had drifted on 8 of 15 orgs.
         await db`
           UPDATE organizations
-          SET nextcloud_folder_path = ${orgFolderPath}
+          SET nextcloud_folder_path = ${nextcloudFolderPath}
           WHERE id = ${org.id}
         `;
       }
-
-      await grantOrgAccess(admin, org.id, ncUserId, "owner");
-
-      const receivedPath = await resolveReceivedOrgPath(
-        admin,
-        nextcloudClient,
-        org.id,
-        ncUserId
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      return NextResponse.json(
+        { error: "Could not provision the org's Nextcloud folder", detail },
+        { status: 502 }
       );
-      nextcloudFolderPath = (receivedPath ?? `/${org.id}`).replace(/^\/+/, "");
     }
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    return NextResponse.json(
-      {
-        error: "Could not provision the org's Nextcloud folder",
-        detail,
-      },
-      { status: 502 }
-    );
   }
 
   const token = await mintSilexToken({
     userId: dbUserId,
     orgId: org.id,
     slug,
-    ncUser: ncUserId,
-    ncPass: ncAppPassword,
+    ncUser,
+    ncPass,
     nextcloudFolderPath,
   });
 

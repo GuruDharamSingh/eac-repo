@@ -249,11 +249,11 @@
       "repeatable": false,
       "defaultVisible": true,
       "cmsFields": [
-        "artist_profiles.display_name",
-        "artist_profiles.role_title",
-        "artist_profiles.bio",
-        "artist_profiles.photo_url",
-        "artist_profiles.pronouns",
+        "users.display_name",
+        "org_profiles.role_title",
+        "users.bio",
+        "users.avatar_url",
+        "users.pronouns",
         "workshop_pages.author_note"
       ],
       "traits": [
@@ -306,7 +306,7 @@
           "from": "facilitator.co"
         }
       },
-      "notes": "Data source is threads.author_id → artist_profiles. workshop_pages.author_note overrides artist_profiles.bio for this workshop only.",
+      "notes": "Data source is threads.author_id → users, plus org_profiles.role_title for the author's title in THIS org (artist_profiles is being retired). workshop_pages.author_note overrides users.bio for this workshop only.",
       "wizard": {
         "label": "Facilitator",
         "description": "Who is leading this workshop."
@@ -457,7 +457,7 @@
         "workshop_testimonials.name",
         "workshop_testimonials.role"
       ],
-      "notes": "Optional. Testimonials table is future work — filtered by thread_id.",
+      "notes": "Optional. Testimonials table is future work — filtered by thread_id. NOTE 2026-09-09: the workshop_testimonials table these bindings name does not exist in the schema; the section renders its fallbacks until it does.",
       "wizard": {
         "skip": true
       }

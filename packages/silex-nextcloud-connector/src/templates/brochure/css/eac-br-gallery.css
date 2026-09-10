@@ -1,0 +1,57 @@
+/*
+  eac-br-gallery.css
+  ===================
+  Torn-paper photo frames: an irregular clip-path on the image plus a
+  slight rotation per variant, like snapshots pasted into a scrapbook.
+*/
+
+.eac-br-gallery {
+  padding: 72px 24px;
+  background: var(--eac-br-paper-2);
+}
+
+.eac-br-gallery__head {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto 40px;
+  text-align: center;
+}
+.eac-br-gallery__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 30px);
+  margin: 6px 0 0;
+}
+
+.eac-br-gallery__grid {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px 28px;
+  padding-top: 12px;
+}
+
+.eac-br-torn-frame {
+  margin: 0;
+  padding: 10px 10px 26px;
+  background: #fffdf8;
+  box-shadow: 0 6px 14px rgba(36, 28, 21, 0.22);
+  clip-path: polygon(
+    0 2%, 4% 0, 96% 1%, 100% 3%,
+    99% 97%, 92% 100%, 84% 97%, 76% 100%,
+    68% 98%, 60% 100%, 52% 97%, 44% 100%,
+    36% 98%, 28% 100%, 20% 97%, 12% 100%, 0 98%
+  );
+}
+.eac-br-torn-frame img { width: 100%; height: auto; }
+
+.eac-br-torn-frame--a { transform: rotate(-1.5deg); }
+.eac-br-torn-frame--b { transform: rotate(1deg); margin-top: 14px; }
+.eac-br-torn-frame--c { transform: rotate(-0.5deg); }
+
+@media (max-width: 900px) {
+  .eac-br-gallery__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .eac-br-gallery__grid { grid-template-columns: 1fr; }
+  .eac-br-torn-frame--b { margin-top: 0; }
+}

@@ -1,8 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { BaroqueSignup } from "@elkdonis/ui";
-import "@elkdonis/ui/eac-theme.css";
+// From @elkdonis/cms-ui, not @elkdonis/ui: the component is Mantine-free
+// either way, but the ui barrel declares Mantine, so importing through it
+// pulls Mantine into an app that deliberately does without it.
+import { BaroqueSignup } from "@elkdonis/cms-ui/auth";
+import "@elkdonis/cms-ui/baroque-signup.css";
 
 /**
  * The shared platform signup/signin card (same component amrit-canada uses)

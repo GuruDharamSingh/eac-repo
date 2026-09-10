@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "@elkdonis/ui/rgl-theme.css";
+import "@elkdonis/cms-ui/gallery.css";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {

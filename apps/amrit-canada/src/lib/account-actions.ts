@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { db } from "@elkdonis/db";
 import { updateProfile, ensureUniqueUserSlug } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
 import type { ActionResult } from "@/lib/cms/actions";
@@ -44,5 +45,39 @@ export async function updateOwnProfileAction(input: {
   } catch (err) {
     console.error("[amrit-canada] updateOwnProfileAction:", err);
     return { ok: false, error: "Could not save your profile." };
+  }
+}
+
+/** Sections this site knows how to render on a member's page. Others are refused. */
+const KNOWN_PROFILE_SECTIONS = ["store"] as const;
+
+/**
+ * Switch an optional section of the CALLER's own profile page on or off
+ * (users.profile_sections, migration 105). Self-only by construction, like
+ * updateOwnProfileAction. `jsonb ||` merges, so a section another site set
+ * is left alone.
+ */
+export async function setOwnProfileSectionAction(input: {
+  key: (typeof KNOWN_PROFILE_SECTIONS)[number];
+  on: boolean;
+}): Promise<ActionResult> {
+  const viewer = await getViewer();
+  if (!viewer) return { ok: false, error: "Sign in first." };
+  if (!KNOWN_PROFILE_SECTIONS.includes(input.key)) {
+    return { ok: false, error: "Unknown section." };
+  }
+  try {
+    const [row] = await db<Array<{ slug: string | null }>>`
+      UPDATE users
+      SET profile_sections = COALESCE(profile_sections, '{}'::jsonb) || ${db.json({ [input.key]: Boolean(input.on) } as never)}
+      WHERE id = ${viewer.userId}
+      RETURNING slug
+    `;
+    revalidatePath("/account");
+    if (row?.slug) revalidatePath(`/about/${row.slug}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("[amrit-canada] setOwnProfileSectionAction:", err);
+    return { ok: false, error: "Could not save that." };
   }
 }

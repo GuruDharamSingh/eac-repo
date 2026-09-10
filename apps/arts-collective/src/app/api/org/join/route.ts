@@ -38,11 +38,27 @@ export async function POST(req: Request) {
     });
   }
 
+  // Self-join grants `viewer`, not `member`.
+  //
+  // This route is deliberately ungated — it is how `/login?org=<slug>` gets a
+  // new person affiliated with the org that invited them, and requiring
+  // approval there would break onboarding. But `member` is the role that
+  // satisfies all three of:
+  //
+  //   - isOrgAffiliate (media-authz)      → the org's PRIVATE media
+  //   - org_feeds.min_role = 'member'     → the org's non-public feeds
+  //   - canClaimStore (commerce)          → opening a store in that org
+  //
+  // so an ungated route granting it meant any signed-in person could take
+  // themselves from nothing to reading any org's private files in two
+  // requests. `viewer` ranks below `member` in ROLE_RANK, so it carries
+  // affiliation and public access and none of those three. Promotion to
+  // `member` is a deliberate act by someone who already holds the org.
   await db`
     INSERT INTO user_organizations (user_id, org_id, role)
-    VALUES (${user.id}, ${org.id}, 'member')
+    VALUES (${user.id}, ${org.id}, 'viewer')
     ON CONFLICT (user_id, org_id) DO NOTHING
   `;
 
-  return NextResponse.json({ ok: true, role: "member" });
+  return NextResponse.json({ ok: true, role: "viewer" });
 }

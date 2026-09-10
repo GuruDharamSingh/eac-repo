@@ -96,8 +96,8 @@ export const defaultSiteContent: IfacSiteContent = {
     stats: ["Artists", "Art dealers", "Blog, videos and social"],
   },
   signup: {
-    title: "Sign up for openings and collector notes",
-    body: "Collectors, artists and dealers can join the IFAC list for exhibition announcements, private previews and membership follow-up.",
+    title: "Create an account or sign in",
+    body: "One account works across the whole Elkdonis network. Artists and dealers can claim their profile; collectors get exhibition announcements and private previews.",
   },
   rsvp: {
     title: "RSVP for IFAC events",

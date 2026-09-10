@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types && node scripts/check-client-barrels.mjs",
+    "check-types": "turbo run check-types && node scripts/check-client-barrels.mjs && node scripts/check-workshop-fields.mjs",
     "check-barrels": "node scripts/check-client-barrels.mjs",
     "test": "turbo run test"
   },

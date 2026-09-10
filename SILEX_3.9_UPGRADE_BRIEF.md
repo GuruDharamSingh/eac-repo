@@ -50,10 +50,33 @@ client config; `/eac-blocks.css` + `/eac-*-template.json` → 200; `GET /?t=fake
 → our `nextcloud-storage`; built client bundle still emits `silex:grapesjs:start/end` +
 `silex:startup:end` (so `client-config.js` block wiring stays valid).
 
-**Not yet verified**: a real browser load of the editor with grapesjs 0.23 —
-`DomComponents.addType` / `Css.addRules` / `BlockManager.add` in `client-config.js` are stable
-API but need one end-to-end smoke (mint a token from arts-collective `/hub`, open the editor,
-confirm all block categories appear and a Save/Publish round-trips to Nextcloud).
+**Browser smoke: PASSED (2026-09-06).** Driven headlessly over CDP (chromium in a container on
+`eac-network`, since the TrueNAS host lacks the GUI libs). Against the real `silex` service:
+
+```
+hasEditor: true          grapesjs 0.23 initialised
+blockCount: 97
+categories: Basics, Media, Elements, forms, Eleventy,
+            Arts Live Slots, EAC Layout, EAC Content, EAC Templates,
+            EAC Workshop Template, EAC Dossier Template, EAC Enneagram Template
+console:    [eac-client-config] plugin entry executed
+            … workshop/dossier/enneagram css seeded + template installed
+            [eac-client-config] installed
+page errors: none
+```
+
+So `DomComponents.addType`, `BlockManager.add` and `Css.addRules` all work on grapesjs 0.23 —
+the one real unknown from the version jump. A control run without `SILEX_SERVER_CONFIG` gave
+52 blocks and only the 3 hardcoded categories (the `/eac-*` routes 404), confirming the
+connector's asset middleware is what supplies the other 45 template blocks.
+
+Note `document.body` stays `silex-loading` without a redeemed token — that's the login overlay;
+GrapesJS and every block are fully initialised underneath. An early `--dump-dom` read of that
+as "stalled" and was misleading; the CDP probe is the accurate signal.
+
+**Still not covered**: a Save/Publish round-trip to Nextcloud. That needs a real one-time token
+(a signed-in owner opening the editor from arts-collective `/hub`), so it's a human-at-a-browser
+step, not something the headless probe can synthesise.
 
 ## New facts learned in Phase 0 (feed into Phases 1 & 3)
 

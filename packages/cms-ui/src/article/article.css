@@ -1,0 +1,284 @@
+/*
+  article.css — the reading environment.
+
+  ONE structure, MANY voices. The measurements that make prose readable are
+  held constant across the network — measure, rhythm, where the apparatus sits
+  — while the things that make a site sound like itself are tokens an org
+  overrides. A reader should be able to tell whose site they are on and should
+  not be able to tell that the reading layer is shared.
+
+  ── How an org makes it theirs ──────────────────────────────────────────────
+
+  Set any of the --read-* tokens in your own :root, after importing this file:
+
+      :root {
+        --read-face-prose:  "Spectral", Georgia, serif;
+        --read-accent:      hsl(var(--terracotta));
+        --read-cap-size:    0;          disables the drop cap
+        --read-rule-weight: 2px;        heavier rules
+      }
+
+  Or pick a preset on the article element and adjust from there:
+
+      <ArticleView reading="gazette" … />
+
+  Everything falls back, so an org that sets nothing still gets correct
+  setting. Plain CSS with custom properties, NOT Tailwind utilities — ifac and
+  artdirect carry their own stylesheets and utility classes would render
+  unstyled there. For orgs that DO want utilities, reading-theme.css exposes
+  the same tokens to Tailwind.
+*/
+
+/* ── The interface ──────────────────────────────────────────────────────── */
+
+:root {
+  /* Structure — constant by default, because these are what make it read.
+     An org CAN change them; it usually should not. */
+  --read-measure: 63ch;
+  --read-size: 20px;
+  --read-leading: 1.62;
+  --read-para-space: 1.15em;
+
+  /* Voice — this is what an org changes. */
+  --read-face-prose: var(--eac-font-prose, "EB Garamond", Garamond, Georgia, "Times New Roman", serif);
+  --read-face-record: var(--eac-font-record, ui-monospace, "SF Mono", Menlo, monospace);
+  --read-face-title: var(--read-face-prose);
+
+  --read-title-size: clamp(2rem, 4.6vw, 2.9rem);
+  --read-title-weight: 500;
+  --read-title-tracking: -0.02em;
+  --read-lede-size: 1.22rem;
+
+  /* 0 turns the drop cap off. */
+  --read-cap-size: 3.5em;
+  --read-cap-weight: 500;
+
+  --read-rule-weight: 1px;
+  --read-rule-colophon: 2px;
+  --read-label-tracking: 0.13em;
+  --read-label-size: 0.66rem;
+  --read-record-size: 0.78rem;
+
+  /* Colour — inherits the platform tokens when an org has set them. */
+  --read-ink: var(--eac-color-ink, #16181d);
+  --read-muted: var(--eac-color-ink-muted, #5a6070);
+  --read-faint: var(--eac-color-ink-faint, #8b90a0);
+  --read-rule: var(--eac-color-border, #e1e3ea);
+  --read-accent: var(--eac-accent, #5b45a8);
+}
+
+/* ── Presets ────────────────────────────────────────────────────────────────
+   Three voices, one structure. Chosen with `reading="…"`, and every token
+   below can still be overridden individually afterwards. */
+
+/* gazette — notices and announcements. Tighter, louder rules, no drop cap.
+   For an org whose posts are mostly short and mostly news. */
+.eac-article[data-reading="gazette"] {
+  --read-face-title: var(--read-face-record);
+  --read-title-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  --read-title-weight: 500;
+  --read-title-tracking: -0.01em;
+  --read-lede-size: 1.1rem;
+  --read-cap-size: 0;
+  --read-rule-weight: 2px;
+  --read-label-tracking: 0.18em;
+  --read-leading: 1.55;
+}
+
+/* quiet — maximum restraint. Sans throughout, no cap, no rules around the
+   byline. For an org whose identity is modern rather than literary. */
+.eac-article[data-reading="quiet"] {
+  --read-face-prose: var(--eac-font-body, system-ui, -apple-system, sans-serif);
+  --read-face-title: var(--read-face-prose);
+  --read-face-record: var(--read-face-prose);
+  --read-size: 18px;
+  --read-leading: 1.7;
+  --read-title-weight: 600;
+  --read-title-tracking: -0.025em;
+  --read-cap-size: 0;
+  --read-rule-weight: 0px;
+  --read-label-tracking: 0.09em;
+  --read-record-size: 0.82rem;
+}
+
+/* ── The article ────────────────────────────────────────────────────────── */
+
+.eac-article {
+  max-width: var(--read-measure);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4.5rem) 1.25rem;
+  color: var(--read-ink);
+  font-family: var(--read-face-prose);
+  font-size: var(--read-size);
+  line-height: var(--read-leading);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.eac-article__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin-bottom: 1.4rem;
+}
+
+.eac-article__label {
+  font-family: var(--read-face-record);
+  font-size: var(--read-label-size);
+  font-weight: 500;
+  letter-spacing: var(--read-label-tracking);
+  text-transform: uppercase;
+  color: var(--read-faint);
+  margin: 0;
+}
+
+.eac-article__label--org { color: var(--read-accent); }
+.eac-article__label a { color: inherit; }
+
+.eac-article__title {
+  margin: 0 0 0.9rem;
+  font-family: var(--read-face-title);
+  font-size: var(--read-title-size);
+  font-weight: var(--read-title-weight);
+  line-height: 1.06;
+  letter-spacing: var(--read-title-tracking);
+  text-wrap: balance;
+  color: var(--read-ink);
+}
+
+.eac-article__lede {
+  font-size: var(--read-lede-size);
+  line-height: 1.5;
+  color: var(--read-muted);
+  margin: 0 0 1.8rem;
+}
+
+.eac-article__byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.9rem;
+  padding: 0.85rem 0;
+  border-top: var(--read-rule-weight) solid var(--read-rule);
+  border-bottom: var(--read-rule-weight) solid var(--read-rule);
+  margin-bottom: 2.4rem;
+  font-family: var(--read-face-record);
+  font-size: var(--read-record-size);
+  color: var(--read-muted);
+}
+
+.eac-article__byline strong { color: var(--read-ink); font-weight: 500; }
+.eac-article__sep { color: var(--read-faint); }
+
+/* ── Prose ──────────────────────────────────────────────────────────────── */
+
+.eac-article__body > * { max-width: var(--read-measure); }
+.eac-article__body p { margin: 0 0 var(--read-para-space); }
+
+/* The drop cap marks where reading starts. `--read-cap-size: 0` removes it
+   without the org having to know this selector exists. */
+.eac-article__body > p:first-of-type::first-letter {
+  font-size: var(--read-cap-size);
+  font-weight: var(--read-cap-weight);
+  color: var(--read-ink);
+}
+
+.eac-article:not([data-reading="gazette"]):not([data-reading="quiet"])
+  .eac-article__body > p:first-of-type::first-letter {
+  float: left;
+  line-height: 0.82;
+  padding: 0.06em 0.09em 0 0;
+}
+
+.eac-article__body h2,
+.eac-article__body h3,
+.eac-article__body h4 {
+  margin: 2.4rem 0 0.7rem;
+  font-family: var(--read-face-title);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.eac-article__body h2 { font-size: 1.5rem; }
+.eac-article__body h3 { font-size: 1.24rem; }
+.eac-article__body h4 { font-size: 1.08rem; }
+
+.eac-article__body a {
+  color: var(--read-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.eac-article__body blockquote {
+  margin: 2rem 0;
+  padding-left: 1.4rem;
+  border-left: 2px solid var(--read-rule);
+  font-style: italic;
+  color: var(--read-muted);
+}
+
+.eac-article__body img,
+.eac-article__body video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem 0;
+}
+
+/* Wide content scrolls in its own container rather than pushing the page
+   sideways — a pasted table is the usual culprit. */
+.eac-article__body pre,
+.eac-article__body table {
+  overflow-x: auto;
+  max-width: 100%;
+  display: block;
+}
+
+.eac-article__body ul,
+.eac-article__body ol {
+  margin: 0 0 var(--read-para-space);
+  padding-left: 1.4em;
+}
+.eac-article__body li { margin-bottom: 0.35em; }
+
+.eac-article__body hr {
+  border: 0;
+  border-top: 1px solid var(--read-rule);
+  margin: 2.5rem 0;
+}
+
+.eac-article__cover {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 0 2rem;
+  border-radius: 2px;
+}
+
+/* ── Colophon ───────────────────────────────────────────────────────────── */
+
+.eac-article__colophon {
+  margin-top: 3rem;
+  border-top: var(--read-rule-colophon) solid var(--read-ink);
+  padding-top: 1.1rem;
+  font-family: var(--read-face-record);
+  font-size: 0.74rem;
+  line-height: 1.75;
+  color: var(--read-muted);
+}
+
+.eac-article__colophon dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: 0.15rem 1.5rem;
+}
+
+.eac-article__colophon dt { color: var(--read-faint); }
+.eac-article__colophon dd { margin: 0; color: var(--read-ink); }
+
+@media (max-width: 30rem) {
+  .eac-article__colophon dl { grid-template-columns: 1fr; }
+  .eac-article__colophon dt { margin-top: 0.5rem; }
+}

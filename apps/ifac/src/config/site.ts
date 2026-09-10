@@ -11,4 +11,6 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_IFAC_OWNER_EMAIL ?? "info@ifacgroup.com",
   ].filter(Boolean),
   centralAdminUrl: process.env.NEXT_PUBLIC_EAC_ADMIN_URL ?? "http://localhost:3000",
+  /** The network marketplace (art-auction); a member's store section links there. */
+  marketplaceUrl: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009",
 } as const;

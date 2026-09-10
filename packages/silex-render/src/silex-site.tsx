@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { applyManifestBindings, toWorkshopContext } from "@elkdonis/cms-bindings";
+import { applyManifestBindings, removeSections, toWorkshopContext } from "@elkdonis/cms-bindings";
 import { loadTemplateManifest } from "@elkdonis/cms-bindings/node";
 import { sanitizeSilexHtml } from "@elkdonis/utils";
 import {
@@ -62,10 +62,23 @@ export async function SilexSite({
   org,
   cssLinks = [],
   page,
+  omitSections,
 }: {
   org: OrgSummary;
   cssLinks?: string[];
   page?: string;
+  /**
+   * Template section ids to drop from the published document — typically the
+   * template's own nav and footer, when the surrounding app renders its own.
+   *
+   * A Silex page is published as a COMPLETE document. Rendered inside a React
+   * app that has its own header, the visitor gets two navs stacked, and the
+   * one they meet first is static: it cannot know who is signed in, cannot
+   * open a menu, and cannot carry a notification count. Naming those sections
+   * here inverts it — the framework owns the chrome, the artifact supplies the
+   * body — and it happens at render time, so nothing has to be republished.
+   */
+  omitSections?: string[];
 }) {
   const path = pageRef(org.silex_published_path, page);
   const cacheKey = `${org.silex_published_at ?? "no-publish"}:${page ?? "index"}`;
@@ -103,6 +116,12 @@ export async function SilexSite({
   // a binding wrote unsanitized.
   let bound = rewriteAssetUrls(html, org.slug);
 
+  // Drop the template's own chrome before anything else looks at the document,
+  // so bindings are never spent on sections that are about to be removed.
+  if (omitSections?.length) {
+    bound = removeSections(bound, omitSections);
+  }
+
   // If the published HTML carries template hooks, fill them from the org's
   // primary published workshop. Which hook takes which field is declared in the
   // template manifest, not here — see @elkdonis/cms-bindings/engine.
@@ -139,12 +158,17 @@ export async function SilexSiteBySlug({
   slug,
   cssLinks,
   page,
+  omitSections,
 }: {
   slug: string;
   cssLinks?: string[];
   page?: string;
+  /** See SilexSite — drop the template's own chrome when the app renders it. */
+  omitSections?: string[];
 }) {
   const org = await getOrgBySlug(slug);
   if (!org) return null;
-  return <SilexSite org={org} cssLinks={cssLinks} page={page} />;
+  return (
+    <SilexSite org={org} cssLinks={cssLinks} page={page} omitSections={omitSections} />
+  );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SilexSiteBySlug } from "@elkdonis/silex-render";
-import { AuthNav } from "@/components/auth-nav";
+import { SiteNav } from "@/components/site-nav";
 import { EnneagramDiagram } from "@/components/enneagram/EnneagramDiagram";
 import { ORG_SLUG } from "@/lib/session";
 
@@ -9,6 +9,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * The published Silex site, with the interactive diagram appended below it.
+ *
+ * The site arrives without its own top bar: `omitSections` drops the
+ * template's `eac-enn-nav` at render time, and SiteNav stands in its place.
+ * The template's hamburger was decorative — published artifacts are stripped
+ * of script, so it could never open — whereas the React bar is a client
+ * component and its drawer works. Silex renders the content; React keeps the
+ * chrome.
  *
  * Safe to sit next to the Silex markup: that template's stylesheet is entirely
  * class-scoped to `.eac-enn-*` (its only global is a `:root` variable block),
@@ -19,19 +26,20 @@ export const dynamic = "force-dynamic";
 export default function Home() {
   return (
     <>
-      <AuthNav />
+      <SiteNav />
       <SilexSiteBySlug
         slug={ORG_SLUG}
         cssLinks={["/api/silex/templates/enneagram.css"]}
+        omitSections={["eac-enn-nav"]}
       />
 
       <section
         id="enneagram"
         className="border-t border-border px-6 py-20"
-        style={{ backgroundColor: "#0a0a0c", color: "#ece7dd" }}
+        style={{ backgroundColor: "hsl(var(--band))", color: "hsl(var(--band-foreground))" }}
       >
         <div className="mx-auto max-w-md text-center">
-          <p className="mb-5 text-xs uppercase tracking-[0.3em]" style={{ color: "#3aa99c" }}>
+          <p className="mb-5 text-xs uppercase tracking-[0.3em]" style={{ color: "hsl(var(--band-primary))" }}>
             The map itself
           </p>
           <h2
@@ -53,7 +61,7 @@ export default function Home() {
           <Link
             href="/triads"
             className="mt-12 inline-block text-xs uppercase tracking-[0.2em] no-underline"
-            style={{ color: "#3aa99c" }}
+            style={{ color: "hsl(var(--band-primary))" }}
           >
             The centers and triads →
           </Link>

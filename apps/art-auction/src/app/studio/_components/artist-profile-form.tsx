@@ -28,10 +28,17 @@ export type ArtistProfileInitial = {
 export function ArtistProfileForm({
   mode,
   initial,
+  storeKind = "user",
 }: {
   mode: "apply" | "edit";
   initial?: ArtistProfileInitial;
+  /** An org store edits only its own blurb and links; identity is the org's. */
+  storeKind?: "user" | "org";
 }) {
+  // Identity fields belong to a person. Payout email is collected on apply
+  // only — afterwards the studio's Payouts panel owns it (with Stripe).
+  const showIdentity = storeKind === "user";
+  const showPayout = mode === "apply" && storeKind === "user";
   const router = useRouter();
   const [displayName, setDisplayName] = React.useState(
     initial?.displayName ?? ""
@@ -54,8 +61,8 @@ export function ArtistProfileForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!displayName.trim()) return toast.error("A display name is required.");
-    if (!payoutEmail.trim()) return toast.error("A payout email is required.");
+    if (showIdentity && !displayName.trim()) return toast.error("A display name is required.");
+    if (showPayout && !payoutEmail.trim()) return toast.error("An eTransfer payout email is required.");
 
     const input: ApplyArtistInput = {
       displayName,
@@ -86,6 +93,7 @@ export function ArtistProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {showIdentity && (
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls} htmlFor="displayName">
@@ -122,6 +130,7 @@ export function ArtistProfileForm({
             placeholder="Contemporary painter exploring light and memory"
           />
         </div>
+        {showPayout && (
         <div>
           <label className={labelCls} htmlFor="payoutEmail">
             Payout email (eTransfer)
@@ -134,7 +143,11 @@ export function ArtistProfileForm({
             onChange={(e) => setPayoutEmail(e.target.value)}
             required
           />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Where buyers send eTransfers. Card payouts via Stripe can be added after approval.
+          </p>
         </div>
+        )}
         <div>
           <label className={labelCls} htmlFor="photoUrl">
             Photo URL
@@ -148,9 +161,10 @@ export function ArtistProfileForm({
           />
         </div>
       </div>
+      )}
 
       <div>
-        <label className={labelCls}>Bio</label>
+        <label className={labelCls}>{showIdentity ? "Bio" : "About the store"}</label>
         <RichTextEditor
           value={bioHtml}
           onChange={setBioHtml}

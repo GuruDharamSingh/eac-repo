@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Signal Watch">
+<title>Signal Watch</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root {
+    --bg: #111418;
+    --card: #1b2026;
+    --text: #f2f4f6;
+    --muted: #9aa4b1;
+    --line: #2b323b;
+    --good: #2fbf71;
+    --weak: #f0a63a;
+    --none: #e5484d;
+    --unknown: #6b7480;
+    --accent: #4f8cff;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%; }
+  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  main { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+  h1 { font-size: 18px; margin: 8px 0 14px; letter-spacing: .02em; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+
+  .status { border-radius: var(--radius); padding: 28px 20px 22px; text-align: center;
+    background: var(--unknown); color: #fff; transition: background .4s; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .status[data-s="good"] { background: var(--good); }
+  .status[data-s="weak"] { background: var(--weak); color: #1a1200; }
+  .status[data-s="none"] { background: var(--none); }
+  .status .label { font-size: 34px; font-weight: 800; letter-spacing: .01em; line-height: 1.1; }
+  .status .detail { margin-top: 8px; font-size: 15px; opacity: .92; }
+  .status .since { margin-top: 4px; font-size: 13px; opacity: .8; }
+  .status .idle { font-size: 22px; font-weight: 700; }
+
+  .row { display: flex; gap: 10px; margin-top: 14px; }
+  .row > * { flex: 1; }
+  button { appearance: none; border: 0; border-radius: 14px; padding: 16px 14px; font-size: 17px; font-weight: 700;
+    background: var(--card); color: var(--text); cursor: pointer; border: 1px solid var(--line); }
+  button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  button.stop { background: #3a2226; border-color: #5a2d33; color: #ffd3d6; }
+  button.small { padding: 10px 12px; font-size: 14px; font-weight: 600; }
+  button:active { transform: scale(.98); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-top: 14px; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: #141920; border-radius: 12px; padding: 10px 8px; text-align: center; }
+  .stat b { display: block; font-size: 20px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+
+  .opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); gap: 12px; }
+  .opt:first-of-type { border-top: 0; }
+  .opt label { font-size: 15px; }
+  .opt small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  select { background: #141920; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 15px; }
+  .switch { position: relative; width: 50px; height: 30px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch i { position: absolute; inset: 0; background: #3a424d; border-radius: 30px; transition: .2s; }
+  .switch i::before { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + i { background: var(--good); }
+  .switch input:checked + i::before { transform: translateX(20px); }
+
+  ul.log { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; }
+  ul.log li { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  ul.log li:first-child { border-top: 0; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; flex: none; }
+  .dot.good { background: var(--good); } .dot.weak { background: var(--weak); } .dot.none { background: var(--none); } .dot.note { background: var(--unknown); }
+  .log time { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; width: 64px; }
+  .log .what { flex: 1; }
+  .log .what small { display: block; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+  .hint { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 12px; }
+  .hint b { color: var(--text); }
+  #installTip { display: none; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #000; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: .25s; }
+  .toast.show { opacity: .92; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Signal Watch</h1>
+
+  <section class="status" id="status" data-s="unknown" aria-live="polite">
+    <div class="idle" id="idle">Not watching</div>
+    <div class="label" id="label" hidden></div>
+    <div class="detail" id="detail"></div>
+    <div class="since" id="since"></div>
+  </section>
+
+  <div class="row">
+    <button class="primary" id="toggle">Start watching</button>
+    <button id="checkNow" class="" disabled>Check now</button>
+  </div>
+
+  <section class="card">
+    <h2>Today</h2>
+    <div class="stats">
+      <div class="stat"><b id="sDrops">0</b><span>drops</span></div>
+      <div class="stat"><b id="sUp">–</b><span>time with service</span></div>
+      <div class="stat"><b id="sPing">–</b><span>last response</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Log</h2>
+    <ul class="log" id="log"></ul>
+    <div class="empty" id="logEmpty">Nothing logged yet. Every time service drops or comes back, it shows up here with the time and, if you allow it, your location.</div>
+    <div class="row">
+      <button class="small" id="share">Share / export log</button>
+      <button class="small" id="clear">Clear log</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Settings</h2>
+    <div class="opt">
+      <div><label for="interval">Check every</label><small>How often to test the connection.</small></div>
+      <select id="interval">
+        <option value="10">10 sec</option>
+        <option value="20" selected>20 sec</option>
+        <option value="30">30 sec</option>
+        <option value="60">1 min</option>
+        <option value="120">2 min</option>
+      </select>
+    </div>
+    <div class="opt">
+      <div><label for="optWake">Keep screen on</label><small>Phones pause web apps when the screen is off. Leave this on while watching.</small></div>
+      <label class="switch"><input type="checkbox" id="optWake" checked><i></i></label>
+    </div>
+    <div class="opt">
+      <div><label for="optSound">Sound alerts</label><small>Low tone when service drops, rising tone when it's back.</small></div>
+      <label class="switch"><input type="checkbox" id="optSound" checked><i></i></label>
+    </div>
+    <div class="opt">
+      <div><label for="optVibe">Vibrate</label><small>Android only.</small></div>
+      <label class="switch"><input type="checkbox" id="optVibe" checked><i></i></label>
+    </div>
+    <div class="opt">
+      <div><label for="optNotify">Notifications</label><small>Alert even if you've switched to another app (works best once installed to the home screen).</small></div>
+      <label class="switch"><input type="checkbox" id="optNotify"><i></i></label>
+    </div>
+    <div class="opt">
+      <div><label for="optGeo">Record location</label><small>Saves GPS coordinates with each change. GPS works without cell service.</small></div>
+      <label class="switch"><input type="checkbox" id="optGeo"><i></i></label>
+    </div>
+    <div class="row">
+      <button class="small" id="testAlert">Test the alerts</button>
+    </div>
+  </section>
+
+  <p class="hint" id="installTip"><b>Install it:</b> <span id="installHow"></span></p>
+  <p class="hint">Keep this app open on screen while you want it watching. It tests the connection by reaching out to the internet, so <b>"No service"</b> means data isn't getting through, which is usually what matters. Calls and texts can sometimes still work on a weaker signal.</p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const LS_EVENTS = 'signalwatch.events.v1';
+  const LS_SETTINGS = 'signalwatch.settings.v1';
+
+  const PROBE_TIMEOUT_MS = 8000;   // no reply within this = no service
+  const WEAK_MS = 1500;            // slower than this = weak
+  const RECOVER_NEEDED = 2;        // consecutive good checks before we announce "back"
+
+  const LABELS = {
+    good: 'Service is good',
+    weak: 'Service is weak',
+    none: 'No service',
+    unknown: 'Checking…'
+  };
+
+  let events = load(LS_EVENTS, []);
+  let settings = Object.assign({ interval: 20, wake: true, sound: true, vibe: true, notify: false, geo: false }, load(LS_SETTINGS, {}));
+
+  let watching = false;
+  let status = 'unknown';
+  let statusSince = null;
+  let timer = null;
+  let ticker = null;
+  let recoverStreak = 0;
+  let lastPing = null;
+  let wakeLock = null;
+  let audio = null;
+  let checking = false;
+
+  // ---------- helpers ----------
+  function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  function fmtTime(t) { return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+  function fmtDur(ms) {
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60); if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60); return h + 'h ' + (m % 60) + 'm';
+  }
+  function isToday(t) { const a = new Date(t), b = new Date(); return a.toDateString() === b.toDateString(); }
+  function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 2200); }
+  function connInfo() {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!c) return '';
+    const parts = [];
+    if (c.type && c.type !== 'unknown') parts.push(c.type === 'cellular' ? 'cellular' : c.type);
+    if (c.effectiveType) parts.push(c.effectiveType.toUpperCase().replace('SLOW-2G', 'very slow'));
+    return parts.join(' · ');
+  }
+
+  // ---------- probing ----------
+  function withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('timeout')), ms);
+      promise.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+    });
+  }
+  function probeTargets() {
+    const bust = Date.now() + '-' + Math.random().toString(36).slice(2);
+    const ctl = new AbortController();
+    const targets = [
+      // Same origin: the server this app came from. The service worker never caches ?probe= requests.
+      fetch(location.pathname + '?probe=' + bust, { cache: 'no-store', signal: ctl.signal }),
+      // Two well-known always-up endpoints. no-cors gives an opaque response, which is all we need.
+      fetch('https://www.gstatic.com/generate_204?_=' + bust, { mode: 'no-cors', cache: 'no-store', signal: ctl.signal }),
+      fetch('https://www.cloudflare.com/cdn-cgi/trace?_=' + bust, { mode: 'no-cors', cache: 'no-store', signal: ctl.signal }),
+    ];
+    return { targets, ctl };
+  }
+  async function probe() {
+    const t0 = performance.now();
+    const { targets, ctl } = probeTargets();
+    try {
+      // First responder wins. Any successful reply means data is flowing.
+      await withTimeout(Promise.any(targets.map((p) => p.then((r) => {
+        if (r.type === 'opaque' || r.ok || (r.status >= 200 && r.status < 500)) return r;
+        throw new Error('bad status ' + r.status);
+      }))), PROBE_TIMEOUT_MS);
+      const ms = Math.round(performance.now() - t0);
+      ctl.abort();
+      return { ok: true, ms };
+    } catch {
+      ctl.abort();
+      return { ok: false, ms: null };
+    }
+  }
+
+  async function check(reason) {
+    if (checking) return;
+    checking = true;
+    $('checkNow').disabled = true;
+    try {
+      const r = await probe();
+      lastPing = r.ok ? r.ms : null;
+      let next;
+      if (!r.ok) next = 'none';
+      else if (r.ms > WEAK_MS) next = 'weak';
+      else next = 'good';
+
+      // Avoid flapping: after a drop, require a couple of consecutive good replies before announcing recovery.
+      if (status === 'none' && next !== 'none') {
+        recoverStreak++;
+        if (recoverStreak < RECOVER_NEEDED) { render(); return; }
+      } else if (next === 'none') {
+        recoverStreak = 0;
+      }
+      if (next !== status) setStatus(next, r);
+      else render();
+    } finally {
+      checking = false;
+      $('checkNow').disabled = !watching;
+    }
+  }
+
+  function setStatus(next, r) {
+    const prev = status;
+    status = next;
+    statusSince = Date.now();
+    recoverStreak = 0;
+    if (prev !== 'unknown') {
+      logEvent({ t: statusSince, s: next, ms: r ? r.ms : null, conn: connInfo() });
+      alertChange(next, prev);
+    } else {
+      logEvent({ t: statusSince, s: next, ms: r ? r.ms : null, conn: connInfo(), note: 'started watching' });
+    }
+    render();
+  }
+
+  // ---------- events / log ----------
+  function logEvent(e) {
+    events.push(e);
+    if (events.length > 2000) events = events.slice(-2000);
+    save(LS_EVENTS, events);
+    if (settings.geo && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((p) => {
+        e.lat = +p.coords.latitude.toFixed(5); e.lon = +p.coords.longitude.toFixed(5); e.acc = Math.round(p.coords.accuracy);
+        save(LS_EVENTS, events); renderLog();
+      }, () => {}, { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+    }
+    renderLog();
+  }
+
+  function describe(e) {
+    if (e.note === 'stopped') return 'Stopped watching';
+    if (e.note === 'started watching') return LABELS[e.s] + ' (started watching)';
+    return LABELS[e.s];
+  }
+
+  function renderLog() {
+    const ul = $('log');
+    ul.innerHTML = '';
+    const list = events.slice().reverse().slice(0, 300);
+    $('logEmpty').style.display = list.length ? 'none' : '';
+    let lastDay = null;
+    for (const e of list) {
+      const day = new Date(e.t).toDateString();
+      if (day !== lastDay) {
+        lastDay = day;
+        const h = document.createElement('li');
+        h.innerHTML = '<span class="dot note" style="visibility:hidden"></span><span class="what" style="color:var(--muted);font-size:12px">' + (isToday(e.t) ? 'Today' : new Date(e.t).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })) + '</span>';
+        ul.appendChild(h);
+      }
+      const li = document.createElement('li');
+      const bits = [];
+      if (e.ms != null) bits.push(e.ms + ' ms');
+      if (e.conn) bits.push(e.conn);
+      if (e.lat != null) bits.push(e.lat + ', ' + e.lon);
+      li.innerHTML = '<span class="dot ' + (e.note === 'stopped' ? 'note' : e.s) + '"></span><time>' + fmtTime(e.t) + '</time><span class="what">' + describe(e) + (bits.length ? '<small>' + bits.join(' · ') + '</small>' : '') + '</span>';
+      ul.appendChild(li);
+    }
+    renderStats();
+  }
+
+  function renderStats() {
+    const today = events.filter((e) => isToday(e.t));
+    $('sDrops').textContent = today.filter((e) => e.s === 'none' && !e.note).length;
+    // Time with service today: walk the day's events and sum spans where status was good/weak.
+    let up = 0, total = 0, cur = null, curT = null;
+    for (const e of today) {
+      if (cur && curT) { const d = e.t - curT; total += d; if (cur !== 'none') up += d; }
+      cur = e.note === 'stopped' ? null : e.s; curT = e.t;
+    }
+    if (cur && curT && watching) { const d = Date.now() - curT; total += d; if (cur !== 'none') up += d; }
+    $('sUp').textContent = total > 0 ? Math.round(100 * up / total) + '%' : '–';
+    $('sPing').textContent = lastPing != null ? lastPing + ' ms' : (watching ? 'none' : '–');
+  }
+
+  function render() {
+    const st = $('status');
+    st.dataset.s = watching ? status : 'unknown';
+    $('idle').hidden = watching;
+    $('label').hidden = !watching;
+    $('label').textContent = LABELS[status];
+    const d = [];
+    if (watching) {
+      if (lastPing != null) d.push('replied in ' + lastPing + ' ms');
+      else if (status === 'none') d.push('nothing is getting through');
+      const c = connInfo(); if (c) d.push(c);
+    } else {
+      d.push('Tap start to begin checking your connection.');
+    }
+    $('detail').textContent = d.join(' · ');
+    $('since').textContent = watching && statusSince ? 'for ' + fmtDur(Date.now() - statusSince) + ' (since ' + fmtTime(statusSince) + ')' : '';
+    $('toggle').textContent = watching ? 'Stop watching' : 'Start watching';
+    $('toggle').className = watching ? 'stop' : 'primary';
+    $('checkNow').disabled = !watching || checking;
+    renderStats();
+  }
+
+  // ---------- alerts ----------
+  function ensureAudio() {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
+    if (audio && audio.state === 'suspended') audio.resume().catch(() => {});
+  }
+  function tone(seq) {
+    if (!settings.sound || !audio) return;
+    let t = audio.currentTime;
+    for (const [freq, dur] of seq) {
+      const o = audio.createOscillator(); const g = audio.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.4, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + dur + 0.05);
+      t += dur + 0.06;
+    }
+  }
+  function buzz(pattern) { if (settings.vibe && navigator.vibrate) { try { navigator.vibrate(pattern); } catch {} } }
+  function notify(title, body) {
+    if (!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then((reg) => reg.showNotification(title, { body, tag: 'signalwatch', renotify: true, icon: 'icons/icon-192.png' }));
+      } else {
+        new Notification(title, { body, tag: 'signalwatch' });
+      }
+    } catch {}
+  }
+  function alertChange(next, prev) {
+    const when = fmtTime(Date.now());
+    if (next === 'none') {
+      tone([[440, 0.35], [330, 0.5]]); buzz([500, 150, 500]);
+      notify('No service', 'Service dropped at ' + when);
+    } else if (prev === 'none') {
+      tone([[523, 0.15], [659, 0.15], [784, 0.3]]); buzz([120, 80, 120, 80, 120]);
+      notify('Service is back', (next === 'weak' ? 'Weak but working' : 'Working well') + ' as of ' + when);
+    } else if (next === 'weak') {
+      tone([[392, 0.25]]); buzz([250]);
+      notify('Service is weak', 'Slow responses as of ' + when);
+    } else if (next === 'good') {
+      tone([[659, 0.15], [784, 0.2]]); buzz([80, 60, 80]);
+    }
+  }
+
+  // ---------- wake lock ----------
+  async function acquireWake() {
+    if (!settings.wake || !watching || !('wakeLock' in navigator)) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch {}
+  }
+  function releaseWake() { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { acquireWake(); if (watching) check('visible'); } });
+
+  // ---------- start / stop ----------
+  function schedule() {
+    clearInterval(timer);
+    timer = setInterval(() => check('tick'), settings.interval * 1000);
+  }
+  function start() {
+    ensureAudio();
+    watching = true; status = 'unknown'; statusSince = null; lastPing = null; recoverStreak = 0;
+    render();
+    check('start');
+    schedule();
+    acquireWake();
+    clearInterval(ticker); ticker = setInterval(render, 1000);
+    if (settings.notify) requestNotify();
+  }
+  function stop() {
+    watching = false;
+    clearInterval(timer); timer = null; clearInterval(ticker); ticker = null;
+    releaseWake();
+    if (status !== 'unknown') { events.push({ t: Date.now(), s: status, note: 'stopped' }); save(LS_EVENTS, events); }
+    status = 'unknown'; statusSince = null;
+    render(); renderLog();
+  }
+  function requestNotify() {
+    if (!('Notification' in window)) { toast('Notifications aren’t available in this browser'); settings.notify = false; $('optNotify').checked = false; save(LS_SETTINGS, settings); return; }
+    if (Notification.permission === 'granted') return;
+    Notification.requestPermission().then((p) => {
+      if (p !== 'granted') { settings.notify = false; $('optNotify').checked = false; save(LS_SETTINGS, settings); toast('Notifications were not allowed'); }
+    });
+  }
+
+  // ---------- wiring ----------
+  $('toggle').addEventListener('click', () => (watching ? stop() : start()));
+  $('checkNow').addEventListener('click', () => { ensureAudio(); check('manual'); });
+  window.addEventListener('offline', () => { if (watching) { lastPing = null; if (status !== 'none') setStatus('none', null); } });
+  window.addEventListener('online', () => { if (watching) check('online'); });
+
+  $('interval').value = String(settings.interval);
+  $('optWake').checked = settings.wake; $('optSound').checked = settings.sound; $('optVibe').checked = settings.vibe;
+  $('optNotify').checked = settings.notify; $('optGeo').checked = settings.geo;
+  $('interval').addEventListener('change', (e) => { settings.interval = +e.target.value; save(LS_SETTINGS, settings); if (watching) schedule(); });
+  $('optWake').addEventListener('change', (e) => { settings.wake = e.target.checked; save(LS_SETTINGS, settings); e.target.checked ? acquireWake() : releaseWake(); });
+  $('optSound').addEventListener('change', (e) => { settings.sound = e.target.checked; save(LS_SETTINGS, settings); if (settings.sound) ensureAudio(); });
+  $('optVibe').addEventListener('change', (e) => { settings.vibe = e.target.checked; save(LS_SETTINGS, settings); });
+  $('optNotify').addEventListener('change', (e) => { settings.notify = e.target.checked; save(LS_SETTINGS, settings); if (settings.notify) requestNotify(); });
+  $('optGeo').addEventListener('change', (e) => {
+    settings.geo = e.target.checked; save(LS_SETTINGS, settings);
+    if (settings.geo && navigator.geolocation) navigator.geolocation.getCurrentPosition(() => toast('Location on'), () => { toast('Location was not allowed'); settings.geo = false; e.target.checked = false; save(LS_SETTINGS, settings); }, { timeout: 15000 });
+  });
+  $('testAlert').addEventListener('click', () => {
+    ensureAudio();
+    toast('Drop alert… then the “back” alert');
+    alertChange('none', 'good');
+    setTimeout(() => alertChange('good', 'none'), 1800);
+  });
+  $('clear').addEventListener('click', () => {
+    if (!events.length) return;
+    if (confirm('Clear the whole log?')) { events = []; save(LS_EVENTS, events); renderLog(); }
+  });
+  $('share').addEventListener('click', async () => {
+    if (!events.length) { toast('Nothing to share yet'); return; }
+    const lines = ['Signal Watch log', ''];
+    for (const e of events) {
+      const d = new Date(e.t);
+      let line = d.toLocaleDateString() + ' ' + fmtTime(e.t) + '  ' + describe(e);
+      const bits = [];
+      if (e.ms != null) bits.push(e.ms + ' ms'); if (e.conn) bits.push(e.conn);
+      if (e.lat != null) bits.push('https://maps.google.com/?q=' + e.lat + ',' + e.lon);
+      if (bits.length) line += '  (' + bits.join(', ') + ')';
+      lines.push(line);
+    }
+    const text = lines.join('\n');
+    if (navigator.share) { try { await navigator.share({ title: 'Signal Watch log', text }); return; } catch (err) { if (err && err.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(text); toast('Log copied to clipboard'); return; } catch {}
+    const a = document.createElement('a'); a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text); a.download = 'signal-watch-log.txt'; a.click();
+  });
+
+  // Install tip
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (!standalone) {
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua);
+    $('installHow').textContent = ios
+      ? 'In Safari, tap the Share button, then “Add to Home Screen”. Open it from there like a normal app.'
+      : 'In Chrome, open the ⋮ menu and tap “Add to Home screen” (or “Install app”).';
+    $('installTip').style.display = '';
+  }
+
+  // Service worker for offline shell
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  renderLog();
+  render();
+})();
+</script>
+</body>
+</html>

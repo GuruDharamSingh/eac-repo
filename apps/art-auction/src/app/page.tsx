@@ -30,7 +30,8 @@ export default async function HomePage() {
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted-foreground">
             {siteConfig.tagline} Browse fixed-price works or place a bid in a
-            timed auction. Pay artists directly by Interac eTransfer.
+            timed auction. Pay by card or Interac eTransfer — the artist is
+            paid directly.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">

@@ -8,6 +8,7 @@
     "docker:start": "next start -H 0.0.0.0 -p 3010",
     "build": "next build",
     "start": "next start --port 3010",
+    "check-types": "tsc --noEmit --incremental false",
     "lint": "eslint"
   },
   "dependencies": {

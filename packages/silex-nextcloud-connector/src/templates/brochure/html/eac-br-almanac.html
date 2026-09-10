@@ -1,0 +1,33 @@
+<!--
+  eac-br-almanac.html
+  ====================
+  Calendar board — a torn calendar-page card (hanging tab at top) housing
+  the live countdown + RSVP embeds. Used on the org profile for "what's
+  next", and on an offering page for "reserve this session".
+-->
+<section class="eac-br-almanac" id="almanac" data-gjs-type="eac-br-almanac">
+  <div class="eac-br-almanac__head">
+    <p class="eac-br-label"
+       data-gjs-editable="true"
+       data-trait="eyebrowText">
+      The almanac
+    </p>
+    <h2 class="eac-br-almanac__title"
+        data-gjs-editable="true"
+        data-trait="title">
+      What comes next
+    </h2>
+  </div>
+
+  <div class="eac-br-almanac__board">
+    <div class="eac-br-calendar-page">
+      <span class="eac-br-calendar-page__tab" aria-hidden="true"></span>
+      <eac-embed data-eac-component="countdown" data-title="Next gathering" data-variant="inline"><div class="eac-editor-placeholder"><strong>Next gathering</strong><span>Live Arts component renders on the public site.</span></div></eac-embed>
+    </div>
+
+    <div class="eac-br-calendar-page">
+      <span class="eac-br-calendar-page__tab" aria-hidden="true"></span>
+      <eac-embed data-eac-component="rsvp" data-title="Reserve your place" data-limit="3" data-variant="inline"><div class="eac-editor-placeholder"><strong>Reserve your place</strong><span>Live Arts component renders on the public site.</span></div></eac-embed>
+    </div>
+  </div>
+</section>

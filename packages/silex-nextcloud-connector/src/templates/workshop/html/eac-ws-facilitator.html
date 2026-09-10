@@ -4,14 +4,14 @@
   Facilitator bio block. Pulls from the members table via FK.
   Supports a single facilitator + optional co-facilitators row.
 
-  CMS fields consumed (via threads.author_id → artist_profiles):
-    artist_profiles.display_name  → fullName
-    artist_profiles.role_title    → roleTitle (optional)
-    artist_profiles.bio           → bio
-    artist_profiles.photo_url     → photoPath / alt (optional)
-    artist_profiles.pronouns      → pronouns (optional)
+  CMS fields consumed (via threads.author_id → users, + org_profiles for the org-scoped title):
+    users.display_name            → fullName
+    org_profiles.role_title       → roleTitle (optional)
+    users.bio                     → bio
+    users.avatar_url              → photoPath / alt (optional)
+    users.pronouns                → pronouns (optional)
   Workshop-specific override:
-    workshop_pages.author_note    → replaces artist_profiles.bio if present
+    workshop_pages.author_note    → replaces users.bio if present
 -->
 <section class="eac-ws-facilitator" data-gjs-type="eac-ws-facilitator" id="facilitator">
   <div class="eac-ws-facilitator__inner">

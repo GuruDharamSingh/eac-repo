@@ -416,7 +416,16 @@ services:
     # make a crash-restart take minutes instead of seconds.
     # (mem_limit below is a ceiling, not a reservation: it has to clear the
     # occasional rebuild, while steady-state serving sits far under it.)
-    command: sh -c "cd apps/inner-gathering && { [ -f .next/BUILD_ID ] || pnpm build; } && pnpm docker:start"
+    #
+    # The sentinel is server/pages-manifest.json: the file `next start` opens
+    # first, and one that only a COMPLETED `next build` writes. BUILD_ID was the
+    # wrong choice — `next dev` writes one too — and prerender-manifest.json is
+    # no better, because it lands BEFORE page collection. An OOM-killed build
+    # leaves both behind with no .next/server directory at all, so a guard on
+    # either skips the rebuild forever and the service restart-loops with no way
+    # out. That is exactly what happened to amrit-canada. NEXT_BUILD_CPUS caps
+    # the worker count so the build fits under mem_limit instead of being killed.
+    command: sh -c "cd apps/inner-gathering && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     restart: unless-stopped
     networks:
       - eac-network
@@ -576,6 +585,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
@@ -635,6 +645,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      # The marketplace — a member's store section links there
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: production
       PORT: 3006
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
@@ -658,13 +670,11 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
-      # Pipeline hub tile — surfaces the real, existing Nextcloud Deck board
-      # ("Agenda", owned by stephan) rather than a parallel one. An env var,
-      # never a literal in code: this points at someone else's live board,
-      # which could be recreated with a new id independent of any deploy
-      # here. Writes stay off until the read path is verified live.
-      NEXTCLOUD_PIPELINE_BOARD_ID: ${NEXTCLOUD_PIPELINE_BOARD_ID:-14}
-      NEXTCLOUD_PIPELINE_WRITES_ENABLED: ${NEXTCLOUD_PIPELINE_WRITES_ENABLED:-false}
+      # The Pipeline hub tile renders the org's OWN Deck board, resolved from
+      # organizations.deck_board_id (migration 101) — no board id in env. The
+      # former NEXTCLOUD_PIPELINE_BOARD_ID defaulted to 14, a board owned by
+      # another member and shared with the whole collective, so every site
+      # pointed at the same cards.
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
@@ -674,17 +684,86 @@ services:
     ports:
       - "3006:3006"
     # Build only when there is no build to serve, then start — matches
-    # inner-gathering's pattern below. `next start` serves prebuilt output,
+    # inner-gathering's pattern above. `next start` serves prebuilt output,
     # so a crash-restart is seconds, not a multi-minute rebuild.
-    # Checks prerender-manifest.json, not BUILD_ID: this service's .next
-    # volume carried over from dev mode on its first switch to production,
-    # and `next dev` (webpack, non-Turbopack) writes its own BUILD_ID too —
-    # the check passed, skipped the build, and next start crashed missing
-    # prerender-manifest.json, which only `next build` ever produces.
-    command: sh -c "cd apps/amrit-canada && { [ -f .next/prerender-manifest.json ] || pnpm build; } && pnpm docker:start"
+    #
+    # Third sentinel, and the reason for each: BUILD_ID failed because
+    # `next dev` writes one too. prerender-manifest.json then failed because it
+    # lands BEFORE page collection — an OOM-killed build (31 workers on a
+    # 32-core host, capped container) left it present with no .next/server
+    # directory at all, so the guard skipped the rebuild, `next start` died on
+    # the missing server manifest, and the restart loop could never self-heal.
+    # server/pages-manifest.json is the file `next start` actually opens, and
+    # only a completed build writes it. NEXT_BUILD_CPUS caps workers so the
+    # build fits under mem_limit rather than being OOM-killed in the first place.
+    command: sh -c "cd apps/amrit-canada && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
+
+  innergathering:
+    # Same node+pnpm image as amrit-canada: the repo is bind-mounted over /app,
+    # so the image only supplies the runtime. Reusing it avoids a second full
+    # `pnpm install` layer for an app whose dependencies are identical.
+    image: guru-eac-amrit-canada
+    container_name: eac-innergathering
+    restart: unless-stopped
+    # InnerGathering — the non-Mantine replacement for inner-gathering (org
+    # inner_group). Same production shape as amrit-canada above: full monorepo
+    # image, NODE_ENV=production, guarded `next build` then `next start`.
+    mem_limit: 5g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${INNERGATHERING_URL:-http://localhost:3015}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NODE_ENV: production
+      PORT: 3015
+      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
+      # is a 4.1GB limit per dev server, so six of them can exhaust the
+      # machine before any one of them collects. Cap it instead.
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Owner config
+      INNERGATHERING_OWNER_EMAIL: ${INNERGATHERING_OWNER_EMAIL:-info@elkdonis-arts.org}
+      # Nextcloud — media library, collaborative documents, Talk rooms.
+      # The service is already on nextcloud-network; it was missing only these.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # The Pipeline hub tile renders the org's OWN Deck board, resolved from
+      # organizations.deck_board_id (migration 101) — no board id in env. The
+      # former NEXTCLOUD_PIPELINE_BOARD_ID defaulted to 14, a board owned by
+      # another member and shared with the whole collective, so every site
+      # pointed at the same cards.
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+    volumes:
+      - .:/app
+      - /app/apps/innergathering/.next
+    ports:
+      - "3015:3015"
+    # Build only when there is no completed build to serve — see amrit-canada
+    # above for why server/pages-manifest.json is the sentinel.
+    command: sh -c "cd apps/innergathering && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    networks:
+      - eac-network
+      - nextcloud-network
+
 
   # Pigeonshoot — Toronto street pigeons, crowdsourced as trading cards
   pigeonshoot:
@@ -768,6 +847,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
+      # The marketplace — a member's store section links there
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
@@ -842,6 +923,13 @@ services:
       ART_AUCTION_RESERVATION_MINUTES: ${ART_AUCTION_RESERVATION_MINUTES:-15}
       ART_AUCTION_ETRANSFER_DUE_HOURS: ${ART_AUCTION_ETRANSFER_DUE_HOURS:-72}
       ART_AUCTION_GALLERY_PAYOUT_EMAIL: ${ART_AUCTION_GALLERY_PAYOUT_EMAIL:-info@elkdonis-arts.org}
+      # Stripe — card payments + Express seller onboarding. Unset = eTransfer only.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # The other centralising sites, for profile / hub links from the studio
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
@@ -915,7 +1003,7 @@ services:
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
     # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
     # real headroom while still bounding a runaway to one service.
-    mem_limit: 3g
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -923,7 +1011,7 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
-      NODE_ENV: development
+      NODE_ENV: production
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
@@ -952,7 +1040,19 @@ services:
       - /app/apps/hidden-enneagram/.next
     ports:
       - "3012:3012"
-    command: sh -c "pnpm install && cd apps/hidden-enneagram && pnpm docker:dev"
+    # Production mode: `next start` serves prebuilt output — no dev compiler,
+    # no module graph held in memory. Build only when there is no build to
+    # serve, so a crash-restart is seconds rather than a multi-minute rebuild.
+    #
+    # The sentinel is server/pages-manifest.json: the file `next start` opens
+    # first, and one only a COMPLETED build writes. BUILD_ID is wrong (`next
+    # dev` writes one too) and prerender-manifest.json is wrong (it lands
+    # BEFORE page collection) — an OOM-killed build leaves both behind with no
+    # .next/server at all, so a guard on either skips the rebuild forever and
+    # the service restart-loops with no way out. That is exactly what happened
+    # to amrit-canada. NEXT_BUILD_CPUS caps workers so the build fits under
+    # mem_limit instead of being killed.
+    command: sh -c "cd apps/hidden-enneagram && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     restart: unless-stopped
     networks:
       - eac-network
@@ -983,6 +1083,9 @@ services:
       ARTS_INTERNAL_URL: ${ARTS_INTERNAL_URL:-http://arts-collective:3007}
     volumes:
       - ./packages/silex-nextcloud-connector:/silex/extensions/silex-nextcloud-connector:ro
+      # The live-component catalogue, so the editor's block panel is built from
+      # the same list the renderer reads (served at /eac-components.json).
+      - ./packages/silex-render/src/components.data.json:/silex/extensions/eac-components.json:ro
     ports:
       - "6805:6805"
     restart: unless-stopped

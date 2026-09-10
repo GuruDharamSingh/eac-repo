@@ -59,10 +59,21 @@ export async function downloadPublishedFile(ref: SilexPublishedRef): Promise<Buf
   const owner = rows[0];
 
   // Fall back to the admin service account for files seeded/published under it.
-  const username =
-    owner?.nextcloud_user_id ?? process.env.NEXTCLOUD_ADMIN_USER ?? null;
-  const password =
-    owner?.nextcloud_app_password ?? process.env.NEXTCLOUD_ADMIN_PASSWORD ?? null;
+  //
+  // The pair is resolved TOGETHER, deliberately. Two independent `??` chains
+  // here produced `owner.nextcloud_user_id` paired with the service account's
+  // password for any row with a user id and a NULL app password — which is the
+  // normal state, since the email-linking path in @elkdonis/nextcloud stores
+  // NULL by design ("we don't know this account's real password"). That mix is
+  // a guaranteed 401, and the catch below swallows it, so it surfaces as a
+  // missing page rather than an auth error.
+  const useOwner = Boolean(owner?.nextcloud_user_id && owner?.nextcloud_app_password);
+  const username = useOwner
+    ? owner!.nextcloud_user_id
+    : (process.env.NEXTCLOUD_ADMIN_USER ?? null);
+  const password = useOwner
+    ? owner!.nextcloud_app_password
+    : (process.env.NEXTCLOUD_ADMIN_PASSWORD ?? null);
 
   if (!username || !password) return null;
 

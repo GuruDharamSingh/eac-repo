@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { ThreadCard } from "@/components/thread-card";
-import { getGuideBySlug, getThreadsByAuthor } from "@/lib/data";
+import { StoreShowcase } from "@elkdonis/commerce/components";
+import { getGuideBySlug, getGuideStore, getThreadsByAuthor } from "@/lib/data";
+import { siteConfig } from "@/config/site";
 import { toPlainText } from "@/lib/format";
 
 interface GuidePageProps {
@@ -27,7 +29,10 @@ export default async function GuidePage({ params }: GuidePageProps) {
 
   // Everything they've published here — the substance of the page. A teacher
   // page that's only a bio goes stale; one that lists their classes doesn't.
-  const threads = await getThreadsByAuthor(guide.userId);
+  const [threads, store] = await Promise.all([
+    getThreadsByAuthor(guide.userId),
+    getGuideStore(guide.userId),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
@@ -88,6 +93,22 @@ export default async function GuidePage({ params }: GuidePageProps) {
               </li>
             ))}
         </ul>
+      )}
+
+      {/* Their marketplace store — a window, not a checkout. Shown only when
+          they have switched the section on for their profile (/account). */}
+      {store && (
+        <div className="mt-12">
+          <hr className="saffron-divider" />
+          <StoreShowcase
+            store={store.store}
+            artworks={store.artworks}
+            marketplaceUrl={siteConfig.marketplaceUrl}
+            heading={`From ${guide.displayName.split(" ")[0]}’s store`}
+            columns={3}
+            className="mt-6"
+          />
+        </div>
       )}
 
       {threads.length > 0 && (

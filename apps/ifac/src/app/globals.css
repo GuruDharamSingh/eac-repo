@@ -1,3 +1,36 @@
+/* ---------------------------------------------------------------------------
+   Tailwind utilities — WITHOUT preflight.
+   This file is ~1,600 lines of IFAC's own plain CSS, and Tailwind's preflight
+   would reset all of it. Importing theme + utilities only gives the shadcn
+   components (added for the Deck pipeline board) their classes while leaving
+   every existing IFAC style exactly as it was.
+   --------------------------------------------------------------------------- */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "tw-animate-css";
+
+/* MediaPicker styles itself with plain CSS custom properties rather than
+   Tailwind utilities, so the @source directive below does not reach it — this
+   is what makes the compose surface's media pane render. It reads --ink,
+   --ink-soft and --line, which IFAC already defines, so it themes itself.
+   Kept with the other @imports: CSS requires them before any rule block. */
+@import "@elkdonis/cms-ui/files-card.css";
+/* The shared surface layer, and The Grand Forum built on it (/forum).
+   Both are plain CSS over custom properties, so they are themed by the
+   :root block near the end of this file and add no runtime dependency. */
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/forum-ui/forum.css";
+
+/* Tailwind scans source for class names; the pipeline components live here. */
+@source "../components";
+@source "../../../../packages/pipeline/src";
+
+/* cms-ui ships source, not a bundle — Tailwind has to be told to scan it or
+   the compose surface renders unstyled. */
+@source "../../../../packages/cms-ui/src";
+@source "../../../../packages/commerce/src";
+@source "../lib";
+
 :root {
   --ink: #171615;
   --ink-soft: #4f4a44;
@@ -10,6 +43,73 @@
   --blue: #273d54;
   --gold: #c79a42;
   --shadow: 0 18px 55px rgba(23, 22, 21, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
+   shadcn/Tailwind token bridge.
+   The pipeline components (ported from amrit-canada) address colours as
+   hsl(var(--background)) etc. Rather than import another palette, each is
+   mapped onto IFAC's own tokens above, so the board reads as IFAC — paper,
+   ink, oxide — instead of arriving with a second design system.
+   --------------------------------------------------------------------------- */
+:root {
+  --background: 40 39% 95%;          /* paper    */
+  --foreground: 30 5% 9%;            /* ink      */
+  --card: 43 100% 99%;               /* surface  */
+  --card-foreground: 30 5% 9%;
+  --popover: 43 100% 99%;
+  --popover-foreground: 30 5% 9%;
+  --primary: 9 53% 39%;              /* oxide    */
+  --primary-foreground: 43 100% 99%;
+  --secondary: 38 22% 80%;           /* line     */
+  --secondary-foreground: 30 5% 9%;
+  --muted: 38 22% 80%;
+  --muted-foreground: 33 7% 29%;     /* ink-soft */
+  --accent: 40 54% 52%;              /* gold     */
+  --accent-foreground: 30 5% 9%;
+  --destructive: 9 53% 39%;          /* oxide    */
+  --destructive-foreground: 43 100% 99%;
+  /* NOT --line (38 22% 80%): that is 1.41:1 on paper, and WCAG 1.4.11 wants
+     3.0:1 for a UI component boundary — card and input edges were effectively
+     invisible. Same hue family, dropped to 50% lightness = 3.18:1. */
+  --border: 38 22% 50%;
+  --input: 38 22% 50%;
+  --ring: 40 54% 52%;                /* gold     */
+  --radius: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Tailwind v4 needs the tokens above mapped to `--color-*` before utilities
+   like `bg-popover` / `text-muted-foreground` / `border-border` exist at all.
+   Without this block those class names generate NOTHING — which is why the
+   ported dropdowns rendered see-through and their text fell back to whatever
+   colour it inherited. Values, not just names: `inline` resolves at build time.
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 * {
@@ -564,46 +664,19 @@ nextjs-portal {
   display: block;
 }
 
-.header-main,
-.social-bar {
+.header-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  /* Was space-between, to push the strip image and the text links to opposite
+     ends. With a short label and a row of marks they belong together. */
+  justify-content: flex-start;
+  gap: 0.6rem;
 }
 
-.social-bar {
-  margin-bottom: 8px;
-}
 
-.social-bar img {
-  display: block;
-  width: 214px;
-  max-width: 100%;
-  height: auto;
-}
 
-.social-bar-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.3rem;
-}
 
-.social-bar-links a {
-  border: 1px solid #40215c;
-  background: #050505;
-  color: #20d7ff;
-  padding: 0.25rem 0.45rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
 
-.social-bar-links a:hover,
-.social-bar-links a:focus-visible {
-  border-color: #20d7ff;
-  color: #ffffff;
-}
 
 .brand-mark {
   gap: 10px;
@@ -726,6 +799,54 @@ nextjs-portal {
 .directory-links a:focus-visible {
   border-color: #20d7ff;
   color: #ffffff;
+}
+
+/* Portrait beside each artist / dealer in the directory lists. The links are
+   already flex rows, so the avatar is just the first child. Squared off
+   rather than circular to sit with the panel's hard edges. */
+.directory-links a {
+  gap: 9px;
+}
+
+.directory-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  object-fit: cover;
+  border: 1px solid #40215c;
+  background: #0a0a0a;
+  /* The name is the point; the portrait supports it. Full colour on hover. */
+  filter: saturate(0.85);
+  transition: filter 140ms ease, border-color 140ms ease;
+}
+
+.directory-links a:hover .directory-avatar,
+.directory-links a:focus-visible .directory-avatar {
+  filter: none;
+  border-color: #20d7ff;
+}
+
+.directory-avatar--empty {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #40215c;
+}
+
+/* Long names must not push the avatar out of the row. Scoped to rows that
+   actually have a portrait: the social and campaign links share this markup
+   and their labels were free to wrap before, so truncating them here would
+   be a regression nobody asked for. */
+.directory-links a:has(.directory-avatar) .directory-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .directory-avatar { transition: none; }
 }
 
 .image-link {
@@ -874,21 +995,27 @@ nextjs-portal {
     width: min(100% - 16px, 1000px);
   }
 
-  .header-main,
-  .social-bar {
-    align-items: flex-start;
-    flex-direction: column;
+  /* Brand and social marks stay on one row at every width — stacking them
+     pushed the marks below the fold. The marks shrink and scroll instead. */
+  .header-main {
+    align-items: center;
+    flex-direction: row;
   }
 
-  .social-bar-links {
-    justify-content: flex-start;
-  }
 
   .ifac-directory {
     width: min(100% - 16px, 1000px);
   }
 
-  .directory-links,
+  /* Artists and dealers stay two-up on a phone: these are short names beside
+     a small portrait, and one per row makes the list needlessly long to
+     scroll. The video grid genuinely needs the full width, so it still
+     collapses to one. */
+  .directory-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+  }
+
   .video-grid {
     grid-template-columns: 1fr;
   }
@@ -1374,7 +1501,9 @@ a.team-card:hover .team-photo {
   border: none;
   background: transparent;
   padding: 0;
-  max-width: min(560px, calc(100vw - 32px));
+  /* Widened from 560: a month grid needs seven legible columns, and a file
+     list with sizes and dates wraps badly below this. */
+  max-width: min(680px, calc(100vw - 32px));
   width: 100%;
 }
 
@@ -1593,4 +1722,992 @@ a.team-card:hover .team-photo {
 .hub-appearance-controls button:hover,
 .hub-appearance-controls select:hover {
   border-color: var(--ink);
+}
+
+
+/* --- tile previews ------------------------------------------------------ *
+   Content drawn on a tile's face, under the blurb. Everything here is
+   non-interactive: the face is a <button>, and nesting a control inside one
+   is invalid and unfocusable. Anything clickable belongs in the panel. */
+
+.hub-card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  /* The tile is a fixed square; a long list must not push the title out of
+     it, so the preview scrolls its overflow away rather than growing. */
+  overflow: hidden;
+  max-height: 5.6em;
+}
+
+.hub-preview-line {
+  display: block;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hub-preview-date {
+  display: inline-block;
+  min-width: 4.6em;
+  color: var(--ink-soft);
+}
+
+.hub-preview-cue {
+  color: var(--accent-color, var(--ink-soft));
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.hub-preview-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.hub-preview-cover {
+  width: 100%;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 3px;
+  margin-bottom: 4px;
+}
+
+.hub-preview-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-preview-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+.hub-preview-avatar--blank {
+  display: grid;
+  place-items: center;
+  background: var(--accent-color, var(--ink));
+  color: var(--paper);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* --- panels ------------------------------------------------------------- */
+
+.hub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Panels hold lists that can run long. Cap and scroll inside the dialog so
+     the header and close button stay reachable. */
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+}
+
+.hub-panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.hub-panel-subhead {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.hub-panel-cover {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.hub-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-muted {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.hub-error {
+  margin: 0;
+  color: var(--oxide);
+  font-size: 0.85rem;
+}
+
+.hub-facts {
+  display: grid;
+  grid-template-columns: minmax(5.5em, auto) 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.hub-facts dt {
+  color: var(--ink-soft);
+}
+
+.hub-facts dd {
+  margin: 0;
+}
+
+.hub-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+/* --- buttons ------------------------------------------------------------ */
+
+.hub-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.hub-btn:hover:not(:disabled),
+.hub-btn:focus-visible {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.hub-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.hub-btn--primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.hub-btn--primary:hover:not(:disabled) {
+  background: var(--ink-soft);
+  border-color: var(--ink-soft);
+}
+
+.hub-btn--icon {
+  width: 34px;
+  padding: 7px 0;
+}
+
+/* --- forms -------------------------------------------------------------- */
+
+.hub-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hub-form label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.hub-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.hub-input:focus-visible {
+  outline: 2px solid var(--accent-color, var(--ink));
+  outline-offset: -1px;
+  border-color: var(--ink);
+}
+
+.hub-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.hub-inline-form .hub-input {
+  flex: 1 1 12rem;
+  width: auto;
+}
+
+/* The native file input is replaced by its own <label>, styled as a button.
+   Clipped rather than display:none so it stays focusable by keyboard. */
+.hub-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hub-file-input:focus-visible + label {
+  border-color: var(--ink);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.hub-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.hub-toggle input {
+  margin-top: 3px;
+  flex: none;
+}
+
+.hub-toggle > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --- lists -------------------------------------------------------------- */
+
+.hub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-list-row {
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+
+.hub-list-row:first-child {
+  border-top: none;
+}
+
+.hub-list-title {
+  margin: 0;
+  font-weight: 500;
+}
+
+.hub-list-body {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.hub-file {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hub-file:hover .hub-list-title,
+.hub-file:focus-visible .hub-list-title {
+  text-decoration: underline;
+}
+
+.hub-file .hub-list-title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-file .hub-muted {
+  flex: none;
+  font-size: 0.78rem;
+}
+
+.hub-file--folder .hub-list-title {
+  font-weight: 600;
+}
+
+.hub-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.hub-crumb {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.hub-crumb:disabled {
+  color: var(--ink);
+  text-decoration: none;
+  cursor: default;
+  font-weight: 600;
+}
+
+.hub-crumb:not(:last-child)::after {
+  content: " /";
+  color: var(--line);
+}
+
+/* --- calendar ----------------------------------------------------------- */
+
+.hub-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hub-cal-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hub-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.hub-cal-weekday {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hub-cal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 62px;
+  padding: 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.hub-cal-cell--pad {
+  border-color: transparent;
+  background: none;
+  cursor: default;
+}
+
+.hub-cal-cell:hover:not(.hub-cal-cell--pad),
+.hub-cal-cell:focus-visible {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.hub-cal-cell.is-today .hub-cal-num {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  display: grid;
+  place-items: center;
+}
+
+.hub-cal-cell.is-selected {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.hub-cal-num {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.hub-cal-cell.has-events .hub-cal-num {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hub-cal-pip {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--blue) 16%, transparent);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-cal-more {
+  font-size: 0.66rem;
+  color: var(--ink-soft);
+}
+
+.hub-cal-detail {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.hub-cal-detail h4 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.hub-cal-event {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.hub-cal-event:first-of-type {
+  border-top: none;
+}
+
+.hub-cal-event h5 {
+  margin: 0 0 3px;
+  font-size: 0.92rem;
+}
+
+/* --- profile panel ------------------------------------------------------ */
+
+.hub-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+/* --- compose route ------------------------------------------------------ */
+
+.hub-compose {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 24px;
+}
+
+@media (max-width: 620px) {
+  .hub-cal-cell {
+    min-height: 48px;
+  }
+  .hub-cal-pip {
+    /* Below this width a title is unreadable anyway; a dot still says
+       "something is on this day", which is what the cell is for. */
+    height: 4px;
+    padding: 0;
+    text-indent: -999em;
+  }
+}
+
+/* --- opt-in profile sections -------------------------------------------- */
+
+.profile-feed {
+  max-width: 900px;
+  margin: 48px auto 0;
+  padding: 0 16px 48px;
+  border-top: 1px solid var(--line);
+}
+
+.profile-feed h2 {
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 28px 0 18px;
+}
+
+.profile-feed ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.profile-feed h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.profile-feed p {
+  margin: 0 0 6px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.profile-feed time {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+/* ==========================================================================
+   Blog feed — real post cards, replacing the blogspot iframe.
+   Same dark panel / cyan-on-violet language as the directory lists.
+   ========================================================================== */
+
+.blog-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.blog-post a {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid #40215c;
+  background: #020202;
+  color: #20d7ff;
+  text-decoration: none;
+  transition: border-color 140ms ease;
+}
+.blog-post a:hover,
+.blog-post a:focus-visible {
+  border-color: #20d7ff;
+}
+
+.blog-post-thumb {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  object-fit: cover;
+  border: 1px solid #40215c;
+  background: #0a0a0a;
+  filter: saturate(0.85);
+  transition: filter 140ms ease;
+}
+.blog-post a:hover .blog-post-thumb { filter: none; }
+
+.blog-post-thumb--empty {
+  display: block;
+}
+
+.blog-post-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.blog-post-title {
+  font-weight: 700;
+  line-height: 1.25;
+  /* Two lines, then ellipsis — titles vary wildly in length and a long one
+     would otherwise push the excerpt out of an even grid. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.blog-post-meta {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a5fa0;
+}
+
+.blog-post-excerpt {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #b9a9d0;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.blog-feed-more {
+  margin: 12px 0 0;
+  text-align: right;
+  font-size: 12px;
+}
+.blog-feed-more a {
+  color: #20d7ff;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 900px) {
+  .blog-feed { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-post a,
+  .blog-post-thumb { transition: none; }
+}
+
+/* ==========================================================================
+   Social link marks (public/social/*.svg, from Simple Icons).
+   Drawn as a mask rather than an <img> so each mark takes the link's own
+   colour: the source SVGs carry brand fills, and X's is pure black — which
+   is invisible on this panel. The mask also means hover recolours them for
+   free, exactly like the link text.
+   ========================================================================== */
+
+.social-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: block;
+  background-color: currentColor;
+  -webkit-mask-image: var(--social-icon);
+  mask-image: var(--social-icon);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ==========================================================================
+   Social row — "Social:" then the marks alone, no labels.
+   Replaces the socialshort.png strip, which showed the same platforms as a
+   flat image nobody could click.
+   ========================================================================== */
+
+.social-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.social-row-label {
+  color: #7a5fa0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.social-row-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.social-row-links a {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #40215c;
+  background: #020202;
+  /* The same cyan the rest of the panel's links use — the marks are masked,
+     so they take this colour rather than their own brand palette. */
+  color: #20d7ff;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.social-row-links a:hover,
+.social-row-links a:focus-visible {
+  border-color: #20d7ff;
+  color: #ffffff;
+  background: #06131a;
+}
+
+.social-row-links .social-icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+/* No mark for this host — show the words rather than an empty square. */
+.social-row-fallback {
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.social-row-links a:has(.social-row-fallback) {
+  width: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-row-links a { transition: none; }
+}
+
+/* Header marks sit beside the brand. */
+.header-socials a {
+  width: 30px;
+  height: 30px;
+}
+.header-socials .social-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================================================
+   Header nav — its own row beneath the banner, on one line.
+   Previously it sat beside the brand mark and wrapped to two rows once the
+   window narrowed.
+   ========================================================================== */
+
+.site-header .main-nav {
+  /* One line, always. With Blog and Social removed there are seven items, so
+     this fits comfortably; if the viewport is genuinely too narrow the row
+     scrolls sideways rather than wrapping and pushing the page down. */
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-top: 8px;
+  padding-bottom: 2px;
+}
+.site-header .main-nav::-webkit-scrollbar { display: none; }
+
+.site-header .main-nav a {
+  white-space: nowrap;
+  flex: none;
+}
+
+/* The banner now lives in the header, so it needs the spacing the page
+   section used to provide. */
+.site-header .hero.image-only {
+  margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+  .site-header .main-nav {
+    /* Edge-to-edge so the scroll affordance reads as intentional. */
+    gap: 0.3rem;
+    font-size: 0.78rem;
+  }
+  .site-header .main-nav a {
+    padding: 0.35rem 0.55rem;
+  }
+}
+
+/* Brand left, marks right, on one line always. */
+.header-main {
+  flex-wrap: nowrap;
+  gap: 10px 16px;
+}
+
+.header-socials {
+  margin-left: auto;
+  /* Never wrap onto a second line: if the row runs out of room the marks
+     scroll sideways, which keeps them beside the brand instead of below it. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.header-socials::-webkit-scrollbar { display: none; }
+.header-socials li { flex: none; }
+
+/* The brand yields space before the marks do — it can ellipsis, they cannot
+   usefully shrink. */
+.brand-mark { min-width: 0; }
+.brand-copy { min-width: 0; overflow: hidden; }
+.brand-copy strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Below this the full name has no useful room left; the IFAC seal still
+   identifies the site, so drop the expansion rather than ellipsis it to a
+   couple of letters. */
+@media (max-width: 620px) {
+  .brand-copy { display: none; }
+}
+
+/* ==========================================================================
+   Home page auth panel — create account / sign in.
+   Reuses .form-shell, .field and .button so it reads as part of the page
+   rather than a bolted-on auth widget; only the tabs and the button row are
+   new here.
+   ========================================================================== */
+
+.auth-panel-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.auth-panel-tab {
+  flex: 1 1 0;
+  padding: 8px 10px;
+  border: 1px solid #40215c;
+  background: #020202;
+  color: #7a5fa0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.auth-panel-tab:hover { color: #20d7ff; }
+.auth-panel-tab.is-active {
+  color: #20d7ff;
+  border-color: #20d7ff;
+}
+.auth-panel-tab:focus-visible {
+  outline: 2px solid #20d7ff;
+  outline-offset: 2px;
+}
+
+.auth-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Google is the secondary path, so it reads quieter than the primary submit
+   without becoming hard to find. */
+.button--ghost {
+  background: #020202;
+  color: #20d7ff;
+}
+.button--ghost:hover {
+  background: #06131a;
+}
+
+.auth-panel-note {
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+.auth-panel-note strong { color: #20d7ff; }
+
+/* .button is an <a> in the signed-in state, which has no default alignment. */
+.auth-panel a.button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The surface layer and the forum, in IFAC's voice.
+
+   Both stylesheets read only custom properties, so theming them is this
+   block and nothing else — no wrapper component, no inline styles, no
+   Tailwind. They must be set on :root: surface.css computes --sf-* there
+   from these, and a custom property computed on :root cannot be changed by
+   redefining its input further down the tree.
+
+   IFAC's chrome is dark (body is #020202, set below), but --oxide and --blue
+   are the LIGHT-theme accents and fail badly against it — 3.09:1 and 1.86:1.
+   Gold is the brand mark's colour and clears AA at 8.03:1, so it leads here,
+   with lifted blue/moss for the per-kind accents. Every pair below was
+   measured; body text is 16.3:1, the quietest text 4.55:1.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --eac-surface-bg: #020202;          /* the body's own ground */
+  --eac-surface-bg-soft: #0e0e10;     /* lifted: panels, cards, table heads */
+  --eac-surface-fg: #e8e3e4;          /* 16.34:1 on the ground */
+  --eac-surface-muted: #9a948f;       /* 6.92:1 — kickers, counts, bylines */
+  --eac-surface-faint: #7a7570;       /* 4.55:1 — timestamps, dividers' text */
+  --eac-surface-line: #2e2e30;
+  --eac-surface-rule: #4a4744;
+  --eac-surface-accent: var(--gold);  /* #c79a42 — 8.03:1, the IFAC mark */
+  --eac-surface-on-accent: #1a1408;   /* 7.08:1 on gold */
+  --eac-surface-danger: #d9705c;      /* 6.35:1 — lifted from --oxide */
+  --eac-surface-radius: 2px;
+
+  /* Per-kind accents, lifted off IFAC's light-theme swatches. */
+  --eac-kind-post: var(--gold);
+  --eac-kind-event: #7fa3cc;          /* 7.92:1 — lifted --blue */
+  --eac-kind-meeting: #7fa3cc;
+  --eac-kind-workshop: #8fae86;       /* 8.46:1 — lifted --moss */
+  --eac-kind-service: #8fae86;
+
+  --eac-forum-blue: #7fa3cc;
+}
+
+/* The board is a full page on this site, so it carries the ground itself —
+   the forum's own stylesheet deliberately paints no background. */
+.gf-page {
+  min-height: 100vh;
+  background: var(--eac-surface-bg);
+  color: var(--eac-surface-fg);
+  max-width: none;
+}
+.gf-page > * {
+  max-width: 1180px;
+  margin-inline: auto;
 }

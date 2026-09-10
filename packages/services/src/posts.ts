@@ -18,10 +18,44 @@ interface CreatePostData {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Any thread kind, not just `post`.
+ *
+ * `threads` holds meeting (16 rows), post (12), workshop (6), service and
+ * pigeon — but `createPost` hardcoded `kind='post'`, so every app that needed
+ * anything else hand-wrote its own INSERT and lost slug-collision handling,
+ * excerpt derivation and correct published_at semantics along the way.
+ * Generalising it is what lets those call sites converge.
+ */
+export interface CreateThreadData extends CreatePostData {
+  /** Defaults to 'post'. Free-form: the DB has no CHECK on kind. */
+  kind?: string;
+  // Schedule — meetings, events, workshops
+  scheduledAt?: Date | string | null;
+  durationMinutes?: number | null;
+  location?: string | null;
+  format?: 'in_person' | 'online' | 'hybrid' | null;
+  meetingUrl?: string | null;
+  /**
+   * Attendance. `pinned` and `isRsvpEnabled` are NOT NULL with defaults in the
+   * schema, so they coalesce to false rather than passing through as null —
+   * naming a column in an INSERT defeats its DEFAULT, which is how the first
+   * call through this path hit a not-null violation.
+   */
+  isRsvpEnabled?: boolean | null;
+  attendeeLimit?: number | null;
+  // Pricing
+  price?: number | string | null;
+  currency?: string | null;
+  /** `org_feeds.slug` — which section of the org's site this lands in. */
+  section?: string | null;
+  pinned?: boolean | null;
+}
+
 interface UpdatePostData extends Partial<CreatePostData> {}
 
 /**
- * Create a post (a thread with kind='post').
+ * Create a thread of any kind.
  *
  * This is the single write path every app should use. It previously could not
  * succeed at all: it omitted `id` (NOT NULL, no default) and defaulted
@@ -34,7 +68,7 @@ interface UpdatePostData extends Partial<CreatePostData> {}
  *     does not backdate it and flipping to draft does not invent one
  *   - derives an excerpt when the author left it blank
  */
-export async function createPost(data: CreatePostData): Promise<Post> {
+export async function createThread(data: CreateThreadData): Promise<Post> {
   const status: PostStatus = data.status || 'published';
   const visibility: PostVisibility = data.visibility || 'PUBLIC';
 
@@ -44,26 +78,20 @@ export async function createPost(data: CreatePostData): Promise<Post> {
 
   const excerpt = data.excerpt || deriveExcerpt(data.body);
   const metadata = data.metadata ?? {};
+  const scheduledAt = data.scheduledAt
+    ? new Date(data.scheduledAt as string | Date)
+    : null;
 
   const [post] = await db`
     INSERT INTO threads (
-      id,
-      kind,
-      title,
-      slug,
-      org_id,
-      author_id,
-      body,
-      excerpt,
-      status,
-      visibility,
-      nextcloud_file_id,
-      nextcloud_last_sync,
-      metadata,
-      published_at
+      id, kind, title, slug, org_id, author_id,
+      body, excerpt, status, visibility,
+      nextcloud_file_id, nextcloud_last_sync, metadata, published_at,
+      scheduled_at, duration_minutes, location, format, meeting_url,
+      is_rsvp_enabled, attendee_limit, price, currency, section, pinned
     ) VALUES (
       ${nanoid()},
-      'post',
+      ${data.kind || 'post'},
       ${data.title},
       ${slug},
       ${data.orgId},
@@ -75,12 +103,28 @@ export async function createPost(data: CreatePostData): Promise<Post> {
       ${data.nextcloudFileId || null},
       ${data.nextcloudLastSync || null},
       ${db.json(metadata as any)},
-      ${status === 'published' ? db`NOW()` : null}
+      ${status === 'published' ? db`NOW()` : null},
+      ${scheduledAt},
+      ${data.durationMinutes ?? null},
+      ${data.location || null},
+      ${data.format || null},
+      ${data.meetingUrl || null},
+      ${data.isRsvpEnabled ?? false},
+      ${data.attendeeLimit ?? null},
+      ${data.price ?? null},
+      ${data.currency || null},
+      ${data.section || null},
+      ${data.pinned ?? false}
     )
     RETURNING *
   `;
 
   return mapPostFromDb(post);
+}
+
+/** A thread with `kind='post'`. Thin wrapper — see createThread. */
+export async function createPost(data: CreatePostData): Promise<Post> {
+  return createThread({ ...data, kind: 'post' });
 }
 
 /**

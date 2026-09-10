@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
+import { validateUploadBuffer } from "@elkdonis/utils";
 import { uploadFile, getUploadPath, getProxyFileUrl } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
@@ -45,6 +46,19 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // The client-supplied MIME type above is attacker-controlled, and
+    // `image/svg+xml` passes a `startsWith("image/")` check. An SVG is a
+    // script container, so verify the actual leading bytes — validateUploadBuffer
+    // classifies SVG as its own kind, never `image`.
+    const validation = validateUploadBuffer(buffer, ["image"]);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: "reason" in validation ? validation.reason : "Rejected" },
+        { status: 415 }
+      );
+    }
+
 
     const uploadSuccess = await uploadFile(relativePath, buffer, file.type);
     if (!uploadSuccess) {

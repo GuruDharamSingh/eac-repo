@@ -44,7 +44,12 @@ export interface TemplateAudit {
  * both marked future work — and those are roadmap, not drift, so they are not
  * reported. Widen this set when such a table lands.
  */
-const MODELLED_TABLES = new Set(["threads", "workshop_pages", "artist_profiles"]);
+const MODELLED_TABLES = new Set([
+  "threads",
+  "workshop_pages",
+  "users",
+  "org_profiles",
+]);
 
 const TRAIT_RE = /data-trait="([^"]+)"/g;
 

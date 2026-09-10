@@ -1,0 +1,76 @@
+/*
+  eac-br-footer.css
+  ==================
+  Back panel of the brochure, with a dashed fold line across the top.
+*/
+
+.eac-br-footer {
+  background: var(--eac-br-ink);
+  color: var(--eac-br-paper);
+  position: relative;
+}
+
+.eac-br-footer__fold {
+  border-top: 1px dashed rgba(244, 236, 216, 0.3);
+  margin: 0 24px;
+}
+
+.eac-br-footer__inner {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  padding: 48px 24px 32px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+}
+
+.eac-br-footer__crest {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--eac-br-brass);
+  color: var(--eac-br-brass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.eac-br-footer__col h3 {
+  font-family: var(--eac-br-font-display);
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.eac-br-footer__col p { color: rgba(244, 236, 216, 0.65); font-size: 14px; margin: 0; }
+
+.eac-br-footer .eac-br-label { color: var(--eac-br-brass); margin-bottom: 12px; }
+
+.eac-br-footer__col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.eac-br-footer__col a {
+  color: rgba(244, 236, 216, 0.75);
+  font-size: 14px;
+}
+.eac-br-footer__col a:hover { color: var(--eac-br-paper); }
+
+.eac-br-footer__base {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(244, 236, 216, 0.5);
+  border-top: var(--eac-br-rule-hair);
+}
+
+@media (max-width: 720px) {
+  .eac-br-footer__inner { grid-template-columns: 1fr; }
+  .eac-br-footer__base { flex-direction: column; gap: 6px; }
+}

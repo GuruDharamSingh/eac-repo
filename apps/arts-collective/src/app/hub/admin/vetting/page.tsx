@@ -72,19 +72,12 @@ function SubmissionCard({ review }: { review: PendingReview }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {review.userDisplayName || review.userEmail}
             {review.orgName ? ` · for ${review.orgName}` : ""}
-            {" · currently "}
-            <code className="text-foreground">{review.userNetworkTier}</code>
           </p>
         </div>
         <div className="shrink-0 text-right text-xs text-muted-foreground">
           {review.submittedAt
             ? new Date(review.submittedAt).toLocaleDateString()
             : "—"}
-          {review.gatesTier && (
-            <div className="mt-1 rounded-full border border-border px-2 py-0.5">
-              gates {review.gatesTier}
-            </div>
-          )}
         </div>
       </div>
 
@@ -107,11 +100,7 @@ function SubmissionCard({ review }: { review: PendingReview }) {
         </dl>
       )}
 
-      <ReviewActions
-        responseId={review.id}
-        gatesTier={review.gatesTier}
-        currentTier={review.userNetworkTier}
-      />
+      <ReviewActions responseId={review.id} />
     </li>
   );
 }

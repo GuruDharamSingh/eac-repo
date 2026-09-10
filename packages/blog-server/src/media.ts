@@ -127,6 +127,18 @@ export function createMediaGetHandler() {
         return new NextResponse('Not found', { status: 404 });
       }
 
+      // A session alone used to be enough here, which meant any signed-in
+      // user of any app could read any org's private media by guessing a
+      // path. Media is fetched with one shared Nextcloud service account, so
+      // this check is the only thing standing between the requester and the
+      // whole tree. The session gate above is kept as-is: this only ever
+      // narrows access, never widens it.
+      const { canReadMedia } = await import('@elkdonis/services');
+      const viewerId = session.user.db_user_id ?? session.user.id ?? null;
+      if (!(await canReadMedia(viewerId, path))) {
+        return new NextResponse('Not found', { status: 404 });
+      }
+
       const url = getFileUrl(path);
 
       const response = await fetch(url, {
@@ -145,7 +157,14 @@ export function createMediaGetHandler() {
       return new NextResponse(buffer, {
         headers: {
           'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000, immutable',
+          // A response whose visibility was just decided per-viewer by
+          // canReadMedia must never be stored by a shared cache — public+
+          // immutable would serve one org's private file to the next
+          // requester for a year, so revoking a membership would not revoke
+          // the leak.
+          'Cache-Control': path.includes('/Private/')
+            ? 'private, no-store'
+            : 'public, max-age=31536000, immutable',
         },
       });
     } catch (error) {

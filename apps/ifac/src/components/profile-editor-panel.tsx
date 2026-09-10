@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LiveEditor, type FieldDef } from "@elkdonis/ui";
+// Imported straight from @elkdonis/live-editor, not re-exported through
+// @elkdonis/ui: LiveEditor itself uses no Mantine, but the ui barrel
+// declares Mantine as a dependency, so importing through it pulls Mantine
+// into an app that is deliberately without it.
+import { LiveEditor, type FieldDef } from "@elkdonis/live-editor";
 import { CssPanel } from "@elkdonis/live-editor";
 import type { ThemeVars } from "@elkdonis/services";
 import { saveProfileFieldAction, saveAvatarAction } from "@/lib/profile-editor-actions";

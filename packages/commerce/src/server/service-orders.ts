@@ -123,6 +123,11 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
     amountMinor,
   });
 
+  const payoutEmail = settlement.payoutEmail;
+  if (!payoutEmail) {
+    throw new Error("This practitioner takes card payments only, which this booking form does not offer yet.");
+  }
+
   const orderNumber = generateOrderNumber();
   const dueHours = input.etransferDueHours ?? 72;
   const instructions = buildEtransferInstructions({
@@ -130,7 +135,7 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
     totalMinor: amountMinor,
     currency,
     artistName: settlement.payeeName,
-    payoutEmail: settlement.payoutEmail,
+    payoutEmail,
     paymentDueAt: new Date(Date.now() + dueHours * 3600_000).toISOString(),
     itemNoun: input.itemNoun ?? "booking",
   });
@@ -209,10 +214,10 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
           currency,
           paymentInstructions: instructions.buyerInstructions,
           artistName: settlement.payeeName,
-          artistPayoutEmail: settlement.payoutEmail,
+          artistPayoutEmail: payoutEmail,
           paymentDueAt,
         }),
-        sendOrderNotification(settlement.payoutEmail, {
+        sendOrderNotification(payoutEmail, {
           role: "artist",
           orderNumber,
           customerName: input.customerName ?? null,

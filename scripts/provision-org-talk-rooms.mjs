@@ -4,7 +4,11 @@
  * ============================
  * Create the persistent Nextcloud Talk room for each org that doesn't have
  * one yet (organizations.talk_room_token IS NULL), owned by the service
- * account. Members are invited later once they have Nextcloud accounts.
+ * account. This is the room the org's hub renders as "General Chat".
+ *
+ * Rooms are PUBLIC so members can join as Talk guests — see the note in
+ * createGroupRoom. Members with their own Nextcloud accounts can be invited
+ * as real participants later.
  *
  * Usage (env like backfill-org-nextcloud.mjs):
  *   DATABASE_URL=... NEXTCLOUD_URL=... \
@@ -40,8 +44,13 @@ const auth = `Basic ${Buffer.from(`${NC_USER}:${NC_PASS}`).toString("base64")}`;
 
 async function createGroupRoom(name) {
   const body = new URLSearchParams();
-  body.set("roomType", "2"); // group
-  body.set("roomName", name);
+  // Public (3), not group (2). A group room admits Nextcloud accounts only,
+  // and our members reach the hub's General Chat as Talk GUESTS — none of them
+  // has a Nextcloud account. Rooms created as type 2 silently admitted nobody
+  // and had to be flipped by hand afterwards; ensureOrgChatRoom() in
+  // @elkdonis/services now repairs any that are still private.
+  body.set("roomType", "3");
+  body.set("roomName", `${name} — General Chat`);
   const res = await fetch(`${NC_URL}/ocs/v2.php/apps/spreed/api/v4/room`, {
     method: "POST",
     headers: {

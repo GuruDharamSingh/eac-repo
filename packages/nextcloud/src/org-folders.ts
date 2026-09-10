@@ -107,11 +107,56 @@ export async function ensureMemberMediaFolder(
   return memberFolder;
 }
 
+/** Where per-person folders live, as a sibling of the org folders. */
+export const USERS_SEGMENT = 'users';
+
+/**
+ * A principal's own folder: EAC_Network/users/<slug>/…
+ *
+ * Persons and organizations are the same kind of thing on this platform
+ * (organizations.profile_user_id is a unique FK into users, populated for
+ * every org), so a principal folder gets exactly the same subtree an org
+ * folder does — only the location and who is granted access differ.
+ *
+ * Deliberately NOT tied to Nextcloud account provisioning. Most principals
+ * have no Nextcloud login and may never get one (17 of IFAC's 18 artists,
+ * for instance), yet still need somewhere for their media to live. The
+ * folder is created for everyone; a *share* is what gets added later if and
+ * when they connect an account. Access changes, location never does.
+ *
+ * Keyed on users.slug, which is unique, backfilled for every principal, and
+ * treated as immutable precisely because it is both a public profile URL and
+ * this folder name.
+ */
+export async function ensureUserFolder(
+  client: NextcloudClient,
+  userSlug: string,
+  options: EnsureOrgFolderOptions = {}
+): Promise<string> {
+  const slug = cleanPath(userSlug);
+  // A slug with a separator in it would escape the users/ subtree.
+  if (!slug || slug.includes('/')) {
+    throw new Error(`ensureUserFolder: invalid slug ${JSON.stringify(userSlug)}`);
+  }
+
+  const rootFolder = cleanPath(options.rootFolder || getOrgRootFolder());
+  const userFolder = cleanPath(`${rootFolder}/${USERS_SEGMENT}/${slug}`);
+
+  return ensureOrgFolderPath(client, userFolder, {
+    includeStandardMediaFolders: options.includeStandardMediaFolders,
+  });
+}
+
 /**
  * A person's own media folder, org-agnostic — ArtDirect has no org_id to key
  * off of (a person's identity spans every org they belong to), so this
  * treats "artdirect" as a fixed pseudo-org root and reuses the same
  * org-folder tree-creation rather than inventing a second folder scheme.
+ *
+ * @deprecated Superseded by ensureUserFolder(), which puts a person's media
+ * under EAC_Network/users/<slug>/ instead of inside a pseudo-org. Kept as-is
+ * because ArtDirect's existing uploads and stored URLs still point at
+ * EAC_Network/artdirect/Media/Images/<slug>/; migrate those before removing.
  */
 export async function ensurePersonMediaFolder(
   client: NextcloudClient,

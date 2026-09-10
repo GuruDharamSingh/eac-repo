@@ -41,11 +41,10 @@ export async function POST(
 
   const result = await reviewResponse(responseId, user.id, outcome, {
     note: body?.note,
-    promote: Boolean(body?.promote),
   });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 409 });
   }
-  return NextResponse.json({ ok: true, promotedTo: result.promotedTo ?? null });
+  return NextResponse.json({ ok: true });
 }

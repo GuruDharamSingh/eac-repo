@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./components": "./src/components/index.ts",
-    "./server": "./src/server/index.ts"
+    "./server": "./src/server/index.ts",
+    "./stripe": "./src/server/stripe.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

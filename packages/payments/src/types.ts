@@ -1,14 +1,24 @@
 /**
  * Provider-neutral types for the payment abstraction.
  *
- * The `PaymentProvider` interface lets the rest of the app stay agnostic about
- * which payment rail (eTransfer, Stripe, manual cash, etc.) is in use. v1 ships
- * the eTransfer implementation; Stripe is a stub for later.
+ * The `PaymentProvider` interface lets the rest of the network stay agnostic
+ * about which payment rail (eTransfer, Stripe, manual) is in use. eTransfer
+ * needs no configuration and is always available; Stripe is available when
+ * `STRIPE_SECRET_KEY` is set (see providers/stripe.ts).
  */
 
 import type { Currency, Order } from "@elkdonis/commerce/types";
 
 export type PaymentProviderId = "etransfer" | "stripe" | "manual";
+
+export interface InitiateLine {
+  name: string;
+  description?: string | null;
+  amountMinor: number;
+  currency: string;
+  quantity: number;
+  imageUrl?: string | null;
+}
 
 export interface InitiateInput {
   orderId: string;
@@ -20,6 +30,16 @@ export interface InitiateInput {
   artistPayoutEmail?: string;
   /** ISO timestamp by which payment must be received */
   dueAt: string;
+
+  // ─── Hosted-checkout providers (Stripe) ──────────────────────────────────
+  /** Itemised lines; a provider that shows a receipt uses them. */
+  lines?: InitiateLine[];
+  successUrl?: string;
+  cancelUrl?: string;
+  /** A PERSON's connected account to route to; omit for a platform charge. */
+  destinationAccountId?: string | null;
+  /** The platform's (org-earmarked) cut of a destination charge. */
+  applicationFeeMinor?: number;
 }
 
 export interface InitiateResult {
@@ -38,6 +58,12 @@ export type PaymentDisplay =
       reference: string;
       bodyText: string; // human-readable instructions block
       dueAt: string;
+    }
+  | {
+      /** Send the buyer to a hosted payment page. */
+      kind: "redirect";
+      url: string;
+      expiresAt?: string;
     }
   | {
       kind: "stripe_client_secret";

@@ -1,6 +1,22 @@
 import { db } from "@elkdonis/db";
 import { getOrgRole, hasOrgRole } from "@elkdonis/services";
-import type { ArtistProfileRow } from "@/lib/profile";
+
+/**
+ * The organisation's own public identity, from its `entity_type='organization'`
+ * users row (migration 099) via `organizations.profile_user_id`.
+ *
+ * This replaces a read of `artist_profiles WHERE org_id = … LIMIT 1`, which had
+ * no ORDER BY. That table is keyed on `user_id` — one row per *person*, merely
+ * tagged with an org — so the query returned whichever member Postgres felt
+ * like and rendered their name, bio and city as the organisation's own. On
+ * `elkdonis` (10 such rows) the answer was nondeterministic, and it rendered on
+ * a public, unauthenticated URL for every org.
+ */
+export type OrgIdentity = {
+  display_name: string | null;
+  bio: string | null;
+  city: string | null;
+};
 
 export type OrgSummary = {
   id: string;
@@ -16,7 +32,7 @@ export type OrgSummary = {
   /** Service-account path (EAC_Network/<org>). Null until first provisioning —
    *  the hub shows that state rather than pretending the folder exists. */
   nextcloud_folder_path: string | null;
-  profile: ArtistProfileRow | null;
+  profile: OrgIdentity | null;
 };
 
 export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
@@ -97,10 +113,14 @@ export async function getOrgBySlug(slug: string): Promise<OrgSummary | null> {
 
     if (!org) return null;
 
-    let profile: ArtistProfileRow | null = null;
+    let profile: OrgIdentity | null = null;
     try {
-      const rows = await db<ArtistProfileRow[]>`
-        SELECT * FROM artist_profiles WHERE org_id = ${org.id} LIMIT 1
+      const rows = await db<OrgIdentity[]>`
+        SELECT u.display_name, u.bio, u.city
+        FROM organizations o
+        JOIN users u ON u.id = o.profile_user_id
+        WHERE o.id = ${org.id}
+        LIMIT 1
       `;
       profile = rows[0] ?? null;
     } catch {
@@ -415,13 +435,19 @@ export async function getOrgWorkshopForTemplate(
 
         ap.display_name  AS facilitator_name,
         ap.bio           AS facilitator_bio,
-        ap.photo_url     AS facilitator_photo,
+        ap.avatar_url    AS facilitator_photo,
         ap.pronouns      AS facilitator_pronouns,
 
         t.org_id
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
-      LEFT JOIN artist_profiles ap ON ap.org_id = t.org_id
+      -- The facilitator is the workshop's AUTHOR. This was a join to
+      -- artist_profiles on org_id alone -- a table keyed one row per person and
+      -- merely tagged with an org, so it attributed the workshop to whichever
+      -- member Postgres picked, and would have duplicated every workshop row
+      -- once an org had two such rows. threads.author_id is NOT NULL, so this
+      -- join is exact.
+      LEFT JOIN users ap ON ap.id = t.author_id
       WHERE t.org_id   = ${orgId}
         AND t.kind      = 'workshop'
         AND t.status    = 'published'
@@ -436,6 +462,81 @@ export async function getOrgWorkshopForTemplate(
     return data as WorkshopPageData;
   } catch {
     return null;
+  }
+}
+
+/** A published thread of any kind, with everything the reading layer needs. */
+export type PublicThread = {
+  id: string;
+  slug: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  body_format: string;
+  excerpt: string | null;
+  published_at: string | null;
+  scheduled_at: string | null;
+  location: string | null;
+  metadata: Record<string, unknown> | null;
+  author_name: string | null;
+  author_slug: string | null;
+};
+
+/**
+ * One published thread by slug, whatever its kind.
+ *
+ * The sibling of `getThreadWithWorkshopPage`, which requires
+ * `t.kind = 'workshop'` — so an org could publish an article, see it listed on
+ * its own `/profile`, and every reader who clicked the link got a 404. That was
+ * true of every post, meeting and service on the network.
+ *
+ * Workshops keep their own path: they render a bound template with a schedule,
+ * gallery and registration, which is a different surface from a piece of
+ * writing. This is for everything else.
+ */
+export async function getPublicThread(
+  orgId: string,
+  slug: string
+): Promise<PublicThread | null> {
+  try {
+    const rows = await db<PublicThread[]>`
+      SELECT
+        t.id, t.slug, t.kind, t.title, t.body, t.body_format, t.excerpt,
+        t.published_at, t.scheduled_at, t.location, t.metadata,
+        u.display_name AS author_name,
+        u.slug         AS author_slug
+      FROM threads t
+      LEFT JOIN users u ON u.id = t.author_id
+      WHERE t.org_id = ${orgId}
+        AND t.slug = ${slug}
+        AND t.status = 'published'
+        AND t.visibility = 'PUBLIC'
+      LIMIT 1
+    `;
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every organisation carrying this thread — the org that published it plus any
+ * that have taken it on (`thread_orgs`). This is the custody claim the colophon
+ * renders: both the person and the orgs hold it, and neither owns a copy.
+ */
+export async function getThreadOrgs(
+  threadId: string
+): Promise<Array<{ id: string; name: string; slug: string }>> {
+  try {
+    return await db<Array<{ id: string; name: string; slug: string }>>`
+      SELECT DISTINCT o.id, o.name, o.slug
+      FROM organizations o
+      WHERE o.id = (SELECT org_id FROM threads WHERE id = ${threadId})
+         OR o.id IN (SELECT org_id FROM thread_orgs WHERE thread_id = ${threadId})
+      ORDER BY o.name
+    `;
+  } catch {
+    return [];
   }
 }
 
@@ -464,13 +565,19 @@ export async function getThreadWithWorkshopPage(
 
         ap.display_name  AS facilitator_name,
         ap.bio           AS facilitator_bio,
-        ap.photo_url     AS facilitator_photo,
+        ap.avatar_url    AS facilitator_photo,
         ap.pronouns      AS facilitator_pronouns,
 
         t.org_id
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
-      LEFT JOIN artist_profiles ap ON ap.org_id = t.org_id
+      -- The facilitator is the workshop's AUTHOR. This was a join to
+      -- artist_profiles on org_id alone -- a table keyed one row per person and
+      -- merely tagged with an org, so it attributed the workshop to whichever
+      -- member Postgres picked, and would have duplicated every workshop row
+      -- once an org had two such rows. threads.author_id is NOT NULL, so this
+      -- join is exact.
+      LEFT JOIN users ap ON ap.id = t.author_id
       WHERE t.org_id = ${orgId}
         AND t.slug    = ${slug}
         AND t.kind    = 'workshop'

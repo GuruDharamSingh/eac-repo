@@ -6,27 +6,19 @@ import { useState, useTransition } from "react";
 /**
  * Accept or return one submission. Authorisation lives entirely in the route
  * this calls — these are affordances, not a gate.
+ *
+ * The "also advance their tier" checkbox is gone with `users.network_tier`
+ * (migration 104). That tier was written here and read by nothing, and never
+ * moved a row off `member`; standing that gates nothing is not standing.
+ * Accepting answers and changing what someone may do are separate acts, and
+ * the second one is `user_organizations.role`.
  */
-export function ReviewActions({
-  responseId,
-  gatesTier,
-  currentTier,
-}: {
-  responseId: string;
-  gatesTier: string | null;
-  currentTier: string;
-}) {
+export function ReviewActions({ responseId }: { responseId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [promote, setPromote] = useState(false);
-
-  // Only offer promotion when it would actually change something.
-  const order = ["member", "host", "partner"];
-  const canPromote =
-    Boolean(gatesTier) && order.indexOf(gatesTier!) > order.indexOf(currentTier);
 
   async function act(outcome: "reviewed" | "returned") {
     setBusy(true);
@@ -38,7 +30,6 @@ export function ReviewActions({
         body: JSON.stringify({
           outcome,
           note: note.trim() || undefined,
-          promote: outcome === "reviewed" ? promote : false,
         }),
       });
       const body = await res.json().catch(() => null);
@@ -62,18 +53,6 @@ export function ReviewActions({
         rows={2}
         className="w-full rounded-md border border-border bg-background p-2 text-sm"
       />
-
-      {canPromote && (
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={promote}
-            onChange={(e) => setPromote(e.target.checked)}
-          />
-          Also advance to <code className="text-foreground">{gatesTier}</code>{" "}
-          (currently {currentTier})
-        </label>
-      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <button

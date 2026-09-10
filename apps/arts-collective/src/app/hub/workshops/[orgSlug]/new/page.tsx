@@ -7,6 +7,13 @@ import { resolveOrgHomeUrl } from "@/lib/org-url.server";
 import { db } from "@elkdonis/db";
 import Link from "next/link";
 
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function NewWorkshopPage({
   params,
 }: {

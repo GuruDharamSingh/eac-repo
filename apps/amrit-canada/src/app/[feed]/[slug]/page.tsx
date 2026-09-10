@@ -1,22 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  CalendarDays,
-  Clock,
-  Download,
-  FileText,
-  MapPin,
-  MessagesSquare,
-  Repeat,
-  Video,
-} from "lucide-react";
+import { Download } from "lucide-react";
 import { getOrgFeed } from "@elkdonis/services";
-import { Badge } from "@/components/ui/badge";
+import { ArticleView } from "@elkdonis/cms-ui/article";
+import {
+  SurfacePage,
+  buildIcs,
+  icsDataUrl,
+  threadViewParts,
+  type SurfaceAction,
+} from "@elkdonis/cms-ui/surface";
+import { toSurfaceThread } from "@/lib/surface-thread";
 import { CycleBadge } from "@/components/cycle-badge";
 import { RsvpPanel } from "@/components/rsvp-panel";
 import { ShareButton } from "@/components/share-button";
 import { AttendeeList } from "@/components/attendee-list";
+import { EditThreadButton } from "@/components/edit-thread-button";
 import {
   getAttendanceCount,
   getCycleStatus,
@@ -26,13 +26,7 @@ import {
   listAttendees,
 } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
-import {
-  formatDate,
-  formatDuration,
-  formatRecurrence,
-  formatTime,
-  toPlainText,
-} from "@/lib/format";
+import { toPlainText } from "@/lib/format";
 import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
 
@@ -61,6 +55,14 @@ export async function generateMetadata({ params }: ThreadPageProps): Promise<Met
   };
 }
 
+/** The feed's accent, as an inline custom property. Null when unset. */
+function accentStyle(hex: string | null | undefined): React.CSSProperties | undefined {
+  const accent = hexToHslTriplet(hex);
+  return accent
+    ? ({ ["--feed" as string]: `hsl(${accent})` } as React.CSSProperties)
+    : undefined;
+}
+
 export default async function ThreadPage({ params }: ThreadPageProps) {
   const { feed: feedSlug, slug } = await params;
 
@@ -71,6 +73,42 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   ]);
 
   if (!thread || !feed) notFound();
+
+  // Writing reads; gatherings are attended. Same route, two presentations —
+  // a post rendered through the meeting page gets a date table, an RSVP panel
+  // and a "Together" card it has no use for, and none of the reading
+  // treatment it does. The kind decides which surface, not the route.
+  if (thread.kind === "post") {
+    return (
+      <div
+        className="mx-auto max-w-3xl px-5 py-10"
+        style={accentStyle(feed.accent)}
+      >
+        <Link
+          href={`/${feed.slug}`}
+          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+        >
+          ← {feed.name}
+        </Link>
+
+        <ArticleView
+          title={thread.title}
+          lede={thread.excerpt}
+          bodyHtml={thread.description ?? ""}
+          authorName={thread.authorName}
+          publishedAt={thread.publishedAt}
+          kindLabel="Writing"
+          org={{ name: feed.name, href: `/${feed.slug}` }}
+          coverImageUrl={thread.coverImageUrl}
+        >
+          <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
+            {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            <ShareButton title={thread.title} />
+          </div>
+        </ArticleView>
+      </div>
+    );
+  }
 
   const isRecurring = Boolean(
     thread.recurrencePattern && thread.recurrencePattern !== "NONE"
@@ -89,8 +127,6 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
   const when = thread.nextOccurrenceAt;
   const accent = hexToHslTriplet(feed.accent);
-  const duration = formatDuration(thread.durationMinutes);
-  const recurrence = formatRecurrence(thread.recurrencePattern);
 
   // Public Talk rooms (type 3) are joinable by link without an account, which
   // is what most attendees here have. Uses the browser-facing Nextcloud URL.
@@ -100,196 +136,89 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
       ? `${nextcloudPublicUrl.replace(/\/$/, "")}/call/${thread.talkToken}`
       : null;
 
+  // The page IS the surface at page size: same masthead, facts rail and foot
+  // as the popup a feed card opens, so "Open page" is a continuation. The
+  // guest RSVP form and the attendee list sit beneath it — they are this
+  // site's own, and the popup links here for them.
+  const surfaceThread = toSurfaceThread(thread, {
+    feed: { slug: feed.slug, name: feed.name },
+    rsvpCount: attendanceCount,
+    viewerAttending: viewer ? myRsvp : null,
+    cycleStatus,
+  });
+  const parts = threadViewParts(surfaceThread, { timeZone: "America/Toronto" });
+  const ics = when ? buildIcs(surfaceThread) : null;
+
+  const actions: SurfaceAction[] = [];
+  if (ics) {
+    actions.push({
+      label: "Add to my calendar",
+      quiet: true,
+      href: icsDataUrl(ics),
+      download: `${thread.slug}.ics`,
+    });
+  }
+  if (thread.talkToken && talkUrl) {
+    actions.push({ label: "Join the Talk room", href: talkUrl, external: true });
+  }
+  if (thread.isOnline && thread.meetingUrl) {
+    actions.push({ label: "Join online", href: thread.meetingUrl, external: true, primary: true });
+  }
+
   return (
-    <article
-      className="mx-auto max-w-3xl px-5 py-10"
+    <div
+      className="mx-auto max-w-5xl px-5 py-10"
       style={accent ? ({ ["--feed" as string]: `hsl(${accent})` } as React.CSSProperties) : undefined}
     >
-      <Link
-        href={`/${feed.slug}`}
-        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      <SurfacePage
+        kind={thread.kind}
+        title={thread.title}
+        kicker={parts.kicker}
+        crumb={<Link href={`/${feed.slug}`}>← {feed.name}</Link>}
+        rail={parts.rail}
+        actions={actions}
+        status={
+          isRecurring && thread.scheduledAt ? (
+            <CycleBadge status={cycleStatus} />
+          ) : thread.isRsvpEnabled && attendanceCount > 0 ? (
+            `${attendanceCount} coming`
+          ) : null
+        }
+        footExtra={
+          <>
+            {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            <ShareButton title={thread.title} />
+          </>
+        }
       >
-        ← {feed.name}
-      </Link>
+        {parts.main}
 
-      {thread.coverImageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={thread.coverImageUrl}
-          alt=""
-          className="mt-5 aspect-[2/1] w-full rounded-2xl border-4 border-[#f4c430] object-cover shadow-[0_8px_28px_rgba(244,196,48,0.25)]"
-        />
-      )}
-
-      <h1 className="mt-6 font-serif text-[clamp(1.9rem,5vw,2.8rem)] leading-tight">
-        {thread.title}
-      </h1>
-
-      {thread.authorName && (
-        <p className="mt-2 text-sm italic text-[hsl(var(--terracotta-deep))]">
-          with{" "}
-          {thread.authorSlug ? (
-            <Link href={`/about/${thread.authorSlug}`} className="underline underline-offset-2">
-              {thread.authorName}
-            </Link>
-          ) : (
-            thread.authorName
-          )}
-        </p>
-      )}
-
-      {isRecurring && thread.scheduledAt && (
-        <div className="mt-5">
-          <CycleBadge status={cycleStatus} />
-        </div>
-      )}
-
-      {(when || thread.location) && (
-        <dl className="card-natural mt-6 grid gap-3 p-6 text-sm">
-          {when && (
-            <div className="flex items-start gap-3">
-              <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <div>
-                <dt className="sr-only">Date</dt>
-                <dd className="font-medium">{formatDate(when)}</dd>
-              </div>
-            </div>
-          )}
-          {when && (
-            <div className="flex items-start gap-3">
-              <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <div>
-                <dt className="sr-only">Time</dt>
-                <dd>
-                  {formatTime(when)}
-                  {duration ? ` · ${duration}` : ""}{" "}
-                  <span className="text-muted-foreground">(Toronto time)</span>
-                </dd>
-              </div>
-            </div>
-          )}
-          {recurrence && (
-            <div className="flex items-start gap-3">
-              <Repeat className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <dd>{recurrence}</dd>
-            </div>
-          )}
-          {thread.location && (
-            <div className="flex items-start gap-3">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <dd>{thread.location}</dd>
-            </div>
-          )}
-          {thread.isOnline && thread.meetingUrl && (
-            <div className="flex items-start gap-3">
-              <Video className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <dd>
-                <a
-                  href={thread.meetingUrl}
-                  className="underline underline-offset-2"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Join online
-                </a>
-              </dd>
-            </div>
-          )}
-        </dl>
-      )}
-
-      {thread.description && (
-        <div
-          className="prose-amrit mt-8 max-w-none"
-          dangerouslySetInnerHTML={{ __html: thread.description }}
-        />
-      )}
-
-      {thread.videoLink && (
-        <p className="mt-6">
-          <a
-            href={thread.videoLink}
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-2"
-          >
-            Watch the recording
-          </a>
-        </p>
-      )}
-
-      {materials.length > 0 && (
-        <section className="card-natural mt-8 p-6">
-          <h2 className="font-serif text-lg">Materials</h2>
-          <ul className="mt-3 space-y-2">
-            {materials.map((m) => (
-              <li key={m.id}>
-                <a
-                  href={m.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-sm underline underline-offset-2"
-                >
-                  <Download className="size-4 shrink-0" aria-hidden />
-                  {m.filename}
-                  {m.size ? (
-                    <span className="text-xs text-muted-foreground">
-                      ({Math.max(1, Math.round(m.size / 1024))} KB)
-                    </span>
-                  ) : null}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {(thread.documentUrl || thread.talkToken) && (
-        <div className="card-natural mt-8 space-y-3 p-6">
-          <h2 className="font-serif text-lg">Together</h2>
-          {thread.documentUrl && (
-            <p className="flex items-start gap-3 text-sm">
-              <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <a
-                href={thread.documentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="underline underline-offset-2"
-              >
-                Open the shared document
-              </a>
-            </p>
-          )}
-          {thread.talkToken && talkUrl && (
-            <p className="flex items-start gap-3 text-sm">
-              <MessagesSquare
-                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              <span>
-                <a
-                  href={talkUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  Join the Talk room
-                </a>{" "}
-                <span className="text-muted-foreground">— no account needed.</span>
-              </span>
-            </p>
-          )}
-        </div>
-      )}
-
-      <hr className="saffron-divider" />
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Badge variant="outline" className="capitalize">
-          {thread.kind}
-        </Badge>
-        <ShareButton title={thread.title} />
-      </div>
+        {materials.length > 0 && (
+          <section className="eac-surface-section" style={{ marginTop: 24 }}>
+            <h3>Materials</h3>
+            <ul className="mt-3 space-y-2">
+              {materials.map((m) => (
+                <li key={m.id}>
+                  <a
+                    href={m.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm underline underline-offset-2"
+                  >
+                    <Download className="size-4 shrink-0" aria-hidden />
+                    {m.filename}
+                    {m.size ? (
+                      <span className="text-xs text-muted-foreground">
+                        ({Math.max(1, Math.round(m.size / 1024))} KB)
+                      </span>
+                    ) : null}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </SurfacePage>
 
       {thread.isRsvpEnabled && (
         <>
@@ -309,6 +238,6 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           />
         </>
       )}
-    </article>
+    </div>
   );
 }

@@ -1,0 +1,165 @@
+/*
+  compose.css — the composer's chrome: groups, the collapsed ones, rows.
+  Field controls themselves are fields.css. Plain CSS, same posture.
+
+      @import "@elkdonis/cms-ui/fields.css";
+      @import "@elkdonis/cms-ui/compose.css";
+*/
+
+.eac-compose {
+  --cmp-fg: var(--sf-fg, var(--ink, #16181d));
+  --cmp-muted: var(--sf-muted, var(--ink-soft, #5e667a));
+  --cmp-line: var(--sf-line, var(--line, #d9dde2));
+  --cmp-bg-soft: var(--sf-bg-soft, #f2f3f1);
+  --cmp-accent: var(--sf-kind, var(--sf-accent, #5b45a8));
+  --cmp-record: var(--eac-font-record, var(--sf-font-record, ui-monospace, Menlo, monospace));
+  display: grid;
+  gap: 22px;
+  color: var(--cmp-fg);
+}
+
+.eac-group { display: grid; gap: 14px; }
+.eac-group > h3 {
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sf-rule, var(--cmp-fg));
+  font-family: var(--cmp-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cmp-fg);
+  font-weight: 600;
+}
+.eac-group-fields { display: grid; gap: 14px; }
+
+/* An optional group is a <details>. Closed, it is one line: the name and what
+   is inside. Open, it is a group like any other. */
+details.eac-group--optional {
+  gap: 0;
+  border: 1px solid var(--sf-rule, var(--cmp-line));
+  border-radius: var(--sf-radius-sm, 6px);
+  background: var(--cmp-bg-soft);
+}
+details.eac-group--optional > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 14px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+details.eac-group--optional > summary::-webkit-details-marker { display: none; }
+details.eac-group--optional > summary::before {
+  content: "+";
+  font-family: var(--cmp-record);
+  font-size: 0.9rem;
+  color: var(--cmp-accent);
+  width: 1ch;
+  flex: none;
+}
+details.eac-group--optional[open] > summary::before { content: "–"; }
+details.eac-group--optional > summary:focus-visible { outline: 2px solid var(--cmp-accent); outline-offset: -2px; border-radius: inherit; }
+.eac-group-name {
+  font-family: var(--cmp-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cmp-fg);
+  font-weight: 600;
+}
+.eac-group-blurb { font-size: 0.82rem; color: var(--cmp-muted); }
+details.eac-group--optional[open] > summary .eac-group-blurb { display: none; }
+details.eac-group--optional > .eac-group-fields {
+  padding: 4px 14px 16px;
+  border-top: 1px solid var(--cmp-line);
+  margin-top: 0;
+  padding-top: 14px;
+  background: var(--sf-bg, #fff);
+  border-radius: 0 0 var(--sf-radius-sm, 6px) var(--sf-radius-sm, 6px);
+}
+
+/* A "has a value" mark on a closed optional group, so someone editing sees
+   that "Repeats" is set without opening it. */
+details.eac-group--optional.has-values:not([open]) > summary::after {
+  content: "set";
+  margin-left: auto;
+  font-family: var(--cmp-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cmp-accent);
+}
+
+/* The slotted widgets inherit the field label treatment. */
+.eac-slot-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+/* ── Sessions editor ── */
+.eac-sessions { display: grid; gap: 10px; }
+.eac-sessions-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.eac-session { border: 1px solid var(--sf-rule, var(--cmp-line)); border-left: 4px solid var(--cmp-accent); border-radius: var(--sf-radius-sm, 4px); background: var(--sf-bg, #fff); }
+.eac-session-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; padding: 10px 12px; border: 0; background: none; color: var(--cmp-fg); font: inherit; text-align: left; cursor: pointer; }
+.eac-session-num { font-family: var(--cmp-record); font-size: 0.72rem; color: var(--cmp-accent); font-weight: 700; }
+.eac-session-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-session-meta { font-family: var(--cmp-record); font-size: 0.68rem; color: var(--cmp-muted); white-space: nowrap; }
+.eac-session-body { display: grid; gap: 12px; padding: 4px 12px 14px; border-top: 1px solid var(--cmp-line); }
+.eac-session-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Focal point ── */
+.eac-focal { display: grid; gap: 8px; }
+.eac-focal-preview { position: relative; width: 100%; aspect-ratio: 21 / 8; overflow: hidden; border: 1px solid var(--sf-rule, var(--cmp-line)); border-radius: var(--sf-radius-sm, 4px); background: var(--cmp-bg-soft); }
+.eac-focal-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eac-focal-preview .eac-focal-line { position: absolute; left: 0; right: 0; height: 1px; background: var(--cmp-accent); box-shadow: 0 0 0 1px rgba(255,255,255,0.6); pointer-events: none; }
+.eac-focal-empty { display: grid; place-items: center; height: 100%; font-size: 0.8rem; color: var(--cmp-muted); font-style: italic; }
+.eac-focal-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; font-family: var(--cmp-record); font-size: 0.72rem; color: var(--cmp-muted); }
+.eac-focal-row input[type="range"] { width: 100%; accent-color: var(--cmp-accent); }
+
+
+/* ── Session resources — the files and links a session carries ─────────── */
+.eac-resources {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--eac-line, rgba(0, 0, 0, 0.12));
+}
+.eac-resources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.eac-resource {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--eac-line, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  background: var(--eac-well, rgba(0, 0, 0, 0.02));
+}
+.eac-resource-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.eac-resource-row > .eac-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.eac-resource-type {
+  flex: 0 0 auto;
+  width: auto;
+}
+.eac-resource-picker {
+  padding: 0.5rem 0 0.25rem;
+}
+.eac-resource-foot {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}

@@ -48,5 +48,14 @@ export {
   lastOccurrenceEnd,
   nextOccurrence,
   isWithinCurrentCycle,
+  // Calendar-grid expansion — one recurring thread becomes many cells.
+  expandOccurrences,
+  occurrencesByDay,
+  monthGrid,
+  dayKey,
+  startOfMonth,
+  addMonths,
   type RecurrencePattern,
+  type Occurring,
+  type Occurrence,
 } from './recurrence';

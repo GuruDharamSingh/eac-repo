@@ -1,0 +1,145 @@
+/* ==========================================================================
+   ProfileView — the standard (non-template) profile page.
+
+   Custom properties with fallbacks rather than fixed colours, so a person's
+   own palette (users.theme, injected by ThemeStyle from @elkdonis/live-editor)
+   actually reaches the page. Inheriting the site's colours is the whole
+   reason this layout exists, since the Silex profile templates ship a fixed
+   look of their own. The fallbacks reproduce the dark ArtDirect defaults, so
+   an unthemed page renders exactly as it did before this moved out of
+   apps/artdirect.
+
+   Import once per app, e.g. in globals.css:
+     @import "@elkdonis/cms-ui/profile.css";
+   ========================================================================== */
+
+.eac-profile {
+  --eac-profile-bg: var(--paper, #121413);
+  --eac-profile-fg: var(--ink, #f7f1e3);
+  --eac-profile-muted: var(--ink-soft, #a9a293);
+  --eac-profile-line: var(--line, #35322c);
+  --eac-profile-accent: var(--gold, #c79a42);
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 20px 80px;
+  color: var(--eac-profile-fg);
+}
+
+.eac-profile-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: flex-end;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--eac-profile-line);
+}
+
+.eac-profile-portrait {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 1px solid var(--eac-profile-line);
+}
+
+.eac-profile-portrait--empty {
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: var(--eac-profile-muted);
+}
+
+.eac-profile-id h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.eac-profile-headline {
+  margin: 8px 0 0;
+  color: var(--eac-profile-accent);
+}
+
+.eac-profile-meta {
+  margin: 10px 0 0;
+  color: var(--eac-profile-muted);
+  font-size: 0.9rem;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.eac-profile-verified {
+  border: 1px solid var(--eac-profile-accent);
+  color: var(--eac-profile-accent);
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.eac-profile-bio {
+  margin-top: 30px;
+  max-width: 68ch;
+  line-height: 1.75;
+}
+
+.eac-profile-work,
+.eac-profile-links {
+  margin-top: 44px;
+}
+
+.eac-profile-work h2,
+.eac-profile-links h2 {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eac-profile-muted);
+}
+
+.eac-profile-links ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+}
+
+.eac-profile-links a {
+  color: var(--eac-profile-fg);
+  text-decoration-color: var(--eac-profile-accent);
+  text-underline-offset: 3px;
+}
+
+.eac-profile-links a:hover,
+.eac-profile-links a:focus-visible {
+  color: var(--eac-profile-accent);
+}
+
+/* Read-only work grid. Apps that supply an interactive gallery (drag-to-
+   arrange, upload) pass their own component into ProfileView's `gallery`
+   slot instead; this is the plain server-rendered fallback. */
+.eac-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.eac-profile-grid figure {
+  margin: 0;
+}
+
+.eac-profile-grid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 1px solid var(--eac-profile-line);
+}
+
+.eac-profile-grid figcaption {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--eac-profile-muted);
+}

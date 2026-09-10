@@ -18,7 +18,7 @@ export function LogoutButton() {
         border: "1px solid rgba(236,231,221,0.18)",
         borderRadius: 999,
         background: "transparent",
-        color: "#ece7dd",
+        color: "hsl(var(--band-foreground))",
         fontFamily: "var(--font-eb-garamond), Georgia, serif",
         fontSize: 12,
         letterSpacing: "0.2em",

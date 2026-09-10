@@ -27,6 +27,12 @@ export const siteConfig = {
   /** Fallback recipient for guest RSVP notifications when a thread has no author email. */
   fallbackNotifyEmail:
     process.env.AMRIT_CANADA_OWNER_EMAIL ?? "gurudharamsingh@gmail.com",
+  /**
+   * The network marketplace (art-auction). A member's store lives THERE; this
+   * site only shows a window onto it when they switch the "store" section on
+   * for their profile (users.profile_sections, migration 105).
+   */
+  marketplaceUrl: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

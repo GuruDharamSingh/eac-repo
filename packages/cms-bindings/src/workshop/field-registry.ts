@@ -37,7 +37,18 @@ export function isLiveEditorInput(input: FieldInputType): input is LiveEditorInp
   return LIVE_EDITOR_INPUTS.has(input);
 }
 
-export type FieldTable = "threads" | "workshop_pages" | "artist_profiles";
+/**
+ * `users` is the facilitator's identity (migrations 084-087, 099-100);
+ * `org_profiles` is their affiliation with one org, which is where a role title
+ * belongs. Neither is `artist_profiles` — that table is keyed one row per
+ * person and merely tagged with an org, and writing through it here meant an
+ * `UPDATE … WHERE org_id = (…)` that rewrote every member of the org.
+ */
+export type FieldTable =
+  | "threads"
+  | "workshop_pages"
+  | "users"
+  | "org_profiles";
 
 export interface SelectOption {
   value: string;
@@ -238,7 +249,7 @@ export const fieldRegistry: Record<string, FieldMeta> = {
   fullName: {
     label: "Facilitator Name",
     input: "text",
-    table: "artist_profiles",
+    table: "users",
     col: "display_name",
     dataKey: "facilitator_name",
     hint: "Name shown in the facilitator section",
@@ -246,30 +257,29 @@ export const fieldRegistry: Record<string, FieldMeta> = {
   pronouns: {
     label: "Facilitator Pronouns",
     input: "text",
-    table: "artist_profiles",
+    table: "users",
     col: "pronouns",
     dataKey: "facilitator_pronouns",
     hint: "e.g. she/her · they/them",
   },
   roleTitle: {
-    // READONLY DELIBERATELY (2026-09-01). This mapped to
-    // artist_profiles.display_name — the same column as `fullName` — so saving
-    // a role title through the live editor overwrote the facilitator's name.
-    // The correct target is org_profiles.role_title (migration 084), but
-    // arts-collective's updateWorkshopFieldAction has no org_profiles arm, and
-    // pointing at it would trade data loss for a silent no-op. Readonly until
-    // the facilitator fields move off artist_profiles as a set.
+    // Editable again (2026-09-07). It was made readonly on 2026-09-01 because
+    // it pointed at artist_profiles.display_name — the same column as
+    // `fullName` — so saving a role title overwrote the facilitator's name.
+    // The note then said the correct target was org_profiles.role_title and
+    // that it would stay readonly "until the facilitator fields move off
+    // artist_profiles as a set". They have; this is that move.
     label: "Facilitator Role Title",
-    input: "readonly",
-    table: "artist_profiles",
-    col: "display_name",
-    dataKey: "facilitator_name",
-    hint: "Edited on the facilitator's profile, not per workshop",
+    input: "text",
+    table: "org_profiles",
+    col: "role_title",
+    dataKey: "facilitator_role",
+    hint: "The facilitator's role in this organisation",
   },
   facilitatorBio: {
     label: "Facilitator Bio (profile)",
     input: "textarea",
-    table: "artist_profiles",
+    table: "users",
     col: "bio",
     hint: "The facilitator's standing bio, shared across their workshops",
   },
@@ -283,8 +293,8 @@ export const fieldRegistry: Record<string, FieldMeta> = {
   photoPath: {
     label: "Facilitator Photo",
     input: "image",
-    table: "artist_profiles",
-    col: "photo_url",
+    table: "users",
+    col: "avatar_url",
     dataKey: "facilitator_photo",
     hint: "Profile photo shown in the facilitator section",
   },
@@ -418,8 +428,40 @@ export const fieldRegistry: Record<string, FieldMeta> = {
     col: "gallery_image_urls",
     hint: "Images from past sessions — each takes an optional alt text and caption",
   },
+  rsvpEnabled: {
+    label: "Take registrations here",
+    input: "boolean",
+    table: "threads",
+    col: "is_rsvp_enabled",
+    hint: "Off if people register somewhere else — use the registration link instead",
+  },
 
   // ── Platform fields: how the workshop operates, template-independent ──────
+
+  durationMinutes: {
+    label: "Length of a session",
+    input: "number",
+    table: "threads",
+    col: "duration_minutes",
+    platform: true,
+    hint: "In minutes. The per-session length; `sessionDuration` is the hours shown on the page.",
+  },
+  meetingUrl: {
+    label: "Meeting link",
+    input: "url",
+    table: "threads",
+    col: "meeting_url",
+    platform: true,
+    hint: "For online or hybrid sessions. Leave empty if you create a Talk room instead.",
+  },
+  nextcloudDocUrl: {
+    label: "Shared document",
+    input: "url",
+    table: "threads",
+    col: "nextcloud_doc_url",
+    platform: true,
+    hint: "A Nextcloud document shared with registrants",
+  },
 
   coverImage: {
     label: "Cover Image",

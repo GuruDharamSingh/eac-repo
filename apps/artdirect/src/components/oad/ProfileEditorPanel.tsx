@@ -1,14 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { LiveEditor, type FieldDef } from "@elkdonis/ui";
-import { saveProfileFieldAction, saveAvatarAction } from "@/lib/profile-editor-actions";
+// Imported straight from @elkdonis/live-editor, not re-exported through
+// @elkdonis/ui: LiveEditor itself uses no Mantine, but the ui barrel
+// declares Mantine as a dependency, so importing through it pulls Mantine
+// into an app that is deliberately without it.
+import { LiveEditor, type FieldDef } from "@elkdonis/live-editor";
+import {
+  saveProfileFieldAction,
+  saveAvatarAction,
+  setProfileSectionAction,
+} from "@/lib/profile-editor-actions";
 
 export interface ProfileEditorPanelProps {
   profileUserId: string;
   slug: string;
   bio: string;
   avatarUrl: string;
+  /** Whether the person has an active marketplace store. */
+  hasStore?: boolean;
+  /** Whether their store section is currently shown on this page. */
+  storeSectionOn?: boolean;
+  marketplaceUrl?: string;
 }
 
 /**
@@ -26,9 +39,37 @@ export interface ProfileEditorPanelProps {
  * see StandardProfile's isSelf gate. The server actions re-check
  * authorization themselves regardless (see profile-editor-actions.ts).
  */
-export function ProfileEditorPanel({ profileUserId, slug, bio, avatarUrl }: ProfileEditorPanelProps) {
+export function ProfileEditorPanel({
+  profileUserId,
+  slug,
+  bio,
+  avatarUrl,
+  hasStore = false,
+  storeSectionOn = false,
+  marketplaceUrl = "",
+}: ProfileEditorPanelProps) {
   const [avatar, setAvatar] = useState(avatarUrl);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [storeOn, setStoreOn] = useState(storeSectionOn);
+  const [storeSaving, setStoreSaving] = useState(false);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const market = marketplaceUrl.replace(/\/$/, "");
+
+  async function toggleStore(next: boolean) {
+    setStoreOn(next);
+    setStoreSaving(true);
+    setStoreError(null);
+    const res = await setProfileSectionAction(profileUserId, "store", next);
+    setStoreSaving(false);
+    if (!res.ok) {
+      // Put the switch back: a toggle left flipped after a failed save says
+      // something is on when it isn't.
+      setStoreOn(!next);
+      setStoreError(res.error ?? "Could not save that.");
+      return;
+    }
+    window.location.reload();
+  }
 
   const fields: FieldDef[] = [
     { trait: "bio", label: "Bio", input: "textarea", initialValue: bio, hint: "Blank lines separate paragraphs." },
@@ -74,6 +115,39 @@ export function ProfileEditorPanel({ profileUserId, slug, bio, avatarUrl }: Prof
           style={{ display: "none" }}
         />
       </label>
+
+      {/* The store is a front for this profile; whether it shows here is the
+          person's call (users.profile_sections.store — the same flag every
+          org site reads). */}
+      <div className="oad-editor-store mt-3 text-sm">
+        {hasStore ? (
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              checked={storeOn}
+              disabled={storeSaving}
+              onChange={(e) => void toggleStore(e.currentTarget.checked)}
+              className="mt-1 accent-gold"
+            />
+            <span>
+              Show my store on my profile
+              {market && (
+                <>
+                  {" "}·{" "}
+                  <a href={`${market}/studio`} className="text-gold underline underline-offset-4">
+                    studio
+                  </a>
+                </>
+              )}
+              {storeError && <span className="block text-ink-soft">{storeError}</span>}
+            </span>
+          </label>
+        ) : market ? (
+          <a href={`${market}/studio/apply`} className="oad-editor-btn">
+            Sell your work on the marketplace
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }

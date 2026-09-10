@@ -15,8 +15,8 @@ export default function EnneagramPage() {
     <SiteNav />
     <main
       style={{
-        backgroundColor: "#0a0a0c",
-        color: "#ece7dd",
+        backgroundColor: "hsl(var(--band))",
+        color: "hsl(var(--band-foreground))",
         minHeight: "100vh",
         fontFamily: "'Cormorant Garamond', Georgia, serif",
       }}
@@ -25,13 +25,13 @@ export default function EnneagramPage() {
       <section className="py-20 px-6 text-center">
         <p
           className="text-xs tracking-[0.3em] uppercase mb-5"
-          style={{ color: "#3aa99c" }}
+          style={{ color: "hsl(var(--band-primary))" }}
         >
           A map of nine fixations
         </p>
         <h1
           className="text-5xl md:text-6xl mb-4"
-          style={{ fontWeight: 400, color: "#ece7dd" }}
+          style={{ fontWeight: 400, color: "hsl(var(--band-foreground))" }}
         >
           The Enneagram
         </h1>
@@ -57,7 +57,7 @@ export default function EnneagramPage() {
           className="text-3xl md:text-4xl text-center mb-10"
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
-            color: "#ece7dd",
+            color: "hsl(var(--band-foreground))",
             fontWeight: 400,
           }}
         >
@@ -66,11 +66,11 @@ export default function EnneagramPage() {
         <div className="flex flex-col md:flex-row gap-10 items-center max-w-5xl mx-auto">
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <SectionLabel color="#3aa99c">Body · Heart · Head</SectionLabel>
+            <SectionLabel color="hsl(var(--band-primary))">Body · Heart · Head</SectionLabel>
             <h3 style={h3Style}>Where awareness lives</h3>
             <p style={bodyStyle}>
               The nine types organize into three centers of intelligence. The{" "}
-              <Emphasis color="#3aa99c">Body center</Emphasis> — types 1, 8,
+              <Emphasis color="hsl(var(--band-primary))">Body center</Emphasis> — types 1, 8,
               and 9 — processes experience through instinct, boundary, and
               physical presence. The{" "}
               <Emphasis color="#d97070">Heart center</Emphasis> — types 2, 3,
@@ -138,7 +138,7 @@ export default function EnneagramPage() {
         activeLineGroups={["147"]}
         diagramSide="right"
       >
-        <SectionLabel color="#3aa99c">1 · 4 · 7</SectionLabel>
+        <SectionLabel color="hsl(var(--band-primary))">1 · 4 · 7</SectionLabel>
         <h3 style={h3Style}>Seeking what is missing</h3>
         <p style={bodyStyle}>
           Types 1, 4, and 7 share a structural orientation toward{" "}
@@ -147,10 +147,10 @@ export default function EnneagramPage() {
           should be — and each manages that gap differently.
         </p>
         <p style={bodyStyle}>
-          <Emphasis color="#3aa99c">Type 1</Emphasis> turns toward the outer world
-          and tries to correct it. <Emphasis color="#3aa99c">Type 4</Emphasis>{" "}
+          <Emphasis color="hsl(var(--band-primary))">Type 1</Emphasis> turns toward the outer world
+          and tries to correct it. <Emphasis color="hsl(var(--band-primary))">Type 4</Emphasis>{" "}
           turns inward and mourns what is missing in the self. Type{" "}
-          <Emphasis color="#3aa99c">7</Emphasis> turns toward the future and fills
+          <Emphasis color="hsl(var(--band-primary))">7</Emphasis> turns toward the future and fills
           the gap with plans, options, and anticipation.
         </p>
         <p style={bodyStyle}>
@@ -279,7 +279,7 @@ function Emphasis({
 
 function CenterKey() {
   const centers = [
-    { label: "Body center", types: "1, 8, 9", color: "#3aa99c" },
+    { label: "Body center", types: "1, 8, 9", color: "hsl(var(--band-primary))" },
     { label: "Heart center", types: "2, 3, 4", color: "#d97070" },
     { label: "Head center", types: "5, 6, 7", color: "#8f83c0" },
   ];
@@ -306,7 +306,7 @@ function CenterKey() {
 const h3Style: React.CSSProperties = {
   fontSize: "clamp(1.4rem, 2.5vw, 2rem)",
   fontWeight: 400,
-  color: "#ece7dd",
+  color: "hsl(var(--band-foreground))",
   marginBottom: "1rem",
   lineHeight: 1.2,
 };

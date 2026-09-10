@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getServerSession } from "@elkdonis/auth-server";
 import {
   getLotWithArtwork,
   listBidsForLot,
 } from "@elkdonis/commerce/queries";
+import { settleExpiredLots } from "@elkdonis/commerce/server";
 import { BidWidget } from "@elkdonis/commerce/components";
 import { ArtworkGallery } from "@/components/artwork-gallery";
 import { placeBidAction } from "@/app/actions";
+import { getCurrentUserId } from "@/lib/marketplace-auth";
+import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
@@ -28,15 +30,19 @@ export default async function LotPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Close anything that has run out before drawing this page, so a lot that
+  // ended a minute ago already shows its outcome.
+  await settleExpiredLots({ payUrlBase: siteConfig.url }).catch(() => null);
+
   const lot = await getLotWithArtwork(id);
   if (!lot || !lot.artwork) notFound();
 
   const artwork = lot.artwork;
-  const [bids, session] = await Promise.all([
-    listBidsForLot(lot.id, 12),
-    getServerSession().catch(() => null),
-  ]);
-  const isAuthenticated = Boolean(session?.user?.id);
+  const [bids, userId] = await Promise.all([listBidsForLot(lot.id, 12), getCurrentUserId()]);
+  const isAuthenticated = Boolean(userId);
+  const closed = !(lot.status === "live" || lot.status === "scheduled");
+  const iWon = closed && lot.status === "sold" && userId && lot.winnerUserId === userId;
+  const winnerOrderId = (lot.metadata?.orderId as string | undefined) ?? null;
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
@@ -70,22 +76,52 @@ export default async function LotPage({
             )}
           </div>
 
+          {iWon && (
+            <div className="rounded-lg border border-border bg-accent/30 p-5">
+              <p className="font-medium">You won this auction.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                An order has been created for you at the hammer price. Pay by card
+                or eTransfer within 72 hours to complete the purchase.
+              </p>
+              {winnerOrderId && (
+                <Link
+                  href={`/orders/${winnerOrderId}`}
+                  className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Complete your purchase
+                </Link>
+              )}
+            </div>
+          )}
+
           <BidWidget
             lot={lot}
             recentBids={bids}
             isAuthenticated={isAuthenticated}
-            signInHref="/login"
+            signInHref={`/login?next=/lots/${lot.id}`}
             onPlaceBid={placeBidAction}
           />
 
-          <p className="text-xs text-muted-foreground">
-            Bidding requires a signed-in account. Bids in the last{" "}
-            {lot.antiSnipeMinutes} minutes extend the auction by{" "}
-            {lot.antiSnipeMinutes} minutes.
-            {lot.reserveMinor != null
-              ? " This lot has a reserve price that must be met for the sale to complete."
-              : ""}
-          </p>
+          {closed ? (
+            <p className="text-xs text-muted-foreground">
+              {lot.status === "sold"
+                ? "This auction has ended and the piece is sold to the winning bidder."
+                : lot.status === "passed"
+                  ? "This auction ended without meeting its reserve. The piece may be available to buy directly."
+                  : "This auction was withdrawn."}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Bidding requires a signed-in account. Bids in the last{" "}
+              {lot.antiSnipeMinutes} minutes extend the auction by{" "}
+              {lot.antiSnipeMinutes} minutes.
+              {lot.reserveMinor != null
+                ? " This lot has a reserve price that must be met for the sale to complete."
+                : ""}{" "}
+              The winner receives an order to pay by card or eTransfer within 72
+              hours.
+            </p>
+          )}
 
           <Link
             href={`/artworks/${artwork.id}`}

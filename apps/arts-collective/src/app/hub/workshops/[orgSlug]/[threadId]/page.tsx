@@ -6,7 +6,15 @@ import { SiteShell } from "@/components/site-shell";
 import { WorkshopForm } from "@/components/hub/WorkshopForm";
 import { resolveOrgHomeUrl } from "@/lib/org-url.server";
 import { db } from "@elkdonis/db";
+import { getWorkshopOfferingById } from "@elkdonis/services";
 import type { WorkshopFullInput } from "@/lib/cms/schema";
+
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
 
 type ThreadRow = {
   id: string;
@@ -27,7 +35,6 @@ type ThreadRow = {
   attendee_limit: number | null;
   price: string | null;
   currency: string | null;
-  sessions: unknown;
   nextcloud_doc_url: string | null;
   // sidecar
   subtitle: string | null;
@@ -70,7 +77,7 @@ export default async function EditWorkshopPage({
       t.title, t.body, t.status, t.visibility, t.share_to_network,
       t.scheduled_at, t.duration_minutes, t.location, t.format,
       t.meeting_url, t.is_rsvp_enabled, t.attendee_limit,
-      t.price, t.currency, t.sessions, t.nextcloud_doc_url,
+      t.price, t.currency, t.nextcloud_doc_url,
       wp.subtitle, wp.description_short, wp.discipline, wp.series_label,
       wp.level, wp.language, wp.session_count, wp.session_duration_hrs,
       wp.recurrence_label, wp.location_address, wp.accessibility_notes,
@@ -90,6 +97,13 @@ export default async function EditWorkshopPage({
 
   const allowed = await canEditOrgSite(user.id, row.org_id);
   if (!allowed) redirect("/hub");
+
+  // Sessions come from workshop_sessions, which is where they are stored and
+  // where the public workshop page reads them. This form used to load them
+  // from the `threads.sessions` JSON column that the old save path wrote —
+  // so the editor and the page it published to were reading two different
+  // places, and the column has never held a row.
+  const offering = await getWorkshopOfferingById(row.org_id, row.id);
 
   // Convert DB row to form default values
   const defaults: Partial<WorkshopFullInput> = {
@@ -111,7 +125,16 @@ export default async function EditWorkshopPage({
     attendee_limit: row.attendee_limit ?? undefined,
     price: row.price ? Number(row.price) : undefined,
     currency: row.currency ?? "USD",
-    sessions: Array.isArray(row.sessions) ? row.sessions : [],
+    sessions: (offering?.sessions ?? []).map((session) => ({
+      id: session.id,
+      title: session.title,
+      scheduled_at: session.scheduledAt
+        ? new Date(session.scheduledAt).toISOString().slice(0, 16)
+        : "",
+      duration_minutes: session.durationMinutes ?? undefined,
+      location: session.location,
+      meeting_url: session.videoConferenceUrl,
+    })),
     nextcloud_doc_url: row.nextcloud_doc_url ?? "",
     subtitle: row.subtitle ?? "",
     description_short: row.description_short ?? "",

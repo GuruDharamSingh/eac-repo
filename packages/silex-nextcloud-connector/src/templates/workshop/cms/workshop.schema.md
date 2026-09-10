@@ -13,9 +13,9 @@ and the Silex trait names. It is not a migration file.
 
 ## Author / facilitator
 
-Workshop pages use `threads.author_id → artist_profiles` as the facilitator source.
+Workshop pages use `threads.author_id → users` (and `org_profiles.role_title` for the title held in this org) as the facilitator source. `artist_profiles` is retired.
 EAC is the publisher; the thread author is the facilitator.
-`workshop_pages.author_note` overrides `artist_profiles.bio` for this workshop only.
+`workshop_pages.author_note` overrides `users.bio` for this workshop only.
 No separate `facilitator_id` column is needed unless guest facilitators are added later.
 
 ## Where fields live
@@ -69,7 +69,7 @@ No separate `facilitator_id` column is needed unless guest facilitators are adde
 | `og_image_url` | text | social share | — |
 | `optional_sections` | jsonb {sectionId: boolean} | template editor | — |
 
-### `artist_profiles` (via `threads.author_id`)
+### `users` + `org_profiles` (via `threads.author_id`) — formerly `artist_profiles`
 
 | Column | Trait |
 |---|---|

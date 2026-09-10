@@ -1,0 +1,48 @@
+name: Signal Watch APK
+
+on:
+  push:
+    paths:
+      - "apps/signal-watch/android/**"
+      - ".github/workflows/signal-watch-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build release APK
+        working-directory: apps/signal-watch/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp apps/signal-watch/android/app/build/outputs/apk/release/app-release.apk signal-watch.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signal-watch-apk
+          path: signal-watch.apk
+
+      # A "latest" release gives a stable download link you can text to a phone:
+      # https://github.com/<owner>/<repo>/releases/download/signal-watch-latest/signal-watch.apk
+      - name: Publish as latest release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: signal-watch-latest
+          name: Signal Watch (latest)
+          body: Android APK for Signal Watch. Download on the phone, open it, allow installing from this source.
+          files: signal-watch.apk
+          prerelease: false

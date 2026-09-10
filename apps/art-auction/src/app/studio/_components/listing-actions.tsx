@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { publishArtworkAction, archiveArtworkAction } from "../actions";
@@ -10,15 +11,20 @@ type Status = "draft" | "available" | "reserved" | "sold" | "archived";
 /**
  * Inline quick status controls for an artwork row in the studio store.
  * Maps each status to its sensible next action:
- *   draft / archived → Publish (list it)   ·   available → Unlist (archive)
+ *   draft / archived → Publish (list it)
+ *   available        → Auction (put it up) · Unlist (archive)
+ *   at auction       → link to the lot (a piece at auction is locked)
  * Sold and reserved pieces are locked (no quick action).
  */
 export function ListingActions({
   artworkId,
   status,
+  openLotId,
 }: {
   artworkId: string;
   status: Status;
+  /** The open (scheduled/live) lot on this piece, if any. */
+  openLotId?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
@@ -44,6 +50,14 @@ export function ListingActions({
   const btn =
     "rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50";
 
+  if (openLotId) {
+    return (
+      <Link href={`/lots/${openLotId}`} className={btn}>
+        At auction →
+      </Link>
+    );
+  }
+
   if (status === "draft" || status === "archived") {
     return (
       <button
@@ -59,14 +73,19 @@ export function ListingActions({
 
   if (status === "available") {
     return (
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => run(archiveArtworkAction, "Unlisted from the storefront.")}
-        className={btn}
-      >
-        {pending ? "…" : "Unlist"}
-      </button>
+      <>
+        <Link href={`/studio/artworks/${artworkId}/auction`} className={btn}>
+          Auction
+        </Link>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => run(archiveArtworkAction, "Unlisted from the storefront.")}
+          className={btn}
+        >
+          {pending ? "…" : "Unlist"}
+        </button>
+      </>
     );
   }
 

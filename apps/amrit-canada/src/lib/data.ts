@@ -1,4 +1,9 @@
 import { db } from "@elkdonis/db";
+import {
+  getStoreShowcaseForUser,
+  hasProfileSection,
+  type StoreShowcase,
+} from "@elkdonis/commerce/queries";
 import { lastOccurrenceEnd, nextOccurrence } from "@elkdonis/utils";
 import { getOrgProfileBySlug, listOrgProfiles, type OrgProfile } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
@@ -34,6 +39,7 @@ const THREAD_COLUMNS = db`
   t.id, t.title, t.slug, t.kind, t.section, t.status, t.visibility,
   t.body AS description, t.excerpt,
   t.metadata->>'coverImageUrl' AS cover_image_url,
+  t.metadata->>'timeZone' AS time_zone,
   t.location, t.is_online, t.meeting_url, t.video_link,
   t.document_url, t.nextcloud_talk_token,
   t.scheduled_at, t.duration_minutes,
@@ -67,6 +73,7 @@ interface ThreadRow {
   description: string | null;
   excerpt: string | null;
   cover_image_url: string | null;
+  time_zone: string | null;
   location: string | null;
   is_online: boolean | null;
   meeting_url: string | null;
@@ -102,6 +109,7 @@ function mapThread(row: ThreadRow): Thread {
     description: row.description,
     excerpt: row.excerpt,
     coverImageUrl: row.cover_image_url,
+    timeZone: row.time_zone,
     location: row.location,
     isOnline: row.is_online ?? false,
     meetingUrl: row.meeting_url,
@@ -456,6 +464,20 @@ export async function getGuides(): Promise<Guide[]> {
 export async function getGuideBySlug(slug: string): Promise<Guide | null> {
   const row = await getOrgProfileBySlug(ORG, slug);
   return row ? mapGuide(row) : null;
+}
+
+/**
+ * The guide's marketplace store, when they have switched the "store" section
+ * on for their profile. Null otherwise — the page simply has no such section.
+ */
+export async function getGuideStore(userId: string): Promise<StoreShowcase | null> {
+  try {
+    if (!(await hasProfileSection(userId, "store"))) return null;
+    return await getStoreShowcaseForUser(userId, { limit: 6 });
+  } catch (err) {
+    console.error(`[amrit-canada] getGuideStore(${userId}):`, err);
+    return null;
+  }
 }
 
 /** What a guide has published here — the body of their profile page. */

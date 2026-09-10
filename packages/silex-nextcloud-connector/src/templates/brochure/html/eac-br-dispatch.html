@@ -1,0 +1,29 @@
+<!--
+  eac-br-dispatch.html
+  =====================
+  Bulletin column — the live org feed, styled as newspaper dispatches
+  with column rules between items. The featured item (data-limit="1")
+  can be dropped in above the grid for a single "front page" post.
+-->
+<section class="eac-br-dispatch" id="dispatch" data-gjs-type="eac-br-dispatch">
+  <div class="eac-br-dispatch__head">
+    <p class="eac-br-label"
+       data-gjs-editable="true"
+       data-trait="eyebrowText">
+      Dispatches
+    </p>
+    <h2 class="eac-br-dispatch__title"
+        data-gjs-editable="true"
+        data-trait="title">
+      Notes from the collective
+    </h2>
+  </div>
+
+  <div class="eac-br-dispatch__feature">
+    <eac-embed data-eac-component="org-feed" data-title="From the journal" data-limit="1" data-variant="inline"><div class="eac-editor-placeholder"><strong>From the journal</strong><span>Live Arts component renders on the public site.</span></div></eac-embed>
+  </div>
+
+  <div class="eac-br-dispatch__grid">
+    <eac-embed data-eac-component="org-feed" data-title="Latest updates" data-limit="4" data-variant="inline"><div class="eac-editor-placeholder"><strong>Latest updates</strong><span>Live Arts component renders on the public site.</span></div></eac-embed>
+  </div>
+</section>

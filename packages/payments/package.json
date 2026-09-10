@@ -14,7 +14,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@elkdonis/commerce": "workspace:*"
+    "@elkdonis/commerce": "workspace:*",
+    "stripe": "^22.6.1"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

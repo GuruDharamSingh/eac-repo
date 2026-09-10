@@ -1,0 +1,432 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@source "../../../../packages/pipeline/src";
+@source "../../../../packages/chat/src";
+/* @elkdonis/cms-ui ships source, not a bundle, so Tailwind has to be told to
+   scan it or the compose sheet renders unstyled. */
+@source "../../../../packages/cms-ui/src";
+
+/* The reading layer for published writing, the surface system (every popup
+   and every face), the media picker, the field controls and the composer's
+   groups — all plain CSS, themed below through custom properties. */
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/gallery.css";
+@import "@elkdonis/cms-ui/files-card.css";
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+@import "@elkdonis/cms-ui/baroque-signup.css";
+@import "@elkdonis/cms-ui/reading-theme.css";
+
+/* The landing page's own stylesheet, carried over from inner-gathering's
+   (marketing) route group as it stood — scoped to .marketing-root. */
+@import "./landing.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   The three faces InnerGathering has always set in.
+
+   Venture     display — the wordmark, the landing's headings
+   Brothers    display sans — section headings on the landing
+   Basteleur   text — prose, forms, anything read at length
+
+   All three are shipped with the app (public/fonts), as they were.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Venture";
+  src: url("/fonts/Venture-nRqOR.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Brothers";
+  src: url("/fonts/BrothersTypeface-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Moonlight.woff2") format("woff2"),
+       url("/fonts/Basteleur-Moonlight.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Bold.woff2") format("woff2"),
+       url("/fonts/Basteleur-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   Palette — inner-gathering's parchment and navy, re-expressed as the HSL
+   shadcn tokens the shared components read.
+
+   parchment #fbf7ef · paper #fffdf8 · section #f3eadc
+   ink #022278 · smoke #01124E · muted #104b8C · gold #b79a55 · moss #64726a
+   ========================================================================== */
+
+:root {
+  --radius: 0.375rem;
+
+  --background: 42 60% 96%;           /* parchment #fbf7ef */
+  --foreground: 226 97% 24%;          /* ink #022278 */
+
+  --card: 43 100% 99%;                /* paper #fffdf8 */
+  --card-foreground: 226 97% 24%;
+
+  --popover: 43 100% 99%;
+  --popover-foreground: 226 97% 24%;
+
+  /* Navy is the primary: it is the chrome, the wordmark's ground, the
+     filled button. Gold is the accent it sits against. */
+  --primary: 226 97% 24%;
+  --primary-foreground: 43 100% 98%;
+
+  --secondary: 37 49% 91%;            /* section #f3eadc */
+  --secondary-foreground: 226 97% 24%;
+
+  --muted: 40 45% 92%;
+  --muted-foreground: 211 79% 31%;    /* #104b8C */
+
+  --accent: 42 40% 53%;               /* gold #b79a55 */
+  --accent-foreground: 226 97% 15%;
+
+  --gold: 42 40% 53%;
+  --gold-light: 42 47% 70%;           /* #d6c38e */
+  --smoke: 226 97% 15%;               /* #01124E */
+  --moss: 132 7% 42%;                 /* #64726a */
+  --ember: 42 41% 40%;                /* #8f763c */
+
+  --destructive: 4 55% 42%;
+  --destructive-foreground: 43 100% 98%;
+
+  --border: 42 40% 76%;
+  --input: 42 40% 76%;
+  --ring: 42 40% 53%;
+
+  /* Per-feed accents; org_feeds.accent is the source of truth. */
+  --feed-offerings: 42 40% 53%;
+  --feed-blog: 226 97% 24%;
+
+  /* ── The surface system, in this site's voice ── */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--secondary));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-rule: hsl(var(--gold));
+  --eac-surface-accent: hsl(var(--gold));
+  --eac-surface-on-accent: hsl(var(--smoke));
+  --eac-surface-radius: var(--radius);
+  --eac-font-title: "Venture", Georgia, serif;
+  --eac-font-body: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  --eac-kind-meeting: hsl(var(--gold));
+  --eac-kind-event: hsl(var(--gold));
+  --eac-kind-workshop: hsl(var(--moss));
+  --eac-kind-workshop-on: hsl(var(--card));
+  --eac-kind-post: hsl(var(--foreground));
+  --eac-kind-post-on: hsl(var(--card));
+  --eac-kind-calendar: hsl(var(--smoke));
+  --eac-kind-calendar-on: hsl(var(--card));
+  --eac-kind-gallery: hsl(var(--ember));
+  --eac-kind-gallery-on: hsl(var(--card));
+  --eac-kind-board: hsl(var(--moss));
+  --eac-kind-board-on: hsl(var(--card));
+  --eac-kind-compose: hsl(var(--smoke));
+  --eac-kind-compose-on: hsl(var(--card));
+
+  /* ── The reading layer ── */
+  --eac-font-prose: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  --eac-color-ink: hsl(var(--foreground));
+  --eac-color-ink-muted: hsl(var(--muted-foreground));
+  --eac-color-border: hsl(var(--border));
+  --eac-accent: hsl(var(--gold));
+}
+
+.dark {
+  --background: 226 97% 11%;
+  --foreground: 43 60% 92%;
+  --card: 226 80% 15%;
+  --card-foreground: 43 60% 92%;
+  --popover: 226 80% 15%;
+  --popover-foreground: 43 60% 92%;
+  --primary: 42 47% 70%;
+  --primary-foreground: 226 97% 12%;
+  --secondary: 226 60% 20%;
+  --secondary-foreground: 43 60% 92%;
+  --muted: 226 50% 20%;
+  --muted-foreground: 43 30% 72%;
+  --accent: 42 47% 70%;
+  --accent-foreground: 226 97% 12%;
+  --border: 226 40% 28%;
+  --input: 226 40% 28%;
+  --ring: 42 47% 70%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-gold: hsl(var(--gold));
+  --color-smoke: hsl(var(--smoke));
+
+  /* Set by the feed page wrapper from org_feeds.accent. */
+  --color-feed: var(--feed, hsl(var(--gold)));
+
+  --font-serif: "Venture", Georgia, serif;
+  --font-sans: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  --font-display: "Brothers", "Venture", sans-serif;
+
+  /* landing.css (carried over from inner-gathering's marketing stylesheet
+     as-is) styles the front page's headings through these two variables
+     rather than the Tailwind theme names above. Without them, `var(--font-brothers)`
+     is undefined and the whole font-family declaration it sits in becomes
+     invalid, silently falling back further up the cascade to the h1 default
+     (Venture) — which is why "Elkdonis Arts Collective" rendered in the wrong
+     face. Defined here, not in @theme, since landing.css reads plain
+     variables and was never converted to Tailwind's font-* utilities. */
+  --font-brothers: "Brothers", sans-serif;
+  --font-venture: "Venture", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100vh; }
+html { scroll-behavior: smooth; }
+
+body {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(183, 154, 85, 0.12), transparent 30rem),
+    linear-gradient(180deg, #fffdf8 0%, #fbf7ef 48%, #f3eadc 100%);
+  background-attachment: fixed;
+  color: hsl(var(--foreground));
+  font-family: "Basteleur", "Cormorant Garamond", Georgia, serif;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+.dark body {
+  background: linear-gradient(180deg, hsl(226 97% 11%) 0%, hsl(226 80% 13%) 100%);
+}
+
+h1, h2, h3, h4 {
+  font-family: "Venture", Georgia, serif;
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Site chrome and the handful of decorative classes the shared pages use.
+   The class names are the ones the amrit-canada template's pages carry, so
+   those pages work unchanged; the treatments are InnerGathering's.
+   ========================================================================== */
+
+/* Header and footer: the navy gradient with a gold rule — the archive topbar. */
+.bg-header-footer {
+  background: linear-gradient(90deg, #01124E 0%, #022278 54%, #063179 100%);
+  color: #fffdf8;
+}
+
+/* The parchment card: a gold hairline and a soft navy glow. */
+.card-natural {
+  border: 1px solid rgba(183, 154, 85, 0.55);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #fffdf8 0%, #fbf7ef 100%);
+  box-shadow: 0 2px 8px rgba(1, 18, 78, 0.08);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.card-natural:hover { box-shadow: 0 10px 28px -12px rgba(1, 18, 78, 0.28); }
+
+/* A gold rule between sections. Named as the template names it. */
+.saffron-divider {
+  border: 0;
+  height: 2px;
+  margin: 1.75rem 0;
+  background: linear-gradient(90deg, transparent, #b79a55, transparent);
+}
+
+/* Prose on a detail page. */
+.prose-amrit { font-family: "Basteleur", Georgia, serif; font-size: 1.08rem; line-height: 1.75; }
+.prose-amrit :where(p) { margin: 0 0 1em; }
+.prose-amrit :where(h2, h3) { font-family: "Venture", Georgia, serif; margin: 1.6em 0 0.6em; line-height: 1.2; }
+.prose-amrit :where(ul, ol) { padding-left: 1.4em; margin: 0 0 1em; }
+.prose-amrit :where(a) { color: hsl(var(--ember)); text-decoration: underline; text-underline-offset: 3px; }
+.prose-amrit :where(blockquote) { border-left: 3px solid #b79a55; padding-left: 1rem; color: hsl(var(--muted-foreground)); font-style: italic; }
+.prose-amrit :where(img) { max-width: 100%; border-radius: var(--radius); }
+
+/* The dark portal tiles on the front page. */
+.portal-tile {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: 0 8px 24px rgba(1, 18, 78, 0.18);
+}
+.portal-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px var(--feed-glow, rgba(183, 154, 85, 0.3));
+}
+
+/* The landing page sets its own body font through .marketing-root; the site
+   chrome above and below it should not inherit that. */
+.marketing-root { font-size: 16px; }
+
+/* ==========================================================================
+   The topbar — see components/site-header.tsx.
+   ========================================================================== */
+.ig-topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: linear-gradient(90deg, rgba(1,18,78,0.97), rgba(2,34,120,0.95) 48%, rgba(6,49,121,0.94)), #01124E;
+  border-bottom: 1px solid rgba(183,154,85,0.52);
+  box-shadow: 0 10px 30px rgba(1,18,78,0.24);
+  backdrop-filter: blur(14px);
+  color: #fffdf8;
+}
+.ig-topbar-inner {
+  max-width: 72rem; margin: 0 auto; padding: 0.85rem clamp(1rem, 4vw, 2rem);
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.ig-wordmark { display: flex; flex-direction: column; line-height: 1.05; text-decoration: none; }
+.ig-wordmark-main { font-family: "Venture", Georgia, serif; font-size: clamp(1.2rem, 3vw, 1.55rem); color: #d6c38e; letter-spacing: 0.1em; text-shadow: 0 0 18px rgba(198,164,90,0.22); }
+.ig-wordmark-sub { font-family: "Venture", Georgia, serif; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,253,248,0.55); margin-top: 3px; }
+.ig-nav { display: none; align-items: center; gap: clamp(0.85rem, 2.5vw, 2rem); }
+.ig-nav-toggle { background: none; border: 0; color: #d6c38e; padding: 0.4rem; cursor: pointer; }
+@media (min-width: 820px) { .ig-nav { display: flex; } .ig-nav-toggle { display: none; } }
+.ig-nav-link {
+  position: relative; font-family: "Venture", Georgia, serif; font-size: 0.86rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #fffdf8; text-decoration: none; transition: color 0.2s ease;
+}
+.ig-nav-link::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: #b79a55; transition: width 0.3s ease; }
+.ig-nav-link:hover, .ig-nav-link.is-active { color: #d6c38e; }
+.ig-nav-link:hover::after, .ig-nav-link.is-active::after { width: 100%; }
+.ig-nav-link--door { padding: 0.45rem 0.95rem; border: 1px solid rgba(183,154,85,0.55); border-radius: 2px; background: rgba(183,154,85,0.14); color: #f0db9d; }
+.ig-nav-link--door::after { display: none; }
+.ig-nav-sheet { display: grid; gap: 0.2rem; padding: 0.5rem 1rem 1rem; border-top: 1px solid rgba(183,154,85,0.3); }
+@media (min-width: 820px) { .ig-nav-sheet { display: none; } }
+.ig-nav-sheet a { padding: 0.7rem 0.25rem; font-family: "Venture", Georgia, serif; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.85rem; color: rgba(255,253,248,0.85); text-decoration: none; border-bottom: 1px solid rgba(255,253,248,0.06); }
+.ig-nav-sheet a.is-door { color: #f0db9d; }
+
+/* ==========================================================================
+   Page furniture shared by the about, member and feed pages.
+   ========================================================================== */
+.ig-page { max-width: 64rem; margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) 1.25rem 4rem; }
+.ig-kicker { margin: 0; font-family: "Venture", Georgia, serif; font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: #8f763c; }
+.ig-page h1 { margin: 0.35rem 0 0; font-family: "Venture", Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: #01124E; }
+.ig-lead { font-family: "Basteleur", Georgia, serif; font-size: 1.15rem; line-height: 1.75; color: #022278; max-width: 66ch; }
+.ig-prose { font-family: "Basteleur", Georgia, serif; font-size: 1.08rem; line-height: 1.8; color: #022278; max-width: 68ch; }
+.ig-prose p { margin: 0 0 1em; }
+.ig-h2 { margin: 0 0 0.75rem; font-family: "Brothers", "Venture", sans-serif; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: 0.02em; color: #01124E; }
+.ig-quality { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1.25rem; padding: 2rem 0; border-top: 1px solid rgba(183,154,85,0.4); }
+.ig-quality-num { font-family: "Venture", Georgia, serif; font-size: 2.2rem; color: #b79a55; line-height: 1; }
+.ig-quality h3 { margin: 0 0 0.6rem; font-family: "Venture", Georgia, serif; font-size: 1.5rem; color: #01124E; }
+.ig-commitments { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
+.ig-commitment { padding: 1.5rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.7); }
+.ig-commitment .glyph { color: #b79a55; font-size: 1.4rem; }
+.ig-commitment h3 { margin: 0.5rem 0; font-family: "Venture", Georgia, serif; font-size: 1.2rem; color: #01124E; }
+.ig-commitment p { margin: 0; font-family: "Basteleur", Georgia, serif; line-height: 1.65; color: #022278; }
+.ig-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
+.ig-member { display: grid; gap: 0.6rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); text-align: center; }
+.ig-member-photo { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid #b79a55; box-shadow: 0 0 0 4px rgba(183,154,85,0.18); }
+.ig-member-initials { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: #01124E; color: #d6c38e; font-family: "Venture", Georgia, serif; font-size: 1.6rem; }
+.ig-member-name { margin: 0; font-family: "Venture", Georgia, serif; font-size: 1.15rem; color: #01124E; }
+.ig-member-name a { color: inherit; text-decoration: none; }
+.ig-member-name a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.ig-member-title { margin: 0; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #8f763c; font-family: "Venture", Georgia, serif; }
+.ig-member-bio { margin: 0; font-family: "Basteleur", Georgia, serif; font-size: 0.95rem; line-height: 1.6; color: #022278; }
+.ig-member-hero { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 2rem; align-items: start; }
+@media (max-width: 640px) { .ig-member-hero { grid-template-columns: 1fr; } }
+.ig-member-hero img { width: 100%; aspect-ratio: 1; object-fit: cover; object-position: top; border-radius: 6px; border: 2px solid #b79a55; }
+.ig-edit-link { display: inline-block; margin-top: 0.75rem; font-family: "Venture", Georgia, serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8f763c; text-decoration: none; border-bottom: 1px solid rgba(183,154,85,0.5); }
+
+/* ==========================================================================
+   Workshop page — see components/workshop-view.tsx for what each slot is.
+   ========================================================================== */
+.ws { --ws-ink: #01124E; }
+.ws-banner { position: relative; height: clamp(260px, 42vw, 460px); overflow: hidden; }
+.ws-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ws-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(1,18,78,0.78), rgba(1,18,78,0.1) 55%, transparent); }
+.ws-banner-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: clamp(1.25rem, 4vw, 2.5rem); color: #fffdf8; max-width: 64rem; margin: 0 auto; }
+.ws-banner-text h1 { margin: 0; font-family: "Venture", Georgia, serif; font-size: clamp(1.8rem, 5vw, 3.2rem); line-height: 1.05; color: #fffdf8; text-shadow: 0 2px 14px rgba(0,0,0,0.5); }
+.ws-eyebrow { margin: 0 0 0.5rem; font-family: "Venture", Georgia, serif; font-size: 0.7rem; letter-spacing: 0.24em; text-transform: uppercase; color: #d6c38e; }
+.ws-subtitle { margin: 0.5rem 0 0; font-family: "Basteleur", Georgia, serif; font-size: 1.15rem; line-height: 1.5; color: inherit; opacity: 0.9; }
+.ws-title { margin: 0.35rem 0 0; font-family: "Venture", Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; color: var(--ws-ink); }
+.ws-body { max-width: 64rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 2.5rem) 1.25rem 4rem; display: grid; gap: 1.75rem; }
+.ws-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid rgba(183,154,85,0.45); border-bottom: 1px solid rgba(183,154,85,0.45); }
+.ws-meta-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; }
+.ws-meta-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ws-guide { display: inline-flex; align-items: center; gap: 0.5rem; font-family: "Basteleur", Georgia, serif; }
+.ws-guide img, .ws-guide-initial { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #b79a55; display: grid; place-items: center; background: #01124E; color: #d6c38e; font-family: "Venture", serif; }
+.ws-guide a { color: var(--ws-ink); text-decoration: none; }
+.ws-guide a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ws-chip { padding: 3px 10px; border: 1px solid rgba(183,154,85,0.6); border-radius: 2px; font-family: "Venture", Georgia, serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ws-ink); background: rgba(255,253,248,0.7); }
+.ws-chip--price { background: #01124E; color: #d6c38e; border-color: #01124E; }
+.ws-chip--warn { color: #8b2e2e; border-color: rgba(139,46,46,0.5); }
+.ws-hero { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid rgba(183,154,85,0.45); }
+.ws-hero img, .ws-hero video { width: 100%; display: block; }
+.ws-hero-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem; background: linear-gradient(to top, rgba(1,18,78,0.65), transparent 55%); pointer-events: none; }
+.ws-hero-text h2 { margin: 0; color: #fffdf8; font-family: "Venture", Georgia, serif; font-size: clamp(1.1rem, 3vw, 1.8rem); text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+.ws-facts { max-width: 40rem; }
+.ws-session-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; counter-reset: session; }
+.ws-session { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 1rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); border-radius: 6px; }
+.ws-session-num { font-family: "Venture", Georgia, serif; font-size: 1.6rem; color: #b79a55; line-height: 1; }
+.ws-session-body { display: grid; gap: 0.5rem; min-width: 0; }
+.ws-session-body h3 { margin: 0; font-family: "Venture", Georgia, serif; font-size: 1.25rem; color: var(--ws-ink); }
+.ws-session-meta { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.72rem; letter-spacing: 0.04em; color: #104b8C; }
+.ws-session-media { width: 100%; max-height: 380px; object-fit: contain; border-radius: 4px; background: rgba(1,18,78,0.06); }
+.ws-session-desc { margin: 0; font-family: "Basteleur", Georgia, serif; line-height: 1.7; color: #022278; white-space: pre-wrap; }
+.ws-resources { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.92rem; }
+.ws-resources a { color: #8f763c; text-decoration: underline; text-underline-offset: 3px; }
+.ws-resources span { color: #104b8C; font-size: 0.8rem; }
+.ws-resource-desc { margin: 0.15rem 0 0; font-size: 0.85rem; color: #022278; }
+.ws-resources-held { margin: 0; font-size: 0.8rem; color: #104b8C; font-style: italic; }
+.ws-materials { display: grid; gap: 0.75rem; padding: 1.25rem; border: 1px solid rgba(183,154,85,0.45); background: rgba(255,253,248,0.75); border-radius: 6px; }
+.ws-materials-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.ws-materials-head .ws-chip { display: inline-flex; align-items: center; gap: 0.35rem; }
+.ws-materials-locked { margin: 0; font-family: "Basteleur", Georgia, serif; color: #022278; line-height: 1.6; }
+.ws-materials-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.ws-material { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.25rem; border-bottom: 1px solid rgba(183,154,85,0.25); color: #01124E; }
+.ws-material:last-child { border-bottom: 0; }
+.ws-material-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #01124E; text-decoration: none; }
+.ws-material-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ws-material-size { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.7rem; color: #104b8C; }
+.ws-material-dl, .ws-material-rm { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; color: #8f763c; background: transparent; border: 1px solid transparent; cursor: pointer; }
+.ws-material-dl:hover, .ws-material-rm:hover { border-color: rgba(183,154,85,0.6); }
+.ws-material-rm { color: #8b2e2e; }
+.ws-material-rm:disabled { opacity: 0.4; cursor: default; }
+.ws-materials-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding-top: 0.5rem; }
+.ws-materials-upload .eac-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+.ws-materials-hint { font-size: 0.78rem; color: #104b8C; }
+.ws-materials-hint code { font-size: 0.72rem; background: rgba(1,18,78,0.06); padding: 1px 5px; border-radius: 3px; }
+.ws-materials-error { margin: 0; color: #8b2e2e; font-size: 0.9rem; }
+.ws-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+.ws-gallery figure { margin: 0; }
+.ws-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; border: 1px solid rgba(183,154,85,0.45); }
+.ws-gallery figcaption { font-size: 0.8rem; color: #104b8C; margin-top: 0.3rem; }

@@ -285,8 +285,15 @@ export async function handleSignup(
     try {
       const { db } = await import('@elkdonis/db');
 
+      // Fallback for the multi-org sites (inner-gathering, arts-collective,
+      // the blogs); every single-org site passes its own defaultOrgs.
+      //
+      // `elkdonis` used to be joined alongside inner_group — it was the
+      // legacy Nextcloud group that inner-gathering hosted the collective
+      // under. Under the EAC_Network model those people are inner_group
+      // members, so signups no longer join elkdonis. Existing elkdonis rows
+      // are left alone; every real person in them already holds inner_group.
       const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'elkdonis', role: 'member' },
         { id: 'inner_group', role: 'member' },
       ];
 
@@ -520,8 +527,15 @@ export async function handleOAuthCallback(
 
     try {
       const { db } = await import('@elkdonis/db');
+      // Fallback for the multi-org sites (inner-gathering, arts-collective,
+      // the blogs); every single-org site passes its own defaultOrgs.
+      //
+      // `elkdonis` used to be joined alongside inner_group — it was the
+      // legacy Nextcloud group that inner-gathering hosted the collective
+      // under. Under the EAC_Network model those people are inner_group
+      // members, so signups no longer join elkdonis. Existing elkdonis rows
+      // are left alone; every real person in them already holds inner_group.
       const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'elkdonis', role: 'member' },
         { id: 'inner_group', role: 'member' },
       ];
       for (const org of defaultOrgs) {

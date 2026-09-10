@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
- * A square hub tile that opens a modal for its feature.
+ * A hub tile: real information on its face, the full feature in a modal.
+ *
+ * That split is the load-time budget. Every tile is server-rendered with the
+ * few fields it draws — the next meeting's date, four filenames, three idea
+ * titles — so the hub arrives informative on first paint. Nothing fetches on
+ * mount. The modal is where the rest lives, and its content fetches when it
+ * opens, so eight features cost one page's worth of queries instead of eight.
  *
  * Uses the native <dialog> element rather than a library: IFAC has no UI
  * dependencies at all (no Tailwind, no Mantine, no Radix), and <dialog>
@@ -18,6 +24,8 @@ export function HubCard({
   accent = "ink",
   href,
   wide = false,
+  preview,
+  onOpen,
   children,
 }: {
   title: string;
@@ -28,17 +36,31 @@ export function HubCard({
   /** When set the tile navigates instead of opening a modal. */
   href?: string;
   wide?: boolean;
+  /**
+   * Drawn on the tile face, under the blurb. Server-rendered content, so it
+   * costs nothing on the client and is visible before any JS runs.
+   */
+  preview?: ReactNode;
+  /** Called the first time the modal opens — where a panel loads its data. */
+  onOpen?: () => void;
   children?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
+  const opened = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
-  }, [open]);
+    // Fire once: a panel that refetched on every open would undo the point of
+    // deferring the fetch in the first place.
+    if (open && !opened.current) {
+      opened.current = true;
+      onOpen?.();
+    }
+  }, [open, onOpen]);
 
   const body = (
     <>
@@ -47,6 +69,7 @@ export function HubCard({
       </span>
       <span className="hub-card-title">{title}</span>
       <span className="hub-card-blurb">{blurb}</span>
+      {preview && <span className="hub-card-preview">{preview}</span>}
     </>
   );
 

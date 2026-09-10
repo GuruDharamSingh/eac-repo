@@ -1,0 +1,60 @@
+/*
+  reading-theme.css — the reading tokens, as Tailwind utilities.
+
+  Optional. `article.css` alone is enough to render a post correctly anywhere,
+  including in the apps that are not Tailwind at all. This file is for a
+  Tailwind org that wants to build the SURROUNDINGS of a post — the header
+  above it, the "more from this feed" strip below it, an author card — out of
+  the same measurements, so the page around the article agrees with the
+  article.
+
+  Import AFTER tailwindcss and after article.css:
+
+      @import "tailwindcss";
+      @import "@elkdonis/cms-ui/article.css";
+      @import "@elkdonis/cms-ui/reading-theme.css";
+
+  Then, in your own markup:
+
+      <div class="max-w-measure font-prose text-prose leading-prose">
+      <p class="font-record text-label tracking-label uppercase text-faint">
+
+  Because these map to the same --read-* variables the article consumes,
+  overriding a token moves the article AND everything you build beside it. One
+  change, one voice.
+*/
+
+@theme inline {
+  /* Widths — `max-w-measure` is the one most worth having: it is how a
+     "continue reading" strip or an author note lines up with the prose above
+     it instead of being a few pixels off. */
+  --container-measure: var(--read-measure);
+  --container-measure-wide: calc(var(--read-measure) + 12rem);
+
+  /* Faces */
+  --font-prose: var(--read-face-prose);
+  --font-record: var(--read-face-record);
+  --font-title: var(--read-face-title);
+
+  /* Sizes, in the same scale the article uses */
+  --text-prose: var(--read-size);
+  --text-lede: var(--read-lede-size);
+  --text-record: var(--read-record-size);
+  --text-label: var(--read-label-size);
+
+  /* Rhythm */
+  --leading-prose: var(--read-leading);
+
+  /* Tracking — `tracking-label` is what makes a hand-written eyebrow match
+     the article's own labels rather than approximating them. */
+  --tracking-label: var(--read-label-tracking);
+  --tracking-title: var(--read-title-tracking);
+
+  /* Colour. Named for their role in reading, not for their hue, so an org
+     that re-themes keeps the names meaningful. */
+  --color-ink: var(--read-ink);
+  --color-ink-muted: var(--read-muted);
+  --color-ink-faint: var(--read-faint);
+  --color-reading-rule: var(--read-rule);
+  --color-reading-accent: var(--read-accent);
+}

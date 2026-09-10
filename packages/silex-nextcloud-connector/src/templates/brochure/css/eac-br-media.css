@@ -1,0 +1,110 @@
+/*
+  eac-br-media.css
+  =================
+  Wireless-set framing for video, and a gramophone disc framing for audio.
+*/
+
+.eac-br-media {
+  padding: 72px 24px;
+  background: var(--eac-br-paper);
+}
+
+.eac-br-media__head {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto 40px;
+  text-align: center;
+}
+.eac-br-media__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 30px);
+  margin: 6px 0 0;
+}
+
+.eac-br-media__row {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Video: speaker-grille surround (dot pattern) around the screen */
+.eac-br-wireless {
+  margin: 0;
+  padding: 22px;
+  background: var(--eac-br-ink);
+  border-radius: 10px;
+  position: relative;
+}
+.eac-br-wireless__grille {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background-image: radial-gradient(rgba(244, 236, 216, 0.06) 1.4px, transparent 1.4px);
+  background-size: 8px 8px;
+  pointer-events: none;
+}
+.eac-br-wireless__screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 4px solid var(--eac-br-brass);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.eac-br-wireless__screen iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.eac-br-wireless__caption {
+  position: relative;
+  margin: 12px 4px 0;
+  font-size: 13px;
+  color: rgba(244, 236, 216, 0.65);
+}
+
+/* Audio: turntable disc beside a plain player */
+.eac-br-gramophone {
+  margin: 0;
+  padding: 22px;
+  background: var(--eac-br-paper-3);
+  border: 1px solid var(--eac-br-ink-faint);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.eac-br-gramophone__disc {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--eac-br-ink) 0 8px,
+    var(--eac-br-paper-3) 8px 10px,
+    var(--eac-br-ink) 10px 12px,
+    #33291d 12px 40px,
+    var(--eac-br-ink) 40px 48px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.eac-br-gramophone__label {
+  font-family: var(--eac-br-font-display);
+  font-size: 12px;
+  color: var(--eac-br-paper);
+}
+.eac-br-gramophone__player { width: 100%; text-align: center; }
+.eac-br-gramophone__player audio { width: 100%; }
+.eac-br-gramophone__caption {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--eac-br-ink-muted);
+}
+
+@media (max-width: 760px) {
+  .eac-br-media__row { grid-template-columns: 1fr; }
+}

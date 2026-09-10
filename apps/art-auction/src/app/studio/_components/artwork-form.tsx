@@ -47,9 +47,17 @@ function numOrNull(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
+export function ArtworkForm({
+  initial,
+  allowMakerChoice = false,
+}: {
+  initial?: ArtworkFormInitial;
+  /** Org stores: let the person choose whether they are the credited maker. */
+  allowMakerChoice?: boolean;
+}) {
   const router = useRouter();
   const isEdit = Boolean(initial?.id);
+  const [creditMe, setCreditMe] = React.useState(true);
 
   const [title, setTitle] = React.useState(initial?.title ?? "");
   const [descriptionHtml, setDescriptionHtml] = React.useState(
@@ -116,14 +124,15 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
         nextcloudFileId: img.nextcloudFileId ?? null,
         alt: img.alt ?? null,
       })),
+      creditMe: allowMakerChoice ? creditMe : undefined,
     };
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return toast.error("A title is required.");
-    if (!price || Number(price) <= 0)
-      return toast.error("Set a price greater than zero.");
+    if (price.trim() && !(Number(price) >= 0))
+      return toast.error("The price must be a number, or blank for price on request.");
     setPending(true);
     try {
       if (isEdit && initial?.id) {
@@ -184,6 +193,29 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
         />
       </section>
 
+      {allowMakerChoice && !isEdit && (
+        <section className="space-y-2 rounded-lg border border-border p-4">
+          <h2 className="font-serif text-xl">Who made it</h2>
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={creditMe}
+              onChange={(e) => setCreditMe(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">Credit me as the maker.</span>{" "}
+              <span className="text-muted-foreground">
+                You are then the payee; the organisation takes a share only under
+                an agreement you have accepted. Untick for work the organisation
+                owns outright (collective prints, merchandise) — all proceeds are
+                then earmarked to the organisation.
+              </span>
+            </span>
+          </label>
+        </section>
+      )}
+
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={labelCls} htmlFor="title">
@@ -227,7 +259,7 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
 
         <div>
           <label className={labelCls} htmlFor="price">
-            Price
+            Price <span className="font-normal text-muted-foreground">(blank = price on request)</span>
           </label>
           <div className="flex gap-2">
             <input
@@ -238,7 +270,7 @@ export function ArtworkForm({ initial }: { initial?: ArtworkFormInitial }) {
               className={inputCls}
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              required
+              placeholder="Leave blank to show “price on request”"
             />
             <select
               aria-label="Currency"

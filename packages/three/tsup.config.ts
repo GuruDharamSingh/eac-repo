@@ -1,7 +1,13 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // One entry per experience. A single barrel would make every consumer pull
+  // every scene in the package — the temple's shaders along with a mini-game.
+  entry: [
+    'src/index.ts',
+    'src/endless-runner/index.ts',
+    'src/inner-temple/index.ts',
+  ],
   format: ['cjs', 'esm'],
   dts: true,
   clean: true,

@@ -6,7 +6,7 @@
  * renderer.
  */
 
-export { applyBindings, applyManifestBindings } from "./apply";
+export { applyBindings, applyManifestBindings, removeSections } from "./apply";
 export { resolvePath, isEmptyValue, toDisplayString } from "./path";
 export { builtinFormatters } from "./formatters";
 export {

@@ -27,6 +27,13 @@ import { saveOrgIdentityAction } from "@/lib/org-identity-actions";
 import { SITE_THEME_VARS, THEMEABLE_PAGES } from "@/lib/theme-tokens";
 import { saveSiteThemeAction, saveMyThemeAction } from "@/lib/theme-actions";
 
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
+
 const EDITOR_ROLES = new Set(["owner", "guide"]);
 
 const ROLE_LABEL: Record<string, string> = {
@@ -175,7 +182,13 @@ export default async function OrganizationTabPage({
                 Offerings, your site, and writing to your members
               </span>
             </div>
-            <PublishSection orgSlug={selected.orgSlug} orgHomeUrl={homeUrl} />
+            <PublishSection
+              orgSlug={selected.orgSlug}
+              orgHomeUrl={homeUrl}
+              // Owner/guide — the same bar canManageQuestionnaires applies
+              // server-side, so the card list matches what the action allows.
+              canManageOrg={canEdit}
+            />
           </section>
 
           <section className="mb-10 space-y-4">

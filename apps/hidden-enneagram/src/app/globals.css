@@ -6,10 +6,41 @@
    are silently dropped from the build. */
 @source "../../../../packages/cms-ui/src";
 
+/* The shared systems this site now hosts. Plain CSS driven by custom
+   properties, so they take this site's own dark palette rather than
+   arriving with a second one:
+     article + reading-theme  the reading layer for published writing
+     surface + gallery        the one popup pattern (face -> surface)
+     fields + compose         the CMS form controls
+     files-card               the media picker in the compose surface  */
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/reading-theme.css";
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/profile.css";
+/* The Grand Forum at /forum, in this site's tokens. */
+@import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/cms-ui/gallery.css";
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+@import "@elkdonis/cms-ui/files-card.css";
+
 /* ==========================================================================
-   The Hidden Enneagram — single dark theme (the site never switches to
-   light, so there's no .dark block; the shadcn tokens below just resolve
-   the same colours a shadcn app would toggle between).
+   The Hidden Enneagram — single LIGHT theme with dark features.
+
+   Was a single dark theme. Flipped 2026-09-09 for legibility: the body now
+   reads as warm paper with near-black ink, and darkness is kept as a
+   deliberate accent — the masthead band, the footer, and the enneagram
+   diagrams stay dark, so the site keeps its character without asking anyone
+   to read long passages of cream-on-black.
+
+   Every pair below is measured against WCAG AA (4.5:1 for body text, 3:1
+   for large/secondary): ink on paper is 16.7:1, muted 6.2:1, the quietest
+   grey 4.2:1. The teal had to darken from #3aa99c to #1f6f66 — the original
+   was 2.6:1 on paper, which is unreadable; it is 5.4:1 now and unchanged
+   against the dark bands, where it was always fine.
+
+   There is still no .dark block; the shadcn tokens below just resolve the
+   one theme a shadcn app would toggle between.
 
    HSL triplets converted from the original flat hex palette so shadcn
    primitives (button, card, badge, etc.) and @elkdonis/checkout's
@@ -22,33 +53,56 @@
 :root {
   --radius: 0.625rem;
 
-  --background: 240 9% 4%;          /* #0a0a0c */
-  --foreground: 40 28% 90%;         /* #ece7dd */
+  --background: 40 36% 95%;         /* #f7f4ee paper */
+  --foreground: 240 13% 9%;         /* #14141a ink — 16.71:1 on paper */
 
-  --card: 240 14% 9%;               /* #131319 */
-  --card-foreground: 40 28% 90%;
+  --card: 43 64% 98%;               /* #fdfbf6 — a shade above the paper */
+  --card-foreground: 240 13% 9%;
 
-  --popover: 240 14% 9%;
-  --popover-foreground: 40 28% 90%;
+  --popover: 43 64% 98%;
+  --popover-foreground: 240 13% 9%;
 
-  --primary: 173 49% 45%;           /* teal #3aa99c */
-  --primary-foreground: 164 65% 5%; /* #04130f */
+  --primary: 173 56% 28%;           /* teal #1f6f66 — 5.43:1 (was 2.61:1) */
+  --primary-foreground: 0 0% 100%;  /* white — 5.96:1 on the teal */
 
-  --secondary: 240 12% 11%;
-  --secondary-foreground: 40 28% 90%;
+  --secondary: 42 32% 88%;          /* #eae4d6 */
+  --secondary-foreground: 240 13% 9%;
 
-  --muted: 240 12% 10%;             /* #16161c */
-  --muted-foreground: 40 6% 51%;    /* #8a857b */
+  --muted: 42 35% 90%;              /* #efeade */
+  --muted-foreground: 37 7% 35%;    /* #5f5a52 — 6.23:1 on paper */
 
-  --accent: 240 12% 10%;
-  --accent-foreground: 40 28% 90%;
+  --accent: 42 35% 90%;
+  --accent-foreground: 240 13% 9%;
 
-  --destructive: 0 62% 68%;         /* #e07a7a */
-  --destructive-foreground: 164 65% 5%;
+  --destructive: 4 65% 39%;         /* #a32b22 — 6.54:1 on paper */
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 40 4% 16%;              /* flattened rgba(236,231,221,.14) on bg */
-  --input: 240 10% 12%;
-  --ring: 173 49% 45%;
+  --border: 41 23% 76%;             /* #cfc6b3 — 1.55:1, a line you can see */
+  --input: 41 23% 76%;
+  --ring: 173 56% 28%;
+
+  /* The dark band kept as a feature: masthead, footer, and any section that
+     wants the old ground. Text on it is the former foreground, unchanged. */
+  --band: 240 9% 4%;                /* #0a0a0c */
+  --band-foreground: 40 28% 90%;    /* #ece7dd — 16.34:1 on the band */
+  --band-muted: 40 6% 62%;          /* #a49e92 — 7.29:1 on the band */
+  --band-primary: 173 49% 55%;      /* #56c4b6 — 8.16:1 on the band */
+  --band-danger: 0 62% 68%;         /* #e07a7a — 7.16:1 on the band */
+
+  /* The shared surface layer (@elkdonis/cms-ui/surface) and the forum built
+     on it read their own --eac-surface-* tokens, whose defaults assume a
+     light page. This site is permanently dark, so without this mapping every
+     surface renders dark ink on a near-black ground. Maps onto the shadcn
+     tokens above, so the popups and /forum follow the site's palette. */
+  --eac-surface-bg: hsl(var(--background));
+  --eac-surface-bg-soft: hsl(var(--card));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-danger: hsl(var(--destructive));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-forum-blue: hsl(var(--primary));
 }
 
 @theme inline {

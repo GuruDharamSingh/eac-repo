@@ -7,6 +7,8 @@ const TEMPLATE_ROOT = path.join(__dirname, "templates");
 const WORKSHOP_ROOT = path.join(TEMPLATE_ROOT, "workshop");
 const DOSSIER_ROOT = path.join(TEMPLATE_ROOT, "dossier-classified");
 const ENNEAGRAM_ROOT = path.join(TEMPLATE_ROOT, "enneagram");
+const BROCHURE_ROOT = path.join(TEMPLATE_ROOT, "brochure");
+const ARTICLE_ROOT = path.join(TEMPLATE_ROOT, "article");
 
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -90,6 +92,70 @@ function readEnneagramTemplateCss() {
     .join("\n\n");
 }
 
+function readBrochureTemplateRegistry() {
+  const manifest = readJson(path.join(BROCHURE_ROOT, "manifest.json"));
+  const tokensCss = readText(path.join(BROCHURE_ROOT, "tokens", "eac-brochure-tokens.css"));
+
+  const sections = manifest.sections.map((section) => ({
+    ...section,
+    htmlContent: readText(path.join(BROCHURE_ROOT, section.html)),
+    cssContent: readText(path.join(BROCHURE_ROOT, section.css)),
+  }));
+
+  // `...manifest` carries the `pages` array through to the client so it can
+  // register one block per page composition (org-profile, offering) in
+  // addition to per-section blocks — same convention as Enneagram.
+  return {
+    ...manifest,
+    tokensCss,
+    sections,
+  };
+}
+
+function readBrochureTemplateCss() {
+  const registry = readBrochureTemplateRegistry();
+  return [registry.tokensCss || ""]
+    .concat(registry.sections.map((section) => section.cssContent || ""))
+    .join("\n\n");
+}
+
+/**
+ * The article template — the reading environment for a published post.
+ *
+ * Its tokens live in the shared ../tokens/eac-tokens.css rather than a
+ * template-private file, because this template is deliberately the same system
+ * as @elkdonis/cms-ui/article.css: a post must read identically whether it is
+ * served from the database by ArticleView or from a published file. Two
+ * renderers, one reading environment.
+ */
+function readArticleTemplateRegistry() {
+  const manifest = readJson(path.join(ARTICLE_ROOT, "manifest.json"));
+  const tokensCss = readText(path.join(TEMPLATE_ROOT, "tokens", "eac-tokens.css"));
+
+  const sections = manifest.sections.map((section) => ({
+    ...section,
+    htmlContent: readText(path.join(ARTICLE_ROOT, section.html)),
+    cssContent: readText(path.join(ARTICLE_ROOT, section.css)),
+  }));
+
+  return { ...manifest, tokensCss, sections };
+}
+
+function readArticleTemplateCss() {
+  const registry = readArticleTemplateRegistry();
+  // Sections share one stylesheet here, so de-duplicate rather than emitting
+  // the reading CSS four times.
+  const seen = new Set();
+  const css = registry.sections
+    .map((section) => section.cssContent || "")
+    .filter((body) => {
+      if (!body || seen.has(body)) return false;
+      seen.add(body);
+      return true;
+    });
+  return [registry.tokensCss || ""].concat(css).join("\n\n");
+}
+
 module.exports = {
   readWorkshopTemplateCss,
   readWorkshopTemplateRegistry,
@@ -97,4 +163,8 @@ module.exports = {
   readDossierTemplateCss,
   readEnneagramTemplateRegistry,
   readEnneagramTemplateCss,
+  readBrochureTemplateRegistry,
+  readBrochureTemplateCss,
+  readArticleTemplateRegistry,
+  readArticleTemplateCss,
 };

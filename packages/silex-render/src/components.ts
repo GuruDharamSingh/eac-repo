@@ -9,11 +9,20 @@
  * Three consumers, all reading the same table:
  *   - renderSilexHtmlWithEmbeds (embeds.tsx) turns markers into React
  *   - a content compiler turns authored tags into markers
- *   - an editor UI can offer a picker built from this list
+ *   - the Silex editor builds its live-slot blocks from it
  *
  * Deliberately free of React and of any Node built-in, so a compiler or a
  * client-side picker can import it without pulling the renderer in behind it.
+ *
+ * The rows live in `components.data.json` rather than inline, because the Silex
+ * editor cannot import TypeScript: its client config is served to the browser as
+ * a plain file and fetches the catalogue over HTTP (the connector serves the
+ * same JSON at /eac-components.json). Keeping the data in JSON means the editor
+ * and the renderer read one file instead of two lists that drift — which they
+ * had: the catalogue declared 12 components, the editor offered 8.
  */
+
+import componentData from "./components.data.json";
 
 export type EmbedPropKind = "string" | "number" | "list";
 
@@ -41,160 +50,7 @@ export type EmbedComponent = {
   memberSafe: boolean;
 };
 
-/** Props every component accepts. */
-const COMMON_PROPS: EmbedProp[] = [
-  { name: "title", kind: "string", description: "Heading shown above the block." },
-  {
-    name: "variant",
-    kind: "string",
-    description: "Set to `inline` to render without the section wrapper.",
-  },
-];
-
-const LIMIT: EmbedProp = {
-  name: "limit",
-  kind: "number",
-  description: "How many items to show (1–8).",
-};
-
-export const EMBED_COMPONENTS: EmbedComponent[] = [
-  {
-    id: "rsvp",
-    tag: "Rsvp",
-    label: "RSVP",
-    description: "Upcoming sessions with a join/RSVP action.",
-    props: [...COMMON_PROPS, LIMIT],
-    memberSafe: true,
-  },
-  {
-    id: "login",
-    tag: "Login",
-    label: "Sign in",
-    description: "Sign-in state for this organisation, resolved server-side.",
-    props: [
-      ...COMMON_PROPS,
-      {
-        name: "description",
-        kind: "string",
-        description: "Prompt shown to signed-out readers.",
-      },
-    ],
-    memberSafe: true,
-  },
-  {
-    id: "media-upload",
-    tag: "MediaUpload",
-    label: "Media upload",
-    description:
-      "Upload box for org members. Non-members see an explanatory notice.",
-    props: [
-      ...COMMON_PROPS,
-      {
-        name: "accept",
-        kind: "string",
-        description: "File input accept list. Defaults to images and video.",
-      },
-    ],
-    memberSafe: true,
-  },
-  {
-    id: "directory",
-    tag: "Directory",
-    label: "Member directory",
-    description:
-      "The people published on this organisation, with portraits and roles.",
-    props: [
-      ...COMMON_PROPS,
-      LIMIT,
-      {
-        name: "tags",
-        kind: "list",
-        description:
-          "Only show people carrying these org tags, e.g. `artist` or `dealer`.",
-      },
-    ],
-    memberSafe: true,
-  },
-  {
-    id: "workshop-cards",
-    tag: "WorkshopCards",
-    label: "Workshop cards",
-    description: "This organisation's workshops and offerings.",
-    props: [...COMMON_PROPS, LIMIT],
-    memberSafe: true,
-  },
-  {
-    id: "org-feed",
-    tag: "OrgFeed",
-    label: "Organisation feed",
-    description: "Recent published content from this organisation.",
-    props: [...COMMON_PROPS, LIMIT],
-    memberSafe: true,
-  },
-  {
-    id: "community-feed",
-    tag: "CommunityFeed",
-    label: "Community feed",
-    description: "Recent activity from across the network.",
-    props: [...COMMON_PROPS, LIMIT],
-    memberSafe: true,
-  },
-  {
-    id: "inquiry",
-    tag: "Inquiry",
-    label: "Contact form",
-    description: "Sends an inquiry to this organisation.",
-    props: COMMON_PROPS,
-    memberSafe: true,
-  },
-  {
-    id: "countdown",
-    tag: "Countdown",
-    label: "Countdown",
-    description: "Counts down to the next scheduled session.",
-    props: COMMON_PROPS,
-    memberSafe: true,
-  },
-  {
-    id: "live",
-    tag: "Live",
-    label: "Live now",
-    description: "Shows whether a session is currently live.",
-    props: [
-      ...COMMON_PROPS,
-      { name: "status", kind: "string", description: "Override status text." },
-    ],
-    memberSafe: true,
-  },
-  {
-    id: "poll",
-    tag: "Poll",
-    label: "Poll",
-    description: "A question with options.",
-    props: [
-      ...COMMON_PROPS,
-      { name: "question", kind: "string", description: "The question asked." },
-      {
-        name: "options",
-        kind: "list",
-        description: "Pipe-separated answers, e.g. `Yes|No|Maybe`.",
-      },
-      { name: "poll-type", kind: "string", description: "Poll style." },
-    ],
-    memberSafe: true,
-  },
-  {
-    id: "resources",
-    tag: "Resources",
-    label: "Resources",
-    description: "A list of linked resources.",
-    props: [
-      ...COMMON_PROPS,
-      { name: "items", kind: "list", description: "Pipe-separated item labels." },
-    ],
-    memberSafe: true,
-  },
-];
+export const EMBED_COMPONENTS: EmbedComponent[] = componentData as EmbedComponent[];
 
 const BY_TAG = new Map(
   EMBED_COMPONENTS.map((c) => [c.tag.toLowerCase(), c])

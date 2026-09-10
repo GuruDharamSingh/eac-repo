@@ -16,6 +16,10 @@ const {
   readDossierTemplateRegistry,
   readEnneagramTemplateCss,
   readEnneagramTemplateRegistry,
+  readBrochureTemplateCss,
+  readBrochureTemplateRegistry,
+  readArticleTemplateRegistry,
+  readArticleTemplateCss,
 } = require("./workshopTemplateRegistry");
 
 const CSS_URL = "/eac-blocks.css";
@@ -25,6 +29,17 @@ const DOSSIER_TEMPLATE_URL = "/eac-dossier-classified.json";
 const DOSSIER_CSS_URL = "/eac-dossier-classified.css";
 const ENNEAGRAM_TEMPLATE_URL = "/eac-enneagram.json";
 const ENNEAGRAM_CSS_URL = "/eac-enneagram.css";
+const BROCHURE_TEMPLATE_URL = "/eac-brochure-template.json";
+const BROCHURE_CSS_URL = "/eac-brochure-template.css";
+const ARTICLE_TEMPLATE_URL = "/eac-article-template.json";
+const ARTICLE_CSS_URL = "/eac-article-template.css";
+// The live-component catalogue (@elkdonis/silex-render components.data.json),
+// bind-mounted into the container. Serving it here is what lets the editor build
+// its live-slot blocks from the same list the renderer reads, instead of a
+// hardcoded copy that drifts — it had: 12 declared, 8 offered.
+const COMPONENTS_URL = "/eac-components.json";
+const COMPONENTS_FILE =
+  process.env.EAC_COMPONENTS_FILE || "/silex/extensions/eac-components.json";
 const ASSET_ROUTES = [
   CSS_URL,
   WORKSHOP_TEMPLATE_URL,
@@ -33,6 +48,11 @@ const ASSET_ROUTES = [
   DOSSIER_CSS_URL,
   ENNEAGRAM_TEMPLATE_URL,
   ENNEAGRAM_CSS_URL,
+  BROCHURE_TEMPLATE_URL,
+  ARTICLE_CSS_URL,
+  ARTICLE_TEMPLATE_URL,
+  BROCHURE_CSS_URL,
+  COMPONENTS_URL,
 ];
 const CSS_FILE = path.join(__dirname, "eac-blocks.css");
 
@@ -121,6 +141,70 @@ function registerEditorAssets(app) {
     }
   }
 
+  function eacBrochureTemplate(req, res, next) {
+    try {
+      const body = JSON.stringify(readBrochureTemplateRegistry());
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read brochure template", err);
+      next(err);
+    }
+  }
+
+  function eacBrochureCss(req, res, next) {
+    try {
+      const body = readBrochureTemplateCss();
+      res.set("Content-Type", "text/css; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read brochure css", err);
+      next(err);
+    }
+  }
+
+  function eacArticleTemplate(req, res, next) {
+    try {
+      const body = JSON.stringify(readArticleTemplateRegistry());
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read article template", err);
+      next(err);
+    }
+  }
+
+  function eacArticleCss(req, res, next) {
+    try {
+      const body = readArticleTemplateCss();
+      res.set("Content-Type", "text/css; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read article css", err);
+      next(err);
+    }
+  }
+
+  function eacComponents(req, res, next) {
+    fs.readFile(COMPONENTS_FILE, (err, body) => {
+      if (err) {
+        // Not fatal: the client config falls back to its built-in slot list, so
+        // a missing mount degrades to the old behaviour rather than an empty panel.
+        console.warn("[editorAssets] component catalogue unavailable:", err.message);
+        res.set("Content-Type", "application/json; charset=utf-8");
+        return res.status(200).send("[]");
+      }
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    });
+  }
+
+  app.get(COMPONENTS_URL, eacComponents);
   app.get(CSS_URL, eacEditorAssets);
   app.get(WORKSHOP_TEMPLATE_URL, eacWorkshopTemplate);
   app.get(WORKSHOP_CSS_URL, eacWorkshopCss);
@@ -128,10 +212,15 @@ function registerEditorAssets(app) {
   app.get(DOSSIER_CSS_URL, eacDossierCss);
   app.get(ENNEAGRAM_TEMPLATE_URL, eacEnneagramTemplate);
   app.get(ENNEAGRAM_CSS_URL, eacEnneagramCss);
+  app.get(BROCHURE_TEMPLATE_URL, eacBrochureTemplate);
+  app.get(BROCHURE_CSS_URL, eacBrochureCss);
+  app.get(ARTICLE_TEMPLATE_URL, eacArticleTemplate);
+  app.get(ARTICLE_CSS_URL, eacArticleCss);
 }
 
 module.exports = {
   ASSET_ROUTES,
+  COMPONENTS_URL,
   CSS_URL,
   WORKSHOP_CSS_URL,
   WORKSHOP_TEMPLATE_URL,
@@ -139,5 +228,9 @@ module.exports = {
   DOSSIER_TEMPLATE_URL,
   ENNEAGRAM_CSS_URL,
   ENNEAGRAM_TEMPLATE_URL,
+  BROCHURE_CSS_URL,
+  BROCHURE_TEMPLATE_URL,
+  ARTICLE_CSS_URL,
+  ARTICLE_TEMPLATE_URL,
   registerEditorAssets,
 };

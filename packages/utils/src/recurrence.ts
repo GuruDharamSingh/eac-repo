@@ -81,3 +81,119 @@ export function isWithinCurrentCycle(
   if (!cutoff) return true; // non-recurring: never expires
   return timestamp > cutoff;
 }
+
+// ============================================================================
+// Calendar-grid expansion.
+//
+// The functions above answer "when is the next one?" — enough for a card, not
+// enough for a month view, where ONE recurring thread is four or five cells.
+//
+// Expansion happens here rather than in SQL on purpose. A recursive CTE could
+// generate the occurrences, but it would return rows that do not exist as
+// records, which then cannot be clicked through to anything. Expanding from
+// the real row keeps every cell pointing back at its own thread.
+//
+// `recurrenceIntervalMs` above is the single source for the interval, so a
+// grid and a "next occurrence" badge on the same screen can never disagree —
+// which they would the moment a second copy of the interval table appeared.
+// ============================================================================
+
+/** The minimum a thing needs for the grid to place it. */
+export interface Occurring {
+  scheduledAt: string | Date | null;
+  recurrencePattern?: string | null;
+}
+
+export type Occurrence<T> = { item: T; at: Date };
+
+/**
+ * Every occurrence of every item that falls in [from, to).
+ *
+ * Non-recurring items contribute at most one. Recurring items are walked
+ * forward from their start — jumping straight to the first occurrence at or
+ * after `from` rather than stepping there one interval at a time, so an item
+ * scheduled years ago costs the same as one scheduled last week.
+ *
+ * `maxPerItem` is a guard, not a feature: a corrupt `scheduled_at` far in the
+ * past with a daily pattern would otherwise spin here.
+ */
+export function expandOccurrences<T extends Occurring>(
+  items: T[],
+  from: Date,
+  to: Date,
+  maxPerItem = 64
+): Array<Occurrence<T>> {
+  const out: Array<Occurrence<T>> = [];
+
+  for (const item of items) {
+    if (!item.scheduledAt) continue;
+    const start = new Date(item.scheduledAt);
+    if (Number.isNaN(start.getTime())) continue;
+
+    const pattern = item.recurrencePattern;
+    if (!pattern || pattern === "NONE") {
+      if (start >= from && start < to) out.push({ item, at: start });
+      continue;
+    }
+
+    const stepMs = recurrenceIntervalMs(pattern);
+    let current = start;
+    if (current < from) {
+      const skipped = Math.floor((from.getTime() - current.getTime()) / stepMs);
+      current = new Date(current.getTime() + skipped * stepMs);
+    }
+    for (let guard = 0; guard < maxPerItem && current < to; guard++) {
+      if (current >= from) out.push({ item, at: current });
+      current = new Date(current.getTime() + stepMs);
+    }
+  }
+
+  return out.sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
+/** Local-time YYYY-MM-DD. The key a grid buckets on. */
+export function dayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+}
+
+/** Group expanded occurrences by the local day they fall on. */
+export function occurrencesByDay<T extends Occurring>(
+  items: T[],
+  from: Date,
+  to: Date
+): Map<string, Array<Occurrence<T>>> {
+  const map = new Map<string, Array<Occurrence<T>>>();
+  for (const occurrence of expandOccurrences(items, from, to)) {
+    const key = dayKey(occurrence.at);
+    const list = map.get(key);
+    if (list) list.push(occurrence);
+    else map.set(key, [occurrence]);
+  }
+  return map;
+}
+
+/**
+ * The cells of a month, with leading blanks so day 1 sits under its weekday.
+ * `null` is a padding cell.
+ */
+export function monthGrid(month: Date): Array<Date | null> {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells: Array<Date | null> = new Array(first.getDay()).fill(null);
+  for (let day = 1; day <= days; day++) {
+    cells.push(new Date(month.getFullYear(), month.getMonth(), day));
+  }
+  return cells;
+}
+
+/** First instant of `date`'s month. */
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+/** First instant of the month `count` months from `date`'s. */
+export function addMonths(date: Date, count: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + count, 1);
+}

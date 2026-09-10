@@ -33,6 +33,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
   }
 
+  // Reads the whole network tree with the shared Nextcloud service account and
+  // takes the path straight off the query string, so it needs the same
+  // visibility check as every other media route. Public media is unaffected;
+  // private media requires affiliation with the owning org or person.
+  const { canReadMedia } = await import('@elkdonis/services');
+  const { getServerSession } = await import('@elkdonis/auth-server');
+  const session = await getServerSession();
+  const viewerId = session.user?.db_user_id ?? session.user?.id ?? null;
+  if (!(await canReadMedia(viewerId, path))) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   try {
     const client = getAdminClient();
     const content = await client.webdav.getFileContents(path);

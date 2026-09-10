@@ -6,12 +6,15 @@
     "dev": "next dev --port 3005 --turbopack",
     "build": "next build --turbopack",
     "start": "next start --port 3005",
+    "check-types": "tsc --noEmit --incremental false",
     "lint": "eslint"
   },
   "dependencies": {
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/nextcloud": "workspace:*",
+    "@elkdonis/services": "workspace:*",
     "@elkdonis/ui": "workspace:*",
     "@mantine/core": "^8.3.2",
     "@mantine/hooks": "^8.3.2",

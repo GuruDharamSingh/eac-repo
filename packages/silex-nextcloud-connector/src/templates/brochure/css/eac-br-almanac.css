@@ -1,0 +1,54 @@
+/*
+  eac-br-almanac.css
+  ===================
+  Calendar-page cards: a paper card with a small hanging tab at the top
+  edge (like a torn-off day from a desk calendar), housing the live
+  countdown / RSVP embeds.
+*/
+
+.eac-br-almanac {
+  padding: 72px 24px;
+  background: var(--eac-br-paper-2);
+}
+
+.eac-br-almanac__head {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto 40px;
+  text-align: center;
+}
+.eac-br-almanac__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 30px);
+  margin: 6px 0 0;
+}
+
+.eac-br-almanac__board {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.eac-br-calendar-page {
+  position: relative;
+  margin-top: 18px;
+  padding: 28px 22px 22px;
+  background: var(--eac-br-paper);
+  border: 1px solid var(--eac-br-ink-faint);
+  box-shadow: 0 8px 16px rgba(36, 28, 21, 0.14);
+}
+.eac-br-calendar-page__tab {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 18px;
+  background: var(--eac-br-brass);
+  border-radius: 3px 3px 0 0;
+}
+
+@media (max-width: 760px) {
+  .eac-br-almanac__board { grid-template-columns: 1fr; }
+}

@@ -1,6 +1,9 @@
 "use client";
 
-import { ProfileGallery, type GalleryItem } from "@elkdonis/ui";
+// From @elkdonis/cms-ui, not @elkdonis/ui: ProfileGallery uses no Mantine,
+// but the ui barrel declares it, so importing through that package pulled
+// Mantine into an app that is otherwise free of it.
+import { ProfileGallery, type GalleryItem } from "@elkdonis/cms-ui/gallery";
 import { saveGalleryAction } from "@/lib/profile-editor-actions";
 
 /**

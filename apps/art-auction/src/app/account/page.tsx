@@ -8,7 +8,7 @@ import {
 import { formatMoney } from "@elkdonis/commerce/money";
 import { ArtworkGrid } from "@elkdonis/commerce/components";
 import type { Order } from "@elkdonis/commerce/types";
-import { getCurrentArtist, getCurrentUser } from "@/lib/marketplace-auth";
+import { getCurrentStore, listActableStores, getCurrentUser } from "@/lib/marketplace-auth";
 import { LogoutButton } from "@/components/logout-button";
 
 export const dynamic = "force-dynamic";
@@ -42,11 +42,14 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [orders, artist, saved] = await Promise.all([
+  const [orders, own, stores, saved] = await Promise.all([
     listOrdersForCustomer(user.id),
-    getCurrentArtist(),
+    getCurrentStore(),
+    listActableStores(),
     listFavoriteArtworks(user.id),
   ]);
+  // "You sell here" if any store — own or an org's — is active.
+  const artist = own?.status === "active" ? own : (stores.find((s) => s.status === "active") ?? own);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">

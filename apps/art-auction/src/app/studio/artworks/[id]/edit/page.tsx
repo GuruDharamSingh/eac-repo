@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getArtworkForEdit } from "@elkdonis/commerce/queries";
-import { requireApprovedArtist } from "@/lib/marketplace-auth";
+import { requireStudioStore } from "@/lib/marketplace-auth";
 import { ArtworkForm } from "../../../_components/artwork-form";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export default async function EditArtworkPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { userId } = await requireApprovedArtist();
+  const { userId } = await requireStudioStore();
   const artwork = await getArtworkForEdit(id, userId);
   if (!artwork) notFound();
 

@@ -1,0 +1,25 @@
+/*
+  eac-br-ledger.css
+  ==================
+  Account-book panel. Rows come from .eac-br-leader in the tokens file;
+  this file only sets the panel chrome and heading.
+*/
+
+.eac-br-ledger {
+  padding: 64px 24px;
+  background: var(--eac-br-paper);
+}
+
+.eac-br-ledger__inner {
+  max-width: var(--eac-br-max-width-sm);
+  margin: 0 auto;
+}
+
+.eac-br-ledger__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(22px, 2.8vw, 28px);
+  margin: 6px 0 24px;
+}
+
+.eac-br-ledger .eac-br-leader__label { font-family: var(--eac-br-font-body); }
+.eac-br-ledger .eac-br-leader__value { font-family: var(--eac-br-font-display); font-size: 18px; }

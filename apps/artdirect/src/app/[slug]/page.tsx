@@ -14,6 +14,11 @@ import { DossierActivity } from "@/components/oad/DossierActivity";
 import { StandardProfile } from "@/components/oad/StandardProfile";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getProfileBySlug } from "@elkdonis/services";
+import {
+  getStoreForUser,
+  getStoreShowcaseForUser,
+  hasProfileSection,
+} from "@elkdonis/commerce/queries";
 import { resolveLayout } from "@/lib/profile-layouts";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +59,23 @@ export default async function DossierPage({ params }: Props) {
   // layout was retired still renders something.
   const identity = await getProfileBySlug(slug);
   const layout = resolveLayout(identity?.profileLayout);
+
+  // Their marketplace store, if one is active: the store is a front for this
+  // profile, so this is where a visitor learns the work is for sale. Shown
+  // only when the person has switched the section on (profile_sections).
+  const marketplaceUrl = process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009";
+  const uid = identity?.userId ?? null;
+  const [ownStore, storeSectionOn] = uid
+    ? await Promise.all([
+        getStoreForUser(uid).catch(() => null),
+        hasProfileSection(uid, "store"),
+      ])
+    : [null, false];
+  const hasStore = ownStore?.status === "active";
+  const storeShowcase =
+    hasStore && storeSectionOn && uid
+      ? await getStoreShowcaseForUser(uid, { limit: 6 }).catch(() => null)
+      : null;
   const useTemplate = layout !== "standard";
 
   const html = useTemplate ? renderDossier(profile, { archiveName: "ArtDirect" }) : null;
@@ -75,6 +97,10 @@ export default async function DossierPage({ params }: Props) {
           <StandardProfile
             profile={identity}
             isSelf={Boolean(identity.userId && user?.id === identity.userId)}
+            store={storeShowcase}
+            hasStore={hasStore}
+            storeSectionOn={storeSectionOn}
+            marketplaceUrl={marketplaceUrl}
           />
         )
       )}

@@ -1,0 +1,64 @@
+/*
+  eac-br-testimonial.css
+  ========================
+  Wax-seal ornament: a filled circle with a ribbon tail, echoing the
+  medallion shape from eac-br-services but rendered solid, like a
+  stamped letter seal.
+*/
+
+.eac-br-testimonial {
+  padding: 72px 24px;
+  background: var(--eac-br-paper-2);
+  text-align: center;
+}
+
+.eac-br-testimonial__inner {
+  max-width: var(--eac-br-max-width-sm);
+  margin: 0 auto;
+}
+
+.eac-br-seal {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: var(--eac-br-oxblood);
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(36, 28, 21, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.eac-br-seal span {
+  color: var(--eac-br-paper);
+  font-size: 22px;
+}
+.eac-br-seal::after {
+  content: "";
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  width: 10px;
+  height: 20px;
+  transform: translateX(-50%);
+  background: var(--eac-br-oxblood);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%);
+  opacity: 0.85;
+}
+
+.eac-br-testimonial__quote {
+  margin: 0;
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--eac-br-ink);
+}
+
+.eac-br-testimonial__attr {
+  margin-top: 16px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--eac-br-ink-muted);
+}

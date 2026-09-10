@@ -1,9 +1,10 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
+import { validateUploadBuffer } from "@elkdonis/utils";
 import { getServerSession } from "@elkdonis/auth-server";
 import { db } from "@elkdonis/db";
 import { uploadFile, getProxyFileUrl } from "@elkdonis/services";
-import { getAdminClient, ensureMemberMediaFolder } from "@elkdonis/nextcloud";
+import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { nanoid } from "nanoid";
 import { canManageIfac } from "@/lib/data";
 import { siteConfig } from "@/config/site";
@@ -12,8 +13,13 @@ const ORG_ID = siteConfig.orgId;
 const MAX_SIZE_MB = 25;
 
 /**
- * Uploads one image into a member's gallery folder
- * (EAC_Network/ifac/Media/Images/<memberSlug>/...).
+ * Uploads one image into the artist's own folder
+ * (EAC_Network/users/<memberSlug>/Media/Images/...).
+ *
+ * Not under EAC_Network/ifac/: a portrait and a body of work belong to the
+ * artist and follow them across every org that publishes them, whereas the
+ * org tree holds what IFAC itself publishes. `memberSlug` is users.slug,
+ * which is also the folder name and the profile URL.
  *
  * `target` ("gallery", default, or "avatar") decides what a successful
  * upload does to the member's row once it resolves — a plain "return me a
@@ -76,14 +82,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File size must be less than ${MAX_SIZE_MB}MB` }, { status: 400 });
     }
 
-    await ensureMemberMediaFolder(getAdminClient(), ORG_ID, memberSlug);
+    // An artist's portrait and artwork belong to the artist, not to IFAC, so
+    // they live under EAC_Network/users/<slug>/ and follow the person across
+    // every org they're published on. The old per-org location
+    // (EAC_Network/ifac/Media/Images/<slug>/) has been migrated and emptied —
+    // writing there again would rebuild the split this replaced.
+    const memberFolder = await ensureUserFolder(getAdminClient(), memberSlug);
 
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const filename = `${timestamp}-${sanitizedName}`;
-    const relativePath = `EAC_Network/${ORG_ID}/Media/Images/${memberSlug}/${filename}`;
+    const relativePath = `${memberFolder}/Media/Images/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // The client-supplied MIME type above is attacker-controlled, and
+    // `image/svg+xml` passes a `startsWith("image/")` check. An SVG is a
+    // script container, so verify the actual leading bytes — validateUploadBuffer
+    // classifies SVG as its own kind, never `image`.
+    const validation = validateUploadBuffer(buffer, ["image"]);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: "reason" in validation ? validation.reason : "Rejected" },
+        { status: 415 }
+      );
+    }
+
     const uploadSuccess = await uploadFile(relativePath, buffer, file.type);
     if (!uploadSuccess) {
       return NextResponse.json({ error: "Failed to upload file to Nextcloud" }, { status: 500 });

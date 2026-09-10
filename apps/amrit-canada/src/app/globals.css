@@ -1,6 +1,35 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@source "../../../../packages/pipeline/src";
+@source "../../../../packages/chat/src";
+
+
+/* @elkdonis/cms-ui ships source, not a bundle, so Tailwind has to be told to
+   scan it or the compose sheet renders unstyled. */
+@source "../../../../packages/cms-ui/src";
+
+/* The reading layer for published writing. Plain CSS with custom-property
+   fallbacks, so it picks up this site's ink and rule colours. */
+@import "@elkdonis/cms-ui/article.css";
+/* The surface system — every popup on the hub (a meeting, the month, the
+   gallery, quick-add) and the faces that open them. gallery.css carries the
+   lightbox the gallery surface uses. Both plain CSS; tokens mapped below. */
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/profile.css";
+/* The Grand Forum at /forum, in this site's tokens. */
+@import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/cms-ui/gallery.css";
+/* MediaPicker (the composer's cover-image pane) is styled here too. */
+@import "@elkdonis/cms-ui/files-card.css";
+/* Field controls and the composer's groups — plain CSS, so the same form
+   sets correctly in every app. */
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+/* The same reading tokens as Tailwind utilities, so anything built AROUND a
+   post (a feed strip, an author note) lines up with the prose inside it. */
+@import "@elkdonis/cms-ui/reading-theme.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /* ==========================================================================
@@ -54,6 +83,34 @@
   --feed-amrit-vela: 45 79% 52%;     /* saffron  #E6B422 */
   --feed-yoga: 140 21% 45%;          /* green    #5A8A6A */
   --feed-gurdwara: 0 50% 36%;        /* crimson  #8B2E2E */
+
+  /* The surface system, in this site's voice. Everything it draws — faces,
+     the popup, facts, the month grid — reads these; nothing in it carries a
+     colour of its own. Kinds take the site's accents: gatherings are saffron
+     (the sadhana is the primary object here), writing is terracotta, and the
+     structural surfaces (calendar, gallery, compose) sit on charcoal. */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-radius: var(--radius);
+  --eac-font-title: var(--font-cinzel), Georgia, serif;
+  --eac-kind-meeting: hsl(var(--feed-amrit-vela));
+  --eac-kind-event: hsl(var(--feed-amrit-vela));
+  --eac-kind-post: hsl(var(--terracotta));
+  --eac-kind-workshop: hsl(var(--feed-yoga));
+  --eac-kind-calendar: hsl(var(--foreground));
+  --eac-kind-calendar-on: hsl(var(--background));
+  --eac-kind-gallery: hsl(var(--terracotta-deep));
+  --eac-kind-gallery-on: hsl(var(--background));
+  --eac-kind-post-on: hsl(var(--background));
+  --eac-kind-compose: hsl(var(--foreground));
+  --eac-kind-compose-on: hsl(var(--background));
+  --eac-kind-board: hsl(var(--feed-yoga));
+  --eac-kind-board-on: hsl(var(--background));
 }
 
 .dark {

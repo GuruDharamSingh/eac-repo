@@ -1,0 +1,259 @@
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+/* Do NOT disable pointer-events on gallery images outright: that was the
+   reason clicking a photo never opened the lightbox — the click could not
+   reach the <img> that carries the handler. Native image-dragging is already
+   prevented by draggable={false} on the element itself, so the only thing
+   still worth suppressing is pointer interaction DURING an active drag. */
+.react-grid-item img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.react-grid-item.react-draggable-dragging img,
+.react-grid-item.resizing img {
+  pointer-events: none;
+}
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+.react-grid-item.resizing {
+  transition: none;
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: red;
+  opacity: 0.2;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+.react-grid-item.react-grid-placeholder.placeholder-resizing {
+  transition: none;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+}
+
+.react-grid-item:hover > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+.react-resizable-hide > .react-resizable-handle {
+  display: none;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  transform: rotate(90deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  transform: rotate(180deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  transform: rotate(270deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  top: 50%;
+  margin-top: -10px;
+  cursor: ew-resize;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  left: 0;
+  transform: rotate(135deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  right: 0;
+  transform: rotate(315deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  left: 50%;
+  margin-left: -10px;
+  cursor: ns-resize;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
+  top: 0;
+  transform: rotate(225deg);
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  bottom: 0;
+  transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   SimpleLightbox — full-screen image viewer.
+   In CSS rather than inline styles so it can carry transitions, a spinner,
+   and a prefers-reduced-motion opt-out, none of which inline styles express.
+   ========================================================================== */
+
+.eac-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 4.5rem;
+  background: rgba(8, 6, 12, 0.94);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: eac-lb-in 160ms ease-out;
+}
+
+@keyframes eac-lb-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.eac-lb-figure {
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.eac-lb-img {
+  max-width: 100%;
+  /* Leave room for the caption so a tall image never pushes it off-screen. */
+  max-height: calc(100vh - 9rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 2px;
+  box-shadow: 0 24px 70px -20px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.eac-lb-img.is-loaded { opacity: 1; }
+
+.eac-lb-caption {
+  color: rgba(255, 255, 255, 0.82);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+
+.eac-lb-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  animation: eac-lb-spin 700ms linear infinite;
+}
+
+@keyframes eac-lb-spin {
+  to { transform: rotate(360deg); }
+}
+
+.eac-lb-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.eac-lb-btn:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.eac-lb-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.eac-lb-close { top: 18px; right: 18px; font-size: 1.05rem; }
+.eac-lb-prev { left: 18px; top: 50%; transform: translateY(-50%); }
+.eac-lb-next { right: 18px; top: 50%; transform: translateY(-50%); }
+
+.eac-lb-count {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Narrow screens: the side buttons would sit on top of the image, so move
+   them to the bottom corners and reclaim the horizontal padding. */
+@media (max-width: 640px) {
+  .eac-lb { padding: 3.5rem 1rem 5rem; }
+  .eac-lb-prev { left: 16px; top: auto; bottom: 14px; transform: none; }
+  .eac-lb-next { right: 16px; top: auto; bottom: 14px; transform: none; }
+  .eac-lb-img { max-height: calc(100vh - 11rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-lb { animation: none; }
+  .eac-lb-img { transition: none; }
+  .eac-lb-spinner { animation-duration: 2s; }
+}

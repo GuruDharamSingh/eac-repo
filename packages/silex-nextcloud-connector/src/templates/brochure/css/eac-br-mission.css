@@ -1,0 +1,36 @@
+/*
+  eac-br-mission.css
+  ===================
+  Cartouche panel: a bordered block with brass corner brackets
+  (.eac-br-corners, from tokens) and a serif drop-cap opening.
+*/
+
+.eac-br-mission {
+  padding: 72px 24px;
+  background: var(--eac-br-paper);
+}
+
+.eac-br-mission__inner {
+  max-width: var(--eac-br-max-width-sm);
+  margin: 0 auto;
+  padding: 40px 48px;
+  border: 1px solid var(--eac-br-ink-faint);
+}
+
+.eac-br-mission__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 32px);
+  margin: 6px 0 22px;
+  color: var(--eac-br-ink);
+}
+
+.eac-br-mission__body {
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--eac-br-ink);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .eac-br-mission__inner { padding: 30px 26px; }
+}

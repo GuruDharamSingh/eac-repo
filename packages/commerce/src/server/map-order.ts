@@ -1,12 +1,24 @@
+import { db } from "@elkdonis/db";
 import type { Order, OrderStatus } from "../types";
 
 export type Row = Record<string, unknown>;
+
+/**
+ * A jsonb parameter. Use this — never `${JSON.stringify(x)}::jsonb`: with the
+ * cast Postgres reports the parameter as jsonb, and the driver then JSON-
+ * encodes the string a second time, so the column ends up holding a JSON
+ * *string* of JSON and every reader gets text back instead of an object.
+ * (`db.json` is typed for plain JSON values; the cast is only to admit
+ * `Record<string, unknown>`.)
+ */
+export const jsonb = (v: unknown) => db.json(v as never);
 export const num = (v: unknown): number => (v == null ? 0 : Number(v));
 
 export function mapOrder(r: Row): Order {
   return {
     id: r.id as string,
     number: r.number as string,
+    storeId: (r.store_id as string | null) ?? null,
     customerId: (r.customer_id as string | null) ?? null,
     customerEmail: r.customer_email as string,
     customerName: (r.customer_name as string | null) ?? null,

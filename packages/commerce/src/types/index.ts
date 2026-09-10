@@ -303,6 +303,11 @@ export interface Artwork {
   media?: ArtworkMedia[];
   /** Active auction lot if this artwork is being auctioned */
   lot?: AuctionLot | null;
+  /**
+   * Set when the piece appears in a front that does not sell it (migration
+   * 112): the presenting store's id. Undefined on the piece's own store.
+   */
+  presentedByStoreId?: string | null;
 }
 
 export interface ArtworkVariant {
@@ -401,6 +406,8 @@ export interface CartLine {
   unitPriceMinor: number;
   currency: Currency;
   notes?: string | null;
+  /** The presenting store the buyer came through, when not the seller (112). */
+  viaStoreId?: string | null;
   createdAt: string;
   /** Joined artwork data for cart display */
   artwork?: Artwork;
@@ -445,6 +452,8 @@ export interface Address {
 export interface Order {
   id: string;
   number: string;
+  /** The front the order was placed through (migration 095). Null for thread orders. */
+  storeId?: string | null;
   customerId?: string | null;
   customerEmail: string;
   customerName?: string | null;
@@ -494,6 +503,8 @@ export interface OrderLine {
   currency: Currency;
   metadata: Record<string, unknown>;
   createdAt: string;
+  /** Joined: the artwork's primary image, when the line sells one. */
+  imageUrl?: string | null;
 }
 
 export type InquiryKind = "question" | "reserve_request" | "make_offer";
@@ -519,11 +530,14 @@ export type PayoutStatus = "pending" | "sent" | "received" | "failed";
 
 export interface Payout {
   id: string;
-  artistUserId: string;
+  /** Null for an org party (migration 098). */
+  artistUserId: string | null;
+  partyOrgId?: string | null;
   orderId?: string | null;
   amountMinor: number;
   currency: Currency;
-  method: "etransfer" | "manual";
+  /** `stripe` = a destination-charge transfer to the maker's connected account. */
+  method: "etransfer" | "manual" | "stripe";
   reference?: string | null;
   status: PayoutStatus;
   notes?: string | null;

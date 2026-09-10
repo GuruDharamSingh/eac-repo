@@ -8,6 +8,14 @@ import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 import { Button } from "@/components/ui/button";
 import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 import { TierBadge } from "@/components/hub/TierBadge";
+import { FilesCard } from "@elkdonis/cms-ui/files";
+
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
 
 const TIER_ORDER: Record<string, number> = { partner: 0, supported: 1, free: 2 };
 
@@ -36,6 +44,11 @@ export default async function NetworkTabPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-12">
+      {/* A person's own cloud storage. Everyone has a folder at
+          EAC_Network/users/<slug>/ whether or not they have a Nextcloud
+          login, so this is the only way most members can reach it. */}
+      <FilesCard />
+
       <header className="mb-10 space-y-2 border-b border-border pb-8">
         <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Community

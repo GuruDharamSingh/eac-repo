@@ -1,0 +1,56 @@
+/*
+  eac-br-dispatch.css
+  ====================
+  Newspaper-bulletin framing around the live org-feed embed. The embed's
+  own markup (from @elkdonis/silex-render) is themed via the .eac-br-page
+  ancestor selector so the cards read as dispatches, not app cards.
+*/
+
+.eac-br-dispatch {
+  padding: 72px 24px;
+  background: var(--eac-br-paper);
+}
+
+.eac-br-dispatch__head {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto 32px;
+  text-align: center;
+}
+.eac-br-dispatch__title {
+  font-family: var(--eac-br-font-display);
+  font-size: clamp(24px, 3vw, 30px);
+  margin: 6px 0 0;
+}
+
+.eac-br-dispatch__feature {
+  max-width: var(--eac-br-max-width-sm);
+  margin: 0 auto 40px;
+  padding-bottom: 28px;
+  border-bottom: var(--eac-br-rule);
+}
+
+.eac-br-dispatch__grid {
+  max-width: var(--eac-br-max-width);
+  margin: 0 auto;
+  column-count: 2;
+  column-gap: 40px;
+  column-rule: 1px solid var(--eac-br-ink-faint);
+}
+.eac-br-dispatch__grid > * { break-inside: avoid; }
+
+/* Theme the live-rendered feed cards to match the paper aesthetic. */
+.eac-br-page .eac-br-dispatch article {
+  border: none;
+  border-bottom: var(--eac-br-rule-hair);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 20px;
+  margin-bottom: 20px;
+}
+.eac-br-page .eac-br-dispatch h3 {
+  font-family: var(--eac-br-font-display);
+}
+
+@media (max-width: 720px) {
+  .eac-br-dispatch__grid { column-count: 1; }
+}

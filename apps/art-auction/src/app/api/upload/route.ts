@@ -118,7 +118,13 @@ export async function POST(request: NextRequest) {
     // Verify actual bytes are a raster image (client MIME is spoofable).
     const validation = validateUploadBuffer(buffer, ["image"]);
     if (!validation.ok) {
-      return NextResponse.json({ error: validation.reason }, { status: 415 });
+      // `in` rather than `validation.reason`: UploadValidation is a true
+      // discriminated union, which this codebase repeatedly finds does not
+      // narrow on `if (!x.ok)` — same idiom as arts-collective's upload route.
+      return NextResponse.json(
+        { error: "reason" in validation ? validation.reason : "Rejected" },
+        { status: 415 }
+      );
     }
 
     // Make sure marketplace/<artist>/Images exists before the PUT.

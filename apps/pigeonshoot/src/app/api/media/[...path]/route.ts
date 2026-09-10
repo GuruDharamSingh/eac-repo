@@ -44,11 +44,17 @@ export async function GET(
 
     const isPrivate = filePath.includes('/Private/');
 
-    // Only require EAC session for Private media.
+    // Private media requires affiliation with the owning org, not merely a
+    // session — any signed-in user of any app used to satisfy this.
     if (isPrivate) {
+      const { canReadMedia } = await import('@elkdonis/services');
       const session = await getServerSession();
-      if (!session.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const viewerId = session.user?.db_user_id ?? session.user?.id ?? null;
+      if (!(await canReadMedia(viewerId, filePath))) {
+        return NextResponse.json(
+          { error: session.user ? 'Not found' : 'Unauthorized' },
+          { status: session.user ? 404 : 401 }
+        );
       }
     }
     

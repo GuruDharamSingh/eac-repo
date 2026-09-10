@@ -101,7 +101,10 @@ export async function getNetworkUpcomingEvents(
         ap.city
       FROM threads t
       JOIN organizations o ON o.id = t.org_id
-      LEFT JOIN artist_profiles ap ON ap.org_id = o.id
+      -- The city is the ORG's, from its own identity row (migration 099). This
+      -- was a join to artist_profiles on org_id alone, which grouped the
+      -- network events list by whichever member Postgres happened to pick.
+      LEFT JOIN users ap ON ap.id = o.profile_user_id
       WHERE t.status = 'published'
         AND t.visibility = 'PUBLIC'
         AND t.kind IN ('event', 'workshop')

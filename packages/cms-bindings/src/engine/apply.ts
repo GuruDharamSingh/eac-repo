@@ -308,3 +308,34 @@ export function applyManifestBindings(
 
   return root.toString();
 }
+
+/**
+ * Remove whole sections from a published document, by the same
+ * `data-gjs-type="<id>"` lookup `applyManifestBindings` uses (falling back to a
+ * class of the same name).
+ *
+ * This is what lets an app own its own chrome. A Silex page is published as a
+ * COMPLETE document — its own nav, its own footer — so rendering it inside a
+ * React app produces two navs stacked on top of each other, and the one a
+ * visitor sees first is the static one, which cannot know who is signed in,
+ * cannot open a menu, and cannot carry a cart or a notification count.
+ *
+ * Dropping those sections inverts it: the framework renders the chrome and the
+ * published artifact supplies the body. Nothing has to be republished, because
+ * this happens at render time on the way out.
+ *
+ * A section id that is not present is skipped, so a page the owner rearranged
+ * in the editor is safe.
+ */
+export function removeSections(html: string, sectionIds: string[]): string {
+  if (!html || sectionIds.length === 0) return html;
+
+  const root = parse(html, PARSE_OPTIONS);
+  for (const id of sectionIds) {
+    const escaped = id.replace(/"/g, '\\"');
+    let matches = root.querySelectorAll(`[data-gjs-type="${escaped}"]`);
+    if (matches.length === 0) matches = root.querySelectorAll(`.${id}`);
+    for (const node of matches) node.remove();
+  }
+  return root.toString();
+}

@@ -18,7 +18,7 @@ const field: React.CSSProperties = {
   background: "var(--eac-enn-bg-soft, rgba(255,255,255,0.04))",
   border: "1px solid rgba(236,231,221,0.18)",
   borderRadius: "8px",
-  color: "#ece7dd",
+  color: "hsl(var(--band-foreground))",
   fontFamily: "var(--font-eb-garamond), Georgia, serif",
   fontSize: "16px",
 };
@@ -28,7 +28,7 @@ const label: React.CSSProperties = {
   marginBottom: "8px",
   fontSize: "13px",
   letterSpacing: "0.04em",
-  color: "#bcb6aa",
+  color: "hsl(var(--band-muted))",
 };
 
 export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
@@ -50,8 +50,8 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
         alignItems: "center",
         justifyContent: "center",
         padding: "24px",
-        background: "#0a0a0c",
-        color: "#ece7dd",
+        background: "hsl(var(--band))",
+        color: "hsl(var(--band-foreground))",
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
@@ -71,7 +71,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
           style={{
             margin: "0 0 32px",
             textAlign: "center",
-            color: "#8a857b",
+            color: "hsl(var(--band-muted))",
             fontFamily: "var(--font-eb-garamond), Georgia, serif",
             fontSize: 16,
           }}
@@ -135,7 +135,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
           )}
 
           {f.error && (
-            <p role="alert" style={{ margin: 0, color: "#e07a7a", fontSize: 15 }}>
+            <p role="alert" style={{ margin: 0, color: "hsl(var(--band-danger))", fontSize: 15 }}>
               {f.error}
             </p>
           )}
@@ -150,8 +150,8 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
               padding: "13px 0",
               border: "1px solid rgba(236,231,221,0.18)",
               borderRadius: 999,
-              background: "#3aa99c",
-              color: "#04130f",
+              background: "hsl(var(--band-primary))",
+              color: "hsl(var(--band))",
               fontFamily: "var(--font-eb-garamond), Georgia, serif",
               fontSize: 13,
               letterSpacing: "0.2em",
@@ -167,7 +167,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
                 : "Create account"}
           </button>
 
-          <p style={{ textAlign: "center", color: "#8a857b", fontSize: 14 }}>
+          <p style={{ textAlign: "center", color: "hsl(var(--band-muted))", fontSize: 14 }}>
             {f.mode === "signin" ? "New here? " : "Already have an account? "}
             <button
               type="button"
@@ -175,7 +175,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
               style={{
                 background: "none",
                 border: "none",
-                color: "#3aa99c",
+                color: "hsl(var(--band-primary))",
                 cursor: "pointer",
                 fontSize: 14,
                 textDecoration: "underline",

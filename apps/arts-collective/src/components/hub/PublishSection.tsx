@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CreateContentDialog } from "@/components/cms/create-content-dialog";
+import type { ComposeContext, ComposeKindId } from "@elkdonis/cms-ui/compose";
+import { ComposeLauncher } from "@/components/hub/ComposeLauncher";
 
 /**
  * What an org can make and manage from its hub.
@@ -18,7 +19,14 @@ type PublishCard = {
   icon: string;
   title: string;
   blurb: string;
-  action: "dialog-post" | "dialog-event" | "dialog-workshop-event" | "link" | "external";
+  action:
+    | "dialog-post"
+    | "dialog-event"
+    | "dialog-workshop-event"
+    | "dialog-questionnaire"
+    | "dialog-poll"
+    | "link"
+    | "external";
   href?: string;
   locked?: boolean;
 };
@@ -69,11 +77,17 @@ const PUBLISH_CARDS: PublishCard[] = [
   },
   {
     id: "questionnaire",
-    icon: "◎",
-    title: "Questionnaires",
+    icon: "▤",
+    title: "Questionnaire",
     blurb: "Ask your members something and read the results. Answers stay private to you.",
-    action: "link",
-    locked: true,
+    action: "dialog-questionnaire",
+  },
+  {
+    id: "poll",
+    icon: "▥",
+    title: "Poll",
+    blurb: "One question, a set of options, and a result bar everyone who answers can see.",
+    action: "dialog-poll",
   },
   {
     id: "drafts",
@@ -96,21 +110,46 @@ const PUBLISH_CARDS: PublishCard[] = [
 export function PublishSection({
   orgSlug,
   orgHomeUrl,
+  canManageOrg = false,
 }: {
   orgSlug: string;
   /** The org's public home — resolved server-side, since a client component
    *  can't look up its custom domain. */
   orgHomeUrl?: string;
+  /** Owner or guide. Gates the kinds that ask the org's members something. */
+  canManageOrg?: boolean;
 }) {
+  // The compose context is what makes two orgs' hubs differ. Everything a card
+  // needs to know about this org's capabilities is here rather than in the
+  // card list, so adding a capability adds an option everywhere at once.
+  const composeContext: ComposeContext = {
+    orgSlug,
+    canManageOrg,
+    // This app is the network hub: cross-posting is the point of it, and Talk
+    // rooms are already wired here (see /api/talk/join).
+    canShareToNetwork: true,
+    hasMeetings: true,
+    // The workshop wizard is a route, not a sheet body, so the catalogue lists
+    // it and the sheet links out rather than trying to host ten steps.
+    hasWorkshops: true,
+  };
+
+  const cards = PUBLISH_CARDS.filter((card) =>
+    card.action === "dialog-questionnaire" || card.action === "dialog-poll"
+      ? canManageOrg
+      : true
+  );
+
   return (
     <div className="-mx-6 overflow-x-auto px-6 pb-4">
       <div className="flex gap-4">
-        {PUBLISH_CARDS.map((card) => (
+        {cards.map((card) => (
           <PublishCard
             key={card.id}
             card={card}
             orgSlug={orgSlug}
             orgHomeUrl={orgHomeUrl}
+            composeContext={composeContext}
           />
         ))}
       </div>
@@ -122,10 +161,12 @@ function PublishCard({
   card,
   orgSlug,
   orgHomeUrl,
+  composeContext,
 }: {
   card: PublishCard;
   orgSlug: string;
   orgHomeUrl?: string;
+  composeContext: ComposeContext;
 }) {
   const base =
     "relative flex w-[220px] shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 text-left";
@@ -181,23 +222,45 @@ function PublishCard({
     );
   }
 
-  const kind =
-    card.action === "dialog-post" ? "post" :
-    card.action === "dialog-event" ? "event" :
-    "event";
+  // Everything composable now goes through the one shared sheet. The kinds
+  // differ by which field groups `buildContentFields` returns for them, not by
+  // having their own form — which is what the 696-line CreateContentDialog and
+  // its two forks in other apps were.
+  const SHEET_KIND: Partial<Record<PublishCard["action"], ComposeKindId>> = {
+    "dialog-questionnaire": "questionnaire",
+    "dialog-poll": "poll",
+    "dialog-post": "article",
+    "dialog-event": "event",
+    "dialog-workshop-event": "meeting",
+  };
 
-  return (
-    <div className={`${base} transition-colors hover:border-foreground/30 hover:bg-muted/30`}>
-      {inner}
-      <div className="mt-auto">
-        <CreateContentDialog
-          orgSlug={orgSlug}
-          triggerLabel="Open wizard →"
-          triggerVariant="ghost"
-          triggerSize="sm"
-          defaultKind={kind as "post" | "workshop" | "event"}
-        />
+  const sheetKind = SHEET_KIND[card.action];
+  if (sheetKind) {
+    const id = sheetKind;
+    return (
+      <div className={`${base} transition-colors hover:border-foreground/30 hover:bg-muted/30`}>
+        {inner}
+        <div className="mt-auto">
+          <ComposeLauncher
+            context={composeContext}
+            openWith={id}
+            trigger={(open) => (
+              <button
+                type="button"
+                onClick={open}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Open wizard →
+              </button>
+            )}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Nothing should reach here: every `dialog-*` action is mapped above and the
+  // other actions returned earlier. Rendering the card inert is better than
+  // throwing in a hub someone is trying to use.
+  return <div className={`${base} opacity-50`}>{inner}</div>;
 }

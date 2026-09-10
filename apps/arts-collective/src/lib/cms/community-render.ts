@@ -6,6 +6,9 @@ import type {
   NetworkFeedItem,
 } from "@/lib/network";
 
+/** Mount node the newsroom leaves in its right column for the arcade game. */
+export const COMMUNITY_GAME_SLOT = "community-game-slot";
+
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
 export const PORTAL_CSS = `
@@ -984,6 +987,13 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
           <li><a href="/artists">&#8594; Discover artists</a></li>
           <li><a href="/hub">&#8594; Your hub</a></li>
         </ul>
+      </div>
+    </div>
+    <div class="ep-blk">
+      <div class="ep-blk__h">&#127918; Arcade</div>
+      <div class="ep-blk__b" style="padding:0">
+        <!-- Filled by <CommunityGame/>, which portals into this node. -->
+        <div id="${COMMUNITY_GAME_SLOT}"></div>
       </div>
     </div>
   </aside>

@@ -1,0 +1,52 @@
+<!--
+  eac-br-media.html
+  ==================
+  A two-up "wireless set" panel: a video frame (speaker-grille surround)
+  beside an audio/music frame (turntable disc). Swap the iframe src for
+  YouTube/Vimeo/PeerTube, and the <audio> src for a hosted track or
+  Bandcamp/SoundCloud embed.
+-->
+<section class="eac-br-media" data-gjs-type="eac-br-media">
+  <div class="eac-br-media__head">
+    <p class="eac-br-label"
+       data-gjs-editable="true"
+       data-trait="eyebrowText">
+      See and hear
+    </p>
+    <h2 class="eac-br-media__title"
+        data-gjs-editable="true"
+        data-trait="title">
+      A recording, and a listen
+    </h2>
+  </div>
+
+  <div class="eac-br-media__row">
+    <figure class="eac-br-wireless">
+      <div class="eac-br-wireless__grille" aria-hidden="true"></div>
+      <div class="eac-br-wireless__screen">
+        <iframe src="about:blank" title="Video" frameborder="0" allowfullscreen></iframe>
+      </div>
+      <figcaption class="eac-br-wireless__caption"
+                   data-gjs-editable="true"
+                   data-trait="videoCaption">
+        Replace with a YouTube, Vimeo, or PeerTube embed URL.
+      </figcaption>
+    </figure>
+
+    <figure class="eac-br-gramophone">
+      <div class="eac-br-gramophone__disc" aria-hidden="true">
+        <span class="eac-br-gramophone__label">45</span>
+      </div>
+      <div class="eac-br-gramophone__player">
+        <audio controls preload="none">
+          <source src="" type="audio/mpeg" />
+        </audio>
+        <figcaption class="eac-br-gramophone__caption"
+                     data-gjs-editable="true"
+                     data-trait="audioCaption">
+          Replace with a hosted track, or embed Bandcamp/SoundCloud in place of the player.
+        </figcaption>
+      </div>
+    </figure>
+  </div>
+</section>

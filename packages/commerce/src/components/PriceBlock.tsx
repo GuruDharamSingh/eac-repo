@@ -53,7 +53,7 @@ export function PriceBlock({ artwork, variant, lot, size = "md", className }: Pr
     );
   }
 
-  if (variant) {
+  if (variant && variant.priceMinor > 0) {
     const editionLine =
       variant.editionNumber && variant.editionTotal
         ? `Edition ${variant.editionNumber} of ${variant.editionTotal}`

@@ -8,10 +8,10 @@
  * the guard against the manifest / HTML / data drift that used to go unnoticed.
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateBindings, formatIssues } from "../src/engine/index";
+import { validateBindings, formatIssues, extractTraitNames } from "../src/engine/index";
 import type { SectionToValidate } from "../src/engine/validate";
 import type { TemplateManifest } from "../src/manifest";
 import { toWorkshopContext } from "../src/workshop/context";
@@ -72,30 +72,56 @@ function loadSections(templateId: string): SectionToValidate[] {
   }));
 }
 
+/** Every template directory that ships a manifest. */
+function allTemplateIds(): string[] {
+  return readdirSync(TEMPLATE_ROOT, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .filter((id) => existsSync(join(TEMPLATE_ROOT, id, "manifest.json")))
+    .sort();
+}
+
 const templateIds = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ["workshop"];
+  : allTemplateIds();
 
 let errors = 0;
+const coverage: string[] = [];
+
 for (const templateId of templateIds) {
-  console.log(`\n── ${templateId} ${"─".repeat(Math.max(0, 50 - templateId.length))}`);
   const sections = loadSections(templateId);
+  const bound = sections.reduce((n, s) => n + Object.keys(s.bindings ?? {}).length, 0);
+
+  // A template with no bindings at all has not been migrated to the engine yet;
+  // reporting every one of its hooks as "unbound" is noise, not signal. Say so
+  // once and move on — the coverage summary is what tracks the backlog.
+  if (bound === 0) {
+    const hooks = sections.reduce((n, s) => n + extractTraitNames(s.html).size, 0);
+    coverage.push(
+      `  ${templateId.padEnd(20)} not migrated — ${sections.length} sections, ${hooks} hook(s) render placeholder text`
+    );
+    continue;
+  }
+
   const issues = validateBindings(sections, {
     sampleContext: CONTEXTS[templateId],
     ignoreTraits: IGNORE,
   });
-  console.log(formatIssues(issues));
-
-  const bound = sections.reduce(
-    (n, s) => n + Object.keys(s.bindings ?? {}).length,
-    0
-  );
   const errs = issues.filter((i) => i.severity === "error").length;
   errors += errs;
+
+  console.log(`\n── ${templateId} ${"─".repeat(Math.max(0, 50 - templateId.length))}`);
+  console.log(formatIssues(issues));
   console.log(
     `\n${bound} bindings across ${sections.length} sections · ` +
       `${errs} error(s), ${issues.length - errs} warning(s)`
   );
+  coverage.push(
+    `  ${templateId.padEnd(20)} ${bound} bindings · ${errs} error(s), ${issues.length - errs} warning(s)`
+  );
 }
+
+console.log("\n── coverage ───────────────────────────────────────");
+for (const line of coverage) console.log(line);
 
 if (errors > 0) process.exitCode = 1;

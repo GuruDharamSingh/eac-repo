@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
+import { validateUploadBuffer } from "@elkdonis/utils";
 import { uploadFile, getProxyFileUrl, getProfileBySlug, canEditProfile, updateProfile } from "@elkdonis/services";
 import { getAdminClient, ensurePersonMediaFolder } from "@elkdonis/nextcloud";
 import { getCurrentUser } from "@/lib/session";
@@ -57,6 +58,19 @@ export async function POST(request: NextRequest) {
     const relativePath = `EAC_Network/artdirect/Media/Images/${slug}/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // The client-supplied MIME type above is attacker-controlled, and
+    // `image/svg+xml` passes a `startsWith("image/")` check. An SVG is a
+    // script container, so verify the actual leading bytes — validateUploadBuffer
+    // classifies SVG as its own kind, never `image`.
+    const validation = validateUploadBuffer(buffer, ["image"]);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: "reason" in validation ? validation.reason : "Rejected" },
+        { status: 415 }
+      );
+    }
+
     const uploadSuccess = await uploadFile(relativePath, buffer, file.type);
     if (!uploadSuccess) {
       return NextResponse.json({ error: "Failed to upload file to Nextcloud" }, { status: 500 });

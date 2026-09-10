@@ -10,17 +10,20 @@ import {
   buildNewsroomHtml,
 } from "@/lib/cms/community-render";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
+import { CommunityGame } from "@/components/sites/CommunityGame";
+import { getArcadeArtwork } from "@/lib/arcade";
 
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
   const user = await getCurrentUser();
 
-  const [memberOrgs, events, feed, homes] = await Promise.all([
+  const [memberOrgs, events, feed, homes, artwork] = await Promise.all([
     getMemberRoster(24),
     getNetworkUpcomingEvents(20),
     getNetworkFrontFeed(20),
     orgHomeUrlMap(),
+    getArcadeArtwork(),
   ]);
 
   const html = buildNewsroomHtml({
@@ -40,6 +43,7 @@ export default async function LandingPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: PORTAL_CSS }} />
       <div dangerouslySetInnerHTML={{ __html: html }} />
+      <CommunityGame subtitle="A LITTLE ROMP" artwork={artwork} />
     </>
   );
 }

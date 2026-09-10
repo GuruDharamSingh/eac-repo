@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   // @elkdonis/studio-ui, by contrast, MUST be transpiled: its package main
   // points at raw ./src/index.ts, so there is no dist to consume.
   transpilePackages: [
+    "@elkdonis/cms-ui",
     "@elkdonis/db",
     "@elkdonis/email",
     "@elkdonis/types",

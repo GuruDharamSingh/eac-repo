@@ -144,7 +144,31 @@ export async function getOrgWorkshopForTemplate(
       SELECT
         t.id, t.slug, t.title, t.body,
         t.scheduled_at, t.duration_minutes, t.location, t.format,
-        t.attendee_limit, t.price, t.currency, t.sessions,
+        t.attendee_limit, t.price, t.currency,
+
+        -- Sessions come from workshop_sessions, which is where every author
+        -- surface writes them. This selected threads.sessions, a JSON column
+        -- that the old arts-collective save path wrote and nothing else ever
+        -- read, so the template schedule section -- which binds
+        -- workshop.sessions -- had never rendered a single session.
+        COALESCE(
+          (
+            SELECT jsonb_agg(
+                     jsonb_build_object(
+                       'id', ws.id,
+                       'title', ws.topic,
+                       'scheduled_at', ws.scheduled_at,
+                       'duration_minutes', ws.duration_minutes,
+                       'location', ws.notes ->> 'location',
+                       'meeting_url', ws.notes ->> 'videoConferenceUrl'
+                     )
+                     ORDER BY ws.session_number
+                   )
+            FROM workshop_sessions ws
+            WHERE ws.thread_id = t.id
+          ),
+          '[]'::jsonb
+        ) AS sessions,
 
         wp.subtitle, wp.description_short, wp.discipline, wp.series_label,
         wp.level, wp.language,
@@ -158,14 +182,21 @@ export async function getOrgWorkshopForTemplate(
 
         ap.display_name  AS facilitator_name,
         ap.bio           AS facilitator_bio,
-        ap.photo_url     AS facilitator_photo,
+        ap.avatar_url    AS facilitator_photo,
         ap.pronouns      AS facilitator_pronouns,
-        ap.role_title    AS facilitator_role,
+        apr.role_title   AS facilitator_role,
 
         t.org_id
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
-      LEFT JOIN artist_profiles ap ON ap.org_id = t.org_id
+      -- The facilitator is the workshop's AUTHOR, and their role title is the
+      -- one they hold IN THIS ORG. This was a join to artist_profiles on
+      -- org_id alone -- one row per person merely tagged with an org, so it
+      -- attributed the workshop to whichever member Postgres picked.
+      -- threads.author_id is NOT NULL, so this join is exact.
+      LEFT JOIN users ap ON ap.id = t.author_id
+      LEFT JOIN org_profiles apr
+        ON apr.user_id = t.author_id AND apr.org_id = t.org_id
       WHERE t.org_id   = ${orgId}
         AND t.kind      = 'workshop'
         AND t.status    = 'published'

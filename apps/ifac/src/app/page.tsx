@@ -1,6 +1,9 @@
+import { getServerSession } from "@elkdonis/auth-server";
 import { getSiteContent } from "@/lib/data";
 import { listDirectory } from "@/lib/directory";
-import { SignupForm } from "@/components/signup-form";
+import { fetchBlogPosts, formatPostDate } from "@/lib/blog-feed";
+import { socialIcon } from "@/lib/social-icons";
+import { AuthPanel } from "@/components/auth-panel";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { GalleryItem, SiteLink } from "@/lib/types";
 
@@ -13,18 +16,24 @@ export default async function HomePage() {
     listDirectory("dealer"),
   ]);
 
+  // Only to decide whether the panel offers a form or a way through to the
+  // hub — nothing on this page is gated on it.
+  const session = await getServerSession();
+
+  // Needs content.blog.href, so it cannot join the Promise.all above.
+  // Returns [] on any failure, which is what selects the iframe fallback.
+  const blogPosts = await fetchBlogPosts(content.blog.href, 6);
+
   // Special non-roster campaign tiles (e.g. "Vote For Andre") still come from
   // the editable gallery section.
   const campaignItems = content.gallery.items.filter((item) => item.id === "andre-pace-vote");
 
   return (
     <div className="site-shell">
-      <SiteHeader />
+      <SiteHeader
+        banner={{ imageUrl: content.hero.imageUrl, alt: "IFAC home page banner" }}
+      />
       <main className="ifac-directory">
-        <section className="hero image-only" aria-label="IFAC banner">
-          <img src={content.hero.imageUrl} alt="IFAC home page banner" />
-        </section>
-
         <section id="about" className="ifac-panel intro-panel">
           <h1>{content.about.kicker}</h1>
           <p>{content.about.body}</p>
@@ -34,7 +43,11 @@ export default async function HomePage() {
           <h2>{content.gallery.title}</h2>
           <div className="directory-links artist-links">
             {directoryArtists.map((artist) => (
-              <DirectoryLink key={artist.slug} link={{ label: artist.name, href: `/artists/${artist.slug}` }} />
+              <DirectoryLink
+                key={artist.slug}
+                link={{ label: artist.name, href: `/artists/${artist.slug}` }}
+                avatar={artist.portrait}
+              />
             ))}
             {campaignItems.map((item) => <ArtistLink key={item.id} item={item} />)}
           </div>
@@ -44,16 +57,57 @@ export default async function HomePage() {
           <h2>{content.dealers.title}</h2>
           <div className="directory-links">
             {directoryDealers.map((dealer) => (
-              <DirectoryLink key={dealer.slug} link={{ label: dealer.name, href: `/dealers/${dealer.slug}` }} />
+              <DirectoryLink
+                key={dealer.slug}
+                link={{ label: dealer.name, href: `/dealers/${dealer.slug}` }}
+                avatar={dealer.portrait}
+              />
             ))}
           </div>
         </section>
 
         <section id="blog" className="ifac-panel media-panel">
           <h2><a href={content.blog.href} target="_blank" rel="noreferrer">{content.blog.title}</a></h2>
-          <div className="embed-frame blog-frame">
-            <iframe src={content.blog.embedUrl} title="IFAC Blog" loading="lazy" />
-          </div>
+          {blogPosts.length > 0 ? (
+            <>
+              <ul className="blog-feed">
+                {blogPosts.map((post) => (
+                  <li key={post.id} className="blog-post">
+                    <a href={post.url} target="_blank" rel="noreferrer">
+                      {post.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="blog-post-thumb" src={post.imageUrl} alt="" loading="lazy" />
+                      ) : (
+                        <span className="blog-post-thumb blog-post-thumb--empty" aria-hidden />
+                      )}
+                      <span className="blog-post-body">
+                        <span className="blog-post-title">{post.title}</span>
+                        <span className="blog-post-meta">
+                          {formatPostDate(post.publishedAt)}
+                          {post.author ? ` · ${post.author}` : ""}
+                        </span>
+                        {post.excerpt && (
+                          <span className="blog-post-excerpt">{post.excerpt}</span>
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="blog-feed-more">
+                <a href={content.blog.href} target="_blank" rel="noreferrer">
+                  Read the full blog →
+                </a>
+              </p>
+            </>
+          ) : (
+            /* The feed is a third party. If it is unreachable or changes
+               shape, fall back to the embed rather than showing an empty
+               panel where the blog used to be. */
+            <div className="embed-frame blog-frame">
+              <iframe src={content.blog.embedUrl} title="IFAC Blog" loading="lazy" />
+            </div>
+          )}
         </section>
 
         <section id="videos" className="ifac-panel media-panel">
@@ -72,16 +126,50 @@ export default async function HomePage() {
 
         <section id="social" className="ifac-panel">
           <h2>{content.social.title}</h2>
-          <img className="social-icons-strip" src={content.social.iconUrl} alt="IFAC social media" />
-          <div className="directory-links social-links">
-            {content.social.links.map((link) => <DirectoryLink key={link.href} link={link} />)}
+          {/* The socialshort.png strip that used to sit here was a picture of
+              these same platforms; with a real icon per link it was saying the
+              same thing twice, and it was not clickable. */}
+          <div className="social-row">
+            <span className="social-row-label">Social:</span>
+            <ul className="social-row-links">
+              {content.social.links.map((link) => {
+                const icon = socialIcon(link.href);
+                return (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      target={link.href.startsWith("http") ? "_blank" : undefined}
+                      rel={link.href.startsWith("http") ? "noreferrer" : undefined}
+                      /* Icon-only, so the label has to survive as the
+                         accessible name — otherwise every one of these reads
+                         as "link" to a screen reader, and the tooltip gives
+                         sighted users the same text on hover. */
+                      aria-label={link.label}
+                      title={link.label}
+                    >
+                      {icon ? (
+                        <span
+                          className="social-icon"
+                          style={{ ["--social-icon" as string]: `url(/social/${icon}.svg)` }}
+                          aria-hidden
+                        />
+                      ) : (
+                        /* An unrecognised host has no mark to show, so fall
+                           back to the label rather than an empty hit area. */
+                        <span className="social-row-fallback">{link.label}</span>
+                      )}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </section>
 
         <section id="signup" className="ifac-panel live-panel">
           <h2>{content.signup.title}</h2>
           <p>{content.signup.body}</p>
-          <SignupForm />
+          <AuthPanel signedInEmail={session.user?.email ?? null} />
         </section>
       </main>
 
@@ -103,10 +191,49 @@ function ArtistLink({ item }: { item: GalleryItem }) {
   return <DirectoryLink link={{ label: item.title, href }} />;
 }
 
-function DirectoryLink({ link }: { link: SiteLink }) {
+
+function DirectoryLink({
+  link,
+  avatar,
+  icon,
+}: {
+  link: SiteLink;
+  /** Portrait for a person. Omitted by the social and campaign links, which
+   *  are not people — they keep rendering as a plain label. */
+  avatar?: string | null;
+  /** Name of a mark in /public/social. Drawn as a CSS mask rather than an
+   *  <img> so it takes the link's own colour — Simple Icons bakes in brand
+   *  colours, and X's is pure black, which is invisible on this panel. */
+  icon?: string | null;
+}) {
+  const external = link.href.startsWith("http");
   return (
-    <a href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel={link.href.startsWith("http") ? "noreferrer" : undefined}>
-      {link.label}
+    <a
+      href={link.href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+    >
+      {icon && (
+        <span
+          className="social-icon"
+          style={{ ["--social-icon" as string]: `url(/social/${icon}.svg)` }}
+          aria-hidden
+        />
+      )}
+      {avatar !== undefined && (
+        avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="directory-avatar" src={avatar} alt="" loading="lazy" />
+        ) : (
+          // Every current IFAC profile has a portrait, but a new one may not,
+          // and a missing image would collapse the row and misalign the name
+          // against its neighbours. The initial keeps the grid regular.
+          <span className="directory-avatar directory-avatar--empty" aria-hidden>
+            {link.label.trim().charAt(0).toUpperCase()}
+          </span>
+        )
+      )}
+      <span className="directory-name">{link.label}</span>
     </a>
   );
 }

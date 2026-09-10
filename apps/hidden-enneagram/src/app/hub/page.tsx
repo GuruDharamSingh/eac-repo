@@ -5,10 +5,12 @@ import { Lock } from "lucide-react";
 import { canViewFeed, listOrgFeeds } from "@elkdonis/services";
 import { listOrdersForCustomer } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
+import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
 import { Badge } from "@/components/ui/badge";
 import { SiteNav } from "@/components/site-nav";
 import { getThreadsForFeed } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
+import { getForumSnapshot } from "@/lib/forum";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -38,7 +40,7 @@ export default async function HubPage() {
     (feed) => feed.minRole && canViewFeed(feed, viewer.role)
   );
 
-  const [feedContents, orders] = await Promise.all([
+  const [feedContents, orders, forum] = await Promise.all([
     Promise.all(
       memberFeeds.map(async (feed) => ({
         feed,
@@ -46,6 +48,9 @@ export default async function HubPage() {
       }))
     ),
     listOrdersForCustomer(viewer.userId, { limit: 20 }).catch(() => []),
+    // The same snapshot /api/hub/forum returns, so the tile and the popup it
+    // opens agree. A forum outage costs the tile, not the page.
+    getForumSnapshot().catch(() => null),
   ]);
 
   const myOrders = orders.filter((o) => o.metadata?.orgId === siteConfig.orgId);
@@ -61,6 +66,23 @@ export default async function HubPage() {
         <p className="mt-4 max-w-[560px] text-lg text-muted-foreground">
           Working material, and the sessions you&rsquo;ve booked.
         </p>
+
+        {/* Editors compose from here rather than going to /manage: the same
+            surface a card opens, in compose mode. Omitted entirely for
+            members — a door onto a form they cannot submit is worse than no
+            door, which is the "Soon" card pattern the catalogue replaced. */}
+        <SurfaceCardGrid className="mt-10">
+          {viewer.canEdit && (
+            <SurfaceCard
+              title="Write something"
+              blurb="A piece of writing, or an offering people can book."
+              glyph="✎"
+              kicker="Compose"
+              surface={{ type: "compose" }}
+            />
+          )}
+          <ForumFace forum={forum} />
+        </SurfaceCardGrid>
 
         {memberFeeds.length === 0 ? (
           <p className="mt-14 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
@@ -88,31 +110,31 @@ export default async function HubPage() {
               {threads.length === 0 ? (
                 <p className="mt-6 text-sm text-muted-foreground">Nothing here yet.</p>
               ) : (
-                <ul className="mt-6 grid gap-3">
+                <SurfaceCardGrid className="mt-6">
                   {threads.map((thread) => (
-                    <li key={thread.id}>
-                      <Link
-                        href={`/${feed.slug}/${thread.slug}`}
-                        className="flex items-baseline justify-between gap-4 rounded-lg border border-border bg-card px-5 py-4 no-underline transition-colors hover:border-primary/60"
-                      >
-                        <span>
-                          <span className="font-medium">{thread.title}</span>
-                          {thread.excerpt && (
-                            <span className="mt-1 block text-sm text-muted-foreground">
-                              {thread.excerpt}
-                            </span>
-                          )}
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {new Date(thread.publishedAt ?? thread.createdAt).toLocaleDateString(
-                            "en-CA",
-                            { month: "short", day: "numeric" }
-                          )}
-                        </span>
-                      </Link>
-                    </li>
+                    <SurfaceCard
+                      key={thread.id}
+                      title={thread.title}
+                      blurb={thread.excerpt ?? undefined}
+                      kind={thread.kind}
+                      kicker={new Date(
+                        thread.publishedAt ?? thread.createdAt
+                      ).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
+                      // The card carries what it already knows, so the surface
+                      // paints before its fetch returns.
+                      surface={{
+                        type: "thread",
+                        id: thread.id,
+                        preview: {
+                          title: thread.title,
+                          kind: thread.kind,
+                          coverImageUrl: thread.coverImageUrl,
+                          feedName: feed.name,
+                        },
+                      }}
+                    />
                   ))}
-                </ul>
+                </SurfaceCardGrid>
               )}
             </section>
           ))

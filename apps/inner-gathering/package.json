@@ -7,6 +7,8 @@
     "docker:dev": "next dev -H 0.0.0.0 -p 3004",
     "docker:start": "next start -H 0.0.0.0 -p 3004",
     "build": "next build",
+    "_check-types-disabled": "KNOWN TYPE DEBT: 17 errors — documented in next.config.ts (typescript.ignoreBuildErrors). Rename to check-types to re-enable the gate.",
+    "check-types:strict": "tsc --noEmit --incremental false",
     "lint": "eslint"
   },
   "dependencies": {

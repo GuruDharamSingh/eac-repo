@@ -863,3 +863,179 @@ org and every purchasable kind, not just the marketplace.
 * art-auction still has no UI for managing an org-owned store.
 * Pre-097 `workshop_join_requests` rows have no `order_id` and can only be
   resolved by hand.
+
+---
+
+## 12. Marketplace operations pass — art-auction as the store reference (2026-09-08)
+
+Roadmap steps 8 (Stripe) and 9 (the central commerce surface), plus the
+dangling scaffolds the review turned up. Everything below was verified through
+`packages/commerce/scripts/e2e-marketplace.ts` (73 checks against the live
+database through the real server functions, fixtures removed afterwards) and an
+HTTP smoke test of the running app. Tables are back at their baseline counts.
+
+### What the review found dangling
+
+| scaffold | state before | now |
+|---|---|---|
+| Stripe | 33-line stub; checkout showed a disabled "coming soon" radio | real provider, hosted Checkout, Express onboarding, webhook |
+| auctions | bidding worked; **nothing could create a lot and nothing ever closed one** | studio creates lots; ended lots settle into a winner's order |
+| seller confirming an eTransfer | comment said "artist clicks I received it" — no such button anywhere in art-auction | Sales section in the studio, plus admin |
+| unpaid orders | reservation rows expired but the artwork stayed `reserved` forever | `releaseExpiredOrders`, run lazily from studio/admin/lots |
+| org stores | full service layer, zero UI | store switcher, open-a-store for owned orgs, team roll |
+| "Connect & curate" | "coming soon" placeholder | replaced by real links to ArtDirect / the hub / agreements |
+| profile edits | wrote to deprecated `store.display_name` etc., so the store's name drifted from the person's | `updateStore` writes identity to `users` |
+| `auction_lot.artwork_variant_id` | plain UNIQUE — a passed/withdrawn piece could never be auctioned again | migration 111: partial unique on open lots only |
+| jsonb params | `${JSON.stringify(x)}::jsonb` double-encodes (driver JSON-encodes the string again) — `order.metadata` came back as text | `jsonb()` helper in `server/map-order.ts`; all commerce writes use it |
+
+### Stripe (`@elkdonis/payments` → `@elkdonis/checkout/stripe`)
+
+* `packages/payments/src/providers/stripe.ts` — real SDK (`stripe@22`). Hosted
+  Checkout sessions (card data never touches an app), Express account creation
+  + onboarding links, account status, signature-verified webhook parsing,
+  refunds. Configured from `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` /
+  `STRIPE_WEBHOOK_SECRET`; `isStripeConfigured()` false → the card option is
+  simply not offered and everything runs eTransfer-only.
+* `packages/checkout/src/server/stripe.ts` (subpath `@elkdonis/checkout/stripe`)
+  is the glue any app uses: `startStripeCheckout({orderId, successUrl,
+  cancelUrl})`, `handleStripeWebhook(request)`, `syncStripeOrder(orderId)`
+  (reconciles on the return visit so the buyer sees "paid" before the webhook
+  lands), `startStripeOnboarding`, `refreshStripeAccountStatus`.
+* **Routing per payee, as decided:** destination charge to the maker's
+  connected account with the org's agreed cut as `application_fee_amount`
+  only when every line has the same maker and that maker has finished KYC;
+  otherwise a platform charge, and the ledger records what is owed. Orgs never
+  hold accounts. Processing fees on a destination charge come out of the
+  platform side — a bookkeeping fact for whoever does the NFP's accounts.
+* `confirmOrderPaid` now records *where the money went* per rail: eTransfer →
+  accrual + payout netting to zero; Stripe destination → accrual + payout with
+  the transfer as the payout record; Stripe platform charge → accrual payable
+  (the NFP settles by hand), or held `no_payout_account` if the maker is mid-
+  onboarding — that hold releases itself when KYC lands.
+* A maker is sellable with **either** an eTransfer address **or** a Stripe
+  account — even one still mid-onboarding: the card charge lands on the
+  platform and their share is held `no_payout_account` until KYC lands, when
+  the `account.updated` webhook releases it. `resolveSettlement` throws only
+  with neither. An eTransfer order for a card-only maker is refused rather
+  than inventing an address.
+* Refunds: `refundOrder` (ledger reversal per share, piece back on sale) and
+  `refundStripeOrder` (Stripe refund with transfer reversal, then the same).
+  Admin refunds either rail; a seller may record an eTransfer refund only.
+  Money actions on an order need `manager` or above on the store roll
+  (`canActForOrder(..., { minRole })`); staff list and edit work only.
+* **Still blocked on real keys.** Everything is type-checked and the order/
+  ledger side is e2e-verified with a simulated confirmation; the Stripe API
+  calls themselves have not been exercised. First thing with test keys:
+  `stripe listen --forward-to localhost:3009/api/stripe/webhook`, buy a piece,
+  onboard a seller.
+
+### Orders (`packages/commerce/src/server/orders.ts`)
+
+One module for the lifecycle: `createOrder` / `createOrderFromCart`
+(either rail), `switchOrderToEtransfer`, `recordStripeCheckout`,
+`confirmOrderPaid` (`confirmEtransferReceived` is now a wrapper),
+`cancelOrder`, `releaseExpiredOrders`, `markOrderFulfilled`. The order page
+(`/orders/[id]`) is the single "pay for this" surface — a cart order, an
+auction win, and a buyer who backed out of Stripe all land there and can
+switch rails. `Order.storeId` is now mapped.
+
+### Auctions (`packages/commerce/src/server/auctions.ts`)
+
+`createLot` (listed piece only, one open lot per variant, 1h–60d), `cancelLot`
+(no bids), `settleExpiredLots` — runs lazily from `/lots`, `/lots/[id]`, the
+studio and admin; a winning bid at/above reserve becomes an ordinary order for
+the winner (eTransfer first, card if the maker is card-only, 72h), the lot is
+`sold`; cancelling that order marks the lot `passed` and frees the piece.
+While a lot is open the piece is not buy-now purchasable (`addToCart` refuses).
+
+### The studio is now the store surface other sites copy
+
+`/studio?store=<id>` with a remembered choice (`ea_studio_store` cookie):
+`listStoresForUser` = own store + org stores on the member roll;
+`listOrgsUserCanOpenStoreFor` = owned orgs → "Open a store for X" (lands active,
+no review, actor becomes store owner). Sections: Store · Sales (confirm / cancel
+/ ship) · Auctions · Payouts (person: eTransfer address + Stripe Express;
+org: earmarked balance + links to hub agreements/ledger) · Team (org stores;
+NOT the org's membership) · Messages · Network (ArtDirect profile, hub,
+agreements). Org-store artwork has a "credit me as the maker" choice; unticked
+= org-owned, all proceeds earmarked to the org.
+
+Cross-links: `/artists/[handle]` links to the ArtDirect profile; ArtDirect's
+standard profile shows "Shop their work on the marketplace →" when the person
+has an active store (`NEXT_PUBLIC_ART_AUCTION_URL`). art-auction gained Google
+sign-in (same PKCE flow + `/api/auth/callback` as ArtDirect/IFAC).
+
+### Still open
+
+* Stripe against real keys (above). The webhook path is exercised in the e2e
+  with locally signed events; session creation, onboarding links and refunds
+  are not.
+* Collections / curator attribution (step 7) — unchanged.
+* `product` threads — unchanged; artwork is the marketplace's product.
+* `splitCommission` output names — unchanged.
+* Held-fund releases stay on the arts-collective hub ledger; art-auction's admin
+  only lists them.
+
+### Addendum 2026-09-08 — a store as a profile section on an org site
+
+The pattern for "show my store on my page on site X", built first on
+amrit-canada and meant to be copied:
+
+* **The flag is the person's:** `users.profile_sections.store` (migration 105
+  already reserved the key). Set from that site's `/account` via a self-only
+  server action (`setOwnProfileSectionAction`), never by the org.
+* **The read is shared:** `getStoreShowcaseForUser(userId)` in
+  `@elkdonis/commerce/queries` returns the active store plus its listed work,
+  or null. `hasProfileSection(userId, key)` is next to it.
+* **The render is shared:** `StoreShowcase` in `@elkdonis/commerce/components`
+  — a window, not a checkout. Every card links to the marketplace
+  (`NEXT_PUBLIC_ART_AUCTION_URL`), so an org site never carries cart or
+  payment code. amrit-canada's `/about/[slug]` renders it between the bio and
+  "With <name>".
+* **Seeding:** `packages/commerce/scripts/seed-listing.ts` walks the real path
+  (apply → approve → create → publish → switch the section on), so it doubles
+  as a check that a fresh person can actually sell. Guru Dharam Singh's store
+  and one open-edition listing were seeded with it on 2026-09-08.
+* **ArtDirect too** (same day): the standard profile (`StandardProfile`, used
+  when no Silex template is chosen) renders the same `StoreShowcase` under
+  the same flag, and the owner's editor panel carries the toggle
+  (`setProfileSectionAction`). One flag, three surfaces: the person's own
+  ArtDirect page, any org site's member page, and the marketplace store
+  itself. The dossier template does not render it yet.
+* `StoreShowcase` is styled with inline layout + `eac-store-*` hooks, not
+  Tailwind, so it renders the same in a shadcn app and a plain-CSS one.
+* Vocabulary is in `MARKETPLACE_NAMING.md` at the repo root.
+
+### Addendum 2026-09-08 (later) — fronts that present, price on request, Tailwind on ArtDirect
+
+* **Migration 112 `store_presentation` + `cart_line.via_store_id`.** A store
+  may present another store's listed piece. Seller and payee do not change;
+  `?via=<storeId>` on the piece → `cart_line.via_store_id` →
+  `commerce_order_line.presented_store_id`, and the presenting front's owning
+  org becomes the split counterparty — so an org's accepted agreement with a
+  maker applies to exactly the sales its front produced. Managers/owners of a
+  front get "Show in <front>" on any piece; the studio lists presented pieces.
+  Verified in the e2e (83 checks): staff cannot present, a via that no longer
+  presents is dropped, the order line logs the window, the maker is still paid.
+* **Price on request.** A variant priced 0 publishes, shows "Price on
+  request", cannot be added to a cart; the buyer is pointed at messaging the
+  artist. The artwork form's price is optional.
+* **Seeded:** Eric Brummel (6 pieces) and Dana McCool (8 pieces) from their
+  network portfolios, all price-on-request, no payout identity set (nothing is
+  buyable until they price and set payouts). The **IFAC front** (org store in
+  `market`, Eric Brummel owner on the roll — he holds `owner` in `ifac`)
+  presents all 14. Scripts: `seed-listing.ts` (`SEED_FROM_PORTFOLIO=1`,
+  `SEED_EMAIL=name:<Display Name>` for people without an email) and
+  `seed-org-front.ts`.
+* **Tailwind v4 on ArtDirect**, theme + utilities without preflight (its look
+  is hand-written CSS). `@theme` maps `--paper/--ink/--ink-soft/--line/--gold`
+  to `bg-paper text-ink … text-gold`; `@source` covers commerce, cms-ui,
+  live-editor, checkout. First compile needed `.next` cleared — Turbopack had
+  cached the failed resolve from before the package was linked.
+
+* **IFAC renders it too** (later the same day): `/artists/[slug]` and
+  `/dealers/[slug]` show `StoreShowcase` under the same `profile_sections.store`
+  flag; the hub's profile card gained the "My store" toggle (its
+  `/api/hub/profile-sections` route now accepts `store`), replacing the
+  "storefront is being built" placeholder. Four surfaces read one flag:
+  ArtDirect, amrit-canada, IFAC, and the marketplace itself.

@@ -1,0 +1,251 @@
+/* ==========================================================================
+   BaroqueSignup — bright occult baroque.
+
+   Self-contained: an app importing this needs nothing else, no eac-theme.css
+   and no bundled display font. Plain CSS rather than Tailwind utilities so it
+   renders identically in ifac and artdirect, which are not Tailwind apps.
+
+   The look is gilt-on-parchment rather than gilt-on-black: bright ground,
+   aubergine ink, gold leaf drawn with gradients, and geometry (the sigil,
+   the lozenge corners) carrying the occult note instead of darkness.
+
+   Import once per app:  @import "@elkdonis/cms-ui/baroque-signup.css";
+   Point --eac-bq-display at a display face if the app ships one.
+   ========================================================================== */
+
+.eac-bq {
+  --eac-bq-parchment: #fbf7ef;
+  --eac-bq-parchment-deep: #f2eade;
+  --eac-bq-ink: #241b2f;
+  --eac-bq-ink-soft: #6a5f77;
+  --eac-bq-gilt: #b08432;
+  --eac-bq-gilt-bright: #e9cd86;
+  --eac-bq-violet: #5b3e7a;
+  --eac-bq-vermilion: #a8322b;
+  --eac-bq-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+
+  color: var(--eac-bq-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  max-width: 27rem;
+  margin: 0 auto;
+}
+
+/* Double frame: an outer gilt hairline, an inner rule inset from it — the
+   cheapest honest way to read as "baroque" without imagery. */
+.eac-bq-frame {
+  position: relative;
+  padding: 42px 34px 34px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #fffdf8 0%, var(--eac-bq-parchment) 55%, var(--eac-bq-parchment-deep) 100%);
+  border: 1px solid var(--eac-bq-gilt);
+  box-shadow:
+    0 0 0 1px rgba(176, 132, 50, 0.28) inset,
+    0 0 0 7px var(--eac-bq-parchment) inset,
+    0 0 0 8px rgba(176, 132, 50, 0.45) inset,
+    0 18px 44px -22px rgba(36, 27, 47, 0.45);
+}
+
+/* Corner lozenges. Two pseudo-elements, mirrored, give all four corners. */
+.eac-bq-frame::before,
+.eac-bq-frame::after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  background: linear-gradient(135deg, var(--eac-bq-gilt-bright), var(--eac-bq-gilt));
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 1px var(--eac-bq-parchment);
+}
+.eac-bq-frame::before { top: -7px; left: -7px; }
+.eac-bq-frame::after { bottom: -7px; right: -7px; }
+
+.eac-bq-sigil {
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 14px;
+  fill: none;
+  stroke: var(--eac-bq-gilt);
+  stroke-width: 1;
+  opacity: 0.85;
+}
+.eac-bq-sigil .eac-bq-sigil-core {
+  fill: var(--eac-bq-violet);
+  stroke: none;
+  opacity: 0.85;
+}
+
+.eac-bq-eyebrow {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--eac-bq-gilt);
+}
+
+.eac-bq-title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--eac-bq-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 4vw, 1.95rem);
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+
+/* Engraved rule: gilt at the centre, fading to nothing at both ends. */
+.eac-bq-rule {
+  border: 0;
+  height: 1px;
+  margin: 16px auto 18px;
+  width: 72%;
+  background: linear-gradient(90deg, transparent, var(--eac-bq-gilt), transparent);
+}
+
+.eac-bq-subtitle {
+  margin: -6px 0 18px;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--eac-bq-ink-soft);
+}
+
+.eac-bq-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.eac-bq-toggle-btn {
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--eac-bq-ink-soft);
+  background: transparent;
+  border: 1px solid rgba(176, 132, 50, 0.4);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.eac-bq-toggle-btn:hover { color: var(--eac-bq-ink); }
+.eac-bq-toggle-btn.is-active {
+  color: var(--eac-bq-ink);
+  border-color: var(--eac-bq-gilt);
+  background: linear-gradient(180deg, rgba(233, 205, 134, 0.35), rgba(233, 205, 134, 0.12));
+}
+.eac-bq-toggle-btn:focus-visible {
+  outline: 2px solid var(--eac-bq-violet);
+  outline-offset: 2px;
+}
+
+.eac-bq-row { margin-bottom: 14px; }
+
+.eac-bq-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--eac-bq-ink-soft);
+}
+
+.eac-bq-input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--eac-bq-ink);
+  background: #fffdf9;
+  border: 1px solid rgba(176, 132, 50, 0.45);
+  border-radius: 2px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.eac-bq-input:focus {
+  outline: none;
+  border-color: var(--eac-bq-violet);
+  box-shadow: 0 0 0 3px rgba(91, 62, 122, 0.16);
+}
+
+.eac-bq-turnstile { margin: 14px 0; }
+
+.eac-bq-error {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  font-size: 0.85rem;
+  color: var(--eac-bq-vermilion);
+  background: rgba(168, 50, 43, 0.07);
+  border-left: 2px solid var(--eac-bq-vermilion);
+}
+
+.eac-bq-cta {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 18px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2a2010;
+  background: linear-gradient(180deg, var(--eac-bq-gilt-bright), var(--eac-bq-gilt));
+  border: 1px solid var(--eac-bq-gilt);
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: filter 0.15s;
+}
+.eac-bq-cta:hover:not(:disabled) { filter: brightness(1.06); }
+.eac-bq-cta:disabled { opacity: 0.55; cursor: not-allowed; }
+.eac-bq-cta:focus-visible {
+  outline: 2px solid var(--eac-bq-violet);
+  outline-offset: 2px;
+}
+
+.eac-bq-cta--google {
+  margin-top: 0;
+  color: #3c4043;
+  background: #fff;
+  border-color: rgba(36, 27, 47, 0.18);
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: 0.9rem;
+}
+
+.eac-bq-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--eac-bq-ink-soft);
+}
+.eac-bq-or::before,
+.eac-bq-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(176, 132, 50, 0.4);
+}
+
+.eac-bq-success {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--eac-bq-ink-soft);
+  background: rgba(233, 205, 134, 0.16);
+  border: 1px solid rgba(176, 132, 50, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-bq * { transition: none !important; }
+}

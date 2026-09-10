@@ -191,6 +191,63 @@ export async function listArtworks(
   return rows.map(mapArtwork);
 }
 
+/**
+ * What a store's FRONT shows: the pieces it sells, plus the pieces it presents
+ * for other stores (migration 112), newest first. Presented pieces carry
+ * `presentedByStoreId` so a page can build `?via=` links, and are credited to
+ * their own maker/store as anywhere else.
+ */
+export async function listStoreFrontArtworks(
+  storeId: string,
+  opts: { limit?: number; status?: Artwork["status"][] } = {}
+): Promise<Artwork[]> {
+  const limit = Math.min(opts.limit ?? 60, 200);
+  const statusList = opts.status ?? ["available", "reserved", "sold"];
+  const rows = (await db`
+    SELECT
+      a.*,
+      COALESCE(u.display_name, u.email, o.name) AS artist_name,
+      COALESCE(u.slug, u.id::text, o.slug, s.id::text) AS artist_slug,
+      pm.url AS primary_image_url,
+      pm.alt AS primary_image_alt,
+      sp.store_id AS presented_by_store_id,
+      COALESCE(sp.added_at, a.created_at) AS shown_at
+    FROM artwork a
+    JOIN store s ON s.id = a.store_id AND s.status = 'active'
+    LEFT JOIN store_presentation sp ON sp.artwork_id = a.id AND sp.store_id = ${storeId}
+    LEFT JOIN organizations o ON o.id = s.owner_org_id
+    LEFT JOIN users u ON u.id = a.artist_user_id
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE a.status = ANY(${statusList})
+      AND (a.store_id = ${storeId} OR sp.store_id IS NOT NULL)
+    ORDER BY shown_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+  return rows.map((r) => ({
+    ...mapArtwork(r),
+    presentedByStoreId: opt<string>(r.presented_by_store_id),
+  }));
+}
+
+/** Only the pieces a store presents for others — the studio's list. */
+export async function listPresentedArtworks(storeId: string): Promise<Artwork[]> {
+  const rows = (await db`
+    SELECT a.*, pm.url AS primary_image_url, pm.alt AS primary_image_alt,
+      COALESCE(u.display_name, u.email, o.name) AS artist_name,
+      COALESCE(u.slug, u.id::text, o.slug, s.id::text) AS artist_slug,
+      sp.store_id AS presented_by_store_id
+    FROM store_presentation sp
+    JOIN artwork a ON a.id = sp.artwork_id
+    JOIN store s ON s.id = a.store_id
+    LEFT JOIN organizations o ON o.id = s.owner_org_id
+    LEFT JOIN users u ON u.id = a.artist_user_id
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE sp.store_id = ${storeId}
+    ORDER BY sp.added_at DESC
+  `) as unknown as Row[];
+  return rows.map((r) => ({ ...mapArtwork(r), presentedByStoreId: opt<string>(r.presented_by_store_id) }));
+}
+
 export async function listFeaturedArtworks(opts: { limit?: number } = {}): Promise<Artwork[]> {
   return listArtworks({ limit: opts.limit ?? 8, status: ["available"] });
 }
@@ -333,14 +390,16 @@ function mapStore(r: Row): Store {
     updatedAt: r.updated_at as string,
 
 
+    // Identity is the owner's (users / organizations). The store's own copies
+    // are deprecated (092) and no longer written; they only fill a gap.
     displayName:
-      (opt<string>(r.display_name) ??
-        opt<string>(r.fallback_display_name) ??
-        opt<string>(r.fallback_owner_name)) ||
+      (opt<string>(r.fallback_display_name) ??
+        opt<string>(r.fallback_owner_name) ??
+        opt<string>(r.display_name)) ||
       null,
-    headline: opt(r.headline),
-    city: opt<string>(r.city) ?? opt<string>(r.fallback_city) ?? null,
-    photoUrl: opt<string>(r.photo_url) ?? opt<string>(r.fallback_photo_url) ?? null,
+    headline: opt<string>(r.fallback_headline) ?? opt<string>(r.headline) ?? null,
+    city: opt<string>(r.fallback_city) ?? opt<string>(r.city) ?? null,
+    photoUrl: opt<string>(r.fallback_photo_url) ?? opt<string>(r.photo_url) ?? null,
     links: parseArtistLinks(r.links),
     appliedAt: opt(r.applied_at),
     reviewedAt: opt(r.reviewed_at),
@@ -378,6 +437,7 @@ const STORE_OWNER_SELECT = db`
   u.stripe_onboarded_at AS owner_stripe_onboarded_at,
   COALESCE(u.display_name, o.name) AS fallback_display_name,
   COALESCE(u.display_name, o.name, u.email) AS fallback_owner_name,
+  u.headline AS fallback_headline,
   u.city AS fallback_city,
   u.avatar_url AS fallback_photo_url,
   -- Falls back to something the *owner's* own route can still resolve: the
@@ -388,14 +448,15 @@ const STORE_OWNER_SELECT = db`
 `;
 
 export async function listStores(
-  opts: { limit?: number; orgId?: string } = {}
+  opts: { limit?: number; orgId?: string; status?: Store["status"][] } = {}
 ): Promise<Store[]> {
   const limit = Math.min(opts.limit ?? 50, 200);
+  const status = opts.status ?? ["active"];
   const rows = (await db`
     SELECT s.*, ${STORE_OWNER_SELECT}
     FROM store s
     ${STORE_OWNER_JOIN}
-    WHERE s.status = 'active'
+    WHERE s.status = ANY(${status})
       ${opts.orgId ? db`AND s.org_id = ${opts.orgId}` : db``}
     ORDER BY s.joined_at DESC
     LIMIT ${limit}
@@ -554,6 +615,106 @@ export async function listStoreMembers(storeId: string): Promise<StoreMember[]> 
   }));
 }
 
+export interface StoreShowcase {
+  store: Store;
+  /** Listed pieces, newest first. */
+  artworks: Artwork[];
+}
+
+/**
+ * What another site shows about a person's store: the active store plus its
+ * listed work. This is the read an org site (amrit-canada, IFAC, an artist
+ * subdomain) makes when the person has switched the "store" section on for
+ * their profile there — `users.profile_sections.store` (migration 105). Null
+ * when they have no active store, so the section simply does not render.
+ */
+export async function getStoreShowcaseForUser(
+  userId: string,
+  opts: { limit?: number; orgId?: string } = {}
+): Promise<StoreShowcase | null> {
+  const store = await getStoreForUser(userId, opts.orgId);
+  if (!store || store.status !== "active") return null;
+  const artworks = await listArtworks({
+    storeId: store.id,
+    status: ["available", "reserved"],
+    limit: opts.limit ?? 8,
+  });
+  return { store, artworks };
+}
+
+/** Whether a person has switched a profile section on (users.profile_sections). */
+export async function hasProfileSection(userId: string, key: string): Promise<boolean> {
+  try {
+    const [row] = (await db`
+      SELECT COALESCE((profile_sections->>${key})::boolean, false) AS on
+      FROM users WHERE id = ${userId}
+    `) as unknown as Row[];
+    return Boolean(row?.on);
+  } catch (err) {
+    console.error(`[commerce] hasProfileSection(${userId}, ${key}):`, err);
+    return false;
+  }
+}
+
+/** A store together with the role the asking person holds in it. */
+export type ActableStore = Store & { myRole: StoreMember["role"] };
+
+/**
+ * Every store a person may act for: their own, plus any org store they are
+ * on the member roll of. Own store first, then by age. This is what a studio
+ * lists in its store switcher.
+ */
+export async function listStoresForUser(userId: string): Promise<ActableStore[]> {
+  const rows = (await db`
+    SELECT s.*, ${STORE_OWNER_SELECT},
+      CASE WHEN s.owner_user_id = ${userId} THEN 'owner' ELSE sm.role END AS my_role
+    FROM store s
+    ${STORE_OWNER_JOIN}
+    LEFT JOIN store_member sm ON sm.store_id = s.id AND sm.user_id = ${userId}
+    WHERE s.owner_user_id = ${userId} OR sm.user_id IS NOT NULL
+    ORDER BY (s.owner_user_id = ${userId}) DESC, s.joined_at ASC
+  `) as unknown as Row[];
+  return rows.map((r) => ({ ...mapStore(r), myRole: r.my_role as StoreMember["role"] }));
+}
+
+export interface OpenableOrg {
+  orgId: string;
+  name: string;
+  slug: string;
+  /** Whether a store already exists for this org in the given marketplace. */
+  storeId: string | null;
+}
+
+/**
+ * Organisations this person OWNS (the role that may open an org store),
+ * with whether each already has a store in the marketplace. Excludes the
+ * marketplace org itself and any org whose own `users` row is the only
+ * "owner" — a listing cannot vouch for itself.
+ */
+export async function listOrgsUserCanOpenStoreFor(
+  userId: string,
+  marketplaceOrgId: string
+): Promise<OpenableOrg[]> {
+  const rows = (await db`
+    SELECT o.id, o.name, o.slug, s.id AS store_id
+    FROM user_organizations uo
+    JOIN organizations o ON o.id = uo.org_id
+    JOIN users u ON u.id = uo.user_id
+    LEFT JOIN store s ON s.owner_org_id = o.id AND s.org_id = ${marketplaceOrgId}
+    WHERE uo.user_id = ${userId}
+      AND uo.role = 'owner'
+      AND COALESCE(u.entity_type, 'person') = 'person'
+      AND o.id <> ${marketplaceOrgId}
+    ORDER BY o.name ASC
+  `) as unknown as Row[];
+  return rows.map((r) => ({
+    orgId: r.id as string,
+    name: r.name as string,
+    slug: r.slug as string,
+    storeId: opt(r.store_id),
+  }));
+}
+
 /** @deprecated Use {@link listStores}. */
 export const listMarketplaceArtists = listStores;
 /** @deprecated Use {@link getStoreForUser}. */
@@ -594,11 +755,16 @@ export async function listMyArtworks(
  */
 export async function getArtworkForEdit(
   artworkId: string,
-  artistUserId: string
+  actorUserId: string
 ): Promise<Artwork | null> {
+  // Access is through the store that sells it — its owner or its member roll
+  // — not through `artist_user_id`, which an org store's work may not have.
   const rows = (await db`
     SELECT a.* FROM artwork a
-    WHERE a.id = ${artworkId} AND a.artist_user_id = ${artistUserId}
+    JOIN store s ON s.id = a.store_id
+    LEFT JOIN store_member sm ON sm.store_id = s.id AND sm.user_id = ${actorUserId}
+    WHERE a.id = ${artworkId}
+      AND (s.owner_user_id = ${actorUserId} OR sm.user_id IS NOT NULL)
     LIMIT 1
   `) as unknown as Row[];
   if (!rows[0]) return null;
@@ -719,6 +885,70 @@ export async function listLotsForArtist(
 }
 
 /**
+ * Every lot on a store's work (any status), newest-ending first. The studio
+ * form — a store may sell work by several makers, or by none, so this is
+ * keyed on the store rather than on `artist_user_id`.
+ */
+export async function listLotsForStore(
+  storeId: string,
+  opts: { limit?: number } = {}
+): Promise<AuctionLot[]> {
+  const limit = Math.min(opts.limit ?? 25, 100);
+  const rows = (await db`
+    SELECT
+      al.*,
+      a.id AS art_id, a.title AS art_title, a.slug AS art_slug,
+      a.org_id AS art_org_id, a.artist_user_id AS art_artist_user_id, a.store_id AS art_store_id,
+      a.kind AS art_kind, a.status AS art_status,
+      pm.url AS primary_image_url, pm.alt AS primary_image_alt
+    FROM auction_lot al
+    JOIN artwork_variant av ON av.id = al.artwork_variant_id
+    JOIN artwork a ON a.id = av.artwork_id
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE a.store_id = ${storeId}
+    ORDER BY al.end_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+
+  return rows.map((r) => {
+    const lot = mapLot(r);
+    lot.artwork = {
+      id: r.art_id as string,
+      orgId: r.art_org_id as string,
+      storeId: r.art_store_id as string,
+      artistUserId: opt(r.art_artist_user_id),
+      slug: r.art_slug as string,
+      title: r.art_title as string,
+      kind: r.art_kind as Artwork["kind"],
+      status: r.art_status as Artwork["status"],
+      certificateOfAuthenticity: true,
+      metadata: {},
+      viewCount: 0,
+      createdAt: lot.createdAt,
+      updatedAt: lot.updatedAt,
+      primaryImageUrl: opt(r.primary_image_url),
+      primaryImageAlt: opt(r.primary_image_alt),
+    };
+    return lot;
+  });
+}
+
+/** The open (scheduled or live) lot on an artwork, if any. */
+export async function getOpenLotForArtwork(artworkId: string): Promise<AuctionLot | null> {
+  const rows = (await db`
+    SELECT al.*
+    FROM auction_lot al
+    JOIN artwork_variant av ON av.id = al.artwork_variant_id
+    WHERE av.artwork_id = ${artworkId}
+      AND al.status IN ('scheduled', 'live')
+    ORDER BY al.end_at ASC
+    LIMIT 1
+  `) as unknown as Row[];
+  if (!rows[0]) return null;
+  return mapLot(rows[0]);
+}
+
+/**
  * Live/scheduled auctions returned as Artwork[] with `.lot` attached.
  * Convenient for grids (home page, /lots index) that render ArtworkCard.
  */
@@ -811,6 +1041,7 @@ export async function getCartByToken(token: string): Promise<Cart | null> {
     unitPriceMinor: num(lr.unit_price_minor),
     currency: lr.currency as Cart["currency"],
     notes: opt(lr.notes),
+    viaStoreId: opt(lr.via_store_id),
     createdAt: lr.created_at as string,
     artwork: {
       id: lr.art_id as string,
@@ -884,16 +1115,43 @@ export async function listOrdersForOrg(
   return rows.map(mapOrder);
 }
 
-/** Raw line items for an order, in insertion order. */
+/**
+ * Orders placed through a store, newest first — the seller's sales list.
+ * `store_id` is the front the order was presented through (migration 095),
+ * so an org store sees sales of every maker it presents.
+ */
+export async function listOrdersForStore(
+  storeId: string,
+  opts: { limit?: number; status?: Order["status"][] } = {}
+): Promise<Order[]> {
+  const limit = Math.min(opts.limit ?? 50, 200);
+  const status = opts.status ?? null;
+  const rows = (await db`
+    SELECT * FROM commerce_order
+    WHERE store_id = ${storeId}
+      ${status ? db`AND status = ANY(${status})` : db``}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+  return rows.map(mapOrder);
+}
+
+/** Line items for an order, in insertion order, with the artwork's image. */
 export async function getOrderLines(orderId: string): Promise<OrderLine[]> {
   const rows = (await db`
-    SELECT * FROM commerce_order_line WHERE order_id = ${orderId} ORDER BY created_at
+    SELECT l.*, pm.url AS image_url
+    FROM commerce_order_line l
+    LEFT JOIN artwork a ON a.id = l.artwork_id
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE l.order_id = ${orderId}
+    ORDER BY l.created_at
   `) as unknown as Row[];
   return rows.map(mapOrderLine);
 }
 
 function mapOrderLine(r: Row): OrderLine {
   return {
+    imageUrl: opt(r.image_url),
     id: r.id as string,
     orderId: r.order_id as string,
     artworkVariantId: opt(r.artwork_variant_id),
@@ -931,6 +1189,7 @@ function mapOrder(r: Row): Order {
   return {
     id: r.id as string,
     number: r.number as string,
+    storeId: opt(r.store_id),
     customerId: opt(r.customer_id),
     customerEmail: r.customer_email as string,
     customerName: opt(r.customer_name),
@@ -1073,6 +1332,8 @@ export interface AdminArtworkRow {
   /** Null for work an org store sells with no individual attribution. */
   artistUserId: string | null;
   artistName: string | null;
+  /** Credit link target: the maker's slug, else the selling store's. */
+  artistSlug: string | null;
   primaryImageUrl: string | null;
   viewCount: number;
   priceMinor: number | null;
@@ -1088,8 +1349,8 @@ export async function adminListArtworks(
   const status = opts.status ?? null;
   const rows = (await db`
     SELECT
-      a.id, a.title, a.status, a.kind, a.artist_user_id, a.view_count, a.created_at,
-      COALESCE(u.display_name, u.email, oa.name) AS artist_name,
+      a.id, a.title, a.status, a.kind, a.store_id, a.artist_user_id, a.view_count, a.created_at,
+      ${ARTWORK_CREDIT_SELECT},
       pm.url AS primary_image_url,
       v.price_minor, v.currency
     FROM artwork a
@@ -1112,6 +1373,7 @@ export async function adminListArtworks(
     storeId: r.store_id as string,
     artistUserId: opt(r.artist_user_id),
     artistName: opt(r.artist_name),
+    artistSlug: opt(r.artist_slug),
     primaryImageUrl: opt(r.primary_image_url),
     viewCount: num(r.view_count),
     priceMinor: r.price_minor != null ? num(r.price_minor) : null,

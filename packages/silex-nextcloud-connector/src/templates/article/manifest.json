@@ -1,0 +1,172 @@
+{
+  "id": "article",
+  "name": "Article Template",
+  "version": "0.1.0",
+  "category": "EAC Article Template",
+  "description": "The reading environment for a published post: masthead, prose, colophon. Same tokens and measurements as @elkdonis/cms-ui/article.css, so a post reads identically whether it is served from the database or from a published file.",
+  "tokens": "../tokens/eac-tokens.css",
+  "cssOrder": [
+    "css/eac-art-reading.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-art-masthead",
+      "label": "Masthead",
+      "html": "html/eac-art-masthead.html",
+      "css": "css/eac-art-reading.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.kind",
+        "threads.title",
+        "threads.excerpt",
+        "threads.published_at",
+        "users.display_name",
+        "organizations.name"
+      ],
+      "traits": [
+        "kindLabel",
+        "orgName",
+        "title",
+        "lede",
+        "authorName",
+        "publishedAt",
+        "readingTime",
+        "coverImage"
+      ],
+      "bindings": {
+        "kindLabel": {
+          "kind": "text",
+          "from": "article.kind_label",
+          "fallback": "Essay"
+        },
+        "orgName": {
+          "kind": "text",
+          "from": "article.org_name",
+          "fallback": "Elkdonis Arts Collective"
+        },
+        "title": {
+          "kind": "text",
+          "from": "article.title",
+          "fallback": "Untitled"
+        },
+        "lede": {
+          "kind": "text",
+          "from": "article.excerpt",
+          "hideWhenEmpty": true
+        },
+        "authorName": {
+          "kind": "text",
+          "from": "article.author_name",
+          "hideWhenEmpty": true
+        },
+        "publishedAt": {
+          "kind": "text",
+          "from": "article.published_at_label",
+          "hideWhenEmpty": true
+        },
+        "readingTime": {
+          "kind": "text",
+          "from": "article.reading_time_label",
+          "hideWhenEmpty": true
+        },
+        "coverImage": {
+          "kind": "attr",
+          "attr": "src",
+          "from": "article.cover_image_url",
+          "hideWhenEmpty": true
+        }
+      }
+    },
+    {
+      "id": "eac-art-body",
+      "label": "The writing",
+      "html": "html/eac-art-body.html",
+      "css": "css/eac-art-reading.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.body"
+      ],
+      "traits": [
+        "body"
+      ],
+      "bindings": {
+        "body": {
+          "kind": "html",
+          "from": "article.body_html",
+          "fallback": ""
+        }
+      }
+    },
+    {
+      "id": "eac-art-colophon",
+      "label": "Colophon",
+      "html": "html/eac-art-colophon.html",
+      "css": "css/eac-art-reading.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.author_id",
+        "thread_orgs.org_id",
+        "threads.published_at"
+      ],
+      "traits": [
+        "authorName",
+        "publishedOn",
+        "publishedAt",
+        "recordUrl"
+      ],
+      "bindings": {
+        "authorName": {
+          "kind": "text",
+          "from": "article.author_name",
+          "hideWhenEmpty": true
+        },
+        "publishedOn": {
+          "kind": "text",
+          "from": "article.published_on_label",
+          "hideWhenEmpty": true
+        },
+        "publishedAt": {
+          "kind": "text",
+          "from": "article.published_at_label",
+          "hideWhenEmpty": true
+        },
+        "recordUrl": {
+          "kind": "text",
+          "from": "article.record_url",
+          "hideWhenEmpty": true
+        }
+      }
+    },
+    {
+      "id": "eac-art-more",
+      "label": "More from this page",
+      "html": "html/eac-art-more.html",
+      "css": "css/eac-art-reading.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": false,
+      "cmsFields": [],
+      "traits": [
+        "moreLabel",
+        "moreItems"
+      ],
+      "bindings": {
+        "moreLabel": {
+          "kind": "text",
+          "fallback": "More from this page"
+        },
+        "moreItems": {
+          "kind": "html",
+          "from": "article.more_items_html",
+          "hideWhenEmpty": true
+        }
+      }
+    }
+  ]
+}

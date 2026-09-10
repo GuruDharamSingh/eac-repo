@@ -1,0 +1,200 @@
+/*
+  eac-brochure-tokens.css
+  =======================
+  Design tokens for the "Old-Style Brochure" template family.
+
+  Aesthetic: a tri-fold letterpress brochure — kraft/cream paper, deep ink,
+  an oxblood + brass duotone accent, serif display type, ruled dividers,
+  dotted leaders, and a small set of hand-drawn shapes (seal, ticket stub,
+  cartouche, ribbon, torn edge) reused across every section below.
+
+  Import this file before any eac-br-*.css file. Override the --eac-br-*
+  variables on .eac-br-page (or :root) to retheme per org without touching
+  section CSS.
+*/
+
+:root {
+
+  /* ── Paper & ink ─────────────────────────────────────────────── */
+
+  --eac-br-paper:        #f4ecd8;   /* page background — warm cream/kraft   */
+  --eac-br-paper-2:      #ece0c3;   /* card/panel background — deeper kraft */
+  --eac-br-paper-3:      #e4d5ae;   /* recessed panels, table zebra         */
+  --eac-br-ink:          #241c15;   /* primary text — near-black brown      */
+  --eac-br-ink-muted:    #5b5142;   /* secondary text                       */
+  --eac-br-ink-faint:    #8a7d68;   /* tertiary text, captions              */
+
+  /* ── Accent duotone ──────────────────────────────────────────── */
+
+  --eac-br-oxblood-rgb:  122, 34, 34;
+  --eac-br-oxblood:      rgb(var(--eac-br-oxblood-rgb));
+  --eac-br-brass-rgb:    156, 122, 52;
+  --eac-br-brass:        rgb(var(--eac-br-brass-rgb));
+
+  /* ── Type ────────────────────────────────────────────────────── */
+
+  --eac-br-font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  --eac-br-font-body:    'EB Garamond', 'Iowan Old Style', Georgia, serif;
+  --eac-br-tracking-caps: 0.16em;
+
+  /* ── Rules & leaders ─────────────────────────────────────────── */
+
+  --eac-br-rule:         3px double var(--eac-br-ink);
+  --eac-br-rule-hair:    1px solid var(--eac-br-ink-faint);
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+
+  --eac-br-max-width:    1120px;
+  --eac-br-max-width-sm: 760px;
+  --eac-br-radius:       2px;      /* brochures don't round corners */
+}
+
+/* ── Base page shell ───────────────────────────────────────────── */
+
+.eac-br-page {
+  background: var(--eac-br-paper);
+  color: var(--eac-br-ink);
+  font-family: var(--eac-br-font-body);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.eac-br-page * { box-sizing: border-box; }
+.eac-br-page img, .eac-br-page video { max-width: 100%; display: block; }
+.eac-br-page a { color: inherit; text-decoration: none; }
+
+/* ── Shared utility: small-caps eyebrow label ─────────────────── */
+
+.eac-br-label {
+  display: inline-block;
+  font-family: var(--eac-br-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--eac-br-tracking-caps);
+  text-transform: uppercase;
+  color: var(--eac-br-oxblood);
+}
+
+/* ── Shared utility: double rule divider ──────────────────────── */
+
+.eac-br-rule {
+  border: none;
+  border-top: var(--eac-br-rule);
+  margin: 0 auto 28px;
+  width: 100%;
+  max-width: var(--eac-br-max-width);
+}
+
+.eac-br-rule--hair {
+  border-top: var(--eac-br-rule-hair);
+}
+
+/* ── Shared utility: ornamental corner brackets (cartouche) ────── */
+
+.eac-br-corners {
+  position: relative;
+}
+.eac-br-corners::before,
+.eac-br-corners::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--eac-br-brass);
+  pointer-events: none;
+}
+.eac-br-corners::before {
+  top: -8px; left: -8px;
+  border-right: none; border-bottom: none;
+}
+.eac-br-corners::after {
+  bottom: -8px; right: -8px;
+  border-left: none; border-top: none;
+}
+
+/* ── Shared utility: drop cap ──────────────────────────────────── */
+
+.eac-br-dropcap::first-letter {
+  font-family: var(--eac-br-font-display);
+  font-size: 3.6em;
+  font-weight: 700;
+  float: left;
+  line-height: 0.8;
+  padding: 4px 8px 0 0;
+  color: var(--eac-br-oxblood);
+}
+
+/* ── Shared utility: dotted leader row (directory / ledger) ────── */
+
+.eac-br-leader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: var(--eac-br-rule-hair);
+}
+.eac-br-leader__label { flex: 0 0 auto; font-weight: 600; }
+.eac-br-leader__fill {
+  flex: 1 1 auto;
+  border-bottom: 2px dotted var(--eac-br-ink-faint);
+  transform: translateY(-4px);
+}
+.eac-br-leader__value {
+  flex: 0 0 auto;
+  color: var(--eac-br-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Shared utility: brochure button ────────────────────────────── */
+
+.eac-br-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 26px;
+  border: 2px solid var(--eac-br-ink);
+  font-family: var(--eac-br-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-height: 44px;
+  background: var(--eac-br-ink);
+  color: var(--eac-br-paper);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.eac-br-btn:hover { transform: translateY(-1px); }
+
+.eac-br-btn--ghost {
+  background: transparent;
+  color: var(--eac-br-ink);
+}
+.eac-br-btn--ghost:hover {
+  background: var(--eac-br-ink);
+  color: var(--eac-br-paper);
+}
+
+/* ── Editor-time placeholder for live <eac-embed> slots ────────── */
+/* Mirrors eac-blocks.css .eac-editor-placeholder but themed to paper. */
+
+.eac-br-page .eac-editor-placeholder {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 20px;
+  border: var(--eac-br-rule-hair);
+  background: var(--eac-br-paper-3);
+}
+.eac-br-page .eac-editor-placeholder strong {
+  font-family: var(--eac-br-font-display);
+  font-size: 16px;
+  color: var(--eac-br-ink);
+}
+.eac-br-page .eac-editor-placeholder span {
+  font-size: 12px;
+  color: var(--eac-br-ink-muted);
+}

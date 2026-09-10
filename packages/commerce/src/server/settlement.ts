@@ -22,6 +22,11 @@ import { splitCommission } from "../money";
 //   * An org's cut is earmarked inside the host account, never sent to an
 //     org-held Stripe account, so it needs no payout address of its own.
 //   * No maker at all means the org owns the piece outright and takes 100%.
+//
+// A maker is sellable by either of two routes (2026-09-08): an eTransfer
+// address, or a Stripe Express account — even one still mid-onboarding, since
+// the card rail holds their share until KYC lands. Having neither is the only
+// thing that stops a sale.
 // ============================================================================
 
 /** Where money goes when it is not going to a person — see §9 of the brief. */
@@ -45,10 +50,18 @@ export interface LineSettlement {
   agreementId: string | null;
   makerShareMinor: number;
   orgShareMinor: number;
-  /** Where a buyer actually sends an eTransfer. */
-  payoutEmail: string;
+  /**
+   * Where a buyer sends an eTransfer. Null when the maker is card-only (a
+   * connected Stripe account and no eTransfer address) — the eTransfer rail
+   * must refuse such an order rather than invent an address.
+   */
+  payoutEmail: string | null;
   /** Who the buyer is told they are paying. */
   payeeName: string;
+  /** The maker's account email, for notifications. Null for org-owned work. */
+  makerEmail: string | null;
+  /** The maker's connected account, whether or not onboarding has finished. */
+  makerStripeAccountId: string | null;
   /** Whether the maker could take a Stripe destination charge today. */
   makerCanReceiveDestinationCharge: boolean;
 }
@@ -56,10 +69,10 @@ export interface LineSettlement {
 /**
  * Resolve one line's settlement.
  *
- * Throws when a maker has no payout email rather than quietly falling back to
- * the host account: silently redirecting an artist's money to the collective
- * is the worst possible failure mode here, and it is exactly what the service
- * rail was doing before this existed.
+ * Throws when a maker has no way to be paid at all rather than quietly
+ * falling back to the host account: silently redirecting an artist's money to
+ * the collective is the worst possible failure mode here, and it is exactly
+ * what the service rail was doing before this existed.
  */
 export async function resolveSettlement(
   input: SettlementInput
@@ -81,6 +94,8 @@ export async function resolveSettlement(
       orgShareMinor: amountMinor,
       payoutEmail: HOST_PAYOUT_EMAIL,
       payeeName: org?.name ?? "the collective",
+      makerEmail: null,
+      makerStripeAccountId: null,
       makerCanReceiveDestinationCharge: false,
     };
   }
@@ -92,9 +107,15 @@ export async function resolveSettlement(
   if (!maker) throw new Error("The maker of this item no longer has an account.");
 
   const payoutEmail = (maker.payout_email as string | null) ?? null;
-  if (!payoutEmail) {
+  const stripeAccountId = (maker.stripe_account_id as string | null) ?? null;
+  const onboarded = Boolean(stripeAccountId) && Boolean(maker.stripe_onboarded_at);
+  // A started-but-unfinished Stripe account is enough to SELL by card: the
+  // charge lands on the platform and the maker's share is held for want of a
+  // payout account, releasing itself when KYC completes (ledger, 098). It is
+  // not enough to sell by eTransfer — the eTransfer rail checks payoutEmail.
+  if (!payoutEmail && !stripeAccountId) {
     throw new Error(
-      "This seller has not set up a payout email yet, so we cannot take payment for their work."
+      "This seller has not set up payouts yet (no eTransfer address and no card account), so we cannot take payment for their work."
     );
   }
 
@@ -113,7 +134,8 @@ export async function resolveSettlement(
     payoutEmail,
     payeeName:
       (maker.display_name as string | null) ?? (maker.email as string) ?? "the seller",
-    makerCanReceiveDestinationCharge:
-      Boolean(maker.stripe_account_id) && Boolean(maker.stripe_onboarded_at),
+    makerEmail: (maker.email as string | null) ?? null,
+    makerStripeAccountId: stripeAccountId,
+    makerCanReceiveDestinationCharge: onboarded,
   };
 }

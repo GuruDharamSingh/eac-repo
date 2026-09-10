@@ -15,7 +15,13 @@ import {
   type WorkshopFullInput,
 } from "@/lib/cms/schema";
 import { deriveExcerpt } from "@elkdonis/utils";
-import { ensureUniqueThreadSlug } from "@elkdonis/services";
+import {
+  ensureUniqueThreadSlug,
+  ensureWorkshopMaterialsFolder,
+  replaceWorkshopSessions,
+  upsertWorkshopOffering,
+} from "@elkdonis/services";
+import type { FieldTable } from "@elkdonis/cms-bindings";
 
 export type CreateThreadResult =
   | { ok: true; id: string; slug: string }
@@ -58,7 +64,8 @@ export async function createThreadAction(
   const baseSlug = slugifyTitle(data.title);
   const slug = await ensureUniqueThreadSlug(org.id, baseSlug);
 
-  const isScheduled = data.kind === "workshop" || data.kind === "event";
+  const isScheduled =
+    data.kind === "workshop" || data.kind === "event" || data.kind === "meeting";
   const scheduledAt =
     isScheduled && "scheduled_at" in data && data.scheduled_at
       ? new Date(data.scheduled_at)
@@ -99,6 +106,11 @@ export async function createThreadAction(
     }
   }
 
+  // Cover image rides in metadata — threads has no cover_image_url column, and
+  // amrit-canada's save path already uses this shape. Keeping one convention
+  // matters more than the column would.
+  const metadata = data.cover_image_url ? { coverImageUrl: data.cover_image_url } : {};
+
   await db`
     INSERT INTO threads (
       id, org_id, author_id, kind,
@@ -106,8 +118,9 @@ export async function createThreadAction(
       status, visibility, share_to_network,
       scheduled_at, duration_minutes, location, format, meeting_url,
       is_rsvp_enabled, attendee_limit,
-      price, currency, sessions,
+      price, currency,
       nextcloud_talk_token, nextcloud_doc_url,
+      metadata,
       published_at
     ) VALUES (
       ${id}, ${org.id}, ${user.id}, ${data.kind},
@@ -115,11 +128,31 @@ export async function createThreadAction(
       ${data.status}, ${data.visibility}, ${data.share_to_network},
       ${scheduledAt}, ${durationMinutes}, ${location}, ${format}, ${meetingUrl},
       ${isRsvpEnabled}, ${attendeeLimit},
-      ${price}, ${currency}, ${db.json(sessions)},
+      ${price}, ${currency},
       ${talkToken}, ${data.nextcloud_doc_url || null},
+      ${db.json(metadata)},
       ${publishedAt}
     )
   `;
+
+  // Sessions belong in workshop_sessions, which is where the workshop page
+  // reads them. They used to go into the `threads.sessions` JSON column,
+  // which nothing displays — a workshop created here arrived with its whole
+  // schedule silently dropped.
+  if (data.kind === "workshop" && sessions.length > 0) {
+    await replaceWorkshopSessions(
+      org.id,
+      id,
+      sessions.map((session, i) => ({
+        title: session.title || `Session ${i + 1}`,
+        scheduledAt: session.scheduled_at || null,
+        durationMinutes: session.duration_minutes ?? null,
+        location: session.location || "",
+        isOnline: format !== "in_person",
+        videoConferenceUrl: session.meeting_url || "",
+      }))
+    );
+  }
 
   revalidatePath(`/sites/${org.slug}`);
 
@@ -219,7 +252,11 @@ export type UpdateWorkshopFieldResult =
 
 interface FieldUpdate {
   col: string;
-  table: "threads" | "workshop_pages" | "artist_profiles";
+  // Re-using the registry's own union rather than restating it: this list had
+  // already drifted (it still named artist_profiles after the facilitator
+  // fields moved to users + org_profiles), and a local copy can only drift
+  // again.
+  table: FieldTable;
   value: unknown;
 }
 
@@ -284,8 +321,10 @@ export async function updateWorkshopFieldAction(
 
   const user = await requireUser();
 
-  const rows = await db<{ org_id: string; org_slug: string }[]>`
-    SELECT t.org_id, o.slug AS org_slug
+  const rows = await db<
+    { org_id: string; org_slug: string; author_id: string }[]
+  >`
+    SELECT t.org_id, o.slug AS org_slug, t.author_id
     FROM threads t
     JOIN organizations o ON o.id = t.org_id
     WHERE t.id = ${threadId} AND t.kind = 'workshop'
@@ -299,12 +338,14 @@ export async function updateWorkshopFieldAction(
 
   const threadCols: Record<string, unknown> = {};
   const wpCols: Record<string, unknown> = {};
-  const apCols: Record<string, unknown> = {};
+  const userCols: Record<string, unknown> = {};
+  const orgProfileCols: Record<string, unknown> = {};
 
   for (const u of updates) {
     if (u.table === "threads") threadCols[u.col] = u.value;
     else if (u.table === "workshop_pages") wpCols[u.col] = u.value;
-    else if (u.table === "artist_profiles") apCols[u.col] = u.value;
+    else if (u.table === "users") userCols[u.col] = u.value;
+    else if (u.table === "org_profiles") orgProfileCols[u.col] = u.value;
   }
 
   if (Object.keys(threadCols).length > 0) {
@@ -325,10 +366,31 @@ export async function updateWorkshopFieldAction(
     `;
   }
 
-  if (Object.keys(apCols).length > 0) {
+  // Facilitator identity. Scoped to the workshop's AUTHOR by primary key.
+  //
+  // This replaces `UPDATE artist_profiles SET … WHERE org_id = (SELECT org_id
+  // FROM threads WHERE id = …)` — no user filter and no LIMIT, so editing one
+  // facilitator's name inline rewrote every member's personal profile row in
+  // that org. `elkdonis` holds 10 such rows; it had not fired only because
+  // that org has no workshops yet.
+  if (Object.keys(userCols).length > 0) {
     await db`
-      UPDATE artist_profiles SET ${db(apCols)}
-      WHERE org_id = (SELECT org_id FROM threads WHERE id = ${threadId})
+      UPDATE users SET ${db(userCols)}, updated_at = NOW()
+      WHERE id = ${row.author_id}
+    `;
+  }
+
+  // Role title is per-org, so it lives on the author's org_profiles row.
+  // Ensure the row exists first: a facilitator can author a workshop for an org
+  // they hold a membership in without having been published on its roster.
+  if (Object.keys(orgProfileCols).length > 0) {
+    await db`
+      INSERT INTO org_profiles (org_id, user_id) VALUES (${row.org_id}, ${row.author_id})
+      ON CONFLICT (org_id, user_id) DO NOTHING
+    `;
+    await db`
+      UPDATE org_profiles SET ${db(orgProfileCols)}
+      WHERE org_id = ${row.org_id} AND user_id = ${row.author_id}
     `;
   }
 
@@ -435,7 +497,9 @@ export async function upsertWorkshopPageAction(
       price_sliding_min, price_member, sliding_scale_note,
       registration_url, registration_deadline, registration_status,
       author_note,
-      cover_image_url, promo_video_url,
+      cover_image_url, promo_video_url, gallery_image_urls,
+      banner_image_url, banner_focal_y,
+      hero_media_url, hero_media_type, hero_text, background_color,
       seo_title, seo_description, og_image_url,
       optional_sections
     ) VALUES (
@@ -452,6 +516,11 @@ export async function upsertWorkshopPageAction(
       ${data.registration_status},
       ${data.author_note || null},
       ${data.cover_image_url || null}, ${data.promo_video_url || null},
+      ${db.json(data.gallery_image_urls ?? [])},
+      ${data.banner_image_url || null}, ${data.banner_focal_y ?? null},
+      ${data.hero_media_url || null},
+      ${data.hero_media_url ? (data.hero_media_type || "image") : null},
+      ${data.hero_text || null}, ${data.background_color || null},
       ${data.seo_title || null}, ${data.seo_description || null},
       ${data.og_image_url || null},
       ${db.json(data.optional_sections)}
@@ -477,6 +546,13 @@ export async function upsertWorkshopPageAction(
       author_note          = EXCLUDED.author_note,
       cover_image_url      = EXCLUDED.cover_image_url,
       promo_video_url      = EXCLUDED.promo_video_url,
+      gallery_image_urls   = EXCLUDED.gallery_image_urls,
+      banner_image_url     = EXCLUDED.banner_image_url,
+      banner_focal_y       = EXCLUDED.banner_focal_y,
+      hero_media_url       = EXCLUDED.hero_media_url,
+      hero_media_type      = EXCLUDED.hero_media_type,
+      hero_text            = EXCLUDED.hero_text,
+      background_color     = EXCLUDED.background_color,
       seo_title            = EXCLUDED.seo_title,
       seo_description      = EXCLUDED.seo_description,
       og_image_url         = EXCLUDED.og_image_url,
@@ -545,169 +621,158 @@ export async function saveWorkshopAction(
   const allowed = await canEditOrgSite(user.id, org.id);
   if (!allowed) return { ok: false, error: "Not authorized" };
 
-  const scheduledAt =
-    data.scheduled_at ? new Date(data.scheduled_at) : null;
-  const regDeadline =
-    data.registration_deadline ? new Date(data.registration_deadline) : null;
-  const publishedAt =
-    data.status === "published" ? new Date() : null;
-  const excerpt = data.description_short || deriveExcerpt(data.body ?? null) || null;
-
-  let threadId = data.thread_id ?? "";
-  let slug = "";
+  // ── What is about to change, for the people already signed up ────────────
+  //
+  // Read before the write, because afterwards there is nothing to compare
+  // against. This is the one part of saving a workshop that is genuinely this
+  // app's own: the shared service stores the workshop, and the warning is
+  // about how this app's editor behaves once it has.
   const attendeeChangeWarning: string[] = [];
-
-  if (!threadId) {
-    // ── CREATE ─────────────────────────────────────────────────────────────
-    threadId = nanoid(21);
-    const baseSlug = slugifyTitle(data.title);
-    slug = await ensureUniqueThreadSlug(org.id, baseSlug);
-
-    await db`
-      INSERT INTO threads (
-        id, org_id, author_id, kind,
-        title, slug, body, excerpt,
-        status, visibility, share_to_network,
-        scheduled_at, duration_minutes, location, format, meeting_url,
-        is_rsvp_enabled, attendee_limit,
-        price, currency, sessions,
-        nextcloud_doc_url,
-        published_at
-      ) VALUES (
-        ${threadId}, ${org.id}, ${user.id}, 'workshop',
-        ${data.title}, ${slug}, ${data.body || null}, ${excerpt},
-        ${data.status}, ${data.visibility}, ${data.share_to_network},
-        ${scheduledAt}, ${data.duration_minutes ?? null},
-        ${data.location || null}, ${data.format}, ${data.meeting_url || null},
-        ${data.is_rsvp_enabled}, ${data.attendee_limit ?? null},
-        ${data.price ?? null}, ${data.currency}, ${db.json(data.sessions)},
-        ${data.nextcloud_doc_url || null},
-        ${publishedAt}
-      )
-    `;
-  } else {
-    // ── UPDATE ─────────────────────────────────────────────────────────────
-    const existing = await db<
-      { scheduled_at: string | null; location: string | null; format: string | null; registration_status: string | null; slug: string; org_id: string }[]
+  if (data.thread_id) {
+    const [prev] = await db<
+      {
+        org_id: string;
+        scheduled_at: Date | null;
+        location: string | null;
+        format: string | null;
+        registration_status: string | null;
+      }[]
     >`
-      SELECT t.scheduled_at, t.location, t.format, wp.registration_status, t.slug, t.org_id
+      SELECT t.org_id, t.scheduled_at, t.location, t.format, wp.registration_status
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
-      WHERE t.id = ${threadId} AND t.kind = 'workshop'
+      WHERE t.id = ${data.thread_id} AND t.kind = 'workshop'
       LIMIT 1
     `;
-    const prev = existing[0];
     if (!prev) return { ok: false, error: "Thread not found" };
     if (prev.org_id !== org.id) return { ok: false, error: "Not authorized" };
 
-    // Detect attendee-sensitive changes
-    if (prev.scheduled_at !== (scheduledAt?.toISOString() ?? null)) {
+    const nextScheduled = data.scheduled_at ? new Date(data.scheduled_at).toISOString() : null;
+    if ((prev.scheduled_at?.toISOString() ?? null) !== nextScheduled) {
       attendeeChangeWarning.push("scheduled_at");
     }
-    if ((prev.location ?? "") !== (data.location ?? "")) {
-      attendeeChangeWarning.push("location");
-    }
-    if ((prev.format ?? "") !== (data.format ?? "")) {
-      attendeeChangeWarning.push("format");
-    }
+    if ((prev.location ?? "") !== (data.location ?? "")) attendeeChangeWarning.push("location");
+    if ((prev.format ?? "") !== (data.format ?? "")) attendeeChangeWarning.push("format");
     if ((prev.registration_status ?? "open") !== data.registration_status) {
       attendeeChangeWarning.push("registration_status");
     }
-
-    slug = prev.slug;
-
-    await db`
-      UPDATE threads SET
-        title          = ${data.title},
-        body           = ${data.body || null},
-        excerpt        = ${excerpt},
-        status         = ${data.status},
-        visibility     = ${data.visibility},
-        share_to_network = ${data.share_to_network},
-        scheduled_at   = ${scheduledAt},
-        duration_minutes = ${data.duration_minutes ?? null},
-        location       = ${data.location || null},
-        format         = ${data.format},
-        meeting_url    = ${data.meeting_url || null},
-        is_rsvp_enabled = ${data.is_rsvp_enabled},
-        attendee_limit = ${data.attendee_limit ?? null},
-        price          = ${data.price ?? null},
-        currency       = ${data.currency},
-        sessions       = ${db.json(data.sessions)},
-        nextcloud_doc_url = ${data.nextcloud_doc_url || null},
-        published_at   = ${publishedAt ?? null},
-        updated_at     = NOW()
-      WHERE id = ${threadId}
-    `;
   }
 
-  // ── Upsert sidecar ─────────────────────────────────────────────────────────
-  await db`
-    INSERT INTO workshop_pages (
-      thread_id,
-      subtitle, description_short, discipline, series_label,
-      level, language, session_count, session_duration_hrs,
-      recurrence_label, location_address, accessibility_notes,
-      price_sliding_min, price_member, sliding_scale_note,
-      registration_url, registration_deadline, registration_status,
-      author_note,
-      cover_image_url, promo_video_url,
-      seo_title, seo_description, og_image_url,
-      optional_sections
-    ) VALUES (
-      ${threadId},
-      ${data.subtitle || null}, ${data.description_short || null},
-      ${data.discipline || null}, ${data.series_label || null},
-      ${data.level ?? null}, ${data.language},
-      ${data.session_count ?? null}, ${data.session_duration_hrs ?? null},
-      ${data.recurrence_label || null}, ${data.location_address || null},
-      ${data.accessibility_notes || null},
-      ${data.price_sliding_min ?? null}, ${data.price_member ?? null},
-      ${data.sliding_scale_note || null},
-      ${data.registration_url || null}, ${regDeadline},
-      ${data.registration_status},
-      ${data.author_note || null},
-      ${data.cover_image_url || null}, ${data.promo_video_url || null},
-      ${data.seo_title || null}, ${data.seo_description || null},
-      ${data.og_image_url || null},
-      ${db.json(data.optional_sections)}
-    )
-    ON CONFLICT (thread_id) DO UPDATE SET
-      subtitle             = EXCLUDED.subtitle,
-      description_short    = EXCLUDED.description_short,
-      discipline           = EXCLUDED.discipline,
-      series_label         = EXCLUDED.series_label,
-      level                = EXCLUDED.level,
-      language             = EXCLUDED.language,
-      session_count        = EXCLUDED.session_count,
-      session_duration_hrs = EXCLUDED.session_duration_hrs,
-      recurrence_label     = EXCLUDED.recurrence_label,
-      location_address     = EXCLUDED.location_address,
-      accessibility_notes  = EXCLUDED.accessibility_notes,
-      price_sliding_min    = EXCLUDED.price_sliding_min,
-      price_member         = EXCLUDED.price_member,
-      sliding_scale_note   = EXCLUDED.sliding_scale_note,
-      registration_url     = EXCLUDED.registration_url,
-      registration_deadline = EXCLUDED.registration_deadline,
-      registration_status  = EXCLUDED.registration_status,
-      author_note          = EXCLUDED.author_note,
-      cover_image_url      = EXCLUDED.cover_image_url,
-      promo_video_url      = EXCLUDED.promo_video_url,
-      seo_title            = EXCLUDED.seo_title,
-      seo_description      = EXCLUDED.seo_description,
-      og_image_url         = EXCLUDED.og_image_url,
-      optional_sections    = EXCLUDED.optional_sections
-  `;
+  // ── The write ────────────────────────────────────────────────────────────
+  //
+  // This was ~170 lines of INSERT/UPDATE against threads and workshop_pages,
+  // beside an identical pair in @elkdonis/services that innergathering and
+  // the compose surfaces already used. Two write paths into the same two
+  // tables meant every column added had to be added twice, and one of them
+  // was always behind — sessions were the proof: this action wrote them to
+  // the vestigial `threads.sessions` JSON column while the public workshop
+  // page read `workshop_sessions`, so a session authored here never appeared
+  // there. The service writes the rows the page reads.
+  let saved: { id: string; slug: string };
+  try {
+    saved = await upsertWorkshopOffering(
+      org.id,
+      user.id,
+      {
+        title: data.title,
+        body: data.body || null,
+        excerpt: data.description_short || deriveExcerpt(data.body ?? null) || null,
+        status: data.status,
+        visibility: data.visibility,
+        shareToNetwork: data.share_to_network,
+        // Workshops here are addressed by their own route, not by a feed.
+        section: null,
+        // A retitled workshop keeps the URL it was published at.
+        keepSlug: true,
+
+        format: data.format,
+        scheduledAt: data.scheduled_at || null,
+        durationMinutes: data.duration_minutes ?? null,
+        location: data.location || null,
+        locationAddress: data.location_address || null,
+        meetingUrl: data.meeting_url || null,
+        nextcloudDocUrl: data.nextcloud_doc_url || null,
+        isRsvpEnabled: data.is_rsvp_enabled,
+        attendeeLimit: data.attendee_limit ?? null,
+
+        price: data.price ?? null,
+        currency: data.currency,
+        priceMember: data.price_member ?? null,
+        priceSlidingMin: data.price_sliding_min ?? null,
+        slidingScaleNote: data.sliding_scale_note || null,
+
+        registrationStatus: data.registration_status,
+        registrationUrl: data.registration_url || null,
+        registrationDeadline: data.registration_deadline || null,
+
+        subtitle: data.subtitle || null,
+        descriptionShort: data.description_short || null,
+        discipline: data.discipline || null,
+        seriesLabel: data.series_label || null,
+        level: data.level ?? null,
+        language: data.language,
+        sessionCount: data.session_count ?? null,
+        sessionDurationHrs: data.session_duration_hrs ?? null,
+        recurrenceLabel: data.recurrence_label || null,
+        accessibilityNotes: data.accessibility_notes || null,
+        authorNote: data.author_note || null,
+
+        coverImageUrl: data.cover_image_url || null,
+        bannerImageUrl: data.banner_image_url || null,
+        bannerFocalY: data.banner_focal_y ?? null,
+        heroMediaUrl: data.hero_media_url || null,
+        heroMediaType: data.hero_media_type ?? null,
+        heroText: data.hero_text || null,
+        backgroundColor: data.background_color || null,
+        // The schema makes every gallery field optional-ish; a tile with no
+        // address is not a tile, so it is dropped rather than stored empty.
+        galleryImageUrls: (data.gallery_image_urls ?? [])
+          .filter((g): g is { url: string; alt?: string; caption?: string } => Boolean(g?.url))
+          .map((g) => ({ url: g.url, alt: g.alt, caption: g.caption })),
+        promoVideoUrl: data.promo_video_url || null,
+
+        seoTitle: data.seo_title || null,
+        seoDescription: data.seo_description || null,
+        ogImageUrl: data.og_image_url || null,
+        optionalSections: data.optional_sections,
+
+        sessions: data.sessions.map((session, i) => ({
+          title: session.title || `Session ${i + 1}`,
+          scheduledAt: session.scheduled_at || null,
+          durationMinutes: session.duration_minutes ?? null,
+          location: session.location || "",
+          // This app's session form has no online/in-person switch of its
+          // own; a session inherits the workshop's format.
+          isOnline: data.format !== "in_person",
+          videoConferenceUrl: session.meeting_url || "",
+        })),
+      },
+      data.thread_id || undefined
+    );
+  } catch (err) {
+    console.error("[arts-collective] saveWorkshopAction:", err);
+    return {
+      ok: false,
+      error: err instanceof Error && err.message === "Workshop not found"
+        ? "Thread not found"
+        : "Could not save the workshop.",
+    };
+  }
+
+  // The materials folder exists from the first save, with whoever saved
+  // holding it read/write — same as innergathering.
+  void ensureWorkshopMaterialsFolder(org.id, saved.id);
 
   revalidatePath(`/hub/workshops/${org.slug}`);
-  revalidatePath(`/hub/workshops/${org.slug}/${threadId}`);
-  revalidatePath(`/sites/${org.slug}/${slug}`);
+  revalidatePath(`/hub/workshops/${org.slug}/${saved.id}`);
+  revalidatePath(`/sites/${org.slug}/workshop/${saved.slug}`);
+  revalidatePath(`/sites/${org.slug}/${saved.slug}`);
   revalidatePath(`/sites/${org.slug}`);
 
   return {
     ok: true,
-    thread_id: threadId,
-    slug,
+    thread_id: saved.id,
+    slug: saved.slug,
     ...(attendeeChangeWarning.length > 0 && { attendeeChangeWarning }),
   };
 }

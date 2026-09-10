@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "@elkdonis/auth-server";
 import { updateProfile, canEditProfile, getProfile, type UpdateProfileInput } from "@elkdonis/services";
-import type { SaveFieldPayload, SaveResult, GalleryItem } from "@elkdonis/ui";
+import type { SaveFieldPayload, SaveResult } from "@elkdonis/live-editor";
+import type { GalleryItem } from "@elkdonis/cms-ui/gallery";
 
 /**
  * Save actions behind the inline profile editor on IFAC's own artist/dealer

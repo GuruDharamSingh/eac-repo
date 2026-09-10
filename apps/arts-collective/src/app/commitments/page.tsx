@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { getCommitmentsForUser, type Commitment } from "@/lib/commitments";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
+
 function groupByKind(items: Commitment[]) {
   const groups = {
     membership: [] as Commitment[],

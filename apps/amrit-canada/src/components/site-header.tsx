@@ -26,6 +26,7 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
 
   const links = [
     ...feeds.map((f) => ({ href: `/${f.slug}`, label: f.name })),
+    { href: "/forum", label: "Forum" },
     { href: "/about", label: "About" },
     { href: "/resources", label: "Resources" },
   ];

@@ -1,12 +1,23 @@
 "use client";
 
+import "./globals.css";
+
 /**
- * Last-resort error boundary — replaces the root layout entirely when
- * something throws above it, so it has to render its own <html> and <body>
- * and cannot use any of the site's providers or fonts.
+ * Last-resort error boundary.
  *
- * Deliberately dependency-free, with inline styles: whatever broke may well
- * be the thing that would break again here.
+ * When something throws above the root layout, Next unmounts that layout and
+ * renders this instead — so it has to produce its own <html> and <body>, and
+ * none of the site's providers, fonts or header exist here. (Next also
+ * prerenders it at build time as `/_global-error`.)
+ *
+ * Every app carries the same file, in its own palette. Two rules keep it from
+ * breaking in the exact moment it is needed:
+ *
+ *   1. No components, hooks or packages: whatever broke may be the thing that
+ *      would break again here. Plain elements only.
+ *   2. Styling comes from globals.css — a static asset that cannot throw —
+ *      Tailwind utilities on the site's own tokens (background, foreground,
+ *      primary), so the page still looks like this site while it apologises.
  */
 export default function GlobalError({
   error,
@@ -17,48 +28,24 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#FDF5E6",
-          color: "#36454F",
-          fontFamily: "Georgia, serif",
-          padding: "2rem",
-        }}
-      >
-        <main style={{ maxWidth: "32rem", textAlign: "center" }}>
-          <h1 style={{ fontSize: "1.75rem", marginBottom: "0.75rem" }}>
-            Something went wrong
-          </h1>
-          <p style={{ lineHeight: 1.6, marginBottom: "1.5rem" }}>
+      <body className="m-0 flex min-h-screen items-center justify-center bg-background p-8 text-foreground antialiased">
+        <main className="max-w-lg text-center">
+          <h1 className="mb-3 text-2xl font-medium tracking-tight">Something went wrong</h1>
+          <p className="mb-6 leading-relaxed text-muted-foreground">
             The page couldn&rsquo;t load. Try again, and if it keeps happening let us know.
           </p>
           {error.digest && (
-            <p style={{ fontSize: "0.8rem", opacity: 0.6, marginBottom: "1.5rem" }}>
-              Reference: {error.digest}
-            </p>
+            <p className="mb-6 text-xs text-muted-foreground/70">Reference: {error.digest}</p>
           )}
           <button
             type="button"
             onClick={reset}
-            style={{
-              background: "#E6B422",
-              color: "#36454F",
-              border: "none",
-              borderRadius: "0.5rem",
-              padding: "0.6rem 1.4rem",
-              fontSize: "1rem",
-              cursor: "pointer",
-            }}
+            className="rounded-md border border-border bg-transparent px-5 py-2 text-sm text-foreground transition-colors hover:bg-muted"
           >
             Try again
           </button>
-          <p style={{ marginTop: "1.5rem" }}>
-            <a href="/" style={{ color: "#D16B47" }}>
+          <p className="mt-6">
+            <a href="/" className="text-primary underline underline-offset-4">
               Back to the home page
             </a>
           </p>

@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAuthForm } from "@elkdonis/auth-client";
+import { signInWithGoogle, useAuthForm } from "@elkdonis/auth-client";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 
@@ -136,6 +136,21 @@ function LoginInner() {
                   : "Sign in"}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            or
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => void signInWithGoogle(returnTo ?? "/")}
+          >
+            Continue with Google
+          </Button>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
             {isSignup

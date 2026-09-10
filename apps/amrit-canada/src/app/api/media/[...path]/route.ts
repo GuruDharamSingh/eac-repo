@@ -40,16 +40,28 @@ export async function GET(
   if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
-  if (!filePath.startsWith(`EAC_Network/${siteConfig.orgId}/`)) {
+  // Two legitimate trees: this org's own assets, and a person's own folder
+  // (a member's portrait/work follows the person, not the org). A sanity
+  // bound on the subtree only — canReadMedia below is the access decision.
+  const allowedPrefixes = [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"];
+  if (!allowedPrefixes.some((p) => filePath.startsWith(p))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Public media is served to anyone; anything under Private/ needs a member.
-  if (filePath.includes("/Private/")) {
-    const viewer = await getViewer();
-    if (!viewer?.isMember) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Public media is served to anyone; private media requires affiliation with
+  // whoever owns it. This replaced a plain `viewer.isMember` check, which
+  // asked whether the viewer belonged to THIS org — the right question for
+  // this org's own Private/ tree, but the wrong one for a person's folder,
+  // where it would have let any member here read any individual's private
+  // media across the whole network.
+  const { canReadMedia } = await import("@elkdonis/services");
+  const viewer = await getViewer();
+  const viewerId = viewer?.userId ?? null;
+  if (!(await canReadMedia(viewerId, filePath))) {
+    return NextResponse.json(
+      { error: viewerId ? "Not found" : "Unauthorized" },
+      { status: viewerId ? 404 : 401 }
+    );
   }
 
   const url = `${NEXTCLOUD_URL}/remote.php/dav/files/${encodeURIComponent(
@@ -77,7 +89,16 @@ export async function GET(
     }
     // Content at a given path is immutable in practice (filenames are
     // timestamped on upload), so let browsers keep it.
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    // A response whose visibility was just decided per-viewer must never be
+    // stored by a shared cache: marking it public+immutable would serve one
+    // org's private file to the next requester for a year, so revoking a
+    // membership would not revoke the leak.
+    headers.set(
+      "Cache-Control",
+      filePath.includes("/Private/")
+        ? "private, no-store"
+        : "public, max-age=31536000, immutable"
+    );
 
     return new NextResponse(upstream.body, { status: upstream.status, headers });
   } catch (err) {

@@ -10,6 +10,10 @@ import { getThemeOverrides } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { GalleryPanel } from "@/components/gallery-panel";
 import { defaultSiteContent } from "@/lib/default-content";
+import { ElkdonisFeed } from "@/components/elkdonis-feed";
+import { StoreShowcase } from "@elkdonis/commerce/components";
+import { getStoreShowcaseForUser } from "@elkdonis/commerce/queries";
+import { db } from "@elkdonis/db";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +48,17 @@ export default async function ArtistPage({ params }: Props) {
   const themeOverrides = profile.userId
     ? await getThemeOverrides({ userId: profile.userId })
     : {};
+
+  // Sections this person switched on for their own page, from the hub.
+  const showElkdonisFeed = profile.userId
+    ? await hasProfileSection(profile.userId, "elkdonisFeed")
+    : false;
+  // Their marketplace store, when they have switched the section on — a
+  // window onto art-auction, not a checkout of IFAC's own.
+  const storeShowcase =
+    profile.userId && (await hasProfileSection(profile.userId, "store"))
+      ? await getStoreShowcaseForUser(profile.userId, { limit: 6 }).catch(() => null)
+      : null;
 
   const galleryItems = profile.artworks.map((w, i) => ({
     id: w.id ?? `${slug}-${i}`,
@@ -105,8 +120,40 @@ export default async function ArtistPage({ params }: Props) {
             )}
           </section>
         </div>
+
+        {storeShowcase && (
+          <div className="mx-auto max-w-6xl px-6 py-10">
+            <StoreShowcase
+              store={storeShowcase.store}
+              artworks={storeShowcase.artworks}
+              marketplaceUrl={siteConfig.marketplaceUrl}
+              heading="Available work"
+              columns={3}
+            />
+          </div>
+        )}
+        {showElkdonisFeed && <ElkdonisFeed />}
       </main>
       <SiteFooter content={defaultSiteContent.footer} />
     </div>
   );
+}
+
+/**
+ * Whether this person opted into an optional page section.
+ *
+ * Fail-soft to false: a page that renders without an extra section is fine, a
+ * page that 500s because of one is not.
+ */
+async function hasProfileSection(userId: string, key: string): Promise<boolean> {
+  try {
+    const [row] = await db<Array<{ on: boolean }>>`
+      SELECT COALESCE((profile_sections->>${key})::boolean, false) AS on
+      FROM users WHERE id = ${userId}
+    `;
+    return Boolean(row?.on);
+  } catch (error) {
+    console.error("[ifac] hasProfileSection error:", error);
+    return false;
+  }
 }

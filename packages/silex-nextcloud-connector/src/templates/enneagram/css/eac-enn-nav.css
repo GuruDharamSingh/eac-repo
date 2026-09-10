@@ -60,6 +60,70 @@
 }
 .eac-enn-nav__links a:hover { color: var(--eac-enn-accent); }
 
+/* ── The hamburger, made to work ──────────────────────────────────────────
+   Below 600px the links were simply `display: none` and the hamburger had no
+   behaviour at all — the template ships it as three decorative bars ("not a
+   content menu by default"). The result was a nav with five real links that
+   was unreachable on a phone.
+
+   Fixed in CSS rather than script, and that is not a stylistic preference:
+   a published Silex page is sanitized by `sanitizeSilexHtml` on the way out,
+   which strips <script>. Any JS toggle would be removed before a visitor ever
+   saw the page. CSS is the only thing that survives the artifact.
+
+   Driven by focus rather than a checkbox so it needs NO markup change, which
+   means it also repairs the site already published to Nextcloud — that
+   artifact is a stored file from June and would otherwise need a republish.
+   `:focus` opens it on tap; `:focus-within` keeps it open while tabbing
+   through the links. Blurring closes it, which is the behaviour you want from
+   a nav: you tap a link and leave. */
 @media (max-width: 600px) {
-  .eac-enn-nav__links { display: none; }
+  .eac-enn-nav__links {
+    /* Still hidden at rest — but as a collapsed panel, not `display: none`,
+       so it can animate and stays in the accessibility tree. */
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 28px;
+    background: rgba(10, 10, 12, 0.97);
+    border-bottom: 1px solid var(--eac-enn-line-soft);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height 0.24s ease, opacity 0.18s ease, padding 0.24s ease;
+  }
+
+  .eac-enn-nav__menu:focus ~ .eac-enn-nav__links,
+  .eac-enn-nav__links:focus-within {
+    max-height: 60vh;
+    opacity: 1;
+    visibility: visible;
+    padding: 10px 28px 18px;
+    overflow-y: auto;
+  }
+
+  .eac-enn-nav__links a {
+    padding: 13px 0;
+    border-bottom: 1px solid var(--eac-enn-line-soft);
+    font-size: 14px;
+  }
+  .eac-enn-nav__links a:last-child { border-bottom: 0; }
+
+  /* The bars become an X while the panel is open, so the control says which
+     state it is in — the one affordance a button loses without JS. */
+  .eac-enn-nav__menu:focus span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .eac-enn-nav__menu:focus span:nth-child(2) { opacity: 0; }
+  .eac-enn-nav__menu:focus span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+}
+
+.eac-enn-nav__menu span { transition: transform 0.2s ease, opacity 0.2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-enn-nav__links,
+  .eac-enn-nav__menu span { transition: none; }
 }

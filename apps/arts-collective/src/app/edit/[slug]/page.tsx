@@ -6,6 +6,13 @@ import { networkHostWithPort } from "@/lib/domain";
 import { requireUser } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Reads the session cookie, so it can never be a static page. Declared
+ * rather than left to Next's automatic bailout: without it the export
+ * step tries to prerender the page and dies inside a client boundary.
+ */
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const DEFAULT_SILEX_PORT = "6805";

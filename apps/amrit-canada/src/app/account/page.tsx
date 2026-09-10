@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ProfileEditForm } from "@/components/profile-edit-form";
+import { StoreSectionToggle } from "@/components/store-section-toggle";
+import { getStoreForUser, hasProfileSection } from "@elkdonis/commerce/queries";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
@@ -27,6 +29,13 @@ export default async function AccountPage() {
   if (!viewer) redirect("/login?next=/account");
 
   const profile = await getProfile(viewer.userId);
+
+  // Their marketplace store (art-auction), if any, and whether they show it here.
+  const [store, storeSectionOn] = await Promise.all([
+    getStoreForUser(viewer.userId).catch(() => null),
+    hasProfileSection(viewer.userId, "store"),
+  ]);
+  const marketplace = siteConfig.marketplaceUrl.replace(/\/$/, "");
 
   // What this person has said they're coming to, on this site only.
   const rsvps = await db<RsvpRow[]>`
@@ -96,6 +105,44 @@ export default async function AccountPage() {
               slug: profile?.slug ?? "",
             }}
           />
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Your store</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          {store?.status === "active" ? (
+            <>
+              <p className="text-muted-foreground">
+                You sell on the network marketplace as{" "}
+                <a href={`${marketplace}/artists/${store.slug}`} className="underline underline-offset-2">
+                  {store.displayName ?? "your store"}
+                </a>
+                . Listings, sales and payouts are managed in your{" "}
+                <a href={`${marketplace}/studio`} className="underline underline-offset-2">
+                  studio
+                </a>
+                .
+              </p>
+              <StoreSectionToggle initialOn={storeSectionOn} />
+            </>
+          ) : store?.status === "pending" ? (
+            <p className="text-muted-foreground">
+              Your marketplace store application is under review. Once it is approved you can
+              show your work here.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              Members can sell original work on the network marketplace and show it on their
+              page here.{" "}
+              <a href={`${marketplace}/studio/apply`} className="underline underline-offset-2">
+                Open a store
+              </a>
+              .
+            </p>
+          )}
         </CardContent>
       </Card>
 

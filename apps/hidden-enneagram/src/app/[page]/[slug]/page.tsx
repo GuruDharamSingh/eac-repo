@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Lock } from "lucide-react";
+import { ArticleView } from "@elkdonis/cms-ui/article";
 import { canViewFeed, getOrgFeed } from "@elkdonis/services";
 import { getThreadBySlug } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
@@ -78,40 +79,61 @@ export default async function ThreadPage({ params }: PageProps) {
         />
       )}
 
-      <h1 className="mt-8 font-serif text-4xl font-medium leading-[1.1]">{thread.title}</h1>
+      {thread.kind === "post" ? (
+        <ArticleView
+          title={thread.title}
+          lede={thread.excerpt}
+          bodyHtml={thread.description ?? ""}
+          authorName={thread.authorName}
+          publishedAt={published}
+          kindLabel="Writing"
+          org={{ name: feed.name, href: `/${feed.slug}` }}
+        >
+          {thread.visibility === "ORGANIZATION" && (
+            <p className="mt-6 inline-flex items-center gap-1 text-sm text-muted-foreground">
+              <Lock className="size-3" aria-hidden />
+              Members only
+            </p>
+          )}
+        </ArticleView>
+      ) : (
+        <>
+          <h1 className="mt-8 font-serif text-4xl font-medium leading-[1.1]">{thread.title}</h1>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        {thread.authorName && (
-          <span>
-            {thread.authorSlug ? (
-              <Link href={`/about/${thread.authorSlug}`} className="hover:text-foreground">
-                {thread.authorName}
-              </Link>
-            ) : (
-              thread.authorName
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            {thread.authorName && (
+              <span>
+                {thread.authorSlug ? (
+                  <Link href={`/about/${thread.authorSlug}`} className="hover:text-foreground">
+                    {thread.authorName}
+                  </Link>
+                ) : (
+                  thread.authorName
+                )}
+              </span>
             )}
-          </span>
-        )}
-        <time dateTime={new Date(published).toISOString()}>
-          {new Date(published).toLocaleDateString("en-CA", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </time>
-        {thread.visibility === "ORGANIZATION" && (
-          <span className="inline-flex items-center gap-1">
-            <Lock className="size-3" aria-hidden />
-            Members only
-          </span>
-        )}
-      </div>
+            <time dateTime={new Date(published).toISOString()}>
+              {new Date(published).toLocaleDateString("en-CA", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
+            {thread.visibility === "ORGANIZATION" && (
+              <span className="inline-flex items-center gap-1">
+                <Lock className="size-3" aria-hidden />
+                Members only
+              </span>
+            )}
+          </div>
 
-      {thread.description && (
-        <div
-          className="prose-enneagram mt-10 text-[17px]"
-          dangerouslySetInnerHTML={{ __html: thread.description }}
-        />
+          {thread.description && (
+            <div
+              className="prose-enneagram mt-10 text-[17px]"
+              dangerouslySetInnerHTML={{ __html: thread.description }}
+            />
+          )}
+        </>
       )}
     </article>
     </main>
