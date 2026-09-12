@@ -69,6 +69,10 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: d.preview?.title ?? null, kind: "board", size: "standard" };
     case "forum":
       return { title: "Forum", kind: "forum", size: "wide" };
+    case "profile":
+      return { title: d.target ? "Organisation" : "Your profile", kind: "neutral", size: "wide" };
+    case "define":
+      return { title: d.term, kind: "define", size: "compact" };
     case "custom":
       return { title: d.title ?? null, kind: d.kind ?? "neutral", size: d.size ?? "standard" };
   }

@@ -27,6 +27,9 @@ const KINDS: Record<SurfaceKind, KindMeta> = {
   board: { label: "Board", glyph: "▥", size: "wide" },
   forum: { label: "Forum", glyph: "☰", size: "wide" },
   compose: { label: "Compose", glyph: "✎", size: "standard" },
+  // Compact on purpose: a definition is one sentence, opened over the thing
+  // being written rather than replacing it.
+  define: { label: "Define", glyph: "§", size: "compact" },
   neutral: { label: "", glyph: "•", size: "standard" },
 };
 

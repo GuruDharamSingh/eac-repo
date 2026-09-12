@@ -11,7 +11,7 @@ import { createThread } from './posts';
 // unique within the wiki — the org_id is a storage detail, not a scoping
 // mechanism. Any authenticated user can read and edit any page. Slug
 // uniqueness across wiki pages is enforced by a partial unique index
-// (migration 119), not merely by that convention.
+// (migration 122), not merely by that convention.
 //
 // `visibility` is NOT this wiki's access gate — the route does that with
 // requireUser(). The enum has no value meaning "any authenticated network
@@ -141,12 +141,17 @@ export async function updateWikiPage(
   const { body, linkedThreadIds } = await resolveWikilinks(data.body ?? '', id);
   const excerpt = deriveExcerpt(body);
 
+  // metadata is merged, not replaced: it also carries the thesaurus entry
+  // (an "aliases" array), and a plain assignment would silently drop those on
+  // every ordinary edit.
+
   const [thread] = await db`
     UPDATE threads
     SET title = ${data.title},
         body = ${body || null},
         excerpt = ${excerpt},
-        metadata = ${db.json({ wikiParentId: data.parentId ?? null } as any)},
+        metadata = COALESCE(metadata, '{}'::jsonb)
+                   || ${db.json({ wikiParentId: data.parentId ?? null } as any)},
         updated_at = NOW()
     WHERE id = ${id} AND kind = 'wiki_page'
     RETURNING *
@@ -354,19 +359,41 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** Anchors a previous save already resolved. */
+const RESOLVED_LINK = /data-wiki-slug="([^"]*)"/g;
+
+/**
+ * Turn `[[Title]]` into anchors and report every page this body links to.
+ *
+ * It must read **both** forms, because what gets stored is the resolved
+ * anchor, not the `[[…]]` source: an edit round-trips already-resolved
+ * markup, so counting only `[[…]]` made every re-save look like a body with
+ * no links at all — and syncWikiLinks would then delete the page's whole edge
+ * set. Editing any page silently destroyed its "what links here" until this
+ * scanned the anchors too.
+ */
 export async function resolveWikilinks(
   html: string,
   excludeThreadId?: string
 ): Promise<{ body: string; linkedThreadIds: string[] }> {
   const matches = [...html.matchAll(WIKILINK)];
-  if (matches.length === 0) return { body: html, linkedThreadIds: [] };
+  const already = [
+    ...new Set([...html.matchAll(RESOLVED_LINK)].map((m) => m[1].trim().toLowerCase())),
+  ].filter(Boolean);
+
+  if (matches.length === 0 && already.length === 0) {
+    return { body: html, linkedThreadIds: [] };
+  }
 
   const titles = [...new Set(matches.map((m) => m[1].trim()).filter(Boolean))];
   const rows = await db<Array<{ id: string; slug: string; title: string }>>`
     SELECT id, slug, title
     FROM threads
     WHERE kind = 'wiki_page'
-      AND LOWER(title) = ANY(${titles.map((t) => t.toLowerCase())})
+      AND (
+        LOWER(title) = ANY(${titles.map((t) => t.toLowerCase())})
+        OR LOWER(slug) = ANY(${[...titles.map((t) => t.toLowerCase()), ...already]})
+      )
   `;
 
   const bySlug = new Map(rows.map((r) => [r.slug.toLowerCase(), r]));
@@ -384,6 +411,12 @@ export async function resolveWikilinks(
     if (hit.id !== excludeThreadId) linked.add(hit.id);
     return `<a class="wikilink" data-wiki-slug="${escapeHtml(hit.slug)}">${escapeHtml(label)}</a>`;
   });
+
+  // Edges the body already carried, so a re-save keeps them.
+  for (const slug of already) {
+    const hit = bySlug.get(slug);
+    if (hit && hit.id !== excludeThreadId) linked.add(hit.id);
+  }
 
   return { body, linkedThreadIds: [...linked] };
 }
@@ -409,6 +442,291 @@ async function syncWikiLinks(threadId: string, linkedThreadIds: string[]): Promi
     INSERT INTO thread_references ${db(rows)}
     ON CONFLICT (thread_id, references_thread_id) DO NOTHING
   `;
+}
+
+// ============================================================================
+// The dictionary — terms defined while writing
+// ============================================================================
+
+/** One sense of a term, as somebody gave it. Append-only. */
+export interface WikiDefinition {
+  id: string;
+  text: string;
+  byId: string;
+  byName?: string;
+  at: string;
+  /** The writing it was given from, when it came from an article. */
+  sourceThreadId?: string;
+}
+
+export interface DefinedTerm {
+  term: string;
+  slug: string;
+  threadId: string;
+  /** False when the term already had a page and this added a sense to it. */
+  created: boolean;
+  /** Every sense the term now carries, oldest first. */
+  definitions: WikiDefinition[];
+  /** True when this exact wording was already recorded, so nothing was added. */
+  duplicate: boolean;
+}
+
+/**
+ * Define a term from inside a piece of writing, creating its wiki page
+ * immediately.
+ *
+ * The dictionary is the wiki: a term is a wiki page whose title is the term,
+ * so a definition written mid-article is a first-class page the moment it is
+ * accepted rather than something queued until publish. That is deliberate —
+ * the wiki is network-wide, so a stub is useful even if the article that
+ * prompted it is never finished.
+ *
+ * **A term may hold several definitions, and that is the point.** A second
+ * person defining a word does not overwrite the first and is not turned away
+ * either: their wording is appended as another sense, attributed to them.
+ * A collective holds more than one reading of its own vocabulary, and the
+ * earlier definition is not more true for having been written first — so
+ * `metadata.definitions` is append-only and nothing that was offered is
+ * discarded. Only an exact repeat of existing wording is dropped, which makes
+ * defining the same thing twice harmless rather than duplicative.
+ *
+ * The page body stays separate and curated: anyone may edit it into the
+ * fuller treatment, while the senses below it record how the word has
+ * actually been used. Matching is by title or by an alias in
+ * `metadata.aliases` (case-insensitive), so a thesaurus entry adds its sense
+ * to the page it belongs to.
+ *
+ * `sourceThreadId` records an edge from the writing to the term, which is
+ * what makes the term page's "what links here" show the articles that use it.
+ */
+export async function defineTerm(input: {
+  term: string;
+  definition: string;
+  authorId: string;
+  sourceThreadId?: string;
+}): Promise<DefinedTerm> {
+  const term = input.term.trim();
+  const text = input.definition.trim();
+  if (!term) throw new Error('defineTerm: term is required');
+
+  const existing = await findTermPage(term);
+
+  const page =
+    existing ??
+    (await createWikiPage({
+      authorId: input.authorId,
+      title: term,
+      // A page made from a definition starts as that definition, so it is
+      // never an empty stub. Editors take it from there.
+      body: text ? `<p>${escapeHtml(text)}</p>` : undefined,
+    }));
+
+  if (input.sourceThreadId && input.sourceThreadId !== page.id) {
+    // Additive: syncWikiLinks replaces a thread's whole edge set, which would
+    // drop the source article's other references.
+    await db`
+      INSERT INTO thread_references (id, thread_id, references_thread_id)
+      VALUES (${nanoid()}, ${input.sourceThreadId}, ${page.id})
+      ON CONFLICT (thread_id, references_thread_id) DO NOTHING
+    `;
+  }
+
+  const before = await getTermDefinitions(page.id);
+  const duplicate =
+    !text || before.some((d) => d.text.trim().toLowerCase() === text.toLowerCase());
+
+  if (!duplicate) {
+    const entry: WikiDefinition = {
+      id: nanoid(),
+      text,
+      byId: input.authorId,
+      at: new Date().toISOString(),
+      ...(input.sourceThreadId ? { sourceThreadId: input.sourceThreadId } : {}),
+    };
+    // `||` concatenates jsonb arrays, so this appends without reading and
+    // rewriting the whole list — two people defining at once both survive.
+    await db`
+      UPDATE threads
+      SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+            'definitions',
+            COALESCE(metadata->'definitions', '[]'::jsonb) || ${db.json([entry] as any)}
+          ),
+          updated_at = NOW()
+      WHERE id = ${page.id} AND kind = 'wiki_page'
+    `;
+  }
+
+  return {
+    term,
+    slug: page.slug,
+    threadId: page.id,
+    created: !existing,
+    definitions: await getTermDefinitions(page.id),
+    duplicate,
+  };
+}
+
+/** Every sense recorded on a term's page, oldest first, with who gave it. */
+export async function getTermDefinitions(threadId: string): Promise<WikiDefinition[]> {
+  const rows = await db<Array<any>>`
+    SELECT d.value AS entry, u.display_name AS by_name
+    FROM threads t
+    CROSS JOIN LATERAL jsonb_array_elements(
+      CASE WHEN jsonb_typeof(t.metadata->'definitions') = 'array'
+           THEN t.metadata->'definitions' ELSE '[]'::jsonb END
+    ) AS d(value)
+    LEFT JOIN users u ON u.id = (d.value->>'byId')::uuid
+    WHERE t.id = ${threadId}
+  `;
+  return rows.map((r) => ({
+    id: r.entry.id,
+    text: r.entry.text,
+    byId: r.entry.byId,
+    byName: r.by_name || undefined,
+    at: r.entry.at,
+    sourceThreadId: r.entry.sourceThreadId,
+  }));
+}
+
+/** A wiki page for this term, by title or by a `metadata.aliases` entry. */
+async function findTermPage(term: string): Promise<WikiPage | null> {
+  const [row] = await db<Array<any>>`
+    SELECT *
+    FROM threads
+    WHERE kind = 'wiki_page'
+      AND status <> 'archived'
+      AND (
+        LOWER(title) = ${term.toLowerCase()}
+        OR EXISTS (
+          SELECT 1 FROM jsonb_array_elements_text(
+            CASE WHEN jsonb_typeof(metadata->'aliases') = 'array'
+                 THEN metadata->'aliases' ELSE '[]'::jsonb END
+          ) AS alias
+          WHERE LOWER(alias) = ${term.toLowerCase()}
+        )
+      )
+    LIMIT 1
+  `;
+  if (!row) return null;
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    body: row.body,
+    excerpt: row.excerpt,
+    parentId: parentIdOf(row.metadata),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    authorId: row.author_id,
+  };
+}
+
+/** Does this term already have a page? For the "this will link, not create" hint. */
+export async function lookupTerm(term: string): Promise<WikiPageRef | null> {
+  const page = await findTermPage(term.trim());
+  return page ? { id: page.id, slug: page.slug, title: page.title } : null;
+}
+
+const TERM_TAG = /<dfn\b([^>]*?)data-term="([^"]*)"([^>]*)>/gi;
+
+export interface ResolvedTerms {
+  html: string;
+  /** Terms used here that have no wiki page yet. */
+  undefined: string[];
+}
+
+/**
+ * Fill in the definitions for `<dfn data-term="…">` spans at render time.
+ *
+ * The marks store only the term, so this is where a reader actually gets the
+ * meaning. Doing it server-side is what lets a *public* article carry
+ * definitions out of an auth-gated wiki: nothing about the wiki is exposed
+ * except the sentence being quoted.
+ *
+ * One query for every distinct term on the page rather than one per span, and
+ * every lookup honours aliases, so `[[colour]]` and "color" reach one entry.
+ * A term with no page keeps its dotted styling but gains no tooltip — it is
+ * reported in `undefined` so a writing surface can offer to fill it in.
+ */
+export async function resolveTerms(
+  html: string,
+  basePath?: string
+): Promise<ResolvedTerms> {
+  if (!html) return { html, undefined: [] };
+
+  const terms = [...new Set([...html.matchAll(TERM_TAG)].map((m) => decodeAttr(m[2]).trim()))]
+    .filter(Boolean);
+  if (terms.length === 0) return { html, undefined: [] };
+
+  const lowered = terms.map((t) => t.toLowerCase());
+  const rows = await db<
+    Array<{
+      slug: string;
+      title: string;
+      excerpt: string | null;
+      matched: string;
+      first_sense: string | null;
+      sense_count: number;
+    }>
+  >`
+    SELECT t.slug, t.title, t.excerpt, LOWER(m.name) AS matched,
+           t.metadata->'definitions'->0->>'text' AS first_sense,
+           jsonb_array_length(
+             CASE WHEN jsonb_typeof(t.metadata->'definitions') = 'array'
+                  THEN t.metadata->'definitions' ELSE '[]'::jsonb END
+           ) AS sense_count
+    FROM threads t
+    CROSS JOIN LATERAL (
+      SELECT t.title AS name
+      UNION ALL
+      SELECT alias FROM jsonb_array_elements_text(
+        CASE WHEN jsonb_typeof(t.metadata->'aliases') = 'array'
+             THEN t.metadata->'aliases' ELSE '[]'::jsonb END
+      ) AS alias
+    ) m
+    WHERE t.kind = 'wiki_page'
+      AND t.status <> 'archived'
+      AND LOWER(m.name) = ANY(${lowered})
+  `;
+
+  const byName = new Map(rows.map((r) => [r.matched, r]));
+  const missing = new Set<string>();
+
+  const out = html.replace(TERM_TAG, (full, before: string, raw: string, after: string) => {
+    const term = decodeAttr(raw).trim();
+    const hit = byName.get(term.toLowerCase());
+    if (!hit) {
+      missing.add(term);
+      return full;
+    }
+    // A given sense wins over the page excerpt. Senses are written *as*
+    // definitions — one or two sentences aimed at a reader meeting the word —
+    // whereas the excerpt is a whole article flattened, headings and all,
+    // which makes a poor tooltip. The excerpt is the fallback for a page
+    // nobody has glossed.
+    const definition = (hit.first_sense ?? hit.excerpt ?? '').trim();
+    const senses = Number(hit.sense_count ?? 0);
+    const attrs = [
+      definition ? ` title="${escapeHtml(definition)}"` : '',
+      definition ? ` data-definition="${escapeHtml(definition)}"` : '',
+      // More than one reading exists — the surface can offer "3 senses" and
+      // send the reader to the page rather than pretending there is one.
+      senses > 1 ? ` data-senses="${senses}"` : '',
+      basePath ? ` data-href="${escapeHtml(`${basePath}/${hit.slug}`)}"` : '',
+    ].join('');
+    return `<dfn${before}data-term="${escapeHtml(term)}"${after}${attrs}>`;
+  });
+
+  return { html: out, undefined: [...missing] };
+}
+
+function decodeAttr(value: string): string {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 }
 
 export async function getWikiBacklinks(threadId: string): Promise<WikiPageRef[]> {

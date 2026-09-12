@@ -9,6 +9,8 @@ import {
   getWikiAncestors,
   getWikiBacklinks,
   listWikiPages,
+  getTermDefinitions,
+  resolveTerms,
 } from "@elkdonis/services";
 
 export const dynamic = "force-dynamic";
@@ -24,17 +26,21 @@ export default async function WikiPageView({
   const page = await getWikiPage(slug);
   if (!page) notFound();
 
-  const [ancestors, backlinks, allPages] = await Promise.all([
+  const [ancestors, backlinks, allPages, senses] = await Promise.all([
     getWikiAncestors(page.id),
     getWikiBacklinks(page.id),
     listWikiPages(),
+    getTermDefinitions(page.id),
   ]);
 
   const children = allPages
     .filter((p) => p.parentId === page.id)
     .sort((a, b) => a.title.localeCompare(b.title));
 
-  const { html, headings } = renderWikiBody(page.body ?? "", "/hub/wiki");
+  // Terms inside the body get their definitions filled in here, server-side —
+  // the marks store only the term (see TermDefinition in @elkdonis/cms-ui).
+  const resolved = await resolveTerms(page.body ?? "", "/hub/wiki");
+  const { html, headings } = renderWikiBody(resolved.html, "/hub/wiki");
 
   return (
     <div>
@@ -94,6 +100,35 @@ export default async function WikiPageView({
             Write it.
           </Link>
         </p>
+      )}
+
+      {senses.length > 0 && (
+        <section className="mt-10 border-t border-border pt-6">
+          <h2 className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            {senses.length === 1
+              ? "How this has been defined"
+              : `How this has been defined · ${senses.length} senses`}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Given by people using the word in their own writing. Later ones sit
+            alongside earlier ones rather than replacing them.
+          </p>
+          <ol className="mt-3 space-y-3">
+            {senses.map((s) => (
+              <li key={s.id} className="border-l-2 border-border pl-3">
+                <p className="text-sm text-foreground">{s.text}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {s.byName ?? "someone"} ·{" "}
+                  {new Date(s.at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
 
       {children.length > 0 && (

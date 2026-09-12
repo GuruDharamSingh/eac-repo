@@ -11,6 +11,8 @@ import { GallerySurface } from "./surfaces/GallerySurface";
 import { WriteSurface } from "./surfaces/WriteSurface";
 import { BoardSurface, BoardCardSurface } from "./surfaces/BoardSurface";
 import { ForumSurface } from "./surfaces/ForumSurface";
+import { ProfileSurface } from "./surfaces/ProfileSurface";
+import { DefineSurface } from "./surfaces/DefineSurface";
 
 /** Descriptor → surface. The only place that knows every surface's name. */
 export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor }) {
@@ -33,6 +35,10 @@ export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor })
       return <BoardCardSurface descriptor={descriptor} />;
     case "forum":
       return <ForumSurface />;
+    case "profile":
+      return <ProfileSurface descriptor={descriptor} />;
+    case "define":
+      return <DefineSurface descriptor={descriptor} />;
     case "custom": {
       const render = connectors.custom?.[descriptor.key];
       if (render) return <>{render({ descriptor })}</>;

@@ -32,9 +32,28 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return `boardCard:${d.cardId}`;
     case "forum":
       return "forum";
+    case "profile":
+      return d.target ? `profile:org:${d.target.orgId}` : "profile";
+    case "define":
+      // Encoded: a term may hold spaces, punctuation, even a colon, and the
+      // format is colon-separated.
+      return `define:${encodeURIComponent(d.term)}${d.sourceThreadId ? `:${d.sourceThreadId}` : ""}`;
     case "custom":
       return null;
   }
+}
+
+/** A term out of the address bar: decoded, trimmed, and length-capped. */
+function decodeTerm(raw: string | undefined): string | null {
+  if (!raw) return null;
+  let term: string;
+  try {
+    term = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  term = term.replace(/\s+/g, " ").trim();
+  return term && term.length <= 120 ? term : null;
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -65,6 +84,15 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return a && SAFE.test(a) ? { type: "boardCard", cardId: a } : null;
     case "forum":
       return { type: "forum" };
+    case "profile":
+      if (a === "org" && b && SAFE.test(b)) return { type: "profile", target: { kind: "org", orgId: b } };
+      return { type: "profile" };
+    case "define": {
+      // Bounded: this arrives from the address bar, so it is somebody's input.
+      const term = decodeTerm(a);
+      if (!term) return null;
+      return { type: "define", term, sourceThreadId: b && SAFE.test(b) ? b : undefined };
+    }
     default:
       return null;
   }

@@ -7,10 +7,12 @@ import {
   defaultThreadToAnswers,
   type SurfaceConnectors,
   type SurfaceThread,
+  type SurfaceProfile,
 } from "@elkdonis/cms-ui/surface";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
+import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
 
@@ -99,6 +101,38 @@ export function HubSurfaces({
         }));
       },
       uploadEndpoint: "/api/upload",
+
+      // The profile surface: the person's network-wide identity, or this
+      // org's own identity row for its owners and guides (the display image
+      // lives there). Reads and writes go to /api/center/profile.
+      profile: {
+        async load(target) {
+          const q = target ? `?org=${encodeURIComponent(target.orgId)}` : "";
+          const res = await fetch(`/api/center/profile${q}`);
+          if (res.status === 404 || res.status === 401) return null;
+          if (!res.ok) throw new Error(`profile ${res.status}`);
+          return (await res.json()) as SurfaceProfile;
+        },
+        async save(target, input) {
+          const q = target ? `?org=${encodeURIComponent(target.orgId)}` : "";
+          const res = await fetch(`/api/center/profile${q}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) return { ok: false, error: data.error ?? "Could not save that." };
+          return { ok: true };
+        },
+        async uploadAvatar(file) {
+          const body = new FormData();
+          body.append("file", file);
+          const res = await fetch("/api/center/avatar", { method: "POST", body });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.url) return { ok: false, error: data.error ?? "Could not upload that." };
+          return { ok: true, url: data.url as string };
+        },
+      },
 
       async rsvp(thread, going) {
         const res = await fetch(`/api/threads/${thread.id}/rsvp`, {
@@ -208,6 +242,14 @@ export function HubSurfaces({
         },
       },
 
+      // The network dictionary. Defining a term while writing creates its
+      // wiki page straight away — the wiki is shared across every org, so the
+      // entry outlives whatever article prompted it.
+      dictionary: {
+        lookup: (term) => lookupTermAction(term),
+        define: (input) => defineTermAction(input),
+      },
+
       // The forum, as the shared forum surface. The tile is server-rendered
       // from the same snapshot in hub/page.tsx; this reload is what lets
       // "Mark all read" take effect without a page load.
@@ -244,7 +286,7 @@ export function HubSurfaces({
       },
 
       composeSlots: {
-        body: ({ value, onChange }) => <RichTextEditor value={value} onChange={onChange} />,
+        body: ({ value, onChange, tier }) => <RichTextEditor value={value} onChange={onChange} toolbar={tier === "quick" ? "compact" : "full"} />,
         // Never a URL box: upload, or choose from what this org already has.
         media: ({ value, onChange, label, hint }) => (
           <MediaPicker

@@ -34,8 +34,17 @@ import {
 // ============================================================================
 
 export interface ContentComposerSlots {
-  /** Rich-text body editor. Receives the current HTML and a setter. */
-  body?: (props: { value: string; onChange: (html: string) => void }) => React.ReactNode;
+  /**
+   * Rich-text body editor. Receives the current HTML and a setter, plus the
+   * tier being rendered so the host can size the editor to its surface — a
+   * "quick" popup wants a short toolbar, the full writing room wants all of
+   * it. Hosts that don't care can ignore `tier`.
+   */
+  body?: (props: {
+    value: string;
+    onChange: (html: string) => void;
+    tier?: ContentTier;
+  }) => React.ReactNode;
   /**
    * Media pane — picker plus what is already attached. `label` and `hint`
    * name the slot being filled (cover, banner, hero, a session's image), so
@@ -115,7 +124,7 @@ export function ContentComposer({
       {groups.map((group) => {
         const body = (
           <div className="eac-group-fields">
-            {renderFields(group, answers, patch, slots, fieldErrors)}
+            {renderFields(group, answers, patch, slots, fieldErrors, tier)}
           </div>
         );
 
@@ -161,7 +170,8 @@ function renderFields(
   answers: Record<string, unknown>,
   patch: (fields: Record<string, unknown>) => void,
   slots: ContentComposerSlots | undefined,
-  fieldErrors: Record<string, string[] | undefined> | undefined
+  fieldErrors: Record<string, string[] | undefined> | undefined,
+  tier: ContentTier
 ): React.ReactNode[] {
   const visible = group.fields.filter((f) => fieldDependencySatisfied(f.dependsOn, answers));
   const out: React.ReactNode[] = [];
@@ -174,7 +184,7 @@ function renderFields(
   };
 
   for (const field of visible) {
-    const node = renderField(field, answers, patch, slots, fieldErrors?.[field.name]);
+    const node = renderField(field, answers, patch, slots, fieldErrors?.[field.name], tier);
     if (node === null) continue;
     if (field.inline) row.push(node);
     else {
@@ -191,7 +201,8 @@ function renderField(
   answers: Record<string, unknown>,
   patch: (fields: Record<string, unknown>) => void,
   slots: ContentComposerSlots | undefined,
-  errors: string[] | undefined
+  errors: string[] | undefined,
+  tier: ContentTier
 ): React.ReactNode | null {
   // The slotted fields render the host's widget in place, keeping the
   // declared order rather than appending them.
@@ -199,7 +210,11 @@ function renderField(
     return (
       <div key={field.name} className="eac-field" data-field="body">
         <span className="eac-field-label">{field.label}</span>
-        {slots.body({ value: String(answers.body ?? ""), onChange: (html) => patch({ body: html }) })}
+        {slots.body({
+          value: String(answers.body ?? ""),
+          onChange: (html) => patch({ body: html }),
+          tier,
+        })}
         {errors?.length ? <p className="eac-field-error">{errors.join(". ")}</p> : null}
       </div>
     );

@@ -22,6 +22,8 @@ import {
   completeWikilink,
   type WikilinkTrigger,
 } from './wikilink-suggest';
+import { TermDefinition } from './term-definition';
+import { useSurfaceOptional } from '../surface/context';
 
 const lowlight = createLowlight(common);
 
@@ -59,6 +61,11 @@ export interface RichTextEditorProps {
    * the syntax still works when typed by hand, since it resolves server-side.
    */
   wikiPages?: WikiPageRef[];
+  /**
+   * The thread being written, so a term defined from here records a reference
+   * from the writing to the term.
+   */
+  sourceThreadId?: string;
 }
 
 export function RichTextEditor({
@@ -70,9 +77,15 @@ export function RichTextEditor({
   className,
   toolbar = 'full',
   wikiPages,
+  sourceThreadId,
 }: RichTextEditorProps) {
   const compact = toolbar === 'compact';
   const height = minHeight ?? (compact ? 120 : 240);
+
+  // Optional: the editor works standalone (the wiki form) and inside the
+  // surface stack (a compose popup). Only the latter can open a define layer.
+  const surface = useSurfaceOptional();
+  const canDefine = Boolean(surface && surface.connectors.dictionary);
 
   const [trigger, setTrigger] = React.useState<WikilinkTrigger | null>(null);
   const [coords, setCoords] = React.useState<{ left: number; bottom: number } | null>(null);
@@ -109,6 +122,7 @@ export function RichTextEditor({
       TableHeader,
       TableCell,
       Youtube.configure({ controls: true, nocookie: true }),
+      TermDefinition,
       ...(wikiPages
         ? [
             WikilinkSuggest.configure({
@@ -181,9 +195,30 @@ export function RichTextEditor({
     return false;
   };
 
+  /**
+   * Mark the selection as a term and open the define layer over the article.
+   *
+   * The mark goes on first and carries only the term, so the prose is marked
+   * up whether or not the definition gets written — and because the
+   * definition is resolved at render from the wiki, nothing has to come back
+   * from the surface for this to end up correct.
+   */
+  const defineSelection = React.useCallback(() => {
+    if (!editor || !surface) return;
+    const { from, to } = editor.state.selection;
+    const term = editor.state.doc.textBetween(from, to, ' ').replace(/\s+/g, ' ').trim();
+    if (!term) return;
+    editor.chain().focus().setTermDefinition({ term }).run();
+    surface.push({ type: 'define', term, sourceThreadId });
+  }, [editor, surface, sourceThreadId]);
+
   return (
     <div className={className ? `eac-ed ${className}` : 'eac-ed'}>
-      <Toolbar editor={editor} toolbar={toolbar} />
+      <Toolbar
+        editor={editor}
+        toolbar={toolbar}
+        onDefine={canDefine ? defineSelection : undefined}
+      />
       <div
         className="eac-ed-body"
         style={{ minHeight: height }}
@@ -238,11 +273,20 @@ export function RichTextEditor({
   );
 }
 
-function Toolbar({ editor, toolbar }: { editor: Editor | null; toolbar: EditorToolbar }) {
+function Toolbar({
+  editor,
+  toolbar,
+  onDefine,
+}: {
+  editor: Editor | null;
+  toolbar: EditorToolbar;
+  onDefine?: () => void;
+}) {
   if (!editor) return <div className="eac-ed-bar eac-ed-bar--placeholder" />;
 
   const full = toolbar === 'full';
   const compact = toolbar === 'compact';
+  const hasSelection = !editor.state.selection.empty;
 
   return (
     <div className="eac-ed-bar">
@@ -289,6 +333,26 @@ function Toolbar({ editor, toolbar }: { editor: Editor | null; toolbar: EditorTo
       <Btn on={editor.isActive('link')} act={() => promptLink(editor)} label="Link">
         ↗
       </Btn>
+      {onDefine && (
+        <Btn
+          on={editor.isActive('termDefinition')}
+          act={() =>
+            editor.isActive('termDefinition')
+              ? editor.chain().focus().unsetTermDefinition().run()
+              : onDefine()
+          }
+          label={
+            editor.isActive('termDefinition')
+              ? 'Undefine this term'
+              : hasSelection
+                ? 'Define this term'
+                : 'Select a word to define it'
+          }
+          disabled={!hasSelection && !editor.isActive('termDefinition')}
+        >
+          §
+        </Btn>
+      )}
 
       {full && (
         <>
@@ -380,11 +444,13 @@ function Btn({
   on,
   act,
   label,
+  disabled,
   children,
 }: {
   on?: boolean;
   act: () => void;
   label: string;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -394,6 +460,7 @@ function Btn({
       aria-label={label}
       aria-pressed={on ?? false}
       title={label}
+      disabled={disabled}
       className="eac-ed-btn"
     >
       {children}

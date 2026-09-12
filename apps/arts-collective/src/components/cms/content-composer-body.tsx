@@ -83,8 +83,8 @@ export function ContentComposerBody({
         onChange={setAnswers}
         fieldErrors={fieldErrors}
         slots={{
-          body: ({ value, onChange }) => (
-            <RichTextEditor value={value} onChange={onChange} />
+          body: ({ value, onChange, tier }) => (
+            <RichTextEditor value={value} onChange={onChange} toolbar={tier === "quick" ? "compact" : "full"} />
           ),
           // Upload *and* browse what the org already has, in the same pane —
           // the Library tab is the "media review" half, and it is the reason

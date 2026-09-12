@@ -229,6 +229,9 @@ export function WriteSurface({ descriptor }: { descriptor: Descriptor }) {
                   connectors.composeSlots.body({
                     value: bodyHtml,
                     onChange: (html) => update({ body: html }),
+                    // The writing room is the full-page surface; it wants the
+                    // whole toolbar, not the popup's short one.
+                    tier: "full",
                   })
                 ) : (
                   <textarea

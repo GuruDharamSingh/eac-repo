@@ -9,3 +9,4 @@ export {
   completeWikilink,
   type WikilinkTrigger,
 } from './wikilink-suggest';
+export { TermDefinition } from './term-definition';

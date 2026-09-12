@@ -130,6 +130,10 @@ export {
 } from './wiki';
 export type {
   WikiPage,
+  defineTerm,
+  lookupTerm,
+  resolveTerms,
+  getTermDefinitions,
   WikiPageListItem,
   WikiTreeNode,
   WikiRevision,
@@ -137,6 +141,9 @@ export type {
 } from './wiki';
 
 // Auth services
+  DefinedTerm,
+  WikiDefinition,
+  ResolvedTerms,
 export {
   createUser,
   getUserById,

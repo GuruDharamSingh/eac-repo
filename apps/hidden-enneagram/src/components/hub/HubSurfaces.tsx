@@ -119,8 +119,8 @@ export function HubSurfaces({
       },
 
       composeSlots: {
-        body: ({ value, onChange }) => (
-          <RichTextEditor value={value} onChange={onChange} />
+        body: ({ value, onChange, tier }) => (
+          <RichTextEditor value={value} onChange={onChange} toolbar={tier === "quick" ? "compact" : "full"} />
         ),
         // Never a URL box: upload, or choose from what this org already has.
         media: ({ value, onChange }) => (

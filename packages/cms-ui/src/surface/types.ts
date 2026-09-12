@@ -30,9 +30,19 @@ export type SurfaceKind =
   | "board"
   | "forum"
   | "compose"
+  | "define"
   | "neutral";
 
-export type SurfaceSize = "compact" | "standard" | "wide" | "full";
+/**
+ * How much room the surface takes.
+ *
+ * `bare` is the odd one: no panel at all — no paper, no masthead, no foot —
+ * just the surface's own content floating on the backdrop, sized to the
+ * viewport's shorter axis. For a subject that is already a shape (the chart
+ * wheel is a circle), a rectangle around it is furniture. A `bare` surface
+ * renders its own close control, since there is no chrome to carry one.
+ */
+export type SurfaceSize = "compact" | "standard" | "wide" | "full" | "bare";
 
 /**
  * What a face already knows about the thing it opens. Painted into the
@@ -49,6 +59,16 @@ export interface ThreadPreview {
 
 export type SurfaceDescriptor =
   | { type: "thread"; id: string; preview?: ThreadPreview }
+  | {
+      /**
+       * The flip side of a profile card: the network-wide identity (the
+       * ArtDirect profile), read and edited in place. With `target` it is an
+       * organisation's identity instead — the same `users` row shape
+       * (migration 099), edited by its owners and guides.
+       */
+      type: "profile";
+      target?: { kind: "org"; orgId: string };
+    }
   | {
       type: "compose";
       /** Omit to open the catalogue and choose. */
@@ -101,6 +121,21 @@ export type SurfaceDescriptor =
     }
   | {
       /** Anything a host registers under `connectors.custom`. */
+      /**
+       * Define a term into the network dictionary, without leaving what you
+       * are writing. Pushed as a layer, so the masthead grows a "‹ back" to
+       * the article underneath and accepting returns you to your sentence.
+       *
+       * Carries only the term: the definition is typed here, and the wiki
+       * page is created on accept. Everything is serialisable, so a
+       * half-finished definition survives a reload via `?surface=`.
+       */
+      type: "define";
+      term: string;
+      /** The thread being written, recorded as a reference to the term. */
+      sourceThreadId?: string;
+    }
+  | {
       type: "custom";
       key: string;
       title?: string;
@@ -336,6 +371,57 @@ export interface SurfaceAction {
   download?: string;
 }
 
+// ── The profile surface ───────────────────────────────────────────────────
+
+export interface SurfaceProfileLink {
+  label: string | null;
+  url: string;
+}
+
+/** A `users` row as the surface sees it — a person, or an org's identity. */
+export interface SurfaceProfile {
+  kind: "person" | "organization";
+  displayName: string;
+  headline: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  pronouns: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  socialLinks: SurfaceProfileLink[];
+  slug: string | null;
+  /** The public page, when there is one. */
+  pageHref: string | null;
+  /** Whether the viewer may save changes. */
+  canEdit: boolean;
+  /** Doors out of the surface: the person's files, blog, store. */
+  hrefs?: { files?: string | null; blog?: string | null; store?: string | null };
+}
+
+export interface SurfaceProfileInput {
+  displayName?: string;
+  headline?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  pronouns?: string | null;
+  city?: string | null;
+  region?: string | null;
+  country?: string | null;
+  socialLinks?: SurfaceProfileLink[];
+}
+
+export type SaveProfileResult = { ok: true } | { ok: false; error: string };
+
+export type SurfaceProfileTarget = { kind: "org"; orgId: string } | undefined;
+
+export interface SurfaceProfileConnectors {
+  load: (target: SurfaceProfileTarget) => Promise<SurfaceProfile | null>;
+  save: (target: SurfaceProfileTarget, input: SurfaceProfileInput) => Promise<SaveProfileResult>;
+  /** Omit to hide the avatar control. Resolves to the stored URL. */
+  uploadAvatar?: (file: File) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
+}
+
 export type SaveThreadResult =
   | { ok: true; id: string; href?: string | null }
   | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
@@ -358,6 +444,8 @@ export interface SurfaceConnectors {
   viewer: SurfaceViewer;
   /** Shown in kickers ("Calendar · Amrit Canada"). */
   orgName?: string;
+  /** The profile surface. Omit and profile faces simply navigate. */
+  profile?: SurfaceProfileConnectors;
 
   /** A thread by id, as this viewer may see it. Null when not found. */
   loadThread: (id: string) => Promise<SurfaceThread | null>;
@@ -400,6 +488,25 @@ export interface SurfaceConnectors {
 
   /** The org's forum. Omit to disable the forum surface. */
   forum?: SurfaceForumConnectors;
+
+  /**
+   * The network dictionary, behind the define surface. Omit and the "Define"
+   * affordance stays hidden rather than failing when used.
+   *
+   * A term may hold several senses: defining one that already exists appends
+   * your wording rather than overwriting theirs or refusing you. `lookup`
+   * reports what is already there so the surface can say so before you write.
+   */
+  dictionary?: {
+    lookup: (
+      term: string
+    ) => Promise<{ slug: string; title: string; senses: number } | null>;
+    define: (input: {
+      term: string;
+      definition: string;
+      sourceThreadId?: string;
+    }) => Promise<{ slug: string; created: boolean; senses: number; duplicate: boolean }>;
+  };
 
   /** Nextcloud's public origin, for Talk join links. */
   talkBaseUrl?: string | null;

@@ -38,6 +38,7 @@ export { ForumMini, ForumFace } from "./surfaces/ForumSurface";
 export { MonthGrid } from "./surfaces/CalendarSurface";
 export type { MonthGridProps } from "./surfaces/CalendarSurface";
 export { defaultThreadToAnswers } from "./surfaces/ComposeSurface";
+export { DefineSurface } from "./surfaces/DefineSurface";
 
 export { kindMeta, asSurfaceKind } from "./kinds";
 export type { KindMeta } from "./kinds";
@@ -83,6 +84,12 @@ export type {
   SurfaceForumFeed,
   SurfaceForumThread,
   SurfaceForumConnectors,
+  SurfaceProfile,
+  SurfaceProfileInput,
+  SurfaceProfileLink,
+  SurfaceProfileTarget,
+  SurfaceProfileConnectors,
+  SaveProfileResult,
   SaveThreadResult,
   RsvpResult,
 } from "./types";
