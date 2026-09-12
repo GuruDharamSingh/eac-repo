@@ -23,11 +23,12 @@ const FONT_STACK = {
  * same, so Aquarius (a wide, short glyph) and Mars (tall) come out the same
  * size instead of Aquarius reading as half the height of its neighbours.
  */
-const GLYPH_SCALE: Record<string, number> = {
+export const GLYPH_SCALE: Record<string, number> = {
   aries: 1.379, taurus: 1.321, gemini: 1.203, cancer: 1.401, leo: 1.068, virgo: 1.086,
   libra: 1.437, scorpio: 1.105, sagittarius: 1.458, capricorn: 1.104, aquarius: 1.976, pisces: 1.33,
   moon: 1.441, mercury: 1.23, venus: 1.527, mars: 1.873, jupiter: 1.416, saturn: 1.316,
   uranus: 1.379, neptune: 1.321, pluto: 1.401,
+  northNode: 1.395, chiron: 1.359,
   conjunction: 1.603, opposition: 1.538, sextile: 2.045, quincunx: 2.273, semisextile: 2.273,
   semisquare: 1.401, sesquisquare: 1.133,
 };

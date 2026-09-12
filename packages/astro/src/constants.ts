@@ -10,23 +10,36 @@ export interface BodyInfo {
   key: BodyKey;
   name: string;
   glyph: string;
-  /** Swiss Ephemeris planet number (SE_SUN = 0 … SE_PLUTO = 9). */
+  /** Swiss Ephemeris body number (SE_SUN = 0 … SE_PLUTO = 9, SE_TRUE_NODE = 11, SE_CHIRON = 15). */
   sweId: number;
+  /**
+   * "planet" counts toward the element/modality balance and must always
+   * compute; "point" is extra — it may be missing from a chart (Chiron needs
+   * the asteroid ephemeris and covers a narrower span of years) and is left
+   * out of the tally.
+   */
+  group: "planet" | "point";
   color: string;
   keywords: string[];
 }
 
 export const BODIES: readonly BodyInfo[] = [
-  { key: "sun", name: "Sun", glyph: "☉", sweId: 0, color: "#FFA500", keywords: ["ego", "identity", "vitality", "purpose"] },
-  { key: "moon", name: "Moon", glyph: "☽", sweId: 1, color: "#C0C0C0", keywords: ["emotions", "instinct", "subconscious", "nurturing"] },
-  { key: "mercury", name: "Mercury", glyph: "☿", sweId: 2, color: "#87CEEB", keywords: ["communication", "intellect", "learning", "travel"] },
-  { key: "venus", name: "Venus", glyph: "♀", sweId: 3, color: "#FF69B4", keywords: ["love", "beauty", "harmony", "values"] },
-  { key: "mars", name: "Mars", glyph: "♂", sweId: 4, color: "#DC143C", keywords: ["action", "energy", "courage", "desire"] },
-  { key: "jupiter", name: "Jupiter", glyph: "♃", sweId: 5, color: "#DAA520", keywords: ["expansion", "wisdom", "philosophy", "luck"] },
-  { key: "saturn", name: "Saturn", glyph: "♄", sweId: 6, color: "#2F4F4F", keywords: ["discipline", "structure", "responsibility", "limits"] },
-  { key: "uranus", name: "Uranus", glyph: "♅", sweId: 7, color: "#4FD0E3", keywords: ["innovation", "rebellion", "technology", "freedom"] },
-  { key: "neptune", name: "Neptune", glyph: "♆", sweId: 8, color: "#4169E1", keywords: ["dreams", "intuition", "spirituality", "illusion"] },
-  { key: "pluto", name: "Pluto", glyph: "♇", sweId: 9, color: "#8B008B", keywords: ["transformation", "power", "regeneration", "depth"] },
+  { key: "sun", name: "Sun", glyph: "☉", sweId: 0, color: "#FFA500", group: "planet", keywords: ["ego", "identity", "vitality", "purpose"] },
+  { key: "moon", name: "Moon", glyph: "☽", sweId: 1, color: "#C0C0C0", group: "planet", keywords: ["emotions", "instinct", "subconscious", "nurturing"] },
+  { key: "mercury", name: "Mercury", glyph: "☿", sweId: 2, color: "#87CEEB", group: "planet", keywords: ["communication", "intellect", "learning", "travel"] },
+  { key: "venus", name: "Venus", glyph: "♀", sweId: 3, color: "#FF69B4", group: "planet", keywords: ["love", "beauty", "harmony", "values"] },
+  { key: "mars", name: "Mars", glyph: "♂", sweId: 4, color: "#DC143C", group: "planet", keywords: ["action", "energy", "courage", "desire"] },
+  { key: "jupiter", name: "Jupiter", glyph: "♃", sweId: 5, color: "#DAA520", group: "planet", keywords: ["expansion", "wisdom", "philosophy", "luck"] },
+  { key: "saturn", name: "Saturn", glyph: "♄", sweId: 6, color: "#2F4F4F", group: "planet", keywords: ["discipline", "structure", "responsibility", "limits"] },
+  { key: "uranus", name: "Uranus", glyph: "♅", sweId: 7, color: "#4FD0E3", group: "planet", keywords: ["innovation", "rebellion", "technology", "freedom"] },
+  { key: "neptune", name: "Neptune", glyph: "♆", sweId: 8, color: "#4169E1", group: "planet", keywords: ["dreams", "intuition", "spirituality", "illusion"] },
+  { key: "pluto", name: "Pluto", glyph: "♇", sweId: 9, color: "#8B008B", group: "planet", keywords: ["transformation", "power", "regeneration", "depth"] },
+  // The TRUE node, not the mean one: it follows the Moon's actual orbit
+  // rather than a smoothed average, and it is what astro.com and most modern
+  // software show. The South Node is always exactly opposite, so it is not
+  // stored — derive it as northNode + 180° if it is ever wanted.
+  { key: "northNode", name: "North Node", glyph: "☊", sweId: 11, color: "#6A5ACD", group: "point", keywords: ["direction", "growth", "what is being learned"] },
+  { key: "chiron", name: "Chiron", glyph: "⚷", sweId: 15, color: "#8FBC8F", group: "point", keywords: ["wound", "healing", "teaching", "the bridge"] },
 ];
 
 export const BODY_BY_KEY = Object.fromEntries(BODIES.map((b) => [b.key, b])) as Record<BodyKey, BodyInfo>;

@@ -77,6 +77,10 @@ const MOVING_ORB_FACTOR: Partial<Record<AspectPoint, number>> = {
   moon: 0.5,
 };
 
+/** Chiron and the Node keep the half-orb they are given natally, on either side. */
+const POINT_ORB = 0.5;
+const isPoint = (k: AspectPoint) => k === "chiron" || k === "northNode";
+
 /** Angles keep the same three-quarter orb they get natally. */
 const ANGLE_ORB = 0.75;
 const isAngle = (k: AspectPoint) => k === "ascendant" || k === "midheaven";
@@ -139,7 +143,10 @@ export function computeCrossAspects(
 
         const base = opts.orbs?.[def.key] ?? TRANSIT_ORBS[def.key];
         const maxOrb =
-          base * (MOVING_ORB_FACTOR[m.key] ?? 1) * (isAngle(m.key) || isAngle(f.key) ? ANGLE_ORB : 1);
+          base *
+          (MOVING_ORB_FACTOR[m.key] ?? 1) *
+          (isAngle(m.key) || isAngle(f.key) ? ANGLE_ORB : 1) *
+          (isPoint(m.key) || isPoint(f.key) ? POINT_ORB : 1);
 
         const orb = Math.abs(sep - def.angle);
         if (orb > maxOrb) continue;

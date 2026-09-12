@@ -26,7 +26,7 @@ import {
   transitAspects,
 } from "../src/index";
 import { renderNatalSvg } from "../src/svg";
-import { renderWheelSvg } from "../src/wheel";
+import { GLYPH_SCALE, renderWheelSvg } from "../src/wheel";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -94,7 +94,9 @@ const golden: Record<string, [number, boolean, number]> = {
 };
 check("utc", () => assert.equal(chart.utc, "1990-05-15T18:30:00.000Z"));
 check("planet longitudes, retrogrades, houses", () => {
-  for (const b of chart.bodies) {
+  // The golden table is the ten planets. Chiron and the Node are checked
+  // separately, below — their reference values are not in sample_chart.json.
+  for (const b of chart.bodies.filter((x) => golden[x.key])) {
     const [lon, retro, house] = golden[b.key];
     near(b.longitude, lon, 0.01, b.key);
     assert.equal(b.retrograde, retro, `${b.key} retrograde`);
@@ -183,7 +185,7 @@ check("a day of stepping moves the Moon about 13°", () => {
 console.log("other");
 check("sky now computes", () => {
   const sky = calculateSky();
-  assert.equal(sky.bodies.length, 10);
+  assert.equal(sky.bodies.length, 12);
   assert.equal(sky.houses.length, 12);
 });
 check("ephemeris data files are found and used", () => {
@@ -222,6 +224,68 @@ check("bad input throws ChartInputError", () => {
     () => calculateChart({ date: "1990-05-15", time: "14:30", timezone: "UTC", latitude: 95, longitude: 0 }),
     { name: "ChartInputError" },
   );
+});
+
+console.log("Chiron and the North Node");
+check("the reference chart's points land in the right signs", () => {
+  // Degrees from our own engine would only prove it agrees with itself. The
+  // SIGN is independently checkable against any published ephemeris: the
+  // nodal axis sat in Aquarius/Leo from late 1989 to mid 1991, and Chiron
+  // was in Cancer from 1988 to 1991.
+  const node = chart.bodies.find((b) => b.key === "northNode")!;
+  const chiron = chart.bodies.find((b) => b.key === "chiron")!;
+  assert.equal(node.sign, "aquarius", "North Node in Aquarius on 1990-05-15");
+  assert.equal(chiron.sign, "cancer", "Chiron in Cancer on 1990-05-15");
+});
+
+check("both points are computed, after the ten planets", () => {
+  assert.equal(chart.bodies.length, 12);
+  // Appended, never inserted: plenty of callers read bodies[0]/[1] as the
+  // Sun and Moon.
+  assert.equal(chart.bodies[0].key, "sun");
+  assert.equal(chart.bodies[1].key, "moon");
+  const node = chart.bodies.find((b) => b.key === "northNode");
+  const chiron = chart.bodies.find((b) => b.key === "chiron");
+  assert.ok(node && chiron, "both points present");
+  assert.ok(node.retrograde, "the lunar node travels backwards");
+  assert.ok(node.house >= 1 && node.house <= 12 && chiron.house >= 1 && chiron.house <= 12);
+});
+
+check("the element balance still counts ten planets, not twelve bodies", () => {
+  const total = Object.values(chart.summary.elements).reduce((a, b) => a + b, 0);
+  assert.equal(total, 10, "adding points must not shift every chart's balance");
+  assert.equal(Object.values(chart.summary.modalities).reduce((a, b) => a + b, 0), 10);
+});
+
+check("points are held to half the planetary orb", () => {
+  // Sun and Chiron 5° apart: inside the 8° conjunction orb for two planets,
+  // outside the 4° a point is allowed.
+  const wide = computeAspects([
+    { key: "sun", longitude: 100, speed: 1 },
+    { key: "mars", longitude: 105, speed: 0.5 },
+  ]);
+  const tight = computeAspects([
+    { key: "sun", longitude: 100, speed: 1 },
+    { key: "chiron", longitude: 105, speed: 0.05 },
+  ]);
+  assert.equal(wide.length, 1, "5° is a planetary conjunction");
+  assert.equal(tight.length, 0, "5° is outside a point's half orb");
+});
+
+check("a chart before Chiron's ephemeris keeps its planets and says so", () => {
+  const old = calculateChart({ date: "0400-03-01", time: "12:00", timezone: "UTC", latitude: 41.9, longitude: 12.5 });
+  assert.ok(!old.bodies.some((b) => b.key === "chiron"), "Chiron is dropped, not faked");
+  assert.ok(old.bodies.length >= 10, "every planet still computed");
+  assert.ok(old.warnings.some((w) => w.includes("Chiron")), "and the chart says why");
+});
+
+check("every body has a client glyph size — a missing one silently mis-scales", () => {
+  const svg = renderWheelSvg(chart);
+  for (const key of ["northNode", "chiron"]) {
+    assert.ok(GLYPH_SCALE[key], `${key} needs a measured entry in GLYPH_SCALE`);
+  }
+  assert.ok(svg.includes("\u260A") || svg.includes("☊"), "the node is drawn");
+  assert.ok(svg.includes("\u26B7") || svg.includes("⚷"), "Chiron is drawn");
 });
 
 console.log("transits (bi-wheel)");

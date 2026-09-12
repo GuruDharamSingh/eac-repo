@@ -13,7 +13,15 @@ export type BodyKey =
   | "saturn"
   | "uranus"
   | "neptune"
-  | "pluto";
+  | "pluto"
+  /**
+   * Chiron and the true North Node. Not planets — "points" — and treated as
+   * such: they take part in aspects (on a tighter orb) but are left out of
+   * the element and modality tally, which by convention counts the ten
+   * planets so that two charts' balances stay comparable.
+   */
+  | "chiron"
+  | "northNode";
 
 export type SignKey =
   | "aries"

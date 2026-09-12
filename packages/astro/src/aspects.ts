@@ -19,6 +19,17 @@ const ANGLE_ORB = 0.75;
 const isAngle = (k: AspectPoint) => k === "ascendant" || k === "midheaven";
 
 /**
+ * Chiron and the Node are held to half the planetary orb.
+ *
+ * Partly convention — most astrologers who use them read only close contacts
+ * — and partly arithmetic: they are the eleventh and twelfth bodies, and at
+ * full orbs two more points add about forty more pairs, burying the aspects
+ * that actually carry the chart.
+ */
+const POINT_ORB = 0.5;
+const isPoint = (k: AspectPoint) => k === "chiron" || k === "northNode";
+
+/**
  * Every aspect within orb between every pair of points, tightest first.
  * Orbs and the aspect set are the prototype's (server/src/lib/aspect-utils.ts).
  * Angle–angle pairs are skipped (the AC and MC are ~90° apart by
@@ -37,11 +48,12 @@ export function computeAspects(points: readonly AspectablePoint[]): Aspect[] {
       const q = points[j];
       if (isAngle(p.key) && isAngle(q.key)) continue;
       const toAngle = isAngle(p.key) || isAngle(q.key);
+      const toPoint = isPoint(p.key) || isPoint(q.key);
       const sep = separation(p.longitude, q.longitude);
       const sepLater = separation(p.longitude + p.speed * dt, q.longitude + q.speed * dt);
 
       for (const def of ASPECTS) {
-        const maxOrb = toAngle ? def.orb * ANGLE_ORB : def.orb;
+        const maxOrb = def.orb * (toAngle ? ANGLE_ORB : 1) * (toPoint ? POINT_ORB : 1);
         const orb = Math.abs(sep - def.angle);
         if (orb > maxOrb) continue;
         found.push({

@@ -17,13 +17,13 @@ import { join } from "node:path";
 import { calc_ut, constants, houses_ex2, set_ephe_path, utc_to_jd } from "sweph";
 import tzlookup from "@photostructure/tz-lookup";
 import { bodiesToPoints, computeAspects } from "./aspects";
-import { BODIES, DEFAULT_HOUSE_SYSTEM, HOUSE_SYSTEMS, SIGN_BY_KEY } from "./constants";
+import { BODIES, BODY_BY_KEY, DEFAULT_HOUSE_SYSTEM, HOUSE_SYSTEMS, SIGN_BY_KEY } from "./constants";
 import { normalizeDegrees, signOf } from "./format";
 import { ChartInputError, localToUtc, nowUtc, utcIso, type UtcParts } from "./time";
 import type { BodyPosition, ChartInput, ChartResult, Element, HouseCusp, Modality } from "./types";
 
 /** Bump when output for an unchanged input would differ, so cached charts can be recomputed. */
-export const ENGINE_VERSION = "3";
+export const ENGINE_VERSION = "4";
 
 let ephemerisFlag: number | null = null;
 
@@ -122,13 +122,24 @@ export function calculateChart(input: ChartInput): ChartResult {
   const [asc, mc, , vertex] = h.data.points as number[];
 
   let usedMoshier = eph === constants.SEFLG_MOSEPH;
-  const bodies: BodyPosition[] = BODIES.map((b) => {
+  const bodies: BodyPosition[] = [];
+  for (const b of BODIES) {
     const r = calc_ut(jd, b.sweId, eph | constants.SEFLG_SPEED);
-    if (r.flag < 0) throw new Error(`${b.name}: ${r.error}`);
+    if (r.flag < 0) {
+      // A planet failing means the chart is wrong and must not be shown. A
+      // point failing is survivable and common: Chiron needs the asteroid
+      // ephemeris (absent under the Moshier fallback) and its orbit is only
+      // published for roughly 675–4650 CE, so a medieval chart loses it.
+      if (b.group === "point") {
+        warnings.push(`${b.name} could not be calculated here and is left out of this chart.`);
+        continue;
+      }
+      throw new Error(`${b.name}: ${r.error}`);
+    }
     if (r.flag & constants.SEFLG_MOSEPH) usedMoshier = true;
     const [lon, lat, , speed] = r.data;
     const { sign, signDegree } = signOf(lon);
-    return {
+    bodies.push({
       key: b.key,
       longitude: lon,
       latitude: lat,
@@ -137,18 +148,22 @@ export function calculateChart(input: ChartInput): ChartResult {
       sign,
       signDegree,
       house: houseOf(lon, cusps),
-    };
-  });
+    });
+  }
 
   const houses: HouseCusp[] = cusps.map((lon, i) => ({ house: i + 1, longitude: lon, ...signOf(lon) }));
 
+  // The balance counts the ten planets only. Chiron and the Node are points,
+  // not planets, and folding them in would shift every chart's elements away
+  // from the figures astrologers (and every other program) expect.
+  const planets = bodies.filter((b) => BODY_BY_KEY[b.key].group === "planet");
   const elements = tally<Element>(
     ["fire", "earth", "air", "water"],
-    bodies.map((b) => SIGN_BY_KEY[b.sign].element),
+    planets.map((b) => SIGN_BY_KEY[b.sign].element),
   );
   const modalities = tally<Modality>(
     ["cardinal", "fixed", "mutable"],
-    bodies.map((b) => SIGN_BY_KEY[b.sign].modality),
+    planets.map((b) => SIGN_BY_KEY[b.sign].modality),
   );
 
   return {

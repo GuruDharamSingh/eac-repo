@@ -104,6 +104,7 @@ export const GLYPH_CHARS: Record<string, string> = {
   aries: "♈", taurus: "♉", gemini: "♊", cancer: "♋", leo: "♌", virgo: "♍", libra: "♎", scorpio: "♏",
   sagittarius: "♐", capricorn: "♑", aquarius: "♒", pisces: "♓",
   moon: "☽", mercury: "☿", venus: "♀", mars: "♂", jupiter: "♃", saturn: "♄", uranus: "♅", neptune: "♆", pluto: "♇",
+  northNode: "☊", chiron: "⚷",
   conjunction: "☌", opposition: "☍", sextile: "⚹", quincunx: "⚻", semisextile: "⚺", semisquare: "∠", sesquisquare: "⚼",
 };
 
