@@ -1,0 +1,30 @@
+{
+  "name": "@elkdonis/astro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Natal chart engine (Swiss Ephemeris via sweph) plus the pure zodiac/format helpers the UI needs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./svg": "./src/svg.ts",
+    "./wheel": "./src/wheel.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "tsx scripts/engine-smoke.ts",
+    "render": "tsx scripts/render-svg.ts"
+  },
+  "dependencies": {
+    "@photostructure/tz-lookup": "^11.6.1",
+    "sweph": "2.10.3-8",
+    "opentype.js": "1.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.1",
+    "typescript": "^5",
+    "@types/opentype.js": "^1.3.8"
+  }
+}

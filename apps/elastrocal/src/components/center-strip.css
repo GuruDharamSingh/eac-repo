@@ -1,0 +1,17 @@
+/*
+  The collective strip.
+
+  Lives here rather than in globals.css because this app's CSS pipeline drops
+  rules appended there — the same trap that swallowed the surface.css @import.
+  A stylesheet imported by a component survives.
+*/
+
+/* ProfileCardBody draws a 3:4 portrait, which is right on /center where the
+   person is the page's anchor. Here it is one card in a row under the chart,
+   and a 390px portrait makes every sibling card that tall for nothing — so
+   the image is cropped to a band. */
+.el-person .eac-center-pcard {
+  aspect-ratio: auto;
+  height: 190px;
+  max-height: 190px;
+}

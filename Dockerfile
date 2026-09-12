@@ -7,6 +7,12 @@ ARG APP_NAME=admin
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
+# Native-addon toolchain. sweph (Swiss Ephemeris, used by @elkdonis/astro)
+# ships only glibc prebuilds, so on Alpine/musl it compiles from source during
+# pnpm install. Every app shares one node_modules, so every image needs this
+# for an install to succeed, not just elastrocal's.
+RUN apk add --no-cache python3 make g++
+
 # Development stage
 FROM base AS development
 
@@ -15,8 +21,11 @@ WORKDIR /app
 # Copy all source code (development doesn't need multi-stage optimization)
 COPY . .
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies. Hardlink rather than pnpm's default clone/copy: on
+# this host (TrueNAS) copying from the store during a BuildKit build fails with
+# ERR_PNPM_EAGAIN (reproduced 2026-09-11); store and node_modules share the
+# image filesystem, so hardlinks are safe and faster.
+RUN pnpm install --config.package-import-method=hardlink
 
 # Build database package
 WORKDIR /app

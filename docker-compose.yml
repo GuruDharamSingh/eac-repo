@@ -670,6 +670,12 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts): the
+      # inter-app signing secret and the origins a handoff may target. Values
+      # come from .env; no defaults here on purpose.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # The Pipeline hub tile renders the org's OWN Deck board, resolved from
       # organizations.deck_board_id (migration 101) — no board id in env. The
       # former NEXTCLOUD_PIPELINE_BOARD_ID defaulted to 14, a board owned by
@@ -744,6 +750,12 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts): the
+      # inter-app signing secret and the origins a handoff may target. Values
+      # come from .env; no defaults here on purpose.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # The Pipeline hub tile renders the org's OWN Deck board, resolved from
       # organizations.deck_board_id (migration 101) — no board id in env. The
       # former NEXTCLOUD_PIPELINE_BOARD_ID defaulted to 14, a board owned by
@@ -827,6 +839,53 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Elastrocal — natal charts (org: elastrocal). Engine: @elkdonis/astro on
+  # sweph, a native addon compiled during `pnpm install` (the Dockerfile's base
+  # stage carries the toolchain for it).
+  elastrocal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-elastrocal
+    restart: unless-stopped
+    mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${ELASTROCAL_URL:-http://localhost:3016}
+      # Served under this prefix so it can sit inside arts-collective.com/astro.
+      # Local access is therefore http://localhost:3016/astro (the bare root 404s).
+      NEXT_PUBLIC_BASE_PATH: ${ELASTROCAL_BASE_PATH:-/astro}
+      NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Swiss Ephemeris data files (packages/astro/ephe, committed). Without
+      # them the engine falls back to the built-in Moshier model — see that
+      # directory's README.
+      SWISSEPH_PATH: ${SWISSEPH_PATH:-/app/packages/astro/ephe}
+      # Signs the guest cookie (src/lib/guest.ts): charts kept without an account.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+    volumes:
+      - .:/app
+      - /app/apps/elastrocal/.next
+    ports:
+      - "3016:3016"
+    # `pnpm install` first: the bind mount shadows the image's node_modules,
+    # and installing here builds sweph's musl binary rather than using a glibc one.
+    command: sh -c "pnpm install && cd apps/elastrocal && pnpm docker:dev"
+    networks:
+      - eac-network
+
   # IFAC - International Fine Art Collectors public site and org admin
   ifac:
     build:
@@ -838,6 +897,15 @@ services:
     # ifac serves a live public domain. It OOM'd against a 3g cap with a
     # 1GB JS heap, so the overhead is Turbopack native + file watching,
     # not JS. Give the one public site room; dev-only apps keep 3g.
+    #
+    # Switched to production mode (2026-09-12): ifac was running `next dev`
+    # against live traffic. In dev mode, CSS isn't emitted as prebuilt <link>
+    # tags — it's injected as each route's chunk compiles on demand, so a
+    # cold route (first client nav to /artists, or /hub right after login)
+    # could paint before its CSS finished compiling, rendering unstyled until
+    # a refresh hit the now-warm module. `next start` serves prebuilt static
+    # CSS, which structurally can't race like that. Same shape as
+    # amrit-canada/inner-gathering below.
     mem_limit: 5g
     depends_on:
       postgres:
@@ -849,7 +917,9 @@ services:
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
       # The marketplace — a member's store section links there
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
-      NODE_ENV: development
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NODE_ENV: production
+      PORT: 3008
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
@@ -877,7 +947,13 @@ services:
       - /app/apps/ifac/.next
     ports:
       - "3008:3008"
-    command: sh -c "cd apps/ifac && pnpm docker:dev"
+    # Build only when there is no build to serve, then start — matches
+    # amrit-canada/inner-gathering's pattern above. server/pages-manifest.json
+    # is the file `next start` actually opens, and only a completed build
+    # writes it (BUILD_ID and prerender-manifest.json both land too early and
+    # can strand a restart loop behind an OOM-killed build). NEXT_BUILD_CPUS
+    # caps workers so the build fits under mem_limit instead of being killed.
+    command: sh -c "cd apps/ifac && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network

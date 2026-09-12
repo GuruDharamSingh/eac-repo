@@ -4,3 +4,7 @@
 .git
 *.log
 dist
+
+# Elastrocal prototype — reference only, never part of an image
+astrologychart2
+astrologychart2.zip

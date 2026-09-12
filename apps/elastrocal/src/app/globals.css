@@ -1,0 +1,168 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@elkdonis/cms-ui/profile.css";
+/* surface.css is imported by src/components/surfaces.tsx, the way
+   login-form.tsx imports baroque-signup.css: an @import of it here is
+   silently dropped by this app's dev CSS pipeline. */
+@source "../../../../packages/cms-ui/src";
+@source "../../../../packages/sky-ui/src";
+
+/* ==========================================================================
+   Elastrocal palette — light and quiet.
+
+   Warm paper ground, ink text, one gold accent for emphasis and a deep
+   indigo for interactive elements. Cinzel stays for display type; the chart
+   wheel keeps its white card. Nothing decorative behind the content.
+
+   Token NAMES are stock shadcn so the files in src/components/ui/ (copied
+   from pigeonshoot) work untouched. Values are HSL triplets.
+   ========================================================================== */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: 40 30% 97%;          /* paper */
+  --foreground: 232 24% 16%;         /* ink */
+
+  --card: 0 0% 100%;
+  --card-foreground: 232 24% 16%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 232 24% 16%;
+
+  --primary: 232 44% 34%;            /* deep indigo: buttons, links, focus */
+  --primary-foreground: 40 30% 98%;
+
+  --secondary: 40 22% 92%;
+  --secondary-foreground: 232 24% 20%;
+
+  --muted: 40 18% 93%;
+  --muted-foreground: 232 10% 46%;
+
+  --accent: 232 30% 94%;             /* indigo wash for hovers */
+  --accent-foreground: 232 44% 28%;
+
+  --destructive: 0 62% 46%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 40 14% 86%;
+  --input: 40 14% 80%;
+  --ring: 232 44% 34%;
+
+  /* Gold: sparingly, for headings' eyebrow text and the favourite star. */
+  --gold-hsl: 42 70% 42%;
+
+  /* The shared @elkdonis/cms-ui stylesheets (profile.css, surface.css) read
+     these as COLOURS, falling back to a dark palette when absent — so they
+     are set here from the palette above. (--gold is therefore a colour, and
+     the HSL triplet lives in --gold-hsl.) */
+  --ink: hsl(232 24% 16%);
+  --ink-soft: hsl(232 10% 46%);
+  --paper: hsl(40 30% 97%);
+  --line: hsl(40 14% 86%);
+  --gold: hsl(42 70% 42%);
+
+  /* The shared popup and its faces (@elkdonis/cms-ui/surface). */
+  --eac-surface-bg: hsl(0 0% 100%);
+  --eac-surface-fg: hsl(232 24% 16%);
+  --eac-surface-muted: hsl(232 10% 46%);
+  --eac-surface-line: hsl(40 14% 86%);
+  --eac-surface-accent: hsl(232 44% 34%);
+  --eac-surface-radius: 14px;
+  --eac-kind-calendar: hsl(42 70% 42%);
+
+  /* Element colours for TEXT on the light ground. The wheel uses the
+     prototype's own brighter values (ELEMENT_COLORS in @elkdonis/astro). */
+  --el-fire: 4 68% 46%;
+  --el-earth: 32 45% 36%;
+  --el-air: 172 55% 30%;
+  --el-water: 219 65% 44%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-gold: hsl(var(--gold-hsl));
+  --color-paper: hsl(var(--card));
+
+  --color-fire: hsl(var(--el-fire));
+  --color-earth: hsl(var(--el-earth));
+  --color-air: hsl(var(--el-air));
+  --color-water: hsl(var(--el-water));
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-cinzel);
+  --font-glyph: var(--font-symbols);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: 0.02em;
+}
+
+/* Astrological glyphs. Many zodiac code points default to EMOJI presentation;
+   the Glyph component appends U+FE0E, and this font stack makes sure a text
+   face that actually has the symbols is tried first. */
+.glyph,
+.eac-sky-glyph {
+  font-family: var(--font-glyph), "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", sans-serif;
+  font-variant-emoji: text;
+  line-height: 1;
+}
+
+/* AstroChart draws into a fixed-size SVG; let it scale to its container. */
+.wheel svg {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+/* The inline wheel SVG: fill its box, centred. */
+.wheel svg {
+  margin: 0 auto;
+}
+

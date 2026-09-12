@@ -75,3 +75,7 @@ docker-compose.override.yml
 
 # Playwright test output
 test-results/
+
+# Elastrocal prototype (reference copy while porting into apps/elastrocal; has its own .git and .env)
+astrologychart2/
+astrologychart2.zip

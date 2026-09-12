@@ -1,0 +1,127 @@
+/*
+  sky.css — what @elkdonis/sky-ui needs that Tailwind tokens can't carry.
+
+  Astrological glyphs default to EMOJI presentation on most platforms: ♍ comes
+  out as a coloured pictograph rather than a line symbol. The components append
+  U+FE0E to each glyph, but that only takes effect alongside a font stack that
+  has a text form — so the class travels with the package rather than living in
+  one app's globals.css. (Without it the list renders as coloured circles; that
+  is exactly what happened on arts-collective's landing page.)
+
+  A host that loads Noto Sans Symbols (next/font) and exposes it as
+  --font-symbols gets the nicer face; everything else falls back to whatever
+  symbol font the system has.
+*/
+.eac-sky-glyph {
+  font-family: var(--font-symbols), "Noto Sans Symbols", "Noto Sans Symbols 2", "Segoe UI Symbol",
+    "Apple Symbols", "DejaVu Sans", sans-serif;
+  font-variant-emoji: text;
+  line-height: 1;
+}
+
+/*
+  The renderer emits width="1180" height="1180" on the root <svg> so a wheel
+  saved to a file has a sensible natural size. Inline in a page that makes the
+  SVG's *min-content* width 1180px, which a flex or grid item will not shrink
+  below (min-width:auto) — the wheel then bursts out of its column and the
+  panel scrolls sideways. That is what happened inside arts-collective's
+  popup. Overriding here rather than in a host's globals keeps it true
+  wherever the package is mounted.
+*/
+.wheel > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   The bare surface: the wheel as its own window.
+
+   A chart is a circle. Put a rectangular dialog around it and most of the
+   frame is furniture — corners of empty paper, a masthead repeating what the
+   drawing already says. At `size="bare"` the surface keeps only the disc:
+   white paper cut to the wheel, floating on the backdrop, with the controls
+   loose beneath it and a close button off its shoulder.
+   ────────────────────────────────────────────────────────────────────────── */
+.eac-sky-bare {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.eac-sky-disc {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  /* No hard border: a hairline on a circle reads as a seam against the
+     blurred backdrop. Depth comes from the shadow instead. */
+  box-shadow:
+    0 2px 10px rgba(20, 18, 16, 0.18),
+    0 24px 60px rgba(20, 18, 16, 0.34);
+  overflow: hidden;
+}
+
+/* The drawing is square and already round; let it fill the disc. */
+.eac-sky-disc > .wheel {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+}
+
+/* Controls float free of any panel — a translucent pill so the buttons stay
+   legible over whatever page shows through the backdrop. */
+.eac-sky-bare-controls {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.eac-sky-floatbar {
+  padding: 8px 14px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 18px rgba(20, 18, 16, 0.3);
+}
+
+.eac-sky-bare-close {
+  position: absolute;
+  top: 2px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #16181d;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(20, 18, 16, 0.28);
+}
+.eac-sky-bare-close:hover { background: #fff; }
+.eac-sky-bare-close:focus-visible { outline: 2px solid var(--sf-kind, #5b45a8); outline-offset: 2px; }
+
+.eac-sky-bare-link {
+  color: #fff;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.eac-sky-bare-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* On a phone the height is the scarce dimension either way, so the disc goes
+   as wide as the screen allows and the controls wrap under it. */
+@media (max-width: 640px) {
+  .eac-sky-disc { width: 100%; }
+}

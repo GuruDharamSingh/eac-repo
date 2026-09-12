@@ -132,7 +132,8 @@ apps/
 ├── ifac/                Port 3008 - International Fine Art Collectors (org: ifac)
 ├── art-auction/         Port 3009 - Art marketplace and auctions
 ├── fourth-way-book-readers/ Port 3010 - Reading groups & book programs (org: fourth-way)
-└── blog-tester/         Port 3011 - Sandbox for blog features
+├── blog-tester/         Port 3011 - Sandbox for blog features
+└── elastrocal/          Port 3016 - Natal charts (org: elastrocal; engine in packages/astro)
 ```
 
 Each app operates independently but queries the same database filtered by its `org_id`.
@@ -162,7 +163,8 @@ packages/
 ├── silex-nextcloud-connector/ Silex extension for Nextcloud storage
 ├── live-editor/         In-browser site editing components
 ├── reading-wizard/      Book reading session logic
-└── three/               Three.js / 3D visualization utilities
+├── three/               Three.js / 3D visualization utilities
+└── astro/               Natal chart engine (Swiss Ephemeris via native `sweph`; client-safe helpers at root, engine at /server, self-contained SVG renderer at /svg)
 ```
 
 **Critical package: `@elkdonis/db`**
@@ -187,6 +189,7 @@ When services are running:
 - **Art Auction:** http://localhost:3009
 - **Book Readers:** http://localhost:3010
 - **Blog Tester:** http://localhost:3011
+- **Elastrocal:** http://localhost:3016
 - **Silex Editor:** http://localhost:6805
 - **Nextcloud:** http://localhost:8080
 - **Supabase Auth:** http://localhost:9999
