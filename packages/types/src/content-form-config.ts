@@ -1,4 +1,4 @@
-export type ThreadKind = 'post' | 'meeting' | 'event' | 'workshop' | 'service';
+export type ThreadKind = 'post' | 'meeting' | 'event' | 'workshop' | 'service' | 'wiki_page';
 export type ContentFormKind = 'post' | 'meeting' | 'workshop';
 
 export interface ExtraField {

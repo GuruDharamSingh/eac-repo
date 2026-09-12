@@ -112,6 +112,30 @@ export {
   deletePost,
 } from './posts';
 
+// Wiki pages — threads with kind='wiki_page', plus full-snapshot edit
+// history (migration 118). See wiki.ts.
+export {
+  createWikiPage,
+  updateWikiPage,
+  getWikiPage,
+  listWikiPages,
+  getWikiRevisions,
+  revertWikiPage,
+  archiveWikiPage,
+  buildWikiTree,
+  collectSubtreeIds,
+  getWikiAncestors,
+  resolveWikilinks,
+  getWikiBacklinks,
+} from './wiki';
+export type {
+  WikiPage,
+  WikiPageListItem,
+  WikiTreeNode,
+  WikiRevision,
+  WikiPageRef,
+} from './wiki';
+
 // Auth services
 export {
   createUser,

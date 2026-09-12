@@ -27,12 +27,13 @@ export interface ForumSearchHit {
   rank: number;
 }
 
+/** Wiki pages are excluded for every viewer — they are not forum topics. */
 function visible(viewer: ForumViewer) {
-  if (viewer.isGlobalAdmin) return db`t.status = 'published'`;
+  if (viewer.isGlobalAdmin) return db`t.status = 'published' AND t.kind <> 'wiki_page'`;
   const orgs = Object.keys(viewer.roles);
   const uid = viewer.userId;
   return db`
-    t.status = 'published' AND (
+    t.status = 'published' AND t.kind <> 'wiki_page' AND (
       t.visibility = 'PUBLIC'
       OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs}))
       OR (${uid}::uuid IS NOT NULL AND t.author_id = ${uid}::uuid)

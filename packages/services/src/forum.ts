@@ -197,6 +197,9 @@ export interface ForumPulse {
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
+/** Wiki pages are threads but never forum topics. See visibleTo. */
+const notWiki = db`t.kind <> 'wiki_page'`;
+
 function memberOrgIds(viewer: ForumViewer): string[] {
   return Object.keys(viewer.roles);
 }
@@ -205,13 +208,20 @@ function memberOrgIds(viewer: ForumViewer): string[] {
  * The visibility predicate, as a fragment over alias `t`. Global admins see
  * everything published; everyone else sees PUBLIC, their orgs' ORGANIZATION
  * rows, and their own INVITE_ONLY rows.
+ *
+ * Wiki pages are excluded for every viewer, admins included. They are threads
+ * so they can reuse replies, search and references, but a wiki page is a
+ * collectively edited reference surface with no first-post semantics — it is
+ * reached through the wiki, never as a forum topic. The own-author and
+ * global-admin clauses would otherwise let them through whatever their
+ * visibility.
  */
 function visibleTo(viewer: ForumViewer) {
-  if (viewer.isGlobalAdmin) return db`t.status = 'published'`;
+  if (viewer.isGlobalAdmin) return db`t.status = 'published' AND ${notWiki}`;
   const orgs = memberOrgIds(viewer);
   const uid = viewer.userId;
   return db`
-    t.status = 'published' AND (
+    t.status = 'published' AND ${notWiki} AND (
       t.visibility = 'PUBLIC'
       OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs}))
       OR (${uid}::uuid IS NOT NULL AND t.author_id = ${uid}::uuid)

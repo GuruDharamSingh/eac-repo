@@ -85,10 +85,11 @@ export interface ForumActivityItem {
   feed: { slug: string; name: string | null };
 }
 
+/** Wiki pages are excluded for every viewer — they are not forum topics. */
 function visibleThreads(viewer: ForumViewer) {
-  if (viewer.isGlobalAdmin) return db`t.status = 'published'`;
+  if (viewer.isGlobalAdmin) return db`t.status = 'published' AND t.kind <> 'wiki_page'`;
   const orgs = Object.keys(viewer.roles);
-  return db`t.status = 'published' AND (t.visibility = 'PUBLIC' OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs})) OR (${viewer.userId}::uuid IS NOT NULL AND t.author_id = ${viewer.userId}::uuid))`;
+  return db`t.status = 'published' AND t.kind <> 'wiki_page' AND (t.visibility = 'PUBLIC' OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs})) OR (${viewer.userId}::uuid IS NOT NULL AND t.author_id = ${viewer.userId}::uuid))`;
 }
 
 const PLAIN = (col: ReturnType<typeof db>) => db`LEFT(REGEXP_REPLACE(REGEXP_REPLACE(COALESCE(${col}, ''), '<[^>]*>', ' ', 'g'), '\s+', ' ', 'g'), 160)`;
