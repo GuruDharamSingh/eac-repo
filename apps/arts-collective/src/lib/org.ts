@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { getOrgRole, hasOrgRole } from "@elkdonis/services";
+import { getOrgRole, hasOrgRole, resolveTerms } from "@elkdonis/services";
 
 /**
  * The organisation's own public identity, from its `entity_type='organization'`
@@ -513,7 +513,25 @@ export async function getPublicThread(
         AND t.visibility = 'PUBLIC'
       LIMIT 1
     `;
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+
+    // Terms marked in the prose get their definitions filled in here, on the
+    // way out of the data layer rather than at each render site — miss one of
+    // those and definitions just silently stop appearing. Server-side by
+    // necessity: the dictionary is the wiki, which requires a login, and this
+    // is what lets a public post carry a definition out of it without
+    // exposing anything beyond the sentence.
+    if (row.body?.includes("data-term")) {
+      try {
+        const { html } = await resolveTerms(row.body, "/wiki");
+        return { ...row, body: html };
+      } catch (err) {
+        // A dictionary that is down must not take the article with it.
+        console.error("[arts-collective] resolveTerms:", err);
+      }
+    }
+    return row;
   } catch {
     return null;
   }

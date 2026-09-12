@@ -26,6 +26,10 @@ const ALLOWED_TAGS = [
   // Inline marks
   'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'mark', 'sub', 'sup',
   'a',
+  // A defined term. Inert and semantic — the element HTML has for exactly
+  // this — but it must be allowed or the dictionary is stripped on save,
+  // before the wiki ever sees it.
+  'dfn', 'abbr',
   // Media
   'img',
   'iframe', // YouTube embeds (src is locked down below)
@@ -45,6 +49,13 @@ const ALLOWED_ATTR = [
   'data-language',
   // Table layout
   'colspan', 'rowspan', 'data-colwidth',
+  // Wiki link targets and defined terms. These carry a TARGET, never an href
+  // or a script, so they are inert — but they must survive sanitising or the
+  // feature quietly dies at the save boundary. data-wiki-slug especially:
+  // stored bodies hold resolved anchors, so stripping it here would make a
+  // re-save look like a body with no links and drop the page's backlinks.
+  'data-wiki-slug', 'data-wiki-new',
+  'data-term', 'data-definition', 'data-senses', 'data-href',
   // YouTube iframe attributes
   'allow', 'allowfullscreen', 'frameborder',
 ];

@@ -24,6 +24,11 @@ type Props = {
   parentOptions: WikiParentOption[];
   /** Feeds `[[` autocomplete. Titles resolve server-side either way. */
   wikiPages: { title: string; slug: string }[];
+  /** The version being edited, so a save can refuse to clobber a newer one. */
+  updatedAt?: string;
+  /** Network topics this page may carry, and which it already does. */
+  topicChoices?: { id: string; name: string }[];
+  initialTopicIds?: string[];
 };
 
 export function WikiPageForm({
@@ -33,6 +38,9 @@ export function WikiPageForm({
   initialParentId,
   parentOptions,
   wikiPages,
+  updatedAt,
+  topicChoices,
+  initialTopicIds,
 }: Props) {
   const router = useRouter();
   const isEditing = Boolean(threadId);
@@ -41,6 +49,13 @@ export function WikiPageForm({
   const [body, setBody] = React.useState(initialBody ?? "");
   const [parentId, setParentId] = React.useState(initialParentId ?? "");
   const [saving, setSaving] = React.useState(false);
+  // Moves forward only when a save succeeds, so a refused save can be retried
+  // against the version the other person left.
+  const [base, setBase] = React.useState(updatedAt);
+  const [topicIds, setTopicIds] = React.useState<string[]>(initialTopicIds ?? []);
+  const [conflict, setConflict] = React.useState<{ title: string; body: string | null } | null>(
+    null
+  );
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,13 +63,25 @@ export function WikiPageForm({
     try {
       const payload = { title, body, parentId: parentId || null };
       const result = isEditing
-        ? await updateWikiPageAction(threadId!, payload)
+        ? await updateWikiPageAction(threadId!, {
+            ...payload,
+            expectedUpdatedAt: base ?? null,
+            topicIds,
+          })
         : await createWikiPageAction(payload);
 
       if (result.ok === false) {
+        if ("conflict" in result) {
+          // Their version is shown, yours stays in the editor untouched.
+          setConflict(result.theirs);
+          setBase(result.updatedAt);
+          toast.error("Someone else saved first — nothing was overwritten.");
+          return;
+        }
         toast.error(result.error);
         return;
       }
+      setConflict(null);
 
       toast.success(isEditing ? "Page saved." : "Page created.");
       router.push(`/hub/wiki/${result.slug}`);
@@ -69,6 +96,27 @@ export function WikiPageForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {conflict && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+          <p className="text-sm font-medium text-foreground">
+            Someone else saved this page while you were writing.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Nothing of yours was lost and nothing of theirs was overwritten.
+            Their version is below — fold in whatever you need, then save again.
+          </p>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted-foreground">
+              Their version{conflict.title !== title ? ` — titled “${conflict.title}”` : ""}
+            </summary>
+            <div
+              className="prose prose-sm mt-2 max-w-none rounded border border-border bg-background p-3 dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: conflict.body ?? "<p><em>Empty.</em></p>" }}
+            />
+          </details>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="wiki-title">Title</Label>
         <Input
@@ -101,6 +149,40 @@ export function WikiPageForm({
           ))}
         </select>
       </div>
+
+      {isEditing && topicChoices && topicChoices.length > 0 && (
+        <div className="space-y-2">
+          <Label>Tags</Label>
+          <div className="flex flex-wrap gap-2">
+            {topicChoices.map((t) => {
+              const on = topicIds.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    setTopicIds((ids) =>
+                      on ? ids.filter((x) => x !== t.id) : [...ids, t.id]
+                    )
+                  }
+                  className={
+                    on
+                      ? "rounded-full border border-primary bg-primary/10 px-3 py-1 text-xs text-primary"
+                      : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            The same tags the rest of the network uses, so a tag leads
+            somewhere beyond the wiki.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Body</Label>

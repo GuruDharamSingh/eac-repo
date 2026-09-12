@@ -133,17 +133,53 @@ export async function createWikiPage(data: {
   };
 }
 
+/**
+ * Somebody else saved while this editor was typing.
+ *
+ * Thrown rather than silently winning: the wiki is open to everyone on the
+ * network, so two people on one page is ordinary, and last-write-wins would
+ * drop the other person's work with nothing on screen to say so. The loser of
+ * the race gets their text back and the current version to merge against.
+ */
+export class WikiConflictError extends Error {
+  readonly code = 'WIKI_CONFLICT';
+  constructor(
+    readonly currentUpdatedAt: Date,
+    readonly currentBody: string | null,
+    readonly currentTitle: string
+  ) {
+    super('This page was changed by someone else while you were editing it.');
+    this.name = 'WikiConflictError';
+  }
+}
+
 export async function updateWikiPage(
   id: string,
   editorId: string,
-  data: { title: string; body?: string; parentId?: string | null }
+  data: {
+    title: string;
+    body?: string;
+    parentId?: string | null;
+    /**
+     * The `updatedAt` the editor loaded. When given, the save is refused if
+     * the page has moved since. Omit only where there is no editor to tell —
+     * revertWikiPage, which is itself a deliberate overwrite.
+     */
+    expectedUpdatedAt?: Date | string | null;
+  }
 ): Promise<WikiPage> {
   const { body, linkedThreadIds } = await resolveWikilinks(data.body ?? '', id);
   const excerpt = deriveExcerpt(body);
 
+  const expected = data.expectedUpdatedAt ? new Date(data.expectedUpdatedAt) : null;
+
   // metadata is merged, not replaced: it also carries the thesaurus entry
   // (an "aliases" array), and a plain assignment would silently drop those on
   // every ordinary edit.
+  //
+  // The updated_at guard is part of the WHERE so the check and the write are
+  // one statement — testing first and updating after would leave a window for
+  // exactly the race it is meant to catch.
 
   const [thread] = await db`
     UPDATE threads
@@ -154,10 +190,28 @@ export async function updateWikiPage(
                    || ${db.json({ wikiParentId: data.parentId ?? null } as any)},
         updated_at = NOW()
     WHERE id = ${id} AND kind = 'wiki_page'
+      ${
+        expected
+          ? // Both sides truncated to milliseconds: Postgres keeps timestamptz
+            // to the microsecond, a JS Date cannot, so a value that has been
+            // round-tripped through the client never equals the stored one.
+            // Comparing raw made the guard reject every save, not just stale
+            // ones.
+            db`AND date_trunc('milliseconds', updated_at) = date_trunc('milliseconds', ${expected}::timestamptz)`
+          : db``
+      }
     RETURNING *
   `;
 
   if (!thread) {
+    // No row changed. Either the page is gone, or it moved under this editor.
+    const [current] = await db<Array<any>>`
+      SELECT title, body, updated_at FROM threads
+      WHERE id = ${id} AND kind = 'wiki_page'
+    `;
+    if (current && expected) {
+      throw new WikiConflictError(current.updated_at, current.body, current.title);
+    }
     throw new Error(`Wiki page ${id} not found`);
   }
 
@@ -442,6 +496,70 @@ async function syncWikiLinks(threadId: string, linkedThreadIds: string[]): Promi
     INSERT INTO thread_references ${db(rows)}
     ON CONFLICT (thread_id, references_thread_id) DO NOTHING
   `;
+}
+
+// ============================================================================
+// Tags
+//
+// Reuses `topics` + `thread_topics` rather than a wiki-specific tag table, so
+// a wiki page and a forum thread carrying the same tag are carrying the same
+// row — which is the only way a tag can lead somewhere across the network
+// instead of within one surface. `listTopicChoices` supplies the picker.
+// ============================================================================
+
+export interface WikiTopic {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export async function listWikiTopics(threadId: string): Promise<WikiTopic[]> {
+  return db<WikiTopic[]>`
+    SELECT tp.id, tp.slug, tp.name
+    FROM thread_topics tt
+    JOIN topics tp ON tp.id = tt.topic_id
+    WHERE tt.thread_id = ${threadId}
+    ORDER BY tp.name ASC
+  `;
+}
+
+/** Replace a page's tags wholesale — the edit form posts the full set. */
+export async function setWikiTopics(threadId: string, topicIds: string[]): Promise<void> {
+  const wanted = [...new Set(topicIds.filter(Boolean))];
+
+  if (wanted.length === 0) {
+    await db`DELETE FROM thread_topics WHERE thread_id = ${threadId}`;
+    return;
+  }
+
+  await db`
+    DELETE FROM thread_topics
+    WHERE thread_id = ${threadId} AND topic_id != ALL(${wanted}::text[])
+  `;
+  await db`
+    INSERT INTO thread_topics ${db(wanted.map((id) => ({ thread_id: threadId, topic_id: id })))}
+    ON CONFLICT (thread_id, topic_id) DO NOTHING
+  `;
+}
+
+/** Wiki pages carrying a tag — what makes a tag worth clicking. */
+export async function listWikiPagesByTopic(topicSlug: string): Promise<WikiPageListItem[]> {
+  const rows = await db<Array<any>>`
+    SELECT t.id, t.slug, t.title, t.excerpt, t.metadata, t.updated_at
+    FROM threads t
+    JOIN thread_topics tt ON tt.thread_id = t.id
+    JOIN topics tp ON tp.id = tt.topic_id
+    WHERE t.kind = 'wiki_page' AND t.status <> 'archived' AND tp.slug = ${topicSlug}
+    ORDER BY t.title ASC
+  `;
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    excerpt: r.excerpt,
+    parentId: parentIdOf(r.metadata),
+    updatedAt: r.updated_at,
+  }));
 }
 
 // ============================================================================

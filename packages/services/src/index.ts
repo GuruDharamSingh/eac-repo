@@ -134,6 +134,10 @@ export {
   lookupTerm,
   resolveTerms,
   getTermDefinitions,
+  WikiConflictError,
+  listWikiTopics,
+  setWikiTopics,
+  listWikiPagesByTopic,
 } from './wiki';
 export type {
   WikiPage,
@@ -144,6 +148,7 @@ export type {
   DefinedTerm,
   WikiDefinition,
   ResolvedTerms,
+  WikiTopic,
 } from './wiki';
 
 // Auth services

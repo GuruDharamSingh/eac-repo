@@ -9,6 +9,8 @@ import {
   getWikiAncestors,
   listWikiPages,
   collectSubtreeIds,
+  listWikiTopics,
+  listTopicChoices,
 } from "@elkdonis/services";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +26,13 @@ export default async function EditWikiPage({
   const page = await getWikiPage(slug);
   if (!page) notFound();
 
-  const [pages, ancestors] = await Promise.all([
+  const [pages, ancestors, mine, choices] = await Promise.all([
     listWikiPages(),
     getWikiAncestors(page.id),
+    listWikiTopics(page.id),
+    // The wiki lives under the collective's org, so that is whose proposed
+    // topics are offered alongside the network-approved ones.
+    listTopicChoices("elkdonis"),
   ]);
 
   return (
@@ -44,6 +50,9 @@ export default async function EditWikiPage({
         wikiPages={pages
           .filter((p) => p.id !== page.id)
           .map((p) => ({ title: p.title, slug: p.slug }))}
+        updatedAt={new Date(page.updatedAt).toISOString()}
+        topicChoices={choices.map((c) => ({ id: c.id, name: c.name }))}
+        initialTopicIds={mine.map((t) => t.id)}
       />
 
       <section className="mt-10 border-t border-border pt-6">

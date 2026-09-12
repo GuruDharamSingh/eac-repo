@@ -11,6 +11,7 @@ import {
   listWikiPages,
   getTermDefinitions,
   resolveTerms,
+  listWikiTopics,
 } from "@elkdonis/services";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +27,12 @@ export default async function WikiPageView({
   const page = await getWikiPage(slug);
   if (!page) notFound();
 
-  const [ancestors, backlinks, allPages, senses] = await Promise.all([
+  const [ancestors, backlinks, allPages, senses, topics] = await Promise.all([
     getWikiAncestors(page.id),
     getWikiBacklinks(page.id),
     listWikiPages(),
     getTermDefinitions(page.id),
+    listWikiTopics(page.id),
   ]);
 
   const children = allPages
@@ -53,6 +55,18 @@ export default async function WikiPageView({
               Last edited {new Date(page.updatedAt).toLocaleString()}
               {page.authorName ? ` · started by ${page.authorName}` : ""}
             </p>
+            {topics.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {topics.map((t) => (
+                  <li
+                    key={t.id}
+                    className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
+                  >
+                    {t.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="flex shrink-0 gap-2">
             <Button asChild variant="outline" size="sm">

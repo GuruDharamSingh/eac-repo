@@ -5,7 +5,12 @@ import {
   type StoreShowcase,
 } from "@elkdonis/commerce/queries";
 import { lastOccurrenceEnd, nextOccurrence } from "@elkdonis/utils";
-import { getOrgProfileBySlug, listOrgProfiles, type OrgProfile } from "@elkdonis/services";
+import {
+  getOrgProfileBySlug,
+  listOrgProfiles,
+  resolveTerms,
+  type OrgProfile,
+} from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import type {
   Attendee,
@@ -223,6 +228,31 @@ export async function getNextInFeed(feedSlug: string): Promise<Thread | null> {
   }
 }
 
+/**
+ * Fill in the definitions for any terms the body marks up.
+ *
+ * Done on the way OUT of the data layer rather than in each page, because
+ * these two getters are the only ways a single thread's body reaches a
+ * reader — the public page and the surface's loadThread both come through
+ * here. Putting it in the pages instead would mean remembering it at every
+ * render site, and missing one just means definitions silently stop showing.
+ *
+ * Server-side by necessity: the dictionary is the network wiki, which
+ * requires a login, and this is what lets a public post carry a definition
+ * out of it without exposing anything but the sentence.
+ */
+async function withTerms(thread: Thread | null): Promise<Thread | null> {
+  if (!thread?.description?.includes("data-term")) return thread;
+  try {
+    const { html } = await resolveTerms(thread.description, "/wiki");
+    return { ...thread, description: html };
+  } catch (err) {
+    // A dictionary that is down must not take the article with it.
+    console.error("[amrit-canada] resolveTerms:", err);
+    return thread;
+  }
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -233,7 +263,7 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
         AND t.status = 'published'
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[amrit-canada] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -248,7 +278,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
       WHERE t.org_id = ${ORG} AND t.id = ${id}
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[amrit-canada] getThreadById(${id}):`, err);
     return null;
