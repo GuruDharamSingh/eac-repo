@@ -43,6 +43,13 @@
   --sf-faint: var(--eac-surface-faint, color-mix(in srgb, var(--sf-muted) 60%, var(--sf-bg)));
   --sf-line: var(--eac-surface-line, var(--line, #cfd4db));
   --sf-accent: var(--eac-surface-accent, var(--eac-accent, #5b45a8));
+  /* Text that sits ON the accent (a filled button, a count bubble). The
+     per-kind equivalents below have always had this; the root accent did
+     not, so callers hardcoded #fff — which fails badly on a light accent
+     (white on IFAC's gold is 2.58:1). Default stays #fff so hosts that
+     never set it are unchanged; a host with a light accent sets
+     --eac-surface-on-accent and every filled control follows. */
+  --sf-on-accent: var(--eac-surface-on-accent, #fff);
   --sf-scrim: var(--eac-surface-scrim, rgba(20, 18, 16, 0.46));
   --sf-danger: var(--eac-surface-danger, #ae3a31);
 
@@ -325,6 +332,27 @@ dialog.eac-surface[data-size="compact"]  { --sf-width: var(--sf-w-compact); }
 dialog.eac-surface[data-size="standard"] { --sf-width: var(--sf-w-standard); }
 dialog.eac-surface[data-size="wide"]     { --sf-width: var(--sf-w-wide); }
 dialog.eac-surface[data-size="full"]     { --sf-width: var(--sf-w-full); }
+
+/* `bare`: no window. The panel's paper, border, shadow and height cap all
+   come off, and the surface's own content is the only thing on the backdrop.
+   Width follows the viewport's height so round or square content fits without
+   scrolling. The surface must then supply its own close control. */
+/* 78vh, not 88: the bare surface stacks a date line, the controls and a link
+   around its content, and the whole column has to clear the viewport. */
+dialog.eac-surface[data-size="bare"] { --sf-width: min(92vw, 78vh); }
+/* The provider focuses the dialog on open. With a panel there the ring is
+   invisible against the paper; with none it draws a rectangle around content
+   that is meant to have no rectangle. Focus still moves — only the ring goes,
+   and only on this size. */
+dialog.eac-surface[data-size="bare"]:focus { outline: none; }
+dialog.eac-surface[data-size="bare"] .eac-surface-panel {
+  display: block;
+  max-height: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
 
 dialog.eac-surface::backdrop {
   background: var(--sf-scrim);

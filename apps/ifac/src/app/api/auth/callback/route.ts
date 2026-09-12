@@ -24,11 +24,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  // A fresh Google signup here joins 'ifac' as a member — same scoping fix
-  // as the password-signup route (see its comment). Without this a
-  // first-time Google sign-in would join the shared network defaults
-  // instead and never appear in getIfacUsers().
+  // A fresh Google signup here joins 'ifac' as a VIEWER — a follower with
+  // read access — matching the password-signup route, which has always said
+  // viewer. This said `member` until 2026-09-12, so whether a new account
+  // could write depended on which button they signed up with. Membership is
+  // something the org grants (admin console / invite), not something signing
+  // in confers. The org scoping itself still matters: without defaultOrgs a
+  // first-time Google sign-in would join the shared network defaults instead
+  // and never appear in getIfacUsers().
   return handleOAuthCallback(proxied as NextRequest, {
-    defaultOrgs: [{ id: siteConfig.orgId, role: "member" }],
+    defaultOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
   });
 }

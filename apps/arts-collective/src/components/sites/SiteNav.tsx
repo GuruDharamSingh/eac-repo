@@ -11,7 +11,8 @@ export function SiteNav({
   mainSiteUrl,
 }: {
   orgName: string;
-  current: "offering" | "profile" | "community";
+  /** "center" highlights no tab: it is the signed-in home, not a public page. */
+  current: "offering" | "profile" | "community" | "center";
   mainSiteUrl?: string | null;
 }) {
   const tabs = [

@@ -16,9 +16,11 @@
    gallery, quick-add) and the faces that open them. gallery.css carries the
    lightbox the gallery surface uses. Both plain CSS; tokens mapped below. */
 @import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
 @import "@elkdonis/cms-ui/profile.css";
 /* The Grand Forum at /forum, in this site's tokens. */
 @import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
 @import "@elkdonis/cms-ui/gallery.css";
 /* MediaPicker (the composer's cover-image pane) is styled here too. */
 @import "@elkdonis/cms-ui/files-card.css";
@@ -26,10 +28,10 @@
    sets correctly in every app. */
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
-/* The same reading tokens as Tailwind utilities, so anything built AROUND a
-   post (a feed strip, an author note) lines up with the prose inside it. */
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
+/* The same reading tokens as Tailwind utilities, so anything built AROUND a
+   post (a feed strip, an author note) lines up with the prose inside it. */
 @import "@elkdonis/cms-ui/reading-theme.css";
 
 @custom-variant dark (&:is(.dark *));

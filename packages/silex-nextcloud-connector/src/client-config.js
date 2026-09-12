@@ -34,6 +34,7 @@ const WORKSHOP_CATEGORY = "EAC Workshop Template";
 const DOSSIER_CATEGORY = "EAC Dossier Template";
 const ENNEAGRAM_CATEGORY = "EAC Enneagram Template";
 const BROCHURE_CATEGORY = "EAC Brochure Template";
+const PENS_CATEGORY = "EAC Pens";
 
 const CSS_PATH = "/eac-blocks.css";
 const WORKSHOP_CSS_PATH = "/eac-workshop-template.css";
@@ -45,6 +46,8 @@ const ENNEAGRAM_TEMPLATE_PATH = "/eac-enneagram.json";
 const BROCHURE_CSS_PATH = "/eac-brochure-template.css";
 const BROCHURE_TEMPLATE_PATH = "/eac-brochure-template.json";
 const COMPONENTS_PATH = "/eac-components.json";
+const PENS_PATH = "/eac-pens.json";
+const PENS_CSS_PATH = "/eac-pens.css";
 
 let workshopTemplatePromise = null;
 let workshopCssPromise = null;
@@ -53,6 +56,7 @@ let dossierCssPromise = null;
 let enneagramTemplatePromise = null;
 let enneagramCssPromise = null;
 let componentsPromise = null;
+let pensPromise = null;
 let brochureTemplatePromise = null;
 let brochureCssPromise = null;
 
@@ -178,6 +182,25 @@ function loadBrochureCss() {
       return "";
     });
   return brochureCssPromise;
+}
+
+/**
+ * The pens library (src/pens/README.md). Returns [] on failure: a pen that
+ * cannot be listed is a missing block, not a broken editor.
+ */
+function loadPens() {
+  if (pensPromise) return pensPromise;
+  pensPromise = fetch(sameOriginUrl(PENS_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((registry) => (registry && Array.isArray(registry.pens) ? registry.pens : []))
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load pens", err);
+      return [];
+    });
+  return pensPromise;
 }
 
 /**
@@ -382,6 +405,18 @@ function registerEmbedType(editor) {
           },
           { type: "text", name: "data-title", label: "Title" },
           { type: "number", name: "data-limit", label: "Limit" },
+          // Feed slots only: draw the rows as the feed-list pen instead of
+          // the card grid. Ignored by every other component.
+          {
+            type: "select",
+            name: "data-layout",
+            label: "Feed layout",
+            options: [
+              { id: "", name: "Cards" },
+              { id: "expand", name: "Expanding rows" },
+              { id: "expand-inline", name: "Expanding rows (avatar left)" },
+            ],
+          },
           { type: "text", name: "data-question", label: "Question" },
           { type: "text", name: "data-options", label: "Options" },
           { type: "text", name: "data-items", label: "Items" },
@@ -941,6 +976,122 @@ function installTypesOnEditor(editor) {
   registerStructureTypes(editor);
 }
 
+/* ---- Pens -------------------------------------------------------------- */
+
+function penClass(pen) {
+  return `eac-pen-${pen.id}`;
+}
+
+/**
+ * One component type per pen so its manifest traits show in the Settings
+ * panel. Matched by the pen's root class, which every pen prefixes eac-pen-.
+ */
+function registerPenTypes(editor, pens) {
+  if (!Array.isArray(pens) || !pens.length) return;
+  if (!editor.DomComponents || !editor.DomComponents.addType) return;
+  if (editor.__eacPenTypesInstalled) return;
+  editor.__eacPenTypesInstalled = true;
+
+  for (const pen of pens) {
+    if (!pen || !pen.id) continue;
+    const cls = penClass(pen);
+    editor.DomComponents.addType(cls, {
+      isComponent: (el) => hasClass(el, cls),
+      model: {
+        defaults: {
+          name: pen.label || pen.id,
+          droppable: true,
+          copyable: true,
+          traits: (pen.traits || []).map((trait) =>
+            trait.type === "select"
+              ? { type: "select", name: trait.name, label: trait.label || traitLabel(trait.name), options: trait.options || [] }
+              : { type: trait.type || "text", name: trait.name, label: trait.label || traitLabel(trait.name) }
+          ),
+        },
+      },
+    });
+  }
+}
+
+/**
+ * Seed one pen's CSS into the project stylesheet, once, so the published
+ * page carries it. Unlike the templates this is lazy — done when a pen is
+ * dropped, or found already in the saved page — so a site that uses no pens
+ * persists none of their CSS.
+ */
+function seedPenCss(editor, pen) {
+  if (!editor || !editor.Css || typeof editor.Css.addRules !== "function") return;
+  if (!pen || !pen.cssContent) return;
+  editor.__eacPensSeeded = editor.__eacPensSeeded || {};
+  if (editor.__eacPensSeeded[pen.id]) return;
+
+  const cls = "." + penClass(pen);
+  const existingRules = typeof editor.Css.getAll === "function" ? editor.Css.getAll() : null;
+  const alreadyThere = existingRules
+    ? existingRules.some((rule) => {
+        if (!rule || typeof rule.getSelectorsString !== "function") return false;
+        const sel = rule.getSelectorsString();
+        return typeof sel === "string" && sel.indexOf(cls) !== -1;
+      })
+    : false;
+  editor.__eacPensSeeded[pen.id] = true;
+  if (alreadyThere) return;
+
+  try {
+    editor.Css.addRules(pen.cssContent);
+    console.info("[eac-client-config] pen css seeded", { pen: pen.id, bytes: pen.cssContent.length });
+  } catch (err) {
+    console.warn("[eac-client-config] failed to seed pen css", pen.id, err);
+  }
+}
+
+function pageUsesPen(editor, pen) {
+  try {
+    const html = typeof editor.getHtml === "function" ? editor.getHtml() : "";
+    return typeof html === "string" && html.indexOf(penClass(pen)) !== -1;
+  } catch (_) {
+    return false;
+  }
+}
+
+function addPenBlocks(editor, pens) {
+  if (!Array.isArray(pens) || !pens.length) return;
+  if (!editor.BlockManager || !editor.BlockManager.add) return;
+  if (editor.__eacPenBlocksInstalled) return;
+  editor.__eacPenBlocksInstalled = true;
+
+  registerPenTypes(editor, pens);
+
+  for (const pen of pens) {
+    if (!pen || !pen.id || !pen.htmlContent) continue;
+    const blockId = `eac-pen-${pen.id}--block`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    editor.BlockManager.add(blockId, {
+      label: pen.label || pen.id,
+      category: PENS_CATEGORY,
+      content: pen.htmlContent,
+      attributes: pen.description ? { title: pen.description } : undefined,
+    });
+  }
+
+  // A saved page that already holds a pen keeps its CSS in the project; this
+  // covers the case where a rule was pruned or the pen predates seeding.
+  for (const pen of pens) {
+    if (pageUsesPen(editor, pen)) seedPenCss(editor, pen);
+  }
+
+  // Seed on drop. block:drag:stop passes the dropped component (or null when
+  // the drop was cancelled) and the block model.
+  if (typeof editor.on === "function") {
+    editor.on("block:drag:stop", (component, block) => {
+      if (!component || !block) return;
+      const id = typeof block.getId === "function" ? block.getId() : block.id;
+      const pen = pens.find((p) => `eac-pen-${p.id}--block` === id);
+      if (pen) seedPenCss(editor, pen);
+    });
+  }
+}
+
 function installBlocksOnEditor(
   editor,
   slotBlocks,
@@ -951,7 +1102,8 @@ function installBlocksOnEditor(
   enneagramRegistry,
   enneagramCss,
   brochureRegistry,
-  brochureCss
+  brochureCss,
+  pens
 ) {
   if (editor.__eacBlocksInstalled) return;
   editor.__eacBlocksInstalled = true;
@@ -997,9 +1149,14 @@ function installBlocksOnEditor(
     console.info("[eac-client-config] brochure template installed");
   }
 
+  if (pens && pens.length) {
+    addPenBlocks(editor, pens);
+    console.info("[eac-client-config] pens installed", { pens: pens.map((p) => p.id) });
+  }
+
   console.info("[eac-client-config] installed", {
     blocks: editor.BlockManager.getAll().length,
-    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, BROCHURE_CATEGORY, SLOT_CATEGORY],
+    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, BROCHURE_CATEGORY, PENS_CATEGORY, SLOT_CATEGORY],
   });
 
   setTimeout(() => openBlocksPanelIfSimpleMode(editor), 250);
@@ -1033,6 +1190,7 @@ export default async function eacClientConfig(config /*, _options */) {
     initialEnneagramCss,
     initialBrochureTemplate,
     initialBrochureCss,
+    initialPens,
   ] = await Promise.all([
     loadComponents(),
     loadWorkshopTemplate(),
@@ -1043,6 +1201,7 @@ export default async function eacClientConfig(config /*, _options */) {
     loadEnneagramCss(),
     loadBrochureTemplate(),
     loadBrochureCss(),
+    loadPens(),
   ]);
 
   const initialSlotBlocks = slotBlocksFromCatalogue(initialComponents);
@@ -1062,7 +1221,7 @@ export default async function eacClientConfig(config /*, _options */) {
           console.warn("[eac-client-config] no editor available for manual install");
           return null;
         }
-        installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
+        installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
         return editor.BlockManager.getAll().length;
       };
     }
@@ -1082,7 +1241,7 @@ export default async function eacClientConfig(config /*, _options */) {
     // different base URI than the parent (about:srcdoc / blob: / data:), in
     // which case relative paths like "/eac-blocks.css" silently fail to
     // resolve and the canvas renders without our grid/column styles.
-    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH, BROCHURE_CSS_PATH]) {
+    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH, BROCHURE_CSS_PATH, PENS_CSS_PATH]) {
       for (const candidate of [cssPath, sameOriginUrl(cssPath)]) {
         if (candidate && !styles.includes(candidate)) styles.push(candidate);
       }
@@ -1098,6 +1257,7 @@ export default async function eacClientConfig(config /*, _options */) {
       registerDossierTypes(editor, initialDossierTemplate);
       registerEnneagramTypes(editor, initialEnneagramTemplate);
       registerBrochureTypes(editor, initialBrochureTemplate);
+      registerPenTypes(editor, initialPens);
     });
     gjs.plugins = plugins;
   });
@@ -1109,13 +1269,13 @@ export default async function eacClientConfig(config /*, _options */) {
       console.warn("[eac-client-config] grapesjs:end fired but no editor available");
       return;
     }
-    installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
+    installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
   });
 
   // Safety net: also try at startup:end. If grapesjs:end already fired, the
   // idempotent guard inside installBlocksOnEditor makes this a no-op.
   config.on("silex:startup:end", () => {
     const editor = typeof config.getEditor === "function" ? config.getEditor() : null;
-    if (editor) installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss);
+    if (editor) installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
   });
 }

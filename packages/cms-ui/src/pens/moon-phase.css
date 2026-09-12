@@ -1,0 +1,7 @@
+/*
+ * MoonPhase styles — ONE source of truth, shared with the Silex block.
+ * The look lives in the pens library next to its markup and manifest; this
+ * file only re-exports it so apps import "@elkdonis/cms-ui/moon-phase.css"
+ * like every other cms-ui stylesheet. Edit the pen, not this.
+ */
+@import "../../../silex-nextcloud-connector/src/pens/moon-phase/pen.css";

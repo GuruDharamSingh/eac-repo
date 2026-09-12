@@ -393,3 +393,4 @@ export async function invalidateSessionCache(userId: string): Promise<void> {
 
 // Export API route handlers
 export * from './api-routes';
+export * from './handoff';

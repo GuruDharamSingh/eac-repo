@@ -1069,3 +1069,47 @@ boards screenshotted in their own skins.
 **Screenshot gotcha:** `docker run --network host` does *not* reach the host's
 `localhost` on this box — use the host IP (192.168.0.11). A blank 5.9KB PNG
 means the browser never connected, not that the page is broken.
+
+## 6d. A second skin: the modern card feed (2026-09-12)
+
+Decision 1 chose the classic board. This adds the **modern feed as an
+option** rather than a replacement — `theme: "classic" | "modern"` on the
+forum connectors, defaulting to classic.
+
+**It is only CSS.** `packages/forum-ui/src/forum-modern.css`, every rule
+scoped under `[data-forum-theme="modern"]`, which `renderForumRoute` emits on
+its own root (`.gf-root`) so the thread view — which sits outside `Layout` —
+is covered too and no host touches its markup. A host opts in with one
+`@import` and one connector field; the stylesheet is inert until the
+attribute is set, so importing it always is safe.
+
+This works because the classic markup was already semantically a feed: a
+topic is an `<li>` with a glyph, title, excerpt, kicker and stats group, and
+a board section is a table of feed rows. Cards need different boxes, not
+different HTML. The consequence that matters: **the two skins cannot drift**
+— a feature built for one appears in both, because there is one set of
+components.
+
+What changes: a card per topic with a hover lift; two lines of excerpt
+instead of one clipped line; the kind glyph in a tinted circle; counts as
+pills under the body instead of a right-hand column; segmented pills for
+sort; the board index as a responsive grid of section cards with the feed
+accent as a top edge; rail blocks, replies, forms, search hits, members and
+the mod log all as cards; pagination as pills.
+
+Two judgements worth keeping:
+- **Unread is marked once.** The classic row uses a dot plus bold; a card can
+  carry a coloured left edge, so the dot is hidden in modern rather than
+  marking one fact three times.
+- **An empty section earns a quieter card.** `:has(.gf-last--none)` fades the
+  top edge, greys the ground and drops the last-post line — otherwise an
+  empty feed takes the same visual weight as a busy one in a grid.
+
+Kept: real `?page=` links, the plain-form reply box, server-side read state,
+and colour only from `--sf-*` tokens — so an org theme restyles the modern
+skin exactly as it restyles the classic one, and both work with JS off.
+`prefers-reduced-motion` drops the lift.
+
+The network host reads `FORUM_THEME=modern` (env, defaults classic).
+Verified live in both skins: index, `/latest`, thread, mobile; classic
+screenshotted after the change to confirm no regression from the new wrapper.

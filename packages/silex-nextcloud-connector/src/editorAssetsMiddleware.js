@@ -21,6 +21,7 @@ const {
   readArticleTemplateRegistry,
   readArticleTemplateCss,
 } = require("./workshopTemplateRegistry");
+const { readPensRegistry, readPensCss } = require("./pensRegistry");
 
 const CSS_URL = "/eac-blocks.css";
 const WORKSHOP_TEMPLATE_URL = "/eac-workshop-template.json";
@@ -33,6 +34,9 @@ const BROCHURE_TEMPLATE_URL = "/eac-brochure-template.json";
 const BROCHURE_CSS_URL = "/eac-brochure-template.css";
 const ARTICLE_TEMPLATE_URL = "/eac-article-template.json";
 const ARTICLE_CSS_URL = "/eac-article-template.css";
+// The pens library (src/pens/README.md): one JSON registry, one stylesheet.
+const PENS_URL = "/eac-pens.json";
+const PENS_CSS_URL = "/eac-pens.css";
 // The live-component catalogue (@elkdonis/silex-render components.data.json),
 // bind-mounted into the container. Serving it here is what lets the editor build
 // its live-slot blocks from the same list the renderer reads, instead of a
@@ -53,6 +57,8 @@ const ASSET_ROUTES = [
   ARTICLE_TEMPLATE_URL,
   BROCHURE_CSS_URL,
   COMPONENTS_URL,
+  PENS_URL,
+  PENS_CSS_URL,
 ];
 const CSS_FILE = path.join(__dirname, "eac-blocks.css");
 
@@ -204,7 +210,33 @@ function registerEditorAssets(app) {
     });
   }
 
+  function eacPens(req, res, next) {
+    try {
+      const body = JSON.stringify(readPensRegistry());
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read pens registry", err);
+      next(err);
+    }
+  }
+
+  function eacPensCss(req, res, next) {
+    try {
+      const body = readPensCss();
+      res.set("Content-Type", "text/css; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read pens css", err);
+      next(err);
+    }
+  }
+
   app.get(COMPONENTS_URL, eacComponents);
+  app.get(PENS_URL, eacPens);
+  app.get(PENS_CSS_URL, eacPensCss);
   app.get(CSS_URL, eacEditorAssets);
   app.get(WORKSHOP_TEMPLATE_URL, eacWorkshopTemplate);
   app.get(WORKSHOP_CSS_URL, eacWorkshopCss);

@@ -1,0 +1,65 @@
+{
+  "id": "feed-list",
+  "label": "Feed List",
+  "description": "A feed whose rows open in place: the avatar swells, the card grows, and a longer body unrolls underneath.",
+  "credit": {
+    "title": "Staggered list expand (GSAP Flip)",
+    "author": "Cassie Evans",
+    "url": "https://codepen.io/cassie-codes"
+  },
+  "root": ".eac-pen-feed",
+  "html": "pen.html",
+  "css": "pen.css",
+  "react": "@elkdonis/cms-ui/pens FeedList",
+  "traits": [
+    {
+      "name": "data-open-layout",
+      "label": "Open layout",
+      "type": "select",
+      "options": [
+        {
+          "id": "stack",
+          "name": "Stack (avatar moves up)"
+        },
+        {
+          "id": "inline",
+          "name": "Inline (avatar stays left)"
+        }
+      ]
+    },
+    {
+      "name": "data-speed",
+      "label": "Speed",
+      "type": "select",
+      "options": [
+        {
+          "id": "fast",
+          "name": "Fast"
+        },
+        {
+          "id": "normal",
+          "name": "Normal"
+        },
+        {
+          "id": "slow",
+          "name": "Slow"
+        }
+      ]
+    },
+    {
+      "name": "data-frame",
+      "label": "Frame",
+      "type": "select",
+      "options": [
+        {
+          "id": "card",
+          "name": "Bordered card"
+        },
+        {
+          "id": "plain",
+          "name": "Plain rows"
+        }
+      ]
+    }
+  ]
+}

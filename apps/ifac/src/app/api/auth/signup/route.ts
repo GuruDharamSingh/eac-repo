@@ -14,6 +14,7 @@ import { siteConfig } from "@/config/site";
  */
 export async function POST(req: NextRequest) {
   return handleSignup(req, {
-    defaultOrgs: [{ id: siteConfig.orgId, role: "member" }],
+    // A signup is a follower (viewer role), not a member — CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
+    defaultOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
   });
 }

@@ -57,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             feeds={feeds.filter((f) => f.isPublic).map((f) => ({ slug: f.slug, name: f.name }))}
             signedIn={Boolean(viewer)}
             canEdit={canEdit}
+            isMember={Boolean(viewer?.isMember)}
           />
           <main className="flex-1">{children}</main>
           <SiteFooter />

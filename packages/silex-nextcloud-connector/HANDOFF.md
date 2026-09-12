@@ -11,6 +11,8 @@
 | `http://127.0.0.1:6805/eac-workshop-template.json` | 200 | Workshop manifest plus section HTML/CSS |
 | `http://127.0.0.1:6805/eac-workshop-template.css` | 200 | Workshop tokens plus section CSS |
 | `http://127.0.0.1:6805/eac-silex-blocks.js` | not mounted | Old monkey-patch endpoint; keep out of the active path |
+| `http://127.0.0.1:6805/eac-pens.json` | 200, `application/json` | Pens library registry (`src/pens/README.md`): id, label, traits, markup, CSS per pen |
+| `http://127.0.0.1:6805/eac-pens.css` | 200, `text/css` | All pen stylesheets, linked into the canvas; each pen's CSS is seeded into the project on first drop |
 
 Server logs show clean startup with no errors:
 ```

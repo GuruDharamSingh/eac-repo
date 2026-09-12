@@ -1,0 +1,333 @@
+/* ==========================================================================
+   Pen: Feed List  (.eac-pen-feed)
+
+   A feed whose rows open in place: click an item and it grows, the avatar
+   swells and moves to the head of the card, and a longer body unrolls
+   underneath. Ported from "Staggered list / GSAP Flip" by Cassie Evans
+   (https://codepen.io/collection/ — the staggered-list expand demo).
+
+   The original morphs the layout with GSAP's Flip plugin. Published Silex
+   HTML carries no script (see ../README.md), so here the state is a
+   checkbox and the motion is CSS:
+
+     - card padding, background and border colour  → transitioned
+     - avatar size and the body's type scale       → transitioned
+     - the extra panel's height (0fr → 1fr grid)   → transitioned
+     - the row → column REFLOW                     → instant, by design
+
+   That last one is the part CSS cannot interpolate: no property animates a
+   flex item from "beside" to "above". Rather than let it drift mid-ease and
+   look broken, the reflow is given a 0s transition so it happens on the
+   first frame and everything else eases from there. Pick
+   data-open-layout="inline" to avoid the reflow entirely — the avatar stays
+   at the left and only grows, which is fully smooth.
+
+   The React twin (@elkdonis/cms-ui/pens FeedList) restores the morph: it
+   runs a real FLIP over the avatar and the body, which is what the original
+   used GSAP for. It sets data-flip="on", and the rules at the bottom hand
+   those two elements over to it.
+   ========================================================================== */
+
+.eac-pen-feed {
+  --eac-pen-feed-duration: 500ms;
+  --eac-pen-feed-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --eac-pen-feed-accent: var(--eac-accent, #b85c3a);
+  --eac-pen-feed-card: var(--eac-surface, #fbf8f2);
+  --eac-pen-feed-card-open: color-mix(in srgb, var(--eac-pen-feed-accent) 16%, var(--eac-pen-feed-card));
+  --eac-pen-feed-ink: var(--eac-text, #1a1612);
+  --eac-pen-feed-ink-soft: var(--eac-text-soft, #5a5045);
+  /* The accent is a brand colour, not a legible one: at full strength it is
+     4.28:1 on the card and 3.50:1 on the opened card, both under 4.5. These
+     two derive a usable pair from it and are the only accent values any TEXT
+     is ever drawn in or on.
+       kicker — mixed toward the card's OWN ink, which self-corrects: it
+         darkens on a light card and lightens on a dark one.
+       solid  — mixed toward a fixed near-black, because the text on it is
+         always the inverted (near-white) ink, so it must always darken. */
+  --eac-pen-feed-kicker-color: color-mix(in srgb, var(--eac-pen-feed-accent) 72%, var(--eac-pen-feed-ink));
+  --eac-pen-feed-solid: color-mix(in srgb, var(--eac-pen-feed-accent) 80%, #12100e);
+  --eac-pen-feed-line: color-mix(in srgb, var(--eac-pen-feed-ink) 72%, transparent);
+  --eac-pen-feed-radius: 10px;
+  --eac-pen-feed-avatar: 4rem;
+  --eac-pen-feed-avatar-open: 8rem;
+  --eac-pen-feed-gap: 1.5rem;
+
+  box-sizing: border-box;
+  width: 100%;
+  color: var(--eac-pen-feed-ink);
+  font-family: var(--eac-font-sans, Inter, system-ui, sans-serif);
+}
+.eac-pen-feed *,
+.eac-pen-feed *::before,
+.eac-pen-feed *::after {
+  box-sizing: border-box;
+}
+
+.eac-pen-feed[data-speed="fast"] { --eac-pen-feed-duration: 280ms; }
+.eac-pen-feed[data-speed="slow"] { --eac-pen-feed-duration: 900ms; }
+/* A quieter card: no heavy border, a rule between rows instead. */
+.eac-pen-feed[data-frame="plain"] { --eac-pen-feed-line: transparent; }
+
+.eac-pen-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eac-pen-feed-li {
+  display: block;
+  margin: 0;
+}
+
+/* ---- The row ------------------------------------------------------------- */
+
+.eac-pen-feed-item {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 1rem;
+  border: 3px solid var(--eac-pen-feed-line);
+  border-radius: var(--eac-pen-feed-radius);
+  background-color: var(--eac-pen-feed-card);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    padding var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    background-color var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    border-color var(--eac-pen-feed-duration) var(--eac-pen-feed-easing);
+}
+.eac-pen-feed[data-frame="plain"] .eac-pen-feed-item {
+  border-width: 0 0 1px 0;
+  border-bottom-color: var(--eac-border, #d8ddd8);
+  border-radius: 0;
+  background-color: transparent;
+}
+.eac-pen-feed-item:hover {
+  border-color: color-mix(in srgb, var(--eac-pen-feed-accent) 60%, var(--eac-pen-feed-line));
+}
+
+.eac-pen-feed-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.eac-pen-feed-item:has(> .eac-pen-feed-toggle:focus-visible) {
+  outline: 3px solid var(--eac-pen-feed-accent);
+  outline-offset: 3px;
+}
+
+.eac-pen-feed-avatar {
+  flex: 0 0 var(--eac-pen-feed-avatar);
+  width: var(--eac-pen-feed-avatar);
+  height: var(--eac-pen-feed-avatar);
+  margin-right: var(--eac-pen-feed-gap);
+  border-radius: 100px;
+  object-fit: cover;
+  background-color: color-mix(in srgb, var(--eac-pen-feed-ink) 12%, transparent);
+  transition:
+    width var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    height var(--eac-pen-feed-duration) var(--eac-pen-feed-easing);
+}
+
+.eac-pen-feed-body {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+.eac-pen-feed-body .eac-kicker,
+.eac-pen-feed-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--eac-pen-feed-kicker-color);
+}
+.eac-pen-feed-title {
+  margin: 0;
+  font-family: var(--eac-font-serif, Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--eac-pen-feed-ink);
+}
+.eac-pen-feed-summary {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--eac-pen-feed-ink-soft);
+}
+.eac-pen-feed-meta {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  color: var(--eac-pen-feed-ink-soft);
+}
+
+/* The pen's three bars. Kept as the skeleton shape for a feed that is still
+   loading; a row with real words uses the title/summary above instead. */
+.eac-pen-feed-line {
+  height: 0.25rem;
+  width: 14rem;
+  max-width: 100%;
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--eac-pen-feed-ink) 65%, transparent);
+}
+.eac-pen-feed-line:nth-of-type(2) { width: 11rem; }
+.eac-pen-feed-line:nth-of-type(3) { width: 8rem; }
+.eac-pen-feed-line + .eac-pen-feed-line { margin-top: 1rem; }
+
+/* ---- The panel that unrolls ---------------------------------------------- */
+
+/* 0fr → 1fr is how a grid track animates to "as tall as the content";
+   the child must clip and be allowed to shrink below its content. */
+.eac-pen-feed-extra {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  /* visibility, delayed to the end of the collapse, is what keeps the links
+     inside a closed row out of the tab order — a clipped panel is still
+     focusable, and tabbing into invisible links is the usual bug in this
+     pattern. It flips back on instantly when opening (see the open rule). */
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    margin-top var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    opacity calc(var(--eac-pen-feed-duration) * 0.6) linear,
+    visibility 0s linear var(--eac-pen-feed-duration);
+}
+.eac-pen-feed-extra-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.eac-pen-feed-extra p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--eac-pen-feed-ink-soft);
+}
+.eac-pen-feed-extra p:last-child { margin-bottom: 0; }
+
+.eac-pen-feed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.eac-pen-feed-actions > a,
+.eac-pen-feed-actions > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--eac-pen-feed-accent) 55%, transparent);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--eac-pen-feed-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.eac-pen-feed-actions > a:hover,
+.eac-pen-feed-actions > button:hover {
+  background-color: color-mix(in srgb, var(--eac-pen-feed-accent) 14%, transparent);
+}
+.eac-pen-feed-actions > [data-variant="solid"] {
+  border-color: var(--eac-pen-feed-solid);
+  background-color: var(--eac-pen-feed-solid);
+  color: var(--eac-text-inv, #faf6ee);
+}
+
+/* ---- Open ---------------------------------------------------------------- */
+
+.eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) {
+  padding: 1.75rem;
+  border-color: var(--eac-pen-feed-accent);
+  background-color: var(--eac-pen-feed-card-open);
+}
+.eac-pen-feed[data-frame="plain"] .eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) {
+  background-color: var(--eac-pen-feed-card-open);
+  border-radius: var(--eac-pen-feed-radius);
+}
+
+.eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-avatar {
+  width: var(--eac-pen-feed-avatar-open);
+  height: var(--eac-pen-feed-avatar-open);
+}
+.eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-title {
+  font-size: 1.4rem;
+}
+.eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-extra {
+  grid-template-rows: 1fr;
+  margin-top: 1.25rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    margin-top var(--eac-pen-feed-duration) var(--eac-pen-feed-easing),
+    opacity calc(var(--eac-pen-feed-duration) * 0.6) linear calc(var(--eac-pen-feed-duration) * 0.3),
+    visibility 0s linear 0s;
+}
+
+/* The reflow, in the pen-faithful "stack" layout. flex-basis and the margins
+   carry no transition on purpose — see the note at the top of this file. */
+.eac-pen-feed[data-open-layout="stack"] .eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) {
+  flex-direction: row;
+  justify-content: center;
+  text-align: center;
+}
+.eac-pen-feed[data-open-layout="stack"] .eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-avatar {
+  flex-basis: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  margin-bottom: 1rem;
+}
+.eac-pen-feed[data-open-layout="stack"] .eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-body {
+  flex: 0 0 100%;
+}
+.eac-pen-feed[data-open-layout="stack"] .eac-pen-feed-item:is(.is-open, :has(> .eac-pen-feed-toggle:checked)) .eac-pen-feed-actions {
+  justify-content: center;
+}
+
+/* The inline layout keeps the avatar where it is, so nothing reflows and the
+   whole open is interpolated. */
+.eac-pen-feed[data-open-layout="inline"] {
+  --eac-pen-feed-avatar-open: 5.5rem;
+}
+
+/* ---- FLIP handover (React twin only) ------------------------------------- */
+
+/* With a real FLIP driving position AND size, the CSS size transition would
+   fight it: the twin reads the element's final box, so that box must already
+   be final. */
+.eac-pen-feed[data-flip="on"] .eac-pen-feed-avatar,
+.eac-pen-feed[data-flip="on"] .eac-pen-feed-body {
+  transition: none;
+}
+
+/* ---- Motion preference --------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-pen-feed *,
+  .eac-pen-feed *::before,
+  .eac-pen-feed *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .eac-pen-feed-extra { transition: none !important; }
+}

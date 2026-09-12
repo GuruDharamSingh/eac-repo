@@ -2,7 +2,7 @@ import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { createThread } from './posts';
-import { getOrgFeed, canViewFeed } from './org-feeds';
+import { getOrgFeed, canViewFeed, upsertOrgFeed } from './org-feeds';
 import type { ForumPerson, ForumViewer } from './forum';
 
 // ============================================================================
@@ -105,6 +105,17 @@ export function canModerate(viewer: ForumViewer, orgId: string): boolean {
   if (viewer.isGlobalAdmin) return true;
   const role = viewer.roles[orgId];
   return role === 'owner' || role === 'guide';
+}
+
+/**
+ * Member and up — NOT viewer. `viewer` is what a new signup lands on: a
+ * follower with read access. Structural acts (creating a category) need
+ * actual membership, which the org grants; reading does not.
+ */
+export function isOrgMember(viewer: ForumViewer, orgId: string): boolean {
+  if (viewer.isGlobalAdmin) return true;
+  const role = viewer.roles[orgId];
+  return role === 'owner' || role === 'guide' || role === 'member';
 }
 
 // ── replies ─────────────────────────────────────────────────────────────────
@@ -438,6 +449,78 @@ export async function listTopicChoices(orgId: string): Promise<Array<{ id: strin
     WHERE status = 'approved' OR (status = 'proposed' AND org_id = ${orgId})
     ORDER BY status ASC, name ASC
   `;
+}
+
+// ── categories (a row in org_feeds) ─────────────────────────────────────────
+
+/**
+ * Slugs the forum's own routes claim. An org host mounts feeds at
+ * /forum/[feed] and renderForumRoute matches these words FIRST, so a
+ * category that slugified to one of them would be permanently unreachable —
+ * the list page would answer instead. Cheaper to refuse the name than to
+ * ship a category nobody can open.
+ */
+const RESERVED_FEED_SLUGS = new Set([
+  'latest', 'unread', 'watching', 'bookmarks', 'happening', 'notifications',
+  'members', 'topics', 'orgs', 'search', 'log', 't',
+]);
+
+export interface CreateCategoryInput {
+  orgId: string;
+  name: string;
+  tagline?: string;
+  /** 'everyone' leaves min_role NULL; 'members' gates it at member and up. */
+  audience?: 'everyone' | 'members';
+  accent?: string | null;
+}
+
+/**
+ * Add a category to an org's board.
+ *
+ * Members and up, not viewers — see isOrgMember. Distinct from proposeTopic,
+ * which is about the network-wide `topics` taxonomy and needs owner/guide
+ * plus admin review: a category is the org's own furniture, so the org's own
+ * members arrange it without asking the network.
+ */
+export async function createCategory(
+  viewer: ForumViewer,
+  input: CreateCategoryInput
+): Promise<WriteResult<{ slug: string; name: string }>> {
+  if (!viewer.userId) return { ok: false, error: 'Sign in first.' };
+  if (!isOrgMember(viewer, input.orgId)) {
+    return { ok: false, error: 'Only members of this organisation can add a category.' };
+  }
+  const name = (input.name ?? '').trim().replace(/\s+/g, ' ');
+  if (name.length < 2 || name.length > 120) {
+    return { ok: false, error: 'A category name is between 2 and 120 characters.' };
+  }
+  const slug = slugify(name);
+  if (!slug) return { ok: false, error: 'That name has no letters or numbers in it.' };
+  if (RESERVED_FEED_SLUGS.has(slug)) {
+    return { ok: false, error: `“${name}” is a word the forum's own pages use — try another name.` };
+  }
+  const clash = await getOrgFeed(input.orgId, slug);
+  if (clash) return { ok: false, error: `There is already a category called “${clash.name}”.` };
+
+  // After the existing categories, but ahead of `general`, which parks at 999.
+  const [{ next }] = await db<Array<{ next: number }>>`
+    SELECT COALESCE(MAX(sort_order) FILTER (WHERE slug <> 'general'), 0) + 10 AS next
+    FROM org_feeds WHERE org_id = ${input.orgId}
+  `;
+
+  const feed = await upsertOrgFeed(input.orgId, slug, {
+    name,
+    tagline: (input.tagline ?? '').trim() || null,
+    accent: /^#[0-9a-f]{6}$/i.test(input.accent ?? '') ? input.accent! : null,
+    sortOrder: next,
+    // is_public drives the HOST SITE's navigation, and a forum category is
+    // not a page of the site — this is what leaked `general` into every
+    // org's header before migration 113. The forum lists every feed
+    // regardless and gates on min_role instead.
+    isPublic: false,
+    minRole: input.audience === 'members' ? 'member' : null,
+  });
+  return { ok: true, slug: feed.slug, name: feed.name };
 }
 
 // ── moderation ──────────────────────────────────────────────────────────────

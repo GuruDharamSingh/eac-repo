@@ -7,6 +7,7 @@ import { handleSignup } from "@elkdonis/auth-server";
  */
 export async function POST(req: NextRequest) {
   return handleSignup(req, {
-    defaultOrgs: [{ id: "hidden-enneagram", role: "member" }],
+    // A signup is a follower (viewer role), not a member — CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
+    defaultOrgs: [{ id: "hidden-enneagram", role: "viewer" }],
   });
 }

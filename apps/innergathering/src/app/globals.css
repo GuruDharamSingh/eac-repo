@@ -12,13 +12,14 @@
    groups — all plain CSS, themed below through custom properties. */
 @import "@elkdonis/cms-ui/article.css";
 @import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
 @import "@elkdonis/cms-ui/gallery.css";
 @import "@elkdonis/cms-ui/files-card.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
-@import "@elkdonis/cms-ui/baroque-signup.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
+@import "@elkdonis/cms-ui/baroque-signup.css";
 @import "@elkdonis/cms-ui/reading-theme.css";
 
 /* The landing page's own stylesheet, carried over from inner-gathering's

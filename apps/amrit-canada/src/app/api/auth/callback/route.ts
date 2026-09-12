@@ -30,6 +30,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   return handleOAuthCallback(proxied as NextRequest, {
-    defaultOrgs: [{ id: siteConfig.orgId, role: "member" }],
+    // viewer, not member: signing in is not the same as being granted
+    // membership. Was `member` until 2026-09-12, disagreeing with the
+    // password-signup route next door, so the role a new account got
+    // depended on which button they used.
+    defaultOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
   });
 }

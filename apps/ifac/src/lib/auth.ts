@@ -14,16 +14,24 @@ import { siteConfig } from "@/config/site";
  */
 
 export const EDITOR_ROLES: OrgRole[] = ["owner", "guide"];
+/**
+ * What counts as a member. `viewer` is deliberately NOT here: it is the role
+ * a new signup lands on — a follower with read access — and it must not carry
+ * member privileges. This used to be `role !== null`, which let a viewer
+ * through every member gate on the site, including `canWrite` on the pipeline
+ * board. Matches the list hub-auth.ts has always used for /api/hub/*.
+ */
+export const MEMBER_ROLES: OrgRole[] = ["owner", "guide", "member"];
 
 export interface Viewer {
   /** Database user id — what threads.author_id and thread_rsvps.user_id hold. */
   userId: string;
   email: string;
-  /** Role in THIS org, or null for a signed-in non-member. */
+  /** Role in THIS org, or null for a signed-in stranger. */
   role: OrgRole | null;
   /** owner or guide: may publish content and manage the site. */
   canEdit: boolean;
-  /** Any membership: may see attendee lists and member-only content. */
+  /** owner, guide or member — NOT viewer. May write and see member content. */
   isMember: boolean;
 }
 
@@ -43,7 +51,7 @@ export async function getViewer(): Promise<Viewer | null> {
     email: session.user.email,
     role,
     canEdit: role !== null && EDITOR_ROLES.includes(role),
-    isMember: role !== null,
+    isMember: role !== null && MEMBER_ROLES.includes(role),
   };
 }
 
@@ -66,9 +74,9 @@ export async function getApiEditor(): Promise<Viewer | null> {
 }
 
 /**
- * Gate for /hub and other member-only pages — any role counts, not just
- * owner/guide. Same redirect shape as requireOrgEditor (signed-out → login
- * with a return path, signed-in non-member → home).
+ * Gate for member-only pages — member and up, not just owner/guide, but not
+ * a viewer. Same redirect shape as requireOrgEditor (signed-out → login with
+ * a return path, signed-in non-member → home).
  */
 export async function requireOrgMember(returnTo = "/hub"): Promise<Viewer> {
   const viewer = await getViewer();

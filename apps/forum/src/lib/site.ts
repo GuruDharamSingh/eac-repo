@@ -16,6 +16,15 @@ export const SITE = {
 // the whole Nextcloud tree, so everything resolves there.
 configureForumMedia((url) => (url.startsWith("/api/media/") ? `${ARTDIRECT_URL}${url}` : url));
 
+/**
+ * Which skin the board wears. Both stylesheets are imported in globals.css;
+ * the modern one is inert unless this says so, because every rule in it is
+ * scoped under [data-forum-theme="modern"]. Set FORUM_THEME=modern to flip
+ * the whole site — index, feeds, threads, search, members — at once.
+ */
+export const FORUM_THEME: "classic" | "modern" =
+  process.env.FORUM_THEME === "modern" ? "modern" : "classic";
+
 /** Where the package's form handler is mounted (see app/api/forum/[action]/route.ts). */
 export const ACTION_BASE = "/api/forum";
 

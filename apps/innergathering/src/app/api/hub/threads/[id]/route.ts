@@ -35,7 +35,8 @@ export async function GET(
   const published = thread.status === "published";
   const allowed =
     (published && thread.visibility === "PUBLIC") ||
-    (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isMember)) ||
+    // A follower (viewer role) reads ORGANIZATION threads too — decision 6.
+    (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isAffiliate)) ||
     Boolean(viewer?.canEdit);
   // 404 rather than 403: an unpublished item should not confirm it exists.
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });

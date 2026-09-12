@@ -470,3 +470,27 @@ export function Agenda({ rows, hrefs, showOrg }: { rows: ForumHappeningRow[]; hr
     </div>
   );
 }
+
+// ── theme toggle + new-topic link ─────────────────────────────────────────
+
+export function ThemeToggle({ currentTheme, actionBase, back }: { currentTheme: "classic" | "modern"; actionBase: string; back: string }) {
+  const next = currentTheme === "classic" ? "modern" : "classic";
+  const base = actionBase.replace(/\/$/, "");
+  return (
+    <form method="post" action={`${base}/set-theme`} className="gf-theme-toggle">
+      <input type="hidden" name="theme" value={next} />
+      <input type="hidden" name="back" value={back} />
+      <button type="submit" className="gf-tool" title={`Switch to ${next} view`}>
+        {currentTheme === "classic" ? "◧ Card view" : "☰ Board view"}
+      </button>
+    </form>
+  );
+}
+
+export function NewTopicLink({ href, label }: { href: string; label?: string }) {
+  return (
+    <a className="eac-btn eac-btn--primary gf-newtopic-btn" href={href}>
+      {label ?? "+ New Topic"}
+    </a>
+  );
+}

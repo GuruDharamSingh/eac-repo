@@ -169,6 +169,41 @@ export async function getThreadsForFeed(feedSlug: string, limit = 30): Promise<T
   }
 }
 
+/** All upcoming threads across all public feeds — the unified landing feed. */
+export async function getUpcomingThreads(limit = 12): Promise<Thread[]> {
+  try {
+    const rows = await db<ThreadRow[]>`
+      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
+      WHERE ${PUBLIC_FILTER}
+        AND ${UPCOMING_FILTER}
+        AND t.section IS NOT NULL
+      ORDER BY t.scheduled_at ASC NULLS LAST,
+        COALESCE(t.published_at, t.created_at) DESC
+      LIMIT ${limit}
+    `;
+    return rows.map(mapThread);
+  } catch (err) {
+    console.error("[amrit-canada] getUpcomingThreads:", err);
+    return [];
+  }
+}
+
+/** Service listings — threads in the 'services' feed. */
+export async function getServiceThreads(limit = 20): Promise<Thread[]> {
+  try {
+    const rows = await db<ThreadRow[]>`
+      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
+      WHERE ${PUBLIC_FILTER} AND t.section = 'services'
+      ORDER BY COALESCE(t.published_at, t.created_at) DESC
+      LIMIT ${limit}
+    `;
+    return rows.map(mapThread);
+  } catch (err) {
+    console.error("[amrit-canada] getServiceThreads:", err);
+    return [];
+  }
+}
+
 /** The next dated item in a feed — what the home page portal previews. */
 export async function getNextInFeed(feedSlug: string): Promise<Thread | null> {
   try {

@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Pen: Moon Phase  (.eac-pen-moon)
+
+   Tonight's moon, drawn in CSS. After "Phases of the Moon in CSS" by Mads
+   Stoumann (https://dev.to/madsstoumann/phases-of-the-moon-in-css-2lbo).
+
+   The original reads its numbers straight out of HTML attributes with the
+   typed attr() function, which at the time of writing only Chrome ships. Here
+   the numbers arrive as custom properties on the element instead, which every
+   current browser understands and which a React twin can set from a real
+   ephemeris. Everything else — the disc, the terminator, the tilt — is the
+   article's idea.
+
+   GEOMETRY. The lit fraction k gives a terminator that is an ellipse with a
+   horizontal semi-axis of |1 - 2k| times the Moon's radius:
+
+     crescent (k <= 0.5)  dark = the shadow half  PLUS that ellipse
+     gibbous  (k >  0.5)  dark = the shadow half  MINUS that ellipse
+
+   So both shapes are one half-disc and one ellipse; only the sign changes.
+   The crescent draws the ellipse as an element, the gibbous punches it out of
+   the half with a hard-edged radial-gradient mask. --eac-pen-moon-shape picks
+   which, because CSS has no widely-supported abs().
+
+   ORIENTATION. The disc is always drawn with its bright limb to the RIGHT and
+   then rotated. Rotating the whole disc rotates the maria too, which is
+   correct: an observer in Sydney sees the same face turned, not mirrored.
+   --eac-pen-moon-rotate carries that angle; @elkdonis/astro's moonPhase()
+   computes it properly (position angle of the bright limb, less the
+   parallactic angle), and a hand-placed block can simply pick a number.
+   ========================================================================== */
+
+.eac-pen-moon {
+  /* What the twin (or the author) sets. */
+  --eac-pen-moon-illumination: 50; /* 0–100, how much of the disc is lit */
+  --eac-pen-moon-rotate: 0deg; /* clockwise; 0 puts the bright limb right */
+  --eac-pen-moon-size: 4rem;
+
+  /* The two tones. The lit side is deliberately NOT the org accent — the Moon
+     is the one thing on the page that should look like itself — but both are
+     derived from the page's ink so the disc sits in whatever palette it lands
+     in. Measured on the default pair: 13.6:1 lit against dark, and the rim
+     keeps a new moon visible on a dark ground at 3.2:1. */
+  --eac-pen-moon-lit: var(--eac-pen-moon-surface, #e6e1d6);
+  --eac-pen-moon-dark: color-mix(in srgb, var(--eac-text, #1a1612) 92%, #000);
+  --eac-pen-moon-maria: color-mix(in srgb, var(--eac-pen-moon-lit) 74%, #6b6154);
+  --eac-pen-moon-rim: color-mix(in srgb, var(--eac-text, #1a1612) 28%, transparent);
+  --eac-pen-moon-duration: 600ms;
+
+  box-sizing: border-box;
+  display: inline-block;
+  width: var(--eac-pen-moon-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* The rim is drawn on the root, outside the rotating disc, so it does not
+     turn with the maria and a new moon still reads as a disc. */
+  box-shadow: 0 0 0 1px var(--eac-pen-moon-rim);
+  line-height: 0;
+}
+.eac-pen-moon * {
+  box-sizing: border-box;
+}
+
+/* The disc: the lit surface, and the frame everything else is clipped to. */
+.eac-pen-moon-disc {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  rotate: var(--eac-pen-moon-rotate);
+  background-color: var(--eac-pen-moon-lit);
+  /* --eac-pen-moon-face takes a url() for a real photograph; the gradients
+     below are the no-asset fallback — maria, a couple of bright rays, and a
+     limb darkening that keeps the edge from looking like a sticker. */
+  background-image: var(--eac-pen-moon-face, none),
+    radial-gradient(circle at 44% 42%, #0000 58%, color-mix(in srgb, var(--eac-pen-moon-dark) 30%, #0000) 100%),
+    radial-gradient(circle at 33% 30%, var(--eac-pen-moon-maria) 0 9%, #0000 10%),
+    radial-gradient(circle at 46% 26%, var(--eac-pen-moon-maria) 0 12%, #0000 13%),
+    radial-gradient(circle at 62% 38%, var(--eac-pen-moon-maria) 0 10%, #0000 11%),
+    radial-gradient(circle at 38% 56%, var(--eac-pen-moon-maria) 0 14%, #0000 15%),
+    radial-gradient(circle at 70% 66%, var(--eac-pen-moon-maria) 0 7%, #0000 8%),
+    radial-gradient(circle at 55% 76%, var(--eac-pen-moon-maria) 0 5%, #0000 6%);
+  background-size: cover;
+  background-position: center;
+}
+
+/* The shadow half. Bright limb right, so the dark side is the left half. */
+.eac-pen-moon-shadow {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  background: var(--eac-pen-moon-dark);
+}
+
+/* The terminator ellipse, centred on the disc: width |1 - 2k| of the disc,
+   full height. Only drawn for a crescent. */
+.eac-pen-moon-terminator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  width: calc(var(--_eac-moon-w) * 100%);
+  translate: -50%;
+  border-radius: 50%;
+  background: var(--eac-pen-moon-dark);
+  transition: width var(--eac-pen-moon-duration) ease;
+}
+
+/* k <= 0.5 — the ellipse ADDS to the dark half. */
+.eac-pen-moon[data-shape="crescent"] {
+  --_eac-moon-w: calc(1 - 2 * var(--eac-pen-moon-illumination) / 100);
+}
+
+/* k > 0.5 — the ellipse is SUBTRACTED from it. The gradient's horizontal
+   radius is measured in the half's own box, whose width is one Moon radius,
+   and it sits on that box's right edge, which is the centre of the disc. */
+.eac-pen-moon[data-shape="gibbous"] {
+  --_eac-moon-w: calc(2 * var(--eac-pen-moon-illumination) / 100 - 1);
+}
+.eac-pen-moon[data-shape="gibbous"] .eac-pen-moon-terminator {
+  display: none;
+}
+.eac-pen-moon[data-shape="gibbous"] .eac-pen-moon-shadow {
+  -webkit-mask-image: radial-gradient(
+    calc(var(--_eac-moon-w) * 100%) 50% at 100% 50%,
+    #0000 99.9%,
+    #000 100%
+  );
+  mask-image: radial-gradient(calc(var(--_eac-moon-w) * 100%) 50% at 100% 50%, #0000 99.9%, #000 100%);
+  transition: -webkit-mask-image var(--eac-pen-moon-duration) ease, mask-image var(--eac-pen-moon-duration) ease;
+}
+
+/* Sizes, as traits. */
+.eac-pen-moon[data-size="sm"] { --eac-pen-moon-size: 2.25rem; }
+.eac-pen-moon[data-size="md"] { --eac-pen-moon-size: 4rem; }
+.eac-pen-moon[data-size="lg"] { --eac-pen-moon-size: 8rem; }
+.eac-pen-moon[data-size="xl"] { --eac-pen-moon-size: 14rem; }
+
+/* A faint halo, for a moon sitting alone on a dark page. */
+.eac-pen-moon[data-glow="on"] {
+  box-shadow:
+    0 0 0 1px var(--eac-pen-moon-rim),
+    0 0 calc(var(--eac-pen-moon-size) / 3) color-mix(in srgb, var(--eac-pen-moon-lit) 38%, transparent);
+}
+
+/* The caption, when a block wants one under the disc. */
+.eac-pen-moon-label {
+  display: block;
+  margin-top: 0.4em;
+  color: var(--eac-text-soft, #5a5045);
+  font-family: var(--eac-font-sans, Inter, system-ui, sans-serif);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-pen-moon-terminator,
+  .eac-pen-moon[data-shape="gibbous"] .eac-pen-moon-shadow {
+    transition: none;
+  }
+}

@@ -1,36 +1,41 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { listOrgFeeds } from "@elkdonis/services";
+import { listOrgFeeds, listOrgEventsInRange } from "@elkdonis/services";
+import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { Button } from "@/components/ui/button";
-import { CycleBadge } from "@/components/cycle-badge";
 import { ThreadCard } from "@/components/thread-card";
 import { HeroBanner } from "@/components/hero-banner";
-import { getAttendanceCount, getCycleStatus, getNextInFeed, getSiteSections } from "@/lib/data";
-import { hexToHslTriplet } from "@/lib/color";
-import { formatDate, formatTime } from "@/lib/format";
+import { CalendarFace } from "@/components/hub/CalendarFace";
+import {
+  getAttendanceCount,
+  getCycleStatus,
+  getSiteSections,
+  getUpcomingThreads,
+} from "@/lib/data";
+import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
 export default async function HomePage() {
-  const [feeds, sections] = await Promise.all([
+  const now = new Date();
+  const calFrom = startOfMonth(now);
+
+  const [feeds, sections, upcoming, calEvents, viewer] = await Promise.all([
     listOrgFeeds(siteConfig.orgId).catch(() => []),
     getSiteSections(),
+    getUpcomingThreads(20),
+    listOrgEventsInRange(siteConfig.orgId, calFrom, addMonths(calFrom, 1)),
+    getViewer().catch(() => null),
   ]);
 
-  // One preview per feed. The first (Amrit Vela) leads, because "is sadhana
-  // on?" is the question most visitors arrive with.
-  const previews = await Promise.all(
-    feeds.map(async (feed) => {
-      const thread = await getNextInFeed(feed.slug);
-      return {
-        feed,
-        thread,
-        cycleStatus: thread?.scheduledAt ? await getCycleStatus(thread) : undefined,
-        attendanceCount: thread?.isRsvpEnabled ? await getAttendanceCount(thread) : undefined,
-      };
-    })
+  const feedNameMap = Object.fromEntries(feeds.map((f) => [f.slug, f.name]));
+
+  const enriched = await Promise.all(
+    upcoming.map(async (thread) => ({
+      thread,
+      cycleStatus: thread.scheduledAt ? await getCycleStatus(thread) : undefined,
+      attendanceCount: thread.isRsvpEnabled ? await getAttendanceCount(thread) : undefined,
+    }))
   );
 
-  const lead = previews[0];
   const hero = sections.hero;
   const about = sections.about;
 
@@ -38,7 +43,7 @@ export default async function HomePage() {
     <>
       <HeroBanner />
 
-      {/* Intro — the site's own words, editable from /manage/pages. */}
+      {/* Intro */}
       <section className="mx-auto max-w-4xl px-5 py-14 text-center">
         <h1 className="font-serif text-[clamp(1.8rem,5vw,2.6rem)] leading-tight">
           {hero?.title ?? siteConfig.orgName}
@@ -52,115 +57,44 @@ export default async function HomePage() {
         {hero?.note && (
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">{hero.note}</p>
         )}
-
-        {lead?.thread && (
-          <div className="card-natural mx-auto mt-10 max-w-2xl p-6 text-left">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Next {lead.feed.name}
-            </p>
-            <h2 className="mt-2 font-serif text-2xl">
-              <Link
-                href={`/${lead.feed.slug}/${lead.thread.slug}`}
-                className="underline-offset-4 hover:underline"
-              >
-                {lead.thread.title}
-              </Link>
-            </h2>
-            {lead.thread.nextOccurrenceAt && (
-              <p className="mt-2 text-sm">
-                {formatDate(lead.thread.nextOccurrenceAt)} at{" "}
-                {formatTime(lead.thread.nextOccurrenceAt)}
-                <span className="text-muted-foreground"> · Toronto time</span>
-              </p>
-            )}
-            {lead.cycleStatus && (
-              <div className="mt-4">
-                <CycleBadge status={lead.cycleStatus} />
-              </div>
-            )}
-            {typeof lead.attendanceCount === "number" && lead.attendanceCount > 0 && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                {lead.attendanceCount}{" "}
-                {lead.attendanceCount === 1 ? "person is" : "people are"} coming.
-              </p>
-            )}
-            <Button asChild size="sm" className="mt-5">
-              <Link href={`/${lead.feed.slug}/${lead.thread.slug}`}>
-                Details and RSVP <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </Button>
-          </div>
-        )}
       </section>
 
-      {/* Our Practices — the dark portal tiles, one per feed from org_feeds. */}
+      {/* Feed + calendar */}
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        <h2 className="text-center font-serif text-3xl">Our Practices</h2>
-        <hr className="saffron-divider mx-auto max-w-xs" />
+        <div className="grid gap-8 md:grid-cols-[1fr_280px]">
+          {/* Unified feed */}
+          <div>
+            <h2 className="font-serif text-2xl">What&rsquo;s Happening</h2>
+            <hr className="saffron-divider max-w-xs" />
 
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {feeds.map((feed) => {
-            const accent = hexToHslTriplet(feed.accent);
-            const accentColor = accent ? `hsl(${accent})` : "#f4c430";
-            return (
-              <Link
-                key={feed.slug}
-                href={`/${feed.slug}`}
-                className="portal-tile group flex flex-col rounded-2xl border-2 p-7 text-center"
-                style={
-                  {
-                    // Dark tile tinted with the feed's own colour, replacing the
-                    // three hardcoded gradients the original had.
-                    background: `linear-gradient(135deg, color-mix(in srgb, ${accentColor} 12%, #1a1a1a) 0%, color-mix(in srgb, ${accentColor} 22%, #2c3e50) 100%)`,
-                    borderColor: `color-mix(in srgb, ${accentColor} 50%, transparent)`,
-                    ["--feed-glow" as string]: `color-mix(in srgb, ${accentColor} 30%, transparent)`,
-                  } as React.CSSProperties
-                }
-              >
-                <h3
-                  className="font-serif text-2xl font-bold tracking-wide"
-                  style={{ color: accentColor, textShadow: "1px 1px 6px rgba(0,0,0,0.5)" }}
-                >
-                  {feed.name}
-                </h3>
-                {feed.tagline && (
-                  <p className="mt-3 text-sm leading-relaxed text-[#fdf5e6]/85">
-                    {feed.tagline}
-                  </p>
-                )}
-                <span
-                  className="mt-auto pt-6 text-sm underline-offset-4 group-hover:underline"
-                  style={{ color: accentColor }}
-                >
-                  View schedule →
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* What's next elsewhere — the lead is already shown above. */}
-      {previews.slice(1).some((p) => p.thread) && (
-        <section className="mx-auto max-w-5xl px-5 pb-16">
-          <h2 className="font-serif text-2xl">Coming up</h2>
-          <div className="mt-5 grid gap-6 sm:grid-cols-2">
-            {previews.slice(1).map(
-              ({ thread, cycleStatus, attendanceCount }) =>
-                thread && (
+            {enriched.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {enriched.map(({ thread, cycleStatus, attendanceCount }) => (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
                     cycleStatus={cycleStatus}
                     attendanceCount={attendanceCount}
+                    feedName={thread.feedSlug ? feedNameMap[thread.feedSlug] : undefined}
                   />
-                )
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-muted-foreground">Nothing scheduled yet. Check back soon.</p>
             )}
           </div>
-        </section>
-      )}
 
-      {/* Our Tradition — Guru Fatha Singh's lineage and the handover in 2023. */}
+          {/* Calendar card */}
+          <aside className="hidden md:block">
+            <CalendarFace
+              initialEvents={calEvents}
+              canEdit={Boolean(viewer?.canEdit)}
+            />
+          </aside>
+        </div>
+      </section>
+
+      {/* Our Tradition */}
       {about && (
         <section className="border-t-2 border-[#e6b422]/30 py-16">
           <div className="mx-auto max-w-5xl px-5">

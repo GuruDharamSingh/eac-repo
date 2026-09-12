@@ -3,22 +3,28 @@
 /* Standard person-profile page (ProfileView) — plain CSS driven by custom
    properties, so it themes off the site palette rather than Tailwind utilities. */
 @import "@elkdonis/cms-ui/profile.css";
+/* The surface system's tokens and faces, and the /center layout on top of them. */
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
 /* Files card — a person's storage, surfaced on hub pages. */
 @import "@elkdonis/cms-ui/files-card.css";
 /* Field controls and composer groups — plain CSS now, shared with every app. */
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
+/* The moon-phase pen, drawn under the sky column on the landing page. */
+@import "@elkdonis/cms-ui/moon-phase.css";
 /* The reading layer for published threads — plain CSS with custom-property
    fallbacks, so it sets correctly whether or not an org has set EAC tokens. */
 @import "@elkdonis/cms-ui/article.css";
-/* The one rich-text editor, shared by every app. */
-@import "@elkdonis/cms-ui/editor.css";
 /* The same reading tokens as Tailwind utilities, so anything built AROUND a
    post (a feed strip, an author note) lines up with the prose inside it. */
 @import "@elkdonis/cms-ui/reading-theme.css";
 
 /* Shared authoring UI (wizard, field controls) — styled with hsl(var(--token)). */
 @source "../../../../packages/cms-ui/src";
+@source "../../../../packages/sky-ui/src";
 
 @custom-variant dark (&:is(.dark *));
 

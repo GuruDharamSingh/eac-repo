@@ -87,6 +87,10 @@ export default async function SiteProfilePage({
     );
   }
 
+  // Followers hold the viewer role (decision 7); they are counted on the
+  // follow button, not listed as the org's people.
+  const people = members.filter((m) => m.role !== "viewer");
+
   const place = [identity?.city, identity?.region, identity?.country]
     .filter(Boolean)
     .join(", ");
@@ -214,11 +218,11 @@ export default async function SiteProfilePage({
           <h2 className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
             People
           </h2>
-          {members.length === 0 ? (
+          {people.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No members listed.</p>
           ) : (
             <ul className="mt-3 flex flex-wrap gap-2">
-              {members.map((m) => (
+              {people.map((m) => (
                 <li
                   key={m.userId}
                   className="rounded-full border border-border px-3 py-1 text-sm"

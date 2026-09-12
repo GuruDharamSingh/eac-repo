@@ -1,9 +1,10 @@
 import { getServerSession } from "@elkdonis/auth-server";
 import { getSiteContent } from "@/lib/data";
 import { listDirectory } from "@/lib/directory";
-import { fetchBlogPosts, formatPostDate } from "@/lib/blog-feed";
+import { fetchBlogPosts } from "@/lib/blog-feed";
 import { socialIcon } from "@/lib/social-icons";
 import { AuthPanel } from "@/components/auth-panel";
+import { BlogCardGrid } from "@/components/blog-card";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { GalleryItem, SiteLink } from "@/lib/types";
 
@@ -70,30 +71,7 @@ export default async function HomePage() {
           <h2><a href={content.blog.href} target="_blank" rel="noreferrer">{content.blog.title}</a></h2>
           {blogPosts.length > 0 ? (
             <>
-              <ul className="blog-feed">
-                {blogPosts.map((post) => (
-                  <li key={post.id} className="blog-post">
-                    <a href={post.url} target="_blank" rel="noreferrer">
-                      {post.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="blog-post-thumb" src={post.imageUrl} alt="" loading="lazy" />
-                      ) : (
-                        <span className="blog-post-thumb blog-post-thumb--empty" aria-hidden />
-                      )}
-                      <span className="blog-post-body">
-                        <span className="blog-post-title">{post.title}</span>
-                        <span className="blog-post-meta">
-                          {formatPostDate(post.publishedAt)}
-                          {post.author ? ` · ${post.author}` : ""}
-                        </span>
-                        {post.excerpt && (
-                          <span className="blog-post-excerpt">{post.excerpt}</span>
-                        )}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <BlogCardGrid posts={blogPosts} />
               <p className="blog-feed-more">
                 <a href={content.blog.href} target="_blank" rel="noreferrer">
                   Read the full blog →
@@ -101,9 +79,6 @@ export default async function HomePage() {
               </p>
             </>
           ) : (
-            /* The feed is a third party. If it is unreachable or changes
-               shape, fall back to the embed rather than showing an empty
-               panel where the blog used to be. */
             <div className="embed-frame blog-frame">
               <iframe src={content.blog.embedUrl} title="IFAC Blog" loading="lazy" />
             </div>

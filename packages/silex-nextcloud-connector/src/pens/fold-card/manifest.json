@@ -1,0 +1,37 @@
+{
+  "id": "fold-card",
+  "label": "Fold Card",
+  "description": "A card that opens into a panel of actions; closing it folds the panel up like paper and drops the card back into place.",
+  "credit": {
+    "title": "Card → view fold transition",
+    "author": "shshaw / keyframers",
+    "url": "https://codepen.io/shshaw/pen/QmZYMG"
+  },
+  "root": ".eac-pen-fold",
+  "html": "pen.html",
+  "css": "pen.css",
+  "react": "@elkdonis/cms-ui/pens FoldCard",
+  "traits": [
+    {
+      "name": "data-speed",
+      "label": "Speed",
+      "type": "select",
+      "options": [
+        { "id": "fast", "name": "Fast" },
+        { "id": "normal", "name": "Normal" },
+        { "id": "slow", "name": "Slow" }
+      ]
+    },
+    {
+      "name": "data-ratio",
+      "label": "Shape",
+      "type": "select",
+      "options": [
+        { "id": "portrait", "name": "Portrait (3:4)" },
+        { "id": "square", "name": "Square" },
+        { "id": "tall", "name": "Tall (5:9)" },
+        { "id": "wide", "name": "Wide (16:10)" }
+      ]
+    }
+  ]
+}

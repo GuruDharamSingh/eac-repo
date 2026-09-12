@@ -358,9 +358,17 @@ export async function listBoards(scope: ForumScope, viewer: ForumViewer): Promis
       RIGHT JOIN (SELECT 1) one ON TRUE
     ) lp ON TRUE
     LEFT JOIN users u ON u.id = lp.uid
-    -- 'general' is the forum's own home-for-orphans feed (migrations 110/113):
-    -- hidden from site nav, always on the board.
-    WHERE (f.is_public OR f.slug = 'general') ${scope.kind === 'org' ? db`AND f.org_id = ${scope.orgId}` : db``}
+    -- Every feed the org has, public or not. The two flags mean different
+    -- things and this used to conflate them:
+    --   is_public  does it appear in the HOST SITE's navigation
+    --   min_role   who may see and enter it  (enforced below, per viewer)
+    -- Filtering on is_public here hid whole categories from the forum — IFAC
+    -- had 'weekly-meeting' and 'ideas' (both is_public=f, min_role=member)
+    -- that members could never reach, leaving 'events' as the only place a
+    -- topic could go. min_role is the forum's gate; is_public is the site's.
+    -- 'general' (migrations 110/113) is is_public=f for exactly that reason
+    -- and no longer needs its special case.
+    WHERE TRUE ${scope.kind === 'org' ? db`AND f.org_id = ${scope.orgId}` : db``}
     ORDER BY f.org_id, f.sort_order, f.name
   `;
 

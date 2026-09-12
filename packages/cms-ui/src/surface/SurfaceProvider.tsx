@@ -71,6 +71,8 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: "Forum", kind: "forum", size: "wide" };
     case "profile":
       return { title: d.target ? "Organisation" : "Your profile", kind: "neutral", size: "wide" };
+    case "centerLayout":
+      return { title: "Arrange the center", kind: "neutral", size: "wide" };
     case "define":
       return { title: d.term, kind: "define", size: "compact" };
     case "custom":

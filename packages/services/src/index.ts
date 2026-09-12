@@ -21,6 +21,8 @@ export {
   textToHtml,
   htmlToQuote,
   canModerate,
+  isOrgMember,
+  createCategory,
   postReply,
   pageOfReply,
   createTopic,
@@ -67,6 +69,7 @@ export type {
   WriteResult as ForumWriteResult,
   PostReplyInput,
   CreateTopicInput,
+  CreateCategoryInput,
   VoteTarget,
   Voters as ForumVoters,
   ModAction as ForumModAction,
@@ -127,23 +130,23 @@ export {
   getWikiAncestors,
   resolveWikilinks,
   getWikiBacklinks,
-} from './wiki';
-export type {
-  WikiPage,
   defineTerm,
   lookupTerm,
   resolveTerms,
   getTermDefinitions,
+} from './wiki';
+export type {
+  WikiPage,
   WikiPageListItem,
   WikiTreeNode,
   WikiRevision,
   WikiPageRef,
-} from './wiki';
-
-// Auth services
   DefinedTerm,
   WikiDefinition,
   ResolvedTerms,
+} from './wiki';
+
+// Auth services
 export {
   createUser,
   getUserById,
@@ -589,3 +592,28 @@ export {
   artifactPath,
 } from './thread-publish';
 export type { PublishedArtifact } from './thread-publish';
+
+// /center — the follower's home on an org's site. One read, every section
+// fail-soft. See center.ts and CENTER_PAGE_BRIEF_2026-09-09.md.
+export { loadCenter } from './center';
+export type {
+  CenterData,
+  CenterThread,
+  CenterPerson,
+  CenterOrg,
+  CenterOrgLink,
+  CenterPromo,
+  CenterPromoKind,
+  CenterPromoConfig,
+  LoadCenterOptions,
+} from './center';
+
+// The center's definition as data: network default ← org override, resolved
+// server-side like themes. See center-layout.ts.
+export {
+  resolveCenterLayout,
+  saveCenterLayout,
+  DEFAULT_CENTER_LAYOUT,
+  CENTER_SECTION_IDS,
+} from './center-layout';
+export type { CenterLayout, CenterSectionId, ResolvedCenterLayout } from './center-layout';

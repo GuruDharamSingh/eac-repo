@@ -1,0 +1,438 @@
+/* ============================================================================
+   /center — the follower's home on one org's site.
+
+   Sits on top of surface.css: every colour and face here is the surface
+   system's own (--sf-* tokens, .eac-face anatomy), so an org that themes its
+   surfaces has themed its center. Plain CSS, no utilities, for the same reason
+   surface.css gives — this renders in the non-Tailwind apps too.
+
+   Layout: two columns, the person left (4) and the org right (7). Under 760px
+   the person's column stacks first, so the card that says "you" leads and the
+   promotion slot sits between the rail and the org's feed.
+   ========================================================================== */
+
+.eac-center {
+  display: grid;
+  grid-template-columns: minmax(240px, 4fr) minmax(320px, 7fr);
+  gap: 16px;
+  align-items: start;
+}
+.eac-center-you,
+.eac-center-org {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+/* ── Panels: a face that holds a list, with no hit area of its own ──────── */
+.eac-center-panel {
+  cursor: default;
+  padding-top: 44px;
+}
+.eac-center-panel:hover {
+  transform: none;
+  box-shadow: none;
+}
+.eac-center-panel-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+.eac-center-panel.is-empty {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.eac-center-empty {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--sf-line);
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--sf-muted);
+}
+
+/* ── The person's card ──────────────────────────────────────────────────── */
+.eac-center-person {
+  min-height: 0;
+}
+/* One portrait block for both cards: the image at 3:4 in a fixed-width
+   column, the words beside it. The org's card and the person's card share
+   this, which is what keeps their proportions the same. */
+.eac-center-portrait {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin: 2px 0 6px;
+}
+.eac-center-portrait-text {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.eac-center-portrait-img,
+.eac-center-portrait-empty {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--sf-radius-sm);
+  border: 1px solid var(--sf-line);
+  background: var(--sf-bg-soft);
+}
+.eac-center-portrait-empty {
+  display: grid;
+  place-items: center;
+  font-size: 2.4rem;
+  color: var(--sf-faint);
+}
+.eac-center-shown-as {
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--sf-muted);
+}
+
+/* ── The button row ─────────────────────────────────────────────────────── */
+.eac-center-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.eac-center-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--sf-fg);
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-rule);
+  border-radius: var(--sf-radius-sm);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.eac-center-btn:hover,
+.eac-center-btn:focus-visible {
+  border-color: var(--sf-accent);
+  outline: none;
+}
+.eac-center-btn--primary {
+  background: var(--sf-accent);
+  border-color: var(--sf-accent);
+  color: var(--eac-surface-on-accent, #fff);
+}
+.eac-center-btn[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+.eac-center-btn-count {
+  font-style: normal;
+  color: var(--sf-accent);
+}
+.eac-center-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.eac-center-error {
+  font-size: 0.78rem;
+  color: var(--sf-danger);
+}
+
+/* ── Where you are: the org rail ────────────────────────────────────────── */
+.eac-center-orgs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.eac-center-org-pill > a,
+.eac-center-org-pill > span {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  text-decoration: none;
+  color: inherit;
+}
+.eac-center-org-pill > a:hover {
+  border-color: var(--sf-accent);
+}
+.eac-center-org-pill.is-current > a,
+.eac-center-org-pill.is-current > span {
+  border-color: var(--sf-fg);
+}
+.eac-center-org-name {
+  font-size: 0.9rem;
+}
+.eac-center-org-note {
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+
+/* ── The promotion slot ─────────────────────────────────────────────────── */
+.eac-center-promo {
+  border-style: dashed;
+}
+.eac-center-promo .eac-face-kicker {
+  color: var(--sf-kind);
+}
+.eac-center-promo-media img,
+.eac-center-featured-media img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--sf-radius-sm);
+  border: 1px solid var(--sf-line);
+  margin-bottom: 6px;
+}
+
+/* ── The site, scaled ───────────────────────────────────────────────────── */
+/* The frame renders the home page at three times the card's width and
+   scales it down by the same factor, so it always fits whatever the column
+   is; the ratio is a little squarer than a full page on purpose. */
+.eac-center-home {
+  min-height: 0;
+  padding-bottom: 14px;
+}
+/* Live and scrollable: the frame takes the pointer (it is .eac-face-live),
+   so a wheel inside it scrolls the org's page; the face's cue and the rest
+   of the card still open the site. The page is rendered at three times the
+   frame's width and scaled by a third, so it always fits the column. */
+.eac-center-home-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--eac-center-site-ratio, 5 / 3);
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  pointer-events: none;
+  margin-top: 6px;
+}
+.eac-center-home-frame iframe {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 300%;
+  height: 300%;
+  border: 0;
+  transform: scale(0.3333);
+  transform-origin: 0 0;
+  background: #fff;
+}
+
+/* ── Pinned strip ───────────────────────────────────────────────────────── */
+.eac-center-pinned,
+.eac-center-network {
+  display: grid;
+  gap: 8px;
+}
+.eac-center-strip-head {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 2px solid var(--sf-rule);
+}
+.eac-center-pinned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* ── The org's card ─────────────────────────────────────────────────────── */
+.eac-center-orgcard-headline {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--sf-muted);
+}
+.eac-center-orgcard-facts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: var(--sf-muted);
+}
+.eac-center-orgcard-relation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.eac-center-chip {
+  display: inline-block;
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--sf-kind, var(--sf-accent));
+  color: var(--sf-kind, var(--sf-accent));
+}
+
+/* ── Feed rows ──────────────────────────────────────────────────────────── */
+.eac-center-rows {
+  display: grid;
+}
+.eac-center-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--sf-line);
+  text-decoration: none;
+  color: inherit;
+}
+.eac-center-row:first-child {
+  border-top: 0;
+}
+.eac-center-row:hover .eac-center-row-t,
+.eac-center-row:focus-visible .eac-center-row-t {
+  color: var(--sf-accent);
+}
+.eac-center-row:focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.eac-center-row-k {
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-center-row[data-kind="post"] .eac-center-row-k { color: var(--sf-kind-post); }
+.eac-center-row[data-kind="event"] .eac-center-row-k { color: var(--sf-kind-event); }
+.eac-center-row[data-kind="meeting"] .eac-center-row-k { color: var(--sf-kind-meeting); }
+.eac-center-row[data-kind="workshop"] .eac-center-row-k { color: var(--sf-kind-workshop); }
+.eac-center-row-t {
+  font-family: var(--sf-font-title);
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  transition: color 160ms ease;
+}
+.eac-center-row-d {
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  color: var(--sf-muted);
+  white-space: nowrap;
+}
+
+/* ── Across the network ─────────────────────────────────────────────────── */
+.eac-center-network-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 6px;
+  border-top: 2px solid var(--sf-rule);
+}
+.eac-center-network-note {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  color: var(--sf-muted);
+}
+.eac-center-slider {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.eac-center-slide {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
+  display: grid;
+}
+.eac-center-slide .eac-face {
+  min-height: 132px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .eac-center {
+    grid-template-columns: 1fr;
+  }
+  .eac-center-portrait {
+    grid-template-columns: minmax(100px, 140px) minmax(0, 1fr);
+  }
+  .eac-center-row {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+  .eac-center-row-d {
+    grid-column: 2;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-center-btn,
+  .eac-center-row-t {
+    transition: none;
+  }
+}
+
+/* ── The profile cards (person and org share ProfileCardBody) ───────────── */
+.eac-center-person,
+.eac-center-orgcard {
+  min-height: 0;
+  padding-top: 44px;
+  overflow: hidden;
+}
+/* The card's glyph/cue sit over the image: give them a plate to read on. */
+.eac-center-person > .eac-face-glyph,
+.eac-center-orgcard > .eac-face-glyph,
+.eac-center-person > .eac-face-cue,
+.eac-center-orgcard > .eac-face-cue {
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-bg) 82%, transparent);
+}
+.eac-center-orgcard {
+  padding-top: 44px;
+}
+.eac-center-orgcard-relation {
+  padding-top: 2px;
+}
+
+/* ── Post cards in the feed ────────────────────────────────────────────── */
+.eac-center-feed .eac-center-panel-body {
+  gap: 12px;
+}
+.eac-center-posts {
+  display: grid;
+}
+.eac-center-compose {
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 160ms ease;
+}
+.eac-center-compose:hover,
+.eac-center-compose:focus-visible {
+  border-color: var(--sf-accent);
+  outline: none;
+}

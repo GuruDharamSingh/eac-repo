@@ -6,10 +6,12 @@ import { getCurrentUser } from "@/lib/session";
 /**
  * Follow / unfollow an org from its subdomain profile page.
  *
- * `org_followers` and its service helpers have existed since the org-membership
- * package was written and had no caller until now — this is the first. A
- * follow carries no role and grants no access: it is only "tell me about this
- * org", deliberately distinct from user_organizations.
+ * A follow is a `viewer` row in user_organizations (CENTER_PAGE_BRIEF
+ * 2026-09-09, decision 7): the lightest relation there is, shown as
+ * "follower", with no hub access. `followOrg` never touches an existing
+ * member row and `unfollowOrg` only ever removes a viewer row, so this route
+ * cannot promote or demote anyone. The old org_followers table (072) is no
+ * longer written.
  */
 
 async function orgIdFor(slug: string): Promise<string | null> {

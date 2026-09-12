@@ -13,7 +13,11 @@ const nextConfig: NextConfig = {
     "@elkdonis/cms-bindings",
     "@elkdonis/cms-ui",
     "@elkdonis/utils",
+    "@elkdonis/astro",
+    "@elkdonis/sky-ui",
   ],
+  // sweph (the Swiss Ephemeris) is a native addon: require it at runtime.
+  serverExternalPackages: ["sweph"],
   // Pin tracing root to the monorepo so Next doesn't pick up the stray
   // /home/elkdonis/pnpm-lock.yaml as the "workspace root".
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
@@ -34,6 +38,8 @@ const nextConfig: NextConfig = {
     "*.localhost",
     "192.168.0.24",
     "*.192.168.0.24",
+    "arts-collective.com",
+    "*.arts-collective.com",
   ],
 };
 

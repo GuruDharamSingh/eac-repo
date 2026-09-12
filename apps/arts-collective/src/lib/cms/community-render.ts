@@ -9,6 +9,12 @@ import type {
 /** Mount node the newsroom leaves in its right column for the arcade game. */
 export const COMMUNITY_GAME_SLOT = "community-game-slot";
 
+/** Mount node the newsroom leaves in its right column for the sky face. */
+export const SKY_SLOT = "sky-slot";
+
+/** Mount node the newsroom leaves in its left column for the Active Art piece. */
+export const ACTIVE_ART_SLOT = "active-art-slot";
+
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
 export const PORTAL_CSS = `
@@ -946,6 +952,10 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
         <a class="ep-mast-link" href="/hub">Learn more &amp; get involved &rarr;</a>
       </div>
     </div>
+    <div class="ep-blk">
+      <div class="ep-blk__h ep-blk__h--red">&#9830; Active Art</div>
+      <div class="ep-blk__b" style="padding:0" id="active-art-slot"></div>
+    </div>
   </aside>
 
   <main class="ep-col-c">
@@ -994,6 +1004,13 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
       <div class="ep-blk__b" style="padding:0">
         <!-- Filled by <CommunityGame/>, which portals into this node. -->
         <div id="${COMMUNITY_GAME_SLOT}"></div>
+      </div>
+    </div>
+    <div class="ep-blk">
+      <div class="ep-blk__h">&#9737; The Sky</div>
+      <div class="ep-blk__b" style="padding:8px">
+        <!-- Filled by <SkySection/>, which portals into this node. -->
+        <div id="${SKY_SLOT}"></div>
       </div>
     </div>
   </aside>

@@ -1,4 +1,5 @@
 import type {
+  CreateCategoryInput,
   CreateTopicInput,
   ForumActivityItem,
   ForumBoard,
@@ -103,11 +104,27 @@ export interface ForumConnectors {
   hrefs: ForumHrefs;
   /** Where the host mounted handleForumAction, e.g. "/api/forum". */
   actionBase?: string;
+  /**
+   * Which skin to render in. One markup, two stylesheets:
+   *
+   *   "classic" (default) — the board. Tables, dense rows, hairlines.
+   *                         Needs only forum.css.
+   *   "modern"            — the same pages as a card feed. Needs
+   *                         forum.css AND forum-modern.css; the host imports
+   *                         both and the second overrides the first, scoped
+   *                         under [data-forum-theme="modern"].
+   *
+   * The attribute is emitted by renderForumRoute, so a host switches themes
+   * by setting this and adding one @import — no markup change anywhere.
+   */
+  theme?: "classic" | "modern";
 }
 
 export interface ForumWriteConnectors {
   postReply(viewer: ForumViewer, input: PostReplyInput): Promise<ForumWriteResult<{ replyId: string; page: number }>>;
   createTopic(viewer: ForumViewer, input: CreateTopicInput): Promise<ForumWriteResult<{ threadId: string; slug: string }>>;
+  /** Add a category (an org_feeds row) to this org's board. Member and up. */
+  createCategory?(viewer: ForumViewer, input: CreateCategoryInput): Promise<ForumWriteResult<{ slug: string; name: string }>>;
   setVote(viewer: ForumViewer, target: VoteTarget, kind: "up" | "down"): Promise<ForumWriteResult<{ score: number; vote: "up" | "down" | null }>>;
   toggleHeart(viewer: ForumViewer, target: VoteTarget): Promise<ForumWriteResult<{ hearts: number; hearted: boolean }>>;
   toggleWatch(viewer: ForumViewer, threadId: string): Promise<ForumWriteResult<{ watching: boolean }>>;
@@ -163,6 +180,8 @@ export interface ServiceConnectorOptions {
   hrefs: ForumHrefs;
   /** Where the host mounted handleForumAction. Omit for a read-only host. */
   actionBase?: string;
+  /** "classic" (default) or "modern". See ForumConnectors.theme. */
+  theme?: "classic" | "modern";
 }
 
 /**
@@ -208,6 +227,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
       ? {
           postReply: s.postReply,
           createTopic: s.createTopic,
+          createCategory: s.createCategory,
           setVote: s.setVote,
           toggleHeart: s.toggleHeart,
           toggleWatch: s.toggleWatch,
@@ -222,6 +242,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
         }
       : undefined,
     actionBase: opts.actionBase,
+    theme: opts.theme,
     hrefs: opts.hrefs,
   };
 }

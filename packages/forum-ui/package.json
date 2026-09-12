@@ -7,7 +7,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./forum.css": "./src/forum.css"
+    "./forum.css": "./src/forum.css",
+    "./forum-modern.css": "./src/forum-modern.css",
+    "./forum-theme.css": "./src/forum-theme.css"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

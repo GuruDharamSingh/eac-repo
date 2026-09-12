@@ -1,0 +1,151 @@
+/* ===========================================================================
+   The Grand Forum — the page theme.
+
+   WHAT THIS IS FOR
+   The forum's own readable palette, scoped to the forum and customisable by
+   any host. Import it and the board reads well without the host having to
+   think about colour; override a token or two to put it in your own voice.
+
+   WHY IT IS SCOPED, NOT :root
+   surface.css computes every --sf-* token at :root from the host's
+   --eac-surface-* inputs. A custom property computed at :root cannot be
+   changed by redefining its INPUT further down the tree, which used to mean
+   the forum was stuck wearing whatever palette the host's popups wore — on
+   a site with dark chrome, that made the board a wall of near-black behind
+   long passages of text. This file redefines the OUTPUT tokens (--sf-*)
+   on the forum's own wrapper, which does cascade. So the forum can read
+   like a place for reading while the host's hub popups stay exactly as they
+   were. Nothing here leaks out of .gf-root / .gf-page.
+
+   HOW TO CUSTOMISE (any host, Tailwind or not)
+   Set any --forum-* below on :root, or on the forum wrapper:
+
+       :root {
+         --forum-accent: #9a3f2f;
+         --forum-paper:  #f8f5ef;
+       }
+
+   Every value here is var(--forum-X, <default>), so you override only what
+   you care about and inherit a measured default for the rest.
+
+   ON TAILWIND v4 HOSTS you can declare the same names in @theme, which
+   additionally generates utilities (bg-forum-paper, text-forum-ink, …) for
+   anything you build AROUND the board:
+
+       @theme {
+         --color-forum-paper: #f8f5ef;
+         --color-forum-ink:   #171615;
+       }
+       :root { --forum-paper: var(--color-forum-paper); }
+
+   Kept as two names on purpose: --forum-* is the contract and works on a
+   host with no Tailwind at all (apps/forum, the network host, has none),
+   while @theme is the optional extra for hosts that do.
+
+   CONTRAST
+   Both variants are measured, not chosen by eye. Light: body 16.12:1,
+   muted 8.44:1, faint 5.23:1, accent 7.75:1, white-on-accent 8.38:1.
+   Dark: body 14.60:1, muted 7.27:1, faint 5.32:1, accent 8.26:1. All AA,
+   and the dark ground is #16161a rather than black so light text does not
+   halate. If you override a colour, measure the pair — a brand colour that
+   works as a logo often fails as text (IFAC's gold is 2.37:1 on paper).
+   =========================================================================== */
+
+.gf-root,
+.gf-page {
+  /* ── the ground and the ink ─────────────────────────────────────────── */
+  --sf-bg: var(--forum-paper, #f7f6f3);
+  --sf-bg-soft: var(--forum-panel, #ffffff);
+  --sf-fg: var(--forum-ink, #1a1a19);
+  --sf-muted: var(--forum-muted, #4a4844);
+  --sf-faint: var(--forum-faint, #6a675f);
+
+  /* ── lines ──────────────────────────────────────────────────────────── */
+  --sf-line: var(--forum-line, #dedcd5);
+  --sf-rule: var(--forum-rule, #b9b6ad);
+
+  /* ── accent ─────────────────────────────────────────────────────────── */
+  --sf-accent: var(--forum-accent, #34506b);
+  --sf-on-accent: var(--forum-on-accent, #ffffff);
+  --sf-danger: var(--forum-danger, #8c3a2c);
+
+  /* ── shape, shadow, type ────────────────────────────────────────────── */
+  --sf-radius: var(--forum-radius, 5px);
+  --sf-radius-sm: max(2px, calc(var(--sf-radius) - 3px));
+  --sf-shadow: var(--forum-shadow, 0 18px 44px -20px rgba(20, 20, 25, 0.28), 0 2px 8px rgba(20, 20, 25, 0.06));
+  --sf-font-body: var(--forum-font-body, var(--eac-font-body, system-ui, -apple-system, "Segoe UI", sans-serif));
+  --sf-font-title: var(--forum-font-title, var(--eac-font-title, Georgia, "Times New Roman", serif));
+  --sf-font-record: var(--forum-font-record, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+
+  /* ── the forum's own tokens ─────────────────────────────────────────── */
+  --gf-blue: var(--forum-link, #34506b);
+  --gf-row-hover: var(--forum-row-hover, rgba(20, 20, 25, 0.035));
+  --gf-unread: var(--forum-unread, var(--sf-accent));
+  --gf-vote-up: var(--forum-vote-up, #3f6f4a);
+  --gf-vote-down: var(--forum-vote-down, #8c3a2c);
+  --gf-quote-rule: var(--forum-quote-rule, var(--sf-rule));
+  --gf-font-display: var(--forum-font-display, var(--eac-font-display, var(--sf-font-title)));
+
+  /* Per-kind accents. Default to the accent so a host that sets nothing
+     still looks deliberate rather than multicoloured. */
+  --sf-kind-post: var(--forum-kind-post, var(--eac-kind-post, var(--sf-accent)));
+
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+}
+
+/* The board is the whole page on an org site, so it carries the ground. */
+.gf-page {
+  min-height: 100vh;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   The dark variant. Opt in per host or per request:
+
+       <div className="gf-page" data-forum-mode="dark">
+
+   Deliberately a soft charcoal, not black: pure #000 behind light text
+   causes halation, and the forum is mostly long text.
+   ─────────────────────────────────────────────────────────────────────── */
+
+[data-forum-mode="dark"],
+[data-forum-mode="dark"] .gf-root {
+  --sf-bg: var(--forum-paper-dark, #16161a);
+  --sf-bg-soft: var(--forum-panel-dark, #1e1e24);
+  --sf-fg: var(--forum-ink-dark, #e9e7e2);
+  --sf-muted: var(--forum-muted-dark, #a8a49c);
+  --sf-faint: var(--forum-faint-dark, #8f8b83);
+  --sf-line: var(--forum-line-dark, #2f2f38);
+  --sf-rule: var(--forum-rule-dark, #4a4a55);
+  --sf-accent: var(--forum-accent-dark, #8fb3d9);
+  --sf-on-accent: var(--forum-on-accent-dark, #10161d);
+  --sf-danger: var(--forum-danger-dark, #e08b7d);
+  --gf-blue: var(--forum-link-dark, #8fb3d9);
+  --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.04));
+  --gf-vote-up: var(--forum-vote-up-dark, #7fbf90);
+  --gf-vote-down: var(--forum-vote-down-dark, #e08b7d);
+  --sf-shadow: var(--forum-shadow-dark, 0 18px 44px -20px rgba(0, 0, 0, 0.6));
+}
+
+/* Follow the reader's own setting when the host asks for it, rather than
+   picking for them: <div className="gf-page" data-forum-mode="auto">. */
+@media (prefers-color-scheme: dark) {
+  [data-forum-mode="auto"],
+  [data-forum-mode="auto"] .gf-root {
+    --sf-bg: var(--forum-paper-dark, #16161a);
+    --sf-bg-soft: var(--forum-panel-dark, #1e1e24);
+    --sf-fg: var(--forum-ink-dark, #e9e7e2);
+    --sf-muted: var(--forum-muted-dark, #a8a49c);
+    --sf-faint: var(--forum-faint-dark, #8f8b83);
+    --sf-line: var(--forum-line-dark, #2f2f38);
+    --sf-rule: var(--forum-rule-dark, #4a4a55);
+    --sf-accent: var(--forum-accent-dark, #8fb3d9);
+    --sf-on-accent: var(--forum-on-accent-dark, #10161d);
+    --sf-danger: var(--forum-danger-dark, #e08b7d);
+    --gf-blue: var(--forum-link-dark, #8fb3d9);
+    --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.04));
+    --gf-vote-up: var(--forum-vote-up-dark, #7fbf90);
+    --gf-vote-down: var(--forum-vote-down-dark, #e08b7d);
+    --sf-shadow: var(--forum-shadow-dark, 0 18px 44px -20px rgba(0, 0, 0, 0.6));
+  }
+}

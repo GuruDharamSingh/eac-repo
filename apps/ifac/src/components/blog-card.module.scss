@@ -1,0 +1,239 @@
+// Blog cards — horizontal image + content with hover-reveal details overlay.
+// Alternating cards flip the layout via .alt.
+// Themed to IFAC's dark palette.
+
+$purple: #9c40d8;
+$purple-dim: #40215c;
+$cyan: #20d7ff;
+$orange: #ff8c00;
+$bg: #050505;
+$bg-body: #020202;
+$text: #e8e3e4;
+$text-soft: #bca7cf;
+
+.blogCard {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 14px;
+  box-shadow: 0 3px 7px -1px rgba(#000, 0.3);
+  background: $bg;
+  line-height: 1.4;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+  z-index: 0;
+  border: 2px solid $purple-dim;
+  transition: border-color 0.2s;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      color: $cyan;
+    }
+  }
+
+  &:hover {
+    border-color: $purple;
+
+    .photo {
+      transform: scale(1.3) rotate(3deg);
+    }
+
+    .details {
+      left: 0;
+    }
+  }
+}
+
+.meta {
+  position: relative;
+  z-index: 0;
+  height: 200px;
+  overflow: hidden;
+}
+
+.photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: #0a0a0a;
+  transition: transform 0.2s;
+}
+
+.noImage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: $purple-dim;
+  font-size: 3rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.details {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -100%;
+  margin: auto;
+  transition: left 0.2s;
+  background: rgba(#000, 0.7);
+  color: $text;
+  padding: 10px;
+  width: 100%;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+
+  a {
+    text-decoration: dotted underline;
+  }
+}
+
+.detailLabel {
+  color: $text-soft;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.description {
+  padding: 1rem;
+  background: $bg;
+  position: relative;
+  z-index: 1;
+
+  h3 {
+    line-height: 1.15;
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $orange;
+
+    a {
+      color: $orange;
+      text-decoration: none;
+
+      &:hover {
+        color: $cyan;
+      }
+    }
+  }
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  font-weight: 300;
+  text-transform: uppercase;
+  color: $text-soft;
+  margin-top: 5px;
+}
+
+.excerpt {
+  position: relative;
+  margin: 1rem 0 0;
+  color: $text;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  &:first-of-type {
+    margin-top: 1.25rem;
+
+    &::before {
+      content: "";
+      position: absolute;
+      height: 4px;
+      background: $purple;
+      width: 35px;
+      top: -0.75rem;
+      border-radius: 3px;
+    }
+  }
+}
+
+.readMore {
+  text-align: right;
+  margin-top: 0.75rem;
+
+  a {
+    color: $cyan;
+    display: inline-block;
+    position: relative;
+    font-weight: 700;
+    font-size: 0.9rem;
+
+    &::after {
+      content: " \2192";
+      margin-left: -10px;
+      opacity: 0;
+      transition: margin 0.3s, opacity 0.3s;
+    }
+
+    &:hover::after {
+      margin-left: 5px;
+      opacity: 1;
+    }
+  }
+}
+
+@media (min-width: 640px) {
+  .blogCard {
+    flex-direction: row;
+
+    .meta {
+      flex-basis: 40%;
+      height: auto;
+      min-height: 220px;
+    }
+
+    .description {
+      flex-basis: 60%;
+
+      &::before {
+        transform: skewX(-3deg);
+        content: "";
+        background: $bg;
+        width: 30px;
+        position: absolute;
+        left: -10px;
+        top: 0;
+        bottom: 0;
+        z-index: -1;
+      }
+    }
+  }
+
+  .alt {
+    flex-direction: row-reverse;
+
+    .description::before {
+      left: inherit;
+      right: -10px;
+      transform: skew(3deg);
+    }
+
+    .details {
+      padding-left: 25px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo,
+  .details,
+  .readMore a::after {
+    transition: none;
+  }
+}

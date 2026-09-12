@@ -1,5 +1,6 @@
 import { forumSnapshot, orgHrefs, serviceConnectors, type ForumConnectors } from "@elkdonis/forum-ui";
 import { getViewerRoles, FORUM_ANONYMOUS } from "@elkdonis/services";
+import { cookies } from "next/headers";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
@@ -17,13 +18,17 @@ export async function getForumViewer() {
   return v ? { userId: v.userId, roles: await getViewerRoles(v.userId) } : FORUM_ANONYMOUS;
 }
 
-export function getForumConnectors(): Promise<ForumConnectors> {
+export async function getForumConnectors(): Promise<ForumConnectors> {
+  const jar = await cookies();
+  const pref = jar.get("forum_theme")?.value;
+  const theme = pref === "classic" || pref === "modern" ? pref : "classic";
   return serviceConnectors({
     scope: { kind: "org", orgId: siteConfig.orgId },
     siteName: siteConfig.orgName,
     viewer: getForumViewer,
     hrefs: forumHrefs,
     actionBase: "/api/forum",
+    theme,
   });
 }
 

@@ -917,7 +917,6 @@ services:
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
       # The marketplace — a member's store section links there
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
-      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NODE_ENV: production
       PORT: 3008
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
@@ -932,6 +931,11 @@ services:
       NEXT_PUBLIC_IFAC_OWNER_EMAIL: ${IFAC_OWNER_EMAIL:-info@ifacgroup.com}
       NEXT_PUBLIC_EAC_ADMIN_URL: ${EAC_ADMIN_URL:-http://localhost:3000}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts): the
+      # inter-app signing secret and the origins a handoff may target.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       REDIS_URL: redis://redis:6379
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}

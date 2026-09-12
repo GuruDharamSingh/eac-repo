@@ -19,12 +19,17 @@
 @import "@elkdonis/cms-ui/profile.css";
 /* The Grand Forum at /forum, in this site's tokens. */
 @import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
 @import "@elkdonis/cms-ui/gallery.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
-@import "@elkdonis/cms-ui/files-card.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
+@import "@elkdonis/cms-ui/files-card.css";
+/* The feed-list pen. The Silex block carries its own CSS into the published
+   page, but the LIVE org-feed slot does not — it is rendered by this app, so
+   the look has to be imported here. Same stylesheet either way. */
+@import "@elkdonis/cms-ui/feed-list.css";
 
 /* ==========================================================================
    The Hidden Enneagram — single LIGHT theme with dark features.

@@ -18,7 +18,7 @@
       {
         "name": "limit",
         "kind": "number",
-        "description": "How many items to show (1–8)."
+        "description": "How many items to show (1\u20138)."
       }
     ],
     "memberSafe": true
@@ -90,7 +90,7 @@
       {
         "name": "limit",
         "kind": "number",
-        "description": "How many items to show (1–8)."
+        "description": "How many items to show (1\u20138)."
       },
       {
         "name": "tags",
@@ -119,7 +119,7 @@
       {
         "name": "limit",
         "kind": "number",
-        "description": "How many items to show (1–8)."
+        "description": "How many items to show (1\u20138)."
       }
     ],
     "memberSafe": true
@@ -143,7 +143,12 @@
       {
         "name": "limit",
         "kind": "number",
-        "description": "How many items to show (1–8)."
+        "description": "How many items to show (1\u20138)."
+      },
+      {
+        "name": "layout",
+        "kind": "string",
+        "description": "`expand` draws the feed-list pen (rows open in place); `expand-inline` keeps the avatar at the left. Omit for the card grid."
       }
     ],
     "memberSafe": true
@@ -167,7 +172,12 @@
       {
         "name": "limit",
         "kind": "number",
-        "description": "How many items to show (1–8)."
+        "description": "How many items to show (1\u20138)."
+      },
+      {
+        "name": "layout",
+        "kind": "string",
+        "description": "`expand` draws the feed-list pen (rows open in place); `expand-inline` keeps the avatar at the left. Omit for the card grid."
       }
     ],
     "memberSafe": true
@@ -264,6 +274,54 @@
         "name": "poll-type",
         "kind": "string",
         "description": "Poll style."
+      }
+    ],
+    "memberSafe": true
+  },
+  {
+    "id": "blog-cards-overlay",
+    "tag": "BlogCardsOverlay",
+    "label": "Blog cards (overlay)",
+    "description": "Published posts as tall image cards with date badge and hover-reveal content panel.",
+    "props": [
+      {
+        "name": "title",
+        "kind": "string",
+        "description": "Heading shown above the block."
+      },
+      {
+        "name": "variant",
+        "kind": "string",
+        "description": "Set to `inline` to render without the section wrapper."
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "description": "How many items to show (1\u20138)."
+      }
+    ],
+    "memberSafe": true
+  },
+  {
+    "id": "blog-cards",
+    "tag": "BlogCards",
+    "label": "Blog cards",
+    "description": "Published posts as visual cards with cover images and hover-reveal details.",
+    "props": [
+      {
+        "name": "title",
+        "kind": "string",
+        "description": "Heading shown above the block."
+      },
+      {
+        "name": "variant",
+        "kind": "string",
+        "description": "Set to `inline` to render without the section wrapper."
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "description": "How many items to show (1\u20138)."
       }
     ],
     "memberSafe": true

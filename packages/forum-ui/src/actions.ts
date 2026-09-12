@@ -13,10 +13,11 @@ import type { ForumConnectors } from "./connectors";
 
 export type ForumActionName =
   | "reply" | "topic" | "vote" | "heart" | "watch" | "bookmark"
-  | "read-all" | "propose-topic" | "moderate" | "notifications-read" | "review-topic";
+  | "read-all" | "propose-topic" | "moderate" | "notifications-read" | "review-topic"
+  | "set-theme" | "category";
 
 const ACTIONS = new Set<string>([
-  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic",
+  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category",
 ]);
 
 function str(fd: FormData, key: string): string {
@@ -66,6 +67,13 @@ export async function handleForumAction({ request, action, connectors }: HandleA
   const fail = (error: string) => redirect(withQuery(back, { error, notice: null }));
   const done = (to: string, notice?: string) => redirect(withQuery(to, { notice: notice ?? null, error: null }));
 
+  if (action === "set-theme") {
+    const theme = str(fd, "theme") === "modern" ? "modern" : "classic";
+    const res = redirect(safeBack(str(fd, "back"), hrefs.root()));
+    res.headers.set("Set-Cookie", `forum_theme=${theme}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    return res;
+  }
+
   if (!viewer.userId) return fail("Sign in first.");
 
   switch (action as ForumActionName) {
@@ -106,6 +114,19 @@ export async function handleForumAction({ request, action, connectors }: HandleA
     case "read-all": {
       const r = await w.markAllRead(viewer);
       return r.ok === true ? done(back, "Everything marked read.") : fail(r.error);
+    }
+    case "category": {
+      if (!w.createCategory) return fail("Not available here.");
+      const r = await w.createCategory(viewer, {
+        orgId: str(fd, "org"),
+        name: str(fd, "name"),
+        tagline: str(fd, "tagline"),
+        audience: str(fd, "audience") === "members" ? "members" : "everyone",
+      });
+      if (r.ok === false) return fail(r.error);
+      // Straight into the new category, which is empty and shows its own
+      // new-topic form — the next thing they want is to post in it.
+      return done(hrefs.feed(str(fd, "orgSlug"), r.slug), `“${r.name}” added.`);
     }
     case "propose-topic": {
       const r = await w.proposeTopic(viewer, { name: str(fd, "name"), orgId: str(fd, "org") });

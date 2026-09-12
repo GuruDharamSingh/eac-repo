@@ -16,6 +16,8 @@ interface SiteHeaderProps {
   feeds: NavFeed[];
   signedIn: boolean;
   canEdit: boolean;
+  /** member or above sees Hub; a follower sees Center. */
+  isMember?: boolean;
 }
 
 /**
@@ -23,7 +25,9 @@ interface SiteHeaderProps {
  * the wordmark set in Venture. Links come from the org's feeds (Offerings,
  * Blog), then About, then the member doors.
  */
-export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
+export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteHeaderProps) {
+  const homeHref = isMember ? "/hub" : "/center";
+  const homeLabel = isMember ? "Hub" : "Center";
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -51,8 +55,8 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
             </Link>
           ))}
           {signedIn && (
-            <Link href="/hub" className={linkClass(isActive("/hub"))}>
-              Hub
+            <Link href={homeHref} className={linkClass(isActive(homeHref))}>
+              {homeLabel}
             </Link>
           )}
           {canEdit && (
@@ -83,7 +87,7 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
               {link.label}
             </Link>
           ))}
-          {signedIn && <Link href="/hub" onClick={() => setOpen(false)}>Hub</Link>}
+          {signedIn && <Link href={homeHref} onClick={() => setOpen(false)}>{homeLabel}</Link>}
           {canEdit && <Link href="/manage" onClick={() => setOpen(false)}>Manage</Link>}
           <Link href={signedIn ? "/account" : "/login"} onClick={() => setOpen(false)} className="is-door">
             {signedIn ? "Account" : "Web-Portal"}

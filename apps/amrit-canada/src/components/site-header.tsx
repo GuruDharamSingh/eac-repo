@@ -8,30 +8,24 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 
-interface NavFeed {
-  slug: string;
-  name: string;
-}
-
 interface SiteHeaderProps {
-  /** From org_feeds — nav is data, so a new section needs no code change. */
-  feeds: NavFeed[];
   signedIn: boolean;
   canEdit: boolean;
+  isMember?: boolean;
 }
 
-export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
+const NAV_LINKS = [
+  { href: "/services", label: "Services" },
+  { href: "/about", label: "About" },
+  { href: "/forum", label: "Forum" },
+];
+
+export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderProps) {
+  const homeHref = isMember ? "/hub" : "/center";
+  const homeLabel = isMember ? "Hub" : "Center";
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const links = [
-    ...feeds.map((f) => ({ href: `/${f.slug}`, label: f.name })),
-    { href: "/forum", label: "Forum" },
-    { href: "/about", label: "About" },
-    { href: "/resources", label: "Resources" },
-  ];
-
-  // Charcoal gradient with a saffron rule underneath — the original chrome.
   return (
     <header className="bg-header-footer sticky top-0 z-40 border-b-[3px] border-[#f4c430] shadow-[0_4px_15px_rgba(0,0,0,0.15)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
@@ -45,7 +39,7 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {links.map((link) => {
+          {NAV_LINKS.map((link) => {
             const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link
@@ -67,7 +61,7 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
               size="sm"
               className="text-[#fdf5e6]/80 hover:bg-[#f4c430]/15 hover:text-[#f4c430]"
             >
-              <Link href="/hub">Hub</Link>
+              <Link href={homeHref}>{homeLabel}</Link>
             </Button>
           )}
           {canEdit && (
@@ -104,7 +98,7 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
 
       {open && (
         <nav className="border-t border-[#f4c430]/30 px-5 pb-4 md:hidden">
-          {links.map((link) => (
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -116,11 +110,11 @@ export function SiteHeader({ feeds, signedIn, canEdit }: SiteHeaderProps) {
           ))}
           {signedIn && (
             <Link
-              href="/hub"
+              href={homeHref}
               onClick={() => setOpen(false)}
               className="block py-2.5 text-sm text-[#fdf5e6]/80"
             >
-              Hub
+              {homeLabel}
             </Link>
           )}
           {canEdit && (

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 // either way, but the ui barrel declares Mantine, so importing through it
 // pulls Mantine into an app that deliberately does without it.
 import { BaroqueSignup } from "@elkdonis/cms-ui/auth";
+import { mirrorLoginHref } from "@elkdonis/auth-client";
 import "@elkdonis/cms-ui/baroque-signup.css";
 
 /**
@@ -36,7 +37,9 @@ export function LoginForm() {
       subtitle="Sign in to manage the site, or create an account to claim your artist or dealer profile."
       googleRedirectTo={next ?? "/hub"}
       onSuccess={() => {
-        window.location.href = next ?? "/hub";
+        // The trip runs through the network host once so a LATER visit to a
+        // different site on the collective finds the session already there.
+        window.location.href = mirrorLoginHref(window.location.origin, next ?? "/hub");
       }}
     />
   );

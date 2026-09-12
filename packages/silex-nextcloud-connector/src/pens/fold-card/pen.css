@@ -1,0 +1,479 @@
+/* ==========================================================================
+   Pen: Fold Card  (.eac-pen-fold)
+
+   A card that opens into a full panel; closing it folds the panel up like a
+   sheet of paper (four staggered 3D folds), drops it away, and lets the card
+   settle back into place. Ported from "Card → view fold transition" by
+   shshaw / keyframers (https://codepen.io/shshaw/pen/QmZYMG).
+
+   Two consumers, ONE stylesheet:
+     - Silex block (packages/silex-nextcloud-connector, this file). Published
+       HTML has no scripts, so state is a checkbox: the whole component is a
+       <label> wrapping <input class="eac-pen-fold-toggle">. Clicking any
+       non-interactive part toggles it; links and buttons inside act normally
+       (label activation is not forwarded from interactive descendants).
+     - React twin (@elkdonis/cms-ui/pens FoldCard). Sets .is-open itself and
+       adds the FLIP morph (the [data-move] rules at the bottom) that CSS
+       alone cannot do.
+
+   State = "open" when EITHER the checkbox is checked OR .is-open is present.
+   Every state rule below lists both, so the two stay in step by construction.
+
+   Colours resolve through the EAC tokens with fallbacks, so the block takes
+   an org's palette in Silex and a person's palette on a profile page.
+   ========================================================================== */
+
+.eac-pen-fold {
+  --eac-pen-duration: 1500ms;
+  --eac-pen-easing: cubic-bezier(0.7, 0, 0.3, 1);
+  --eac-pen-accent: var(--eac-accent, #b85c3a);
+  /* The card face carries near-white text on the accent, and a raw accent is
+     not dark enough for that: the EAC default lands at 4.21:1. Mixed toward a
+     fixed near-black (never toward the ink token, which is itself near-white
+     on a dark card and would push the wrong way) it clears 4.5 whatever the
+     org's colour is. Everything with text on it uses this, not the accent. */
+  --eac-pen-accent-deep: color-mix(in srgb, var(--eac-pen-accent) 80%, #12100e);
+  --eac-pen-paper: var(--eac-surface, #fbf8f2);
+  --eac-pen-ink: var(--eac-text, #1a1612);
+  --eac-pen-ink-soft: var(--eac-text-soft, #5a5045);
+  --eac-pen-ink-inv: var(--eac-text-inv, #faf6ee);
+  --eac-pen-radius: var(--eac-radius-lg, 14px);
+  --eac-pen-ratio: 3 / 4;
+
+  position: relative;
+  display: grid;
+  grid-template: 100% / 100%;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: var(--eac-pen-ratio);
+  overflow: hidden;
+  border-radius: var(--eac-pen-radius);
+  background: var(--eac-pen-paper);
+  color: var(--eac-pen-ink);
+  box-shadow: 0 2.5cqw 4cqw rgba(0, 0, 0, 0.3);
+  font-family: var(--eac-font-sans, Inter, system-ui, sans-serif);
+  /* The original sets 3vmin on a 90vmin-tall card — about 3.3% of the card's
+     height. Half that made the card hold twice the text, so the sheets folded
+     over a wall of small type instead of a page. */
+  font-size: clamp(13px, 5cqw, 19px);
+  container-type: inline-size;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.eac-pen-fold *,
+.eac-pen-fold *::before,
+.eac-pen-fold *::after {
+  box-sizing: border-box;
+}
+.eac-pen-fold a,
+.eac-pen-fold button {
+  cursor: pointer;
+}
+
+/* Speed and shape variants — set as data attributes so they are Silex traits. */
+.eac-pen-fold[data-speed="fast"] { --eac-pen-duration: 800ms; }
+.eac-pen-fold[data-speed="slow"] { --eac-pen-duration: 2400ms; }
+.eac-pen-fold[data-ratio="square"] { --eac-pen-ratio: 1 / 1; }
+.eac-pen-fold[data-ratio="tall"] { --eac-pen-ratio: 5 / 9; }
+.eac-pen-fold[data-ratio="wide"] { --eac-pen-ratio: 16 / 10; }
+
+/* The state input. Visually gone, still focusable for keyboard users. */
+.eac-pen-fold-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.eac-pen-fold:has(> .eac-pen-fold-toggle:focus-visible) {
+  outline: 3px solid var(--eac-pen-accent);
+  outline-offset: 3px;
+}
+
+/* ---- Views: both occupy the same grid cell; one is active at a time ------ */
+
+.eac-pen-fold-view {
+  grid-area: 1 / 1;
+  position: relative;
+  max-height: 100%;
+  padding: 1em;
+  transition:
+    transform var(--eac-pen-duration) var(--eac-pen-easing),
+    visibility 0s linear;
+}
+/* Which view is live is derived from state at the bottom of this file. An
+   inactive view goes hidden only AFTER the outgoing animation has played: its
+   visibility transition is delayed by the full duration. */
+
+/* ---- Overview: the closed card ------------------------------------------ */
+
+/* The face fills the card rather than sitting at the bottom of it. That is
+   what the FLIP morphs to and from: the top band of the open panel expands
+   into a whole card, the way the pen's grid card does. A face that only
+   covered part of the card made the morph land on a small rectangle with
+   empty space around it, which read as a jump. */
+.eac-pen-fold-overview {
+  display: grid;
+  align-content: stretch;
+  grid-template-rows: minmax(0, 1fr);
+}
+.eac-pen-fold-face {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  border-radius: calc(var(--eac-pen-radius) * 0.6);
+  background: var(--eac-pen-accent-deep);
+  color: var(--eac-pen-ink-inv);
+  transform-origin: top left;
+  transition:
+    border-radius var(--eac-pen-duration) var(--eac-pen-easing),
+    transform var(--eac-pen-duration) var(--eac-pen-easing),
+    opacity var(--eac-pen-duration) var(--eac-pen-easing);
+}
+.eac-pen-fold-face > * {
+  opacity: 1;
+  transition: inherit;
+}
+.eac-pen-fold-face-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.15);
+}
+.eac-pen-fold-face-body {
+  padding: 0.8em 1em 1em;
+}
+.eac-pen-fold-face-body .eac-kicker,
+.eac-pen-fold-content .eac-kicker {
+  margin: 0 0 0.3em;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: inherit;
+}
+.eac-pen-fold-face-body h3,
+.eac-pen-fold-content h3 {
+  margin: 0;
+  font-family: var(--eac-font-serif, Georgia, serif);
+  font-size: 1.35em;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.eac-pen-fold-face-body p,
+.eac-pen-fold-content p {
+  margin: 0.4em 0 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+/* Not dimmed. Over the accent face there is no contrast budget to spend on
+   fading text — dimming the hint to 75% took it to 3.49:1 — so the hierarchy
+   here is size and weight instead. */
+.eac-pen-fold-face-hint {
+  font-size: 0.78em;
+}
+.eac-pen-fold-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity var(--eac-pen-duration) linear;
+}
+
+/* ---- Details: the open panel --------------------------------------------- */
+
+.eac-pen-fold-details {
+  z-index: 2;
+  display: grid;
+  /* The original's perspective is 800px on a 50vmin x 90vmin card — roughly
+     0.85 of the card's HEIGHT. A fixed 800px reproduces that only at that
+     size: on IFAC's 280px portrait it is more than twice the card's height,
+     which flattens the rotation into a vertical wipe and is why the fold
+     stopped reading as paper. Expressed against the card's own width (the
+     root is a size container) the depth is the same at any size. */
+  perspective: var(--eac-pen-perspective, 115cqw);
+  transform-style: preserve-3d;
+}
+.eac-pen-fold[data-ratio="square"] .eac-pen-fold-details { --eac-pen-perspective: 85cqw; }
+.eac-pen-fold[data-ratio="tall"] .eac-pen-fold-details { --eac-pen-perspective: 155cqw; }
+.eac-pen-fold[data-ratio="wide"] .eac-pen-fold-details { --eac-pen-perspective: 55cqw; }
+.eac-pen-fold-paper {
+  position: absolute;
+  top: 99%;
+  left: 0;
+  width: 100%;
+  height: 102%;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  background-color: var(--eac-pen-paper);
+  backface-visibility: visible;
+}
+/* The outermost sheet is the fixed top band; the nested ones hang below it
+   and each folds up onto its parent. */
+.eac-pen-fold-details > .eac-pen-fold-paper {
+  top: 0;
+  height: 25%;
+  animation: none !important;
+}
+/* FLIP source for the React twin: the top band's rectangle, never painted. */
+.eac-pen-fold-anchor {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+.eac-pen-fold-content {
+  z-index: 2;
+  display: grid;
+  grid-template: 100% / 100%;
+  height: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to top, transparent 0.2em, #000 4em);
+  -webkit-mask-image: linear-gradient(to top, transparent 0.2em, #000 4em);
+}
+.eac-pen-fold-content-inner {
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 3em;
+  scrollbar-width: thin;
+}
+.eac-pen-fold-content-inner > img,
+.eac-pen-fold-content-img {
+  display: block;
+  width: 100%;
+  max-height: 55%;
+  object-fit: cover;
+  border-radius: calc(var(--eac-pen-radius) * 0.5);
+  margin: 0 0 0.8em;
+}
+.eac-pen-fold-content p {
+  color: var(--eac-pen-ink-soft);
+}
+.eac-pen-fold-actions {
+  display: grid;
+  gap: 0.5em;
+  margin-top: 1em;
+}
+.eac-pen-fold-actions > a,
+.eac-pen-fold-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+  min-height: 2.6em;
+  padding: 0.55em 0.9em;
+  border: 1px solid color-mix(in srgb, var(--eac-pen-accent) 55%, transparent);
+  border-radius: 0.5em;
+  background: transparent;
+  color: var(--eac-pen-ink);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.eac-pen-fold-actions > a::after,
+.eac-pen-fold-actions > button::after {
+  content: "→";
+  opacity: 0.6;
+}
+.eac-pen-fold-actions > a:hover,
+.eac-pen-fold-actions > button:hover {
+  background: color-mix(in srgb, var(--eac-pen-accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+.eac-pen-fold-actions > [data-variant="solid"] {
+  background: var(--eac-pen-accent-deep);
+  border-color: var(--eac-pen-accent-deep);
+  color: var(--eac-pen-ink-inv);
+}
+.eac-pen-fold-close {
+  display: inline-block;
+  margin-top: 1em;
+  font-size: 0.8em;
+  color: var(--eac-pen-ink-soft);
+}
+
+/* ==========================================================================
+   STATE — closed (default). The details panel sits folded away underneath.
+   ========================================================================== */
+
+.eac-pen-fold-details {
+  animation: eac-pen-fold-close-view var(--eac-pen-duration) var(--eac-pen-easing) both;
+}
+@keyframes eac-pen-fold-close-view {
+  from { transform: none; }
+  to { transform: scale(0.8) translateY(50%); }
+}
+
+.eac-pen-fold-paper {
+  --eac-pen-fold-step: calc(var(--eac-pen-duration) / 4);
+  animation: eac-pen-fold-close-paper var(--eac-pen-fold-step) var(--eac-pen-easing) both;
+  /* Bottom sheet first (--fold: 1), then each one above it. */
+  animation-delay: calc(var(--fold, 0) * var(--eac-pen-fold-step) * 0.8);
+}
+@keyframes eac-pen-fold-close-paper {
+  to {
+    transform: rotateX(180deg) translateZ(-1px);
+    background-color: var(--eac-pen-accent);
+  }
+}
+
+/* Content clipping: the mask box slides up while its contents slide down and
+   fade, so the text is eaten from the bottom as the paper folds. */
+.eac-pen-fold-content {
+  animation: eac-pen-fold-close-mask var(--eac-pen-duration) var(--eac-pen-easing) both;
+}
+@keyframes eac-pen-fold-close-mask {
+  to { transform: translateY(-75%); }
+}
+.eac-pen-fold-content-inner {
+  animation: eac-pen-fold-close-inner var(--eac-pen-duration) var(--eac-pen-easing) both;
+}
+@keyframes eac-pen-fold-close-inner {
+  to {
+    transform: translateY(75%);
+    opacity: 0;
+  }
+}
+
+/* While the panel folds away the card underneath stays dark, and the face
+   only appears at the end — in the pen that is the FLIP moment. */
+.eac-pen-fold-overview .eac-pen-fold-face {
+  opacity: 1;
+  transition-delay: calc(var(--eac-pen-duration) * 0.7);
+}
+
+/* ...except when a FLIP is coming. The React twin sets data-returning for the
+   length of the fold, because otherwise the face fades in at 70% in its final
+   position and THEN jumps to the inverted position to start travelling — the
+   same card moving twice, which is the other half of why the close looked
+   wrong. The original hides its card for exactly this window
+   ([data-transitioning] -> visibility: hidden) and reveals it already
+   inverted. Layout is kept, so the FLIP can still measure it. */
+.eac-pen-fold[data-returning] .eac-pen-fold-overview .eac-pen-fold-face {
+  visibility: hidden;
+}
+
+/* ==========================================================================
+   STATE — open. Checkbox checked (Silex) or .is-open (React).
+   ========================================================================== */
+
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-overview .eac-pen-fold-overlay {
+  opacity: 1;
+  transition: none;
+}
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-overview .eac-pen-fold-face {
+  opacity: 0;
+  transition-delay: 0s;
+  transition-duration: calc(var(--eac-pen-duration) * 0.25);
+}
+
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-details {
+  animation-name: eac-pen-fold-open-view;
+}
+@keyframes eac-pen-fold-open-view {
+  from { transform: scale(0.8) translateY(50%); }
+  to { transform: none; }
+}
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-paper {
+  animation-name: eac-pen-fold-open-paper;
+  /* Unfold top-down: the sheet nearest the band goes first. */
+  animation-delay: calc((3 - var(--fold, 0)) * var(--eac-pen-fold-step) * 0.8);
+}
+@keyframes eac-pen-fold-open-paper {
+  from {
+    transform: rotateX(180deg) translateZ(-1px);
+    background-color: var(--eac-pen-accent);
+  }
+  to {
+    transform: none;
+    background-color: var(--eac-pen-paper);
+  }
+}
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-content {
+  animation-name: eac-pen-fold-open-mask;
+}
+@keyframes eac-pen-fold-open-mask {
+  from { transform: translateY(-75%); }
+  to { transform: none; }
+}
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-content-inner {
+  animation-name: eac-pen-fold-open-inner;
+}
+@keyframes eac-pen-fold-open-inner {
+  from {
+    transform: translateY(75%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Which view is live — derived from state, so neither consumer toggles it. */
+.eac-pen-fold:not(.is-open):not(:has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-details,
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-overview {
+  visibility: hidden;
+  pointer-events: none;
+  transition-delay: 0s, var(--eac-pen-duration);
+}
+.eac-pen-fold:is(.is-open, :has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-details {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s, 0s;
+}
+.eac-pen-fold:not(.is-open):not(:has(> .eac-pen-fold-toggle:checked)) .eac-pen-fold-overview {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s, 0s;
+}
+
+/* ==========================================================================
+   FLIP morph — React twin only. The card is measured against the panel's top
+   band and inverted for one frame ([data-move="pending"]), then released
+   ([data-move="moving"]) so it travels back into its slot.
+   ========================================================================== */
+
+.eac-pen-fold-face[data-move="pending"] {
+  border-radius: 0;
+  transition: none;
+  transform:
+    translate(calc(var(--dx, 0) * -1px), calc(var(--dy, 0) * -1px))
+    scale(var(--dw, 1), var(--dh, 1));
+}
+.eac-pen-fold-face[data-move="pending"] > * {
+  opacity: 0;
+  transition: none;
+}
+.eac-pen-fold-face[data-move="moving"] {
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+/* ---- Motion preference ---------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-pen-fold,
+  .eac-pen-fold * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .eac-pen-fold-details { transform: none; }
+  .eac-pen-fold-paper { display: none; }
+  .eac-pen-fold-content,
+  .eac-pen-fold-content-inner { transform: none; opacity: 1; }
+}

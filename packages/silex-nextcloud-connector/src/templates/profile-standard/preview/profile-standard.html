@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile — network standard (mockup)</title>
+<!-- PREVIEW ONLY. The real template takes its faces from the token stack in
+     eac-tokens.css ('EB Garamond', Garamond, Georgia, serif) and ships no
+     webfont; this link exists so the display face is visible when reviewing
+     the mockup on a machine that lacks Garamond. Delete on extraction. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<!--
+  profile-standard — STATIC MOCKUP
+  ================================
+  One file, no build, no data layer: open it in a browser to review the
+  design. The sample content below is realistic but invented.
+
+  This is laid out as the Silex template it is meant to become. Every value
+  that would come from the database already carries its `data-trait` hook and
+  its section is already a `<section data-gjs-type>`, so splitting this file
+  into templates/profile-standard/{html,css}/ + manifest.json is mechanical
+  rather than a rewrite. The trait names match the bindings block sketched at
+  the foot of this file.
+
+  ── What it binds to ───────────────────────────────────────────────────────
+  The CANONICAL profile schema: `users` (+ `org_profiles` for per-org role
+  titles). NOT `artist_profiles` — migrations 084-087 merged that away and the
+  consolidation pass closed it down, yet the existing `portfolio` and
+  `dossier-classified` manifests still name `artist_profiles.*` columns. A new
+  network standard should not inherit that.
+
+  ── Design rules it follows ────────────────────────────────────────────────
+  1. Degrades to almost nothing. A profile with only a display_name renders as
+     a dignified page, not a skeleton full of empty boxes. Every optional
+     block is marked `omitWhenEmpty` and the mockup shows the sparse case at
+     the bottom.
+  2. One column of reading. The portrait and facts sit in a rail; the prose
+     never exceeds ~68 characters so a bio is actually readable.
+  3. Accessible by construction. Every text pair below was measured:
+     ink 17.7:1, muted 7.6:1, quiet 5.8:1, accent 7.6:1, verified 5.0:1.
+     NOTE: the shared token --eac-color-ink-faint (#9ca3af) is 2.54:1 on white
+     and fails even the 3:1 non-text bar, despite being documented as
+     "tertiary / labels". It is deliberately NOT used for text here; this
+     template adds --eac-color-ink-quiet instead.
+  4. Themable, not styled. Colour, type and rhythm come only from custom
+     properties, so an org theme (site_themes) or a dark host restyles it
+     without touching this file.
+-->
+<style>
+/* ───────────────────────────────────────────────────────────────────────────
+   Tokens. In the real template these come from templates/tokens/eac-tokens.css
+   (imported first, per that file's own instruction); they are inlined here so
+   the mockup is one openable file. Only the additions are commented.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --eac-color-ink:           #111827;  /* 17.74:1 on surface */
+  --eac-color-ink-muted:     #4b5563;  /*  7.56:1 */
+  /* NEW. The shared --eac-color-ink-faint (#9ca3af, 2.54:1) is not legible as
+     text; labels and timestamps use this instead. */
+  --eac-color-ink-quiet:     #5f6672;  /*  5.78:1 */
+
+  --eac-color-surface:       #ffffff;
+  --eac-color-surface-2:     #f9fafb;
+  --eac-color-surface-3:     #f3f4f6;
+
+  /* Raised from the shared #e5e7eb so a rule is actually visible (1.4:1+). */
+  --eac-color-border:        #d3d7de;
+  --eac-color-border-strong: #b9bfc9;
+
+  /* Brand accent. Deepened from the shared violet so it passes as a link
+     colour (7.60:1 rather than 5.28:1) and as a filled button ground. */
+  --eac-accent:              #5b3bb8;
+  --eac-accent-contrast:     #ffffff;
+  --eac-accent-wash:         #f2eefc;
+
+  --eac-color-verified:      #15803d;  /* 5.02:1 */
+
+  --eac-font-display: 'EB Garamond', Garamond, Georgia, serif;
+  --eac-font-body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --eac-font-record:  'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --eac-measure:   68ch;   /* the prose column; the whole point of the layout */
+  --eac-rail:      248px;
+  --eac-gap:       clamp(28px, 5vw, 64px);
+  --eac-radius:    3px;
+}
+
+/* A dark org theme needs to override these five and nothing else. Shown as a
+   comment rather than applied — the network default is light.
+   [data-theme="dark"] {
+     --eac-color-ink: #e9e7e3; --eac-color-ink-muted: #b3aea6;
+     --eac-color-ink-quiet: #8d8880; --eac-color-surface: #16161a;
+     --eac-color-surface-2: #1e1e23; --eac-color-border: #33333a;
+   } */
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--eac-color-surface);
+  color: var(--eac-color-ink);
+  font-family: var(--eac-font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--eac-accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+img { max-width: 100%; display: block; }
+
+/* The one shared label voice: small, monospace, letterspaced, quiet-but-legible. */
+.eac-pf-label {
+  font-family: var(--eac-font-record);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eac-color-ink-quiet);
+}
+
+.eac-pf-page { max-width: 1080px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 40px) 96px; }
+
+/* ── eac-pf-identity ─────────────────────────────────────────────────────── */
+
+.eac-pf-identity {
+  display: grid;
+  grid-template-columns: var(--eac-rail) minmax(0, 1fr);
+  gap: var(--eac-gap);
+  align-items: start;
+  padding: clamp(40px, 7vw, 88px) 0 36px;
+}
+.eac-pf-portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--eac-color-surface-3);
+}
+/* No portrait: initials, same footprint. A missing photo should never
+   collapse the layout or show a broken-image glyph. */
+.eac-pf-portrait--initials {
+  display: grid;
+  place-items: center;
+  font-family: var(--eac-font-display);
+  font-size: 64px;
+  color: var(--eac-color-ink-muted);
+  border: 1px solid var(--eac-color-border);
+}
+.eac-pf-name {
+  font-family: var(--eac-font-display);
+  font-size: clamp(36px, 6vw, 58px);
+  line-height: 1.05;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.eac-pf-namerow { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.eac-pf-verified {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--eac-color-verified);
+  font-family: var(--eac-font-record); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.eac-pf-pronouns { color: var(--eac-color-ink-quiet); font-size: 15px; }
+.eac-pf-headline {
+  font-family: var(--eac-font-display);
+  font-size: clamp(19px, 2.4vw, 24px);
+  line-height: 1.35;
+  color: var(--eac-color-ink-muted);
+  margin: 10px 0 0;
+  max-width: 34ch;
+  font-style: italic;
+}
+.eac-pf-facts {
+  display: flex; flex-wrap: wrap; gap: 6px 20px;
+  margin: 20px 0 0; padding: 14px 0 0;
+  border-top: 1px solid var(--eac-color-border);
+}
+.eac-pf-fact { display: flex; align-items: baseline; gap: 7px; font-size: 14px; }
+.eac-pf-fact > .eac-pf-label { flex: none; }
+
+/* Affiliations. A person is known through the orgs they belong to, so this is
+   identity, not a footnote — it sits with the name, above the prose. */
+.eac-pf-orgs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.eac-pf-org {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--eac-color-border);
+  border-radius: 999px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--eac-color-ink);
+  background: var(--eac-color-surface);
+}
+.eac-pf-org:hover { border-color: var(--eac-accent); background: var(--eac-accent-wash); }
+.eac-pf-org b { font-weight: 600; }
+.eac-pf-org span { color: var(--eac-color-ink-quiet); font-size: 12px; }
+
+/* ── sections ────────────────────────────────────────────────────────────── */
+
+.eac-pf-section { padding: 40px 0 0; }
+.eac-pf-section + .eac-pf-section { margin-top: 8px; }
+.eac-pf-section__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; padding-bottom: 10px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--eac-color-border);
+}
+/* Prose is offset into the same column the headline sits in, so the page has
+   one reading edge rather than two. */
+.eac-pf-body { display: grid; grid-template-columns: var(--eac-rail) minmax(0, 1fr); gap: var(--eac-gap); }
+.eac-pf-body > .eac-pf-prose { grid-column: 2; }
+.eac-pf-prose { max-width: var(--eac-measure); font-size: 17px; }
+.eac-pf-prose p { margin: 0 0 1.1em; }
+.eac-pf-prose p:last-child { margin-bottom: 0; }
+
+/* ── eac-pf-work ─────────────────────────────────────────────────────────── */
+
+.eac-pf-work-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+.eac-pf-work { text-decoration: none; color: inherit; }
+.eac-pf-work img {
+  width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
+  background: var(--eac-color-surface-3);
+  border-radius: var(--eac-radius);
+}
+.eac-pf-work__title { margin: 9px 0 0; font-size: 15px; font-weight: 600; }
+.eac-pf-work__meta { color: var(--eac-color-ink-quiet); font-size: 13px; }
+.eac-pf-work:hover .eac-pf-work__title { color: var(--eac-accent); }
+
+/* ── eac-pf-elsewhere ────────────────────────────────────────────────────── */
+
+.eac-pf-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.eac-pf-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 15px;
+  border: 1px solid var(--eac-color-border);
+  border-radius: var(--eac-radius);
+  text-decoration: none; color: var(--eac-color-ink);
+  font-size: 14px;
+}
+.eac-pf-link:hover { border-color: var(--eac-accent); color: var(--eac-accent); }
+.eac-pf-link--primary {
+  background: var(--eac-accent); border-color: var(--eac-accent);
+  color: var(--eac-accent-contrast); font-weight: 600;
+}
+.eac-pf-link--primary:hover { color: var(--eac-accent-contrast); filter: brightness(1.08); }
+
+/* ── eac-pf-authored — profile_sections (migration 105) ──────────────────── */
+
+.eac-pf-authored { display: grid; gap: 26px; }
+.eac-pf-authored__item > h3 {
+  font-family: var(--eac-font-display); font-size: 21px; font-weight: 500;
+  margin: 0 0 6px;
+}
+
+/* ── footer ──────────────────────────────────────────────────────────────── */
+
+.eac-pf-foot {
+  margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--eac-color-border);
+  display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline;
+}
+.eac-pf-source { color: var(--eac-color-ink-quiet); font-size: 13px; font-style: italic; }
+
+/* ── the sparse case, shown side by side in this mockup only ─────────────── */
+.mock-divider {
+  margin: 96px 0 0; padding: 28px 0 0;
+  border-top: 2px dashed var(--eac-color-border-strong);
+}
+.mock-note {
+  background: var(--eac-color-surface-2);
+  border-left: 3px solid var(--eac-accent);
+  padding: 14px 18px; margin: 0 0 8px;
+  font-size: 14px; color: var(--eac-color-ink-muted);
+  max-width: var(--eac-measure);
+}
+.mock-note b { color: var(--eac-color-ink); }
+
+@media (max-width: 760px) {
+  .eac-pf-identity,
+  .eac-pf-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .eac-pf-body > .eac-pf-prose { grid-column: 1; }
+  .eac-pf-portrait { width: 128px; }
+  .eac-pf-name { font-size: 34px; }
+  /* Two-up rather than one: a 4:5 image at full width is most of a screen,
+     so a gallery of six becomes six scrolls. */
+  .eac-pf-work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .eac-pf-work__title { font-size: 14px; }
+  .eac-pf-work__meta { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<main class="eac-pf-page">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 1 — eac-pf-identity   (required)
+       users.display_name, .avatar_url, .pronouns, .headline, .city/.region/
+       .country, .verified, .entity_type  +  org_profiles.role_title
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="eac-pf-identity" data-gjs-type="eac-pf-identity">
+
+    <img class="eac-pf-portrait"
+         data-trait="portraitSrc"
+         src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='400' height='400' fill='%23e7e3f5'/><circle cx='200' cy='158' r='66' fill='%23b9a9e0'/><path d='M60 400c0-86 63-140 140-140s140 54 140 140z' fill='%23b9a9e0'/></svg>"
+         alt="Dana McCool">
+
+    <div>
+      <div class="eac-pf-namerow">
+        <h1 class="eac-pf-name" data-gjs-editable="true" data-trait="displayName">Dana McCool</h1>
+        <!-- omitWhenEmpty: users.verified -->
+        <span class="eac-pf-verified" data-trait="verifiedMark">
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M8 0l1.9 1.4 2.3-.3 1 2.1 2.1 1-.3 2.3L16 8l-1.4 1.9.3 2.3-2.1 1-1 2.1-2.3-.3L8 16l-1.9-1.4-2.3.3-1-2.1-2.1-1 .3-2.3L0 8l1.4-1.9L1.1 3.8l2.1-1 1-2.1 2.3.3z"/>
+            <path d="M6.9 10.9L4.4 8.4l1-1 1.5 1.5 3.7-3.7 1 1z" fill="#fff"/>
+          </svg>
+          Verified
+        </span>
+        <!-- omitWhenEmpty: users.pronouns -->
+        <span class="eac-pf-pronouns" data-trait="pronouns">she/her</span>
+      </div>
+
+      <!-- omitWhenEmpty: users.headline -->
+      <p class="eac-pf-headline" data-gjs-editable="true" data-trait="headline">
+        Painter and workshop facilitator, working between surface and repair.
+      </p>
+
+      <div class="eac-pf-facts">
+        <!-- omitWhenEmpty: city/region/country -->
+        <span class="eac-pf-fact" data-trait="locationFact">
+          <span class="eac-pf-label">Based in</span>
+          <span data-trait="location">Toronto, Ontario</span>
+        </span>
+        <!-- format: "joined" over users.created_at -->
+        <span class="eac-pf-fact" data-trait="joinedFact">
+          <span class="eac-pf-label">On the network</span>
+          <span data-trait="joined">since May 2025</span>
+        </span>
+      </div>
+
+      <!-- omitWhenEmpty: listProfileOrgs() -->
+      <div class="eac-pf-orgs" data-trait="affiliations">
+        <a class="eac-pf-org" href="#"><b>Amrit Canada</b> <span>Guide</span></a>
+        <a class="eac-pf-org" href="#"><b>InnerGathering</b> <span>Member</span></a>
+        <a class="eac-pf-org" href="#"><b>Surrealist Writing</b> <span>Owner</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 2 — eac-pf-statement   (omitWhenEmpty: users.bio)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="eac-pf-section" data-gjs-type="eac-pf-statement">
+    <div class="eac-pf-section__head">
+      <span class="eac-pf-label">Statement</span>
+    </div>
+    <div class="eac-pf-body">
+      <div class="eac-pf-prose" data-gjs-editable="true" data-trait="bio">
+        <p>I paint on salvaged panel — cupboard doors, dropped leaves of tables,
+        whatever arrives with a history already in it. The work is mostly about
+        repair: what a surface looks like once it has been mended and the mend
+        has been left visible.</p>
+        <p>Alongside the studio I run small groups, six or eight people, where
+        we spend as much time looking as making. People arrive wanting technique
+        and usually leave with attention instead, which I think is the better
+        trade.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 3 — eac-pf-work   (omitWhenEmpty: users.portfolio)
+       list binding over portfolio[] = [{url, title, medium, year}]
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="eac-pf-section" data-gjs-type="eac-pf-work">
+    <div class="eac-pf-section__head">
+      <span class="eac-pf-label">Selected work</span>
+      <span class="eac-pf-label" data-trait="workCount">4 pieces</span>
+    </div>
+    <div class="eac-pf-work-grid" data-trait="workItems">
+
+      <a class="eac-pf-work" href="#">
+        <img alt="Mend I" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500'><rect width='400' height='500' fill='%23e8e2d8'/><path d='M0 330h400v170H0z' fill='%23c9bda8'/><circle cx='300' cy='120' r='52' fill='%23a8b5a0'/></svg>">
+        <p class="eac-pf-work__title">Mend I</p>
+        <p class="eac-pf-work__meta">Oil on cupboard door · 2026</p>
+      </a>
+
+      <a class="eac-pf-work" href="#">
+        <img alt="Table Leaf (Blue)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500'><rect width='400' height='500' fill='%23dfe4ea'/><path d='M60 60h280v380H60z' fill='%238fa3bd'/><path d='M60 240h280' stroke='%23e8eef5' stroke-width='14'/></svg>">
+        <p class="eac-pf-work__title">Table Leaf (Blue)</p>
+        <p class="eac-pf-work__meta">Oil and wax on panel · 2025</p>
+      </a>
+
+      <a class="eac-pf-work" href="#">
+        <img alt="Kintsugi Study" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500'><rect width='400' height='500' fill='%23efe7e2'/><path d='M200 0v500M0 250h400' stroke='%23c8a54e' stroke-width='9'/><circle cx='200' cy='250' r='90' fill='none' stroke='%239a7b5f' stroke-width='6'/></svg>">
+        <p class="eac-pf-work__title">Kintsugi Study</p>
+        <p class="eac-pf-work__meta">Gold leaf, gesso · 2025</p>
+      </a>
+
+      <a class="eac-pf-work" href="#">
+        <img alt="Cupboard (Open)" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500'><rect width='400' height='500' fill='%23e3e7e0'/><path d='M40 40h150v420H40z' fill='%237e8c74'/><path d='M210 40h150v420H210z' fill='%23a8b59c'/></svg>">
+        <p class="eac-pf-work__title">Cupboard (Open)</p>
+        <p class="eac-pf-work__meta">Oil on found wood · 2024</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 4 — eac-pf-authored   (omitWhenEmpty: users.profile_sections)
+       Author-defined blocks, migration 105. Kept deliberately plain: it is
+       the author's voice, not the template's.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="eac-pf-section" data-gjs-type="eac-pf-authored">
+    <div class="eac-pf-section__head">
+      <span class="eac-pf-label">More</span>
+    </div>
+    <div class="eac-pf-body">
+      <div class="eac-pf-prose eac-pf-authored" data-trait="authoredSections">
+        <div class="eac-pf-authored__item">
+          <h3>Teaching</h3>
+          <p>Six-week groups, twice a year, in Toronto and online. Materials
+          provided; no experience assumed and none rewarded.</p>
+        </div>
+        <div class="eac-pf-authored__item">
+          <h3>Currently</h3>
+          <p>A long series on hinges. Ask me about it and I will not stop.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 5 — eac-pf-elsewhere   (required, but degrades to nothing)
+       users.portfolio_url, users.social_links[] = [{label, url}]
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="eac-pf-section" data-gjs-type="eac-pf-elsewhere">
+    <div class="eac-pf-section__head">
+      <span class="eac-pf-label">Elsewhere</span>
+    </div>
+    <div class="eac-pf-body">
+      <div class="eac-pf-prose">
+        <div class="eac-pf-links" data-trait="links">
+          <a class="eac-pf-link eac-pf-link--primary" data-href-trait="portfolioUrl" href="#">Portfolio&nbsp;↗</a>
+          <a class="eac-pf-link" href="#">Instagram&nbsp;↗</a>
+          <a class="eac-pf-link" href="#">Bluesky&nbsp;↗</a>
+          <a class="eac-pf-link" href="#">Newsletter&nbsp;↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="eac-pf-foot">
+      <span class="eac-pf-label">Elkdonis Arts Collective</span>
+      <!-- omitWhenEmpty: users.source_note — the wiki-style attribution line
+           that unclaimed/associated entries carry. -->
+      <span class="eac-pf-source" data-trait="sourceNote">Entry maintained by the subject.</span>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MOCKUP ONLY — the sparse case.
+       Not part of the template. Shown so the degradation rule can be judged
+       rather than taken on trust: this is the same template with nothing but
+       a display_name and one affiliation.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mock-divider">
+    <p class="mock-note">
+      <b>Mockup only — the sparse case.</b> The same template with only
+      <code>display_name</code> and one membership. Every other section is
+      <code>omitWhenEmpty</code>, so a new member's profile reads as finished
+      rather than unfilled. This is the state most profiles on the network are
+      actually in today.
+    </p>
+  </div>
+
+  <section class="eac-pf-identity">
+    <div class="eac-pf-portrait eac-pf-portrait--initials" aria-hidden="true">MO</div>
+    <div>
+      <div class="eac-pf-namerow">
+        <h1 class="eac-pf-name">Michael O&rsquo;Dell</h1>
+      </div>
+      <div class="eac-pf-facts">
+        <span class="eac-pf-fact">
+          <span class="eac-pf-label">On the network</span>
+          <span>since last week</span>
+        </span>
+      </div>
+      <div class="eac-pf-orgs">
+        <a class="eac-pf-org" href="#"><b>IFAC</b> <span>Member</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!--
+  ── The manifest this becomes ──────────────────────────────────────────────
+  templates/profile-standard/manifest.json, abbreviated. `from` paths mirror
+  cmsFields deliberately (see packages/cms-bindings/src/engine/types.ts).
+
+  { "id": "profile-standard",
+    "name": "Profile — network standard",
+    "tokens": "../tokens/eac-tokens.css",
+    "sections": [
+      { "id": "eac-pf-identity", "required": true,
+        "cmsFields": ["users.display_name","users.avatar_url","users.pronouns",
+                      "users.headline","users.city","users.region",
+                      "users.country","users.verified","users.created_at",
+                      "org_profiles.role_title"],
+        "bindings": {
+          "displayName":  { "kind":"text", "from":"profile.display_name" },
+          "portraitSrc":  { "kind":"attr", "attr":"src",
+                            "from":"profile.avatar_url", "format":"media",
+                            "omitWhenEmpty": true },
+          "pronouns":     { "kind":"text", "from":"profile.pronouns",
+                            "omitWhenEmpty": true },
+          "headline":     { "kind":"text", "from":"profile.headline",
+                            "omitWhenEmpty": true },
+          "location":     { "kind":"text", "from":["profile.city",
+                                                   "profile.region",
+                                                   "profile.country"],
+                            "join":", ", "omitWhenEmpty": true },
+          "joined":       { "kind":"text", "from":"profile.created_at",
+                            "format":"sinceMonth" },
+          "verifiedMark": { "kind":"show", "from":"profile.verified" },
+          "affiliations": { "kind":"list", "from":"profile.orgs",
+                            "item": { "orgName": { "kind":"text",
+                                                   "from":"item.org_name" },
+                                      "orgRole": { "kind":"text",
+                                                   "from":"item.role_title" },
+                                      "orgHref": { "kind":"attr","attr":"href",
+                                                   "from":"item.href" } } }
+        } },
+      { "id": "eac-pf-statement",  "omitWhenEmpty": true,
+        "cmsFields": ["users.bio"],
+        "bindings": { "bio": { "kind":"html", "from":"profile.bio",
+                               "format":"paragraphs" } } },
+      { "id": "eac-pf-work",       "omitWhenEmpty": true,
+        "cmsFields": ["users.portfolio"] },
+      { "id": "eac-pf-authored",   "omitWhenEmpty": true,
+        "cmsFields": ["users.profile_sections"] },
+      { "id": "eac-pf-elsewhere",  "required": true,
+        "cmsFields": ["users.portfolio_url","users.social_links",
+                      "users.source_note"] }
+    ] }
+
+  `kind:"html"` on the bio is why @elkdonis/silex-render runs
+  sanitizeSilexHtml after binding — the engine does not sanitize.
+-->
+</body>
+</html>

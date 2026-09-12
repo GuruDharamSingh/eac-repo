@@ -12,6 +12,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/astro": "workspace:*",
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
@@ -24,6 +25,7 @@
     "@elkdonis/redis": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "@elkdonis/silex-render": "workspace:*",
+    "@elkdonis/sky-ui": "workspace:*",
     "@elkdonis/three": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",

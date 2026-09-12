@@ -23,9 +23,20 @@ export interface Viewer {
   role: OrgRole | null;
   /** owner or guide: may publish content and manage the site. */
   canEdit: boolean;
-  /** Any membership: may see attendee lists and member-only content. */
+  /**
+   * member or above: the hub, attendee lists, private media, chat.
+   * A `viewer` (a follower, in the UI) is NOT a member — see
+   * CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
+   */
   isMember: boolean;
+  /**
+   * Any row in user_organizations for this org, viewer included. What
+   * ORGANIZATION-visibility threads and /center key on (decision 6).
+   */
+  isAffiliate: boolean;
 }
+
+const MEMBER_ROLES: OrgRole[] = ["owner", "guide", "member"];
 
 /**
  * The current viewer, or null when signed out. Never throws or redirects —
@@ -43,7 +54,8 @@ export async function getViewer(): Promise<Viewer | null> {
     email: session.user.email,
     role,
     canEdit: role !== null && EDITOR_ROLES.includes(role),
-    isMember: role !== null,
+    isMember: role !== null && MEMBER_ROLES.includes(role),
+    isAffiliate: role !== null,
   };
 }
 

@@ -108,6 +108,117 @@ function maybeWrap(
   );
 }
 
+/* ---- The feed-list pen, server-rendered ---------------------------------- */
+
+/**
+ * Flatten authored HTML to plain text for the row's expanded preview.
+ *
+ * A regex is a poor HTML parser and a fine text extractor: the result is
+ * rendered by React as a TEXT node, never as markup, so nothing it fails to
+ * strip can execute. Do not reuse this to produce HTML.
+ */
+function plainText(html: string | null | undefined, max = 420): string | null {
+  if (!html) return null;
+  const text = html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  if (text.length <= max) return text;
+  return text.slice(0, max).replace(/\s+\S*$/, "") + "\u2026";
+}
+
+export type FeedPenRow = {
+  id: string;
+  title: string;
+  kicker?: string | null;
+  summary?: string | null;
+  meta?: string | null;
+  detail?: string | null;
+  avatar?: string | null;
+};
+
+/**
+ * The `feed-list` pen, rendered from live data
+ * (packages/silex-nextcloud-connector/src/pens/feed-list).
+ *
+ * Deliberately the checkbox version, identical to the block an editor can
+ * drop in Silex — a published org site should not need client JavaScript to
+ * open a row, and a page that mixes a hand-built Feed List with a live feed
+ * slot must not have two different-looking feeds on it. The React twin with
+ * the FLIP morph (@elkdonis/cms-ui/pens) is for the apps, not for here.
+ *
+ * The stylesheet is the pen's own. Host apps import it once:
+ *   @import "@elkdonis/cms-ui/feed-list.css";
+ */
+function FeedPen({
+  rows,
+  openLayout,
+  frame = "card",
+}: {
+  rows: FeedPenRow[];
+  openLayout: "stack" | "inline";
+  frame?: "card" | "plain";
+}) {
+  return (
+    <div
+      className="eac-pen-feed"
+      data-pen="feed-list"
+      data-speed="normal"
+      data-open-layout={openLayout}
+      data-frame={frame}
+    >
+      <ul className="eac-pen-feed-list">
+        {rows.map((row) => (
+          <li className="eac-pen-feed-li" key={row.id}>
+            <label className="eac-pen-feed-item">
+              <input
+                className="eac-pen-feed-toggle"
+                type="checkbox"
+                aria-label={`Open ${row.title}`}
+              />
+              {row.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="eac-pen-feed-avatar" src={row.avatar} alt="" />
+              ) : (
+                <span className="eac-pen-feed-avatar" aria-hidden />
+              )}
+              <div className="eac-pen-feed-body">
+                {row.kicker ? <p className="eac-pen-feed-kicker">{row.kicker}</p> : null}
+                <h3 className="eac-pen-feed-title">{row.title}</h3>
+                {row.summary ? <p className="eac-pen-feed-summary">{row.summary}</p> : null}
+                {row.meta ? <p className="eac-pen-feed-meta">{row.meta}</p> : null}
+              </div>
+              <div className="eac-pen-feed-extra">
+                <div className="eac-pen-feed-extra-inner">
+                  <p>{row.detail ?? "Nothing further was published with this one."}</p>
+                </div>
+              </div>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Which shape a feed slot draws. `data-layout` is one trait rather than
+ * three, so the editor's Settings panel stays a single choice.
+ */
+function feedLayout(attrs: EmbedAttrs): "cards" | "stack" | "inline" {
+  const value = (attrs["data-layout"] || "").toLowerCase();
+  if (value === "expand") return "stack";
+  if (value === "expand-inline") return "inline";
+  return "cards";
+}
+
 function OrgFeedCards({ items }: { items: OrgFeedItem[] }) {
   if (items.length === 0) {
     return <EmptyEmbed>No public updates have been published yet.</EmptyEmbed>;
@@ -232,6 +343,282 @@ function formatPrice(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Overlay blog cards — tall image cards, date badge, hover-reveal content.
+// First CodePen design, two variants alternating: "overlay" and "header".
+// ---------------------------------------------------------------------------
+
+const BLOG_CARDS_OVERLAY_CSS = `
+.eac-bco-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:760px){.eac-bco-row{grid-template-columns:1fr}}
+.eac-bco{overflow:hidden;border:2px solid var(--eac-surface-line,#40215c);transition:border-color .3s}
+.eac-bco:hover{border-color:var(--eac-surface-rule,#9c40d8)}
+.eac-bco a{color:inherit;text-decoration:none}
+.eac-bco .eac-bco-wrap{background-color:var(--eac-surface-bg-soft,#050505);min-height:380px;position:relative;overflow:hidden;background-size:cover;background-position:center;background-repeat:no-repeat}
+.eac-bco .eac-bco-wrap:hover .eac-bco-data{transform:translateY(0)}
+.eac-bco .eac-bco-nophoto{position:absolute;inset:0;display:grid;place-items:center;color:var(--eac-surface-line,#40215c);font-size:4rem;font-weight:700;pointer-events:none}
+.eac-bco .eac-bco-data{position:absolute;bottom:0;width:100%;transform:translateY(calc(70px + 1em));transition:transform .3s}
+.eac-bco .eac-bco-content{padding:1em;position:relative;z-index:1}
+.eac-bco .eac-bco-author{font-size:12px;color:var(--eac-surface-muted,#bca7cf);letter-spacing:.06em;text-transform:uppercase}
+.eac-bco .eac-bco-title{margin-top:10px;font-size:1.15rem;font-weight:700;line-height:1.25}
+.eac-bco .eac-bco-text{height:70px;margin:0;font-size:13px;line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+.eac-bco-v1 .eac-bco-date{position:absolute;top:0;left:0;background:var(--eac-surface-rule,#9c40d8);color:#fff;padding:.8em;z-index:2}
+.eac-bco-v1 .eac-bco-date span{display:block;text-align:center}
+.eac-bco-v1 .eac-bco-day{font-weight:700;font-size:24px;text-shadow:2px 3px 2px rgba(0,0,0,.18)}
+.eac-bco-v1 .eac-bco-month{text-transform:uppercase}
+.eac-bco-v1 .eac-bco-month,.eac-bco-v1 .eac-bco-year{font-size:12px}
+.eac-bco-v1 .eac-bco-content{background:var(--eac-surface-bg-soft,#050505);box-shadow:0 5px 30px 10px rgba(0,0,0,.3)}
+.eac-bco-v1 .eac-bco-title a{color:var(--eac-surface-accent,#ff8c00)}
+.eac-bco-v1 .eac-bco-text{color:var(--eac-surface-fg,#e8e3e4)}
+.eac-bco-v2 .eac-bco-header{display:flex;align-items:center;justify-content:space-between;color:#fff;padding:1em}
+.eac-bco-v2 .eac-bco-date{font-size:12px;color:var(--eac-surface-fg,#e8e3e4)}
+.eac-bco-v2 .eac-bco-data{color:var(--eac-surface-fg,#e8e3e4);transform:translateY(calc(70px + 4em))}
+.eac-bco-v2 .eac-bco-title a{color:#fff}
+.eac-bco-v2 .eac-bco-text{color:rgba(232,227,228,.85)}
+.eac-bco-v2 .eac-bco-readmore{display:block;width:100px;margin:2em auto 1em;text-align:center;font-size:12px;color:var(--eac-surface-accent,#20d7ff);font-weight:700;position:relative}
+.eac-bco-v2 .eac-bco-readmore::after{content:"\\2192";opacity:0;position:absolute;right:0;top:50%;transform:translate(0,-50%);transition:all .3s}
+.eac-bco-v2 .eac-bco-readmore:hover::after{transform:translate(5px,-50%);opacity:1}
+@media(prefers-reduced-motion:reduce){.eac-bco .eac-bco-data,.eac-bco-v2 .eac-bco-readmore::after{transition:none}}
+`;
+
+function parseBlogDate(value: string | null) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    day: d.getDate(),
+    month: d.toLocaleDateString("en-US", { month: "short" }),
+    year: d.getFullYear(),
+  };
+}
+
+function BlogCardsOverlayV1({
+  item,
+  orgName,
+}: {
+  item: OrgFeedItem;
+  orgName: string;
+}) {
+  const date = parseBlogDate(item.published_at);
+  return (
+    <div className="eac-bco eac-bco-v1">
+      <div className="eac-bco-wrap">
+        <div className="eac-bco-nophoto" aria-hidden="true">
+          {orgName.slice(0, 4).toUpperCase()}
+        </div>
+        {date && (
+          <div className="eac-bco-date">
+            <span className="eac-bco-day">{date.day}</span>
+            <span className="eac-bco-month">{date.month}</span>
+            <span className="eac-bco-year">{date.year}</span>
+          </div>
+        )}
+        <div className="eac-bco-data">
+          <div className="eac-bco-content">
+            <h3 className="eac-bco-title">
+              <a href={`/${item.slug}`}>{item.title}</a>
+            </h3>
+            {item.excerpt && <p className="eac-bco-text">{item.excerpt}</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlogCardsOverlayV2({
+  item,
+  orgName,
+}: {
+  item: OrgFeedItem;
+  orgName: string;
+}) {
+  const date = parseBlogDate(item.published_at);
+  return (
+    <div className="eac-bco eac-bco-v2">
+      <div className="eac-bco-wrap">
+        <div className="eac-bco-nophoto" aria-hidden="true">
+          {orgName.slice(0, 4).toUpperCase()}
+        </div>
+        <div className="eac-bco-header">
+          {date && (
+            <div className="eac-bco-date">
+              <span>{date.day} {date.month} {date.year}</span>
+            </div>
+          )}
+        </div>
+        <div className="eac-bco-data">
+          <div className="eac-bco-content">
+            <h3 className="eac-bco-title">
+              <a href={`/${item.slug}`}>{item.title}</a>
+            </h3>
+            {item.excerpt && <p className="eac-bco-text">{item.excerpt}</p>}
+            <a href={`/${item.slug}`} className="eac-bco-readmore">Read more</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlogCardsOverlay({
+  items,
+  orgName,
+}: {
+  items: OrgFeedItem[];
+  orgName: string;
+}) {
+  if (items.length === 0) {
+    return <EmptyEmbed>No blog posts have been published yet.</EmptyEmbed>;
+  }
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: BLOG_CARDS_OVERLAY_CSS }} />
+      <div className="eac-bco-row">
+        {items.map((item, i) =>
+          i % 2 === 0 ? (
+            <BlogCardsOverlayV1 key={item.id} item={item} orgName={orgName} />
+          ) : (
+            <BlogCardsOverlayV2 key={item.id} item={item} orgName={orgName} />
+          )
+        )}
+      </div>
+    </>
+  );
+}
+
+async function BlogCardsOverlayEmbed({
+  org,
+  attrs,
+}: {
+  org: OrgSummary;
+  attrs: EmbedAttrs;
+}) {
+  const limit = normalizeLimit(attrs["data-limit"], 4);
+  const items = (await getOrgFeed(org.id, 20))
+    .filter((t) => t.kind === "post")
+    .slice(0, limit);
+  return maybeWrap(
+    attrs,
+    <BlogCardsOverlay items={items} orgName={org.name} />,
+    { eyebrow: org.name, title: attrs["data-title"] || "Blog" }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Horizontal blog cards — image left/right, hover-reveal author overlay.
+// Second CodePen design, alternating direction.
+// ---------------------------------------------------------------------------
+
+const BLOG_CARDS_CSS = `
+.eac-bc{display:flex;flex-direction:column;margin:0 0 14px;box-shadow:0 3px 7px -1px rgba(0,0,0,.3);background:var(--eac-surface-bg-soft,#050505);line-height:1.4;overflow:hidden;border:2px solid var(--eac-surface-line,#40215c);transition:border-color .2s}
+.eac-bc a{color:inherit;text-decoration:none}.eac-bc a:hover{color:var(--eac-surface-accent,#20d7ff)}
+.eac-bc:hover{border-color:var(--eac-surface-rule,#9c40d8)}
+.eac-bc:hover .eac-bc-photo{transform:scale(1.3) rotate(3deg)}
+.eac-bc:hover .eac-bc-details{left:0}
+.eac-bc-meta{position:relative;z-index:0;height:200px;overflow:hidden}
+.eac-bc-photo{position:absolute;inset:0;background-size:cover;background-position:center;background-color:var(--eac-surface-bg,#0a0a0a);transition:transform .2s}
+.eac-bc-nophoto{position:absolute;inset:0;display:grid;place-items:center;color:var(--eac-surface-line,#40215c);font-size:3rem;font-weight:700;pointer-events:none}
+.eac-bc-details{position:absolute;top:0;bottom:0;left:-100%;margin:auto;transition:left .2s;background:rgba(0,0,0,.7);color:var(--eac-surface-fg,#e8e3e4);padding:10px;width:100%;font-size:.9rem;display:flex;flex-direction:column;justify-content:center;gap:6px;list-style:none}
+.eac-bc-details a{text-decoration:dotted underline}
+.eac-bc-dlabel{color:var(--eac-surface-muted,#bca7cf);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.eac-bc-desc{padding:1rem;background:var(--eac-surface-bg-soft,#050505);position:relative;z-index:1}
+.eac-bc-desc h3{line-height:1.15;margin:0;font-size:1.4rem;font-weight:700;color:var(--eac-surface-accent,#ff8c00)}
+.eac-bc-desc h3 a{color:var(--eac-surface-accent,#ff8c00)}
+.eac-bc-desc h3 a:hover{color:var(--eac-surface-fg,#20d7ff)}
+.eac-bc-sub{font-size:.85rem;font-weight:300;text-transform:uppercase;color:var(--eac-surface-muted,#bca7cf);margin-top:5px}
+.eac-bc-excerpt{position:relative;margin:1rem 0 0;color:var(--eac-surface-fg,#e8e3e4);font-size:.95rem;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.eac-bc-excerpt:first-of-type{margin-top:1.25rem}
+.eac-bc-excerpt:first-of-type::before{content:"";position:absolute;height:4px;background:var(--eac-surface-rule,#9c40d8);width:35px;top:-.75rem;border-radius:3px}
+.eac-bc-more{text-align:right;margin-top:.75rem}
+.eac-bc-more a{color:var(--eac-surface-accent,#20d7ff);font-weight:700;font-size:.9rem;position:relative;display:inline-block}
+.eac-bc-more a::after{content:" \\2192";margin-left:-10px;opacity:0;transition:margin .3s,opacity .3s}
+.eac-bc-more a:hover::after{margin-left:5px;opacity:1}
+@media(min-width:640px){.eac-bc{flex-direction:row}.eac-bc .eac-bc-meta{flex-basis:40%;height:auto;min-height:220px}.eac-bc .eac-bc-desc{flex-basis:60%}.eac-bc .eac-bc-desc::before{transform:skewX(-3deg);content:"";background:var(--eac-surface-bg-soft,#050505);width:30px;position:absolute;left:-10px;top:0;bottom:0;z-index:-1}.eac-bc-alt{flex-direction:row-reverse}.eac-bc-alt .eac-bc-desc::before{left:inherit;right:-10px;transform:skew(3deg)}.eac-bc-alt .eac-bc-details{padding-left:25px}}
+@media(prefers-reduced-motion:reduce){.eac-bc-photo,.eac-bc-details,.eac-bc-more a::after{transition:none}}
+`;
+
+function formatBlogDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function BlogCards({
+  items,
+  orgName,
+}: {
+  items: OrgFeedItem[];
+  orgName: string;
+}) {
+  if (items.length === 0) {
+    return <EmptyEmbed>No blog posts have been published yet.</EmptyEmbed>;
+  }
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: BLOG_CARDS_CSS }} />
+      {items.map((item, i) => (
+        <div
+          key={item.id}
+          className={`eac-bc${i % 2 !== 0 ? " eac-bc-alt" : ""}`}
+        >
+          <div className="eac-bc-meta">
+            <div className="eac-bc-photo" />
+            <div className="eac-bc-nophoto" aria-hidden="true">
+              {orgName.slice(0, 4).toUpperCase()}
+            </div>
+            <ul className="eac-bc-details">
+              {formatBlogDate(item.published_at) && (
+                <li>
+                  <span className="eac-bc-dlabel">Date</span>{" "}
+                  {formatBlogDate(item.published_at)}
+                </li>
+              )}
+              {item.kind && (
+                <li>
+                  <span className="eac-bc-dlabel">Type</span>{" "}
+                  {item.kind}
+                </li>
+              )}
+            </ul>
+          </div>
+          <div className="eac-bc-desc">
+            <h3>
+              <a href={`/${item.slug}`}>{item.title}</a>
+            </h3>
+            {item.excerpt && <p className="eac-bc-excerpt">{item.excerpt}</p>}
+            <p className="eac-bc-more">
+              <a href={`/${item.slug}`}>Read More</a>
+            </p>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+async function BlogCardsEmbed({
+  org,
+  attrs,
+}: {
+  org: OrgSummary;
+  attrs: EmbedAttrs;
+}) {
+  const limit = normalizeLimit(attrs["data-limit"], 4);
+  const items = (await getOrgFeed(org.id, 20))
+    .filter((t) => t.kind === "post")
+    .slice(0, limit);
+  return maybeWrap(
+    attrs,
+    <BlogCards items={items} orgName={org.name} />,
+    { eyebrow: org.name, title: attrs["data-title"] || "Blog" }
+  );
+}
+
 async function OrgFeedEmbed({
   org,
   attrs,
@@ -241,11 +628,32 @@ async function OrgFeedEmbed({
 }) {
   const limit = normalizeLimit(attrs["data-limit"], 4);
   const items = await getOrgFeed(org.id, limit);
-  return maybeWrap(
-    attrs,
-    <OrgFeedCards items={items} />,
-    { eyebrow: org.name, title: attrs["data-title"] || "Latest updates" }
-  );
+  const layout = feedLayout(attrs);
+  const content =
+    layout === "cards" ? (
+      <OrgFeedCards items={items} />
+    ) : items.length === 0 ? (
+      <EmptyEmbed>No public updates have been published yet.</EmptyEmbed>
+    ) : (
+      <FeedPen
+        openLayout={layout}
+        rows={items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          kicker: item.kind,
+          summary: item.excerpt,
+          meta: [item.author_name, formatDate(item.scheduled_at ?? item.published_at)]
+            .filter(Boolean)
+            .join(" \u00b7 ") || null,
+          detail: plainText(item.body) ?? item.excerpt,
+          avatar: item.author_avatar,
+        }))}
+      />
+    );
+  return maybeWrap(attrs, content, {
+    eyebrow: org.name,
+    title: attrs["data-title"] || "Latest updates",
+  });
 }
 
 async function WorkshopCardsEmbed({
@@ -301,9 +709,23 @@ async function RsvpEmbed({
 async function CommunityFeedEmbed({ attrs }: { attrs: EmbedAttrs }) {
   const limit = normalizeLimit(attrs["data-limit"], 4);
   const items = await getCommunityFeed(limit);
+  const layout = feedLayout(attrs);
   const content =
     items.length === 0 ? (
       <EmptyEmbed>The community feed is quiet right now.</EmptyEmbed>
+    ) : layout !== "cards" ? (
+      <FeedPen
+        openLayout={layout}
+        rows={items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          kicker: item.kind,
+          summary: item.excerpt,
+          meta: [item.authorName, item.orgName].filter(Boolean).join(" \u00b7 ") || null,
+          detail: plainText(item.body) ?? item.excerpt,
+          avatar: item.authorAvatar,
+        }))}
+      />
     ) : (
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((item) => (
@@ -674,6 +1096,12 @@ async function DirectoryEmbed({
 
 async function renderEmbed(attrs: EmbedAttrs, org: OrgSummary, key: string) {
   const component = attrs["data-eac-component"];
+  if (component === "blog-cards-overlay") {
+    return <BlogCardsOverlayEmbed key={key} org={org} attrs={attrs} />;
+  }
+  if (component === "blog-cards") {
+    return <BlogCardsEmbed key={key} org={org} attrs={attrs} />;
+  }
   if (component === "workshop-cards") {
     return <WorkshopCardsEmbed key={key} org={org} attrs={attrs} />;
   }

@@ -2,10 +2,11 @@ import * as React from "react";
 import type { ForumBoard, ForumReply, ForumSort, ForumViewer, ForumVoters } from "@elkdonis/services";
 import type { ForumConnectors } from "./connectors";
 import {
-  Agenda, BoardTable, Breadcrumb, Empty, Flash, HappeningBlock, LatestBlock, OrgMasthead, PageHead, Pagination,
+  Agenda, BoardTable, Breadcrumb, Empty, Flash, HappeningBlock, LatestBlock, NewTopicLink, OrgMasthead, PageHead, Pagination,
   PulseStrip, ReadAllForm, SortTabs, TopicList, TopicsBlock, plural,
 } from "./parts";
 import { ThreadPageView, canModerate } from "./thread";
+import { NewCategoryPanel } from "./category";
 import { timeAgo } from "./format";
 import { MemberPageView, MembersDirectory, NewMembersBlock, OrgsDirectory, TopicReviewPage, TopicsIndex, WhoIsHereBlock } from "./people";
 import { ModLog, SearchResults } from "./search";
@@ -110,6 +111,9 @@ export async function IndexPage(props: PageProps) {
       {viewer.userId && connectors.actionBase && (
         <div className="gf-index-foot">
           <span className="gf-legend"><span className="gf-unread-dot" /> unread</span>
+          {live.length > 0 && live[0].feeds.length > 0 && (
+            <NewTopicLink href={`${hrefs.feed(live[0].slug, live[0].feeds[0].slug)}#newtopic`} />
+          )}
           <ReadAllForm actionBase={connectors.actionBase} back={backUrl(path, searchParams)} />
         </div>
       )}
@@ -285,9 +289,20 @@ export async function BoardPageView({ connectors, viewer, searchParams, path, bo
         <PageHead title="Forum" sub={`${plural(topics, "topic")} · ${plural(posts, "post")}`} />
       )}
       {feeds.length === 0 ? <Empty>No forums yet.</Empty> : <BoardTable board={{ ...board, feeds }} hrefs={hrefs} />}
+      <NewCategoryPanel
+        connectors={connectors}
+        viewer={viewer}
+        orgId={board.orgId}
+        orgSlug={board.slug}
+        orgName={board.name}
+        back={backUrl(path, searchParams)}
+      />
       {viewer.userId && connectors.actionBase && (
         <div className="gf-index-foot">
           <span className="gf-legend"><span className="gf-unread-dot" /> unread</span>
+          {feeds.length > 0 && (
+            <NewTopicLink href={`${hrefs.feed(board.slug, feeds[0].slug)}#newtopic`} />
+          )}
           <ReadAllForm actionBase={connectors.actionBase} back={backUrl(path, searchParams)} />
         </div>
       )}

@@ -70,6 +70,11 @@ export type SurfaceDescriptor =
       target?: { kind: "org"; orgId: string };
     }
   | {
+      /** Arrange an org's center: which sections, in what order, with which knobs. */
+      type: "centerLayout";
+      orgId: string;
+    }
+  | {
       type: "compose";
       /** Omit to open the catalogue and choose. */
       kind?: string;
@@ -422,6 +427,37 @@ export interface SurfaceProfileConnectors {
   uploadAvatar?: (file: File) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
 }
 
+// ── Arranging a center ────────────────────────────────────────────────────
+
+export interface SurfaceCenterLayoutShape {
+  columns: { left: string[]; right: string[] };
+  hidden: string[];
+  options: {
+    feed?: { limit?: number };
+    network?: { limit?: number };
+    pinned?: { limit?: number };
+    site?: { ratio?: "5:3" | "4:3" };
+  };
+  voice: "journal" | "gazette" | "quiet";
+}
+
+export interface SurfaceCenterLayout {
+  orgId: string;
+  orgName: string;
+  /** What the page currently shows: default ← network ← org. */
+  resolved: SurfaceCenterLayoutShape;
+  /** Every section the page knows, for the pick lists. */
+  sections: Array<{ id: string; label: string }>;
+  canEdit: boolean;
+  /** Set when the viewer may also edit the network default; the org id that holds it. */
+  networkOrgId?: string | null;
+}
+
+export interface SurfaceCenterLayoutConnectors {
+  load: (orgId: string) => Promise<SurfaceCenterLayout | null>;
+  save: (orgId: string, layout: SurfaceCenterLayoutShape) => Promise<SaveProfileResult>;
+}
+
 export type SaveThreadResult =
   | { ok: true; id: string; href?: string | null }
   | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
@@ -446,6 +482,8 @@ export interface SurfaceConnectors {
   orgName?: string;
   /** The profile surface. Omit and profile faces simply navigate. */
   profile?: SurfaceProfileConnectors;
+  /** Arranging a center's definition (owners, guides; admins for the network default). */
+  centerLayout?: SurfaceCenterLayoutConnectors;
 
   /** A thread by id, as this viewer may see it. Null when not found. */
   loadThread: (id: string) => Promise<SurfaceThread | null>;

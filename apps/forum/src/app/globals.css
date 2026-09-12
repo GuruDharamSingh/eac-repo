@@ -10,6 +10,10 @@
 @import "@elkdonis/cms-ui/surface.css";
 @import "@elkdonis/cms-ui/profile.css";
 @import "@elkdonis/forum-ui/forum.css";
+/* The optional card-feed skin. Every rule is scoped under
+   [data-forum-theme="modern"], so importing it costs nothing until
+   FORUM_THEME=modern sets that attribute. */
+@import "@elkdonis/forum-ui/forum-modern.css";
 
 :root {
   color-scheme: light dark;
@@ -20,7 +24,13 @@
   --eac-surface-muted: #6b6762;
   --eac-surface-line: #e6e2db;
   --eac-surface-rule: #cfc9bf;
-  --eac-surface-accent: #c2622b;
+  /* Burnt orange, deepened from #c2622b 2026-09-12. The original sat in a
+     dead zone where NEITHER white nor near-black cleared AA on it (4.14:1
+     and 4.22:1), so a filled button in it was unreadable either way, and it
+     was also only 3.97:1 as link text on the paper. #ad5623 is the same
+     hue a step down: white on it is 5.08:1, and as a link on paper 4.87:1. */
+  --eac-surface-accent: #ad5623;
+  --eac-surface-on-accent: #fff;      /* 5.08:1 on the accent */
   --eac-surface-danger: #a63d2f;
   --eac-surface-radius: 4px;
 

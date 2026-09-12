@@ -20,6 +20,12 @@
    :root block near the end of this file and add no runtime dependency. */
 @import "@elkdonis/cms-ui/surface.css";
 @import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
+/* The forum's own page theme, scoped to the board. It redefines the --sf-*
+   OUTPUT tokens on .gf-root/.gf-page, so /forum reads on light paper while
+   the :root block far below keeps IFAC's hub popups on its dark chrome.
+   Customised by the --forum-* overrides in that same block. */
+@import "@elkdonis/forum-ui/forum-theme.css";
 
 /* Tailwind scans source for class names; the pipeline components live here. */
 @source "../components";
@@ -2672,21 +2678,33 @@ a.team-card:hover .team-photo {
    IFAC's chrome is dark (body is #020202, set below), but --oxide and --blue
    are the LIGHT-theme accents and fail badly against it — 3.09:1 and 1.86:1.
    Gold is the brand mark's colour and clears AA at 8.03:1, so it leads here,
-   with lifted blue/moss for the per-kind accents. Every pair below was
-   measured; body text is 16.3:1, the quietest text 4.55:1.
+   with lifted blue/moss for the per-kind accents.
+
+   Revised 2026-09-12 for reading comfort. The ground was #020202 — near
+   absolute black, which makes light text halate (the glow/vibration effect,
+   worst for astigmatism and in a dark room) and left panels with almost no
+   separation from the page. Lifted to #0f0f12: still unmistakably IFAC's
+   dark, but the text stops buzzing and cards read as cards.
+
+   Lifting the ground COSTS contrast on every light ink, so each was
+   re-measured rather than assumed, and the quietest grey had to lift with
+   it — #7a7570 was 4.55:1 on black but only 4.20:1 here, an AA failure.
+   Measured on #0f0f12: body 15.07:1, muted 6.38:1, faint 5.23:1, gold
+   7.41:1, danger 5.85:1, blue 7.30:1. On the #191920 panels: body 13.77:1,
+   muted 5.83:1, faint 4.78:1. All AA.
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --eac-surface-bg: #020202;          /* the body's own ground */
-  --eac-surface-bg-soft: #0e0e10;     /* lifted: panels, cards, table heads */
-  --eac-surface-fg: #e8e3e4;          /* 16.34:1 on the ground */
-  --eac-surface-muted: #9a948f;       /* 6.92:1 — kickers, counts, bylines */
-  --eac-surface-faint: #7a7570;       /* 4.55:1 — timestamps, dividers' text */
-  --eac-surface-line: #2e2e30;
-  --eac-surface-rule: #4a4744;
-  --eac-surface-accent: var(--gold);  /* #c79a42 — 8.03:1, the IFAC mark */
-  --eac-surface-on-accent: #1a1408;   /* 7.08:1 on gold */
-  --eac-surface-danger: #d9705c;      /* 6.35:1 — lifted from --oxide */
+  --eac-surface-bg: #0f0f12;          /* the ground; lifted off pure black */
+  --eac-surface-bg-soft: #191920;     /* panels, cards, table heads */
+  --eac-surface-fg: #e8e3e4;          /* 15.07:1 on the ground */
+  --eac-surface-muted: #9a948f;       /* 6.38:1 — kickers, counts, bylines */
+  --eac-surface-faint: #8a857f;       /* 5.23:1 — timestamps, quiet labels */
+  --eac-surface-line: #32323a;        /* visible as a hairline on the lift */
+  --eac-surface-rule: #4f4c48;
+  --eac-surface-accent: var(--gold);  /* #c79a42 — 7.41:1, the IFAC mark */
+  --eac-surface-on-accent: #1a1408;   /* 7.08:1 ON gold — filled buttons */
+  --eac-surface-danger: #d9705c;      /* 5.85:1 — lifted from --oxide */
   --eac-surface-radius: 2px;
 
   /* Per-kind accents, lifted off IFAC's light-theme swatches. */
@@ -2699,13 +2717,47 @@ a.team-card:hover .team-photo {
   --eac-forum-blue: #7fa3cc;
 }
 
-/* The board is a full page on this site, so it carries the ground itself —
-   the forum's own stylesheet deliberately paints no background. */
+/* ───────────────────────────────────────────────────────────────────────────
+   /forum, in IFAC's voice — on paper.
+
+   The board used to inherit the dark chrome above, which made a page of
+   running text hard to read. forum-theme.css now scopes the forum's own
+   light palette to .gf-page, and these are IFAC's values for it: the same
+   paper, ink and line the site's light tokens already define, with OXIDE
+   as the accent rather than gold. Gold is the brand mark but it is only
+   2.37:1 on paper — unreadable as text — while oxide is 6.17:1 and the
+   blue is 10.26:1. Gold stays where it belongs, on the dark chrome.
+   ─────────────────────────────────────────────────────────────────────── */
+:root {
+  --forum-paper: var(--paper);          /* #f8f5ef — body 16.61:1 */
+  --forum-panel: var(--surface);        /* #fffdf8 — panels lift off it */
+  --forum-ink: var(--ink);              /* #171615 */
+  --forum-muted: var(--ink-soft);       /* #4f4a44 — 8.06:1 */
+  --forum-faint: #6b6259;               /* 5.49:1 */
+  --forum-line: var(--line);            /* #d8d0c2 */
+  --forum-rule: #b4a992;
+  --forum-accent: var(--oxide);         /* #9a3f2f — 6.17:1 */
+  --forum-on-accent: #ffffff;           /* 6.72:1 on oxide */
+  --forum-link: var(--blue);            /* #273d54 — 10.26:1 */
+  --forum-radius: 2px;
+  --forum-font-title: "Cormorant Garamond", Georgia, serif;
+  --forum-font-body: Arial, Helvetica, sans-serif;
+}
+
+/* Full-bleed ground, 1180px of content. The theme paints the background.
+   The per-kind accents have to be re-pointed HERE rather than at :root: the
+   :root set are the dark-chrome "lifted" variants (#7fa3cc, #8fae86), which
+   are 2.41:1 and 2.25:1 on paper. These are IFAC's light-theme originals —
+   oxide 6.17:1, blue 10.26:1, moss 5.27:1 — scoped so the hub popups above
+   keep the lifted ones they need. */
 .gf-page {
-  min-height: 100vh;
-  background: var(--eac-surface-bg);
-  color: var(--eac-surface-fg);
   max-width: none;
+  --forum-kind-post: var(--oxide);
+  --sf-kind-post: var(--oxide);
+  --sf-kind-event: var(--blue);
+  --sf-kind-meeting: var(--blue);
+  --sf-kind-workshop: var(--moss);
+  --sf-kind-service: var(--moss);
 }
 .gf-page > * {
   max-width: 1180px;

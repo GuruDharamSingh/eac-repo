@@ -22,10 +22,16 @@
     "./gallery.css": "./src/gallery/gallery.css",
     "./surface": "./src/surface/index.ts",
     "./surface.css": "./src/surface/surface.css",
+    "./center": "./src/center/index.ts",
+    "./center.css": "./src/center/center.css",
     "./fields.css": "./src/wizard/fields.css",
     "./compose.css": "./src/compose/compose.css",
     "./editor": "./src/editor/index.ts",
-    "./editor.css": "./src/editor/editor.css"
+    "./editor.css": "./src/editor/editor.css",
+    "./pens": "./src/pens/index.ts",
+    "./fold-card.css": "./src/pens/fold-card.css",
+    "./feed-list.css": "./src/pens/feed-list.css",
+    "./moon-phase.css": "./src/pens/moon-phase.css"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

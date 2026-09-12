@@ -12,6 +12,7 @@ import { WriteSurface } from "./surfaces/WriteSurface";
 import { BoardSurface, BoardCardSurface } from "./surfaces/BoardSurface";
 import { ForumSurface } from "./surfaces/ForumSurface";
 import { ProfileSurface } from "./surfaces/ProfileSurface";
+import { CenterLayoutSurface } from "./surfaces/CenterLayoutSurface";
 import { DefineSurface } from "./surfaces/DefineSurface";
 
 /** Descriptor → surface. The only place that knows every surface's name. */
@@ -37,6 +38,8 @@ export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor })
       return <ForumSurface />;
     case "profile":
       return <ProfileSurface descriptor={descriptor} />;
+    case "centerLayout":
+      return <CenterLayoutSurface descriptor={descriptor} />;
     case "define":
       return <DefineSurface descriptor={descriptor} />;
     case "custom": {

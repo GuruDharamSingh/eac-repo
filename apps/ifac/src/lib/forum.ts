@@ -2,6 +2,7 @@ import { forumSnapshot, orgHrefs, serviceConnectors, type ForumConnectors } from
 import { getViewerRoles, FORUM_ANONYMOUS } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { cookies } from "next/headers";
 
 /**
  * The Grand Forum, scoped to this org, at /forum. Same package the network
@@ -23,13 +24,17 @@ export async function getForumViewer() {
   return v ? { userId: v.userId, roles: await getViewerRoles(v.userId) } : FORUM_ANONYMOUS;
 }
 
-export function getForumConnectors(): Promise<ForumConnectors> {
+export async function getForumConnectors(): Promise<ForumConnectors> {
+  const jar = await cookies();
+  const pref = jar.get("forum_theme")?.value;
+  const theme = pref === "classic" ? "classic" : "modern";
   return serviceConnectors({
     scope: { kind: "org", orgId: siteConfig.orgId },
     siteName: siteConfig.orgName,
     viewer: getForumViewer,
     hrefs: forumHrefs,
     actionBase: "/api/forum",
+    theme,
   });
 }
 

@@ -96,7 +96,8 @@ async function loadWelcomeEmailSettings(): Promise<Partial<WelcomeEmailProps>> {
   }
 }
 
-function createRouteSupabaseClient(request: NextRequest) {
+/** Exported for handoff.ts, which installs a session the same way login does. */
+export function createRouteSupabaseClient(request: NextRequest) {
   const cookiesToSet: CookieToSet[] = [];
   const { supabaseUrl, supabaseAnonKey, storageKey, fetch } = resolveSupabasePublicConfig();
 
@@ -293,8 +294,10 @@ export async function handleSignup(
       // under. Under the EAC_Network model those people are inner_group
       // members, so signups no longer join elkdonis. Existing elkdonis rows
       // are left alone; every real person in them already holds inner_group.
+      // A signup is a follower (viewer role), never a member: membership is
+      // something an org grants. CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
       const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'inner_group', role: 'member' },
+        { id: 'inner_group', role: 'viewer' },
       ];
 
       for (const org of defaultOrgs) {
@@ -535,8 +538,10 @@ export async function handleOAuthCallback(
       // under. Under the EAC_Network model those people are inner_group
       // members, so signups no longer join elkdonis. Existing elkdonis rows
       // are left alone; every real person in them already holds inner_group.
+      // A signup is a follower (viewer role), never a member: membership is
+      // something an org grants. CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
       const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'inner_group', role: 'member' },
+        { id: 'inner_group', role: 'viewer' },
       ];
       for (const org of defaultOrgs) {
         await db`

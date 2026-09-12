@@ -26,5 +26,7 @@ export type { ForumActionName, HandleActionOptions } from "./actions";
 export { timeAgo, fullStamp } from "./format";
 export { configureForumMedia, mediaUrl } from "./media";
 
+export { NewCategoryPanel, canAddCategory } from "./category";
+
 export { forumSnapshot } from "./snapshot";
 export type { ForumSnapshotOptions } from "./snapshot";

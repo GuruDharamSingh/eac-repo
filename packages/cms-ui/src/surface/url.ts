@@ -38,6 +38,8 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       // Encoded: a term may hold spaces, punctuation, even a colon, and the
       // format is colon-separated.
       return `define:${encodeURIComponent(d.term)}${d.sourceThreadId ? `:${d.sourceThreadId}` : ""}`;
+    case "centerLayout":
+      return `centerLayout:${d.orgId}`;
     case "custom":
       return null;
   }
@@ -87,6 +89,8 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
     case "profile":
       if (a === "org" && b && SAFE.test(b)) return { type: "profile", target: { kind: "org", orgId: b } };
       return { type: "profile" };
+    case "centerLayout":
+      return a && SAFE.test(a) ? { type: "centerLayout", orgId: a } : null;
     case "define": {
       // Bounded: this arrives from the address bar, so it is somebody's input.
       const term = decodeTerm(a);

@@ -8,6 +8,7 @@ import {
   type SurfaceConnectors,
   type SurfaceThread,
   type SurfaceProfile,
+  type SurfaceCenterLayout,
 } from "@elkdonis/cms-ui/surface";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
@@ -103,6 +104,25 @@ export function HubSurfaces({
       },
       uploadEndpoint: "/api/upload",
 
+      // Arranging the center: an org's definition over the network default.
+      centerLayout: {
+        async load(orgId) {
+          const res = await fetch(`/api/center/layout?org=${encodeURIComponent(orgId)}`);
+          if (res.status === 404 || res.status === 401) return null;
+          if (!res.ok) throw new Error(`centerLayout ${res.status}`);
+          return (await res.json()) as SurfaceCenterLayout;
+        },
+        async save(orgId, layout) {
+          const res = await fetch(`/api/center/layout?org=${encodeURIComponent(orgId)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(layout),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) return { ok: false, error: data.error ?? "Could not save that." };
+          return { ok: true };
+        },
+      },
       // The profile surface: the person's network-wide identity, or this
       // org's own identity row for its owners and guides (the display image
       // lives there). Reads and writes go to /api/center/profile.

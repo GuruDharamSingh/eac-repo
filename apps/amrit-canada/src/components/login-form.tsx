@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 // either way, but the ui barrel declares Mantine, so importing through it
 // pulls Mantine into an app that deliberately does without it.
 import { BaroqueSignup } from "@elkdonis/cms-ui/auth";
+import { mirrorLoginHref } from "@elkdonis/auth-client";
 import "@elkdonis/cms-ui/baroque-signup.css";
 
 /**
@@ -33,8 +34,14 @@ export function LoginForm() {
         title="Amrit Canada"
         subtitle="Sign in to RSVP for sadhana and gatherings. One account works across the whole Elkdonis network."
         googleRedirectTo={next ?? "/"}
-        onSuccess={() => {
-          window.location.href = next ?? "/";
+        onSuccess={(result) => {
+          // A new account lands on its center (CENTER_PAGE_BRIEF, decision 8);
+          // a returning sign-in goes back where it was. Either way, the trip
+          // runs through the network host once so a LATER visit to a
+          // different site on the collective finds the session already
+          // there (mirrorLoginHref).
+          const finalPath = next ?? (result.mode === "signup" ? "/center" : "/");
+          window.location.href = mirrorLoginHref(window.location.origin, finalPath);
         }}
       />
     </div>

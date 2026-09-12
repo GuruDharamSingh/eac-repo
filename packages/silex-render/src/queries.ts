@@ -104,6 +104,8 @@ export type OrgFeedItem = {
   reply_count: number | null;
   nextcloud_talk_token: string | null;
   nextcloud_doc_url: string | null;
+  author_name: string | null;
+  author_avatar: string | null;
 };
 
 export async function getOrgFeed(
@@ -113,18 +115,22 @@ export async function getOrgFeed(
   try {
     return await db<OrgFeedItem[]>`
       SELECT
-        id, slug, title, kind, excerpt, body, pinned,
-        scheduled_at, duration_minutes, location, format, meeting_url,
-        is_rsvp_enabled, attendee_limit,
-        price, currency, sessions, share_to_network,
-        published_at, created_at,
-        view_count, reply_count,
-        nextcloud_talk_token, nextcloud_doc_url
-      FROM threads
-      WHERE org_id = ${orgId}
-        AND status = 'published'
-        AND visibility = 'PUBLIC'
-      ORDER BY pinned DESC, COALESCE(published_at, created_at) DESC
+        t.id, t.slug, t.title, t.kind, t.excerpt, t.body, t.pinned,
+        t.scheduled_at, t.duration_minutes, t.location, t.format, t.meeting_url,
+        t.is_rsvp_enabled, t.attendee_limit,
+        t.price, t.currency, t.sessions, t.share_to_network,
+        t.published_at, t.created_at,
+        t.view_count, t.reply_count,
+        t.nextcloud_talk_token, t.nextcloud_doc_url,
+        -- Who wrote it. LEFT JOIN, not INNER: author_id is NOT NULL today,
+        -- but a feed is not the place to discover a broken foreign key.
+        a.display_name AS author_name, a.avatar_url AS author_avatar
+      FROM threads t
+      LEFT JOIN users a ON a.id = t.author_id
+      WHERE t.org_id = ${orgId}
+        AND t.status = 'published'
+        AND t.visibility = 'PUBLIC'
+      ORDER BY t.pinned DESC, COALESCE(t.published_at, t.created_at) DESC
       LIMIT ${limit}
     `;
   } catch {
@@ -223,6 +229,9 @@ export type CommunityFeedItem = {
   orgName: string;
   publishedAt: string | null;
   scheduledAt: string | null;
+  body: string | null;
+  authorName: string | null;
+  authorAvatar: string | null;
 };
 
 export async function getCommunityFeed(
@@ -235,17 +244,22 @@ export async function getCommunityFeed(
         title: string;
         kind: string;
         excerpt: string | null;
+        body: string | null;
         org_slug: string;
         org_name: string;
         published_at: string | null;
         scheduled_at: string | null;
+        author_name: string | null;
+        author_avatar: string | null;
       }[]
     >`
-      SELECT t.id, t.title, t.kind, t.excerpt,
+      SELECT t.id, t.title, t.kind, t.excerpt, t.body,
              o.slug AS org_slug, o.name AS org_name,
-             t.published_at, t.scheduled_at
+             t.published_at, t.scheduled_at,
+             a.display_name AS author_name, a.avatar_url AS author_avatar
       FROM threads t
       JOIN organizations o ON o.id = t.org_id
+      LEFT JOIN users a ON a.id = t.author_id
       WHERE t.status = 'published'
         AND t.visibility = 'PUBLIC'
       ORDER BY COALESCE(t.published_at, t.created_at) DESC
@@ -260,6 +274,9 @@ export async function getCommunityFeed(
       orgName: r.org_name,
       publishedAt: r.published_at,
       scheduledAt: r.scheduled_at,
+      body: r.body,
+      authorName: r.author_name,
+      authorAvatar: r.author_avatar,
     }));
   } catch {
     return [];

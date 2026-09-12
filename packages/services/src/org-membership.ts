@@ -172,26 +172,30 @@ export async function removeOrgMember(userId: string, orgId: string): Promise<bo
 }
 
 // ─── Followers ────────────────────────────────────────────────────────────
-// Lightweight "notify me about this org" relationship — no role, no access.
+// A follower IS a `viewer` row in user_organizations (decision 7 in
+// CENTER_PAGE_BRIEF_2026-09-09.md): one lightweight relation, not two. The
+// old org_followers table (migration 072) is no longer written or read here;
+// it never held a row. Following an org you already belong to is a no-op —
+// a member is already "following" in every sense the UI shows.
 
 export async function isFollowingOrg(userId: string, orgId: string): Promise<boolean> {
-  const [row] = await db`
-    SELECT 1 FROM org_followers WHERE user_id = ${userId} AND org_id = ${orgId}
-  `;
-  return Boolean(row);
+  const role = await getOrgRole(userId, orgId);
+  return role !== null;
 }
 
 export async function followOrg(userId: string, orgId: string): Promise<void> {
   await db`
-    INSERT INTO org_followers (user_id, org_id, followed_at)
-    VALUES (${userId}, ${orgId}, NOW())
+    INSERT INTO user_organizations (user_id, org_id, role, joined_at)
+    VALUES (${userId}, ${orgId}, 'viewer', NOW())
     ON CONFLICT (user_id, org_id) DO NOTHING
   `;
 }
 
+/** Only a viewer row is removed — unfollowing never demotes a member. */
 export async function unfollowOrg(userId: string, orgId: string): Promise<void> {
   await db`
-    DELETE FROM org_followers WHERE user_id = ${userId} AND org_id = ${orgId}
+    DELETE FROM user_organizations
+    WHERE user_id = ${userId} AND org_id = ${orgId} AND role = 'viewer'
   `;
 }
 
@@ -203,11 +207,11 @@ export async function listOrgFollowers(orgId: string): Promise<OrgFollower[]> {
     email: string;
     display_name: string | null;
   }>>`
-    SELECT f.user_id, f.org_id, f.followed_at, u.email, u.display_name
-    FROM org_followers f
-    JOIN users u ON u.id = f.user_id
-    WHERE f.org_id = ${orgId}
-    ORDER BY f.followed_at DESC
+    SELECT uo.user_id, uo.org_id, uo.joined_at AS followed_at, u.email, u.display_name
+    FROM user_organizations uo
+    JOIN users u ON u.id = uo.user_id
+    WHERE uo.org_id = ${orgId} AND uo.role = 'viewer'
+    ORDER BY uo.joined_at DESC
   `;
   return rows.map((r) => ({
     userId: r.user_id,
@@ -220,7 +224,7 @@ export async function listOrgFollowers(orgId: string): Promise<OrgFollower[]> {
 
 export async function getOrgFollowerCount(orgId: string): Promise<number> {
   const [{ count }] = await db<Array<{ count: number }>>`
-    SELECT COUNT(*)::int AS count FROM org_followers WHERE org_id = ${orgId}
+    SELECT COUNT(*)::int AS count FROM user_organizations WHERE org_id = ${orgId} AND role = 'viewer'
   `;
   return count;
 }

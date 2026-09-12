@@ -5,6 +5,7 @@ import {
   BoardPageView, FeedPage, HappeningPage, IndexPage, ListPage, MemberPage, MembersPage, ModLogPage, NotificationsPage,
   OrgsPage, SearchPage, ThreadPage, TopicPage, TopicReviewRoute, TopicsPage,
 } from "./pages";
+import { ThemeToggle } from "./parts";
 
 export interface ForumRouteContext {
   connectors: ForumConnectors;
@@ -67,5 +68,20 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
   }
 
   if (!el) notFound();
-  return el;
+
+  const theme = connectors.theme ?? "classic";
+
+  // The theme attribute goes here rather than on the host's own wrapper, so
+  // every page — including the thread view, which is not inside Layout —
+  // carries it and no host has to touch its markup to switch skins.
+  return (
+    <div className="gf-root" data-forum-theme={theme}>
+      {el}
+      {connectors.actionBase && (
+        <footer className="gf-footer">
+          <ThemeToggle currentTheme={theme} actionBase={connectors.actionBase} back={path} />
+        </footer>
+      )}
+    </div>
+  );
 }

@@ -1,0 +1,45 @@
+{
+  "id": "moon-phase",
+  "label": "Moon Phase",
+  "description": "The Moon as it looks tonight: the lit fraction as a real terminator, tilted the way the sky actually tilts it.",
+  "credit": {
+    "title": "Phases of the Moon in CSS",
+    "author": "Mads Stoumann",
+    "url": "https://dev.to/madsstoumann/phases-of-the-moon-in-css-2lbo"
+  },
+  "root": ".eac-pen-moon",
+  "html": "pen.html",
+  "css": "pen.css",
+  "react": "@elkdonis/cms-ui/pens MoonPhase",
+  "traits": [
+    {
+      "name": "data-shape",
+      "label": "Shape",
+      "type": "select",
+      "options": [
+        { "id": "crescent", "name": "Crescent (half lit or less)" },
+        { "id": "gibbous", "name": "Gibbous (more than half lit)" }
+      ]
+    },
+    {
+      "name": "data-size",
+      "label": "Size",
+      "type": "select",
+      "options": [
+        { "id": "sm", "name": "Small" },
+        { "id": "md", "name": "Medium" },
+        { "id": "lg", "name": "Large" },
+        { "id": "xl", "name": "Huge" }
+      ]
+    },
+    {
+      "name": "data-glow",
+      "label": "Halo",
+      "type": "select",
+      "options": [
+        { "id": "off", "name": "None" },
+        { "id": "on", "name": "Faint halo" }
+      ]
+    }
+  ]
+}
