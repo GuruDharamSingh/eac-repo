@@ -28,6 +28,8 @@
 @import "@elkdonis/cms-ui/compose.css";
 /* The same reading tokens as Tailwind utilities, so anything built AROUND a
    post (a feed strip, an author note) lines up with the prose inside it. */
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/cms-ui/reading-theme.css";
 
 @custom-variant dark (&:is(.dark *));

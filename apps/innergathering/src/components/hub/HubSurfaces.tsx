@@ -9,7 +9,7 @@ import {
   type SurfaceThread,
 } from "@elkdonis/cms-ui/surface";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { saveWorkshopAction } from "@/lib/cms/workshop-actions";

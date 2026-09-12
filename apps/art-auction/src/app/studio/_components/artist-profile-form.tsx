@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { RichTextEditor } from "@elkdonis/studio-ui";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import {
   applyArtistAction,
   updateProfileAction,

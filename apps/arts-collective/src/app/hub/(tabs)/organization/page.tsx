@@ -373,6 +373,9 @@ export default async function OrganizationTabPage({
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/hub/workshops/${selected.orgSlug}`}>Workshops</Link>
                 </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/hub/wiki">Wiki</Link>
+                </Button>
                 <SilexSurfaceControls
                   slug={selected.orgSlug}
                   layoutMode={org?.layout_mode ?? "default"}

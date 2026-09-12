@@ -9,7 +9,6 @@
  * callbacks, never importing app-specific server actions.
  */
 
-export { RichTextEditor, type RichTextEditorProps } from "./rich-text-editor";
 export {
   MultiImageUploader,
   type MultiImageUploaderProps,

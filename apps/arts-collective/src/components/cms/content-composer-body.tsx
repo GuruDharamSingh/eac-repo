@@ -11,7 +11,7 @@ import {
 } from "@elkdonis/cms-ui/compose";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { Button } from "@/components/ui/button";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { createThreadAction } from "@/lib/cms/actions";
 import type { ThreadFormInput } from "@/lib/cms/schema";
 

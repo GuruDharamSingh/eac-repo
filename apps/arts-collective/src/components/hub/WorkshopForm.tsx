@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { workshopFullSchema, type WorkshopFullInput } from "@/lib/cms/schema";
 import { saveWorkshopAction } from "@/lib/cms/actions";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { CoverImageUpload } from "@/components/hub/CoverImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

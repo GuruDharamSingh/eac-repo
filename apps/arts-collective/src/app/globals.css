@@ -11,6 +11,8 @@
 /* The reading layer for published threads — plain CSS with custom-property
    fallbacks, so it sets correctly whether or not an org has set EAC tokens. */
 @import "@elkdonis/cms-ui/article.css";
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
 /* The same reading tokens as Tailwind utilities, so anything built AROUND a
    post (a feed strip, an author note) lines up with the prose inside it. */
 @import "@elkdonis/cms-ui/reading-theme.css";

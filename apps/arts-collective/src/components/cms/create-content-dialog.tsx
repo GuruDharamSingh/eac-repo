@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { cn } from "@/lib/utils";
 import { createThreadAction } from "@/lib/cms/actions";
 import type {

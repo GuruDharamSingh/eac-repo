@@ -1,0 +1,233 @@
+/*
+  editor.css — the shared rich-text editor's chrome and editing surface.
+  Plain CSS, same posture as compose.css/fields.css: no Tailwind utilities, so
+  the component needs no place in any app's content globs and works the same
+  in a Tailwind app and a Mantine one.
+
+      @import "@elkdonis/cms-ui/editor.css";
+*/
+
+.eac-ed {
+  --ed-fg: var(--sf-fg, var(--ink, #16181d));
+  --ed-muted: var(--sf-muted, var(--ink-soft, #5e667a));
+  --ed-line: var(--sf-line, var(--line, #d9dde2));
+  --ed-bg-soft: var(--sf-bg-soft, #f2f3f1);
+  --ed-accent: var(--sf-kind, var(--sf-accent, #5b45a8));
+  --ed-radius: var(--sf-radius-sm, 6px);
+  --ed-record: var(--eac-font-record, var(--sf-font-record, ui-monospace, Menlo, monospace));
+
+  border: 1px solid var(--ed-line);
+  border-radius: var(--ed-radius);
+  background: transparent;
+  color: var(--ed-fg);
+}
+.eac-ed:focus-within { border-color: var(--ed-accent); }
+
+/* ---- toolbar ---------------------------------------------------------- */
+
+.eac-ed-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--ed-bg-soft);
+  border-radius: var(--ed-radius) var(--ed-radius) 0 0;
+}
+.eac-ed-bar--placeholder { height: 33px; }
+
+.eac-ed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ed-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.eac-ed-btn:hover { background: color-mix(in srgb, var(--ed-fg) 8%, transparent); color: var(--ed-fg); }
+.eac-ed-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--ed-accent) 16%, transparent); color: var(--ed-accent); }
+.eac-ed-btn b { font-weight: 700; }
+.eac-ed-btn i { font-style: italic; }
+.eac-ed-btn u { text-decoration: underline; }
+.eac-ed-btn s { text-decoration: line-through; }
+
+.eac-ed-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--ed-line);
+}
+
+/* ---- editing surface -------------------------------------------------- */
+
+.eac-ed-body { padding: 10px 12px; cursor: text; }
+.eac-ed-content { font-size: 0.9rem; line-height: 1.6; }
+.eac-ed-content:focus { outline: none; }
+.eac-ed-content > :first-child { margin-top: 0; }
+.eac-ed-content > :last-child { margin-bottom: 0; }
+
+.eac-ed-content p { margin: 0.5em 0; }
+.eac-ed-content h2,
+.eac-ed-content h3,
+.eac-ed-content h4 {
+  margin: 1.1em 0 0.4em;
+  font-family: var(--sf-font-display, var(--eac-font-display, Georgia, serif));
+  line-height: 1.25;
+}
+.eac-ed-content h2 { font-size: 1.3rem; }
+.eac-ed-content h3 { font-size: 1.12rem; }
+.eac-ed-content h4 { font-size: 1rem; }
+.eac-ed-content ul,
+.eac-ed-content ol { margin: 0.5em 0; padding-left: 1.4em; }
+.eac-ed-content li { margin: 0.2em 0; }
+.eac-ed-content li > p { margin: 0.15em 0; }
+.eac-ed-content a { color: var(--ed-accent); text-decoration: underline; text-underline-offset: 2px; }
+.eac-ed-content strong { color: var(--ed-fg); font-weight: 650; }
+.eac-ed-content hr { margin: 1.2em 0; border: 0; border-top: 1px solid var(--ed-line); }
+
+.eac-ed-content blockquote {
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left: 2px solid var(--ed-accent);
+  color: var(--ed-muted);
+  font-style: italic;
+}
+
+.eac-ed-content code {
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  background: var(--ed-bg-soft);
+  font-family: var(--ed-record);
+  font-size: 0.86em;
+}
+.eac-ed-content pre {
+  margin: 0.8em 0;
+  padding: 0.7em 0.9em;
+  overflow-x: auto;
+  border: 1px solid var(--ed-line);
+  border-radius: var(--ed-radius);
+  background: var(--ed-bg-soft);
+  font-family: var(--ed-record);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.eac-ed-content pre code { padding: 0; background: none; font-size: inherit; }
+
+.eac-ed-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--ed-radius);
+}
+.eac-ed-content img.ProseMirror-selectednode { outline: 2px solid var(--ed-accent); }
+
+/* Tables need visible structure while editing even when the reading surface
+   styles them differently — an invisible grid is not editable. */
+.eac-ed-content table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  overflow: hidden;
+}
+.eac-ed-content th,
+.eac-ed-content td {
+  position: relative;
+  min-width: 3em;
+  padding: 6px 8px;
+  border: 1px solid var(--ed-line);
+  vertical-align: top;
+  text-align: left;
+}
+.eac-ed-content th { background: var(--ed-bg-soft); font-weight: 650; }
+.eac-ed-content .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ed-accent) 12%, transparent);
+  pointer-events: none;
+}
+.eac-ed-content .column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: 0;
+  width: 4px;
+  background: var(--ed-accent);
+  pointer-events: none;
+}
+
+.eac-ed-content mark {
+  padding: 0.05em 0.2em;
+  border-radius: 3px;
+  background: #fde68a;
+  color: inherit;
+}
+
+.eac-ed-content div[data-youtube-video] { margin: 0.9em 0; }
+.eac-ed-content div[data-youtube-video] iframe {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+  border-radius: var(--ed-radius);
+}
+
+/* Tiptap's placeholder: only on the first empty block, never on every line. */
+.eac-ed-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--ed-muted);
+  pointer-events: none;
+}
+
+/* ---- [[wikilink]] autocomplete --------------------------------------- */
+
+.eac-ed-suggest {
+  /* fixed, because the position comes from view.coordsAtPos (viewport coords) */
+  position: fixed;
+  z-index: 60;
+  min-width: 220px;
+  max-width: 340px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--ed-line);
+  border-radius: var(--ed-radius);
+  background: var(--sf-bg, #fff);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+.eac-ed-suggest-item {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ed-fg);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+.eac-ed-suggest-item:hover,
+.eac-ed-suggest-item[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ed-accent) 14%, transparent);
+  color: var(--ed-accent);
+}
+.eac-ed-suggest-new { color: var(--ed-muted); font-style: italic; }
+.eac-ed-suggest-empty {
+  padding: 6px 8px;
+  color: var(--ed-muted);
+  font-size: 0.8rem;
+}

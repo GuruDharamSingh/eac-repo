@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   MultiImageUploader,
-  RichTextEditor,
   type UploadedImage,
 } from "@elkdonis/studio-ui";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import {
   createArtworkAction,
   updateArtworkAction,

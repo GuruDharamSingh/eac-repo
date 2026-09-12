@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { MediaField } from "@/components/manage/media-field";
 import { saveContentAction } from "@/lib/cms/actions";
 import type { ContentFormValues } from "@/lib/cms/schema";

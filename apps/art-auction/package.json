@@ -16,6 +16,7 @@
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/checkout": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/messaging": "workspace:*",

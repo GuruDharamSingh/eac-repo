@@ -23,6 +23,8 @@
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
 @import "@elkdonis/cms-ui/files-card.css";
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
 
 /* ==========================================================================
    The Hidden Enneagram — single LIGHT theme with dark features.
