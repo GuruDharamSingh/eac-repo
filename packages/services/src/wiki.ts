@@ -499,6 +499,154 @@ async function syncWikiLinks(threadId: string, linkedThreadIds: string[]): Promi
 }
 
 // ============================================================================
+// Search
+// ============================================================================
+
+/** One run of text from a search hit; `hit` marks what matched the query. */
+export interface WikiSearchSpan {
+  text: string;
+  hit: boolean;
+}
+
+export interface WikiSearchHit {
+  id: string;
+  slug: string;
+  title: string;
+  /** The title as spans, so a caller can emphasise matches without HTML. */
+  titleSpans: WikiSearchSpan[];
+  /** A matching fragment of the body or a definition, as spans. */
+  snippetSpans: WikiSearchSpan[];
+  /** True when the hit came from a definition rather than the page body. */
+  viaDefinition: boolean;
+  updatedAt: Date;
+}
+
+/**
+ * ts_headline marks matches with control characters rather than `<mark>`.
+ *
+ * Deliberate: its output would otherwise be raw HTML needing
+ * dangerouslySetInnerHTML at the call site, and wiki **titles are never
+ * HTML-sanitised** — the action only trims them, because everywhere else a
+ * title is rendered as a React child and escaped. A title containing markup
+ * would become an injection the moment search rendered it as HTML. Returning
+ * spans keeps that impossible instead of merely unlikely.
+ *
+ * STX/ETX are used because they cannot occur in prose typed into a form.
+ */
+const MARK_START = '\u0002';
+const MARK_END = '\u0003';
+
+const WIKI_TITLE_OPTS = `StartSel=${MARK_START},StopSel=${MARK_END},HighlightAll=true`;
+const WIKI_SNIPPET_OPTS =
+  `StartSel=${MARK_START},StopSel=${MARK_END},MaxWords=34,MinWords=14,MaxFragments=1,FragmentDelimiter= … `;
+
+/** Split ts_headline's sentinel-marked text into alternating plain/hit spans. */
+function toSpans(marked: string | null): WikiSearchSpan[] {
+  if (!marked) return [];
+  const spans: WikiSearchSpan[] = [];
+  // Split keeps the delimiters out, and the marks strictly alternate, so a
+  // simple state machine over the pieces is enough.
+  for (const chunk of marked.split(MARK_START)) {
+    const [hit, rest] = chunk.split(MARK_END);
+    if (rest === undefined) {
+      if (hit) spans.push({ text: hit, hit: false });
+    } else {
+      if (hit) spans.push({ text: hit, hit: true });
+      if (rest) spans.push({ text: rest, hit: false });
+    }
+  }
+  return spans;
+}
+
+/**
+ * Search the wiki.
+ *
+ * `threads.search_tsv` is a stored generated column (title weight A, excerpt
+ * B, body C with tags stripped), so there is nothing to maintain — it is
+ * already indexed for every wiki page. `websearch_to_tsquery` takes what a
+ * person actually types, including quoted phrases, `or`, and a leading `-` to
+ * exclude, and never throws on syntax the way `to_tsquery` does.
+ *
+ * Titles are also matched by trigram similarity (`%`, backed by
+ * idx_threads_title_trgm), so a near-miss spelling still finds the page —
+ * which matters more here than on the forum, since people search a
+ * dictionary for words they are unsure how to spell.
+ *
+ * Definitions are searched separately and unioned in. They live in
+ * `metadata.definitions`, which the generated column cannot see, so a sense
+ * somebody contributed would otherwise be invisible to search even though it
+ * is the most quotable sentence about that term.
+ */
+export async function searchWiki(q: string, limit = 20): Promise<WikiSearchHit[]> {
+  const query = (q ?? '').trim();
+  if (query.length < 2) return [];
+
+  const rows = await db<Array<any>>`
+    WITH matches AS (
+      SELECT t.id, t.slug, t.title, t.updated_at,
+             ts_headline('english', t.title,
+                         websearch_to_tsquery('english', ${query}), ${WIKI_TITLE_OPTS}) AS title_html,
+             ts_headline('english',
+                         COALESCE(NULLIF(t.excerpt, ''),
+                                  REGEXP_REPLACE(COALESCE(t.body, ''), '<[^>]*>', ' ', 'g'),
+                                  t.title),
+                         websearch_to_tsquery('english', ${query}), ${WIKI_SNIPPET_OPTS}) AS snippet,
+             FALSE AS via_definition,
+             GREATEST(
+               ts_rank(t.search_tsv, websearch_to_tsquery('english', ${query})),
+               similarity(t.title, ${query})
+             ) AS rank
+      FROM threads t
+      WHERE t.kind = 'wiki_page' AND t.status <> 'archived'
+        AND (t.search_tsv @@ websearch_to_tsquery('english', ${query})
+             OR t.title % ${query})
+
+      UNION ALL
+
+      -- Contributed senses. metadata is outside the generated tsvector, so
+      -- these are matched on the fly; the set is small (tens of pages).
+      SELECT t.id, t.slug, t.title, t.updated_at,
+             ts_headline('english', t.title,
+                         websearch_to_tsquery('english', ${query}), ${WIKI_TITLE_OPTS}),
+             ts_headline('english', d.value->>'text',
+                         websearch_to_tsquery('english', ${query}), ${WIKI_SNIPPET_OPTS}),
+             TRUE,
+             ts_rank(to_tsvector('english', d.value->>'text'),
+                     websearch_to_tsquery('english', ${query}))
+      FROM threads t
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(t.metadata->'definitions') = 'array'
+             THEN t.metadata->'definitions' ELSE '[]'::jsonb END
+      ) AS d(value)
+      WHERE t.kind = 'wiki_page' AND t.status <> 'archived'
+        AND to_tsvector('english', d.value->>'text')
+            @@ websearch_to_tsquery('english', ${query})
+    )
+    -- One row per page: the best-ranking reason it matched wins, so a page
+    -- whose title and three senses all match appears once, not four times.
+    SELECT DISTINCT ON (id) *
+    FROM matches
+    ORDER BY id, rank DESC
+    LIMIT ${Math.min(limit, 100)}
+  `;
+
+  return rows
+    .map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      titleSpans: toSpans(r.title_html),
+      snippetSpans: toSpans(r.snippet),
+      viaDefinition: r.via_definition,
+      updatedAt: r.updated_at,
+      rank: Number(r.rank),
+    }))
+    // DISTINCT ON forced an ORDER BY id, so rank ordering is restored here.
+    .sort((a, b) => b.rank - a.rank)
+    .map(({ rank: _rank, ...hit }) => hit);
+}
+
+// ============================================================================
 // Tags
 //
 // Reuses `topics` + `thread_topics` rather than a wiki-specific tag table, so

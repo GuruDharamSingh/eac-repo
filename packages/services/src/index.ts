@@ -138,6 +138,7 @@ export {
   listWikiTopics,
   setWikiTopics,
   listWikiPagesByTopic,
+  searchWiki,
 } from './wiki';
 export type {
   WikiPage,
@@ -149,6 +150,8 @@ export type {
   WikiDefinition,
   ResolvedTerms,
   WikiTopic,
+  WikiSearchHit,
+  WikiSearchSpan,
 } from './wiki';
 
 // Auth services

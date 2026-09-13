@@ -96,7 +96,20 @@ export function WikiSidebar({ tree }: Props) {
         <p className="text-xs text-muted-foreground">Network knowledge base</p>
       </Link>
 
-      <Button asChild size="sm" variant="outline" className="mt-4 w-full">
+      {/* Plain GET form: search needs no JavaScript, and lands on the index
+          as ?q= rather than a /hub/wiki/search route that would shadow a page
+          slugged "search". */}
+      <form method="get" action="/hub/wiki" className="mt-4">
+        <input
+          type="search"
+          name="q"
+          placeholder="Search…"
+          aria-label="Search the wiki"
+          className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        />
+      </form>
+
+      <Button asChild size="sm" variant="outline" className="mt-3 w-full">
         <Link href="/hub/wiki/new">New page</Link>
       </Button>
 
