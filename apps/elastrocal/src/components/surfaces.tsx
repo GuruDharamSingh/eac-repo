@@ -2,8 +2,6 @@
 
 import { SurfaceProvider } from "@elkdonis/cms-ui/surface";
 import "@elkdonis/cms-ui/surface.css";
-// The collective strip on the home page draws the shared ProfileCardBody.
-import "@elkdonis/cms-ui/center.css";
 import "@elkdonis/sky-ui/sky.css";
 import { withBase } from "@/lib/base-path";
 import { SkySurface } from "@/components/sky";

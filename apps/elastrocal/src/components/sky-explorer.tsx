@@ -84,16 +84,17 @@ export function SkyExplorer({
         <ChartSummary chart={sky.chart} />
         <PositionsTable chart={sky.chart} />
 
+        {/* The three ways on from here, with the thing worth knowing first:
+            you can keep charts without making an account. The old copy here
+            described the controls, which are right there and need no caption. */}
         <section className="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">
-            Welcome to {siteConfig.orgName}
-          </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">{siteConfig.orgName}</h2>
           <p className="mt-3 text-muted-foreground">
-            The wheel is the sky as it is now, cast for {locationName}. Move it with the controls, or play
-            through the hours and watch the Moon travel.
+            <span className="font-medium text-foreground">No sign-up needed to save charts.</span> Cast one and
+            it stays in this browser. Sign in whenever you like and everything you have made comes with you.
           </p>
           <p className="mt-3 text-muted-foreground">
-            Positions come from the Swiss Ephemeris, in the tropical zodiac.
+            Positions come from the Swiss Ephemeris, in the tropical zodiac, cast for {locationName}.
           </p>
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
             <Link href="/calculate" className="text-primary underline underline-offset-4">
