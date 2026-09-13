@@ -1,6 +1,11 @@
 import { db } from "@elkdonis/db";
 import { lastOccurrenceEnd, nextOccurrence } from "@elkdonis/utils";
-import { getOrgProfileBySlug, listOrgProfiles, type OrgProfile } from "@elkdonis/services";
+import {
+  getOrgProfileBySlug,
+  listOrgProfiles,
+  resolveTerms,
+  type OrgProfile,
+} from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import type {
   Attendee,
@@ -183,6 +188,30 @@ export async function getNextInFeed(feedSlug: string): Promise<Thread | null> {
   }
 }
 
+/**
+ * Fill in the definitions for any terms the body marks up.
+ *
+ * On the way OUT of the data layer rather than in each page: these two
+ * getters are the only ways a single thread's body reaches a reader, so
+ * putting it here means no render site has to remember it. Missing one just
+ * means definitions silently stop showing.
+ *
+ * Server-side by necessity — the dictionary is the network wiki, which
+ * requires a login, and this is what lets a public post carry a definition
+ * out of it without exposing anything but the sentence.
+ */
+async function withTerms(thread: Thread | null): Promise<Thread | null> {
+  if (!thread?.description?.includes("data-term")) return thread;
+  try {
+    const { html } = await resolveTerms(thread.description, "/wiki");
+    return { ...thread, description: html };
+  } catch (err) {
+    // A dictionary that is down must not take the article with it.
+    console.error("[innergathering] resolveTerms:", err);
+    return thread;
+  }
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -193,7 +222,7 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
         AND t.status = 'published'
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[innergathering] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -208,7 +237,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
       WHERE t.org_id = ${ORG} AND t.id = ${id}
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[innergathering] getThreadById(${id}):`, err);
     return null;

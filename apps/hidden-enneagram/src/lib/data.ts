@@ -2,6 +2,7 @@ import { db } from "@elkdonis/db";
 import {
   listOrgProfiles,
   getOrgProfileBySlug,
+  resolveTerms,
   type OrgProfile,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
@@ -124,6 +125,30 @@ export async function getThreadsForFeed(
   }
 }
 
+/**
+ * Fill in the definitions for any terms the body marks up.
+ *
+ * On the way OUT of the data layer rather than in each page: these two
+ * getters are the only ways a single thread's body reaches a reader, so
+ * putting it here means no render site has to remember it. Missing one just
+ * means definitions silently stop showing.
+ *
+ * Server-side by necessity — the dictionary is the network wiki, which
+ * requires a login, and this is what lets a public post carry a definition
+ * out of it without exposing anything but the sentence.
+ */
+async function withTerms(thread: Thread | null): Promise<Thread | null> {
+  if (!thread?.description?.includes("data-term")) return thread;
+  try {
+    const { html } = await resolveTerms(thread.description, "/wiki");
+    return { ...thread, description: html };
+  } catch (err) {
+    // A dictionary that is down must not take the article with it.
+    console.error("[hidden-enneagram] resolveTerms:", err);
+    return thread;
+  }
+}
+
 export async function getThreadBySlug(
   feedSlug: string,
   slug: string,
@@ -137,7 +162,7 @@ export async function getThreadBySlug(
         AND (t.slug = ${slug} OR t.id = ${slug})
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[hidden-enneagram] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -152,7 +177,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
       WHERE t.org_id = ${ORG} AND t.id = ${id}
       LIMIT 1
     `;
-    return row ? mapThread(row) : null;
+    return row ? await withTerms(mapThread(row)) : null;
   } catch (err) {
     console.error(`[hidden-enneagram] getThreadById(${id}):`, err);
     return null;
