@@ -286,7 +286,10 @@ export function ChartBuilder({
           <OrbitDial value={date} onChange={onDial} className="odp-roomy" />
         </div>
         <div className="relative mx-auto w-full" style={{ maxWidth: "min(100%, calc(100vh - 11rem))" }}>
-          <ChartWheel chart={chart} />
+          {/* Zodiac pinned: this wheel is scrubbed, and with the Ascendant on
+              the left the whole drawing turns once a year as the date moves,
+              which makes the signs impossible to read while dragging. */}
+          <ChartWheel chart={chart} orient="aries" />
           {busy && (
             <span className="absolute right-3 top-3 text-muted-foreground" aria-hidden>
               <Loader2 className="size-4 animate-spin" />

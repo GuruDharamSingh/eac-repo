@@ -20,12 +20,15 @@ import { cn } from "./utils";
 export function ChartWheel({
   chart,
   transits,
+  orient,
   variant = "full",
   showMinorAspects = false,
   className,
 }: {
   chart: ChartResult;
   transits?: ChartResult;
+  /** "aries" pins the zodiac so the signs hold still while the date moves. */
+  orient?: WheelOptions["orient"];
   variant?: WheelOptions["variant"];
   showMinorAspects?: boolean;
   className?: string;
@@ -35,12 +38,13 @@ export function ChartWheel({
       renderWheelSvg(chart, {
         variant,
         transits,
+        orient,
         minorAspects: showMinorAspects,
         rootAttrs: 'role="img" aria-label="Chart wheel"',
         // The full wheel sits on its white card; the compact one on the page.
         background: variant === "full" ? "#ffffff" : "#f9f6ef",
       }),
-    [chart, transits, variant, showMinorAspects],
+    [chart, transits, orient, variant, showMinorAspects],
   );
   return (
     <div

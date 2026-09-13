@@ -61,6 +61,21 @@ export interface RenderOptions {
   /** Draw minor aspects too (default: majors only). */
   minorAspects?: boolean;
   /**
+   * What sits on the left of the wheel, and therefore what holds still.
+   *
+   * "ascendant" (default) is the natal convention: the Ascendant on the left,
+   * the houses square to the page, the zodiac turning behind them. Right for
+   * one chart, read once.
+   *
+   * "aries" pins 0° Aries there instead. Nothing about the chart changes —
+   * the same drawing, rotated — but the signs stop moving, so a wheel being
+   * scrubbed through time no longer spins. At a fixed clock time the
+   * Ascendant advances about a degree a day, which is a whole revolution over
+   * a year; with the zodiac pinned it is the houses that visibly sweep, which
+   * is what is actually moving.
+   */
+  orient?: "ascendant" | "aries";
+  /**
    * Draw as a BI-WHEEL: this second chart's planets in a ring outside the
    * natal ones, with transit-to-natal aspect lines in the centre. The natal
    * chart keeps the houses — a transiting planet is read in the natal house
@@ -203,8 +218,10 @@ export function renderChartSvg(chart: ChartResult, ts: Typesetter, opts: RenderO
   const MC = chart.angles.midheaven;
   const cusps = chart.houses.map((h) => h.longitude);
 
+  // Whatever is pinned to the left of the drawing.
+  const origin = opts.orient === "aries" ? 0 : ASC;
   const pt = (lon: number, r: number): [number, number] => {
-    const phi = rad(180 + (lon - ASC));
+    const phi = rad(180 + (lon - origin));
     return [CX + r * Math.cos(phi), CY - r * Math.sin(phi)];
   };
   const P = (lon: number, r: number) => pt(lon, r).map(f2) as [number, number];

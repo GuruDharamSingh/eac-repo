@@ -230,6 +230,26 @@ check("bad input throws ChartInputError", () => {
   );
 });
 
+console.log("orientation");
+check("pinning the zodiac stops the signs moving as the date does", () => {
+  // At a fixed clock time the Ascendant advances about a degree a day, so an
+  // Ascendant-left wheel turns once a year — unreadable while scrubbing.
+  const ariesAt = (date: string, orient?: "aries") => {
+    const c = calculateChart({ date, time: "12:00", timezone: "UTC", latitude: 51.4769, longitude: -0.0005 });
+    const svg = renderWheelSvg(c, orient ? { orient } : {});
+    const m = [...svg.matchAll(/<text x="([-\d.]+)" y="([-\d.]+)"[^>]*>\u2648/g)][0];
+    if (!m) throw new Error("no Aries glyph in the wheel");
+    return ((Math.atan2(-(Number(m[2]) - 590), Number(m[1]) - 590) * 180) / Math.PI + 360) % 360;
+  };
+  const dates = ["2026-01-15", "2026-04-15", "2026-07-15", "2026-10-15"];
+  const pinned = dates.map((d) => ariesAt(d, "aries"));
+  const loose = dates.map((d) => ariesAt(d));
+  for (const a of pinned) near(a, pinned[0], 0.01, "Aries stays put when pinned");
+  // And the default really does sweep, which is the thing being fixed.
+  const spread = Math.max(...loose) - Math.min(...loose);
+  assert.ok(spread > 180, `an ascendant-left wheel turns through the year (saw ${spread.toFixed(0)}°)`);
+});
+
 console.log("spans (the scrubbing table)");
 check("a chart rebuilt from a span matches one cast directly", () => {
   // The whole point: the browser assembles these from a table with no
