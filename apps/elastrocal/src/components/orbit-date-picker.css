@@ -288,3 +288,38 @@
 .odp-btn-primary:hover {
   filter: brightness(1.06);
 }
+
+/* The day stepper sits either side of the date, so the fine control is
+   exactly where the value it changes is being read. */
+.odp-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.odp-day strong {
+  min-width: 12.5rem;
+  text-align: center;
+}
+.odp-day button {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid hsl(var(--input));
+  border-radius: 6px;
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.odp-day button:hover {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--ring));
+}
+.odp-day button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}

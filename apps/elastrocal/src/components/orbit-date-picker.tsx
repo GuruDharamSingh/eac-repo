@@ -33,6 +33,8 @@ import "./orbit-date-picker.css";
  */
 
 const MS_DAY = 86_400_000;
+/** How far back the throw looks when measuring how fast the hand was moving. */
+const VEL_WINDOW_MS = 70;
 /** Mean degrees of orbit per day. Only used to convert a drag into days. */
 const DEG_PER_DAY = 360 / 365.2422;
 
@@ -139,7 +141,20 @@ export function OrbitDatePicker({
   // converted at the mean orbital rate. Earth is then redrawn from the true
   // solar longitude of the new date, so the mark stays astronomically right
   // even though the conversion is a mean.
-  const drag = useRef<{ last: number; moved: boolean; vel: number; t: number } | null>(null);
+  /**
+   * The live drag. `trail` is the recent history of cumulative rotation —
+   * velocity is measured across it rather than between two consecutive
+   * events, because a browser is free to deliver several pointer moves in the
+   * same millisecond. Dividing one of those deltas by a ~1ms gap yields a
+   * velocity an order of magnitude too high, and a gentle nudge then throws
+   * the date most of a year.
+   */
+  const drag = useRef<{
+    last: number;
+    moved: boolean;
+    total: number;
+    trail: Array<{ t: number; a: number }>;
+  } | null>(null);
   const spin = useRef<number | null>(null);
   /**
    * Days of movement not yet spent. A date holds whole days, but a drag
@@ -186,7 +201,7 @@ export function OrbitDatePicker({
     stopSpin();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     carry.current = 0;
-    drag.current = { last: angleAt(e), moved: false, vel: 0, t: performance.now() };
+    drag.current = { last: angleAt(e), moved: false, total: 0, trail: [{ t: performance.now(), a: 0 }] };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -196,11 +211,10 @@ export function OrbitDatePicker({
     const delta = angleDelta(d.last, now);
     if (Math.abs(delta) < 0.01) return;
     const t = performance.now();
-    const dt = Math.max(1, t - d.t);
-    // Smoothed, not the last sample: one jittery final move before release
-    // would otherwise fling the date across a decade.
-    d.vel = d.vel * 0.7 + (delta / dt) * 0.3;
-    d.t = t;
+    d.total += delta;
+    d.trail.push({ t, a: d.total });
+    // Only the last breath of movement decides the throw.
+    while (d.trail.length > 2 && t - d.trail[0].t > VEL_WINDOW_MS) d.trail.shift();
     d.last = now;
     d.moved = true;
     nudge(delta / DEG_PER_DAY);
@@ -212,31 +226,55 @@ export function OrbitDatePicker({
     (e.target as Element).releasePointerCapture?.(e.pointerId);
     if (!d?.moved) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    let v = d.vel;
-    // A pointer that came to rest before lifting is not a throw. Velocity is
-    // only sampled on movement, so without this a pause before release still
-    // flings the date using however fast the finger was moving before it
-    // stopped — which is exactly the opposite of what stopping means.
-    if (performance.now() - d.t > 90) v = 0;
-    if (reduced || Math.abs(v) < 0.02) return;
-    // Throw: decay the angular velocity and keep feeding the date until it
-    // is slower than a day a frame. Same feel as inertia, no dependency.
-    let last = performance.now();
+
+    // Average speed over the last stretch of movement. A pointer that came to
+    // rest before lifting has nothing recent in the trail, so this falls to
+    // zero on its own and no throw happens — stopping means stopping.
+    const end = performance.now();
+    const oldest = d.trail[0];
+    const span = end - oldest.t;
+    const v = span >= 12 && span <= VEL_WINDOW_MS * 2 ? (d.total - oldest.a) / span : 0;
+
+    if (reduced || Math.abs(v) < 0.012) return;
+
+    /*
+      The glide.
+
+      Not a per-frame decay. Multiplying the velocity every frame is the
+      obvious model and it feels wrong at both ends: it leaves a long tail of
+      sub-pixel movement that reads as the dial refusing to settle, and where
+      it comes to rest depends on frame timing, so the same flick lands
+      somewhere different each time.
+
+      Instead the resting point is decided at the moment of release — throw
+      distance is velocity times a time constant, the way a scroll view
+      projects a fling — and the dial eases there. That gives it weight: a
+      hard flick travels far and slows visibly, a light one drifts a few days
+      and stops, and both settle exactly where they said they would.
+    */
+    const GLIDE_MS = 420; // time constant: how much "mass" the dial carries
+    const MAX_TURN = 300; // no single flick throws more than ten months
+    const travel = Math.max(-MAX_TURN, Math.min(MAX_TURN, v * GLIDE_MS));
+    // How long it takes to cover that distance. The distance is right; the
+    // first pass covered it in half this time and read as a whip rather than
+    // something with weight, so the same throw now takes longer to die away.
+    const duration = Math.min(2400, Math.max(420, Math.abs(travel) * 13));
+
+    const start = performance.now();
+    let done = 0; // degrees already handed to the date
     const step = () => {
-      const now = performance.now();
-      const dt = now - last;
-      last = now;
-      // Decay chosen by feel: a throw adds roughly a third of the drag that
-      // launched it. 0.9975 (the rate a frame-based tween would give) added
-      // nearly a whole second drag, which overshoots the month you aimed at.
-      v *= Math.pow(0.992, dt);
-      const move = v * dt;
-      if (Math.abs(move) < 0.05) {
-        spin.current = null;
+      const p = Math.min(1, (performance.now() - start) / duration);
+      // easeOutQuint — takes the speed off the finger cleanly, then a long
+      // tail where the last few days tick past slowly enough to read.
+      const eased = 1 - Math.pow(1 - p, 5);
+      const target = travel * eased;
+      nudge((target - done) / DEG_PER_DAY);
+      done = target;
+      if (p < 1) {
+        spin.current = requestAnimationFrame(step);
         return;
       }
-      nudge(move / DEG_PER_DAY);
-      spin.current = requestAnimationFrame(step);
+      spin.current = null;
     };
     spin.current = requestAnimationFrame(step);
   };
@@ -349,7 +387,8 @@ export function OrbitDatePicker({
       </div>
       <p id={`${labelId}-hint`} className="sr-only">
         Type the date as four-digit year, month, day. Or open the orbit picker and drag the Earth around the
-        Sun.
+        Sun — dragging further from the centre gives finer control, and there are buttons for stepping a
+        single day.
       </p>
 
       {open && (
@@ -423,8 +462,37 @@ export function OrbitDatePicker({
             </svg>
           </div>
 
+          {/* A day is about a degree and a half of this dial — under two
+              pixels of arc — so the ring alone cannot reliably land on the
+              14th rather than the 15th. These step one day at a time. (The
+              other fine control is physical: drag further out from the
+              centre and the same movement of the hand turns fewer degrees.) */}
           <div className="odp-readout">
-            <strong>{LONG_DATE.format(draft)}</strong>
+            <div className="odp-day">
+              <button
+                type="button"
+                onClick={() => {
+                  stopSpin();
+                  carry.current = 0;
+                  commit(addDays(draft, -1));
+                }}
+                aria-label="Previous day"
+              >
+                ‹
+              </button>
+              <strong>{LONG_DATE.format(draft)}</strong>
+              <button
+                type="button"
+                onClick={() => {
+                  stopSpin();
+                  carry.current = 0;
+                  commit(addDays(draft, 1));
+                }}
+                aria-label="Next day"
+              >
+                ›
+              </button>
+            </div>
             <span>
               Sun in {sign.name} · {toISO(draft)}
             </span>
