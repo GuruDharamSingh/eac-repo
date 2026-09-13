@@ -6,6 +6,7 @@ import { Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { withBase } from "@/lib/base-path";
 import { Input } from "@/components/ui/input";
+import { OrbitDatePicker } from "@/components/orbit-date-picker";
 import { Label } from "@/components/ui/label";
 
 export interface ChartFormValues {
@@ -115,7 +116,7 @@ export function ChartForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="date">Birth date</Label>
-          <Input id="date" type="date" required value={v.date} onChange={(e) => set("date", e.target.value)} />
+          <OrbitDatePicker id="date" required value={v.date} onChange={(next) => set("date", next)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="time">Birth time</Label>

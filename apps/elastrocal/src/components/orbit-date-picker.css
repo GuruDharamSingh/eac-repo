@@ -1,0 +1,290 @@
+/*
+  orbit-date-picker.css
+
+  Plain CSS, imported by the component — this app's build drops rules appended
+  to globals.css, which has caught me twice now.
+
+  The design this follows is a dark widget; Elastrocal is light paper and ink,
+  so the palette is the site's own tokens rather than the original's slate and
+  periwinkle. What is kept is the shape of the thing: a field with a small
+  celestial button, a panel holding one big dial, the Sun breathing at the
+  centre, and two plain actions at the foot.
+*/
+
+.odp {
+  position: relative;
+}
+
+.odp-field {
+  position: relative;
+}
+
+.odp-open {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0;
+  background: none;
+  cursor: pointer;
+  color: hsl(var(--primary));
+}
+.odp-open svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.odp-open .odp-open-dot {
+  fill: currentColor;
+  stroke: none;
+}
+.odp-open:hover {
+  color: hsl(var(--foreground));
+}
+.odp-open:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+/* ── the panel ──────────────────────────────────────────────────────────── */
+
+.odp-pop {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  box-shadow:
+    0 2px 8px rgba(20, 18, 16, 0.08),
+    0 18px 40px -16px rgba(20, 18, 16, 0.35);
+}
+
+/*
+  On a phone the panel is the whole width of the screen, docked to the bottom.
+  A 320px popover anchored to a field near the top of a form would otherwise
+  be half-covered by the keyboard the field just raised.
+*/
+@media (max-width: 640px) {
+  .odp-pop {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    top: auto;
+    border-radius: 14px 14px 0 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -12px 40px -12px rgba(20, 18, 16, 0.4);
+  }
+}
+
+/* ── year ───────────────────────────────────────────────────────────────── */
+
+.odp-year {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.odp-year button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--card));
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+.odp-year button:hover {
+  border-color: hsl(var(--ring));
+}
+.odp-year button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+.odp-year-input {
+  width: 5.5rem;
+  height: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  border: 1px solid hsl(var(--input));
+  border-radius: 6px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  outline: none;
+}
+.odp-year-input:focus-visible {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5);
+}
+/* The spinners fight the ‹ › buttons either side of them. */
+.odp-year-input::-webkit-outer-spin-button,
+.odp-year-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.odp-year-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* ── the dial ───────────────────────────────────────────────────────────── */
+
+.odp-dial {
+  width: min(15rem, 70vw);
+  aspect-ratio: 1;
+  /* Without this a drag scrolls the page on a touch screen instead of
+     turning the dial. */
+  touch-action: none;
+  cursor: grab;
+  border-radius: 50%;
+  outline: none;
+}
+.odp-dial:active {
+  cursor: grabbing;
+}
+.odp-dial:focus-visible {
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.55);
+}
+.odp-dial svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.odp-orbit {
+  fill: none;
+  stroke: hsl(var(--border));
+  stroke-dasharray: 3 4;
+}
+.odp-zodiac {
+  fill: none;
+  stroke: hsl(var(--border) / 0.7);
+}
+.odp-tick {
+  stroke: hsl(var(--muted-foreground) / 0.75);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.odp-sun-disc {
+  fill: var(--gold, #b08a33);
+}
+.odp-flare {
+  fill: var(--gold, #b08a33);
+  opacity: 0.22;
+  transform-origin: 100px 100px;
+  animation: odp-flare 3s linear infinite;
+}
+.odp-flare-2 {
+  animation-delay: -1s;
+}
+.odp-flare-3 {
+  animation-delay: -2s;
+}
+@keyframes odp-flare {
+  0% {
+    opacity: 0.22;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+.odp-earth {
+  fill: #4667ad;
+  stroke: hsl(var(--card));
+  stroke-width: 1.5;
+}
+.odp-earth-halo {
+  fill: #4667ad;
+  opacity: 0.16;
+}
+.odp-moon {
+  fill: hsl(var(--foreground));
+  opacity: 0.85;
+}
+.odp-moon-path {
+  fill: none;
+  stroke: hsl(var(--border));
+  stroke-dasharray: 2 3;
+}
+
+/* The Sun's pulse is ambient, not information — the first thing to go. */
+@media (prefers-reduced-motion: reduce) {
+  .odp-flare {
+    animation: none;
+    opacity: 0.16;
+  }
+}
+
+/* ── readout and actions ────────────────────────────────────────────────── */
+
+.odp-readout {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.odp-readout strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.odp-readout span {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
+}
+
+.odp-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.odp-btn {
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.odp-btn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.odp-btn-quiet {
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted));
+}
+.odp-btn-quiet:hover {
+  color: hsl(var(--foreground));
+}
+.odp-btn-primary {
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+}
+.odp-btn-primary:hover {
+  filter: brightness(1.06);
+}

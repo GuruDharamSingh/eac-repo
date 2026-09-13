@@ -27,3 +27,10 @@ export {
   type StepUnit,
 } from "./time";
 export { moonPhase, moonPhaseFrom, type MoonPhase, type MoonPhaseName } from "./moon";
+export {
+  elongation,
+  illuminatedFraction,
+  julianDay,
+  moonLongitude,
+  sunLongitude,
+} from "./approx";

@@ -21,7 +21,9 @@ import {
   computeCrossAspects,
   formatPosition,
   localToUtc,
+  moonLongitude,
   stepInstant,
+  sunLongitude,
   synastryAspects,
   transitAspects,
 } from "../src/index";
@@ -224,6 +226,29 @@ check("bad input throws ChartInputError", () => {
     () => calculateChart({ date: "1990-05-15", time: "14:30", timezone: "UTC", latitude: 95, longitude: 0 }),
     { name: "ChartInputError" },
   );
+});
+
+console.log("drawing-grade approximations");
+check("the dial's Sun and Moon track the ephemeris closely enough to draw", () => {
+  // The date picker positions Earth on its orbit and lights the Moon from
+  // these, on every pointer move. If a series drifts, a dial silently points
+  // at the wrong day — so the bound is asserted rather than assumed.
+  const apart = (a: number, b: number) => {
+    const d = Math.abs(a - b) % 360;
+    return d > 180 ? 360 - d : d;
+  };
+  let worstSun = 0;
+  let worstMoon = 0;
+  for (let y = 1920; y <= 2040; y += 4) {
+    for (const md of ["-01-15", "-04-02", "-07-21", "-10-09"]) {
+      const at = new Date(`${y}${md}T06:00:00Z`);
+      const real = calculateSkyAt(at);
+      worstSun = Math.max(worstSun, apart(sunLongitude(at), real.bodies[0].longitude));
+      worstMoon = Math.max(worstMoon, apart(moonLongitude(at), real.bodies[1].longitude));
+    }
+  }
+  assert.ok(worstSun < 0.01, `Sun approximation drifted to ${worstSun.toFixed(4)}°`);
+  assert.ok(worstMoon < 0.1, `Moon approximation drifted to ${worstMoon.toFixed(4)}°`);
 });
 
 console.log("Chiron and the North Node");
