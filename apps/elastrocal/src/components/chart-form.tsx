@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { HOUSE_SYSTEMS, type HouseSystemCode } from "@elkdonis/astro";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,14 +41,27 @@ interface Place {
 const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
-export function ChartForm({
+function ChartFormInner({
   initial,
   busy,
   onSubmit,
+  onChange,
+  showDate = true,
+  showSubmit = true,
 }: {
   initial: ChartFormValues;
   busy: boolean;
   onSubmit: (values: ChartFormValues) => void;
+  /**
+   * Fires on every field change, for a caller drawing the chart live. The
+   * home page owns the date itself (the orbit dial sits above the form) and
+   * recalculates as anything here moves.
+   */
+  onChange?: (values: ChartFormValues) => void;
+  /** Off when the caller supplies the date some other way. */
+  showDate?: boolean;
+  /** Off when the chart is already live and there is nothing to submit. */
+  showSubmit?: boolean;
 }) {
   const [v, setV] = useState<ChartFormValues>(initial);
   const [query, setQuery] = useState(initial.locationName);
@@ -65,7 +78,11 @@ export function ChartForm({
   }, []);
 
   const set = <K extends keyof ChartFormValues>(key: K, value: ChartFormValues[K]) =>
-    setV((prev) => ({ ...prev, [key]: value }));
+    setV((prev) => {
+      const next = { ...prev, [key]: value };
+      onChange?.(next);
+      return next;
+    });
 
   async function searchPlaces() {
     if (query.trim().length < 2) return;
@@ -113,11 +130,13 @@ export function ChartForm({
         onSubmit(v);
       }}
     >
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="date">Birth date</Label>
-          <OrbitDatePicker id="date" required value={v.date} onChange={(next) => set("date", next)} />
-        </div>
+      <div className={showDate ? "grid grid-cols-2 gap-4" : "grid gap-4"}>
+        {showDate && (
+          <div className="space-y-1.5">
+            <Label htmlFor="date">Birth date</Label>
+            <OrbitDatePicker id="date" required value={v.date} onChange={(next) => set("date", next)} />
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="time">Birth time</Label>
           <Input
@@ -251,10 +270,20 @@ export function ChartForm({
         The zone&rsquo;s historical rules are applied, including daylight saving in force on the birth date.
       </p>
 
-      <Button type="submit" size="lg" className="w-full" disabled={busy}>
-        {busy && <Loader2 className="size-4 animate-spin" />}
-        {busy ? "Calculating…" : "Calculate chart"}
-      </Button>
+      {showSubmit && (
+        <Button type="submit" size="lg" className="w-full" disabled={busy}>
+          {busy && <Loader2 className="size-4 animate-spin" />}
+          {busy ? "Calculating…" : "Calculate chart"}
+        </Button>
+      )}
     </form>
   );
 }
+
+/**
+ * Memoised. The form carries a datalist of every IANA time zone — over four
+ * hundred options — and on the home page it sits beside a chart that is
+ * recast on every day of a drag. Without this it would rebuild that list
+ * several times a second for a value that never changed.
+ */
+export const ChartForm = memo(ChartFormInner);

@@ -55,6 +55,13 @@
 
 /* ── the panel ──────────────────────────────────────────────────────────── */
 
+.odp-stack {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
 .odp-pop {
   position: absolute;
   z-index: 50;
@@ -322,4 +329,17 @@
 .odp-day button:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 1px;
+}
+
+/*
+  The dial standing on its own, beside the chart on the home page. In a
+  popover 15rem is right; in a column next to a wheel the size of the screen
+  it needs to hold its own, and a bigger ring is also a finer one — a day is
+  worth more pixels of arc.
+*/
+.odp-roomy .odp-dial {
+  width: min(20rem, 72vw);
+}
+.odp-roomy .odp-readout strong {
+  font-size: 16px;
 }

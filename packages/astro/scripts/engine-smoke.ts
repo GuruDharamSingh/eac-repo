@@ -14,8 +14,10 @@
  */
 
 import assert from "node:assert/strict";
-import { calculateChart, calculateSky, calculateSkyAt, timeZoneAt } from "../src/server";
+import type { BodyPosition } from "../src/types";
+import { calculateChart, calculateSky, calculateSkyAt, calculateSpan, timeZoneAt } from "../src/server";
 import {
+  chartForDate,
   chartToPoints,
   computeAspects,
   computeCrossAspects,
@@ -226,6 +228,76 @@ check("bad input throws ChartInputError", () => {
     () => calculateChart({ date: "1990-05-15", time: "14:30", timezone: "UTC", latitude: 95, longitude: 0 }),
     { name: "ChartInputError" },
   );
+});
+
+console.log("spans (the scrubbing table)");
+check("a chart rebuilt from a span matches one cast directly", () => {
+  // The whole point: the browser assembles these from a table with no
+  // ephemeris, so they must not drift from what the engine would have said.
+  const input = {
+    date: "1995-05-16", time: "16:30", timezone: "America/Toronto",
+    latitude: 43.6532, longitude: -79.3832, houseSystem: "P" as const, timeKnown: true,
+  };
+  const span = calculateSpan(input, 40);
+  assert.equal(span.days.length, 40);
+
+  for (const offset of [0, 1, 17, 39]) {
+    const date = new Date(Date.parse(`${input.date}T00:00:00Z`) + offset * 86_400_000)
+      .toISOString().slice(0, 10);
+    const direct = calculateChart({ ...input, date });
+    const fromSpan = chartForDate(span, date);
+    // A plain throw rather than assert.ok: an assertion signature stops the
+    // compiler narrowing the rows below it.
+    if (!fromSpan) throw new Error(`span should cover ${date}`);
+
+    assert.equal(fromSpan.input.date, date);
+    assert.equal(fromSpan.utc, direct.utc);
+    assert.equal(fromSpan.bodies.length, direct.bodies.length);
+    for (let i = 0; i < direct.bodies.length; i++) {
+      // Annotated: `near` is built on assert.ok, and a call to an assertion
+      // function upstream leaves the compiler unable to infer these.
+      const a: BodyPosition = fromSpan.bodies[i];
+      const b: BodyPosition = direct.bodies[i];
+      assert.equal(a.key, b.key);
+      // Six decimals of rounding: two thousandths of an arcsecond.
+      near(a.longitude, b.longitude, 1e-5, `${b.key} longitude on ${date}`);
+      assert.equal(a.sign, b.sign, `${b.key} sign`);
+      assert.equal(a.house, b.house, `${b.key} house`);
+      assert.equal(a.retrograde, b.retrograde, `${b.key} retrograde`);
+    }
+    near(fromSpan.angles.ascendant, direct.angles.ascendant, 1e-5, "ascendant");
+    near(fromSpan.angles.midheaven, direct.angles.midheaven, 1e-5, "midheaven");
+    assert.equal(fromSpan.houses.length, 12);
+    assert.equal(fromSpan.summary.rising, direct.summary.rising);
+    assert.deepEqual(fromSpan.summary.elements, direct.summary.elements);
+    // Aspects are recomputed at the far end, so the list must match.
+    assert.equal(fromSpan.aspects.length, direct.aspects.length, `aspect count on ${date}`);
+    assert.equal(
+      fromSpan.aspects.map((x) => `${x.a}-${x.type}-${x.b}`).join(","),
+      direct.aspects.map((x) => `${x.a}-${x.type}-${x.b}`).join(","),
+      `aspects on ${date}`,
+    );
+  }
+});
+
+check("a span covering a year stays a reasonable download", () => {
+  const span = calculateSpan(
+    { date: "2026-01-01", time: "12:00", timezone: "UTC", latitude: 51.4769, longitude: -0.0005 },
+    365,
+  );
+  const bytes = JSON.stringify(span).length;
+  assert.ok(bytes < 400_000, `a year of span is ${Math.round(bytes / 1024)}KB`);
+  console.log(`    · a year of days is ${Math.round(bytes / 1024)}KB of JSON`);
+});
+
+check("a date outside the span reports itself rather than guessing", () => {
+  const span = calculateSpan(
+    { date: "2026-01-01", time: "12:00", timezone: "UTC", latitude: 0, longitude: 0 },
+    10,
+  );
+  assert.equal(chartForDate(span, "2026-01-05")?.input.date, "2026-01-05");
+  assert.equal(chartForDate(span, "2025-12-31"), null);
+  assert.equal(chartForDate(span, "2026-02-01"), null);
 });
 
 console.log("drawing-grade approximations");

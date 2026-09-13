@@ -1,38 +1,66 @@
-import { calculateSkyAt } from "@elkdonis/astro/server";
+import { calculateChart } from "@elkdonis/astro/server";
+import { listOrgProfiles } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import { SkyExplorer } from "@/components/sky-explorer";
-
-interface Props {
-  /** ?t=<ISO instant> — the moment to chart. Absent or unparseable means now. */
-  searchParams: Promise<{ t?: string }>;
-}
-
-/** Whole seconds: the chart is recomputed per request, so a stable string matters more than ms. */
-function truncate(d: Date): Date {
-  return new Date(Math.floor(d.getTime() / 1000) * 1000);
-}
+import { ChartBuilder } from "@/components/chart-builder";
+import { AstrologersSection, JournalSection, type JournalEntry } from "@/components/home-sections";
+import type { ChartFormValues } from "@/components/chart-form";
+import { listJournal } from "@/lib/journal";
 
 /**
- * The home page is the sky and nothing else.
+ * The home page is a chart you can turn.
  *
- * It carried a strip of collective cards — people, readings, the other sites
- * — for a while, but four of the six had nothing behind them yet, and a row
- * of "not open yet" tiles under a chart is worse than no row at all. The
- * people and the readings have their own pages in the nav; this page is for
- * looking at the sky.
+ * The orbit dial and the wheel sit side by side, and the chart is recast as
+ * the date moves; below it, the place, the time and a name, so the thing you
+ * were playing with becomes your own chart without starting again somewhere
+ * else. Then the people who read charts, what has been written, and the Moon
+ * as it is on the date in the dial.
+ *
+ * The first chart is cast here so the page arrives complete — no spinner on
+ * a wheel that is the whole point of the page.
  */
-export default async function HomePage({ searchParams }: Props) {
-  const { t } = await searchParams;
-  const requested = t ? new Date(t) : null;
-  const valid = requested && !Number.isNaN(requested.getTime()) ? truncate(requested) : null;
-  const at = valid ?? truncate(new Date());
+export default async function HomePage() {
+  const today = new Date();
+  const date = today.toISOString().slice(0, 10);
+  const { name: placeName, latitude, longitude } = siteConfig.skyLocation;
 
-  const { name, latitude, longitude } = siteConfig.skyLocation;
-  const sky = calculateSkyAt(at, latitude, longitude);
+  const initialValues: ChartFormValues = {
+    date,
+    // Noon, not now: the page opens on a chart rather than on the particular
+    // minute it was loaded, and noon is the convention for an unknown time.
+    time: "12:00",
+    timeKnown: true,
+    locationName: placeName,
+    latitude: String(latitude),
+    longitude: String(longitude),
+    timezone: "UTC",
+    houseSystem: "P",
+  };
+
+  const initialChart = calculateChart({
+    date,
+    time: "12:00",
+    timeKnown: true,
+    timezone: "UTC",
+    latitude,
+    longitude,
+    houseSystem: "P",
+  });
+
+  // Both fail soft: the chart is the page, and a database hiccup should cost
+  // a section rather than the whole thing.
+  const [people, journal] = await Promise.all([
+    listOrgProfiles(siteConfig.orgId, { onlyPublic: true }).catch(() => []),
+    listJournal(6).catch((): JournalEntry[] => []),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-6 sm:py-8">
-      <SkyExplorer initialIso={at.toISOString()} initialChart={sky} initialIsNow={valid === null} locationName={name} />
+      <ChartBuilder initialChart={initialChart} initialValues={initialValues}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AstrologersSection people={people} />
+          <JournalSection entries={journal} />
+        </div>
+      </ChartBuilder>
     </div>
   );
 }

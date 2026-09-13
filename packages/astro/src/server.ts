@@ -16,11 +16,14 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { calc_ut, constants, houses_ex2, set_ephe_path, utc_to_jd } from "sweph";
 import tzlookup from "@photostructure/tz-lookup";
-import { bodiesToPoints, computeAspects } from "./aspects";
+import { assembleChart } from "./assemble";
+import { packSpanDay, type ChartSpan } from "./span";
 import { BODIES, BODY_BY_KEY, DEFAULT_HOUSE_SYSTEM, HOUSE_SYSTEMS, SIGN_BY_KEY } from "./constants";
 import { normalizeDegrees, signOf } from "./format";
 import { ChartInputError, localToUtc, nowUtc, utcIso, type UtcParts } from "./time";
-import type { BodyPosition, ChartInput, ChartResult, Element, HouseCusp, Modality } from "./types";
+import type { BodyPosition, ChartInput, ChartResult, Element, HouseCusp, Modality,
+  BodyKey,
+} from "./types";
 
 /** Bump when output for an unchanged input would differ, so cached charts can be recomputed. */
 export const ENGINE_VERSION = "4";
@@ -122,7 +125,10 @@ export function calculateChart(input: ChartInput): ChartResult {
   const [asc, mc, , vertex] = h.data.points as number[];
 
   let usedMoshier = eph === constants.SEFLG_MOSEPH;
-  const bodies: BodyPosition[] = [];
+  const keys: BodyKey[] = [];
+  const longitudes: number[] = [];
+  const latitudes: number[] = [];
+  const speeds: number[] = [];
   for (const b of BODIES) {
     const r = calc_ut(jd, b.sweId, eph | constants.SEFLG_SPEED);
     if (r.flag < 0) {
@@ -138,66 +144,27 @@ export function calculateChart(input: ChartInput): ChartResult {
     }
     if (r.flag & constants.SEFLG_MOSEPH) usedMoshier = true;
     const [lon, lat, , speed] = r.data;
-    const { sign, signDegree } = signOf(lon);
-    bodies.push({
-      key: b.key,
-      longitude: lon,
-      latitude: lat,
-      speed,
-      retrograde: speed < 0,
-      sign,
-      signDegree,
-      house: houseOf(lon, cusps),
-    });
+    keys.push(b.key);
+    longitudes.push(lon);
+    latitudes.push(lat);
+    speeds.push(speed);
   }
 
-  const houses: HouseCusp[] = cusps.map((lon, i) => ({ house: i + 1, longitude: lon, ...signOf(lon) }));
-
-  // The balance counts the ten planets only. Chiron and the Node are points,
-  // not planets, and folding them in would shift every chart's elements away
-  // from the figures astrologers (and every other program) expect.
-  const planets = bodies.filter((b) => BODY_BY_KEY[b.key].group === "planet");
-  const elements = tally<Element>(
-    ["fire", "earth", "air", "water"],
-    planets.map((b) => SIGN_BY_KEY[b.sign].element),
-  );
-  const modalities = tally<Modality>(
-    ["cardinal", "fixed", "mutable"],
-    planets.map((b) => SIGN_BY_KEY[b.sign].modality),
-  );
-
-  return {
-    engineVersion: ENGINE_VERSION,
-    input: { ...input, houseSystem, timeKnown },
-    approximate: !timeKnown,
-    utc: utcIso(utc),
-    julianDayUt: jd,
-    ephemeris: usedMoshier ? "moshier" : "swiss",
-    bodies,
-    houses,
-    angles: {
-      ascendant: asc,
-      midheaven: mc,
-      descendant: normalizeDegrees(asc + 180),
-      imumCoeli: normalizeDegrees(mc + 180),
-      vertex,
+  // Everything a chart shows beyond these numbers is arithmetic, and it lives
+  // in assemble.ts so the browser can do it too — see chartFromSpan.
+  return assembleChart(
+    { longitudes, speeds, latitudes, cusps, ascendant: asc, midheaven: mc, vertex },
+    {
+      input: { ...input, houseSystem, timeKnown },
+      engineVersion: ENGINE_VERSION,
+      utc: utcIso(utc),
+      julianDayUt: jd,
+      ephemeris: usedMoshier ? "moshier" : "swiss",
+      approximate: !timeKnown,
+      warnings,
+      keys,
     },
-    // Bodies first, then the two angles (fixed points), so planet–angle
-    // aspects read as "Sun trine Ascendant".
-    aspects: computeAspects([
-      ...bodiesToPoints(bodies),
-      { key: "ascendant", longitude: asc, speed: 0 },
-      { key: "midheaven", longitude: mc, speed: 0 },
-    ]),
-    summary: {
-      sun: bodies[0].sign,
-      moon: bodies[1].sign,
-      rising: signOf(asc).sign,
-      elements,
-      modalities,
-    },
-    warnings,
-  };
+  );
 }
 
 /**
@@ -241,3 +208,55 @@ export function timeZoneAt(latitude: number, longitude: number): string {
 }
 
 export { ChartInputError } from "./time";
+
+/**
+ * Cast every day in a window, and keep only the numbers.
+ *
+ * One call replaces a round trip per day while a dial is being dragged. The
+ * cost is linear and small — a chart is a few milliseconds — so a year is
+ * well under a second, and the browser then scrubs it with no network at all.
+ * See span.ts for what travels and what is rebuilt at the other end.
+ */
+export function calculateSpan(
+  input: ChartInput,
+  days: number,
+): ChartSpan {
+  if (!Number.isInteger(days) || days < 1 || days > 800) {
+    throw new ChartInputError("A span must be between 1 and 800 days");
+  }
+
+  const start = Date.parse(`${input.date}T00:00:00Z`);
+  if (Number.isNaN(start)) throw new ChartInputError("Invalid start date");
+
+  const rows: ChartSpan["days"] = [];
+  let first: ChartResult | null = null;
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
+    const chart = calculateChart({ ...input, date });
+    if (!first) first = chart;
+    rows.push(
+      packSpanDay({
+        utc: chart.utc,
+        jd: chart.julianDayUt,
+        lon: chart.bodies.map((b) => b.longitude),
+        spd: chart.bodies.map((b) => b.speed),
+        cusp: chart.houses.map((h) => h.longitude),
+        asc: chart.angles.ascendant,
+        mc: chart.angles.midheaven,
+        vtx: chart.angles.vertex,
+      }),
+    );
+  }
+
+  const { date: _ignored, ...fixed } = first!.input;
+  return {
+    engineVersion: ENGINE_VERSION,
+    ephemeris: first!.ephemeris,
+    from: input.date,
+    input: fixed,
+    keys: first!.bodies.map((b) => b.key),
+    warnings: first!.warnings,
+    days: rows,
+  };
+}

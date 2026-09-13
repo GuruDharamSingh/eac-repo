@@ -28,6 +28,14 @@ export {
 } from "./time";
 export { moonPhase, moonPhaseFrom, type MoonPhase, type MoonPhaseName } from "./moon";
 export {
+  chartForDate,
+  chartFromSpan,
+  spanIndexOf,
+  SPAN_PRECISION,
+  type ChartSpan,
+} from "./span";
+export { assembleChart, houseOf, type ChartRaw } from "./assemble";
+export {
   elongation,
   illuminatedFraction,
   julianDay,
