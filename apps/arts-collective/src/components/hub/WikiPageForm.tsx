@@ -193,6 +193,9 @@ export function WikiPageForm({
           minHeight={320}
           ariaLabel="Wiki page body"
           wikiPages={wikiPages}
+          // Only when editing: a page being created has no id yet to hang a
+          // reference edge from.
+          sourceThreadId={threadId}
         />
         <p className="text-xs text-muted-foreground">
           Type <code className="rounded bg-muted px-1 py-0.5">[[</code> to search
