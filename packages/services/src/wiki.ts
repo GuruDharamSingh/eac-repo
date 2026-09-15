@@ -499,6 +499,93 @@ async function syncWikiLinks(threadId: string, linkedThreadIds: string[]): Promi
 }
 
 // ============================================================================
+// Talk pages — discussion about a wiki page, on the forum
+// ============================================================================
+
+/** The feed added by migration 126, where Talk topics live. */
+const WIKI_TALK_FEED = 'wiki-talk';
+
+export interface WikiTalkThread {
+  id: string;
+  slug: string;
+  replyCount: number;
+}
+
+/**
+ * The discussion topic for a wiki page, creating it only when asked.
+ *
+ * A wiki page is not a forum topic — it has no post #1 and everyone rewrites
+ * it, which is why it is excluded from the boards by kind. Discussion *about*
+ * a page is an ordinary topic, so that is exactly what this is: a normal
+ * thread in a public feed, appearing in lists, search and Latest like any
+ * other, paired to its page by `metadata.wikiTalkFor` (indexed in 126)
+ * rather than a join table.
+ *
+ * `ensure` is off by default because a wiki page view asks this on every
+ * render. Creating eagerly would seed the forum with an empty topic for every
+ * page nobody has discussed; the "Start a discussion" button passes it.
+ */
+export async function wikiTalkThread(
+  wikiThreadId: string,
+  opts: { ensure?: boolean; authorId?: string } = {}
+): Promise<WikiTalkThread | null> {
+  const [found] = await db<Array<{ id: string; slug: string; reply_count: string }>>`
+    SELECT t.id, t.slug,
+           (SELECT COUNT(*)::text FROM replies r WHERE r.thread_id = t.id) AS reply_count
+    FROM threads t
+    WHERE t.metadata->>'wikiTalkFor' = ${wikiThreadId}
+      AND t.status <> 'archived'
+    ORDER BY t.created_at ASC
+    LIMIT 1
+  `;
+  if (found) {
+    return { id: found.id, slug: found.slug, replyCount: Number(found.reply_count) };
+  }
+  if (!opts.ensure) return null;
+
+  const page = await db<Array<{ title: string; author_id: string }>>`
+    SELECT title, author_id FROM threads
+    WHERE id = ${wikiThreadId} AND kind = 'wiki_page'
+  `;
+  const wiki = page[0];
+  if (!wiki) return null;
+
+  const thread = await createThread({
+    orgId: WIKI_ORG,
+    authorId: opts.authorId ?? wiki.author_id,
+    kind: 'post',
+    title: `Discussion: ${wiki.title}`,
+    body:
+      `<p>Discussion about the wiki page ` +
+      `<a class="wikilink" data-wiki-slug="${escapeHtml(await slugOf(wikiThreadId))}">` +
+      `${escapeHtml(wiki.title)}</a>.</p>`,
+    status: 'published',
+    // A real topic, unlike the page it discusses — this one is meant to be
+    // found on the boards.
+    visibility: 'PUBLIC',
+    section: WIKI_TALK_FEED,
+    metadata: { wikiTalkFor: wikiThreadId },
+  });
+
+  // Edge both ways: the page's "what links here" shows its discussion, and
+  // the discussion counts as a reference to the page.
+  await db`
+    INSERT INTO thread_references (id, thread_id, references_thread_id)
+    VALUES (${nanoid()}, ${thread.id}, ${wikiThreadId})
+    ON CONFLICT (thread_id, references_thread_id) DO NOTHING
+  `;
+
+  return { id: thread.id, slug: thread.slug, replyCount: 0 };
+}
+
+async function slugOf(threadId: string): Promise<string> {
+  const [row] = await db<Array<{ slug: string }>>`
+    SELECT slug FROM threads WHERE id = ${threadId}
+  `;
+  return row?.slug ?? '';
+}
+
+// ============================================================================
 // Search
 // ============================================================================
 

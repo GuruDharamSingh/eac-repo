@@ -38,3 +38,10 @@ export const hrefs = networkHrefs({
   profile: (slug) => (slug ? `${ARTDIRECT_URL}/${slug}` : null),
   orgSite: (org) => (org.primaryDomain ? `https://${org.primaryDomain}` : `${NETWORK_HOST.startsWith("localhost") ? "http" : "https"}://${org.slug}.${NETWORK_HOST}`),
 });
+
+/**
+ * Where the wiki is edited. The forum renders wiki pages at its own /wiki/…
+ * routes but never hosts the editor, so Edit and New link out to the one
+ * console on arts-collective.
+ */
+export const WIKI_CONSOLE = `${NETWORK_URL}/hub/wiki`;

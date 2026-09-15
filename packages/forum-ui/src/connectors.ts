@@ -193,7 +193,7 @@ export interface ForumWikiConnectors {
    */
   talkThread?(
     wikiThreadId: string,
-    opts?: { ensure?: boolean }
+    opts?: { ensure?: boolean; authorId?: string }
   ): Promise<{ id: string; slug: string; replyCount: number } | null>;
   /** Where a page is edited — the wiki's own console, off the forum. */
   editHref?(slug: string): string | null;
@@ -398,7 +398,12 @@ function wikiConnectors(
       ]);
 
       const resolved = await s.resolveTerms(page.body ?? "", base);
-      const { html } = renderWikiBody(resolved.html, base);
+      // Read links resolve to the forum's own /wiki/…, but an UNWRITTEN link
+      // has to point at the editing console: the forum has no /wiki/new of
+      // its own, so defaulting would make every red link a 404.
+      const { html } = renderWikiBody(resolved.html, base, {
+        newBase: console_ ? `${console_}/new` : undefined,
+      });
 
       return {
         id: page.id,

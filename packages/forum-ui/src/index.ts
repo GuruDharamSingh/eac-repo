@@ -17,6 +17,13 @@ export type { ForumRouteContext } from "./routes";
 
 export { serviceConnectors, networkHrefs, orgHrefs } from "./connectors";
 export type { ForumConnectors, ForumHrefs, ForumWriteConnectors, ServiceConnectorOptions } from "./connectors";
+export type {
+  ForumWikiConnectors,
+  ForumWikiPage,
+  ForumWikiPageRow,
+  ForumWikiSearchHit,
+  ForumWikiSearchSpan,
+} from "./connectors";
 
 export { handleForumAction } from "./actions";
 export { NotificationsBell } from "./bell";

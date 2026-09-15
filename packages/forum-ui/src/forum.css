@@ -529,3 +529,89 @@ h1.gf-org-name { font-size: 32px; }
   .gf-agenda-going { grid-column: 2; grid-row: auto; }
   .gf-brand { font-size: 24px; }
 }
+
+/* ── the wiki, as a section of the forum ──────────────────────────────────
+   Reference reading, not a stream of posts: a measure narrow enough to read
+   a paragraph in, and an outline that shows the page tree rather than hiding
+   it behind alphabetical order. Tokens are the board's own, so the wiki
+   inherits whatever skin and mode the host is in. */
+
+.gf-wiki-search { display: flex; gap: 6px; margin: 10px 0 2px; }
+.gf-wiki-search input { flex: 1 1 auto; max-width: 30rem; }
+
+.gf-wiki-outline { list-style: none; margin: 8px 0 0; padding: 0; }
+.gf-wiki-outline li { padding: 3px 0; line-height: 1.45; }
+.gf-wiki-gloss {
+  display: block;
+  color: var(--gf-ink-soft, #5e667a);
+  font-size: 0.82em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gf-wiki-recent { list-style: none; margin: 8px 0 0; padding: 0; }
+.gf-wiki-recent li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+.gf-wiki-recent time { color: var(--gf-ink-soft, #5e667a); font-size: 0.82em; white-space: nowrap; }
+
+.gf-wiki-hits { list-style: none; margin: 8px 0 0; padding: 0; }
+.gf-wiki-hits > li { padding: 8px 0; border-bottom: 1px solid var(--gf-rule, #d9dde2); }
+.gf-wiki-hits > li:last-child { border-bottom: 0; }
+.gf-wiki-hits p { margin: 2px 0 0; color: var(--gf-ink-soft, #5e667a); font-size: 0.86em; line-height: 1.5; }
+.gf-wiki-hits mark { background: var(--gf-mark, #fde68a); color: inherit; padding: 0 1px; }
+
+.gf-wiki-tag,
+.gf-wiki-topics li {
+  display: inline-block;
+  border: 1px solid var(--gf-rule, #d9dde2);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gf-ink-soft, #5e667a);
+}
+.gf-wiki-tag { margin-left: 6px; }
+.gf-wiki-topics { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; padding: 0; }
+
+.gf-wiki-actions { display: inline-flex; gap: 6px; }
+
+/* The page itself. 68ch keeps a definition readable; the board's own rows are
+   allowed to be wider because they are scanned, not read. */
+.gf-wiki-body { max-width: 68ch; line-height: 1.65; margin-top: 10px; }
+.gf-wiki-body > :first-child { margin-top: 0; }
+.gf-wiki-body h2, .gf-wiki-body h3 { line-height: 1.25; margin: 1.3em 0 0.4em; }
+.gf-wiki-body p, .gf-wiki-body ul, .gf-wiki-body ol { margin: 0.6em 0; }
+.gf-wiki-body table { border-collapse: collapse; width: 100%; margin: 0.9em 0; }
+.gf-wiki-body th, .gf-wiki-body td {
+  border: 1px solid var(--gf-rule, #d9dde2);
+  padding: 5px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.gf-wiki-body img { max-width: 100%; height: auto; }
+/* An unwritten link is an invitation, and has to look different from a real
+   one without looking broken. Marked by line style and weight rather than a
+   colour: the board renders in light AND dark, and any single hardcoded red
+   that passes contrast on paper fails on the dark ground. */
+.gf-wiki-body .wikilink-new {
+  text-decoration-style: dotted;
+  text-decoration-thickness: from-font;
+  opacity: 0.72;
+}
+/* A defined term: glossed, not clickable-looking. */
+.gf-wiki-body .eac-term { font-style: normal; border-bottom: 1px dotted currentColor; cursor: help; }
+.gf-wiki-body .eac-term:not([data-definition]) { border-bottom-color: transparent; cursor: default; }
+
+.gf-wiki-senses { margin: 8px 0 0; padding-left: 1.2em; }
+.gf-wiki-senses li { margin: 0 0 10px; }
+.gf-wiki-senses p { margin: 0; line-height: 1.55; }
+.gf-wiki-senses small { color: var(--gf-ink-soft, #5e667a); font-size: 0.8em; }
+
+.gf-wiki-backlinks { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; padding: 0; }

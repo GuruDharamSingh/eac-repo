@@ -14,10 +14,10 @@ import type { ForumConnectors } from "./connectors";
 export type ForumActionName =
   | "reply" | "topic" | "vote" | "heart" | "watch" | "bookmark"
   | "read-all" | "propose-topic" | "moderate" | "notifications-read" | "review-topic"
-  | "set-theme" | "category";
+  | "set-theme" | "category" | "wiki-talk";
 
 const ACTIONS = new Set<string>([
-  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category",
+  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category", "wiki-talk",
 ]);
 
 function str(fd: FormData, key: string): string {
@@ -163,6 +163,20 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       if (decision !== "approved" && decision !== "rejected") return fail("Bad decision.");
       const r = await w.reviewTopic(viewer, str(fd, "topic"), decision);
       return r.ok === true ? done(back, decision === "approved" ? "Approved." : "Rejected.") : fail(r.error);
+    }
+    // Start the Talk page for a wiki page. Creating on demand rather than
+    // with every wiki page is what keeps the board free of empty topics.
+    case "wiki-talk": {
+      const wikiTalk = connectors.wiki?.talkThread;
+      if (!wikiTalk) return fail("Not available here.");
+      // Attributed to whoever starts the discussion, not to whoever happened
+      // to create the wiki page.
+      const talk = await wikiTalk(str(fd, "wikiThreadId"), {
+        ensure: true,
+        authorId: viewer.userId,
+      });
+      if (!talk) return fail("That page is gone.");
+      return done(hrefs.thread(talk.id, talk.slug));
     }
   }
   return new Response("Not found", { status: 404 });

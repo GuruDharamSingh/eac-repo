@@ -55,7 +55,16 @@ function decodeAttr(value: string): string {
  */
 export function renderWikiBody(
   html: string,
-  basePath: string
+  basePath: string,
+  opts: {
+    /**
+     * Where an UNWRITTEN link should go. Defaults to `${basePath}/new`, which
+     * is right for a host that owns the editor. A host that only DISPLAYS the
+     * wiki — the forum — has no /new route of its own, so it passes the
+     * editing console's instead; otherwise every red link is a 404.
+     */
+    newBase?: string;
+  } = {}
 ): { html: string; headings: WikiHeading[] } {
   const headings: WikiHeading[] = [];
   const used = new Map<string, number>();
@@ -83,7 +92,7 @@ export function renderWikiBody(
       const href =
         kind === "slug"
           ? `${basePath}/${encodeURIComponent(target)}`
-          : `${basePath}/new?title=${encodeURIComponent(target)}`;
+          : `${opts.newBase ?? `${basePath}/new`}?title=${encodeURIComponent(target)}`;
       const title =
         kind === "slug" ? "" : ` title="Unwritten page — click to start it"`;
       return `<a ${before}${after} href="${href}"${title}>`;

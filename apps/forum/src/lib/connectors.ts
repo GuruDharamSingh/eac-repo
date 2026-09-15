@@ -1,7 +1,7 @@
 import { serviceConnectors, type ForumConnectors } from "@elkdonis/forum-ui";
 import { cookies } from "next/headers";
 import { getViewer } from "@/lib/viewer";
-import { hrefs, SITE, ACTION_BASE, FORUM_THEME } from "@/lib/site";
+import { hrefs, SITE, ACTION_BASE, FORUM_THEME, WIKI_CONSOLE } from "@/lib/site";
 
 /** The network host's connectors: every org, writes on, forms post to /api/forum. */
 export async function getConnectors(): Promise<ForumConnectors> {
@@ -15,5 +15,8 @@ export async function getConnectors(): Promise<ForumConnectors> {
     hrefs,
     actionBase: ACTION_BASE,
     theme,
+    // The forum shows the wiki; arts-collective owns editing it. Pointing
+    // out rather than duplicating the editor here is what keeps one console.
+    wikiConsole: WIKI_CONSOLE,
   });
 }

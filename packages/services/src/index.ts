@@ -139,6 +139,7 @@ export {
   setWikiTopics,
   listWikiPagesByTopic,
   searchWiki,
+  wikiTalkThread,
 } from './wiki';
 export type {
   WikiPage,
@@ -152,6 +153,7 @@ export type {
   WikiTopic,
   WikiSearchHit,
   WikiSearchSpan,
+  WikiTalkThread,
 } from './wiki';
 
 // Auth services
