@@ -71,11 +71,17 @@
   overflow: hidden;
   rotate: var(--eac-pen-moon-rotate);
   background-color: var(--eac-pen-moon-lit);
-  /* --eac-pen-moon-face takes a url() for a real photograph; the gradients
-     below are the no-asset fallback — maria, a couple of bright rays, and a
-     limb darkening that keeps the edge from looking like a sticker. */
-  background-image: var(--eac-pen-moon-face, none),
-    radial-gradient(circle at 44% 42%, #0000 58%, color-mix(in srgb, var(--eac-pen-moon-dark) 30%, #0000) 100%),
+  /* --eac-pen-moon-face takes a url() for a real photograph; the maria
+     gradients below it are the no-asset fallback. The limb darkening is
+     deliberately the TOP layer, so it falls on a photograph too: an orbital
+     mosaic is normalised flat across the disc, and without an edge it reads
+     as a sticker rather than a sphere. */
+  background-image: radial-gradient(
+      circle at 44% 42%,
+      #0000 58%,
+      color-mix(in srgb, var(--eac-pen-moon-dark) 30%, #0000) 100%
+    ),
+    var(--eac-pen-moon-face, none),
     radial-gradient(circle at 33% 30%, var(--eac-pen-moon-maria) 0 9%, #0000 10%),
     radial-gradient(circle at 46% 26%, var(--eac-pen-moon-maria) 0 12%, #0000 13%),
     radial-gradient(circle at 62% 38%, var(--eac-pen-moon-maria) 0 10%, #0000 11%),

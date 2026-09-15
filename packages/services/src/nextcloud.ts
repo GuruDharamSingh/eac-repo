@@ -319,7 +319,14 @@ export async function createCollaborativeDocument(
   meetingTitle: string,
   meetingId: string,
   initialContent?: string
-): Promise<{ fileId: string; url: string; editUrl: string; shareToken: string } | null> {
+): Promise<{
+  fileId: string;
+  /** Storage path, so a caller can read the body back later. */
+  path: string;
+  url: string;
+  editUrl: string;
+  shareToken: string;
+} | null> {
   try {
     const timestamp = Date.now();
     const filename = `${timestamp}-${meetingId}.md`;
@@ -380,6 +387,7 @@ export async function createCollaborativeDocument(
 
     return {
       fileId,
+      path,
       url: viewUrl,
       editUrl,
       shareToken,

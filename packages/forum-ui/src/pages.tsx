@@ -54,7 +54,7 @@ function backUrl(path: string, sp: PageProps["searchParams"]): string {
   return s ? `${path}?${s}` : path;
 }
 
-function Layout({ main, rail }: { main: React.ReactNode; rail?: React.ReactNode }) {
+export function Layout({ main, rail }: { main: React.ReactNode; rail?: React.ReactNode }) {
   return (
     <div className={`gf-layout${rail ? " has-rail" : ""}`}>
       <div className="gf-main">{main}</div>

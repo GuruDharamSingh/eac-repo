@@ -7,6 +7,7 @@ import {
   type LayerMeta,
   type SurfaceApi,
   type SurfaceLayer,
+  type SurfaceOrigin,
 } from "./context";
 import type { SurfaceConnectors, SurfaceDescriptor } from "./types";
 import { kindMeta } from "./kinds";
@@ -43,6 +44,60 @@ export interface SurfaceProviderProps {
 
 let nextId = 1;
 
+/**
+ * The face grows into the surface.
+ *
+ * FLIP: the panel is already sitting where it belongs (Last), so measure it,
+ * put it back onto the face for a single frame (Invert), then let go and it
+ * plays home. Same technique and the same `data-move` vocabulary as the
+ * fold-card pen, which ports the transition this is modelled on
+ * (packages/silex-nextcloud-connector/src/pens/fold-card).
+ *
+ * Everything about the surface that matters — top layer, backdrop, focus,
+ * Escape — is untouched; this only changes how it arrives. Without an origin
+ * (a deep link, a calendar day, `?surface=` on load) there is nothing to grow
+ * out of, so the surface keeps its plain rise-and-settle.
+ */
+function morphIn(
+  dialog: HTMLDialogElement,
+  panel: HTMLElement | null,
+  from: DOMRect | null
+): void {
+  if (!panel || !from || !from.width || !from.height) return;
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  // Suppress the dialog's own entry transform first: two transforms fighting
+  // over the same box would land the panel somewhere neither intended.
+  dialog.dataset.morph = "1";
+
+  const to = panel.getBoundingClientRect();
+  if (!to.width || !to.height) {
+    delete dialog.dataset.morph;
+    return;
+  }
+
+  panel.style.setProperty("--sf-dx", String(from.x - to.x));
+  panel.style.setProperty("--sf-dy", String(from.y - to.y));
+  panel.style.setProperty("--sf-dw", String(from.width / to.width));
+  panel.style.setProperty("--sf-dh", String(from.height / to.height));
+  panel.dataset.move = "pending";
+
+  requestAnimationFrame(() => {
+    panel.dataset.move = "moving";
+  });
+}
+
+/** A face, an explicit rect, or nothing. */
+function rectOf(origin: SurfaceOrigin | undefined): DOMRect | null {
+  if (!origin) return null;
+  return typeof DOMRect !== "undefined" && origin instanceof DOMRect
+    ? origin
+    : (origin as HTMLElement).getBoundingClientRect();
+}
+
+
 function initialMeta(d: SurfaceDescriptor): LayerMeta {
   switch (d.type) {
     case "thread":
@@ -69,6 +124,8 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: d.preview?.title ?? null, kind: "board", size: "standard" };
     case "forum":
       return { title: "Forum", kind: "forum", size: "wide" };
+    case "documents":
+      return { title: "Documents", kind: "document", size: "wide" };
     case "profile":
       return { title: d.target ? "Organisation" : "Your profile", kind: "neutral", size: "wide" };
     case "centerLayout":
@@ -87,6 +144,9 @@ function makeLayer(d: SurfaceDescriptor): SurfaceLayer {
 export function SurfaceProvider({ connectors, children, syncUrl = true }: SurfaceProviderProps) {
   const [stack, setStack] = React.useState<SurfaceLayer[]>([]);
   const dialogRef = React.useRef<HTMLDialogElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  /** The face the current surface was opened from, for the morph. */
+  const originRef = React.useRef<DOMRect | null>(null);
   const returnFocusTo = React.useRef<Element | null>(null);
   /** True when this provider pushed the history entry the popup lives on. */
   const ownsEntry = React.useRef(false);
@@ -110,7 +170,8 @@ export function SurfaceProvider({ connectors, children, syncUrl = true }: Surfac
   // ── the API ──────────────────────────────────────────────────────────────
 
   const open = React.useCallback(
-    (d: SurfaceDescriptor) => {
+    (d: SurfaceDescriptor, origin?: SurfaceOrigin) => {
+      originRef.current = rectOf(origin);
       const layer = makeLayer(d);
       const wasOpen = stackRef.current.length > 0;
       setStack([layer]);
@@ -231,6 +292,9 @@ export function SurfaceProvider({ connectors, children, syncUrl = true }: Surfac
       // Land on the panel, not the first input: the first thing in most
       // surfaces is something to read or a choice to make.
       el.focus();
+      // After showModal, not before: the panel is only in the top layer —
+      // and so only measurable where it will actually sit — once it is open.
+      morphIn(el, panelRef.current, originRef.current);
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
@@ -238,6 +302,8 @@ export function SurfaceProvider({ connectors, children, syncUrl = true }: Surfac
       };
     }
     if (!isOpen && el.open) {
+      delete el.dataset.morph;
+      originRef.current = null;
       el.close();
       (returnFocusTo.current as HTMLElement | null)?.focus?.();
       returnFocusTo.current = null;
@@ -283,7 +349,7 @@ export function SurfaceProvider({ connectors, children, syncUrl = true }: Surfac
         }}
       >
         {isOpen && (
-          <div className="eac-surface-panel">
+          <div className="eac-surface-panel" ref={panelRef}>
             {stack.map((layer, index) => (
               <LayerHost
                 key={layer.id}

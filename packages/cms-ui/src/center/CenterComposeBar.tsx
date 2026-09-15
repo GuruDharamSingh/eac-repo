@@ -54,7 +54,7 @@ export function CenterComposeBar({
       type="button"
       className={cls}
       aria-haspopup="dialog"
-      onClick={() => surfaces?.open({ type: "write", kind: "post" })}
+      onClick={(e) => surfaces?.open({ type: "write", kind: "post" }, e.currentTarget)}
     >
       {body}
     </button>

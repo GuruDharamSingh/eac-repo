@@ -3,28 +3,44 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { siteConfig } from "@/config/site";
+
+export interface NavOffering {
+  slug: string;
+  title: string;
+}
 
 interface SiteHeaderProps {
   signedIn: boolean;
   canEdit: boolean;
   isMember?: boolean;
+  offerings?: NavOffering[];
 }
 
-const NAV_LINKS = [
-  { href: "/services", label: "Services" },
-  { href: "/about", label: "About" },
-  { href: "/forum", label: "Forum" },
-];
+const NAV_LINKS = [{ href: "/about", label: "About" }];
 
-export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderProps) {
+export function SiteHeader({
+  signedIn,
+  canEdit,
+  isMember = false,
+  offerings = [],
+}: SiteHeaderProps) {
   const homeHref = isMember ? "/hub" : "/center";
   const homeLabel = isMember ? "Hub" : "Center";
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const offeringsActive = offerings.some(
+    (o) => pathname === `/${o.slug}` || pathname.startsWith(`/${o.slug}/`)
+  );
 
   return (
     <header className="bg-header-footer sticky top-0 z-40 border-b-[3px] border-[#f4c430] shadow-[0_4px_15px_rgba(0,0,0,0.15)]">
@@ -39,6 +55,30 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-3 py-2 text-sm transition-colors hover:bg-[#f4c430]/15",
+                  offeringsActive
+                    ? "font-medium text-[#f4c430]"
+                    : "text-[#fdf5e6]/80 hover:text-[#f4c430]"
+                )}
+              >
+                Offerings
+                <ChevronDown className="size-3.5" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {offerings.map((offering) => (
+                <DropdownMenuItem key={offering.slug} asChild>
+                  <Link href={`/${offering.slug}`}>{offering.title}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {NAV_LINKS.map((link) => {
             const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
@@ -98,6 +138,20 @@ export function SiteHeader({ signedIn, canEdit, isMember = false }: SiteHeaderPr
 
       {open && (
         <nav className="border-t border-[#f4c430]/30 px-5 pb-4 md:hidden">
+          <span className="block pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-[#fdf5e6]/50">
+            Offerings
+          </span>
+          {offerings.map((offering) => (
+            <Link
+              key={offering.slug}
+              href={`/${offering.slug}`}
+              onClick={() => setOpen(false)}
+              className="block py-2 pl-3 text-sm text-[#fdf5e6]/80"
+            >
+              {offering.title}
+            </Link>
+          ))}
+
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}

@@ -9,7 +9,14 @@ import {
 import { sendRsvpConfirmation, sendRsvpNotification } from "@elkdonis/email";
 import { isWithinCurrentCycle } from "@elkdonis/utils";
 import { getViewer } from "@/lib/auth";
+import { getThreadMaterials } from "@/lib/data";
+import {
+  MEETING_EMAIL_TEMPLATE_KEY,
+  getEmailTemplateSettingsForThread,
+} from "@/lib/email-template-settings";
 import { siteConfig } from "@/config/site";
+
+const EMBLEM_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://amritcanada.ca"}/email/khanda-gold.png`;
 
 /**
  * Member RSVP. Guests use /api/rsvp instead.
@@ -144,6 +151,21 @@ export async function POST(
 
     try {
       if (receiveEmailNotice && previous !== "yes") {
+        const settings = await getEmailTemplateSettingsForThread(
+          siteConfig.orgId,
+          MEETING_EMAIL_TEMPLATE_KEY,
+          id
+        ).catch(() => null);
+        const config = settings?.config ?? {};
+        const materials = await getThreadMaterials(id);
+        const selectedMaterials = config.materialIds?.length
+          ? materials.filter((m) => config.materialIds!.includes(m.id))
+          : materials;
+        const links = [
+          ...selectedMaterials.map((m) => ({ label: m.filename, url: m.url })),
+          ...(config.links ?? []),
+        ];
+
         await sendRsvpConfirmation(viewer.email, {
           guestName: viewer.email.split("@")[0],
           meetingTitle: thread.title,
@@ -152,6 +174,12 @@ export async function POST(
           location: thread.location ?? undefined,
           meetingUrl: thread.meeting_url ?? undefined,
           orgName: siteConfig.orgName,
+          dark: false,
+          emblemUrl: EMBLEM_URL,
+          emblemAlt: "Khanda",
+          bodyText: config.bodyText,
+          links,
+          media: config.media,
         });
       }
     } catch (err) {

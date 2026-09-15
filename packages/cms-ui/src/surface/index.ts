@@ -30,6 +30,8 @@ export type { SurfaceFrameProps } from "./SurfaceShell";
 
 export { SurfacePage } from "./SurfacePage";
 export type { SurfacePageProps } from "./SurfacePage";
+export { toSurfaceThread } from "./thread-mapper";
+export type { ThreadMapperInput, ThreadMapperExtras } from "./thread-mapper";
 export { threadViewParts } from "./ThreadView";
 export type { ThreadViewParts } from "./ThreadView";
 export { BoardMini } from "./surfaces/BoardSurface";
@@ -39,6 +41,7 @@ export { MonthGrid } from "./surfaces/CalendarSurface";
 export type { MonthGridProps } from "./surfaces/CalendarSurface";
 export { defaultThreadToAnswers } from "./surfaces/ComposeSurface";
 export { DefineSurface } from "./surfaces/DefineSurface";
+export { DocumentsSurface } from "./surfaces/DocumentsSurface";
 
 export { kindMeta, asSurfaceKind } from "./kinds";
 export type { KindMeta } from "./kinds";
@@ -69,6 +72,11 @@ export type {
   SurfaceDescriptor,
   ThreadPreview,
   SurfaceEvent,
+  SurfaceImage,
+  SurfaceDocument,
+  SurfaceDocumentConnectors,
+  SurfaceIdea,
+  SurfaceIdeaConnectors,
   SurfaceThread,
   SurfaceSession,
   SurfaceAction,

@@ -9,6 +9,9 @@ import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getThemeOverrides } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { GalleryPanel } from "@/components/gallery-panel";
+import { GalleriesSection } from "@/components/galleries-section";
+import { FRAME_THEME_VARS } from "@/lib/theme-tokens";
+import { listUserGalleries } from "@elkdonis/services";
 import { defaultSiteContent } from "@/lib/default-content";
 import { ElkdonisFeed } from "@/components/elkdonis-feed";
 import { StoreShowcase } from "@elkdonis/commerce/components";
@@ -18,7 +21,7 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ edit?: string }> };
 
 export async function generateStaticParams() {
   const slugs = await listDirectorySlugs("artist");
@@ -32,8 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${profile.name} — IFAC Artist` };
 }
 
-export default async function ArtistPage({ params }: Props) {
+export default async function ArtistPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { edit } = await searchParams;
   const profile = await getDirectoryProfile(slug);
   if (!profile || profile.kind !== "artist") notFound();
 
@@ -60,6 +64,11 @@ export default async function ArtistPage({ params }: Props) {
       ? await getStoreShowcaseForUser(profile.userId, { limit: 6 }).catch(() => null)
       : null;
 
+  // Their gallery pages. Hidden ones are listed only for the owner/admin.
+  const galleries = profile.userId
+    ? await listUserGalleries(profile.userId, { onlyPublic: !editable })
+    : [];
+
   const galleryItems = profile.artworks.map((w, i) => ({
     id: w.id ?? `${slug}-${i}`,
     url: w.filename,
@@ -84,12 +93,12 @@ export default async function ArtistPage({ params }: Props) {
 
         {editable && profile.userId && (
           <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px" }}>
-            <ProfileEditorPanel profileUserId={profile.userId} slug={profile.slug} bio={profile.bio.join("\n\n")} avatarUrl={profile.portrait} themeOverrides={themeOverrides} isSelf={isSelf} />
+            <ProfileEditorPanel profileUserId={profile.userId} slug={profile.slug} bio={profile.bio.join("\n\n")} avatarUrl={profile.portrait} themeOverrides={themeOverrides} isSelf={isSelf} startEditing={edit === "1"} />
           </div>
         )}
 
         <div className="profile-body">
-          <aside className="profile-sidebar">
+          <aside className="profile-sidebar" data-theme-vars={FRAME_THEME_VARS} data-theme-label="Sidebar">
             {profile.portrait && (
               <img src={profile.portrait} alt={profile.name} className="profile-portrait" />
             )}
@@ -112,7 +121,7 @@ export default async function ArtistPage({ params }: Props) {
             )}
           </aside>
 
-          <section className="profile-gallery">
+          <section className="profile-gallery" data-theme-vars={FRAME_THEME_VARS} data-theme-label="Featured work">
             {galleryItems.length > 0 || editable ? (
               <GalleryPanel profileUserId={profile.userId ?? ""} slug={profile.slug} items={galleryItems} editable={editable} />
             ) : (
@@ -120,6 +129,16 @@ export default async function ArtistPage({ params }: Props) {
             )}
           </section>
         </div>
+
+        {profile.userId && (
+          <GalleriesSection
+            profileUserId={profile.userId}
+            profileSlug={profile.slug}
+            kind="artists"
+            galleries={galleries}
+            editable={editable}
+          />
+        )}
 
         {storeShowcase && (
           <div className="mx-auto max-w-6xl px-6 py-10">

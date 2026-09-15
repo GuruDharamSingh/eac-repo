@@ -1,0 +1,308 @@
+/* Adapted from the tabbed profile-card design the user supplied (a
+   Supahfunk-style CodePen). The original used SCSS nesting (&:hover,
+   &:last-child) which isn't valid plain CSS -- flattened here, same look:
+   blurred cover photo, overlapping avatar, sliding fade between tabs,
+   gradient CTA button, dotted timeline. */
+
+.card {
+  max-width: 360px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(145deg, #fdf5e6 0%, #faf0e6 100%);
+  border: 2px solid #e6b422;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(244, 196, 48, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 16px 48px rgba(244, 196, 48, 0.28),
+    0 0 0 3px rgba(244, 196, 48, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* .portrait wraps the header-space + the name/title beneath it in one
+   positioning context, so the glass-gradient panel can span both and fade
+   out around the name instead of stopping at an abrupt header/identity
+   seam. .header itself is just an empty spacer that reserves the photo
+   zone's height; the actual visuals (glow, avatar) are portrait's direct
+   children so they can be positioned against that combined height. */
+.portrait {
+  position: relative;
+}
+
+.header {
+  flex-shrink: 0;
+  transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.headerLarge {
+  height: 168px;
+}
+
+.headerCompact {
+  height: 76px;
+}
+
+/* The glass-gradient panel: photo blur, then a personalized left/right
+   color blend that fades into the card's own base tone by the time it
+   reaches the name, then a frosted-glass layer on top of all of it. */
+.glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cover {
+  position: absolute;
+  inset: -20% 0 auto 0;
+  height: 60%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(26px);
+  transform: scale(1.25);
+}
+
+.glowGradient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, transparent 0%, var(--gp-base) 85%),
+    linear-gradient(120deg, var(--gp-left) 0%, var(--gp-right) 100%);
+}
+
+.glowGlass {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.avatar {
+  position: absolute;
+  z-index: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fdf5e6;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.35s cubic-bezier(0.4, 0, 0.2, 1), top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.avatarLarge {
+  top: 168px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 128px;
+  height: 128px;
+}
+
+.avatarCompact {
+  top: 76px;
+  left: 20px;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+}
+
+.identity {
+  position: relative;
+  z-index: 1;
+  transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.identityLarge {
+  padding: 76px 24px 4px;
+  text-align: center;
+}
+
+.identityCompact {
+  padding: 6px 24px 4px 86px;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fullname {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #36454f;
+  margin: 0;
+}
+
+.jobtitle {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #d16b47;
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
+.content {
+  padding: 16px 24px;
+  min-height: 128px;
+}
+
+.section {
+  animation: fadeIn 0.45s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.subtitle {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8797a1;
+  margin-bottom: 10px;
+}
+
+.desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #636b6f;
+  margin: 0;
+}
+
+.timeline {
+  position: relative;
+  margin-top: 4px;
+}
+
+.timeline::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: linear-gradient(to top, rgba(134, 214, 243, 0) 0%, #516acc 100%);
+}
+
+.item {
+  position: relative;
+  padding-left: 26px;
+  padding-bottom: 16px;
+}
+
+.item:last-child {
+  padding-bottom: 0;
+}
+
+.item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fdf5e6;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #7d93e6, #516acc);
+}
+
+.itemYear {
+  font-size: 11px;
+  font-weight: 700;
+  color: #516acc;
+  letter-spacing: 0.04em;
+}
+
+.itemTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #36454f;
+  margin: 2px 0 3px;
+}
+
+.itemDesc {
+  font-size: 12.5px;
+  color: #6f6f7b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.cta {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: linear-gradient(to right, rgba(83, 200, 239, 0.9), rgba(81, 106, 204, 0.9));
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+.tabs {
+  display: flex;
+  margin-top: auto;
+  border-top: 1px solid rgba(230, 180, 34, 0.3);
+}
+
+.tab {
+  flex: 1 1 auto;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8797a1;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tab:hover,
+.tabActive {
+  color: #36454f;
+  border-bottom-color: #8a84ff;
+  background: linear-gradient(
+    to bottom,
+    rgba(127, 199, 231, 0) 0%,
+    rgba(207, 204, 255, 0.2) 44%,
+    rgba(211, 226, 255, 0.4) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cta,
+  .section {
+    animation: none;
+    transition: none;
+  }
+}

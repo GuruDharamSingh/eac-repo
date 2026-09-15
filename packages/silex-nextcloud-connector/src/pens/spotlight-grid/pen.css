@@ -1,0 +1,217 @@
+/* ==========================================================================
+   Pen: Spotlight Grid  (.eac-pen-spot)
+
+   A grid of cards lit by the cursor. Two radial gradients per card, both
+   centred on the pointer: a wide soft wash over the card the pointer is on,
+   and a tighter, brighter one that shows only through the 1px gap around the
+   inner panel, so every card in the grid gets a lit edge as the pointer
+   passes. Ported from the Linear-style card grid by Hyperplexed
+   (https://youtu.be/htGfnF1zN4g).
+
+   The pointer tracking is the one part that needs script, and it is only the
+   two custom properties: the React twin (@elkdonis/cms-ui/pens SpotlightGrid)
+   writes --mouse-x / --mouse-y onto each card. Both fall back to the card's
+   centre, so a Silex-published page with no script still lights a card on
+   hover — it just does not follow.
+
+   The original is white light on near-black. That is `data-tone="dark"` here.
+   The default takes the host's own tokens and lights the edge with the org
+   accent instead, because white glow on paper is invisible.
+   ========================================================================== */
+
+.eac-pen-spot {
+  --eac-pen-spot-min: 260px;
+  --eac-pen-spot-height: 260px;
+  --eac-pen-spot-radius: 10px;
+  --eac-pen-spot-gap: 8px;
+  --eac-pen-spot-panel: var(--eac-surface, #fbf8f2);
+  --eac-pen-spot-frame: var(--eac-border, #d8ddd8);
+  --eac-pen-spot-ink: var(--eac-text, #1a1612);
+  --eac-pen-spot-ink-soft: var(--eac-text-soft, #5a5045);
+  --eac-pen-spot-accent: var(--eac-accent, #b85c3a);
+  /* The lit edge and the wash are decoration, so they may sit at any
+     strength. The MARK is type, so it takes the same self-correcting mix the
+     other pens use: toward the panel's own ink, which darkens it on paper and
+     lightens it on a dark card. */
+  --eac-pen-spot-edge: color-mix(in srgb, var(--eac-pen-spot-accent) 85%, transparent);
+  --eac-pen-spot-wash: color-mix(in srgb, var(--eac-pen-spot-accent) 10%, transparent);
+  --eac-pen-spot-mark: color-mix(in srgb, var(--eac-pen-spot-accent) 72%, var(--eac-pen-spot-ink));
+
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--eac-pen-spot-min), 1fr));
+  gap: var(--eac-pen-spot-gap);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--eac-font-sans, Inter, system-ui, sans-serif);
+}
+.eac-pen-spot *,
+.eac-pen-spot *::before,
+.eac-pen-spot *::after { box-sizing: border-box; }
+
+/* The pen's own world: white light on near-black, as published. */
+.eac-pen-spot[data-tone="dark"] {
+  --eac-pen-spot-panel: #171717;
+  --eac-pen-spot-frame: rgba(255, 255, 255, 0.1);
+  --eac-pen-spot-ink: #f0f0f0;
+  --eac-pen-spot-ink-soft: rgba(255, 255, 255, 0.5);
+  --eac-pen-spot-edge: rgba(255, 255, 255, 0.4);
+  --eac-pen-spot-wash: rgba(255, 255, 255, 0.06);
+  --eac-pen-spot-mark: rgba(255, 255, 255, 0.75);
+}
+
+.eac-pen-spot[data-density="tight"] { --eac-pen-spot-min: 200px; --eac-pen-spot-height: 190px; }
+.eac-pen-spot[data-density="roomy"] { --eac-pen-spot-min: 320px; --eac-pen-spot-height: 300px; }
+
+/* ---- The card: a frame with the panel floating 1px inside it ------------- */
+
+.eac-pen-spot-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--eac-pen-spot-height);
+  margin: 0;
+  border-radius: var(--eac-pen-spot-radius);
+  background-color: var(--eac-pen-spot-frame);
+}
+.eac-pen-spot-card[data-wide="true"] { grid-column: span 2; }
+@media (max-width: 560px) {
+  .eac-pen-spot-card[data-wide="true"] { grid-column: auto; }
+}
+
+.eac-pen-spot-card::before,
+.eac-pen-spot-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  /* Never intercept the click: the hit target sits above these. */
+  pointer-events: none;
+  transition: opacity 500ms;
+}
+/* Over the panel — the soft wash on the card the pointer is actually on. */
+.eac-pen-spot-card::before {
+  z-index: 3;
+  background: radial-gradient(
+    800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    var(--eac-pen-spot-wash),
+    transparent 40%
+  );
+}
+/* Under the panel — visible only in the 1px ring, which is the lit edge. */
+.eac-pen-spot-card::after {
+  z-index: 1;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    var(--eac-pen-spot-edge),
+    transparent 40%
+  );
+}
+.eac-pen-spot:hover > .eac-pen-spot-card::after,
+.eac-pen-spot:focus-within > .eac-pen-spot-card::after { opacity: 1; }
+.eac-pen-spot-card:hover::before,
+.eac-pen-spot-card:focus-within::before { opacity: 1; }
+
+.eac-pen-spot-panel {
+  position: absolute;
+  inset: 1px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px;
+  border-radius: inherit;
+  background-color: var(--eac-pen-spot-panel);
+  color: var(--eac-pen-spot-ink);
+}
+
+/* One hit target per card, over everything, so the whole tile is the control
+   and the gradients above the panel cannot swallow the click. */
+.eac-pen-spot-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  color: transparent;
+  cursor: pointer;
+}
+.eac-pen-spot-hit:focus-visible {
+  outline: 2px solid var(--eac-pen-spot-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Contents ----------------------------------------------------------- */
+
+.eac-pen-spot-art {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 132px;
+  overflow: hidden;
+  font-size: 5.2rem;
+  line-height: 1;
+  color: var(--eac-pen-spot-ink);
+  opacity: 0.22;
+}
+.eac-pen-spot-art svg { width: 1em; height: 1em; }
+.eac-pen-spot-art img { max-height: 100%; width: auto; }
+
+.eac-pen-spot-foot {
+  display: flex;
+  flex-grow: 1;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 14px 10px;
+}
+.eac-pen-spot-mark {
+  flex: 0 0 auto;
+  height: 20px;
+  font-size: 1rem;
+  line-height: 20px;
+  color: var(--eac-pen-spot-mark);
+}
+.eac-pen-spot-mark svg { width: 1em; height: 1em; vertical-align: -0.15em; }
+.eac-pen-spot-text { min-width: 0; }
+.eac-pen-spot-kicker {
+  margin: 0 0 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--eac-pen-spot-mark);
+}
+.eac-pen-spot-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--eac-pen-spot-ink);
+}
+.eac-pen-spot-sub {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--eac-pen-spot-ink-soft);
+}
+
+@media (max-width: 520px) {
+  .eac-pen-spot { --eac-pen-spot-height: 190px; }
+  .eac-pen-spot-art { height: 82px; font-size: 3rem; }
+  .eac-pen-spot-foot { padding: 0 10px 10px; }
+  .eac-pen-spot-title { font-size: 0.95rem; }
+  .eac-pen-spot-sub { font-size: 0.8rem; margin-top: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-pen-spot-card::before,
+  .eac-pen-spot-card::after { transition: none; }
+}

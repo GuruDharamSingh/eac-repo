@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",
-    "@elkdonis/services": "workspace:*"
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/utils": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",

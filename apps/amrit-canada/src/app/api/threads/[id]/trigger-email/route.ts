@@ -3,7 +3,14 @@ import { db } from "@elkdonis/db";
 import { sendMeetingTriggerEmail } from "@elkdonis/email";
 import { lastOccurrenceEnd } from "@elkdonis/utils";
 import { getApiEditor } from "@/lib/auth";
+import { getThreadMaterials } from "@/lib/data";
+import {
+  MEETING_EMAIL_TEMPLATE_KEY,
+  getEmailTemplateSettingsForThread,
+} from "@/lib/email-template-settings";
 import { siteConfig } from "@/config/site";
+
+const EMBLEM_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://amritcanada.ca"}/email/khanda-gold.png`;
 
 /**
  * Manual blast to everyone who said they're coming — a reminder the night
@@ -29,7 +36,9 @@ export async function POST(
   if (!editor) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
-  const type = body.type === "cancellation" ? "cancellation" : "reminder";
+  const type =
+    body.type === "cancellation" ? "cancellation" : body.type === "confirmation" ? "confirmation" : "reminder";
+  const audience = body.audience === "custom" ? "custom" : "rsvp";
 
   const [thread] = await db<
     {
@@ -52,38 +61,68 @@ export async function POST(
   `;
   if (!thread) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Only this cycle's respondents — a monthly gathering shouldn't email
-  // everyone who ever attended it.
-  const cutoff = thread.scheduled_at
-    ? lastOccurrenceEnd(thread.scheduled_at, thread.recurrence_pattern, thread.duration_minutes)
-    : null;
+  const settings = await getEmailTemplateSettingsForThread(
+    siteConfig.orgId,
+    MEETING_EMAIL_TEMPLATE_KEY,
+    id
+  ).catch(() => null);
+  const config = settings?.config ?? {};
 
-  const recipients = await db<{ email: string; name: string | null }[]>`
-    SELECT u.email, u.display_name AS name
-    FROM thread_rsvps r
-    JOIN users u ON u.id = r.user_id
-    WHERE r.thread_id = ${id}
-      AND r.status = 'yes'
-      AND u.email IS NOT NULL
-      ${cutoff ? db`AND r.updated_at > ${cutoff}` : db``}
+  let recipients: { email: string; name: string | null }[];
+  let rsvpCount: number | undefined;
 
-    UNION
+  if (audience === "custom") {
+    recipients = (config.recipients ?? []).map((email) => ({ email, name: null }));
+    if (recipients.length === 0) {
+      return NextResponse.json({
+        sent: 0,
+        message: "No custom recipients saved for this thread yet — add some in the Write tab.",
+      });
+    }
+  } else {
+    // Only this cycle's respondents — a monthly gathering shouldn't email
+    // everyone who ever attended it.
+    const cutoff = thread.scheduled_at
+      ? lastOccurrenceEnd(thread.scheduled_at, thread.recurrence_pattern, thread.duration_minutes)
+      : null;
 
-    SELECT g.email, g.name
-    FROM guest_submissions g
-    WHERE g.thread_id = ${id}
-      AND g.kind = 'rsvp'
-      AND g.email IS NOT NULL
-      ${cutoff ? db`AND g.created_at > ${cutoff}` : db``}
-  `;
+    recipients = await db<{ email: string; name: string | null }[]>`
+      SELECT u.email, u.display_name AS name
+      FROM thread_rsvps r
+      JOIN users u ON u.id = r.user_id
+      WHERE r.thread_id = ${id}
+        AND r.status = 'yes'
+        AND u.email IS NOT NULL
+        ${cutoff ? db`AND r.updated_at > ${cutoff}` : db``}
 
-  if (recipients.length === 0) {
-    return NextResponse.json({ sent: 0, message: "Nobody has RSVP'd for this cycle yet." });
+      UNION
+
+      SELECT g.email, g.name
+      FROM guest_submissions g
+      WHERE g.thread_id = ${id}
+        AND g.kind = 'rsvp'
+        AND g.email IS NOT NULL
+        ${cutoff ? db`AND g.created_at > ${cutoff}` : db``}
+    `;
+
+    if (recipients.length === 0) {
+      return NextResponse.json({ sent: 0, message: "Nobody has RSVP'd for this cycle yet." });
+    }
+    rsvpCount = recipients.length;
   }
 
   const threadUrl = thread.section
     ? `${request.nextUrl.origin}/${thread.section}/${thread.slug}`
     : request.nextUrl.origin;
+
+  const materials = await getThreadMaterials(id);
+  const selectedMaterials = config.materialIds?.length
+    ? materials.filter((m) => config.materialIds!.includes(m.id))
+    : materials;
+  const links = [
+    ...selectedMaterials.map((m) => ({ label: m.filename, url: m.url })),
+    ...(config.links ?? []),
+  ];
 
   const results = await Promise.allSettled(
     recipients.map((r) =>
@@ -93,9 +132,17 @@ export async function POST(
         meetingTitle: thread.title,
         scheduledAt: thread.scheduled_at?.toISOString(),
         location: thread.location ?? undefined,
-        meetingUrl: thread.meeting_url ?? threadUrl,
+        meetingUrl: thread.meeting_url ?? undefined,
         senderName: editor.email,
         orgName: siteConfig.orgName,
+        rsvpUrl: threadUrl,
+        rsvpCount,
+        dark: false,
+        emblemUrl: EMBLEM_URL,
+        emblemAlt: "Khanda",
+        bodyText: config.bodyText,
+        links,
+        media: config.media,
       })
     )
   );

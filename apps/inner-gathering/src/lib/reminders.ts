@@ -25,7 +25,8 @@ export async function runReminderTick(appOrigin: string): Promise<void> {
            o.name AS org_name
     FROM threads t
     JOIN organizations o ON o.id = t.org_id
-    WHERE t.kind IN ('meeting', 'event', 'workshop')
+    WHERE t.org_id != 'amrit_canada' -- amrit-canada runs its own (branded) scheduler
+      AND t.kind IN ('meeting', 'event', 'workshop')
       AND t.status = 'published'
       AND t.is_rsvp_enabled = true
       AND t.scheduled_at IS NOT NULL

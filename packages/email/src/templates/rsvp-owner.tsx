@@ -33,6 +33,11 @@ export interface RsvpOwnerEmailProps {
   materialsUrl?: string;
   orgName?: string;
   rsvpCount?: number;
+  /** Dark card/background variant. Defaults to dark, matching today's output. */
+  dark?: boolean;
+  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
+  emblemUrl?: string;
+  emblemAlt?: string;
   bodyText?: string;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
@@ -53,12 +58,15 @@ function RsvpOwnerEmail({
   talkRoomUrl,
   materialsUrl,
   rsvpCount,
+  dark = true,
+  emblemUrl,
+  emblemAlt,
   bodyText,
   links = [],
   media = [],
 }: RsvpOwnerEmailProps) {
   const isReconfirm = variant === 'reconfirmed';
-  const palette = getEmailPalette(true);
+  const palette = getEmailPalette(dark);
 
   let dateStr: string | null = null;
   if (scheduledAt) {
@@ -108,8 +116,10 @@ function RsvpOwnerEmail({
           : `New RSVP from ${guestName} — ${meetingTitle}`
       }
       kicker={isReconfirm ? 'RSVP Reconfirmed' : 'New RSVP'}
-      dark
+      dark={dark}
       showNfpFooter
+      emblemUrl={emblemUrl}
+      emblemAlt={emblemAlt}
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, margin: 0 }}>
           Sent via Elkdonis Arts Collective.

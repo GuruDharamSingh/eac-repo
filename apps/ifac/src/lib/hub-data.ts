@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { nextOccurrence } from "@elkdonis/utils";
+import { countUserGalleries } from "@elkdonis/services";
 import { getOrgFolderPath } from "@elkdonis/nextcloud";
 import { siteConfig } from "@/config/site";
 
@@ -20,243 +20,25 @@ import { siteConfig } from "@/config/site";
 
 const ORG = siteConfig.orgId;
 
-/** Thread kinds that represent something happening at a time. */
-const SCHEDULED_KINDS = ["event", "meeting", "workshop"];
-
-export type HubEvent = {
-  id: string;
-  title: string;
-  slug: string;
-  kind: string;
-  scheduledAt: string | null;
-  /** For a recurring thread, the occurrence a visitor is looking at now. */
-  nextOccurrenceAt: string | null;
-  durationMinutes: number | null;
-  location: string | null;
-  format: string | null;
-  meetingUrl: string | null;
-  talkToken: string | null;
-  coverImageUrl: string | null;
-  recurrencePattern: string | null;
-  rsvpCount: number;
-  attendeeLimit: number | null;
-};
+/**
+ * Events, the weekly meeting and the calendar query used to be defined here —
+ * `HubEvent`, `EVENT_COLUMNS`, `mapEvent`, `getWeeklyMeeting` and
+ * `getEventsInRange`. All five were this app's own second implementation of
+ * things the rest of the network already shared: `listOrgEventsInRange` and
+ * `OrgCalendarEvent` in @elkdonis/services (a superset of `HubEvent`), and
+ * `getStandingMeeting` for "the weekly meeting" — which resolves an editor's
+ * flag before guessing from a section name, and reports which it used.
+ *
+ * The hub page and api/hub/calendar now read those directly.
+ */
 
 /**
- * `threads` has no cover_image_url column — that lives on workshop_pages,
- * which IFAC doesn't use. amrit-canada established the convention of carrying
- * the hero image in `metadata` rather than spending a migration on one
- * nullable text field, and this follows it.
+ * Ideas and living documents used to be defined here — `listIdeas`,
+ * `listLivingDocuments` and their types. They were the only real
+ * implementations in the repo, so they were lifted into
+ * `@elkdonis/services` (org-ideas.ts, org-documents.ts) where the two
+ * template apps can use them too, and the hub page imports them from there.
  */
-const EVENT_COLUMNS = db`
-  t.id, t.title, t.slug, t.kind, t.scheduled_at, t.duration_minutes,
-  t.location, t.format, t.meeting_url, t.nextcloud_talk_token,
-  t.recurrence_pattern, t.attendee_limit,
-  t.metadata->>'coverImageUrl' AS cover_image_url
-`;
-
-type EventRow = {
-  id: string;
-  title: string;
-  slug: string;
-  kind: string;
-  scheduled_at: string | null;
-  duration_minutes: number | null;
-  location: string | null;
-  format: string | null;
-  meeting_url: string | null;
-  nextcloud_talk_token: string | null;
-  recurrence_pattern: string | null;
-  attendee_limit: number | null;
-  cover_image_url: string | null;
-  rsvp_count?: number;
-};
-
-function mapEvent(row: EventRow): HubEvent {
-  return {
-    id: row.id,
-    title: row.title,
-    slug: row.slug,
-    kind: row.kind,
-    scheduledAt: row.scheduled_at,
-    nextOccurrenceAt: row.scheduled_at
-      ? nextOccurrence(
-          new Date(row.scheduled_at),
-          row.recurrence_pattern,
-          row.duration_minutes
-        ).toISOString()
-      : null,
-    durationMinutes: row.duration_minutes,
-    location: row.location,
-    format: row.format,
-    meetingUrl: row.meeting_url,
-    talkToken: row.nextcloud_talk_token,
-    coverImageUrl: row.cover_image_url,
-    recurrencePattern: row.recurrence_pattern,
-    rsvpCount: row.rsvp_count ?? 0,
-    attendeeLimit: row.attendee_limit,
-  };
-}
-
-/**
- * The group's standing weekly meeting.
- *
- * "The weekly meeting" is not a concept the schema had, and four mechanisms
- * were candidates for expressing it. This uses two that already exist together:
- * `section = 'weekly-meeting'` (migration 073 made site sections data, and an
- * org_feeds row gives the card a name and a "see all" destination) plus
- * `recurrence_pattern = 'WEEKLY'` (which makes nextOccurrence() work). Neither
- * a new column nor a fifth metadata key was needed.
- *
- * Falls back to any weekly-recurring thread when the section hasn't been
- * seeded, so the card works before an admin has organised the feeds.
- */
-export async function getWeeklyMeeting(): Promise<HubEvent | null> {
-  try {
-    const [row] = await db<EventRow[]>`
-      SELECT ${EVENT_COLUMNS},
-             (SELECT COUNT(*)::int FROM thread_rsvps r
-               WHERE r.thread_id = t.id AND r.status = 'yes') AS rsvp_count
-      FROM threads t
-      WHERE t.org_id = ${ORG}
-        AND t.status = 'published'
-        AND t.kind = ANY(${SCHEDULED_KINDS})
-        AND (t.section = 'weekly-meeting' OR t.recurrence_pattern = 'WEEKLY')
-      ORDER BY (t.section = 'weekly-meeting') DESC,
-               t.scheduled_at DESC NULLS LAST
-      LIMIT 1
-    `;
-    return row ? mapEvent(row) : null;
-  } catch (error) {
-    console.error("[ifac] getWeeklyMeeting error:", error);
-    return null;
-  }
-}
-
-/**
- * Dated threads overlapping a window, for the calendar tile.
- *
- * Recurring threads are expanded client-side from `recurrencePattern` — one
- * row can be many cells — so this returns anything whose series could still be
- * running, not only rows whose single `scheduled_at` lands inside the window.
- */
-export async function getEventsInRange(
-  from: Date,
-  to: Date
-): Promise<HubEvent[]> {
-  try {
-    const rows = await db<EventRow[]>`
-      SELECT ${EVENT_COLUMNS},
-             (SELECT COUNT(*)::int FROM thread_rsvps r
-               WHERE r.thread_id = t.id AND r.status = 'yes') AS rsvp_count
-      FROM threads t
-      WHERE t.org_id = ${ORG}
-        AND t.status = 'published'
-        AND t.kind = ANY(${SCHEDULED_KINDS})
-        AND t.scheduled_at IS NOT NULL
-        AND t.scheduled_at < ${to.toISOString()}
-        AND (t.recurrence_pattern IS NOT NULL
-             OR t.scheduled_at >= ${from.toISOString()})
-      ORDER BY t.scheduled_at ASC
-      LIMIT 200
-    `;
-    return rows.map(mapEvent);
-  } catch (error) {
-    console.error("[ifac] getEventsInRange error:", error);
-    return [];
-  }
-}
-
-export type HubIdea = {
-  id: string;
-  title: string;
-  body: string | null;
-  authorName: string | null;
-  createdAt: string;
-  status: string;
-  replyCount: number;
-};
-
-/**
- * Member suggestions.
- *
- * Stored as threads with `kind = 'idea'`. `threads.kind` carries no CHECK
- * constraint any more, and going through threads means an idea gets
- * authorship, a status, replies and moderation for free — where
- * `guest_submissions` (the other candidate) is email-keyed and anonymous,
- * which is the opposite of what a members' suggestion queue wants.
- */
-export async function listIdeas(limit = 20): Promise<HubIdea[]> {
-  try {
-    const rows = await db<
-      Array<{
-        id: string;
-        title: string;
-        body: string | null;
-        author_name: string | null;
-        created_at: string;
-        status: string;
-        reply_count: number;
-      }>
-    >`
-      SELECT t.id, t.title, t.body, t.status, t.created_at,
-             u.display_name AS author_name,
-             (SELECT COUNT(*)::int FROM replies r
-               WHERE r.thread_id = t.id) AS reply_count
-      FROM threads t
-      LEFT JOIN users u ON u.id = t.author_id
-      WHERE t.org_id = ${ORG} AND t.kind = 'idea'
-      ORDER BY t.created_at DESC
-      LIMIT ${limit}
-    `;
-    return rows.map((r) => ({
-      id: r.id,
-      title: r.title,
-      body: r.body,
-      authorName: r.author_name,
-      createdAt: r.created_at,
-      status: r.status,
-      replyCount: r.reply_count,
-    }));
-  } catch (error) {
-    console.error("[ifac] listIdeas error:", error);
-    return [];
-  }
-}
-
-export type LivingDocument = {
-  id: string;
-  title: string;
-  url: string;
-  editUrl: string;
-  createdAt: string;
-};
-
-/**
- * The org's living documents.
- *
- * Nothing enumerated these before. The files themselves are named
- * `<timestamp>-<id>.md` in Nextcloud, so a title is NOT recoverable from the
- * path — it has to be recorded at creation time. `site_config` is the store
- * (the same place inner-gathering keeps its single about-document), keyed
- * `living_documents` and holding the whole list, so this costs no migration.
- */
-export async function listLivingDocuments(): Promise<LivingDocument[]> {
-  try {
-    const [row] = await db<Array<{ value: unknown }>>`
-      SELECT value FROM site_config
-      WHERE org_id = ${ORG} AND key = 'living_documents'
-    `;
-    const value = row?.value;
-    if (!Array.isArray(value)) return [];
-    return (value as LivingDocument[])
-      .filter((d) => d && typeof d.url === "string")
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  } catch (error) {
-    console.error("[ifac] listLivingDocuments error:", error);
-    return [];
-  }
-}
 
 /**
  * The org's storage root.
@@ -279,16 +61,20 @@ export type ProfileSummary = {
   roleTitle: string | null;
   bioLength: number;
   galleryCount: number;
-  unreadMessages: number;
-  upcomingCount: number;
+  galleriesCount: number;
 };
 
 /**
- * The signed-in member, as their own tile shows them.
+ * The signed-in member's identity and page stats, as the "Page sections"
+ * tile shows them.
  *
- * One round trip for the profile and one aggregate for the counts, because
- * this is above the fold on every hub load. The counts are the "quick look"
- * the tile promises; the modal fetches the actual messages and dates.
+ * Unread messages and upcoming RSVPs used to be a second copy of this exact
+ * query, kept here alongside it — the same two subqueries `getViewerAlerts`
+ * in @elkdonis/services already runs (that one also counts notifications,
+ * which this one never did). The hub page now calls `getViewerAlerts`
+ * directly for the shared identity face; this function is left with only the
+ * facts that are genuinely this app's own: the ArtDirect-style portfolio and
+ * gallery counts nothing else in the network has a column for.
  */
 export async function getProfileSummary(
   userId: string
@@ -314,28 +100,6 @@ export async function getProfileSummary(
     `;
     if (!row) return null;
 
-    const [counts] = await db<
-      Array<{ unread: number; upcoming: number }>
-    >`
-      SELECT
-        (SELECT COUNT(*)::int
-           FROM message m
-           JOIN conversation_participant cp
-             ON cp.conversation_id = m.conversation_id
-          WHERE cp.user_id = ${userId}
-            AND m.sender_id <> ${userId}
-            AND (cp.last_read_at IS NULL OR m.created_at > cp.last_read_at)
-        ) AS unread,
-        (SELECT COUNT(*)::int
-           FROM thread_rsvps r
-           JOIN threads t ON t.id = r.thread_id
-          WHERE r.user_id = ${userId}
-            AND r.status = 'yes'
-            AND t.org_id = ${ORG}
-            AND t.scheduled_at >= NOW()
-        ) AS upcoming
-    `;
-
     const portfolio = Array.isArray(row.portfolio) ? row.portfolio : [];
     return {
       slug: row.slug,
@@ -345,8 +109,7 @@ export async function getProfileSummary(
       roleTitle: row.role_title,
       bioLength: (row.bio ?? "").trim().length,
       galleryCount: portfolio.length,
-      unreadMessages: counts?.unread ?? 0,
-      upcomingCount: counts?.upcoming ?? 0,
+      galleriesCount: await countUserGalleries(userId),
     };
   } catch (error) {
     console.error("[ifac] getProfileSummary error:", error);

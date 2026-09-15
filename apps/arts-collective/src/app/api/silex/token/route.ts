@@ -7,7 +7,7 @@ import {
   provisionOrgOnNextcloud,
 } from "@elkdonis/nextcloud";
 import { canEditOrgSite } from "@/lib/org";
-import { mintSilexToken, SILEX_TOKEN_TTL_SECONDS } from "@/lib/silex-tokens";
+import { mintSilexToken, SILEX_TOKEN_TTL_SECONDS } from "@elkdonis/silex-render";
 
 /**
  * POST /api/silex/token

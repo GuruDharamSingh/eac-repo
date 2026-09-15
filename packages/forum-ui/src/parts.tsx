@@ -487,6 +487,23 @@ export function ThemeToggle({ currentTheme, actionBase, back }: { currentTheme: 
   );
 }
 
+export function ModeToggle({ currentMode, actionBase, back }: { currentMode: "light" | "dark" | "auto"; actionBase: string; back: string }) {
+  // Two-state toggle, because a three-way including "auto" makes the control
+  // say something the reader has to decode. "auto" resolves to whichever it
+  // is currently showing, and flipping it commits to the opposite.
+  const next = currentMode === "dark" ? "light" : "dark";
+  const base = actionBase.replace(/\/$/, "");
+  return (
+    <form method="post" action={`${base}/set-theme`} className="gf-mode-toggle">
+      <input type="hidden" name="mode" value={next} />
+      <input type="hidden" name="back" value={back} />
+      <button type="submit" className="gf-tool" title={`Switch to ${next} background`}>
+        {currentMode === "dark" ? "☀ Light" : "◑ Dark"}
+      </button>
+    </form>
+  );
+}
+
 export function NewTopicLink({ href, label }: { href: string; label?: string }) {
   return (
     <a className="eac-btn eac-btn--primary gf-newtopic-btn" href={href}>

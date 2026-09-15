@@ -31,6 +31,8 @@ export type SurfaceKind =
   | "forum"
   | "compose"
   | "define"
+  | "document"
+  | "idea"
   | "neutral";
 
 /**
@@ -68,6 +70,13 @@ export type SurfaceDescriptor =
        */
       type: "profile";
       target?: { kind: "org"; orgId: string };
+      /**
+       * Which half opens first. "details" is the read view — the portrait, the
+       * statement, what is waiting for you; "edit" goes straight to the fields.
+       * The face offers both, so a member who only wanted to check their
+       * messages never lands in a form. Defaults to "details".
+       */
+      mode?: "details" | "edit";
     }
   | {
       /** Arrange an org's center: which sections, in what order, with which knobs. */
@@ -94,10 +103,34 @@ export type SurfaceDescriptor =
       /** Events the opener already has, so the first month needs no fetch. */
       events?: SurfaceEvent[];
     }
-  | { type: "gallery"; title?: string }
+  | {
+      /**
+       * The org's images. `images` seeds the grid from what the face already
+       * drew, so opening a gallery whose thumbnails you were just skipping
+       * through shows those same images at once rather than a spinner; the
+       * surface still refreshes from `listMedia` behind them.
+       */
+      type: "gallery";
+      title?: string;
+      images?: SurfaceImage[];
+      /** Open with this one already in the lightbox — the face's current thumbnail. */
+      startAt?: number;
+    }
   | {
       /** The org's Kanban (its Deck board), read and lightly edited in place. */
       type: "board";
+    }
+  | {
+      /**
+       * The group's living documents: real files in the org's Nextcloud
+       * folder, collaboratively editable by link. The surface lists them,
+       * starts new ones, and assigns one to an idea it belongs to.
+       */
+      type: "documents";
+      /** What the face already listed, so the panel opens populated. */
+      documents?: SurfaceDocument[];
+      /** Open with the "start one" field focused and pre-filled. */
+      draftTitle?: string;
     }
   | {
       /**
@@ -148,6 +181,12 @@ export type SurfaceDescriptor =
       size?: SurfaceSize;
       props?: Record<string, unknown>;
     };
+
+/** One image in an org's library, as every media surface reads it. */
+export interface SurfaceImage {
+  url: string;
+  name: string;
+}
 
 /**
  * A scheduled thing, as the calendar sees it. Structurally identical to
@@ -360,6 +399,83 @@ export interface SurfaceForumConnectors {
   markAllRead?: () => Promise<boolean>;
 }
 
+// ── Living documents ────────────────────────────────────────────────────────
+// A document here is a real file in the org's Nextcloud folder, shared by a
+// writable link — which is what makes it editable by the majority of members,
+// who have no Nextcloud account of their own. The surface never sees WebDAV;
+// it sees this shape and the three functions under it.
+//
+// Deliberately NOT `threads.nextcloud_doc_url` (thread-document.ts): that path
+// puts a draft in its AUTHOR'S folder with no share, which is right for a post
+// someone is writing alone and wrong for the group's notes.
+
+export interface SurfaceDocument {
+  id: string;
+  title: string;
+  /** Where a member opens it. A public writable share, so no account is needed. */
+  editUrl: string;
+  createdAt: string;
+  /** Display name, when the host records one. */
+  createdBy?: string | null;
+  /**
+   * The first lines of the file. What makes the face a *snapshot* rather than
+   * a filename — a host that cannot cheaply read the body omits it and the
+   * face falls back to the title.
+   */
+  snippet?: string | null;
+  /** ISO; when the file itself last changed, not when the row was written. */
+  updatedAt?: string | null;
+  /**
+   * The idea this document belongs to, when it has been assigned to one.
+   * A scrap doc starts unassigned, which is the point of a scrap doc.
+   */
+  ideaId?: string | null;
+  ideaTitle?: string | null;
+}
+
+export interface SurfaceDocumentConnectors {
+  list: () => Promise<SurfaceDocument[]>;
+  /**
+   * Start one. Omitting `title` asks for a SCRAP doc: the host names it by
+   * date and the member starts typing rather than naming a thing they have
+   * not written yet.
+   */
+  create: (input: {
+    title?: string;
+    ideaId?: string;
+  }) => Promise<{ ok: true; document: SurfaceDocument } | { ok: false; error: string }>;
+  /** Assign an existing document to an idea, or pass null to unassign. */
+  assign?: (
+    documentId: string,
+    ideaId: string | null
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+}
+
+// ── Suggested ideas ─────────────────────────────────────────────────────────
+// An idea is a thread (`kind = 'idea'`) in the org's ideas feed, so proposing
+// one and discussing it happen in the same place the rest of the org's
+// conversation does. The face IS the form; `href` is where the conversation
+// lives, and is the only thing "opening" the tile does.
+
+export interface SurfaceIdea {
+  id: string;
+  title: string;
+  authorName?: string | null;
+  createdAt: string;
+  replyCount?: number;
+  /** The idea's own thread on the board. */
+  href?: string | null;
+}
+
+export interface SurfaceIdeaConnectors {
+  /** The ideas feed on the forum. The face's only navigation target. */
+  href: string;
+  list?: () => Promise<SurfaceIdea[]>;
+  create: (input: {
+    title: string;
+  }) => Promise<{ ok: true; idea: SurfaceIdea } | { ok: false; error: string }>;
+}
+
 export interface SurfaceAction {
   label: string;
   onClick?: () => void | Promise<void>;
@@ -402,6 +518,18 @@ export interface SurfaceProfile {
   canEdit: boolean;
   /** Doors out of the surface: the person's files, blog, store. */
   hrefs?: { files?: string | null; blog?: string | null; store?: string | null };
+  /**
+   * What is waiting for this person. Shown as counts on the face and in the
+   * surface's facts. A count with no inbox to open is still worth stating —
+   * a number that is true beats a button that goes nowhere — so nothing here
+   * is a link.
+   */
+  alerts?: {
+    unreadMessages?: number;
+    notifications?: number;
+    /** Things they have said they are coming to. */
+    upcoming?: number;
+  };
 }
 
 export interface SurfaceProfileInput {
@@ -492,7 +620,7 @@ export interface SurfaceConnectors {
   listEvents?: (from: Date, to: Date) => Promise<SurfaceEvent[]>;
 
   /** The org's image library. Omit to disable the gallery surface. */
-  listMedia?: () => Promise<Array<{ url: string; name: string }>>;
+  listMedia?: () => Promise<SurfaceImage[]>;
   /** POST target taking multipart `file`, returning `{ url }`. Enables upload in the gallery. */
   uploadEndpoint?: string;
   uploadFields?: Record<string, string>;
@@ -526,6 +654,12 @@ export interface SurfaceConnectors {
 
   /** The org's forum. Omit to disable the forum surface. */
   forum?: SurfaceForumConnectors;
+
+  /** The group's living documents. Omit to disable the documents surface. */
+  documents?: SurfaceDocumentConnectors;
+
+  /** Suggested ideas. Omit and the ideas face stays hidden. */
+  ideas?: SurfaceIdeaConnectors;
 
   /**
    * The network dictionary, behind the define surface. Omit and the "Define"

@@ -4,6 +4,7 @@ import { CenterThreadRow } from "./CenterThreadRow";
 import { CenterComposeBar } from "./CenterComposeBar";
 import { FollowButton } from "./FollowButton";
 import { ArrangeButton } from "./ArrangeButton";
+import { OrgStrip, type OrgStripItem } from "./OrgStrip";
 import type { CenterData, CenterLinks, CenterOrgLink, CenterThread } from "./types";
 import { DEFAULT_CENTER_LAYOUT, type CenterLayout, type CenterSectionId } from "./layout";
 
@@ -284,11 +285,26 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
           {orgs.length === 0 ? (
             <Empty>You don&rsquo;t follow anything yet.</Empty>
           ) : (
-            <ul className="eac-center-orgs">
-              {orgs.map((o) => (
-                <OrgPill key={o.orgId} org={o} href={links.orgHref(o)} />
-              ))}
-            </ul>
+            <OrgStrip
+              orgs={orgs.map<OrgStripItem>((o) => {
+                const staff = o.role === "owner" || o.role === "guide" || o.role === "member";
+                const href = links.orgHref(o);
+                return {
+                  orgId: o.orgId,
+                  orgSlug: o.orgSlug,
+                  orgName: o.orgName,
+                  role: o.role,
+                  isCurrent: o.isCurrent,
+                  href,
+                  note: [
+                    o.rsvpCount > 0 ? `${o.rsvpCount} RSVP${o.rsvpCount === 1 ? "" : "s"}` : null,
+                    href && staff && !o.isCurrent ? "hub →" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                };
+              })}
+            />
           )}
         </Panel>
       </>
@@ -584,32 +600,7 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
   );
 }
 
-function OrgPill({ org, href }: { org: CenterOrgLink; href: string | null }) {
-  const note = [
-    ROLE_LABEL[org.role],
-    org.rsvpCount > 0 ? `${org.rsvpCount} RSVP${org.rsvpCount === 1 ? "" : "s"}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const staff = org.role === "owner" || org.role === "guide" || org.role === "member";
-  const body = (
-    <>
-      <span className="eac-center-org-name">
-        {org.isCurrent && <span aria-hidden>✓ </span>}
-        {org.orgName}
-      </span>
-      <span className="eac-center-org-note">
-        {note}
-        {href && staff && !org.isCurrent ? " · hub →" : ""}
-      </span>
-    </>
-  );
-  return (
-    <li className={`eac-center-org-pill${org.isCurrent ? " is-current" : ""}`}>
-      {href ? <a href={href}>{body}</a> : <span>{body}</span>}
-    </li>
-  );
-}
+
 
 function rowMeta(t: CenterThread, tz?: string, locale?: string): string | null {
   const when = t.scheduledAt ? fmtWhen(t.scheduledAt, tz, locale) : fmtDay(t.publishedAt, tz, locale);

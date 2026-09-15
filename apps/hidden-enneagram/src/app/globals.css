@@ -20,6 +20,23 @@
 /* The Grand Forum at /forum, in this site's tokens. */
 @import "@elkdonis/forum-ui/forum.css";
 @import "@elkdonis/forum-ui/forum-modern.css";
+
+/* The Silex hub template and the spotlight-grid pen inside it read --eac-*
+   tokens with their own cream-and-terracotta fallbacks. Mapped here onto this
+   site's palette so /hub reads as this site. Scoped to .eac-hub so the
+   template's own :root tokens cannot reach the rest of the page.
+   Measured on the opened page: tile title 17.74:1, tile sub 6.61:1,
+   kicker 8.12:1, card frame 3.39:1. */
+.eac-hub {
+  --eac-bg: hsl(var(--background));
+  --eac-surface: hsl(var(--card));
+  --eac-text: hsl(var(--foreground));
+  --eac-text-soft: hsl(var(--muted-foreground));
+  --eac-accent: hsl(var(--primary));
+  --eac-border: hsl(var(--border));
+  --eac-font-sans: var(--font-sans);
+  --eac-font-serif: var(--font-serif);
+}
 @import "@elkdonis/cms-ui/gallery.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";

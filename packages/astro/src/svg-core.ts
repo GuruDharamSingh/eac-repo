@@ -76,6 +76,20 @@ export interface RenderOptions {
    */
   orient?: "ascendant" | "aries";
   /**
+   * Draw the chart stripped to what reads while it is moving.
+   *
+   * A full wheel is about 610 SVG elements and 348 of those are the one-degree
+   * ticks — more than half the drawing, and all of it re-parsed every time the
+   * markup is replaced. When a dial is being dragged nobody is reading a tick,
+   * a degree label, or an aspect glyph, so `lite` leaves them out along with
+   * the aspects to the Ascendant and Midheaven (which move fastest and mean
+   * least in motion). What stays is the shape: the signs, the houses, the
+   * planets and the major aspects between them.
+   *
+   * The full drawing comes back the moment the dial settles.
+   */
+  lite?: boolean;
+  /**
    * Draw as a BI-WHEEL: this second chart's planets in a ring outside the
    * natal ones, with transit-to-natal aspect lines in the centre. The natal
    * chart keeps the houses — a transiting planet is read in the natal house
@@ -294,16 +308,17 @@ export function renderChartSvg(chart: ChartResult, ts: Typesetter, opts: RenderO
   out.push(`<circle cx="${CX}" cy="${CY}" r="${R_OUT - strip}" fill="none" stroke="${C.ink}" stroke-width="${f2(0.6 * k)}"/>`);
   out.push(`<circle cx="${CX}" cy="${CY}" r="${R_Z}" fill="none" stroke="${C.ink}" stroke-width="${f2(1.2 * k)}"/>`);
   for (let i = 0; i < 12; i++) out.push(line(i * 30, R_Z, R_OUT, `stroke="${C.ink}" stroke-width="${f2(0.9 * k)}"`));
-  for (let a = 0; a < 360; a += G.fineTicks ? 1 : 5) {
+  const fineTicks = G.fineTicks && !opts.lite;
+  for (let a = 0; a < 360; a += fineTicks ? 1 : 5) {
     if (a % 30 === 0) continue;
-    const len = (a % 10 === 0 ? 12 : a % 5 === 0 ? 8 : 4) * (G.fineTicks ? 1 : 0.8);
+    const len = (a % 10 === 0 ? 12 : a % 5 === 0 ? 8 : 4) * (fineTicks ? 1 : 0.8);
     out.push(line(a, R_Z, R_Z + len, `stroke="${C.ink}" stroke-width="${f2((a % 5 === 0 ? 0.8 : 0.45) * k)}"`));
   }
   for (let i = 0; i < 12; i++) {
     const mid = i * 30 + 15;
     const [gx, gy] = pt(mid, (R_Z + 14 + R_OUT - strip - 1) / 2);
     out.push(glyph(SIGNS[i].key, gx, gy, G.signGlyph, C.ink));
-    if (G.signNames) {
+    if (G.signNames && !opts.lite) {
       const [nx, ny] = pt(mid, R_OUT + 12 + G.signName * 0.8);
       out.push(text("sans", SIGNS[i].name.toUpperCase(), nx, ny + 4, G.signName, { anchor: "middle", fill: C.ink2, tracking: 1.4 }));
     }
@@ -420,7 +435,7 @@ export function renderChartSvg(chart: ChartResult, ts: Typesetter, opts: RenderO
   // chord belongs to.
   if (outer) drawPointers(outer, R_C, R_Z);
   out.push(...houseNumbers);
-  drawRing(natal, R_P, { labels: G.labels, glyph: G.planetGlyph, halo: G.halo });
+  drawRing(natal, R_P, { labels: G.labels && !opts.lite, glyph: G.planetGlyph, halo: G.halo });
   if (outer) {
     // The transit ring sits on its own band of paper so its glyphs never read
     // as part of the natal chart.
@@ -454,6 +469,7 @@ export function renderChartSvg(chart: ChartResult, ts: Typesetter, opts: RenderO
     out.push(
       `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${st.color}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ""} opacity="${o.opacity ?? 0.9}"/>`,
     );
+    if (opts.lite) return; // the glyph on the line is detail, not shape
     const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
     glyphs.push(
       `<circle cx="${f2(mx)}" cy="${f2(my)}" r="${f2(G.aspectGlyph * 0.85)}" fill="${C.paper}" opacity="0.92"/>` +
@@ -484,7 +500,15 @@ export function renderChartSvg(chart: ChartResult, ts: Typesetter, opts: RenderO
       drawAspect(from, to, a.type, a.exactness, a.applying ? {} : { dash: "2 4", opacity: 0.75 });
     }
   } else {
-    const aspects = chart.aspects.filter((a) => a.type !== "conjunction" && (a.major || opts.minorAspects));
+    const isAngle = (k: AspectPoint) => k === "ascendant" || k === "midheaven";
+    const aspects = chart.aspects.filter(
+      (a) =>
+        a.type !== "conjunction" &&
+        (a.major || opts.minorAspects) &&
+        // In motion the angles sweep a degree a day and their aspects flicker
+        // in and out; the lines are noise rather than information.
+        !(opts.lite && (isAngle(a.a) || isAngle(a.b))),
+    );
     for (const a of [...aspects].sort((x, y) => x.exactness - y.exactness)) {
       drawAspect(lonOf[a.a], lonOf[a.b], a.type, a.exactness);
     }

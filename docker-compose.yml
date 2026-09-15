@@ -545,8 +545,15 @@ services:
       # https://edit.example.com. If unset, dev falls back to port 6805.
       SILEX_EDITOR_PUBLIC_URL: ${SILEX_EDITOR_PUBLIC_URL:-}
       SILEX_PUBLIC_URL: ${SILEX_PUBLIC_URL:-}
-      # JWT shared secret for inter-app SSO bridge (Talk room join, etc.)
+      # JWT shared secret for inter-app SSO bridge (Talk room join, etc.),
+      # and the wider set: the network's site-to-site session handoff
+      # (packages/auth-server/src/handoff.ts) needs to know which origins
+      # it may accept a token FROM. Without this, arts-collective — the
+      # network host every handoff bounces through — refused every other
+      # site's token as an "unknown issuer" even though the token itself
+      # was valid, because this was the one service missing the list.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-2tUAlTGY3CvoVysKpy/qaokFwj+NmS3K6+CaXiC+58I=}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
     volumes:
       - .:/app
       - /app/apps/arts-collective/.next
@@ -1099,6 +1106,11 @@ services:
       PORT: 3012
       NEXT_PUBLIC_APP_URL: ${HIDDEN_ENNEAGRAM_URL:-http://localhost:3012}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      # The Silex editor origin, so /edit can bounce an editor straight into
+      # the page they were standing on. Redemption still goes through
+      # arts-collective; only minting happens here.
+      SILEX_EDITOR_PUBLIC_URL: ${SILEX_EDITOR_PUBLIC_URL:-}
+      SILEX_PUBLIC_URL: ${SILEX_PUBLIC_URL:-}
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
@@ -1134,6 +1146,52 @@ services:
     # mem_limit instead of being killed.
     command: sh -c "cd apps/hidden-enneagram && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     restart: unless-stopped
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Dana McCool — personal artist site (org: danamccool). App shell follows
+  # amrit-canada/ifac's conventions (src/config/site.ts + src/lib/auth.ts
+  # via user_organizations, not a blog-app email allowlist); galleries are
+  # user_galleries (124) via @elkdonis/cms-ui/gallery + @elkdonis/services.
+  danamccool:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: eac-danamccool
+    restart: unless-stopped
+    mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${DANAMCCOOL_URL:-http://localhost:3018}
+      NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYwMzExMjk0OSwiZXhwIjoxOTE4Njg4OTQ5fQ.5bE4BQPT5-x5dNGmqQ-YBfAlvYvDJJNMXY-Wqj3FrE0}
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Nextcloud (media upload/serve, via src/app/api/media/*, ifac's pattern)
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXT_PUBLIC_ELKDONIS_ARTS_URL: ${ELKDONIS_ARTS_URL:-http://localhost:3005}
+      NEXT_PUBLIC_IFAC_URL: ${IFAC_URL:-http://localhost:3008}
+    volumes:
+      - .:/app
+      - /app/apps/danamccool/.next
+    ports:
+      - "3018:3018"
+    command: sh -c "cd apps/danamccool && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network

@@ -16,7 +16,7 @@ export function ArrangeButton({ orgId }: { orgId: string }) {
       type="button"
       className="eac-center-btn"
       aria-haspopup="dialog"
-      onClick={() => surfaces.open({ type: "centerLayout", orgId })}
+      onClick={(e) => surfaces.open({ type: "centerLayout", orgId }, e.currentTarget)}
     >
       Arrange center
     </button>

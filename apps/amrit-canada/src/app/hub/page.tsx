@@ -4,25 +4,40 @@ import {
   getOrgChatRoom,
   getProfile,
   listOrgChatMessages,
+  listOrgDocuments,
+  listOrgIdeas,
+  listOrgMediaLibrary,
   getStandingMeeting,
+  getViewerAlerts,
   listOrgEventsInRange,
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { ChatCard, ProvisionChat } from "@elkdonis/chat";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import {
+  CalendarFace,
+  ComposeFace,
+  DocumentsFace,
+  GalleryFace,
+  IdeasFace,
+  PipelineFace,
+  ProfileFace,
+  StandingMeetingFace,
+  hubCards,
+} from "@elkdonis/cms-ui/hub";
 import { requireOrgMember } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { CalendarFace } from "@/components/hub/CalendarFace";
-import { PipelineFace } from "@/components/hub/PipelineFace";
 import { getPipelineBoard } from "@/lib/pipeline";
 import { getForumSnapshot } from "@/lib/forum";
-import { StandingMeetingFace } from "@/components/hub/StandingMeetingFace";
-import { HUB_CARDS } from "@/lib/hub-cards";
+import { getAllThreadsForOrg } from "@/lib/data";
+import { EmailFace } from "@/components/hub/EmailFace";
 
 export const metadata: Metadata = { title: "Hub" };
 export const dynamic = "force-dynamic";
 
-const ARTDIRECT_URL = process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "http://localhost:3013";
+/** This org's zone. Was a bare literal inside StandingMeetingFace before the
+ *  face was shared; it belongs to the site, not to the component. */
+const TIME_ZONE = "America/Toronto";
 
 /**
  * The members' hub: a grid of faces, each the tile-sized form of the popup it
@@ -34,7 +49,19 @@ export default async function HubPage() {
   const viewer = await requireOrgMember("/hub");
 
   const calendarFrom = startOfMonth(new Date());
-  const [profile, chatRoom, events, standing, board, forum] = await Promise.all([
+  const [
+    profile,
+    chatRoom,
+    events,
+    standing,
+    board,
+    forum,
+    documents,
+    ideas,
+    media,
+    alerts,
+    emailThreads,
+  ] = await Promise.all([
     getProfile(viewer.userId),
     getOrgChatRoom(siteConfig.orgId),
     // The calendar face draws this month; it fetches later months itself.
@@ -48,6 +75,30 @@ export default async function HubPage() {
     // The same snapshot /api/hub/forum returns, so the tile and the popup it
     // opens agree. A forum outage costs the tile, not the hub.
     getForumSnapshot().catch(() => null),
+    // The documents face draws the current document's first LINES, so one
+    // snippet is read back from Nextcloud; the rest of the list is the index
+    // in site_config and costs nothing.
+    listOrgDocuments(siteConfig.orgId, { withSnippets: 1 }).catch(() => []),
+    listOrgIdeas(siteConfig.orgId, { limit: 10 }).catch(() => []),
+    // Editors only, matching /api/media/library: listing the library reveals
+    // filenames of unpublished material.
+    viewer.canEdit
+      ? listOrgMediaLibrary(siteConfig.orgId)
+          // `filename` → `name`, the same rename `createHubConnectors.listMedia`
+          // does on the client, so the face and the surface agree on the shape.
+          .then((items) => items.map((i) => ({ url: i.url, name: i.filename })))
+          .catch(() => [])
+      : [],
+    // Unread messages, unread notifications, and gatherings here this person
+    // said they are coming to. Stated on the profile face, never linked —
+    // no app serves an inbox route yet.
+    getViewerAlerts(viewer.userId, siteConfig.orgId),
+    // Editors only — the Email card can message any thread's attendees.
+    viewer.canEdit
+      ? getAllThreadsForOrg(50)
+          .then((threads) => threads.filter((t) => t.kind !== "post"))
+          .catch(() => [])
+      : [],
   ]);
 
   const [chatMessages, chatIdentity] = chatRoom
@@ -61,7 +112,19 @@ export default async function HubPage() {
       ])
     : [[], undefined];
 
-  const visible = HUB_CARDS.filter((c) => !c.adminOnly || viewer.canEdit);
+  // What this site actually has. The catalogue's words live in cms-ui; which
+  // of them are real is a fact about this host. Gallery, compose, profile,
+  // documents and ideas are live FACES now rather than catalogue entries, so
+  // they are no longer named here — what is left is the tiles that genuinely
+  // are a word and a door.
+  const cards = hubCards({
+    files: false,
+    questionnaires: false,
+    help: false,
+    manageHref: "/manage",
+  });
+
+  const visible = cards.filter((c) => !c.adminOnly || viewer.canEdit);
   const main = visible.filter((c) => !c.wide);
   const wide = visible.filter((c) => c.wide);
 
@@ -80,13 +143,50 @@ export default async function HubPage() {
         <div className="mt-8">
           <SurfaceCardGrid>
             {/* The standing gathering: what a member opens the hub to check. */}
-            <StandingMeetingFace standing={standing} canEdit={viewer.canEdit} />
+            <StandingMeetingFace standing={standing} canEdit={viewer.canEdit} timeZone={TIME_ZONE} />
 
             <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
 
             <PipelineFace board={board} canEdit={viewer.canEdit} />
 
             <ForumFace forum={forum} />
+
+            {/* Your identity, opened in place. The tile this replaces linked
+                out to ArtDirect: click your own name on your own org's hub and
+                you were on a different site with no way back but the browser's
+                button. It is one `users` row and the profile surface already
+                reads and writes it. */}
+            <ProfileFace
+              summary={{
+                displayName: profile?.displayName?.trim() || viewer.email,
+                avatarUrl: profile?.avatarUrl ?? null,
+                headline: profile?.headline ?? null,
+                alerts,
+              }}
+            />
+
+            {/* The face IS the form: type it, press Enter. Opening the tile
+                goes to the ideas feed, where they are discussed. */}
+            <IdeasFace initialIdeas={ideas} />
+
+            <DocumentsFace documents={documents} />
+
+            {viewer.canEdit && <ComposeFace />}
+
+            {/* Editors only — the library lists unpublished material, which is
+                why /api/media/library is editors-only too. */}
+            {viewer.canEdit && <GalleryFace images={media} />}
+
+            {viewer.canEdit && (
+              <EmailFace
+                threads={emailThreads.map((t) => ({
+                  id: t.id,
+                  title: t.title,
+                  scheduledAt: t.scheduledAt?.toISOString() ?? null,
+                  reminderMinutesBefore: t.reminderMinutesBefore,
+                }))}
+              />
+            )}
 
             {main.map((card) => (
               <SurfaceCard
@@ -98,15 +198,7 @@ export default async function HubPage() {
                 blurb={card.blurb}
                 disabled={!card.available}
                 surface={card.available ? card.surface : undefined}
-                href={
-                  card.available
-                    ? card.id === "my_profile"
-                      ? profile?.slug
-                        ? `${ARTDIRECT_URL}/${profile.slug}`
-                        : "/account"
-                      : card.href
-                    : undefined
-                }
+                href={card.available ? card.href : undefined}
               />
             ))}
 

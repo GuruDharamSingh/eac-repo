@@ -90,7 +90,9 @@
      still looks deliberate rather than multicoloured. */
   --sf-kind-post: var(--forum-kind-post, var(--eac-kind-post, var(--sf-accent)));
 
-  background: var(--sf-bg);
+  /* background-COLOR, not the shorthand: the dark variant layers a gradient
+     into background-image, and the shorthand would reset it. */
+  background-color: var(--sf-bg);
   color: var(--sf-fg);
 }
 
@@ -99,53 +101,119 @@
   min-height: 100vh;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   The dark variant. Opt in per host or per request:
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE DARK VARIANT — brushed silver.
 
-       <div className="gf-page" data-forum-mode="dark">
+   The ground is a cool diagonal sheen rather than a flat colour: dark at the
+   corners, lifting through a silver band across the middle, like light
+   falling across brushed steel. Set data-forum-mode="dark" (the package puts
+   it on .gf-root; the :has() selector lets the host's own .gf-page wrapper
+   pick it up without the host changing any markup).
 
-   Deliberately a soft charcoal, not black: pure #000 behind light text
-   causes halation, and the forum is mostly long text.
-   ─────────────────────────────────────────────────────────────────────── */
+   ── WHY THESE INKS ARE LIGHTER THAN A FLAT DARK THEME'S ──────────────────
+
+   A gradient means text sits over a RANGE of luminance, so every pair has to
+   clear AA at the sheen's BRIGHTEST point, not its average. That is the
+   whole difficulty of this design, and measuring it is what forced these
+   values: against the #343841 peak the previous flat-theme inks failed —
+   muted 4.25:1 and the quietest grey 3.11:1 — even though both were
+   comfortable on a flat near-black. Every ink below was lifted until it
+   passed at the peak:
+
+     body    #f0ede8   10.06:1 at the peak · 15.21:1 in the corners
+     muted   #c8c4bc    6.75:1
+     faint   #b0aca4    5.19:1 at the peak ·  7.85:1 in the corners
+     accent  #9fb9dd    5.85:1   danger #e8968a 5.12:1   vote-up 6.54:1
+     on-accent #10161d  9.06:1 on the accent
+
+   Cards keep a SOLID ground (--sf-bg-soft #1c1e24, body 14.27:1, faint
+   7.36:1) so long text is read against a known colour and only the gutters
+   show the sheen. --sf-bg also stays solid because two rules use it as a
+   `color:` value, not a background.
+
+   ── AND WHY background-attachment: fixed ─────────────────────────────────
+
+   It sizes the gradient to the VIEWPORT instead of the element, so the host's
+   .gf-page and the package's nested .gf-root paint the same sheen in the same
+   place and read as one continuous surface — no seam where they overlap, and
+   no need to work out which element owns the background.
+   ═══════════════════════════════════════════════════════════════════════ */
 
 [data-forum-mode="dark"],
-[data-forum-mode="dark"] .gf-root {
-  --sf-bg: var(--forum-paper-dark, #16161a);
-  --sf-bg-soft: var(--forum-panel-dark, #1e1e24);
-  --sf-fg: var(--forum-ink-dark, #e9e7e2);
-  --sf-muted: var(--forum-muted-dark, #a8a49c);
-  --sf-faint: var(--forum-faint-dark, #8f8b83);
-  --sf-line: var(--forum-line-dark, #2f2f38);
-  --sf-rule: var(--forum-rule-dark, #4a4a55);
-  --sf-accent: var(--forum-accent-dark, #8fb3d9);
+[data-forum-mode="dark"] .gf-root,
+.gf-page:has([data-forum-mode="dark"]) {
+  --sf-bg: var(--forum-paper-dark, #16181d);
+  --sf-bg-soft: var(--forum-panel-dark, #1c1e24);
+  --sf-fg: var(--forum-ink-dark, #f0ede8);
+  --sf-muted: var(--forum-muted-dark, #c8c4bc);
+  --sf-faint: var(--forum-faint-dark, #b0aca4);
+  --sf-line: var(--forum-line-dark, #2f323a);
+  --sf-rule: var(--forum-rule-dark, #4c505b);
+  --sf-accent: var(--forum-accent-dark, #9fb9dd);
   --sf-on-accent: var(--forum-on-accent-dark, #10161d);
-  --sf-danger: var(--forum-danger-dark, #e08b7d);
-  --gf-blue: var(--forum-link-dark, #8fb3d9);
-  --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.04));
-  --gf-vote-up: var(--forum-vote-up-dark, #7fbf90);
-  --gf-vote-down: var(--forum-vote-down-dark, #e08b7d);
-  --sf-shadow: var(--forum-shadow-dark, 0 18px 44px -20px rgba(0, 0, 0, 0.6));
+  --sf-danger: var(--forum-danger-dark, #e8968a);
+  --gf-blue: var(--forum-link-dark, #9fb9dd);
+  --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.055));
+  --gf-vote-up: var(--forum-vote-up-dark, #8fd0a0);
+  --gf-vote-down: var(--forum-vote-down-dark, #e8968a);
+  --sf-shadow: var(--forum-shadow-dark, 0 20px 48px -22px rgba(0, 0, 0, 0.7));
+
+  background-color: var(--sf-bg);
+  background-image: var(
+    --forum-ground-dark,
+    linear-gradient(
+      155deg,
+      #14161b 0%,
+      #1e2127 20%,
+      #2e323b 40%,
+      #343841 50%,
+      #2a2e36 62%,
+      #1b1e24 84%,
+      #15171c 100%
+    )
+  );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
-/* Follow the reader's own setting when the host asks for it, rather than
-   picking for them: <div className="gf-page" data-forum-mode="auto">. */
+/* Follow the reader's own setting: data-forum-mode="auto". */
 @media (prefers-color-scheme: dark) {
   [data-forum-mode="auto"],
-  [data-forum-mode="auto"] .gf-root {
-    --sf-bg: var(--forum-paper-dark, #16161a);
-    --sf-bg-soft: var(--forum-panel-dark, #1e1e24);
-    --sf-fg: var(--forum-ink-dark, #e9e7e2);
-    --sf-muted: var(--forum-muted-dark, #a8a49c);
-    --sf-faint: var(--forum-faint-dark, #8f8b83);
-    --sf-line: var(--forum-line-dark, #2f2f38);
-    --sf-rule: var(--forum-rule-dark, #4a4a55);
-    --sf-accent: var(--forum-accent-dark, #8fb3d9);
+  [data-forum-mode="auto"] .gf-root,
+  .gf-page:has([data-forum-mode="auto"]) {
+    --sf-bg: var(--forum-paper-dark, #16181d);
+    --sf-bg-soft: var(--forum-panel-dark, #1c1e24);
+    --sf-fg: var(--forum-ink-dark, #f0ede8);
+    --sf-muted: var(--forum-muted-dark, #c8c4bc);
+    --sf-faint: var(--forum-faint-dark, #b0aca4);
+    --sf-line: var(--forum-line-dark, #2f323a);
+    --sf-rule: var(--forum-rule-dark, #4c505b);
+    --sf-accent: var(--forum-accent-dark, #9fb9dd);
     --sf-on-accent: var(--forum-on-accent-dark, #10161d);
-    --sf-danger: var(--forum-danger-dark, #e08b7d);
-    --gf-blue: var(--forum-link-dark, #8fb3d9);
-    --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.04));
-    --gf-vote-up: var(--forum-vote-up-dark, #7fbf90);
-    --gf-vote-down: var(--forum-vote-down-dark, #e08b7d);
-    --sf-shadow: var(--forum-shadow-dark, 0 18px 44px -20px rgba(0, 0, 0, 0.6));
+    --sf-danger: var(--forum-danger-dark, #e8968a);
+    --gf-blue: var(--forum-link-dark, #9fb9dd);
+    --gf-row-hover: var(--forum-row-hover-dark, rgba(255, 255, 255, 0.055));
+    --gf-vote-up: var(--forum-vote-up-dark, #8fd0a0);
+    --gf-vote-down: var(--forum-vote-down-dark, #e8968a);
+    --sf-shadow: var(--forum-shadow-dark, 0 20px 48px -22px rgba(0, 0, 0, 0.7));
+
+    background-color: var(--sf-bg);
+    background-image: var(
+      --forum-ground-dark,
+      linear-gradient(155deg, #14161b 0%, #1e2127 20%, #2e323b 40%, #343841 50%, #2a2e36 62%, #1b1e24 84%, #15171c 100%)
+    );
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
+}
+
+/* In dark, cards must sit ON the sheen as solid objects — the modern skin's
+   cards already paint --sf-bg-soft, this just makes sure the panel edge is
+   visible against a ground that is sometimes lighter than the card. */
+[data-forum-mode="dark"] .eac-surface-panel,
+.gf-page:has([data-forum-mode="dark"]) .eac-surface-panel {
+  background: var(--sf-bg-soft);
+  border-color: var(--sf-rule);
 }

@@ -39,16 +39,20 @@ export function CenterThreadRow({
     if (!openInPlace || !surfaces) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
-    surfaces.open({
-      type: "thread",
-      id: thread.id,
-      preview: {
-        title: thread.title,
-        kind: thread.kind,
-        scheduledAt: thread.scheduledAt,
-        coverImageUrl: thread.coverImageUrl,
+    // The row is the face here, so the surface grows out of the row.
+    surfaces.open(
+      {
+        type: "thread",
+        id: thread.id,
+        preview: {
+          title: thread.title,
+          kind: thread.kind,
+          scheduledAt: thread.scheduledAt,
+          coverImageUrl: thread.coverImageUrl,
+        },
       },
-    });
+      e.currentTarget as HTMLElement
+    );
   }
 
   if (post) {

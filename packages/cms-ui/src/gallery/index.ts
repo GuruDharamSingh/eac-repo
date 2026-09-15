@@ -5,3 +5,5 @@ export { ProfileGallery } from "./ProfileGallery";
 export type { ProfileGalleryProps, GalleryItem } from "./ProfileGallery";
 export { SimpleLightbox } from "./SimpleLightbox";
 export type { SimpleLightboxProps, LightboxImage } from "./SimpleLightbox";
+export { LibraryPicker } from "./LibraryPicker";
+export type { LibraryPickerProps, LibraryEntry } from "./LibraryPicker";

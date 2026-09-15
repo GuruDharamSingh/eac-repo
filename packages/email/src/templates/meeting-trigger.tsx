@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { Section, Text, Button } from '@react-email/components';
+import { Section, Text, Button, Img } from '@react-email/components';
 import { render } from '@react-email/render';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
 
-export type MeetingTriggerType = 'reminder' | 'cancellation';
+export type MeetingTriggerType = 'reminder' | 'cancellation' | 'confirmation';
 
 export interface MeetingTriggerEmailProps {
   type: MeetingTriggerType;
@@ -11,6 +12,7 @@ export interface MeetingTriggerEmailProps {
   meetingTitle: string;
   scheduledAt?: string;
   location?: string;
+  /** Video-call join link, distinct from rsvpUrl. */
   meetingUrl?: string;
   talkRoomUrl?: string;
   materialsUrl?: string;
@@ -19,6 +21,19 @@ export interface MeetingTriggerEmailProps {
   /** Link the guest can click to reconfirm they're still coming (reminder only). */
   confirmUrl?: string;
   orgName?: string;
+  /** The thread's public page, where the real RSVP UI lives. */
+  rsvpUrl?: string;
+  /** "N people are coming so far" -- shown in the detail box when present. */
+  rsvpCount?: number;
+  /** Dark card/background variant. Defaults to dark, matching today's output. */
+  dark?: boolean;
+  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
+  emblemUrl?: string;
+  emblemAlt?: string;
+  /** Author-editable copy (email_template_settings config). */
+  bodyText?: string;
+  links?: EmailLinkItem[];
+  media?: EmailMediaItem[];
 }
 
 function formatCountdown(scheduledAt: string): string {
@@ -43,9 +58,18 @@ function MeetingTriggerEmail({
   materialsUrl,
   senderName,
   confirmUrl,
+  rsvpUrl,
+  rsvpCount,
+  dark = true,
+  emblemUrl,
+  emblemAlt,
+  bodyText,
+  links = [],
+  media = [],
 }: MeetingTriggerEmailProps) {
-  const palette = getEmailPalette(true);
+  const palette = getEmailPalette(dark);
   const isCancellation = type === 'cancellation';
+  const isConfirmation = type === 'confirmation';
 
   let dateStr: string | null = null;
   if (scheduledAt) {
@@ -62,19 +86,27 @@ function MeetingTriggerEmail({
     }
   }
 
-  const countdown = !isCancellation && scheduledAt ? formatCountdown(scheduledAt) : null;
-  const hasDetails = Boolean(dateStr || location || meetingUrl || talkRoomUrl || materialsUrl);
+  const countdown = type === 'reminder' && scheduledAt ? formatCountdown(scheduledAt) : null;
+  const hasDetails = Boolean(dateStr || location || meetingUrl || talkRoomUrl || materialsUrl || rsvpCount !== undefined);
+  const bodyParagraphs = bodyText
+    ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
+    : [];
+  const rsvpHref = rsvpUrl ?? confirmUrl;
 
   return (
     <EmailShell
       previewText={
         isCancellation
           ? `Cancelled — ${meetingTitle}`
-          : `Reminder — ${meetingTitle} starts in ${countdown ?? 'soon'}`
+          : isConfirmation
+            ? `Confirmed — ${meetingTitle}`
+            : `Reminder — ${meetingTitle} starts in ${countdown ?? 'soon'}`
       }
       kicker={meetingTitle}
-      dark
+      dark={dark}
       showNfpFooter
+      emblemUrl={emblemUrl}
+      emblemAlt={emblemAlt}
     >
       <Text style={{ fontSize: '13px', color: palette.textMuted, marginTop: 0, marginBottom: '2px' }}>
         This email is for {guestName}.
@@ -83,6 +115,10 @@ function MeetingTriggerEmail({
       {isCancellation ? (
         <Text style={{ fontSize: '18px', color: palette.textPrimary, marginTop: 0, lineHeight: '1.5' }}>
           <strong>{meetingTitle}</strong> has been cancelled.
+        </Text>
+      ) : isConfirmation ? (
+        <Text style={{ fontSize: '18px', color: palette.textPrimary, marginTop: 0, lineHeight: '1.5' }}>
+          <strong>{meetingTitle}</strong> is confirmed.
         </Text>
       ) : (
         <Text style={{ fontSize: '18px', color: palette.textPrimary, marginTop: 0, lineHeight: '1.5' }}>
@@ -125,20 +161,68 @@ function MeetingTriggerEmail({
             </Text>
           )}
           {materialsUrl && (
-            <Text style={{ margin: 0, fontSize: '14px', color: palette.textBody }}>
+            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
               Materials: <a href={materialsUrl} style={{ color: palette.accent }}>View materials</a>
+            </Text>
+          )}
+          {rsvpCount !== undefined && !isCancellation && (
+            <Text style={{ margin: 0, fontSize: '14px', color: palette.textBody }}>
+              {rsvpCount} {rsvpCount === 1 ? 'person is' : 'people are'} coming so far.
             </Text>
           )}
         </Section>
       )}
 
-      {!isCancellation && confirmUrl && (
+      {bodyParagraphs.length > 0 && (
+        <Section style={{ margin: '20px 0' }}>
+          <Text
+            style={{
+              margin: '0 0 8px',
+              fontSize: '11px',
+              color: palette.textMuted,
+              fontFamily: 'Arial, sans-serif',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.12em',
+            }}
+          >
+            From the author
+          </Text>
+          {bodyParagraphs.map((paragraph, index) => (
+            <Text key={index} style={{ fontSize: '15px', color: palette.textBody, lineHeight: '1.7' }}>
+              {paragraph}
+            </Text>
+          ))}
+        </Section>
+      )}
+
+      {media.map((item, index) => (
+        <Section key={`media-${index}`} style={{ margin: '16px 0' }}>
+          <Img src={item.url} alt={item.alt ?? ''} style={{ maxWidth: '100%', display: 'block' }} />
+          {item.caption && (
+            <Text style={{ margin: '6px 0 0', fontSize: '12px', color: palette.textMuted }}>
+              {item.caption}
+            </Text>
+          )}
+        </Section>
+      ))}
+
+      {links.length > 0 && (
+        <Section style={{ margin: '16px 0' }}>
+          {links.map((link, index) => (
+            <Text key={`link-${index}`} style={{ margin: '0 0 6px', fontSize: '14px' }}>
+              <a href={link.url} style={{ color: palette.accent }}>{link.label}</a>
+            </Text>
+          ))}
+        </Section>
+      )}
+
+      {!isCancellation && rsvpHref && (
         <Section style={{ margin: '26px 0 0', textAlign: 'center' as const }}>
           <Text style={{ fontSize: '14px', color: palette.textBody, margin: '0 0 12px' }}>
-            Still coming?
+            {isConfirmation ? "Haven't RSVP'd yet?" : 'Still coming?'}
           </Text>
           <Button
-            href={confirmUrl}
+            href={rsvpHref}
             style={{
               backgroundColor: palette.accent,
               color: '#0b0e18',
@@ -152,7 +236,7 @@ function MeetingTriggerEmail({
               display: 'inline-block',
             }}
           >
-            Yes, I&apos;ll be there
+            RSVP here
           </Button>
         </Section>
       )}

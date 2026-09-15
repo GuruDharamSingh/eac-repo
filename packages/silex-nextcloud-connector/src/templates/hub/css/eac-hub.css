@@ -1,0 +1,111 @@
+/* ==========================================================================
+   EAC Hub Template
+   A members' landing page: who you are, what you can do, what is new.
+
+   The card grid is the `spotlight-grid` pen (loaded ahead of this file by the
+   manifest's cssOrder), so a hub tile and a Spotlight Grid block dropped on
+   any other page are the same object. This file is only the page around it.
+   ========================================================================== */
+
+.eac-hub {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 72px;
+  background: var(--eac-bg, #f5f0e8);
+  color: var(--eac-text, #1a1612);
+  font-family: var(--eac-font-sans, Inter, system-ui, sans-serif);
+}
+.eac-hub *,
+.eac-hub *::before,
+.eac-hub *::after { box-sizing: border-box; }
+
+.eac-hub-inner {
+  width: min(1040px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+/* ---- Masthead ----------------------------------------------------------- */
+
+.eac-hub-masthead {
+  padding: 56px 0 34px;
+}
+.eac-hub-kicker {
+  margin: 0 0 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* Mixed toward the page ink so it clears 4.5:1 on paper whatever the org
+     accent is — a raw accent does not (see the pens README). */
+  color: color-mix(in srgb, var(--eac-accent, #b85c3a) 72%, var(--eac-text, #1a1612));
+}
+.eac-hub-title {
+  margin: 0;
+  font-family: var(--eac-font-serif, Georgia, serif);
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.eac-hub-lede {
+  margin: 14px 0 0;
+  max-width: 58ch;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--eac-text-soft, #5a5045);
+}
+.eac-hub-whoami {
+  margin: 18px 0 0;
+  font-size: 0.85rem;
+  color: var(--eac-text-soft, #5a5045);
+}
+
+/* ---- Sections ----------------------------------------------------------- */
+
+.eac-hub-section { padding: 26px 0; }
+.eac-hub-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--eac-border, #d8ddd8);
+}
+.eac-hub-section-title {
+  margin: 0;
+  font-family: var(--eac-font-serif, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.eac-hub-section-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--eac-text-soft, #5a5045);
+}
+.eac-hub-section-link {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: color-mix(in srgb, var(--eac-accent, #b85c3a) 72%, var(--eac-text, #1a1612));
+}
+.eac-hub-section-link:hover { text-decoration: underline; }
+
+/* The live slots sit inside a section and bring their own look; this only
+   keeps the editor placeholder from collapsing to nothing. */
+.eac-hub-slot { min-height: 80px; }
+
+/* The tile frame is the only thing separating a card from the page at rest.
+   The pen's default takes the host's border token, and on a paper site that
+   is often a 1.5:1 hairline — right for a rule under a heading, too quiet for
+   a card edge, which leaves a grid of invisible tiles until the cursor is
+   over them. Half the page ink puts it at 3.4:1. The glow is still the
+   affordance; this is just so the cards exist before you find them. */
+.eac-hub .eac-pen-spot {
+  --eac-pen-spot-frame: color-mix(in srgb, var(--eac-text, #1a1612) 50%, transparent);
+}

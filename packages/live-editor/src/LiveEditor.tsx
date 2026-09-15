@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EditOverlay } from "./EditOverlay";
+import { StyleOverlay } from "./StyleOverlay";
 import { CssPanel } from "./CssPanel";
 import type { FieldDef, CssVarDef, SaveFieldPayload, SaveResult } from "./types";
 
@@ -15,18 +16,25 @@ export interface LiveEditorProps {
   fullEditorUrl?: string;
   /** Role badge shown in the control bar, e.g. "Owner" or "Admin" */
   role?: string;
+  /** Start in edit mode (e.g. arrived via ?edit=1). */
+  initialEditMode?: boolean;
+  /** Extra controls rendered into the bar after the built-in buttons. */
+  extra?: React.ReactNode;
 }
 
 /**
- * Template-agnostic live field editor.
+ * Template-agnostic live editor.
  *
- * Renders a fixed control bar, an edit-pin overlay (when active) that scans
- * the DOM for [data-trait] elements and matches them against the provided
- * FieldDef list, and an optional CSS custom property panel.
+ * Renders a fixed control bar and, in edit mode, two overlays over the page:
+ *   - EditOverlay: a pencil pin on every [data-trait] element matching a
+ *     FieldDef, for the CONTENT of the page;
+ *   - StyleOverlay: a paint pin on every [data-theme-vars] element, for the
+ *     LOOK of that part of the page, narrowed to the variables it names.
+ * plus a "Styles" button opening the full CSS variable panel.
  *
- * No knowledge of any specific template, data model, or database table.
- * The host app supplies field definitions (with initial values) and async
- * save callbacks.
+ * No knowledge of any specific template, data model, or database table. The
+ * host app supplies field definitions (with initial values), the variables it
+ * exposes (with defaults) and async save callbacks.
  */
 export function LiveEditor({
   fields,
@@ -36,9 +44,14 @@ export function LiveEditor({
   onSaveCss,
   fullEditorUrl,
   role = "Owner",
+  initialEditMode = false,
+  extra,
 }: LiveEditorProps) {
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(initialEditMode);
   const [cssPanel, setCssPanel] = useState(false);
+  // The overrides now in force, kept current as pins and the panel save, so
+  // a second panel opens on what the first one just saved.
+  const [overrides, setOverrides] = useState(cssOverrides);
 
   const hasCssVars = cssVars.length > 0 && !!onSaveCss;
 
@@ -67,6 +80,8 @@ export function LiveEditor({
           </button>
         )}
 
+        {extra}
+
         {fullEditorUrl && (
           <>
             <div style={dividerStyle} />
@@ -80,12 +95,18 @@ export function LiveEditor({
         <EditOverlay fields={fields} onSaveField={onSaveField} />
       )}
 
-      {/* ── CSS panel ── */}
+      {/* ── Style-pin overlay ── */}
+      {editMode && hasCssVars && onSaveCss && (
+        <StyleOverlay cssVars={cssVars} overrides={overrides} onSave={onSaveCss} onApplied={setOverrides} />
+      )}
+
+      {/* ── Full CSS panel ── */}
       {cssPanel && onSaveCss && (
         <CssPanel
           cssVars={cssVars}
-          initialOverrides={cssOverrides}
+          initialOverrides={overrides}
           onSave={onSaveCss}
+          onApplied={setOverrides}
           onClose={() => setCssPanel(false)}
         />
       )}

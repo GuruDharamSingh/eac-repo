@@ -91,6 +91,8 @@
   --sf-kind-board: var(--eac-kind-board, var(--sf-accent));
   --sf-kind-forum: var(--eac-kind-forum, var(--sf-accent));
   --sf-kind-compose: var(--eac-kind-compose, var(--sf-accent));
+  --sf-kind-document: var(--eac-kind-document, var(--sf-accent));
+  --sf-kind-idea: var(--eac-kind-idea, var(--sf-accent));
   --sf-kind-neutral: var(--eac-kind-neutral, var(--sf-muted));
 }
 
@@ -109,6 +111,8 @@
 [data-kind="forum"] { --sf-kind: var(--sf-kind-forum); --sf-on-kind: var(--eac-kind-forum-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="gallery"] { --sf-kind: var(--sf-kind-gallery); --sf-on-kind: var(--eac-kind-gallery-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="compose"] { --sf-kind: var(--sf-kind-compose); --sf-on-kind: var(--eac-kind-compose-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="document"] { --sf-kind: var(--sf-kind-document); --sf-on-kind: var(--eac-kind-document-on, var(--eac-surface-on-accent, #fff)); }
+[data-kind="idea"] { --sf-kind: var(--sf-kind-idea); --sf-on-kind: var(--eac-kind-idea-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="neutral"],
 [data-kind=""]              { --sf-kind: var(--sf-kind-neutral); --sf-on-kind: var(--eac-kind-neutral-on, var(--sf-bg)); }
 
@@ -1288,3 +1292,304 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
   font-family: var(--sf-font-record); font-size: 0.66rem; color: var(--sf-faint);
 }
 .eac-forum-mini-feeds .is-unread { color: var(--sf-accent); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE MORPH — a face grows into its surface
+   ══════════════════════════════════════════════════════════════════════════
+   This system's claim is that a face and a surface are the same object at two
+   sizes. That is only true if you can see it happen: opened from a face, the
+   panel starts on that face's rectangle and plays to its own.
+
+   FLIP, driven from SurfaceProvider's morphIn(), using the same `data-move`
+   vocabulary as the fold-card pen, which ports the transition this is
+   modelled on. Nothing else about the surface changes — the backdrop, the
+   focus trap and Escape are the native dialog's as before.
+
+   No origin (a deep link, `?surface=` on load, a calendar day) means nothing
+   to grow out of, and the plain rise-and-settle above still applies.
+   ========================================================================== */
+
+/* While morphing, the dialog's own entry transform stands down: two
+   transforms on the same box would fight over where it lands. */
+dialog.eac-surface[data-morph],
+dialog.eac-surface[data-morph][open] {
+  transform: none;
+  transition:
+    opacity 120ms ease,
+    display 220ms allow-discrete,
+    overlay 220ms allow-discrete;
+}
+@starting-style {
+  dialog.eac-surface[data-morph][open] { transform: none; }
+}
+
+.eac-surface-panel[data-move] {
+  transform-origin: top left;
+  will-change: transform;
+}
+
+/* One frame sitting exactly on the face that was clicked. */
+.eac-surface-panel[data-move="pending"] {
+  transition: none;
+  transform:
+    translate(calc(var(--sf-dx, 0) * 1px), calc(var(--sf-dy, 0) * 1px))
+    scale(var(--sf-dw, 1), var(--sf-dh, 1));
+}
+
+/* The panel's contents would squash under that scale, so they arrive after
+   the move rather than riding it — the face's own words are still on screen
+   underneath until they do. */
+.eac-surface-panel[data-move="pending"] > * {
+  opacity: 0;
+}
+
+.eac-surface-panel[data-move="moving"] {
+  transform: none;
+  transition: transform 340ms var(--sf-morph-easing, cubic-bezier(0.7, 0, 0.3, 1));
+}
+.eac-surface-panel[data-move="moving"] > * {
+  opacity: 1;
+  transition: opacity 220ms ease 140ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-surface-panel[data-move],
+  .eac-surface-panel[data-move] > * {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The live faces: gallery, compose, profile, documents, ideas.
+
+   Everything below sits inside .eac-face-live, the one region of a face that
+   takes the pointer. Colours are the surface tokens throughout — never a fill
+   with white text over an org's raw accent, which is the pair that keeps
+   failing 4.5:1. Ink is --sf-fg or --sf-muted over --sf-bg; --sf-kind only
+   ever paints a hairline, a glyph or a tint.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.eac-preview-action:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: var(--sf-line);
+}
+.eac-preview-action--quiet { color: var(--sf-muted); border-color: transparent; }
+.eac-preview-action--quiet:hover { color: var(--sf-fg); }
+
+/* ── Gallery face: one image at a time, with ‹ › ─────────────────────────── */
+.eac-gal-face { gap: 6px; }
+.eac-gal-face-shot {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.eac-gal-face-shot img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.eac-gal-face-shot:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+.eac-gal-face-skip { display: flex; align-items: center; gap: 8px; }
+.eac-gal-face-skip .eac-preview-action {
+  align-self: auto;
+  min-width: 28px;
+  padding: 2px 8px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+.eac-gal-face-count {
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  color: var(--sf-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Compose face: the common kinds, on the tile ─────────────────────────── */
+.eac-compose-quick { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+.eac-compose-quick .eac-preview-action { align-self: auto; }
+
+/* ── Profile face: portrait, name, what is waiting ───────────────────────── */
+.eac-profile-face { gap: 8px; }
+.eac-profile-face-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.eac-profile-face-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--sf-line);
+  background: var(--sf-bg-soft);
+}
+.eac-profile-face-avatar.is-empty {
+  display: grid;
+  place-items: center;
+  color: var(--sf-faint);
+  font-size: 1.1rem;
+}
+.eac-profile-face-lines { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.eac-profile-face-name {
+  font-family: var(--sf-font-title);
+  font-size: 1rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eac-profile-face-doors { display: flex; flex-wrap: wrap; gap: 6px; }
+.eac-profile-face-doors .eac-preview-action { align-self: auto; }
+
+/* ── Documents face: the current living doc, or the scrap offer ──────────── */
+.eac-doc-face { gap: 6px; }
+.eac-doc-face-current {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--sf-line);
+  border-left: 3px solid var(--sf-kind);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.eac-doc-face-current:hover { border-color: var(--sf-kind); }
+.eac-doc-face-title {
+  font-family: var(--sf-font-title);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eac-doc-face-snippet {
+  color: var(--sf-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.eac-doc-face-offer { display: flex; flex-wrap: wrap; gap: 6px; }
+.eac-doc-face-offer .eac-preview-action { align-self: auto; }
+
+/* ── Ideas face: the face IS the form ───────────────────────────────────── */
+.eac-idea-face { gap: 6px; }
+.eac-idea-form { display: flex; gap: 6px; align-items: stretch; }
+.eac-idea-form .eac-preview-action { align-self: auto; flex: none; }
+.eac-idea-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.78rem;
+}
+.eac-idea-input::placeholder { color: var(--sf-faint); }
+.eac-idea-input:focus { border-color: var(--sf-kind); outline: none; }
+.eac-idea-error { color: var(--sf-danger); font-size: 0.74rem; }
+.eac-idea-row {
+  padding-left: 12px;
+  position: relative;
+  color: var(--sf-muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eac-idea-row::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--sf-kind);
+  font-size: 0.62rem;
+}
+
+/* ── Documents surface ──────────────────────────────────────────────────── */
+.eac-doc-start { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.eac-doc-label {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sf-muted);
+}
+.eac-doc-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.eac-doc-input:focus { border-color: var(--sf-kind); outline: none; }
+.eac-doc-hint { margin: 0; color: var(--sf-muted); font-size: 0.8rem; line-height: 1.55; }
+.eac-doc-subhead {
+  margin: 0 0 8px;
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sf-muted);
+  font-weight: 400;
+}
+.eac-doc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.eac-doc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+}
+.eac-doc-open {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 10px;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+.eac-doc-glyph { grid-row: 1 / span 3; align-self: start; color: var(--sf-kind); }
+.eac-doc-name { font-family: var(--sf-font-title); font-size: 1rem; line-height: 1.25; }
+.eac-doc-open:hover .eac-doc-name { color: var(--sf-kind); }
+.eac-doc-snippet {
+  color: var(--sf-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.eac-doc-meta { font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
+.eac-doc-assign { display: flex; align-items: center; gap: 6px; flex: none; }
+.eac-doc-assign select {
+  padding: 5px 8px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.82rem;
+  max-width: 16rem;
+}

@@ -16,6 +16,8 @@ export type { CenterPageProps } from "./CenterPage";
 export { CenterThreadRow } from "./CenterThreadRow";
 export { FollowButton } from "./FollowButton";
 export { ArrangeButton } from "./ArrangeButton";
+export { OrgStrip } from "./OrgStrip";
+export type { OrgStripItem } from "./OrgStrip";
 export type {
   CenterData,
   CenterThread,

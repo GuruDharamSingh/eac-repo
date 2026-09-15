@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./reserved-slugs": "./src/reserved-slugs.ts"
+    "./reserved-slugs": "./src/reserved-slugs.ts",
+    "./wiki-render": "./src/wiki-render.ts"
   },
   "scripts": {
     "build": "tsup",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Lock, Menu, X } from "lucide-react";
@@ -32,9 +32,12 @@ export interface NavLink {
 export function SiteNavBar({
   primary,
   secondary,
+  action,
 }: {
   primary: NavLink[];
   secondary: NavLink[];
+  /** A control, not a link — the editor's "Edit page". Sits with the secondary links. */
+  action?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -99,6 +102,7 @@ export function SiteNavBar({
       </Link>
 
       <nav className="flex items-center gap-5 justify-self-end">
+        {action && <span className="hidden md:inline-flex">{action}</span>}
         {secondary.map((link) => (
           <NavAnchor
             key={link.href}
@@ -123,6 +127,9 @@ export function SiteNavBar({
             className="absolute inset-x-0 top-full z-50 max-h-[80vh] overflow-y-auto border-b border-border/70 bg-background px-5 pb-4 md:hidden"
           >
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
+              {action && (
+                <li className="border-b border-border/40 py-3">{action}</li>
+              )}
               {[...primary, ...secondary].map((link) => (
                 <li key={link.href}>
                   <Link

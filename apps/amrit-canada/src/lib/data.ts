@@ -49,7 +49,7 @@ const THREAD_COLUMNS = db`
   t.document_url, t.nextcloud_talk_token,
   t.scheduled_at, t.duration_minutes,
   t.is_rsvp_enabled, t.rsvp_deadline, t.attendee_limit, t.min_attendees,
-  t.notify_on_min_attendees,
+  t.notify_on_min_attendees, t.reminder_minutes_before,
   t.recurrence_pattern, t.recurrence_until,
   t.author_id, t.published_at, t.created_at,
   u.display_name AS author_name,
@@ -92,6 +92,7 @@ interface ThreadRow {
   attendee_limit: number | null;
   min_attendees: number | null;
   notify_on_min_attendees: boolean;
+  reminder_minutes_before: number | null;
   recurrence_pattern: string | null;
   recurrence_until: Date | null;
   author_id: string | null;
@@ -128,6 +129,7 @@ function mapThread(row: ThreadRow): Thread {
     attendeeLimit: row.attendee_limit,
     minAttendees: row.min_attendees,
     notifyOnMinAttendees: row.notify_on_min_attendees ?? false,
+    reminderMinutesBefore: row.reminder_minutes_before,
     recurrencePattern: row.recurrence_pattern,
     recurrenceUntil: row.recurrence_until,
     authorId: row.author_id,

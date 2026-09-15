@@ -136,5 +136,5 @@ Only worth it once we have many subdomains; **not required** for anything today.
 | hidden-enneagram | 3012 | hiddenenneagram.com (separate domain) |
 | artdirect (OAD) | 3013 | artdirect.elkdonis-arts.org |
 | art-auction | 3009 | market.elkdonis-arts.org (when public) |
-| Silex editor | 6805 | edit.elkdonis-arts.org (for site owners) |
+| Silex editor | 6805 | edit.arts-collective.com (for site owners; edit.elkdonis-arts.org retired 2026-09-13) |
 | admin | 3000 | none — LAN/IP only, never public |

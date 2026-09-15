@@ -2,6 +2,7 @@ import { canViewFeed, listOrgFeeds } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { SiteNavBar, type NavLink } from "@/components/site-nav-bar";
+import { EditPageButton } from "@/components/edit-page-button";
 
 /**
  * The React chrome for every page on this site, published Silex ones included.
@@ -13,8 +14,14 @@ import { SiteNavBar, type NavLink } from "@/components/site-nav-bar";
  * Links come from org_feeds, so adding a section to the site is a row rather
  * than an edit here. Member-only feeds are filtered by canViewFeed and shown
  * with a lock to the members who can open them.
+ *
+ * `silexPage` is the id of the published Silex page this nav is sitting on
+ * (index, introduction, type-1…). When set and the viewer can edit, the bar
+ * carries an "Edit page" action that opens the editor on exactly that page —
+ * the page component says which, because only it knows whether the body
+ * below the nav came from Silex or from a feed.
  */
-export async function SiteNav() {
+export async function SiteNav({ silexPage }: { silexPage?: string } = {}) {
   const [feeds, viewer] = await Promise.all([
     listOrgFeeds(siteConfig.orgId).catch(() => []),
     getViewer().catch(() => null),
@@ -38,5 +45,8 @@ export async function SiteNav() {
       : { href: "/login", label: "Sign in", strong: true }
   );
 
-  return <SiteNavBar primary={primary} secondary={secondary} />;
+  const action =
+    silexPage && viewer?.canEdit ? <EditPageButton page={silexPage} /> : null;
+
+  return <SiteNavBar primary={primary} secondary={secondary} action={action} />;
 }

@@ -17,6 +17,11 @@ export interface RsvpGuestEmailProps {
   materialsUrl?: string;
   orgName?: string;
   primaryColor?: string;
+  /** Dark card/background variant. Defaults to dark, matching today's output. */
+  dark?: boolean;
+  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
+  emblemUrl?: string;
+  emblemAlt?: string;
   /** Author-editable copy (email_template_settings config) — shown under "From the author" when present. */
   bodyText?: string;
   links?: EmailLinkItem[];
@@ -39,11 +44,14 @@ function RsvpGuestEmail({
   talkRoomUrl,
   materialsUrl,
   primaryColor = '#c9a84c',
+  dark = true,
+  emblemUrl,
+  emblemAlt,
   bodyText,
   links = [],
   media = [],
 }: RsvpGuestEmailProps) {
-  const palette = getEmailPalette(true);
+  const palette = getEmailPalette(dark);
   const sectionLabel = section ? (SECTION_LABELS[section] ?? section) : null;
   const bodyParagraphs = bodyText
     ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
@@ -70,8 +78,10 @@ function RsvpGuestEmail({
     <EmailShell
       previewText={`Your RSVP is confirmed — ${meetingTitle}`}
       kicker={meetingTitle}
-      dark
+      dark={dark}
       showNfpFooter
+      emblemUrl={emblemUrl}
+      emblemAlt={emblemAlt}
     >
       <Text style={{ fontSize: '13px', color: palette.textMuted, marginTop: 0, marginBottom: '2px' }}>
         This email is for {guestName}.

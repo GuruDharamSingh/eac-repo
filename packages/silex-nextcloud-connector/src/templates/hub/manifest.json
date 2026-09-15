@@ -1,0 +1,130 @@
+{
+  "id": "hub",
+  "name": "Hub Template",
+  "version": "0.1.0",
+  "category": "EAC Hub Template",
+  "description": "A members' landing page: a masthead, a grid of tiles the owner points wherever they like, and live slots for the organisation's recent threads and shared material. The tile grid is the spotlight-grid pen, so it matches that block anywhere else on the site.",
+  "tokens": "../tokens/eac-tokens.css",
+  "cssOrder": [
+    "../../pens/spotlight-grid/pen.css",
+    "css/eac-hub.css"
+  ],
+  "sections": [
+    {
+      "id": "eac-hub-masthead",
+      "label": "Hub masthead",
+      "html": "html/eac-hub-masthead.html",
+      "css": "css/eac-hub.css",
+      "required": true,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "organizations.name"
+      ],
+      "traits": [
+        "orgName",
+        "title",
+        "lede",
+        "whoami"
+      ],
+      "bindings": {
+        "orgName": {
+          "kind": "text",
+          "from": "hub.org_name",
+          "fallback": "Organisation"
+        },
+        "title": {
+          "kind": "text",
+          "fallback": "Members"
+        },
+        "lede": {
+          "kind": "text",
+          "hideWhenEmpty": true
+        },
+        "whoami": {
+          "kind": "text",
+          "from": "hub.whoami",
+          "hideWhenEmpty": true
+        }
+      }
+    },
+    {
+      "id": "eac-hub-tools",
+      "label": "Tile grid",
+      "html": "html/eac-hub-tools.html",
+      "css": "css/eac-hub.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [],
+      "traits": [
+        "toolsTitle",
+        "toolsNote"
+      ],
+      "bindings": {
+        "toolsTitle": {
+          "kind": "text",
+          "fallback": "What you can do"
+        },
+        "toolsNote": {
+          "kind": "text",
+          "hideWhenEmpty": true
+        }
+      }
+    },
+    {
+      "id": "eac-hub-stream",
+      "label": "Lately (live feed)",
+      "html": "html/eac-hub-stream.html",
+      "css": "css/eac-hub.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [
+        "threads.title",
+        "threads.excerpt",
+        "threads.published_at"
+      ],
+      "traits": [
+        "streamTitle",
+        "streamLink"
+      ],
+      "bindings": {
+        "streamTitle": {
+          "kind": "text",
+          "fallback": "Lately"
+        },
+        "streamLink": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "hub.all_url",
+          "fallback": "/"
+        }
+      }
+    },
+    {
+      "id": "eac-hub-resources",
+      "label": "To hand (live slot)",
+      "html": "html/eac-hub-resources.html",
+      "css": "css/eac-hub.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "cmsFields": [],
+      "traits": [
+        "resourcesTitle",
+        "resourcesNote"
+      ],
+      "bindings": {
+        "resourcesTitle": {
+          "kind": "text",
+          "fallback": "To hand"
+        },
+        "resourcesNote": {
+          "kind": "text",
+          "hideWhenEmpty": true
+        }
+      }
+    }
+  ]
+}

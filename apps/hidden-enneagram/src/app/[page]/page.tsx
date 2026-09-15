@@ -67,7 +67,7 @@ export default async function SitePage({ params }: PageProps) {
   if (SILEX_PAGES.has(page)) {
     return (
       <>
-        <SiteNav />
+        <SiteNav silexPage={page} />
         <SilexSiteBySlug
           slug={ORG_SLUG}
           page={page}

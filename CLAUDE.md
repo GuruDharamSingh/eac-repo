@@ -133,7 +133,8 @@ apps/
 ├── art-auction/         Port 3009 - Art marketplace and auctions
 ├── fourth-way-book-readers/ Port 3010 - Reading groups & book programs (org: fourth-way)
 ├── blog-tester/         Port 3011 - Sandbox for blog features
-└── elastrocal/          Port 3016 - Natal charts (org: elastrocal; engine in packages/astro)
+├── elastrocal/          Port 3016 - Natal charts (org: elastrocal; engine in packages/astro)
+└── danamccool/          Port 3018 - Dana McCool's personal artist site (org: danamccool)
 ```
 
 Each app operates independently but queries the same database filtered by its `org_id`.
@@ -190,6 +191,7 @@ When services are running:
 - **Book Readers:** http://localhost:3010
 - **Blog Tester:** http://localhost:3011
 - **Elastrocal:** http://localhost:3016
+- **Dana McCool:** http://localhost:3018
 - **Silex Editor:** http://localhost:6805
 - **Nextcloud:** http://localhost:8080
 - **Supabase Auth:** http://localhost:9999

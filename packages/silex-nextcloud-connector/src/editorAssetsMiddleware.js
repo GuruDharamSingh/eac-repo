@@ -20,6 +20,8 @@ const {
   readBrochureTemplateRegistry,
   readArticleTemplateRegistry,
   readArticleTemplateCss,
+  readHubTemplateRegistry,
+  readHubTemplateCss,
 } = require("./workshopTemplateRegistry");
 const { readPensRegistry, readPensCss } = require("./pensRegistry");
 
@@ -35,6 +37,8 @@ const BROCHURE_CSS_URL = "/eac-brochure-template.css";
 const ARTICLE_TEMPLATE_URL = "/eac-article-template.json";
 const ARTICLE_CSS_URL = "/eac-article-template.css";
 // The pens library (src/pens/README.md): one JSON registry, one stylesheet.
+const HUB_TEMPLATE_URL = "/eac-hub-template.json";
+const HUB_CSS_URL = "/eac-hub-template.css";
 const PENS_URL = "/eac-pens.json";
 const PENS_CSS_URL = "/eac-pens.css";
 // The live-component catalogue (@elkdonis/silex-render components.data.json),
@@ -59,6 +63,8 @@ const ASSET_ROUTES = [
   COMPONENTS_URL,
   PENS_URL,
   PENS_CSS_URL,
+  HUB_TEMPLATE_URL,
+  HUB_CSS_URL,
 ];
 const CSS_FILE = path.join(__dirname, "eac-blocks.css");
 
@@ -234,6 +240,32 @@ function registerEditorAssets(app) {
     }
   }
 
+  function eacHubTemplate(req, res, next) {
+    try {
+      const body = JSON.stringify(readHubTemplateRegistry());
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read hub template", err);
+      next(err);
+    }
+  }
+
+  function eacHubCss(req, res, next) {
+    try {
+      const body = readHubTemplateCss();
+      res.set("Content-Type", "text/css; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60");
+      res.status(200).send(body);
+    } catch (err) {
+      console.error("[editorAssets] failed to read hub css", err);
+      next(err);
+    }
+  }
+
+  app.get(HUB_TEMPLATE_URL, eacHubTemplate);
+  app.get(HUB_CSS_URL, eacHubCss);
   app.get(COMPONENTS_URL, eacComponents);
   app.get(PENS_URL, eacPens);
   app.get(PENS_CSS_URL, eacPensCss);

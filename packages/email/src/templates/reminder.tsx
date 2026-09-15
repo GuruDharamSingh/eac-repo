@@ -13,6 +13,13 @@ export interface ReminderEmailProps {
   talkJoinUrl?: string;
   orgName?: string;
   primaryColor?: string;
+  /** The thread's public page, where the real RSVP UI lives. */
+  rsvpUrl?: string;
+  /** "N people are coming so far" -- shown in the detail box when present. */
+  rsvpCount?: number;
+  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
+  emblemUrl?: string;
+  emblemAlt?: string;
   /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
   links?: EmailLinkItem[];
@@ -28,6 +35,10 @@ function ReminderEmail({
   talkJoinUrl,
   orgName = 'Elkdonis Arts Collective',
   primaryColor = '#022278',
+  rsvpUrl,
+  rsvpCount,
+  emblemUrl,
+  emblemAlt,
   bodyText = 'A reminder that your session begins soon. Gather your materials and settle in — we look forward to seeing you.',
   links = [],
   media = [],
@@ -59,6 +70,8 @@ function ReminderEmail({
     <EmailShell
       previewText={`Starting soon — ${meetingTitle}`}
       kicker={orgName}
+      emblemUrl={emblemUrl}
+      emblemAlt={emblemAlt}
       footerText={
         <Text style={{ fontSize: '12px', color: '#999', margin: 0 }}>
           You are receiving this because you RSVP&apos;d with {orgName}.
@@ -118,6 +131,33 @@ function ReminderEmail({
               </a>
             </Text>
           )}
+          {rsvpCount !== undefined && (
+            <Text style={{ margin: '8px 0 0', fontSize: '14px', color: '#374238' }}>
+              {rsvpCount} {rsvpCount === 1 ? 'person is' : 'people are'} coming so far.
+            </Text>
+          )}
+        </Section>
+      )}
+
+      {rsvpUrl && (
+        <Section style={{ margin: '20px 0 0' }}>
+          <Text style={{ margin: '0 0 6px', fontSize: '14px' }}>
+            <a
+              href={rsvpUrl}
+              style={{
+                display: 'inline-block',
+                background: primaryColor,
+                color: '#fffaf0',
+                padding: '10px 22px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '14px',
+              }}
+            >
+              RSVP here
+            </a>
+          </Text>
         </Section>
       )}
 

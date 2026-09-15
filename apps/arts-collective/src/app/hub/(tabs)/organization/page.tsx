@@ -20,7 +20,7 @@ import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 import { JoinTiers } from "@/components/hub/JoinTiers";
 import { AppearancePanel } from "@/components/hub/AppearancePanel";
 import { MyAppearancePanel } from "@/components/hub/MyAppearancePanel";
-import { OrgSwitcher } from "@/components/hub/OrgSwitcher";
+import { OrgStrip, type OrgStripItem } from "@elkdonis/cms-ui/center";
 import { TierBadge } from "@/components/hub/TierBadge";
 import { OrgIdentityPanel } from "@/components/hub/OrgIdentityPanel";
 import { saveOrgIdentityAction } from "@/lib/org-identity-actions";
@@ -115,16 +115,7 @@ export default async function OrganizationTabPage({
               Organization Hub
             </p>
             <TierBadge tier={tier} />
-            {memberships.length > 1 && (
-              <OrgSwitcher
-                current={selected.orgSlug}
-                options={memberships.map((m) => ({
-                  slug: m.orgSlug,
-                  name: m.orgName,
-                  role: ROLE_LABEL[m.role] ?? m.role,
-                }))}
-              />
-            )}
+
           </div>
           <h1 className="font-serif text-4xl leading-tight text-foreground">
             {selected.orgName}
@@ -166,6 +157,29 @@ export default async function OrganizationTabPage({
           </p>
         )}
       </header>
+
+      {/* Which of your orgs this tab is showing. The same strip /center uses
+          for "Where you are", so the two places a person meets their list of
+          organisations look like one thing. Past two it slides. */}
+      {memberships.length > 1 && (
+        <section className="mb-10" aria-label="Your organizations">
+          <p className="eac-face-kicker mb-2">Your organizations</p>
+          <OrgStrip
+            orgs={memberships.map<OrgStripItem>((m) => ({
+              orgId: m.orgId,
+              orgSlug: m.orgSlug,
+              orgName: m.orgName,
+              role: m.role,
+              isCurrent: m.orgSlug === selected.orgSlug,
+              href:
+                m.orgSlug === selected.orgSlug
+                  ? null
+                  : `/hub/organization?org=${encodeURIComponent(m.orgSlug)}`,
+              note: m.orgSlug === selected.orgSlug ? "showing" : "switch →",
+            }))}
+          />
+        </section>
+      )}
 
       {startingNew && (
         <section className="mb-12 rounded-lg border border-dashed border-border">

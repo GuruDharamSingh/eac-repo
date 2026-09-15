@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Html, Head, Body, Container, Section, Text, Hr, Preview } from '@react-email/components';
+import { Html, Head, Body, Container, Section, Text, Hr, Preview, Img } from '@react-email/components';
 
 // Public origin where the brand fonts are served (/fonts/*) — the same files
 // the site itself uses (Brothers for display headings, Basteleur for body
@@ -96,6 +96,13 @@ export interface EmailShellProps {
   footerText?: React.ReactNode;
   /** Appends the standard not-for-profit/open-source note below footerText. */
   showNfpFooter?: boolean;
+  /**
+   * Small emblem shown in the header banner, above the collective name.
+   * Opt-in per org (e.g. amrit-canada's Khanda) -- unset for every other
+   * caller today, so this is purely additive to existing output.
+   */
+  emblemUrl?: string;
+  emblemAlt?: string;
   children: React.ReactNode;
 }
 
@@ -111,6 +118,8 @@ export function EmailShell({
   dark = false,
   footerText,
   showNfpFooter = false,
+  emblemUrl,
+  emblemAlt,
   children,
 }: EmailShellProps) {
   const palette = getEmailPalette(dark);
@@ -137,6 +146,15 @@ export function EmailShell({
                 borderBottom: `1px solid ${EAC_GOLD}`,
               }}
             >
+              {emblemUrl && (
+                <Img
+                  src={emblemUrl}
+                  alt={emblemAlt ?? ''}
+                  width="30"
+                  height="30"
+                  style={{ margin: '0 auto 8px', display: 'block' }}
+                />
+              )}
               <Text
                 style={{
                   color: '#fdf0d0',

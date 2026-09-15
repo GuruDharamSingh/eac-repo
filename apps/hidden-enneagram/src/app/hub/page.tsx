@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Lock } from "lucide-react";
 import { canViewFeed, listOrgFeeds } from "@elkdonis/services";
+import { applyManifestBindings } from "@elkdonis/cms-bindings";
+import { getOrgBySlug, renderSilexHtmlWithEmbeds } from "@elkdonis/silex-render";
+import { sanitizeSilexHtml } from "@elkdonis/utils";
+import { hubTemplateHtml, hubTemplateSections } from "@/lib/hub-template";
 import { listOrdersForCustomer } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
@@ -30,6 +34,17 @@ export const metadata: Metadata = {
  * Everyone who signs up here is made a member of this org by the signup route,
  * so membership is self-serve today. If that ever needs to be an invitation,
  * the gate is org role and this page needs no change.
+ *
+ * The top of the page is the Silex HUB TEMPLATE
+ * (packages/silex-nextcloud-connector/src/templates/hub), rendered through the
+ * same pipeline a published org site goes through: bind the declared traits,
+ * sanitize, then swap <eac-embed> markers for live React. So the masthead, the
+ * tile grid and the two live slots are all editable in Silex by whoever owns
+ * this org, and what they see in the editor is what this page renders.
+ *
+ * Everything below the template — the member-only feeds and this person's
+ * bookings — stays in React, because neither can be expressed as a static
+ * template: one is gated per feed role, the other is per-viewer.
  */
 export default async function HubPage() {
   const viewer = await getViewer();
@@ -54,24 +69,21 @@ export default async function HubPage() {
   ]);
 
   const myOrders = orders.filter((o) => o.metadata?.orgId === siteConfig.orgId);
+  const hub = await renderHubTemplate(viewer.email);
 
   return (
     <>
       <SiteNav />
+      {/* The template's stylesheet: tokens, the spotlight-grid pen, then the
+          hub's own layout — one file, the same one the Silex editor loads. */}
+      <link rel="stylesheet" href="/api/silex/templates/hub.css" />
+      {hub}
       <main className="mx-auto max-w-[880px] px-6 py-16 font-sans">
-        <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-          Signed in as {viewer.email}
-        </p>
-        <h1 className="mt-3 font-serif text-5xl font-medium leading-[1.05]">Members</h1>
-        <p className="mt-4 max-w-[560px] text-lg text-muted-foreground">
-          Working material, and the sessions you&rsquo;ve booked.
-        </p>
-
         {/* Editors compose from here rather than going to /manage: the same
             surface a card opens, in compose mode. Omitted entirely for
             members — a door onto a form they cannot submit is worse than no
             door, which is the "Soon" card pattern the catalogue replaced. */}
-        <SurfaceCardGrid className="mt-10">
+        <SurfaceCardGrid>
           {viewer.canEdit && (
             <SurfaceCard
               title="Write something"
@@ -174,4 +186,35 @@ export default async function HubPage() {
       </main>
     </>
   );
+}
+
+/**
+ * The hub template, rendered with its live slots resolved.
+ *
+ * Fails soft to null: a hub that arrives without its masthead is worse than
+ * one without its tiles, and everything below this in the page is independent
+ * of it. The template is bound BEFORE it is sanitized, which is the order the
+ * rest of the pipeline uses — a binding writes real values into the document,
+ * so those values have to pass through DOMPurify too.
+ */
+async function renderHubTemplate(email: string) {
+  const html = hubTemplateHtml();
+  if (!html) return null;
+
+  const org = await getOrgBySlug(siteConfig.orgId).catch(() => null);
+  if (!org) return null;
+
+  try {
+    const bound = applyManifestBindings(html, hubTemplateSections(), {
+      hub: {
+        org_name: siteConfig.orgName,
+        whoami: `Signed in as ${email}`,
+        all_url: "/",
+      },
+    });
+    return await renderSilexHtmlWithEmbeds(sanitizeSilexHtml(bound), org);
+  } catch (error) {
+    console.error("[hidden-enneagram] hub template render:", error);
+    return null;
+  }
 }

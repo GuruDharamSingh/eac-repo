@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 export default function Home() {
   return (
     <>
-      <SiteNav />
+      <SiteNav silexPage="index" />
       <SilexSiteBySlug
         slug={ORG_SLUG}
         cssLinks={["/api/silex/templates/enneagram.css"]}

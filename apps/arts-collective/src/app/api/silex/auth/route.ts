@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { consumeSilexToken } from "@/lib/silex-tokens";
+import { consumeSilexToken } from "@elkdonis/silex-render";
 
 /**
  * GET /api/silex/auth?token=<tokenId>

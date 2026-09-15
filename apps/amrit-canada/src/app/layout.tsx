@@ -4,6 +4,7 @@ import { Cinzel, Lora } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { KundaliniPanel } from "@/components/kundalini-panel-loader";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { siteConfig } from "@/config/site";
 import { getSiteSections } from "@/lib/data";
@@ -58,28 +59,45 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ]);
   const talkBaseUrl =
     process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
+  // "Offerings" in the nav is the site's actual content channels, not the
+  // (now-unused) "services" feed -- Amrit Vela Sadhana, Yoga Classes,
+  // Gurdwara & Langar. "general" is private and excluded.
+  const offerings = feeds
+    .filter((f) => f.isPublic && f.slug !== "services")
+    .map((f) => ({ slug: f.slug, title: f.name }));
 
   return (
     <html lang="en" suppressHydrationWarning className={`${cinzel.variable} ${lora.variable}`}>
-      <body suppressHydrationWarning className="flex min-h-screen flex-col">
-        {/* One surface system for the whole site: a listing card on a feed
-            page, a hub tile and a calendar day all open into the same dialog. */}
-        <HubSurfaces
-          signedIn={Boolean(viewer)}
-          canEdit={canEdit}
-          displayName={profile?.displayName ?? null}
-          feeds={feeds.filter((f) => f.isPublic || canEdit).map((f) => ({ slug: f.slug, name: f.name }))}
-          talkBaseUrl={talkBaseUrl}
-        >
-          <SiteHeader
+      <body suppressHydrationWarning className="flex min-h-screen">
+        {/* Runs the full length of the page, from the very top -- the header
+            sits beside its top portion rather than above it. */}
+        <aside className="w-14 shrink-0 sm:w-20 md:w-32 lg:w-64">
+          <div className="sticky top-0 h-full">
+            <KundaliniPanel showWord />
+          </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* One surface system for the whole site: a listing card on a feed
+              page, a hub tile and a calendar day all open into the same dialog. */}
+          <HubSurfaces
             signedIn={Boolean(viewer)}
             canEdit={canEdit}
-            isMember={Boolean(viewer?.isMember)}
-          />
-          <main className="flex-1">{children}</main>
-          <SiteFooter content={sections.footer} />
-          <Toaster position="top-right" />
-        </HubSurfaces>
+            displayName={profile?.displayName ?? null}
+            feeds={feeds.filter((f) => f.isPublic || canEdit).map((f) => ({ slug: f.slug, name: f.name }))}
+            talkBaseUrl={talkBaseUrl}
+          >
+            <SiteHeader
+              signedIn={Boolean(viewer)}
+              canEdit={canEdit}
+              isMember={Boolean(viewer?.isMember)}
+              offerings={offerings}
+            />
+            <main className="flex-1">{children}</main>
+            <SiteFooter content={sections.footer} />
+            <Toaster position="top-right" />
+          </HubSurfaces>
+        </div>
       </body>
     </html>
   );

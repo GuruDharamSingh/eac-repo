@@ -24,6 +24,11 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return d.kind ? `compose:${d.kind}` : "compose";
     case "gallery":
       return "gallery";
+    case "documents":
+      // The seeded list and draft title are dropped, as the calendar's events
+      // and compose's prefill are: the popup reopens to the right place and
+      // fetches for itself.
+      return "documents";
     case "write":
       return d.threadId ? `write:post:${d.threadId}` : "write:post";
     case "board":
@@ -33,7 +38,8 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
     case "forum":
       return "forum";
     case "profile":
-      return d.target ? `profile:org:${d.target.orgId}` : "profile";
+      if (d.target) return `profile:org:${d.target.orgId}`;
+      return d.mode === "edit" ? "profile:edit" : "profile";
     case "define":
       // Encoded: a term may hold spaces, punctuation, even a colon, and the
       // format is colon-separated.
@@ -78,6 +84,8 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return { type: "compose", kind: a && SAFE.test(a) ? a : undefined };
     case "gallery":
       return { type: "gallery" };
+    case "documents":
+      return { type: "documents" };
     case "write":
       return { type: "write", kind: "post", threadId: b && SAFE.test(b) ? b : undefined };
     case "board":
@@ -88,7 +96,7 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return { type: "forum" };
     case "profile":
       if (a === "org" && b && SAFE.test(b)) return { type: "profile", target: { kind: "org", orgId: b } };
-      return { type: "profile" };
+      return { type: "profile", mode: a === "edit" ? "edit" : undefined };
     case "centerLayout":
       return a && SAFE.test(a) ? { type: "centerLayout", orgId: a } : null;
     case "define": {

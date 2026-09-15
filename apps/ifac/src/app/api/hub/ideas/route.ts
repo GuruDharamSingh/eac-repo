@@ -1,20 +1,19 @@
-import { createThread } from "@elkdonis/services";
+import { createOrgIdea, listOrgIdeas } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import { listIdeas } from "@/lib/hub-data";
 import { forbidden, getHubViewer } from "@/lib/hub-auth";
 
 /**
  * Suggested ideas.
  *
- * An idea is a thread (`kind = 'idea'`), written through the shared
- * `createThread` rather than a hand-rolled INSERT — which is what earned it
- * slug uniqueness, excerpt derivation and correct published_at handling for
- * free. IFAC's only other write path, /api/admin/events, is a raw INSERT and
- * has none of those.
+ * The listing and the write both live in `@elkdonis/services/org-ideas` now —
+ * this route was the only real implementation in the repo, so it was lifted
+ * rather than copied and the two template apps serve the same shapes. What
+ * stays here is IFAC's own guard.
  *
- * Ideas are published on submission rather than queued for approval: a
- * suggestion box whose contents only an admin can see is a comment form. What
- * an admin does have is the ability to archive one.
+ * Unchanged in the move: an idea is a thread (`kind = 'idea'`, section
+ * `ideas`, ORGANIZATION visibility) written through the shared `createThread`,
+ * and it is published on submission — a suggestion box whose contents only an
+ * admin can see is a comment form.
  */
 export const dynamic = "force-dynamic";
 
@@ -22,7 +21,7 @@ export async function GET() {
   const viewer = await getHubViewer();
   if (!viewer) return forbidden();
   return Response.json({
-    ideas: await listIdeas(30),
+    ideas: await listOrgIdeas(siteConfig.orgId, { limit: 30 }),
     canEdit: viewer.canEdit,
   });
 }
@@ -38,29 +37,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Expected JSON" }, { status: 400 });
   }
 
-  const title = (payload.title ?? "").trim().slice(0, 200);
-  if (title.length < 3) {
-    return Response.json(
-      { error: "Give the idea a short title" },
-      { status: 400 }
-    );
+  const idea = await createOrgIdea(siteConfig.orgId, {
+    authorId: viewer.userId,
+    title: payload.title ?? "",
+    body: payload.body,
+  });
+  if (!idea) {
+    return Response.json({ error: "Give the idea a short title" }, { status: 400 });
   }
-
-  try {
-    const thread = await createThread({
-      kind: "idea",
-      orgId: siteConfig.orgId,
-      authorId: viewer.userId,
-      title,
-      body: (payload.body ?? "").trim().slice(0, 5000) || undefined,
-      status: "published",
-      // Members-only: an idea under discussion is not the org's public face.
-      visibility: "ORGANIZATION",
-      section: "ideas",
-    });
-    return Response.json({ ok: true, id: thread.id, title: thread.title });
-  } catch (error) {
-    console.error("[ifac] hub/ideas create:", error);
-    return Response.json({ error: "Could not save that idea" }, { status: 500 });
-  }
+  return Response.json({ ok: true, idea });
 }

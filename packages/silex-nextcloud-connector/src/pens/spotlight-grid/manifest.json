@@ -1,0 +1,50 @@
+{
+  "id": "spotlight-grid",
+  "label": "Spotlight Grid",
+  "description": "A grid of cards lit by the cursor: a soft wash on the card under the pointer, and a bright edge on every card it passes.",
+  "credit": {
+    "title": "Linear-style spotlight cards",
+    "author": "Hyperplexed",
+    "url": "https://youtu.be/htGfnF1zN4g"
+  },
+  "root": ".eac-pen-spot",
+  "html": "pen.html",
+  "css": "pen.css",
+  "react": "@elkdonis/cms-ui/pens SpotlightGrid",
+  "traits": [
+    {
+      "name": "data-tone",
+      "label": "Tone",
+      "type": "select",
+      "options": [
+        {
+          "id": "light",
+          "name": "Site colours"
+        },
+        {
+          "id": "dark",
+          "name": "Dark (the original)"
+        }
+      ]
+    },
+    {
+      "name": "data-density",
+      "label": "Density",
+      "type": "select",
+      "options": [
+        {
+          "id": "tight",
+          "name": "Tight"
+        },
+        {
+          "id": "normal",
+          "name": "Normal"
+        },
+        {
+          "id": "roomy",
+          "name": "Roomy"
+        }
+      ]
+    }
+  ]
+}

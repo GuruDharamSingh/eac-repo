@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { SurfaceDescriptor } from "../types";
+import type { SurfaceDescriptor, SurfaceImage } from "../types";
 import { useLayer, useSurface } from "../context";
 import { SurfaceFrame, SurfaceSkeleton } from "../SurfaceShell";
 import { SimpleLightbox } from "../../gallery/SimpleLightbox";
@@ -21,18 +21,20 @@ import { SimpleLightbox } from "../../gallery/SimpleLightbox";
 
 type Descriptor = Extract<SurfaceDescriptor, { type: "gallery" }>;
 
-interface Item {
-  url: string;
-  name: string;
-}
+type Item = SurfaceImage;
 
 export function GallerySurface({ descriptor }: { descriptor: Descriptor }) {
   const { connectors } = useSurface();
   const layer = useLayer();
 
-  const [items, setItems] = React.useState<Item[] | null>(null);
+  // Seeded from whatever the face was already showing, so a gallery opened
+  // mid-skim paints those thumbnails immediately and the fetch below only
+  // ever replaces them with a longer list.
+  const [items, setItems] = React.useState<Item[] | null>(descriptor.images ?? null);
   const [error, setError] = React.useState<string | null>(null);
-  const [lightbox, setLightbox] = React.useState<number | null>(null);
+  const [lightbox, setLightbox] = React.useState<number | null>(
+    descriptor.startAt ?? null
+  );
   const [uploading, setUploading] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);

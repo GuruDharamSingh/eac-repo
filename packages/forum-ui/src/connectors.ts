@@ -1,3 +1,4 @@
+import { renderWikiBody } from "@elkdonis/utils/wiki-render";
 import type {
   CreateCategoryInput,
   CreateTopicInput,
@@ -57,6 +58,9 @@ export interface ForumHrefs {
   /** The forum's own member page. Null for a person without a slug. */
   member(slug: string | null): string | null;
   topic(slug: string): string | null;
+  /** The wiki, inside the forum. Null on a host without a wiki section. */
+  wiki?(): string | null;
+  wikiPage?(slug: string): string | null;
   /** The org's own site, for the "↗" on a masthead. */
   orgSite(board: { slug: string; orgId: string; primaryDomain?: string | null }): string | null;
   /** The network-wide identity page (ArtDirect). Optional. */
@@ -99,6 +103,18 @@ export interface ForumConnectors {
   getTopicBySlug?(slug: string): Promise<ForumTopicEntry | null>;
   searchForum?(q: string, viewer: ForumViewer, opts: { scope?: ForumScope; page?: number; limit?: number; only?: "thread" | "reply" }): Promise<Paged<ForumSearchHit>>;
   listModLog?(orgId: string, opts: { page?: number; limit?: number }): Promise<Paged<ForumModLogEntry>>;
+  /**
+   * The network wiki, as a section of the forum. Absent and the /wiki routes
+   * 404 and the masthead link doesn't render — same posture as every other
+   * optional connector here.
+   *
+   * The wiki is a PEER of the boards, not a board: its pages are excluded
+   * from listTopics and searchForum by kind, because a collectively edited
+   * reference page has no post #1 (decision 3b — the thread IS post #1).
+   * Discussion about a page is a real topic that references it, which is what
+   * `talkThread` resolves.
+   */
+  wiki?: ForumWikiConnectors;
   /** Writes. Absent on a read-only host; the forms then don't render. */
   write?: ForumWriteConnectors;
   hrefs: ForumHrefs;
@@ -118,6 +134,70 @@ export interface ForumConnectors {
    * by setting this and adding one @import — no markup change anywhere.
    */
   theme?: "classic" | "modern";
+  /**
+   * Light or dark ground, independent of the skin — a host can offer a card
+   * feed on paper or a board on brushed silver. "auto" follows the reader's
+   * own prefers-color-scheme. Emitted as data-forum-mode by renderForumRoute;
+   * forum-theme.css carries the palettes.
+   */
+  mode?: "light" | "dark" | "auto";
+}
+
+/** A wiki page as the forum needs it — shaped here so forum-ui stays free of
+ *  any dependency on @elkdonis/services. */
+export interface ForumWikiPageRow {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  updatedAt: Date;
+  /** Depth in the page tree, for an indented outline. 0 is a root. */
+  depth?: number;
+}
+
+export interface ForumWikiPage extends ForumWikiPageRow {
+  /** Already resolved for rendering: hrefs stamped, terms filled in. */
+  bodyHtml: string | null;
+  authorName?: string | null;
+  /** Contributed senses, when the page is a defined term. */
+  senses?: Array<{ id: string; text: string; byName?: string | null; at: string }>;
+  topics?: Array<{ id: string; slug: string; name: string }>;
+  ancestors?: Array<{ slug: string; title: string }>;
+  children?: ForumWikiPageRow[];
+  backlinks?: Array<{ slug: string; title: string }>;
+}
+
+export interface ForumWikiSearchSpan {
+  text: string;
+  hit: boolean;
+}
+
+export interface ForumWikiSearchHit {
+  id: string;
+  slug: string;
+  title: string;
+  titleSpans: ForumWikiSearchSpan[];
+  snippetSpans: ForumWikiSearchSpan[];
+  viaDefinition: boolean;
+}
+
+export interface ForumWikiConnectors {
+  /** Flat list, tree order, for the index outline. */
+  listPages(): Promise<ForumWikiPageRow[]>;
+  getPage(slug: string): Promise<ForumWikiPage | null>;
+  search?(q: string, limit?: number): Promise<ForumWikiSearchHit[]>;
+  /**
+   * The discussion topic for a wiki page — the Talk page. Returns the thread
+   * that already references it, or null when nobody has started one.
+   * `ensure: true` creates it (used behind the "Discuss this page" button).
+   */
+  talkThread?(
+    wikiThreadId: string,
+    opts?: { ensure?: boolean }
+  ): Promise<{ id: string; slug: string; replyCount: number } | null>;
+  /** Where a page is edited — the wiki's own console, off the forum. */
+  editHref?(slug: string): string | null;
+  newHref?(title?: string): string | null;
 }
 
 export interface ForumWriteConnectors {
@@ -150,6 +230,8 @@ export function networkHrefs(opts: { base?: string; signIn?: string | null; orgS
     thread: (id, slug) => `${b}/t/${id}/${slug}`,
     member: (slug) => (slug ? `${b}/members/${slug}` : null),
     topic: (slug) => `${b}/topics/${slug}`,
+    wiki: () => `${b}/wiki`,
+    wikiPage: (slug) => `${b}/wiki/${slug}`,
     orgSite: opts.orgSite ?? (() => null),
     profile: opts.profile,
     signIn: opts.signIn ?? null,
@@ -168,6 +250,8 @@ export function orgHrefs(opts: { base?: string; signIn?: string | null } = {}): 
     thread: (id, slug) => `${b}/t/${id}/${slug}`,
     member: (slug) => (slug ? `${b}/members/${slug}` : null),
     topic: (slug) => `${b}/topics/${slug}`,
+    wiki: () => `${b}/wiki`,
+    wikiPage: (slug) => `${b}/wiki/${slug}`,
     orgSite: () => null,
     signIn: opts.signIn ?? null,
   };
@@ -182,6 +266,15 @@ export interface ServiceConnectorOptions {
   actionBase?: string;
   /** "classic" (default) or "modern". See ForumConnectors.theme. */
   theme?: "classic" | "modern";
+  /** "light" (default), "dark" or "auto". See ForumConnectors.mode. */
+  mode?: "light" | "dark" | "auto";
+  /**
+   * Where the wiki is EDITED, if anywhere reachable from this host — e.g.
+   * "https://arts-collective.com/hub/wiki". The forum displays the wiki and
+   * links out to its console; it never hosts the editor, so omitting this
+   * simply hides the Edit and New affordances.
+   */
+  wikiConsole?: string;
 }
 
 /**
@@ -223,6 +316,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
     getTopicBySlug: s.getTopicBySlug,
     searchForum: s.searchForum,
     listModLog: s.listModLog,
+    wiki: wikiConnectors(s, opts),
     write: opts.actionBase
       ? {
           postReply: s.postReply,
@@ -243,6 +337,101 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
       : undefined,
     actionBase: opts.actionBase,
     theme: opts.theme,
+    mode: opts.mode,
     hrefs: opts.hrefs,
+  };
+}
+
+/**
+ * The wiki, bound to the same services the boards use.
+ *
+ * The one piece of real work here is the body: a stored wiki page carries
+ * link TARGETS (`data-wiki-slug`), never hrefs, precisely so that whoever
+ * renders it decides where a wikilink points. arts-collective serves the same
+ * page under /hub/wiki/…; here it has to come out under the forum's own
+ * /wiki/…, which is what renderWikiBody's basePath is for. Defined terms are
+ * resolved the same way, server-side, so a reader gets the meaning inline.
+ *
+ * `editHref`/`newHref` point OFF the forum at the wiki's own console — the
+ * forum shows the wiki, it does not own editing it.
+ */
+function wikiConnectors(
+  s: typeof import("@elkdonis/services"),
+  opts: ServiceConnectorOptions
+): ForumWikiConnectors {
+  const base = opts.hrefs.wiki?.() ?? "/wiki";
+  const console_ = opts.wikiConsole;
+
+  return {
+    async listPages() {
+      const pages = await s.listWikiPages();
+      // Tree order with depth, so the index reads as an outline rather than
+      // an alphabetical dump that hides the hierarchy.
+      const out: ForumWikiPageRow[] = [];
+      const walk = (nodes: ReturnType<typeof s.buildWikiTree>, depth: number) => {
+        for (const n of nodes) {
+          out.push({
+            id: n.id,
+            slug: n.slug,
+            title: n.title,
+            excerpt: n.excerpt,
+            updatedAt: n.updatedAt,
+            depth,
+          });
+          walk(n.children, depth + 1);
+        }
+      };
+      walk(s.buildWikiTree(pages), 0);
+      return out;
+    },
+
+    async getPage(slug) {
+      const page = await s.getWikiPage(slug);
+      if (!page) return null;
+
+      const [ancestors, backlinks, all, senses, topics] = await Promise.all([
+        s.getWikiAncestors(page.id),
+        s.getWikiBacklinks(page.id),
+        s.listWikiPages(),
+        s.getTermDefinitions(page.id),
+        s.listWikiTopics(page.id),
+      ]);
+
+      const resolved = await s.resolveTerms(page.body ?? "", base);
+      const { html } = renderWikiBody(resolved.html, base);
+
+      return {
+        id: page.id,
+        slug: page.slug,
+        title: page.title,
+        excerpt: page.excerpt,
+        updatedAt: page.updatedAt,
+        bodyHtml: page.body ? html : null,
+        authorName: page.authorName ?? null,
+        senses: senses.map((d) => ({ id: d.id, text: d.text, byName: d.byName ?? null, at: d.at })),
+        topics,
+        ancestors: ancestors.map((a) => ({ slug: a.slug, title: a.title })),
+        children: all
+          .filter((p) => p.parentId === page.id)
+          .sort((a, b) => a.title.localeCompare(b.title))
+          .map((p) => ({
+            id: p.id,
+            slug: p.slug,
+            title: p.title,
+            excerpt: p.excerpt,
+            updatedAt: p.updatedAt,
+          })),
+        backlinks: backlinks.map((b) => ({ slug: b.slug, title: b.title })),
+      };
+    },
+
+    search: (q, limit) => s.searchWiki(q, limit),
+
+    talkThread: (wikiThreadId, o) => s.wikiTalkThread(wikiThreadId, o),
+
+    editHref: console_ ? (slug) => `${console_}/${slug}/edit` : undefined,
+    newHref: console_
+      ? (title) => (title ? `${console_}/new?title=${encodeURIComponent(title)}` : `${console_}/new`)
+      : undefined,
   };
 }

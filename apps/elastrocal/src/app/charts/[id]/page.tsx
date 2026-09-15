@@ -7,6 +7,7 @@ import { getIdentity } from "@/lib/auth";
 import { claimGuestCharts, getChart, listCharts } from "@/lib/charts";
 import { ChartActions } from "@/components/chart-actions";
 import { OverlayPanel } from "@/components/chart/overlay-panel";
+import { ReadingPanel } from "@/components/chart/reading";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -60,6 +61,7 @@ export default async function ChartPage({ params, searchParams }: Props) {
         others={others}
         compare={compare}
       />
+      <ReadingPanel chart={chart} name={saved.name} className="mt-6" />
     </div>
   );
 }

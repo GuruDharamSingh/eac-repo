@@ -31,7 +31,12 @@ export interface SurfaceCardProps {
   kicker?: string | null;
   surface?: SurfaceDescriptor;
   href?: string;
-  onClick?: () => void;
+  /**
+   * Receives the face element, so a card that opens its OWN surface (the
+   * hub faces do: they pass `onClick` and no `surface`) can still hand the
+   * face over and grow out of it. Ignore the argument and nothing changes.
+   */
+  onClick?: (origin: HTMLElement | null) => void;
   /** Drawn between the blurb and the title block: server-rendered, so it
    *  costs nothing on the client and is visible before any JS runs. */
   preview?: React.ReactNode;
@@ -88,10 +93,16 @@ export function SurfaceCard({
       className="eac-face-hit"
       aria-label={ariaLabel ?? title}
       aria-haspopup={surface ? "dialog" : undefined}
-      onClick={() => {
-        if (surface && surfaces) surfaces.open(surface);
-        else if (href) window.location.assign(href);
-        onClick?.();
+      onClick={(e) => {
+        // Hand the face itself over, so the surface grows out of it rather
+        // than appearing from nowhere — see the morph in surface.css.
+        const face = e.currentTarget.closest<HTMLElement>(".eac-face");
+        if (surface && surfaces) {
+          surfaces.open(surface, face);
+        } else if (href) {
+          window.location.assign(href);
+        }
+        onClick?.(face);
       }}
     />
   );

@@ -35,6 +35,7 @@ const DOSSIER_CATEGORY = "EAC Dossier Template";
 const ENNEAGRAM_CATEGORY = "EAC Enneagram Template";
 const BROCHURE_CATEGORY = "EAC Brochure Template";
 const PENS_CATEGORY = "EAC Pens";
+const HUB_CATEGORY = "EAC Hub Template";
 
 const CSS_PATH = "/eac-blocks.css";
 const WORKSHOP_CSS_PATH = "/eac-workshop-template.css";
@@ -46,6 +47,8 @@ const ENNEAGRAM_TEMPLATE_PATH = "/eac-enneagram.json";
 const BROCHURE_CSS_PATH = "/eac-brochure-template.css";
 const BROCHURE_TEMPLATE_PATH = "/eac-brochure-template.json";
 const COMPONENTS_PATH = "/eac-components.json";
+const HUB_TEMPLATE_PATH = "/eac-hub-template.json";
+const HUB_CSS_PATH = "/eac-hub-template.css";
 const PENS_PATH = "/eac-pens.json";
 const PENS_CSS_PATH = "/eac-pens.css";
 
@@ -57,6 +60,8 @@ let enneagramTemplatePromise = null;
 let enneagramCssPromise = null;
 let componentsPromise = null;
 let pensPromise = null;
+let hubTemplatePromise = null;
+let hubCssPromise = null;
 let brochureTemplatePromise = null;
 let brochureCssPromise = null;
 
@@ -182,6 +187,34 @@ function loadBrochureCss() {
       return "";
     });
   return brochureCssPromise;
+}
+
+function loadHubTemplate() {
+  if (hubTemplatePromise) return hubTemplatePromise;
+  hubTemplatePromise = fetch(sameOriginUrl(HUB_TEMPLATE_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load hub template", err);
+      return null;
+    });
+  return hubTemplatePromise;
+}
+
+function loadHubCss() {
+  if (hubCssPromise) return hubCssPromise;
+  hubCssPromise = fetch(sameOriginUrl(HUB_CSS_PATH), { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.text();
+    })
+    .catch((err) => {
+      console.warn("[eac-client-config] could not load hub css", err);
+      return "";
+    });
+  return hubCssPromise;
 }
 
 /**
@@ -969,11 +1002,215 @@ function openBlocksPanelIfSimpleMode(editor) {
   }
 }
 
+/* ---- Open on the requested page ---------------------------------------- */
+
+/**
+ * Silex's own slug rule, copied from dist/server/common/page.js so a name
+ * matches here exactly as it does at publish time. Kept as a fallback only:
+ * on the projects we seed, the page ID already IS the published filename
+ * (index, introduction, type-1), and the display name ("Type 1 — One") would
+ * slug to something else.
+ */
+function eacPageSlug(name) {
+  return String(name || "index")
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+/**
+ * `?page=<id>` opens the editor on that page instead of the project's main
+ * one. This is what makes "Edit page" on a live site land on the page the
+ * editor was looking at rather than on Home every time.
+ *
+ * Why this is a watch and not a single select — established by driving a real
+ * browser through the launch: at grapesjs:end GrapesJS already has a
+ * non-empty page list, but it is Silex's placeholder project, not ours. The
+ * real pages (index, introduction, type-1…) arrive ~1s later, once the
+ * storage connector has answered. A first version selected once and, seeing
+ * a list without the requested id, concluded "not in project" and gave up —
+ * every launch landed on Home. So: keep looking until the page EXISTS, select
+ * it, and only stop once the selection has held for 1.5s (a load can still
+ * reset to main under it). It never overrides a page the person chose: if
+ * the selection is anything other than main-or-requested, it stops. Hard
+ * cap 20s. The token-redeem middleware strips only `t` from the URL, so
+ * `page` is still in location.search by the time this runs.
+ */
+function openRequestedPage(editor) {
+  if (!editor || editor.__eacPageWatch) return;
+  let requested = null;
+  try {
+    requested = new URLSearchParams(window.location.search).get("page");
+  } catch (_) { /* ignore */ }
+  if (!requested) return;
+  editor.__eacPageWatch = true;
+
+  const findRequested = () => {
+    const pages = editor.Pages && editor.Pages.getAll ? editor.Pages.getAll() : [];
+    if (!pages || !pages.length) return null;
+    return (
+      pages.find((page) => page && page.id === requested) ||
+      pages.find((page) => {
+        const name = page && typeof page.getName === "function" ? page.getName() : (page && page.get ? page.get("name") : "");
+        return eacPageSlug(name) === requested;
+      }) ||
+      null
+    );
+  };
+
+  let done = false;
+  let warned = false;
+  let confirmTimer = null;
+  const settle = (why) => {
+    if (done) return;
+    done = true;
+    clearInterval(timer);
+    if (confirmTimer) clearTimeout(confirmTimer);
+    const selected = editor.Pages && editor.Pages.getSelected ? editor.Pages.getSelected() : null;
+    console.info("[eac-client-config] page watch settled", { requested, why, selected: selected ? selected.id : null });
+  };
+
+  const assert = () => {
+    if (done) return;
+    const target = findRequested();
+    if (!target) {
+      // Not there YET is the normal case for the first second. Say so once
+      // (it is the signal if it never appears) but keep waiting for the cap.
+      if (!warned && editor.Pages && editor.Pages.getAll && editor.Pages.getAll().length) {
+        warned = true;
+        console.info("[eac-client-config] waiting for requested page", { requested, have: editor.Pages.getAll().map((p) => p.id) });
+      }
+      return;
+    }
+    const selected = editor.Pages.getSelected ? editor.Pages.getSelected() : null;
+    const main = editor.Pages.getMain ? editor.Pages.getMain() : null;
+
+    if (selected && selected.id === target.id) {
+      // Met — but confirm it held, because a project load can still reset to
+      // main underneath us. One confirmation window at a time.
+      if (!confirmTimer) {
+        confirmTimer = setTimeout(() => {
+          confirmTimer = null;
+          const now = editor.Pages.getSelected ? editor.Pages.getSelected() : null;
+          if (now && now.id === target.id) settle("met");
+          // else: got reset; the interval re-asserts on its next tick.
+        }, 1500);
+      }
+      return;
+    }
+    // Only ever move off the MAIN page (the reset value). Anything else is a
+    // choice the person made, and that wins.
+    if (selected && main && selected.id !== main.id) {
+      settle("user-chose-" + selected.id);
+      return;
+    }
+    editor.Pages.select(target);
+  };
+
+  for (const ev of ["load", "storage:end:load", "page:select"]) {
+    try { editor.on(ev, () => { setTimeout(assert, 0); }); } catch (_) { /* ignore */ }
+  }
+  const timer = setInterval(assert, 250);
+  setTimeout(() => settle("timeout"), 20000);
+  assert();
+}
+
 function installTypesOnEditor(editor) {
   if (editor.__eacTypesInstalled) return;
   editor.__eacTypesInstalled = true;
   registerEmbedType(editor);
   registerStructureTypes(editor);
+}
+
+/* ---- Hub template ------------------------------------------------------ */
+
+function registerHubTypes(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.DomComponents || !editor.DomComponents.addType) return;
+  if (editor.__eacHubTypesInstalled) return;
+  editor.__eacHubTypesInstalled = true;
+
+  for (const section of registry.sections) {
+    if (!section || !section.id) continue;
+    editor.DomComponents.addType(section.id, {
+      isComponent(el) {
+        if (!el || !el.getAttribute) return false;
+        return el.getAttribute("data-section") === section.id;
+      },
+      model: {
+        defaults: {
+          name: section.label || section.id,
+          droppable: true,
+          copyable: true,
+          traits: (section.traits || []).map((trait) => ({
+            type: "text",
+            name: trait,
+            label: traitLabel(trait),
+          })),
+        },
+      },
+    });
+  }
+}
+
+function addHubBlocks(editor, registry) {
+  if (!registry || !Array.isArray(registry.sections)) return;
+  if (!editor.BlockManager || !editor.BlockManager.add) return;
+
+  // The whole page first, because that is what someone dropping a "hub" wants.
+  const pageBlockId = "eac-template-hub-page";
+  if (!editor.BlockManager.get || !editor.BlockManager.get(pageBlockId)) {
+    const inner = registry.sections
+      .filter((section) => section.defaultVisible !== false)
+      .map((section) => section.htmlContent || "")
+      .filter(Boolean)
+      .join("\n");
+    if (inner) {
+      editor.BlockManager.add(pageBlockId, {
+        label: "Hub page",
+        category: HUB_CATEGORY,
+        content: `<main class="eac-hub">\n${inner}\n</main>`,
+      });
+    }
+  }
+
+  for (const section of registry.sections) {
+    if (!section || !section.id || !section.htmlContent) continue;
+    const blockId = `${section.id}--block`;
+    if (editor.BlockManager.get && editor.BlockManager.get(blockId)) continue;
+    editor.BlockManager.add(blockId, {
+      label: section.label || section.id,
+      category: HUB_CATEGORY,
+      content: section.htmlContent,
+    });
+  }
+}
+
+function seedHubCssIntoEditor(editor, cssText) {
+  if (!editor || !editor.Css || typeof editor.Css.addRules !== "function") return;
+  if (editor.__eacHubCssSeeded) return;
+  editor.__eacHubCssSeeded = true;
+  if (!cssText) return;
+
+  const existing = typeof editor.Css.getAll === "function" ? editor.Css.getAll() : null;
+  const alreadyThere = existing
+    ? existing.some((rule) => {
+        if (!rule || typeof rule.getSelectorsString !== "function") return false;
+        const sel = rule.getSelectorsString();
+        return typeof sel === "string" && sel.indexOf(".eac-hub") !== -1;
+      })
+    : false;
+  if (alreadyThere) {
+    console.info("[eac-client-config] hub css already in project, skipping seed");
+    return;
+  }
+  try {
+    editor.Css.addRules(cssText);
+    console.info("[eac-client-config] hub css seeded", { bytes: cssText.length });
+  } catch (err) {
+    console.warn("[eac-client-config] failed to seed hub css", err);
+  }
 }
 
 /* ---- Pens -------------------------------------------------------------- */
@@ -1103,7 +1340,9 @@ function installBlocksOnEditor(
   enneagramCss,
   brochureRegistry,
   brochureCss,
-  pens
+  pens,
+  hubRegistry,
+  hubCss
 ) {
   if (editor.__eacBlocksInstalled) return;
   editor.__eacBlocksInstalled = true;
@@ -1149,6 +1388,14 @@ function installBlocksOnEditor(
     console.info("[eac-client-config] brochure template installed");
   }
 
+  if (hubRegistry && !editor.__eacHubBlocksInstalled) {
+    editor.__eacHubBlocksInstalled = true;
+    registerHubTypes(editor, hubRegistry);
+    addHubBlocks(editor, hubRegistry);
+    if (hubCss) seedHubCssIntoEditor(editor, hubCss);
+    console.info("[eac-client-config] hub template installed");
+  }
+
   if (pens && pens.length) {
     addPenBlocks(editor, pens);
     console.info("[eac-client-config] pens installed", { pens: pens.map((p) => p.id) });
@@ -1156,7 +1403,7 @@ function installBlocksOnEditor(
 
   console.info("[eac-client-config] installed", {
     blocks: editor.BlockManager.getAll().length,
-    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, BROCHURE_CATEGORY, PENS_CATEGORY, SLOT_CATEGORY],
+    categories: [LAYOUT_CATEGORY, CONTENT_CATEGORY, TEMPLATE_CATEGORY, WORKSHOP_CATEGORY, DOSSIER_CATEGORY, ENNEAGRAM_CATEGORY, BROCHURE_CATEGORY, HUB_CATEGORY, PENS_CATEGORY, SLOT_CATEGORY],
   });
 
   setTimeout(() => openBlocksPanelIfSimpleMode(editor), 250);
@@ -1191,6 +1438,8 @@ export default async function eacClientConfig(config /*, _options */) {
     initialBrochureTemplate,
     initialBrochureCss,
     initialPens,
+    initialHubTemplate,
+    initialHubCss,
   ] = await Promise.all([
     loadComponents(),
     loadWorkshopTemplate(),
@@ -1202,6 +1451,8 @@ export default async function eacClientConfig(config /*, _options */) {
     loadBrochureTemplate(),
     loadBrochureCss(),
     loadPens(),
+    loadHubTemplate(),
+    loadHubCss(),
   ]);
 
   const initialSlotBlocks = slotBlocksFromCatalogue(initialComponents);
@@ -1221,7 +1472,7 @@ export default async function eacClientConfig(config /*, _options */) {
           console.warn("[eac-client-config] no editor available for manual install");
           return null;
         }
-        installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
+        installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens, initialHubTemplate, initialHubCss);
         return editor.BlockManager.getAll().length;
       };
     }
@@ -1241,7 +1492,7 @@ export default async function eacClientConfig(config /*, _options */) {
     // different base URI than the parent (about:srcdoc / blob: / data:), in
     // which case relative paths like "/eac-blocks.css" silently fail to
     // resolve and the canvas renders without our grid/column styles.
-    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH, BROCHURE_CSS_PATH, PENS_CSS_PATH]) {
+    for (const cssPath of [CSS_PATH, WORKSHOP_CSS_PATH, DOSSIER_CSS_PATH, ENNEAGRAM_CSS_PATH, BROCHURE_CSS_PATH, PENS_CSS_PATH, HUB_CSS_PATH]) {
       for (const candidate of [cssPath, sameOriginUrl(cssPath)]) {
         if (candidate && !styles.includes(candidate)) styles.push(candidate);
       }
@@ -1258,6 +1509,7 @@ export default async function eacClientConfig(config /*, _options */) {
       registerEnneagramTypes(editor, initialEnneagramTemplate);
       registerBrochureTypes(editor, initialBrochureTemplate);
       registerPenTypes(editor, initialPens);
+      registerHubTypes(editor, initialHubTemplate);
     });
     gjs.plugins = plugins;
   });
@@ -1269,13 +1521,17 @@ export default async function eacClientConfig(config /*, _options */) {
       console.warn("[eac-client-config] grapesjs:end fired but no editor available");
       return;
     }
-    installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
+    installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens, initialHubTemplate, initialHubCss);
+    openRequestedPage(editor);
   });
 
   // Safety net: also try at startup:end. If grapesjs:end already fired, the
   // idempotent guard inside installBlocksOnEditor makes this a no-op.
   config.on("silex:startup:end", () => {
     const editor = typeof config.getEditor === "function" ? config.getEditor() : null;
-    if (editor) installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens);
+    if (editor) {
+      installBlocksOnEditor(editor, initialSlotBlocks, initialWorkshopTemplate, initialWorkshopCss, initialDossierTemplate, initialDossierCss, initialEnneagramTemplate, initialEnneagramCss, initialBrochureTemplate, initialBrochureCss, initialPens, initialHubTemplate, initialHubCss);
+      openRequestedPage(editor);
+    }
   });
 }

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { WikiBreadcrumbs } from "@/components/hub/WikiBreadcrumbs";
-import { renderWikiBody } from "@/lib/wiki-render";
+import { renderWikiBody } from "@elkdonis/utils";
 import {
   getWikiPage,
   getWikiAncestors,

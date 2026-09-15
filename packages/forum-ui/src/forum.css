@@ -496,8 +496,8 @@ h1.gf-org-name { font-size: 32px; }
 
 /* ── footer + theme toggle ─────────────────────────────────────────────── */
 
-.gf-footer { margin-top: 48px; padding: 16px 0; border-top: 1px solid var(--sf-line); display: flex; justify-content: center; }
-.gf-theme-toggle { margin: 0; }
+.gf-footer { margin-top: 48px; padding: 16px 0; border-top: 1px solid var(--sf-line); display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.gf-theme-toggle, .gf-mode-toggle { margin: 0; }
 .gf-newtopic-btn { display: inline-block; text-decoration: none; font-size: 14px; white-space: nowrap; }
 
 /* ── compact under 720px ───────────────────────────────────────────────── */

@@ -815,3 +815,189 @@ on write, sees no button; promoted to guide the button appears, a PATCH with
 a junk section saves the cleaned layout, and the page reflects the new
 order, hidden section, voice and feed cap; a guide is refused on the network
 default. Role and rows reverted.
+
+## Round twelve (2026-09-13) — automatic SSO, verified on the real domains
+
+The owner asked for the concrete case: signed in on amritcanada.ca, then
+visiting ifacgroup.com without logging in again. Built on the handoff from
+round nine — no new server mechanism, two new call sites for it.
+
+**Built:**
+- `packages/auth-client/src/sso.ts` — client-safe (`"use client"`-importable)
+  `networkOrigin()`, `handoffHref()`, `mirrorLoginHref(hereOrigin, finalPath)`.
+  The last composes the handoff twice: leave here for the network host
+  (which, now signed in there too, immediately hands back) — no new server
+  code, just two existing hops chained.
+- `packages/auth-server/src/handoff.ts` gained `currentOrigin()` (this
+  request's origin, from `next/headers`) and `ssoCheckUrl(hereOrigin,
+  loginPath)` — where a `/login` page bounces once, before showing the form,
+  to ask the network host if the person is already signed in elsewhere.
+- **Every real sign-in now mirrors to the network host.** amrit-canada,
+  innergathering and ifac's `login-form.tsx` route their `onSuccess` through
+  `mirrorLoginHref` instead of a bare `window.location.href`.
+- **Every login page tries the network host silently first.** amrit-canada,
+  innergathering and ifac's `/login` pages redirect through `ssoCheckUrl`
+  once (marked `?sso=1` so the chain cannot loop) before rendering the form.
+- ifac gained the SSO environment (`INTER_APP_JWT_SECRET`,
+  `NEXT_PUBLIC_NETWORK_HOST`, `ADDITIONAL_REDIRECT_URLS`) the other two
+  already had.
+
+**A real production gap found and fixed:** arts-collective — the network
+host every handoff bounces through — had no `ADDITIONAL_REDIRECT_URLS` of
+its own, so it refused every incoming token as an "unknown issuer" no matter
+how correctly it was signed. This meant the round-nine SSO hop had never
+actually been usable between two real custom domains; only the local-port
+tests (which don't exercise this check the same way) had passed. Fixed by
+adding the same env line arts-collective was missing.
+
+**Verified against the live public domains** (amritcanada.ca,
+ifacgroup.com, arts-collective.com — confirmed reachable and proxying to
+these containers), with a real login and one cookie jar:
+1. Sign in on amritcanada.ca.
+2. Before any mirror, ifacgroup.com is correctly signed out.
+3. The mirror a real browser's `onSuccess` would trigger, run by hand:
+   4 redirects, lands back on amritcanada.ca's own center, and the jar now
+   also holds an arts-collective.com cookie.
+4. Visiting ifacgroup.com's gated `/hub` with that same jar: no login form
+   at any point, 5 silent redirects, ifac's own `/api/auth/session` shows
+   the real authenticated user — ifac genuinely signed the person in, not a
+   spoof. It lands on IFAC's own "members only" notice rather than the hub,
+   because this test account holds no role in `ifac` (confirmed in the
+   database) — that is IFAC's org-membership gate working correctly, a
+   separate concern from authentication.
+5. **Negative control:** a brand-new cookie jar that never touched any EAC
+   site hits the same ifac page, bounces once (central correctly finds
+   nothing), and lands on the real login form after exactly two redirects —
+   no loop, no false positive.
+
+**Not yet wired:** hidden-enneagram and the old inner-gathering have handoff
+*routes* from round nine but not this round's login-page/login-form changes.
+The mechanism generalises to any app with both once patched the same way.
+
+## Round thirteen (2026-09-13) — the morph: a face grows into its surface
+
+The owner sent shshaw/keyframers' card→view fold transition
+(codepen.io/shshaw/pen/QmZYMG) and asked to refine `/center`'s UI and
+understand "its movement / reinvention across apps / domains".
+
+**The gap that mattered.** The other session had already ported that exact
+CodePen as the `fold-card` pen (its header credits the same pen), but only as
+a standalone card for IFAC portraits. The *surface system* — the thing every
+hub tile, center card and feed row across every app opens into — still did a
+plain rise-and-settle fade. So the system's own claim, "a face and a surface
+are the same object at two sizes", was true in the data model and invisible
+on screen. That is the one change that propagates to every app and domain at
+once, which is exactly the "movement across apps" being asked about.
+
+**Built — in `@elkdonis/cms-ui/surface`, so every host gets it:**
+- `morphIn()` in `SurfaceProvider.tsx`: FLIP. The panel is already where it
+  belongs, so measure it, put it back onto the clicked face for one frame,
+  then let go. Runs immediately after `showModal()` in the same effect, since
+  the panel is only measurable where it will actually sit once it is in the
+  top layer. Same `data-move="pending" → "moving"` vocabulary as the
+  fold-card pen, so the two read as one technique in the codebase.
+- `open(descriptor, origin?)` — `SurfaceOrigin` is the face element or a
+  rect. Omit it (a deep link, `?surface=` on load, a calendar day) and the
+  surface keeps its old plain entry: there is nothing to grow out of.
+- `surface.css`: the morph block. While morphing, the dialog's own entry
+  transform stands down — two transforms on one box would fight over where it
+  lands. Panel children fade in *after* the move rather than riding it, since
+  they would squash under the scale. Fully disabled under
+  `prefers-reduced-motion`.
+- Origins now passed by `SurfaceCard` (the face itself, via
+  `closest(".eac-face")`), `CenterThreadRow` (the row is the face),
+  `CenterComposeBar` and `ArrangeButton`.
+
+**Also built — the org rail as sliding cards.** Past two orgs, "Where you
+are" slides, reusing the same `.eac-center-slider` the network strip already
+uses (one slider idiom on the page, not two). Each org is a face with the
+current one marked "You are here"; one or two orgs still stack as pills,
+where a slider would be ceremony.
+
+**Verified on amrit-canada production:** the morph CSS and the FLIP code are
+both in the served stylesheet and client bundle; `/center` renders; with a
+third org temporarily added the rail switches to sliding cards with the right
+names, "You are here" on the current one and "Following" on the rest; the
+temporary rows were removed. The animation itself cannot be seen from here —
+there is no browser on this box — so the motion is verified as *shipped and
+wired*, not as *looks right*; that last judgement is yours on screen.
+
+**Not done, and why:** the arts-collective `/hub` upgrade (better cards, the
+compose card holding a full row). arts-collective has no `SurfaceProvider`
+mounted at all — it would be the system's first host there — and its
+`hub-cards.ts` is a different, simpler onboarding catalogue with no compose
+card and no `wide` concept. That is a real piece of work rather than a tweak.
+amrit-canada's own `hub-cards.ts` was being deleted by the other session
+mid-round, so its hub was left alone deliberately.
+
+## Round fourteen (2026-09-13) — one strip for "which org am I in"
+
+A person on this network belongs to several organisations at once, and the
+question "which one am I standing in, and what am I in the others?" was being
+answered twice, differently: a list of pills on `/center`, and a `<select>`
+buried in a chip row on arts-collective's Organization tab.
+
+**Built:** `OrgStrip` in `@elkdonis/cms-ui/center` — a server component (these
+are links; nothing holds state) that renders the viewer's orgs as sliding
+faces past two of them, and as stacked pills below that, where a slider would
+be ceremony. The current org is marked "You are here"; the host decides where
+each card points and what the note under the name says.
+
+- `/center`'s rail now renders through it (its private `OrgCard`/`OrgPill`
+  are gone).
+- arts-collective's Organization tab renders it as a row of its own beneath
+  the header, replacing the `<select>`. Each card links to
+  `?org=<slug>`; the one being shown says "showing", the rest "switch →".
+- `OrgSwitcher.tsx` had no other caller and was removed (tracked by git, so
+  recoverable).
+
+The strip reuses `.eac-center-slider`, the same slider the network feed and
+the compose strip already use — one sliding idiom across the network rather
+than three.
+
+**Verified live:** arts-collective's Organization tab shows the three orgs
+with the right kickers ("Member", "Following", "You are here") and no
+`<select>` left; amrit-canada's `/center` renders the same strip from the same
+component; with the account back to one org it correctly falls back to pills.
+The temporary memberships used for the multi-org case were removed.
+
+**Note on `PublishSection`** ("the compose card could handle a full row"): it
+is *already* a horizontally scrolling strip of compose cards, so the compose
+surface already behaves the way the request describes. What it is not yet is
+part of the surface system — arts-collective still mounts no
+`SurfaceProvider`, so those cards navigate rather than opening in place. That
+remains the real next step for that hub, and it is the same step the morph
+work makes worth taking.
+
+## Round fifteen (2026-09-14) — making the morph reach the faces the other session built
+
+Between rounds the other session built `@elkdonis/cms-ui/hub` — Calendar,
+Compose, Gallery, Documents, Profile, Ideas, Pipeline and StandingMeeting as
+live faces — and mounted the surface system on ifac, hidden-enneagram and
+elastrocal. None of it morphed, for two reasons worth recording because both
+are the kind of thing that fails silently:
+
+1. **The card-level click.** Those faces pass `onClick` and no `surface` —
+   they open their own surfaces. `SurfaceCard` only handed the face over on
+   the `surface` path, so the `onClick` path passed no origin and the morph
+   never ran. `SurfaceCard.onClick` now receives the face element
+   (`onClick?: (origin: HTMLElement | null) => void`); a caller that ignores
+   the argument is unaffected, which is why no call site had to change.
+2. **The live inner regions.** A face's most-clicked targets are often not
+   its hit area but what is alive inside it: the day on the calendar, the
+   thumbnail in the gallery, an option in the compose picker, "Start another"
+   on documents, "Edit" on the profile. Each called `open()` directly with no
+   origin. Every one now forwards it, via a small `faceOf()` helper in the hub
+   package.
+
+`CalendarFace` is the one exception to the pattern: `MonthGrid`'s `onSelect`
+carries no event, and MonthGrid is not mine to change, so the face is found
+from a ref on the live region instead. The surface grows from the calendar
+card rather than the specific day cell — a smaller truth than it could be,
+but still the card it came from.
+
+**Verified:** `cms-ui` and all five apps that mount the surface system
+(amrit-canada, ifac, hidden-enneagram, elastrocal, innergathering) typecheck
+clean; amrit-canada rebuilt and both `/center` (25 faces) and `/hub` (36
+faces) render without error. As before, the animation itself is unverified —
+no browser here.

@@ -5,7 +5,8 @@ import {
   BoardPageView, FeedPage, HappeningPage, IndexPage, ListPage, MemberPage, MembersPage, ModLogPage, NotificationsPage,
   OrgsPage, SearchPage, ThreadPage, TopicPage, TopicReviewRoute, TopicsPage,
 } from "./pages";
-import { ThemeToggle } from "./parts";
+import { ModeToggle, ThemeToggle } from "./parts";
+import { WikiIndexPage, WikiPageView } from "./wiki-pages";
 
 export interface ForumRouteContext {
   connectors: ForumConnectors;
@@ -46,6 +47,11 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
   else if (a === "topics" && b && segments.length === 2) el = await TopicPage({ ...props, slug: b });
   else if (a === "orgs" && segments.length === 1 && connectors.scope.kind === "network") el = await OrgsPage(props);
   else if (a === "search" && segments.length === 1) el = await SearchPage(props);
+  // The wiki, as a peer section. Matched before the org-scoped `/[feed]`
+  // branch below, so a feed can never be slugged "wiki" and shadow it.
+  else if (a === "wiki" && segments.length === 1 && connectors.wiki) el = await WikiIndexPage(props);
+  else if (a === "wiki" && b && segments.length === 2 && connectors.wiki)
+    el = await WikiPageView({ ...props, slug: b });
   else if (a === "log" && segments.length === 1 && connectors.scope.kind === "org") el = await ModLogPage({ ...props, orgSlug: "" });
   else if (a === "t" && b) {
     if (d === "unread" && segments.length === 4) {
@@ -70,16 +76,19 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
   if (!el) notFound();
 
   const theme = connectors.theme ?? "classic";
+  const mode = connectors.mode ?? "light";
 
-  // The theme attribute goes here rather than on the host's own wrapper, so
-  // every page — including the thread view, which is not inside Layout —
-  // carries it and no host has to touch its markup to switch skins.
+  // Both attributes go here rather than on the host's own wrapper, so every
+  // page — including the thread view, which is not inside Layout — carries
+  // them and no host has to touch its markup. forum-theme.css reaches the
+  // host's outer .gf-page via :has(), so the ground changes too.
   return (
-    <div className="gf-root" data-forum-theme={theme}>
+    <div className="gf-root" data-forum-theme={theme} data-forum-mode={mode}>
       {el}
       {connectors.actionBase && (
         <footer className="gf-footer">
           <ThemeToggle currentTheme={theme} actionBase={connectors.actionBase} back={path} />
+          <ModeToggle currentMode={mode} actionBase={connectors.actionBase} back={path} />
         </footer>
       )}
     </div>

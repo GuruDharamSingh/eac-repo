@@ -58,7 +58,7 @@ export const textTypesetter: Typesetter = {
 
 export type WheelOptions = Pick<
   RenderOptions,
-  "variant" | "minorAspects" | "rootAttrs" | "background" | "transits" | "orient"
+  "variant" | "minorAspects" | "rootAttrs" | "background" | "transits" | "orient" | "lite"
 >;
 
 /** The round chart alone, as a string of SVG. */

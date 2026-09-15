@@ -41,6 +41,8 @@ export interface Thread {
   attendeeLimit: number | null;
   minAttendees: number | null;
   notifyOnMinAttendees: boolean;
+  /** Minutes before scheduledAt the automatic reminder fires. Null = reminders off for this thread. */
+  reminderMinutesBefore: number | null;
   recurrencePattern: string | null;
   recurrenceUntil: Date | null;
   authorId: string | null;

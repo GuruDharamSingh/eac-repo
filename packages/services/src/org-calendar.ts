@@ -566,3 +566,46 @@ function stripHtml(value: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+// ── the calendar window, for /api/hub/calendar ──────────────────────────────
+
+/**
+ * One screen of dates, resolved and queried.
+ *
+ * Three apps served this route with three copies of the same twenty lines:
+ * parse `from`/`to`, default them to the current month, refuse an empty or
+ * absurd range, then call listOrgEventsInRange. The span limit in particular
+ * is a POLICY — the reason the route exists is to stop an unbounded scan —
+ * and a policy kept in three files is a policy that will eventually differ.
+ *
+ * Returns data, never a Response: each app keeps its own auth gate and its
+ * own error shape, because the gate is the security boundary and is worth
+ * reading in the route it protects.
+ */
+export type OrgCalendarWindow =
+  | { ok: true; from: Date; to: Date; events: OrgCalendarEvent[] }
+  | { ok: false; error: string };
+
+/** One query should be one screen of dates, not an unbounded scan. */
+export const CALENDAR_MAX_SPAN_DAYS = 92;
+
+export async function readOrgCalendarWindow(
+  orgId: string,
+  params: URLSearchParams
+): Promise<OrgCalendarWindow> {
+  const parse = (value: string | null): Date | null => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const from = parse(params.get('from')) ?? startOfMonth(new Date());
+  const to = parse(params.get('to')) ?? addMonths(from, 1);
+
+  if (to <= from) return { ok: false, error: 'Empty range' };
+  if ((to.getTime() - from.getTime()) / 86_400_000 > CALENDAR_MAX_SPAN_DAYS) {
+    return { ok: false, error: 'Range too wide' };
+  }
+
+  return { ok: true, from, to, events: await listOrgEventsInRange(orgId, from, to) };
+}

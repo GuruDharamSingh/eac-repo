@@ -526,6 +526,8 @@ export {
   getStandingMeeting,
   getStandingMeetingId,
   listOrgEventsInRange,
+  readOrgCalendarWindow,
+  CALENDAR_MAX_SPAN_DAYS,
   setStandingMeeting,
   pushThreadToCalendar,
   removeThreadFromCalendar,
@@ -535,6 +537,7 @@ export {
 export type {
   OrgCalendar,
   OrgCalendarEvent,
+  OrgCalendarWindow,
   StandingMeeting,
   StandingMeetingSource,
 } from './org-calendar';
@@ -625,3 +628,43 @@ export {
   CENTER_SECTION_IDS,
 } from './center-layout';
 export type { CenterLayout, CenterSectionId, ResolvedCenterLayout } from './center-layout';
+
+// A person's gallery pages — many per user, org-agnostic, the same item
+// shape as users.portfolio (migration 124). See galleries.ts.
+export {
+  listUserGalleries,
+  countUserGalleries,
+  getUserGallery,
+  getUserGalleryById,
+  createUserGallery,
+  updateUserGallery,
+  deleteUserGallery,
+  reorderUserGalleries,
+  asGalleryItems,
+} from './galleries';
+export type {
+  UserGallery,
+  UserGallerySummary,
+  CreateUserGalleryInput,
+  UpdateUserGalleryInput,
+} from './galleries';
+
+// The group's living documents and its suggested ideas — both lifted out of
+// apps/ifac, which was the only host where either was real.
+export {
+  listOrgDocuments,
+  createOrgDocument,
+  assignOrgDocument,
+} from './org-documents';
+export type { OrgDocument } from './org-documents';
+export {
+  listOrgIdeas,
+  createOrgIdea,
+  ensureIdeasFeed,
+  IDEAS_FEED,
+} from './org-ideas';
+export type { OrgIdea } from './org-ideas';
+
+// What is waiting for a person — the counts the profile face states.
+export { getViewerAlerts } from './viewer-alerts';
+export type { ViewerAlerts } from './viewer-alerts';

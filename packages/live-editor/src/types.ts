@@ -36,12 +36,33 @@ export interface FieldDef {
   compound?: CompoundFieldDef[];
 }
 
+/**
+ * How a CSS custom property is edited.
+ *
+ *   color   — a colour picker plus hex field
+ *   text    — a free text field (any CSS value; sanitised server-side)
+ *   rgb     — legacy: a "r g b" triple as text
+ *   length  — a slider plus number, with `unit` appended ("2px"); needs
+ *             min/max/step
+ *   select  — one of `options`
+ */
+export type CssVarType = "color" | "text" | "rgb" | "length" | "select";
+
 export interface CssVarDef {
   name: string;
   label: string;
-  type: "color" | "text" | "rgb";
+  type: CssVarType;
   default: string;
   hint?: string;
+  /** Groups rows under a heading in the full panel ("Frames", "Text"…). */
+  group?: string;
+  /** type === "length" */
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  /** type === "select" */
+  options?: SelectOption[];
 }
 
 export interface SaveResult {

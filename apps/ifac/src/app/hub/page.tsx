@@ -1,31 +1,36 @@
 import { redirect } from "next/navigation";
 import { db } from "@elkdonis/db";
-import { getThemeOverrides, listOrgFiles } from "@elkdonis/services";
+import {
+  getStandingMeeting,
+  getThemeOverrides,
+  getViewerAlerts,
+  listOrgDocuments,
+  listOrgEventsInRange,
+  listOrgFiles,
+  listOrgIdeas,
+} from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
-import {
-  getEventsInRange,
-  getProfileSummary,
-  getWeeklyMeeting,
-  listIdeas,
-  listLivingDocuments,
-} from "@/lib/hub-data";
+import { getProfileSummary } from "@/lib/hub-data";
 import { getHubViewer } from "@/lib/hub-auth";
 import { getForumSnapshot } from "@/lib/forum";
+import { getPipelineBoard } from "@/lib/pipeline";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { ForumMini } from "@elkdonis/cms-ui/surface";
-import { HubCard } from "@/components/hub/HubCard";
+import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import {
+  CalendarFace,
+  DocumentsFace,
+  IdeasFace,
+  PipelineFace,
+  ProfileFace,
+  StandingMeetingFace,
+} from "@elkdonis/cms-ui/hub";
 import { HubDrawer } from "@/components/hub/HubDrawer";
 import { AppearanceCard } from "@/components/hub/AppearanceCard";
-import { ComposeWorkspace } from "@/components/hub/compose-workspace";
-import { CalendarCard } from "@/components/hub/CalendarCard";
-import { DocumentsCard } from "@/components/hub/DocumentsCard";
-import { FilesCard } from "@/components/hub/FilesCard";
-import { IdeasCard } from "@/components/hub/IdeasCard";
-import { ProfileCard } from "@/components/hub/ProfileCard";
+import { FilesFace } from "@/components/hub/FilesCard";
+import { PageSectionsFace } from "@/components/hub/PageSectionsCard";
 import { getStoreForUser } from "@elkdonis/commerce/queries";
-import { WeeklyMeetingCard } from "@/components/hub/WeeklyMeetingCard";
 import { IFAC_THEME_VARS, IFAC_THEMEABLE_PAGES } from "@/lib/theme-tokens";
 import { saveIfacThemeAction } from "@/lib/theme-actions";
 
@@ -46,6 +51,9 @@ import { saveIfacThemeAction } from "@/lib/theme-actions";
  * Access is members-and-up in the ifac org.
  */
 export const dynamic = "force-dynamic";
+
+/** This org's zone, for the faces that render a time. */
+const TIME_ZONE = "America/Toronto";
 
 export default async function HubPage() {
   const viewer = await getHubViewer();
@@ -71,7 +79,7 @@ export default async function HubPage() {
   );
 
   const [
-    weeklyMeeting,
+    standing,
     events,
     ideas,
     documents,
@@ -79,16 +87,34 @@ export default async function HubPage() {
     profile,
     sections,
     forum,
+    board,
+    alerts,
   ] = await Promise.all([
-    getWeeklyMeeting(),
-    getEventsInRange(monthStart, monthEnd),
-    listIdeas(12),
-    listLivingDocuments(),
+    // The shared resolver, replacing this app's own getWeeklyMeeting: an
+    // editor's flag first, then a weekly series, then whatever is soonest —
+    // and it reports WHICH, so the tile only says "Weekly meeting" when that
+    // is true. IFAC's query could only ever guess from the section name.
+    getStandingMeeting(siteConfig.orgId).catch(() => null),
+    // The shared query, not this app's own copy of it — see the note in
+    // api/hub/calendar/route.ts.
+    listOrgEventsInRange(siteConfig.orgId, monthStart, monthEnd),
+    listOrgIdeas(siteConfig.orgId, { limit: 12 }),
+    // One snippet read back from Nextcloud, for the face's snapshot of the
+    // current document. Entries created before the move carry no path and so
+    // get no snippet — the title still shows.
+    listOrgDocuments(siteConfig.orgId, { withSnippets: 1 }),
     listOrgFiles(siteConfig.orgId, "Media").catch(() => []),
     getProfileSummary(viewer.userId),
     readProfileSections(viewer.userId),
     // A forum outage costs the tile, not the hub.
     getForumSnapshot().catch(() => null),
+    // Likewise a Deck outage.
+    getPipelineBoard().catch(() => null),
+    // Unread messages, unread notifications, upcoming RSVPs — the same
+    // subqueries getProfileSummary ran inline until this consolidated onto
+    // the shared query every other host already uses. Never throws on its
+    // own (reports zeroes on a failed read), so no .catch needed here.
+    getViewerAlerts(viewer.userId, siteConfig.orgId),
   ]);
 
   const overridesByPage: Record<string, Record<string, string>> = {};
@@ -105,8 +131,6 @@ export default async function HubPage() {
   }
 
   const displayName = profile?.displayName ?? viewer.email.split("@")[0];
-  const talkBaseUrl =
-    process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
 
   return (
     <div className="site-shell">
@@ -146,114 +170,122 @@ export default async function HubPage() {
           </div>
         </section>
 
-        <div className="hub-grid">
-          <div className="hub-col">
-            <ProfileCard summary={profile} sections={sections} marketplaceUrl={siteConfig.marketplaceUrl} />
+        {/* One grid of faces, replacing the two hand-packed columns of
+            bespoke HubCards. Every tile here is the tile-sized form of the
+            popup it opens, and they all open in ONE dialog that stacks — so
+            a calendar day can open a gathering, which can open its RSVP,
+            without the page moving. The four leading faces are the shared
+            ones every site in the network draws; the rest are IFAC's own
+            features registered as `custom` surfaces. */}
+        <SurfaceCardGrid>
+          <StandingMeetingFace
+            standing={standing}
+            canEdit={viewer.canEdit}
+            timeZone={TIME_ZONE}
+          />
 
-            <DocumentsCard initialDocuments={documents} />
+          <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
 
-            <HubCard
-              title="Pipeline"
-              blurb="Board of what the group is working on."
-              glyph="▤"
-              accent="moss"
-              href="/hub/pipeline"
-            />
+          <PipelineFace board={board} canEdit={viewer.canEdit} />
 
-            {/* The forum, on IFAC's own tile. The face is the shared one
-                (ForumMini over the same snapshot every other site draws);
-                the tile navigates rather than opening a surface, because
-                this app keeps its HubCard/<dialog> system. */}
-            <HubCard
-              title={forum && (forum.unreadCount ?? 0) > 0 ? `Forum · ${forum.unreadCount} new` : "Forum"}
-              blurb={
-                forum
-                  ? `${forum.topicCount} ${forum.topicCount === 1 ? "topic" : "topics"} · ${forum.postCount} ${forum.postCount === 1 ? "post" : "posts"}.`
-                  : "The group's board."
-              }
-              glyph="☰"
-              accent="blue"
-              href="/forum"
-              preview={forum ? <ForumMini recent={forum.recent} feeds={forum.feeds} /> : undefined}
-            />
+          <ForumFace forum={forum} />
 
-            <WeeklyMeetingCard
-              meeting={weeklyMeeting}
-              canEdit={viewer.canEdit}
-              talkBaseUrl={talkBaseUrl}
-            />
-          </div>
+          {/* Identity: the shared surface, opening in place rather than
+              bouncing the member to a different domain to edit their own
+              name and bio. */}
+          <ProfileFace
+            summary={{
+              displayName: profile?.displayName ?? viewer.email.split("@")[0],
+              avatarUrl: profile?.avatarUrl ?? null,
+              headline: profile?.roleTitle ?? profile?.headline ?? null,
+              alerts,
+            }}
+          />
 
-          <div className="hub-col">
-            <HubCard
-              title="Compose"
-              blurb="Art, announcements, events and products."
-              glyph="✚"
-              accent="oxide"
-              href="/hub/compose"
-              preview={
-                <span className="hub-preview-line">
-                  {viewer.canEdit
-                    ? "Article · Event · Meeting · Questionnaire"
-                    : "Propose something for the group"}
-                </span>
-              }
-            />
+          {/* This site's own: gallery counts, and what shows on the public
+              page. See PageSectionsCard.tsx for why this stayed local. */}
+          <PageSectionsFace
+            summary={profile}
+            sections={sections}
+            marketplaceUrl={siteConfig.marketplaceUrl}
+          />
 
-            <CalendarCard initialEvents={events} canEdit={viewer.canEdit} />
+          <DocumentsFace documents={documents} />
 
-            <FilesCard initialFiles={files} canEdit={viewer.canEdit} />
+          <FilesFace initialFiles={files} canEdit={viewer.canEdit} />
 
-            <IdeasCard initialIdeas={ideas} />
-          </div>
-        </div>
+          {/* The face IS the form now: type it, press Enter. Opening the tile
+              goes to the ideas feed on the forum, where they are discussed. */}
+          <IdeasFace initialIdeas={ideas} />
 
-        {viewer.canEdit && (
-          <section className="hub-wide">
-            <HubCard
+          {/* Authoring is a page on this site, not a surface — it has its own
+              route and its own workspace, so the tile navigates. */}
+          <SurfaceCard
+            kind="compose"
+            glyph="✚"
+            title="Compose"
+            blurb="Art, announcements, events and products."
+            href="/hub/compose"
+            cue="→"
+            preview={
+              <span className="eac-preview-line">
+                {viewer.canEdit
+                  ? "Article · Event · Meeting · Questionnaire"
+                  : "Propose something for the group"}
+              </span>
+            }
+          />
+
+          <SurfaceCard
+            wide
+            kind="questionnaire"
+            glyph="◎"
+            title="Questionnaires & group research"
+            blurb="Ask the membership something, and read the results."
+            surface={{
+              type: "custom",
+              key: "questionnaires",
+              title: "Questionnaires & group research",
+              kind: "questionnaire",
+              size: "wide",
+              props: { canEdit: viewer.canEdit, orgSlug: siteConfig.orgId },
+            }}
+          />
+
+          <SurfaceCard
+            wide
+            kind="neutral"
+            glyph="?"
+            title="Help & notes from the developer"
+            blurb="How things work, and how to tell us they don't."
+            surface={{
+              type: "custom",
+              key: "help",
+              title: "Help & notes from the developer",
+              kind: "neutral",
+            }}
+          />
+
+          {viewer.canEdit && (
+            <SurfaceCard
+              wide
+              kind="neutral"
+              glyph="◈"
               title="Manage site"
               blurb="Review people and promote members."
-              glyph="◈"
-              accent="charcoal"
+              // Still /admin/directory: the /manage dashboard is not built
+              // yet, and a tile pointing at a route that 404s is worse than
+              // one pointing at the tool that works.
               href="/admin/directory"
-              wide
+              cue="→"
               preview={
-                <span className="hub-preview-line">
+                <span className="eac-preview-line">
                   Directory entries, accounts and roles
                 </span>
               }
             />
-          </section>
-        )}
-
-        <section id="questionnaires" className="hub-wide">
-          <HubCard
-            title="Questionnaires & group research"
-            blurb="Ask the membership something, and read the results."
-            glyph="◎"
-            accent="blue"
-            wide
-          >
-            {viewer.canEdit ? (
-              <ComposeWorkspace
-                context={{
-                  orgSlug: siteConfig.orgId,
-                  canManageOrg: true,
-                  // The full grid lives at /hub/compose; here only the
-                  // research kinds, because that is what this card is for.
-                  canPublishContent: false,
-                }}
-              />
-            ) : (
-              <div className="hub-panel">
-                <p>
-                  Administrators open questionnaires and polls from here. When
-                  one is running you will be asked to answer it.
-                </p>
-              </div>
-            )}
-          </HubCard>
-        </section>
+          )}
+        </SurfaceCardGrid>
 
         {viewer.canEdit && (
           <section className="hub-wide">
@@ -266,52 +298,6 @@ export default async function HubPage() {
           </section>
         )}
 
-        <section className="hub-wide">
-          <HubCard
-            title="Help & notes from the developer"
-            blurb="How things work, and how to tell us they don't."
-            glyph="?"
-            accent="gold"
-            wide
-          >
-            <div className="hub-panel">
-              <h4 className="hub-panel-subhead">Getting around</h4>
-              <ul className="hub-list">
-                <li className="hub-list-row">
-                  <div>
-                    <p className="hub-list-title">Your page</p>
-                    <p className="hub-list-body">
-                      My profile &rarr; Edit my page opens your public page with
-                      the editor on it, so you see changes where they land.
-                    </p>
-                  </div>
-                </li>
-                <li className="hub-list-row">
-                  <div>
-                    <p className="hub-list-title">Files and documents</p>
-                    <p className="hub-list-body">
-                      Files is the group&rsquo;s shared drive. Documents are
-                      collaborative — several people can type in one at once.
-                    </p>
-                  </div>
-                </li>
-                <li className="hub-list-row">
-                  <div>
-                    <p className="hub-list-title">The calendar</p>
-                    <p className="hub-list-body">
-                      Anything dated and published reaches the group&rsquo;s
-                      Nextcloud calendar, which you can subscribe to on a phone.
-                    </p>
-                  </div>
-                </li>
-              </ul>
-              <p className="hub-muted">
-                Something wrong or missing? Add it to Suggested ideas — that
-                queue is read.
-              </p>
-            </div>
-          </HubCard>
-        </section>
       </main>
 
       <SiteFooter content={content.footer} />

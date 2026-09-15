@@ -49,6 +49,13 @@
   --blue: #273d54;
   --gold: #c79a42;
   --shadow: 0 18px 55px rgba(23, 22, 21, 0.12);
+  /* The purple frame around most panels, sidebars and cards, and the softer
+     inner rule inside them. Tokens rather than literals so the live editor
+     (theme-tokens.ts) can recolour every frame on the site at once, or one
+     section's through its style pin. */
+  --frame: #9c40d8;
+  --frame-soft: #40215c;
+  --frame-width: 2px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -691,7 +698,7 @@ nextjs-portal {
 .brand-seal {
   width: 54px;
   height: 34px;
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
   color: #ff8c00;
   font-family: Arial, Helvetica, sans-serif;
@@ -717,7 +724,7 @@ nextjs-portal {
 }
 
 .main-nav a {
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   border-radius: 0;
   padding: 0.35rem 0.5rem;
   background: #050505;
@@ -738,7 +745,7 @@ nextjs-portal {
 .hero.image-only {
   min-height: 0;
   display: block;
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
 }
 
@@ -755,7 +762,7 @@ nextjs-portal {
 
 .ifac-panel {
   margin-top: 14px;
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
   padding: 14px;
   color: #e8e3e4;
@@ -794,7 +801,7 @@ nextjs-portal {
   min-height: 34px;
   display: flex;
   align-items: center;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
   color: #20d7ff;
   padding: 7px 10px;
@@ -819,7 +826,7 @@ nextjs-portal {
   height: 30px;
   flex: 0 0 30px;
   object-fit: cover;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #0a0a0a;
   /* The name is the point; the portrait supports it. Full colour on hover. */
   filter: saturate(0.85);
@@ -872,7 +879,7 @@ nextjs-portal {
 
 .embed-frame {
   overflow: hidden;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
 }
 
@@ -930,7 +937,7 @@ nextjs-portal {
 
 .form-shell {
   margin-top: 12px;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   border-radius: 0;
   background: #020202;
 }
@@ -945,7 +952,7 @@ nextjs-portal {
 .field input,
 .field textarea,
 .field select {
-  border-color: #40215c;
+  border-color: var(--frame-soft);
   border-radius: 0;
   background: #050505;
   color: #ffffff;
@@ -970,7 +977,7 @@ nextjs-portal {
 
 .event-card {
   min-height: 0;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   border-radius: 0;
   background: #020202;
   color: #e8e3e4;
@@ -987,7 +994,7 @@ nextjs-portal {
 }
 
 .footer {
-  border-top: 2px solid #9c40d8;
+  border-top: var(--frame-width) solid var(--frame);
   background: #020202;
   color: #e8e3e4;
 }
@@ -1067,7 +1074,7 @@ nextjs-portal {
 .claim-prompt {
   margin: 0 0 14px;
   padding: 10px 14px;
-  border: 1px solid #9c40d8;
+  border: 1px solid var(--frame);
   background: rgba(156, 64, 216, 0.08);
   font-size: 0.9rem;
   color: #e8e3e4;
@@ -1092,7 +1099,7 @@ nextjs-portal {
 }
 
 .profile-sidebar {
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
   padding: 14px;
   color: #e8e3e4;
@@ -1104,7 +1111,7 @@ nextjs-portal {
   height: auto;
   object-fit: cover;
   margin-bottom: 14px;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
 }
 
 .profile-bio p {
@@ -1149,7 +1156,7 @@ nextjs-portal {
 }
 
 .profile-gallery {
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
   padding: 14px;
   min-height: 200px;
@@ -1163,7 +1170,7 @@ nextjs-portal {
 
 .artwork-card {
   margin: 0;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
   overflow: hidden;
 }
@@ -1212,7 +1219,7 @@ nextjs-portal {
 }
 
 .about-statement {
-  border: 2px solid #9c40d8;
+  border: var(--frame-width) solid var(--frame);
   background: #050505;
   padding: 20px 24px;
   margin-bottom: 16px;
@@ -1246,7 +1253,7 @@ nextjs-portal {
   flex-direction: column;
   align-items: center;
   padding: 16px 12px 14px;
-  border: 2px solid #40215c;
+  border: var(--frame-width) solid var(--frame-soft);
   background: #050505;
   text-align: center;
   text-decoration: none;
@@ -1264,7 +1271,7 @@ a.team-card:hover {
   height: 107px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid #40215c;
+  border: var(--frame-width) solid var(--frame-soft);
   margin-bottom: 10px;
   background: #111;
 }
@@ -2333,7 +2340,7 @@ a.team-card:hover .team-photo {
   gap: 12px;
   height: 100%;
   padding: 10px;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
   color: #20d7ff;
   text-decoration: none;
@@ -2349,7 +2356,7 @@ a.team-card:hover .team-photo {
   height: 88px;
   flex: 0 0 88px;
   object-fit: cover;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #0a0a0a;
   filter: saturate(0.85);
   transition: filter 140ms ease;
@@ -2476,7 +2483,7 @@ a.team-card:hover .team-photo {
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
   /* The same cyan the rest of the panel's links use — the marks are masked,
      so they take this colour rather than their own brand palette. */
@@ -2615,7 +2622,7 @@ a.team-card:hover .team-photo {
 .auth-panel-tab {
   flex: 1 1 0;
   padding: 8px 10px;
-  border: 1px solid #40215c;
+  border: 1px solid var(--frame-soft);
   background: #020202;
   color: #7a5fa0;
   font: inherit;
@@ -2718,6 +2725,68 @@ a.team-card:hover .team-photo {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   /hub, in IFAC's voice — on paper.
+
+   The `:root` block above maps --eac-surface-* onto IFAC's DARK chrome, on
+   the grounds that `body` is #020202. True of the body, but not of the hub:
+   `.hub` sets `background: var(--paper)` (line ~1311), so the members' area
+   is a light page, and faces inheriting the dark mapping came out near-black
+   on cream.
+
+   Same technique as forum-theme.css — redefine the OUTPUT tokens (--sf-*),
+   which cascade, rather than their --eac-surface-* inputs, which are
+   computed at :root and cannot be changed from further down. Scoped to the
+   hub wrapper (app/hub/layout.tsx) rather than to `.hub`, because the single
+   <dialog> every surface opens in is rendered outside `.hub` — styling the
+   page and not the popups is how you get a light hub with dark modals.
+
+   Measured on the #fffdf8 card: ink 17.78:1, muted 8.62:1, faint 5.87:1,
+   oxide 6.61:1, blue 10.98:1, moss 5.65:1, white-on-oxide 6.72:1. Gold is
+   absent on purpose — it is 2.37:1 on paper and cannot carry text here.
+   ─────────────────────────────────────────────────────────────────────── */
+/* The hub's own text colour. `.hub` set a paper background but never an ink
+   to go with it, so every heading inside it inherited #e8e3e4 from the dark
+   `body` rule — light text on cream, measured at 1.13:1. It has been that way
+   as long as the hub has been light; the faces above simply made it visible.
+   And the gold kicker is 2.37:1 on paper, so inside the hub it takes oxide
+   (6.17:1) — gold stays where it works, on the dark chrome. */
+.hub {
+  color: var(--ink);
+}
+.hub .kicker,
+.hub .hub-panel-head h2 {
+  color: var(--oxide);
+}
+
+.ifac-hub-scope {
+  --sf-bg: var(--surface);              /* #fffdf8 — cards lift off paper */
+  --sf-bg-soft: var(--paper);
+  --sf-fg: var(--ink);
+  --sf-muted: var(--ink-soft);
+  --sf-faint: #6b6259;
+  --sf-line: var(--line);
+  --sf-rule: #b4a992;
+  --sf-accent: var(--oxide);
+  --sf-on-accent: #ffffff;
+  --sf-danger: var(--oxide);
+  --sf-radius: 2px;
+  /* Per-kind accents, in the light set. The :root ones are the dark-chrome
+     "lifted" variants and are 2.2–2.4:1 on paper. */
+  --sf-kind-post: var(--oxide);
+  --sf-kind-event: var(--blue);
+  --sf-kind-meeting: var(--blue);
+  --sf-kind-workshop: var(--moss);
+  --sf-kind-service: var(--moss);
+  --sf-kind-calendar: var(--blue);
+  --sf-kind-board: var(--moss);
+  --sf-kind-forum: var(--oxide);
+  --sf-kind-gallery: var(--ink);
+  --sf-kind-compose: var(--oxide);
+  --sf-kind-questionnaire: var(--blue);
+  --sf-kind-neutral: var(--ink-soft);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    /forum, in IFAC's voice — on paper.
 
    The board used to inherit the dark chrome above, which made a page of
@@ -2742,6 +2811,16 @@ a.team-card:hover .team-photo {
   --forum-radius: 2px;
   --forum-font-title: "Cormorant Garamond", Georgia, serif;
   --forum-font-body: Arial, Helvetica, sans-serif;
+
+  /* Dark-mode inputs. Only forum-theme.css's dark rule reads these, so they
+     are inert in light mode and safe to declare here. Gold leads on the dark
+     ground — it is the IFAC mark, and it is the accent that CAN'T be used on
+     paper (2.37:1). Lifted one step from #c79a42, which is only 4.55:1 at the
+     silver sheen's brightest point; #d0a651 is 5.18:1 there and 7.90:1 in the
+     corners, with 8.07:1 for the dark text on a gold button. The blue stays
+     the link colour, as it is on paper. */
+  --forum-accent-dark: #d0a651;
+  --forum-on-accent-dark: #1a1408;
 }
 
 /* Full-bleed ground, 1180px of content. The theme paints the background.
@@ -2759,7 +2838,218 @@ a.team-card:hover .team-photo {
   --sf-kind-workshop: var(--moss);
   --sf-kind-service: var(--moss);
 }
+
+/* The kind accents again for the dark ground. These MUST be re-pointed: the
+   light set above is applied by a plain .gf-page rule, so without this it
+   would bleed straight into dark mode, where IFAC's blue is 1.05:1 against
+   the sheen — invisible — and oxide 1.75:1. Measured at the #343841 peak:
+   gold 5.18:1, blue 5.85:1, moss 4.79:1. The previously-used lifted blue
+   #7fa3cc is deliberately NOT here; it measures 4.48:1, just under AA. */
+.gf-page:has([data-forum-mode="dark"]),
+.gf-root[data-forum-mode="dark"] {
+  --forum-kind-post: #d0a651;
+  --sf-kind-post: #d0a651;
+  --sf-kind-event: #9fb9dd;
+  --sf-kind-meeting: #9fb9dd;
+  --sf-kind-workshop: #8fae86;
+  --sf-kind-service: #8fae86;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gf-page:has([data-forum-mode="auto"]),
+  .gf-root[data-forum-mode="auto"] {
+    --forum-kind-post: #d0a651;
+    --sf-kind-post: #d0a651;
+    --sf-kind-event: #9fb9dd;
+    --sf-kind-meeting: #9fb9dd;
+    --sf-kind-workshop: #8fae86;
+    --sf-kind-service: #8fae86;
+  }
+}
 .gf-page > * {
   max-width: 1180px;
   margin-inline: auto;
+}
+
+
+/* =====================================================
+   Galleries — a person's gallery pages
+   ===================================================== */
+
+.profile-galleries {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+  border: var(--frame-width) solid var(--frame);
+  background: #050505;
+  padding: 14px;
+  color: #e8e3e4;
+}
+
+.profile-galleries-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-galleries-title {
+  margin: 0;
+  color: #ff8c00;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.gallery-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.gallery-card {
+  display: block;
+  border: 1px solid var(--frame-soft);
+  background: #020202;
+  color: #e8e3e4;
+  overflow: hidden;
+  text-decoration: none;
+  transition: border-color 140ms ease;
+}
+
+.gallery-card:hover {
+  border-color: #20d7ff;
+}
+
+.gallery-card-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #111;
+}
+
+.gallery-card-cover--blank {
+  display: grid;
+  place-items: center;
+  color: #bca7cf;
+  font-size: 0.9rem;
+}
+
+.gallery-card-body {
+  padding: 8px 10px 10px;
+}
+
+.gallery-card-title {
+  margin: 0;
+  color: #20d7ff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.gallery-card-meta {
+  margin: 2px 0 0;
+  color: #bca7cf;
+  font-size: 0.85rem;
+}
+
+.gallery-card-draft {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--frame-soft);
+  color: #bca7cf;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.gallery-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.gallery-new input {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 10px;
+  border: 1px solid var(--frame-soft);
+  background: #020202;
+  color: #e8e3e4;
+  font: inherit;
+}
+
+.gallery-new-error {
+  width: 100%;
+  margin: 0;
+  color: #ff8c00;
+  font-size: 0.9rem;
+}
+
+/* One gallery's own page */
+
+.gallery-page-head {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 18px 0 0;
+}
+
+.gallery-page-artist {
+  margin: 0 0 4px;
+  color: #20d7ff;
+  font-size: 1rem;
+}
+
+.gallery-page-title {
+  margin: 0 0 6px;
+  color: #ff8c00;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.gallery-page-description {
+  max-width: 70ch;
+  margin: 0 0 14px;
+  color: #e8e3e4;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.gallery-page-description:empty {
+  display: none;
+}
+
+.gallery-page-body {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+  border: var(--frame-width) solid var(--frame);
+  background: #050505;
+  padding: 14px;
+  min-height: 240px;
+}
+
+.gallery-page-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 12px;
+  font-size: 0.9rem;
+  color: #bca7cf;
+}
+
+.gallery-page-tools .button-secondary {
+  cursor: pointer;
+}
+
+.gallery-page-tools .is-danger {
+  margin-left: auto;
+  color: #ff8c00;
 }

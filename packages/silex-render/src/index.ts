@@ -31,3 +31,14 @@ export {
   downloadPublishedFile,
 } from "./published";
 export type { SilexPublishedRef } from "./published";
+
+// The auth bridge into the editor: any app mints, arts-collective redeems.
+export {
+  mintSilexToken,
+  consumeSilexToken,
+  peekSilexToken,
+  SILEX_TOKEN_TTL_SECONDS,
+} from "./tokens";
+export type { SilexTokenPayload } from "./tokens";
+export { resolveSilexEditorUrl, buildSilexEditorUrl } from "./editor-url";
+export type { EditorSearchParams } from "./editor-url";

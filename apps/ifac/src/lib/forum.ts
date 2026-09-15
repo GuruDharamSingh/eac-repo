@@ -28,6 +28,12 @@ export async function getForumConnectors(): Promise<ForumConnectors> {
   const jar = await cookies();
   const pref = jar.get("forum_theme")?.value;
   const theme = pref === "classic" ? "classic" : "modern";
+  // Dark by default — the brushed-silver ground, which also sits better with
+  // IFAC's own near-black chrome than paper did. A reader who prefers paper
+  // gets it from the toggle in the footer and we remember that, so only an
+  // explicit "light"/"auto" cookie overrides the default.
+  const m = jar.get("forum_mode")?.value;
+  const mode = m === "light" || m === "auto" ? m : "dark";
   return serviceConnectors({
     scope: { kind: "org", orgId: siteConfig.orgId },
     siteName: siteConfig.orgName,
@@ -35,6 +41,7 @@ export async function getForumConnectors(): Promise<ForumConnectors> {
     hrefs: forumHrefs,
     actionBase: "/api/forum",
     theme,
+    mode,
   });
 }
 

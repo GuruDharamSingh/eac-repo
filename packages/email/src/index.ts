@@ -61,7 +61,9 @@ export async function sendMeetingTriggerEmail(
   const html = await renderMeetingTriggerEmail(data);
   const subject = data.type === 'cancellation'
     ? `Cancelled — ${data.meetingTitle}`
-    : `Reminder — ${data.meetingTitle}`;
+    : data.type === 'confirmation'
+      ? `Confirmed — ${data.meetingTitle}`
+      : `Reminder — ${data.meetingTitle}`;
   await sendEmail({
     to,
     subject,

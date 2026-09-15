@@ -31,6 +31,9 @@ const NAV: Array<{ label: string; href: string }> = [
   { label: "Latest", href: hrefs.latest() },
   { label: "Happening", href: hrefs.happening() },
   { label: "Topics", href: `${ROOT}/topics` },
+  // A peer of the boards, not one of them — the shared reference surface
+  // sitting next to the discussion.
+  { label: "Wiki", href: `${ROOT}/wiki` },
   { label: "Orgs", href: `${ROOT}/orgs` },
   { label: "Members", href: `${ROOT}/members` },
 ];

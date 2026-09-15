@@ -436,3 +436,35 @@
   border-color: var(--sf-accent);
   outline: none;
 }
+
+/* ── Your orgs, as sliding cards ────────────────────────────────────────── */
+/* Past two orgs the rail slides, using the same slider the network strip
+   uses. The card is a face: same hairline, kicker and hover as everything
+   else on the page, at the width a name needs rather than a full tile. */
+.eac-center-org-slide {
+  flex: 0 0 170px;
+  scroll-snap-align: start;
+  display: grid;
+}
+.eac-center-org-card {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 104px;
+  padding: 14px 14px 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.eac-center-org-card.is-current {
+  border-color: var(--sf-fg);
+}
+.eac-center-org-card.is-current::before {
+  background: var(--sf-accent);
+  opacity: 1;
+}
+.eac-center-org-slide-name {
+  font-family: var(--sf-font-title);
+  font-size: 1.05rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}

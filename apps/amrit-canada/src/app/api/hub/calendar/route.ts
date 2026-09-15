@@ -1,11 +1,15 @@
-import { listOrgEventsInRange } from "@elkdonis/services";
-import { addMonths, startOfMonth } from "@elkdonis/utils";
+import { readOrgCalendarWindow } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getApiMember } from "@/lib/auth";
 
 /**
  * Events for a window, so the calendar dialog can page between months without
  * reloading the hub.
+ *
+ * The window parsing, the span limit and the query are shared
+ * (`readOrgCalendarWindow`) because three sites served this route with three
+ * copies of them. What stays here is this app's gate, which is the security
+ * boundary and belongs in the route it protects.
  *
  * Reads Postgres, not CalDAV. `threads` is the record and the org's Nextcloud
  * calendar is a projection of it (see packages/services/src/org-calendar.ts) —
@@ -15,35 +19,25 @@ import { getApiMember } from "@/lib/auth";
  */
 export const dynamic = "force-dynamic";
 
-/** One query should be one screen of dates, not an unbounded scan. */
-const MAX_SPAN_DAYS = 92;
-
 export async function GET(request: Request) {
   const viewer = await getApiMember();
   if (!viewer) {
     return Response.json({ error: "Members only" }, { status: 403 });
   }
 
-  const params = new URL(request.url).searchParams;
-  const from = parseDate(params.get("from")) ?? startOfMonth(new Date());
-  const to = parseDate(params.get("to")) ?? addMonths(from, 1);
-
-  if (to <= from) {
-    return Response.json({ error: "Empty range" }, { status: 400 });
-  }
-  if ((to.getTime() - from.getTime()) / 86_400_000 > MAX_SPAN_DAYS) {
-    return Response.json({ error: "Range too wide" }, { status: 400 });
+  const result = await readOrgCalendarWindow(
+    siteConfig.orgId,
+    new URL(request.url).searchParams
+  );
+  // `=== false`, not `!result.ok`: this union does not narrow through the
+  // negation in this repo's TS config.
+  if (result.ok === false) {
+    return Response.json({ error: result.error }, { status: 400 });
   }
 
   return Response.json({
-    from: from.toISOString(),
-    to: to.toISOString(),
-    events: await listOrgEventsInRange(siteConfig.orgId, from, to),
+    from: result.from.toISOString(),
+    to: result.to.toISOString(),
+    events: result.events,
   });
-}
-
-function parseDate(value: string | null): Date | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
 }

@@ -67,10 +67,22 @@ export async function handleForumAction({ request, action, connectors }: HandleA
   const fail = (error: string) => redirect(withQuery(back, { error, notice: null }));
   const done = (to: string, notice?: string) => redirect(withQuery(to, { notice: notice ?? null, error: null }));
 
+  // Reader preferences. Deliberately outside the sign-in check below: how the
+  // board LOOKS is not a privilege, and a signed-out reader who finds it hard
+  // to read should be able to change it.
   if (action === "set-theme") {
-    const theme = str(fd, "theme") === "modern" ? "modern" : "classic";
     const res = redirect(safeBack(str(fd, "back"), hrefs.root()));
-    res.headers.set("Set-Cookie", `forum_theme=${theme}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    const cookies: string[] = [];
+    if (fd.has("theme")) {
+      const theme = str(fd, "theme") === "modern" ? "modern" : "classic";
+      cookies.push(`forum_theme=${theme}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    }
+    if (fd.has("mode")) {
+      const raw = str(fd, "mode");
+      const mode = raw === "dark" || raw === "auto" ? raw : "light";
+      cookies.push(`forum_mode=${mode}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    }
+    for (const c of cookies) res.headers.append("Set-Cookie", c);
     return res;
   }
 

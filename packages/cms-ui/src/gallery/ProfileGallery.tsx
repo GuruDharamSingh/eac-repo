@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { GridLayout, useContainerWidth, type Layout, type LayoutItem } from "react-grid-layout";
 import { SimpleLightbox } from "./SimpleLightbox";
+import { LibraryPicker, type LibraryEntry } from "./LibraryPicker";
 
 export interface GalleryItem {
   /** Stable id (react-grid-layout's `i`). Required here — the caller
@@ -29,6 +30,17 @@ export interface ProfileGalleryProps {
   uploadEndpoint?: string;
   /** Extra form fields sent with every upload (e.g. `{ memberSlug: slug }`). */
   uploadExtraFields?: Record<string, string>;
+  /**
+   * GET endpoint listing images already in storage (`{ files }` or
+   * `{ items }`, see LibraryPicker). When set, editors get an "Add from
+   * files" button beside the upload, so a gallery can be assembled from
+   * what is already in the person's folder and the org's tree.
+   */
+  libraryEndpoint?: string;
+  /** Labels for the picker's source tabs, keyed by the `source` the endpoint returns. */
+  librarySourceLabels?: Record<string, string>;
+  /** Shown in the empty editable state. */
+  emptyHint?: string;
   className?: string;
 }
 
@@ -79,12 +91,16 @@ export function ProfileGallery({
   onChange,
   uploadEndpoint,
   uploadExtraFields,
+  libraryEndpoint,
+  librarySourceLabels,
+  emptyHint,
   className,
 }: ProfileGalleryProps) {
   const [items, setItems] = useState<GalleryItem[]>(() => placeMissing(itemsProp));
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   // Where the pointer went down on a tile, so a click can be told apart from
   // a drag WITHOUT relying on react-grid-layout's onDrag firing (which it does
   // on a pixel of jitter, so a flag set from it swallows ordinary clicks too).
@@ -136,6 +152,19 @@ export function ProfileGallery({
       }
     }
     setUploading(false);
+    if (added.length) commit(placeMissing([...items, ...added]));
+  }
+
+  function addFromLibrary(entries: LibraryEntry[]) {
+    const have = new Set(items.map((i) => i.url));
+    const stamp = Date.now();
+    const added: GalleryItem[] = entries
+      .filter((e) => !have.has(e.url))
+      .map((e, n) => ({
+        id: `lib-${stamp}-${n}`,
+        url: e.url,
+        title: e.name.replace(/\.[^.]+$/, "").replace(/^\d{10,}-/, ""),
+      }));
     if (added.length) commit(placeMissing([...items, ...added]));
   }
 
@@ -222,18 +251,41 @@ export function ProfileGallery({
         </GridLayout>
       )}
 
-      {editable && uploadEndpoint && (
-        <label style={uploadTileStyle}>
-          {uploading ? "Uploading…" : "+ Add image"}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            disabled={uploading}
-            onChange={(e) => { uploadFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
-            style={{ display: "none" }}
-          />
-        </label>
+      {editable && items.length === 0 && emptyHint && (
+        <p style={{ fontSize: 13, opacity: 0.7, margin: "4px 0 0" }}>{emptyHint}</p>
+      )}
+
+      {editable && (uploadEndpoint || libraryEndpoint) && (
+        <div className="eac-gallery-actions">
+          {uploadEndpoint && (
+            <label style={uploadTileStyle}>
+              {uploading ? "Uploading…" : "+ Upload images"}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={uploading}
+                onChange={(e) => { uploadFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
+                style={{ display: "none" }}
+              />
+            </label>
+          )}
+          {libraryEndpoint && (
+            <button type="button" style={{ ...uploadTileStyle, background: "none", color: "inherit" }} onClick={() => setLibraryOpen(true)}>
+              + Add from files
+            </button>
+          )}
+        </div>
+      )}
+
+      {libraryOpen && libraryEndpoint && (
+        <LibraryPicker
+          endpoint={libraryEndpoint}
+          existingUrls={new Set(items.map((i) => i.url))}
+          sourceLabels={librarySourceLabels}
+          onAdd={addFromLibrary}
+          onClose={() => setLibraryOpen(false)}
+        />
       )}
 
       <SimpleLightbox
@@ -295,7 +347,6 @@ const uploadTileStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  marginTop: 10,
   padding: "10px 16px",
   border: "1px dashed currentColor",
   borderRadius: 4,

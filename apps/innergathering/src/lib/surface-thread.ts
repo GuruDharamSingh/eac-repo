@@ -1,13 +1,15 @@
-import type { SurfaceThread } from "@elkdonis/cms-ui/surface";
+import { toSurfaceThread as sharedToSurfaceThread } from "@elkdonis/cms-ui/surface";
 import type { WorkshopOffering } from "@elkdonis/services";
 import type { Thread, ThreadCycleStatus } from "@/lib/types";
 
 /**
  * This site's `Thread` view-model → the shared `SurfaceThread`.
  *
- * One mapping, used by the hub API route (for popups) and the detail page
- * (for the page-size surface), so the popup and the page cannot disagree
- * about what a gathering is. The surface never sees this app's column names.
+ * The mapping itself is `@elkdonis/cms-ui/surface`'s `toSurfaceThread` — see
+ * the note in amrit-canada's copy of this file for why. What is left here is
+ * this site's own: the boolean→format derivation, its URL scheme, the extra
+ * fields its own `threadToAnswers` reads back, and workshop pricing/sessions,
+ * which nowhere else in the network has.
  */
 export function toSurfaceThread(
   thread: Thread,
@@ -19,84 +21,89 @@ export function toSurfaceThread(
     /** The workshop_pages row and sessions, when the thread is a workshop. */
     workshop?: WorkshopOffering | null;
   }
-): SurfaceThread {
+) {
   const w = extras.workshop ?? null;
-  const iso = (d: Date | null) => (d ? d.toISOString() : null);
-  return {
-    id: thread.id,
-    title: thread.title,
-    slug: thread.slug,
-    kind: thread.kind,
-    status: thread.status,
-    visibility: thread.visibility,
-    feed: extras.feed ?? null,
-    excerpt: thread.excerpt,
-    bodyHtml: thread.description,
-    coverImageUrl: thread.coverImageUrl,
-    author: { name: thread.authorName, photo: thread.authorPhoto },
-    publishedAt: iso(thread.publishedAt),
-    scheduledAt: iso(thread.scheduledAt),
-    nextOccurrenceAt: iso(thread.nextOccurrenceAt),
-    durationMinutes: thread.durationMinutes,
-    location: thread.location,
-    // This site stores a boolean; the surface speaks the shared vocabulary.
-    format: thread.isOnline ? (thread.location ? "hybrid" : "online") : "in_person",
-    meetingUrl: thread.meetingUrl,
-    talkToken: thread.talkToken,
-    recurrencePattern: thread.recurrencePattern,
-    recurrenceUntil: iso(thread.recurrenceUntil),
-    cycleStatus: extras.cycleStatus,
-    isRsvpEnabled: thread.isRsvpEnabled,
-    attendeeLimit: thread.attendeeLimit,
-    rsvpDeadline: iso(thread.rsvpDeadline),
-    rsvpCount: extras.rsvpCount,
-    viewerAttending: extras.viewerAttending,
-    documentUrl: thread.documentUrl,
-    videoLink: thread.videoLink,
-    href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
-    price: w?.price ?? null,
-    currency: w?.currency ?? null,
-    sessions: w
-      ? w.sessions.map((s) => ({
-          title: s.title,
-          startsAt: s.scheduledAt,
-          durationMinutes: s.durationMinutes,
-          location: s.isOnline ? "Online" : s.location || null,
-        }))
-      : null,
-    extra: {
-      time_zone: thread.timeZone,
-      min_attendees: thread.minAttendees,
-      notify_on_min_attendees: thread.notifyOnMinAttendees,
-      ...(w
-        ? {
-            subtitle: w.subtitle ?? "",
-            discipline: w.discipline ?? "",
-            level: w.level ?? "",
-            banner_image_url: w.bannerImageUrl ?? "",
-            banner_focal_y: w.bannerFocalY,
-            hero_media_url: w.heroMediaUrl ?? "",
-            hero_text: w.heroText ?? "",
-            background_color: w.backgroundColor ?? "",
-            // The editor's shape: wall-clock strings, not instants.
-            sessions: w.sessions.map((s) => ({
-              id: s.id,
-              title: s.title,
-              description: s.description,
-              scheduledAt: s.scheduledAt ? localInput(s.scheduledAt) : null,
-              durationMinutes: s.durationMinutes,
-              isOnline: s.isOnline,
-              location: s.location,
-              videoConferenceUrl: s.videoConferenceUrl,
-              mediaUrl: s.mediaUrl,
-              videoUrl: s.videoUrl,
-              backgroundColor: s.backgroundColor,
-              resources: s.resources,
-            })),
-          }
-        : {}),
+
+  return sharedToSurfaceThread(
+    {
+      id: thread.id,
+      title: thread.title,
+      slug: thread.slug,
+      kind: thread.kind,
+      status: thread.status,
+      visibility: thread.visibility,
+      excerpt: thread.excerpt,
+      bodyHtml: thread.description,
+      coverImageUrl: thread.coverImageUrl,
+      authorName: thread.authorName,
+      authorPhoto: thread.authorPhoto,
+      publishedAt: thread.publishedAt,
+      scheduledAt: thread.scheduledAt,
+      nextOccurrenceAt: thread.nextOccurrenceAt,
+      durationMinutes: thread.durationMinutes,
+      location: thread.location,
+      // This site stores a boolean; the surface speaks the shared vocabulary.
+      format: thread.isOnline ? (thread.location ? "hybrid" : "online") : "in_person",
+      meetingUrl: thread.meetingUrl,
+      talkToken: thread.talkToken,
+      recurrencePattern: thread.recurrencePattern,
+      recurrenceUntil: thread.recurrenceUntil,
+      isRsvpEnabled: thread.isRsvpEnabled,
+      attendeeLimit: thread.attendeeLimit,
+      rsvpDeadline: thread.rsvpDeadline,
+      documentUrl: thread.documentUrl,
+      videoLink: thread.videoLink,
+      href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
     },
-  };
+    {
+      feed: extras.feed,
+      rsvpCount: extras.rsvpCount,
+      viewerAttending: extras.viewerAttending,
+      cycleStatus: extras.cycleStatus,
+      price: w?.price ?? null,
+      currency: w?.currency ?? null,
+      sessions: w
+        ? w.sessions.map((s) => ({
+            title: s.title,
+            startsAt: s.scheduledAt,
+            durationMinutes: s.durationMinutes,
+            location: s.isOnline ? "Online" : s.location || null,
+          }))
+        : null,
+      extra: {
+        time_zone: thread.timeZone,
+        min_attendees: thread.minAttendees,
+        notify_on_min_attendees: thread.notifyOnMinAttendees,
+        ...(w
+          ? {
+              subtitle: w.subtitle ?? "",
+              discipline: w.discipline ?? "",
+              level: w.level ?? "",
+              banner_image_url: w.bannerImageUrl ?? "",
+              banner_focal_y: w.bannerFocalY,
+              hero_media_url: w.heroMediaUrl ?? "",
+              hero_text: w.heroText ?? "",
+              background_color: w.backgroundColor ?? "",
+              // The editor's shape: wall-clock strings, not instants.
+              sessions: w.sessions.map((s) => ({
+                id: s.id,
+                title: s.title,
+                description: s.description,
+                scheduledAt: s.scheduledAt ? localInput(s.scheduledAt) : null,
+                durationMinutes: s.durationMinutes,
+                isOnline: s.isOnline,
+                location: s.location,
+                videoConferenceUrl: s.videoConferenceUrl,
+                mediaUrl: s.mediaUrl,
+                videoUrl: s.videoUrl,
+                backgroundColor: s.backgroundColor,
+                resources: s.resources,
+              })),
+            }
+          : {}),
+      },
+    }
+  );
 }
 
 /** An instant as the `datetime-local` value it reads as in Toronto. */

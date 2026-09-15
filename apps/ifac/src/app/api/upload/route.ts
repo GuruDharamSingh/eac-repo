@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const memberSlug = String(formData.get("memberSlug") ?? "").trim();
-    const target = formData.get("target") === "avatar" ? "avatar" : "gallery";
+    // "gallery" (default, legacy name) appends to users.portfolio; "avatar"
+    // and "file" only store the file and its media row — "file" is what the
+    // gallery PAGES use, since each keeps its own item list (user_galleries).
+    const rawTarget = String(formData.get("target") ?? "gallery");
+    const target = rawTarget === "avatar" || rawTarget === "file" ? rawTarget : "gallery";
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (!memberSlug) return NextResponse.json({ error: "memberSlug is required" }, { status: 400 });

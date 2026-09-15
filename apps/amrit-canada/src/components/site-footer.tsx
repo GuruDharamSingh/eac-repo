@@ -38,6 +38,10 @@ export function SiteFooter({ content }: SiteFooterProps) {
         </p>
         <p className="mt-6 text-xs text-[#fdf5e6]/50">
           © {new Date().getFullYear()} {siteConfig.orgName} ·{" "}
+          <Link href="/forum" className="underline underline-offset-2 hover:text-[#f4c430]">
+            Forum
+          </Link>{" "}
+          ·{" "}
           <Link href="/login" className="underline underline-offset-2 hover:text-[#f4c430]">
             Member sign in
           </Link>

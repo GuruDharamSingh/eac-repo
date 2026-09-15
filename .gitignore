@@ -79,3 +79,10 @@ test-results/
 # Elastrocal prototype (reference copy while porting into apps/elastrocal; has its own .git and .env)
 astrologychart2/
 astrologychart2.zip
+
+# Reference material for the danamccool rebuild: screenshots and a scrape of
+# the old site, kept on disk while the new one is built. ~150MB of PNGs that
+# would be in git history forever; the site's own assets live in
+# apps/danamccool/public and ARE tracked.
+danascreenshots/
+/theme style sheet scss Danamccool.txt

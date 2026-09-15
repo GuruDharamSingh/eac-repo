@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { HubCard } from "./HubCard";
+import { SurfaceCard, SurfaceFrame, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import { formatBytes, formatDay } from "./format";
 
 export type HubFile = {
@@ -28,13 +28,51 @@ export type HubFile = {
  * have brought (useNextcloudFiles) speaks a different response shape and a
  * POST-with-action protocol this route doesn't use for reads.
  */
-export function FilesCard({
+export function FilesFace({
   initialFiles,
   canEdit,
 }: {
   initialFiles: HubFile[];
   canEdit: boolean;
 }) {
+  return (
+    <SurfaceCard
+      kind="gallery"
+      glyph="▦"
+      title="Files"
+      blurb="The group's shared drive."
+      surface={{
+        type: "custom",
+        key: "files",
+        title: "Files",
+        kind: "gallery",
+        size: "wide",
+        props: { files: initialFiles, canEdit },
+      }}
+      preview={
+        initialFiles.length ? (
+          <>
+            {initialFiles.slice(0, 4).map((file) => (
+              <span key={file.path} className="eac-preview-line">
+                <span aria-hidden>{file.isFolder ? "▸" : "·"}</span> {file.name}
+              </span>
+            ))}
+          </>
+        ) : (
+          <span className="eac-preview-empty">The drive is empty</span>
+        )
+      }
+    />
+  );
+}
+
+export function FilesSurface({
+  descriptor,
+}: {
+  descriptor: Extract<SurfaceDescriptor, { type: "custom" }>;
+}) {
+  const initialFiles = (descriptor.props?.files as HubFile[] | undefined) ?? [];
+  const canEdit = Boolean(descriptor.props?.canEdit);
   const [path, setPath] = useState("");
   const [files, setFiles] = useState(initialFiles);
   const [loading, setLoading] = useState(false);
@@ -98,28 +136,7 @@ export function FilesCard({
   }
 
   return (
-    <HubCard
-      title="Files"
-      blurb="The group's shared drive."
-      glyph="▦"
-      accent="ink"
-      preview={
-        initialFiles.length ? (
-          <>
-            {initialFiles.slice(0, 4).map((file) => (
-              <span key={file.path} className="hub-preview-line">
-                <span className="hub-preview-date" aria-hidden>
-                  {file.isFolder ? "▸" : "·"}
-                </span>
-                {file.name}
-              </span>
-            ))}
-          </>
-        ) : (
-          <span className="hub-preview-empty">The drive is empty</span>
-        )
-      }
-    >
+    <SurfaceFrame kind="gallery" title="Files" kicker="Shared drive">
       <div className="hub-panel">
         <nav className="hub-crumbs" aria-label="Folder path">
           <button
@@ -214,7 +231,7 @@ export function FilesCard({
           )}
         </div>
       </div>
-    </HubCard>
+    </SurfaceFrame>
   );
 }
 

@@ -20,10 +20,20 @@ export interface SurfaceLayer {
   meta: LayerMeta;
 }
 
+/**
+ * Where a surface is opening FROM — the face that was clicked.
+ *
+ * The system's claim is that a face and a surface are the same object at two
+ * sizes; handing over the face's element is what lets the surface actually
+ * grow out of it (the morph in surface.css). Omit it and the surface simply
+ * appears, as it always did.
+ */
+export type SurfaceOrigin = HTMLElement | DOMRect | null;
+
 export interface SurfaceApi {
   stack: SurfaceLayer[];
   /** Start fresh: whatever is open is replaced by this one layer. */
-  open: (descriptor: SurfaceDescriptor) => void;
+  open: (descriptor: SurfaceDescriptor, origin?: SurfaceOrigin) => void;
   /** Add a layer; the masthead grows a "‹ back" to the one beneath. */
   push: (descriptor: SurfaceDescriptor) => void;
   /** Swap the top layer — after publishing, show what was published. */

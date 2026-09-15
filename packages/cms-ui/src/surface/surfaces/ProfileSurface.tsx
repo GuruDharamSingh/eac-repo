@@ -49,6 +49,10 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
     avatarUrl: string | null;
     socialLinks: SurfaceProfileLink[];
   } | null>(null);
+  // Which half is showing. The face offers both doors, so a member who came
+  // to check what was waiting for them never lands in a form they did not ask
+  // for — the old behaviour, where canEdit meant "always editing".
+  const [editing, setEditing] = React.useState(descriptor.mode === "edit");
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
@@ -123,6 +127,8 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   }
 
   const canEdit = profile.canEdit;
+  const isEditing = canEdit && editing;
+  const alerts = profile.alerts;
 
   async function save() {
     if (!connectors.profile || !draft) return;
@@ -171,7 +177,12 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   }
 
   const actions: SurfaceAction[] = [];
-  if (canEdit) actions.push({ label: saving ? "Saving…" : "Save", primary: true, disabled: saving, onClick: save });
+  if (isEditing) {
+    actions.push({ label: saving ? "Saving…" : "Save", primary: true, disabled: saving, onClick: save });
+    actions.push({ label: "Done", quiet: true, onClick: () => setEditing(false) });
+  } else if (canEdit) {
+    actions.push({ label: "Edit", primary: true, onClick: () => setEditing(true) });
+  }
   if (profile.pageHref) actions.push({ label: target ? "Open page" : "Your page", href: profile.pageHref, quiet: true });
   if (!target && connectors.viewer.canCompose) {
     actions.push({ label: "Write a post", quiet: true, onClick: () => push({ type: "write", kind: "post" }) });
@@ -193,7 +204,7 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
           {draft.headline && <div className="text-xs text-[color:var(--sf-muted)]">{draft.headline}</div>}
         </div>
       </div>
-      {canEdit && connectors.profile?.uploadAvatar && (
+      {isEditing && connectors.profile?.uploadAvatar && (
         <div className="flex flex-wrap items-center gap-2">
           <input
             ref={fileRef}
@@ -244,8 +255,31 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
       status={notice}
       statusTone={tone}
     >
-      {!canEdit ? (
+      {!isEditing ? (
         <div className="grid gap-3">
+          {alerts && (alerts.unreadMessages || alerts.notifications || alerts.upcoming) ? (
+            // Counted, never linked. No host in the network has an inbox route
+            // yet, and a number that is true is worth more than a button that
+            // goes nowhere.
+            <ul className="flex flex-wrap gap-2" aria-label="Waiting for you">
+              {alerts.unreadMessages ? (
+                <li className="eac-chip">{alerts.unreadMessages} unread</li>
+              ) : null}
+              {alerts.notifications ? (
+                <li className="eac-chip">
+                  {alerts.notifications} notification{alerts.notifications === 1 ? "" : "s"}
+                </li>
+              ) : null}
+              {alerts.upcoming ? (
+                <li className="eac-chip">{alerts.upcoming} upcoming</li>
+              ) : null}
+            </ul>
+          ) : alerts ? (
+            <p className="text-sm text-[color:var(--sf-muted)]">Nothing waiting.</p>
+          ) : null}
+          {profile.headline && (
+            <p className="text-[0.95rem] text-[color:var(--sf-muted)]">{profile.headline}</p>
+          )}
           {profile.bio && <p className="whitespace-pre-line text-[0.95rem] leading-relaxed">{profile.bio}</p>}
           {[profile.city, profile.region, profile.country].filter(Boolean).length > 0 && (
             <p className="text-sm text-[color:var(--sf-muted)]">

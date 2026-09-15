@@ -9,6 +9,7 @@ const DOSSIER_ROOT = path.join(TEMPLATE_ROOT, "dossier-classified");
 const ENNEAGRAM_ROOT = path.join(TEMPLATE_ROOT, "enneagram");
 const BROCHURE_ROOT = path.join(TEMPLATE_ROOT, "brochure");
 const ARTICLE_ROOT = path.join(TEMPLATE_ROOT, "article");
+const HUB_ROOT = path.join(TEMPLATE_ROOT, "hub");
 
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -156,7 +157,42 @@ function readArticleTemplateCss() {
   return [registry.tokensCss || ""].concat(css).join("\n\n");
 }
 
+/**
+ * The hub template. Its cssOrder reaches OUT of the template directory to the
+ * spotlight-grid pen (../../pens/...), which is deliberate: the tile grid and
+ * the Spotlight Grid block are one stylesheet, so a hub cannot drift from the
+ * block an owner drops on any other page. path.join resolves the climb, and
+ * the de-duplication below stops the pen being emitted once per section.
+ */
+function readHubTemplateRegistry() {
+  const manifest = readJson(path.join(HUB_ROOT, "manifest.json"));
+  const tokensCss = readText(path.join(TEMPLATE_ROOT, "tokens", "eac-tokens.css"));
+
+  const sections = manifest.sections.map((section) => ({
+    ...section,
+    htmlContent: readText(path.join(HUB_ROOT, section.html)),
+    cssContent: readText(path.join(HUB_ROOT, section.css)),
+  }));
+
+  return { ...manifest, tokensCss, sections };
+}
+
+function readHubTemplateCss() {
+  const manifest = readJson(path.join(HUB_ROOT, "manifest.json"));
+  const parts = [readText(path.join(TEMPLATE_ROOT, "tokens", "eac-tokens.css"))];
+  const seen = new Set();
+  for (const rel of manifest.cssOrder || []) {
+    const body = readText(path.join(HUB_ROOT, rel));
+    if (!body || seen.has(body)) continue;
+    seen.add(body);
+    parts.push(`/* hub/${rel} */\n${body}`);
+  }
+  return parts.join("\n\n");
+}
+
 module.exports = {
+  readHubTemplateRegistry,
+  readHubTemplateCss,
   readWorkshopTemplateCss,
   readWorkshopTemplateRegistry,
   readDossierTemplateRegistry,

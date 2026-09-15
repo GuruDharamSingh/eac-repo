@@ -1,12 +1,16 @@
-import type { SurfaceThread } from "@elkdonis/cms-ui/surface";
-import type { Thread, ThreadCycleStatus } from "@/lib/types";
+import { toSurfaceThread as sharedToSurfaceThread } from "@elkdonis/cms-ui/surface";
+import type { ThreadCycleStatus } from "@/lib/types";
+import type { Thread } from "@/lib/types";
 
 /**
  * This site's `Thread` view-model → the shared `SurfaceThread`.
  *
- * One mapping, used by the hub API route (for popups) and the detail page
- * (for the page-size surface), so the popup and the page cannot disagree
- * about what a gathering is. The surface never sees this app's column names.
+ * The mapping itself is `@elkdonis/cms-ui/surface`'s `toSurfaceThread` — this
+ * app, innergathering and hidden-enneagram each carried their own copy of it
+ * (229 lines total; two were byte-identical). What is left here is what is
+ * genuinely this site's own: deriving `format` from the boolean+location this
+ * schema stores it as, this site's own URL scheme, and the extra fields its
+ * own `threadToAnswers` reads back.
  */
 export function toSurfaceThread(
   thread: Thread,
@@ -16,44 +20,48 @@ export function toSurfaceThread(
     viewerAttending: boolean | null;
     cycleStatus: ThreadCycleStatus | null;
   }
-): SurfaceThread {
-  const iso = (d: Date | null) => (d ? d.toISOString() : null);
-  return {
-    id: thread.id,
-    title: thread.title,
-    slug: thread.slug,
-    kind: thread.kind,
-    status: thread.status,
-    visibility: thread.visibility,
-    feed: extras.feed ?? null,
-    excerpt: thread.excerpt,
-    bodyHtml: thread.description,
-    coverImageUrl: thread.coverImageUrl,
-    author: { name: thread.authorName, photo: thread.authorPhoto },
-    publishedAt: iso(thread.publishedAt),
-    scheduledAt: iso(thread.scheduledAt),
-    nextOccurrenceAt: iso(thread.nextOccurrenceAt),
-    durationMinutes: thread.durationMinutes,
-    location: thread.location,
-    // This site stores a boolean; the surface speaks the shared vocabulary.
-    format: thread.isOnline ? (thread.location ? "hybrid" : "online") : "in_person",
-    meetingUrl: thread.meetingUrl,
-    talkToken: thread.talkToken,
-    recurrencePattern: thread.recurrencePattern,
-    recurrenceUntil: iso(thread.recurrenceUntil),
-    cycleStatus: extras.cycleStatus,
-    isRsvpEnabled: thread.isRsvpEnabled,
-    attendeeLimit: thread.attendeeLimit,
-    rsvpDeadline: iso(thread.rsvpDeadline),
-    rsvpCount: extras.rsvpCount,
-    viewerAttending: extras.viewerAttending,
-    documentUrl: thread.documentUrl,
-    videoLink: thread.videoLink,
-    href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
-    extra: {
-      time_zone: thread.timeZone,
-      min_attendees: thread.minAttendees,
-      notify_on_min_attendees: thread.notifyOnMinAttendees,
+) {
+  return sharedToSurfaceThread(
+    {
+      id: thread.id,
+      title: thread.title,
+      slug: thread.slug,
+      kind: thread.kind,
+      status: thread.status,
+      visibility: thread.visibility,
+      excerpt: thread.excerpt,
+      bodyHtml: thread.description,
+      coverImageUrl: thread.coverImageUrl,
+      authorName: thread.authorName,
+      authorPhoto: thread.authorPhoto,
+      publishedAt: thread.publishedAt,
+      scheduledAt: thread.scheduledAt,
+      nextOccurrenceAt: thread.nextOccurrenceAt,
+      durationMinutes: thread.durationMinutes,
+      location: thread.location,
+      // This site stores a boolean; the surface speaks the shared vocabulary.
+      format: thread.isOnline ? (thread.location ? "hybrid" : "online") : "in_person",
+      meetingUrl: thread.meetingUrl,
+      talkToken: thread.talkToken,
+      recurrencePattern: thread.recurrencePattern,
+      recurrenceUntil: thread.recurrenceUntil,
+      isRsvpEnabled: thread.isRsvpEnabled,
+      attendeeLimit: thread.attendeeLimit,
+      rsvpDeadline: thread.rsvpDeadline,
+      documentUrl: thread.documentUrl,
+      videoLink: thread.videoLink,
+      href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
     },
-  };
+    {
+      feed: extras.feed,
+      rsvpCount: extras.rsvpCount,
+      viewerAttending: extras.viewerAttending,
+      cycleStatus: extras.cycleStatus,
+      extra: {
+        time_zone: thread.timeZone,
+        min_attendees: thread.minAttendees,
+        notify_on_min_attendees: thread.notifyOnMinAttendees,
+      },
+    }
+  );
 }

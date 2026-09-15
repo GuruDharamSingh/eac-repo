@@ -59,3 +59,10 @@ export {
   type Occurring,
   type Occurrence,
 } from './recurrence';
+// Render-time transforms for wiki bodies. Pure string work, shared because
+// two surfaces render the same stored page at different routes: the stored
+// body carries link TARGETS (data-wiki-slug), never hrefs, so whoever renders
+// it decides where a wikilink points. arts-collective serves /hub/wiki/…, the
+// forum serves /wiki/… — one transform, two basePaths.
+export { renderWikiBody } from './wiki-render';
+export type { WikiHeading } from './wiki-render';

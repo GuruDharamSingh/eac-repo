@@ -6,7 +6,6 @@ import { useState } from "react";
 // declares Mantine as a dependency, so importing through it pulls Mantine
 // into an app that is deliberately without it.
 import { LiveEditor, type FieldDef } from "@elkdonis/live-editor";
-import { CssPanel } from "@elkdonis/live-editor";
 import type { ThemeVars } from "@elkdonis/services";
 import { saveProfileFieldAction, saveAvatarAction } from "@/lib/profile-editor-actions";
 import { saveMyIfacThemeAction } from "@/lib/theme-actions";
@@ -21,6 +20,8 @@ export interface ProfileEditorPanelProps {
   themeOverrides: ThemeVars;
   /** Whether the viewer IS this person, as opposed to an admin editing them. */
   isSelf: boolean;
+  /** Open in edit mode straight away (arrived via ?edit=1 from the hub). */
+  startEditing?: boolean;
 }
 
 /**
@@ -47,10 +48,10 @@ export function ProfileEditorPanel({
   avatarUrl,
   themeOverrides,
   isSelf,
+  startEditing = false,
 }: ProfileEditorPanelProps) {
   const [avatar, setAvatar] = useState(avatarUrl);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [stylesOpen, setStylesOpen] = useState(false);
 
   const fields: FieldDef[] = [
     { trait: "bio", label: "Bio", input: "textarea", initialValue: bio, hint: "Blank lines separate paragraphs." },
@@ -74,10 +75,22 @@ export function ProfileEditorPanel({
 
   return (
     <>
+      {/* Colours live here rather than in the hub: the point of a live editor
+          is seeing the change on the page it applies to. In edit mode the
+          framed sections carry style pins (data-theme-vars on the page) and
+          the bar has a Styles button for the full set. Only offered to the
+          person themselves — an admin may fix someone's bio, but the palette
+          of your own page is yours. saveMyIfacThemeAction writes to the
+          signed-in user regardless, so an admin could not set it for someone
+          else even if this were passed. */}
       <LiveEditor
         fields={fields}
-        role="Owner"
+        role={isSelf ? "Owner" : "Admin"}
+        initialEditMode={startEditing}
         onSaveField={(payload) => saveProfileFieldAction(profileUserId, payload)}
+        cssVars={isSelf ? IFAC_THEME_VARS : undefined}
+        cssOverrides={isSelf ? themeOverrides : undefined}
+        onSaveCss={isSelf ? saveMyIfacThemeAction : undefined}
       />
 
       <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, marginBottom: 14 }}>
@@ -97,33 +110,6 @@ export function ProfileEditorPanel({
         />
       </label>
 
-      {/* Colours live here rather than in the hub: the point of a live editor
-          is seeing the change on the page it applies to. Only offered to the
-          person themselves — an admin may fix someone's bio, but the palette
-          of your own page is yours. saveMyIfacThemeAction writes to the
-          signed-in user regardless, so an admin could not set it for someone
-          else even if this rendered. */}
-      {isSelf && (
-        <>
-          <button
-            type="button"
-            className="button-secondary"
-            onClick={() => setStylesOpen(true)}
-            style={{ marginLeft: 10 }}
-          >
-            Page colours
-          </button>
-
-          {stylesOpen && (
-            <CssPanel
-              cssVars={IFAC_THEME_VARS}
-              initialOverrides={themeOverrides}
-              onSave={saveMyIfacThemeAction}
-              onClose={() => setStylesOpen(false)}
-            />
-          )}
-        </>
-      )}
     </>
   );
 }
