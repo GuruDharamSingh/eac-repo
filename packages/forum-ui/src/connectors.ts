@@ -195,6 +195,24 @@ export interface ForumWikiConnectors {
     wikiThreadId: string,
     opts?: { ensure?: boolean; authorId?: string }
   ): Promise<{ id: string; slug: string; replyCount: number } | null>;
+  /**
+   * Add a word to the dictionary from inside the forum — the wiki section is
+   * an input space, not only a reading one, because reading is when you
+   * notice a term nobody has defined.
+   *
+   * Never overwrites: a word that already has a page gains another sense
+   * attributed to whoever wrote it. `sourceThreadId` records the topic being
+   * read as a reference to the term.
+   *
+   * It does NOT mark up the post the word came from — that is somebody
+   * else's prose. Terms are only glossed where their own author marked them.
+   */
+  define?(input: {
+    term: string;
+    definition: string;
+    authorId: string;
+    sourceThreadId?: string;
+  }): Promise<{ slug: string; created: boolean; senses: number; duplicate: boolean }>;
   /** Where a page is edited — the wiki's own console, off the forum. */
   editHref?(slug: string): string | null;
   newHref?(title?: string): string | null;
@@ -433,6 +451,21 @@ function wikiConnectors(
     search: (q, limit) => s.searchWiki(q, limit),
 
     talkThread: (wikiThreadId, o) => s.wikiTalkThread(wikiThreadId, o),
+
+    async define(input) {
+      const r = await s.defineTerm({
+        term: input.term,
+        definition: input.definition,
+        authorId: input.authorId,
+        sourceThreadId: input.sourceThreadId,
+      });
+      return {
+        slug: r.slug,
+        created: r.created,
+        senses: r.definitions.length,
+        duplicate: r.duplicate,
+      };
+    },
 
     editHref: console_ ? (slug) => `${console_}/${slug}/edit` : undefined,
     newHref: console_

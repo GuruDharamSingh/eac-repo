@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { ForumWikiPageRow, ForumWikiSearchSpan } from "./connectors";
-import { Layout, type PageProps } from "./pages";
-import { Breadcrumb, Empty, PageHead, SectionTitle, Time } from "./parts";
+import { Layout, flash, type PageProps } from "./pages";
+import { Breadcrumb, Empty, Flash, PageHead, SectionTitle, Time } from "./parts";
 
 // ============================================================================
 // The wiki, as a section of the forum.
@@ -53,7 +53,61 @@ function Outline({
   );
 }
 
-export async function WikiIndexPage({ connectors, searchParams, path }: PageProps) {
+/**
+ * Add a word to the dictionary, from the forum.
+ *
+ * A plain POST, like every other interaction on the board — no client
+ * JavaScript anywhere in this package, and adding a word should not be the
+ * one thing that needs it. `?term=` prefills, so a link from anywhere (a
+ * topic, eventually a text selection) can open this with the word already in
+ * the box without the capability depending on that.
+ *
+ * It does not touch the post the word came from: terms are glossed only where
+ * their own author marked them.
+ */
+function DefineBox({
+  actionBase,
+  back,
+  term,
+  sourceThreadId,
+}: {
+  actionBase: string;
+  back: string;
+  term: string;
+  sourceThreadId?: string;
+}) {
+  return (
+    <form method="post" action={`${actionBase.replace(/\/$/, "")}/wiki-define`} className="gf-wiki-define">
+      <p className="gf-wiki-define-head">Add a word</p>
+      <input
+        name="term"
+        defaultValue={term}
+        required
+        maxLength={120}
+        placeholder="The word or phrase"
+        aria-label="The word or phrase"
+      />
+      <textarea
+        name="definition"
+        required
+        rows={3}
+        placeholder="What does it mean here? One or two sentences."
+        aria-label="What it means"
+      />
+      <input type="hidden" name="back" value={back} />
+      {sourceThreadId && <input type="hidden" name="sourceThreadId" value={sourceThreadId} />}
+      <div className="gf-wiki-define-foot">
+        <button type="submit" className="gf-tool">Add to the dictionary</button>
+        <small>
+          A word can hold more than one reading — yours is added beside any
+          already there, never over them.
+        </small>
+      </div>
+    </form>
+  );
+}
+
+export async function WikiIndexPage({ connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName, wiki } = connectors;
   if (!wiki) return null;
 
@@ -72,6 +126,7 @@ export async function WikiIndexPage({ connectors, searchParams, path }: PageProp
     <Layout
       main={
         <>
+          <Flash {...flash(searchParams)} />
           <Breadcrumb
             items={[
               { label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() },
@@ -108,6 +163,17 @@ export async function WikiIndexPage({ connectors, searchParams, path }: PageProp
               />
               <button type="submit">Search</button>
             </form>
+          )}
+
+          {wiki.define && connectors.actionBase && viewer.userId && (
+            <DefineBox
+              actionBase={connectors.actionBase}
+              back={path}
+              term={typeof searchParams.term === "string" ? searchParams.term : ""}
+              sourceThreadId={
+                typeof searchParams.from === "string" ? searchParams.from : undefined
+              }
+            />
           )}
 
           {hits && (
@@ -177,7 +243,12 @@ export async function WikiIndexPage({ connectors, searchParams, path }: PageProp
   );
 }
 
-export async function WikiPageView({ connectors, viewer, slug }: PageProps & { slug: string }) {
+export async function WikiPageView({
+  connectors,
+  viewer,
+  searchParams,
+  slug,
+}: PageProps & { slug: string }) {
   const { hrefs, scope, siteName, wiki } = connectors;
   if (!wiki) return null;
 
@@ -193,6 +264,7 @@ export async function WikiPageView({ connectors, viewer, slug }: PageProps & { s
     <Layout
       main={
         <>
+          <Flash {...flash(searchParams)} />
           <Breadcrumb
             items={[
               { label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() },

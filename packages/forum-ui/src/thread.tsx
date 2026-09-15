@@ -237,6 +237,10 @@ function Toolbar({ ctx, board }: { ctx: Ctx; board: ForumBoard | null }) {
   }
   const mod = moderate && canModerate(viewer, thread.org.id);
   const feeds = board?.feeds ?? [];
+  const wikiHref = connectors.wiki?.define ? hrefs.wiki?.() : null;
+  const defineHref = wikiHref
+    ? `${wikiHref}?from=${encodeURIComponent(thread.id)}`
+    : null;
   return (
     <div className="gf-toolbar">
       {watch && (
@@ -250,6 +254,14 @@ function Toolbar({ ctx, board }: { ctx: Ctx; board: ForumBoard | null }) {
           <input type="hidden" name="thread" value={thread.id} /><input type="hidden" name="back" value={base} />
           <button type="submit" className={`gf-tool${thread.viewerBookmarked ? " is-on" : ""}`} aria-pressed={thread.viewerBookmarked}>{thread.viewerBookmarked ? "⚑ Bookmarked" : "⚑ Bookmark"}</button>
         </form>
+      )}
+      {/* Reading is when you notice a word nobody has defined. A link rather
+          than a box in the toolbar: the form lives in the wiki section, and
+          `from` carries this topic so the term records it as a reference. */}
+      {defineHref && (
+        <a className="gf-tool" href={defineHref} title="Add a word to the dictionary">
+          § Define a word
+        </a>
       )}
       {mod && (
         <details className="gf-mod">

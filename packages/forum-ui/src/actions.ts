@@ -14,10 +14,10 @@ import type { ForumConnectors } from "./connectors";
 export type ForumActionName =
   | "reply" | "topic" | "vote" | "heart" | "watch" | "bookmark"
   | "read-all" | "propose-topic" | "moderate" | "notifications-read" | "review-topic"
-  | "set-theme" | "category" | "wiki-talk";
+  | "set-theme" | "category" | "wiki-talk" | "wiki-define";
 
 const ACTIONS = new Set<string>([
-  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category", "wiki-talk",
+  "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category", "wiki-talk", "wiki-define",
 ]);
 
 function str(fd: FormData, key: string): string {
@@ -163,6 +163,34 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       if (decision !== "approved" && decision !== "rejected") return fail("Bad decision.");
       const r = await w.reviewTopic(viewer, str(fd, "topic"), decision);
       return r.ok === true ? done(back, decision === "approved" ? "Approved." : "Rejected.") : fail(r.error);
+    }
+    // Add a word to the dictionary from inside the forum. Reading is when
+    // you notice an undefined term, so the wiki section takes input as well
+    // as showing pages.
+    case "wiki-define": {
+      const define = connectors.wiki?.define;
+      if (!define) return fail("Not available here.");
+      const term = str(fd, "term").replace(/\s+/g, " ").trim();
+      const definition = str(fd, "definition").trim();
+      if (!term) return fail("Which word?");
+      if (term.length > 120) return fail("That is too long for a term.");
+      if (!definition) return fail("Say what it means.");
+
+      const r = await define({
+        term,
+        definition,
+        authorId: viewer.userId,
+        sourceThreadId: str(fd, "sourceThreadId") || undefined,
+      });
+
+      const to = hrefs.wikiPage?.(r.slug) ?? back;
+      if (r.duplicate) return done(to, `“${term}” already said it that way.`);
+      return done(
+        to,
+        r.created
+          ? `“${term}” added to the dictionary.`
+          : `Your sense of “${term}” sits alongside the ${r.senses - 1} already there.`
+      );
     }
     // Start the Talk page for a wiki page. Creating on demand rather than
     // with every wiki page is what keeps the board free of empty topics.

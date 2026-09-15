@@ -543,7 +543,7 @@ h1.gf-org-name { font-size: 32px; }
 .gf-wiki-outline li { padding: 3px 0; line-height: 1.45; }
 .gf-wiki-gloss {
   display: block;
-  color: var(--gf-ink-soft, #5e667a);
+  color: var(--sf-muted);
   font-size: 0.82em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -558,24 +558,24 @@ h1.gf-org-name { font-size: 32px; }
   align-items: baseline;
   padding: 3px 0;
 }
-.gf-wiki-recent time { color: var(--gf-ink-soft, #5e667a); font-size: 0.82em; white-space: nowrap; }
+.gf-wiki-recent time { color: var(--sf-muted); font-size: 0.82em; white-space: nowrap; }
 
 .gf-wiki-hits { list-style: none; margin: 8px 0 0; padding: 0; }
-.gf-wiki-hits > li { padding: 8px 0; border-bottom: 1px solid var(--gf-rule, #d9dde2); }
+.gf-wiki-hits > li { padding: 8px 0; border-bottom: 1px solid var(--sf-line); }
 .gf-wiki-hits > li:last-child { border-bottom: 0; }
-.gf-wiki-hits p { margin: 2px 0 0; color: var(--gf-ink-soft, #5e667a); font-size: 0.86em; line-height: 1.5; }
-.gf-wiki-hits mark { background: var(--gf-mark, #fde68a); color: inherit; padding: 0 1px; }
+.gf-wiki-hits p { margin: 2px 0 0; color: var(--sf-muted); font-size: 0.86em; line-height: 1.5; }
+.gf-wiki-hits mark { background: color-mix(in srgb, var(--sf-accent) 22%, transparent); color: var(--sf-fg); padding: 0 1px; }
 
 .gf-wiki-tag,
 .gf-wiki-topics li {
   display: inline-block;
-  border: 1px solid var(--gf-rule, #d9dde2);
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
   padding: 0 7px;
   font-size: 0.7em;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--gf-ink-soft, #5e667a);
+  color: var(--sf-muted);
 }
 .gf-wiki-tag { margin-left: 6px; }
 .gf-wiki-topics { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; padding: 0; }
@@ -590,7 +590,7 @@ h1.gf-org-name { font-size: 32px; }
 .gf-wiki-body p, .gf-wiki-body ul, .gf-wiki-body ol { margin: 0.6em 0; }
 .gf-wiki-body table { border-collapse: collapse; width: 100%; margin: 0.9em 0; }
 .gf-wiki-body th, .gf-wiki-body td {
-  border: 1px solid var(--gf-rule, #d9dde2);
+  border: 1px solid var(--sf-line);
   padding: 5px 8px;
   text-align: left;
   vertical-align: top;
@@ -612,6 +612,41 @@ h1.gf-org-name { font-size: 32px; }
 .gf-wiki-senses { margin: 8px 0 0; padding-left: 1.2em; }
 .gf-wiki-senses li { margin: 0 0 10px; }
 .gf-wiki-senses p { margin: 0; line-height: 1.55; }
-.gf-wiki-senses small { color: var(--gf-ink-soft, #5e667a); font-size: 0.8em; }
+.gf-wiki-senses small { color: var(--sf-muted); font-size: 0.8em; }
 
 .gf-wiki-backlinks { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; padding: 0; }
+
+/* Adding a word to the dictionary, from the forum. A plain form like every
+   other interaction here — the board has no client JavaScript and this is
+   not the feature that should introduce it. */
+.gf-wiki-define {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius);
+  background: var(--sf-bg-soft);
+}
+.gf-wiki-define-head {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.gf-wiki-define input,
+.gf-wiki-define textarea { width: 100%; font: inherit; }
+.gf-wiki-define textarea { resize: vertical; }
+.gf-wiki-define-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.gf-wiki-define-foot small {
+  color: var(--sf-muted);
+  font-size: 0.78em;
+  line-height: 1.4;
+  flex: 1 1 16rem;
+}

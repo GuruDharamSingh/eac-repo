@@ -39,7 +39,7 @@ export function readPage(sp: PageProps["searchParams"]): number {
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
-function flash(sp: PageProps["searchParams"]) {
+export function flash(sp: PageProps["searchParams"]) {
   return { notice: str(sp.notice) ?? null, error: str(sp.error) ?? null };
 }
 
