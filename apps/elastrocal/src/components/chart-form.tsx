@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { HOUSE_SYSTEMS, type HouseSystemCode } from "@elkdonis/astro";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ function ChartFormInner({
   busy,
   onSubmit,
   onChange,
+  sync,
   showDate = true,
   showSubmit = true,
 }: {
@@ -58,6 +59,13 @@ function ChartFormInner({
    * recalculates as anything here moves.
    */
   onChange?: (values: ChartFormValues) => void;
+  /**
+   * Fields pushed in from outside. The home page's time buttons step the
+   * clock, and the hour they land on has to appear in this field — it is the
+   * same value, and two boxes disagreeing about the time is worse than any
+   * amount of plumbing.
+   */
+  sync?: Partial<ChartFormValues>;
   /** Off when the caller supplies the date some other way. */
   showDate?: boolean;
   /** Off when the chart is already live and there is nothing to submit. */
@@ -76,6 +84,12 @@ function ChartFormInner({
       return [];
     }
   }, []);
+
+  // Adopt anything the caller pushes in, without telling it back again.
+  const syncTime = sync?.time;
+  useEffect(() => {
+    if (syncTime !== undefined) setV((prev) => (prev.time === syncTime ? prev : { ...prev, time: syncTime }));
+  }, [syncTime]);
 
   const set = <K extends keyof ChartFormValues>(key: K, value: ChartFormValues[K]) =>
     setV((prev) => {

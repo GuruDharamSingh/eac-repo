@@ -343,3 +343,15 @@
 .odp-roomy .odp-readout strong {
   font-size: 16px;
 }
+
+/*
+  The dial under the chart on the home page. Smaller than the popover's
+  roomy form, because here it shares the screen with the wheel it spins and
+  the two have to be usable without scrolling between them.
+*/
+.odp-beside .odp-dial {
+  width: min(15rem, 66vw);
+}
+.odp-beside .odp-readout strong {
+  font-size: 15px;
+}

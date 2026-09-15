@@ -7,7 +7,8 @@ import { MoonPhase } from "@elkdonis/cms-ui/pens";
 import "@elkdonis/cms-ui/moon-phase.css";
 import { ChartWheel } from "@/components/sky";
 import { ChartForm, EMPTY_FORM, type ChartFormValues } from "@/components/chart-form";
-import { OrbitDial, parseISO, toISO } from "@/components/orbit-dial";
+import { OrbitDial, addDays, addMonths, parseISO, toISO } from "@/components/orbit-dial";
+import { MomentControls, type StepUnit } from "@/components/moment-controls";
 import { ChartSummary, PositionsTable } from "@/components/chart/tables";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,21 @@ const THROTTLE_MS = 120;
   to move. The per-date endpoint stays as the fallback for anything outside
   it, and for the moment the window is still loading.
 */
+/*
+  How often the WHEEL is redrawn while the dial is moving.
+
+  The dial and the chart do not need the same cadence, and tying them together
+  was the last of the jank: a pointer move arrives about sixty times a second,
+  and each one was assembling a chart, building an SVG and handing the browser
+  a few hundred fresh elements to parse. That caps the whole page at whatever
+  one redraw costs.
+
+  The dial still follows the hand on every event — it is the thing under the
+  finger, and it is cheap. The wheel repaints at about eighteen frames a
+  second, which reads as motion, with a final exact draw when movement stops.
+*/
+const PAINT_MS = 55;
+
 const SPAN_DAYS = 365;
 /** How far before the centre the window starts. */
 const SPAN_BACK = 182;
@@ -95,6 +111,50 @@ export function ChartBuilder({
   const span = useRef<ChartSpan | null>(null);
   const spanKey = useRef<string>("");
   const spanLoading = useRef<string | null>(null);
+
+  /**
+   * True while the chart is being moved — by the dial, by a step, or by
+   * playback. The wheel draws its stripped-down form while this is set: a
+   * full wheel is ~610 SVG elements and 348 of those are one-degree ticks,
+   * all re-parsed on every frame, and nobody reads a tick while it is
+   * moving. Cleared shortly after the last change, when the detail returns.
+   */
+  const [moving, setMoving] = useState(false);
+  const stillTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markMoving = useCallback(() => {
+    setMoving(true);
+    if (stillTimer.current) clearTimeout(stillTimer.current);
+    stillTimer.current = setTimeout(() => setMoving(false), 220);
+  }, []);
+  useEffect(() => () => void (stillTimer.current && clearTimeout(stillTimer.current)), []);
+
+  // The wheel's own clock, deliberately slower than the dial's.
+  const paintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPaint = useRef(0);
+  const pendingISO = useRef<string | null>(null);
+
+  /** Show the chart for a date already covered by the span, at most every PAINT_MS. */
+  const paintFromSpan = useCallback((iso: string) => {
+    pendingISO.current = iso;
+    if (paintTimer.current) return;
+    const wait = Math.max(0, PAINT_MS - (performance.now() - lastPaint.current));
+    paintTimer.current = setTimeout(() => {
+      paintTimer.current = null;
+      lastPaint.current = performance.now();
+      const want = pendingISO.current;
+      pendingISO.current = null;
+      if (!want || !span.current) return;
+      const ready = chartForDate(span.current, want);
+      if (ready) {
+        setChart(ready);
+        setError(null);
+      }
+    }, wait);
+  }, []);
+  useEffect(() => () => void (paintTimer.current && clearTimeout(paintTimer.current)), []);
+
+  const [unit, setUnit] = useState<StepUnit>("day");
+  const [playing, setPlaying] = useState(false);
 
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -206,17 +266,21 @@ export function ChartBuilder({
   const dateRef = useRef(date);
   dateRef.current = date;
   const noop = useCallback(() => {}, []);
+  const unitRef = useRef(unit);
+  unitRef.current = unit;
+
+  /** The clock time, pushed down into the form when a step moves it. */
+  const [timeOfDay, setTimeOfDay] = useState<string | undefined>(undefined);
 
   const onDial = (next: Date) => {
+    markMoving();
     setDate(next);
     const iso = toISO(next);
 
     // The fast path: the day is in the window, so the chart is arithmetic.
     if (span.current && spanKey.current === keyOf(formRef.current)) {
-      const ready = chartForDate(span.current, iso);
-      if (ready) {
-        setChart(ready);
-        setError(null);
+      if (chartForDate(span.current, iso)) {
+        paintFromSpan(iso);
         // Top up before running out, so the edge is never felt.
         const first = span.current.from;
         const last = shiftISO(first, span.current.days.length - 1);
@@ -273,31 +337,112 @@ export function ChartBuilder({
     }
   }
 
-  const phase = moonPhase(chart);
+  /**
+   * Move the moment by one unit.
+   *
+   * Hours are the awkward one: the hour lives in the form's time field, not
+   * in the dial's date, so stepping across midnight has to move both and push
+   * the new clock time back into the form. Everything coarser is a date
+   * change and stays on the span's fast path.
+   */
+  const stepBy = useCallback(
+    (amount: number) => {
+      markMoving();
+      const u = unitRef.current;
+      if (u === "hour") {
+        const [h, m] = (formRef.current.time || "12:00").split(":").map(Number);
+        const from = Date.UTC(
+          dateRef.current.getUTCFullYear(),
+          dateRef.current.getUTCMonth(),
+          dateRef.current.getUTCDate(),
+          Number.isFinite(h) ? h : 12,
+          Number.isFinite(m) ? m : 0,
+        );
+        const next = new Date(from + amount * 3_600_000);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        setTimeOfDay(`${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}`);
+        const nd = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate(), 12));
+        setDate(nd);
+        // A different clock time is a different table.
+        span.current = null;
+        recalculate({ ...formRef.current, time: `${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}` }, nd);
+        return;
+      }
+      const by =
+        u === "day" ? addDays(dateRef.current, amount)
+        : u === "week" ? addDays(dateRef.current, amount * 7)
+        : u === "month" ? addMonths(dateRef.current, amount)
+        : addMonths(dateRef.current, amount * 12);
+      onDial(by);
+    },
+    [markMoving, onDial, recalculate],
+  );
+
+  const goNow = useCallback(() => {
+    setPlaying(false);
+    const now = new Date();
+    onDial(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12)));
+  }, [onDial]);
+
+  // Playback: one step per tick. Days stay inside the loaded window and cost
+  // nothing; coarser units will run off the end of it and fall back to the
+  // per-date path, which is why the tick is unhurried.
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => stepBy(1), 260);
+    return () => clearInterval(id);
+  }, [playing, stepBy]);
+
+  // Recomputed only when the chart settles. Working out which way up the Moon
+  // looks needs the parallactic angle for the place and instant, and that is
+  // wasted on a frame nobody is reading.
+  const lastPhase = useRef(moonPhase(chart));
+  if (!moving) lastPhase.current = moonPhase(chart);
+  const phase = lastPhase.current;
 
   return (
     <div className="space-y-10">
-      {/* The dial and the chart it is casting. */}
-      {/* The dial and the chart are a pair, so they are sized as one: the
-          wheel is capped to the height of the screen and the dial is given
-          enough of the row not to read as an afterthought beside it. */}
-      <section className="grid items-center gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-10">
-        <div className="mx-auto w-full max-w-[24rem] lg:mx-0">
-          <OrbitDial value={date} onChange={onDial} className="odp-roomy" />
+      {/* The chart, and the buttons that move it. */}
+      <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-10">
+        <div className="space-y-3">
+          {/* The chart is sized so that it, the buttons and the dial that
+              spins it all sit on one screen — a control you have to scroll
+              away from the thing it moves is no control at all. */}
+          <div className="relative mx-auto w-full" style={{ maxWidth: "min(100%, calc(100vh - 31rem))" }}>
+            {/* Zodiac pinned: this wheel is scrubbed, and with the Ascendant
+                on the left the whole drawing turns once a year as the date
+                moves, which makes the signs unreadable while dragging.
+                `lite` strips it to its shape while it is in motion. */}
+            <ChartWheel chart={chart} orient="aries" lite={moving} />
+            {busy && (
+              <span className="absolute right-3 top-3 text-muted-foreground" aria-hidden>
+                <Loader2 className="size-4 animate-spin" />
+              </span>
+            )}
+            <p className="sr-only" aria-live="polite">
+              Chart for {toISO(date)}
+            </p>
+          </div>
+
+          <MomentControls
+            unit={unit}
+            setUnit={setUnit}
+            onStep={stepBy}
+            onNow={goNow}
+            playing={playing}
+            setPlaying={setPlaying}
+            isNow={toISO(date) === toISO(new Date())}
+          />
+
+          {/* The dial that spins it. */}
+          <div className="flex justify-center pt-2">
+            <OrbitDial value={date} onChange={onDial} className="odp-beside" />
+          </div>
         </div>
-        <div className="relative mx-auto w-full" style={{ maxWidth: "min(100%, calc(100vh - 11rem))" }}>
-          {/* Zodiac pinned: this wheel is scrubbed, and with the Ascendant on
-              the left the whole drawing turns once a year as the date moves,
-              which makes the signs impossible to read while dragging. */}
-          <ChartWheel chart={chart} orient="aries" />
-          {busy && (
-            <span className="absolute right-3 top-3 text-muted-foreground" aria-hidden>
-              <Loader2 className="size-4 animate-spin" />
-            </span>
-          )}
-          <p className="sr-only" aria-live="polite">
-            Chart for {toISO(date)}
-          </p>
+
+        <div className="space-y-5 lg:sticky lg:top-20">
+          <ChartSummary chart={chart} />
+          <PositionsTable chart={chart} />
         </div>
       </section>
 
@@ -306,7 +451,7 @@ export function ChartBuilder({
       )}
 
       {/* Where, when, and whose. */}
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
+      <section className="mx-auto w-full max-w-3xl">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-4 font-display text-xl">Make it your chart</h2>
           <ChartForm
@@ -316,6 +461,7 @@ export function ChartBuilder({
             showSubmit={false}
             onChange={onForm}
             onSubmit={noop}
+            sync={timeOfDay === undefined ? undefined : { time: timeOfDay }}
           />
           <div className="mt-5 space-y-1.5 border-t border-border pt-5">
             <Label htmlFor="chart-name">Name this chart</Label>
@@ -346,10 +492,6 @@ export function ChartBuilder({
           </div>
         </div>
 
-        <div className="space-y-5">
-          <ChartSummary chart={chart} />
-          <PositionsTable chart={chart} />
-        </div>
       </section>
 
       {children}

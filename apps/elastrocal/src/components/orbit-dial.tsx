@@ -117,6 +117,21 @@ export function OrbitDial({
   */
   const cur = useRef(value);
   useEffect(() => {
+    /*
+      Adopt the prop — but never while this dial is the one moving.
+
+      Each delta is measured from where the dial already is, and a parent that
+      re-renders slowly (the home page recasts a chart and rebuilds an SVG as
+      the date changes) hands back a `value` several commits behind. Writing
+      that into `cur` rewinds the position, the next delta is measured from
+      the stale date, and the movement is undone about as fast as it
+      accumulates.
+
+      So the prop is ignored for the length of a drag or a glide, and is
+      authoritative again the moment one ends — which matters, because the
+      buttons above the dial move the date without going through it at all.
+    */
+    if (drag.current || spin.current !== null) return;
     cur.current = value;
   }, [value]);
 
