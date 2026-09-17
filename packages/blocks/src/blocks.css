@@ -1,0 +1,1327 @@
+/*
+  blocks.css — the look of the page blocks.
+
+  Plain CSS with custom properties, NOT Tailwind utilities. Same posture as
+  surface.css, article.css and profile.css in cms-ui, and for the same reason:
+  ifac and artdirect carry their own stylesheets, and a utility class renders
+  unstyled there. A block library that silently loses its styling on two of the
+  apps it is meant to serve is not a library.
+
+  ── How an org makes it theirs ──────────────────────────────────────────────
+
+  Set any --eac-block-* token in your own :root, after importing this file:
+
+      :root {
+        --eac-block-bg:       hsl(var(--card));
+        --eac-block-fg:       hsl(var(--foreground));
+        --eac-block-line:     hsl(var(--border));
+        --eac-block-accent:   hsl(var(--primary));
+        --eac-block-on-accent: hsl(var(--primary-foreground));
+      }
+
+  Eight of the nine apps checked already speak that shadcn vocabulary
+  (--background / --card / --border / --primary, plus the Tailwind v4 --color-*
+  mirrors), so for most apps that block is the whole integration.
+
+  Everything falls back, so an app that sets nothing still renders correctly —
+  it just looks generic. Four apps wire these hooks today and five set none;
+  that is the current state of theming across the monorepo, and it is a wiring
+  gap rather than a design one.
+
+  ── The one rule that keeps being broken ───────────────────────────────────
+
+  Every accent carries a paired ON-accent colour. Text on a filled accent is
+  the recurring contrast bug in this codebase — white on IFAC's gold is
+  2.58:1 — so --blk-on-accent exists and defaults to white only because most
+  accents are dark. An app with a light accent MUST set it.
+*/
+
+/* ── The interface ───────────────────────────────────────────────────────── */
+
+:root {
+  --blk-bg: var(--eac-block-bg, var(--paper, var(--surface, #ffffff)));
+  --blk-bg-soft: var(
+    --eac-block-bg-soft,
+    color-mix(in srgb, var(--blk-fg) 4%, var(--blk-bg))
+  );
+  --blk-fg: var(--eac-block-fg, var(--ink, #16181d));
+  --blk-muted: var(--eac-block-muted, var(--ink-soft, #5e667a));
+  --blk-faint: var(
+    --eac-block-faint,
+    color-mix(in srgb, var(--blk-muted) 60%, var(--blk-bg))
+  );
+  --blk-line: var(--eac-block-line, var(--line, #cfd4db));
+
+  --blk-accent: var(--eac-block-accent, var(--eac-accent, #5b45a8));
+  /* Text that sits ON the accent. See the note above — this is not optional
+     for a light accent. */
+  --blk-on-accent: var(--eac-block-on-accent, #ffffff);
+
+  /*
+    The accent used AS INK, on the page's own ground — a card's marker, a
+    text-only link. NOT the same value as the fill.
+
+    An accent chosen to be a background is usually light enough to carry dark
+    text, which makes it illegible as text itself. Measured against a real
+    palette: amrit-canada's saffron marker on its panel tone is 1.65:1. Mixing
+    the accent 60% with black clears 4.5:1 for every palette on the network,
+    worst case 4.54:1 — the same number and the same reasoning as
+    --pr-accent-ink in @elkdonis/primitives. An org whose accent is already
+    dark sets this back to the accent itself and keeps full chroma.
+  */
+  --blk-accent-ink: var(
+    --eac-block-accent-ink,
+    color-mix(in srgb, var(--blk-accent) 60%, black)
+  );
+
+  /* A dark band — section headers, heroes. Distinct from --blk-bg because a
+     banner is deliberately inverted on most of these sites. */
+  --blk-band: var(--eac-block-band, #36454f);
+  --blk-band-fg: var(--eac-block-band-fg, #fdf5e6);
+
+  --blk-danger: var(--eac-block-danger, #b3261e);
+  --blk-ok: var(--eac-block-ok, #16a34a);
+
+  /*
+    The ground a form field sits on, and its own ink.
+
+    Separate from --blk-bg-soft, which is the tint used behind an image while
+    it loads and is chosen to be barely there. A field is different: text is
+    TYPED onto it, so it has to clear 4.5:1 against the ink, and "barely there"
+    on a mid-toned ground does not. Measured on Dana's violet: ink on the soft
+    tint is 3.96:1 — a fail — and on a paper field 18.43:1.
+
+    Defaults to the soft tint so nothing changes for the apps already using
+    this stylesheet; an app with a coloured or mid-toned ground sets it.
+  */
+  --blk-field-bg: var(--eac-block-field-bg, var(--blk-bg-soft));
+  --blk-field-fg: var(--eac-block-field-fg, var(--blk-fg));
+  --blk-field-line: var(--eac-block-field-line, var(--blk-line));
+
+  --blk-radius: var(--eac-block-radius, 10px);
+  --blk-radius-sm: var(--eac-block-radius-sm, 6px);
+
+  --blk-font-title: var(--eac-block-font-title, var(--font-serif, Georgia, serif));
+  --blk-font-body: var(--eac-block-font-body, inherit);
+
+  --blk-measure: var(--eac-block-measure, 64rem);
+}
+
+/* ── Shared furniture ────────────────────────────────────────────────────── */
+
+.blk {
+  box-sizing: border-box;
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+}
+.blk *,
+.blk *::before,
+.blk *::after {
+  box-sizing: border-box;
+}
+
+.blk-shell {
+  margin-inline: auto;
+  max-width: var(--blk-measure);
+  padding-inline: 20px;
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+
+.blk-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--blk-band);
+  /* Not a fixed height: the original was locked to 380px, which crops badly on
+     a phone and leaves a letterbox on a wide screen. */
+  min-height: clamp(260px, 42vw, 420px);
+  display: flex;
+  align-items: flex-end;
+}
+
+.blk-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.blk-hero-wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--blk-band) 90%, transparent),
+    color-mix(in srgb, var(--blk-band) 40%, transparent) 45%,
+    transparent
+  );
+}
+
+.blk-hero-copy {
+  position: relative;
+  width: 100%;
+  padding: 0 24px 40px;
+  text-align: center;
+}
+
+.blk-hero-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: clamp(1.7rem, 6vw, 3rem);
+  line-height: 1.12;
+  font-weight: 400;
+  color: var(--blk-accent);
+  text-shadow: 2px 2px 12px rgb(0 0 0 / 0.6);
+}
+
+.blk-hero-sub {
+  margin: 12px 0 0;
+  font-size: clamp(0.95rem, 3vw, 1.25rem);
+  font-style: italic;
+  color: var(--blk-band-fg);
+  text-shadow: 1px 1px 8px rgb(0 0 0 / 0.6);
+}
+
+/* ── Section banner ──────────────────────────────────────────────────────── */
+
+.blk-banner {
+  /* --blk-banner-accent is set inline per instance, so one section can be gold
+     and the next indigo without another class. */
+  --blk-banner-accent: var(--blk-accent);
+  background: var(--blk-band);
+  border-bottom: 4px solid var(--blk-banner-accent);
+  padding-block: 48px;
+  text-align: center;
+}
+
+.blk-banner-eyebrow {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, var(--blk-banner-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--blk-banner-accent) 20%, transparent);
+  color: var(--blk-banner-accent);
+  border-radius: 999px;
+  padding: 4px 16px;
+  font-size: 0.875rem;
+}
+
+.blk-banner-title {
+  margin: 16px 0 0;
+  font-family: var(--blk-font-title);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  line-height: 1.12;
+  font-weight: 400;
+  color: var(--blk-banner-accent);
+  text-shadow: 2px 2px 8px rgb(0 0 0 / 0.4);
+}
+
+.blk-banner-sub {
+  margin: 12px 0 0;
+  font-size: 1.125rem;
+  font-style: italic;
+  color: color-mix(in srgb, var(--blk-banner-accent) 80%, white);
+}
+
+/* ── Status badge ────────────────────────────────────────────────────────── */
+
+.blk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--blk-line);
+  background: var(--blk-bg-soft);
+  color: var(--blk-muted);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.blk-badge svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.blk-badge[data-status="confirmed"] {
+  border-color: color-mix(in srgb, var(--blk-ok) 50%, transparent);
+  background: color-mix(in srgb, var(--blk-ok) 14%, var(--blk-bg));
+  color: var(--blk-fg);
+}
+
+.blk-badge[data-status="cancelled"] {
+  border-color: color-mix(in srgb, var(--blk-danger) 50%, transparent);
+  background: color-mix(in srgb, var(--blk-danger) 10%, var(--blk-bg));
+  color: var(--blk-danger);
+}
+
+/* ── Thread feed ─────────────────────────────────────────────────────────── */
+
+.blk-feed {
+  display: grid;
+  gap: 14px;
+}
+
+.blk-feed[data-layout="grid"] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+.blk-feed-empty {
+  border: 1px dashed var(--blk-line);
+  border-radius: var(--blk-radius);
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--blk-muted);
+  font-size: 0.9375rem;
+}
+
+.blk-item {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--blk-line);
+  border-radius: var(--blk-radius);
+  background: var(--blk-bg);
+  padding: 16px 18px;
+  /* The kind hairline — same vocabulary as a hub face, so a meeting and a
+     piece of writing are told apart before a word is read. */
+  border-left: 3px solid var(--blk-item-accent, var(--blk-accent));
+}
+
+.blk-item-cover {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--blk-radius-sm);
+  margin-bottom: 4px;
+}
+
+.blk-item-kicker {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blk-faint);
+}
+
+.blk-item-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: 1.125rem;
+  line-height: 1.25;
+  font-weight: 400;
+}
+
+.blk-item-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.blk-item-title a:hover {
+  text-decoration: underline;
+}
+
+.blk-item-blurb {
+  margin: 0;
+  color: var(--blk-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.blk-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--blk-muted);
+  font-size: 0.8125rem;
+}
+
+.blk-item-meta b {
+  color: var(--blk-fg);
+  font-weight: 600;
+}
+
+@media (max-width: 540px) {
+  .blk-banner {
+    padding-block: 32px;
+  }
+  .blk-hero-copy {
+    padding-bottom: 28px;
+  }
+}
+
+/* ── Split row ───────────────────────────────────────────────────────────── */
+
+/*
+  Two columns, declared as a grid so the ratio is one custom property rather
+  than five sets of width rules.
+
+  It stacks to one column below 40rem with a container query rather than a
+  media query, because a split row can appear INSIDE another split row's
+  column — at which point the viewport width says nothing useful about how
+  much room this particular row actually has. Nesting is the whole reason this
+  block exists, so it has to behave when nested.
+*/
+.blk-split {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: var(--split-cols, 1fr 1fr);
+  gap: var(--split-gap, 1.5rem);
+  align-items: var(--split-align, start);
+}
+
+.blk-split[data-ratio="even"]          { --split-cols: 1fr 1fr; }
+.blk-split[data-ratio="wide-start"]    { --split-cols: 2fr 1fr; }
+.blk-split[data-ratio="wide-end"]      { --split-cols: 1fr 2fr; }
+.blk-split[data-ratio="sidebar-start"] { --split-cols: 1fr 3fr; }
+.blk-split[data-ratio="sidebar-end"]   { --split-cols: 3fr 1fr; }
+
+.blk-split[data-align="start"]   { --split-align: start; }
+.blk-split[data-align="center"]  { --split-align: center; }
+.blk-split[data-align="stretch"] { --split-align: stretch; }
+
+.blk-split[data-gap="tight"]   { --split-gap: 0.75rem; }
+.blk-split[data-gap="regular"] { --split-gap: 1.5rem; }
+.blk-split[data-gap="loose"]   { --split-gap: 3rem; }
+
+.blk-split-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* Without this a long word or a wide table in one column pushes the grid
+     past its track and the whole page scrolls sideways. */
+  min-width: 0;
+}
+
+/*
+  Flowing columns.
+
+  A flex container does not float its children — it makes each one a flex item
+  and the float is dropped — so the default stack can never wrap text around an
+  image. `flow-root` is normal flow PLUS containment: the paragraphs wrap, and
+  a tall image cannot hang out of the bottom of its column into whatever comes
+  next. Spacing switches from `gap` to margins, because flow has no gap.
+*/
+.blk-split[data-columns="flowing"] .blk-split-col {
+  display: flow-root;
+  gap: 0;
+}
+/* Every child EXCEPT a floated one. A float carries its own side margins, and
+   a blanket `> * + *` here would overwrite the shorthand that puts the text's
+   breathing room on the correct side of the image. */
+.blk-split[data-columns="flowing"] .blk-split-col
+  > *:not([data-float="left"]):not([data-float="right"]) {
+  margin-block-end: 1rem;
+}
+.blk-split[data-columns="flowing"] .blk-split-col > *:last-child {
+  margin-block-end: 0;
+}
+
+@container (max-width: 40rem) {
+  .blk-split { --split-cols: 1fr; }
+}
+
+/* ── Screen-reader-only text ─────────────────────────────────────────────── */
+
+/*
+  Visible to assistive tech, invisible on screen. `display:none` would hide it
+  from both, which is the usual mistake.
+*/
+.blk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Prose ───────────────────────────────────────────────────────────────── */
+
+.blk-prose {
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+  line-height: 1.65;
+}
+.blk-prose p { margin: 0 0 1em; }
+.blk-prose p:last-child { margin-bottom: 0; }
+
+/* Around 65 characters, which is where running text is easiest to read. */
+.blk-prose[data-measure="on"] p { max-width: 34em; }
+.blk-prose[data-align="center"] { text-align: center; }
+.blk-prose[data-align="center"][data-measure="on"] p { margin-inline: auto; }
+
+.blk-prose[data-size="large"]  { font-size: 1.15rem; }
+.blk-prose[data-size="small"]  { font-size: 0.9rem; color: var(--blk-muted); }
+
+/* ── Section heading ─────────────────────────────────────────────────────── */
+
+.blk-heading { display: flex; flex-direction: column; gap: 0.5rem; }
+.blk-heading[data-align="center"] { align-items: center; text-align: center; }
+.blk-heading[data-align="start"]  { align-items: flex-start; text-align: start; }
+
+.blk-heading-eyebrow {
+  margin: 0;
+  font-family: var(--blk-font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--blk-muted);
+}
+
+.blk-heading-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--blk-fg);
+  text-wrap: balance;
+}
+/* Each level a step down, so the visual order matches the document order. */
+.blk-heading-title:is(h3) { font-size: clamp(1.25rem, 2.6vw, 1.6rem); }
+.blk-heading-title:is(h4) { font-size: 1.15rem; }
+
+/*
+  The raw accent, deliberately — this is a decorative graphic, marked
+  aria-hidden, conveying nothing that the heading does not already say. It is
+  the one place the brand colour is allowed to be soft against its ground; on
+  a pale accent it reads as a faint gold line, which is the intent.
+*/
+.blk-heading-rule {
+  display: block;
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--blk-accent);
+}
+
+.blk-heading-sub {
+  margin: 0;
+  max-width: 34em;
+  color: var(--blk-muted);
+  line-height: 1.55;
+}
+
+/* ── Figure ──────────────────────────────────────────────────────────────── */
+
+.blk-figure { margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.blk-figure[data-width="measure"] { max-width: var(--blk-measure); margin-inline: auto; }
+.blk-figure[data-width="wide"]    { max-width: calc(var(--blk-measure) + 240px); margin-inline: auto; }
+.blk-figure[data-width="full"]    { max-width: none; }
+
+.blk-figure-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--blk-radius);
+  background: var(--blk-bg-soft);
+}
+/* A cropped shape needs the image to fill it rather than letterbox. */
+.blk-figure[data-ratio="wide"]   .blk-figure-img { aspect-ratio: 16 / 9; object-fit: cover; height: auto; }
+.blk-figure[data-ratio="photo"]  .blk-figure-img { aspect-ratio: 4 / 3;  object-fit: cover; height: auto; }
+.blk-figure[data-ratio="square"] .blk-figure-img { aspect-ratio: 1 / 1;  object-fit: cover; height: auto; }
+
+/*
+  A floated figure — the whole point of the wrapping work.
+
+  These sit after the `data-width` rules deliberately: both selectors are one
+  class plus one attribute, so equal specificity means source order decides,
+  and a float has to beat the centring that "Text width" applies.
+
+  The width comes in as a custom property set inline by the component, because
+  it is a number a person chose rather than one of a few named sizes. The
+  stylesheet still has the last word — see the narrow-screen rule below.
+*/
+.blk-figure[data-float="left"],
+.blk-figure[data-float="right"] {
+  width: var(--blk-figure-size, 40%);
+  max-width: 100%;
+  margin-inline: 0;
+}
+.blk-figure[data-float="left"] {
+  float: left;
+  /* A shade of top margin so the image's edge lines up with the first line of
+     text rather than with the top of its line box — unless the author has
+     dragged it further down, which arrives as --blk-figure-offset and leaves
+     those first lines running full width above it. */
+  margin: var(--blk-figure-offset, 0.35rem) var(--blk-flow-gap, 1.5rem) 1rem 0;
+}
+.blk-figure[data-float="right"] {
+  float: right;
+  margin: var(--blk-figure-offset, 0.35rem) 0 1rem var(--blk-flow-gap, 1.5rem);
+}
+
+
+/* The same trimming for a floated image block. See the long note under the
+   text-and-image block for why a margin alone leaves the band above the
+   picture unusable. */
+.blk-figure[data-float="left"],
+.blk-figure[data-float="right"] {
+  shape-outside: inset(var(--blk-figure-offset, 0px) 0 0 0);
+}
+
+/*
+  Tight wrap — the lines follow the SHAPE, not the box.
+
+  `shape-outside: url(...)` reads the image's own alpha channel and wraps the
+  text to its silhouette, which is what a word processor calls "Tight". It is
+  the one place the web does this properly, and it needs two things to be true:
+  the image must be SAME-ORIGIN (ours are, via the media proxy), and it must
+  actually have transparency. A photograph with an opaque background computes a
+  silhouette identical to its rectangle, so this degrades to the square wrap
+  rather than doing something surprising.
+
+  `shape-margin` is the breathing room. Without it the text touches the
+  silhouette exactly, which reads as a collision rather than a wrap.
+*/
+.blk-figure[data-wrap="tight"][data-float="left"],
+.blk-figure[data-wrap="tight"][data-float="right"] {
+  shape-outside: var(--blk-figure-shape);
+  shape-image-threshold: 0.1;
+  shape-margin: 0.75rem;
+}
+.blk-figure[data-wrap="round"][data-float="left"],
+.blk-figure[data-wrap="round"][data-float="right"] {
+  shape-outside: circle(50%);
+  shape-margin: 0.5rem;
+}
+
+/*
+  On a narrow screen, nothing wraps.
+
+  Text flowing beside a 40% image in a 360px column leaves about twelve
+  characters a line, which is unreadable. The float is dropped and the image
+  takes the full width — the same decision the two-column block makes when it
+  collapses to one.
+*/
+@media (max-width: 640px) {
+  .blk-figure[data-float="left"],
+  .blk-figure[data-float="right"] {
+    float: none;
+    width: 100%;
+    /* The offset and the silhouette go with the float — a picture that no
+       longer sits beside the text has nothing to wrap around it. */
+    margin: 0 0 1rem;
+    shape-outside: none;
+  }
+}
+
+.blk-figure-caption {
+  font-size: 0.875rem;
+  color: var(--blk-muted);
+  line-height: 1.5;
+}
+
+/* ── Text column (flowing region) ─────────────────────────────────────────── */
+
+/*
+  The container that makes wrapping possible.
+
+  `flow-root` is the whole mechanism: normal flow, so a floated child pushes
+  the lines of everything after it aside, plus containment, so the float cannot
+  spill past the bottom of the column. `display: block` would give the first
+  half and not the second, and a tall image would overlap the next block.
+
+  `container-type: inline-size` is deliberately NOT set — it would make this a
+  containment context and change how a percentage width resolves for no gain.
+*/
+.blk-flow-body {
+  display: flow-root;
+}
+
+.blk-flow[data-width="measure"] { max-width: var(--blk-measure); margin-inline: auto; }
+.blk-flow[data-width="wide"]    { max-width: calc(var(--blk-measure) + 240px); margin-inline: auto; }
+.blk-flow[data-width="full"]    { max-width: none; }
+
+/* Same rule, same reason, as a flowing split column: space everything except a
+   float, whose own side margins must survive. */
+.blk-flow-body > *:not([data-float="left"]):not([data-float="right"]) {
+  margin-block-end: 1.25rem;
+}
+.blk-flow-body > *:last-child { margin-block-end: 0; }
+
+/* ── Text with an image ──────────────────────────────────────────────────── */
+
+/*
+  One block holding both halves, so the wrap does not depend on which region it
+  was dropped into. `flow-root` again — see the note above.
+*/
+.blk-textimg {
+  display: flow-root;
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+  line-height: 1.65;
+}
+
+.blk-textimg[data-gap="tight"]   { --blk-textimg-gap: 0.75rem; }
+.blk-textimg[data-gap="regular"] { --blk-textimg-gap: 1.5rem; }
+.blk-textimg[data-gap="loose"]   { --blk-textimg-gap: 2.5rem; }
+
+.blk-textimg-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* The width the author dragged to, as a share of this block. Inline custom
+     property from the component; the fallback is what an un-styled render
+     would show. */
+  width: var(--blk-textimg-size, 40%);
+  max-width: 100%;
+}
+
+.blk-textimg-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--blk-radius);
+  background: var(--blk-bg-soft);
+}
+
+.blk-textimg[data-ratio="wide"]   .blk-textimg-img { aspect-ratio: 16 / 9; object-fit: cover; }
+.blk-textimg[data-ratio="photo"]  .blk-textimg-img { aspect-ratio: 4 / 3;  object-fit: cover; }
+.blk-textimg[data-ratio="square"] .blk-textimg-img { aspect-ratio: 1 / 1;  object-fit: cover; }
+.blk-textimg[data-ratio="round"]  .blk-textimg-img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.blk-textimg-caption {
+  font-size: 0.875rem;
+  color: var(--blk-muted);
+  line-height: 1.5;
+}
+
+.blk-textimg-body > p { margin: 0 0 1em; }
+.blk-textimg-body > p:last-child { margin-bottom: 0; }
+
+/* Beside the text: the image floats and the paragraphs close around it.
+
+   The top margin is a shade of optical offset so the image lines up with the
+   first line of text rather than with the top of its line box — unless the
+   author has slid it further down, which arrives as --blk-textimg-offset and
+   leaves those first lines running full width above it. */
+.blk-textimg[data-place="left"] .blk-textimg-figure {
+  float: left;
+  margin: var(--blk-textimg-offset, 0.35rem) var(--blk-textimg-gap, 1.5rem) 1rem 0;
+}
+.blk-textimg[data-place="right"] .blk-textimg-figure {
+  float: right;
+  margin: var(--blk-textimg-offset, 0.35rem) 0 1rem var(--blk-textimg-gap, 1.5rem);
+}
+
+
+/*
+  Starting the picture lower down — and why a margin alone does not do it.
+
+  The obvious implementation is `margin-top`, and it is wrong in a way that
+  looks right in the code and not on the page. A float's exclusion is its
+  MARGIN box, so a top margin makes that box taller rather than starting it
+  further down: the picture moves down, and the text still refuses to flow
+  across the empty band above it. Measured, before this rule existed: with a
+  160px offset the very first line still began 706px in, level with the text
+  beside the image, 157px above the image's own top edge.
+
+  `shape-outside: inset(<offset> 0 0 0)` trims exactly that band off the
+  exclusion. The picture sits where the margin put it, and the lines above it
+  run the full width of the column — which is what a word processor does, and
+  what someone dragging a picture down through their text expects to see.
+
+  Declared before the tight and round rules so those win when chosen: an image
+  can have a silhouette or a vertical offset, not both, because an <image>
+  shape cannot be combined with a shape-box and would be stretched across the
+  margin box instead of mapping onto the picture.
+*/
+.blk-textimg[data-place="left"] .blk-textimg-figure,
+.blk-textimg[data-place="right"] .blk-textimg-figure {
+  shape-outside: inset(var(--blk-textimg-offset, 0px) 0 0 0);
+}
+
+/*
+  Tight wrap — the lines follow the SHAPE, not the box. See the note on the
+  figure block above for why this is safe on a photograph: an opaque image's
+  silhouette IS its rectangle, so it degrades to the square wrap.
+*/
+.blk-textimg[data-wrap="tight"][data-place="left"] .blk-textimg-figure,
+.blk-textimg[data-wrap="tight"][data-place="right"] .blk-textimg-figure {
+  shape-outside: var(--blk-textimg-shape);
+  shape-image-threshold: 0.1;
+  shape-margin: 0.75rem;
+}
+.blk-textimg[data-wrap="round"][data-place="left"] .blk-textimg-figure,
+.blk-textimg[data-wrap="round"][data-place="right"] .blk-textimg-figure {
+  shape-outside: circle(50%);
+  shape-margin: 0.5rem;
+}
+
+/*
+  Above or below: no float, so the width setting is the image's own width
+  within the block and the alignment control decides where it sits. `auto`
+  margins rather than text-align, because the figure is a block box.
+*/
+.blk-textimg[data-place="above"] .blk-textimg-figure { margin: 0 0 var(--blk-textimg-gap, 1.5rem); }
+.blk-textimg[data-place="below"] .blk-textimg-figure { margin: var(--blk-textimg-gap, 1.5rem) 0 0; }
+
+.blk-textimg[data-place="above"][data-align="center"] .blk-textimg-figure,
+.blk-textimg[data-place="below"][data-align="center"] .blk-textimg-figure { margin-inline: auto; }
+.blk-textimg[data-place="above"][data-align="end"] .blk-textimg-figure,
+.blk-textimg[data-place="below"][data-align="end"] .blk-textimg-figure { margin-inline: auto 0; }
+
+/*
+  On a narrow screen the image goes full width and the text goes under it.
+
+  Wrapping text beside a 40% image in a 360px column leaves roughly twelve
+  characters to the line. Better to stop wrapping than to ship that.
+*/
+@media (max-width: 640px) {
+  .blk-textimg[data-place="left"] .blk-textimg-figure,
+  .blk-textimg[data-place="right"] .blk-textimg-figure {
+    float: none;
+    width: 100%;
+    /* The offset goes with the float. A picture that no longer sits beside the
+       text has nothing to start lower than. */
+    margin: 0 0 var(--blk-textimg-gap, 1.5rem);
+    shape-outside: none;
+  }
+}
+
+/* ── Quote ───────────────────────────────────────────────────────────────── */
+
+.blk-quote { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.blk-quote-text {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--blk-fg);
+  white-space: pre-line;
+}
+.blk-quote-by { font-size: 0.9rem; color: var(--blk-muted); }
+.blk-quote-source { font-style: italic; }
+
+.blk-quote[data-tone="rule"] {
+  border-inline-start: 3px solid var(--blk-accent);
+  padding-inline-start: 1.1rem;
+}
+.blk-quote[data-tone="large"] {
+  text-align: center;
+  align-items: center;
+  max-width: 30em;
+  margin-inline: auto;
+}
+.blk-quote[data-tone="large"] .blk-quote-text { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+.blk-quote[data-tone="panel"] {
+  background: var(--blk-bg-soft);
+  border-radius: var(--blk-radius);
+  padding: 1.25rem 1.4rem;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+
+.blk-divider { border: 0; margin-inline: auto; }
+.blk-divider[data-size="tight"]   { margin-block: 1rem; }
+.blk-divider[data-size="regular"] { margin-block: 2.25rem; }
+.blk-divider[data-size="loose"]   { margin-block: 4rem; }
+
+.blk-divider[data-style="rule"]   { height: 1px; width: 100%; background: var(--blk-line); }
+.blk-divider[data-style="accent"] { height: 3px; width: 56px; border-radius: 2px; background: var(--blk-accent); }
+/* Space only: no line, and the margins above already do the work. */
+.blk-divider[data-style="space"]  { height: 0; width: 100%; }
+
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+
+/*
+  auto-fit + minmax is the whole responsive strategy: the author says how
+  narrow a column may get and the browser decides how many fit. min() guards
+  the case where --grid-min is wider than the container itself, which would
+  otherwise push the grid past its bounds on a phone.
+*/
+.blk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-min, 240px)), 1fr));
+  gap: var(--grid-gap, 1.25rem);
+  align-items: var(--grid-align, stretch);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
+.blk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: var(--blk-radius);
+  border: 1px solid transparent;
+  color: var(--blk-fg);
+  text-decoration: none;
+  /* Fills its grid track when the grid is stretching, so a row of cards has
+     one baseline along the bottom. */
+  height: 100%;
+}
+.blk-card[data-tone="panel"]    { background: var(--blk-bg-soft); }
+.blk-card[data-tone="bordered"] { border-color: var(--blk-line); }
+.blk-card[data-tone="plain"]    { padding-inline: 0; }
+
+.blk-card-marker {
+  font-family: var(--blk-font-title);
+  font-size: 1.6rem;
+  line-height: 1;
+  /* Ink, not fill — see --blk-accent-ink. The raw accent measured 1.65:1 here
+     on the palette that made the token necessary; the ink form gives 4.26:1
+     on that same panel and 11.6:1 on the default one. 4.26 is below the 4.5
+     for body text and comfortably above the 3:1 that applies at this size —
+     1.6rem is 25.6px, past the 24px large-text threshold. Keep it large: drop
+     this below 24px and it needs 4.5:1, which this palette would fail. */
+  color: var(--blk-accent-ink);
+}
+.blk-card-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--blk-fg);
+}
+.blk-card-body { margin: 0; color: var(--blk-muted); line-height: 1.55; font-size: 0.94rem; }
+
+/* Only a card that is a link reacts to the pointer. */
+a.blk-card { transition: border-color 120ms ease, background-color 120ms ease; }
+a.blk-card:hover { border-color: var(--blk-accent); }
+a.blk-card:focus-visible {
+  outline: 2px solid var(--blk-accent);
+  outline-offset: 2px;
+}
+
+/* ── Call to action ──────────────────────────────────────────────────────── */
+
+.blk-cta { display: flex; }
+.blk-cta[data-align="center"] { justify-content: center; }
+.blk-cta[data-align="start"]  { justify-content: flex-start; }
+
+.blk-cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--blk-radius-sm);
+  font-family: var(--blk-font-body);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.blk-cta-link[data-tone="filled"] {
+  background: var(--blk-accent);
+  color: var(--blk-on-accent);
+}
+.blk-cta-link[data-tone="filled"]:hover {
+  background: color-mix(in srgb, var(--blk-accent) 88%, black);
+}
+.blk-cta-link[data-tone="outline"] {
+  border-color: var(--blk-line);
+  color: var(--blk-fg);
+}
+.blk-cta-link[data-tone="outline"]:hover { background: var(--blk-bg-soft); }
+/* Text-only uses the ink form of the accent, for the same reason the card
+   marker does — and via the token, so an org overrides both at once. */
+.blk-cta-link[data-tone="quiet"] {
+  padding-inline: 0;
+  color: var(--blk-accent-ink);
+  text-underline-offset: 4px;
+}
+.blk-cta-link[data-tone="quiet"]:hover { text-decoration: underline; }
+.blk-cta-link:focus-visible { outline: 2px solid var(--blk-accent); outline-offset: 2px; }
+
+/* ── Their galleries (profile-galleries) ─────────────────────────────────── */
+/*
+  A wall of doors. Deliberately a card with a cover rather than a row of names:
+  a gallery has a look, and its cover is the only thing that says which room
+  you are choosing.
+*/
+
+.blk-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.blk-room { min-width: 0; }
+
+.blk-room-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--blk-fg);
+  text-decoration: none;
+  background: var(--blk-bg-soft);
+  border: 1px solid var(--blk-line);
+  border-radius: var(--blk-radius, 2px);
+  overflow: hidden;
+  transition: border-color 0.18s ease;
+}
+
+.blk-room-link:hover,
+.blk-room-link:focus-visible { border-color: var(--blk-accent); }
+
+.blk-room-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  object-fit: cover;
+}
+
+/* A room with no cover still needs a door, not a hole. */
+.blk-room-cover-blank {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--blk-bg) 0 8px,
+    var(--blk-bg-soft) 8px 16px
+  );
+}
+
+.blk-room-body {
+  display: block;
+  padding: 0.75rem 0.9rem 0.9rem;
+  border-top: 1px solid var(--blk-line);
+}
+
+.blk-room-title {
+  display: block;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.blk-room-flag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: 0.1em;
+  color: var(--blk-muted);
+  border: 1px solid var(--blk-line);
+}
+
+.blk-room-blurb {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--blk-muted);
+}
+
+.blk-room-count {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--blk-muted);
+}
+
+/* ── Work history (profile-record) ───────────────────────────────────────── */
+/*
+  Dates in the margin, entry beside them, ruled the whole way down. The margin
+  collapses on a narrow screen rather than squeezing: a span like
+  "2019 — present" cannot wrap into three characters, and a squeezed column is
+  how a CV turns into a stack of orphaned hyphens.
+*/
+
+.blk-ledger { margin: 0; }
+
+.blk-ledger-line {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0 1.15rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--blk-line);
+}
+
+.blk-ledger-line:last-child { border-bottom: 1px solid var(--blk-line); }
+
+.blk-ledger-when {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--blk-muted);
+  white-space: nowrap;
+}
+
+.blk-ledger-what { margin: 0; min-width: 0; }
+
+.blk-ledger-role {
+  display: block;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.blk-ledger-where {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.87rem;
+  color: var(--blk-muted);
+}
+
+.blk-ledger-detail {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.87rem;
+  line-height: 1.5;
+  color: var(--blk-muted);
+}
+
+@media (max-width: 560px) {
+  .blk-ledger-line { grid-template-columns: 1fr; gap: 0.25rem; }
+  .blk-ledger-when { white-space: normal; }
+}
+
+/* ── Dated list (CV, exhibitions, publications) ──────────────────────────── */
+
+/*
+  A description list, laid out as a grid rather than with the browser's default
+  <dt>/<dd> indentation — the years want to line up in their own column, which
+  `display: block` on a <dl> cannot do and a table would do at the cost of
+  saying "table" to a screen reader about something that is not one.
+*/
+.blk-entries { margin: 0; color: var(--blk-fg); font-family: var(--blk-font-body); }
+
+.blk-entries-row { display: grid; gap: 0.15rem 1.25rem; padding-block: 0.45rem; }
+
+/*
+  The years share ONE column across every row — which is the whole point of a
+  column of years, and is not what you get by giving each row its own grid.
+  Done that way first: each row sized its own `max-content` track, so "2024"
+  and "2019–21" produced two different indents and the entries came out ragged.
+
+  The track is declared once on the <dl> and each row opts into it with
+  `subgrid`. A row still has a box of its own, so the optional rule between
+  entries has something to draw on — which `display: contents` on the row, the
+  other way to share a track, would have thrown away.
+*/
+.blk-entries[data-align="column"] {
+  display: grid;
+  /* `max-content` rather than a fixed width, so "2019–22" and "Ongoing" both
+     fit without leaving a gutter of dead space when every entry is a plain
+     four-digit year. */
+  grid-template-columns: max-content 1fr;
+}
+.blk-entries[data-align="column"] .blk-entries-row {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+.blk-entries[data-align="inline"] .blk-entries-row { grid-template-columns: 1fr; }
+.blk-entries[data-align="inline"] .blk-entries-year { display: inline; margin-inline-end: 0.5rem; }
+
+.blk-entries[data-rules="on"] .blk-entries-row + .blk-entries-row {
+  border-top: 1px solid var(--blk-line);
+}
+
+.blk-entries-year {
+  margin: 0;
+  font-weight: 600;
+  /* Tabular figures so a column of years is a column, not a ragged edge. */
+  font-variant-numeric: tabular-nums;
+}
+.blk-entries-text { margin: 0; line-height: 1.55; }
+.blk-entries-link { color: var(--blk-accent-ink); text-decoration: underline; }
+.blk-entries-detail {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--blk-muted);
+}
+.blk-entries[data-align="inline"] .blk-entries-detail { display: inline; margin-inline-start: 0.4rem; }
+
+@media (max-width: 520px) {
+  /* Two columns at phone width leaves the entry about twenty characters wide.
+     The year goes above its entry instead — which means dropping the shared
+     track on the list as well as the subgrid on the row, or the rows keep
+     inheriting a two-column parent. */
+  .blk-entries[data-align="column"] { display: block; }
+  .blk-entries[data-align="column"] .blk-entries-row { grid-template-columns: 1fr; }
+}
+
+/* ── Picture wall ────────────────────────────────────────────────────────── */
+
+/*
+  Same auto-fit reasoning as the card grid: the author says how narrow a
+  picture may get and the browser decides how many fit. `min()` guards the one
+  case auto-fit gets wrong — a minimum wider than the container produces a
+  single column that overflows sideways.
+*/
+.blk-wall {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--blk-wall-min, 260px), 100%), 1fr));
+  gap: var(--blk-wall-gap, 1.25rem);
+}
+
+.blk-wall[data-gap="tight"]   { --blk-wall-gap: 0.6rem; }
+.blk-wall[data-gap="regular"] { --blk-wall-gap: 1.25rem; }
+.blk-wall[data-gap="loose"]   { --blk-wall-gap: 2.25rem; }
+
+.blk-wall-cell { min-width: 0; }
+.blk-wall-figure { margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+
+.blk-wall-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--blk-radius);
+  background: var(--blk-bg-soft);
+}
+.blk-wall[data-shape="square"]   .blk-wall-img { aspect-ratio: 1 / 1; object-fit: cover; }
+.blk-wall[data-shape="photo"]    .blk-wall-img { aspect-ratio: 4 / 3; object-fit: cover; }
+.blk-wall[data-shape="portrait"] .blk-wall-img { aspect-ratio: 3 / 4; object-fit: cover; }
+
+.blk-wall-link { display: block; }
+/* A picture that is a link has to say so to the keyboard, not only the mouse. */
+.blk-wall-link:focus-visible { outline: 2px solid var(--blk-accent-ink); outline-offset: 3px; }
+
+.blk-wall-caption { font-size: 0.875rem; color: var(--blk-muted); line-height: 1.45; }
+
+/* ── Video ───────────────────────────────────────────────────────────────── */
+
+.blk-video { margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.blk-video[data-width="measure"] { max-width: var(--blk-measure); margin-inline: auto; }
+.blk-video[data-width="wide"]    { max-width: calc(var(--blk-measure) + 240px); margin-inline: auto; }
+.blk-video[data-width="full"]    { max-width: none; }
+
+/* `aspect-ratio` on the wrapper, not the iframe: an iframe with a percentage
+   height inside an auto-height parent collapses, which is why this pattern
+   used to need the padding-top hack. It does not any more. */
+.blk-video-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--blk-radius);
+  overflow: hidden;
+}
+.blk-video-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.blk-video-fallback {
+  display: inline-block;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--blk-line);
+  border-radius: var(--blk-radius-sm);
+  color: var(--blk-accent-ink);
+}
+.blk-video-caption { font-size: 0.875rem; color: var(--blk-muted); line-height: 1.5; }
+
+/* ── Contact form ────────────────────────────────────────────────────────── */
+
+.blk-contact {
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+  max-width: 34rem;
+}
+.blk-contact-heading {
+  margin: 0 0 0.4rem;
+  font-family: var(--blk-font-title);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.blk-contact-intro { margin: 0 0 1.25rem; line-height: 1.6; }
+
+.blk-contact-form { display: flex; flex-direction: column; gap: 0.9rem; }
+.blk-contact-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.blk-contact-label { font-size: 0.875rem; font-weight: 600; }
+
+.blk-contact-input {
+  font: inherit;
+  color: var(--blk-field-fg);
+  /* Not `transparent`: on a coloured ground a transparent input is invisible
+     until focused, and people do not fill in what they cannot see. And not the
+     soft tint either — see --blk-field-bg, where the contrast measurement is. */
+  background: var(--blk-field-bg);
+  border: 1px solid var(--blk-field-line);
+  border-radius: var(--blk-radius-sm);
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+}
+.blk-contact-input:focus-visible {
+  outline: 2px solid var(--blk-accent-ink);
+  outline-offset: 1px;
+}
+
+.blk-contact-actions { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+
+.blk-contact-send {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.6rem 1.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--blk-radius-sm);
+  /* The accent as a FILL, with its paired ink on top — never the accent as
+     text, which is the contrast bug this stylesheet keeps warning about. */
+  background: var(--blk-accent);
+  color: var(--blk-on-accent);
+}
+.blk-contact-send[disabled] { opacity: 0.6; cursor: progress; }
+
+.blk-contact-note { font-size: 0.8rem; color: var(--blk-muted); }
+.blk-contact-sent { margin: 0; line-height: 1.6; }
+.blk-contact-error { margin: 0; color: var(--blk-danger); font-size: 0.9rem; }
+
+/* ── Questions & answers ─────────────────────────────────────────────────── */
+
+/*
+  Structure from HyperUI (MIT), styling from our own tokens. `<details>` does
+  all the behaviour; everything here is appearance.
+*/
+.blk-faq { color: var(--blk-fg); font-family: var(--blk-font-body); }
+
+.blk-faq[data-look="divided"] .blk-faq-item + .blk-faq-item { border-top: 1px solid var(--blk-line); }
+.blk-faq[data-look="boxed"] .blk-faq-item {
+  border: 1px solid var(--blk-line);
+  border-radius: var(--blk-radius);
+  margin-block-end: 0.6rem;
+  padding-inline: 0.9rem;
+}
+
+.blk-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.4;
+  /* Safari draws its own triangle and ignores `list-style`, so both are needed
+     to end up with one marker rather than two. */
+  list-style: none;
+}
+.blk-faq-q::-webkit-details-marker { display: none; }
+
+/* A summary is focusable, and without this the focus ring is the browser's
+   default on a row that no longer looks like a control. */
+.blk-faq-q:focus-visible { outline: 2px solid var(--blk-accent-ink); outline-offset: 2px; }
+
+.blk-faq-mark {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  transition: transform 200ms ease;
+}
+.blk-faq-item[open] .blk-faq-mark { transform: rotate(180deg); }
+
+/* Respecting a setting someone made because motion makes them ill. */
+@media (prefers-reduced-motion: reduce) {
+  .blk-faq-mark { transition: none; }
+}
+
+.blk-faq-a { padding-block: 0 1rem; line-height: 1.65; }
+.blk-faq-a p { margin: 0 0 0.8em; max-width: 46em; }
+.blk-faq-a p:last-child { margin-bottom: 0; }

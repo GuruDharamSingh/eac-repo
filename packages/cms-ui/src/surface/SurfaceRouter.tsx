@@ -10,11 +10,14 @@ import { CalendarSurface } from "./surfaces/CalendarSurface";
 import { GallerySurface } from "./surfaces/GallerySurface";
 import { WriteSurface } from "./surfaces/WriteSurface";
 import { BoardSurface, BoardCardSurface } from "./surfaces/BoardSurface";
-import { ForumSurface } from "./surfaces/ForumSurface";
+import { ForumFeedSurface, ForumSurface } from "./surfaces/ForumSurface";
 import { ProfileSurface } from "./surfaces/ProfileSurface";
 import { CenterLayoutSurface } from "./surfaces/CenterLayoutSurface";
 import { DefineSurface } from "./surfaces/DefineSurface";
 import { DocumentsSurface } from "./surfaces/DocumentsSurface";
+import { IdentitiesSurface } from "./surfaces/IdentitiesSurface";
+import { MaterialSurface } from "./surfaces/MaterialSurface";
+import { GatherSurface } from "./surfaces/GatherSurface";
 
 /** Descriptor → surface. The only place that knows every surface's name. */
 export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor }) {
@@ -37,14 +40,22 @@ export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor })
       return <BoardCardSurface descriptor={descriptor} />;
     case "forum":
       return <ForumSurface />;
+    case "forumFeed":
+      return <ForumFeedSurface descriptor={descriptor} />;
     case "documents":
       return <DocumentsSurface descriptor={descriptor} />;
+    case "identities":
+      return <IdentitiesSurface />;
     case "profile":
       return <ProfileSurface descriptor={descriptor} />;
     case "centerLayout":
       return <CenterLayoutSurface descriptor={descriptor} />;
     case "define":
       return <DefineSurface descriptor={descriptor} />;
+    case "material":
+      return <MaterialSurface descriptor={descriptor} />;
+    case "gather":
+      return <GatherSurface descriptor={descriptor} />;
     case "custom": {
       const render = connectors.custom?.[descriptor.key];
       if (render) return <>{render({ descriptor })}</>;

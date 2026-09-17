@@ -58,8 +58,17 @@ export class OrgCalendarScopeError extends Error {
   }
 }
 
-/** Kinds that represent something happening at a time. */
-export const SCHEDULED_KINDS = ['event', 'meeting', 'workshop'] as const;
+/**
+ * Kinds that represent something happening at a time.
+ *
+ * `reading_group` is a standing sub-group of an org that meets on a cadence
+ * (apps/fourthwayBookreaders): the thread is the GROUP, its scheduled_at +
+ * recurrence_pattern are when it sits, and an RSVP means joining it. It is
+ * listed here so the org calendar, the standing-meeting face and the forum's
+ * "upcoming" see it; without that a group would exist and never appear on a
+ * calendar. cms-ui/surface/types.ts mirrors this list for the browser.
+ */
+export const SCHEDULED_KINDS = ['event', 'meeting', 'workshop', 'reading_group'] as const;
 
 /**
  * Recurrence patterns, mapped to RFC 5545 RRULEs.

@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* The shared packages ship SOURCE, not a bundle, so Tailwind has to be told to
+   scan them or /center and /hub render unstyled. This is the `@source` trap
+   documented in the repo's shared-package notes — a missing line here looks
+   like a broken component, not a missing stylesheet. */
+@source "../../../../packages/cms-ui/src";
+
+/* Plain-CSS sheets from the shared packages, driven by custom properties that
+   this file maps to the Fourth Way palette below. */
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/editor.css";
+
+/* The shared controls. layer(components) is REQUIRED, not decoration: Tailwind
+   v4 orders theme → base → components → utilities, and an UNLAYERED rule beats
+   every layered one regardless of specificity. Imported bare, this library
+   would silently overpower every utility class passed to a <Button>. */
+@import "@elkdonis/primitives/primitives.css" layer(components);
+
+/* This site's own surface — curtains, paper, the shelf. Last, so it wins. */
+@import "./site.css";
+
+/* ==========================================================================
+   Palette.
+
+   A reading room seen through a window with heavy curtains: warm dark red at
+   the edges, aged paper in the middle, brass for anything that can be clicked.
+
+   Every pair below was measured against WCAG AA before it was written down,
+   because the recurring bug in this codebase is ink chosen on a light accent
+   and never checked. Ratios, on their stated ground:
+
+     ink      #2b1e16 on paper  #f2e4c9 → 12.86:1
+     muted    #6a5340 on paper           →  5.72:1
+     brass    #7a5a1c on paper           →  5.06:1   (links, on paper)
+     crimson  #8c1c1c on paper           →  7.27:1
+     paper    #f2e4c9 on curtain #4a0f12 → 12.22:1
+     gold     #d9a441 on curtain         →  6.82:1   (links, on curtain)
+     gold     #d9a441 on header  #3a0c0f →  7.53:1
+     paper    #f2e4c9 on button  #7a1519 →  8.58:1
+     ink      #2b1e16 on linen   #faf1de → 14.39:1
+     brass    #7a5a1c on linen            →  5.66:1
+
+   Note that brass and gold are NOT interchangeable. Gold is legible only on
+   the curtain; on paper it measures 1.9:1. Brass is the paper-side twin. Using
+   one where the other belongs is the exact failure this split exists to stop.
+   ========================================================================== */
+
+:root {
+  --curtain: #4a0f12;
+  --curtain-deep: #3a0c0f;
+  --curtain-lit: #6b1a1d;
+  --curtain-shadow: #2a080a;
+
+  --paper: #f2e4c9;
+  --paper-edge: #e3d2b2;
+  --linen: #faf1de;
+
+  --ink: #2b1e16;
+  --ink-muted: #6a5340;
+  --brass: #7a5a1c;
+  --gold: #d9a441;
+  --crimson: #8c1c1c;
+  --button-red: #7a1519;
+
+  --rule: #c9b28a;
+  --rule-strong: #a98d5f;
+
+  --font-display: Georgia, "Times New Roman", Times, serif;
+  --font-ui: Verdana, Geneva, Tahoma, sans-serif;
+  --font-book: var(--font-eb-garamond), Garamond, Georgia, serif;
+
+  /* The window's frame. Curtains are fixed decoration behind the content, so
+     the page reserves room for them rather than being laid out inside them. */
+  --curtain-w: 0px;
+  --slim-w: 0px;
+  --column-max: 1060px;
+
+  --radius: 3px;
+}
+
+/* Wide enough for the curtains to hang without squeezing the reading column. */
+@media (min-width: 1180px) {
+  :root { --curtain-w: 76px; --slim-w: 0px; }
+}
+/* Wider still: the slim column appears inboard of each curtain. */
+@media (min-width: 1440px) {
+  :root { --curtain-w: 104px; --slim-w: 54px; }
+}
+
+/* --------------------------------------------------------------------------
+   Shared-package tokens, in this site's palette.
+
+   @elkdonis/primitives never reads a palette directly; it reads --eac-control-*
+   and --eac-card-*. Mapping them here is what makes a shared <Button> or the
+   /center grid look like it belongs to this site.
+
+   --eac-control-accent-ink is PINNED to a literal. The library's default
+   darkens the accent with color-mix, but Lightning CSS compiles that behind an
+   @supports guard whose fallback is the RAW accent — so a browser without
+   color-mix silently gets gold-on-paper at 1.9:1, the exact failure the token
+   exists to prevent. --brass is that darkening, computed ahead of time.
+   -------------------------------------------------------------------------- */
+:root {
+  --eac-control-bg: var(--linen);
+  --eac-control-fg: var(--ink);
+  --eac-control-muted: var(--ink-muted);
+  --eac-control-line: var(--rule);
+  --eac-control-accent: var(--button-red);
+  --eac-control-accent-on: var(--paper);
+  --eac-control-accent-ink: var(--brass);
+  --eac-control-danger: var(--crimson);
+  --eac-control-radius: var(--radius);
+
+  --eac-card-bg: var(--linen);
+  --eac-card-fg: var(--ink);
+
+  /* The reading layer (article.css) and the surface/dialog system. */
+  --eac-ink: var(--ink);
+  --eac-ink-muted: var(--ink-muted);
+  --eac-rule: var(--rule);
+  --eac-surface: var(--linen);
+  --eac-surface-bg: var(--linen);
+  --eac-accent: var(--brass);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-linen: var(--linen);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brass: var(--brass);
+  --color-curtain: var(--curtain);
+  --font-serif: var(--font-display);
+  --font-sans: var(--font-ui);
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+* { box-sizing: border-box; }
+
+html {
+  /* Anchors and the hero's slide-to-slide jumps, but never for someone who
+     has asked the OS for stillness. */
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brass); }
+a:hover { color: var(--crimson); }
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}

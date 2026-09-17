@@ -17,7 +17,7 @@ import { forbidden, getHubViewer } from "@/lib/hub-auth";
 export const dynamic = "force-dynamic";
 
 /** Sections this app knows how to render. Anything else is refused, not stored. */
-const KNOWN_SECTIONS = ["elkdonisFeed", "store"] as const;
+const KNOWN_SECTIONS = ["elkdonisFeed", "store", "blog"] as const;
 
 export async function PATCH(request: Request) {
   const viewer = await getHubViewer();
@@ -50,8 +50,12 @@ export async function PATCH(request: Request) {
   // Their public page renders from this, so it has to be rebuilt or the
   // member toggles a section on and sees no change.
   if (row?.slug) {
-    revalidatePath(`/artists/${row.slug}`);
-    revalidatePath(`/dealers/${row.slug}`);
+    for (const base of [`/artists/${row.slug}`, `/dealers/${row.slug}`]) {
+      revalidatePath(base);
+      // The shelf route too: turning writing off should take the section AND
+      // the page behind it out of the cache in one go.
+      revalidatePath(`${base}/writing`);
+    }
   }
 
   return Response.json({ ok: true, sections: patch });

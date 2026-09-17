@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@elkdonis/db";
 import { lastOccurrenceEnd } from "@elkdonis/utils";
-import { Badge } from "@/components/ui/badge";
 import { getThreadById } from "@/lib/data";
 import { formatDateTime, formatShortDate } from "@/lib/format";
+import { Badge } from "@elkdonis/primitives";
 
 interface AttendeesPageProps {
   params: Promise<{ id: string }>;

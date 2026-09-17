@@ -66,3 +66,70 @@ export function loadTemplateManifest(templateId: string): TemplateManifest {
 export function readTemplateFile(templateId: string, relativePath: string): string {
   return fs.readFileSync(path.join(templateDir(templateId), relativePath), "utf8");
 }
+
+// ─── dossier ─────────────────────────────────────────────────────────────────
+
+import {
+  DOSSIER_TEMPLATE_ID,
+  renderDossier,
+  bindPublishedDossier,
+  type DossierSectionHtml,
+  type RenderDossierOptions,
+} from "./dossier/render";
+import type { DossierProfileData } from "./dossier/types";
+
+/**
+ * Every section file of a template, keyed by its manifest `html` path.
+ *
+ * Not cached, deliberately: the manifest ships with the code, but the section
+ * HTML is what a designer edits, and caching it means a CSS-and-markup change
+ * needs a process restart to be seen. The read is a handful of small files.
+ */
+export function readTemplateSections(templateId: string): Record<string, string> {
+  const manifest = loadTemplateManifest(templateId);
+  const out: Record<string, string> = {};
+  for (const section of manifest.sections) {
+    out[section.html] = readTemplateFile(templateId, section.html);
+  }
+  return out;
+}
+
+/** Compose and bind a dossier straight from the template on disk. */
+export function renderDossierFromDisk(
+  data: DossierProfileData,
+  opts: RenderDossierOptions = {}
+): string {
+  const manifest = loadTemplateManifest(DOSSIER_TEMPLATE_ID);
+  const html: DossierSectionHtml = readTemplateSections(DOSSIER_TEMPLATE_ID);
+  return renderDossier(manifest, html, data, opts);
+}
+
+/** Bind a dossier published from Silex, using the manifest on disk. */
+export function bindPublishedDossierFromDisk(
+  publishedHtml: string,
+  data: DossierProfileData,
+  opts: RenderDossierOptions = {}
+): string {
+  const manifest = loadTemplateManifest(DOSSIER_TEMPLATE_ID);
+  return bindPublishedDossier(manifest, publishedHtml, data, opts);
+}
+
+/**
+ * The template's whole stylesheet: tokens first, then the sections in
+ * `cssOrder`. One reader for every host, rather than each app re-deriving the
+ * order from the manifest — which is how ArtDirect ended up owning the file
+ * frame that the template itself needed.
+ */
+export function readTemplateCss(templateId: string): string {
+  const manifest = loadTemplateManifest(templateId);
+  const dir = templateDir(templateId);
+  const parts: string[] = [];
+  if (manifest.tokens) {
+    parts.push(fs.readFileSync(path.resolve(dir, manifest.tokens), "utf8"));
+  }
+  const order =
+    manifest.cssOrder ??
+    manifest.sections.map((s) => s.css).filter((c): c is string => Boolean(c));
+  for (const rel of order) parts.push(readTemplateFile(templateId, rel));
+  return parts.join("\n\n");
+}

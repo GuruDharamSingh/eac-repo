@@ -1,16 +1,20 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { renderDossier } from "@elkdonis/cms-bindings/dossier";
+import { renderDossierFromDisk } from "@elkdonis/cms-bindings/node";
+import { visibleDossierSections } from "@elkdonis/cms-bindings/dossier";
 import {
   getDossierProfile,
+  getFullDossier,
   getDossierMeta,
   listDossierSlugs,
   hasVouched,
   isOadSteward,
+  dossierEditValues,
 } from "@/lib/oad";
 import { getCurrentUser } from "@/lib/session";
 import { DossierActions } from "@/components/oad/DossierActions";
 import { DossierActivity } from "@/components/oad/DossierActivity";
+import { DossierSidebar } from "@/components/oad/DossierSidebar";
 import { StandardProfile } from "@/components/oad/StandardProfile";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getProfileBySlug } from "@elkdonis/services";
@@ -42,12 +46,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DossierPage({ params }: Props) {
   const { slug } = await params;
-  const [profile, meta, user] = await Promise.all([
-    getDossierProfile(slug),
-    getDossierMeta(slug),
-    getCurrentUser(),
-  ]);
-  if (!profile || !meta) notFound();
+  const [meta, user] = await Promise.all([getDossierMeta(slug), getCurrentUser()]);
+  if (!meta) notFound();
+
+  // Their drafts are only ever unlocked by the viewer BEING them; there is no
+  // flag for it. See getAuthoredThreads.
+  const viewerId = user?.id;
+  const profile = await getFullDossier(slug, { viewerId });
+  if (!profile) notFound();
 
   const [steward, vouched] = await Promise.all([
     user ? isOadSteward(user.id) : Promise.resolve(false),
@@ -77,38 +83,71 @@ export default async function DossierPage({ params }: Props) {
       ? await getStoreShowcaseForUser(uid, { limit: 6 }).catch(() => null)
       : null;
   const useTemplate = layout !== "standard";
+  const isSelf = Boolean(identity?.userId && user?.id === identity.userId);
 
-  const html = useTemplate ? renderDossier(profile, { archiveName: "ArtDirect" }) : null;
+  // The nav and the file are rendered apart so the owner's sidebar can sit
+  // between them, on the folder — it is about the file, not part of it.
+  const navHtml = useTemplate
+    ? renderDossierFromDisk(profile, { navOnly: true, archiveName: "ArtDirect", indexHref: "/" })
+    : null;
+  const fileHtml = useTemplate
+    ? renderDossierFromDisk(profile, { includeNav: false, includeFolder: false })
+    : null;
+
+  // The owner's panel. Rendered on BOTH layouts, because switching between them
+  // is one of the things it does — offering it only on the dossier would make
+  // the plain page a one-way door.
+  const sidebar =
+    isSelf && identity ? (
+      <DossierSidebar
+        profileUserId={identity.userId}
+        slug={slug}
+        values={dossierEditValues(identity)}
+        sections={profile.sections ?? {}}
+        visibleSections={[...visibleDossierSections(profile)]}
+        layout={layout}
+        hasStore={hasStore}
+        marketplaceUrl={marketplaceUrl}
+        networkUrl={process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ?? "http://localhost:3007"}
+      />
+    ) : null;
 
   return (
     <>
       {/* The dossier template carries its own fixed look, so a person's palette
-          only reaches the standard page. Injected either way — harmless when
-          the template ignores it, and it still themes DossierActivity below. */}
+          only reaches the standard page. */}
       <ThemeStyle userId={identity?.userId ?? null} precedence="user" />
       {useTemplate ? (
         <>
           {/* eslint-disable-next-line @next/next/no-head-element */}
           <link rel="stylesheet" href="/api/silex/templates/dossier.css" />
-          <div dangerouslySetInnerHTML={{ __html: html! }} />
+          <div dangerouslySetInnerHTML={{ __html: navHtml! }} />
+          {/* Filed activity is rendered INSIDE the file by the template. It
+              used to be a React sibling of the sheet, sitting on the desk and
+              inheriting the file's near-black ink — about 1.07:1, so it was
+              present in the DOM and invisible on every dossier. */}
+          <div className="eac-dossier-folder">
+            <div dangerouslySetInnerHTML={{ __html: fileHtml! }} />
+          </div>
         </>
       ) : (
         identity && (
-          <StandardProfile
-            profile={identity}
-            isSelf={Boolean(identity.userId && user?.id === identity.userId)}
-            store={storeShowcase}
-            hasStore={hasStore}
-            storeSectionOn={storeSectionOn}
-            marketplaceUrl={marketplaceUrl}
-          />
+          <>
+            <StandardProfile
+              profile={identity}
+              isSelf={isSelf}
+              store={storeShowcase}
+              hasStore={hasStore}
+              storeSectionOn={storeSectionOn}
+              marketplaceUrl={marketplaceUrl}
+            />
+            {/* The standard layout has no equivalent section of its own yet. */}
+            <div style={{ paddingBottom: 64 }}>
+              <DossierActivity userId={meta.id} viewerId={user?.id} />
+            </div>
+          </>
         )
       )}
-      {/* Identity comes from the dossier template above; this is what they
-          have actually published across the network. meta.id is the user id. */}
-      <div style={{ paddingBottom: 64 }}>
-        <DossierActivity userId={meta.id} viewerId={user?.id} />
-      </div>
       <DossierActions
         slug={slug}
         signedIn={Boolean(user)}
@@ -119,6 +158,7 @@ export default async function DossierPage({ params }: Props) {
         alreadyVouched={vouched}
         loginUrl={`/login?redirect=/${slug}`}
       />
+      {sidebar}
     </>
   );
 }

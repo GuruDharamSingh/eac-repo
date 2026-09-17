@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@elkdonis/commerce/commerce.css";
 
 @source "../../../../packages/pipeline/src";
 @source "../../../../packages/chat/src";
@@ -30,11 +31,91 @@
 @import "@elkdonis/cms-ui/compose.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
+/* The shared controls — buttons, inputs, cards, tabs, select. Plain CSS driven
+   by --eac-control-* tokens, mapped to this site's palette below. Replaced the
+   17 shadcn copies that used to live in src/components/ui.
+
+   layer(components) is REQUIRED, not decoration. Tailwind v4 orders its layers
+   theme → base → components → utilities, and an UNLAYERED rule beats every
+   layered one no matter its specificity. Imported bare, this stylesheet would
+   overpower every utility class a caller passes in — `<Button className="text-
+   [#fdf5e6]/80">` would silently render in the default ink instead. Thirty call
+   sites in this app pass exactly that kind of override. Importing into the
+   components layer puts the library underneath utilities, which is where the
+   shadcn copies effectively sat. */
+@import "@elkdonis/primitives/primitives.css" layer(components);
+
+/* Page blocks — the section banner and the status badge on the feed pages.
+   Same layer reasoning as the primitives above. */
+@import "@elkdonis/blocks/blocks.css" layer(components);
 /* The same reading tokens as Tailwind utilities, so anything built AROUND a
    post (a feed strip, an author note) lines up with the prose inside it. */
 @import "@elkdonis/cms-ui/reading-theme.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   The shared controls, in Amrit Canada's palette.
+
+   Every token here is a hand-off: @elkdonis/primitives never reads --primary
+   itself, because this site stores it as a bare HSL triplet ("45 79% 52%")
+   that is only a valid colour once wrapped in hsl(). Doing that wrapping is
+   this file's job — it is the only place that knows the storage format.
+
+   --accent-ink is PINNED to a literal rather than left to the library default.
+   Saffron as ink on cream measures 1.76:1, so it cannot be used as link text
+   or as the focus ring; the library's default darkens it with color-mix to
+   4.54:1. But Lightning CSS compiles that default with a @supports guard whose
+   fallback is the RAW accent — so a browser without color-mix would silently
+   get 1.76:1 back, which is the exact bug the token exists to prevent.
+   #8a6d16 is that same 60% mix computed ahead of time: 4.54:1 on the cream
+   ground, 4.55:1 on the linen card, and no feature detection involved.
+   ========================================================================== */
+
+:root {
+  --eac-control-bg: hsl(var(--background));
+  --eac-control-fg: hsl(var(--foreground));
+  --eac-control-muted: hsl(var(--muted-foreground));
+  --eac-control-line: hsl(var(--border));
+  --eac-control-accent: hsl(var(--primary));
+  --eac-control-accent-on: hsl(var(--primary-foreground));
+  --eac-control-accent-ink: #8a6d16;   /* deep saffron — 4.54:1 on cream */
+  --eac-control-danger: hsl(var(--destructive));
+  --eac-control-radius: var(--radius);
+
+  --eac-card-bg: hsl(var(--card));
+  --eac-card-fg: hsl(var(--card-foreground));
+}
+
+/* ==========================================================================
+   @elkdonis/blocks, in Amrit Canada's palette.
+
+   --band is a GRADIENT, not a colour: the charcoal chrome behind the header,
+   the footer and every section banner has always been one, and the block sets
+   it with `background:` which takes an image just as happily as a colour. The
+   old .bg-header-footer class stays for the header and footer themselves.
+
+   --ok is mapped to the saffron primary rather than left green. On this site
+   "it's on" has always been said in saffron; green would be a new colour
+   introduced by a refactor, which is not what a refactor is for.
+   ========================================================================== */
+
+:root {
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  --eac-block-danger: hsl(var(--destructive));
+  --eac-block-ok: hsl(var(--primary));
+
+  --eac-block-band: linear-gradient(135deg, #36454f 0%, #2c3e50 100%);
+  --eac-block-band-fg: hsl(var(--background));
+
+  --eac-block-font-title: var(--font-cinzel), Georgia, serif;
+  --eac-block-radius: var(--radius);
+}
 
 /* ==========================================================================
    Amrit Canada palette — saffron, terracotta, cream, charcoal.
@@ -110,7 +191,16 @@
   --eac-kind-calendar-on: hsl(var(--background));
   --eac-kind-gallery: hsl(var(--terracotta-deep));
   --eac-kind-gallery-on: hsl(var(--background));
-  --eac-kind-post-on: hsl(var(--background));
+  /* Measured, not assumed. Cream on terracotta is 2.59:1 — it was failing
+     anywhere a post's colour is FILLED (the primary button on a writing
+     surface, and now the hub face's mark on hover). The charcoal that
+     --primary-foreground already carries is 5.14:1 on the same terracotta. */
+  --eac-kind-post-on: hsl(var(--primary-foreground));
+  /* Forum set no ink of its own, so it fell through to --eac-surface-on-accent
+     — that same charcoal — which is 2.58:1 on oxide, the opposite mistake.
+     Cream is 5.17:1 there. The two accents want opposite inks; neither can
+     use the shared default. */
+  --eac-kind-forum-on: hsl(var(--background));
   --eac-kind-compose: hsl(var(--foreground));
   --eac-kind-compose-on: hsl(var(--background));
   --eac-kind-board: hsl(var(--feed-yoga));
@@ -383,4 +473,20 @@ h4 {
   margin: 1.2rem 0;
   font-style: italic;
   color: hsl(var(--muted-foreground));
+}
+
+/* A guide's marketplace store, embedded on their about page. Themed onto the
+   site's shadcn tokens so the card reads as part of the page; the accent is
+   `primary`, not the saffron `accent`, which is a hover wash and far too pale
+   to carry white text or a focus ring. */
+.eac-commerce {
+  --pc-ink: hsl(var(--foreground));
+  --pc-ink-soft: hsl(var(--muted-foreground));
+  --pc-ink-faint: hsl(var(--muted-foreground));
+  --pc-line: hsl(var(--border));
+  --pc-mat: hsl(var(--muted));
+  --pc-surface: transparent;
+  --pc-accent: hsl(var(--primary));
+  --pc-on-accent: hsl(var(--primary-foreground));
+  --pc-radius: var(--radius);
 }

@@ -1,13 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+/*
+  dossier-classified — tokens.
+
+  ── The voice ───────────────────────────────────────────────────────────────
+
+  A private investigator's case file, not a Victorian broadsheet. The previous
+  pairing led with UnifrakturMaguntia (blackletter), which is the wrong genre:
+  blackletter reads as newspaper masthead and occult, while an investigation
+  file reads as typewriter carbon, ruled forms, ballpoint annotation and a
+  rubber stamp.
+
+  Three faces, each with one job:
+
+    --eac-dos-display    Playfair Display. The subject's name and the section
+                         headings. A high-contrast editorial serif — this is
+                         the "noir" half, and the only place the page is
+                         allowed to be beautiful rather than bureaucratic.
+    --eac-dos-typewriter Courier Prime. Everything a typist would have typed:
+                         labels, values, notes, captions, metadata.
+    --eac-dos-stamp-face Archivo Black. The status stamp and the case number,
+                         and nothing else. A stamp is ink pressed through a
+                         die, so it is heavy, tight and unapologetic.
+
+  ── The one rule that keeps being broken ────────────────────────────────────
+
+  Every colour here is measured against the surface it is used on. The old
+  stamp was `--eac-dos-stamp-red` at `opacity: .8`, which resolves to #a15f5d
+  on paper — 4.33:1, passing only because it happened to be large text. Opacity
+  is not a colour, so there is no faded variant here: where a lighter red is
+  wanted, --eac-dos-stamp-ghost is a real colour with a known ratio.
+
+  Measured against --eac-dos-paper (#f4efe4, L 0.866):
+
+    --eac-dos-ink          19.0:1
+    --eac-dos-ink-soft      6.5:1
+    --eac-dos-stamp-red     7.3:1
+    --eac-dos-ballpoint     9.0:1
+    --eac-dos-rule          1.8:1   hairlines only, never text
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Archivo+Black&display=swap');
 
 :root {
-  --eac-dos-bg-desk: #121413;
-  --eac-dos-bg-accent: #1e2220;
-  --eac-dos-manila: #e4cc9a;
-  --eac-dos-paper: #f7f1e3;
-  --eac-dos-ink: #1a1a1a;
+  /* ── Surfaces: desk → folder → sheet ─────────────────────────────────── */
+  /* The stack the old tokens declared and never built. --eac-dos-manila was
+     defined from the first commit and used by nothing; the folder is what
+     makes the sheet read as a FILE rather than a page with a dark margin. */
+  --eac-dos-bg-desk: #14120f;
+  --eac-dos-bg-accent: #1e1b16;
+  --eac-dos-manila: #d8bd8a;
+  --eac-dos-manila-shade: #c2a877;
+  --eac-dos-paper: #f4efe4;
+  --eac-dos-paper-shade: #e9e2d2;
+
+  /* ── Inks ────────────────────────────────────────────────────────────── */
+  --eac-dos-ink: #161310;
+  --eac-dos-ink-soft: #5b5347;
+  --eac-dos-rule: #b9ae99;
+  --eac-dos-rule-soft: #d5cbb6;
+  /* The second pen. A file that has been through someone's hands has two
+     inks in it — typed black and annotated blue. */
+  --eac-dos-ballpoint: #2f3f6b;
+  --eac-dos-redact: #14110d;
+
+  /* ── Stamps ──────────────────────────────────────────────────────────── */
+  --eac-dos-stamp-red: #8a2f2a;
+  --eac-dos-stamp-ghost: #b98a80;
+  --eac-dos-stamp-green: #3c5e45;
+
+  /* ── Faces ───────────────────────────────────────────────────────────── */
+  --eac-dos-display: 'Playfair Display', 'Libre Caslon Text', Georgia, serif;
   --eac-dos-typewriter: 'Courier Prime', 'Courier New', Courier, monospace;
-  --eac-dos-gothic: 'UnifrakturMaguntia', 'Old Standard TT', serif;
-  --eac-dos-stamp-red: #8c3b3b;
-  --eac-dos-border: #1a1a1a;
+  --eac-dos-stamp-face: 'Archivo Black', 'Helvetica Neue', Impact, sans-serif;
+  /* Retained so Silex pages published against the old token set keep a face
+     rather than falling back to the browser default. Do not use in new CSS. */
+  --eac-dos-gothic: var(--eac-dos-display);
+
+  /* ── Measure ─────────────────────────────────────────────────────────── */
+  --eac-dos-sheet-max: 940px;
+  --eac-dos-gap: 2.75rem;
+  --eac-dos-border: var(--eac-dos-ink);
 }

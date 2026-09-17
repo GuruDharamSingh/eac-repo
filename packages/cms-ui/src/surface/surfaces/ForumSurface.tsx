@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import type { SurfaceAction, SurfaceForum, SurfaceForumThread } from "../types";
+import type {
+  SurfaceAction,
+  SurfaceDescriptor,
+  SurfaceForum,
+  SurfaceForumFeed,
+  SurfaceForumThread,
+} from "../types";
 import { useLayer, useSurface } from "../context";
 import { SurfaceFrame, SurfaceSection, SurfaceSkeleton } from "../SurfaceShell";
 import { SurfaceCard } from "../SurfaceCard";
@@ -100,6 +106,16 @@ export function ForumSurface() {
   if (forum?.composeHref) actions.push({ label: "Start a topic", href: forum.composeHref });
   if (forum) actions.push({ label: "Open the forum", primary: true, href: forum.href });
 
+  const openThread = React.useCallback(
+    (t: SurfaceForumThread) =>
+      push({
+        type: "thread",
+        id: t.id,
+        preview: { title: t.title, kind: t.kind, feedName: t.feedName },
+      }),
+    [push]
+  );
+
   const unread = forum?.unreadCount ?? 0;
 
   return (
@@ -154,10 +170,19 @@ export function ForumSurface() {
                     className={`eac-forum-feed${f.unreadCount ? " is-unread" : ""}`}
                     style={f.accent ? ({ ["--eac-forum-feed" as string]: f.accent } as React.CSSProperties) : undefined}
                   >
-                    <a className="eac-forum-feed-name" href={f.href}>
+                    {/* Opens IN the popup, the way a latest row does, rather
+                        than navigating to the board. The full board is still
+                        one control away, inside the section. */}
+                    <button
+                      type="button"
+                      className="eac-forum-feed-name"
+                      onClick={() =>
+                        push({ type: "forumFeed", slug: f.slug, name: f.name, href: f.href })
+                      }
+                    >
                       {f.unreadCount ? <span className="eac-forum-dot" aria-label="unread" /> : null}
                       {f.name}
-                    </a>
+                    </button>
                     <span className="eac-forum-feed-count">
                       {f.topicCount}
                       {f.unreadCount ? <b> · {f.unreadCount} new</b> : null}
@@ -174,7 +199,7 @@ export function ForumSurface() {
             ) : (
               <ul className="eac-forum-rows">
                 {forum.recent.map((t) => (
-                  <ThreadRow key={t.id} t={t} onOpen={(x) => push({ type: "thread", id: x.id, preview: { title: x.title, kind: x.kind, feedName: x.feedName } })} />
+                  <ThreadRow key={t.id} t={t} onOpen={openThread} />
                 ))}
               </ul>
             )}
@@ -196,10 +221,14 @@ export function ForumMini({
   recent,
   feeds,
 }: {
-  recent: Array<{ title: string; kind?: string; unread?: boolean | null }>;
+  recent: Array<{ title: string; kind?: string; unread?: boolean | null; at?: string | null }>;
   feeds?: Array<{ name: string; unreadCount?: number | null }>;
 }) {
-  const rows = recent.slice(0, 3);
+  // Six, not three. The face had three lines and a lot of card under them —
+  // and the thing a forum tile is for is seeing what has been said. The
+  // preview now takes the row's slack (see .eac-face-preview), so there is
+  // room for the same list the popup opens with rather than a sample of it.
+  const rows = recent.slice(0, 6);
   if (rows.length === 0) return <span className="eac-preview-empty">Nothing posted yet</span>;
   return (
     <div className="eac-forum-mini" aria-hidden>
@@ -207,6 +236,7 @@ export function ForumMini({
         <span key={i} className={`eac-forum-mini-row${r.unread ? " is-unread" : ""}`} data-kind={r.kind ?? "post"}>
           <span className="eac-forum-mini-glyph">{kindMeta(r.kind).glyph}</span>
           <span className="eac-forum-mini-title">{r.title}</span>
+          {r.at && <span className="eac-forum-mini-when">{ago(r.at)}</span>}
         </span>
       ))}
       {feeds && feeds.length > 0 && (
@@ -266,7 +296,115 @@ export function ForumFace({
       title={unread > 0 ? `${unread} new` : forum.title}
       blurb={blurb}
       surface={{ type: "forum" }}
-      preview={<ForumMini recent={forum.recent} feeds={forum.feeds} />}
+      // The sections, in the top band. They were a wrapped line at the FOOT
+      // of the preview, under the latest list, while the band above held a
+      // decorative medallion and a "+" — the two corners of the card doing
+      // nothing while the one piece of orientation a board tile owes you
+      // ("which rooms are there") sat at the bottom.
+      tools={
+        forum.feeds.length > 0 ? (
+          <span className="eac-forum-face-feeds">
+            {forum.feeds.slice(0, 4).map((f) => (
+              <span
+                key={f.slug}
+                className={`eac-forum-face-feed${f.unreadCount ? " is-unread" : ""}`}
+              >
+                {f.name}
+              </span>
+            ))}
+          </span>
+        ) : undefined
+      }
+      preview={<ForumMini recent={forum.recent} />}
     />
+  );
+}
+
+
+// ── one section, as its own layer ────────────────────────────────────────────
+
+/**
+ * The threads in one section of the board.
+ *
+ * A layer rather than a mode of the forum surface. The difference the user
+ * sees is the back control: a pushed layer gets the masthead's "‹ back", the
+ * same one a thread gets, in the same place — where the panel-local link this
+ * replaced was a second, differently-shaped way to go back one step.
+ *
+ * `listFeed` is optional on the connectors. Without it this falls back to the
+ * board snapshot's `recent`, filtered — honest for a small board, and the
+ * empty state says which case you are in rather than implying a quiet section
+ * is an empty one.
+ */
+export function ForumFeedSurface({
+  descriptor,
+}: {
+  descriptor: Extract<SurfaceDescriptor, { type: "forumFeed" }>;
+}) {
+  const { connectors, push } = useSurface();
+  const [threads, setThreads] = React.useState<SurfaceForumThread[] | null>(null);
+  const [state, setState] = React.useState<"loading" | "ready" | "error">("loading");
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const listFeed = connectors.forum?.listFeed;
+    if (!listFeed) {
+      setState("ready");
+      return;
+    }
+    setState("loading");
+    listFeed(descriptor.slug)
+      .then((rows) => {
+        if (cancelled) return;
+        setThreads(rows);
+        setState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectors.forum, descriptor.slug]);
+
+  const openThread = React.useCallback(
+    (t: SurfaceForumThread) =>
+      push({
+        type: "thread",
+        id: t.id,
+        preview: { title: t.title, kind: t.kind, feedName: t.feedName },
+      }),
+    [push]
+  );
+
+  return (
+    <SurfaceFrame
+      kind="forum"
+      title={descriptor.name}
+      kicker="Section"
+      actions={[{ label: "Open on the forum", href: descriptor.href }]}
+      status={
+        state === "ready" && threads
+          ? `${threads.length} ${threads.length === 1 ? "topic" : "topics"}`
+          : null
+      }
+    >
+      {state === "loading" && <SurfaceSkeleton block />}
+      {state === "error" && <p className="eac-surface-empty">Could not load this section.</p>}
+      {state === "ready" &&
+        (threads && threads.length > 0 ? (
+          <ul className="eac-forum-rows">
+            {threads.map((t) => (
+              <ThreadRow key={t.id} t={t} onOpen={openThread} />
+            ))}
+          </ul>
+        ) : (
+          <p className="eac-surface-empty">
+            {connectors.forum?.listFeed
+              ? "Nothing in this section yet."
+              : "Open it on the forum to see what is in here."}
+          </p>
+        ))}
+    </SurfaceFrame>
   );
 }

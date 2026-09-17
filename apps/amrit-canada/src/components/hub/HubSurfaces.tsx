@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   SurfaceProvider,
   defaultThreadToAnswers,
@@ -14,6 +15,7 @@ import { saveContentAction } from "@/lib/cms/actions";
 import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
+import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
 
 const TIME_ZONE = "America/Toronto";
@@ -78,6 +80,10 @@ export function HubSurfaces({
         // until the shared surfaces were built; the routes behind them are
         // /api/hub/documents and /api/hub/ideas.
         documents: true,
+        // What a thread holds: the gathering and the document written in it,
+        // the terms defined out of that and the board it moved, as one
+        // occasion rather than four tiles. See migration 131.
+        gather: true,
         ideas: { href: "/forum/ideas" },
 
         // The network dictionary. Defining a term while writing creates its
@@ -153,6 +159,11 @@ export function HubSurfaces({
       }),
       custom: {
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
+        whiteboard: () => (
+          <WhiteboardSurface
+            onSaveError={() => toast.error("Couldn't save the whiteboard.")}
+          />
+        ),
       },
     }),
     [signedIn, canEdit, displayName, feeds, talkBaseUrl, router]

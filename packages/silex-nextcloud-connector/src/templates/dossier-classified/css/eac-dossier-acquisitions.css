@@ -1,0 +1,49 @@
+/*
+  Acquisitions — work that is for sale.
+
+  A window onto the person's marketplace store, not a checkout: the dossier
+  lists what is listed and sends the visitor to the marketplace to buy. Shown
+  only when they have an active store AND have switched the section on
+  (`users.profile_sections.store`, migration 105) — the same flag every org
+  site already reads, so a person turns their store on once.
+
+  Prices are stated plainly. A "classified" treatment that hides the price
+  would be the aesthetic eating the function.
+*/
+
+.eac-dossier-acquisitions { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-store-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-store-name {
+  font-family: var(--eac-dos-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.eac-dos-price {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--eac-dos-typewriter);
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-price-sold {
+  color: var(--eac-dos-stamp-red);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}

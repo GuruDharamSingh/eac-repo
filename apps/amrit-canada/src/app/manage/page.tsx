@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getStandingMeetingId, listOrgFeeds } from "@elkdonis/services";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ContentRowActions } from "@/components/manage/content-row-actions";
 import { getAllThreadsForOrg, getAttendanceCount, getCycleStatus } from "@/lib/data";
 import { formatShortDate, formatTime } from "@/lib/format";
 import { siteConfig } from "@/config/site";
+import { Button, Badge } from "@elkdonis/primitives";
 
 /**
  * The editorial dashboard.

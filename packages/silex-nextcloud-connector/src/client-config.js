@@ -1002,6 +1002,188 @@ function openBlocksPanelIfSimpleMode(editor) {
   }
 }
 
+/* ---- Vendored GrapesJS plugins ----------------------------------------- */
+
+const VENDOR_URL = "/eac-vendor/";
+
+/**
+ * Third-party GrapesJS plugins the image ships (packages/silex/Dockerfile),
+ * served as UMD bundles by the connector's editorAssetsMiddleware.
+ *
+ * `global` is the window key each UMD wrapper defines — always the full
+ * package name, scope included ("@silexlabs/grapesjs-ui-suggest-classes"),
+ * which is why it is recorded rather than derived from `id`.
+ *
+ * ── Why so few are `on` by default ─────────────────────────────────────────
+ * This editor already has hand-built, token-styled blocks for Columns, Hero,
+ * Feature Split, CTA Band, Gallery Grid, Pricing Tiers, FAQ and Footer. Most
+ * generic GrapesJS block plugins would add a SECOND way to make a row, styled
+ * by the plugin's own inline CSS rather than the EAC tokens — block-panel
+ * clutter plus a design-system leak. So the default set is only what adds a
+ * capability nothing here has, and the rest are opt-in so they can be judged
+ * in the real editor:
+ *
+ *   ?plugins=grapesjs-project-manager      turn one on for this session
+ *   ?plugins=-grapesjs-tabs                turn a default off
+ *   ?plugins=a,b,-c                        combine
+ *
+ * Opt-in is a URL parameter rather than a setting because the question these
+ * answer is "is this worth keeping", and that is answered by loading a real
+ * project once — not by a stored preference nobody revisits.
+ *
+ * Deliberately absent: @silexlabs/grapesjs-ui-suggest-classes. It is the
+ * obvious pick for class autocomplete and npm deprecates it — Silex Labs
+ * replaced it with grapesjs-advanced-selector, which Silex 3.9 already
+ * bundles and loads. That feature is present; it just isn't ours to add.
+ */
+const VENDOR_PLUGINS = [
+  {
+    id: "grapesjs-tabs",
+    global: "grapesjs-tabs",
+    on: true,
+    // A real tabs component. The nearest thing here is the FAQ accordion,
+    // which is a different interaction, so this duplicates nothing.
+  },
+  {
+    id: "grapesjs-rte-extensions",
+    global: "grapesjs-rte-extensions",
+    on: false,
+    // Extends the rich-text toolbar. Off by default because it replaces RTE
+    // actions Silex configures itself; worth a look, not worth a surprise.
+  },
+  {
+    id: "grapesjs-project-manager",
+    global: "grapesjs-project-manager",
+    on: false,
+    // The closest thing to a "layout chooser": a thumbnailed project/template
+    // picker. OFF, and it may have to stay off — it brings its OWN page and
+    // storage management, and this editor's pages and storage are Silex's,
+    // backed by the Nextcloud connector. Two page managers over one project
+    // is the conflict to watch for when evaluating it.
+  },
+  {
+    id: "grapesjs-blocks-flexbox",
+    global: "grapesjs-blocks-flexbox",
+    on: false,
+    // A flexbox row block — i.e. a fourth way to make Columns.
+  },
+  {
+    id: "grapesjs-blocks-table",
+    global: "grapesjs-blocks-table",
+    on: false,
+    // Table blocks. Little use on a web page; the reason it is here is email,
+    // where tables are still the only reliable layout primitive.
+  },
+  {
+    id: "grapesjs-plugin-export",
+    global: "grapesjs-plugin-export",
+    on: false,
+    // Download the project as a ZIP. Silex publishes to Nextcloud instead, so
+    // this is an escape hatch rather than a workflow.
+  },
+  {
+    id: "grapesjs-preset-newsletter",
+    global: "grapesjs-preset-newsletter",
+    on: false,
+    destructive: true,
+    // GrapesJS's email preset: table layouts, inline-CSS export, ~600px.
+  },
+  {
+    id: "grapesjs-mjml",
+    global: "grapesjs-mjml",
+    on: false,
+    destructive: true,
+    // MJML's own component model — <mj-section> etc, NOT HTML.
+  },
+];
+
+/** Parse `?plugins=a,b,-c` into { enable:Set, disable:Set }. */
+function requestedVendorPlugins() {
+  const enable = new Set();
+  const disable = new Set();
+  try {
+    const raw = new URLSearchParams(window.location.search).get("plugins");
+    if (!raw) return { enable, disable };
+    for (const part of raw.split(",").map((x) => x.trim()).filter(Boolean)) {
+      if (part.startsWith("-")) disable.add(part.slice(1));
+      else enable.add(part);
+    }
+  } catch (_) { /* ignore */ }
+  return { enable, disable };
+}
+
+/** Load one UMD bundle via <script>. Resolves to the plugin fn, or null. */
+function loadVendorScript(entry) {
+  return new Promise((resolve) => {
+    const existing = window[entry.global];
+    if (existing) return resolve(existing.default || existing);
+
+    const el = document.createElement("script");
+    el.src = sameOriginUrl(`${VENDOR_URL}${entry.id}.js`) || `${VENDOR_URL}${entry.id}.js`;
+    el.async = false;
+    el.onload = () => {
+      const mod = window[entry.global];
+      if (!mod) {
+        console.warn("[eac-client-config] vendor plugin loaded but global missing", entry);
+        return resolve(null);
+      }
+      // grapesjs-cli builds from ESM, so the UMD export is usually { default }.
+      resolve(mod.default || mod);
+    };
+    el.onerror = () => {
+      // A 404 here is the normal signal that this image predates the entry —
+      // not a reason to stop booting the editor.
+      console.warn("[eac-client-config] vendor plugin unavailable", entry.id);
+      resolve(null);
+    };
+    document.head.appendChild(el);
+  });
+}
+
+/**
+ * Resolve every vendored plugin that should run, as GrapesJS plugin functions.
+ *
+ * Asks the server which bundles this image actually has before injecting any
+ * <script>, so a stale image produces one clean skip rather than a console
+ * full of 404s.
+ */
+async function loadVendorPlugins() {
+  let available = null;
+  try {
+    const res = await fetch(VENDOR_URL, { headers: { Accept: "application/json" } });
+    if (res.ok) available = new Set((await res.json()).plugins || []);
+  } catch (_) {
+    // No index (older image): fall through and let each <script> decide.
+  }
+
+  const { enable, disable } = requestedVendorPlugins();
+  const wanted = VENDOR_PLUGINS.filter((entry) => {
+    if (disable.has(entry.id)) return false;
+    if (enable.has(entry.id)) return true;
+    return entry.on;
+  }).filter((entry) => !available || available.has(entry.id));
+
+  for (const entry of wanted) {
+    if (entry.destructive && enable.has(entry.id)) {
+      console.warn(
+        `[eac-client-config] ${entry.id} changes what a document IS (email, not a web page). ` +
+        "Saving a website project with it loaded can rewrite that project. Use a scratch project."
+      );
+    }
+  }
+
+  const loaded = await Promise.all(wanted.map(loadVendorScript));
+  const plugins = [];
+  for (let i = 0; i < wanted.length; i += 1) {
+    if (typeof loaded[i] === "function") plugins.push({ id: wanted[i].id, fn: loaded[i] });
+  }
+  console.info("[eac-client-config] vendor plugins", {
+    available: available ? [...available] : "unknown",
+    loaded: plugins.map((p) => p.id),
+  });
+  return plugins;
+}
+
 /* ---- Open on the requested page ---------------------------------------- */
 
 /**
@@ -1440,6 +1622,7 @@ export default async function eacClientConfig(config /*, _options */) {
     initialPens,
     initialHubTemplate,
     initialHubCss,
+    initialVendorPlugins,
   ] = await Promise.all([
     loadComponents(),
     loadWorkshopTemplate(),
@@ -1453,6 +1636,10 @@ export default async function eacClientConfig(config /*, _options */) {
     loadPens(),
     loadHubTemplate(),
     loadHubCss(),
+    // Resolved HERE, not in the grapesjs:start hook: GrapesJS reads
+    // `plugins` synchronously at init, so every plugin function has to exist
+    // by the time that hook returns.
+    loadVendorPlugins(),
   ]);
 
   const initialSlotBlocks = slotBlocksFromCatalogue(initialComponents);
@@ -1502,6 +1689,11 @@ export default async function eacClientConfig(config /*, _options */) {
     // GrapesJS runs each function in `plugins` during init, before loading
     // project data. Registering types here makes them available in time.
     const plugins = Array.isArray(gjs.plugins) ? gjs.plugins.slice() : [];
+
+    // Vendored plugins first: they register component types and RTE actions
+    // that ours may build on, and GrapesJS runs this array in order.
+    for (const vendor of initialVendorPlugins) plugins.push(vendor.fn);
+
     plugins.push(function eacTypesPlugin(editor) {
       installTypesOnEditor(editor);
       registerWorkshopTypes(editor, initialWorkshopTemplate);

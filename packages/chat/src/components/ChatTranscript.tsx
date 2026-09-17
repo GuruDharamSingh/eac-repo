@@ -121,49 +121,77 @@ export function ChatTranscript({
           const el = e.currentTarget;
           atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
         }}
-        className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1"
+        className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1"
       >
         {messages.length === 0 ? (
           <p className="py-6 text-center text-xs text-muted-foreground">{emptyHint}</p>
         ) : (
-          messages.map((m) =>
-            m.isSystem ? (
-              <p key={m.id} className="py-0.5 text-center text-[11px] text-muted-foreground">
-                {m.message}
-              </p>
-            ) : (
-              <div key={m.id} className={cn("flex flex-col", m.own && "items-end")}>
+          messages.map((m, i) => {
+            if (m.isSystem) {
+              return (
+                <p key={m.id} className="text-center text-[11px] text-muted-foreground">
+                  {m.message}
+                </p>
+              );
+            }
+
+            // A short message is ONE line: name, text and time all inline.
+            //
+            // The name used to sit on its own line above every message and the
+            // time on its own line below, so a three-word message cost three
+            // lines and a card-sized transcript held four of them. The name is
+            // now a prefix, and only on the first message of a run by the same
+            // person — a back-and-forth repeats two names down the whole
+            // column otherwise.
+            //
+            // Your own messages carry no name at all: they are right-aligned
+            // and in the accent colour, which already says whose they are.
+            // (The name you post under is still shown, once, by the "Posting
+            // as" control under the composer — that was the other reason it
+            // was on every line.)
+            const previous = messages[i - 1];
+            const showName =
+              !m.own && (!previous || previous.isSystem || previous.authorName !== m.authorName);
+
+            return (
+              <div key={m.id} className={cn("flex", m.own ? "justify-end" : "justify-start")}>
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                    "max-w-[88%] rounded-md px-2 py-1 text-sm leading-snug",
                     m.own ? "bg-primary text-primary-foreground" : "bg-muted"
                   )}
                 >
-                  {/* The name goes on every message, the viewer's own
-                      included: the name a member posts under is settable, so
-                      seeing it on your own lines is how you know what the room
-                      sees. */}
-                  <p className="mb-0.5 text-xs font-medium opacity-80">{m.authorName}</p>
-                  <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                  {/* One interpolation, not name-then-colon: two adjacent
+                      children make React emit a comment node between them,
+                      which lands in the middle of the name when the line is
+                      copied or read aloud. */}
+                  {showName && (
+                    <span className="mr-1 font-medium opacity-80">{`${m.authorName}:`}</span>
+                  )}
+                  <span className="whitespace-pre-wrap break-words">{m.message}</span>
+                  {/* Inline and last, so it fills the gap at the end of the
+                      line instead of claiming one of its own. opacity-80 is
+                      the floor that still measures 4.9:1 on the accent
+                      bubble. */}
+                  <time
+                    className="ml-1.5 text-[10px] opacity-80"
+                    dateTime={m.at}
+                    title={new Date(m.at).toLocaleString("en-CA")}
+                  >
+                    {new Date(m.at).toLocaleTimeString("en-CA", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </time>
                 </div>
-                <time
-                  className="mt-0.5 text-[10px] text-muted-foreground"
-                  dateTime={m.at}
-                  title={new Date(m.at).toLocaleString("en-CA")}
-                >
-                  {new Date(m.at).toLocaleTimeString("en-CA", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </time>
               </div>
-            )
-          )
+            );
+          })
         )}
       </div>
 
       {canPost && (
-        <div className="mt-3 shrink-0">
+        <div className="mt-2 shrink-0">
           {identity && (
             <div className="mb-1.5">
               <ChatIdentity identity={identity} endpoint={identityEndpoint} />

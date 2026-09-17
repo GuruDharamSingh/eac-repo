@@ -1,53 +1,174 @@
 {
   "id": "dossier-classified",
-  "name": "Classified Artist Dossier",
-  "version": "0.1.0",
+  "name": "Artist Dossier",
+  "version": "0.3.0",
   "category": "EAC Dossier Template",
-  "description": "A utilitarian, classified file structure for artist profiles.",
+  "description": "A private investigator's case file as an artist's network profile. Editorial serif over typewriter, a manila file on a desk, and the person's real published work \u2014 writing, appearances, galleries, store \u2014 filed inside it.",
   "tokens": "../../tokens/dossier-classified.css",
+  "context": "toDossierContext",
+  "notes": "v0.3 moved this template onto the declarative binding engine. The section HTML is now the only place the markup lives; there are no string builders. Display logic \u2014 'Exhibit C', '18 plates', upcoming vs past, sold beats price \u2014 is in toDossierContext (@elkdonis/cms-bindings/dossier), because the engine's contract is that the manifest declares wiring and nothing conditional. Data is users + org_profiles + threads + user_galleries + store (migrations 084/086). Sections carrying `profileSection` render only when the person has switched that key on in users.profile_sections (migration 105) \u2014 the same flag every org site reads, so a person turns a section on once for the whole network.",
   "cssOrder": [
+    "css/eac-dossier-chrome.css",
     "css/eac-dossier-nav.css",
     "css/eac-dossier-identity.css",
     "css/eac-dossier-operations.css",
+    "css/eac-dossier-dispatches.css",
+    "css/eac-dossier-movements.css",
+    "css/eac-dossier-exhibits.css",
+    "css/eac-dossier-acquisitions.css",
+    "css/eac-dossier-record.css",
     "css/eac-dossier-intelligence.css",
     "css/eac-dossier-network.css",
-    "css/eac-dossier-funds.css"
+    "css/eac-dossier-channels.css",
+    "css/eac-dossier-funds.css",
+    "css/eac-dossier-activity.css"
   ],
   "sections": [
     {
       "id": "eac-dossier-nav",
-      "label": "Dossier Nav",
+      "label": "Archive nav",
       "html": "html/eac-dossier-nav.html",
       "css": "css/eac-dossier-nav.css",
       "required": true,
       "repeatable": false,
       "defaultVisible": true,
       "cmsFields": [],
-      "traits": ["archiveName", "placeholderText"],
-      "notes": "Global navigation for the archive network."
+      "traits": [
+        "archiveName",
+        "indexAction",
+        "indexHref"
+      ],
+      "bindings": {
+        "archiveName": {
+          "kind": "text",
+          "from": "archive.name"
+        },
+        "indexHref": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "archive.indexHref"
+        },
+        "indexAction": {
+          "kind": "attr",
+          "attr": "action",
+          "from": "archive.indexHref"
+        }
+      },
+      "notes": "Sticky bar above the file. The search is a real GET form to the directory index; in v0.1 it was an input with no form, no name and no handler.",
+      "wizard": {
+        "skip": true
+      }
     },
     {
       "id": "eac-dossier-identity",
-      "label": "Subject Identity",
+      "label": "Subject identity",
       "html": "html/eac-dossier-identity.html",
       "css": "css/eac-dossier-identity.css",
       "required": true,
       "repeatable": false,
       "defaultVisible": true,
       "cmsFields": [
-        "artist_profiles.display_name",
-        "artist_profiles.occupation",
-        "artist_profiles.location",
-        "artist_profiles.dossier_status",
-        "artist_profiles.dossier_notes",
-        "artist_profiles.photo_url"
+        "users.display_name",
+        "users.headline",
+        "users.city",
+        "users.region",
+        "users.country",
+        "users.bio",
+        "users.avatar_url",
+        "users.claim_status",
+        "users.verified",
+        "users.oad_dossier.location",
+        "users.oad_dossier.dossier_status"
       ],
-      "traits": ["aliasName", "occupation", "location", "status", "bioNotes", "photoUrl"],
-      "notes": "Header with paperclip photo and basic metadata."
+      "traits": [
+        "aliasName",
+        "bioBlock",
+        "bioNotes",
+        "contactBlock",
+        "contactHref",
+        "fileStatus",
+        "location",
+        "noPhoto",
+        "occupation",
+        "photoUrl",
+        "stampLabel"
+      ],
+      "bindings": {
+        "stampLabel": [
+          {
+            "kind": "text",
+            "from": "subject.stampLabel"
+          },
+          {
+            "kind": "attr",
+            "attr": "data-state",
+            "from": "subject.stampState"
+          }
+        ],
+        "photoUrl": [
+          {
+            "kind": "attr",
+            "attr": "src",
+            "from": "subject.photoUrl",
+            "omitWhenEmpty": true
+          },
+          {
+            "kind": "attr",
+            "attr": "alt",
+            "from": "subject.photoAlt"
+          }
+        ],
+        "noPhoto": {
+          "kind": "show",
+          "from": "subject.photoUrl",
+          "unless": true
+        },
+        "aliasName": {
+          "kind": "text",
+          "from": "subject.name"
+        },
+        "occupation": {
+          "kind": "text",
+          "from": "subject.occupation",
+          "omitWhenEmpty": true
+        },
+        "location": {
+          "kind": "text",
+          "from": "subject.location",
+          "omitWhenEmpty": true
+        },
+        "fileStatus": {
+          "kind": "text",
+          "from": "subject.fileStatus",
+          "omitWhenEmpty": true
+        },
+        "bioBlock": {
+          "kind": "show",
+          "from": "subject.bioHtml"
+        },
+        "bioNotes": {
+          "kind": "html",
+          "from": "subject.bioHtml"
+        },
+        "contactBlock": {
+          "kind": "show",
+          "from": "subject.contactHref"
+        },
+        "contactHref": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "subject.contactHref"
+        }
+      },
+      "notes": "Portrait, name, the form rows and the notes. An absent occupation or location is REMOVED rather than filled with an em-dash, leaving the row's ruled line \u2014 across the live directory neither field has ever been filled in, and v0.1 printed '\u2014' and the words 'Location withheld' on every page as a result.",
+      "wizard": {
+        "label": "Who you are",
+        "description": "Name, what you do, where, and the note that introduces you."
+      }
     },
     {
       "id": "eac-dossier-operations",
-      "label": "Known Operations",
+      "label": "Known work",
       "html": "html/eac-dossier-operations.html",
       "css": "css/eac-dossier-operations.css",
       "required": false,
@@ -55,17 +176,507 @@
       "defaultVisible": true,
       "omitWhenEmpty": true,
       "cmsFields": [
-        "artist_profiles.known_operations[].title",
-        "artist_profiles.known_operations[].date",
-        "artist_profiles.known_operations[].details",
-        "artist_profiles.known_operations[].image_url"
+        "users.portfolio[].url",
+        "users.portfolio[].title",
+        "users.oad_dossier.operations[].title",
+        "users.oad_dossier.operations[].date",
+        "users.oad_dossier.operations[].details",
+        "users.oad_dossier.operations[].image_url"
       ],
-      "traits": ["operationsList"],
-      "notes": "JSONB array of recent projects or artifacts. Omit if none."
+      "traits": [
+        "workCount",
+        "workList"
+      ],
+      "bindings": {
+        "workCount": {
+          "kind": "text",
+          "from": "work.countLabel"
+        },
+        "workList": {
+          "kind": "list",
+          "from": "work.items",
+          "item": {
+            "platePlateHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.plateHref",
+              "omitWhenEmpty": true
+            },
+            "plateImage": [
+              {
+                "kind": "attr",
+                "attr": "src",
+                "from": "item.imageUrl",
+                "omitWhenEmpty": true
+              },
+              {
+                "kind": "attr",
+                "attr": "alt",
+                "from": "item.title"
+              }
+            ],
+            "plateRef": {
+              "kind": "text",
+              "from": "item.ref"
+            },
+            "plateTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "plateNote": {
+              "kind": "text",
+              "from": "item.note",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "notes": "The plate wall. Falls back to users.portfolio when no dossier-specific work is written. Thumbnails are grayscale; each links to its full-colour plate in the lightbox section.",
+      "wizard": {
+        "label": "Your work",
+        "description": "The pieces on the wall of the file."
+      }
+    },
+    {
+      "id": "eac-dossier-dispatches",
+      "label": "Dispatches (their writing)",
+      "html": "html/eac-dossier-dispatches.html",
+      "css": "css/eac-dossier-dispatches.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "profileSection": "dispatches",
+      "cmsFields": [
+        "threads.title",
+        "threads.slug",
+        "threads.excerpt",
+        "threads.published_at",
+        "threads.metadata.coverImageUrl",
+        "threads.kind",
+        "threads.org_id"
+      ],
+      "traits": [
+        "dispatchCount",
+        "dispatchList",
+        "leadBlock",
+        "leadCover",
+        "leadExcerpt",
+        "leadFlag",
+        "leadHref",
+        "leadMeta",
+        "leadTitle"
+      ],
+      "bindings": {
+        "dispatchCount": {
+          "kind": "text",
+          "from": "dispatches.countLabel"
+        },
+        "leadBlock": [
+          {
+            "kind": "show",
+            "from": "dispatches.lead"
+          },
+          {
+            "kind": "class",
+            "class": "eac-dos-lead-nocover",
+            "from": "dispatches.leadNoCover"
+          }
+        ],
+        "leadCover": {
+          "kind": "attr",
+          "attr": "src",
+          "from": "dispatches.lead.coverImageUrl",
+          "omitWhenEmpty": true
+        },
+        "leadTitle": {
+          "kind": "text",
+          "from": "dispatches.lead.title"
+        },
+        "leadHref": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "dispatches.lead.href"
+        },
+        "leadFlag": {
+          "kind": "text",
+          "from": "dispatches.lead.flag",
+          "omitWhenEmpty": true
+        },
+        "leadExcerpt": {
+          "kind": "text",
+          "from": "dispatches.lead.excerpt",
+          "omitWhenEmpty": true
+        },
+        "leadMeta": {
+          "kind": "text",
+          "from": "dispatches.lead.meta",
+          "omitWhenEmpty": true
+        },
+        "dispatchList": {
+          "kind": "list",
+          "from": "dispatches.rest",
+          "item": {
+            "rowTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "rowHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "rowFlag": {
+              "kind": "text",
+              "from": "item.flag",
+              "omitWhenEmpty": true
+            },
+            "rowExcerpt": {
+              "kind": "text",
+              "from": "item.excerpt",
+              "omitWhenEmpty": true
+            },
+            "rowMeta": {
+              "kind": "text",
+              "from": "item.meta",
+              "omitWhenEmpty": true
+            },
+            "rowDate": {
+              "kind": "text",
+              "from": "item.date",
+              "omitWhenEmpty": true
+            }
+          },
+          "whenEmpty": "remove"
+        }
+      },
+      "notes": "Their blog: threads of kind 'post' and 'writing' they authored anywhere on the network, newest first, the most recent as a lead item. Read-only here \u2014 edited where it was filed.",
+      "wizard": {
+        "skip": true
+      }
+    },
+    {
+      "id": "eac-dossier-movements",
+      "label": "Movements (their events)",
+      "html": "html/eac-dossier-movements.html",
+      "css": "css/eac-dossier-movements.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "profileSection": "movements",
+      "cmsFields": [
+        "threads.title",
+        "threads.slug",
+        "threads.scheduled_at",
+        "threads.duration_minutes",
+        "threads.location",
+        "threads.kind",
+        "threads.org_id"
+      ],
+      "traits": [
+        "pastBlock",
+        "pastList",
+        "upcomingBlock",
+        "upcomingList"
+      ],
+      "bindings": {
+        "upcomingBlock": {
+          "kind": "show",
+          "from": "movements.upcoming"
+        },
+        "upcomingList": {
+          "kind": "list",
+          "from": "movements.upcoming",
+          "item": {
+            "moveMonth": {
+              "kind": "text",
+              "from": "item.month"
+            },
+            "moveDay": {
+              "kind": "text",
+              "from": "item.day"
+            },
+            "moveYear": {
+              "kind": "text",
+              "from": "item.year"
+            },
+            "moveTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "moveHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "moveMeta": {
+              "kind": "text",
+              "from": "item.meta",
+              "omitWhenEmpty": true
+            },
+            "moveTime": {
+              "kind": "text",
+              "from": "item.time",
+              "omitWhenEmpty": true
+            }
+          }
+        },
+        "pastBlock": {
+          "kind": "show",
+          "from": "movements.past"
+        },
+        "pastList": {
+          "kind": "list",
+          "from": "movements.past",
+          "item": {
+            "moveMonth": {
+              "kind": "text",
+              "from": "item.month"
+            },
+            "moveDay": {
+              "kind": "text",
+              "from": "item.day"
+            },
+            "moveYear": {
+              "kind": "text",
+              "from": "item.year"
+            },
+            "moveTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "moveHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "moveMeta": {
+              "kind": "text",
+              "from": "item.meta",
+              "omitWhenEmpty": true
+            },
+            "moveTime": {
+              "kind": "text",
+              "from": "item.time",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "notes": "Dated threads they host \u2014 event, meeting, workshop \u2014 split into upcoming and past. A gathering counts as upcoming until six hours past its start, the same window the org feeds use. Read-only here \u2014 edited on the org that runs it.",
+      "wizard": {
+        "skip": true
+      }
+    },
+    {
+      "id": "eac-dossier-exhibits",
+      "label": "Exhibits (their galleries)",
+      "html": "html/eac-dossier-exhibits.html",
+      "css": "css/eac-dossier-exhibits.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "profileSection": "galleries",
+      "cmsFields": [
+        "user_galleries.title",
+        "user_galleries.slug",
+        "user_galleries.cover_url",
+        "user_galleries.description",
+        "user_galleries.items"
+      ],
+      "traits": [
+        "exhibitCount",
+        "exhibitList"
+      ],
+      "bindings": {
+        "exhibitCount": {
+          "kind": "text",
+          "from": "exhibits.countLabel"
+        },
+        "exhibitList": {
+          "kind": "list",
+          "from": "exhibits.items",
+          "item": {
+            "exhibitHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "exhibitCover": {
+              "kind": "attr",
+              "attr": "src",
+              "from": "item.coverUrl",
+              "omitWhenEmpty": true
+            },
+            "exhibitNoCover": {
+              "kind": "show",
+              "from": "item.coverUrl",
+              "unless": true
+            },
+            "exhibitRef": {
+              "kind": "text",
+              "from": "item.ref"
+            },
+            "exhibitTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "exhibitItems": {
+              "kind": "text",
+              "from": "item.countLabel"
+            }
+          }
+        }
+      },
+      "notes": "Their gallery pages (user_galleries, migration 124). Public galleries only, unless the viewer is the owner.",
+      "wizard": {
+        "skip": true
+      }
+    },
+    {
+      "id": "eac-dossier-acquisitions",
+      "label": "Acquisitions (their store)",
+      "html": "html/eac-dossier-acquisitions.html",
+      "css": "css/eac-dossier-acquisitions.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "profileSection": "store",
+      "cmsFields": [
+        "store.name",
+        "store.slug",
+        "artwork.title",
+        "artwork.price_cents",
+        "artwork.status",
+        "artwork.image_url"
+      ],
+      "traits": [
+        "lotList",
+        "storeHref",
+        "storeName"
+      ],
+      "bindings": {
+        "storeName": {
+          "kind": "text",
+          "from": "store.name"
+        },
+        "storeHref": {
+          "kind": "attr",
+          "attr": "href",
+          "from": "store.href"
+        },
+        "lotList": {
+          "kind": "list",
+          "from": "store.lots",
+          "item": {
+            "lotPlateHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.plateHref",
+              "omitWhenEmpty": true
+            },
+            "lotImage": [
+              {
+                "kind": "attr",
+                "attr": "src",
+                "from": "item.imageUrl",
+                "omitWhenEmpty": true
+              },
+              {
+                "kind": "attr",
+                "attr": "alt",
+                "from": "item.title"
+              }
+            ],
+            "lotRef": {
+              "kind": "text",
+              "from": "item.ref"
+            },
+            "lotTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "lotHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "lotPrice": {
+              "kind": "text",
+              "from": "item.price",
+              "omitWhenEmpty": true
+            },
+            "lotSold": {
+              "kind": "text",
+              "from": "item.soldLabel",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "notes": "A window onto their marketplace store, not a checkout. Requires an active store AND users.profile_sections.store \u2014 the flag every org site already reads. A sold lot shows the word rather than a price; that precedence is decided in toDossierContext, not here.",
+      "wizard": {
+        "skip": true
+      }
+    },
+    {
+      "id": "eac-dossier-record",
+      "label": "Service record (work history)",
+      "html": "html/eac-dossier-record.html",
+      "css": "css/eac-dossier-record.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "profileSection": "workHistory",
+      "cmsFields": [
+        "users.oad_dossier.work_history[].from",
+        "users.oad_dossier.work_history[].to",
+        "users.oad_dossier.work_history[].role",
+        "users.oad_dossier.work_history[].organisation",
+        "users.oad_dossier.work_history[].detail"
+      ],
+      "traits": [
+        "recordList"
+      ],
+      "bindings": {
+        "recordList": {
+          "kind": "list",
+          "from": "record",
+          "item": {
+            "recordSpan": {
+              "kind": "text",
+              "from": "item.span"
+            },
+            "recordRole": {
+              "kind": "text",
+              "from": "item.role"
+            },
+            "recordWhere": {
+              "kind": "text",
+              "from": "item.organisation",
+              "omitWhenEmpty": true
+            },
+            "recordDetail": {
+              "kind": "text",
+              "from": "item.detail",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "notes": "Where they have shown, taught, been collected or held a post. Free-form spans with no relations ('Spring 2021', '2019 \u2014 present'), so they live in the dossier's own JSONB rather than a table no query would ever join.",
+      "wizard": {
+        "label": "Your record",
+        "description": "Where you have shown, taught or held a post."
+      }
     },
     {
       "id": "eac-dossier-intelligence",
-      "label": "Intelligence Report",
+      "label": "In progress",
       "html": "html/eac-dossier-intelligence.html",
       "css": "css/eac-dossier-intelligence.css",
       "required": false,
@@ -73,15 +684,54 @@
       "defaultVisible": true,
       "omitWhenEmpty": true,
       "cmsFields": [
-        "artist_profiles.current_targets",
-        "artist_profiles.projected_movements"
+        "users.oad_dossier.current_targets",
+        "users.oad_dossier.projected_movements"
       ],
-      "traits": ["currentTargets", "projectedMovements"],
-      "notes": "Displays lists on a lined paper background."
+      "traits": [
+        "nextBlock",
+        "nextList",
+        "workingBlock",
+        "workingList"
+      ],
+      "bindings": {
+        "workingBlock": {
+          "kind": "show",
+          "from": "progress.working"
+        },
+        "workingList": {
+          "kind": "list",
+          "from": "progress.working",
+          "item": {
+            "lineText": {
+              "kind": "text",
+              "from": "item"
+            }
+          }
+        },
+        "nextBlock": {
+          "kind": "show",
+          "from": "progress.next"
+        },
+        "nextList": {
+          "kind": "list",
+          "from": "progress.next",
+          "item": {
+            "lineText": {
+              "kind": "text",
+              "from": "item"
+            }
+          }
+        }
+      },
+      "notes": "Two short lists side by side. Empty for every profile on the live directory bar one test row, so the whole section is omitted rather than rendered as two empty headings.",
+      "wizard": {
+        "label": "What you're working on",
+        "description": "In progress, and what's next."
+      }
     },
     {
       "id": "eac-dossier-network",
-      "label": "Network & Informants",
+      "label": "Associates",
       "html": "html/eac-dossier-network.html",
       "css": "css/eac-dossier-network.css",
       "required": false,
@@ -89,15 +739,99 @@
       "defaultVisible": true,
       "omitWhenEmpty": true,
       "cmsFields": [
-        "artist_profiles.verified_contacts",
-        "artist_profiles.wanted_accomplices"
+        "users.oad_dossier.verified_contacts",
+        "users.oad_dossier.wanted_accomplices"
       ],
-      "traits": ["verifiedContacts", "wantedAccomplices"],
-      "notes": "Arrays of strings rendering as solid or dashed tags."
+      "traits": [
+        "wantsBlock",
+        "wantsList",
+        "worksWithBlock",
+        "worksWithList"
+      ],
+      "bindings": {
+        "worksWithBlock": {
+          "kind": "show",
+          "from": "associates.works"
+        },
+        "worksWithList": {
+          "kind": "list",
+          "from": "associates.works",
+          "item": {
+            "tagText": {
+              "kind": "text",
+              "from": "item"
+            }
+          }
+        },
+        "wantsBlock": {
+          "kind": "show",
+          "from": "associates.wants"
+        },
+        "wantsList": {
+          "kind": "list",
+          "from": "associates.wants",
+          "item": {
+            "tagText": {
+              "kind": "text",
+              "from": "item"
+            }
+          }
+        }
+      },
+      "notes": "Confirmed collaborators as solid tags, people being sought as dashed ones.",
+      "wizard": {
+        "label": "Who you work with",
+        "description": "Collaborators, and who you're looking for."
+      }
+    },
+    {
+      "id": "eac-dossier-channels",
+      "label": "Known addresses",
+      "html": "html/eac-dossier-channels.html",
+      "css": "css/eac-dossier-channels.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "users.social_links[].label",
+        "users.social_links[].url",
+        "users.portfolio_url"
+      ],
+      "traits": [
+        "addressList"
+      ],
+      "bindings": {
+        "addressList": {
+          "kind": "list",
+          "from": "addresses",
+          "item": {
+            "addressLabel": {
+              "kind": "text",
+              "from": "item.label",
+              "omitWhenEmpty": true
+            },
+            "addressText": {
+              "kind": "text",
+              "from": "item.text"
+            },
+            "addressHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            }
+          }
+        }
+      },
+      "notes": "Website and social links. In v0.1 these were rendered under the heading FINANCIAL CHANNELS, so on the live directory a website and a Facebook page were presented as ways to send money.",
+      "wizard": {
+        "label": "Where else you are",
+        "description": "Your site and your social links."
+      }
     },
     {
       "id": "eac-dossier-funds",
-      "label": "Financial Channels",
+      "label": "Buy & support",
       "html": "html/eac-dossier-funds.html",
       "css": "css/eac-dossier-funds.css",
       "required": false,
@@ -105,12 +839,191 @@
       "defaultVisible": true,
       "omitWhenEmpty": true,
       "cmsFields": [
-        "artist_profiles.financial_channels[].title",
-        "artist_profiles.financial_channels[].description",
-        "artist_profiles.financial_channels[].url"
+        "users.oad_dossier.financial_channels[].title",
+        "users.oad_dossier.financial_channels[].description",
+        "users.oad_dossier.financial_channels[].url"
       ],
-      "traits": ["financialChannels"],
-      "notes": "Support links (e.g. Patreon, shop) rendered as bordered boxes."
+      "traits": [
+        "supportList"
+      ],
+      "bindings": {
+        "supportList": {
+          "kind": "list",
+          "from": "support",
+          "item": {
+            "supportHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href"
+            },
+            "supportTitle": {
+              "kind": "text",
+              "from": "item.title"
+            },
+            "supportBlurb": {
+              "kind": "text",
+              "from": "item.description",
+              "omitWhenEmpty": true
+            }
+          }
+        }
+      },
+      "notes": "Links that are actually about money \u2014 a shop, a patronage page, commissions. Plain social and website links go to the channels section instead.",
+      "wizard": {
+        "label": "Buying and support",
+        "description": "Where someone can buy your work or back it."
+      }
+    },
+    {
+      "id": "eac-dossier-activity",
+      "label": "Filed activity",
+      "html": "html/eac-dossier-activity.html",
+      "css": "css/eac-dossier-activity.css",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [
+        "org_profiles.org_id",
+        "org_profiles.role_title",
+        "threads.title",
+        "threads.published_at",
+        "media.id"
+      ],
+      "traits": [
+        "orgBlockList",
+        "orgTagBlock",
+        "orgTagList",
+        "tallyList"
+      ],
+      "bindings": {
+        "orgTagBlock": {
+          "kind": "show",
+          "from": "activity.orgTags"
+        },
+        "orgTagList": {
+          "kind": "list",
+          "from": "activity.orgTags",
+          "item": {
+            "orgTagLabel": {
+              "kind": "text",
+              "from": "item.label"
+            },
+            "orgTagHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href",
+              "fallback": "#"
+            }
+          }
+        },
+        "orgBlockList": {
+          "kind": "list",
+          "from": "activity.orgBlocks",
+          "item": {
+            "orgName": {
+              "kind": "text",
+              "from": "item.name"
+            },
+            "orgHref": {
+              "kind": "attr",
+              "attr": "href",
+              "from": "item.href",
+              "fallback": "#"
+            },
+            "filingList": {
+              "kind": "list",
+              "from": "item.filings",
+              "item": {
+                "filingTitle": {
+                  "kind": "text",
+                  "from": "item.title"
+                },
+                "filingHref": {
+                  "kind": "attr",
+                  "attr": "href",
+                  "from": "item.href",
+                  "fallback": "#"
+                },
+                "filingFlag": {
+                  "kind": "text",
+                  "from": "item.flag",
+                  "omitWhenEmpty": true
+                },
+                "filingDate": {
+                  "kind": "text",
+                  "from": "item.date",
+                  "omitWhenEmpty": true
+                }
+              }
+            }
+          }
+        },
+        "tallyList": {
+          "kind": "list",
+          "from": "activity.tally",
+          "item": {
+            "tallyN": {
+              "kind": "text",
+              "from": "item.n"
+            },
+            "tallyLabel": {
+              "kind": "text",
+              "from": "item.label"
+            }
+          }
+        }
+      },
+      "notes": "What they have published across the network, grouped by org. Previously a React component rendered OUTSIDE the file, on the desk, inheriting the file's ink at about 1.07:1 \u2014 present in the DOM and invisible on every dossier in the directory.",
+      "wizard": {
+        "skip": true
+      }
+    },
+    {
+      "id": "eac-dossier-lightbox",
+      "label": "Plate lightboxes",
+      "html": "html/eac-dossier-lightbox.html",
+      "required": false,
+      "repeatable": false,
+      "defaultVisible": true,
+      "omitWhenEmpty": true,
+      "cmsFields": [],
+      "traits": [
+        "plateList"
+      ],
+      "bindings": {
+        "plateList": {
+          "kind": "list",
+          "from": "plates",
+          "item": {
+            "plateId": {
+              "kind": "attr",
+              "attr": "id",
+              "from": "item.id"
+            },
+            "plateFullImage": [
+              {
+                "kind": "attr",
+                "attr": "src",
+                "from": "item.src"
+              },
+              {
+                "kind": "attr",
+                "attr": "alt",
+                "from": "item.caption"
+              }
+            ],
+            "plateCaption": {
+              "kind": "text",
+              "from": "item.caption"
+            }
+          }
+        }
+      },
+      "notes": "One `:target` overlay per plate, appended after the file. CSS-only rather than a script: this template renders server-side into a React page, publishes static from Silex, and previews inside the Silex canvas, and only one of those runs a bundle. The anchors that open these are generated alongside the plates in toDossierContext, so an id can never point at nothing.",
+      "wizard": {
+        "skip": true
+      }
     }
   ]
 }

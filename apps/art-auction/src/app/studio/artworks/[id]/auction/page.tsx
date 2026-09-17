@@ -26,7 +26,7 @@ export default async function AuctionArtworkPage({
   const listPrice = variant ? variant.priceMinor / 100 : 0;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-4xl tracking-tight">Put up for auction</h1>

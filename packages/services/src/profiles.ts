@@ -89,6 +89,15 @@ export interface Profile {
   sourceNote: string | null;
   /** Template-specific display extras (e.g. ArtDirect's "Classified Dossier"). Opaque to shared code. */
   oadDossier: Record<string, unknown>;
+  /**
+   * Optional profile sections this person has switched on (migration 105).
+   *
+   * Read here rather than through a per-key `hasProfileSection` call so a page
+   * that renders five optional sections makes one query instead of five. The
+   * keys are whatever the rendering surface asks for — 'store' is shared with
+   * every org site, and the dossier template adds its own.
+   */
+  profileSections: Record<string, boolean>;
 }
 
 export interface OrgProfile extends Profile {
@@ -126,6 +135,7 @@ interface UserRow {
   directory_listed: boolean;
   source_note: string | null;
   oad_dossier: unknown;
+  profile_sections?: unknown;
 }
 
 interface OrgProfileRow extends UserRow {
@@ -189,6 +199,22 @@ function asDossier(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+/**
+ * `profile_sections` as booleans.
+ *
+ * Coerced rather than trusted: the column is JSONB written by several apps'
+ * server actions, and a key that arrives as the string "true" or as 1 must not
+ * read as off — nor must an arbitrary truthy object read as on.
+ */
+function asSectionFlags(value: unknown): Record<string, boolean> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, boolean> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] = v === true || v === 'true' || v === 1;
+  }
+  return out;
+}
+
 function mapUser(row: UserRow): Profile {
   return {
     userId: row.id,
@@ -216,6 +242,7 @@ function mapUser(row: UserRow): Profile {
     directoryListed: row.directory_listed ?? true,
     sourceNote: row.source_note,
     oadDossier: asDossier(row.oad_dossier),
+    profileSections: asSectionFlags(row.profile_sections),
   };
 }
 
@@ -230,8 +257,8 @@ function mapOrgProfile(row: OrgProfileRow): OrgProfile {
   };
 }
 
-const USER_COLS = `id, entity_type, slug, display_name, headline, bio, avatar_url, pronouns, city, region, country, postal_code, lat, lng, social_links, portfolio_url, portfolio, claim_status, claimed_by, created_by, verified, directory_listed, source_note, oad_dossier, profile_layout`;
-const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, u.portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.directory_listed, u.source_note, u.oad_dossier, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
+const USER_COLS = `id, entity_type, slug, display_name, headline, bio, avatar_url, pronouns, city, region, country, postal_code, lat, lng, social_links, portfolio_url, portfolio, claim_status, claimed_by, created_by, verified, directory_listed, source_note, oad_dossier, profile_sections, profile_layout`;
+const ORG_PROFILE_COLS = `u.id, u.entity_type, u.slug, u.display_name, u.headline, u.bio, u.avatar_url, u.pronouns, u.city, u.region, u.country, u.postal_code, u.lat, u.lng, u.social_links, u.portfolio_url, u.portfolio, u.claim_status, u.claimed_by, u.created_by, u.verified, u.directory_listed, u.source_note, u.oad_dossier, u.profile_sections, u.profile_layout, op.org_id, op.role_title, op.sort_order, op.is_public, op.tags`;
 
 /** A person's global identity, independent of any org. */
 export async function getProfile(userId: string): Promise<Profile | null> {
@@ -278,14 +305,35 @@ export async function listOrgProfiles(
   }
 }
 
-export async function getOrgProfileBySlug(orgId: string, slug: string): Promise<OrgProfile | null> {
+export async function getOrgProfileBySlug(
+  orgId: string,
+  slug: string,
+  options: { includePrivate?: boolean } = {}
+): Promise<OrgProfile | null> {
   try {
-    const rows = await db<OrgProfileRow[]>`
-      SELECT ${db.unsafe(ORG_PROFILE_COLS)}
-      FROM org_profiles op JOIN users u ON u.id = op.user_id
-      WHERE op.org_id = ${orgId} AND op.is_public AND u.slug = ${slug}
-      LIMIT 1
-    `;
+    // `includePrivate` lets a caller tell "this org has no such profile" apart
+    // from "it has one and has chosen not to publish it" — the returned row
+    // carries `isPublic` for that. Default false, so every existing caller
+    // keeps the published-only behaviour it was written against.
+    //
+    // Why the distinction is worth a parameter: a site that falls back to
+    // bundled static content when this returns null cannot honour an
+    // unpublished row without it. IFAC did exactly that, and unlisting one of
+    // the thirteen artists who are also hardcoded in its artists.ts left their
+    // page live — the admin had pressed the button and nothing had happened.
+    const rows = options.includePrivate
+      ? await db<OrgProfileRow[]>`
+          SELECT ${db.unsafe(ORG_PROFILE_COLS)}
+          FROM org_profiles op JOIN users u ON u.id = op.user_id
+          WHERE op.org_id = ${orgId} AND u.slug = ${slug}
+          LIMIT 1
+        `
+      : await db<OrgProfileRow[]>`
+          SELECT ${db.unsafe(ORG_PROFILE_COLS)}
+          FROM org_profiles op JOIN users u ON u.id = op.user_id
+          WHERE op.org_id = ${orgId} AND op.is_public AND u.slug = ${slug}
+          LIMIT 1
+        `;
     return rows[0] ? mapOrgProfile(rows[0]) : null;
   } catch (err) {
     console.error(`[profiles] getOrgProfileBySlug(${orgId}, ${slug}):`, err);
@@ -896,6 +944,15 @@ export interface AuthoredThread {
   publishedAt: string | null;
   /** 'published' | 'draft'. Only ever 'draft' when the viewer is the author. */
   status: string;
+  /**
+   * When the thing happens, for the dated kinds. Null for a post or a piece of
+   * writing, which is what lets ONE query back both "what they have published"
+   * and "where they are appearing" — a profile needs both lists and they come
+   * from the same rows.
+   */
+  scheduledAt: string | null;
+  durationMinutes: number | null;
+  location: string | null;
 }
 
 /**
@@ -918,9 +975,22 @@ export async function getAuthoredThreads(
     orgId?: string;
     /** e.g. 'post' for a blog index. Omit for everything they've made. */
     kind?: string;
+    /**
+     * Several kinds at once — `['event','meeting','workshop']` for an
+     * appearances list, `['post','writing']` for a blog index. Applied on top
+     * of `kind` rather than instead of it, so passing both narrows.
+     */
+    kinds?: readonly string[];
     limit?: number;
     /** Set to the signed-in user. Drafts appear only when it equals userId. */
     viewerId?: string;
+    /** Only rows that have a date on them. */
+    scheduledOnly?: boolean;
+    /**
+     * Ordering. 'filed' is newest-published first (a blog); 'scheduled' is by
+     * date, soonest first, which is what an appearances list wants.
+     */
+    order?: "filed" | "scheduled";
   } = {}
 ): Promise<AuthoredThread[]> {
   const limit = opts.limit ?? 20;
@@ -928,23 +998,37 @@ export async function getAuthoredThreads(
 
   try {
     const rows = await db<
-      Array<AuthoredThread & { published_at: string | null; cover_image_url: string | null }>
+      Array<
+        AuthoredThread & {
+          published_at: string | null;
+          cover_image_url: string | null;
+          scheduled_at: string | null;
+          duration_minutes: number | null;
+        }
+      >
     >`
       SELECT t.id, t.org_id AS "orgId", o.name AS org_name,
              t.title, t.slug, t.kind, t.section, t.excerpt,
              t.metadata->>'coverImageUrl' AS cover_image_url,
-             t.published_at, t.status
+             t.published_at, t.status,
+             t.scheduled_at, t.duration_minutes, t.location
       FROM threads t
       JOIN organizations o ON o.id = t.org_id
       WHERE t.author_id = ${userId}
         ${opts.orgId ? db`AND t.org_id = ${opts.orgId}` : db``}
         ${opts.kind ? db`AND t.kind = ${opts.kind}` : db``}
+        ${opts.kinds?.length ? db`AND t.kind = ANY(${opts.kinds as string[]})` : db``}
+        ${opts.scheduledOnly ? db`AND t.scheduled_at IS NOT NULL` : db``}
         ${
           isSelf
             ? db`AND t.status <> 'archived'`
             : db`AND t.status = 'published' AND t.visibility = 'PUBLIC'`
         }
-      ORDER BY COALESCE(t.published_at, t.created_at) DESC
+      ${
+        opts.order === "scheduled"
+          ? db`ORDER BY t.scheduled_at DESC NULLS LAST`
+          : db`ORDER BY COALESCE(t.published_at, t.created_at) DESC`
+      }
       LIMIT ${limit}
     `;
 
@@ -960,6 +1044,9 @@ export async function getAuthoredThreads(
       coverImageUrl: r.cover_image_url,
       publishedAt: r.published_at,
       status: (r as unknown as { status: string }).status,
+      scheduledAt: r.scheduled_at,
+      durationMinutes: r.duration_minutes,
+      location: r.location,
     }));
   } catch (err) {
     console.error(`[profiles] getAuthoredThreads(${userId}):`, err);

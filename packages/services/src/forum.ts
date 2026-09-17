@@ -1,4 +1,7 @@
 import { db } from '@elkdonis/db';
+import { OFF_FEED_KINDS } from './thread-kinds';
+// One list of what "happens at a time" — this file used to spell it out twice.
+import { SCHEDULED_KINDS } from './org-calendar';
 import { canViewFeed, type OrgFeed } from './org-feeds';
 
 // ============================================================================
@@ -26,9 +29,30 @@ export interface ForumViewer {
   /** org_id → role, from user_organizations. Empty when signed out. */
   roles: Record<string, string>;
   isGlobalAdmin?: boolean;
+  /**
+   * Every identity whose authorship belongs to this person — their own row
+   * plus any live pen names (identity_control, migration 132). Omitted means
+   * "just userId", which is what every caller predating pen names supplies.
+   *
+   * This exists because `author_id = viewer.userId` is not only an ownership
+   * test in this codebase, it is a VISIBILITY GRANT: it is what lets someone
+   * see their own unpublished and org-only threads. Left un-widened, writing
+   * under a pen name would hide the result from its own author.
+   */
+  identityIds?: string[];
 }
 
 export const ANONYMOUS: ForumViewer = { userId: null, roles: {} };
+
+/**
+ * The viewer's authorship set, for `author_id = ANY(...)`. Falls back to the
+ * account's own id, and is empty when signed out — which makes the clause
+ * simply false, so no `IS NOT NULL` guard is needed around it.
+ */
+export function viewerIdentityIds(viewer: ForumViewer): string[] {
+  if (viewer.identityIds && viewer.identityIds.length) return viewer.identityIds;
+  return viewer.userId ? [viewer.userId] : [];
+}
 
 export type ForumSort = 'active' | 'newest' | 'top';
 
@@ -197,8 +221,12 @@ export interface ForumPulse {
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
-/** Wiki pages are threads but never forum topics. See visibleTo. */
-const notWiki = db`t.kind <> 'wiki_page'`;
+/**
+ * Kinds that are threads but never forum topics — a wiki page, a person's own
+ * writing. See visibleTo, and OFF_FEED_KINDS in thread-kinds.ts for why an
+ * exclusion rather than a visibility.
+ */
+const notWiki = db`t.kind <> ALL(${OFF_FEED_KINDS})`;
 
 function memberOrgIds(viewer: ForumViewer): string[] {
   return Object.keys(viewer.roles);
@@ -219,12 +247,12 @@ function memberOrgIds(viewer: ForumViewer): string[] {
 function visibleTo(viewer: ForumViewer) {
   if (viewer.isGlobalAdmin) return db`t.status = 'published' AND ${notWiki}`;
   const orgs = memberOrgIds(viewer);
-  const uid = viewer.userId;
+  const mine = viewerIdentityIds(viewer);
   return db`
     t.status = 'published' AND ${notWiki} AND (
       t.visibility = 'PUBLIC'
       OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs}))
-      OR (${uid}::uuid IS NOT NULL AND t.author_id = ${uid}::uuid)
+      OR t.author_id = ANY(${mine}::uuid[])
     )
   `;
 }
@@ -777,7 +805,7 @@ export async function listHappening(
     JOIN organizations o ON o.id = t.org_id
     LEFT JOIN org_feeds f ON f.org_id = t.org_id AND f.slug = t.section
     WHERE ${visibleTo(viewer)} ${inScope(scope)}
-      AND t.kind IN ('event', 'meeting', 'workshop')
+      AND t.kind = ANY(${SCHEDULED_KINDS as unknown as string[]})
       AND t.scheduled_at >= NOW() ${horizon}
     ORDER BY t.scheduled_at ASC
     LIMIT ${limit}
@@ -841,7 +869,7 @@ export async function getPulse(viewer: ForumViewer): Promise<ForumPulse> {
         (SELECT COUNT(*)::int FROM threads t WHERE ${visibleTo(viewer)}) AS topics,
         (SELECT COUNT(*)::int + COALESCE(SUM(t.reply_count), 0)::int FROM threads t WHERE ${visibleTo(viewer)}) AS posts,
         (SELECT COUNT(*)::int FROM threads t
-          WHERE ${visibleTo(viewer)} AND t.kind IN ('event','meeting','workshop')
+          WHERE ${visibleTo(viewer)} AND t.kind = ANY(${SCHEDULED_KINDS as unknown as string[]})
             AND t.scheduled_at >= NOW() AND t.scheduled_at < NOW() + interval '7 days') AS happening
     `,
     db<PersonRow[]>`

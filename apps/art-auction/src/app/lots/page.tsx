@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArtworkGrid } from "@elkdonis/commerce/components";
+import { ProductGrid } from "@elkdonis/commerce/components";
 import { listLiveAuctionArtworks } from "@elkdonis/commerce/queries";
 import { settleExpiredLots } from "@elkdonis/commerce/server";
 import { siteConfig } from "@/config/site";
@@ -24,10 +24,9 @@ export default async function LotsPage() {
         </p>
       </header>
 
-      <ArtworkGrid
+      <ProductGrid
         items={lots}
-        columns={4}
-        showAuctionBadge
+        label="Live auctions"
         emptyState={
           <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
             No auctions are running right now. Sellers put pieces up for auction

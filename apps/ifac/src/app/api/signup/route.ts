@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
           senderName: name,
           senderEmail: email,
           message: combinedMessage ?? undefined,
+          orgId: siteConfig.orgId,
           orgName: siteConfig.orgName,
           source: "ifac_signup",
         });

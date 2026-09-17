@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@elkdonis/primitives";
 
 export interface MaterialItem {
   /** media.id — what gets attached to the thread on save. */

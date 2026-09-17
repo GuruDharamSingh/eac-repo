@@ -10,10 +10,10 @@ import {
   type ContentKind,
 } from "@elkdonis/cms-ui/compose";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
-import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * The complete CMS for this site, on the shared composer.

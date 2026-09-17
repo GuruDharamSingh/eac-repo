@@ -1,7 +1,11 @@
 <nav class="eac-dossier-nav" data-gjs-type="eac-dossier-nav">
-  <div class="eac-dossier-nav-brand" data-trait="archiveName">Mutual Aid Archive</div>
+  <a class="eac-dossier-nav-brand" href="/" data-trait="archiveName" data-href-trait="indexHref">ArtDirect</a>
   <div class="eac-dossier-nav-controls">
-    <input type="text" class="eac-dossier-nav-search" placeholder="Query Directory...">
-    <a href="/directory" class="eac-dossier-nav-link">Index</a>
+    <form class="eac-dossier-nav-search" action="/" method="get" role="search" data-trait="indexAction">
+      <label class="eac-dos-sr" for="dos-q">Search the directory</label>
+      <input id="dos-q" type="search" name="q" placeholder="Query directory…">
+      <button type="submit">Go</button>
+    </form>
+    <a href="/" class="eac-dossier-nav-link" data-href-trait="indexHref">Index</a>
   </div>
 </nav>

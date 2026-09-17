@@ -6,6 +6,9 @@ import type {
   SurfaceConnectors,
   SurfaceProfile,
   SurfaceThread,
+  SurfaceForumThread,
+  SurfaceGathered,
+  SurfaceGatherCandidate,
 } from "../surface";
 
 // ============================================================================
@@ -53,7 +56,8 @@ export interface HubRoutes {
   pipelinePage: string;
   /** GET → the forum snapshot. */
   forumSnapshot: string;
-  /** GET → `{documents}`; POST `{title?}` → `{document}`; PATCH `{documentId, ideaId}`. */
+  /** GET → `{documents}`; POST `{title?}` → `{document}`; PATCH `{documentId, ideaId}`;
+   *  DELETE `?documentId=` → takes it off the list. */
   documents: string;
   /** GET → `{ideas}`; POST `{title}` → `{idea}`. */
   ideas: string;
@@ -99,6 +103,9 @@ type HostSupplied = Pick<SurfaceConnectors, "viewer" | "orgName"> &
     Pick<
       SurfaceConnectors,
       | "saveThread"
+      // The names this viewer writes under. Host-supplied because only the
+      // host knows where its own account lives; there is no default route.
+      | "identities"
       | "compose"
       | "composeSlots"
       | "timeZone"
@@ -123,9 +130,24 @@ export interface HubConnectorOptions extends HostSupplied {
    * leaving a connector out, just stated instead of implied.
    */
   board?: boolean;
-  forum?: boolean;
+  /**
+   * The org's forum. `true` takes the default routes; the object form adds
+   * what only the host can answer — `listFeed` is what lets the popup show a
+   * SECTION's threads instead of navigating out to the board for them.
+   */
+  forum?: boolean | { listFeed?: (slug: string) => Promise<SurfaceForumThread[]> };
   /** The group's living documents in the org's Nextcloud folder. */
   documents?: boolean;
+  /**
+   * What a thread HOLDS — migration 131. Wired against `${routes.thread}/:id/
+   * gather`, which is uniform across the template apps, so a host that serves
+   * that route needs nothing here but `true`.
+   *
+   * Turning it OFF does not hide the band: a thread's gathered items arrive
+   * with the thread itself, from `loadThread`. This is only the ability to
+   * change what is there.
+   */
+  gather?: boolean;
   /**
    * Suggested ideas. Pass the ideas feed's path on the forum — the face
    * navigates there, so there is nothing sensible to default it to and an
@@ -196,6 +218,7 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
       }),
 
     saveThread: opts.saveThread,
+    identities: opts.identities,
     compose: opts.compose,
     composeSlots: opts.composeSlots,
     threadToAnswers: opts.threadToAnswers,
@@ -400,6 +423,58 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
         if (!res.ok) return { ok: false, error: data.error ?? "Could not assign it." };
         return { ok: true };
       },
+      async remove(documentId) {
+        const res = await fetch(
+          `${r.documents}?documentId=${encodeURIComponent(documentId)}`,
+          { method: "DELETE" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data.error ?? "Could not remove it." };
+        return { ok: true };
+      },
+    };
+  }
+
+  if (opts.gather) {
+    // Every verb is its own request. Nothing is staged in the surface, so
+    // closing the panel cannot lose an arrangement somebody thought was saved.
+    const at = (threadId: string) =>
+      `${r.thread}/${encodeURIComponent(threadId)}/gather`;
+
+    connectors.gather = {
+      async list(threadId) {
+        const res = await fetch(at(threadId));
+        if (!res.ok) return [];
+        return ((await res.json()).gathered ?? []) as SurfaceGathered[];
+      },
+      async candidates(threadId, q) {
+        const res = await fetch(`${at(threadId)}?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return [];
+        return ((await res.json()).candidates ?? []) as SurfaceGatherCandidate[];
+      },
+      async attach(threadId, candidate) {
+        const res = await fetch(at(threadId), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(candidate),
+        });
+        return res.ok;
+      },
+      async detach(threadId, edgeId) {
+        const res = await fetch(
+          `${at(threadId)}?edgeId=${encodeURIComponent(edgeId)}`,
+          { method: "DELETE" }
+        );
+        return res.ok;
+      },
+      async reorder(threadId, edgeIds) {
+        const res = await fetch(at(threadId), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ edgeIds }),
+        });
+        return res.ok;
+      },
     };
   }
 
@@ -427,7 +502,9 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
   }
 
   if (opts.forum) {
+    const forumOpts = typeof opts.forum === "object" ? opts.forum : {};
     connectors.forum = {
+      ...(forumOpts.listFeed ? { listFeed: forumOpts.listFeed } : {}),
       async load() {
         const res = await fetch(r.forumSnapshot);
         if (!res.ok) throw new Error(`forum ${res.status}`);

@@ -22,7 +22,7 @@ This is a **multi-organization monorepo** for the Elkdonis Arts Collective - a s
 ### Operating rules (2026-09-17)
 - **Install only through the container:** `docker compose run --rm install`. `node_modules` holds Alpine/musl native addons (sweph, sharp); a host `pnpm install` fights it, and no app runs `pnpm install` on start any more.
 - **App containers run as the host user** (`user: ${EAC_UID:-3003}`) from one slim image, `eac-dev` (`docker build --target development -t eac-dev .`). Nothing in the tree should be root-owned; if something is, a container is running as root.
-- **Each app's `.next` is a per-container volume**, not the host directory. To force a rebuild of a production-mode app: `docker compose exec <svc> rm -rf /app/apps/<app>/.next/server` then `docker compose restart <svc>`.
+- **Each app's `.next` is a per-container volume**, not the host directory. The (empty) host `apps/<app>/.next` folder is that volume's MOUNT POINT — never `rm -rf` it while the container runs: Linux detaches the mount inside the container and the site loses its build until `docker restart` (done once, 2026-09-17). To force a rebuild of a production-mode app: `docker compose exec <svc> rm -rf /app/apps/<app>/.next/server` then `docker compose restart <svc>`.
 - **Postgres / Redis / PostgREST / Realtime listen on 127.0.0.1 only.** Apps use `eac-network`.
 - **Backups:** `scripts/backup-db.sh` runs nightly from guru's crontab into `~/eac-backups` (14 dailies + monthlies). Same pool as the database — not an off-box copy.
 - **Type check:** the script is named `check-types` in every workspace (turbo silently skips any other name).
@@ -140,7 +140,6 @@ apps/
 ├── arts-collective/     Port 3007 - Artist network & subdomain management
 ├── ifac/                Port 3008 - International Fine Art Collectors (org: ifac)
 ├── art-auction/         Port 3009 - Art marketplace and auctions
-├── fourth-way-book-readers/ Port 3010 - Reading groups & book programs (org: fourth-way)
 ├── blog-tester/         Port 3011 - Sandbox for blog features
 ├── elastrocal/          Port 3016 - Natal charts (org: elastrocal; engine in packages/astro)
 ├── danamccool/          Port 3018 - Dana McCool's personal artist site (org: danamccool)
@@ -198,7 +197,7 @@ When services are running:
 - **Arts Network:** http://localhost:3007
 - **IFAC:** http://localhost:3008
 - **Art Auction:** http://localhost:3009
-- **Book Readers:** http://localhost:3010
+- **Book Readers:** http://localhost:3019/books
 - **Blog Tester:** http://localhost:3011
 - **Elastrocal:** http://localhost:3016
 - **Dana McCool:** http://localhost:3018

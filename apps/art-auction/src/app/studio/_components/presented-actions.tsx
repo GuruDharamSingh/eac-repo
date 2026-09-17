@@ -3,16 +3,18 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { unpresentArtworkAction } from "../actions";
 
 export function RemovePresentedButton({ storeId, artworkId }: { storeId: string; artworkId: string }) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="sm"
       disabled={pending}
-      className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
       onClick={async () => {
         setPending(true);
         try {
@@ -26,6 +28,6 @@ export function RemovePresentedButton({ storeId, artworkId }: { storeId: string;
       }}
     >
       {pending ? "…" : "Remove"}
-    </button>
+    </Button>
   );
 }

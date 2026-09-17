@@ -1,0 +1,67 @@
+/*
+  Dispatches — what this person has written.
+
+  Their blog: `threads` of kind 'post' and 'writing' that they authored,
+  anywhere on the network. A dossier that shows an artist's work but not their
+  words is only half a file, and until now their writing had no place on this
+  template at all.
+
+  Structure is the shared `.eac-dos-index` from chrome.css; what is specific
+  here is the lead item, which gets its cover and a longer standfirst — a file
+  opens with the most recent filing, not with a flat list.
+*/
+
+.eac-dossier-dispatches { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) 1fr;
+  gap: 1.5rem;
+  padding-bottom: 1.35rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--eac-dos-ink);
+}
+
+.eac-dos-lead-nocover { grid-template-columns: 1fr; }
+
+.eac-dos-lead-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(112%);
+  background: #fff;
+  padding: 6px;
+  border: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-lead-title {
+  font-family: var(--eac-dos-display);
+  font-weight: 700;
+  font-size: clamp(1.15rem, 0.95rem + 0.9vw, 1.5rem);
+  line-height: 1.25;
+  margin: 0 0 0.45rem;
+}
+
+.eac-dos-lead-title a {
+  color: var(--eac-dos-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-lead-title a:hover,
+.eac-dos-lead-title a:focus-visible {
+  color: var(--eac-dos-stamp-red);
+  border-bottom-color: var(--eac-dos-stamp-red);
+}
+
+.eac-dos-lead-standfirst {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--eac-dos-ink-soft);
+}
+
+@media (max-width: 560px) {
+  .eac-dos-lead { grid-template-columns: 1fr; }
+}

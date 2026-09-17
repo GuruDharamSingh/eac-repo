@@ -8,11 +8,8 @@ import {
   cleanQuestionFields,
 } from "@elkdonis/cms-ui/compose";
 import type { StoredQuestionnaireField } from "@elkdonis/cms-ui/wizard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { createQuestionnaireAction } from "@/lib/cms/questionnaire-actions";
+import { Button, Input, Label, Textarea } from "@elkdonis/primitives";
 
 /**
  * Questionnaire / poll authoring for this site.

@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { OFF_FEED_KINDS } from "@elkdonis/services";
 
 export type CommunityFeedItem = {
   id: string;
@@ -33,6 +34,7 @@ export async function getCommunityFeed(
       FROM threads t
       JOIN organizations o ON o.id = t.org_id
       WHERE t.status = 'published'
+        AND t.kind <> ALL(${OFF_FEED_KINDS})
         AND t.visibility = 'PUBLIC'
       ORDER BY COALESCE(t.published_at, t.created_at) DESC
       LIMIT ${limit}

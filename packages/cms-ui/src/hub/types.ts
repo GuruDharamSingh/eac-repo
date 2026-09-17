@@ -1,4 +1,9 @@
-import type { SurfaceDescriptor, SurfaceEvent, SurfaceKind } from "../surface";
+import type {
+  SurfaceDescriptor,
+  SurfaceEvent,
+  SurfaceKind,
+  SurfaceMaterial,
+} from "../surface";
 
 // ============================================================================
 // Hub types.
@@ -39,6 +44,15 @@ export interface HubStandingMeeting {
 export interface HubPipelineBoard {
   title: string;
   stacks: Array<{
+    /**
+     * Optional because this type only ever needed to COUNT cards, and a host
+     * passing a shape it had already computed should not have to add a field
+     * to satisfy a tile. The quick-add in PipelineFace needs it to file a
+     * card into a list, and simply does not render when it is absent — a
+     * board whose stacks carry no id is one this face cannot write to, which
+     * is the honest reading either way. `OrgDeckBoard` supplies it.
+     */
+    id?: string | number;
     title: string;
     cards?: Array<{ done?: boolean | null; archived?: boolean | null }> | null;
   }>;
@@ -90,4 +104,84 @@ export interface HubProfileSummary {
     notifications?: number;
     upcoming?: number;
   };
+}
+
+// ── The standing meeting's opt-in parts ─────────────────────────────────────
+// Everything below is switched on by a host passing it and is absent
+// otherwise. The face is shared by three sites; a new behaviour that arrived
+// by default would be changing two products that never asked for it.
+
+/**
+ * One answer on offer to "Will you make it?".
+ *
+ * `status` is what it COMMITS to — one of the statuses `thread_rsvps` already
+ * allows — and `key` is the nuance stored beside it (migration 130). An early
+ * yes and a certain yes are both a yes and are both counted as one; the
+ * difference is a sentence, not a number. Structurally the `RsvpFlavour` of
+ * @elkdonis/services, so a host passes those straight through.
+ */
+export interface RsvpFlavourOption {
+  key: string;
+  label: string;
+  note?: string;
+  status: "yes" | "no";
+}
+
+export interface StandingMeetingAttendance {
+  /** What is on offer, firmest first. Defaults to the shared six. */
+  options?: RsvpFlavourOption[];
+  /** What this viewer has already said, when they have said anything. */
+  answered?: { status?: string | null; flavour?: string | null } | null;
+  /**
+   * POST `{threadId, flavour}` to answer, `{threadId, clear:true}` to take it
+   * back. May answer `{light}` with the recomputed light, since an answer can
+   * be the one that meets the minimum.
+   * Defaults to `/api/hub/meeting/attendance`.
+   */
+  endpoint?: string;
+}
+
+export interface StandingMeetingLight {
+  state: "green" | "yellow" | "red";
+  /**
+   * Why, in words, and never optional: the dot is a non-text indicator, so
+   * something has to say what it means for anyone who cannot see the colour.
+   */
+  reason: string;
+  /** `host` — a guide said so; `derived` — from the attendance minimum. */
+  source?: "host" | "derived" | "default";
+  /**
+   * Whether an editor may change it here. Defaults to true, gated by the
+   * face's own `canEdit` — pass false to show the light read-only even to
+   * owners.
+   */
+  canSet?: boolean;
+  /**
+   * POST `{threadId, state, note, occurrence}`, or `{threadId, clear:true}`.
+   * Defaults to `/api/hub/meeting/light`.
+   */
+  endpoint?: string;
+}
+
+export interface StandingMeetingHistory {
+  /**
+   * GET `?threadId=&before=` → `{ occurrence }` or `{ occurrence: null }`.
+   * Defaults to `/api/hub/meeting/history`.
+   */
+  endpoint?: string;
+}
+
+/**
+ * An occurrence the arrow has paged back to. Structurally the
+ * `PastMeetingOccurrence` of @elkdonis/services.
+ */
+export interface StandingMeetingPast {
+  threadId: string;
+  title: string;
+  kind: string;
+  /** ISO — the occurrence, not the series' first date. */
+  at: string;
+  /** An earlier occurrence of the same series, rather than another thread. */
+  sameSeries: boolean;
+  materials: SurfaceMaterial[];
 }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Section, Text, Button, Img } from '@react-email/components';
-import { render } from '@react-email/render';
+import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
 
 export interface NewsletterLinkItem {
@@ -106,5 +106,5 @@ function NewsletterEmail({
 }
 
 export async function renderNewsletterEmail(props: NewsletterEmailProps): Promise<string> {
-  return render(React.createElement(NewsletterEmail, props));
+  return renderEmail(React.createElement(NewsletterEmail, props));
 }

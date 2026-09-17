@@ -134,6 +134,7 @@ export async function POST(
         location: thread.location ?? undefined,
         meetingUrl: thread.meeting_url ?? undefined,
         senderName: editor.email,
+        orgId: siteConfig.orgId,
         orgName: siteConfig.orgName,
         rsvpUrl: threadUrl,
         rsvpCount,

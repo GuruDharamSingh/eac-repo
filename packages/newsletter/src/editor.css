@@ -1,0 +1,268 @@
+/* Chrome around the GrapesJS canvas. Plain CSS with no token dependency, so
+   any host app can mount the editor without adopting a design system — the
+   canvas itself is styled by GrapesJS and by the newsletter preset. */
+.eac-nl { display: flex; flex-direction: column; height: 100vh; background: #f6f6f6; }
+
+.eac-nl-bar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 10px 16px; background: #fff; border-bottom: 1px solid #e3e3e3; flex: none;
+}
+.eac-nl-subject { display: flex; align-items: center; gap: 8px; flex: 1 1 24rem; min-width: 0; }
+.eac-nl-subject span { font: 500 12px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
+.eac-nl-subject input {
+  flex: 1 1 auto; min-width: 0; padding: 7px 10px;
+  border: 1px solid #d5d5d5; border-radius: 4px; font: 14px system-ui, sans-serif;
+}
+.eac-nl-subject input:focus-visible { outline: 2px solid #3b82f6; outline-offset: -1px; }
+
+.eac-nl-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.eac-nl-actions button {
+  padding: 7px 14px; border: 1px solid #d5d5d5; border-radius: 4px;
+  background: #fff; font: 13px system-ui, sans-serif; cursor: pointer;
+}
+.eac-nl-actions button:hover:not(:disabled) { border-color: #999; }
+.eac-nl-actions button:disabled { opacity: .55; cursor: default; }
+.eac-nl-primary { background: #111; border-color: #111 !important; color: #fff; }
+.eac-nl-primary:hover:not(:disabled) { background: #333; }
+.eac-nl-status { font: 12px system-ui, sans-serif; color: #6b7280; }
+
+/* min-height:0 matters: without it the flex child refuses to shrink and the
+   GrapesJS panels are pushed off the bottom of the window. */
+.eac-nl-canvas { flex: 1 1 auto; min-height: 0; }
+.eac-nl-loading { margin: 0; padding: 24px; font: 14px system-ui, sans-serif; color: #6b7280; }
+
+/* ---------------------------------------------------------------------------
+   The block panel.
+
+   GrapesJS ships a light grey chrome; the letters being composed in it are the
+   collective's gold-on-navy. Left alone, the two fight, and a block preview
+   reads as a piece of the editor rather than a piece of the email. These rules
+   only touch the panel — the canvas is the email and is styled from inside.
+   --------------------------------------------------------------------------- */
+
+.eac-nl .gjs-block-categories .gjs-block-category .gjs-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8f763c;
+}
+
+.eac-nl .gjs-block {
+  min-height: auto;
+  padding: 12px 8px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.eac-nl .gjs-block:hover {
+  border-color: #b79a55;
+  background-color: rgba(183, 154, 85, 0.08);
+}
+
+.eac-nl .gjs-block__media svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The Elkdonis category is the house vocabulary, so it leads. GrapesJS orders
+   categories by insertion and ours are added after the preset's, so this pulls
+   it back to the top rather than leaving the generic blocks first. */
+.eac-nl .gjs-block-categories .gjs-block-category:last-child {
+  order: -1;
+}
+.eac-nl .gjs-block-categories {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A dropped block should be findable. The preset's default outline is a
+   1px dotted grey that vanishes against a dark canvas. */
+.eac-nl .gjs-dashed .gjs-comp-selected {
+  outline: 2px solid #b79a55 !important;
+  outline-offset: -2px;
+}
+
+/* ── The merge-field strip ─────────────────────────────────────────────────
+   Reference for what a laid-out letter can say. Sits between the toolbar and
+   the canvas so it is visible while composing without taking a panel.       */
+
+.eac-nl-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--eac-nl-line, #2a2a2a);
+  background: var(--eac-nl-bar-bg, #1a1a1a);
+}
+
+.eac-nl-fields-label {
+  margin-right: 4px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--eac-nl-muted, #9b9b9b);
+}
+
+.eac-nl-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--eac-nl-line, #2a2a2a);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--eac-nl-ink, #e6e6e6);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+
+.eac-nl-chip:hover,
+.eac-nl-chip:focus-visible {
+  border-color: var(--eac-nl-accent, #b79a55);
+  color: var(--eac-nl-accent, #b79a55);
+}
+
+/* ── Thread-card picker ────────────────────────────────────────────────────
+   Opens the moment an unlinked thread card lands on the canvas, so "is this
+   pointing at the right thing" is answered at the drop rather than being
+   something an author has to remember to check.                            */
+
+.eac-nl-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  background: rgba(5, 7, 13, 0.8);
+}
+
+.eac-nl-picker-panel {
+  width: min(560px, 100%);
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: var(--eac-nl-bar-bg, #1a1a1a);
+  border: 1px solid var(--eac-nl-line, #2a2a2a);
+  color: var(--eac-nl-ink, #e6e6e6);
+}
+
+.eac-nl-picker-panel h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.eac-nl-picker-panel > p {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--eac-nl-muted, #9b9b9b);
+}
+
+.eac-nl-picker-panel ul {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.eac-nl-picker-panel li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--eac-nl-line, #2a2a2a);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.eac-nl-picker-panel li button:hover,
+.eac-nl-picker-panel li button:focus-visible {
+  border-color: var(--eac-nl-accent, #b79a55);
+}
+
+.eac-nl-picker-panel li b { display: block; font-weight: 600; }
+
+.eac-nl-picker-panel li span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--eac-nl-muted, #9b9b9b);
+}
+
+.eac-nl-picker-skip {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--eac-nl-muted, #9b9b9b);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.eac-nl-problems {
+  list-style: none;
+  margin: 0 0 1.1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.eac-nl-problems li {
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid #c05a52;
+  background: rgba(192, 90, 82, 0.1);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.eac-nl-picker-buttons { display: flex; gap: 0.6rem; }
+
+.eac-nl-picker-buttons button {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--eac-nl-line, #2a2a2a);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.eac-nl-picker-buttons button:hover { border-color: var(--eac-nl-accent, #b79a55); }
+
+/* Sending a letter you were just told is broken is a real choice, so it looks
+   like one rather than sitting beside "Go back" as an equal. */
+.eac-nl-danger { border-color: #c05a52 !important; color: #e08a8a; }
+.eac-nl-danger:hover { background: #c05a52; color: #fff; }
+
+.eac-nl-picker-group {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--eac-nl-accent, #b79a55);
+}
+
+.eac-nl-picker-group:first-of-type { margin-top: 0; }
+
+/* Says what picking from this group will DO to the card, so the shape is a
+   decision rather than something discovered afterwards. */
+.eac-nl-picker-group span {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--eac-nl-muted, #9b9b9b);
+}

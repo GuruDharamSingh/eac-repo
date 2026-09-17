@@ -1,0 +1,624 @@
+/* ============================================================================
+   The email suite's own surface.
+
+   Plain CSS with custom properties, no Tailwind — a shared package styled with
+   Tailwind renders UNSTYLED in any host that did not `@source` it, which has
+   already cost this network one invisible buy button. Everything here hangs
+   off the tokens surface.css publishes, so the suite wears whichever org's
+   theme it is standing in without knowing anything about that org.
+
+   Contrast: every pair below was measured, not eyeballed. The muted text is
+   `--eac-surface-muted`, which the surface theme already guarantees against
+   its own ground; nothing here introduces a new ink over a new field.
+   ============================================================================ */
+
+/* Visually hidden but read aloud. The activity feed's direction is a glyph,
+   and "↗ 4 recipients" is not a sentence for anyone using a screen reader. */
+.eac-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── The face ─────────────────────────────────────────────────────────────── */
+
+.eac-email-face {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.eac-email-badge {
+  border: 1px solid var(--eac-surface-accent, currentColor);
+  background: var(--eac-surface-accent, transparent);
+  color: var(--eac-surface-on-accent, #fff);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+}
+
+.eac-email-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.eac-email-feed-row {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  min-width: 0;
+}
+
+.eac-email-feed-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.eac-email-feed-subject,
+.eac-email-feed-who {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-email-feed-who,
+.eac-email-feed-when {
+  color: var(--eac-surface-muted, #6b7280);
+  font-size: 0.75rem;
+}
+
+.eac-email-mark {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+.eac-email-mark--received {
+  color: var(--eac-surface-accent, currentColor);
+  opacity: 1;
+}
+
+.eac-email-quiet {
+  margin: 0;
+  color: var(--eac-surface-muted, #6b7280);
+  font-size: 0.82rem;
+}
+
+.eac-email-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.eac-email-chip {
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font: inherit;
+  font-size: 0.75rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.eac-email-chip:hover,
+.eac-email-chip:focus-visible {
+  border-color: var(--eac-surface-accent, currentColor);
+}
+.eac-email-chip--go {
+  border-style: dashed;
+}
+
+/* ── The surface ──────────────────────────────────────────────────────────── */
+
+.eac-email {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eac-email-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+  margin-bottom: 0.5rem;
+}
+
+.eac-email-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--eac-surface-muted, #6b7280);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  /* The underline is drawn on a transparent border at rest so the tab does not
+     shift by 2px when it becomes current. */
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.eac-email-tab:hover {
+  color: var(--eac-surface-fg, inherit);
+}
+.eac-email-tab.is-current {
+  color: var(--eac-surface-fg, inherit);
+  border-bottom-color: var(--eac-surface-accent, currentColor);
+}
+
+.eac-email-tab-count {
+  background: var(--eac-surface-accent, #444);
+  color: var(--eac-surface-on-accent, #fff);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  padding: 0.05rem 0.4rem;
+  line-height: 1.5;
+}
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+
+.eac-email-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.eac-email-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.08));
+  min-width: 0;
+}
+.eac-email-item:last-child {
+  border-bottom: 0;
+}
+
+/* Unread is marked by a rule and by weight, never by colour alone. */
+.eac-email-item.is-unread {
+  border-left: 2px solid var(--eac-surface-accent, currentColor);
+  padding-left: 0.6rem;
+}
+.eac-email-item.is-unread .eac-email-item-title {
+  font-weight: 600;
+}
+.eac-email-item.is-off .eac-email-item-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.eac-email-item-open {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.eac-email-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.eac-email-item-title {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-email-item-sub {
+  font-size: 0.76rem;
+  color: var(--eac-surface-muted, #6b7280);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-email-item-links {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.25rem;
+  font-size: 0.76rem;
+}
+.eac-email-item-links a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.eac-email-item-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.eac-email-item-when,
+.eac-email-item-status {
+  font-size: 0.72rem;
+  color: var(--eac-surface-muted, #6b7280);
+  white-space: nowrap;
+}
+.eac-email-item-status.is-faint {
+  opacity: 0.65;
+}
+
+.eac-email-quietbtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--eac-surface-muted, #6b7280);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+}
+.eac-email-quietbtn:hover {
+  color: var(--eac-surface-fg, inherit);
+}
+.eac-email-back {
+  margin-bottom: 0.6rem;
+  display: inline-block;
+}
+
+/* ── One message ──────────────────────────────────────────────────────────── */
+
+.eac-email-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.9rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.82rem;
+}
+.eac-email-facts > div {
+  display: contents;
+}
+.eac-email-facts dt {
+  color: var(--eac-surface-muted, #6b7280);
+}
+.eac-email-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A stranger's words, in a monospace block, so the framing itself says this
+   is quoted material rather than the site speaking. */
+.eac-email-body {
+  margin: 0 0 0.9rem;
+  padding: 0.8rem;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--eac-surface-radius, 4px);
+  background: var(--eac-surface-bg-soft, rgba(0, 0, 0, 0.03));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.eac-email-attachments {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.eac-email-rowactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Stats ────────────────────────────────────────────────────────────────── */
+
+.eac-email-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.eac-email-stat {
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.1));
+  border-radius: var(--eac-surface-radius, 4px);
+  padding: 0.6rem 0.7rem;
+}
+.eac-email-stat dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eac-surface-muted, #6b7280);
+}
+.eac-email-stat dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* A failure count is marked by a rule as well as by the word above it — the
+   border alone would be colour-only signalling. */
+.eac-email-stat.is-bad {
+  border-color: var(--eac-surface-danger, #b42318);
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────────── */
+
+.eac-email-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--eac-surface-muted, #6b7280);
+  margin: 0.8rem 0 0.25rem;
+}
+
+.eac-email-input,
+.eac-email-textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.2));
+  border-radius: var(--eac-surface-radius, 4px);
+  background: var(--eac-surface-bg, transparent);
+  color: inherit;
+}
+.eac-email-input:focus-visible,
+.eac-email-textarea:focus-visible {
+  outline: 2px solid var(--eac-surface-accent, currentColor);
+  outline-offset: 1px;
+}
+.eac-email-textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.eac-email-add {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.eac-email-add .eac-email-label {
+  margin-top: 0.4rem;
+}
+
+.eac-email-check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0.9rem 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.eac-email-check input {
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+.eac-email-check > span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.eac-email-hint {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--eac-surface-muted, #6b7280);
+  line-height: 1.45;
+}
+
+/* ── Palette ──────────────────────────────────────────────────────────────── */
+
+.eac-email-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.8rem;
+  margin: 0.6rem 0;
+}
+
+.eac-email-swatch-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.eac-email-swatch-row input[type="color"] {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.2));
+  border-radius: var(--eac-surface-radius, 4px);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.eac-email-swatch .eac-email-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+/* The verdict carries a word, not just a colour — "fails AA" is the message,
+   and the tint is the reinforcement. */
+.eac-email-contrast {
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--eac-surface-radius, 4px);
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+}
+.eac-email-contrast.is-bad {
+  border-color: var(--eac-surface-danger, #b42318);
+}
+
+.eac-email-swatchdemo {
+  padding: 1rem;
+  border-radius: var(--eac-surface-radius, 4px);
+  font-size: 1.05rem;
+  margin: 0.5rem 0 0.9rem;
+  text-align: center;
+}
+
+/* ── Narrow ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 560px) {
+  .eac-email-item,
+  .eac-email-item-open {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+  .eac-email-item-side {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    text-align: left;
+  }
+  .eac-email-facts {
+    grid-template-columns: 1fr;
+    gap: 0.05rem;
+  }
+  .eac-email-facts dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* ── As a page ────────────────────────────────────────────────────────────── */
+
+/* The suite at page size drops the popup's masthead and close control — the
+   page supplies its own heading, and there is nothing to close. What it still
+   needs is somewhere for a save to report itself, which the frame's foot was
+   providing. `position: sticky` so a confirmation stays visible when the save
+   happened at the bottom of a long address list. */
+.eac-email-status {
+  position: sticky;
+  bottom: 0;
+  margin: 1rem 0 0;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.82rem;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
+  border-radius: var(--eac-surface-radius, 4px);
+  background: var(--eac-surface-bg, #fff);
+}
+.eac-email-status.is-error {
+  border-color: var(--eac-surface-danger, #b42318);
+}
+
+/* Two demos side by side: the masthead (accent as ink) and a button (accent as
+   fill). One swatch would only ever show one of the two things the letter does
+   with an org's colour. */
+.eac-email-demos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.9rem;
+}
+@media (max-width: 460px) {
+  .eac-email-demos {
+    grid-template-columns: 1fr;
+  }
+}
+.eac-email-demos .eac-email-swatchdemo {
+  margin: 0;
+}
+.eac-email-contrast .eac-email-hint {
+  margin-top: 0.15rem;
+}
+
+/* ── A letter, read in place ──────────────────────────────────────────────── */
+
+/* Full width of the row rather than beside it: an email is a document, and a
+   preview squeezed into a list column would show a layout nobody will receive. */
+.eac-email-preview {
+  flex-basis: 100%;
+  order: 99;
+  margin-top: 0.6rem;
+}
+
+.eac-email-preview-frame {
+  display: block;
+  width: 100%;
+  height: 22rem;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
+  border-radius: var(--eac-surface-radius, 4px);
+  /* White, always: the letter draws its own ground, and letting a dark site
+     theme show through the iframe would misrepresent what the inbox gets. */
+  background: #fff;
+}
+
+/* The row has to wrap once it can hold a document. */
+.eac-email-item {
+  flex-wrap: wrap;
+}
+
+/* The org's own words, written beside the letter they land in. */
+.eac-email-words {
+  margin-bottom: 0.9rem;
+  padding: 0.8rem;
+  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--eac-surface-radius, 4px);
+  background: var(--eac-surface-bg-soft, rgba(0, 0, 0, 0.02));
+}
+.eac-email-words .eac-email-label {
+  margin-top: 0;
+}
+.eac-email-words .eac-email-textarea {
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.eac-email-words .eac-email-hint {
+  margin-top: 0.35rem;
+}
+.eac-email-words .eac-email-rowactions {
+  margin-top: 0.6rem;
+  align-items: center;
+}

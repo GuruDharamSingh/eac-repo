@@ -25,8 +25,12 @@ export const PORTAL_CSS = `
 :root {
   --ink:       #111111;
   --ink-2:     #333333;
-  --ink-3:     #666666;
-  --ink-4:     #999999;
+  /* #666 / #999 failed against the newsprint ground (4.36:1 and 2.16:1)
+     at the 9-11px these are used for — bylines, kickers, captions and
+     every empty state. Darkened until both pass on the WORST ground
+     they sit on: 6.51:1 and 4.70:1 on newsprint. */
+  --ink-3:     #4f4c45;
+  --ink-4:     #646159;
   --cream:     #f5f0e8;
   --paper:     #fdfaf4;
   --newsprint: #e6e0d2;
@@ -34,7 +38,8 @@ export const PORTAL_CSS = `
   --rule-dark: #888070;
   --navy:  #1a2744;
   --red:   #8b1a1a;
-  --gold:  #a07010;
+  /* White on the old #a07010 was 4.36:1 on a 10px bold button. */
+  --gold:  #8a5f0d;
   --green: #1a5c2a;
   --col-l: 195px;
   --col-r: 175px;
@@ -360,11 +365,12 @@ a:hover { text-decoration: underline; color: var(--red); }
 
 /* ── Footer ───────────────────────────────────────────── */
 .ep-foot {
-  background: var(--navy); color: rgba(255,255,255,0.45);
+  /* 0.45 alpha on navy measured 4.21:1 at 10px. 0.62 clears 4.5:1. */
+  background: var(--navy); color: rgba(255,255,255,0.62);
   padding: 8px 14px; display: flex; justify-content: space-between;
   font-size: 10px; letter-spacing: 0.04em; font-family: var(--sans);
 }
-.ep-foot a { color: rgba(255,255,255,0.45); }
+.ep-foot a { color: rgba(255,255,255,0.62); }
 .ep-foot a:hover { color: #fff; text-decoration: none; }
 
 /* ── Responsive ───────────────────────────────────────── */
@@ -788,7 +794,13 @@ export function buildPortalHtml(opts: BuildOpts): string {
 // owning org to bind embeds to).
 
 export type NewsroomOpts = {
+  /** The roster shown in the left rail. These are PEOPLE, despite the name —
+   *  see `counts` for the numbers the masthead prints, which are counted
+   *  rather than taken from this page's length. */
   memberOrgs: MemberRosterItem[];
+  /** Real totals. The masthead used to print `memberOrgs.length`, i.e. the
+   *  page size, so it said the same number forever. */
+  counts: { members: number; orgs: number };
   /** org slug → public home URL, resolved by the caller (org_domains first,
    *  network subdomain otherwise). This renderer builds a string, so it can't
    *  look them up itself. */
@@ -803,7 +815,7 @@ export type NewsroomOpts = {
 
 export function buildNewsroomHtml(opts: NewsroomOpts): string {
   const {
-    memberOrgs, orgHomeUrls, eventsByCity, feed,
+    memberOrgs, counts, orgHomeUrls, eventsByCity, feed,
     isUserLoggedIn, userDisplayName, loginUrl, signupUrl,
   } = opts;
 
@@ -832,7 +844,7 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
           ${m.city ? ` &mdash; ${esc(m.city)}` : ""}
         </li>`
       ).join("")}</ul>`
-    : `<p style="font-size:11px;color:var(--ink-4);font-style:italic">No member orgs listed yet.</p>`;
+    : `<p style="font-size:11px;color:var(--ink-4);font-style:italic">No members listed yet.</p>`;
 
   const cityKeys = Object.keys(eventsByCity).sort((a, b) =>
     a === "Elsewhere" ? 1 : b === "Elsewhere" ? -1 : a.localeCompare(b)
@@ -890,9 +902,9 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
 
   <div class="ep-mast-side ep-mast-side--l">
     <div>
-      <div class="ep-mast-side__eyebrow">Member orgs</div>
-      <div class="ep-mast-side__name">${memberOrgs.length} &amp; growing</div>
-      <div class="ep-mast-side__sub">Each on their own subdomain, sharing one network.</div>
+      <div class="ep-mast-side__eyebrow">The network</div>
+      <div class="ep-mast-side__name">${counts.orgs} ${counts.orgs === 1 ? "organisation" : "organisations"}</div>
+      <div class="ep-mast-side__sub">${counts.members} ${counts.members === 1 ? "member" : "members"}. Each org on its own subdomain, sharing one network.</div>
     </div>
     <a class="ep-mast-link" href="/artists">Browse directory &rarr;</a>
   </div>
@@ -939,7 +951,7 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
 
   <aside class="ep-col-l">
     <div class="ep-blk">
-      <div class="ep-blk__h ep-blk__h--dark">&#9733; Member Orgs</div>
+      <div class="ep-blk__h ep-blk__h--dark">&#9733; Members</div>
       <div class="ep-blk__b">${orgListHtml}</div>
     </div>
     <div class="ep-blk">

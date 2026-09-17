@@ -8,6 +8,7 @@ import {
 import { canClaimStore } from "@elkdonis/commerce/server";
 import { getCurrentStore, getCurrentUserId } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
+import { Button } from "@/components/ui/button";
 import { ArtistProfileForm } from "../_components/artist-profile-form";
 import { OpenOrgStoreButton } from "../_components/open-org-store-button";
 
@@ -43,7 +44,7 @@ export default async function StudioApplyPage() {
   const hub = siteConfig.network.artsCollectiveUrl;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="mb-8">
         <h1 className="font-serif text-4xl tracking-tight">
           {own?.status === "pending"
@@ -66,12 +67,11 @@ export default async function StudioApplyPage() {
           <ul className="mt-2 flex flex-wrap gap-2">
             {actable.map((s) => (
               <li key={s.id}>
-                <Link
-                  href={`/studio?store=${s.id}`}
-                  className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
-                >
-                  {s.displayName ?? "Store"} <span className="ml-1 text-xs text-muted-foreground">({s.myRole})</span>
-                </Link>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/studio?store=${s.id}`}>
+                    {s.displayName ?? "Store"} <span className="ml-1 text-xs text-muted-foreground">({s.myRole})</span>
+                  </Link>
+                </Button>
               </li>
             ))}
           </ul>
@@ -128,12 +128,9 @@ export default async function StudioApplyPage() {
             agreements and your public profile live. Then come back and claim
             your store.
           </p>
-          <a
-            href={`${hub}/hub`}
-            className="mt-4 inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Go to the Arts Collective hub
-          </a>
+          <Button asChild className="mt-4">
+            <a href={`${hub}/hub`}>Go to the Arts Collective hub</a>
+          </Button>
         </section>
       ) : (
         <section>

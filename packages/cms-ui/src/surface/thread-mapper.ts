@@ -1,4 +1,10 @@
-import type { SurfaceSession, SurfaceThread } from "./types";
+import type {
+  SurfaceGathered,
+  SurfaceGatheredBy,
+  SurfaceSession,
+  SurfaceTerm,
+  SurfaceThread,
+} from "./types";
 
 // ============================================================================
 // A host's Thread view-model → the shared SurfaceThread.
@@ -69,6 +75,14 @@ export interface ThreadMapperExtras {
   price?: SurfaceThread["price"];
   currency?: string | null;
   sessions?: SurfaceSession[] | null;
+  // What the thread HOLDS (migration 131). Extras rather than input fields
+  // because they come from `thread_gathers`, not from the host's own thread
+  // row — a site that has not wired gathering passes none and renders exactly
+  // the thread it always did.
+  gathered?: SurfaceGathered[];
+  gatheredBy?: SurfaceGatheredBy[];
+  terms?: SurfaceTerm[];
+
   /** Merged onto `SurfaceThread.extra` — a host's own fields for its own
    *  `threadToAnswers`, e.g. a time zone or a minimum-attendance setting. */
   extra?: Record<string, unknown>;
@@ -123,6 +137,9 @@ export function toSurfaceThread(
     documentUrl: thread.documentUrl ?? null,
     videoLink: thread.videoLink ?? null,
     href: thread.href ?? null,
+    gathered: extras.gathered ?? [],
+    gatheredBy: extras.gatheredBy ?? [],
+    terms: extras.terms ?? [],
     extra: extras.extra ?? {},
   };
 }

@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
             guestName: name,
             meetingTitle: eventTitle,
             scheduledAt: eventScheduledAt ?? undefined,
+            orgId: siteConfig.orgId,
             orgName: siteConfig.orgName,
             primaryColor: "#8B6914",
           }),
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
             guestMessage: message || undefined,
             meetingTitle: eventTitle,
             scheduledAt: eventScheduledAt ?? undefined,
+            orgId: siteConfig.orgId,
             orgName: siteConfig.orgName,
           }),
         ]);

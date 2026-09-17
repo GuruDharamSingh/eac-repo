@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { updateProfile, canEditProfile, getProfile, type UpdateProfileInput } from "@elkdonis/services";
 import type { SaveFieldPayload, SaveResult } from "@elkdonis/live-editor";
 import type { GalleryItem } from "@elkdonis/cms-ui/gallery";
+import { DOSSIER_SECTION_KEYS } from "@elkdonis/cms-bindings/dossier";
 
 /**
  * Save actions behind the inline profile editor on ArtDirect's own /[slug]
@@ -73,8 +74,15 @@ export async function saveGalleryAction(profileUserId: string, items: GalleryIte
   return { ok: true };
 }
 
-/** Sections this page knows how to render. Anything else is refused, not stored. */
-const KNOWN_PROFILE_SECTIONS = ["store"] as const;
+/**
+ * Sections this page knows how to render. Anything else is refused, not stored.
+ *
+ * `store` is shared with every org site on purpose — a person who has turned
+ * their store on for their IFAC page has turned it on here too. The rest come
+ * from the dossier template's manifest, so adding a section to the template is
+ * what adds it here rather than a second list drifting from the first.
+ */
+const KNOWN_PROFILE_SECTIONS = ["store", ...DOSSIER_SECTION_KEYS] as const;
 
 /**
  * Switch an optional section of a profile page on or off
@@ -85,12 +93,14 @@ const KNOWN_PROFILE_SECTIONS = ["store"] as const;
  */
 export async function setProfileSectionAction(
   profileUserId: string,
-  key: (typeof KNOWN_PROFILE_SECTIONS)[number],
+  key: string,
   on: boolean
 ): Promise<SaveResult> {
   const auth = await authorize(profileUserId);
   if (!auth.ok) return auth;
-  if (!KNOWN_PROFILE_SECTIONS.includes(key)) return { ok: false, error: `Unknown section: ${key}` };
+  if (!(KNOWN_PROFILE_SECTIONS as readonly string[]).includes(key)) {
+    return { ok: false, error: `Unknown section: ${key}` };
+  }
 
   await db`
     UPDATE users

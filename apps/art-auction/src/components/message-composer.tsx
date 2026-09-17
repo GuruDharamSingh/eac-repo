@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { sendMessageAction } from "@/app/messages/actions";
 
 /** Send-a-message form at the bottom of a conversation thread. */
@@ -39,15 +40,11 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
         }}
         rows={2}
         placeholder="Write a message…  (⌘/Ctrl+Enter to send)"
-        className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+        className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
-      <button
-        type="submit"
-        disabled={pending || !body.trim()}
-        className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending || !body.trim()}>
         {pending ? "Sending…" : "Send"}
-      </button>
+      </Button>
     </form>
   );
 }

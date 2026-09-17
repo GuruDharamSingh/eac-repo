@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   approveApplicationAction,
   rejectApplicationAction,
@@ -45,28 +46,18 @@ export function ApplicationActions({ storeId }: { storeId: string }) {
     return (
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
-          className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-[2px] focus:ring-ring/50"
+          className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           placeholder="Reason for declining"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={reject}
-            disabled={pending}
-            className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-white hover:bg-destructive/90 disabled:opacity-60"
-          >
+          <Button type="button" variant="destructive" size="sm" onClick={reject} disabled={pending}>
             Confirm
-          </button>
-          <button
-            type="button"
-            onClick={() => setRejecting(false)}
-            disabled={pending}
-            className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
-          >
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(false)} disabled={pending}>
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -74,22 +65,12 @@ export function ApplicationActions({ storeId }: { storeId: string }) {
 
   return (
     <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={approve}
-        disabled={pending}
-        className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-      >
+      <Button type="button" size="sm" onClick={approve} disabled={pending}>
         Approve
-      </button>
-      <button
-        type="button"
-        onClick={() => setRejecting(true)}
-        disabled={pending}
-        className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
-      >
+      </Button>
+      <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(true)} disabled={pending}>
         Decline
-      </button>
+      </Button>
     </div>
   );
 }

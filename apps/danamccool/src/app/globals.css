@@ -1,384 +1,159 @@
-/* ============================================================================
-   Dana McCool — real site palette, sampled directly from her live
-   danamccool.com screenshots (danascreenshots/*.png), not a network default.
+/* ---------------------------------------------------------------------------
+   Tailwind, COMPLETE — preflight included.
 
-   --ink is #060606 rather than pure black or the sampled #242424: #242424 on
-   #795ff0 measures ~3.5:1 (fails WCAG AA body-text contrast, 4.5:1), and even
-   #1a1a1a only reaches ~3.9:1. #060606 clears 4.5:1 while still reading as
-   "near-black ink", not a pure #000 slab.
-   ============================================================================ */
+   The earlier version imported theme + utilities only, to protect Dana's
+   hand-written CSS from the reset. That protection is withdrawn deliberately:
+   the UI kits are to come in FAITHFULLY, and every one of them is written
+   against a page where preflight has already run. Without it their markup
+   inherits the browser's defaults — blockquote margins, list bullets, heading
+   sizes — and each section needs hand-patching to look like itself.
 
-:root {
-  --violet: #795ff0;
-  --violet-panel: #6f54e8; /* one step deeper, for the sidebar */
-  --ink: #060606;
-  --ink-soft: #1a1a1a; /* secondary/meta text only — not body copy */
-  --cyan: #48d0ed; /* active nav + inline links, sampled rgb(72,208,237) */
-  --orange: #ef4926; /* social/contact marks, sampled */
-  --sidebar-w: 208px;
-}
+   Her stylesheet still loads, and still wins over preflight, because it is
+   imported into layer(base) AFTER it. What it does not win against is a kit's
+   own utility classes, which sit in a later layer — so a harvested section
+   looks like the kit, which is the point.
 
-* {
-  box-sizing: border-box;
-}
+   The @source lines are not optional. A shared package ships SOURCE, not a
+   bundle, so Tailwind never sees its class names unless told where to look.
+   --------------------------------------------------------------------------- */
+/* The cascade order, stated before anything else — and it MUST be stated.
+   A layer's position is fixed by where it FIRST APPEARS, so importing her
+   stylesheet as layer(base) after the utilities import put base last and it
+   went on winning: the invisible cyan-on-cyan button survived the whole fix
+   until this line existed. One declaration pins the order regardless of what
+   is imported when. */
+@layer theme, base, components, utilities;
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
+@import "tailwindcss";
 
-body {
-  background: var(--violet);
-  color: var(--ink);
-  font-family: "Helvetica Neue", "Segoe UI", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 300;
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-}
+@source "../../../../packages/blocks/src";
+@source "../../../../packages/page-builder/src";
+@source "../../../../packages/cms-ui/src";
 
-a {
-  color: var(--cyan);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
+/* ---------------------------------------------------------------------------
+   Dana's own stylesheet, IN A LAYER — and this is not tidiness.
 
-/* ---- shell: fixed left sidebar + content column, like the real site ---- */
+   CSS gives an UNLAYERED rule precedence over every layered one, whatever the
+   specificity. Her base rules were unlayered, so `a { color: var(--cyan) }`
+   beat Tailwind's `text-[var(--ink)]` (which lives in @layer utilities) and
+   the first utility-styled button on this site came out cyan text on a cyan
+   ground — 1:1, completely invisible, with nothing wrong in the markup.
 
-.site-shell {
-  display: flex;
-  align-items: flex-start;
-  min-height: 100vh;
-}
+   Importing her stylesheet as `layer(base)` puts it where Tailwind expects a
+   site's own base styles: theme → base → components → utilities. Her look is
+   unchanged, and a utility can now do what a utility is for.
+   --------------------------------------------------------------------------- */
+@import "./site.css" layer(base);
 
-.site-sidebar {
-  position: sticky;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  width: var(--sidebar-w);
-  flex: 0 0 var(--sidebar-w);
-  height: 100vh;
-  padding: 1.75rem 1.25rem;
-  overflow-y: auto;
-}
+/* ---------------------------------------------------------------------------
+   The tokens Preline's markup reads.
 
-@media (max-width: 720px) {
-  .site-shell {
-    flex-direction: column;
-  }
-  .site-sidebar {
-    position: static;
-    width: 100%;
-    flex: none;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .side-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
+   Preline ships `bg-background`, `text-foreground`, `text-muted-foreground`,
+   `bg-primary`, `text-primary-foreground`, `border-border` — the shadcn
+   vocabulary — rather than `bg-gray-50`. That is the whole reason its blocks
+   are worth taking: define these once from her palette and every Preline
+   section arrives in her colours without a class being edited.
+
+   Measured against her ground, as always:
+     foreground (ink) on background (violet)   4.54  ✓
+     primary-foreground (ink) on primary(cyan) 11.12  ✓
+     foreground (ink) on muted #8c75f2          5.73  ✓
+
+   muted-foreground is full-strength ink, not a grey. There is no room for a
+   lighter one on a mid-toned ground — lifting the ink at all drops it under
+   4.5:1, the same finding that put paper under the form fields.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-background: #795ff0;
+  --color-foreground: #060606;
+  --color-muted: #8c75f2;
+  --color-muted-foreground: #060606;
+  --color-primary: #48d0ed;
+  --color-primary-foreground: #060606;
+  /* A control's boundary needs 3:1 (WCAG 1.4.11), and this ground gives almost
+     no room: every violet-and-ink mix from 30% to 60% lands between 1.7 and
+     2.8:1, and a pale lilac only reaches 3.01 at 70% white. Cream is 4.12:1
+     and is a colour she already uses on her dark bands. The hairline BETWEEN
+     entries elsewhere stays her softer mix — a decorative divider is not a
+     control boundary. */
+  --color-border: #fdf5e6;
 }
 
-.brand-mark {
-  display: block;
-  width: 116px;
-}
-.brand-mark img {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: #000;
-}
-.brand-mark:hover {
-  text-decoration: none;
+
+/* ---------------------------------------------------------------------------
+   daisyUI — semantic component classes, themed from her palette.
+
+   A different kind of thing from HyperUI and Preline, which are markup you
+   copy. daisyUI is a Tailwind plugin that adds CLASSES (`btn`, `card`,
+   `timeline`) driven by CSS variables — which is much closer to how everything
+   else here is themed than raw utilities are.
+
+   `include` is deliberate: only the components actually used. Loading the
+   whole library would put several hundred kilobytes of components this site
+   never places into every page, and its opinions about form controls on top of
+   hers.
+
+   Every colour below has a PAIRED content colour and every pair was measured
+   against her real palette, because daisyUI's `-content` convention is the
+   same rule this codebase keeps relearning — a colour chosen as a background
+   is usually unreadable as text on itself:
+
+     ink on violet base-100      4.54  ✓
+     ink on base-200 #8c75f2     5.73  ✓
+     ink on base-300 #9f8cf4     7.27  ✓
+     ink on cyan primary        11.12  ✓
+     cream on ink neutral       18.70  ✓
+     ink on orange secondary     5.45  ✓
+
+   base-200 and base-300 go LIGHTER than base-100, which is the opposite of
+   daisyUI's usual light theme. Her ground is a mid-tone violet, so the deeper
+   panel tone she uses elsewhere measures 3.96:1 against ink and fails —
+   daisyUI has only one --color-base-content for all three, so the steps have
+   to move the way that keeps it readable.
+   --------------------------------------------------------------------------- */
+@plugin "daisyui" {
+  themes: false;
+  logs: false;
+  include: timeline, card, badge, button, stat, divider;
 }
 
-.side-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+@plugin "daisyui/theme" {
+  name: "dana";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #795ff0;
+  --color-base-200: #8c75f2;
+  --color-base-300: #9f8cf4;
+  --color-base-content: #060606;
+
+  --color-primary: #48d0ed;
+  --color-primary-content: #060606;
+
+  --color-secondary: #ef4926;
+  --color-secondary-content: #060606;
+
+  --color-accent: #48d0ed;
+  --color-accent-content: #060606;
+
+  --color-neutral: #060606;
+  --color-neutral-content: #fdf5e6;
+
+  --color-info: #48d0ed;
+  --color-info-content: #060606;
+  --color-success: #16a34a;
+  --color-success-content: #fdf5e6;
+  --color-warning: #ef4926;
+  --color-warning-content: #060606;
+  --color-error: #b3261e;
+  --color-error-content: #fdf5e6;
+
+  /* Her site has no rounded corners anywhere. */
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
-.side-nav-link {
-  color: var(--ink);
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-}
-.side-nav-link:hover {
-  color: var(--cyan);
-  text-decoration: none;
-}
-.side-nav-link.is-active {
-  color: var(--cyan);
-  font-weight: 600;
-}
-.side-nav-link--manage {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(6, 6, 6, 0.2);
-}
-
-.social-row {
-  display: flex;
-  gap: 0.6rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.social-row a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  color: var(--orange);
-  font-size: 1rem;
-}
-.social-row a:hover {
-  text-decoration: none;
-  opacity: 0.8;
-}
-
-/* ---- content column ---- */
-
-.site-content {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 2.5rem 3rem 4rem;
-}
-
-@media (max-width: 720px) {
-  .site-content {
-    padding: 1.5rem 1.25rem 3rem;
-  }
-}
-
-.site-footer {
-  margin-top: 4rem;
-  font-size: 0.85rem;
-  color: var(--ink);
-}
-
-/* ---- content page typography ---- */
-
-.content-page {
-  max-width: 760px;
-}
-.content-page--wide {
-  max-width: 1080px;
-}
-.content-page--centered {
-  max-width: 640px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.page-title {
-  font-size: 1.05rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  margin: 0 0 1.75rem;
-}
-
-.content-page p {
-  margin: 0 0 1.1rem;
-}
-
-.content-page hr {
-  border: none;
-  border-top: 1px solid rgba(6, 6, 6, 0.25);
-  margin: 1.5rem 0;
-  width: 2rem;
-}
-
-.hero-portrait {
-  width: 100%;
-  max-width: 640px;
-  display: block;
-  margin: 0 auto 2rem;
-}
-.hero-portrait img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
-}
-
-/* Signature motif: circle-cropped images beside text (Manifestos, etc). */
-.circle-crop {
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-}
-
-.manifesto-block {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 2rem;
-  align-items: start;
-  margin-bottom: 3rem;
-}
-.manifesto-block .circle-crop {
-  width: 220px;
-  height: 220px;
-}
-@media (max-width: 640px) {
-  .manifesto-block {
-    grid-template-columns: 1fr;
-  }
-  .manifesto-block .circle-crop {
-    width: 160px;
-    height: 160px;
-  }
-}
-
-.manifesto-heading {
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
-}
-
-.planet-row {
-  display: flex;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  margin-top: 2rem;
-}
-.planet-row .circle-crop {
-  width: 200px;
-  height: 200px;
-  flex: 0 0 auto;
-}
-
-/* Simple masonry-ish grid for portfolio/gallery-shaped pages. */
-.tile-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-}
-@media (max-width: 640px) {
-  .tile-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.tile-grid img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.hub-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.6rem;
-}
-.hub-list a {
-  color: var(--ink);
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-}
-.hub-list a:hover {
-  color: var(--cyan);
-}
-
-.cv-section {
-  margin-bottom: 2rem;
-}
-.cv-section h2 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
-}
-.cv-year {
-  font-weight: 600;
-  margin: 1rem 0 0.25rem;
-}
-.cv-entry {
-  margin: 0 0 0.35rem;
-}
-
-.gallery-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.5rem;
-}
-.gallery-card {
-  display: block;
-  color: var(--ink);
-}
-.gallery-card-cover {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  display: block;
-}
-.gallery-card-cover--blank {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(6, 6, 6, 0.06);
-  color: var(--ink-soft);
-  font-size: 0.8rem;
-}
-.gallery-card-title {
-  margin: 0.5rem 0 0.15rem;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.gallery-card-meta {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--ink-soft);
-}
-
-.gallery-new {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-top: 2rem;
-}
-.gallery-new input {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(6, 6, 6, 0.3);
-  background: rgba(255, 255, 255, 0.35);
-  color: var(--ink);
-  border-radius: 4px;
-}
-.button-secondary {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--ink);
-  background: transparent;
-  color: var(--ink);
-  border-radius: 4px;
-  cursor: pointer;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-.button-secondary:hover {
-  background: rgba(6, 6, 6, 0.08);
-}
-.gallery-new-error {
-  color: #3a0000;
-  font-size: 0.8rem;
-}

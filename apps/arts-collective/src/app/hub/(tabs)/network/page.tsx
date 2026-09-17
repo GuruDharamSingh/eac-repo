@@ -43,7 +43,7 @@ export default async function NetworkTabPage() {
     );
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-12">
+    <div className="w-full py-10">
       {/* A person's own cloud storage. Everyone has a folder at
           EAC_Network/users/<slug>/ whether or not they have a Nextcloud
           login, so this is the only way most members can reach it. */}

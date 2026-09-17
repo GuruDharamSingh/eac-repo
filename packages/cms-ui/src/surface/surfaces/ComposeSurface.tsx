@@ -9,7 +9,7 @@ import {
   type ContentKind,
   type ContentTier,
 } from "../../compose/content-fields";
-import type { SurfaceAction, SurfaceDescriptor, SurfaceThread } from "../types";
+import type { SurfaceAction, SurfaceDescriptor, SurfaceIdentity, SurfaceThread } from "../types";
 import { SCHEDULED_KINDS } from "../types";
 import { useLayer, useSurface } from "../context";
 import { asSurfaceKind, kindMeta } from "../kinds";
@@ -134,6 +134,10 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
   const [loading, setLoading] = React.useState(editing);
   const [saving, setSaving] = React.useState<false | "draft" | "published">(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Which name signs this. Null is the viewer's own, which is what every
+  // caller that predates pen names supplies by saying nothing.
+  const [actingAs, setActingAs] = React.useState<string | null>(descriptor.actingAs ?? null);
+  const [bylines, setBylines] = React.useState<SurfaceIdentity[]>([]);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[] | undefined>>();
 
   // Editing: the record becomes the starting answers.
@@ -182,6 +186,25 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
     return Object.keys(errors).length ? errors : null;
   }
 
+  // The byline choice is offered only where it is meaningful: the host has
+  // wired identities, and this is a NEW thread. Re-signing something already
+  // published would rewrite history under a different name, which is a
+  // different act from choosing how to sign what you are writing now.
+  const offersBylines = Boolean(connectors.identities) && !descriptor.threadId;
+  React.useEffect(() => {
+    if (!offersBylines) return;
+    let live = true;
+    void connectors
+      .identities!.list()
+      .then((rows) => {
+        if (live) setBylines(rows.filter((r) => !r.retiredAt));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [connectors.identities, offersBylines]);
+
   async function save(status: "draft" | "published") {
     if (!connectors.saveThread) return;
     setError(null);
@@ -199,6 +222,7 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
       answers,
       status,
       threadId: descriptor.threadId,
+      actingAs,
     });
     setSaving(false);
 
@@ -281,6 +305,35 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
             <p className="eac-compose-prefill">
               <span aria-hidden>▦</span> Adding to {fmtDate(prefillDate, {})}
             </p>
+          )}
+
+          {/* The byline sits ABOVE the fields, not in the foot beside Save.
+              Which name signs a piece changes how it is written, so it is a
+              decision to make before typing rather than a switch to find
+              afterwards. Drawn only when there is a real choice — one name is
+              not a choice, and a select showing it would imply otherwise. */}
+          {bylines.length > 1 && (
+            <div className="eac-compose-byline">
+              <label className="eac-compose-byline-label" htmlFor="eac-compose-byline">
+                Signed
+              </label>
+              <select
+                id="eac-compose-byline"
+                className="eac-compose-byline-select"
+                value={actingAs ?? ""}
+                onChange={(e) => setActingAs(e.target.value || null)}
+              >
+                {bylines.map((identity) => (
+                  <option
+                    key={identity.id}
+                    value={identity.relation === "self" ? "" : identity.id}
+                  >
+                    {identity.displayName}
+                    {identity.relation === "organization" ? " (organisation)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <ContentComposer

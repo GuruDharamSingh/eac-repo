@@ -7,7 +7,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { WelcomeEmailProps } from '@elkdonis/email';
 import { deriveCookieDomain, resolveSupabasePublicConfig, getSupabaseServer } from './index';
 
 type CookieToSet = {
@@ -16,50 +15,39 @@ type CookieToSet = {
   options: CookieOptions;
 };
 
-function cleanEditableEmailSettings(value: unknown): Partial<WelcomeEmailProps> {
-  const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
-  const bodyText = typeof source.bodyText === 'string' && source.bodyText.trim()
-    ? source.bodyText.trim()
-    : undefined;
-  const links = Array.isArray(source.links)
-    ? source.links
-        .map((item) => {
-          const link = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
-          return {
-            label: typeof link.label === 'string' ? link.label.trim() : '',
-            url: typeof link.url === 'string' ? link.url.trim() : '',
-          };
-        })
-        .filter((item) => item.label && item.url)
-    : undefined;
-  const media = Array.isArray(source.media)
-    ? source.media
-        .map((item) => {
-          const mediaItem = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
-          return {
-            url: typeof mediaItem.url === 'string' ? mediaItem.url.trim() : '',
-            alt: typeof mediaItem.alt === 'string' ? mediaItem.alt.trim() : undefined,
-            caption: typeof mediaItem.caption === 'string' ? mediaItem.caption.trim() : undefined,
-          };
-        })
-        .filter((item) => item.url)
-    : undefined;
-
-  return { bodyText, links, media };
-}
 
 /**
- * Generates a real GoTrue email-confirmation link (not a custom token — reuses
- * Nextcloud's own verify/confirm flow, which marks auth.users.email_confirmed_at
- * natively). Landing back on `${publicOrigin}/feed?nc_connect=1` re-triggers the
- * same background-tab Nextcloud provisioning used for the Google-signup path —
- * confirming email is now the only trigger for Nextcloud sync, replacing the
- * immediate on-signup attempt.
+ * Generates a real GoTrue action link and returns it — `generateLink` does NOT
+ * send anything, which is why the address arrives inside our own welcome email
+ * rather than as a second, plainer message from GoTrue. There is no separate
+ * Supabase confirmation email to reconcile: `GOTRUE_MAILER_AUTOCONFIRM` is
+ * true and no SMTP credentials are set, so GoTrue's mailer is off entirely.
+ *
+ * Two things this comment used to claim, which are not true as of 2026-09-16:
+ *
+ *  - "marks auth.users.email_confirmed_at natively" — AUTOCONFIRM already
+ *    does that at creation. All 23 accounts in the database were confirmed
+ *    within a second of being created. So clicking the link confirms nothing;
+ *    what it actually does is establish a session and land the person in the
+ *    app, which is still worth doing but is not what the button said.
+ *
+ *  - "re-triggers the background-tab Nextcloud provisioning" — the only
+ *    handler for `?nc_connect=1` lives in apps/inner-gathering, the retired
+ *    app. Nothing in apps/innergathering reads it, and `/feed` is not a route
+ *    there (the segment is `[feed]`, for org feeds), so the link 404s. On the
+ *    live site both /feed and /general return 404 while /center returns 200.
+ *    **Nextcloud provisioning is therefore not being triggered by signup at
+ *    all** — that needs a handler in the current app, which is its own piece
+ *    of work and is not fixed here.
+ *
+ * The landing path is now a parameter defaulting to the origin root, which
+ * every app has. Pass something better where something better exists.
  */
 async function generateConfirmationLink(
   email: string,
   password: string,
-  publicOrigin: string
+  publicOrigin: string,
+  landingPath = '/'
 ): Promise<string | null> {
   try {
     const admin = getSupabaseServer();
@@ -67,7 +55,7 @@ async function generateConfirmationLink(
       type: 'signup',
       email,
       password,
-      options: { redirectTo: `${publicOrigin}/feed?nc_connect=1` },
+      options: { redirectTo: `${publicOrigin}${landingPath}` },
     });
     if (error || !data?.properties?.action_link) {
       console.error('[Signup] generateLink failed:', error?.message);
@@ -80,21 +68,13 @@ async function generateConfirmationLink(
   }
 }
 
-async function loadWelcomeEmailSettings(): Promise<Partial<WelcomeEmailProps>> {
-  try {
-    const { db } = await import('@elkdonis/db');
-    const [row] = await db`
-      SELECT config
-      FROM email_template_settings
-      WHERE org_id = 'inner_group' AND template_key = 'welcome'
-    `;
-
-    return cleanEditableEmailSettings(row?.config);
-  } catch (error) {
-    console.error('[Signup] Welcome email settings load error:', error);
-    return {};
-  }
-}
+// The welcome email's per-org copy used to be loaded here with `org_id` as a
+// hardcoded 'inner_group' literal, so whichever organisation someone signed up
+// to, they received inner_group's words. That resolution now lives in
+// @elkdonis/email's template store, which picks the right org and also handles
+// the layer this file never knew about (an org that laid the email out itself
+// in the newsletter editor). Passing `orgId` to sendWelcomeEmail is all that is
+// needed — see renderWithOverrides.
 
 /** Exported for handoff.ts, which installs a session the same way login does. */
 export function createRouteSupabaseClient(request: NextRequest) {
@@ -185,6 +165,12 @@ export interface SignupOrgOptions {
    * pass their own org so signups stay scoped to that group.
    */
   defaultOrgs?: { id: string; role: string }[];
+  /**
+   * Where the welcome email's button lands. Defaults to the origin root
+   * because that is the only path every app is guaranteed to serve — the
+   * previous default, `/feed?nc_connect=1`, 404s on the live site.
+   */
+  postSignupPath?: string;
 }
 
 export async function handleSignup(
@@ -193,6 +179,11 @@ export async function handleSignup(
 ) {
   try {
     const { email, password, displayName, interests, turnstileToken } = await request.json();
+
+    // The organisation the account is being created with. Declared out here so
+    // the welcome email below can name it, resolve its copy and send under its
+    // identity — the membership loop that sets it runs in its own try block.
+    let signupOrgId: string | undefined;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -299,6 +290,7 @@ export async function handleSignup(
       const defaultOrgs = options.defaultOrgs ?? [
         { id: 'inner_group', role: 'viewer' },
       ];
+      signupOrgId = defaultOrgs[0]?.id;
 
       for (const org of defaultOrgs) {
         await db`
@@ -328,21 +320,25 @@ export async function handleSignup(
     try {
       const { sendWelcomeEmail } = await import('@elkdonis/email');
       const resolvedName = displayName || email.split('@')[0];
-      const welcomeEmailSettings = await loadWelcomeEmailSettings();
 
       const fwdProto = (request.headers.get('x-forwarded-proto') ?? 'https').split(',')[0].trim();
       const fwdHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
       const publicOrigin = `${fwdProto}://${fwdHost}`;
-      const confirmUrl = await generateConfirmationLink(email, password, publicOrigin);
+      const confirmUrl = await generateConfirmationLink(
+        email,
+        password,
+        publicOrigin,
+        options.postSignupPath ?? '/'
+      );
 
       await sendWelcomeEmail(email, {
         displayName: resolvedName,
-        ...welcomeEmailSettings,
-        // Confirming email is what triggers Nextcloud provisioning — this
-        // link always wins over any org-customized welcome links.
-        ...(confirmUrl
-          ? { links: [{ label: 'Confirm Your Email', url: confirmUrl }] }
-          : {}),
+        email,
+        orgId: signupOrgId,
+        // Confirming email is what triggers Nextcloud provisioning, so the
+        // template renders this as its primary button regardless of what else
+        // the org has configured.
+        ...(confirmUrl ? { confirmUrl } : {}),
       });
       console.log(`[Signup] ✅ Welcome/confirmation email sent to ${email}`);
     } catch (emailError) {
@@ -436,6 +432,12 @@ export interface OAuthCallbackOptions {
    * to that group instead of the wider network.
    */
   defaultOrgs?: { id: string; role: string }[];
+  /**
+   * Where the welcome email's button lands. Defaults to the origin root
+   * because that is the only path every app is guaranteed to serve — the
+   * previous default, `/feed?nc_connect=1`, 404s on the live site.
+   */
+  postSignupPath?: string;
 }
 
 export async function handleOAuthCallback(
@@ -448,7 +450,13 @@ export async function handleOAuthCallback(
   const fwdHost  = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
   const publicOrigin = `${fwdProto.split(',')[0].trim()}://${fwdHost}`;
 
-  const redirect = (path: string) => NextResponse.redirect(`${publicOrigin}${path}`);
+  // A route handler builds its own URLs, so Next's `basePath` does not apply
+  // here the way it does to `redirect()` in a page. An app served under a
+  // sub-path (see NEXT_PUBLIC_BASE_PATH) would otherwise send every OAuth
+  // error to `<domain>/login` — on a shared domain, a DIFFERENT app's login.
+  // Empty for every app that owns its domain, so nothing else changes.
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  const redirect = (path: string) => NextResponse.redirect(`${publicOrigin}${basePath}${path}`);
 
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -528,8 +536,11 @@ export async function handleOAuthCallback(
       (authUser.user_metadata?.name as string | undefined) ||
       authUser.email.split('@')[0];
 
-    try {
-      const { db } = await import('@elkdonis/db');
+    // Declared out here so the welcome email below can name the organisation
+    // the account was created with — the membership loop runs in its own try
+    // block, and a database hiccup there should not also cost the email its
+    // sender identity.
+    const defaultOrgs = options.defaultOrgs ?? [
       // Fallback for the multi-org sites (inner-gathering, arts-collective,
       // the blogs); every single-org site passes its own defaultOrgs.
       //
@@ -540,9 +551,11 @@ export async function handleOAuthCallback(
       // are left alone; every real person in them already holds inner_group.
       // A signup is a follower (viewer role), never a member: membership is
       // something an org grants. CENTER_PAGE_BRIEF_2026-09-09.md, decision 2.
-      const defaultOrgs = options.defaultOrgs ?? [
-        { id: 'inner_group', role: 'viewer' },
-      ];
+      { id: 'inner_group', role: 'viewer' },
+    ];
+
+    try {
+      const { db } = await import('@elkdonis/db');
       for (const org of defaultOrgs) {
         await db`
           INSERT INTO user_organizations (user_id, org_id, role, joined_at)
@@ -562,8 +575,14 @@ export async function handleOAuthCallback(
 
     try {
       const { sendWelcomeEmail } = await import('@elkdonis/email');
-      const welcomeEmailSettings = await loadWelcomeEmailSettings();
-      await sendWelcomeEmail(authUser.email, { displayName: resolvedName, ...welcomeEmailSettings });
+      // No confirmUrl: Google has already verified the address, so there is
+      // nothing to confirm. The template falls back to its own portal link —
+      // which is why that default must not be a host that no longer resolves.
+      await sendWelcomeEmail(authUser.email, {
+        displayName: resolvedName,
+        email: authUser.email,
+        orgId: defaultOrgs[0]?.id,
+      });
       console.log(`[oauth] ✅ Welcome email sent to ${authUser.email}`);
     } catch (emailError) {
       console.error('[oauth] Welcome email error:', emailError);

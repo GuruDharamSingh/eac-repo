@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { OFF_FEED_KINDS } from "@elkdonis/services";
 
 // ─── Cross-org queries ─────────────────────────────────────────────────────
 // Unlike org.ts, nothing here is scoped to a single orgId — these power the
@@ -162,10 +163,48 @@ export async function getNetworkFrontFeed(
       JOIN organizations o ON o.id = t.org_id
       WHERE t.status = 'published'
         AND t.visibility = 'PUBLIC'
+        -- Without this the front page leads with whatever is newest, which
+        -- included a member's personal writing post and a Pigeonshoot
+        -- trading card. OFF_FEED_KINDS is the one place that decides what
+        -- stays off feeds; getCommunityFeed in this same app already applied
+        -- it and this query did not.
+        AND t.kind <> ALL(${OFF_FEED_KINDS})
       ORDER BY t.pinned DESC, COALESCE(t.published_at, t.created_at) DESC
       LIMIT ${limit}
     `;
   } catch {
     return [];
+  }
+}
+
+export type NetworkCounts = {
+  /** People with a public identity — what the roster lists. */
+  members: number;
+  /** Organisations past intake — what "member orgs" actually means. */
+  orgs: number;
+};
+
+/**
+ * How big the network is, counted rather than inferred.
+ *
+ * The masthead used to print `memberOrgs.length`, which is the LENGTH OF A
+ * PAGE — `getMemberRoster(24)` — so it read "24 & growing" no matter how many
+ * people there were, and it labelled people as organisations. Two different
+ * numbers, neither of them the one on the page.
+ */
+export async function getNetworkCounts(): Promise<NetworkCounts> {
+  try {
+    const [row] = await db<Array<{ members: string; orgs: string }>>`
+      SELECT
+        (SELECT COUNT(*)::text FROM users
+          WHERE slug IS NOT NULL AND display_name IS NOT NULL
+            AND entity_type = 'person') AS members,
+        (SELECT COUNT(*)::text FROM organizations
+          WHERE subdomain_confirmed) AS orgs
+    `;
+    return { members: Number(row?.members ?? 0), orgs: Number(row?.orgs ?? 0) };
+  } catch (err) {
+    console.error("[network] getNetworkCounts:", err);
+    return { members: 0, orgs: 0 };
   }
 }

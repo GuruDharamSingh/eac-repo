@@ -27,6 +27,8 @@ export interface CenterLayout {
     site?: { ratio?: "5:3" | "4:3" };
   };
   voice: "journal" | "gazette" | "quiet";
+  /** 'columns' is the two orderly columns; 'desk' is the same sections loose. */
+  arrangement: "columns" | "desk";
 }
 
 export const DEFAULT_CENTER_LAYOUT: CenterLayout = {
@@ -37,4 +39,5 @@ export const DEFAULT_CENTER_LAYOUT: CenterLayout = {
   hidden: [],
   options: { feed: { limit: 12 }, network: { limit: 12 }, pinned: { limit: 6 }, site: { ratio: "5:3" } },
   voice: "journal",
+  arrangement: "columns",
 };

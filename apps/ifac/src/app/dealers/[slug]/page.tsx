@@ -14,6 +14,7 @@ import { FRAME_THEME_VARS } from "@/lib/theme-tokens";
 import { listUserGalleries } from "@elkdonis/services";
 import { defaultSiteContent } from "@/lib/default-content";
 import { ElkdonisFeed } from "@/components/elkdonis-feed";
+import { WritingSection } from "@/components/writing-section";
 import { StoreShowcase } from "@elkdonis/commerce/components";
 import { getStoreShowcaseForUser } from "@elkdonis/commerce/queries";
 import { db } from "@elkdonis/db";
@@ -55,6 +56,12 @@ export default async function DealerPage({ params, searchParams }: Props) {
   // Sections this person switched on for their own page, from the hub.
   const showElkdonisFeed = profile.userId
     ? await hasProfileSection(profile.userId, "elkdonisFeed")
+    : false;
+  // Their own writing — the shelf and the reading room behind it. Off unless
+  // they asked for it: a person who does not write should not carry an empty
+  // section on their page.
+  const showWriting = profile.userId
+    ? await hasProfileSection(profile.userId, "blog")
     : false;
   // Their marketplace store, when they have switched the section on — a
   // window onto art-auction, not a checkout of IFAC's own.
@@ -139,12 +146,22 @@ export default async function DealerPage({ params, searchParams }: Props) {
           />
         )}
 
+        {showWriting && profile.userId && (
+          <WritingSection
+            profileUserId={profile.userId}
+            profileSlug={profile.slug}
+            kind="dealers"
+            editable={editable}
+          />
+        )}
+
         {storeShowcase && (
           <div className="mx-auto max-w-6xl px-6 py-10">
             <StoreShowcase
               store={storeShowcase.store}
               artworks={storeShowcase.artworks}
               marketplaceUrl={siteConfig.marketplaceUrl}
+              from="ifac"
               heading="Available work"
               columns={3}
             />

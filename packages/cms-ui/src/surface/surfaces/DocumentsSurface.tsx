@@ -42,7 +42,9 @@ export function DocumentsSurface({ descriptor }: { descriptor: Descriptor }) {
   );
   const [ideas, setIdeas] = React.useState<SurfaceIdea[]>([]);
   const [title, setTitle] = React.useState(descriptor.draftTitle ?? "");
-  const [busy, setBusy] = React.useState<"idle" | "creating" | "scrap" | "assigning">("idle");
+  const [busy, setBusy] = React.useState<
+    "idle" | "creating" | "scrap" | "assigning" | "removing"
+  >("idle");
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
 
@@ -130,6 +132,37 @@ export function DocumentsSurface({ descriptor }: { descriptor: Descriptor }) {
     connectors.onMutated?.();
   }
 
+  /**
+   * Take one off the list. Confirmed first, and the wording says exactly what
+   * survives — a member who has just written the group's notes needs to know
+   * this is not the button that destroys them.
+   */
+  async function remove(doc: SurfaceDocument) {
+    if (!docs?.remove) return;
+    if (
+      !window.confirm(
+        `Remove “${doc.title}” from the group's documents?\n\n` +
+          `It comes off this list for everyone. The file itself stays in the ` +
+          `group's Nextcloud folder, so the writing is not lost — but nobody ` +
+          `will reach it from here again.`
+      )
+    ) {
+      return;
+    }
+    setBusy("removing");
+    setError(null);
+    setNotice(null);
+    const result = await docs.remove(doc.id);
+    setBusy("idle");
+    if (result.ok === false) {
+      setError(result.error);
+      return;
+    }
+    setItems((current) => (current ?? []).filter((d) => d.id !== doc.id));
+    setNotice(`Removed “${doc.title}”`);
+    connectors.onMutated?.();
+  }
+
   if (!docs) {
     return (
       <SurfaceFrame kind="document" title="Documents">
@@ -173,15 +206,29 @@ export function DocumentsSurface({ descriptor }: { descriptor: Descriptor }) {
         <label className="eac-doc-label" htmlFor="eac-doc-title">
           Start a document
         </label>
-        <input
-          id="eac-doc-title"
-          className="eac-doc-input"
-          value={title}
-          maxLength={200}
-          autoFocus={Boolean(descriptor.draftTitle)}
-          placeholder="Meeting notes, a proposal, a shared list…"
-          onChange={(e) => setTitle(e.target.value)}
-        />
+        {/* The create button sits BESIDE the field, not only in the surface's
+            foot. A foot action is where you look to finish a form; this is
+            one input, and the thing to do with it should be within reach of
+            the thing you just typed. The foot keeps its copy for the keyboard
+            path and for the scrap-doc alternative. */}
+        <div className="eac-doc-start-row">
+          <input
+            id="eac-doc-title"
+            className="eac-doc-input"
+            value={title}
+            maxLength={200}
+            autoFocus={Boolean(descriptor.draftTitle)}
+            placeholder="Meeting notes, a proposal, a shared list…"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="eac-btn eac-btn--primary"
+            disabled={Boolean(busy) || title.trim().length === 0}
+          >
+            {busy === "creating" ? "Creating…" : "Create"}
+          </button>
+        </div>
         <p className="eac-doc-hint">
           Opens in Nextcloud Text, editable by everyone in the group at once and
           saved to the group&rsquo;s folder. No account needed — the link is the
@@ -238,6 +285,19 @@ export function DocumentsSurface({ descriptor }: { descriptor: Descriptor }) {
                     ))}
                   </select>
                 </label>
+              )}
+
+              {docs.remove && (
+                <button
+                  type="button"
+                  className="eac-doc-remove"
+                  disabled={busy !== "idle"}
+                  aria-label={`Remove ${doc.title} from the documents`}
+                  title="Remove from this list (the file stays in Nextcloud)"
+                  onClick={() => void remove(doc)}
+                >
+                  Remove
+                </button>
               )}
             </li>
           ))}

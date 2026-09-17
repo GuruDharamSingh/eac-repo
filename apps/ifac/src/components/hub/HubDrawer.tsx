@@ -73,8 +73,16 @@ export function HubDrawer({
             My profile
             {!profileHref && <em> — not set up yet</em>}
           </a>
-          <a href="/hub#compose">Add blog post</a>
-          <a href="/hub#questionnaires">Questionnaires</a>
+          {/* These were `/hub#compose` and `/hub#questionnaires` — anchors to
+              ids that have never existed on the page, so both landed at the
+              top of the hub having done nothing. Compose is a real route;
+              the questionnaires panel is a surface, and a surface is reached
+              from its face, not from a link. */}
+          <a href="/hub/compose">
+            Compose
+            <em> — the long form, on its own page</em>
+          </a>
+          <a href="/forum">The forum</a>
           <a href="/">Public site</a>
           <a className="hub-drawer-signout" href="/api/auth/logout">
             Log out

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "@elkdonis/auth-client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elkdonis/primitives";
 
 export function SignOutButton() {
   const [busy, setBusy] = useState(false);

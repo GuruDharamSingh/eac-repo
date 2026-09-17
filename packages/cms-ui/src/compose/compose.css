@@ -163,3 +163,53 @@ details.eac-group--optional.has-values:not([open]) > summary::after {
   justify-content: space-between;
   flex-wrap: wrap;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE PICKER — what you are about to make.
+
+   The options are `.eac-face--small` cards (see surface.css), so everything
+   about their look — the kind accent, the medallion, the lift on hover — is
+   already decided there and must not be restated here. This is only the bed
+   they lie in.
+
+   auto-fit rather than a fixed two columns: the same grid then serves the
+   compose popup (one narrow column on a phone, two on a laptop) and the
+   full-width compose page, where six kinds sit three across instead of
+   stretching to half a screen each.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.eac-pick {
+  display: grid;
+  /* auto-FILL, not auto-fit: with two or three kinds an auto-fit row stretches
+     each card to a third of the page, which makes a short list look like a
+     banner. Empty tracks keep every option the same, readable width whatever
+     the org can compose. 200px fits all six across a full-width compose page
+     and drops cleanly to two in the popup. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* A hub face bottom-aligns its content, so that a tile with a live preview
+   keeps its title on the same line as its neighbours'. A picker is the other
+   case: the cards are all title-then-blurb, the blurbs run to different
+   lengths, and bottom-aligning them staggered every title down the row. Here
+   the titles are what you read, so they go to the top. */
+.eac-pick .eac-face {
+  justify-content: flex-start;
+}
+
+/* The blurb is the part that makes a picker readable rather than a row of
+   nouns, so it is allowed two lines here where a hub face clamps to one. */
+.eac-pick .eac-face-blurb {
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.eac-pick-empty {
+  margin: 0;
+  padding: 28px 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--sf-muted, var(--ink-soft, #5e667a));
+}

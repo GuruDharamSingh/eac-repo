@@ -23,7 +23,9 @@ export type ComposeKindId =
   | "meeting"
   | "workshop"
   | "questionnaire"
-  | "poll";
+  | "poll"
+  | "art-piece"
+  | "blog";
 
 export interface ComposeOption {
   id: ComposeKindId;
@@ -46,8 +48,16 @@ export interface ComposeOption {
   surface?: "form" | "writing";
   /** Path for `mode: "route"`, with `:orgSlug` already substituted. */
   href?: string;
-  /** The `threads.kind` or `questionnaires.kind` this writes. */
-  writes: { table: "threads" | "questionnaires"; kind: string };
+  /**
+   * What this writes.
+   *
+   * `threads` is the shared composer's territory and needs only
+   * `connectors.saveThread`. Anything else is per app — a questionnaire has
+   * its own table, an artwork belongs to the commerce package — so the
+   * catalogue offers it only when the host has registered
+   * `connectors.custom["compose:<id>"]` to answer for it.
+   */
+  writes: { table: "threads" | "questionnaires" | "artwork" | "writing"; kind: string };
 }
 
 export interface ComposeContext {
@@ -97,6 +107,18 @@ export interface ComposeContext {
   canCreateDocument?: boolean;
   /** Offer "create a Talk room" — needs Nextcloud Talk wired. */
   canCreateTalkRoom?: boolean;
+  /**
+   * Whether members sell work here. Adds "Art piece" — an object with
+   * measurements rather than a post with a date, written to the commerce
+   * package's `artwork`. Off by default: most orgs are not a marketplace,
+   * and the form asks for dimensions and provenance.
+   */
+  hasArtworks?: boolean;
+  /**
+   * Whether a member can have a blog section on their profile on this site.
+   * Off by default; the org needs member profiles for it to hang on.
+   */
+  hasMemberBlogs?: boolean;
 }
 
 const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }> = [
@@ -145,6 +167,30 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     mode: "dialog",
     writes: { table: "questionnaires", kind: "questionnaire" },
     available: (ctx) => Boolean(ctx.canManageOrg),
+  },
+  {
+    id: "art-piece",
+    title: "Art piece",
+    blurb: "A work, with its image, medium, dimensions and provenance.",
+    icon: "▣",
+    mode: "dialog",
+    // Not a thread: an artwork is an OBJECT with measurements, and the
+    // commerce package already owns that table. The host registers
+    // `compose:art-piece` and that surface writes through `createArtwork`.
+    writes: { table: "artwork", kind: "artwork" },
+    available: (ctx) => Boolean(ctx.hasArtworks),
+  },
+  {
+    id: "blog",
+    title: "Blog",
+    blurb: "Your own voice, as a section of your profile page.",
+    icon: "▤",
+    mode: "dialog",
+    // Also not an org thread — a member's writing belongs to the member. The
+    // surface behind this is a door, not a form: it asks once whether to add
+    // the section and what it should show, then takes them there.
+    writes: { table: "writing", kind: "writing" },
+    available: (ctx) => Boolean(ctx.hasMemberBlogs),
   },
   {
     id: "poll",

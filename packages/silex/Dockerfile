@@ -27,6 +27,33 @@ FROM silexlabs/silex-platform:${SILEX_VERSION}
 # a plain `npm i @silexlabs/silex` tree.
 COPY packages/silex/eac-deploy-config.js /silex/server/deploy/.silex.js
 
+# ── Vendored GrapesJS plugins ───────────────────────────────────────────────
+# Third-party editor plugins, installed into their OWN npm tree at
+# /silex/eac-vendor rather than into /silex/node_modules: the base image's tree
+# is pnpm-managed (symlinked .pnpm store), and `npm i` into it rewrites those
+# links and can leave Silex itself unresolvable.
+#
+# Only the UMD bundle of each is ever served (see the connector's
+# editorAssetsMiddleware → /eac-vendor/<id>.js). They are loaded in the browser
+# as <script> tags, because the client config is served raw to the browser and
+# cannot resolve bare npm specifiers.
+#
+# Which of these actually run in the editor is decided in client-config.js —
+# installing a plugin here only makes it AVAILABLE. See VENDOR_PLUGINS there
+# for what is on by default and what is opt-in via `?plugins=`.
+#
+# NOT here on purpose: @silexlabs/grapesjs-ui-suggest-classes. npm deprecates
+# it in favour of @silexlabs/grapesjs-advanced-selector, which this image
+# ALREADY bundles (/silex/grapesjs-plugins/grapesjs-advanced-selector) and
+# whose code the built client already references. Installing it would have
+# been a deprecated second copy of a feature Silex ships.
+ARG EAC_VENDOR_PLUGINS="grapesjs-tabs@1.0.6 grapesjs-rte-extensions@1.0.13 grapesjs-project-manager@2.0.6 grapesjs-blocks-flexbox@1.0.1 grapesjs-blocks-table@1.1.2 grapesjs-plugin-export@1.0.12 grapesjs-preset-newsletter@1.0.2 grapesjs-mjml@1.0.8"
+RUN mkdir -p /silex/eac-vendor \
+ && cd /silex/eac-vendor \
+ && npm init -y > /dev/null \
+ && npm i --no-audit --no-fund --omit=dev ${EAC_VENDOR_PLUGINS} \
+ && npm cache clean --force
+
 # Mount point for the bind-mounted connector package (see docker-compose.yml).
 RUN mkdir -p /silex/extensions
 

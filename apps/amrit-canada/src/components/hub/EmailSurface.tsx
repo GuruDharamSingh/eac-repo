@@ -1,26 +1,35 @@
 "use client";
 
+// ============================================================================
+// SUPERSEDED IN PART — 2026-09-17.
+//
+// The email SUITE is now `@elkdonis/cms-ui/email` (face + surface + the page at
+// arts-collective.com/hub/email). It carries everything this pair used to be
+// the only home for, and four things it never had: an inbox for mail that
+// comes back, an address book merged across contacts/members/RSVP guests, a
+// delivery ledger, and the org's own palette.
+//
+// This file is KEPT because it still does one thing the shared suite does not:
+// per-thread email — choosing a meeting, writing its confirmation body,
+// triggering a blast to that meeting's attendees, and setting its automatic
+// reminder. Those run against amrit-canada's own routes
+// (/api/threads/[id]/email-settings, /trigger-email, /reminder).
+//
+// DO NOT extend this file. When per-thread email is folded into the shared
+// suite it becomes a sixth tab there, and this pair is deleted along with the
+// `email` custom-surface key in HubSurfaces.tsx — which is the same key the
+// shared suite registers, so the two can never be mounted in one app.
+// ============================================================================
+
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SurfaceFrame, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import type { EmailMediaItem } from "@elkdonis/email";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { EmailThreadOption } from "./EmailFace";
 import type { EmailTemplateConfig } from "@/lib/email-template-settings";
 import type { Material } from "@/lib/types";
+import { Button, Textarea, Checkbox, Switch, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent } from "@elkdonis/primitives";
 
 type TriggerType = "confirmation" | "reminder" | "cancellation";
 type Audience = "rsvp" | "custom";

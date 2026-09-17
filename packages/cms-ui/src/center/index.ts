@@ -12,10 +12,14 @@
 // ============================================================================
 
 export { CenterPage, ProfileCardBody } from "./CenterPage";
+export { ProfileFlipCard } from "./ProfileFlipCard";
+export type { ProfileCardAction } from "./ProfileFlipCard";
 export type { CenterPageProps } from "./CenterPage";
 export { CenterThreadRow } from "./CenterThreadRow";
 export { FollowButton } from "./FollowButton";
 export { ArrangeButton } from "./ArrangeButton";
+export { CenterDesk } from "./CenterDesk";
+export type { CenterDeskItem } from "./CenterDesk";
 export { OrgStrip } from "./OrgStrip";
 export type { OrgStripItem } from "./OrgStrip";
 export type {

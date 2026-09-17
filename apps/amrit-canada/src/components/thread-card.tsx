@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { kindMeta, useSurfaceOptional } from "@elkdonis/cms-ui/surface";
-import { CycleBadge } from "@/components/cycle-badge";
 import {
   formatDuration,
   formatRecurrence,
@@ -11,6 +10,7 @@ import {
   toPlainText,
 } from "@/lib/format";
 import type { Thread, ThreadCycleStatus } from "@/lib/types";
+import { CycleBadge } from "@elkdonis/blocks";
 
 interface ThreadCardProps {
   thread: Thread;

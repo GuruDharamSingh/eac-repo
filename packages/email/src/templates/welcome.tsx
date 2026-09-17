@@ -1,7 +1,41 @@
 import * as React from 'react';
-import { Section, Text, Button, Img } from '@react-email/components';
-import { render } from '@react-email/render';
-import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import { Section, Text, Button, Img, Link, Hr } from '@react-email/components';
+import { renderEmail } from '../render-email';
+import { EmailShell, getEmailPalette, EAC_GOLD, HEADER_FONT_STACK } from '../components/EmailShell';
+import { ProfileCard, ThreadCard, Prose, ReadMore, type ThreadCardProps } from '../components/cards';
+import {
+  NETWORK_MANIFESTO,
+  NETWORK_RESOURCES,
+  SIGNUP_CONFIRM,
+  SIGNUP_NETWORK_NOTE,
+  SIGNUP_BY_PURCHASE,
+  REMINDER_OPTIONS_NOTE,
+  fill,
+  paragraphsOf,
+} from '../copy';
+
+// ============================================================================
+// The one letter the network sends on its own behalf.
+//
+// It does three jobs at once, in this order, because that is the order the
+// reader cares about:
+//
+//   1. confirm the account they just made, with the organisation they made it
+//      with — and carry the confirm-email link, which is what triggers their
+//      Nextcloud provisioning. That link is LOAD-BEARING; an account that
+//      never confirms never gets its storage.
+//   2. show them what they joined — their own profile, and, when the account
+//      was created by buying or reserving a place, the thing they bought.
+//   3. say what the Elkdonis Arts Collective is. Once, properly, at the only
+//      moment someone is reliably reading.
+//
+// Every organisation on the network sends this same letter (see
+// auth-server's handleSignup) — that is deliberate. Signing up is a NETWORK
+// event: the account is on the network, org membership is downstream, and the
+// confirm link provisions a network resource. An org adds its own voice
+// through `bodyText`, which renders as its own section rather than displacing
+// any of the above.
+// ============================================================================
 
 export interface WelcomeLinkItem {
   label: string;
@@ -16,138 +50,269 @@ export interface WelcomeMediaItem {
 
 export interface WelcomeEmailProps {
   displayName: string;
-  portalUrl?: string;
+  /** Shown on the profile card — the address this was sent to. */
+  email?: string;
+  username?: string;
+  avatarUrl?: string;
+  /** The organisation the account was created with. */
+  orgName?: string;
+
+  /**
+   * The confirm-email link. Rendered as the primary button.
+   * Confirming is what triggers Nextcloud provisioning, so when this is
+   * present it outranks every other call to action in the email.
+   */
+  confirmUrl?: string;
+
+  /**
+   * Set when the account was created by buying or reserving a place — a
+   * workshop, a meeting. Renders the thread card and the materials note.
+   */
+  thread?: Omit<ThreadCardProps, 'dark'>;
+
+  /** Where the reader can turn the reminder off or move it earlier. */
+  reminderSettingsUrl?: string;
+  /** A .ics or Google Calendar link for the thread above. */
+  calendarUrl?: string;
+
+  /** The whole network. Defaults to arts-collective.com. */
+  networkUrl?: string;
+  /** The collective itself. Defaults to elkdonis-arts.org. */
+  collectiveUrl?: string;
+
+  /** The org's own words, shown as its own section. */
   bodyText?: string;
+  /** Extra links from the org. The confirm button is separate and always wins. */
   links?: WelcomeLinkItem[];
   media?: WelcomeMediaItem[];
+
+  /**
+   * Legacy fallback CTA for callers that pass no confirmUrl.
+   * NB: this used to default to gathering.elkdonis-arts.org, which does not
+   * resolve — every email rendered without a confirm link carried a dead
+   * button.
+   */
+  portalUrl?: string;
+  dark?: boolean;
+  /** True once the org sends from its own authenticated domain. */
+  orgHeader?: boolean;
+  orgAccent?: string;
 }
 
-const defaultBodyText = `This is an email to confirm your sign up.
-
-Thanks.`;
-
-function paragraphsFromText(value?: string) {
-  return (value?.trim() || defaultBodyText)
-    .split(/\n{2,}/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+const NETWORK_URL = 'https://arts-collective.com';
+const COLLECTIVE_URL = 'https://elkdonis-arts.org';
 
 function WelcomeEmail({
   displayName,
-  portalUrl = 'https://gathering.elkdonis-arts.org',
+  email,
+  username,
+  avatarUrl,
+  orgName,
+  confirmUrl,
+  thread,
+  reminderSettingsUrl,
+  calendarUrl,
+  networkUrl = NETWORK_URL,
+  collectiveUrl = COLLECTIVE_URL,
   bodyText,
   links,
   media = [],
+  portalUrl = COLLECTIVE_URL,
+  dark = true,
+  orgHeader = false,
+  orgAccent,
 }: WelcomeEmailProps) {
-  const bodyParagraphs = paragraphsFromText(bodyText);
-  const actionLinks = links === undefined ? [{ label: 'Enter the Collective', url: portalUrl }] : links;
-  const palette = getEmailPalette(true);
+  const palette = getEmailPalette(dark);
+  const org = orgName ?? 'the Elkdonis Arts Collective';
+
+  const confirmParagraphs = fill(SIGNUP_CONFIRM, { org });
+  const orgParagraphs = paragraphsOf(bodyText);
+  const primaryUrl = confirmUrl ?? portalUrl;
+  // Confirming is optional — GOTRUE_MAILER_AUTOCONFIRM is on, so the address
+  // is already confirmed, and nothing is withheld from someone who never
+  // clicks. The link is offered, not pressed: no urgency copy underneath it.
+  const primaryLabel = confirmUrl ? 'Confirm account' : 'Enter the Collective';
+  const extraLinks = (links ?? []).filter((link) => link.url && link.url !== primaryUrl);
+
+  const divider = (
+    <Hr style={{ border: 'none', borderTop: `1px solid ${palette.boxBorder}`, margin: '30px 0 26px' }} />
+  );
+
+  const sectionLabel = (text: string) => (
+    <Text
+      style={{
+        fontSize: '11px',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.13em',
+        color: EAC_GOLD,
+        margin: '0 0 14px',
+      }}
+    >
+      {text}
+    </Text>
+  );
 
   return (
     <EmailShell
-      previewText="Welcome to Elkdonis Arts Collective"
-      kicker="Welcome to the Collective"
-      dark
+      previewText={`Your account with ${org} — and the collective it joins`}
+      kicker={orgHeader ? undefined : orgName ? `Welcome to ${orgName}` : 'Welcome to the Collective'}
+      dark={dark}
+      orgName={orgName}
+      orgHeader={orgHeader}
+      orgAccent={orgAccent}
       showNfpFooter
       footerText={
-        <Text style={{ fontSize: '12px', color: palette.textMuted, margin: 0 }}>
-          This email was sent because you created an account at{' '}
-          <span style={{ color: palette.accent }}>elkdonis-arts.org</span>.
-          If you did not sign up, you can safely ignore this message.
+        <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
+          This email was sent because an account was created with {org} on the
+          Elkdonis Arts Collective. If that was not you, you can safely ignore
+          this message and nothing further will happen.
         </Text>
       }
     >
-      <Text style={{ fontSize: '16px', color: palette.textBody, marginTop: 0, lineHeight: '1.7' }}>
-        Hello {displayName} —
-      </Text>
-
-      {bodyParagraphs.map((paragraph, index) => (
-        <Text key={index} style={{ fontSize: '15px', color: palette.textBody, lineHeight: '1.75' }}>
-          {paragraph}
-        </Text>
+      {/* 1 — the confirmation itself */}
+      {confirmParagraphs.map((paragraph, i) => (
+        <Prose key={`confirm-${i}`} dark={dark}>{paragraph}</Prose>
       ))}
 
-      {media.map((item, index) => (
-        <Section key={`${item.url}-${index}`} style={{ margin: '28px 0' }}>
-          <Img
-            src={item.url}
-            alt={item.alt ?? ''}
-            style={{
-              width: '100%',
-              display: 'block',
-              border: `1px solid ${palette.boxBorder}`,
-            }}
+      <ProfileCard
+        displayName={displayName}
+        email={email}
+        username={username}
+        avatarUrl={avatarUrl}
+        metaLine={orgName ? `Member of ${orgName}` : undefined}
+        dark={dark}
+      />
+
+      {/* 2 — what they bought or reserved, when that is why the account exists */}
+      {thread && (
+        <>
+          <ThreadCard
+            {...thread}
+            linkLabel={thread.linkLabel ?? 'Navigate back to view details'}
+            orgName={thread.orgName ?? orgName}
+            dark={dark}
           />
-          {item.caption && (
-            <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: '10px 0 0' }}>
-              {item.caption}
-            </Text>
-          )}
-        </Section>
-      ))}
+          {SIGNUP_BY_PURCHASE.map((paragraph, i) => (
+            <Prose key={`purchase-${i}`} dark={dark}>{paragraph}</Prose>
+          ))}
 
-      {actionLinks.length > 0 && (
-        <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
-          {actionLinks.map((link) => (
-            <Button
-              key={`${link.label}-${link.url}`}
-              href={link.url}
-              style={{
-                backgroundColor: palette.accent,
-                color: '#0b0e18',
-                padding: '14px 22px',
-                fontFamily: 'Arial, Helvetica, sans-serif',
-                fontSize: '13px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.08em',
-                textDecoration: 'none',
-                display: 'inline-block',
-                margin: '0 6px 10px',
-              }}
-            >
-              {link.label}
-            </Button>
+          {(reminderSettingsUrl || calendarUrl) && (
+            <Prose dark={dark} muted>
+              {REMINDER_OPTIONS_NOTE}{' '}
+              {reminderSettingsUrl && (
+                <Link href={reminderSettingsUrl} style={{ color: palette.accent }}>
+                  Change or turn off the reminder
+                </Link>
+              )}
+              {reminderSettingsUrl && calendarUrl ? ' · ' : ''}
+              {calendarUrl && (
+                <Link href={calendarUrl} style={{ color: palette.accent }}>
+                  Add it to your calendar
+                </Link>
+              )}
+            </Prose>
+          )}
+        </>
+      )}
+
+      {/* The load-bearing action. */}
+      <Section style={{ textAlign: 'center' as const, margin: '30px 0 8px' }}>
+        <Button
+          href={primaryUrl}
+          style={{
+            backgroundColor: EAC_GOLD,
+            color: '#01124E',
+            fontFamily: HEADER_FONT_STACK,
+            fontSize: '14px',
+            textTransform: 'uppercase' as const,
+            letterSpacing: '0.1em',
+            padding: '14px 30px',
+            textDecoration: 'none',
+            display: 'inline-block',
+          }}
+        >
+          {primaryLabel}
+        </Button>
+      </Section>
+
+      {extraLinks.length > 0 && (
+        <Section style={{ margin: '10px 0 0', textAlign: 'center' as const }}>
+          {extraLinks.map((link) => (
+            <Text key={link.url} style={{ margin: '0 0 6px' }}>
+              <Link href={link.url} style={{ color: palette.accent, fontSize: '14px' }}>
+                {link.label}
+              </Link>
+            </Text>
           ))}
         </Section>
       )}
 
-      <Text style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.7', margin: '8px 0 0' }}>
-        You&apos;re joining <strong>Elkdonis Arts Collective</strong> — a platform for many
-        different arts collectives, built on open resources. We&apos;re working to give
-        artists who aren&apos;t especially tech-savvy — artists closer to the street
-        level of society — access to the kind of business-level tools and engagement
-        that&apos;s often out of reach.
-      </Text>
-      <Text style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.7', margin: '12px 0 0' }}>
-        We&apos;re in an early stage: new sites are coming together to form this
-        broader network, helping many artists succeed.
-      </Text>
+      {/* 3 — the org's own words, if it has written any */}
+      {orgParagraphs.length > 0 && (
+        <>
+          {divider}
+          {sectionLabel(orgName ? `From ${orgName}` : 'From your hosts')}
+          {orgParagraphs.map((paragraph, i) => (
+            <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
+          ))}
+        </>
+      )}
 
-      <Section style={{ margin: '22px 0 0' }}>
-        <Text
-          style={{
-            margin: '0 0 6px',
-            fontSize: '11px',
-            color: palette.textMuted,
-            fontFamily: 'Arial, sans-serif',
-            textTransform: 'uppercase' as const,
-            letterSpacing: '0.12em',
-          }}
-        >
-          Follow along
-        </Text>
-        <Text style={{ margin: 0, fontSize: '13px', color: palette.textBody }}>
-          <a href="https://elkdonisarts.substack.com/" style={{ color: palette.accent }}>Substack</a>
-          {' · '}
-          <a href="https://www.instagram.com/Elkdonisarts" style={{ color: palette.accent }}>Instagram</a>
-        </Text>
-      </Section>
+      {media.length > 0 && (
+        <Section style={{ margin: '18px 0 0' }}>
+          {media.map((item) => (
+            <Section key={item.url} style={{ margin: '0 0 14px' }}>
+              <Img src={item.url} alt={item.alt ?? ''} width="520" style={{ display: 'block', width: '100%', height: 'auto' }} />
+              {item.caption && (
+                <Text style={{ fontSize: '12px', color: palette.textMuted, margin: '6px 0 0' }}>
+                  {item.caption}
+                </Text>
+              )}
+            </Section>
+          ))}
+        </Section>
+      )}
+
+      {/* 4 — the network this account actually joins */}
+      {divider}
+      {fill(SIGNUP_NETWORK_NOTE, { org }).map((paragraph, i) => (
+        <Prose key={`net-${i}`} dark={dark}>{paragraph}</Prose>
+      ))}
+      <Prose dark={dark}>
+        You can visit{' '}
+        <Link href={networkUrl} style={{ color: palette.accent }}>arts-collective.com</Link>{' '}
+        to view the full network, or choose to investigate Elkdonis Arts at{' '}
+        <Link href={collectiveUrl} style={{ color: palette.accent }}>elkdonis-arts.org</Link>.
+      </Prose>
+
+      {/* 5 — what the collective is */}
+      {/*
+        The collective's letter, in two parts. The opening two paragraphs say
+        what this is and stand on their own; everything after them — the
+        values, the resources, the bit about hockey teams — is offered behind a
+        "read more" rather than imposed on someone who just wanted to confirm
+        an address. Where a client strips <details> it all shows anyway, which
+        is the right way for that to fail.
+      */}
+      {divider}
+      {sectionLabel('About the collective')}
+      {NETWORK_MANIFESTO.slice(0, 2).map((paragraph, i) => (
+        <Prose key={`manifesto-${i}`} dark={dark}>{paragraph}</Prose>
+      ))}
+
+      <ReadMore label="Read more about the collective" dark={dark}>
+        {NETWORK_MANIFESTO.slice(2).map((paragraph, i) => (
+          <Prose key={`manifesto-rest-${i}`} dark={dark}>{paragraph}</Prose>
+        ))}
+        {NETWORK_RESOURCES.map((paragraph, i) => (
+          <Prose key={`resources-${i}`} dark={dark}>{paragraph}</Prose>
+        ))}
+      </ReadMore>
     </EmailShell>
   );
 }
 
 export async function renderWelcomeEmail(props: WelcomeEmailProps): Promise<string> {
-  return render(React.createElement(WelcomeEmail, props));
+  return renderEmail(<WelcomeEmail {...props} />);
 }

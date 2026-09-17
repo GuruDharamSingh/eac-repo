@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { listOrgFeeds, listOrgEventsInRange } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
-import { Button } from "@/components/ui/button";
 import { ThreadCard } from "@/components/thread-card";
 import { GuideProfileCard } from "@/components/guide-profile-card";
 import { CalendarFace } from "@elkdonis/cms-ui/hub";
@@ -14,6 +13,7 @@ import {
 } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { Button } from "@elkdonis/primitives";
 
 export default async function HomePage() {
   const now = new Date();

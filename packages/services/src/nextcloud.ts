@@ -4,6 +4,7 @@
  */
 
 import { Buffer } from 'node:buffer';
+import { asBodyOrBlob } from './bytes';
 
 declare const process: any;
 
@@ -255,7 +256,7 @@ export async function uploadFile(
         'Authorization': `Basic ${auth}`,
         'Content-Type': contentType,
       },
-      body: file,
+      body: asBodyOrBlob(file),
     });
 
     console.log(`[Nextcloud] Response status: ${response.status} ${response.statusText}`);

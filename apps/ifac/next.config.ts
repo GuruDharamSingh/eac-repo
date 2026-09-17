@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
+    "@elkdonis/services",
     "@elkdonis/pipeline",
+    "@elkdonis/primitives",
+    "@elkdonis/chat",
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
     "@elkdonis/db",

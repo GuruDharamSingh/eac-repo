@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Download } from "lucide-react";
 import {
+  getGathering,
   getOrgFeed,
   getProfile,
   getWorkshopOffering,
@@ -37,6 +38,7 @@ import { getViewer } from "@/lib/auth";
 import { toPlainText } from "@/lib/format";
 import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
+import { termHref, threadHref } from "@/lib/gather";
 
 interface ThreadPageProps {
   params: Promise<{ feed: string; slug: string }>;
@@ -196,7 +198,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
     thread.recurrencePattern && thread.recurrencePattern !== "NONE"
   );
 
-  const [cycleStatus, attendanceCount, myRsvp, attendees, materials] = await Promise.all([
+  const [cycleStatus, attendanceCount, myRsvp, attendees, materials, gathering] = await Promise.all([
     thread.scheduledAt ? getCycleStatus(thread) : Promise.resolve("pending" as const),
     thread.isRsvpEnabled ? getAttendanceCount(thread) : Promise.resolve(0),
     viewer ? getThreadRsvpForUser(thread, viewer.userId) : Promise.resolve(false),
@@ -205,6 +207,19 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
     // is not the same thing.
     viewer?.isMember ? listAttendees(thread) : Promise.resolve([]),
     getThreadMaterials(thread.id),
+    // What the occasion holds — the document written here, the terms defined
+    // out of it, the discussion it started. `isMember` gates the living
+    // document's URL and nothing else does: that share is public and writable,
+    // so the thread's own visibility is the wrong question.
+    getGathering(thread.id, {
+      viewerUserId: viewer?.userId ?? null,
+      isMember: Boolean(viewer?.isMember),
+      orgId: siteConfig.orgId,
+      hrefFor: threadHref,
+      termHref,
+      // Files dropped into the thread's folder list beside the edges.
+      withFolder: true,
+    }),
   ]);
 
   const when = thread.nextOccurrenceAt;
@@ -227,6 +242,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
     rsvpCount: attendanceCount,
     viewerAttending: viewer ? myRsvp : null,
     cycleStatus,
+    ...gathering,
   });
   const parts = threadViewParts(surfaceThread, { timeZone: "America/Toronto" });
   const ics = when ? buildIcs(surfaceThread) : null;

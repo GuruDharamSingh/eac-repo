@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { messageArtistAction } from "@/app/messages/actions";
 
 /**
@@ -65,24 +66,15 @@ export function MessageArtistButton({
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         placeholder="Ask about availability, shipping, commissions…"
-        className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+        className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
       <div className="mt-2 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
           Cancel
-        </button>
-        <button
-          type="button"
-          onClick={send}
-          disabled={pending || !body.trim()}
-          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
+        </Button>
+        <Button type="button" size="sm" onClick={send} disabled={pending || !body.trim()}>
           {pending ? "Sending…" : "Send"}
-        </button>
+        </Button>
       </div>
     </div>
   );

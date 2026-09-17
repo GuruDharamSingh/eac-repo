@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
             meetingTitle: thread.title,
             section: thread.section ?? undefined,
             scheduledAt,
+            orgId: siteConfig.orgId,
             orgName: siteConfig.orgName,
           });
         }
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
             section: thread.section ?? undefined,
             scheduledAt,
             threadUrl,
+            orgId: siteConfig.orgId,
             orgName: siteConfig.orgName,
             rsvpCount: count,
           });

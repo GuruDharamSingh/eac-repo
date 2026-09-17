@@ -19,6 +19,7 @@ export function ChatCard({
   endpoint,
   identity,
   identityEndpoint,
+  heightClass = "h-80",
 }: {
   messages: OrgChatMessage[];
   canPost: boolean;
@@ -29,11 +30,19 @@ export function ChatCard({
   endpoint?: string;
   expandedHref?: string;
   title?: string;
+  /**
+   * How tall the card stands. Defaults to `h-80`, which is one tile in a face
+   * grid; a host placing the chat beside or below the grid passes something
+   * taller (IFAC's runs the depth of two tiles under the cards). It has to be
+   * a fixed height of some kind — the transcript scrolls inside it, so `auto`
+   * would let the column grow with the conversation instead.
+   */
+  heightClass?: string;
 }) {
   return (
     <section
       aria-label={title}
-      className="flex h-80 w-full flex-col rounded-lg border bg-card p-4"
+      className={`flex w-full flex-col rounded-lg border bg-card p-3 ${heightClass}`}
     >
       <header className="mb-2 flex shrink-0 items-center gap-2">
         <MessageSquare className="size-4 text-muted-foreground" />

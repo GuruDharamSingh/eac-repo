@@ -8,9 +8,9 @@ import {
   type ComposeContext,
   type ComposeOption,
 } from "@elkdonis/cms-ui/compose";
-import { Button } from "@/components/ui/button";
 import { ContentComposerBody } from "@/components/manage/content-composer-body";
 import { QuestionnaireComposerBody } from "@/components/manage/questionnaire-composer-body";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * Compose from anywhere in the hub, as a popup.

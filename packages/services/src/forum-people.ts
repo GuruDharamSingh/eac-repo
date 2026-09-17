@@ -1,6 +1,8 @@
 import { db } from '@elkdonis/db';
+import { OFF_FEED_KINDS } from './thread-kinds';
 import { nanoid } from 'nanoid';
 import { getProfileBySlug, type Profile } from './profiles';
+import { viewerIdentityIds } from './forum';
 import type { ForumPerson, ForumScope, ForumViewer, Paged } from './forum';
 
 // ============================================================================
@@ -87,9 +89,10 @@ export interface ForumActivityItem {
 
 /** Wiki pages are excluded for every viewer — they are not forum topics. */
 function visibleThreads(viewer: ForumViewer) {
-  if (viewer.isGlobalAdmin) return db`t.status = 'published' AND t.kind <> 'wiki_page'`;
+  if (viewer.isGlobalAdmin) return db`t.status = 'published' AND t.kind <> ALL(${OFF_FEED_KINDS})`;
   const orgs = Object.keys(viewer.roles);
-  return db`t.status = 'published' AND t.kind <> 'wiki_page' AND (t.visibility = 'PUBLIC' OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs})) OR (${viewer.userId}::uuid IS NOT NULL AND t.author_id = ${viewer.userId}::uuid))`;
+  const mine = viewerIdentityIds(viewer);
+  return db`t.status = 'published' AND t.kind <> ALL(${OFF_FEED_KINDS}) AND (t.visibility = 'PUBLIC' OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs})) OR t.author_id = ANY(${mine}::uuid[]))`;
 }
 
 const PLAIN = (col: ReturnType<typeof db>) => db`LEFT(REGEXP_REPLACE(REGEXP_REPLACE(COALESCE(${col}, ''), '<[^>]*>', ' ', 'g'), '\s+', ' ', 'g'), 160)`;

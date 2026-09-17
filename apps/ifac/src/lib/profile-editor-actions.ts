@@ -40,7 +40,7 @@ async function revalidateProfile(profileUserId: string) {
 }
 
 // Only fields the page actually renders as self-owned data belong here —
-// role_title, for instance, is IFAC's own call (see /admin/directory), not
+// role_title, for instance, is IFAC's own call (see /manage/directory), not
 // the artist's, so it's deliberately not offered through this self-edit path.
 const FIELD_TO_COLUMN: Record<string, keyof UpdateProfileInput> = {
   bio: "bio",

@@ -1,4 +1,11 @@
 import "./globals.css";
+// App-scoped, not route-scoped, and that distinction is load-bearing. The
+// editor renders blocks inside an iframe whose styles are mirrored from
+// whatever is in the parent document's <head> AT THAT MOMENT. A stylesheet
+// imported by the published route is only in the head while that route is
+// mounted, so the editor canvas drew every block unstyled — the two-column
+// block in particular stacked, and its layout controls looked like no-ops.
+import "@elkdonis/blocks/blocks.css";
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";

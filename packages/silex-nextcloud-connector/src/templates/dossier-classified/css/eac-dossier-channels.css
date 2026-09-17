@@ -1,0 +1,53 @@
+/*
+  Known addresses — where else this person exists.
+
+  This is the section that fixes the template's worst content bug. Every
+  profile's `social_links` were being rendered under the heading FINANCIAL
+  CHANNELS, with template copy reading "COVERT FUNDING (PATREON)". On the live
+  directory that meant E.J. Gold's page listed ejgold.com, Facebook, YouTube
+  and Pinterest as ways to send him money.
+
+  A link to a website is a known address. Money is a different section, and it
+  now only renders when something in it is actually about money — see
+  eac-dossier-funds.css.
+*/
+
+.eac-dossier-channels { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-channel-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.6rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eac-dos-channel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--eac-dos-rule-soft);
+  font-size: 0.88rem;
+}
+
+.eac-dos-channel-label {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-channel a {
+  color: var(--eac-dos-ballpoint);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  overflow-wrap: anywhere;
+}
+
+.eac-dos-channel a:hover,
+.eac-dos-channel a:focus-visible {
+  color: var(--eac-dos-stamp-red);
+}

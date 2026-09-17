@@ -3,12 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
 import { saveSectionAction } from "@/lib/cms/actions";
+import { Button, Input, Label, Textarea, Card, CardContent } from "@elkdonis/primitives";
 
 interface SectionField {
   name: string;

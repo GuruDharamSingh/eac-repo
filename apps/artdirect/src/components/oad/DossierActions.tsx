@@ -14,16 +14,21 @@ type Props = {
   loginUrl: string;
 };
 
+// Read from the template's own tokens, with the v0.2 values as fallbacks. The
+// bar sits under the file on every dossier, so a hardcoded palette here is a
+// second source of truth for the same design — which is how this bar ended up
+// still wearing the v0.1 reds and the v0.1 border weight after the template
+// moved on.
 const bar: React.CSSProperties = {
   position: "fixed",
   left: 0,
   right: 0,
   bottom: 0,
   zIndex: 50,
-  background: "#1a1a1a",
-  borderTop: "2px solid #8c3b3b",
-  color: "#f7f1e3",
-  fontFamily: "'Courier Prime', 'Courier New', monospace",
+  background: "var(--eac-dos-bg-accent, #1e1b16)",
+  borderTop: "1px solid var(--eac-dos-stamp-red, #8a2f2a)",
+  color: "var(--eac-dos-paper, #f4efe4)",
+  fontFamily: "var(--eac-dos-typewriter, 'Courier Prime', 'Courier New', monospace)",
   display: "flex",
   flexWrap: "wrap",
   alignItems: "center",
@@ -34,8 +39,8 @@ const bar: React.CSSProperties = {
 
 const btn: React.CSSProperties = {
   background: "transparent",
-  color: "#f7f1e3",
-  border: "1px solid #5a5a52",
+  color: "var(--eac-dos-paper, #f4efe4)",
+  border: "1px solid #6a6252",
   padding: "0.4rem 0.9rem",
   letterSpacing: 1,
   textTransform: "uppercase",
@@ -46,7 +51,13 @@ const btn: React.CSSProperties = {
   textDecoration: "none",
 };
 
-const btnPrimary: React.CSSProperties = { ...btn, background: "#8c3b3b", borderColor: "#8c3b3b" };
+// #f4efe4 on #8a2f2a is 6.3:1. The v0.1 pairing was the same idea at a red
+// that had never been measured.
+const btnPrimary: React.CSSProperties = {
+  ...btn,
+  background: "var(--eac-dos-stamp-red, #8a2f2a)",
+  borderColor: "var(--eac-dos-stamp-red, #8a2f2a)",
+};
 
 export function DossierActions(props: Props) {
   const { slug, signedIn, isSteward, claimStatus, verified, vouchCount, alreadyVouched, loginUrl } = props;

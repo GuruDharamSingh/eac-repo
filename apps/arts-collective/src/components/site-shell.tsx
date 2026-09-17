@@ -9,8 +9,19 @@ import { ShellUserMenu } from "@/components/shell-user-menu";
  */
 export async function SiteShell({
   children,
+  /**
+   * Let the page own its own width and gutters.
+   *
+   * The shell's `max-w-5xl px-6` is right for a reading page, but a page that
+   * set its own `max-w-6xl px-6` inside it got neither: the 6xl was clamped to
+   * 5xl and the two `px-6` stacked into a 48px gutter on each side. Every hub
+   * tab was doing exactly that. Rather than silently shrink such a page, this
+   * hands the column over — the page is then responsible for centring itself.
+   */
+  wide = false,
 }: Readonly<{
   children: React.ReactNode;
+  wide?: boolean;
 }>) {
   const user = await getCurrentUser();
   const directoryUrl = process.env.NEXT_PUBLIC_ARTDIRECT_URL;
@@ -42,7 +53,7 @@ export async function SiteShell({
         </div>
       </header>
       <main className="flex-1">
-        <div className="mx-auto max-w-5xl px-6">{children}</div>
+        {wide ? children : <div className="mx-auto max-w-5xl px-6">{children}</div>}
       </main>
       <footer className="border-t border-border/60">
         <div className="mx-auto max-w-5xl px-6 py-6 text-xs text-muted-foreground">

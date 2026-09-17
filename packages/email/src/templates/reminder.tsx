@@ -1,8 +1,19 @@
 import * as React from 'react';
-import { Section, Text } from '@react-email/components';
-import { render } from '@react-email/render';
-import { EmailShell } from '../components/EmailShell';
+import { Section, Text, Link } from '@react-email/components';
+import { renderEmail } from '../render-email';
+import { EmailShell, getEmailPalette, EAC_GOLD } from '../components/EmailShell';
+import { ThreadCard, Prose } from '../components/cards';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
+import { REMINDER_INTRO, REMINDER_ORG_NOTE, fill, paragraphsOf } from '../copy';
+
+// ============================================================================
+// "This begins soon."
+//
+// The one email in the suite whose value is entirely in its timing, so it
+// leads with WHEN and leaves everything else to the thread card. The
+// "in 3 hours" line is computed at render time — which is send time — so it is
+// accurate for exactly the moment it lands, and would be a lie if precomputed.
+// ============================================================================
 
 export interface ReminderEmailProps {
   guestName: string;
@@ -17,13 +28,60 @@ export interface ReminderEmailProps {
   rsvpUrl?: string;
   /** "N people are coming so far" -- shown in the detail box when present. */
   rsvpCount?: number;
-  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
+  /** Small header emblem (e.g. amrit-canada's Khanda). */
   emblemUrl?: string;
   emblemAlt?: string;
   /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
+
+  /** 'workshop' | 'meeting' | 'event' — shown on the thread card. */
+  threadKind?: string;
+  coverUrl?: string;
+  summary?: string;
+  /** Where the reader turns the reminder off or moves it earlier. */
+  reminderSettingsUrl?: string;
+  calendarUrl?: string;
+  dark?: boolean;
+  orgHeader?: boolean;
+  orgAccent?: string;
+}
+
+const TZ = 'America/Toronto';
+
+/** "in 3 hours", "in 2 days", "in 45 minutes" — or null if it has passed. */
+function relativeWhen(scheduledAt?: string): string | null {
+  if (!scheduledAt) return null;
+  const at = new Date(scheduledAt).getTime();
+  if (Number.isNaN(at)) return null;
+
+  const minutes = Math.round((at - Date.now()) / 60000);
+  if (minutes < 1) return null;
+  if (minutes < 60) return `in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 36) return `in ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+
+  const days = Math.round(hours / 24);
+  return `in ${days} ${days === 1 ? 'day' : 'days'}`;
+}
+
+function absoluteWhen(scheduledAt?: string): string | null {
+  if (!scheduledAt) return null;
+  try {
+    return new Date(scheduledAt).toLocaleString('en-CA', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: TZ,
+      timeZoneName: 'short',
+    });
+  } catch {
+    return null;
+  }
 }
 
 function ReminderEmail({
@@ -33,163 +91,156 @@ function ReminderEmail({
   location,
   meetingUrl,
   talkJoinUrl,
-  orgName = 'Elkdonis Arts Collective',
-  primaryColor = '#022278',
+  orgName,
   rsvpUrl,
   rsvpCount,
   emblemUrl,
   emblemAlt,
-  bodyText = 'A reminder that your session begins soon. Gather your materials and settle in — we look forward to seeing you.',
+  bodyText,
   links = [],
   media = [],
+  threadKind,
+  coverUrl,
+  summary,
+  reminderSettingsUrl,
+  calendarUrl,
+  dark = true,
+  orgHeader = false,
+  orgAccent,
 }: ReminderEmailProps) {
-  let whenStr: string | null = null;
-  if (scheduledAt) {
-    try {
-      whenStr = new Date(scheduledAt).toLocaleString('en-CA', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/Toronto',
-      });
-    } catch {
-      whenStr = null;
-    }
-  }
+  const palette = getEmailPalette(dark);
+  const org = orgName ?? 'the collective';
+  const relative = relativeWhen(scheduledAt);
+  const absolute = absoluteWhen(scheduledAt);
+  const orgParagraphs = paragraphsOf(bodyText);
 
-  const bodyParagraphs = bodyText
-    .split('\n')
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const joinUrl = talkJoinUrl || meetingUrl;
+  const joinUrl = talkJoinUrl ?? meetingUrl;
 
   return (
     <EmailShell
-      previewText={`Starting soon — ${meetingTitle}`}
-      kicker={orgName}
+      previewText={`${meetingTitle} — ${relative ?? 'starting soon'}`}
+      kicker="A reminder"
+      dark={dark}
       emblemUrl={emblemUrl}
       emblemAlt={emblemAlt}
+      orgName={orgName}
+      orgHeader={orgHeader}
+      orgAccent={orgAccent}
+      showNfpFooter
       footerText={
-        <Text style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-          You are receiving this because you RSVP&apos;d with {orgName}.
+        <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
+          You are receiving this because you said you were coming.
+          {reminderSettingsUrl && (
+            <>
+              {' '}
+              <Link href={reminderSettingsUrl} style={{ color: palette.textMuted, textDecoration: 'underline' }}>
+                Change when reminders reach you, or turn them off.
+              </Link>
+            </>
+          )}
         </Text>
       }
     >
-      <Text style={{ fontSize: '16px', color: '#374238', marginTop: 0 }}>
-        Hello {guestName} —
-      </Text>
-      <Text style={{ fontSize: '16px', color: '#374238' }}>
-        <strong>{meetingTitle}</strong> is starting soon.
-      </Text>
+      <Prose dark={dark}>{guestName},</Prose>
 
-      {bodyParagraphs.map((paragraph, index) => (
-        <Text key={index} style={{ fontSize: '15px', color: '#374238', lineHeight: '1.7' }}>
-          {paragraph}
-        </Text>
+      {fill(REMINDER_INTRO, { thread: meetingTitle, org }).map((paragraph, i) => (
+        <Prose key={`intro-${i}`} dark={dark}>{paragraph}</Prose>
       ))}
 
-      {(whenStr || location || joinUrl) && (
+      {/* The whole point of the email, given its own weight. */}
+      {(relative || absolute) && (
         <Section
           style={{
-            background: '#f4f7ff',
-            border: '1px solid #dce6ff',
-            borderLeft: `4px solid ${primaryColor}`,
-            borderRadius: '4px',
-            padding: '16px 20px',
-            margin: '24px 0',
+            border: `1px solid ${EAC_GOLD}`,
+            background: palette.boxBg,
+            padding: '20px',
+            margin: '22px 0',
+            textAlign: 'center' as const,
           }}
         >
-          {whenStr && (
-            <Text style={{ margin: '0 0 4px', fontSize: '14px', color: '#374238' }}>
-              <strong>When:</strong> {whenStr}
-            </Text>
-          )}
-          {location && (
-            <Text style={{ margin: '0 0 4px', fontSize: '14px', color: '#374238' }}>
-              <strong>Where:</strong> {location}
-            </Text>
-          )}
-          {joinUrl && (
-            <Text style={{ margin: '8px 0 0', fontSize: '14px' }}>
-              <a
-                href={joinUrl}
-                style={{
-                  display: 'inline-block',
-                  background: primaryColor,
-                  color: '#fffaf0',
-                  padding: '10px 22px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  fontFamily: 'Arial, sans-serif',
-                  fontSize: '14px',
-                }}
-              >
-                Join the session
-              </a>
-            </Text>
-          )}
-          {rsvpCount !== undefined && (
-            <Text style={{ margin: '8px 0 0', fontSize: '14px', color: '#374238' }}>
-              {rsvpCount} {rsvpCount === 1 ? 'person is' : 'people are'} coming so far.
-            </Text>
-          )}
-        </Section>
-      )}
-
-      {rsvpUrl && (
-        <Section style={{ margin: '20px 0 0' }}>
-          <Text style={{ margin: '0 0 6px', fontSize: '14px' }}>
-            <a
-              href={rsvpUrl}
+          {relative && (
+            <Text
               style={{
-                display: 'inline-block',
-                background: primaryColor,
-                color: '#fffaf0',
-                padding: '10px 22px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '14px',
+                fontSize: '22px',
+                lineHeight: '1.25',
+                color: palette.textPrimary,
+                margin: 0,
               }}
             >
-              RSVP here
-            </a>
-          </Text>
-        </Section>
-      )}
-
-      {media.map((item, index) => (
-        <Section key={`media-${index}`} style={{ margin: '16px 0' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.url}
-            alt={item.alt ?? ''}
-            style={{ maxWidth: '100%', borderRadius: '6px', display: 'block' }}
-          />
-          {item.caption && (
-            <Text style={{ margin: '6px 0 0', fontSize: '12px', color: '#999' }}>
-              {item.caption}
+              Begins {relative}
+            </Text>
+          )}
+          {absolute && (
+            <Text style={{ fontSize: '14px', color: palette.textMuted, margin: relative ? '8px 0 0' : 0 }}>
+              {absolute}
             </Text>
           )}
         </Section>
+      )}
+
+      <ThreadCard
+        title={meetingTitle}
+        kind={threadKind}
+        orgName={orgName}
+        when={absolute ?? undefined}
+        where={location}
+        summary={summary}
+        coverUrl={coverUrl}
+        url={rsvpUrl}
+        linkLabel="Navigate back to view details"
+        joinUrl={joinUrl}
+        dark={dark}
+      />
+
+      {typeof rsvpCount === 'number' && rsvpCount > 0 && (
+        <Prose dark={dark} muted>
+          {rsvpCount} {rsvpCount === 1 ? 'person is' : 'people are'} coming so far.
+        </Prose>
+      )}
+
+      {calendarUrl && (
+        <Prose dark={dark} muted>
+          <Link href={calendarUrl} style={{ color: palette.accent }}>Add it to your calendar</Link>
+        </Prose>
+      )}
+
+      {/* The org's own words, when it has written any. */}
+      {orgParagraphs.map((paragraph, i) => (
+        <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
       ))}
 
       {links.length > 0 && (
-        <Section style={{ margin: '16px 0' }}>
-          {links.map((link, index) => (
-            <Text key={`link-${index}`} style={{ margin: '0 0 6px', fontSize: '14px' }}>
-              <a href={link.url} style={{ color: primaryColor }}>{link.label}</a>
+        <Section style={{ margin: '18px 0 0' }}>
+          {links.map((link) => (
+            <Text key={link.url} style={{ margin: '0 0 6px' }}>
+              <Link href={link.url} style={{ color: palette.accent, fontSize: '14px' }}>
+                {link.label}
+              </Link>
             </Text>
           ))}
         </Section>
       )}
+
+      {media.length > 0 && (
+        <Section style={{ margin: '18px 0 0' }}>
+          {media.map((item) => (
+            <Section key={item.url} style={{ margin: '0 0 14px' }}>
+              <img src={item.url} alt={item.alt ?? ''} width="520" style={{ display: 'block', width: '100%', height: 'auto' }} />
+              {item.caption && (
+                <Text style={{ fontSize: '12px', color: palette.textMuted, margin: '6px 0 0' }}>{item.caption}</Text>
+              )}
+            </Section>
+          ))}
+        </Section>
+      )}
+
+      {fill(REMINDER_ORG_NOTE, { org }).map((paragraph, i) => (
+        <Prose key={`orgnote-${i}`} dark={dark} muted>{paragraph}</Prose>
+      ))}
     </EmailShell>
   );
 }
 
 export async function renderReminderEmail(props: ReminderEmailProps): Promise<string> {
-  return render(React.createElement(ReminderEmail, props));
+  return renderEmail(<ReminderEmail {...props} />);
 }

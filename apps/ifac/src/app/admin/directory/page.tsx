@@ -1,19 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@elkdonis/auth-server";
-import { canManageIfac } from "@/lib/data";
-import { listAllDirectory, listAssignableMembers } from "@/lib/directory-admin";
-import { DirectoryManager } from "@/components/directory-manager";
 
-export const metadata = { title: "IFAC Directory Admin" };
-export const dynamic = "force-dynamic";
-
-export default async function DirectoryAdminPage() {
-  const session = await getServerSession();
-  if (!(await canManageIfac(session))) {
-    redirect("/login");
-  }
-
-  const [profiles, assignableMembers] = await Promise.all([listAllDirectory(), listAssignableMembers()]);
-
-  return <DirectoryManager initialProfiles={profiles} initialAssignableMembers={assignableMembers} />;
+/** Moved into the console as a tab — see ../page.tsx. */
+export default function AdminDirectoryRedirect() {
+  redirect("/manage/directory");
 }

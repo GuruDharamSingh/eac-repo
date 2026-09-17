@@ -8,6 +8,7 @@ import {
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
 import { createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { EmailPopup } from "./email/EmailPopup";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
@@ -61,6 +62,10 @@ export function HubSurfaces({
         // /api/hub/documents. No `ideas`: this app serves no forum route, and
         // that face's only navigation target is the ideas feed on the board.
         documents: true,
+        // What a thread holds: the gathering and the document written in it,
+        // the terms defined out of that and the board it moved, as one
+        // occasion rather than four tiles. See migration 131.
+        gather: true,
 
         async saveThread({ kind, answers, status, threadId }) {
           // Workshops carry a page and sessions of their own; they go through
@@ -128,6 +133,18 @@ export function HubSurfaces({
             }),
             kind: thread.kind,
           };
+        },
+
+        custom: {
+          // The email suite, in the popup. The SAME component the full page
+          // at /hub/email renders — one email UI, opened two ways, which is
+          // the point of consolidating the four app-local attempts.
+          //
+          // Fetches its own data on open — this provider is mounted in the
+          // ROOT layout, so anything passed in here would be loaded on every
+          // page of the site. It refuses itself for a non-editor, because the
+          // route does.
+          email: ({ descriptor }) => <EmailPopup descriptor={descriptor} />,
         },
 
         onMutated: () => router.refresh(),

@@ -7,6 +7,7 @@ export default defineConfig({
     'src/index.ts',
     'src/endless-runner/index.ts',
     'src/inner-temple/index.ts',
+    'src/gallery/index.ts',
   ],
   format: ['cjs', 'esm'],
   dts: true,

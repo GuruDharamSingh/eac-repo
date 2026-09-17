@@ -95,6 +95,7 @@ export async function POST(
         location: thread.location ?? undefined,
         meetingUrl: thread.meeting_url ?? threadUrl,
         senderName: editor.email,
+        orgId: siteConfig.orgId,
         orgName: siteConfig.orgName,
       })
     )

@@ -145,7 +145,19 @@ export function ContentComposer({
             className={`eac-group eac-group--optional${hasValues ? " has-values" : ""}`}
             data-group={group.id}
             open={open}
-            onToggle={(e) => setToggled((t) => ({ ...t, [group.id]: e.currentTarget.open }))}
+            onToggle={(e) => {
+              // Read the flag SYNCHRONOUSLY, not inside the updater. React
+              // calls a functional setState later, during the reducer pass,
+              // and by then it has reset the synthetic event's currentTarget
+              // to null — so `e.currentTarget.open` threw
+              // "Cannot read properties of null (reading 'open')" and took
+              // the whole page to the error boundary. Opening and then
+              // closing any optional group did it: the first toggle set
+              // state from the initial render's live event, the second ran
+              // the updater against a released one.
+              const isOpen = e.currentTarget.open;
+              setToggled((t) => ({ ...t, [group.id]: isOpen }));
+            }}
           >
             <summary>
               <span className="eac-group-name">{group.label}</span>

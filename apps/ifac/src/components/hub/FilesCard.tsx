@@ -28,6 +28,16 @@ export type HubFile = {
  * have brought (useNextcloudFiles) speaks a different response shape and a
  * POST-with-action protocol this route doesn't use for reads.
  */
+/*
+ * REVERTED 2026-09-16. This briefly became a header-led face with an
+ * IFAC/Mine drive switch and a grid of thumbnails. It broke the card: the
+ * preview was wrapped in `.eac-face-live` so the thumbnails could be hovered,
+ * which re-enabled pointer events across the whole body — and a face is a
+ * stretched hit-area BEHIND inert content, so making the content live means
+ * clicking the card no longer opens anything. The drive switch is a good idea
+ * and belongs in the surface, where there is room for it and nothing to
+ * swallow. The face's job is to open that surface.
+ */
 export function FilesFace({
   initialFiles,
   canEdit,
@@ -38,9 +48,14 @@ export function FilesFace({
   return (
     <SurfaceCard
       kind="gallery"
-      glyph="▦"
+      // Not ▦ — that is the calendar's mark, and two tiles wearing the same
+      // glyph in one grid is the one thing a glyph exists to prevent.
+      glyph="▩"
+      // The default kicker is the KIND's label, which here is "Gallery" — a
+      // card titled "Files" was announcing itself as a gallery.
+      kicker="Shared drive"
       title="Files"
-      blurb="The group's shared drive."
+      blurb="Everything the group keeps together — images, documents, audio."
       surface={{
         type: "custom",
         key: "files",
@@ -64,6 +79,16 @@ export function FilesFace({
       }
     />
   );
+}
+
+/** A mark per kind, for everything that cannot show itself. */
+function tileGlyph(file: HubFile): string {
+  const mime = file.mimeType ?? "";
+  if (mime.startsWith("video/")) return "▶";
+  if (mime.startsWith("audio/")) return "♪";
+  if (mime === "application/pdf") return "▤";
+  if (mime.startsWith("text/") || mime.includes("word") || mime.includes("document")) return "▭";
+  return "▫";
 }
 
 export function FilesSurface({
@@ -166,31 +191,56 @@ export function FilesSurface({
           </p>
         )}
 
-        <ul className="hub-list" aria-busy={loading}>
+        {/* A grid, not a list. This is a MEDIA drive — most of what is in it
+            is an image, and an image shows itself. A column of filenames
+            differing only in their extension is the one presentation a
+            picture replaces outright. Anything that is not an image gets a
+            mark for its kind, which is still faster to scan than a name. */}
+        <ul className="hub-grid-files" aria-busy={loading}>
           {files.length === 0 && !loading && (
             <li className="hub-muted">This folder is empty.</li>
           )}
           {files.map((file) => (
-            <li key={file.path} className="hub-list-row">
+            <li key={file.path} className="hub-grid-cell">
               {file.isFolder ? (
                 <button
                   type="button"
-                  className="hub-file hub-file--folder"
+                  className="hub-tile hub-tile--folder"
                   onClick={() => load(relativeOf(file.path))}
+                  title={file.name}
                 >
-                  <span aria-hidden>▸</span>
-                  <span className="hub-list-title">{file.name}</span>
+                  <span className="hub-tile-face" aria-hidden>
+                    ▸
+                  </span>
+                  <span className="hub-tile-name">{file.name}</span>
                 </button>
               ) : (
                 <a
-                  className="hub-file"
+                  className="hub-tile"
                   href={file.url}
                   target="_blank"
                   rel="noreferrer"
+                  title={`${file.name}${
+                    formatBytes(file.size) ? ` — ${formatBytes(file.size)}` : ""
+                  }`}
                 >
-                  <span aria-hidden>·</span>
-                  <span className="hub-list-title">{file.name}</span>
-                  <span className="hub-muted">
+                  <span className="hub-tile-face">
+                    {file.mimeType?.startsWith("image/") ? (
+                      // `?w=` asks the media route for a variant rather than
+                      // the master — a 3MB original behind a 90px tile is the
+                      // difference between a grid that paints and one that
+                      // hangs.
+                      <img
+                        src={`${file.url}${file.url.includes("?") ? "&" : "?"}w=200`}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span aria-hidden>{tileGlyph(file)}</span>
+                    )}
+                  </span>
+                  <span className="hub-tile-name">{file.name}</span>
+                  <span className="hub-tile-meta">
                     {[formatBytes(file.size), formatDay(file.lastModified)]
                       .filter(Boolean)
                       .join(" · ")}

@@ -1,0 +1,452 @@
+/* ============================================================================
+   Dana McCool — real site palette, sampled directly from her live
+   danamccool.com screenshots (danascreenshots/*.png), not a network default.
+
+   --ink is #060606 rather than pure black or the sampled #242424: #242424 on
+   #795ff0 measures ~3.5:1 (fails WCAG AA body-text contrast, 4.5:1), and even
+   #1a1a1a only reaches ~3.9:1. #060606 clears 4.5:1 while still reading as
+   "near-black ink", not a pure #000 slab.
+   ============================================================================ */
+
+:root {
+  --violet: #795ff0;
+  --violet-panel: #6f54e8; /* one step deeper, for the sidebar */
+  --ink: #060606;
+  --ink-soft: #1a1a1a; /* secondary/meta text only — not body copy */
+  --cyan: #48d0ed; /* active nav + inline links, sampled rgb(72,208,237) */
+  --orange: #ef4926; /* social/contact marks, sampled */
+  --sidebar-w: 208px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--violet);
+  color: var(--ink);
+  font-family: "Helvetica Neue", "Segoe UI", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---- shell: fixed left sidebar + content column, like the real site ---- */
+
+.site-shell {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.site-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  height: 100vh;
+  padding: 1.75rem 1.25rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .site-shell {
+    flex-direction: column;
+  }
+  .site-sidebar {
+    position: static;
+    width: 100%;
+    flex: none;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .side-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.brand-mark {
+  display: block;
+  width: 116px;
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+.brand-mark:hover {
+  text-decoration: none;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.side-nav-link {
+  color: var(--ink);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+.side-nav-link:hover {
+  color: var(--cyan);
+  text-decoration: none;
+}
+.side-nav-link.is-active {
+  color: var(--cyan);
+  font-weight: 600;
+}
+.side-nav-link--manage {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(6, 6, 6, 0.2);
+}
+
+.social-row {
+  display: flex;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.social-row a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--orange);
+  font-size: 1rem;
+}
+.social-row a:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+/* ---- content column ---- */
+
+.site-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2.5rem 3rem 4rem;
+}
+
+@media (max-width: 720px) {
+  .site-content {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+}
+
+.site-footer {
+  margin-top: 4rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+/* ---- content page typography ---- */
+
+.content-page {
+  max-width: 760px;
+}
+.content-page--wide {
+  max-width: 1080px;
+}
+.content-page--centered {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin: 0 0 1.75rem;
+}
+
+.content-page p {
+  margin: 0 0 1.1rem;
+}
+
+.content-page hr {
+  border: none;
+  border-top: 1px solid rgba(6, 6, 6, 0.25);
+  margin: 1.5rem 0;
+  width: 2rem;
+}
+
+.hero-portrait {
+  width: 100%;
+  max-width: 640px;
+  display: block;
+  margin: 0 auto 2rem;
+}
+.hero-portrait img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* Signature motif: circle-cropped images beside text (Manifestos, etc). */
+.circle-crop {
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.manifesto-block {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 3rem;
+}
+.manifesto-block .circle-crop {
+  width: 220px;
+  height: 220px;
+}
+@media (max-width: 640px) {
+  .manifesto-block {
+    grid-template-columns: 1fr;
+  }
+  .manifesto-block .circle-crop {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+.manifesto-heading {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.planet-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+.planet-row .circle-crop {
+  width: 200px;
+  height: 200px;
+  flex: 0 0 auto;
+}
+
+/* Simple masonry-ish grid for portfolio/gallery-shaped pages. */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 640px) {
+  .tile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.tile-grid img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.hub-list a {
+  color: var(--ink);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.hub-list a:hover {
+  color: var(--cyan);
+}
+
+.cv-section {
+  margin-bottom: 2rem;
+}
+.cv-section h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+.cv-year {
+  font-weight: 600;
+  margin: 1rem 0 0.25rem;
+}
+.cv-entry {
+  margin: 0 0 0.35rem;
+}
+
+.gallery-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+.gallery-card {
+  display: block;
+  color: var(--ink);
+}
+.gallery-card-cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+.gallery-card-cover--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 6, 6, 0.06);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.gallery-card-title {
+  margin: 0.5rem 0 0.15rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gallery-card-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.gallery-new {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 2rem;
+}
+.gallery-new input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(6, 6, 6, 0.3);
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--ink);
+  border-radius: 4px;
+}
+.button-secondary {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+.button-secondary:hover {
+  background: rgba(6, 6, 6, 0.08);
+}
+.gallery-new-error {
+  color: #3a0000;
+  font-size: 0.8rem;
+}
+
+/* ============================================================================
+   Page blocks (@elkdonis/blocks) in Dana's palette.
+
+   The block library is plain CSS driven by --eac-block-* custom properties, so
+   this block is the whole integration: the same blocks that build an amrit or
+   IFAC page arrive here wearing her violet.
+
+   Every pair below was measured against her ground (#795ff0):
+
+     ink #060606          4.54:1  ✓  body text
+     white               4.46:1  ✗  (just under — which is why ink is the ink)
+     ink-soft #1a1a1a     3.90:1  ✗  fails as body copy, as her own note says
+     cyan #48d0ed         2.45:1  ✗  as TEXT. It is a fine fill, not an ink.
+     ink on cyan         11.12:1  ✓
+     cream on near-black 18.70:1  ✓
+
+   Two consequences worth stating rather than hiding:
+
+   - --blk-muted would normally be a lighter grey, and on this violet there is
+     no room for one: the ground is mid-toned, so lightening ANY ink drops it
+     under 4.5:1 within a step or two. Captions are therefore full-strength ink
+     at a smaller size, which is the honest version of "quieter".
+   - --blk-accent-ink is likewise NOT the cyan. Cyan as text on violet is
+     2.45:1. It stays the accent for FILLS, where ink sits on it at 11:1.
+     (Her existing nav links are cyan on violet and carry the same 2.45:1 —
+     that predates the blocks and is left alone here, but it is the same bug.)
+   ============================================================================ */
+
+:root {
+  --eac-block-bg: var(--violet);
+  --eac-block-bg-soft: var(--violet-panel);
+  --eac-block-fg: var(--ink);
+  --eac-block-muted: var(--ink);
+  --eac-block-faint: color-mix(in srgb, var(--ink) 55%, var(--violet));
+  --eac-block-line: color-mix(in srgb, var(--ink) 28%, var(--violet));
+
+  --eac-block-accent: var(--cyan);
+  --eac-block-on-accent: var(--ink);
+  --eac-block-accent-ink: var(--ink);
+
+  /* A near-black band rather than the network's charcoal — her site has no
+     grey in it at all, and a charcoal hero on violet reads as a mistake. */
+  --eac-block-band: var(--ink);
+  --eac-block-band-fg: #fdf5e6;
+
+  /*
+    Form fields are PAPER, not violet.
+
+    Measured: ink #060606 on the violet panel tone is 3.96:1, and text typed
+    into a field has to clear 4.5:1 like any other body text. On this near-white
+    it is 18.43:1, and the violet border against it is 4.06:1 — visible without
+    competing with what is being typed.
+  */
+  --eac-block-field-bg: #f6f4ef;
+  --eac-block-field-fg: var(--ink);
+  --eac-block-field-line: color-mix(in srgb, var(--ink) 35%, #f6f4ef);
+
+  --eac-block-radius: 0px;
+  --eac-block-radius-sm: 0px;
+
+  /* No serif. Her site is one weight of Helvetica Neue throughout, and the
+     block library's Georgia default would introduce a typeface she never uses. */
+  --eac-block-font-title: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --eac-block-font-body: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+
+  --eac-block-measure: 52rem;
+}

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Section, Text, Button, Img } from '@react-email/components';
-import { render } from '@react-email/render';
+import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
 
@@ -245,5 +245,5 @@ function MeetingTriggerEmail({
 }
 
 export async function renderMeetingTriggerEmail(props: MeetingTriggerEmailProps): Promise<string> {
-  return render(React.createElement(MeetingTriggerEmail, props));
+  return renderEmail(React.createElement(MeetingTriggerEmail, props));
 }

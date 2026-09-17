@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/checkout",
     "@elkdonis/payments",
     "@elkdonis/cms-ui",
+    "@elkdonis/newsletter",
     "@elkdonis/forum-ui",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.

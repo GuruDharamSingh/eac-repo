@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { getOrgRole, hasOrgRole, resolveTerms } from "@elkdonis/services";
+import { getOrgRole, hasOrgRole, resolveTerms, OFF_FEED_KINDS } from "@elkdonis/services";
 
 /**
  * The organisation's own public identity, from its `entity_type='organization'`
@@ -263,6 +263,7 @@ export async function getOrgFeed(
       FROM threads
       WHERE org_id = ${orgId}
         AND status = 'published'
+        AND kind <> ALL(${OFF_FEED_KINDS})
         AND visibility = 'PUBLIC'
       ORDER BY pinned DESC, COALESCE(published_at, created_at) DESC
       LIMIT ${limit}
@@ -298,6 +299,7 @@ export async function getOfferingThread(
       FROM threads
       WHERE org_id = ${orgId}
         AND status = 'published'
+        AND kind <> ALL(${OFF_FEED_KINDS})
         AND visibility = 'PUBLIC'
       ORDER BY COALESCE(published_at, created_at) DESC
       LIMIT 1
@@ -324,6 +326,7 @@ export async function getFeaturedThread(
       FROM threads
       WHERE org_id = ${orgId}
         AND status = 'published'
+        AND kind <> ALL(${OFF_FEED_KINDS})
         AND visibility = 'PUBLIC'
         AND pinned = true
       ORDER BY COALESCE(published_at, created_at) DESC
@@ -510,6 +513,7 @@ export async function getPublicThread(
       WHERE t.org_id = ${orgId}
         AND t.slug = ${slug}
         AND t.status = 'published'
+        AND t.kind <> ALL(${OFF_FEED_KINDS})
         AND t.visibility = 'PUBLIC'
       LIMIT 1
     `;

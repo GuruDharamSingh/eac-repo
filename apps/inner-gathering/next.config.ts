@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
   // Remove this once the 17 are fixed; run `npx tsc --noEmit` for the list.
   typescript: { ignoreBuildErrors: true },
 
-  transpilePackages: ["@elkdonis/db", "@elkdonis/email", "@elkdonis/types", "@elkdonis/ui", "@elkdonis/utils"],
+  transpilePackages: [
+    "@elkdonis/services","@elkdonis/db", "@elkdonis/email", "@elkdonis/types", "@elkdonis/ui", "@elkdonis/utils"],
 
   // Build concurrency. Next defaults to one worker per CPU; this host has 32
   // while the container is capped well below what 31 workers need, so

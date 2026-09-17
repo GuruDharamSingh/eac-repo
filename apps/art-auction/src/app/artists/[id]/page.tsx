@@ -5,7 +5,7 @@ import {
   getStoreByHandle,
   listStoreFrontArtworks,
 } from "@elkdonis/commerce/queries";
-import { ArtworkGrid } from "@elkdonis/commerce/components";
+import { ProductGrid } from "@elkdonis/commerce/components";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { siteConfig } from "@/config/site";
 
@@ -94,14 +94,14 @@ export default async function ArtistPage({
           </span>
         )}
       </h2>
-      <ArtworkGrid
+      <ProductGrid
         items={artworks}
-        columns={4}
+        label="Works"
         hrefBuilder={(a) => (a.presentedByStoreId ? `/artworks/${a.id}?via=${a.presentedByStoreId}` : `/artworks/${a.id}`)}
         emptyState={
           <p className="text-muted-foreground">
             Nothing published yet.{" "}
-            <Link href="/artworks" className="underline underline-offset-4">
+            <Link href="/" className="underline underline-offset-4">
               Browse the marketplace
             </Link>
             .

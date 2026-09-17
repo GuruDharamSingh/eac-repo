@@ -1001,3 +1001,55 @@ but still the card it came from.
 clean; amrit-canada rebuilt and both `/center` (25 faces) and `/hub` (36
 faces) render without error. As before, the animation itself is unverified —
 no browser here.
+
+## Round sixteen (2026-09-15) — the console, tried and rolled back
+
+The owner asked for a social-dashboard treatment — *"more stylish bento or
+grid or dashboard… work as personal CMS… an elkdonis section… a section for
+quotes"* — and, mid-build, *"a bit of digital or pokedex look to it."*
+
+Built and rendered: four layout regions instead of two columns (`top`,
+`left`, `right`, `bottom`) with a six-column dense bento and per-section
+spans; a `skin: 'console' | 'plain'` device chrome (bezelled shell, lamps,
+numbered module tabs, inset screens, pressable keys, mono readouts); and six
+new sections — `masthead`, `actions`, `studio`, `elkdonis`, `start`,
+`quotes`.
+
+**Reverted the same day, at the owner's call: "undo the new layout /
+styling… keep quotes, just revert back to a similar layout as before and
+ordering."** `/center` is the two-column page it was, with the original
+section order, and `CenterLayout` is back to `columns: { left, right }` with
+no spans and no skin.
+
+### What survived the revert
+
+**Quotes are a real content type and they stayed** (migration 127,
+`packages/services/src/quotes.ts`, the desk at arts-collective
+`/hub/quotes`, and `POST /api/center/quotes` on innergathering and
+amrit-canada). A quote is a body, who said it and where from —
+deliberately **not** a `threads` kind, because a line that shows for twelve
+seconds wants no permalink, no feed position, no RSVP eligibility check and
+no place in forum search. `org_id` NULL is the collective's and would show
+everywhere; a row with an org leads on that org's own site. Unique on
+`(COALESCE(org_id,'~network'), lower(btrim(body)))`.
+
+Seeded only with the collective's own already-published copy (manifesto and
+about pages), attributed to the collective. No org was seeded: inventing
+words for an organisation is not a migration's job.
+
+**Nothing on `/center` reads them yet** — `loadCenter` went back with the
+rest, so the band that rotated them is gone. The desk works, the rows are
+there, and wiring them into a page is a separate decision.
+
+### Worth keeping from the attempt, if it is ever picked up again
+
+- Module numbers must be **counted in CSS** (`counter` over
+  `:not(:empty)` cells), never computed in the page: a section decides for
+  itself whether it draws anything, so a number reserved up front leaves
+  gaps, and on a device a missing number reads as a fault.
+- Device colour belongs in lamps, hairlines and plates, **never in body
+  text** — a "lit" readout has to keep `--sf-fg` and say lit with a dot,
+  because raw org accents do not clear 4.5:1 as ink.
+- The empty states are what made the bento look broken: an org with nothing
+  pinned and a person with no store each left a full-width hole. Sections
+  have to return null rather than apologise.

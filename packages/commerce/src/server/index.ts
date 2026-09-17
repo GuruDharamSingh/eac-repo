@@ -134,7 +134,7 @@ export async function addToCart(input: {
 
   const variantRows = (await db`
     SELECT av.id, av.price_minor, av.currency, av.inventory_qty,
-           a.store_id, s.status AS store_status
+           a.store_id, a.status AS artwork_status, s.status AS store_status
     FROM artwork_variant av
     JOIN artwork a ON a.id = av.artwork_id
     JOIN store s ON s.id = a.store_id
@@ -142,6 +142,19 @@ export async function addToCart(input: {
   `) as unknown as Row[];
   if (!variantRows[0]) throw new Error("Variant not found");
   const variant = variantRows[0];
+  // The piece's own status was the one thing this never checked. Inventory
+  // and price survive a draft or an archive, so without this a seller's
+  // unpublished work — or a piece taken down after selling elsewhere — could
+  // be added to a cart and paid for by anyone holding its URL.
+  if (variant.artwork_status !== "available") {
+    throw new Error(
+      variant.artwork_status === "sold"
+        ? "This piece has sold."
+        : variant.artwork_status === "reserved"
+          ? "This piece is reserved pending payment."
+          : "This piece is not listed for sale."
+    );
+  }
   if (num(variant.inventory_qty) <= 0) throw new Error("This piece is no longer available");
   if (variant.store_status !== "active") {
     throw new Error("This store is not currently selling.");

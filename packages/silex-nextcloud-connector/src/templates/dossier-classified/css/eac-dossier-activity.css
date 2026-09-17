@@ -1,0 +1,95 @@
+/*
+  Filed activity — where this person operates across the network.
+
+  This section existed before as a React component that borrowed the network
+  section's classes and was rendered OUTSIDE the file, directly on the desk. It
+  inherited `color: var(--eac-dos-ink)` — #161310 on #14120f — so the whole
+  thing rendered at about 1.07:1 and was invisible on every dossier in the
+  directory. It now lives inside the sheet and owns its own rules.
+*/
+
+.eac-dossier-activity { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-activity-orgs { margin-bottom: 1.5rem; }
+
+.eac-dos-org-block {
+  margin-bottom: 1.4rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--eac-dos-rule);
+}
+
+.eac-dos-org-block:last-child { margin-bottom: 0; }
+
+.eac-dos-org-name {
+  font-family: var(--eac-dos-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 0.5rem;
+}
+
+.eac-dos-org-name a {
+  color: var(--eac-dos-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-org-name a:hover,
+.eac-dos-org-name a:focus-visible {
+  color: var(--eac-dos-stamp-red);
+  border-bottom-color: var(--eac-dos-stamp-red);
+}
+
+.eac-dos-filings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eac-dos-filings li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.6rem;
+  align-items: baseline;
+  padding: 0.28rem 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.eac-dos-filings li::before {
+  content: '·';
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-filing-date {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--eac-dos-ink-soft);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.eac-dos-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-top: 1rem;
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-tally div {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-tally b {
+  display: block;
+  font-family: var(--eac-dos-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--eac-dos-ink);
+}

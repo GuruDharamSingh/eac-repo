@@ -1,4 +1,4 @@
-import { getForumSnapshot } from "@/lib/forum";
+import { getForumFeedThreads, getForumSnapshot } from "@/lib/forum";
 
 /**
  * This org's forum in one object, for the hub's forum surface.
@@ -15,6 +15,13 @@ import { getForumSnapshot } from "@/lib/forum";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  // `?feed=<slug>` answers one section instead of the whole board — what the
+  // popup asks for once someone walks into a section. Same viewer, same
+  // visibility rules; only the target narrows.
+  const feed = new URL(request.url).searchParams.get("feed");
+  if (feed) {
+    return Response.json({ threads: await getForumFeedThreads(feed) });
+  }
   return Response.json(await getForumSnapshot());
 }

@@ -1,0 +1,567 @@
+/*
+  writing.css — the room around the reading.
+
+  Built from the same --read-* tokens as article.css, so a shelf and the piece
+  it opens are one publication rather than two designs that happen to sit on
+  the same domain. Import BOTH, in this order:
+
+      @import "@elkdonis/cms-ui/article.css";
+      @import "@elkdonis/cms-ui/writing.css";
+
+  Plain CSS with custom-property fallbacks, not Tailwind utilities — ifac and
+  artdirect carry their own stylesheets and utilities would render unstyled.
+
+  Nothing here paints a background. The shelf and the desk sit on whatever
+  ground the host page uses, and carry their structure in rules and space
+  instead — which is the right register for a page of writing, and also means
+  a host's own palette can never produce an unreadable ink-on-fill pair here.
+*/
+
+/* ── The shelf ──────────────────────────────────────────────────────────── */
+
+.eac-shelf {
+  max-width: var(--read-measure, 63ch);
+  margin-inline: auto;
+  padding-block: 2.5rem;
+  color: var(--read-ink, #16181d);
+}
+
+/* The shelf's lead piece is allowed to be wider than the measure — it is a
+   picture and a title, not prose. Everything else stays on the measure. */
+.eac-shelf__head {
+  border-bottom: var(--read-rule-weight, 1px) solid var(--read-rule, #e1e3ea);
+  padding-bottom: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.eac-shelf__kicker {
+  margin: 0 0 0.5rem;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-label-size, 0.66rem);
+  letter-spacing: var(--read-label-tracking, 0.13em);
+  text-transform: uppercase;
+  color: var(--read-faint, #8b90a0);
+}
+
+.eac-shelf__heading {
+  margin: 0;
+  font-family: var(--read-face-title, Georgia, serif);
+  font-size: clamp(1.7rem, 3.6vw, 2.3rem);
+  font-weight: var(--read-title-weight, 500);
+  letter-spacing: var(--read-title-tracking, -0.02em);
+  line-height: 1.15;
+  color: var(--read-ink, #16181d);
+}
+
+.eac-shelf__intro {
+  margin: 0.6rem 0 0;
+  font-family: var(--read-face-prose, Georgia, serif);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--read-muted, #5a6070);
+}
+
+.eac-shelf__empty {
+  margin: 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-record-size, 0.78rem);
+  color: var(--read-faint, #8b90a0);
+}
+
+/* ── The lead piece ─────────────────────────────────────────────────────── */
+
+.eac-shelf__lead {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding-bottom: 1.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: var(--read-rule-weight, 1px) solid var(--read-rule, #e1e3ea);
+}
+
+.eac-shelf__lead-cover {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-bottom: 1.1rem;
+  /* A hairline rather than a shadow: the image is a plate in a book. */
+  border: 1px solid var(--read-rule, #e1e3ea);
+}
+
+.eac-shelf__lead-title {
+  margin: 0;
+  font-family: var(--read-face-title, Georgia, serif);
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: var(--read-title-weight, 500);
+  letter-spacing: var(--read-title-tracking, -0.02em);
+  line-height: 1.2;
+}
+
+.eac-shelf__lead:hover .eac-shelf__lead-title,
+.eac-shelf__row-link:hover .eac-shelf__row-title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.eac-shelf__lead:focus-visible,
+.eac-shelf__row-link:focus-visible {
+  outline: 2px solid var(--read-accent, #5b45a8);
+  outline-offset: 3px;
+}
+
+/* ── The rest ───────────────────────────────────────────────────────────── */
+
+.eac-shelf__list {
+  list-style: none;
+  margin: 0 -0.85rem;
+  padding: 0;
+}
+
+/* Alternating grounds down the shelf.
+   A list of entries separated only by a hairline reads as one undivided
+   column, and on a dark site the hairline is the first thing to disappear.
+   A half-step lift on every other row divides them without adding a border to
+   each — the rhythm does the work. `--read-bg-alt` falls back to a 4% mix of
+   the reading ink over the page, so a host that sets nothing still gets a
+   perceptible band that follows its own palette in either direction. */
+.eac-shelf__row:nth-child(even) {
+  background: var(
+    --read-bg-alt,
+    color-mix(in srgb, var(--read-ink, #16181d) 4%, var(--read-bg, transparent))
+  );
+}
+
+/* The band should reach past the text, or it looks like a highlight rather
+   than a row. */
+.eac-shelf__row {
+  border-radius: 3px;
+}
+
+.eac-shelf__row + .eac-shelf__row {
+  border-top: 1px solid var(--read-rule, #e1e3ea);
+}
+
+.eac-shelf__row-link {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  /* Side padding so the alternating band above reads as a row rather than a
+     highlight stopping at the text. Pulled back out with a negative margin on
+     the list, so the type still lines up with everything above it. */
+  padding: 1.25rem 0.85rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.eac-shelf__row-text {
+  min-width: 0;
+}
+
+.eac-shelf__row-title {
+  margin: 0;
+  font-family: var(--read-face-title, Georgia, serif);
+  font-size: 1.25rem;
+  font-weight: var(--read-title-weight, 500);
+  line-height: 1.25;
+}
+
+.eac-shelf__row-cover {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--read-rule, #e1e3ea);
+}
+
+.eac-shelf__lede {
+  margin: 0.4rem 0 0;
+  font-family: var(--read-face-prose, Georgia, serif);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--read-muted, #5a6070);
+  /* Two lines on the shelf; the rest is what the piece is for. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.eac-shelf__dateline {
+  margin: 0.55rem 0 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-record-size, 0.78rem);
+  letter-spacing: 0.02em;
+  color: var(--read-faint, #8b90a0);
+}
+
+/* Marked, not coloured — an accent chip fails contrast against half the
+   accents in the network, and the word is the whole message anyway. */
+.eac-shelf__draft {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.1em 0.5em;
+  border: 1px solid var(--read-rule, #e1e3ea);
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-label-size, 0.66rem);
+  font-weight: 400;
+  letter-spacing: var(--read-label-tracking, 0.13em);
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--read-muted, #5a6070);
+}
+
+.eac-shelf__foot {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: var(--read-rule-weight, 1px) solid var(--read-rule, #e1e3ea);
+}
+
+/* ── The desk ───────────────────────────────────────────────────────────────
+   Where a piece is written. Deliberately set in the same faces as the shelf
+   and the article: what you type looks like what will be read, which is the
+   only reliable way to know how long a paragraph really is. */
+
+.eac-desk {
+  max-width: var(--read-measure, 63ch);
+  margin-inline: auto;
+  color: var(--read-ink, #16181d);
+}
+
+.eac-desk__bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  margin-bottom: 1.25rem;
+  border-bottom: var(--read-rule-weight, 1px) solid var(--read-rule, #e1e3ea);
+  /* The one place a ground is needed: the bar scrolls over the prose. */
+  background: var(--eac-color-surface, Canvas);
+}
+
+.eac-desk__status {
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-label-size, 0.66rem);
+  letter-spacing: var(--read-label-tracking, 0.13em);
+  text-transform: uppercase;
+  color: var(--read-faint, #8b90a0);
+}
+
+.eac-desk__spacer {
+  flex: 1 1 auto;
+}
+
+.eac-desk__btn {
+  appearance: none;
+  padding: 0.45em 0.95em;
+  border: 1px solid var(--read-rule, #e1e3ea);
+  background: transparent;
+  color: var(--read-ink, #16181d);
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.6;
+}
+
+.eac-desk__btn:hover:not(:disabled) {
+  border-color: var(--read-ink, #16181d);
+}
+
+.eac-desk__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The one filled control on the page, so "publish" is never a guess. Ink on
+   ink-inverted rather than on the accent: an org accent is not guaranteed to
+   carry white text at 4.5:1, the ink pair always is. */
+.eac-desk__btn--primary {
+  border-color: var(--read-ink, #16181d);
+  background: var(--read-ink, #16181d);
+  color: var(--eac-color-surface, #ffffff);
+}
+
+.eac-desk__btn--danger {
+  color: var(--eac-color-danger, #9a2c2c);
+  border-color: var(--eac-color-danger, #9a2c2c);
+}
+
+.eac-desk__field {
+  margin-bottom: 1.25rem;
+}
+
+.eac-desk__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-label-size, 0.66rem);
+  letter-spacing: var(--read-label-tracking, 0.13em);
+  text-transform: uppercase;
+  color: var(--read-faint, #8b90a0);
+}
+
+.eac-desk__title-input,
+.eac-desk__lede-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0;
+  border: none;
+  border-bottom: 1px solid var(--read-rule, #e1e3ea);
+  background: transparent;
+  color: var(--read-ink, #16181d);
+  font-family: var(--read-face-title, Georgia, serif);
+  resize: vertical;
+}
+
+.eac-desk__title-input {
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: var(--read-title-weight, 500);
+  letter-spacing: var(--read-title-tracking, -0.02em);
+  line-height: 1.2;
+}
+
+.eac-desk__lede-input {
+  font-family: var(--read-face-prose, Georgia, serif);
+  font-size: var(--read-lede-size, 1.22rem);
+  line-height: 1.45;
+}
+
+.eac-desk__title-input:focus,
+.eac-desk__lede-input:focus {
+  outline: none;
+  border-bottom-color: var(--read-accent, #5b45a8);
+}
+
+.eac-desk__cover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.eac-desk__cover-preview {
+  width: 160px;
+  height: 100px;
+  max-width: 100%;
+  object-fit: cover;
+  border: 1px solid var(--read-rule, #e1e3ea);
+}
+
+/* Starting a piece: a label on its own line, then the field and the button
+   on one row that wraps to two on a phone. */
+.eac-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.eac-start__label {
+  flex: 1 0 100%;
+  margin-bottom: 0;
+}
+
+.eac-start__input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.45rem 0;
+  border: none;
+  border-bottom: 1px solid var(--read-rule, #e1e3ea);
+  background: transparent;
+  color: var(--read-ink, #16181d);
+  font-family: var(--read-face-prose, Georgia, serif);
+  font-size: 1.05rem;
+}
+
+.eac-start__input:focus {
+  outline: none;
+  border-bottom-color: var(--read-accent, #5b45a8);
+}
+
+.eac-start__error {
+  flex: 1 0 100%;
+}
+
+.eac-desk__note,
+.eac-desk__error {
+  margin: 0.5rem 0 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: var(--read-record-size, 0.78rem);
+}
+
+.eac-desk__note {
+  color: var(--read-faint, #8b90a0);
+}
+
+.eac-desk__error {
+  color: var(--eac-color-danger, #9a2c2c);
+}
+
+/* The editor keeps its own chrome (editor.css) but reads in the prose face,
+   so a paragraph is the same width and rhythm here as when published. */
+.eac-desk__body .eac-ed-content {
+  font-family: var(--read-face-prose, Georgia, serif);
+  font-size: var(--read-size, 20px);
+  line-height: var(--read-leading, 1.62);
+}
+
+.eac-desk__body .eac-ed {
+  border-color: var(--read-rule, #e1e3ea);
+  border-radius: 0;
+}
+
+@media (max-width: 560px) {
+  .eac-shelf__row-link {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .eac-shelf__row-cover {
+    width: 100%;
+    height: 160px;
+  }
+}
+
+/* The starter row. It joins the alternation above by being a row like any
+   other; all it needs is the padding the row LINK would have given it, since
+   it has no link of its own. */
+.eac-shelf__row--start {
+  padding: 1.1rem 0.85rem;
+}
+
+/* And it should read as the end of the sequence rather than another entry:
+   the rule above it is the one that separates "what is here" from "add to
+   it". */
+.eac-shelf__row--start {
+  border-top: 1px solid var(--read-rule, #e1e3ea);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE DESK'S SPLIT — a little of the writing room, on the profile.
+
+   Its own rules rather than reusing `.eac-write` from surface.css: this
+   package is loaded by hosts that do not load the surface layer, and a split
+   that depends on another stylesheet would collapse to one unstyled column
+   there. The vocabulary is the same idea, on the `--read-*` tokens that
+   already set the shelf and the article.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.eac-desk__panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+}
+
+.eac-desk__panes[data-view="split"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.eac-desk__editor {
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  padding-right: 0;
+}
+
+.eac-desk__panes[data-view="split"] .eac-desk__editor {
+  padding-right: 1.75rem;
+}
+
+.eac-desk__panes[data-view="preview"] .eac-desk__editor {
+  display: none;
+}
+
+.eac-desk__preview {
+  min-width: 0;
+  padding-left: 1.75rem;
+  border-left: 1px solid var(--read-rule, #e1e3ea);
+  overflow: auto;
+}
+
+.eac-desk__panes[data-view="write"] .eac-desk__preview {
+  display: none;
+}
+
+.eac-desk__panes[data-view="preview"] .eac-desk__preview {
+  padding-left: 0;
+  border-left: 0;
+}
+
+/* The view switch, in the bar. */
+.eac-desk__seg {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--read-rule, #e1e3ea);
+  border-radius: 999px;
+}
+
+.eac-desk__seg-btn {
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--read-muted, #5e667a);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Both halves carry a fallback. An `is-on` rule whose background resolves to
+   nothing leaves the label on the bar's own ground in its ON colour — which
+   is how the surface layer's segmented control ended up white on white.
+
+   The ink is `--read-on-accent`, its OWN token, not `--read-bg`. The reading
+   ground and the ink that sits ON the accent are two different questions, and
+   answering the second with the first is the accent-has-three-roles bug: on
+   IFAC's violet (#9c40d8) white measures 5.07:1 while its dark page ground
+   would be 3.77:1 — a fail. White is the default because it clears AA on
+   every accent these sites use; a host with a pale accent sets this. */
+.eac-desk__seg-btn.is-on {
+  background: var(--read-accent, var(--read-ink, #16181d));
+  color: var(--read-on-accent, #fff);
+}
+
+.eac-desk__seg-btn:focus-visible {
+  outline: 2px solid var(--read-accent, var(--read-ink, #16181d));
+  outline-offset: 1px;
+}
+
+/* Side by side halves the editor's width, and the title is sized off the
+   VIEWPORT (`3.2vw`) — so at 1440px it keeps asking for 2rem in a pane that
+   is now 500px wide and the title clips mid-word. In the split it sizes off
+   the pane instead. */
+.eac-desk__panes[data-view="split"] .eac-desk__title-input {
+  font-size: clamp(1.25rem, 1.6vw, 1.6rem);
+}
+
+@media (max-width: 999px) {
+  /* No room for two columns; the switch loses the option that needs them. */
+  .eac-desk__panes[data-view="split"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .eac-desk__panes[data-view="split"] .eac-desk__preview {
+    display: none;
+  }
+  .eac-desk__panes[data-view="split"] .eac-desk__editor {
+    padding-right: 0;
+  }
+  .eac-desk__seg-btn--wide {
+    display: none;
+  }
+}

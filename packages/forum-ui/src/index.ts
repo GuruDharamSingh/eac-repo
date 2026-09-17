@@ -35,5 +35,5 @@ export { configureForumMedia, mediaUrl } from "./media";
 
 export { NewCategoryPanel, canAddCategory } from "./category";
 
-export { forumSnapshot } from "./snapshot";
+export { forumFeedThreads, forumSnapshot } from "./snapshot";
 export type { ForumSnapshotOptions } from "./snapshot";

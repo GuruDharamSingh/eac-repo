@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { PayoutIdentity } from "@elkdonis/commerce/types";
 import type { Balance } from "@elkdonis/commerce/server";
 import { formatMoney } from "@elkdonis/commerce/money";
+import { Button } from "@/components/ui/button";
 import {
   disconnectStripeAction,
   setPayoutEmailAction,
@@ -32,11 +33,6 @@ export function PayoutPanel({
   stripeReturn?: string | null;
   ledgerUrl: string;
 }) {
-  const btn =
-    "inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted";
-  const primary =
-    "inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90";
-
   const onboarded = Boolean(identity?.canReceiveDestinationCharge);
   const hasAccount = Boolean(identity?.stripeAccountId);
 
@@ -55,11 +51,11 @@ export function PayoutPanel({
             type="email"
             defaultValue={identity?.payoutEmail ?? ""}
             placeholder="you@example.com"
-            className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus:ring-[2px] focus:ring-ring/50"
+            className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           />
-          <button type="submit" className={btn}>
+          <Button type="submit" variant="outline">
             Save
-          </button>
+          </Button>
         </form>
         {!identity?.payoutEmail && !onboarded && (
           <p className="mt-2 text-xs text-destructive">
@@ -87,9 +83,9 @@ export function PayoutPanel({
               the transfer.
             </p>
             <form action={disconnectStripeAction} className="mt-3">
-              <button type="submit" className={btn}>
+              <Button type="submit" variant="outline">
                 Disconnect
-              </button>
+              </Button>
             </form>
           </>
         ) : hasAccount ? (
@@ -100,9 +96,7 @@ export function PayoutPanel({
                 : "Onboarding was started but not finished. Card sales still go through; the money is held for you until Stripe enables payouts."}
             </p>
             <form action={startStripeOnboardingAction} className="mt-3 flex gap-2">
-              <button type="submit" className={primary}>
-                Continue Stripe setup
-              </button>
+              <Button type="submit">Continue Stripe setup</Button>
             </form>
             <form action={disconnectStripeAction} className="mt-2">
               <button type="submit" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
@@ -118,9 +112,7 @@ export function PayoutPanel({
               Takes a few minutes; Stripe handles identity checks.
             </p>
             <form action={startStripeOnboardingAction} className="mt-3">
-              <button type="submit" className={primary}>
-                Set up card payouts
-              </button>
+              <Button type="submit">Set up card payouts</Button>
             </form>
           </>
         )}

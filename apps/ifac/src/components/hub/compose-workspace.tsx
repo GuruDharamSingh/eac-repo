@@ -5,21 +5,19 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ComposePicker,
-  QuestionBuilder,
+  ContentComposer,
   buildComposeCatalogue,
-  validateQuestionFields,
-  cleanQuestionFields,
+  emptyContentAnswers,
   type ComposeContext,
   type ComposeOption,
 } from "@elkdonis/cms-ui/compose";
-import type { StoredQuestionnaireField } from "@elkdonis/cms-ui/wizard";
-import { MediaPicker } from "@elkdonis/cms-ui/files";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { createQuestionnaireAction } from "@/lib/cms/questionnaire-actions";
+import { useSurface } from "@elkdonis/cms-ui/surface";
+import { Button } from "@elkdonis/primitives";
+import { siteConfig } from "@/config/site";
 import { saveContentAction } from "@/lib/cms/actions";
+import { toSaveContentInput } from "@/lib/cms/compose-adapter";
+import { QuestionnaireBody } from "./questionnaire-composer";
+import { WritingRoomPage } from "./writing-room-page";
 
 /**
  * IFAC's compose surface, in the hub.
@@ -55,21 +53,22 @@ export function ComposeWorkspace({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">{selected.blurb}</p>
-        <button
-          type="button"
-          onClick={() => setSelected(null)}
-          className="shrink-0 text-xs underline-offset-2 hover:underline"
-        >
+    <div className="eac-compose">
+      <div className="ifac-compose-head">
+        <p className="ifac-compose-blurb">{selected.blurb}</p>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(null)}>
           ← Something else
-        </button>
+        </Button>
       </div>
 
-      {selected.writes.table === "threads" ? (
+      {/* A post gets the writing room — the words with the finished page beside
+          them — not a textarea. It was the one kind whose page form was worse
+          than its popup. Everything else keeps the shared composer. */}
+      {selected.writes.kind === "post" ? (
+        <WritingRoomPage />
+      ) : selected.writes.table === "threads" ? (
         <ContentBody
-          kind={selected.writes.kind as "post" | "event" | "meeting"}
+          kind={selected.writes.kind as "post" | "event" | "meeting" | "workshop"}
           feeds={context.feeds ?? []}
           onDone={() => {
             setSelected(null);
@@ -89,154 +88,65 @@ export function ComposeWorkspace({
   );
 }
 
-function QuestionnaireBody({
-  kind,
-  onDone,
-}: {
-  kind: "questionnaire" | "poll";
-  onDone: () => void;
-}) {
-  const isPoll = kind === "poll";
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [closesAt, setClosesAt] = React.useState("");
-  const [fields, setFields] = React.useState<StoredQuestionnaireField[]>([]);
-  const [submitting, setSubmitting] = React.useState(false);
-
-  async function submit() {
-    if (!title.trim()) {
-      toast.error("Give it a title");
-      return;
-    }
-    const problem = validateQuestionFields(fields);
-    if (problem) {
-      toast.error(problem);
-      return;
-    }
-
-    setSubmitting(true);
-    const result = await createQuestionnaireAction({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      fields: cleanQuestionFields(fields),
-      kind,
-      closesAt: closesAt ? new Date(closesAt).toISOString() : null,
-    });
-    setSubmitting(false);
-
-    if (!result.ok) {
-      toast.error("error" in result ? result.error : "Could not create it");
-      return;
-    }
-    toast.success(isPoll ? "Poll opened" : "Questionnaire opened");
-    onDone();
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="q-title">{isPoll ? "What is this poll about?" : "Title"}</Label>
-        <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="q-desc">Description</Label>
-        <Textarea
-          id="q-desc"
-          rows={2}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional — context for the people answering."
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>{isPoll ? "The question" : "Questions"}</Label>
-        <QuestionBuilder value={fields} onChange={setFields} single={isPoll} />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="q-closes">Closes</Label>
-        <Input
-          id="q-closes"
-          type="datetime-local"
-          value={closesAt}
-          onChange={(e) => setClosesAt(e.target.value)}
-        />
-      </div>
-
-      <p className="text-xs text-[hsl(var(--muted-foreground))]">
-        {isPoll
-          ? "Everyone who answers sees the running result. It is never public."
-          : "Answers are visible to IFAC's administrators only."}
-      </p>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" onClick={submit} disabled={submitting} aria-busy={submitting}>
-          {submitting ? "Opening…" : isPoll ? "Open poll" : "Open questionnaire"}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 /**
- * Article / Event / Meeting.
+ * Article / Event / Meeting / Workshop — the SHARED composer, on a page.
  *
- * One form for all three rather than three forms: they differ only by whether
- * the schedule block is shown, and the columns behind them are the same
- * `threads` columns. Three near-identical forms is how the rest of the network
- * ended up with five diverging content editors.
+ * This was ~200 lines of hand-written form: its own Title, Body textarea,
+ * Section select, cover picker and schedule grid. It predated this app being
+ * wired into the compose surface, and once it was, IFAC had two forms for the
+ * same four kinds — the popup's (rich text, grouped fields, a disclosure for
+ * the rarely-used ones) and this one (a flat column of plain inputs). They
+ * drifted immediately: the "More about this gathering" drawer and the
+ * irregular-schedule field were added to the shared field list and simply did
+ * not exist here.
+ *
+ * So the page renders the same `ContentComposer` the popup did, against the
+ * same `connectors.composeSlots` — which is what gets it the rich-text editor
+ * and the org media picker — and saves through the same server action. The
+ * only thing this file still owns is the page's own save bar, because a page
+ * has no surface footer to put one in.
+ *
+ * The page survives, rather than the popup, for the reason that made compose
+ * a route in the first place: this is a long form, and a modal's backdrop is
+ * one stray click away from discarding it.
  */
 function ContentBody({
   kind,
   feeds,
   onDone,
 }: {
-  kind: "post" | "event" | "meeting";
+  kind: "post" | "event" | "meeting" | "workshop";
   feeds: Array<{ slug: string; name: string }>;
   onDone: () => void;
 }) {
+  const { connectors } = useSurface();
   const dated = kind !== "post";
-  const [title, setTitle] = React.useState("");
-  const [body, setBody] = React.useState("");
-  const [section, setSection] = React.useState("");
-  const [coverImageUrl, setCoverImageUrl] = React.useState("");
-  const [scheduledAt, setScheduledAt] = React.useState("");
-  const [durationMinutes, setDurationMinutes] = React.useState("60");
-  const [format, setFormat] = React.useState<"in_person" | "online" | "hybrid">("online");
-  const [location, setLocation] = React.useState("");
-  const [meetingUrl, setMeetingUrl] = React.useState("");
-  const [recurrence, setRecurrence] = React.useState("");
+
+  const fieldContext = React.useMemo(
+    () => ({ feeds, orgSlug: siteConfig.orgId }),
+    [feeds]
+  );
+
+  const [answers, setAnswers] = React.useState<Record<string, unknown>>(() =>
+    emptyContentAnswers(kind, fieldContext)
+  );
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = React.useState(false);
 
   async function submit(status: "draft" | "published") {
-    if (!title.trim()) {
-      toast.error("Give it a title");
-      return;
+    const errors: Record<string, string[]> = {};
+    if (!String(answers.title ?? "").trim()) errors.title = ["Give it a title"];
+    if (dated && !String(answers.scheduled_at ?? "").trim()) {
+      errors.scheduled_at = ["Pick a date and time"];
     }
-    if (dated && !scheduledAt) {
-      toast.error("Pick a date and time");
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      toast.error("Some fields still need filling in");
       return;
     }
 
     setSubmitting(true);
-    const result = await saveContentAction({
-      kind,
-      title: title.trim(),
-      body: body.trim() || undefined,
-      status,
-      section: section || null,
-      coverImageUrl: coverImageUrl.trim() || null,
-      scheduledAt: dated ? new Date(scheduledAt).toISOString() : null,
-      durationMinutes: dated ? Number(durationMinutes) || 60 : null,
-      format: dated ? format : null,
-      location: location.trim() || null,
-      meetingUrl: meetingUrl.trim() || null,
-      // The CHECK rejects 'NONE' — an empty choice must become null.
-      recurrencePattern:
-        (recurrence as "DAILY" | "WEEKLY" | "MONTHLY") || null,
-    });
+    const result = await saveContentAction(toSaveContentInput(kind, answers, status));
     setSubmitting(false);
 
     // The repo compiles with `strict: false`, so `!result.ok` does not narrow
@@ -250,149 +160,29 @@ function ContentBody({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="c-title">Title</Label>
-        <Input id="c-title" value={title} onChange={(e) => setTitle(e.target.value)} />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="c-body">Body</Label>
-        <Textarea
-          id="c-body"
-          rows={6}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="What is it, and who is it for?"
-        />
-      </div>
-
-      {feeds.length > 0 && (
-        <div className="space-y-1.5">
-          <Label htmlFor="c-section">Section</Label>
-          <select
-            id="c-section"
-            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-            value={section}
-            onChange={(e) => setSection(e.target.value)}
-          >
-            <option value="">No section</option>
-            {feeds.map((feed) => (
-              <option key={feed.slug} value={feed.slug}>
-                {feed.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Never a URL box. Pasting a path means dead links, images hosted
-          somewhere the org does not control, and nothing in the library to
-          reuse — so a cover is always uploaded or chosen from what IFAC
-          already has. */}
-      <MediaPicker
-        value={coverImageUrl || undefined}
-        onChange={setCoverImageUrl}
-        uploadEndpoint="/api/upload"
-        libraryEndpoint="/api/media/library"
-        label="Cover image"
-        hint="Shown in listings and at the top of the item."
+    <>
+      <ContentComposer
+        kind={kind}
+        context={fieldContext}
+        answers={answers}
+        onChange={setAnswers}
+        slots={connectors.composeSlots}
+        fieldErrors={fieldErrors}
       />
 
-      {dated && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="c-when">Starts</Label>
-              <Input
-                id="c-when"
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-duration">Minutes</Label>
-              <Input
-                id="c-duration"
-                type="number"
-                min={5}
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="c-format">Format</Label>
-              <select
-                id="c-format"
-                className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-                value={format}
-                onChange={(e) => setFormat(e.target.value as typeof format)}
-              >
-                <option value="online">Online</option>
-                <option value="in_person">In person</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-repeat">Repeats</Label>
-              <select
-                id="c-repeat"
-                className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-                value={recurrence}
-                onChange={(e) => setRecurrence(e.target.value)}
-              >
-                <option value="">Does not repeat</option>
-                <option value="WEEKLY">Weekly</option>
-                <option value="DAILY">Daily</option>
-                <option value="MONTHLY">Monthly</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="c-location">Where</Label>
-            <Input
-              id="c-location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="A venue, a city, or blank for online"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="c-url">Join link</Label>
-            <Input
-              id="c-url"
-              value={meetingUrl}
-              onChange={(e) => setMeetingUrl(e.target.value)}
-              placeholder="https://…"
-            />
-          </div>
-
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Published dated items are mirrored to the group&rsquo;s Nextcloud
-            calendar, so members can subscribe from a phone.
-          </p>
-        </>
-      )}
-
-      <div className="flex justify-end gap-2">
+      <div className="ifac-compose-actions">
         <Button
           type="button"
           variant="outline"
-          onClick={() => submit("draft")}
+          onClick={() => void submit("draft")}
           disabled={submitting}
         >
           Save draft
         </Button>
-        <Button type="button" onClick={() => submit("published")} disabled={submitting}>
+        <Button type="button" onClick={() => void submit("published")} disabled={submitting}>
           {submitting ? "Saving…" : "Publish"}
         </Button>
       </div>
-    </div>
+    </>
   );
 }

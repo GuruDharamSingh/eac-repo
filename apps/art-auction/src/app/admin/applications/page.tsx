@@ -12,15 +12,16 @@ export default async function ApplicationsPage() {
   const applications = await listPendingStoreApplications();
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <header className="mb-8">
-        <h1 className="font-serif text-4xl tracking-tight">
+    <section>
+      <div className="mb-8">
+        <h2 className="font-serif text-2xl tracking-tight">
           Artist applications
-        </h1>
-        <p className="mt-2 text-muted-foreground">
+          <span className="ml-2 text-base text-muted-foreground">({applications.length})</span>
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           {applications.length} pending review.
         </p>
-      </header>
+      </div>
 
       {applications.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
@@ -72,6 +73,6 @@ export default async function ApplicationsPage() {
           ))}
         </ul>
       )}
-    </main>
+    </section>
   );
 }

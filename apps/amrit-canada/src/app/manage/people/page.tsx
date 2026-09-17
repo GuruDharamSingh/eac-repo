@@ -1,10 +1,10 @@
 import { db } from "@elkdonis/db";
 import { listOrgMembers } from "@elkdonis/services";
-import { Badge } from "@/components/ui/badge";
 import { MemberRow } from "@/components/manage/member-row";
 import { getViewer } from "@/lib/auth";
 import { formatShortDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
+import { Badge } from "@elkdonis/primitives";
 
 interface ProfileRow {
   user_id: string;

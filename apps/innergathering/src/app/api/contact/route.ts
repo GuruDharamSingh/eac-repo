@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   void (async () => {
     try {
       const { sendContactNotification } = await import("@elkdonis/email");
-      await sendContactNotification(siteConfig.fallbackNotifyEmail, { senderName: name ?? email, senderEmail: email, message: message ?? undefined, orgName: siteConfig.orgName, source: "landing-page" });
+      await sendContactNotification(siteConfig.fallbackNotifyEmail, { senderName: name ?? email, senderEmail: email, message: message ?? undefined, orgId: siteConfig.orgId, orgName: siteConfig.orgName, source: "landing-page" });
     } catch (err) {
       console.error("[innergathering] contact email:", err);
     }

@@ -7,28 +7,21 @@ import { formatMoney } from "@elkdonis/commerce/money";
 import { isCardPaymentAvailable, syncStripeOrder } from "@elkdonis/checkout/stripe";
 import { payOrderByCard, payOrderByEtransfer } from "@/app/actions";
 import { getCurrentUserId, getIsAdmin } from "@/lib/marketplace-auth";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your order" };
 
-const STATUS_COPY: Record<string, { label: string; tone: string }> = {
-  pending_payment: {
-    label: "Payment not completed",
-    tone: "bg-accent text-accent-foreground",
-  },
-  awaiting_etransfer: {
-    label: "Awaiting your eTransfer",
-    tone: "bg-accent text-accent-foreground",
-  },
-  payment_received: {
-    label: "Payment received — under review",
-    tone: "bg-accent text-accent-foreground",
-  },
-  paid: { label: "Paid", tone: "bg-primary text-primary-foreground" },
-  fulfilled: { label: "Shipped", tone: "bg-primary text-primary-foreground" },
-  completed: { label: "Completed", tone: "bg-primary text-primary-foreground" },
-  cancelled: { label: "Cancelled", tone: "bg-muted text-muted-foreground" },
-  refunded: { label: "Refunded", tone: "bg-muted text-muted-foreground" },
+const STATUS_COPY: Record<string, { label: string; tone: BadgeProps["tone"] }> = {
+  pending_payment: { label: "Payment not completed", tone: "pending" },
+  awaiting_etransfer: { label: "Awaiting your eTransfer", tone: "pending" },
+  payment_received: { label: "Payment received — under review", tone: "pending" },
+  paid: { label: "Paid", tone: "success" },
+  fulfilled: { label: "Shipped", tone: "success" },
+  completed: { label: "Completed", tone: "success" },
+  cancelled: { label: "Cancelled", tone: "neutral" },
+  refunded: { label: "Refunded", tone: "neutral" },
 };
 
 const UNPAID = new Set(["pending_payment", "awaiting_etransfer", "payment_received"]);
@@ -63,7 +56,7 @@ export default async function OrderPage({
   const lines = await getOrderLines(order.id);
   const status = STATUS_COPY[order.status] ?? {
     label: order.status.replace(/_/g, " "),
-    tone: "bg-muted text-muted-foreground",
+    tone: "neutral" as const,
   };
   const unpaid = UNPAID.has(order.status);
   const cardAvailable = isCardPaymentAvailable();
@@ -79,18 +72,16 @@ export default async function OrderPage({
         : "Thank you — your order is placed.";
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12">
       <div className="mb-8">
         <p className="text-sm text-muted-foreground">Order {order.number}</p>
         <h1 className="mt-1 font-serif text-4xl tracking-tight">{heading}</h1>
-        <span
-          className={
-            "mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider " +
-            status.tone
-          }
+        <Badge
+          tone={status.tone}
+          className="mt-3 px-3 py-1 text-xs font-semibold uppercase tracking-wider"
         >
           {status.label}
-        </span>
+        </Badge>
         {sp.cancelled && unpaid && (
           <p className="mt-3 text-sm text-muted-foreground">
             You left the card payment page before paying. Nothing was charged; the
@@ -142,12 +133,9 @@ export default async function OrderPage({
               </pre>
               {cardAvailable && (
                 <form action={payOrderByCard.bind(null, order.id)} className="mt-4">
-                  <button
-                    type="submit"
-                    className="inline-flex h-10 items-center rounded-md border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
-                  >
+                  <Button type="submit" variant="outline">
                     Pay by card instead
-                  </button>
+                  </Button>
                 </form>
               )}
             </>
@@ -155,21 +143,15 @@ export default async function OrderPage({
             <div className="flex flex-wrap gap-3">
               {cardAvailable && (
                 <form action={payOrderByCard.bind(null, order.id)}>
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                  >
+                  <Button type="submit" size="lg">
                     Pay by card
-                  </button>
+                  </Button>
                 </form>
               )}
               <form action={payOrderByEtransfer.bind(null, order.id)}>
-                <button
-                  type="submit"
-                  className="inline-flex h-11 items-center rounded-md border border-border bg-card px-5 text-sm font-medium hover:bg-muted"
-                >
+                <Button type="submit" variant="outline" size="lg">
                   Pay by Interac eTransfer
-                </button>
+                </Button>
               </form>
             </div>
           )}
@@ -252,19 +234,13 @@ export default async function OrderPage({
 
       <div className="mt-6 flex flex-wrap gap-3">
         {userId && (
-          <Link
-            href="/account"
-            className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm hover:bg-muted"
-          >
-            Your orders
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/account">Your orders</Link>
+          </Button>
         )}
-        <Link
-          href="/artworks"
-          className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm hover:bg-muted"
-        >
-          Continue browsing
-        </Link>
+        <Button asChild variant="outline">
+          <Link href="/">Continue browsing</Link>
+        </Button>
       </div>
     </main>
   );

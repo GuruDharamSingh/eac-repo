@@ -11,7 +11,7 @@ import {
   type Occurrence,
 } from "@elkdonis/utils";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * A live month grid, shared by the hub tile and the full calendar page.

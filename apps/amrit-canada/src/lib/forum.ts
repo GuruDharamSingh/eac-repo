@@ -1,5 +1,5 @@
 import { forumSnapshot, orgHrefs, serviceConnectors, type ForumConnectors } from "@elkdonis/forum-ui";
-import { getViewerRoles, FORUM_ANONYMOUS } from "@elkdonis/services";
+import { getViewerRoles, getIdentityIds, FORUM_ANONYMOUS } from "@elkdonis/services";
 import { cookies } from "next/headers";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
@@ -16,7 +16,14 @@ export const forumHrefs = orgHrefs({ base: "/forum", signIn: "/login?next=/forum
 /** The forum viewer for this site's session, or the anonymous one. */
 export async function getForumViewer() {
   const v = await getViewer();
-  return v ? { userId: v.userId, roles: await getViewerRoles(v.userId) } : FORUM_ANONYMOUS;
+  if (!v) return FORUM_ANONYMOUS;
+  const [roles, identityIds] = await Promise.all([
+    getViewerRoles(v.userId),
+    // Their own row plus any pen names, so `author_id = viewer` keeps
+    // showing someone their own threads whichever name signed them.
+    getIdentityIds(v.userId).catch(() => [v.userId]),
+  ]);
+  return { userId: v.userId, roles, identityIds };
 }
 
 export async function getForumConnectors(): Promise<ForumConnectors> {

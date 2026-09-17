@@ -19,7 +19,30 @@ import { faceOf } from "./face-origin";
 // titled, or assigned to an idea, later.
 //
 // Both buttons sit in `.eac-face-live`; the rest of the face opens the list.
+//
+// HEADER-LED, and named for what it is (2026-09-16). It was titled
+// "Documents", which in a hub that also has a Files tile and a shared drive
+// names three different things the same way. These are collaboratively-edited
+// Nextcloud documents, so the card says so, and a second line says which tool
+// opens — the question a member actually has is "is this a word processor or
+// a folder", and the card can simply answer it.
+//
+// Below that the face lists what is THERE, as a short directory with a mark
+// per entry, instead of one document and a snippet. A group with four living
+// documents was being shown one of them.
 // ============================================================================
+
+/** A mark per kind of thing, so a row is scannable without reading it. */
+function docGlyph(doc: SurfaceDocument): string {
+  const name = (doc.title ?? "").toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|svg)$/.test(name)) return "▣";
+  if (/\.(pdf)$/.test(name)) return "▤";
+  if (/\.(mp4|mov|webm|avi)$/.test(name)) return "▶";
+  if (/\.(mp3|wav|m4a|flac)$/.test(name)) return "♪";
+  if (/\.(xlsx?|csv|ods)$/.test(name)) return "▦";
+  // The default is the thing this face is actually for: a living text doc.
+  return "▭";
+}
 
 export function DocumentsFace({
   documents,
@@ -59,38 +82,44 @@ export function DocumentsFace({
   return (
     <SurfaceCard
       kind="document"
-      title={current ? "Documents" : "Create a document"}
-      blurb={
-        current
-          ? "What the group is working on, in shared storage."
-          : "A collaborative doc in the group's storage — no account needed."
-      }
+      layout="header"
+      // No kicker: the kind's label is "Document", which directly above a
+      // title reading "Collaborative document" says the word twice.
+      kicker={null}
+      title="Collaborative document"
+      blurb="Nextcloud word processor, for editing together or taking notes."
       ariaLabel="Open the group's documents"
       onClick={(origin) => openList(undefined, origin)}
       preview={
         <div className="eac-face-live eac-doc-face">
           {current ? (
             <>
-              <a
-                className="eac-doc-face-current"
-                href={current.editUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="eac-doc-face-title">{current.title}</span>
-                {current.snippet && (
-                  <span className="eac-doc-face-snippet">{current.snippet}</span>
-                )}
+              {/* The directory, newest first. Each row opens that document
+                  directly; the card itself opens the full list. */}
+              <div className="eac-doc-dir">
+                {documents.slice(0, 4).map((doc) => (
+                  <a
+                    key={doc.id}
+                    className="eac-doc-dir-row"
+                    href={doc.editUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="eac-doc-dir-glyph" aria-hidden>
+                      {docGlyph(doc)}
+                    </span>
+                    <span className="eac-doc-dir-name">{doc.title}</span>
+                    <span className="eac-doc-dir-when">
+                      {fmtShortDate(doc.updatedAt ?? doc.createdAt)}
+                    </span>
+                  </a>
+                ))}
+              </div>
+              {documents.length > 4 && (
                 <span className="eac-preview-cue">
-                  {[
-                    fmtShortDate(current.updatedAt ?? current.createdAt),
-                    current.ideaTitle ? `for “${current.ideaTitle}”` : null,
-                    documents.length > 1 ? `${documents.length} docs` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  +{documents.length - 4} more
                 </span>
-              </a>
+              )}
               {canCreate && (
                 <button
                   type="button"

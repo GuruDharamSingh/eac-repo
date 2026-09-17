@@ -7,6 +7,7 @@ import {
   getMemberRoster,
   getNetworkFrontFeed,
   getNetworkUpcomingEvents,
+  getNetworkCounts,
   groupEventsByCity,
 } from "@/lib/network";
 import { PORTAL_CSS, buildNewsroomHtml } from "@/lib/cms/community-render";
@@ -60,8 +61,9 @@ export default async function SiteCommunityPage({
   const rootHost = host.replace(new RegExp(`^${slug}\\.`), "");
   const rootBase = `${proto}://${rootHost}`;
 
-  const [memberOrgs, events, feed, homes, artwork] = await Promise.all([
+  const [memberOrgs, counts, events, feed, homes, artwork] = await Promise.all([
     getMemberRoster(24),
+    getNetworkCounts(),
     getNetworkUpcomingEvents(20),
     getNetworkFrontFeed(20),
     orgHomeUrlMap(),
@@ -70,6 +72,7 @@ export default async function SiteCommunityPage({
 
   const html = buildNewsroomHtml({
     memberOrgs,
+    counts,
     orgHomeUrls: Object.fromEntries(
       memberOrgs.map((m) => [m.slug, orgHomeUrl(homes, m.slug)])
     ),

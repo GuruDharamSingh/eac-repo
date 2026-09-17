@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CssPanel } from "@elkdonis/live-editor";
+import { TokenImportPanel } from "@/components/hub/TokenImportPanel";
 import type { CssVarDef } from "@elkdonis/live-editor";
 import type { ThemeVars } from "@elkdonis/services";
 
@@ -29,6 +30,7 @@ export function AppearancePanel({
   onSave: (orgId: string, pageKey: string, vars: ThemeVars) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [open, setOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [pageKey, setPageKey] = useState(pages[0]?.key ?? "");
 
   if (!open) {
@@ -45,6 +47,7 @@ export function AppearancePanel({
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
       <label className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">Editing</span>
         <select
@@ -59,6 +62,28 @@ export function AppearancePanel({
           ))}
         </select>
       </label>
+        {/* Bulk fill, beside the row-at-a-time panel rather than instead of it:
+            an import sets the palette, the panel adjusts it afterwards. */}
+        <button
+          type="button"
+          onClick={() => setImporting((v) => !v)}
+          className="text-sm underline decoration-dotted"
+        >
+          {importing ? "Hide import" : "Import tokens…"}
+        </button>
+      </div>
+
+      {importing && (
+        <TokenImportPanel
+          key={pageKey}
+          orgId={orgId}
+          pageKey={pageKey}
+          cssVars={vars}
+          existing={overridesByPage[pageKey] ?? {}}
+          onSave={onSave}
+          onClose={() => setImporting(false)}
+        />
+      )}
 
       <CssPanel
         // Remount on scope change so the panel reloads that scope's values

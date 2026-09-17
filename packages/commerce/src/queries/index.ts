@@ -157,6 +157,31 @@ export interface ListArtworksOptions {
   orgId?: string;
   kind?: Artwork["kind"];
   q?: string;
+  /**
+   * Browse order. `price_asc`/`price_desc` sort on the cheapest variant, and
+   * put unpriced ("price on request") work last either way — a piece with no
+   * price is not the cheapest thing in the shop, it is simply not for sale at
+   * a number.
+   */
+  sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "popular";
+  /** Only pieces with a real price — i.e. things a visitor can actually buy. */
+  pricedOnly?: boolean;
+}
+
+/** SQL for {@link ListArtworksOptions.sort}. `pv` must be in scope. */
+function artworkOrder(sort: ListArtworksOptions["sort"]) {
+  switch (sort) {
+    case "oldest":
+      return db`a.created_at ASC`;
+    case "price_asc":
+      return db`(pv.price_minor IS NULL OR pv.price_minor = 0), pv.price_minor ASC, a.created_at DESC`;
+    case "price_desc":
+      return db`(pv.price_minor IS NULL OR pv.price_minor = 0), pv.price_minor DESC, a.created_at DESC`;
+    case "popular":
+      return db`a.view_count DESC, a.created_at DESC`;
+    default:
+      return db`a.created_at DESC`;
+  }
 }
 
 export async function listArtworks(
@@ -178,17 +203,23 @@ export async function listArtworks(
     LEFT JOIN organizations o ON o.id = s.owner_org_id
     LEFT JOIN users u ON u.id = a.artist_user_id
     LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    LEFT JOIN LATERAL (
+      SELECT price_minor FROM artwork_variant av
+      WHERE av.artwork_id = a.id AND av.price_minor > 0
+      ORDER BY av.price_minor ASC LIMIT 1
+    ) pv ON TRUE
     WHERE a.status = ANY(${statusList})
       ${opts.storeId ? db`AND a.store_id = ${opts.storeId}` : db``}
       ${opts.artistUserId ? db`AND a.artist_user_id = ${opts.artistUserId}` : db``}
       ${opts.orgId ? db`AND a.org_id = ${opts.orgId}` : db``}
       ${opts.kind ? db`AND a.kind = ${opts.kind}` : db``}
+      ${opts.pricedOnly ? db`AND pv.price_minor IS NOT NULL` : db``}
       ${opts.q ? db`AND (a.title ILIKE ${"%" + opts.q + "%"} OR a.subject ILIKE ${"%" + opts.q + "%"})` : db``}
-    ORDER BY a.created_at DESC
+    ORDER BY ${artworkOrder(opts.sort)}
     LIMIT ${limit} OFFSET ${offset}
   `) as unknown as Row[];
 
-  return rows.map(mapArtwork);
+  return attachPricing(rows.map(mapArtwork));
 }
 
 /**
@@ -223,10 +254,12 @@ export async function listStoreFrontArtworks(
     ORDER BY shown_at DESC
     LIMIT ${limit}
   `) as unknown as Row[];
-  return rows.map((r) => ({
-    ...mapArtwork(r),
-    presentedByStoreId: opt<string>(r.presented_by_store_id),
-  }));
+  return attachPricing(
+    rows.map((r) => ({
+      ...mapArtwork(r),
+      presentedByStoreId: opt<string>(r.presented_by_store_id),
+    }))
+  );
 }
 
 /** Only the pieces a store presents for others — the studio's list. */
@@ -245,7 +278,55 @@ export async function listPresentedArtworks(storeId: string): Promise<Artwork[]>
     WHERE sp.store_id = ${storeId}
     ORDER BY sp.added_at DESC
   `) as unknown as Row[];
-  return rows.map((r) => ({ ...mapArtwork(r), presentedByStoreId: opt<string>(r.presented_by_store_id) }));
+  return attachPricing(
+    rows.map((r) => ({ ...mapArtwork(r), presentedByStoreId: opt<string>(r.presented_by_store_id) }))
+  );
+}
+
+/**
+ * Attach the cheapest variant and any open lot to a list of artworks, in two
+ * queries rather than two per row.
+ *
+ * Every list query used to return artworks with neither, while the card that
+ * renders them reads `artwork.variants[0]` for the price and `artwork.lot` for
+ * the auction state. The result was a marketplace whose browse grid, artist
+ * pages and embedded store showcases said "Price on request" for absolutely
+ * everything and never once showed that a piece was at auction — the price is
+ * the whole reason those grids exist, and it was never on them.
+ *
+ * Only the lowest-priced variant is needed: that is what the card shows as
+ * "from", and the detail page hydrates the rest anyway.
+ */
+async function attachPricing(artworks: Artwork[]): Promise<Artwork[]> {
+  if (artworks.length === 0) return artworks;
+  const ids = artworks.map((a) => a.id);
+
+  const [variantRows, lotRows] = await Promise.all([
+    db`
+      SELECT DISTINCT ON (artwork_id) *
+      FROM artwork_variant
+      WHERE artwork_id = ANY(${ids}::uuid[])
+      ORDER BY artwork_id, price_minor ASC, position ASC
+    ` as Promise<unknown> as Promise<Row[]>,
+    db`
+      SELECT DISTINCT ON (av.artwork_id) av.artwork_id, al.*
+      FROM auction_lot al
+      JOIN artwork_variant av ON av.id = al.artwork_variant_id
+      WHERE av.artwork_id = ANY(${ids}::uuid[])
+        AND al.status IN ('scheduled', 'live')
+      ORDER BY av.artwork_id, al.end_at ASC
+    ` as Promise<unknown> as Promise<Row[]>,
+  ]);
+
+  const variantById = new Map(variantRows.map((r) => [r.artwork_id as string, mapVariant(r)]));
+  const lotById = new Map(lotRows.map((r) => [r.artwork_id as string, mapLot(r)]));
+
+  for (const a of artworks) {
+    const v = variantById.get(a.id);
+    a.variants = v ? [v] : [];
+    a.lot = lotById.get(a.id) ?? null;
+  }
+  return artworks;
 }
 
 export async function listFeaturedArtworks(opts: { limit?: number } = {}): Promise<Artwork[]> {
@@ -290,7 +371,22 @@ export async function getArtworkBySlug(
   return hydrateArtwork(mapArtwork(rows[0]));
 }
 
-export async function getArtworkById(id: string): Promise<Artwork | null> {
+/**
+ * One artwork by id, for the public detail page.
+ *
+ * Draft and archived work, and work whose store is not trading, are NOT
+ * returned. Every list query already joins `store s ... AND s.status =
+ * 'active'` and filters on artwork status; this one did neither, so a
+ * rejected applicant's listings and a seller's unpublished drafts were
+ * publicly readable at their own URL with images, price and provenance.
+ *
+ * Pass `includeUnlisted` from a surface that has already established the
+ * viewer may see it — a studio preview, an admin screen.
+ */
+export async function getArtworkById(
+  id: string,
+  opts: { includeUnlisted?: boolean } = {}
+): Promise<Artwork | null> {
   const rows = (await db`
     SELECT
       a.*,
@@ -302,6 +398,9 @@ export async function getArtworkById(id: string): Promise<Artwork | null> {
     LEFT JOIN users u ON u.id = a.artist_user_id
     LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
     WHERE a.id = ${id}
+      ${opts.includeUnlisted
+        ? db``
+        : db`AND sa.status = 'active' AND a.status IN ('available','reserved','sold')`}
     LIMIT 1
   `) as unknown as Row[];
   if (!rows[0]) return null;
@@ -720,7 +819,13 @@ export const listMarketplaceArtists = listStores;
 /** @deprecated Use {@link getStoreForUser}. */
 export const getMarketplaceArtist = getStoreForUser;
 
-/** All artwork a store sells, any status — for the studio dashboard. */
+/**
+ * All artwork a store sells, any status — for the studio dashboard.
+ *
+ * Priced, so a seller's own list can show what each piece is listed at. The
+ * studio had no prices on it either, which meant the one screen whose job is
+ * to manage prices was the one screen that never displayed them.
+ */
 export async function listStoreArtworks(storeId: string): Promise<Artwork[]> {
   const rows = (await db`
     SELECT a.*, pm.url AS primary_image_url, pm.alt AS primary_image_alt
@@ -729,7 +834,7 @@ export async function listStoreArtworks(storeId: string): Promise<Artwork[]> {
     WHERE a.store_id = ${storeId}
     ORDER BY a.created_at DESC
   `) as unknown as Row[];
-  return rows.map(mapArtwork);
+  return attachPricing(rows.map(mapArtwork));
 }
 
 /** @deprecated Use {@link listStoreArtworks} — a person may hold several stores. */

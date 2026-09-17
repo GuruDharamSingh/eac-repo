@@ -23,7 +23,9 @@ import {
   StandingMeetingFace,
   hubCards,
 } from "@elkdonis/cms-ui/hub";
+import { EmailFace } from "@elkdonis/cms-ui/email";
 import { requireOrgMember } from "@/lib/auth";
+import { loadEmailSuite } from "@/lib/email-suite";
 import { siteConfig } from "@/config/site";
 import { getPipelineBoard } from "@/lib/pipeline";
 
@@ -44,7 +46,7 @@ export default async function HubPage() {
   const viewer = await requireOrgMember("/hub");
 
   const calendarFrom = startOfMonth(new Date());
-  const [profile, chatRoom, events, standing, board, documents, media, alerts] =
+  const [profile, chatRoom, events, standing, board, documents, media, alerts, email] =
     await Promise.all([
     getProfile(viewer.userId),
     getOrgChatRoom(siteConfig.orgId),
@@ -71,6 +73,11 @@ export default async function HubPage() {
     // said they are coming to. Stated on the profile face, never linked —
     // no app serves an inbox route yet.
     getViewerAlerts(viewer.userId, siteConfig.orgId),
+    // The email face draws real correspondence, so it needs the suite's data.
+    // Editors only — the face's own controls send in the org's name, and a
+    // member seeing a tile that refuses them is worse than seeing no tile.
+    // A failure costs the tile, not the hub.
+    viewer.canEdit ? loadEmailSuite().catch(() => null) : null,
   ]);
 
   const [chatMessages, chatIdentity] = chatRoom
@@ -142,6 +149,17 @@ export default async function HubPage() {
             {viewer.canEdit && <ComposeFace />}
 
             {viewer.canEdit && <GalleryFace images={media} />}
+
+            {/* Email, as a LIVE face rather than the door it used to be.
+                It was a card reading "Every letter sent in this organisation's
+                name" — a description of a feature. It now draws the org's
+                actual correspondence: what went out, what came back, and what
+                is waiting for an answer. The Newsletter tile is gone with it:
+                writing a newsletter is one of the suite's tabs, and a separate
+                tile beside it split one subject across two doors. */}
+            {viewer.canEdit && email && (
+              <EmailFace data={email} canEdit={viewer.canEdit} />
+            )}
 
             {main.map((card) => (
               <SurfaceCard

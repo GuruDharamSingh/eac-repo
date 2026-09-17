@@ -165,7 +165,7 @@ export async function saveEmailTemplateSettings(params: {
       ${nanoid()},
       ${params.orgId},
       ${params.templateKey},
-      ${JSON.stringify(config)}::jsonb,
+      ${db.json(config as never)},
       ${params.userId ?? null},
       ${params.userId ?? null}
     )

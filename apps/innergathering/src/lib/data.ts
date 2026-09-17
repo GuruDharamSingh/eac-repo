@@ -5,6 +5,7 @@ import {
   listOrgProfiles,
   resolveTerms,
   type OrgProfile,
+  OFF_FEED_KINDS,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import type {
@@ -244,12 +245,22 @@ export async function getThreadById(id: string): Promise<Thread | null> {
   }
 }
 
-/** Everything in the org, published or not — the /manage dashboard list. */
+/**
+ * Everything in the org, published or not — the /manage dashboard list.
+ *
+ * Kind-filtered, because this is the one query in this file with no section
+ * and no visibility predicate, which makes it the place a new `kind` lands
+ * first. Living documents (migration 133) and personal writing are threads but
+ * not this org's editorial content: they have their own surfaces, their own
+ * write paths and, in a document's case, a Nextcloud file the row actions here
+ * know nothing about. See OFF_FEED_KINDS.
+ */
 export async function getAllThreadsForOrg(limit = 100): Promise<Thread[]> {
   try {
     const rows = await db<ThreadRow[]>`
       SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
       WHERE t.org_id = ${ORG}
+        AND t.kind <> ALL(${OFF_FEED_KINDS})
       ORDER BY COALESCE(t.scheduled_at, t.published_at, t.created_at) DESC
       LIMIT ${limit}
     `;

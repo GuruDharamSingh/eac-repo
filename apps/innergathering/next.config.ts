@@ -1,6 +1,33 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * The brand faces are fetched cross-origin by every email this network
+   * sends — the @font-face in packages/email points at elkdonis-arts.org/fonts,
+   * and an email is rendered from a mail client, never from this origin.
+   * Without Access-Control-Allow-Origin a browser refuses the fetch, which is
+   * why Brothers silently fell back to Georgia in every preview.
+   *
+   * Only fonts, only GET, and fonts are not credentialed, so `*` here grants
+   * nothing that reading the file would not.
+   *
+   * NB this fixes the previews and Apple Mail. Gmail and Outlook strip
+   * @font-face outright, so most recipients will always see the fallback
+   * stack — which is why that stack is Cinzel then Georgia rather than
+   * whatever the client picks.
+   */
+  async headers() {
+    return [
+      {
+        source: "/fonts/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
+  },
+
   // @elkdonis/ui is deliberately NOT transpiled here.
   //
   // It carries react as a devDependency, so pnpm gives it its own physical
@@ -14,10 +41,13 @@ const nextConfig: NextConfig = {
   // carried: same duplicate-copy problem, different package. The only thing
   // imported from @elkdonis/ui now is BaroqueSignup, which is Mantine-free.
   transpilePackages: [
+    "@elkdonis/blocks",
+    "@elkdonis/page-builder",
     "@elkdonis/pipeline",
     "@elkdonis/chat",
     "@elkdonis/db",
     "@elkdonis/email",
+    "@elkdonis/newsletter",
     "@elkdonis/types",
     "@elkdonis/utils",
     "@elkdonis/auth-client",

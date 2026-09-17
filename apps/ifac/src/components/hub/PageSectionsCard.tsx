@@ -2,7 +2,25 @@
 
 import { useState } from "react";
 import { SurfaceCard, SurfaceFrame, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
+import { marketplaceLinks, storeEntry, type StoreEntryState } from "@elkdonis/commerce/links";
 import type { ProfileSummary } from "@/lib/hub-data";
+
+/**
+ * What this member shows on their own public page, plus where their
+ * marketplace store stands.
+ *
+ * The store fields are the store's real status rather than a boolean: a
+ * member with an application under review needs to be told that, not offered
+ * the "open a store" button again.
+ */
+export interface HubSections {
+  elkdonisFeed: boolean;
+  store: boolean;
+  blog: boolean;
+  storeState: StoreEntryState;
+  storeId: string | null;
+  storeName: string | null;
+}
 
 /**
  * What used to be this app's whole "My profile" tile.
@@ -23,17 +41,22 @@ import type { ProfileSummary } from "@/lib/hub-data";
 export function PageSectionsFace({
   summary,
   sections,
+  marketplaceUrl,
 }: {
   summary: ProfileSummary | null;
-  sections: { elkdonisFeed: boolean; store: boolean; hasStore: boolean };
+  sections: HubSections;
   marketplaceUrl?: string;
 }) {
+  // `marketplaceUrl` used to be accepted here and then dropped: it never
+  // reached `props`, so the surface read `undefined`, and every link it built
+  // came out relative — a member pressing "Open a store" landed on IFAC's own
+  // /studio/apply, which does not exist.
   const descriptor = {
     type: "custom" as const,
     key: "page-sections",
     title: "Page sections",
     kind: "neutral" as const,
-    props: { summary, sections },
+    props: { summary, sections, marketplaceUrl },
   };
 
   if (!summary) {
@@ -49,7 +72,18 @@ export function PageSectionsFace({
     );
   }
 
-  const on = [sections.elkdonisFeed && "Blog feed", sections.store && "Store"].filter(Boolean);
+  const on = [
+    sections.blog && "Writing",
+    sections.elkdonisFeed && "Blog feed",
+    sections.store && "Store",
+  ].filter(Boolean);
+
+  const storeNote =
+    sections.storeState === "active"
+      ? "Store open"
+      : sections.storeState === "pending"
+        ? "Store application in review"
+        : null;
 
   return (
     <SurfaceCard
@@ -70,6 +104,7 @@ export function PageSectionsFace({
           </span>
           <span className="eac-preview-cue">
             {on.length ? `Showing: ${on.join(", ")}` : "No optional sections on"}
+            {storeNote ? ` · ${storeNote}` : ""}
           </span>
         </>
       }
@@ -83,18 +118,29 @@ export function PageSectionsSurface({
   descriptor: Extract<SurfaceDescriptor, { type: "custom" }>;
 }) {
   const summary = (descriptor.props?.summary as ProfileSummary | null) ?? null;
-  const sections = (descriptor.props?.sections as {
-    elkdonisFeed: boolean;
-    store: boolean;
-    hasStore: boolean;
-  }) ?? { elkdonisFeed: false, store: false, hasStore: false };
-  const marketplaceUrl = descriptor.props?.marketplaceUrl as string | undefined;
+  const sections = (descriptor.props?.sections as HubSections) ?? {
+    elkdonisFeed: false,
+    store: false,
+    blog: false,
+    storeState: "none" as const,
+    storeId: null,
+    storeName: null,
+  };
+  const marketplaceUrl = (descriptor.props?.marketplaceUrl as string | undefined) ?? "";
 
   const [feedOn, setFeedOn] = useState(sections.elkdonisFeed);
+  const [blogOn, setBlogOn] = useState(sections.blog);
   const [storeOn, setStoreOn] = useState(sections.store);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const market = (marketplaceUrl ?? "").replace(/\/$/, "");
+
+  // One builder for every marketplace address, told which app the member is
+  // coming from so art-auction can offer them the way back.
+  const links = marketplaceLinks(marketplaceUrl, { from: "ifac" });
+  const entry = storeEntry(links, sections.storeState, {
+    storeId: sections.storeId,
+    storeName: sections.storeName,
+  });
 
   async function patch(body: Record<string, boolean>, revert: () => void) {
     setSaving(true);
@@ -119,7 +165,9 @@ export function PageSectionsSurface({
     }
   }
 
-  const profileHref = summary?.slug ? `/artists/${summary.slug}` : null;
+  const profileHref = summary?.slug
+    ? `/${summary.kind === "dealer" ? "dealers" : "artists"}/${summary.slug}`
+    : null;
 
   if (!summary) {
     return (
@@ -174,6 +222,33 @@ export function PageSectionsSurface({
         <label className="hub-toggle">
           <input
             type="checkbox"
+            checked={blogOn}
+            disabled={saving}
+            onChange={(e) => {
+              const next = e.target.checked;
+              setBlogOn(next);
+              void patch({ blog: next }, () => setBlogOn(!next));
+            }}
+          />
+          <span>
+            <strong>My writing</strong>
+            <span className="hub-muted">
+              A reading room on your page: your own pieces, written and
+              published by you. Nothing you write here goes into IFAC&rsquo;s
+              feed or the forum &mdash; it is yours.
+              {profileHref && (
+                <>
+                  {" "}
+                  <a href={`${profileHref}/writing`}>Open it</a>.
+                </>
+              )}
+            </span>
+          </span>
+        </label>
+
+        <label className="hub-toggle">
+          <input
+            type="checkbox"
             checked={feedOn}
             disabled={saving}
             onChange={(e) => {
@@ -190,7 +265,7 @@ export function PageSectionsSurface({
           </span>
         </label>
 
-        {sections.hasStore ? (
+        {sections.storeState === "active" && (
           <label className="hub-toggle">
             <input
               type="checkbox"
@@ -206,17 +281,35 @@ export function PageSectionsSurface({
               <strong>My store</strong>
               <span className="hub-muted">
                 Show your listed work from the network marketplace on your page.
-                Buying happens there; manage listings in your{" "}
-                <a href={`${market}/studio`}>studio</a>.
+                Buying happens there, and you are paid directly.
               </span>
             </span>
           </label>
-        ) : (
-          <p className="hub-muted">
-            Members can sell on the network marketplace and show their work
-            here. <a href={`${market}/studio/apply`}>Open a store</a>.
-          </p>
         )}
+
+        {/* The marketplace is a different app on a different domain, so this
+            is a departure, not a tab. Say where it goes and what state the
+            store is in before the member commits to the trip. */}
+        <h4 className="hub-panel-subhead">Selling your work</h4>
+        <p className="hub-muted">{entry.hint}</p>
+        <div className="hub-panel-actions">
+          <a
+            className={entry.ready ? "hub-btn hub-btn--primary" : "hub-btn"}
+            href={entry.href}
+          >
+            {entry.label}
+          </a>
+          {sections.storeState === "active" && (
+            <>
+              <a className="hub-btn" href={links.newListing}>
+                Add a piece
+              </a>
+              <a className="hub-btn" href={links.sales}>
+                My sales
+              </a>
+            </>
+          )}
+        </div>
 
         {error && (
           <p className="hub-error" role="alert">

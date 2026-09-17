@@ -9,6 +9,7 @@ import {
 } from "@elkdonis/commerce/queries";
 import { isPresentedBy } from "@elkdonis/commerce/server";
 import { PresentButtons } from "@/components/present-buttons";
+import { Button } from "@/components/ui/button";
 import { PriceBlock, BuyNowButton } from "@elkdonis/commerce/components";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { sanitizeRichText } from "@elkdonis/utils";
@@ -93,7 +94,7 @@ export default async function ArtworkDetailPage({
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
       <nav className="mb-8 text-sm text-muted-foreground">
-        <Link href="/artworks" className="underline-offset-4 hover:underline">
+        <Link href="/" className="underline-offset-4 hover:underline">
           Artworks
         </Link>
         <span className="mx-2">/</span>
@@ -174,12 +175,9 @@ export default async function ArtworkDetailPage({
                   ? ` Or buy it now for ${formatMoney(lot.buyNowMinor, lot.currency)}.`
                   : ""}
               </p>
-              <Link
-                href={`/lots/${lot.id}`}
-                className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                View auction & bid
-              </Link>
+              <Button asChild size="lg" className="mt-4">
+                <Link href={`/lots/${lot.id}`}>View auction & bid</Link>
+              </Button>
             </div>
           ) : (
             <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">

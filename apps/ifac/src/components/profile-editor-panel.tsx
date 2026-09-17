@@ -35,7 +35,7 @@ export interface ProfileEditorPanelProps {
  *
  * Bio is the one field this page displays that's self-owned (users.bio)
  * rather than org-controlled — role_title, for instance, is IFAC's own call
- * (see /admin/directory), not the artist's, so it isn't offered here.
+ * (see /manage/directory), not the artist's, so it isn't offered here.
  *
  * Only rendered at all when the viewer owns this profile or is an admin —
  * see the page component for that gate. The server actions re-check

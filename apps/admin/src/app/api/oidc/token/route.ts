@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CLIENTS, validateAuthCode, generateIdToken } from '@/lib/oidc';
+import {
+  CLIENTS,
+  validateAuthCode,
+  generateIdToken,
+  generateDelegatedToken,
+  DELEGATION_TTL_SECONDS,
+} from '@/lib/oidc';
 import { db } from '@elkdonis/db';
 import { createHash } from 'crypto';
+
+/** RFC 8693's grant name, reused rather than invented. */
+const DELEGATION_GRANT = 'urn:ietf:params:oauth:grant-type:token-exchange';
+const DEFAULT_DELEGATION_SCOPE = 'agent.post';
 
 export async function POST(req: NextRequest) {
   // Handle both JSON and Form Data (OIDC spec uses Form Data)
@@ -17,7 +27,16 @@ export async function POST(req: NextRequest) {
     body = Object.fromEntries(formData);
   }
 
-  const { code, client_id, client_secret, redirect_uri, grant_type, code_verifier } = body;
+  const {
+    code,
+    client_id,
+    client_secret,
+    redirect_uri,
+    grant_type,
+    code_verifier,
+    subject_email,
+    scope,
+  } = body;
 
   console.log('[token] Request body:', {
     client_id,
@@ -31,6 +50,43 @@ export async function POST(req: NextRequest) {
   if (!client || client.secret !== client_secret) {
     console.log('[token] Client validation failed for:', client_id);
     return NextResponse.json({ error: 'invalid_client' }, { status: 401 });
+  }
+
+  // Delegation: a courier asking for a token that speaks for a named human who
+  // is not at a browser. Gated on the client registry's allowDelegation, so
+  // adding an SSO client never accidentally adds this power.
+  if (grant_type === DELEGATION_GRANT) {
+    if (!client.allowDelegation) {
+      console.log('[token] delegation refused for client:', client_id);
+      return NextResponse.json({ error: 'unauthorized_client' }, { status: 403 });
+    }
+    if (!subject_email || typeof subject_email !== 'string') {
+      return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+    }
+
+    // The email is the join key: whoever the courier verified must already be
+    // a user here. It grants nothing on its own — roles are read per request
+    // by whatever the token is then presented to.
+    const [subject] = await db`
+      SELECT id, email, display_name FROM users WHERE lower(email) = lower(${subject_email})
+    `;
+    if (!subject) {
+      return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
+    }
+
+    const delegationIssuer = req.nextUrl.origin.replace(/\/$/, '');
+    const delegated = await generateDelegatedToken(
+      subject,
+      client_id,
+      delegationIssuer,
+      typeof scope === 'string' && scope ? scope : DEFAULT_DELEGATION_SCOPE
+    );
+
+    return NextResponse.json({
+      access_token: delegated,
+      token_type: 'Bearer',
+      expires_in: DELEGATION_TTL_SECONDS,
+    });
   }
 
   if (grant_type !== 'authorization_code') {

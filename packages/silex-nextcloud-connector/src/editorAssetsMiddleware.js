@@ -68,6 +68,37 @@ const ASSET_ROUTES = [
 ];
 const CSS_FILE = path.join(__dirname, "eac-blocks.css");
 
+// ── Vendored GrapesJS plugins ───────────────────────────────────────────────
+//
+// Third-party editor plugins live in their own npm tree, installed by
+// packages/silex/Dockerfile at /silex/eac-vendor. Each is served as ONE UMD
+// bundle at /eac-vendor/<id>.js, because the client config is delivered raw to
+// the browser and cannot resolve bare npm specifiers — it loads these with
+// <script> tags and reads the global each UMD wrapper defines.
+//
+// An ALLOWLIST, deliberately: the id in the URL selects a row here, so no
+// request can reach an arbitrary path under the vendor tree. `dist` is each
+// package's own `main`, recorded once rather than resolved at request time.
+const VENDOR_DIR = process.env.EAC_VENDOR_DIR || "/silex/eac-vendor/node_modules";
+const VENDOR_URL_PREFIX = "/eac-vendor/";
+const VENDOR_BUNDLES = {
+  "grapesjs-tabs": "grapesjs-tabs/dist/grapesjs-tabs.min.js",
+  "grapesjs-rte-extensions": "grapesjs-rte-extensions/dist/index.js",
+  "grapesjs-project-manager": "grapesjs-project-manager/dist/grapesjs-project-manager.min.js",
+  "grapesjs-blocks-flexbox": "grapesjs-blocks-flexbox/dist/index.js",
+  "grapesjs-blocks-table": "grapesjs-blocks-table/dist/grapesjs-blocks-table.min.js",
+  "grapesjs-plugin-export": "grapesjs-plugin-export/dist/index.js",
+  "grapesjs-preset-newsletter": "grapesjs-preset-newsletter/dist/index.js",
+  "grapesjs-mjml": "grapesjs-mjml/dist/index.js",
+};
+
+/** Which vendored bundles are actually present in this image. */
+function availableVendorPlugins() {
+  return Object.keys(VENDOR_BUNDLES).filter((id) =>
+    fs.existsSync(path.join(VENDOR_DIR, VENDOR_BUNDLES[id]))
+  );
+}
+
 function registerEditorAssets(app) {
   function eacEditorAssets(req, res, next) {
     fs.readFile(CSS_FILE, (err, body) => {
@@ -264,6 +295,34 @@ function registerEditorAssets(app) {
     }
   }
 
+  // GET /eac-vendor/<id>.js — one allowlisted UMD bundle.
+  // GET /eac-vendor/           — what this image actually has, so the client
+  //                              config can skip a plugin the image predates
+  //                              instead of injecting a <script> that 404s.
+  function eacVendorPlugin(req, res, next) {
+    const id = String(req.params.id || "").replace(/\.js$/, "");
+    const rel = VENDOR_BUNDLES[id];
+    if (!rel) return res.status(404).type("text/plain").send("Unknown plugin");
+    const file = path.join(VENDOR_DIR, rel);
+    fs.readFile(file, (err, body) => {
+      if (err) {
+        // Not an error the editor should die on: the image may simply predate
+        // this entry. Say which file, and answer 404 so the loader skips it.
+        console.warn(`[editorAssets] vendor plugin missing: ${id} (${file})`);
+        return res.status(404).type("text/plain").send("Plugin not installed");
+      }
+      res.set("Content-Type", "application/javascript; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=300");
+      res.status(200).send(body);
+    });
+  }
+
+  function eacVendorIndex(req, res) {
+    res.set("Content-Type", "application/json; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=60");
+    res.status(200).send(JSON.stringify({ plugins: availableVendorPlugins() }));
+  }
+
   app.get(HUB_TEMPLATE_URL, eacHubTemplate);
   app.get(HUB_CSS_URL, eacHubCss);
   app.get(COMPONENTS_URL, eacComponents);
@@ -280,10 +339,15 @@ function registerEditorAssets(app) {
   app.get(BROCHURE_CSS_URL, eacBrochureCss);
   app.get(ARTICLE_TEMPLATE_URL, eacArticleTemplate);
   app.get(ARTICLE_CSS_URL, eacArticleCss);
+  app.get(VENDOR_URL_PREFIX, eacVendorIndex);
+  app.get(`${VENDOR_URL_PREFIX}:id`, eacVendorPlugin);
 }
 
 module.exports = {
   ASSET_ROUTES,
+  VENDOR_URL_PREFIX,
+  VENDOR_BUNDLES,
+  availableVendorPlugins,
   COMPONENTS_URL,
   CSS_URL,
   WORKSHOP_CSS_URL,

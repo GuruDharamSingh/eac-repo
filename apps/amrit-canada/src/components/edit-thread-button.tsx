@@ -2,7 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { useSurfaceOptional } from "@elkdonis/cms-ui/surface";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * "Edit" on a published page, for editors.

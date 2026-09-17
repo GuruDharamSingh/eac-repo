@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { canReadMedia, parseMediaPath } from './media-authz';
+import { asBody } from './bytes';
 import {
   isThumbnailable,
   lookupThumbnail,
@@ -96,7 +97,7 @@ function variantResponse(
   headers.set('Cache-Control', cacheControlFor(filePath));
   // Derived bytes need their own validator; the master's would be wrong.
   headers.set('ETag', `W/"${key.slice(-32)}"`);
-  return new Response(variant.body, { status: 200, headers });
+  return new Response(asBody(variant.body), { status: 200, headers });
 }
 
 /**

@@ -1,0 +1,88 @@
+/*
+  Exhibits — this person's gallery pages.
+
+  `user_galleries` (migration 124): a person may keep any number of curated
+  gallery pages, and until now none of them were reachable from their network
+  profile — they existed only on IFAC. A gallery is a room; this section is the
+  list of rooms with a plate on each door.
+*/
+
+.eac-dossier-exhibits { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-exhibit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eac-dos-exhibit {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--eac-dos-ink);
+  border: 1px solid var(--eac-dos-rule);
+  background: var(--eac-dos-paper-shade);
+  transition: border-color 0.18s;
+}
+
+.eac-dos-exhibit:hover,
+.eac-dos-exhibit:focus-visible { border-color: var(--eac-dos-ink); }
+
+.eac-dos-exhibit-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(112%);
+}
+
+.eac-dos-exhibit:hover .eac-dos-exhibit-cover { filter: grayscale(55%); }
+
+/* A gallery with no cover still needs a door. */
+.eac-dos-exhibit-blank {
+  aspect-ratio: 5 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--eac-dos-paper) 0 8px,
+    var(--eac-dos-paper-shade) 8px 16px
+  );
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-exhibit-body {
+  padding: 0.75rem 0.9rem 0.9rem;
+  border-top: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-exhibit-ref {
+  display: block;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-exhibit-title {
+  font-family: var(--eac-dos-display);
+  font-size: 1.04rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0.2rem 0 0;
+}
+
+.eac-dos-exhibit-count {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--eac-dos-ink-soft);
+}

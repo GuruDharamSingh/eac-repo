@@ -1,4 +1,5 @@
 import { db } from '@elkdonis/db';
+import { OFF_FEED_KINDS } from './thread-kinds';
 import { getProfile } from './profiles';
 import { listUserMemberships, type OrgRole } from './org-membership';
 import { getOrgIdentity } from './org-domains';
@@ -196,6 +197,7 @@ async function loadFeed(orgId: string, userId: string, affiliated: boolean, limi
     FROM threads t JOIN organizations o ON o.id = t.org_id LEFT JOIN users a ON a.id = t.author_id
     WHERE t.org_id = ${orgId}
       AND t.status = 'published'
+      AND t.kind <> ALL(${OFF_FEED_KINDS})
       AND (t.visibility = 'PUBLIC' OR (t.visibility = 'ORGANIZATION' AND ${affiliated}))
     ORDER BY t.pinned DESC, COALESCE(t.published_at, t.created_at) DESC
     LIMIT ${limit}
@@ -217,6 +219,7 @@ async function loadNetwork(orgId: string, userId: string, memberOrgIds: string[]
     FROM threads t JOIN organizations o ON o.id = t.org_id LEFT JOIN users a ON a.id = t.author_id
     WHERE t.org_id <> ${orgId}
       AND t.status = 'published'
+      AND t.kind <> ALL(${OFF_FEED_KINDS})
       AND t.visibility = 'PUBLIC'
       AND (t.share_to_network OR t.pinned
            OR EXISTS (SELECT 1 FROM thread_orgs x WHERE x.thread_id = t.id AND x.org_id = ${orgId}))

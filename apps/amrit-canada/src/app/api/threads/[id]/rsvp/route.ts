@@ -173,6 +173,7 @@ export async function POST(
           scheduledAt,
           location: thread.location ?? undefined,
           meetingUrl: thread.meeting_url ?? undefined,
+          orgId: siteConfig.orgId,
           orgName: siteConfig.orgName,
           dark: false,
           emblemUrl: EMBLEM_URL,
@@ -198,6 +199,7 @@ export async function POST(
           section: thread.section ?? undefined,
           scheduledAt,
           threadUrl,
+          orgId: siteConfig.orgId,
           orgName: siteConfig.orgName,
           rsvpCount: count,
         });
@@ -210,6 +212,7 @@ export async function POST(
           section: thread.section ?? undefined,
           scheduledAt,
           threadUrl,
+          orgId: siteConfig.orgId,
           orgName: siteConfig.orgName,
           rsvpCount: count,
           guestMessage: `Minimum attendees threshold of ${thread.min_attendees} has been reached.`,

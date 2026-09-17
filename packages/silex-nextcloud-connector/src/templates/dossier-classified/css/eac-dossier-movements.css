@@ -1,0 +1,70 @@
+/*
+  Movements — where this person is appearing.
+
+  Dated threads they are hosting: events, meetings, workshops. Upcoming first
+  under one heading, then what has already happened under another, because a
+  file records both and a visitor wants the first while a researcher wants the
+  second.
+
+  Rows are the shared `.eac-dos-index`. The only thing added here is the date
+  block in the left margin, which replaces the row number for dated rows — a
+  date IS the index on this section.
+*/
+
+.eac-dossier-movements { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-movement-group { margin-bottom: 1.75rem; }
+.eac-dos-movement-group:last-child { margin-bottom: 0; }
+
+.eac-dos-movement-head {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-index-dated { counter-reset: none; }
+
+.eac-dos-index-dated .eac-dos-row {
+  grid-template-columns: 4.1rem 1fr auto;
+}
+
+.eac-dos-index-dated .eac-dos-row::before { content: none; }
+
+.eac-dos-datemark {
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--eac-dos-ink);
+  border: 1px solid var(--eac-dos-rule);
+  padding: 0.3rem 0.1rem;
+  align-self: start;
+}
+
+.eac-dos-datemark b {
+  display: block;
+  font-family: var(--eac-dos-display);
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0.1rem 0;
+}
+
+/* Past appearances read as archived, not as errors. */
+.eac-dos-movement-past .eac-dos-datemark {
+  color: var(--eac-dos-ink-soft);
+  border-style: dashed;
+}
+
+@media (max-width: 560px) {
+  .eac-dos-index-dated .eac-dos-row { grid-template-columns: 3.6rem 1fr; }
+}

@@ -1,0 +1,427 @@
+/*
+  The owner's panel.
+
+  ── Why this stylesheet is the app's and not the template's ────────────────
+
+  The panel has to appear on BOTH profile layouts, because one of the things it
+  does is switch between them — a panel that only existed on the dossier would
+  be a one-way door out of it. The dossier template's stylesheet is only loaded
+  on the dossier layout, so the panel cannot live there.
+
+  Plain CSS with custom properties, not Tailwind: this app carries its own
+  stylesheet and a utility class from elsewhere renders unstyled here. Every
+  token falls back, so the panel looks right on the dossier (where the dossier
+  tokens are loaded) and still looks right on the plain page (where they are
+  not).
+
+  Contrast, measured, on the dark panel (#1b1915):
+    --dside-ink    #f4efe4  15.4:1
+    --dside-soft   #b3aa98   8.0:1
+    --dside-accent #d8bd8a  10.5:1
+    #f4efe4 on the red button (#8a2f2a)  7.3:1
+*/
+
+.eac-dos-side,
+.eac-dos-side-tab {
+  --dside-w: min(420px, 100vw);
+  --dside-bg: var(--eac-dos-bg-accent, #1b1915);
+  --dside-bg-soft: #262218;
+  --dside-ink: var(--eac-dos-paper, #f4efe4);
+  --dside-soft: #b3aa98;
+  --dside-line: #45402f;
+  --dside-accent: var(--eac-dos-manila, #d8bd8a);
+  --dside-red: var(--eac-dos-stamp-red, #8a2f2a);
+  --dside-type: var(--eac-dos-typewriter, "Courier Prime", "Courier New", monospace);
+  --dside-display: var(--eac-dos-display, "Playfair Display", Georgia, serif);
+}
+
+/* ── The tab ────────────────────────────────────────────────────────────── */
+
+.eac-dos-side-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 120;
+  transform: translateY(-50%);
+  transform-origin: right center;
+  transition: right 0.22s ease;
+  writing-mode: vertical-rl;
+  padding: 1.1rem 0.55rem;
+  border: 1px solid var(--dside-line);
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
+  background: var(--dside-bg);
+  color: var(--dside-accent);
+  font-family: var(--dside-type);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.eac-dos-side-tab:hover,
+.eac-dos-side-tab:focus-visible {
+  color: var(--dside-bg);
+  background: var(--dside-accent);
+}
+
+/* Rides out with the panel. Left at right:0 it sat ON the open panel, over the
+   first group's status badge — which is exactly what the screenshot showed. */
+.eac-dos-side-tab[data-open="true"] {
+  right: var(--dside-w);
+  border-radius: 4px 0 0 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-dos-side-tab { transition: none; }
+}
+
+/* ── The panel ──────────────────────────────────────────────────────────── */
+
+.eac-dos-side {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 119;
+  width: var(--dside-w);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem 1.5rem 5rem;
+  background: var(--dside-bg);
+  border-left: 1px solid var(--dside-line);
+  box-shadow: -18px 0 50px rgba(0, 0, 0, 0.45);
+  color: var(--dside-ink);
+  font-family: var(--dside-type);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  transform: translateX(100%);
+  transition: transform 0.22s ease;
+}
+
+.eac-dos-side[data-open="true"] { transform: translateX(0); }
+
+/* Closed means closed: not merely off-screen but out of the tab order and out
+   of the accessibility tree, or a keyboard user tabs into a hidden form. */
+.eac-dos-side[data-open="false"] { visibility: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-dos-side { transition: none; }
+}
+
+.eac-dos-side-head h2 {
+  font-family: var(--dside-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.eac-dos-side-head p {
+  margin: 0 0 1.5rem;
+  font-size: 0.82rem;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--dside-red);
+  background: rgba(138, 47, 42, 0.18);
+  color: var(--dside-ink);
+  font-size: 0.82rem;
+}
+
+.eac-dos-side-note {
+  margin: 0 0 1.25rem;
+  padding: 0.7rem 0.8rem;
+  border-left: 2px solid var(--dside-accent);
+  background: var(--dside-bg-soft);
+  font-size: 0.8rem;
+  color: var(--dside-soft);
+}
+
+/* ── Groups ─────────────────────────────────────────────────────────────── */
+
+.eac-dos-side-group {
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--dside-line);
+}
+
+.eac-dos-side-group h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.3rem;
+  font-family: var(--dside-display);
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.eac-dos-side-status {
+  flex: 0 0 auto;
+  font-family: var(--dside-type);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dside-soft);
+  border: 1px solid var(--dside-line);
+  padding: 0.1rem 0.4rem;
+}
+
+.eac-dos-side-group[data-showing="true"] .eac-dos-side-status {
+  color: var(--dside-accent);
+  border-color: var(--dside-accent);
+}
+
+.eac-dos-side-blurb {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-managed {
+  margin: 0 0 0.85rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--dside-bg-soft);
+  font-size: 0.8rem;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-managed a,
+.eac-dos-side-out {
+  color: var(--dside-accent);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.eac-dos-side-out { display: inline-block; font-size: 0.82rem; }
+
+.eac-dos-side-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  cursor: pointer;
+  font-size: 0.83rem;
+}
+
+.eac-dos-side-switch input,
+.eac-dos-side-layout input {
+  margin-top: 0.2rem;
+  accent-color: var(--dside-accent);
+  flex: 0 0 auto;
+}
+
+/* ── Layout picker ──────────────────────────────────────────────────────── */
+
+.eac-dos-side-layouts { display: grid; gap: 0.6rem; }
+
+.eac-dos-side-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--dside-line);
+  cursor: pointer;
+}
+
+.eac-dos-side-layout[data-checked="true"] {
+  border-color: var(--dside-accent);
+  background: var(--dside-bg-soft);
+}
+
+.eac-dos-side-layout b { display: block; font-weight: 700; }
+
+.eac-dos-side-layout span span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--dside-soft);
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────────── */
+
+.eac-dos-side-field { display: block; margin-bottom: 1rem; }
+
+.eac-dos-side-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-label em {
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: var(--dside-accent);
+}
+
+.eac-dos-side-field input[type="text"],
+.eac-dos-side-field input[type="url"],
+.eac-dos-side-field textarea,
+.eac-dos-side-sub input,
+.eac-dos-side-sub textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--dside-line);
+  background: var(--dside-bg-soft);
+  color: var(--dside-ink);
+  font-family: var(--dside-type);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.eac-dos-side-field input:focus,
+.eac-dos-side-field textarea:focus,
+.eac-dos-side-sub input:focus,
+.eac-dos-side-sub textarea:focus {
+  outline: 2px solid var(--dside-accent);
+  outline-offset: 1px;
+}
+
+.eac-dos-side-field ::placeholder,
+.eac-dos-side-sub ::placeholder {
+  /* The browser default grey does not clear 4.5:1 on #262218. */
+  color: #8e8676;
+  opacity: 1;
+}
+
+.eac-dos-side-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-btn {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--dside-line);
+  background: transparent;
+  color: var(--dside-ink);
+  font-family: var(--dside-type);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.eac-dos-side-btn:hover { border-color: var(--dside-accent); color: var(--dside-accent); }
+
+/* ── Upload ─────────────────────────────────────────────────────────────── */
+
+.eac-dos-side-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.eac-dos-side-upload img {
+  width: 46px;
+  height: 58px;
+  object-fit: cover;
+  border: 1px solid var(--dside-line);
+  background: var(--dside-bg-soft);
+}
+
+.eac-dos-side-upload input[type="file"] { display: none; }
+
+/* ── Repeatable rows ────────────────────────────────────────────────────── */
+
+.eac-dos-side-rows {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.eac-dos-side-row {
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--dside-line);
+  background: var(--dside-bg-soft);
+}
+
+.eac-dos-side-rowhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-rowhead div { display: flex; gap: 0.25rem; }
+
+.eac-dos-side-rowhead button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--dside-line);
+  background: transparent;
+  color: var(--dside-ink);
+  font-family: var(--dside-type);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.eac-dos-side-rowhead button:hover:not(:disabled) {
+  border-color: var(--dside-accent);
+  color: var(--dside-accent);
+}
+
+.eac-dos-side-rowhead button:disabled { opacity: 0.35; cursor: default; }
+
+.eac-dos-side-sub { display: block; margin-bottom: 0.5rem; }
+
+.eac-dos-side-sub > span {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dside-soft);
+}
+
+.eac-dos-side-subimage > .eac-dos-side-upload { margin-top: 0.1rem; }
+
+@media (max-width: 480px) {
+  .eac-dos-side { padding: 1.25rem 1rem 5rem; }
+}
+
+/* ── Making room ────────────────────────────────────────────────────────── */
+/*
+  The panel's whole premise is that you can see what your edits do, and an
+  overlay breaks that: at 1440px the open panel covered the right third of the
+  file, including the stamp and half of every form row. So the page moves over
+  instead of being covered.
+
+  Only where there is room to move: below 1000px the panel is most of the
+  screen, and shifting the page would push the thing you are editing off the
+  other side. There it stays an overlay, which is the right trade on a phone —
+  you scroll between the two.
+*/
+@media (min-width: 1000px) {
+  body[data-dos-side="open"] {
+    padding-right: var(--dside-w, 420px);
+    transition: padding-right 0.22s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-dos-side="open"] { transition: none; }
+}

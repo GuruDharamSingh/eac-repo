@@ -1,5 +1,5 @@
 import { getServerSession, isAdmin } from "@elkdonis/auth-server";
-import { getViewerRoles, getProfile, touchLastSeen, FORUM_ANONYMOUS, type ForumViewer } from "@elkdonis/services";
+import { getViewerRoles, getProfile, touchLastSeen, getIdentityIds, FORUM_ANONYMOUS, type ForumViewer } from "@elkdonis/services";
 
 export interface HostViewer extends ForumViewer {
   name: string | null;
@@ -26,14 +26,17 @@ export async function getViewer(): Promise<HostViewer> {
       userId = session.user.db_user_id ?? session.user.id;
       email = session.user.email;
     }
-    const [roles, admin, profile] = await Promise.all([
+    const [roles, admin, profile, identityIds] = await Promise.all([
       getViewerRoles(userId),
       isAdmin(userId),
       getProfile(userId).catch(() => null),
+      // Their own row plus any pen names, so the board keeps showing them
+      // their own org-only and unpublished threads whichever name wrote them.
+      getIdentityIds(userId).catch(() => [userId]),
     ]);
     // Presence for "Who's here" — throttled inside to one write per 5 min.
     void touchLastSeen(userId);
-    return { userId, roles, isGlobalAdmin: admin, name: profile?.displayName ?? email };
+    return { userId, roles, isGlobalAdmin: admin, identityIds, name: profile?.displayName ?? email };
   } catch (err) {
     console.error("[forum] getViewer:", err);
     return { ...FORUM_ANONYMOUS, name: null };

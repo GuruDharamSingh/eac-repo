@@ -60,13 +60,13 @@ export function FavoriteButton({
         className={cn(
           "inline-flex h-11 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors disabled:opacity-50",
           favorited
-            ? "border-rose-300 bg-rose-50 text-rose-700"
+            ? "border-primary bg-primary/10 text-primary"
             : "border-border hover:bg-muted",
           className
         )}
       >
         <Heart
-          className={cn("h-4 w-4", favorited && "fill-rose-600 text-rose-600")}
+          className={cn("h-4 w-4", favorited && "fill-primary text-primary")}
         />
         {favorited ? "Saved" : "Save"}
       </button>
@@ -88,7 +88,7 @@ export function FavoriteButton({
       <Heart
         className={cn(
           "h-4 w-4",
-          favorited ? "fill-rose-600 text-rose-600" : "text-foreground"
+          favorited ? "fill-primary text-primary" : "text-foreground"
         )}
       />
     </button>

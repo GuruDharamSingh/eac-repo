@@ -202,6 +202,24 @@ export async function deleteProfile(id: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Show or hide this roster entry on the public site, without touching anything
+ * else about it.
+ *
+ * Separate from updateProfile because that takes a whole DirectoryInput and so
+ * can only be called from the edit form — "take this artist off the page" has
+ * to be one click from the roster table, and must not risk rewriting a bio on
+ * the way through. Returns false when the person has no IFAC profile.
+ */
+export async function setProfileVisibility(id: string, isPublic: boolean): Promise<boolean> {
+  const rows = await db`
+    UPDATE org_profiles SET is_public = ${isPublic}, updated_at = NOW()
+    WHERE org_id = ${siteConfig.orgId} AND user_id = ${id}
+    RETURNING user_id
+  `;
+  return rows.length > 0;
+}
+
 export type AssignableMember = {
   userId: string;
   email: string;
@@ -229,7 +247,7 @@ export async function listAssignableMembers(): Promise<AssignableMember[]> {
  * person behind this unclaimed roster row. Skips the self-service claim
  * request — for when the org already knows who someone is. Authorization is
  * this file's job (server actions calling this must have checked
- * canManageIfac first — see api/admin/directory/route.ts), matching
+ * canManageIfac first — see api/manage/directory/route.ts), matching
  * adminAssignProfile's trust convention.
  */
 export async function assignProfile(sentinelId: string, memberId: string): Promise<{ ok: boolean; error?: string }> {

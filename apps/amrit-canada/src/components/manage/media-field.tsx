@@ -3,9 +3,8 @@
 import { useCallback, useState } from "react";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@elkdonis/primitives";
 
 interface LibraryItem {
   url: string;

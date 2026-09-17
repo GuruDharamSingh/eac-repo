@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
+    "@elkdonis/services",
     "@elkdonis/db",
     "@elkdonis/types",
     "@elkdonis/auth-client",
@@ -15,6 +16,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/utils",
     "@elkdonis/astro",
     "@elkdonis/sky-ui",
+    "@elkdonis/tokens",
   ],
   // sweph (the Swiss Ephemeris) is a native addon: require it at runtime.
   serverExternalPackages: ["sweph"],

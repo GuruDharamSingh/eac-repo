@@ -3,6 +3,8 @@ import { nanoid } from 'nanoid';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { createThread } from './posts';
 import { getOrgFeed, canViewFeed, upsertOrgFeed } from './org-feeds';
+import { viewerIdentityIds } from './forum';
+import { getIdentityIds, resolveActor } from './identities';
 import type { ForumPerson, ForumViewer } from './forum';
 
 // ============================================================================
@@ -24,14 +26,33 @@ export type WriteResult<T = {}> = ({ ok: true } & T) | { ok: false; error: strin
 const RATE_WINDOW_MIN = 10;
 const RATE_MAX_POSTS = 10;
 
-async function overRateLimit(userId: string): Promise<boolean> {
+/**
+ * Rate limiting is per ACCOUNT, never per name. Counting by a single
+ * author_id would hand every pen name its own fresh quota, which turns the
+ * limit into a formality for anyone holding two — so the window covers every
+ * identity the account can write as.
+ */
+async function overRateLimit(viewer: ForumViewer): Promise<boolean> {
+  const ids = await allWritableIdentityIds(viewer);
+  if (!ids.length) return false;
   const [{ n }] = await db<Array<{ n: number }>>`
     SELECT (
-      (SELECT COUNT(*) FROM replies WHERE user_id = ${userId} AND created_at > NOW() - (${RATE_WINDOW_MIN} || ' minutes')::interval) +
-      (SELECT COUNT(*) FROM threads WHERE author_id = ${userId} AND created_at > NOW() - (${RATE_WINDOW_MIN} || ' minutes')::interval)
+      (SELECT COUNT(*) FROM replies WHERE user_id = ANY(${ids}::uuid[]) AND created_at > NOW() - (${RATE_WINDOW_MIN} || ' minutes')::interval) +
+      (SELECT COUNT(*) FROM threads WHERE author_id = ANY(${ids}::uuid[]) AND created_at > NOW() - (${RATE_WINDOW_MIN} || ' minutes')::interval)
     )::int AS n
   `;
   return n >= RATE_MAX_POSTS;
+}
+
+/**
+ * Every id this viewer's writes could land under. Prefers the set the host
+ * already resolved onto the viewer; falls back to a query so a caller that
+ * never populated identityIds is still counted correctly rather than
+ * silently under-counted.
+ */
+async function allWritableIdentityIds(viewer: ForumViewer): Promise<string[]> {
+  if (viewer.identityIds && viewer.identityIds.length) return viewer.identityIds;
+  return getIdentityIds(viewer.userId);
 }
 
 /**
@@ -90,12 +111,13 @@ async function loadThreadForWrite(threadId: string, viewer: ForumViewer): Promis
   `;
   if (!t) return null;
   const role = viewer.roles[t.org_id] ?? null;
+  const mine = viewerIdentityIds(viewer);
   const visible =
     viewer.isGlobalAdmin ||
     (t.status === 'published' &&
       (t.visibility === 'PUBLIC' ||
         (t.visibility === 'ORGANIZATION' && role !== null) ||
-        t.author_id === viewer.userId));
+        mine.includes(t.author_id)));
   if (!visible) return null;
   if (!viewer.isGlobalAdmin && !canViewFeed({ minRole: t.min_role as 'member' | 'guide' | 'owner' | null }, role)) return null;
   return { id: t.id, orgId: t.org_id, authorId: t.author_id, section: t.section, locked: t.locked, visibility: t.visibility, status: t.status, title: t.title };
@@ -141,7 +163,7 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
   const html = textToHtml(input.text ?? '');
   if (!html.replace(/<[^>]+>/g, '').trim()) return { ok: false, error: 'Write something first.' };
   if (html.length > 40_000) return { ok: false, error: 'That reply is too long.' };
-  if (await overRateLimit(uid)) return { ok: false, error: 'Slow down — try again in a few minutes.' };
+  if (await overRateLimit(viewer)) return { ok: false, error: 'Slow down — try again in a few minutes.' };
 
   let parentId: string | null = null;
   let parentAuthor: string | null = null;
@@ -216,6 +238,12 @@ export interface CreateTopicInput {
   title: string;
   text: string;
   topicIds?: string[];
+  /**
+   * Post under one of the viewer's other identities — a pen name, or an org's
+   * own byline. Always passed through resolveActor: an identity id arriving
+   * from a request is a claim, never a permission.
+   */
+  actingAs?: string | null;
 }
 
 export async function createTopic(viewer: ForumViewer, input: CreateTopicInput): Promise<WriteResult<{ threadId: string; slug: string }>> {
@@ -231,13 +259,16 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
   if (title.length > 200) return { ok: false, error: 'That title is too long.' };
   const html = textToHtml(input.text ?? '');
   if (!html.replace(/<[^>]+>/g, '').trim()) return { ok: false, error: 'Write something first.' };
-  if (await overRateLimit(uid)) return { ok: false, error: 'Slow down — try again in a few minutes.' };
+  if (await overRateLimit(viewer)) return { ok: false, error: 'Slow down — try again in a few minutes.' };
+
+  const actor = await resolveActor(uid, input.actingAs);
+  if (actor.ok === false) return { ok: false, error: actor.error };
 
   const post = await createThread({
     kind: 'post',
     title,
     orgId: input.orgId,
-    authorId: uid,
+    authorId: actor.identityId,
     body: html,
     status: 'published',
     visibility: 'PUBLIC',

@@ -12,7 +12,7 @@ export default async function StudioProfilePage() {
   const isOwn = store.ownerKind === "user";
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-serif text-4xl tracking-tight">
@@ -27,7 +27,7 @@ export default async function StudioProfilePage() {
                   ArtDirect profile
                 </a>
                 . Payouts are managed from the{" "}
-                <Link href="/studio#payouts" className="underline underline-offset-4">
+                <Link href="/studio/payouts" className="underline underline-offset-4">
                   studio
                 </Link>
                 .

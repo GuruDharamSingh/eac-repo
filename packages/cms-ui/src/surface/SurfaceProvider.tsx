@@ -124,14 +124,28 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: d.preview?.title ?? null, kind: "board", size: "standard" };
     case "forum":
       return { title: "Forum", kind: "forum", size: "wide" };
+    case "forumFeed":
+      return { title: d.name, kind: "forum", size: "wide" };
     case "documents":
       return { title: "Documents", kind: "document", size: "wide" };
+    case "identities":
+      return { title: "Your names", kind: "neutral", size: "standard" };
     case "profile":
       return { title: d.target ? "Organisation" : "Your profile", kind: "neutral", size: "wide" };
     case "centerLayout":
       return { title: "Arrange the center", kind: "neutral", size: "wide" };
     case "define":
       return { title: d.term, kind: "define", size: "compact" };
+    case "material":
+      // Named from the descriptor, so the masthead carries the file's name
+      // before the surface itself has mounted and set its own meta.
+      return {
+        title: d.material.name,
+        kind: d.material.kind === "image" ? "gallery" : "document",
+        size: "wide",
+      };
+    case "gather":
+      return { title: d.title ?? "What this holds", kind: "neutral", size: "standard" };
     case "custom":
       return { title: d.title ?? null, kind: d.kind ?? "neutral", size: d.size ?? "standard" };
   }
@@ -297,8 +311,23 @@ export function SurfaceProvider({ connectors, children, syncUrl = true }: Surfac
       morphIn(el, panelRef.current, originRef.current);
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+      // Canvas-based content (Excalidraw, a map, anything that measures its
+      // container with getBoundingClientRect on mount) can bake in a stale,
+      // too-small size if it mounts while the entry transition or morph is
+      // still animating: a transform-only change never fires ResizeObserver,
+      // so nothing corrects it once the transform settles. A synthetic
+      // resize once the transition actually finishes gives that content a
+      // real measurement to recover from — this is what such libraries'
+      // own `window.resize` listeners are for.
+      const onTransitionEnd = (e: TransitionEvent) => {
+        if (e.propertyName === "opacity" || e.propertyName === "transform") {
+          window.dispatchEvent(new Event("resize"));
+        }
+      };
+      el.addEventListener("transitionend", onTransitionEnd);
       return () => {
         document.body.style.overflow = prev;
+        el.removeEventListener("transitionend", onTransitionEnd);
       };
     }
     if (!isOpen && el.open) {

@@ -1,4 +1,5 @@
 import type { StoreMember } from "@elkdonis/commerce/types";
+import { Button } from "@/components/ui/button";
 import { addStoreMemberAction, removeStoreMemberAction } from "../actions";
 
 /**
@@ -18,7 +19,7 @@ export function TeamPanel({
   error?: string | null;
 }) {
   const inputCls =
-    "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus:ring-[2px] focus:ring-ring/50";
+    "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
   return (
     <div className="rounded-lg border border-border">
       <ul className="divide-y divide-border">
@@ -65,12 +66,9 @@ export function TeamPanel({
             <option value="manager">manager — also sales</option>
             <option value="owner">owner — also the team</option>
           </select>
-          <button
-            type="submit"
-            className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
-          >
+          <Button type="submit" variant="outline">
             Add
-          </button>
+          </Button>
           {error && <p className="w-full text-xs text-destructive">{error}</p>}
         </form>
       )}

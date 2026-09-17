@@ -1,7 +1,9 @@
 import {
   createOrgFolder,
   deleteOrgFile,
+  getStorageSlug,
   listOrgFiles,
+  listUserFiles,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { forbidden, getHubViewer } from "@/lib/hub-auth";
@@ -23,10 +25,25 @@ export async function GET(request: Request) {
   const viewer = await getHubViewer();
   if (!viewer) return forbidden();
 
-  const path = new URL(request.url).searchParams.get("path") ?? "";
+  const params = new URL(request.url).searchParams;
+  const path = params.get("path") ?? "";
+  // `scope=mine` lists the viewer's OWN folder (EAC_Network/users/<slug>)
+  // instead of the org's. The slug is resolved from the session, never from
+  // the request, so this cannot be pointed at someone else's storage — which
+  // is the reason it is a parameter on this route rather than a second route
+  // taking a user id.
+  const scope = params.get("scope") === "mine" ? "mine" : "org";
+
   try {
+    if (scope === "mine") {
+      const slug = await getStorageSlug(viewer.userId);
+      // No slug means no folder has been provisioned yet; that is an empty
+      // drive, not an error.
+      const files = slug ? await listUserFiles(slug, path) : [];
+      return Response.json({ path, scope, files, canEdit: true });
+    }
     const files = await listOrgFiles(siteConfig.orgId, path);
-    return Response.json({ path, files, canEdit: viewer.canEdit });
+    return Response.json({ path, scope, files, canEdit: viewer.canEdit });
   } catch (error) {
     // A traversal attempt throws here. Answer 400, not 500: the request is
     // malformed, the server is fine.

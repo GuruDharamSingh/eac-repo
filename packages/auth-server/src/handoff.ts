@@ -191,7 +191,12 @@ export async function handleHandoffStart(request: NextRequest): Promise<NextResp
     secret
   );
   const q = new URLSearchParams({ token, next: nextPath });
-  return NextResponse.redirect(`${dest.origin}/api/auth/handoff/accept?${q.toString()}`);
+  // The destination's BASE, not just its origin: an app served under a
+  // sub-path answers /<base>/api/auth/handoff/accept, and this host cannot
+  // know that unless the caller's `to` carries it. A `to` of a bare origin —
+  // every caller before sub-path hosting existed — leaves this unchanged.
+  const destBase = `${dest.origin}${dest.pathname.replace(/\/+$/, '')}`;
+  return NextResponse.redirect(`${destBase}/api/auth/handoff/accept?${q.toString()}`);
 }
 
 /** GET /api/auth/handoff/accept — arrive on this site carrying the session. */

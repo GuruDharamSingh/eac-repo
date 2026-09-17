@@ -3,26 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { MediaField } from "@/components/manage/media-field";
 import { MaterialsField } from "@/components/manage/materials-field";
 import { saveContentAction } from "@/lib/cms/actions";
 import type { ContentFormValues } from "@/lib/cms/schema";
 import type { ContentFormDefaults } from "@/lib/cms/form-defaults";
+import { Button, Input, Label, Textarea, Switch, Card, CardContent, Tabs, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@elkdonis/primitives";
 
 export interface FeedOption {
   slug: string;

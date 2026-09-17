@@ -13,6 +13,8 @@
 @import "@elkdonis/cms-ui/compose.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
+/* The email suite — face, surface and the full page at /hub/email. */
+@import "@elkdonis/cms-ui/email.css";
 /* The moon-phase pen, drawn under the sky column on the landing page. */
 @import "@elkdonis/cms-ui/moon-phase.css";
 /* The reading layer for published threads — plain CSS with custom-property

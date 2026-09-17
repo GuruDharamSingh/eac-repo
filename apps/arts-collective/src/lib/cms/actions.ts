@@ -19,6 +19,7 @@ import {
   ensureUniqueThreadSlug,
   ensureWorkshopMaterialsFolder,
   replaceWorkshopSessions,
+  resolveActor,
   upsertWorkshopOffering,
 } from "@elkdonis/services";
 import type { FieldTable } from "@elkdonis/cms-bindings";
@@ -35,7 +36,14 @@ type OrgRow = { id: string; slug: string; name: string };
  * workshop/event opts in.
  */
 export async function createThreadAction(
-  input: ThreadFormInput
+  input: ThreadFormInput,
+  /**
+   * Sign it as one of this person's other identities — a pen name, or an
+   * org's own byline (migration 132). A second argument rather than a form
+   * field because it is not part of the content: the schema describes what is
+   * being written, and this describes who is writing it.
+   */
+  options?: { actingAs?: string | null }
 ): Promise<CreateThreadResult> {
   const parsed = threadFormSchema.safeParse(input);
   if (!parsed.success) {
@@ -56,8 +64,15 @@ export async function createThreadAction(
   const org = orgs[0];
   if (!org) return { ok: false, error: "Organization not found" };
 
+  // Permission follows the PERSON; the byline follows the identity they chose.
+  // Both checks are real and neither substitutes for the other — a pen name
+  // does not earn access to an org, and holding a role does not by itself let
+  // you sign as the org.
   const allowed = await canEditOrgSite(user.id, org.id);
   if (!allowed) return { ok: false, error: "Not authorized" };
+
+  const actor = await resolveActor(user.id, options?.actingAs);
+  if (actor.ok === false) return { ok: false, error: actor.error };
 
   // Generate id and slug (with collision retry).
   const id = nanoid(21);
@@ -123,7 +138,7 @@ export async function createThreadAction(
       metadata,
       published_at
     ) VALUES (
-      ${id}, ${org.id}, ${user.id}, ${data.kind},
+      ${id}, ${org.id}, ${actor.identityId}, ${data.kind},
       ${data.title}, ${slug}, ${data.body || null}, ${excerpt},
       ${data.status}, ${data.visibility}, ${data.share_to_network},
       ${scheduledAt}, ${durationMinutes}, ${location}, ${format}, ${meetingUrl},

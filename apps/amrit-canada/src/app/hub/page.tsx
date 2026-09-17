@@ -31,6 +31,8 @@ import { getPipelineBoard } from "@/lib/pipeline";
 import { getForumSnapshot } from "@/lib/forum";
 import { getAllThreadsForOrg } from "@/lib/data";
 import { EmailFace } from "@/components/hub/EmailFace";
+// Lifted into the shared package when IFAC wanted the same canvas.
+import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
 
 export const metadata: Metadata = { title: "Hub" };
 export const dynamic = "force-dynamic";
@@ -170,6 +172,8 @@ export default async function HubPage() {
             <IdeasFace initialIdeas={ideas} />
 
             <DocumentsFace documents={documents} />
+
+            <WhiteboardFace />
 
             {viewer.canEdit && <ComposeFace />}
 

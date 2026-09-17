@@ -46,6 +46,14 @@ export interface CenterLayout {
   };
   /** The reading voice for the org's column; the surface system's own presets. */
   voice: 'journal' | 'gazette' | 'quiet';
+  /**
+   * How the center composes. 'columns' is the two orderly columns; 'desk'
+   * lays the same sections out as loose cards a reader may push around.
+   * Where they end up is that person's own business — the desk saves in
+   * their browser, never here. This row only decides whether there is a
+   * desk to push things around on.
+   */
+  arrangement: 'columns' | 'desk';
 }
 
 export const DEFAULT_CENTER_LAYOUT: CenterLayout = {
@@ -56,6 +64,7 @@ export const DEFAULT_CENTER_LAYOUT: CenterLayout = {
   hidden: [],
   options: { feed: { limit: 12 }, network: { limit: 12 }, pinned: { limit: 6 }, site: { ratio: '5:3' } },
   voice: 'journal',
+  arrangement: 'columns',
 };
 
 /** The org whose site_config holds the network default. */
@@ -76,6 +85,7 @@ function overlay(base: CenterLayout, raw: unknown): CenterLayout {
     hidden: [...base.hidden],
     options: { ...base.options },
     voice: base.voice,
+    arrangement: base.arrangement,
   };
 
   const cols = r.columns as Record<string, unknown> | undefined;
@@ -109,6 +119,7 @@ function overlay(base: CenterLayout, raw: unknown): CenterLayout {
   }
 
   if (r.voice === 'journal' || r.voice === 'gazette' || r.voice === 'quiet') out.voice = r.voice;
+  if (r.arrangement === 'columns' || r.arrangement === 'desk') out.arrangement = r.arrangement;
   return out;
 }
 

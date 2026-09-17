@@ -3,10 +3,11 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { createLotAction } from "../actions";
 
 const inputCls =
-  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-[2px] focus:ring-ring/50";
+  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const labelCls = "mb-1 block text-sm font-medium";
 
 function localInputValue(d: Date): string {
@@ -169,13 +170,9 @@ export function LotForm({
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? "Starting…" : "Start the auction"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -7,6 +7,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+/**
+ * The app's basePath, when it is served under a sub-path rather than at the
+ * root of its own domain (Next's `basePath`, e.g. `/books`).
+ *
+ * Every URL in this file is app-absolute, so without this they would all
+ * resolve against the DOMAIN root — on a shared domain that is a DIFFERENT
+ * app's routes. A sub-path app would post its password to whatever answers
+ * `/api/auth/login` there, and Google would return the browser to that app's
+ * callback, completing the sign-in on the wrong site.
+ *
+ * Next inlines NEXT_PUBLIC_* per app at build time, so an app that sets no
+ * basePath gets '' here and nothing about its behaviour changes.
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -22,7 +38,7 @@ export interface AuthSession {
  */
 export async function signInWithPassword(email: string, password: string): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${BASE_PATH}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -51,7 +67,7 @@ export async function signUp(
   turnstileToken?: string
 ): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    const response = await fetch('/api/auth/signup', {
+    const response = await fetch(`${BASE_PATH}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, displayName, interests, turnstileToken }),
@@ -78,7 +94,7 @@ export async function signUp(
  *
  * The `afterLoginUrl` param is where the user lands once the callback sets
  * cookies (defaults to the app root). It is separate from the GoTrue
- * callback URL, which is always `<origin>/api/auth/callback`.
+ * callback URL, which is always `<origin><basePath>/api/auth/callback`.
  */
 export async function signInWithGoogle(afterLoginUrl?: string): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -107,7 +123,7 @@ export async function signInWithGoogle(afterLoginUrl?: string): Promise<void> {
     document.cookie = `eac_pkce_dest=${encodeURIComponent(afterLoginUrl)}; path=/; expires=${expires}; samesite=lax`;
   }
 
-  const callbackUrl = `${window.location.origin}/api/auth/callback`;
+  const callbackUrl = `${window.location.origin}${BASE_PATH}/api/auth/callback`;
   window.location.href = [
     `${base.replace(/\/$/, '')}/authorize`,
     `?provider=google`,
@@ -122,7 +138,7 @@ export async function signInWithGoogle(afterLoginUrl?: string): Promise<void> {
  */
 export async function signOut(): Promise<{ error: string | null }> {
   try {
-    const response = await fetch('/api/auth/logout', {
+    const response = await fetch(`${BASE_PATH}/api/auth/logout`, {
       method: 'POST',
     });
 
@@ -142,7 +158,7 @@ export async function signOut(): Promise<{ error: string | null }> {
  */
 export async function getSession(): Promise<AuthSession> {
   try {
-    const response = await fetch('/api/auth/session');
+    const response = await fetch(`${BASE_PATH}/api/auth/session`);
     const data = await response.json();
 
     return { user: data.user || null };

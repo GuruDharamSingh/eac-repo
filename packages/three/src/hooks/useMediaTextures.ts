@@ -23,11 +23,22 @@ async function loadViaBitmap(url: string, maxSize: number): Promise<Texture | nu
     const response = await fetch(url, { credentials: 'same-origin' });
     if (!response.ok) return null;
 
-    let bitmap = await createImageBitmap(await response.blob());
+    // `imageOrientation` is not optional here. WebGL's UNPACK_FLIP_Y_WEBGL —
+    // which is how three.js normally reconciles an image's top-left origin
+    // with a texture's bottom-left one — is specified to have NO effect on an
+    // ImageBitmap, so `texture.flipY` is silently ignored on this path and the
+    // picture uploads vertically mirrored. Flipping at creation is the only
+    // place left to do it. The canvas fallback below needs no equivalent: a
+    // CanvasTexture honours flipY the ordinary way.
+    let bitmap = await createImageBitmap(await response.blob(), {
+      imageOrientation: 'flipY',
+    });
 
     const longest = Math.max(bitmap.width, bitmap.height);
     if (longest > maxSize) {
       const scale = maxSize / longest;
+      // No `imageOrientation` on the resize: the source is the already-flipped
+      // bitmap above, and asking for 'flipY' again would put it back.
       const resized = await createImageBitmap(bitmap, {
         resizeWidth: Math.max(1, Math.round(bitmap.width * scale)),
         resizeHeight: Math.max(1, Math.round(bitmap.height * scale)),

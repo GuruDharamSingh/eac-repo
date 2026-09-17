@@ -1,0 +1,478 @@
+/* ---------------------------------------------------------------------------
+   @elkdonis/commerce — portable storefront styles.
+
+   Written as plain CSS against namespaced custom properties rather than in
+   Tailwind utilities, for one hard-won reason: a shared package's Tailwind
+   class names are only generated if the *host* app points `@source` at this
+   directory. Art-Auction never did, so its own Buy-now button, bid widget,
+   checkout form and auction badges rendered with no background and no text
+   colour, and the badge sat in normal flow instead of over the image. A
+   marketplace card has to look right on an org site, an artist profile and a
+   workshop page too — none of which can be relied on to configure a build
+   step for it.
+
+   Theming: every colour resolves through a `--pc-*` variable. The defaults
+   derive from `currentColor`, so a card dropped on any page inherits that
+   page's ink and reads correctly in light and dark alike. A host with real
+   design tokens should override them on `.eac-commerce` (see
+   apps/art-auction/src/app/globals.css). The soft-ink default sits at 82%
+   alpha deliberately: below about 80% it drops under 4.5:1 against a normal
+   page ground, which is where "muted" secondary text usually goes wrong.
+
+   Import once per app:  import "@elkdonis/commerce/commerce.css";
+   -------------------------------------------------------------------------- */
+
+.eac-commerce {
+  --pc-ink: currentColor;
+  --pc-ink-soft: color-mix(in oklab, currentColor 82%, transparent);
+  --pc-ink-faint: color-mix(in oklab, currentColor 62%, transparent);
+  --pc-line: color-mix(in oklab, currentColor 18%, transparent);
+  --pc-mat: color-mix(in oklab, currentColor 6%, transparent);
+  --pc-surface: transparent;
+  --pc-accent: currentColor;
+  --pc-on-accent: Canvas;
+  --pc-live: #1f8a4c;
+  --pc-urgent: #b4331f;
+  --pc-radius: 0.5rem;
+  --pc-gap: 0.5rem;
+
+  /* The wall variant. `--pc-hang` is the height of the band a piece hangs in;
+     every card in a row shares it, so the works align along one bottom edge
+     the way they would on a real wall while each keeps its own proportions. */
+  --pc-hang: 17rem;
+  --pc-wall: transparent;
+  --pc-shadow:
+    0 1px 2px color-mix(in oklab, currentColor 14%, transparent),
+    0 14px 30px -10px color-mix(in oklab, currentColor 32%, transparent);
+
+  color: var(--pc-ink);
+  font-family: inherit;
+}
+
+/* ─── Grid ────────────────────────────────────────────────────────────────
+   Intrinsic rather than breakpoint-keyed: the card is embedded in columns of
+   unknown width (an org page sidebar, a half-width profile section), where
+   viewport breakpoints describe the wrong box. `--pc-min` sets the narrowest
+   a card may get before the grid drops a column. */
+.eac-pc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--pc-min, 15rem), 100%), 1fr));
+  gap: var(--pc-grid-gap, 1.75rem) var(--pc-grid-gap-x, 1.25rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eac-pc-grid[data-density="tight"] { --pc-min: 11rem; --pc-grid-gap: 1.25rem; --pc-grid-gap-x: 1rem; }
+.eac-pc-grid[data-density="loose"] { --pc-min: 19rem; --pc-grid-gap: 2.5rem; --pc-grid-gap-x: 2rem; }
+
+/* ─── Card ──────────────────────────────────────────────────────────────── */
+.eac-pc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+  background: var(--pc-surface);
+  border-radius: var(--pc-radius);
+}
+
+/* The frame is a fixed box so a row of cards shares one baseline whatever the
+   pictures' proportions are. The artwork is `contain`, not `cover`: cropping
+   someone's painting to fill a rectangle is the one thing a gallery must not
+   do, and a portrait and a landscape piece still line up because the mat
+   absorbs the difference. */
+.eac-pc__frame {
+  position: relative;
+  aspect-ratio: var(--pc-aspect, 4 / 5);
+  overflow: hidden;
+  border-radius: var(--pc-radius);
+  background: var(--pc-mat);
+  display: grid;
+  place-items: center;
+}
+
+.eac-pc__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: var(--pc-fit, contain);
+  transition: transform 500ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.eac-pc[data-fit="cover"] { --pc-fit: cover; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .eac-pc:hover .eac-pc__img,
+  .eac-pc:focus-within .eac-pc__img { transform: scale(1.025); }
+}
+
+.eac-pc__empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-faint);
+}
+
+/* One link covers the whole card, anchored on the title so the accessible
+   name is the piece's name. The picture is therefore NOT a second link to the
+   same place — that duplicate was making every card announce twice. */
+.eac-pc__hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--pc-radius);
+  z-index: 1;
+}
+
+.eac-pc__hit {
+  color: inherit;
+  text-decoration: none;
+}
+
+.eac-pc__hit:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+
+.eac-pc__hit:focus-visible { outline: none; }
+.eac-pc__hit:focus-visible::after {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: 3px;
+}
+
+/* ─── Badge over the picture ─────────────────────────────────────────────── */
+.eac-pc__badge {
+  position: absolute;
+  inset-block-start: 0.65rem;
+  inset-inline-start: 0.65rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--pc-badge-bg, #1a1a1a);
+  color: var(--pc-badge-ink, #fff);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+}
+
+.eac-pc__badge[data-tone="live"]   { --pc-badge-bg: var(--pc-live); --pc-badge-ink: #fff; }
+.eac-pc__badge[data-tone="urgent"] { --pc-badge-bg: var(--pc-urgent); --pc-badge-ink: #fff; }
+.eac-pc__badge[data-tone="quiet"]  { --pc-badge-bg: #4a4a4a; --pc-badge-ink: #fff; }
+
+.eac-pc__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .eac-pc__badge[data-tone="urgent"] .eac-pc__dot { animation: eac-pc-pulse 1.6s ease-in-out infinite; }
+}
+
+@keyframes eac-pc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* ─── Body ──────────────────────────────────────────────────────────────── */
+.eac-pc__body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+
+.eac-pc__title {
+  margin: 0;
+  font-family: var(--pc-title-font, inherit);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.eac-pc__by { margin: 0.1rem 0 0; font-size: 0.875rem; color: var(--pc-ink-soft); }
+
+/* Sits above the card-wide hit area so the maker's name is its own link. */
+.eac-pc__by a { position: relative; z-index: 2; color: inherit; text-decoration: none; }
+.eac-pc__by a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.eac-pc__by a:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; border-radius: 2px; }
+
+.eac-pc__meta { margin: 0.1rem 0 0; font-size: 0.8125rem; color: var(--pc-ink-faint); }
+
+.eac-pc__sep { opacity: 0.55; }
+
+/* ─── Price ─────────────────────────────────────────────────────────────── */
+.eac-pc__price { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.1rem; }
+
+.eac-pc__price-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-faint);
+}
+
+.eac-pc__price-value {
+  font-family: var(--pc-price-font, inherit);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.eac-pc__price-sub { font-size: 0.8125rem; color: var(--pc-ink-soft); font-variant-numeric: tabular-nums; }
+
+.eac-pc__price-ask { font-style: italic; color: var(--pc-ink-soft); font-size: 0.9375rem; }
+
+.eac-pc[data-status="sold"] .eac-pc__frame > .eac-pc__img { opacity: 0.72; }
+
+/* ─── Action row ────────────────────────────────────────────────────────── */
+/* Above the hit area, and always present rather than hover-revealed: a
+   control that only exists on hover cannot be reached by touch or keyboard. */
+.eac-pc__actions {
+  position: relative;
+  z-index: 2;
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.eac-pc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--pc-line);
+  border-radius: calc(var(--pc-radius) - 1px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.eac-pc-btn:hover { background: var(--pc-mat); }
+.eac-pc-btn:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+.eac-pc-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+.eac-pc-btn[data-variant="primary"] {
+  background: var(--pc-accent);
+  border-color: var(--pc-accent);
+  color: var(--pc-on-accent);
+}
+
+.eac-pc-btn[data-variant="primary"]:hover {
+  background: color-mix(in oklab, var(--pc-accent) 88%, black);
+  border-color: color-mix(in oklab, var(--pc-accent) 88%, black);
+}
+
+/* ─── Showcase (a store embedded on someone else's page) ─────────────────── */
+.eac-store-showcase { --pc-min: 13rem; }
+
+.eac-store-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.eac-store-heading { margin: 0; font-family: var(--pc-title-font, inherit); }
+.eac-store-blurb { margin: 0.25rem 0 0; color: var(--pc-ink-soft); font-size: 0.9375rem; }
+.eac-store-link { color: inherit; font-size: 0.9375rem; }
+
+/* The badge sits over the picture and above the card's stretched link. It is
+   never interactive, so let clicks through — otherwise the top-left corner of
+   every auction card is a dead zone. */
+.eac-pc__badge { pointer-events: none; }
+
+/* ═══ The wall ═══════════════════════════════════════════════════════════════
+   The default card boxes each work into an identical rectangle. That reads as
+   a product shelf, and it is the wrong shape for this: most of what is listed
+   here is a one-off painting with no price on it, and a grid of matched tiles
+   makes a small, varied catalogue look like a thin shop rather than a full
+   room.
+
+   So the wall hangs the work instead. Every card shares one band height, and
+   each picture sits on the bottom of it at its own proportions — a tall
+   portrait is narrow and a landscape runs wide, and their lower edges line up
+   across the row exactly as a hang does. Nothing is cropped, nothing is
+   letterboxed into someone else's rectangle, and the whitespace between
+   pieces is the varying part rather than the art.
+
+   Underneath, the caption is a gallery label: maker in small caps, title in
+   italic, then medium, dimensions and price. That is the convention a
+   collector already reads, and it makes "Price on request" — which is most of
+   this catalogue — look like the gallery norm it is instead of missing data.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.eac-pc--wall {
+  gap: 0;
+  background: none;
+}
+
+.eac-pc--wall .eac-pc__hang {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: var(--pc-hang);
+  padding-bottom: 0.15rem;
+  background: var(--pc-wall);
+}
+
+.eac-pc--wall .eac-pc__img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: var(--pc-shadow);
+  transition: transform 450ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 450ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  /* Lifts from the bottom edge, so a piece appears to come off the wall
+     towards you rather than to slide up it. */
+  transform-origin: center bottom;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .eac-pc--wall:hover .eac-pc__img,
+  .eac-pc--wall:focus-within .eac-pc__img {
+    transform: scale(1.018);
+    box-shadow:
+      0 2px 4px color-mix(in oklab, currentColor 16%, transparent),
+      0 22px 44px -12px color-mix(in oklab, currentColor 38%, transparent);
+  }
+}
+
+.eac-pc--wall .eac-pc__empty {
+  width: 9rem;
+  height: 11rem;
+  border: 1px dashed var(--pc-line);
+}
+
+/* ─── The label ─────────────────────────────────────────────────────────── */
+/* Hung art is centred in its band, so a label ranged left under a narrow
+   piece would float away from it. The label centres too, and the whole card
+   reads as one object. */
+.eac-pc--wall .eac-pc__label {
+  margin-top: 1.1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.eac-pc__maker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--pc-ink-soft);
+}
+
+.eac-pc__maker a { color: inherit; text-decoration: none; position: relative; z-index: 2; }
+.eac-pc__maker a:hover { text-decoration: underline; text-underline-offset: 0.25em; }
+.eac-pc__maker a:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+
+.eac-pc__work {
+  margin: 0;
+  font-family: var(--pc-title-font, inherit);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.eac-pc__work a { color: inherit; text-decoration: none; }
+.eac-pc__work a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+
+.eac-pc__year { font-style: normal; color: var(--pc-ink-faint); }
+
+/* The slot is reserved whether or not a piece has a medium and dimensions
+   recorded. Only some do, and without this the price on a card that has them
+   sits a line lower than its neighbours' — a row of labels that will not line
+   up is the first thing the eye catches on a wall. */
+.eac-pc__spec {
+  margin: 0;
+  min-height: 1.22rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--pc-ink-faint);
+}
+
+.eac-pc__amount {
+  margin-top: 0.4rem;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--pc-ink);
+}
+
+.eac-pc__amount[data-ask="true"] {
+  font-style: italic;
+  color: var(--pc-ink-soft);
+}
+
+/* ─── State, stated once ────────────────────────────────────────────────── */
+/* A live auction is the only thing on a wall card allowed to shout: it is the
+   one fact that expires. Sold and reserved are struck into the label instead,
+   the way a gallery annotates a list. */
+.eac-pc__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  align-self: center;
+  margin-top: 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eac-pc__mark[data-tone="live"] { color: var(--pc-live); }
+.eac-pc__mark[data-tone="urgent"] { color: var(--pc-urgent); }
+.eac-pc__mark[data-tone="quiet"] { color: var(--pc-ink-faint); }
+
+.eac-pc--wall[data-status="sold"] .eac-pc__img { opacity: 0.65; }
+.eac-pc--wall[data-status="sold"] .eac-pc__work { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.eac-pc--wall .eac-pc__actions { justify-content: center; margin-top: 0.7rem; }
+
+/* ─── Wall grid ─────────────────────────────────────────────────────────── */
+/* Wider tracks and a deep row gap: the space under a hung piece is what
+   separates it from the one below, and a tight grid gap reads as a
+   contact sheet. */
+.eac-pc-grid[data-variant="wall"] {
+  --pc-min: 16rem;
+  gap: 4.5rem 2rem;
+  /* Deliberately NOT `align-items: end`. Cards differ in height because their
+     labels wrap to different line counts, so bottom-aligning the cards pushes
+     the pictures out of line — the exact thing the shared band exists to fix.
+     Aligning the tops makes every hang band start and end together. */
+  align-items: start;
+}
+
+.eac-pc-grid[data-variant="wall"][data-density="tight"] { --pc-min: 12rem; gap: 3rem 1.5rem; --pc-hang: 12rem; }
+.eac-pc-grid[data-variant="wall"][data-density="loose"] { --pc-min: 21rem; gap: 6rem 3rem; --pc-hang: 22rem; }
+
+/* Two across on a phone. At the desktop track width only one column fits in
+   390px, which turned the catalogue into an eighteen-thousand-pixel scroll. */
+@media (max-width: 40rem) {
+  .eac-pc-grid[data-variant="wall"] {
+    --pc-min: 9.5rem;
+    --pc-hang: 11rem;
+    gap: 2.5rem 1rem;
+  }
+  .eac-pc--wall .eac-pc__work { font-size: 0.9375rem; }
+  .eac-pc--wall .eac-pc__label { margin-top: 0.8rem; }
+}

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { publishArtworkAction, archiveArtworkAction } from "../actions";
 
 type Status = "draft" | "available" | "reserved" | "sold" | "archived";
@@ -47,44 +48,43 @@ export function ListingActions({
     }
   }
 
-  const btn =
-    "rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50";
-
   if (openLotId) {
     return (
-      <Link href={`/lots/${openLotId}`} className={btn}>
-        At auction →
-      </Link>
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/lots/${openLotId}`}>At auction →</Link>
+      </Button>
     );
   }
 
   if (status === "draft" || status === "archived") {
     return (
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={pending}
         onClick={() => run(publishArtworkAction, "Published to the storefront.")}
-        className={btn}
       >
         {pending ? "…" : status === "archived" ? "Re-list" : "Publish"}
-      </button>
+      </Button>
     );
   }
 
   if (status === "available") {
     return (
       <>
-        <Link href={`/studio/artworks/${artworkId}/auction`} className={btn}>
-          Auction
-        </Link>
-        <button
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/studio/artworks/${artworkId}/auction`}>Auction</Link>
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           disabled={pending}
           onClick={() => run(archiveArtworkAction, "Unlisted from the storefront.")}
-          className={btn}
         >
           {pending ? "…" : "Unlist"}
-        </button>
+        </Button>
       </>
     );
   }

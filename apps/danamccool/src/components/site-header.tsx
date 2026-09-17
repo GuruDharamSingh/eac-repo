@@ -3,29 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
+import type { NavItem } from "@/lib/navigation";
 
 /**
- * Her real site's nav, in her real order (sampled from the live screenshots
- * and the scraped page text — every one of these was an actual menu item on
- * danamccool.com). Two of them point back into this network rather than to a
- * local route: ELKDONIS ARTS and IFAC / ART COLLECTORS.
+ * The nav is DATA now, passed in from the layout.
+ *
+ * It used to be the array that lived here — fine for a site somebody writes in
+ * a code editor, useless for one somebody builds in Puck: you publish a page
+ * and nothing links to it, with no way to say so without opening the
+ * repository. Her original order is still the default (see
+ * lib/navigation.ts); this component just draws whatever it is given.
  */
-const NAV_LINKS: Array<{ label: string; href: string; external?: boolean }> = [
-  { label: "Current & Upcoming", href: "/current" },
-  { label: "CV", href: "/cv" },
-  { label: "Elkdonis Arts", href: siteConfig.elkdonisArtsUrl, external: true },
-  { label: "Manifestos", href: "/manifestos" },
-  { label: "Collections", href: "/collections" },
-  { label: "Mixed Media", href: "/mixed-media" },
-  { label: "Past Exhibitions", href: "/exhibitions" },
-  { label: "Vimeo", href: "/vimeo" },
-  { label: "Art Archive", href: "/art-archive" },
-  { label: "Biography", href: "/biography" },
-  { label: "Contact", href: "/contact" },
-  { label: "IFAC / Art Collectors", href: `${siteConfig.ifacUrl}${siteConfig.ifacProfilePath}`, external: true },
-  { label: "Partial Gallery", href: "/gallery" },
-  { label: "Commission Inquiries", href: "/commissions" },
-];
 
 /**
  * Fixed left sidebar: logo mark, then the vertical uppercase nav, then a
@@ -33,7 +21,7 @@ const NAV_LINKS: Array<{ label: string; href: string; external?: boolean }> = [
  * technical wiring (usePathname active state, editor-only "Manage" link)
  * follows amrit-canada's SiteHeader; the visuals are her own, not theirs.
  */
-export function SiteHeader({ canEdit }: { canEdit: boolean }) {
+export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] }) {
   const pathname = usePathname();
 
   return (
@@ -43,7 +31,7 @@ export function SiteHeader({ canEdit }: { canEdit: boolean }) {
       </Link>
 
       <nav className="side-nav" aria-label="Primary">
-        {NAV_LINKS.map((link) => {
+        {nav.map((link) => {
           const active = !link.external && (pathname === link.href || pathname.startsWith(`${link.href}/`));
           return (
             <Link
@@ -58,8 +46,32 @@ export function SiteHeader({ canEdit }: { canEdit: boolean }) {
           );
         })}
         {canEdit && (
-          <Link href="/gallery" className="side-nav-link side-nav-link--manage">
-            Manage
+          <>
+            <Link href="/gallery" className="side-nav-link side-nav-link--manage">
+              Manage
+            </Link>
+            {/* The editor had no way in until this link existed. The routes are
+                /studio/<slug> and /p/<slug>, and a page builder nobody can find
+                is a page builder nobody uses. */}
+            <Link href="/studio" className="side-nav-link side-nav-link--manage">
+              Pages
+            </Link>
+            <Link href="/manage/messages" className="side-nav-link side-nav-link--manage">
+              Messages
+            </Link>
+            <Link href="/studio/theme" className="side-nav-link side-nav-link--manage">
+              Colours
+            </Link>
+            <Link href="/studio/navigation" className="side-nav-link side-nav-link--manage">
+              Navigation
+            </Link>
+          </>
+        )}
+        {!canEdit && (
+          // The login route has existed since this site was built and nothing
+          // anywhere linked to it, so signing in meant knowing to type /login.
+          <Link href="/login" className="side-nav-link side-nav-link--manage">
+            Sign in
           </Link>
         )}
       </nav>

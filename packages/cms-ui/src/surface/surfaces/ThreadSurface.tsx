@@ -154,6 +154,17 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
     });
   }
 
+  // Gathering is an editor's act and a pushed layer, so the occasion stays
+  // open underneath while its contents are arranged. Hidden entirely when the
+  // host has not wired the connector, rather than failing when used.
+  if (canEdit && connectors.gather) {
+    actions.push({
+      label: thread.gathered?.length ? "Arrange what this holds" : "Gather",
+      quiet: true,
+      onClick: () => push({ type: "gather", threadId: thread.id, title: thread.title }),
+    });
+  }
+
   if (thread.href) {
     actions.push({ label: "Open page", quiet: true, href: thread.href });
   }
@@ -216,7 +227,12 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
   }
 
   // ── body: shared with the page ───────────────────────────────────────────
-  const parts = threadViewParts(thread, fmt);
+  // Walking from an occasion into what it gathered STACKS, so the meeting is
+  // still underneath and "‹ back" returns to it. The page renders the same
+  // band as links instead, which is the one difference between the two hosts.
+  const parts = threadViewParts(thread, fmt, {
+    onOpenThread: (id) => push({ type: "thread", id }),
+  });
 
   return (
     <SurfaceFrame

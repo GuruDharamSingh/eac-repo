@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { presentArtworkAction, unpresentArtworkAction } from "@/app/studio/actions";
 
 export interface PresentOption {
@@ -46,19 +47,16 @@ export function PresentButtons({
       <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Your fronts</p>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
-          <button
+          <Button
             key={o.storeId}
             type="button"
+            variant={o.presented ? "default" : "outline"}
+            size="sm"
             disabled={pending === o.storeId}
             onClick={() => void toggle(o)}
-            className={
-              o.presented
-                ? "rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                : "rounded-md border border-border px-3 py-1.5 hover:bg-muted disabled:opacity-50"
-            }
           >
             {pending === o.storeId ? "…" : o.presented ? `Showing in ${o.name} ✓` : `Show in ${o.name}`}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

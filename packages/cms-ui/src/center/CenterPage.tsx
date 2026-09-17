@@ -5,6 +5,8 @@ import { CenterComposeBar } from "./CenterComposeBar";
 import { FollowButton } from "./FollowButton";
 import { ArrangeButton } from "./ArrangeButton";
 import { OrgStrip, type OrgStripItem } from "./OrgStrip";
+import { CenterDesk, type CenterDeskItem } from "./CenterDesk";
+import { ProfileFlipCard, type ProfileCardAction } from "./ProfileFlipCard";
 import type { CenterData, CenterLinks, CenterOrgLink, CenterThread } from "./types";
 import { DEFAULT_CENTER_LAYOUT, type CenterLayout, type CenterSectionId } from "./layout";
 
@@ -39,6 +41,20 @@ export interface CenterPageProps {
   timeZone?: string;
   locale?: string;
 }
+
+/** What the move handle calls each section. */
+const SECTION_LABEL: Record<CenterSectionId, string> = {
+  profile: "your card",
+  buttons: "your settings",
+  orgs: "where you are",
+  promo: "the promotion",
+  site: "the site",
+  org: "the organisation card",
+  pinned: "what is pinned",
+  feed: "the feed",
+  featured: "the featured thread",
+  network: "the network strip",
+};
 
 const ROLE_LABEL: Record<string, string> = {
   owner: "Owner",
@@ -189,11 +205,32 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
 
   // ── Left: you ─────────────────────────────────────────────────────────
   const portrait = person?.orgProfile?.photoOverride ?? person?.avatarUrl ?? null;
-  const shownAs = person?.orgProfile
-    ? [person.orgProfile.roleTitle, person.orgProfile.isPublic ? "listed publicly" : "not listed"]
-        .filter(Boolean)
-        .join(" · ")
-    : null;
+  // The back of the person's card. This is their own center, so every door
+  // here is one they may walk through; a host that serves none of them gets a
+  // card with no back and no turn control at all.
+  const profileActions: ProfileCardAction[] = [
+    {
+      id: "edit",
+      label: "Edit your profile",
+      note: person?.orgProfile
+        ? [
+            person.orgProfile.roleTitle,
+            person.orgProfile.isPublic ? "listed publicly" : "not listed",
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : `${orgName} doesn’t list you yet`,
+      surface: true,
+      href: links.editProfileHref,
+    },
+    ...(links.profileHref
+      ? [{ id: "page", label: "Your public page", note: "how the network sees you", href: links.profileHref }]
+      : []),
+    ...(links.filesHref
+      ? [{ id: "files", label: "Your files", note: "yours wherever you sign in", href: links.filesHref }]
+      : []),
+    { id: "account", label: "Account settings", note: "sign-in and email", href: links.accountHref },
+  ];
 
   const buttons: Array<{ label: string; href: string }> = [
     { label: "Account", href: links.accountHref },
@@ -243,26 +280,31 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
   const sections: Record<CenterSectionId, React.ReactNode> = {
     profile: (
       <>
-        {/* The person's card: the network-wide identity. Its flip side is the
-            profile surface, where the fields live; the card itself is the
-            quick look. */}
+        {/* The person's card: the network-wide identity. The portrait fills
+            the front; the card turns over to what you can do to the profile.
+            A face nobody can see is inert, so the turn is state inside
+            ProfileFlipCard rather than :hover in the stylesheet. */}
         <SurfaceCard
           kind="neutral"
           glyph="◯"
           kicker="You"
           title={person?.displayName ?? "Your profile"}
-          blurb={shownAs ? `How ${orgName} shows you: ${shownAs}` : person ? `${orgName} doesn’t list you yet.` : undefined}
           surface={{ type: "profile" }}
           href={links.editProfileHref}
-          className="group eac-center-person"
+          className="eac-center-person"
           preview={
-            <ProfileCardBody
+            <ProfileFlipCard
               image={portrait}
               glyph="◯"
               name={person?.displayName ?? "You"}
-              subtitle={person?.headline ?? "Add a line about yourself"}
+              /* Only what is true. The prompts that used to fill these — "add
+                 a line about yourself", "how this org shows you" — were
+                 printed over the portrait, which is the one thing the card is
+                 for. They belong on the back, where the editing is. */
+              subtitle={person?.headline ?? null}
               note={person?.city ?? null}
               links={person?.socialLinks ?? []}
+              actions={profileActions}
             />
           }
         />
@@ -578,13 +620,29 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
   };
   const visible = (ids: CenterSectionId[]) => ids.filter((id) => !layout.hidden.includes(id));
   const ratio = layout.options.site?.ratio === "4:3" ? "4 / 3" : "5 / 3";
+  const frame = { ["--eac-center-site-ratio" as string]: ratio } as React.CSSProperties;
+
+  // The desk: the same sections, in the same order, lying loose instead of
+  // stacked in two columns. The org decides there is a desk; the reader
+  // decides where everything sits on it.
+  if (layout.arrangement === "desk") {
+    const deskItems: CenterDeskItem[] = [...visible(layout.columns.left), ...visible(layout.columns.right)].map(
+      (id) => ({ id, label: SECTION_LABEL[id] ?? id, node: sections[id] })
+    );
+    return (
+      <div className="eac-center eac-center--desk" data-voice={layout.voice} style={frame}>
+        <CenterDesk
+          items={deskItems}
+          /* Per org and per person: two people who share a browser keep
+             their own desks. */
+          storageKey={`eac-center-desk/${org?.orgId ?? "org"}/${person?.userId ?? "guest"}`}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="eac-center"
-      data-voice={layout.voice}
-      style={{ ["--eac-center-site-ratio" as string]: ratio } as React.CSSProperties}
-    >
+    <div className="eac-center" data-voice={layout.voice} style={frame}>
       <aside className="eac-center-you" aria-label="You">
         {visible(layout.columns.left).map((id) => (
           <React.Fragment key={id}>{sections[id]}</React.Fragment>

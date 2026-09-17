@@ -28,12 +28,15 @@ export {
 } from "./SurfaceShell";
 export type { SurfaceFrameProps } from "./SurfaceShell";
 
+export { useWritingRoom, WritingRoomBody } from "./surfaces/writing-room";
+export type { WritingRoom, WritingRoomOptions, WritingView } from "./surfaces/writing-room";
+
 export { SurfacePage } from "./SurfacePage";
 export type { SurfacePageProps } from "./SurfacePage";
 export { toSurfaceThread } from "./thread-mapper";
 export type { ThreadMapperInput, ThreadMapperExtras } from "./thread-mapper";
 export { threadViewParts } from "./ThreadView";
-export type { ThreadViewParts } from "./ThreadView";
+export type { ThreadViewParts, ThreadViewOptions } from "./ThreadView";
 export { BoardMini } from "./surfaces/BoardSurface";
 export { ForumMini, ForumFace } from "./surfaces/ForumSurface";
 
@@ -73,12 +76,21 @@ export type {
   ThreadPreview,
   SurfaceEvent,
   SurfaceImage,
+  SurfaceMaterial,
   SurfaceDocument,
   SurfaceDocumentConnectors,
+  SurfaceIdentity,
+  SurfaceIdentityConnectors,
   SurfaceIdea,
   SurfaceIdeaConnectors,
   SurfaceThread,
   SurfaceSession,
+  SurfaceGathered,
+  SurfaceGatherCandidate,
+  SurfaceGatherConnectors,
+  SurfaceGatheredBy,
+  SurfaceGatherRelation,
+  SurfaceTerm,
   SurfaceAction,
   SurfaceConnectors,
   SurfaceViewer,

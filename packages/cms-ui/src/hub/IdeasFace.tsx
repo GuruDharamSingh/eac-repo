@@ -19,6 +19,17 @@ import { SurfaceCard, useSurface, type SurfaceIdea } from "../surface";
 //
 // Posted immediately, not queued: a suggestion box whose contents only an
 // admin can see is a comment form.
+//
+// HEADER-LED (2026-09-16). The title and blurb moved to the top of the card,
+// into the band the kind's medallion used to decorate. On a face whose point
+// is a thing you DO, the instruction belongs above the control rather than
+// underneath the result of using it — the footer layout had you read the
+// field, the list, and then finally what any of it was for.
+//
+// The rows underneath are links now, not text. Each idea already carries the
+// href of its own thread on the board (`SurfaceIdea.href`); printing the
+// title without it meant the one obvious thing to do with an idea — go and
+// read the replies — was the one thing the card would not let you do.
 // ============================================================================
 
 export function IdeasFace({
@@ -67,6 +78,7 @@ export function IdeasFace({
   return (
     <SurfaceCard
       kind="idea"
+      layout="header"
       title="Suggested ideas"
       blurb="Propose something. It opens as a topic everyone can reply to."
       href={feedHref}
@@ -105,19 +117,32 @@ export function IdeasFace({
             </span>
           )}
 
-          {items.slice(0, 3).map((idea) => (
-            <span key={idea.id} className="eac-idea-row">
-              {idea.title}
-            </span>
-          ))}
-          {items.length > 3 && (
-            <span className="eac-preview-cue">
-              +{items.length - 3} more in the feed
-            </span>
-          )}
-          {items.length === 0 && ideas && (
-            <span className="eac-preview-empty">Nothing proposed yet — add the first.</span>
-          )}
+          {/* The latest two, at the foot of the card, each linking to its own
+              thread. Two rather than three: with the title block now at the
+              top the card has one line less to give, and a card that lists
+              is a feed — the point here is the most recent thing and a way
+              in, not a digest. */}
+          <div className="eac-idea-latest">
+            {items.slice(0, 2).map((idea) =>
+              idea.href ? (
+                <a key={idea.id} className="eac-idea-row" href={idea.href}>
+                  {idea.title}
+                </a>
+              ) : (
+                <span key={idea.id} className="eac-idea-row">
+                  {idea.title}
+                </span>
+              )
+            )}
+            {items.length > 2 && feedHref && (
+              <a className="eac-preview-cue" href={feedHref}>
+                +{items.length - 2} more in the feed
+              </a>
+            )}
+            {items.length === 0 && ideas && (
+              <span className="eac-preview-empty">Nothing proposed yet — add the first.</span>
+            )}
+          </div>
         </div>
       }
     />

@@ -1,18 +1,23 @@
-.eac-dossier-network {
-  margin-bottom: 3rem;
-  font-family: var(--eac-dos-typewriter);
-  color: var(--eac-dos-ink);
-}
+/*
+  Associates — who they work with, and who they are looking for.
 
-.eac-dos-network-block {
-  margin-bottom: 1.5rem;
-}
+  Solid tag = confirmed. Dashed tag = wanted. The distinction was already
+  right; what it lacked was a legible weight and a hit area when the tag is a
+  link, which it now is on the activity section.
+*/
+
+.eac-dossier-network { font-family: var(--eac-dos-typewriter); color: var(--eac-dos-ink); }
+
+.eac-dos-network-block { margin-bottom: 1.5rem; }
+.eac-dos-network-block:last-child { margin-bottom: 0; }
 
 .eac-dos-network-sub {
-  font-size: 1rem;
-  border-bottom: none;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  margin: 0 0 0.6rem;
 }
 
 .eac-dos-tags-container {
@@ -22,15 +27,29 @@
 }
 
 .eac-dos-tag {
+  display: inline-block;
   border: 1px solid var(--eac-dos-ink);
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.7rem;
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 0.875rem;
-  font-weight: bold;
-  background: rgba(0,0,0,0.02);
+  color: var(--eac-dos-ink);
+  background: var(--eac-dos-paper-shade);
+  text-decoration: none;
+}
+
+a.eac-dos-tag:hover,
+a.eac-dos-tag:focus-visible {
+  background: var(--eac-dos-ink);
+  color: var(--eac-dos-paper);
 }
 
 .eac-dos-tag-wanted {
   border-style: dashed;
+  border-color: var(--eac-dos-ink-soft);
+  color: var(--eac-dos-ink-soft);
   background: transparent;
+  font-weight: 400;
 }

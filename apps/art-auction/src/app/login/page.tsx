@@ -4,10 +4,8 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { signInWithGoogle, useAuthForm } from "@elkdonis/auth-client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { siteConfig } from "@/config/site";
-
-const inputClass =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 function Field({
   label,
@@ -83,20 +81,19 @@ function LoginInner() {
           <form onSubmit={(e) => void f.submit(e)} className="space-y-4">
             {isSignup && (
               <Field label="Display name" htmlFor="displayName">
-                <input
+                <Input
                   id="displayName"
                   type="text"
                   autoComplete="name"
                   placeholder="How others see you (optional)"
                   value={f.displayName}
                   onChange={(e) => f.setDisplayName(e.target.value)}
-                  className={inputClass}
                 />
               </Field>
             )}
 
             <Field label="Email" htmlFor="email">
-              <input
+              <Input
                 id="email"
                 type="email"
                 required
@@ -104,12 +101,11 @@ function LoginInner() {
                 placeholder="your@email.com"
                 value={f.email}
                 onChange={(e) => f.setEmail(e.target.value)}
-                className={inputClass}
               />
             </Field>
 
             <Field label="Password" htmlFor="password">
-              <input
+              <Input
                 id="password"
                 type="password"
                 required
@@ -119,7 +115,6 @@ function LoginInner() {
                 }
                 value={f.password}
                 onChange={(e) => f.setPassword(e.target.value)}
-                className={inputClass}
               />
             </Field>
 
@@ -167,7 +162,7 @@ function LoginInner() {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          One account works across the Elkdonis Arts network.
+          One account works across the Elkdonis Arts Collective.
         </p>
       </div>
     </main>

@@ -3,6 +3,7 @@ import {
   getMemberRoster,
   getNetworkUpcomingEvents,
   getNetworkFrontFeed,
+  getNetworkCounts,
   groupEventsByCity,
 } from "@/lib/network";
 import {
@@ -25,8 +26,10 @@ export default async function LandingPage() {
   const skyAt = new Date(Math.floor(Date.now() / 1000) * 1000);
   const sky = calculateSkyAt(skyAt);
 
-  const [memberOrgs, events, feed, homes, artwork] = await Promise.all([
+  const [memberOrgs, counts, events, feed, homes, artwork] = await Promise.all([
     getMemberRoster(24),
+    // Counted, not inferred from the roster page's length — see getNetworkCounts.
+    getNetworkCounts(),
     getNetworkUpcomingEvents(20),
     getNetworkFrontFeed(20),
     orgHomeUrlMap(),
@@ -35,6 +38,7 @@ export default async function LandingPage() {
 
   const html = buildNewsroomHtml({
     memberOrgs,
+    counts,
     orgHomeUrls: Object.fromEntries(
       memberOrgs.map((m) => [m.slug, orgHomeUrl(homes, m.slug)])
     ),

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { readCartToken } from "@elkdonis/checkout/server";
 import { getCartByToken } from "@elkdonis/commerce/queries";
 import { CartLineItem, CartSummary } from "@elkdonis/checkout/components";
+import { Button } from "@/components/ui/button";
 import { removeFromCart } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +22,9 @@ export default async function CartPage() {
       {lines.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <p className="text-muted-foreground">Your cart is empty.</p>
-          <Link
-            href="/artworks"
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Browse artworks
-          </Link>
+          <Button asChild className="mt-4">
+            <Link href="/">Browse artworks</Link>
+          </Button>
         </div>
       ) : (
         <>
@@ -47,12 +45,9 @@ export default async function CartPage() {
               currency={currency}
               className="sm:w-64"
             />
-            <Link
-              href="/checkout"
-              className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Proceed to checkout
-            </Link>
+            <Button asChild size="lg">
+              <Link href="/checkout">Proceed to checkout</Link>
+            </Button>
           </div>
 
           <p className="mt-4 text-xs text-muted-foreground">

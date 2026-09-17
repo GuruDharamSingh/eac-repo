@@ -244,6 +244,33 @@ export {
 } from './thread-rsvp';
 export type { RsvpStatus, RsvpEligibility } from './thread-rsvp';
 
+// The standing meeting's card: a nuanced RSVP on top of the same four
+// statuses, the green/yellow/red light, and what last week's occurrence
+// produced. Kind-agnostic for the reason thread-rsvp.ts gives.
+export {
+  RSVP_FLAVOURS,
+  rsvpFlavour,
+  getMeetingAttendance,
+  setMeetingAttendance,
+  clearMeetingAttendance,
+  resolveMeetingLight,
+  setMeetingLight,
+  clearMeetingLight,
+  occurrenceKey,
+  getPreviousMeetingOccurrence,
+  listMeetingMaterials,
+} from './standing-meeting';
+export type {
+  RsvpFlavour,
+  RsvpFlavourStatus,
+  MeetingAttendance,
+  MeetingLight,
+  MeetingLightState,
+  MeetingMaterial,
+  MeetingMaterialKind,
+  PastMeetingOccurrence,
+} from './standing-meeting';
+
 // Workshop offerings — org-agnostic workshop CRUD (threads + workshop_pages
 // + workshop_sessions). Sibling of service-offerings; every app shares this
 // layer and differs only in its form UI.
@@ -391,6 +418,25 @@ export {
   getAuthoredMedia,
 } from './profiles';
 export type { ProfileOrgMembership } from './profiles';
+
+// Identities — one account, several names. A pen name and an organisation's
+// own byline are the same mechanism with different targets; see
+// identities.ts for why the link back to the owner lives in its own table.
+export {
+  MAX_PSEUDONYMS,
+  getIdentityIds,
+  listActingIdentities,
+  resolveActor,
+  createPseudonym,
+  retirePseudonym,
+  restorePseudonym,
+  accountForIdentity,
+} from './identities';
+export type {
+  ActingIdentity,
+  IdentityRelation,
+  CreatePseudonymInput,
+} from './identities';
 export type {
   Profile,
   OrgProfile,
@@ -512,8 +558,12 @@ export {
 } from './org-deck';
 export type { OrgDeckBoard, OrgDeckComment } from './org-deck';
 
-export { listOrgMediaLibrary } from './media-library';
-export type { MediaLibraryItem, ListOrgMediaLibraryOptions } from './media-library';
+export { listOrgMediaLibrary, listUserMediaLibrary } from './media-library';
+export type {
+  MediaLibraryItem,
+  ListOrgMediaLibraryOptions,
+  ListUserMediaLibraryOptions,
+} from './media-library';
 
 // Per-org Nextcloud calendar. Same isolation doctrine as org-deck, opposite
 // data direction: Postgres owns the events, the calendar is a read-only
@@ -621,6 +671,18 @@ export type {
   LoadCenterOptions,
 } from './center';
 
+// The rotating line on a center. The smallest content on the network: no
+// thread, no slug, no page of its own. See quotes.ts and migration 127.
+export {
+  listCenterQuotes,
+  listQuotes,
+  submitQuote,
+  setQuoteStatus,
+  deleteQuote,
+  QUOTE_MAX_BODY,
+} from './quotes';
+export type { Quote, QuoteStatus, SubmitQuoteInput } from './quotes';
+
 // The center's definition as data: network default ← org override, resolved
 // server-side like themes. See center-layout.ts.
 export {
@@ -630,6 +692,10 @@ export {
   CENTER_SECTION_IDS,
 } from './center-layout';
 export type { CenterLayout, CenterSectionId, ResolvedCenterLayout } from './center-layout';
+
+// One shared Excalidraw scene per org, stored whole. See whiteboard.ts.
+export { getWhiteboard, saveWhiteboard } from './whiteboard';
+export type { WhiteboardScene } from './whiteboard';
 
 // A person's gallery pages — many per user, org-agnostic, the same item
 // shape as users.portfolio (migration 124). See galleries.ts.
@@ -656,6 +722,7 @@ export type {
 export {
   listOrgDocuments,
   createOrgDocument,
+  deleteOrgDocument,
   assignOrgDocument,
 } from './org-documents';
 export type { OrgDocument } from './org-documents';
@@ -667,6 +734,74 @@ export {
 } from './org-ideas';
 export type { OrgIdea } from './org-ideas';
 
+// What a thread HOLDS — the occasion made out of a meeting, the document
+// written in it, the terms defined out of that and the board it moved. One
+// edge table (migration 131) in place of the five half-overlapping grouping
+// mechanisms the network had grown. See gather.ts, and note that
+// `getGathered` withholds living-document URLs unless the caller asserts
+// membership: those links are public and WRITABLE.
+export {
+  getGathered,
+  getGathering,
+  getGatheredBy,
+  getReferencedTerms,
+  gatherOnto,
+  ungather,
+  reorderGathered,
+  gatherViewerFor,
+  gatheringFolder,
+  ensureGatheringFolder,
+  GatherError,
+  GATHER_ANONYMOUS,
+} from './gather';
+// The same four verbs on every host. See the header in gather-route.ts for why
+// this is a factory and not a third copy of the route.
+export { createGatherRoutes } from './gather-route';
+export type {
+  GatherRouteOptions,
+  GatherRouteViewer,
+  GatherRouteHandler,
+  GatherRouteHandlers,
+  GatherCandidate,
+} from './gather-route';
+export type {
+  Gathering,
+  GatheredItem,
+  GatheredBy,
+  GatheredOptions,
+  GatherInput,
+  GatherRelation,
+  GatherTargetType,
+  GatherViewer,
+  ReferencedTerm,
+} from './gather';
+
 // What is waiting for a person — the counts the profile face states.
 export { getViewerAlerts } from './viewer-alerts';
 export type { ViewerAlerts } from './viewer-alerts';
+
+// Which kinds an org surface may harvest. Read thread-kinds.ts before adding
+// a `kind` — a new one is enrolled in every feed and the forum by default.
+export { OFF_FEED_KINDS, WRITING_KIND } from './thread-kinds';
+
+// A person's own writing — the blog behind a profile page. Threads, so it
+// shares the editor and the reading layer; off every org feed, so it stays
+// theirs. See writing.ts.
+export {
+  listWriting,
+  countWriting,
+  getWritingPost,
+  getWritingPostById,
+  createWritingPost,
+  updateWritingPost,
+  deleteWritingPost,
+} from './writing';
+export type {
+  WritingPost,
+  WritingSummary,
+  WritingStatus,
+  ListWritingOptions,
+  CreateWritingInput,
+  UpdateWritingInput,
+  WritingResult,
+} from './writing';

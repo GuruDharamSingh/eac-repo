@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@elkdonis/cms-ui/editor.css";
+@import "@elkdonis/commerce/commerce.css";
+
+/* ---------------------------------------------------------------------------
+   Shared packages ship Tailwind class names in their own source. Tailwind v4
+   only scans this app by default, so without these the marketplace's own
+   product grid had no columns and its cards no aspect box: `aspect-[4/5]`,
+   `sm:grid-cols-2`, `xl:grid-cols-4` and the hover transition were never
+   generated, and every artwork rendered full-bleed in a single column.
+   Same directive artdirect already carries.
+   ------------------------------------------------------------------------ */
+@source "../../../../packages/commerce/src";
+@source "../../../../packages/checkout/src";
+@source "../../../../packages/three/src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,7 +22,18 @@
 
   /* Gallery palette: warm gallery white, ink, vermilion accent */
   --background: 36 22% 97%;
-  --foreground: 24 12% 12%;
+  --foreground: 24 14% 11%;
+
+  /* The tone behind a hung piece — plaster, a shade off the page so the wall
+     reads as a surface rather than as more paper. */
+  --wall: 32 16% 93%;
+  /* A third grey under --muted-foreground, for medium and dimensions on a
+     gallery label. Measured: 5.14:1 on the page, 4.70:1 on the wall. The
+     obvious lighter value came out at 3.90:1. */
+  --ink-faint: 28 7% 41%;
+  /* Auction green. Reserved for the one fact on a card that expires. */
+  --live: 152 58% 30%;
+  --live-foreground: 36 30% 98%;
 
   --card: 0 0% 100%;
   --card-foreground: 24 12% 12%;
@@ -39,7 +63,12 @@
 
 .dark {
   --background: 24 12% 8%;
-  --foreground: 36 18% 92%;
+  --foreground: 36 18% 93%;
+
+  --wall: 24 10% 13%;
+  --ink-faint: 30 7% 62%;
+  --live: 152 45% 58%;
+  --live-foreground: 24 18% 10%;
 
   --card: 24 12% 11%;
   --card-foreground: 36 18% 92%;
@@ -67,6 +96,38 @@
   --ring: 14 80% 60%;
 }
 
+/* The dark palette above was written months ago and never reached anybody:
+   nothing in this app has ever set `.dark`, and there is no theme toggle. Ask
+   the operating system instead, while leaving the class working for a toggle
+   later. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: 24 12% 8%;
+    --foreground: 36 18% 93%;
+    --card: 24 12% 11%;
+    --card-foreground: 36 18% 93%;
+    --popover: 24 12% 11%;
+    --popover-foreground: 36 18% 93%;
+    --primary: 14 80% 60%;
+    --primary-foreground: 24 18% 10%;
+    --secondary: 24 8% 18%;
+    --secondary-foreground: 36 18% 93%;
+    --muted: 24 8% 16%;
+    --muted-foreground: 30 8% 70%;
+    --accent: 22 30% 24%;
+    --accent-foreground: 36 22% 92%;
+    --destructive: 0 62% 56%;
+    --destructive-foreground: 36 30% 98%;
+    --border: 24 8% 22%;
+    --input: 24 8% 22%;
+    --ring: 14 80% 60%;
+    --wall: 24 10% 13%;
+    --ink-faint: 30 7% 62%;
+    --live: 152 45% 58%;
+    --live-foreground: 24 18% 10%;
+  }
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -87,6 +148,10 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-wall: hsl(var(--wall));
+  --color-ink-faint: hsl(var(--ink-faint));
+  --color-live: hsl(var(--live));
+  --color-live-foreground: hsl(var(--live-foreground));
 
   --font-serif: var(--font-fraunces);
   --font-sans: var(--font-inter);
@@ -120,4 +185,31 @@ h3,
 h4 {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;
   letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------------------
+   The shared storefront components theme themselves through `--pc-*`, which
+   default to tints of whatever ink they inherit. Here we hand them the real
+   palette so a product card on the marketplace uses the marketplace's own
+   colours rather than an approximation of them.
+
+   Measured against the grounds they sit on: foreground 15.56:1,
+   muted-foreground 5.78:1, primary-foreground on primary 5.49:1.
+   --pc-ink-faint is the one to watch — it is deliberately muted-foreground
+   again rather than a lighter tint, because a third grey below 5.78:1 would
+   put the medium/dimensions line under 4.5:1.
+   ------------------------------------------------------------------------ */
+.eac-commerce {
+  --pc-ink: hsl(var(--foreground));
+  --pc-ink-soft: hsl(var(--muted-foreground));
+  --pc-ink-faint: hsl(var(--ink-faint));
+  --pc-line: hsl(var(--border));
+  --pc-mat: hsl(var(--muted));
+  --pc-surface: transparent;
+  --pc-accent: hsl(var(--primary));
+  --pc-on-accent: hsl(var(--primary-foreground));
+  --pc-live: hsl(var(--live));
+  --pc-radius: var(--radius);
+  --pc-title-font: var(--font-fraunces), Georgia, serif;
+  --pc-price-font: var(--font-fraunces), Georgia, serif;
 }

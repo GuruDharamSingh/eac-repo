@@ -29,6 +29,8 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       // and compose's prefill are: the popup reopens to the right place and
       // fetches for itself.
       return "documents";
+    case "identities":
+      return "identities";
     case "write":
       return d.threadId ? `write:post:${d.threadId}` : "write:post";
     case "board":
@@ -37,6 +39,13 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return `boardCard:${d.cardId}`;
     case "forum":
       return "forum";
+    case "forumFeed":
+      // Not URL-addressable: the descriptor carries the section's NAME and
+      // its href as well as the slug, and a round trip through the URL could
+      // only restore the slug. Serialising it would write a link that opens
+      // a panel with no title. The section is one click from the forum
+      // surface, which IS addressable.
+      return null;
     case "profile":
       if (d.target) return `profile:org:${d.target.orgId}`;
       return d.mode === "edit" ? "profile:edit" : "profile";
@@ -46,6 +55,16 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return `define:${encodeURIComponent(d.term)}${d.sourceThreadId ? `:${d.sourceThreadId}` : ""}`;
     case "centerLayout":
       return `centerLayout:${d.orgId}`;
+    case "material":
+      // A file is not an address. Its URL may be signed, may be a one-off,
+      // and reopening it out of context would restore a document with no
+      // meeting around it — so this layer is deliberately not shareable.
+      return null;
+    case "gather":
+      // Addressable, and deliberately so: "here is what we gathered, help me
+      // arrange it" is a link worth being able to send. The title is dropped
+      // and refetched with the thread, like every other seeded preview here.
+      return `gather:${d.threadId}`;
     case "custom":
       return null;
   }
@@ -86,10 +105,14 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return { type: "gallery" };
     case "documents":
       return { type: "documents" };
+    case "identities":
+      return { type: "identities" };
     case "write":
       return { type: "write", kind: "post", threadId: b && SAFE.test(b) ? b : undefined };
     case "board":
       return { type: "board" };
+    case "gather":
+      return a && SAFE.test(a) ? { type: "gather", threadId: a } : null;
     case "boardCard":
       return a && SAFE.test(a) ? { type: "boardCard", cardId: a } : null;
     case "forum":

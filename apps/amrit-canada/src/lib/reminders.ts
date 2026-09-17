@@ -106,6 +106,7 @@ export async function runReminderTick(appOrigin: string): Promise<void> {
               ? String(thread.video_link ?? thread.meeting_url)
               : undefined,
             talkJoinUrl,
+            orgId: siteConfig.orgId,
             orgName: siteConfig.orgName,
             rsvpUrl,
             rsvpCount: attendees.length,

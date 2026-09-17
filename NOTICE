@@ -1,0 +1,62 @@
+This product includes work adapted from third-party open-source projects.
+
+────────────────────────────────────────────────────────────────────────────
+Cerberus — responsive email patterns
+https://github.com/TedGoas/Cerberus
+
+Copyright (c) 2017 Ted Goas
+
+Used in:
+  packages/newsletter/src/blocks.ts      stackRow() — the "hybrid" column
+                                          pattern: inline-block columns that
+                                          wrap on narrow screens with no media
+                                          query, plus MSO conditional table
+                                          cells for Outlook.
+  packages/email/src/render-email.ts     withOutlookWidth() — the hybrid
+                                          wrapper's fixed-width MSO table,
+                                          holding the letter to 600px in
+                                          clients that ignore max-width.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────
+Colorlib email templates
+https://github.com/ColorlibHQ/email-templates
+
+Copyright (c) Colorlib
+
+Nine of its layouts (4 Stories, 7 Winter, 12 Shop, 20 Eventos, 22 Northbound,
+23 Strata, 24 Brief, 26 Signal, 28 Pulse) were pulled apart and the recurring
+STRUCTURES became blocks. What was taken is the arrangement of sections; none
+of the original colour, typography or copy is present — every value in these
+blocks comes from a runtime palette.
+
+Used in:
+  packages/newsletter/src/blocks.ts    fifteen blocks, from eac-brandbar to
+                                        eac-postal-footer
+  packages/newsletter/src/starters.ts  nine starter layouts, each a list of
+                                        those block ids
+
+Licensed under the MIT License, the full text of which appears above and
+applies equally here.
+────────────────────────────────────────────────────────────────────────────
+
+Note: grapesjs-preset-newsletter (BSD-3-Clause) is a dependency, not adapted
+code, and carries its own licence in node_modules.

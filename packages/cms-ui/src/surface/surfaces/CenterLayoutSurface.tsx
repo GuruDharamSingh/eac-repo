@@ -180,6 +180,12 @@ export function CenterLayoutSurface({ descriptor }: { descriptor: Descriptor }) 
         This is what {data.orgName}&rsquo;s center shows, over the network&rsquo;s default. Sections you
         remove or hide are simply not drawn.
       </p>
+      {(draft.arrangement ?? "columns") === "desk" && (
+        <p className="m-0 text-[color:var(--sf-muted)]">
+          On a desk these sections lie loose and each reader can push them around. Where they
+          leave them is kept in their own browser, not here.
+        </p>
+      )}
       {data.networkOrgId && (
         <label className="flex items-center gap-2">
           <input type="radio" name="target" checked={target === "org"} onChange={() => setTarget("org")} />
@@ -210,7 +216,21 @@ export function CenterLayoutSurface({ descriptor }: { descriptor: Descriptor }) 
           {column("left", "Your column")}
           {column("right", "The org's column")}
         </div>
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <label>
+            <span className={LABEL}>Arrangement</span>
+            <select
+              className={SELECT}
+              value={draft.arrangement ?? "columns"}
+              disabled={!data.canEdit}
+              onChange={(e) =>
+                setDraft((d) => (d ? { ...d, arrangement: e.target.value as "columns" | "desk" } : d))
+              }
+            >
+              <option value="columns">Two columns</option>
+              <option value="desk">A desk of loose cards</option>
+            </select>
+          </label>
           <label>
             <span className={LABEL}>Site view</span>
             <select

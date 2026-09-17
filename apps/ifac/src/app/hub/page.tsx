@@ -1,15 +1,21 @@
 import { redirect } from "next/navigation";
 import { db } from "@elkdonis/db";
 import {
+  getMeetingAttendance,
+  getOrgChatIdentity,
+  getOrgChatRoom,
   getStandingMeeting,
   getThemeOverrides,
   getViewerAlerts,
+  listOrgChatMessages,
   listOrgDocuments,
   listOrgEventsInRange,
   listOrgFiles,
   listOrgIdeas,
+  resolveMeetingLight,
 } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
+import { ChatCard, ProvisionChat } from "@elkdonis/chat";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { getProfileSummary } from "@/lib/hub-data";
@@ -27,12 +33,18 @@ import {
   StandingMeetingFace,
 } from "@elkdonis/cms-ui/hub";
 import { HubDrawer } from "@/components/hub/HubDrawer";
+import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
+import { KindTilesFace } from "@/components/hub/KindTilesFace";
+import { HelpErrand } from "@/components/hub/HelpErrand";
 import { AppearanceCard } from "@/components/hub/AppearanceCard";
 import { FilesFace } from "@/components/hub/FilesCard";
-import { PageSectionsFace } from "@/components/hub/PageSectionsCard";
+import { PageSectionsFace, type HubSections } from "@/components/hub/PageSectionsCard";
+import type { StoreEntryState } from "@elkdonis/commerce/links";
 import { getStoreForUser } from "@elkdonis/commerce/queries";
 import { IFAC_THEME_VARS, IFAC_THEMEABLE_PAGES } from "@/lib/theme-tokens";
 import { saveIfacThemeAction } from "@/lib/theme-actions";
+import { getHubSkin } from "@/lib/hub-skin-store";
+import { saveHubSkinAction } from "@/lib/hub-skin-actions";
 
 /**
  * The IFAC members' hub.
@@ -62,7 +74,7 @@ export default async function HubPage() {
     // versus signed in but not an IFAC member.
     const { getServerSession } = await import("@elkdonis/auth-server");
     const session = await getServerSession();
-    redirect(session.user ? "/?notice=members-only" : "/login?redirect=/hub");
+    redirect(session.user ? "/?notice=members-only" : "/login?next=/hub");
   }
 
   const content = await getSiteContent();
@@ -89,6 +101,7 @@ export default async function HubPage() {
     forum,
     board,
     alerts,
+    chatRoom,
   ] = await Promise.all([
     // The shared resolver, replacing this app's own getWeeklyMeeting: an
     // editor's flag first, then a weekly series, then whatever is soonest —
@@ -115,7 +128,40 @@ export default async function HubPage() {
     // the shared query every other host already uses. Never throws on its
     // own (reports zeroes on a failed read), so no .catch needed here.
     getViewerAlerts(viewer.userId, siteConfig.orgId),
+    // Whether IFAC has a Talk room at all. Null is the ordinary first state,
+    // not a failure — the announcements panel then offers to create one.
+    getOrgChatRoom(siteConfig.orgId).catch(() => null),
   ]);
+
+  // Is it happening, and what has this member already said?
+  //
+  // These cannot join the batch above: both are keyed on `standing.event.id`,
+  // which that batch is what produces. Two indexed single-row lookups, and
+  // only paid for when there is a gathering to say anything about.
+  const [meetingLight, meetingAnswer] = standing
+    ? await Promise.all([
+        resolveMeetingLight(standing.event.id, { occurrence: standing.at }),
+        getMeetingAttendance(standing.event.id, viewer.userId),
+      ])
+    : [null, null];
+
+  // The transcript, only once we know there is a room to read. Two awaits
+  // rather than one because both of these need its token.
+  const [chatMessages, chatIdentity] = chatRoom
+    ? await Promise.all([
+        listOrgChatMessages(siteConfig.orgId, viewer.userId, { limit: 20 }),
+        getOrgChatIdentity(
+          siteConfig.orgId,
+          viewer.userId,
+          profile?.displayName?.trim() || viewer.email
+        ),
+      ])
+    : [[], undefined];
+
+  // The layout reads this too, for the `data-hub-skin` attribute. Read again
+  // rather than threaded through `children`, which a layout cannot do: one
+  // indexed single-row lookup against a value the page has to show anyway.
+  const skin = await getHubSkin(siteConfig.orgId);
 
   const overridesByPage: Record<string, Record<string, string>> = {};
   if (viewer.canEdit) {
@@ -131,23 +177,34 @@ export default async function HubPage() {
   }
 
   const displayName = profile?.displayName ?? viewer.email.split("@")[0];
+  // Just the given name for the greeting. A display name may be a full name,
+  // a studio name or an email stub; the first word of it is the friendliest
+  // thing that is true in all three cases.
+  const firstName = displayName.trim().split(/\s+/)[0] || displayName;
 
   return (
     <div className="site-shell">
       {/* Site defaults, then this page's overrides, then the viewer's own. */}
       <ThemeStyle orgId={siteConfig.orgId} pageKey="hub" userId={viewer.userId} />
-      <SiteHeader
-        banner={{ imageUrl: content.hero.imageUrl, className: "hub-hero" }}
-      />
+      {/* No banner here. The hub is a working page, not a front page, and the
+          hero image pushed every tile below the fold — the same reason about,
+          artists and gallery pass nothing. Restore it by handing SiteHeader
+          `banner={{ imageUrl: content.hero.imageUrl, className: "hub-hero" }}`
+          again; .hub-hero is still in globals.css. */}
+      <SiteHeader />
 
       <main className="hub">
         <div className="hub-welcome">
           <div>
             <p className="kicker">{siteConfig.shortName}</p>
-            <h1>Welcome IFAC Members to the Main Hub</h1>
+            {/* The member's own name, not "Welcome IFAC Members to the Main
+                Hub". A hub for a collective of artists and dealers should
+                greet a person; the old line greeted a category, and then
+                spent its second sentence listing the tiles directly beneath
+                it — which the bands now name for themselves. */}
+            <h1>Welcome back, {firstName}.</h1>
             <p className="hub-welcome-sub">
-              Post to the group, manage your profile and files, and help shape
-              what the collective works on next.
+              Here is what the collective has on, and what you can add to it.
             </p>
           </div>
           <HubDrawer
@@ -156,147 +213,262 @@ export default async function HubPage() {
           />
         </div>
 
-        <section className="hub-announcements" aria-labelledby="ann-head">
-          <div className="hub-panel-head">
-            <h2 id="ann-head">Announcements</h2>
-            <span className="hub-tag">IFAC General</span>
+        {/*
+          Three bands, not one grid of thirteen.
+
+          Every tile used to carry the same weight in one auto-fill grid, so
+          the gathering that is the point of the group sat the same size as
+          "Help & notes from the developer", and a member arriving had no
+          reading order to follow. The bands give one: what is happening, what
+          you can make, and your own place in it. Each is still the same face
+          grid — this is an arrangement, not a second component.
+
+          Every tile arrives carrying real information and clicking one opens
+          the depth. That split is a load-time budget, not a style: all the
+          reads happen above, in parallel, and each returns only the handful of
+          fields its tile draws.
+        */}
+
+        <section className="hub-band" aria-labelledby="band-week">
+          <div className="hub-band-head">
+            <h2 id="band-week">This week</h2>
+            <p>What the collective has on, and where it is being discussed.</p>
           </div>
-          <div className="hub-talk-frame">
-            <p className="hub-empty">
-              The IFAC General talk room has not been provisioned yet, so there
-              is nothing to embed. Once the group has a Talk room this becomes
-              the live chat and announcements feed.
-            </p>
-          </div>
+          {/* Its own grid rather than the shared auto-fill one: the gathering
+              leads at half the row and the other two share the rest, which is
+              what makes it read as the lead rather than as the first of
+              three equals. Collapses to one column on a phone. */}
+          <SurfaceCardGrid className="hub-band-grid hub-band-grid--lead">
+            {/* The three opt-in behaviours. Left off, this renders exactly
+                the card it always did — which is why amrit-canada and
+                innergathering are untouched by any of it.
+
+                `attendance` is "Will you make it?", answered in words rather
+                than yes/no: the flavour is stored beside a canonical status,
+                so every count in the network still reads `status='yes'` and
+                an early, hesitant or this-week-only yes all count the same.
+
+                `light` is whether it is actually happening. Yellow derives
+                itself when the gathering has a minimum attendance it has not
+                met; an owner or guide can override, and the override names
+                the occurrence so it expires on its own. */}
+            <StandingMeetingFace
+              standing={standing}
+              canEdit={viewer.canEdit}
+              timeZone={TIME_ZONE}
+              attendance={{ answered: meetingAnswer }}
+              light={meetingLight ?? undefined}
+              history={{}}
+            />
+            <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
+            <ForumFace forum={forum} />
+          </SurfaceCardGrid>
         </section>
 
-        {/* One grid of faces, replacing the two hand-packed columns of
-            bespoke HubCards. Every tile here is the tile-sized form of the
-            popup it opens, and they all open in ONE dialog that stacks — so
-            a calendar day can open a gathering, which can open its RSVP,
-            without the page moving. The four leading faces are the shared
-            ones every site in the network draws; the rest are IFAC's own
-            features registered as `custom` surfaces. */}
-        <SurfaceCardGrid>
-          <StandingMeetingFace
-            standing={standing}
-            canEdit={viewer.canEdit}
-            timeZone={TIME_ZONE}
-          />
+        <section className="hub-band" aria-labelledby="band-make">
+          <div className="hub-band-head">
+            <h2 id="band-make">Make something</h2>
+            <p>
+              Everything here belongs to IFAC and shows on the site. Dated
+              items also reach the group&rsquo;s calendar.
+            </p>
+          </div>
+          <SurfaceCardGrid className="hub-band-grid">
+            {/*
+              Publish — a plain face over the catalogue.
 
-          <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
+              The kinds were tiles ON this card for one revision. They are
+              gone: a tile grid inside a tile is the picker drawn twice, and
+              the popup already draws it properly, at a readable size, with
+              each kind's accent. The face's job is to be the door.
 
-          <PipelineFace board={board} canEdit={viewer.canEdit} />
+              What each kind does once chosen is still per-kind — short things
+              stay in the popup, long ones open their own page — and that
+              decision lives in the catalogue, not here.
+            */}
+            <SurfaceCard
+              kind="compose"
+              glyph="✚"
+              kicker={null}
+              title="Publish"
+              blurb="Writing, gatherings, work for sale — everything the group puts out."
+              surface={{ type: "compose" }}
+              ariaLabel="Choose what to publish"
+            />
 
-          <ForumFace forum={forum} />
+            {/* The face IS the form: type it, press Enter. Opening the tile
+                goes to the ideas feed on the forum, where they are discussed. */}
+            <IdeasFace initialIdeas={ideas} />
 
-          {/* Identity: the shared surface, opening in place rather than
-              bouncing the member to a different domain to edit their own
-              name and bio. */}
-          <ProfileFace
-            summary={{
-              displayName: profile?.displayName ?? viewer.email.split("@")[0],
-              avatarUrl: profile?.avatarUrl ?? null,
-              headline: profile?.roleTitle ?? profile?.headline ?? null,
-              alerts,
-            }}
-          />
+            <DocumentsFace documents={documents} />
 
-          {/* This site's own: gallery counts, and what shows on the public
-              page. See PageSectionsCard.tsx for why this stayed local. */}
-          <PageSectionsFace
-            summary={profile}
-            sections={sections}
-            marketplaceUrl={siteConfig.marketplaceUrl}
-          />
+            <FilesFace initialFiles={files} canEdit={viewer.canEdit} />
 
-          <DocumentsFace documents={documents} />
+            <PipelineFace board={board} canEdit={viewer.canEdit} />
 
-          <FilesFace initialFiles={files} canEdit={viewer.canEdit} />
+            {/* The shared canvas. It sits with the things you make rather
+                than with the things you read, and it opens at `full` width —
+                a drawing surface with a toolbar down one side has nothing to
+                give back at tile-and-a-half. */}
+            <WhiteboardFace blurb="A shared canvas. Sketch a hang, a floor plan, an idea." />
 
-          {/* The face IS the form now: type it, press Enter. Opening the tile
-              goes to the ideas feed on the forum, where they are discussed. */}
-          <IdeasFace initialIdeas={ideas} />
+            {/*
+              Group research. Was "Ask the membership", a single tile that
+              opened a popup holding a long question-builder — the same
+              losable-draft problem compose had. The three things it can be
+              are tiles now, and the two that are real open their form on its
+              own page.
+            */}
+            <KindTilesFace
+              kind="questionnaire"
+              title="Group research"
+              blurb="Put something to the membership, and read what comes back."
+              tiles={[
+                {
+                  kind: "questionnaire",
+                  glyph: "▤",
+                  label: "Questionnaire",
+                  href: "/hub/compose?kind=questionnaire",
+                  note: "A set of questions",
+                },
+                {
+                  kind: "poll",
+                  glyph: "▥",
+                  label: "Poll",
+                  href: "/hub/compose?kind=poll",
+                  note: "One question, a result bar",
+                },
+                {
+                  // Declared but not built. Shown so the set reads as a whole
+                  // — "what can we ask the group" has three answers, and one
+                  // of them is coming.
+                  kind: "meeting",
+                  glyph: "◷",
+                  label: "Arrange a time",
+                  note: "Find when everyone is free",
+                },
+              ]}
+            />
+          </SurfaceCardGrid>
+        </section>
 
-          {/* Authoring is a page on this site, not a surface — it has its own
-              route and its own workspace, so the tile navigates. */}
-          <SurfaceCard
-            kind="compose"
-            glyph="✚"
-            title="Compose"
-            blurb="Art, announcements, events and products."
-            href="/hub/compose"
-            cue="→"
-            preview={
-              <span className="eac-preview-line">
-                {viewer.canEdit
-                  ? "Article · Event · Meeting · Questionnaire"
-                  : "Propose something for the group"}
+        <section className="hub-band" aria-labelledby="band-you">
+          <div className="hub-band-head">
+            <h2 id="band-you">Your place here</h2>
+            <p>
+              How you appear to the rest of the collective, and what your own
+              page carries.
+            </p>
+          </div>
+          <SurfaceCardGrid className="hub-band-grid hub-band-grid--pair">
+            {/* Identity: the shared surface, opening in place rather than
+                bouncing the member to a different domain to edit their own
+                name and bio. */}
+            <ProfileFace
+              summary={{
+                displayName: displayName,
+                avatarUrl: profile?.avatarUrl ?? null,
+                headline: profile?.roleTitle ?? profile?.headline ?? null,
+                alerts,
+              }}
+            />
+
+            {/* This site's own: gallery counts, and what shows on the public
+                page. See PageSectionsCard.tsx for why this stayed local. */}
+            <PageSectionsFace
+              summary={profile}
+              sections={sections}
+              marketplaceUrl={siteConfig.marketplaceUrl}
+            />
+          </SurfaceCardGrid>
+        </section>
+
+        {/* General Chat, under the bands.
+            It used to sit above them, which put a chat nobody had asked for
+            between the welcome and every tile — and pushed the tiles below the
+            fold on a laptop.
+
+            Height came down from h-[42rem] to h-[30rem]. Forty-two was two
+            tiles deep, chosen when the chat was the only thing under a flat
+            grid; with three banded sections above it, a half-screen well of
+            mostly empty transcript was the largest thing on the page and the
+            last thing a member needed. Thirty still holds a conversation
+            rather than a peek, and /hub/chat is one click away for the rest.
+
+            The room is created from the button here, by an owner or guide, and
+            this becomes the live transcript. Members post under their OWN
+            names without holding Nextcloud accounts: each gets a Talk guest
+            session (migration 102). Reads go over the service account, which
+            is a participant in every room the network provisions. See
+            packages/services/src/org-chat.ts. */}
+        <section className="hub-band hub-band--chat" aria-labelledby="chat-head">
+          <div className="hub-band-head">
+            <h2 id="chat-head">General chat</h2>
+            <p>Everyone in IFAC. Say hello, ask the room, share what you found.</p>
+          </div>
+          {chatRoom ? (
+            <ChatCard
+              messages={chatMessages}
+              // getHubViewer already refused anyone who is not member-and-up,
+              // so reaching this line IS the permission to post.
+              canPost
+              identity={chatIdentity}
+              title="General Chat"
+              expandedHref="/hub/chat"
+              heightClass="h-[30rem]"
+            />
+          ) : (
+            <div className="hub-talk-frame">
+              <ProvisionChat canProvision={viewer.canEdit} />
+            </div>
+          )}
+        </section>
+
+        {/* The quiet end of the page.
+
+            Running the site and asking how it works were both full-width
+            faces in the grid above, each as large as the gathering and each
+            carrying one line. They are errands, not features: they belong
+            after the work, at the size of a link. */}
+        <section className="hub-band hub-band--errands" aria-labelledby="band-errands">
+          <div className="hub-band-head">
+            <h2 id="band-errands">Running things</h2>
+          </div>
+          <div className="hub-errands">
+            {viewer.canEdit && (
+              <a className="hub-errand" href="/manage">
+                <span className="hub-errand-glyph" aria-hidden>
+                  &#9672;
+                </span>
+                <span>
+                  <strong>Manage the site</strong>
+                  <em>Artists &amp; dealers &middot; people &amp; access &middot; site copy</em>
+                </span>
+              </a>
+            )}
+            <a className="hub-errand" href="/forum/general">
+              <span className="hub-errand-glyph" aria-hidden>
+                &#9776;
               </span>
-            }
-          />
-
-          <SurfaceCard
-            wide
-            kind="questionnaire"
-            glyph="◎"
-            title="Questionnaires & group research"
-            blurb="Ask the membership something, and read the results."
-            surface={{
-              type: "custom",
-              key: "questionnaires",
-              title: "Questionnaires & group research",
-              kind: "questionnaire",
-              size: "wide",
-              props: { canEdit: viewer.canEdit, orgSlug: siteConfig.orgId },
-            }}
-          />
-
-          <SurfaceCard
-            wide
-            kind="neutral"
-            glyph="?"
-            title="Help & notes from the developer"
-            blurb="How things work, and how to tell us they don't."
-            surface={{
-              type: "custom",
-              key: "help",
-              title: "Help & notes from the developer",
-              kind: "neutral",
-            }}
-          />
+              <span>
+                <strong>The forum</strong>
+                <em>Every board, in full</em>
+              </span>
+            </a>
+            <HelpErrand />
+          </div>
 
           {viewer.canEdit && (
-            <SurfaceCard
-              wide
-              kind="neutral"
-              glyph="◈"
-              title="Manage site"
-              blurb="Review people and promote members."
-              // Still /admin/directory: the /manage dashboard is not built
-              // yet, and a tile pointing at a route that 404s is worse than
-              // one pointing at the tool that works.
-              href="/admin/directory"
-              cue="→"
-              preview={
-                <span className="eac-preview-line">
-                  Directory entries, accounts and roles
-                </span>
-              }
-            />
-          )}
-        </SurfaceCardGrid>
-
-        {viewer.canEdit && (
-          <section className="hub-wide">
             <AppearanceCard
               vars={IFAC_THEME_VARS}
               pages={IFAC_THEMEABLE_PAGES}
               overridesByPage={overridesByPage}
               onSaveSite={saveIfacThemeAction}
+              skin={skin}
+              onSaveSkin={saveHubSkinAction}
             />
-          </section>
-        )}
+          )}
+        </section>
 
       </main>
 
@@ -312,23 +484,34 @@ export default async function HubPage() {
  * preference about their page, not a fact about their profile, and the two
  * have different lifetimes.
  */
-async function readProfileSections(
-  userId: string
-): Promise<{ elkdonisFeed: boolean; store: boolean; hasStore: boolean }> {
+async function readProfileSections(userId: string): Promise<HubSections> {
+  const empty: HubSections = {
+    elkdonisFeed: false,
+    store: false,
+    blog: false,
+    storeState: "none",
+    storeId: null,
+    storeName: null,
+  };
   try {
     const [row] = await db<Array<{ profile_sections: Record<string, unknown> }>>`
       SELECT profile_sections FROM users WHERE id = ${userId}
     `;
-    // Whether they have an active marketplace store at all — drives whether
-    // the store toggle is offered or an "open a store" link instead.
+    // Their marketplace store, in whatever state it is actually in. This used
+    // to collapse to `hasStore: status === "active"`, which told a member
+    // whose application was under review to go and open a store — the one
+    // thing they had already done.
     const store = await getStoreForUser(userId).catch(() => null);
     return {
       elkdonisFeed: Boolean(row?.profile_sections?.elkdonisFeed),
       store: Boolean(row?.profile_sections?.store),
-      hasStore: store?.status === "active",
+      blog: Boolean(row?.profile_sections?.blog),
+      storeState: (store?.status as StoreEntryState) ?? "none",
+      storeId: store?.id ?? null,
+      storeName: store?.displayName ?? null,
     };
   } catch (error) {
     console.error("[ifac] readProfileSections error:", error);
-    return { elkdonisFeed: false, store: false, hasStore: false };
+    return empty;
   }
 }

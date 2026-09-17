@@ -20,8 +20,8 @@ function fail(err: unknown): Result {
 }
 
 function touch(orderId?: string) {
-  revalidatePath("/admin");
-  revalidatePath("/studio");
+  revalidatePath("/admin", "layout");
+  revalidatePath("/studio", "layout");
   if (orderId) revalidatePath(`/orders/${orderId}`);
 }
 
@@ -46,7 +46,7 @@ export async function adminCancelOrder(orderId: string, reason?: string): Promis
     const adminId = await requireAdmin();
     await cancelOrder({ orderId, actorUserId: adminId, reason: reason?.trim() || "by admin" });
     touch(orderId);
-    revalidatePath("/artworks");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -80,7 +80,7 @@ export async function adminRefundOrder(orderId: string, reason?: string): Promis
       await refundOrder({ orderId, actorUserId: adminId, reason: reason?.trim() || "by admin" });
     }
     touch(orderId);
-    revalidatePath("/artworks");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -91,12 +91,12 @@ export async function adminPauseStore(storeId: string): Promise<void> {
   const adminId = await requireAdmin();
   await pauseStore(storeId, adminId);
   touch();
-  revalidatePath("/artworks");
+  revalidatePath("/");
 }
 
 export async function adminReactivateStore(storeId: string): Promise<void> {
   const adminId = await requireAdmin();
   await approveStore(storeId, adminId);
   touch();
-  revalidatePath("/artworks");
+  revalidatePath("/");
 }

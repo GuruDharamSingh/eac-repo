@@ -468,3 +468,443 @@
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
+
+/* The front's plate already prints the name, so the face's own title would
+   say it twice. Only the visible span goes: the stretched hit area carries
+   its own `aria-label`, so the card keeps its accessible name. The kicker
+   and the blurb stay, because they say what the plate does not — that this
+   is you, and how this org is listing you. */
+.eac-center-person > .eac-face-title {
+  display: none;
+}
+
+/* ── The person's card, turning over ────────────────────────────────────── */
+/* After Uiverse's flip card (ElSombrero2): a scene with perspective, an inner
+   block in preserve-3d rotated 180°, two faces with the backface hidden, and
+   a gradient that sweeps behind the back. What changed: every colour is a
+   surface token, so the card is legible on a cream site and a dark one; the
+   rotation is driven by [data-flipped] from the component rather than :hover,
+   because the face nobody can see has to be `inert` and CSS cannot tell React
+   that; and the whole thing reduces to a cross-fade for
+   prefers-reduced-motion.
+
+   The card bleeds to the edges of the face it sits in (the negative margins),
+   which is why the top corners are rounded and the rest are not — the face's
+   own radius finishes the bottom. */
+.eac-pcard {
+  position: relative;
+  margin: -44px -18px 4px;
+  width: calc(100% + 36px);
+  aspect-ratio: 3 / 4;
+  max-height: 420px;
+  perspective: 1200px;
+}
+.eac-pcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.eac-pcard[data-flipped] .eac-pcard-inner {
+  transform: rotateY(180deg);
+}
+.eac-pcard-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--sf-radius) var(--sf-radius) 0 0;
+  background: var(--sf-bg-soft);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.eac-pcard-back {
+  transform: rotateY(180deg);
+  display: grid;
+  place-items: center;
+  background: var(--sf-bg);
+}
+
+/* ── Front ──────────────────────────────────────────────────────────────── */
+.eac-pcard-img {
+  position: absolute;
+  inset: 0;
+}
+.eac-pcard-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* No picture: the original card's drifting blurred circles. Cheaper to look
+   at than an empty grey box, and it carries the org's colour. */
+.eac-pcard-glow {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sf-bg-soft);
+}
+.eac-pcard-orb {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  filter: blur(18px);
+  background: color-mix(in srgb, var(--sf-accent) 55%, var(--sf-bg));
+  animation: eac-pcard-float 2600ms infinite ease-in-out;
+}
+.eac-pcard-orb[data-orb="bottom"] {
+  width: 150px;
+  height: 150px;
+  left: 28%;
+  top: 46%;
+  background: color-mix(in srgb, var(--sf-accent) 34%, var(--sf-bg));
+  animation-delay: -800ms;
+}
+.eac-pcard-orb[data-orb="right"] {
+  width: 46px;
+  height: 46px;
+  left: 68%;
+  top: 18%;
+  background: color-mix(in srgb, var(--sf-accent) 75%, var(--sf-bg));
+  animation-delay: -1800ms;
+}
+.eac-pcard-mark {
+  position: relative;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--sf-fg) 40%, var(--sf-bg));
+}
+
+/* The social links, over the portrait, on the way to the plate. */
+.eac-pcard-links {
+  position: absolute;
+  inset: auto 0 96px 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0 12px;
+  list-style: none;
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+.eac-pcard:hover .eac-pcard-links,
+.eac-pcard:focus-within .eac-pcard-links {
+  opacity: 1;
+}
+.eac-pcard-links a {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-bg) 88%, transparent);
+  backdrop-filter: blur(3px);
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--sf-fg);
+}
+.eac-pcard-links a:hover,
+.eac-pcard-links a:focus-visible {
+  border-color: var(--sf-accent);
+  outline: none;
+}
+
+/* The plate at the foot: the name, over whatever the picture is doing. */
+.eac-pcard-plate {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  padding: 12px 16px 14px;
+  background: color-mix(in srgb, var(--sf-bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--sf-line);
+}
+.eac-pcard-name {
+  font-family: var(--sf-font-title);
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+.eac-pcard-sub {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--sf-muted);
+}
+.eac-pcard-note {
+  margin-top: 3px;
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--sf-muted);
+}
+
+/* The corner control. The only way over on touch, where there is no hover. */
+.eac-pcard-turn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+.eac-pcard-turn:hover,
+.eac-pcard-turn:focus-visible {
+  border-color: var(--sf-accent);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* ── Back ───────────────────────────────────────────────────────────────── */
+/* The sweep: a wide gradient rotating behind a plate that covers all but a
+   hairline of it, so what shows is a band of light travelling the border. */
+.eac-pcard-sweep {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180%;
+  height: 200%;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--sf-accent) 40deg,
+    color-mix(in srgb, var(--sf-accent) 40%, transparent) 90deg,
+    transparent 150deg,
+    transparent 360deg
+  );
+  animation: eac-pcard-sweep 5s linear infinite;
+}
+.eac-pcard-back-plate {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  padding: 16px;
+  border-radius: calc(var(--sf-radius) - 1px) calc(var(--sf-radius) - 1px) 0 0;
+  background: var(--sf-bg);
+}
+.eac-pcard-back-kicker {
+  color: var(--sf-muted);
+}
+.eac-pcard-actions {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eac-pcard-actions a,
+.eac-pcard-actions button {
+  display: grid;
+  gap: 1px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.eac-pcard-actions a:hover,
+.eac-pcard-actions button:hover,
+.eac-pcard-actions a:focus-visible,
+.eac-pcard-actions button:focus-visible {
+  border-color: var(--sf-accent);
+  background: var(--sf-bg);
+  outline: none;
+}
+.eac-pcard-action-label {
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+.eac-pcard-action-note {
+  font-family: var(--sf-font-record);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-pcard-back-close {
+  justify-self: start;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-muted);
+  font-family: var(--sf-font-record);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.eac-pcard-back-close:hover,
+.eac-pcard-back-close:focus-visible {
+  color: var(--sf-fg);
+  border-color: var(--sf-line);
+  outline: none;
+}
+
+@keyframes eac-pcard-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(10px); }
+}
+@keyframes eac-pcard-sweep {
+  to { rotate: 360deg; }
+}
+
+/* A card that turns over is motion; a card that changes is not. Under the
+   preference the faces cross-fade in place, and the lights hold still. */
+@media (prefers-reduced-motion: reduce) {
+  .eac-pcard { perspective: none; }
+  .eac-pcard-inner { transition: none; }
+  .eac-pcard[data-flipped] .eac-pcard-inner { transform: none; }
+  .eac-pcard-face {
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+    transition: opacity 200ms ease;
+  }
+  .eac-pcard-back { transform: none; opacity: 0; }
+  .eac-pcard[data-flipped] .eac-pcard-front { opacity: 0; }
+  .eac-pcard[data-flipped] .eac-pcard-back { opacity: 1; }
+  .eac-pcard-orb,
+  .eac-pcard-sweep { animation: none; }
+  .eac-pcard-links { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Desk — the same faces, loose (layout.arrangement = 'desk').
+
+   Nothing here restyles a card: a face on the desk is the face from the
+   column, with a resting angle, a shadow while it is held, and a handle for
+   the keyboard. The desk only exists above 860px, where there is room to
+   scatter and a pointer to do it with; below that CenterDesk stays in flow
+   and this file leaves it in one column, exactly as the narrow layout above.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.eac-center--desk {
+  display: block;
+}
+
+.eac-desk-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+/* The desk's own line: whose arrangement this is, and how to undo it. */
+.eac-desk-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.eac-desk-note {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--sf-muted);
+}
+
+.eac-desk {
+  display: grid;
+  gap: 14px;
+}
+.eac-desk-sheet {
+  position: relative;
+  min-width: 0;
+}
+
+.eac-desk-grip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: none;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.eac-desk-grip:hover,
+.eac-desk-grip:focus-visible {
+  color: var(--sf-fg);
+  border-color: var(--sf-kind, var(--sf-line));
+}
+
+@media (min-width: 861px) {
+  .eac-desk-bar {
+    display: flex;
+  }
+  .eac-desk[data-mode="desk"] {
+    display: block;
+    position: relative;
+  }
+  .eac-desk[data-mode="desk"] .eac-desk-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotate(var(--rot, 0deg));
+    transform-origin: 50% 42%;
+    cursor: grab;
+  }
+  /* Picked up: straightens a little, lifts, and keeps its own shadow — the
+     card underneath must still read, so the lift is shadow, not a scrim. */
+  .eac-desk[data-mode="desk"] .eac-desk-sheet.is-held {
+    cursor: grabbing;
+    transform: rotate(calc(var(--rot, 0deg) * 0.35)) scale(1.02);
+    transition: transform 140ms ease !important;
+    filter: drop-shadow(0 16px 24px color-mix(in srgb, var(--sf-fg) 26%, transparent));
+  }
+  .eac-desk[data-mode="desk"] .eac-desk-sheet.is-held * {
+    user-select: none;
+  }
+  .eac-desk[data-mode="desk"] .eac-desk-grip {
+    display: grid;
+  }
+  .eac-desk[data-mode="desk"] .eac-desk-sheet:hover .eac-desk-grip,
+  .eac-desk[data-mode="desk"] .eac-desk-grip:focus-visible {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eac-desk-sheet,
+  .eac-desk-grip {
+    transition: none !important;
+  }
+}

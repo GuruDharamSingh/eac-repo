@@ -131,10 +131,20 @@ export async function listDirectory(kind: "artist" | "dealer"): Promise<IFACProf
 
 /**
  * Fetch one profile by slug (artist or dealer). DB first, static fallback.
+ *
+ * A row that EXISTS but is not public means unpublished — not "fall through to
+ * the bundled copy". That distinction is what makes unlisting someone in
+ * /manage actually take them off the site: 23 of the roster are also hardcoded
+ * in artists.ts, so the old `row && row.isPublic` test sent every unlisted one
+ * of them straight into the static fallback and kept their page live. The
+ * fallback is only for a slug the database has never heard of.
  */
 export async function getDirectoryProfile(slug: string): Promise<IFACProfile | undefined> {
-  const row = await getOrgProfileBySlug(siteConfig.orgId, slug);
-  if (row && row.isPublic) {
+  // includePrivate: an unpublished row must read as "unpublished", not as
+  // "no such profile" — otherwise the static fallback below resurrects it.
+  const row = await getOrgProfileBySlug(siteConfig.orgId, slug, { includePrivate: true });
+  if (row) {
+    if (!row.isPublic) return undefined;
     const kind = row.tags.includes("dealer") ? "dealer" : "artist";
     return rowToProfile(serviceToRow(row), kind);
   }

@@ -84,6 +84,17 @@ export type SurfaceDescriptor =
       orgId: string;
     }
   | {
+      /**
+       * The names this person writes under — their own, plus any pen names,
+       * plus the organisations whose byline they may use.
+       *
+       * One surface for all three because they are one mechanism: an identity
+       * is a `users` row, and an org's own row (migration 099) differs from a
+       * pen name (migration 132) only in what it is allowed to hold.
+       */
+      type: "identities";
+    }
+  | {
       type: "compose";
       /** Omit to open the catalogue and choose. */
       kind?: string;
@@ -93,6 +104,12 @@ export type SurfaceDescriptor =
       prefill?: Record<string, unknown>;
       /** Start with the short form. Default "quick" for a prefilled open, else "full". */
       tier?: "quick" | "full";
+      /**
+       * Sign it with one of the viewer's other identities. The id is a CLAIM,
+       * never a permission: the host re-checks it through `resolveActor` on
+       * the way in, so a forged value fails at the write, not at the form.
+       */
+      actingAs?: string | null;
     }
   | {
       type: "calendar";
@@ -122,6 +139,22 @@ export type SurfaceDescriptor =
     }
   | {
       /**
+       * Arrange what a thread HOLDS: attach the document written at this
+       * meeting, the board slice it moved, the discussion it started; detach
+       * what no longer belongs; put it in the order it should read in.
+       *
+       * A pushed layer over the thread rather than a field inside compose,
+       * because gathering happens AFTER the fact — you attach last week's
+       * minutes to last week's meeting — and compose is for the thread's own
+       * columns. Editors only; the band it arranges is for everyone.
+       */
+      type: "gather";
+      threadId: string;
+      /** The host thread's title, for the masthead before anything loads. */
+      title?: string;
+    }
+  | {
+      /**
        * The group's living documents: real files in the org's Nextcloud
        * folder, collaboratively editable by link. The surface lists them,
        * starts new ones, and assigns one to an idea it belongs to.
@@ -139,6 +172,22 @@ export type SurfaceDescriptor =
        * "Open the forum" goes to the board itself.
        */
       type: "forum";
+    }
+  | {
+      /**
+       * One SECTION of the forum — its threads, in the popup.
+       *
+       * A pushed layer rather than state inside the forum surface, because
+       * the masthead's "‹ back" comes from the layer stack: walking into a
+       * section should be dismissed the same way as walking into a thread,
+       * with the same control in the same place, not with a second bespoke
+       * back link inside the panel.
+       */
+      type: "forumFeed";
+      slug: string;
+      name: string;
+      /** The section on the board itself, for "open the full list". */
+      href: string;
     }
   | {
       /** One card on the board: details, due date, list, comments. */
@@ -174,6 +223,22 @@ export type SurfaceDescriptor =
       sourceThreadId?: string;
     }
   | {
+      /**
+       * ONE file, looked at where you are.
+       *
+       * The gallery surface is the org's whole library and refetches it on
+       * open; a material is a single thing already named by whatever pushed
+       * it — a document handed out at last week's meeting, the recording of
+       * it — and the point is that opening it does not throw the page away.
+       * Images, video and audio play here; anything else gets its link, in a
+       * panel, rather than a navigation.
+       */
+      type: "material";
+      material: SurfaceMaterial;
+      /** Named above the title: "Last meeting", "Workshop materials". */
+      context?: string | null;
+    }
+  | {
       type: "custom";
       key: string;
       title?: string;
@@ -181,6 +246,23 @@ export type SurfaceDescriptor =
       size?: SurfaceSize;
       props?: Record<string, unknown>;
     };
+
+/**
+ * One file attached to something — a handout, a recording, a photo of the
+ * whiteboard. Structurally the `MeetingMaterial` of @elkdonis/services, so a
+ * host passes those straight through.
+ */
+export interface SurfaceMaterial {
+  id: string;
+  name: string;
+  /** A platform URL (`/api/media/…`) or, for `external`, somewhere else. */
+  url: string;
+  kind: "image" | "video" | "audio" | "document";
+  mimeType?: string | null;
+  size?: number | null;
+  /** The URL leaves the network, so the surface offers it rather than embeds it. */
+  external?: boolean;
+}
 
 /** One image in an org's library, as every media surface reads it. */
 export interface SurfaceImage {
@@ -223,6 +305,93 @@ export interface SurfaceSession {
  * (it crosses a JSON boundary), and every kind's fields on one type — a
  * surface reads the ones its kind has and ignores the rest.
  */
+// ── What a thread holds ─────────────────────────────────────────────────────
+// A group's week is a meeting, the document written in it, the terms defined
+// out of that document, the discussion that followed and a couple of board
+// cards. `thread_gathers` (migration 131) is the edge that makes those one
+// occasion; these are the shapes the surface renders it in.
+//
+// Structural, like everything else in this file: a host that keeps its
+// occasions somewhere else fills these in and gets the same bands.
+
+export type SurfaceGatherRelation = "gathers" | "produced" | "talk" | "cites";
+
+export interface SurfaceGathered {
+  /** The EDGE's id, not the target's — what a detach call takes. */
+  id: string;
+  relation: SurfaceGatherRelation;
+  targetType: "thread" | "document" | "deck_card" | "deck_label" | "file" | "quote" | "link";
+  title: string;
+  subtitle: string | null;
+  /**
+   * Null is a legitimate answer and this band renders it as a row that does
+   * not open. A living document's URL is withheld from non-members — the
+   * share is public and WRITABLE — but the row still lists, because knowing
+   * the group wrote minutes is not the same as being able to edit them.
+   */
+  href: string | null;
+  /** Leaves the app: Nextcloud, Deck, an arbitrary link. */
+  external: boolean;
+  /** Set only for thread targets; lets the popup push a layer instead of navigating. */
+  threadId?: string | null;
+  kind?: string | null;
+}
+
+/** The reverse edge: an occasion this thread was gathered onto. */
+export interface SurfaceGatheredBy {
+  id: string;
+  slug: string;
+  title: string;
+  kind: string;
+  relation: SurfaceGatherRelation;
+  href?: string | null;
+}
+
+/** A term defined out of this thread. Derived from the prose, not curated. */
+export interface SurfaceTerm {
+  id: string;
+  slug: string;
+  title: string;
+  /**
+   * Where this host keeps its wiki. Supplied by the host, never assembled
+   * here — the wiki is network-wide but its path is not the same on every
+   * site, and this package does not know routes. Absent renders as a plain
+   * chip, which is still worth showing: the vocabulary is the point.
+   */
+  href?: string | null;
+}
+
+/**
+ * Something that could be attached, as offered by the host's search.
+ *
+ * Deliberately the same field names the attach call takes, so the surface
+ * hands a candidate straight back without reshaping it — the host decides
+ * what is attachable (its threads, its documents, its board) and the surface
+ * only ever lists and forwards.
+ */
+export interface SurfaceGatherCandidate {
+  targetType: SurfaceGathered["targetType"];
+  targetThreadId?: string | null;
+  targetRef?: string | null;
+  title: string;
+  subtitle?: string | null;
+}
+
+export interface SurfaceGatherConnectors {
+  /** Everything currently attached, in order. */
+  list: (threadId: string) => Promise<SurfaceGathered[]>;
+  /** What could be attached. `q` empty means "offer the obvious things". */
+  candidates: (threadId: string, q: string) => Promise<SurfaceGatherCandidate[]>;
+  attach: (
+    threadId: string,
+    candidate: SurfaceGatherCandidate & { relation?: SurfaceGatherRelation }
+  ) => Promise<boolean>;
+  /** Takes the EDGE id. The target itself is never touched. */
+  detach: (threadId: string, edgeId: string) => Promise<boolean>;
+  /** Persist an arrangement. Omit and the surface hides the reordering arrows. */
+  reorder?: (threadId: string, edgeIds: string[]) => Promise<boolean>;
+}
+
 export interface SurfaceThread {
   id: string;
   title: string;
@@ -268,6 +437,15 @@ export interface SurfaceThread {
   // Workspace
   documentUrl?: string | null;
   videoLink?: string | null;
+
+  // What this thread HOLDS. All three are optional: a host that has not wired
+  // gathering renders exactly the thread it always did.
+  /** Curated attachments, in the order someone arranged them. */
+  gathered?: SurfaceGathered[];
+  /** Occasions that gathered THIS thread — the provenance line. */
+  gatheredBy?: SurfaceGatheredBy[];
+  /** Terms defined out of this thread. */
+  terms?: SurfaceTerm[];
 
   /** The full page, when there is one. */
   href?: string | null;
@@ -397,6 +575,17 @@ export interface SurfaceForumConnectors {
   load: () => Promise<SurfaceForum | null>;
   /** Omit to hide the control. Returns false if it did not take. */
   markAllRead?: () => Promise<boolean>;
+  /**
+   * The threads in one section, newest first.
+   *
+   * Optional, and the reason it is optional is worth stating: without it a
+   * section row still opens IN the popup, filtered out of the `recent` list
+   * the surface already holds. That is honest for a small board and wrong
+   * for a big one — `recent` is the latest N across every section, so a
+   * quiet section looks empty rather than old. A host that can answer
+   * properly supplies this and the popup shows the real list.
+   */
+  listFeed?: (slug: string) => Promise<SurfaceForumThread[]>;
 }
 
 // ── Living documents ────────────────────────────────────────────────────────
@@ -408,6 +597,49 @@ export interface SurfaceForumConnectors {
 // Deliberately NOT `threads.nextcloud_doc_url` (thread-document.ts): that path
 // puts a draft in its AUTHOR'S folder with no share, which is right for a post
 // someone is writing alone and wrong for the group's notes.
+
+// ── Identities ──────────────────────────────────────────────────────────────
+// One account, several names. `self` is the person's own row and is always
+// present; `pseudonym` is a name they hold privately; `organization` is a body
+// whose byline their role lets them use.
+//
+// Note what is NOT here: nothing maps a pseudonym back to the account that
+// holds it. The face lists what YOU may write as — it is never a lookup in the
+// other direction, and no response this surface reads carries one.
+
+export interface SurfaceIdentity {
+  id: string;
+  relation: "self" | "pseudonym" | "organization";
+  displayName: string;
+  slug?: string | null;
+  avatarUrl?: string | null;
+  /** Private note the holder wrote for themself. Pseudonyms only. */
+  label?: string | null;
+  /** ISO. Set means the name is kept but no longer written under. */
+  retiredAt?: string | null;
+  /** Organisation identities only. */
+  orgId?: string | null;
+}
+
+export interface SurfaceIdentityConnectors {
+  list: () => Promise<SurfaceIdentity[]>;
+  /** Open another name. Omit and the surface reads without offering one. */
+  create?: (input: {
+    displayName: string;
+    slug?: string;
+    label?: string;
+  }) => Promise<{ ok: true; identity: SurfaceIdentity } | { ok: false; error: string }>;
+  /**
+   * Stop writing under a name, or start again. Retiring never deletes: what
+   * the name wrote keeps its byline. Omit and no retire control is drawn.
+   */
+  setRetired?: (
+    identityId: string,
+    retired: boolean
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** How many pen names this account may hold at once. Default 2. */
+  maxPseudonyms?: number;
+}
 
 export interface SurfaceDocument {
   id: string;
@@ -448,6 +680,16 @@ export interface SurfaceDocumentConnectors {
   assign?: (
     documentId: string,
     ideaId: string | null
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
+   * Take a document off the group's list. Omit and no remove control is drawn.
+   *
+   * Whether the underlying FILE goes with it is the host's call, and the
+   * surface says which: the shared implementation keeps it in the org's
+   * Nextcloud folder, so this is "off the list", not "destroyed".
+   */
+  remove?: (
+    documentId: string
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
@@ -567,6 +809,8 @@ export interface SurfaceCenterLayoutShape {
     site?: { ratio?: "5:3" | "4:3" };
   };
   voice: "journal" | "gazette" | "quiet";
+  /** Optional so a host that predates the desk still type-checks. */
+  arrangement?: "columns" | "desk";
 }
 
 export interface SurfaceCenterLayout {
@@ -634,6 +878,13 @@ export interface SurfaceConnectors {
     answers: Record<string, unknown>;
     status: "draft" | "published";
     threadId?: string;
+    /**
+     * Sign it as one of the viewer's other identities. A CLAIM, not a
+     * permission: the host passes it through `resolveActor` server-side, so a
+     * forged id is refused at the write. Omitted or null means the viewer's
+     * own name.
+     */
+    actingAs?: string | null;
   }) => Promise<SaveThreadResult>;
 
   /** What this org can compose. Read by the picker and the field builder. */
@@ -655,11 +906,21 @@ export interface SurfaceConnectors {
   /** The org's forum. Omit to disable the forum surface. */
   forum?: SurfaceForumConnectors;
 
+  /** The names this viewer writes under. Omit and the identities face hides. */
+  identities?: SurfaceIdentityConnectors;
+
   /** The group's living documents. Omit to disable the documents surface. */
   documents?: SurfaceDocumentConnectors;
 
   /** Suggested ideas. Omit and the ideas face stays hidden. */
   ideas?: SurfaceIdeaConnectors;
+
+  /**
+   * What a thread holds (migration 131). Omit and threads still RENDER their
+   * gathered band — that comes down with the thread itself — but there is no
+   * way to change it from the popup.
+   */
+  gather?: SurfaceGatherConnectors;
 
   /**
    * The network dictionary, behind the define surface. Omit and the "Define"
@@ -700,6 +961,6 @@ export interface SurfaceConnectors {
 }
 
 /** Whether a kind happens at a time. Mirrors SCHEDULED_KINDS in services. */
-export const SCHEDULED_KINDS: ReadonlySet<string> = new Set(["event", "meeting", "workshop"]);
+export const SCHEDULED_KINDS: ReadonlySet<string> = new Set(["event", "meeting", "workshop", "reading_group"]);
 /** Whether a kind has a price. Which kinds are *purchasable* is commerce's call. */
 export const PRICED_KINDS: ReadonlySet<string> = new Set(["workshop", "service", "product"]);

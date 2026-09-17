@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Section, Text } from '@react-email/components';
-import { render } from '@react-email/render';
+import { renderEmail } from '../render-email';
 import { EmailShell } from '../components/EmailShell';
 
 export interface ContactOwnerEmailProps {
@@ -87,5 +87,5 @@ function ContactOwnerEmail({
 }
 
 export async function renderContactOwnerEmail(props: ContactOwnerEmailProps): Promise<string> {
-  return render(React.createElement(ContactOwnerEmail, props));
+  return renderEmail(React.createElement(ContactOwnerEmail, props));
 }

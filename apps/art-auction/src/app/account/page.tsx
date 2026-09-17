@@ -6,10 +6,11 @@ import {
   listFavoriteArtworks,
 } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
-import { ArtworkGrid } from "@elkdonis/commerce/components";
+import { ProductGrid } from "@elkdonis/commerce/components";
 import type { Order } from "@elkdonis/commerce/types";
 import { getCurrentStore, listActableStores, getCurrentUser } from "@/lib/marketplace-auth";
 import { LogoutButton } from "@/components/logout-button";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your account" };
@@ -76,12 +77,9 @@ export default async function AccountPage() {
                 Manage your listings, profile, and sales from your studio.
               </p>
             </div>
-            <Link
-              href="/studio"
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Go to your studio
-            </Link>
+            <Button asChild>
+              <Link href="/studio">Go to your studio</Link>
+            </Button>
           </div>
         ) : artist?.status === "pending" ? (
           <p className="text-sm text-muted-foreground">
@@ -96,12 +94,9 @@ export default async function AccountPage() {
                 Apply to sell your work on the marketplace.
               </p>
             </div>
-            <Link
-              href="/studio/apply"
-              className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm font-medium hover:bg-muted"
-            >
-              Sell your work
-            </Link>
+            <Button asChild variant="outline">
+              <Link href="/studio/apply">Sell your work</Link>
+            </Button>
           </div>
         )}
       </section>
@@ -112,7 +107,7 @@ export default async function AccountPage() {
           <h2 className="mb-4 font-serif text-2xl tracking-tight">
             Saved pieces
           </h2>
-          <ArtworkGrid items={saved} columns={4} />
+          <ProductGrid items={saved} label="Saved pieces" />
         </section>
       )}
 
@@ -122,12 +117,9 @@ export default async function AccountPage() {
         {orders.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
             <p>You haven&rsquo;t placed any orders yet.</p>
-            <Link
-              href="/artworks"
-              className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Browse artworks
-            </Link>
+            <Button asChild className="mt-4">
+              <Link href="/">Browse artworks</Link>
+            </Button>
           </div>
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border">

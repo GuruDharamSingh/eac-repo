@@ -3,6 +3,7 @@ import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { siteConfig } from "@/config/site";
 import { SiteHeader } from "@/components/site-header";
+import { NetworkBar } from "@/components/network-bar";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${fraunces.variable} ${inter.variable} antialiased`}
         suppressHydrationWarning
       >
+        <NetworkBar />
         <SiteHeader />
         {children}
         <SiteFooter />

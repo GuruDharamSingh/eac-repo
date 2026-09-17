@@ -1,87 +1,32 @@
-import { Buffer } from "node:buffer";
-import { NextRequest, NextResponse } from "next/server";
-
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || "";
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || "";
-const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || "";
-
-function encodeWebdavPath(path: string): string {
-  return path
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-}
+import { type NextRequest } from "next/server";
+import { serveMedia, parseThumbnailWidth } from "@elkdonis/services";
+import { getServerSession } from "@elkdonis/auth-server";
 
 /**
- * Proxy route serving Nextcloud media (admin-credentialed WebDAV) to browsers.
- * Public artwork images live under EAC_Network/<org>/Media/Images. Anything in
- * a /Private/ subtree is rejected here (this storefront only serves public art).
+ * Media proxy for the storefront.
+ *
+ * The serving — prefix check, viewer authorization, range passthrough, the
+ * cache rule for private bytes, and the downscaled `?w=` variants — is
+ * `serveMedia` in @elkdonis/services, the same helper arts-collective uses.
+ * What stays here is resolving WHO is asking, which every app does differently.
+ *
+ * Artwork images are public paths (`EAC_Network/users/<slug>/Media/...`), so
+ * they still serve anonymously; what this gained over the hand-rolled proxy it
+ * replaces is `?w=`, without which the 3D gallery pulls a dozen multi-megabyte
+ * masters to fill a wall of pictures barely a thousand pixels across.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  try {
-    const { path } = await params;
-    const filePath = path.join("/");
+  const { path } = await params;
+  const session = await getServerSession();
 
-    if (!filePath || filePath.includes("..") || filePath.includes("\\")) {
-      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
-    }
-    if (!filePath.startsWith("EAC_Network/") || filePath.includes("/Private/")) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    const nextcloudUrl = `${NEXTCLOUD_URL}/remote.php/dav/files/${encodeURIComponent(
-      NEXTCLOUD_USER
-    )}/${encodeWebdavPath(filePath)}`;
-    const auth = Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString(
-      "base64"
-    );
-
-    const range = _request.headers.get("range") || undefined;
-    const response = await fetch(nextcloudUrl, {
-      headers: {
-        Authorization: `Basic ${auth}`,
-        ...(range ? { Range: range } : {}),
-      },
-    });
-
-    if (!response.ok) {
-      return NextResponse.json({ error: "Media not found" }, { status: 404 });
-    }
-
-    const headers = new Headers();
-    const passthrough = [
-      "content-type",
-      "content-length",
-      "content-range",
-      "accept-ranges",
-      "etag",
-      "last-modified",
-    ];
-    for (const key of passthrough) {
-      const value = response.headers.get(key);
-      if (value) headers.set(key, value);
-    }
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
-
-    // Uploaded files are untrusted: no type sniffing, and only known-passive
-    // media renders inline — scriptable types (SVG/HTML/XML) download instead.
-    headers.set("X-Content-Type-Options", "nosniff");
-    const mediaType = (response.headers.get("content-type") ?? "").toLowerCase();
-    const inlineSafe =
-      /^(image\/(jpeg|png|gif|webp|avif|bmp|x-icon)|video\/|audio\/|application\/pdf|font\/)/.test(
-        mediaType
-      );
-    headers.set("Content-Disposition", inlineSafe ? "inline" : "attachment");
-
-    return new NextResponse(response.body, {
-      status: response.status,
-      headers,
-    });
-  } catch (error) {
-    console.error("[art-auction media proxy] error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  return serveMedia({
+    filePath: path.join("/"),
+    viewerId: session.user?.db_user_id ?? session.user?.id ?? null,
+    allowedPrefixes: ["EAC_Network/"],
+    range: request.headers.get("range"),
+    width: parseThumbnailWidth(request.nextUrl.searchParams.get("w")),
+  });
 }

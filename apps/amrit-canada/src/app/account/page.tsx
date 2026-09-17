@@ -3,15 +3,13 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@elkdonis/db";
 import { getProfile } from "@elkdonis/services";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ProfileEditForm } from "@/components/profile-edit-form";
 import { StoreSectionToggle } from "@/components/store-section-toggle";
 import { getStoreForUser, hasProfileSection } from "@elkdonis/commerce/queries";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@elkdonis/primitives";
 
 export const metadata: Metadata = { title: "Your account" };
 

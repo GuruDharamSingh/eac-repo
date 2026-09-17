@@ -8,6 +8,7 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "tw-animate-css";
+@import "@elkdonis/commerce/commerce.css";
 
 /* MediaPicker styles itself with plain CSS custom properties rather than
    Tailwind utilities, so the @source directive below does not reach it — this
@@ -26,14 +27,55 @@
    the :root block far below keeps IFAC's hub popups on its dark chrome.
    Customised by the --forum-* overrides in that same block. */
 @import "@elkdonis/forum-ui/forum-theme.css";
+/* The reading layer, and the room around it: a member's own writing on their
+   profile page (/artists/<slug>/writing). Plain CSS over the --read-* tokens,
+   so the shelf, the desk and the article are one publication. editor.css is
+   the desk's rich-text chrome. */
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/writing.css";
+@import "@elkdonis/cms-ui/editor.css";
+
+/* ---------------------------------------------------------------------------
+   The authoring controls.
+
+   fields.css styles every input the wizard and the composer render
+   (.eac-field/.eac-input/.eac-check/.eac-toggle); compose.css styles the
+   chrome around them (groups, the collapsed optional ones, rows). Both are
+   plain CSS over custom properties that fall back to the --sf-* tokens this
+   file already sets, so they arrive in IFAC's voice with no extra mapping.
+
+   They were MISSING until now, which is the whole reason /hub/compose looked
+   unfinished: the composer emitted `class="eac-input"` into a stylesheet that
+   had never heard of it, so every field rendered as a raw browser input.
+   --------------------------------------------------------------------------- */
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+
+/* ---------------------------------------------------------------------------
+   The shared controls — buttons, inputs, selects, tabs, switches.
+
+   layer(components) is REQUIRED here, not decoration. Tailwind v4 orders
+   layers theme → base → components → utilities, and an unlayered rule beats
+   every layered one regardless of specificity — imported bare, the library
+   would out-rank any utility passed through `className`. The apps with no
+   Tailwind at all (danamccool, artdirect) may import it plain; IFAC pulls
+   Tailwind's utilities in above, so it may not.
+
+   Colours come from the --eac-control-* pins further down: gold on the dark
+   chrome, oxide in the hub.
+   --------------------------------------------------------------------------- */
+@import "@elkdonis/primitives/primitives.css" layer(components);
 
 /* Tailwind scans source for class names; the pipeline components live here. */
 @source "../components";
 @source "../../../../packages/pipeline/src";
+/* General Chat (@elkdonis/chat) is source-exported too — same reason. */
+@source "../../../../packages/chat/src";
 
 /* cms-ui ships source, not a bundle — Tailwind has to be told to scan it or
    the compose surface renders unstyled. */
 @source "../../../../packages/cms-ui/src";
+@source "../../../../packages/primitives/src";
 @source "../../../../packages/commerce/src";
 @source "../lib";
 
@@ -1345,9 +1387,6 @@ a.team-card:hover .team-photo {
   color: var(--ink-soft);
 }
 
-/* --- announcements ------------------------------------------------------- */
-
-.hub-announcements,
 .hub-wide {
   max-width: 1180px;
   margin: 24px auto 0;
@@ -1398,154 +1437,257 @@ a.team-card:hover .team-photo {
   line-height: 1.6;
 }
 
-/* --- the two-column tile grid ------------------------------------------- */
+/* --- bands ---------------------------------------------------------------- *
+   The hub was one auto-fill grid of thirteen equal tiles, which gave a member
+   arriving no reading order: the gathering that is the point of the group sat
+   the same size as "Help & notes from the developer". These are the three
+   groups that replaced it — what is happening, what you can make, your own
+   place in it — plus the chat and the errands under them.
 
-.hub-grid {
+   A band is a rubric and a grid. The grid is still the shared .eac-face-grid
+   from surface.css; nothing here restates how a face looks, only how many of
+   them sit across and which one leads. */
+
+.hub-band {
   max-width: 1180px;
-  margin: 28px auto 0;
+  margin: 34px auto 0;
   padding: 0 24px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
 }
 
-.hub-col {
-  display: grid;
-  gap: 20px;
-  align-content: start;
-}
-
-@media (max-width: 820px) {
-  .hub-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* --- tiles -------------------------------------------------------------- */
-
-.hub-card {
-  position: relative;
+.hub-band-head {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 6px;
-  /* Square, but never so tall on a narrow screen that one tile fills it. */
-  aspect-ratio: 1 / 1;
-  max-height: 320px;
-  width: 100%;
-  padding: 22px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  cursor: pointer;
-  font: inherit;
-  color: var(--ink);
-  text-decoration: none;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-}
-
-.hub-card:hover,
-.hub-card:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  border-color: var(--accent-color, var(--ink));
-  outline: none;
-}
-
-.hub-card--wide {
-  aspect-ratio: auto;
-  max-height: none;
-  min-height: 132px;
-}
-
-.hub-card-glyph {
-  position: absolute;
-  top: 18px;
-  left: 20px;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--accent-color, var(--ink));
-}
-
-.hub-card-title {
-  font-size: 1.18rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.hub-card-blurb {
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-  line-height: 1.5;
-  max-width: 34ch;
-}
-
-.hub-card-cue {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 1.05rem;
-  color: var(--ink-soft);
-}
-
-.hub-card--ink      { --accent-color: var(--ink); }
-.hub-card--oxide    { --accent-color: var(--oxide); }
-.hub-card--moss     { --accent-color: var(--moss); }
-.hub-card--blue     { --accent-color: var(--blue); }
-.hub-card--gold     { --accent-color: var(--gold); }
-.hub-card--charcoal { --accent-color: var(--charcoal); }
-
-/* A hairline in the tile's accent, so the grid reads as varied without
-   colouring whole cards. */
-.hub-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--accent-color, var(--ink));
-  border-radius: 4px 4px 0 0;
-  opacity: 0.85;
-}
-
-/* --- modal -------------------------------------------------------------- */
-
-.hub-dialog {
-  border: none;
-  background: transparent;
-  padding: 0;
-  /* Widened from 560: a month grid needs seven legible columns, and a file
-     list with sizes and dates wraps badly below this. */
-  max-width: min(680px, calc(100vw - 32px));
-  width: 100%;
-}
-
-.hub-dialog::backdrop {
-  background: rgba(23, 22, 21, 0.42);
-  backdrop-filter: blur(2px);
-}
-
-.hub-dialog-panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.hub-dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding-bottom: 9px;
+  /* The hairline that makes the group read as a band rather than as a
+     floating heading. A border on the row, not a pseudo-element: it then
+     spans the band whether or not there is a sentence beside the rubric. */
   border-bottom: 1px solid var(--line);
 }
 
-.hub-dialog-head h2 {
+/* The rubric is small and quiet on purpose. It is wayfinding between groups
+   of cards, not a headline competing with them — the cards carry the page.
+   Oxide rather than gold: gold is the IFAC mark but 2.34:1 on paper, while
+   oxide measures 6.17:1 and can actually be read. */
+.hub-band-head h2 {
+  flex: none;
   margin: 0;
-  font-size: 1.12rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--oxide);
 }
+
+/* One line saying what the band is for. */
+.hub-band-head p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.hub-band-head:only-child,
+.hub-band-head h2:only-child {
+  flex: 1;
+}
+
+.hub-band-grid {
+  /* Three across at IFAC's 1180px measure, not four.
+
+     "Make something" holds six tiles. In four columns that is a row of four
+     and an orphaned row of two, which reads as a grid that ran out rather
+     than a set; at three it is an even 3x2. 300px is the width that resolves
+     to three here and still drops to two, then one, on the way down. */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* A band of two. auto-FIT rather than auto-fill: with only two cards,
+   auto-fill leaves two empty tracks on the right and the pair reads as the
+   start of a row nobody finished. auto-fit collapses the empty tracks so the
+   two stretch to fill the band, which is what a pair should look like. */
+.hub-band-grid--pair {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* --- the lead band -------------------------------------------------------- *
+   "This week" is not three equal things. The standing gathering is what the
+   collective is FOR; the calendar and the forum are how you find the rest of
+   it. So the first child leads: full width once there are two columns, and
+   the widest of three once there is room for three.
+
+   Explicit breakpoints rather than auto-fill, because CSS cannot ask how many
+   columns an auto-fill grid resolved to, and "span 2" in a one-column grid
+   overflows the page rather than wrapping. */
+
+.hub-band-grid--lead {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .hub-band-grid--lead {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hub-band-grid--lead > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1040px) {
+  .hub-band-grid--lead {
+    grid-template-columns: 1.35fr 1fr 1fr;
+  }
+  .hub-band-grid--lead > :first-child {
+    grid-column: auto;
+    min-height: 248px;
+  }
+}
+
+/* --- errands -------------------------------------------------------------- *
+   Managing the site, reading the whole forum, and asking how any of it works.
+   Each of these was a full-width face in the grid, as large as the gathering
+   and carrying one line of text. They are things you do occasionally and on
+   purpose, so they sit after the work at the size of a link. */
+
+.hub-band--errands {
+  margin-top: 44px;
+  padding-bottom: 8px;
+}
+
+.hub-errands {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.hub-errand {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  /* --paper, not --surface: the faces above lift off the page and these
+     deliberately do not. An errand that read as another card would be back
+     to competing with the work. */
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.hub-errand:hover,
+.hub-errand:focus-visible {
+  border-color: var(--oxide);
+  background: var(--surface);
+  outline: none;
+}
+
+.hub-errand:focus-visible {
+  outline: 2px solid var(--oxide);
+  outline-offset: 2px;
+}
+
+.hub-errand-glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--oxide);          /* 6.61:1 on the card */
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.hub-errand strong {
+  display: block;
+  font-size: 0.93rem;
+  font-weight: 600;
+}
+
+.hub-errand em {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);       /* 8.62:1 */
+  font-size: 0.79rem;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+/* The appearance editor is an errand too, and sits under the row. */
+.hub-band--errands .hub-appearance {
+  margin-top: 14px;
+}
+
+/* --- the composer's own chrome -------------------------------------------- *
+   The fields themselves are @elkdonis/cms-ui/fields.css and the groups are
+   compose.css; these are only the three things around them that belong to
+   this page. */
+
+/* The page's heading shares the panel's measure so the title sits over the
+   form, not out at the page's edge. 900 + the .hub-wide gutters. */
+.hub-compose-page .hub-welcome {
+  max-width: 948px;
+}
+
+.ifac-compose-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ifac-compose-blurb {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ifac-compose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.ifac-compose-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* A hairline in the tile's accent, so the grid reads as varied without
+   colouring whole cards. */
+
+
+
+
+
 
 .hub-dialog-close {
   border: 1px solid var(--line);
@@ -1563,41 +1705,10 @@ a.team-card:hover .team-photo {
   border-color: var(--ink);
 }
 
-.hub-dialog-body {
-  padding: 20px;
-}
 
-/* --- stub panels -------------------------------------------------------- */
 
-.hub-stub-what {
-  margin: 0 0 12px;
-  font-weight: 600;
-}
 
-.hub-stub ul {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--ink-soft);
-  line-height: 1.7;
-}
 
-.hub-stub-note {
-  margin: 14px 0 0;
-  padding: 12px 14px;
-  background: var(--paper);
-  border-left: 3px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-  line-height: 1.6;
-}
-
-.hub-stub-flag {
-  margin: 16px 0 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--oxide);
-}
 
 /* --- drawer ------------------------------------------------------------- */
 
@@ -1709,7 +1820,7 @@ a.team-card:hover .team-photo {
 .hub-appearance-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   gap: 14px;
 }
 
@@ -1721,8 +1832,17 @@ a.team-card:hover .team-photo {
   color: var(--ink-soft);
 }
 
-.hub-appearance-controls select,
-.hub-appearance-controls button {
+/* Bare controls only.
+   `:not([data-slot])` is load-bearing. This rule was written when the panel
+   held a raw <select> and a raw <button>; both are @elkdonis/primitives now,
+   and a primitives SelectTrigger renders a <button>. An element selector
+   (0,1,1) out-ranks `[data-slot="select-trigger"]` (0,1,0), and this rule is
+   unlayered while the library sits in `layer(components)` — so it won twice
+   over and painted every control cream: invisible on paper in the basic skin,
+   and a pair of cream boxes on the dark ground in salon. Anything the
+   library renders carries a data-slot and is now excluded. */
+.hub-appearance-controls select:not([data-slot]),
+.hub-appearance-controls button:not([data-slot]) {
   font: inherit;
   color: var(--ink);
   background: var(--paper);
@@ -1732,87 +1852,20 @@ a.team-card:hover .team-photo {
   cursor: pointer;
 }
 
-.hub-appearance-controls button:hover,
-.hub-appearance-controls select:hover {
+.hub-appearance-controls button:not([data-slot]):hover,
+.hub-appearance-controls select:not([data-slot]):hover {
   border-color: var(--ink);
 }
 
 
-/* --- tile previews ------------------------------------------------------ *
-   Content drawn on a tile's face, under the blurb. Everything here is
-   non-interactive: the face is a <button>, and nesting a control inside one
-   is invalid and unfocusable. Anything clickable belongs in the panel. */
 
-.hub-card-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-size: 0.82rem;
-  line-height: 1.45;
-  /* The tile is a fixed square; a long list must not push the title out of
-     it, so the preview scrolls its overflow away rather than growing. */
-  overflow: hidden;
-  max-height: 5.6em;
-}
 
-.hub-preview-line {
-  display: block;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.hub-preview-date {
-  display: inline-block;
-  min-width: 4.6em;
-  color: var(--ink-soft);
-}
 
-.hub-preview-cue {
-  color: var(--accent-color, var(--ink-soft));
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-}
 
-.hub-preview-empty {
-  color: var(--ink-soft);
-  font-style: italic;
-}
 
-.hub-preview-cover {
-  width: 100%;
-  height: 62px;
-  object-fit: cover;
-  border-radius: 3px;
-  margin-bottom: 4px;
-}
 
-.hub-preview-person {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.hub-preview-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: none;
-}
-
-.hub-preview-avatar--blank {
-  display: grid;
-  place-items: center;
-  background: var(--accent-color, var(--ink));
-  color: var(--paper);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
 
 /* --- panels ------------------------------------------------------------- */
 
@@ -1826,10 +1879,6 @@ a.team-card:hover .team-photo {
   overflow-y: auto;
 }
 
-.hub-panel-title {
-  margin: 0;
-  font-size: 1.05rem;
-}
 
 .hub-panel-subhead {
   margin: 4px 0 0;
@@ -1882,15 +1931,6 @@ a.team-card:hover .team-photo {
   margin: 0;
 }
 
-.hub-chip {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 1px 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  color: var(--ink-soft);
-}
 
 /* --- buttons ------------------------------------------------------------ */
 
@@ -1940,11 +1980,6 @@ a.team-card:hover .team-photo {
 
 /* --- forms -------------------------------------------------------------- */
 
-.hub-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
 .hub-form label {
   font-size: 0.85rem;
@@ -2119,163 +2154,62 @@ a.team-card:hover .team-photo {
 
 /* --- calendar ----------------------------------------------------------- */
 
-.hub-cal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
 
-.hub-cal-head h3 {
-  margin: 0;
-  font-size: 1rem;
-}
 
-.hub-cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
 
-.hub-cal-weekday {
-  padding: 4px 0;
-  text-align: center;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
 
-.hub-cal-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: 62px;
-  padding: 4px 5px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: var(--paper);
-  font: inherit;
-  text-align: left;
-  color: var(--ink);
-  cursor: pointer;
-  overflow: hidden;
-}
 
-.hub-cal-cell--pad {
-  border-color: transparent;
-  background: none;
-  cursor: default;
-}
 
-.hub-cal-cell:hover:not(.hub-cal-cell--pad),
-.hub-cal-cell:focus-visible {
-  border-color: var(--ink);
-  outline: none;
-}
 
-.hub-cal-cell.is-today .hub-cal-num {
-  background: var(--ink);
-  color: var(--paper);
-  border-radius: 50%;
-  width: 1.5em;
-  height: 1.5em;
-  display: grid;
-  place-items: center;
-}
 
-.hub-cal-cell.is-selected {
-  border-color: var(--blue);
-  box-shadow: inset 0 0 0 1px var(--blue);
-}
 
-.hub-cal-num {
-  font-size: 0.76rem;
-  color: var(--ink-soft);
-}
 
-.hub-cal-cell.has-events .hub-cal-num {
-  color: var(--ink);
-  font-weight: 600;
-}
 
-.hub-cal-pip {
-  font-size: 0.68rem;
-  line-height: 1.3;
-  padding: 1px 3px;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--blue) 16%, transparent);
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.hub-cal-more {
-  font-size: 0.66rem;
-  color: var(--ink-soft);
-}
 
-.hub-cal-detail {
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
-}
 
-.hub-cal-detail h4 {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
-}
 
-.hub-cal-event {
-  padding: 8px 0;
-  border-top: 1px solid var(--line);
-}
 
-.hub-cal-event:first-of-type {
-  border-top: none;
-}
 
-.hub-cal-event h5 {
-  margin: 0 0 3px;
-  font-size: 0.92rem;
-}
 
 /* --- profile panel ------------------------------------------------------ */
 
-.hub-profile-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
 
-.hub-profile-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: none;
-}
 
 /* --- compose route ------------------------------------------------------ */
 
+/* The composer's page. Centred, and dressed like the surface it is the page
+   form of: the same paper, the same hairline, the same corner radius as a
+   popup's panel. It used to be a full-bleed panel with the form flush left in
+   it, which made every field look like it had drifted to one side of a very
+   wide box. */
 .hub-compose {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 24px;
+  border-radius: var(--sf-radius, 5px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 22px -18px rgba(0, 0, 0, 0.2);
+  padding: 26px 28px 24px;
 }
 
-@media (max-width: 620px) {
-  .hub-cal-cell {
-    min-height: 48px;
-  }
-  .hub-cal-pip {
-    /* Below this width a title is unreadable anyway; a dot still says
-       "something is on this day", which is what the cell is for. */
-    height: 4px;
-    padding: 0;
-    text-indent: -999em;
-  }
+/* The composer's own measure. The panel runs the full 1180px of the page,
+   which is right for the picker — six kinds across one row — and wrong for
+   the form behind it: a single-line Title input 1,100px wide gives the eye
+   nowhere to land and makes a short answer look like a mistake. The two-up
+   rows still get ~380px each at this width, which is enough for a datetime
+   field. The picker is exempted below. */
+.hub-compose .eac-compose {
+  max-width: 820px;
+}
+
+.hub-compose .eac-pick {
+  max-width: none;
+  /* auto-FIT here, unlike the hub's picker: on a page with one job the
+     options should fill the measure they are given rather than leaving empty
+     tracks to the right of a short list. */
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
 /* --- opt-in profile sections -------------------------------------------- */
@@ -2722,6 +2656,33 @@ a.team-card:hover .team-photo {
   --eac-kind-service: #8fae86;
 
   --eac-forum-blue: #7fa3cc;
+
+  /* ── The shared controls, on the dark chrome ───────────────────────────
+     @elkdonis/primitives computes its --pr-* tokens from these, at :root.
+     Three things here are not decoration:
+
+     1. --eac-control-accent-ink must be PINNED. Its default is
+        color-mix(accent 60%, black), which is the right move on a light
+        ground and exactly the wrong one here: it would darken gold toward
+        the ground it has to be legible against. Gold as ink is already
+        7.41:1 on #0f0f12 and 6.77:1 on the panels, so it stays itself.
+     2. --eac-control-line is NOT --eac-surface-line. A hairline between two
+        panels may be quiet (#32323a, 1.38:1); the border of a text input is
+        the only thing identifying it AS an input, and WCAG 1.4.11 asks 3:1
+        of that. #6e6b77 measures 3.67:1 on the ground, 3.36:1 on a panel.
+     3. The focus ring takes the ink form for the same reason — it is a
+        non-text indicator carrying the same 3:1 duty.
+     ──────────────────────────────────────────────────────────────────── */
+  --eac-control-bg: #191920;
+  --eac-control-fg: #e8e3e4;          /* 13.77:1 on the panel */
+  --eac-control-muted: #9a948f;       /* 5.83:1 */
+  --eac-control-line: #6e6b77;        /* 3.36:1 on the panel — see (2) */
+  --eac-control-accent: var(--gold);
+  --eac-control-accent-on: #1a1408;   /* 7.08:1 ON gold */
+  --eac-control-accent-ink: var(--gold);
+  --eac-control-danger: #d9705c;      /* 5.85:1 */
+  --eac-control-danger-on: #2a0f09;
+  --eac-control-radius: 2px;          /* IFAC squares its corners */
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -2784,6 +2745,33 @@ a.team-card:hover .team-photo {
   --sf-kind-compose: var(--oxide);
   --sf-kind-questionnaire: var(--blue);
   --sf-kind-neutral: var(--ink-soft);
+
+  /* ── The shared controls, in the hub ───────────────────────────────────
+     The OUTPUT tokens, not the --eac-control-* inputs: primitives computes
+     --pr-* at :root from those inputs, and a custom property resolved at
+     :root cannot be changed by redefining its input further down the tree.
+     Same reason this block redefines --sf-* rather than --eac-surface-*.
+
+     Oxide leads instead of gold. Gold is the IFAC mark and it is 7.41:1 on
+     the dark chrome, but only 2.34:1 on paper — it cannot carry text here.
+     Oxide is 6.61:1 on the card and 6.72:1 in reverse under white, so it
+     works as fill, as ink and as the focus ring, and needs no darkening:
+     --pr-accent-ink keeps its full chroma rather than taking the 60%-black
+     default, which would push a already-dark accent toward mud.
+     ──────────────────────────────────────────────────────────────────── */
+  --pr-bg: var(--surface);            /* #fffdf8 */
+  --pr-fg: var(--ink);                /* 17.78:1 */
+  --pr-muted: var(--ink-soft);        /* 8.62:1 */
+  --pr-line: #968870;                 /* 3.41:1 on the card — a control edge */
+  --pr-soft: #f4efe5;
+  --pr-soft-strong: #e9e1d3;
+  --pr-accent: var(--oxide);          /* 6.61:1 */
+  --pr-accent-on: #ffffff;            /* 6.72:1 ON oxide */
+  --pr-accent-ink: var(--oxide);
+  --pr-focus: var(--oxide);
+  --pr-danger: var(--oxide);
+  --pr-danger-on: #ffffff;
+  --pr-radius: 2px;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -2990,6 +2978,85 @@ a.team-card:hover .team-photo {
   font-size: 0.9rem;
 }
 
+/* ---------------------------------------------------------------------------
+   A member's own writing — the shelf on their profile, the reading room
+   behind it (/artists/<slug>/writing) and the desk they write at.
+
+   The structure comes from @elkdonis/cms-ui (article.css + writing.css); all
+   IFAC sets is the palette, because this site is dark and the reading layer
+   ships light by default. Every pair below is measured against IFAC's near
+   black (#020202) ground:
+
+     ink   #e8e3e4 on #020202 — 16.5:1
+     muted #b8b0b2 on #020202 —  9.7:1
+     faint #8f888a on #020202 —  5.9:1   (mono apparatus, never body text)
+
+   --eac-color-surface is what the desk's sticky bar paints itself with and
+   what the one filled button uses for its label, so it has to be the page's
+   real ground rather than a guess.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --read-ink: #e8e3e4;
+  --read-muted: #b8b0b2;
+  --read-faint: #8f888a;
+  --read-rule: #2f2a2d;
+  --read-accent: var(--frame);
+  --eac-color-surface: #020202;
+  --eac-color-danger: #ff8c00;
+}
+
+/* The section on a profile page wears the same purple frame as the galleries
+   beside it, so the page reads as one object with several panels. */
+.profile-writing {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+  border: var(--frame-width) solid var(--frame);
+  background: #050505;
+  padding: 14px;
+}
+
+/* Inside the frame the shelf keeps its own measure, but it should not be
+   narrower than the panel it sits in on a wide screen. */
+.profile-writing .eac-shelf {
+  padding-block: 0.5rem 1rem;
+}
+
+.profile-writing-more {
+  margin: 1rem 0 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.profile-writing-more a {
+  color: var(--read-muted);
+  border-bottom: 1px solid var(--read-rule);
+}
+
+.profile-writing-more a:hover {
+  color: var(--read-ink);
+}
+
+/* The standing pages (/writing and one piece) sit on the page's own ground
+   rather than in a frame — a reading room is a room, not a card. */
+.writing-piece-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.writing-draft-note {
+  margin: 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: 0.78rem;
+  color: var(--read-faint);
+}
+
 /* One gallery's own page */
 
 .gallery-page-head {
@@ -3052,4 +3119,960 @@ a.team-card:hover .team-photo {
 .gallery-page-tools .is-danger {
   margin-left: auto;
   color: #ff8c00;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   /manage — the admin console.
+
+   Scoped to `.manage-console` so none of it reaches the public site.
+
+   It exists because the panels it sits on were unreadable. `.admin-panel` and
+   `.table-panel` are cream (`--surface`, #fffdf8) from the light block near the
+   top of this file, while the dark chrome further down sets body text to
+   #e8e3e4 — and nothing in between gave those panels an ink of their own. Every
+   table cell and paragraph on the old /admin screens was therefore #e8e3e4 on
+   #fffdf8: 1.11:1, i.e. invisible. It had been that way as long as the console
+   had.
+
+   Fixed by committing the console to the dark chrome rather than the light
+   paper, since the fields, buttons and event cards inside it were already dark.
+   Measured on the #0a0a0a panel: ink #e8e3e4 15.59:1, muted #bca7cf 9.02:1,
+   orange #ff8c00 8.49:1, cyan #20d7ff 11.53:1, green #7ee081 12.13:1, coral
+   #ff9b8f 9.75:1, and #020202 on the cyan button 12.08:1. The row rules and
+   input edges take #6b5a77 (3.16:1) rather than --frame-soft (1.50:1), which
+   WCAG 1.4.11 wants 3.0:1 for a UI boundary — --frame-soft stays where it is
+   decorative.
+   ─────────────────────────────────────────────────────────────────────── */
+.manage-console {
+  color: #e8e3e4;
+}
+
+.manage-console .admin-panel,
+.manage-console .table-panel {
+  border: 1px solid #6b5a77;
+  border-radius: 0;
+  background: #0a0a0a;
+  color: #e8e3e4;
+  box-shadow: none;
+}
+
+.manage-console .stat-tile {
+  border: 1px solid #6b5a77;
+  border-radius: 0;
+  background: #0a0a0a;
+  color: #bca7cf;
+}
+
+.manage-console .stat-tile strong {
+  color: #ff8c00;
+}
+
+.manage-console .admin-panel h2,
+.manage-console .table-panel h2 {
+  color: #ff8c00;
+}
+
+.manage-console th {
+  color: #bca7cf;
+  border-bottom-color: #6b5a77;
+}
+
+.manage-console td {
+  border-bottom-color: #6b5a77;
+}
+
+.manage-console .small-note,
+.manage-console .body-copy {
+  color: #bca7cf;
+}
+
+/* The site sets `a { color: inherit; text-decoration: none }`, so a link in a
+   sentence is otherwise indistinguishable from the sentence. Colour alone would
+   not be enough either (WCAG 1.4.1), hence the underline. */
+.manage-console a {
+  color: #20d7ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* …but not the tabs or the buttons, which are already their own shapes. */
+.manage-console .manage-tab,
+.manage-console .button,
+.manage-console .button-secondary {
+  text-decoration: none;
+}
+
+/* The "← Back to the hub" link and any other link in the hub's intro. Oxide
+   rather than gold: 6.17:1 on paper against gold's 2.37:1. */
+.hub-welcome-sub a {
+  color: var(--oxide);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- the tab bar --------------------------------------------------------- */
+
+.manage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #6b5a77;
+}
+
+.manage-tab {
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: #bca7cf;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.manage-tab:hover {
+  color: #e8e3e4;
+  background: #0a0a0a;
+}
+
+/* The current tab is marked by more than colour — it keeps the panel's own
+   border and sits flush against the bar, so it reads as the open folder even
+   without seeing the difference between lilac and cream. */
+.manage-console .manage-tab.is-current {
+  border-color: #6b5a77;
+  background: #0a0a0a;
+  color: #ff8c00;
+  margin-bottom: -1px;
+}
+
+/* --- row furniture shared by the people and roster tables --------------- */
+
+.manage-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Deliberately small: these sit three-to-a-row inside a table cell, where the
+   2.75rem site button is taller than the row it lives in. */
+.manage-console .manage-row-actions .button,
+.manage-console .manage-row-actions .button-secondary,
+.manage-console .manage-row-actions select {
+  min-height: 2rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+.manage-console .manage-row-actions select {
+  border: 1px solid #6b5a77;
+  background: #050505;
+  color: #ffffff;
+}
+
+.manage-flag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid currentColor;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.manage-flag[data-tone="live"] {
+  color: #7ee081;
+}
+
+.manage-flag[data-tone="hidden"] {
+  color: #bca7cf;
+}
+
+.manage-flag[data-tone="none"] {
+  color: #9a8fa6;
+}
+
+.manage-flag[data-tone="alert"] {
+  color: #ff9b8f;
+}
+
+/* The one destructive control on each row. Coral text on the dark panel rather
+   than a filled red button: removing someone from IFAC is reversible (it drops
+   one membership row, it does not delete an account), so it should not shout
+   louder than the publish controls beside it. */
+.manage-console .manage-danger {
+  border-color: #ff9b8f;
+  background: transparent;
+  color: #ff9b8f;
+}
+
+.manage-console .manage-danger:hover {
+  background: rgba(255, 155, 143, 0.12);
+}
+
+.manage-note {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid #ff8c00;
+  background: #050505;
+  color: #bca7cf;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .manage-tabs {
+    gap: 0;
+  }
+
+  .manage-tab {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The marketplace's product card, embedded on an artist's or dealer's page
+   (StoreShowcase). It themes itself through `--pc-*`, defaulting to tints of
+   whatever ink it inherits; hand it IFAC's own palette so a piece for sale
+   sits in the page rather than on top of it. The accent is oxide, not gold:
+   gold is 2.1:1 against paper and would put the price and the focus ring
+   below the 3:1 a non-text indicator needs.
+   ------------------------------------------------------------------------ */
+.eac-commerce {
+  --pc-ink: var(--ink);
+  --pc-ink-soft: var(--ink-soft);
+  --pc-ink-faint: var(--ink-soft);
+  --pc-line: var(--line);
+  --pc-mat: color-mix(in oklab, var(--line) 45%, var(--paper));
+  --pc-surface: transparent;
+  --pc-accent: var(--oxide);
+  --pc-on-accent: var(--surface);
+  --pc-radius: 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HUB SKIN — "Salon"
+
+   The other look, selected in Appearance and carried on the hub layout as
+   `[data-hub-skin="salon"]`. Everything above is the "basic" skin and stays
+   the default.
+
+   Why a second skin at all: the basic hub is the network's shared language —
+   cream cards floating on paper, a tinted medallion per kind — and it reads
+   the same on amrit-canada, innergathering and here. That is right for a
+   platform and wrong for the one member site whose subject IS how work is
+   presented. IFAC's public pages are already dark, gilt and serif; its
+   members' area arriving as a light admin panel is the discontinuity.
+
+   So this is not a recolour of the same cards. The construction changes:
+
+     · no card. A face is a WALL LABEL — text on the ground, held by a gilt
+       rule down its left edge. The box is what made the basic hub read as a
+       dashboard; removing it is most of the difference.
+     · no medallion. The kind's mark is a small gilt glyph on the baseline of
+       the kicker, the way a catalogue prints a lot number.
+     · Georgia for titles at a larger size and tighter leading — the site
+       already sets headings in it, and no web font is loaded, so this costs
+       nothing and sounds like the rest of IFAC.
+     · band rubrics become centred dividers with a rule running out either
+       side, like the section breaks in a sale catalogue.
+
+   Measured on the #15120e ground: body 15.04:1, muted 7.07:1, faint 5.62:1,
+   gilt 8.23:1, ink-on-gilt 8.23:1. The control border is #6e6153 at 3.11:1,
+   which is the 3:1 WCAG 1.4.11 asks of the thing that identifies an input.
+   The decorative hairline (#4a4136, 1.87:1) is deliberately below that: it
+   separates, it never identifies.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-hub-skin="salon"] {
+  --salon-ground: #15120e;
+  --salon-label: #1d1913;        /* the half-step lift, used only on hover */
+  --salon-ink: #ece6dc;          /* 15.04:1 */
+  --salon-muted: #a89e8f;        /* 7.07:1 */
+  --salon-faint: #958c7c;        /* 5.62:1 */
+  --salon-gilt: #d0a651;         /* 8.23:1 — the lifted gold, as on the forum */
+  --salon-on-gilt: #15120e;      /* 8.23:1 the other way */
+  --salon-rule: #4a4136;         /* decorative only */
+  --salon-edge: #6e6153;         /* 3.11:1 — identifies a control */
+
+  /* The surface system's OUTPUT tokens, redefined for this ground. Same
+     technique as the `.ifac-hub-scope` block above and for the same reason:
+     --eac-surface-* resolves at :root and cannot be changed from here. */
+  --sf-bg: var(--salon-ground);
+  --sf-bg-soft: var(--salon-label);
+  --sf-fg: var(--salon-ink);
+  --sf-muted: var(--salon-muted);
+  --sf-faint: var(--salon-faint);
+  --sf-line: var(--salon-rule);
+  --sf-rule: var(--salon-edge);
+  --sf-accent: var(--salon-gilt);
+  --sf-on-accent: var(--salon-on-gilt);
+  --sf-danger: #d9705c;
+  --sf-radius: 0px;              /* a catalogue has no rounded corners */
+
+  /* The kind accents, lifted onto the dark ground. The light-theme oxide and
+     blue the basic skin uses are 3.09:1 and 1.86:1 here — unusable. */
+  --sf-kind-post: var(--salon-gilt);
+  --sf-kind-event: #8fb0d6;
+  --sf-kind-meeting: #8fb0d6;
+  --sf-kind-workshop: #9dbb93;
+  --sf-kind-service: #9dbb93;
+  --sf-kind-calendar: #8fb0d6;
+  --sf-kind-board: #9dbb93;
+  --sf-kind-forum: var(--salon-gilt);
+  --sf-kind-gallery: var(--salon-ink);
+  --sf-kind-compose: var(--salon-gilt);
+  --sf-kind-document: var(--salon-muted);
+  --sf-kind-idea: var(--salon-gilt);
+  --sf-kind-questionnaire: #8fb0d6;
+  --sf-kind-neutral: var(--salon-muted);
+
+  /* The shared controls, on this ground. Same three-role split as everywhere:
+     gilt is the fill, the ground is the ink ON it, and gilt is ALSO the ink
+     form — pinned, because the library default darkens toward the ground. */
+  --pr-bg: var(--salon-label);
+  --pr-fg: var(--salon-ink);
+  --pr-muted: var(--salon-muted);
+  --pr-line: var(--salon-edge);
+  --pr-soft: #262119;
+  --pr-soft-strong: #322b21;
+  --pr-accent: var(--salon-gilt);
+  --pr-accent-on: var(--salon-on-gilt);
+  --pr-accent-ink: var(--salon-gilt);
+  --pr-focus: var(--salon-gilt);
+  --pr-danger: #d9705c;
+  --pr-danger-on: #2a0f09;
+  --pr-radius: 0px;
+}
+
+/* The page itself. `.hub` sets paper/ink for the basic skin; both have to be
+   answered here or the labels sit on cream. */
+[data-hub-skin="salon"] .hub {
+  background: var(--salon-ground);
+  color: var(--salon-ink);
+}
+
+[data-hub-skin="salon"] .hub .kicker {
+  color: var(--salon-gilt);
+}
+
+[data-hub-skin="salon"] .hub-welcome h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+[data-hub-skin="salon"] .hub-welcome-sub {
+  color: var(--salon-muted);
+}
+
+/* --- the band rubric, as a catalogue divider ----------------------------- */
+
+[data-hub-skin="salon"] .hub-band-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 0;
+  margin-bottom: 26px;
+  border-bottom: 0;
+  text-align: center;
+}
+
+/* The rule runs out either side of the rubric rather than under it. */
+[data-hub-skin="salon"] .hub-band-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  color: var(--salon-gilt);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  font-weight: 400;
+}
+
+[data-hub-skin="salon"] .hub-band-head h2::before,
+[data-hub-skin="salon"] .hub-band-head h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--salon-rule);
+}
+
+[data-hub-skin="salon"] .hub-band-head p {
+  flex: none;
+  max-width: 58ch;
+  color: var(--salon-faint);
+  font-size: 0.83rem;
+  font-style: italic;
+}
+
+/* --- the face, as a wall label ------------------------------------------- */
+
+[data-hub-skin="salon"] .eac-face {
+  /* No card: no fill, no border box, no lift. A gilt rule down the left edge
+     holds the label to the wall, and that is the whole construction. */
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--salon-rule);
+  border-radius: 0;
+  box-shadow: none;
+  /* The mark is pinned at the top (below) rather than sitting in a medallion,
+     so this reserves its line — less than the 56px a medallion needs. */
+  padding: 34px 20px 6px 22px;
+  min-height: 190px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+
+/* The hairline across the top belonged to the card. */
+[data-hub-skin="salon"] .eac-face::before {
+  display: none;
+}
+
+/* Hover lifts the rule to the kind's own colour and nudges the label out from
+   the wall — the whole hover, instead of a shadow and a translate. */
+[data-hub-skin="salon"] .eac-face:not(.is-disabled):hover,
+[data-hub-skin="salon"] .eac-face:not(.is-disabled):focus-within {
+  transform: none;
+  box-shadow: none;
+  border-left-color: var(--sf-kind);
+  border-left-width: 2px;
+  padding-left: 21px;            /* hold the text still as the rule thickens */
+}
+
+/* The mark: a small gilt glyph in the flow above the kicker, like a lot
+   number, not a tinted tile in the corner. */
+[data-hub-skin="salon"] .eac-face > .eac-face-glyph {
+  /* Still absolute, but at the label's own top-left rather than in a
+     medallion. In the flow it became a flex item of a bottom-aligned column,
+     so it floated down to wherever that label's content happened to start —
+     level with the calendar's month grid on one card and halfway down the
+     next. Pinned, the marks read across a row as a series, while the titles
+     keep the baseline the bottom-alignment gives them. */
+  position: absolute;
+  top: 6px;
+  left: 22px;
+  /* The base rule makes the medallion an inline-flex box that centres its own
+     character. Taken out of absolute positioning it becomes a flex ITEM of
+     the column, stretches to the label's full width, and centres the mark in
+     the middle of the card — which is how the first cut of this skin read.
+     Both axes have to be answered: align-self stops the stretch, and
+     justify-content puts the character at its own left edge. */
+  justify-content: flex-start;
+  width: auto;
+  height: auto;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--sf-kind);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+[data-hub-skin="salon"] .eac-face:not(.is-disabled):hover > .eac-face-glyph,
+[data-hub-skin="salon"] .eac-face:not(.is-disabled):focus-within > .eac-face-glyph {
+  background: none;
+  border-color: transparent;
+  color: var(--sf-kind);
+}
+
+/* The cue keeps its corner but loses the ring it grew on hover — on a label
+   there is no button to imply. */
+[data-hub-skin="salon"] .eac-face > .eac-face-cue {
+  top: 2px;
+  right: 0;
+  border: 0;
+  color: var(--salon-faint);
+}
+
+[data-hub-skin="salon"] .eac-face:hover > .eac-face-cue,
+[data-hub-skin="salon"] .eac-face:focus-within > .eac-face-cue {
+  background: none;
+  border-color: transparent;
+  color: var(--sf-kind);
+}
+
+[data-hub-skin="salon"] .eac-face-kicker {
+  color: var(--salon-faint);
+  letter-spacing: 0.22em;
+  font-weight: 400;
+}
+
+[data-hub-skin="salon"] .eac-face-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.42rem;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+}
+
+[data-hub-skin="salon"] .eac-face-blurb {
+  color: var(--salon-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+/* A little more air between labels than between cards — the gilt rules are
+   what separate them now, and they need room to read as a series. */
+[data-hub-skin="salon"] .hub-band-grid {
+  gap: 30px 34px;
+}
+
+/* --- errands, chat and the appearance panel ------------------------------ */
+
+[data-hub-skin="salon"] .hub-errand {
+  border: 0;
+  border-top: 1px solid var(--salon-rule);
+  border-radius: 0;
+  color: var(--salon-ink);
+  padding: 14px 4px;
+}
+
+[data-hub-skin="salon"] .hub-errand:hover,
+[data-hub-skin="salon"] .hub-errand:focus-visible {
+  background: none;
+  border-top-color: var(--salon-gilt);
+}
+
+[data-hub-skin="salon"] .hub-errand-glyph {
+  border: 0;
+  width: auto;
+  height: auto;
+  color: var(--salon-gilt);
+}
+
+[data-hub-skin="salon"] .hub-errand em {
+  color: var(--salon-faint);
+}
+
+[data-hub-skin="salon"] .hub-errands {
+  gap: 0 34px;
+}
+
+[data-hub-skin="salon"] .hub-talk-frame,
+[data-hub-skin="salon"] .hub-appearance {
+  background: none;
+  border: 1px solid var(--salon-rule);
+  border-radius: 0;
+}
+
+[data-hub-skin="salon"] .hub-appearance .hub-panel-head h2 {
+  color: var(--salon-gilt);
+}
+
+[data-hub-skin="salon"] .hub-appearance-note,
+[data-hub-skin="salon"] .hub-tag {
+  color: var(--salon-muted);
+}
+
+[data-hub-skin="salon"] .hub-tag {
+  border-color: var(--salon-rule);
+}
+
+/* The composer's panel, on the same ground. */
+[data-hub-skin="salon"] .hub-compose {
+  background: none;
+  border: 1px solid var(--salon-rule);
+  border-radius: 0;
+}
+
+/* The picker's options keep their card in every skin: at that size a wall
+   label has nothing to hold it, and the popup is a list of choices rather
+   than a wall. Only the ground follows the skin. */
+[data-hub-skin="salon"] .eac-pick .eac-face {
+  background: var(--salon-label);
+  border: 1px solid var(--salon-rule);
+  border-left-width: 1px;
+  padding: 14px 16px;
+}
+
+/* The one line under the look select, saying what the chosen skin is. */
+.hub-appearance-hint {
+  margin: 0;
+  align-self: center;
+  max-width: 44ch;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* --- the light-theme inks this skin inherits ------------------------------ *
+   Everything above in this file was written for cream paper and reaches these
+   elements by element or class, not through --sf-*. On the salon ground
+   --ink measures 1.03:1 and --ink-soft 2.13:1 — invisible and unreadable
+   respectively. These are the pairs that needed answering, measured on
+   #15120e: ink 15.04:1, muted 7.07:1, faint 5.62:1. */
+
+[data-hub-skin="salon"] .hub-appearance-controls label,
+[data-hub-skin="salon"] .eac-field-label,
+[data-hub-skin="salon"] .hub-panel-title {
+  color: var(--salon-ink);
+}
+
+[data-hub-skin="salon"] .hub-appearance-hint,
+[data-hub-skin="salon"] .hub-empty,
+[data-hub-skin="salon"] .hub-muted,
+[data-hub-skin="salon"] .eac-field-hint,
+[data-hub-skin="salon"] .ifac-compose-note,
+[data-hub-skin="salon"] .ifac-compose-blurb,
+[data-hub-skin="salon"] .hub-panel-subhead {
+  color: var(--salon-faint);
+}
+
+[data-hub-skin="salon"] .hub-band-head h2,
+[data-hub-skin="salon"] .hub-panel-head h2 {
+  color: var(--salon-gilt);
+}
+
+/* The hub's own buttons and inputs, for the parts not yet on primitives. */
+[data-hub-skin="salon"] .hub-btn,
+[data-hub-skin="salon"] .hub-drawer-toggle,
+[data-hub-skin="salon"] .hub-input {
+  background: var(--salon-label);
+  border-color: var(--salon-edge);
+  border-radius: 0;
+  color: var(--salon-ink);
+}
+
+[data-hub-skin="salon"] .hub-btn:hover:not(:disabled),
+[data-hub-skin="salon"] .hub-drawer-toggle:hover {
+  border-color: var(--salon-gilt);
+}
+
+[data-hub-skin="salon"] .hub-btn--primary {
+  background: var(--salon-gilt);
+  border-color: var(--salon-gilt);
+  color: var(--salon-on-gilt);
+}
+
+/* The account drawer slides in over this ground too. */
+[data-hub-skin="salon"] .hub-drawer {
+  background: var(--salon-ground);
+  border-left-color: var(--salon-rule);
+}
+
+[data-hub-skin="salon"] .hub-drawer-head,
+[data-hub-skin="salon"] .hub-drawer-nav a {
+  border-bottom-color: var(--salon-rule);
+}
+
+[data-hub-skin="salon"] .hub-drawer-nav a {
+  color: var(--salon-ink);
+}
+
+[data-hub-skin="salon"] .hub-drawer-nav a:hover {
+  background: var(--salon-label);
+}
+
+[data-hub-skin="salon"] .hub-drawer-nav a em {
+  color: var(--salon-faint);
+}
+
+[data-hub-skin="salon"] .hub-drawer-name {
+  color: var(--salon-ink);
+}
+
+[data-hub-skin="salon"] .hub-dialog-close {
+  background: none;
+  border-color: var(--salon-edge);
+  border-radius: 0;
+  color: var(--salon-ink);
+}
+
+/* --- kind tiles on a face ------------------------------------------------ *
+   Compose and Group research put their doors ON the card: one click to the
+   form you wanted, and the form itself is a page so a stray click beside it
+   cannot dismiss a half-written draft. Each tile takes its kind's accent from
+   the surface system, so an event is the same blue here as everywhere else. */
+
+.ifac-kinds {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ifac-kind {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  text-decoration: none;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+a.ifac-kind:hover,
+a.ifac-kind:focus-visible {
+  border-color: var(--sf-kind);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+a.ifac-kind:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 2px;
+}
+
+/* Declared, not built. Legible but plainly inert — 5.87:1 on the card, so it
+   reads as "later", not as "broken". */
+.ifac-kind.is-soon {
+  border-style: dashed;
+  color: #6b6259;
+}
+
+.ifac-kind-glyph {
+  color: var(--sf-kind);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.ifac-kind.is-soon .ifac-kind-glyph {
+  color: #6b6259;
+}
+
+.ifac-kind-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ifac-kind-note {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.ifac-kind.is-soon .ifac-kind-note {
+  color: #6b6259;
+  font-style: italic;
+}
+
+/* The kind-tile faces are not targets themselves — every door is a tile
+   inside them — so the shared "disabled" dimming must not apply. */
+.eac-face.is-disabled:has(.ifac-kinds) {
+  opacity: 1;
+}
+
+/* --- the files popup, as a grid ------------------------------------------ *
+   A media drive shows its media. Folders keep a mark; images show themselves
+   through the `?w=` variant route so a 3MB master never sits behind a 90px
+   thumbnail. */
+
+.hub-grid-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+/* The empty state is a sentence, not a cell. */
+.hub-grid-files > .hub-muted {
+  grid-column: 1 / -1;
+}
+
+.hub-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hub-tile-face {
+  display: grid;
+  place-items: center;
+  /* Explicit width. `aspect-ratio` alone sizes nothing here: the tile is a
+     flex COLUMN, so this box shrinks to its content and the ratio then
+     derives a matching height — a 14px square with a clipped glyph in it. */
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--oxide);          /* 6.17:1 on paper */
+  font-size: 1.5rem;
+  transition: border-color 140ms ease;
+}
+
+.hub-tile-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hub-tile:hover .hub-tile-face,
+.hub-tile:focus-visible .hub-tile-face {
+  border-color: var(--oxide);
+}
+
+.hub-tile:focus-visible {
+  outline: 2px solid var(--oxide);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.hub-tile-name {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  /* Two lines, then ellipsis — a filename is often distinguished by its end,
+     so one line loses the part that tells them apart. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hub-tile-meta {
+  font-size: 0.66rem;
+  color: var(--ink-soft);       /* 8.62:1 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- the writing room, as a page ----------------------------------------- *
+   The same room the popup hosts, with a page's chrome instead of a dialog's:
+   a heading, the room, and a foot that cannot be dismissed by clicking beside
+   it. `.eac-write` (surface.css) does the split itself. */
+
+.ifac-room {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ifac-room-head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ifac-room-title {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ifac-room-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ifac-room-status {
+  font-family: var(--sf-font-record, "Courier New", monospace);
+  font-size: 0.74rem;
+  color: var(--ink-soft);       /* 8.62:1 on the card */
+}
+
+.ifac-room-status.is-error {
+  color: var(--oxide);          /* 6.61:1 */
+}
+
+.ifac-room-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* The room wants the room.
+   Two caps had to go, not one: the PANEL is 900px for a single-column form,
+   and the composer inside it is capped at 820px so a Title input is not a
+   metre wide. A side-by-side split has to escape both, or the preview is a
+   column of two-word lines. */
+.hub-compose:has(.ifac-room) {
+  max-width: 1240px;
+}
+
+.hub-compose .eac-compose:has(.ifac-room) {
+  max-width: none;
+}
+
+/* --- the art piece form and the blog gate -------------------------------- */
+
+/* Three measurements on one line, with the × between them. */
+.ifac-dims {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ifac-dims > span {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.ifac-blog-lede {
+  margin: 0;
+  max-width: 62ch;
+  line-height: 1.6;
+}
+
+/* Each choice is a block, not a line — the second line is what makes the two
+   options tellable apart, so it needs room under the label rather than
+   trailing after it. */
+.ifac-blog-choice {
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.ifac-blog-choice strong {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.ifac-blog-choice em {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);       /* 8.62:1 on the card */
+  font-size: 0.8rem;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+/* The blog section, on IFAC's dark reading layer.
+   Two things asked for here: the section on a slightly lighter ground than
+   the page, and the entries alternating so the divisions are legible.
+
+   A note on the numbers: a contrast RATIO between two near-blacks always
+   reads small — #15151a to #262730 is 1.23:1 — and that is a property of the
+   formula at the dark end, not a measure of whether the eye can see the
+   step. It can; it is roughly eight points of lightness. What the ratio DOES
+   have to govern is the ink on top, and both grounds were checked: body
+   11.65:1, muted 4.94:1 on the lighter band, so the alternation never costs
+   readability. */
+.eac-shelf {
+  --read-bg-alt: #262730;
+  background: #15151a;
+  padding: 18px 20px 24px;
+  border: 1px solid #2a2a33;
+  border-radius: 4px;
 }

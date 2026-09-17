@@ -72,7 +72,7 @@ const TIERS: Tier[] = [
 
 export function JoinTiers({ signedIn }: { signedIn: boolean }) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-12">
+    <div className="w-full py-10">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Organisation

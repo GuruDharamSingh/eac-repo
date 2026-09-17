@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getOrgFeed, getWorkshopOfferingById } from "@elkdonis/services";
+import { getGathering, getOrgFeed, getWorkshopOfferingById } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { termHref, threadHref } from "@/lib/gather";
 import { getViewer } from "@/lib/auth";
 import {
   getAttendanceCount,
@@ -41,12 +42,24 @@ export async function GET(
   // 404 rather than 403: an unpublished item should not confirm it exists.
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const [feed, rsvpCount, viewerAttending, cycleStatus, workshop] = await Promise.all([
+  const [feed, rsvpCount, viewerAttending, cycleStatus, workshop, gathering] = await Promise.all([
     thread.feedSlug ? getOrgFeed(siteConfig.orgId, thread.feedSlug) : null,
     getAttendanceCount(thread),
     viewer ? getThreadRsvpForUser(thread, viewer.userId) : Promise.resolve(null),
     getCycleStatus(thread),
     thread.kind === "workshop" ? getWorkshopOfferingById(siteConfig.orgId, thread.id).catch(() => null) : Promise.resolve(null),
+    // What this thread holds. `isMember` — not the thread's visibility and not
+    // merely being signed in — is what decides whether a living document's URL
+    // comes down with it; that share is public and writable.
+    getGathering(thread.id, {
+      viewerUserId: viewer?.userId ?? null,
+      isMember: Boolean(viewer?.isMember),
+      orgId: siteConfig.orgId,
+      hrefFor: threadHref,
+      termHref,
+      // Files dropped into the thread's folder list beside the edges.
+      withFolder: true,
+    }),
   ]);
 
   return NextResponse.json(
@@ -56,6 +69,7 @@ export async function GET(
       viewerAttending,
       cycleStatus,
       workshop,
+      ...gathering,
     })
   );
 }

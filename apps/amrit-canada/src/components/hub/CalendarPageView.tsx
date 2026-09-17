@@ -5,8 +5,8 @@ import Link from "next/link";
 import type { OrgCalendarEvent } from "@elkdonis/services";
 import type { Occurrence } from "@elkdonis/utils";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { CalendarGrid, occurrenceSummary } from "./CalendarGrid";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * The expanded calendar, for /hub/calendar.

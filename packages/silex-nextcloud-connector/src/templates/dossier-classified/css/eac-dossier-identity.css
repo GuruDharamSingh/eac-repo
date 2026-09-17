@@ -1,141 +1,151 @@
+/*
+  Identity — the top of the sheet.
+
+  The portrait keeps the evidence treatment (grayscale, sepia, clipped,
+  slightly off-square). That is period-correct for a surveillance photo and it
+  is the ONE image on the page that is about the person rather than by them.
+  The work does not get the same treatment at full size; see the lightbox.
+*/
+
 .eac-dossier-identity {
   position: relative;
   padding-bottom: 2rem;
-  border-bottom: 1px dashed #999;
-  margin-bottom: 3rem;
+  margin-bottom: var(--eac-dos-gap);
+  border-bottom: 3px double var(--eac-dos-ink);
   font-family: var(--eac-dos-typewriter);
   color: var(--eac-dos-ink);
-}
-
-.eac-dos-stamp {
-  position: absolute;
-  top: -12px;
-  right: -12px;
-  font-family: var(--eac-dos-gothic);
-  font-size: 1.9rem;
-  font-weight: bold;
-  color: var(--eac-dos-stamp-red);
-  border: 3px double var(--eac-dos-stamp-red);
-  padding: 3px 12px;
-  transform: rotate(-7deg);
-  opacity: 0.8;
-  pointer-events: none;
-  letter-spacing: 1px;
-  z-index: 10;
 }
 
 .eac-dos-header-block {
   display: flex;
   align-items: flex-start;
-  gap: 2rem;
-}
-
-@media (max-width: 600px) {
-  .eac-dos-header-block {
-    flex-direction: column;
-  }
+  gap: 2.5rem;
 }
 
 .eac-dos-profile-container {
   position: relative;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  padding-top: 0.5rem;
 }
 
+/* The paperclip. */
 .eac-dos-profile-container::before {
   content: '';
   position: absolute;
-  top: -15px;
-  left: 20px;
+  top: -10px;
+  left: 26px;
   width: 15px;
-  height: 45px;
-  border: 3px solid #777;
+  height: 46px;
+  border: 3px solid #8a8375;
   border-radius: 10px;
   z-index: 10;
-  box-shadow: 2px 2px 2px rgba(0,0,0,0.2);
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.22);
 }
 
 .eac-dos-profile-pic {
-  width: 200px;
-  height: 250px;
+  display: block;
+  width: 190px;
+  height: 240px;
   object-fit: cover;
-  filter: grayscale(100%) contrast(150%) sepia(30%);
-  border: 1px solid #333;
-  padding: 5px;
+  filter: grayscale(100%) contrast(128%) sepia(22%);
   background: #fff;
-  transform: rotate(2deg);
-  box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+  padding: 6px;
+  border: 1px solid var(--eac-dos-rule);
+  transform: rotate(-1.4deg);
+  box-shadow: 1px 3px 8px rgba(0, 0, 0, 0.22);
 }
 
 .eac-dos-header-content {
-  flex-grow: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.eac-dos-alias-kicker {
+  display: block;
+  font-family: var(--eac-dos-typewriter);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  margin-bottom: 0.35rem;
 }
 
 .eac-dos-alias {
-  font-family: var(--eac-dos-gothic);
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  border-bottom: none;
-  line-height: 1;
+  font-family: var(--eac-dos-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.1rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.4rem;
+  color: var(--eac-dos-ink);
 }
 
-.eac-dos-alias::before {
-  content: 'ALIAS/NAME: ';
-  font-family: var(--eac-dos-typewriter);
-  font-size: 1rem;
+.eac-dos-alias-sub {
   display: block;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.eac-dos-form-row {
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-
-.eac-dos-label {
-  font-weight: bold;
-  margin-right: 10px;
-  width: 120px;
-  flex-shrink: 0;
-}
-
-.eac-dos-value {
-  flex-grow: 1;
-  border-bottom: 1px dotted #999;
-  padding-bottom: 2px;
+  font-family: var(--eac-dos-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  color: var(--eac-dos-ink-soft);
+  margin-top: 0.4rem;
 }
 
 .eac-dos-bio {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background-color: rgba(0,0,0,0.03);
-  border: 1px solid #ccc;
-  line-height: 1.5;
+  margin-top: 1.6rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--eac-dos-paper-shade);
+  border-left: 3px solid var(--eac-dos-ink);
+  font-size: 0.94rem;
+  line-height: 1.62;
+}
+
+.eac-dos-bio p { margin: 0 0 0.8rem; }
+.eac-dos-bio p:last-child { margin-bottom: 0; }
+
+.eac-dos-bio-head {
+  display: block;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  margin-bottom: 0.5rem;
 }
 
 .eac-dos-actions {
-  margin-top: 1.5rem;
+  margin-top: 1.6rem;
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.eac-dos-btn {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: var(--eac-dos-ink);
-  border: 2px solid var(--eac-dos-ink);
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 0.875rem;
-  background: transparent;
-  transition: all 0.2s;
+@media (max-width: 720px) {
+  .eac-dos-header-block {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .eac-dos-profile-pic { width: 160px; height: 200px; }
 }
 
-.eac-dos-btn:hover {
-  background: var(--eac-dos-ink);
-  color: var(--eac-dos-paper);
+
+/* Shown in place of the portrait when there is none on file. A ruled blank in
+   the shape of a photograph, rather than a broken frame. */
+.eac-dos-nophoto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--eac-dos-paper) 0 8px,
+    var(--eac-dos-paper-shade) 8px 16px
+  );
+  filter: none;
 }

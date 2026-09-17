@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   Html, Head, Body, Container, Section, Heading, Text, Hr, Preview,
 } from '@react-email/components';
-import { render } from '@react-email/render';
+import { renderEmail } from '../render-email';
 
 export interface OrderLineItem {
   description: string;
@@ -163,5 +163,5 @@ function OrderInvoiceEmail({
 }
 
 export async function renderOrderInvoiceEmail(props: OrderInvoiceEmailProps): Promise<string> {
-  return render(React.createElement(OrderInvoiceEmail, props));
+  return renderEmail(React.createElement(OrderInvoiceEmail, props));
 }

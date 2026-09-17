@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Link2, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elkdonis/primitives";
 
 /**
  * Gatherings spread by being pasted into a group chat, so the share link is a

@@ -14,7 +14,7 @@ import { getHubViewer } from "@/lib/hub-auth";
 /**
  * IFAC's content save path.
  *
- * Before this, the app had exactly one thread writer: /api/admin/events, a raw
+ * Before this, the app had exactly one thread writer: /api/manage/events, a raw
  * INSERT with `duration_minutes` hardcoded to 75, no slug-collision handling,
  * no cover image, no recurrence, and `kind = 'event'` — a kind that appears
  * nowhere else in the live data (there are 16 `meeting` rows and zero `event`
@@ -36,7 +36,15 @@ export type SaveContentResult =
   | { ok: false; error: string };
 
 export interface SaveContentInput {
-  kind: "post" | "event" | "meeting";
+  /**
+   * `workshop` joined the list when compose moved into the hub's surface: the
+   * shared catalogue offers it in `dialog` mode for a site with no template
+   * wizard, and IFAC is such a site. `threads.kind` has no CHECK constraint
+   * and six workshop rows already exist network-wide, so this writes a kind
+   * the schema and the rest of the platform already understand rather than
+   * inventing one. It is dated, like an event and a meeting.
+   */
+  kind: "post" | "event" | "meeting" | "workshop";
   title: string;
   body?: string;
   excerpt?: string;
@@ -52,6 +60,9 @@ export interface SaveContentInput {
   isRsvpEnabled?: boolean;
   attendeeLimit?: number | null;
   recurrencePattern?: "DAILY" | "WEEKLY" | "MONTHLY" | null;
+  recurrenceUntil?: string | null;
+  /** Free text describing an irregular schedule. Never parsed. */
+  recurrenceCustomRule?: string | null;
 }
 
 export async function saveContentAction(
@@ -97,9 +108,12 @@ export async function saveContentAction(
     // only to dated kinds, so it is set here rather than widening the shared
     // signature for one app's case. Note 'NONE' is NOT a legal value — the
     // CHECK accepts NULL or one of four patterns.
-    if (dated && input.recurrencePattern) {
+    if (dated && (input.recurrencePattern || input.recurrenceCustomRule)) {
       await db`
-        UPDATE threads SET recurrence_pattern = ${input.recurrencePattern}
+        UPDATE threads SET
+          recurrence_pattern = ${input.recurrencePattern},
+          recurrence_until = ${input.recurrenceUntil ?? null},
+          recurrence_custom_rule = ${input.recurrenceCustomRule ?? null}
         WHERE id = ${thread.id}
       `;
     }

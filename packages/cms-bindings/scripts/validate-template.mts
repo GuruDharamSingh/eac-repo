@@ -16,6 +16,8 @@ import type { SectionToValidate } from "../src/engine/validate";
 import type { TemplateManifest } from "../src/manifest";
 import { toWorkshopContext } from "../src/workshop/context";
 import type { WorkshopPageData } from "../src/workshop/types";
+import { toDossierContext } from "../src/dossier/context";
+import type { DossierProfileData } from "../src/dossier/types";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_ROOT = join(
@@ -48,8 +50,78 @@ const SAMPLE: WorkshopPageData = {
   facilitator_role: "Potter & facilitator",
 };
 
+/**
+ * A fully-populated dossier. Same rule as the workshop sample: every optional
+ * field is present, so an unresolvable `from` path means a genuine typo rather
+ * than "this sample happened to omit it". Sections are all switched ON for the
+ * same reason — an off section contributes no context paths to check.
+ */
+const DOSSIER_SAMPLE: DossierProfileData = {
+  slug: "marcus-vance",
+  name: "Marcus Vance",
+  occupation: "Investigative photographer",
+  location: "Chicago, IL",
+  dossier_status: "Open — accepting commissions",
+  bio: "Documents urban decay at night on 35mm film.\n\nSecond paragraph.",
+  photo_url: "/assets/portrait.jpg",
+  operations: [
+    { title: "Midnight Run", date: "Oct 2023", details: "Abandoned subway tunnels.", image_url: "/assets/a.jpg" },
+    { title: "Project 88", date: null, details: null, image_url: null },
+  ],
+  current_targets: ["A darkroom process for infrared film."],
+  projected_movements: ["A hardcover photobook."],
+  verified_contacts: ["Nightowl Crew"],
+  wanted_accomplices: ["Bookbinders"],
+  financial_channels: [
+    { title: "Patreon", description: "Monthly dispatches", url: "https://patreon.com/mv" },
+  ],
+  channels: [{ title: "Website", description: null, url: "https://example.com" }],
+  work_history: [
+    { role: "Staff photographer", organisation: "The Evening Register", from: "2019", to: "2024", detail: "Night desk." },
+  ],
+  dispatches: [
+    { id: "d1", title: "On working after dark", href: "/x", excerpt: "Notes.", coverImageUrl: "/assets/c.jpg", publishedAt: "2026-09-01T00:00:00.000Z", orgName: "EAC", kind: "post", draft: false },
+    { id: "d2", title: "Infrared", href: "/y", excerpt: null, coverImageUrl: null, publishedAt: null, orgName: "IFAC", kind: "writing", draft: true },
+  ],
+  movements: [
+    { id: "m1", title: "Warehouse pop-up", href: "/e1", scheduledAt: "2099-11-14T19:00:00.000Z", durationMinutes: 180, location: "Toronto", orgName: "EAC", kind: "event" },
+    { id: "m2", title: "Intaglio intensive", href: "/e2", scheduledAt: "2020-08-02T14:00:00.000Z", durationMinutes: 480, location: "Open Studio", orgName: "IFAC", kind: "workshop" },
+  ],
+  exhibits: [
+    { id: "g1", title: "Tunnels", href: "/g1", description: "Below.", coverUrl: "/assets/g.jpg", itemCount: 18 },
+    { id: "g2", title: "Works on paper", href: "/g2", description: null, coverUrl: null, itemCount: 1 },
+  ],
+  storefront: {
+    name: "Norton Street Editions",
+    href: "https://market.example/artists/mv",
+    lots: [
+      { id: "l1", title: "Night Tunnel", href: "/l1", imageUrl: "/assets/l.jpg", price: "$420.00", status: "available" },
+      { id: "l2", title: "High Water", href: "/l2", imageUrl: null, price: null, status: "sold" },
+    ],
+  },
+  activity: {
+    orgs: [
+      {
+        orgId: "ifac",
+        orgName: "International Fine Art Collectors",
+        href: "https://ifacgroup.com",
+        roleTitle: "Artist",
+        filings: [{ id: "f1", title: "On working after dark", href: "/x", date: "2026-09-01T00:00:00.000Z", draft: false }],
+      },
+    ],
+    filingCount: 1,
+    mediaCount: 112,
+  },
+  claim_status: "claimed",
+  verified: true,
+  contact_href: "mailto:mv@example.com",
+  case_number: "0447",
+  sections: { dispatches: true, movements: true, galleries: true, store: true, workHistory: true },
+};
+
 const CONTEXTS: Record<string, unknown> = {
   workshop: toWorkshopContext(SAMPLE),
+  "dossier-classified": toDossierContext(DOSSIER_SAMPLE),
 };
 
 /**

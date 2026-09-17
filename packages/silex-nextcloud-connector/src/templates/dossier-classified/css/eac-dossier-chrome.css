@@ -1,0 +1,536 @@
+/*
+  Chrome — the file itself, and the vocabulary every section shares.
+
+  Everything in here is structure the sections assume but none of them owned
+  before: the desk/folder/sheet stack, the heading system, the ruled form line,
+  the stamp, and the two repeating content shapes (an index of rows, a wall of
+  plates). Previously `.eac-dossier-file` existed only as a class name emitted
+  by render.ts with its rules living in the ArtDirect route — so a page
+  published from Silex got the sections with no file around them.
+*/
+
+/* ── Desk → folder → sheet ──────────────────────────────────────────────── */
+
+.eac-dossier-folder {
+  background: var(--eac-dos-bg-desk);
+  padding: 2.5rem 1.5rem 5rem;
+  min-height: 100%;
+}
+
+.eac-dossier-file {
+  position: relative;
+  max-width: var(--eac-dos-sheet-max);
+  margin: 0 auto;
+  /* The manila folder: a band of card stock the sheet sits on, visible as an
+     edge on three sides and as the tab above. */
+  background: var(--eac-dos-manila);
+  padding: 0 10px 14px;
+  border-radius: 2px 6px 2px 2px;
+  box-shadow:
+    0 1px 0 var(--eac-dos-manila-shade),
+    0 26px 60px rgba(0, 0, 0, 0.55);
+  font-family: var(--eac-dos-typewriter);
+  color: var(--eac-dos-ink);
+  line-height: 1.5;
+}
+
+/* The index tab. Carries the case number, which is the one piece of pure
+   apparatus on the page — it says "this is a file" faster than any wording. */
+.eac-dos-tab {
+  display: inline-block;
+  margin: 0 0 10px 22px;
+  padding: 0.5rem 1.7rem 0.55rem;
+  /* A shade darker than the folder it sits on, or it is manila on manila and
+     reads as nothing but floating text. #161310 on #c2a877 is 7.9:1. */
+  background: var(--eac-dos-manila-shade);
+  border-radius: 0 0 4px 4px;
+  font-family: var(--eac-dos-stamp-face);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-sheet {
+  background: var(--eac-dos-paper);
+  padding: 3rem 3.25rem 3.5rem;
+  border: 1px solid var(--eac-dos-manila-shade);
+  /* Faint horizontal fibre — newsprint, not a flat fill. Cheap: one gradient,
+     no image request. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(22, 19, 16, 0.016) 0 2px,
+    transparent 2px 4px
+  );
+}
+
+@media (max-width: 720px) {
+  .eac-dossier-folder { padding: 0 0 3rem; }
+  .eac-dossier-file { border-radius: 0; padding: 0 5px 8px; }
+  .eac-dos-sheet { padding: 2rem 1.25rem 2.5rem; }
+  .eac-dos-tab { margin-left: 12px; }
+}
+
+/* ── Headings ───────────────────────────────────────────────────────────── */
+/*
+  Two parts: a monospace kicker (the bureaucracy) above an editorial serif
+  heading (the noir). The kicker is opt-IN via `data-kicker` — the old
+  `content: 'SUBJECT FILE: '` fired by DEFAULT and had to be switched off with
+  `.eac-dos-title-plain`, which is how two headings ended up reading
+  "SUBJECT FILE: ASSOCIATES & INFORMANTS".
+*/
+
+.eac-dos-section {
+  margin: 0 0 var(--eac-dos-gap);
+}
+
+.eac-dos-section:last-child { margin-bottom: 0; }
+
+.eac-dos-section-title {
+  font-family: var(--eac-dos-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--eac-dos-ink);
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--eac-dos-ink);
+}
+
+.eac-dos-section-title[data-kicker]::before {
+  content: attr(data-kicker);
+  display: block;
+  font-family: var(--eac-dos-typewriter);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  margin-bottom: 0.45rem;
+}
+
+/* Retained: Silex pages published before this rewrite carry the class. It is
+   now a no-op, because the prefix it used to suppress is gone. */
+.eac-dos-title-plain { }
+
+.eac-dos-count {
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: var(--eac-dos-ink-soft);
+  float: right;
+  padding-top: 0.75rem;
+}
+
+/* ── The form line ──────────────────────────────────────────────────────── */
+/*
+  A ruled blank is how an unfilled field looks on a real form, and it is honest:
+  the old template printed "—" for an absent occupation and the literal words
+  "Location withheld" for an absent city, on pages where neither had ever been
+  entered. A blank rule says "not filled in" without claiming a reason.
+*/
+
+.eac-dos-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+  min-height: 1.95em;
+  padding-bottom: 3px;
+  margin-bottom: 0.7rem;
+  font-size: 0.94rem;
+  /* On the ROW, not on the value: an unfilled field has its value element
+     removed entirely by the binding engine, and the point of a ruled blank is
+     that the line is still there. */
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-label {
+  flex: 0 0 auto;
+  width: 8.5rem;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-value {
+  flex: 1 1 12rem;
+  min-width: 0;
+  color: var(--eac-dos-ink);
+}
+
+/* An annotation in the second pen. */
+.eac-dos-annotation {
+  font-family: var(--eac-dos-typewriter);
+  color: var(--eac-dos-ballpoint);
+}
+
+/* ── Stamps ─────────────────────────────────────────────────────────────── */
+
+.eac-dos-stamp {
+  position: absolute;
+  top: 1.1rem;
+  /* Far enough out to cross the sheet's own margin — a stamp is pressed onto
+     a page, it does not sit politely inside the text column. Bounded by the
+     sheet padding so it never escapes the folder. */
+  right: -2.6rem;
+  z-index: 10;
+  font-family: var(--eac-dos-stamp-face);
+  font-size: clamp(1.05rem, 0.8rem + 1vw, 1.45rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* A real colour, not an opacity. See the tokens file. */
+  color: var(--eac-dos-stamp-red);
+  border: 3px double var(--eac-dos-stamp-red);
+  padding: 0.3rem 0.9rem;
+  transform: rotate(-6deg);
+  pointer-events: none;
+  background: transparent;
+}
+
+.eac-dos-stamp[data-state='claimed'],
+.eac-dos-stamp[data-state='verified'] {
+  color: var(--eac-dos-stamp-green);
+  border-color: var(--eac-dos-stamp-green);
+}
+
+@media (max-width: 720px) {
+  .eac-dos-stamp {
+    position: static;
+    display: inline-block;
+    transform: rotate(-2deg);
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* ── An index of rows ───────────────────────────────────────────────────── */
+/*
+  Shared by dispatches, movements, the service record and filed activity. Rows
+  in a file are numbered, ruled and dated on the right — the shape is the same
+  whether the row is an article, an appearance or a post held somewhere else.
+*/
+
+.eac-dos-index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: dos-row;
+}
+
+.eac-dos-row {
+  counter-increment: dos-row;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  gap: 0 1rem;
+  align-items: baseline;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--eac-dos-rule-soft);
+}
+
+.eac-dos-row:first-child { border-top: 1px solid var(--eac-dos-rule-soft); }
+
+.eac-dos-row::before {
+  content: counter(dos-row, decimal-leading-zero);
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-row-main { min-width: 0; }
+
+.eac-dos-row-title {
+  font-family: var(--eac-dos-display);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.eac-dos-row-title a {
+  color: var(--eac-dos-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eac-dos-rule);
+}
+
+.eac-dos-row-title a:hover,
+.eac-dos-row-title a:focus-visible {
+  color: var(--eac-dos-stamp-red);
+  border-bottom-color: var(--eac-dos-stamp-red);
+}
+
+.eac-dos-row-blurb {
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-row-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+}
+
+.eac-dos-row-stamp {
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.eac-dos-row-flag {
+  display: inline-block;
+  font-family: var(--eac-dos-stamp-face);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--eac-dos-stamp-red);
+  border: 1px solid var(--eac-dos-stamp-red);
+  padding: 0 0.35rem;
+  vertical-align: 0.1em;
+  margin-left: 0.5rem;
+}
+
+@media (max-width: 560px) {
+  .eac-dos-row {
+    grid-template-columns: 2.2rem 1fr;
+  }
+  .eac-dos-row-stamp {
+    grid-column: 2;
+    text-align: left;
+    margin-top: 0.35rem;
+  }
+}
+
+/* ── A wall of plates ───────────────────────────────────────────────────── */
+/*
+  Shared by the work, the galleries and the store.
+
+  The thumbnails stay grayscale: a contact sheet of evidence prints is the
+  whole conceit, and a uniform grid is what makes the page read as a file. The
+  colour lives one click away — see the lightbox below — so nothing is lost,
+  it is just not the first thing. That is the ONE place this template is
+  allowed to alter an artist's work, and it is reversible by the viewer.
+*/
+
+.eac-dos-plates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1.75rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eac-dos-plate { margin: 0; min-width: 0; }
+
+.eac-dos-plate-frame {
+  display: block;
+  position: relative;
+  background: #fff;
+  padding: 7px;
+  border: 1px solid var(--eac-dos-rule);
+  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.18);
+  text-decoration: none;
+}
+
+.eac-dos-plate-frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(112%);
+  transition: filter 0.25s ease;
+}
+
+.eac-dos-plate-frame:hover img,
+.eac-dos-plate-frame:focus-visible img {
+  filter: grayscale(55%) contrast(104%);
+}
+
+/* The corner tab that says "print, mounted" rather than "image, cropped". */
+.eac-dos-plate-frame::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 0 14px 14px;
+  border-style: solid;
+  border-color: transparent transparent var(--eac-dos-paper-shade) transparent;
+}
+
+.eac-dos-plate-caption {
+  margin-top: 0.6rem;
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--eac-dos-ink);
+}
+
+.eac-dos-plate-caption b {
+  display: block;
+  font-weight: 700;
+}
+
+.eac-dos-plate-ref {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eac-dos-ink-soft);
+  margin-bottom: 0.15rem;
+}
+
+/* ── Lightbox ───────────────────────────────────────────────────────────── */
+/*
+  `:target` rather than a script, deliberately. This template is rendered three
+  ways — server-side into a React page, published static from Silex, and
+  previewed inside the Silex canvas — and only one of those is going to run a
+  bundle. CSS-only state is the same posture as the pens library.
+
+  The trigger is a real anchor to a real fragment, so the full-size view is
+  linkable, survives a reload, and the back button closes it.
+*/
+
+.eac-dos-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 3vmin;
+  background: rgba(12, 10, 8, 0.94);
+}
+
+.eac-dos-lightbox:target { display: flex; }
+
+.eac-dos-lightbox img {
+  max-width: 100%;
+  max-height: 84vh;
+  object-fit: contain;
+  /* Full colour. The grid is the file; this is the work. */
+  filter: none;
+  background: #fff;
+  padding: 10px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.7);
+}
+
+.eac-dos-lightbox-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1.5rem;
+  text-align: center;
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--eac-dos-paper);
+  padding: 0 3vmin;
+}
+
+/* Covers the backdrop, so a click anywhere outside the plate closes it. */
+.eac-dos-lightbox-close {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+.eac-dos-lightbox-x {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 2;
+  font-family: var(--eac-dos-stamp-face);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  color: var(--eac-dos-paper);
+  border: 1px solid var(--eac-dos-paper);
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.eac-dos-lightbox figure { margin: 0; position: relative; z-index: 1; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.eac-dos-btn {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  font-family: var(--eac-dos-typewriter);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--eac-dos-ink);
+  border: 1.5px solid var(--eac-dos-ink);
+  background: transparent;
+  transition: background 0.18s, color 0.18s;
+}
+
+.eac-dos-btn:hover,
+.eac-dos-btn:focus-visible {
+  background: var(--eac-dos-ink);
+  color: var(--eac-dos-paper);
+}
+
+.eac-dos-btn-quiet {
+  border-color: var(--eac-dos-rule);
+  color: var(--eac-dos-ink-soft);
+}
+
+.eac-dos-btn-quiet:hover,
+.eac-dos-btn-quiet:focus-visible {
+  background: var(--eac-dos-ink-soft);
+  color: var(--eac-dos-paper);
+}
+
+.eac-dos-empty {
+  font-family: var(--eac-dos-typewriter);
+  font-size: 0.85rem;
+  color: var(--eac-dos-ink-soft);
+  border: 1px dashed var(--eac-dos-rule);
+  padding: 1rem 1.15rem;
+}
+
+:where(.eac-dossier-file) :focus-visible {
+  outline: 2px solid var(--eac-dos-ballpoint);
+  outline-offset: 2px;
+}
+
+/* Visually hidden, still announced. */
+.eac-dos-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Lightbox container ─────────────────────────────────────────────────── */
+/*
+  The overlays are a bound LIST, so they need a container element to be cloned
+  into. It must not become a box of its own — each child is already fixed to
+  the viewport.
+*/
+.eac-dos-lightboxes { display: contents; }

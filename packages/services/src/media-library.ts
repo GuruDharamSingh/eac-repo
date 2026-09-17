@@ -1,6 +1,7 @@
 import { db } from '@elkdonis/db';
 import { listFiles } from './nextcloud';
 import { getOrgFolderPath } from '@elkdonis/nextcloud';
+import { getStorageSlug, listUserFiles, resolveUserPath } from './user-storage';
 
 // ============================================================================
 // An org's media library — what is already in its storage, for a picker.
@@ -98,6 +99,97 @@ export async function listOrgMediaLibrary(
   } catch (err) {
     // Degrade to the database listing rather than breaking the picker.
     console.error(`[media-library] nextcloud listing for ${orgId}:`, err);
+  }
+
+  return [...items.values()];
+}
+
+// ============================================================================
+// A PERSON's media library.
+//
+// Same two sources as the org listing above, pointed at the person's own
+// storage instead: their rows in the `media` table, merged with a live listing
+// of EAC_Network/users/<slug>/Media/Images.
+//
+// Kept beside the org version rather than generalised into one function with a
+// mode flag, because the two differ in the thing that matters most — WHOSE
+// files they are. A single function taking "scope" is one wrong argument away
+// from showing one person's private uploads to another, and that is not a
+// mistake worth making reachable.
+//
+// Authorization is again NOT here: a caller passes a user id, and the route is
+// responsible for proving that id is the person asking. See the header of
+// listOrgMediaLibrary for why.
+// ============================================================================
+
+export interface ListUserMediaLibraryOptions extends ListOrgMediaLibraryOptions {
+  /** Which of the person's media buckets to list. */
+  folder?: 'Images' | 'Audio' | 'Videos' | 'Documents';
+}
+
+export async function listUserMediaLibrary(
+  userId: string,
+  options: ListUserMediaLibraryOptions = {}
+): Promise<MediaLibraryItem[]> {
+  const { limit = 200, type = 'image', folder = 'Images' } = options;
+  const items = new Map<string, MediaLibraryItem>();
+
+  try {
+    // `uploaded_by` rather than org_id: this is the person's own work, wherever
+    // they happened to publish it.
+    const rows = type
+      ? await db<{ url: string; filename: string; type: string }[]>`
+          SELECT url, filename, type FROM media
+          WHERE uploaded_by = ${userId} AND type = ${type}
+          ORDER BY created_at DESC LIMIT ${limit}
+        `
+      : await db<{ url: string; filename: string; type: string }[]>`
+          SELECT url, filename, type FROM media
+          WHERE uploaded_by = ${userId}
+          ORDER BY created_at DESC LIMIT ${limit}
+        `;
+
+    for (const row of rows) {
+      if (!row.url) continue;
+      items.set(row.url, {
+        url: row.url,
+        filename: row.filename,
+        type: row.type,
+        source: 'upload',
+      });
+    }
+  } catch (err) {
+    console.error(`[media-library] db listing for user ${userId}:`, err);
+  }
+
+  try {
+    const slug = await getStorageSlug(userId);
+    // No slug means no personal folder has been provisioned yet — an empty
+    // library, not an error. The database half above may still have rows.
+    if (slug) {
+      const relative = `Media/${folder}`;
+      const files = await listUserFiles(slug, relative);
+      // The same path the proxy serves, built by the same helper that guards
+      // against a relative path escaping the person's own root.
+      const base = resolveUserPath(slug, relative);
+
+      for (const file of files) {
+        const name: string | undefined =
+          typeof file === 'string'
+            ? file
+            : ((file as { name?: string; basename?: string; filename?: string })?.name ??
+              (file as { basename?: string })?.basename ??
+              (file as { filename?: string })?.filename);
+        if (!name || (type === 'image' && !IMAGE_EXT.test(name))) continue;
+
+        const url = `/api/media/${base}/${name}`;
+        if (!items.has(url)) {
+          items.set(url, { url, filename: name, type: type ?? 'image', source: 'nextcloud' });
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[media-library] nextcloud listing for user ${userId}:`, err);
   }
 
   return [...items.values()];

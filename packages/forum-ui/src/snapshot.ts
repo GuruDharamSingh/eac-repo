@@ -110,3 +110,38 @@ export async function forumSnapshot(opts: ForumSnapshotOptions): Promise<Surface
     composeHref: composeFeed && viewer.userId ? `${composeFeed.href}#newtopic` : null,
   };
 }
+
+/**
+ * The threads in ONE section, for the forum surface's in-popup section view.
+ *
+ * `forumSnapshot` carries `recent` — the latest across the whole board — which
+ * is the right thing for a tile and the wrong thing once someone has picked a
+ * section: a quiet section would look empty rather than merely old. This
+ * answers the section properly, through the `feed` target `listTopics`
+ * already has.
+ */
+export async function forumFeedThreads(opts: {
+  scope: Extract<ForumScope, { kind: "org" }>;
+  viewer: ForumViewer;
+  hrefs: ForumHrefs;
+  feedSlug: string;
+  limit?: number;
+}): Promise<SurfaceForumThread[]> {
+  const s = await import("@elkdonis/services");
+  const page = await s.listTopics(
+    { kind: "feed", orgId: opts.scope.orgId, feedSlug: opts.feedSlug },
+    opts.viewer,
+    { sort: "active", limit: Math.min(opts.limit ?? 20, 50) }
+  );
+  return page.rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    kind: r.kind,
+    feedName: r.feed.name ?? null,
+    authorName: r.author.name,
+    replyCount: r.replyCount,
+    at: new Date(r.lastActivityAt).toISOString(),
+    unread: r.unread,
+    href: opts.hrefs.thread(r.id, r.slug),
+  }));
+}

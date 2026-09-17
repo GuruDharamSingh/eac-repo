@@ -8,6 +8,7 @@ import {
 import { settleExpiredLots } from "@elkdonis/commerce/server";
 import { BidWidget } from "@elkdonis/commerce/components";
 import { ArtworkGallery } from "@/components/artwork-gallery";
+import { Button } from "@/components/ui/button";
 import { placeBidAction } from "@/app/actions";
 import { getCurrentUserId } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
@@ -84,12 +85,9 @@ export default async function LotPage({
                 or eTransfer within 72 hours to complete the purchase.
               </p>
               {winnerOrderId && (
-                <Link
-                  href={`/orders/${winnerOrderId}`}
-                  className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Complete your purchase
-                </Link>
+                <Button asChild size="lg" className="mt-4">
+                  <Link href={`/orders/${winnerOrderId}`}>Complete your purchase</Link>
+                </Button>
               )}
             </div>
           )}

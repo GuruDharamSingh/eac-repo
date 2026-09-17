@@ -17,6 +17,8 @@
 @import "@elkdonis/cms-ui/files-card.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
+/* The email suite — face, surface and the page at /hub/email. */
+@import "@elkdonis/cms-ui/email.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/cms-ui/baroque-signup.css";

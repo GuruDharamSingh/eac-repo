@@ -180,11 +180,12 @@ export function buildContentFields(
           input: "duration",
           quick: true,
         },
-        FORMAT,
         { name: "location", label: "Where", input: "text", quick: true, inline: true, placeholder: "An address, a room, or a link" },
         // Recurrence is part of what a gathering IS — the standing weekly
-        // meeting, the monthly sadhana — so it sits in the open group, not
-        // behind a disclosure. "Until" appears once a pattern is chosen.
+        // meeting, the monthly sadhana — so the PATTERN stays in the open
+        // group. Its refinements (when it stops, an irregular rule) do not:
+        // they are answers to a question most gatherings never raise, and
+        // they moved to the drawer below.
         {
           name: "recurrence_pattern",
           label: "Repeats",
@@ -197,12 +198,39 @@ export function buildContentFields(
             { value: "MONTHLY", label: "Monthly" },
           ],
         },
+      ],
+    });
+
+    // ── the drawer ──
+    // Six fields were visible before anyone had typed a title. Four of them
+    // answer questions most gatherings never raise: nearly everything here is
+    // online, nearly nothing has an end date, and an irregular schedule is
+    // rare enough that a field for it was pure tax on the common case. They
+    // are all still one click away, and `eac-group--optional` opens itself
+    // when any of them already holds a value — so editing a gathering that
+    // DOES use them shows them without being asked.
+    groups.push({
+      id: "gathering-detail",
+      label: "More about this gathering",
+      blurb: "Format, an end date, an irregular schedule",
+      optional: true,
+      fields: [
+        FORMAT,
         {
           name: "recurrence_until",
-          label: "Until",
+          label: "Repeats until",
           input: "date",
           inline: true,
+          placeholder: "No end date",
           dependsOn: { field: "recurrence_pattern", not: "NONE" },
+        },
+        {
+          name: "recurrence_custom_rule",
+          label: "Or an irregular schedule",
+          input: "text",
+          placeholder: "First Tuesday of the month, term time only…",
+          hint:
+            "Written for people to read, not parsed — the calendar still uses the pattern above.",
         },
       ],
     });

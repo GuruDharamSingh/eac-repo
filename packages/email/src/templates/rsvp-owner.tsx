@@ -1,7 +1,21 @@
 import * as React from 'react';
-import { Section, Text, Button, Img } from '@react-email/components';
-import { render } from '@react-email/render';
+import { Section, Text, Link } from '@react-email/components';
+import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import { ProfileCard, ThreadCard, Prose } from '../components/cards';
+
+// ============================================================================
+// "Someone just arrived." — the letter that goes to whoever runs the thing.
+//
+// One template for every arrival, because from the owner's side they are the
+// same event with a different noun: a signup, a follower, an RSVP, a purchase,
+// a message. What differs is only WHAT they arrived at, and that is already
+// carried by the thread's kind — so the wording is derived from it rather than
+// being a separate template per case.
+//
+// The file keeps its name, and keeps exporting EmailLinkItem / EmailMediaItem,
+// because rsvp-guest.tsx and reminder.tsx import those types from here.
+// ============================================================================
 
 export interface EmailLinkItem {
   label: string;
@@ -14,259 +28,253 @@ export interface EmailMediaItem {
   caption?: string;
 }
 
+/** What the person did. */
+export type OwnerNotificationKind =
+  | 'rsvp'
+  | 'signup'
+  | 'follow'
+  | 'purchase'
+  | 'contact';
+
 export interface RsvpOwnerEmailProps {
-  /** 'reconfirmed' — guest re-affirmed attendance after a reminder trigger email. */
+  /** 'reconfirmed' — guest re-affirmed attendance after a trigger email. */
   variant?: 'new' | 'reconfirmed';
+  /** Defaults to 'rsvp', which is what every existing caller means. */
+  notificationKind?: OwnerNotificationKind;
   guestName: string;
   guestEmail?: string;
   guestPhone?: string;
   guestMessage?: string;
+  guestUsername?: string;
+  guestAvatarUrl?: string;
   wantsReminder?: boolean;
   meetingTitle: string;
   section?: string;
   scheduledAt?: string;
   rsvpCreatedAt?: string;
   threadUrl?: string;
+  /** 'workshop' | 'meeting' | 'post' | 'listing' — picks the noun in the headline. */
+  threadKind?: string;
+  coverUrl?: string;
   /** Nextcloud Talk room join link, when the thread has one. */
   talkRoomUrl?: string;
   /** Link to the thread's materials (workshops with a provisioned folder). */
   materialsUrl?: string;
   orgName?: string;
   rsvpCount?: number;
-  /** Dark card/background variant. Defaults to dark, matching today's output. */
+  /**
+   * The org's tab in the network hub — an alternative to the thread's own
+   * page. An owner reading this on a phone usually wants the console they
+   * manage everything from, not the public page the guest just saw.
+   * Defaults to arts-collective.com/hub/organization.
+   */
+  hubUrl?: string;
   dark?: boolean;
-  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
   emblemUrl?: string;
   emblemAlt?: string;
+  orgHeader?: boolean;
+  orgAccent?: string;
   bodyText?: string;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
 }
 
-function RsvpOwnerEmail({
+const ACTION_LABEL: Record<OwnerNotificationKind, string> = {
+  rsvp: 'New RSVP',
+  signup: 'New signup',
+  follow: 'New follower',
+  purchase: 'New purchase',
+  contact: 'New message',
+};
+
+/**
+ * What they arrived at, in the owner's words rather than the schema's.
+ * An org that has no thread at all gets "your organization".
+ */
+function targetNoun(threadKind: string | undefined, orgName: string | undefined): string {
+  switch (threadKind) {
+    case 'workshop':
+      return 'your workshop';
+    case 'meeting':
+    case 'event':
+      return 'your meeting';
+    case 'post':
+    case 'writing':
+      return 'your blog';
+    case 'listing':
+    case 'product':
+      return 'your shop';
+    default:
+      return orgName ? `your organization` : 'your page';
+  }
+}
+
+const TZ = 'America/Toronto';
+
+function formatWhen(value?: string, withTime = true): string | null {
+  if (!value) return null;
+  try {
+    return new Date(value).toLocaleString('en-CA', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      ...(withTime ? { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' as const } : {}),
+      timeZone: TZ,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function OwnerNotificationEmail({
   variant = 'new',
+  notificationKind = 'rsvp',
   guestName,
   guestEmail,
   guestPhone,
   guestMessage,
+  guestUsername,
+  guestAvatarUrl,
   wantsReminder,
   meetingTitle,
-  section,
   scheduledAt,
   rsvpCreatedAt,
   threadUrl,
+  threadKind,
+  coverUrl,
   talkRoomUrl,
   materialsUrl,
+  orgName,
   rsvpCount,
+  hubUrl = 'https://arts-collective.com/hub/organization',
   dark = true,
   emblemUrl,
   emblemAlt,
+  orgHeader = false,
+  orgAccent,
   bodyText,
   links = [],
   media = [],
 }: RsvpOwnerEmailProps) {
-  const isReconfirm = variant === 'reconfirmed';
   const palette = getEmailPalette(dark);
-
-  let dateStr: string | null = null;
-  if (scheduledAt) {
-    try {
-      dateStr = new Date(scheduledAt).toLocaleDateString('en-CA', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/Toronto',
-      });
-    } catch {
-      dateStr = null;
-    }
-  }
-
-  let rsvpTimeStr: string | null = null;
-  if (rsvpCreatedAt) {
-    try {
-      rsvpTimeStr = new Date(rsvpCreatedAt).toLocaleString('en-CA', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/Toronto',
-      });
-    } catch {
-      rsvpTimeStr = null;
-    }
-  }
-
-  const allLinks = threadUrl
-    ? [{ label: 'Open the thread', url: threadUrl }, ...links]
-    : links;
-
-  const bodyParagraphs = bodyText
-    ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
-    : [];
+  const action = variant === 'reconfirmed' ? 'Confirmed' : ACTION_LABEL[notificationKind];
+  const noun = targetNoun(threadKind, orgName);
+  const arrivedAt = formatWhen(rsvpCreatedAt);
+  const startsAt = formatWhen(scheduledAt);
 
   return (
     <EmailShell
-      previewText={
-        isReconfirm
-          ? `${guestName} reconfirmed — ${meetingTitle}`
-          : `New RSVP from ${guestName} — ${meetingTitle}`
-      }
-      kicker={isReconfirm ? 'RSVP Reconfirmed' : 'New RSVP'}
+      previewText={`${action}: ${guestName} — ${meetingTitle}`}
+      kicker={action}
       dark={dark}
-      showNfpFooter
       emblemUrl={emblemUrl}
       emblemAlt={emblemAlt}
+      orgName={orgName}
+      orgHeader={orgHeader}
+      orgAccent={orgAccent}
       footerText={
-        <Text style={{ fontSize: '12px', color: palette.textMuted, margin: 0 }}>
-          Sent via Elkdonis Arts Collective.
+        <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
+          You are receiving this because you are listed as a contact for
+          {orgName ? ` ${orgName}` : ' this organization'}.
         </Text>
       }
     >
-      <Text style={{ margin: '0 0 18px', fontSize: '20px', color: palette.textPrimary, fontWeight: 'bold' as const }}>
-        {meetingTitle}
-      </Text>
+      <Prose dark={dark}>
+        You have received {variant === 'reconfirmed' ? 'a confirmation' : `a ${ACTION_LABEL[notificationKind].replace('New ', '').toLowerCase()}`} to {noun}.
+      </Prose>
 
-      {/* Data first: who, when, for what. */}
-      <Section
-        style={{
-          background: palette.boxBg,
-          border: `1px solid ${palette.boxBorder}`,
-          borderLeft: `4px solid ${palette.accent}`,
-          padding: '18px 20px',
-          margin: '0 0 20px',
-        }}
-      >
-        <Text style={{ margin: '0 0 4px', fontSize: '11px', color: palette.textMuted, fontFamily: 'Arial, sans-serif', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
-          Guest
-        </Text>
-        <Text style={{ margin: '0 0 10px', fontSize: '16px', fontWeight: 'bold' as const, color: palette.textPrimary }}>
-          {guestName}
-          {guestEmail && <span style={{ fontWeight: 'normal' as const, color: palette.textBody }}> · {guestEmail}</span>}
-        </Text>
-        {guestPhone && (
-          <Text style={{ margin: '0 0 10px', fontSize: '14px', color: palette.textBody }}>
-            {guestPhone}
-          </Text>
-        )}
-        {rsvpTimeStr && (
-          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
-            <strong>RSVP date:</strong> {rsvpTimeStr}
-          </Text>
-        )}
-        <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
-          <strong>Thread:</strong> {meetingTitle}
-          {section && <> · {section}</>}
-        </Text>
-        {dateStr && (
-          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
-            <strong>Meeting date:</strong> {dateStr}
-          </Text>
-        )}
-        {rsvpCount !== undefined && (
-          <Text style={{ margin: '0 0 4px', fontSize: '14px', color: palette.textBody }}>
-            <strong>Total RSVPs:</strong> {rsvpCount}
-          </Text>
-        )}
-        {wantsReminder && (
-          <Text style={{ margin: '6px 0 0', fontSize: '13px', color: palette.accent }}>
-            Requested a reminder.
-          </Text>
-        )}
-      </Section>
+      <ProfileCard
+        displayName={guestName}
+        email={guestEmail}
+        username={guestUsername}
+        avatarUrl={guestAvatarUrl}
+        metaLine={arrivedAt ? `Arrived ${arrivedAt}` : undefined}
+        dark={dark}
+      />
 
-      <Text style={{ fontSize: '15px', color: palette.textBody, marginTop: 0, lineHeight: '1.6' }}>
-        {isReconfirm
-          ? <>{guestName} confirmed they&apos;re still coming to <strong>{meetingTitle}</strong> after your reminder.</>
-          : <>{guestName} has RSVP&apos;d yes for <strong>{meetingTitle}</strong>.</>}
-      </Text>
-
-      {(talkRoomUrl || materialsUrl) && (
-        <Section style={{ margin: '16px 0 0' }}>
-          {talkRoomUrl && (
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
-              Talk room: <a href={talkRoomUrl} style={{ color: palette.accent }}>Join the Talk room</a>
-            </Text>
-          )}
-          {materialsUrl && (
-            <Text style={{ margin: 0, fontSize: '14px', color: palette.textBody }}>
-              Materials: <a href={materialsUrl} style={{ color: palette.accent }}>View materials</a>
-            </Text>
-          )}
-        </Section>
-      )}
-
-      {bodyParagraphs.length > 0 && (
-        <Section style={{ margin: '20px 0 0' }}>
-          {bodyParagraphs.map((paragraph, index) => (
-            <Text key={index} style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.7' }}>
-              {paragraph}
-            </Text>
-          ))}
-        </Section>
+      {guestPhone && (
+        <Prose dark={dark} muted>Phone: {guestPhone}</Prose>
       )}
 
       {guestMessage && (
-        <Text
+        <Section
           style={{
-            margin: '16px 0 0',
-            fontSize: '14px',
-            color: palette.textBody,
-            fontStyle: 'italic' as const,
-            borderLeft: `3px solid ${palette.accent}`,
-            paddingLeft: '16px',
+            background: palette.boxBg,
+            border: `1px solid ${palette.boxBorder}`,
+            padding: '16px 20px',
+            margin: '0 0 22px',
           }}
         >
-          {guestMessage}
-        </Text>
+          <Text style={{ fontSize: '11px', textTransform: 'uppercase' as const, letterSpacing: '0.12em', color: palette.textMuted, margin: '0 0 8px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+            What they said
+          </Text>
+          <Text style={{ fontSize: '15px', lineHeight: '1.7', color: palette.textBody, margin: 0, whiteSpace: 'pre-wrap' as const }}>
+            {guestMessage}
+          </Text>
+        </Section>
       )}
 
-      {allLinks.length > 0 && (
-        <Section style={{ margin: '24px 0 0' }}>
-          <Button
-            href={allLinks[0].url}
-            style={{
-              backgroundColor: palette.accent,
-              color: '#0b0e18',
-              padding: '12px 22px',
-              fontFamily: 'Arial, sans-serif',
-              fontSize: '13px',
-              fontWeight: 'bold' as const,
-              textDecoration: 'none',
-              display: 'inline-block',
-            }}
-          >
-            {allLinks[0].label}
-          </Button>
-          {allLinks.slice(1).map((link) => (
-            <Text key={`${link.label}-${link.url}`} style={{ margin: '10px 0 0', fontSize: '13px' }}>
-              <a href={link.url} style={{ color: palette.accent }}>{link.label}</a>
+      <ThreadCard
+        title={meetingTitle}
+        kind={threadKind}
+        orgName={orgName}
+        when={startsAt ?? undefined}
+        coverUrl={coverUrl}
+        url={threadUrl}
+        linkLabel="View details"
+        altUrl={hubUrl}
+        altLabel="Or open your organization in the hub"
+        dark={dark}
+      />
+
+      {typeof rsvpCount === 'number' && rsvpCount > 0 && (
+        <Prose dark={dark}>
+          {rsvpCount} {rsvpCount === 1 ? 'person is' : 'people are'} coming so far.
+        </Prose>
+      )}
+
+      {typeof wantsReminder === 'boolean' && (
+        <Prose dark={dark} muted>
+          {wantsReminder
+            ? 'They asked to be reminded before it begins.'
+            : 'They asked not to be reminded.'}
+        </Prose>
+      )}
+
+      {(talkRoomUrl || materialsUrl) && (
+        <Section style={{ margin: '4px 0 0' }}>
+          {talkRoomUrl && (
+            <Text style={{ margin: '0 0 6px' }}>
+              <Link href={talkRoomUrl} style={{ color: palette.accent, fontSize: '14px' }}>Open the conversation</Link>
+            </Text>
+          )}
+          {materialsUrl && (
+            <Text style={{ margin: '0 0 6px' }}>
+              <Link href={materialsUrl} style={{ color: palette.accent, fontSize: '14px' }}>Open the materials</Link>
+            </Text>
+          )}
+        </Section>
+      )}
+
+      {bodyText && <Prose dark={dark}>{bodyText}</Prose>}
+
+      {links.length > 0 && (
+        <Section style={{ margin: '14px 0 0' }}>
+          {links.map((link) => (
+            <Text key={link.url} style={{ margin: '0 0 6px' }}>
+              <Link href={link.url} style={{ color: palette.accent, fontSize: '14px' }}>{link.label}</Link>
             </Text>
           ))}
         </Section>
       )}
 
       {media.length > 0 && (
-        <Section style={{ margin: '24px 0 0' }}>
+        <Section style={{ margin: '14px 0 0' }}>
           {media.map((item) => (
-            <Section key={item.url} style={{ margin: '0 0 16px' }}>
-              <Img
-                src={item.url}
-                alt={item.alt ?? ''}
-                style={{
-                  width: '100%',
-                  maxWidth: '520px',
-                  border: `1px solid ${palette.boxBorder}`,
-                  display: 'block',
-                }}
-              />
+            <Section key={item.url} style={{ margin: '0 0 12px' }}>
+              <img src={item.url} alt={item.alt ?? ''} width="520" style={{ display: 'block', width: '100%', height: 'auto' }} />
               {item.caption && (
-                <Text style={{ margin: '8px 0 0', fontSize: '12px', color: palette.textMuted, fontStyle: 'italic' as const }}>
-                  {item.caption}
-                </Text>
+                <Text style={{ fontSize: '12px', color: palette.textMuted, margin: '6px 0 0' }}>{item.caption}</Text>
               )}
             </Section>
           ))}
@@ -277,5 +285,9 @@ function RsvpOwnerEmail({
 }
 
 export async function renderRsvpOwnerEmail(props: RsvpOwnerEmailProps): Promise<string> {
-  return render(React.createElement(RsvpOwnerEmail, props));
+  return renderEmail(<OwnerNotificationEmail {...props} />);
 }
+
+/** The name this template deserves, now that it covers every arrival. */
+export const renderOwnerNotificationEmail = renderRsvpOwnerEmail;
+export type OwnerNotificationEmailProps = RsvpOwnerEmailProps;

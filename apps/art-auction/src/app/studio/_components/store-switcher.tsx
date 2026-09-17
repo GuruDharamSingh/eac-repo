@@ -1,4 +1,5 @@
 import type { ActableStore, OpenableOrg } from "@elkdonis/commerce/queries";
+import { Button } from "@/components/ui/button";
 import { selectStoreAction } from "../actions";
 import { OpenOrgStoreButton } from "./open-org-store-button";
 
@@ -32,16 +33,17 @@ export function StoreSwitcher({
       </span>
       {others.map((s) => (
         <form key={s.id} action={selectStoreAction.bind(null, s.id)}>
-          <button
+          <Button
             type="submit"
-            className="rounded-md border border-border px-2.5 py-1 hover:bg-muted"
+            variant="outline"
+            size="sm"
             title={s.status !== "active" ? `Store is ${s.status}` : undefined}
           >
             {s.displayName ?? "Store"}
             {s.status !== "active" && (
               <span className="ml-1 text-xs text-muted-foreground">({s.status})</span>
             )}
-          </button>
+          </Button>
         </form>
       ))}
       {canOpen.map((o) => (

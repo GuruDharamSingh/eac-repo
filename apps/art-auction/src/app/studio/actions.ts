@@ -82,7 +82,7 @@ export async function openOrgStoreAction(orgId: string): Promise<Result> {
       path: "/",
       maxAge: 180 * 86400,
     });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath("/studio/apply");
     return { ok: true };
   } catch (err) {
@@ -131,7 +131,7 @@ export async function applyArtistAction(input: ApplyArtistInput): Promise<Result
     });
     if (!result.ok) return { ok: false, error: result.error };
 
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath("/studio/apply");
     return { ok: true };
   } catch (err) {
@@ -170,7 +170,7 @@ export async function updateProfileAction(input: ApplyArtistInput): Promise<Resu
       });
     }
     revalidatePath("/studio/profile");
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     if (store.slug) revalidatePath(`/artists/${store.slug}`);
     return { ok: true };
   } catch (err) {
@@ -242,7 +242,7 @@ export async function createArtworkAction(
       inventoryQty: input.inventoryQty ?? 1,
       images: input.images,
     });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return { ok: true, id };
   } catch (err) {
     return fail(err);
@@ -273,7 +273,7 @@ export async function updateArtworkAction(
       inventoryQty: input.inventoryQty ?? undefined,
     });
     await setArtworkMedia(artworkId, userId, input.images);
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/studio/artworks/${artworkId}/edit`);
     return { ok: true };
   } catch (err) {
@@ -285,8 +285,8 @@ export async function publishArtworkAction(artworkId: string): Promise<Result> {
   const { userId } = await requireStudioStore();
   try {
     await publishArtwork(artworkId, userId);
-    revalidatePath("/studio");
-    revalidatePath("/artworks");
+    revalidatePath("/studio", "layout");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -297,8 +297,8 @@ export async function archiveArtworkAction(artworkId: string): Promise<Result> {
   const { userId } = await requireStudioStore();
   try {
     await archiveArtwork(artworkId, userId);
-    revalidatePath("/studio");
-    revalidatePath("/artworks");
+    revalidatePath("/studio", "layout");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -334,7 +334,7 @@ export async function createLotAction(
       bidIncrementMinor: input.bidIncrement != null && input.bidIncrement > 0 ? toMinor(input.bidIncrement) : undefined,
       antiSnipeMinutes: input.antiSnipeMinutes ?? undefined,
     });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath("/lots");
     revalidatePath(`/artworks/${input.artworkId}`);
     return { ok: true, lotId: lot.id };
@@ -347,7 +347,7 @@ export async function cancelLotAction(lotId: string): Promise<Result> {
   const { userId } = await requireStudioStore();
   try {
     await cancelLot({ lotId, actorUserId: userId });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath("/lots");
     return { ok: true };
   } catch (err) {
@@ -379,7 +379,7 @@ export async function confirmOrderPaidAction(
       method: "etransfer",
       paymentReference: paymentReference?.trim() || undefined,
     });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/orders/${orderId}`);
     return { ok: true };
   } catch (err) {
@@ -391,9 +391,9 @@ export async function cancelOrderAction(orderId: string, reason?: string): Promi
   try {
     const userId = await requireOrderAccess(orderId);
     await cancelOrder({ orderId, actorUserId: userId, reason: reason?.trim() || "by seller" });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/orders/${orderId}`);
-    revalidatePath("/artworks");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -404,7 +404,7 @@ export async function fulfilOrderAction(orderId: string, note?: string): Promise
   try {
     const userId = await requireOrderAccess(orderId);
     await markOrderFulfilled({ orderId, actorUserId: userId, note: note?.trim() || undefined });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/orders/${orderId}`);
     return { ok: true };
   } catch (err) {
@@ -425,9 +425,9 @@ export async function refundOrderAction(orderId: string, reason?: string): Promi
       return { ok: false, error: "Card orders are refunded by the collective — ask an admin." };
     }
     await refundOrder({ orderId, actorUserId: userId, reason: reason?.trim() || "by seller" });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/orders/${orderId}`);
-    revalidatePath("/artworks");
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -443,7 +443,7 @@ export async function presentArtworkAction(storeId: string, artworkId: string): 
   try {
     await presentArtwork({ storeId, artworkId, actorUserId: userId });
     revalidatePath(`/artworks/${artworkId}`);
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -456,7 +456,7 @@ export async function unpresentArtworkAction(storeId: string, artworkId: string)
   try {
     await unpresentArtwork({ storeId, artworkId, actorUserId: userId });
     revalidatePath(`/artworks/${artworkId}`);
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -470,8 +470,8 @@ export async function setPayoutEmailAction(formData: FormData): Promise<void> {
   if (!userId) redirect("/login?next=/studio");
   const email = String(formData.get("payoutEmail") ?? "").trim();
   await setPayoutIdentity(userId, { payoutEmail: email || null });
-  revalidatePath("/studio");
-  redirect("/studio#payouts");
+  revalidatePath("/studio", "layout");
+  redirect("/studio/payouts");
 }
 
 /** Send the person to Stripe Express onboarding (creates the account first). */
@@ -483,8 +483,8 @@ export async function startStripeOnboardingAction(): Promise<void> {
   const { url } = await startStripeOnboarding({
     userId: user.id,
     email: user.email ?? "",
-    refreshUrl: `${base}/studio?stripe=refresh#payouts`,
-    returnUrl: `${base}/studio?stripe=return#payouts`,
+    refreshUrl: `${base}/studio/payouts?stripe=refresh`,
+    returnUrl: `${base}/studio/payouts?stripe=return`,
   });
   redirect(url);
 }
@@ -493,8 +493,8 @@ export async function disconnectStripeAction(): Promise<void> {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login?next=/studio");
   await disconnectStripeAccount(userId);
-  revalidatePath("/studio");
-  redirect("/studio#payouts");
+  revalidatePath("/studio", "layout");
+  redirect("/studio/payouts");
 }
 
 // ─── Team (org stores) ───────────────────────────────────────────────────────
@@ -511,11 +511,11 @@ export async function addStoreMemberAction(formData: FormData): Promise<void> {
     SELECT id FROM users WHERE LOWER(email) = ${email} AND COALESCE(entity_type, 'person') = 'person' LIMIT 1
   `) as unknown as Array<{ id: string }>;
   if (!rows[0]) {
-    redirect(`/studio?error=${encodeURIComponent("No account with that email. They need to sign up first.")}#team`);
+    redirect(`/studio/payouts?error=${encodeURIComponent("No account with that email. They need to sign up first.")}`);
   }
   await addStoreMember(store.id, rows[0].id, role, userId);
-  revalidatePath("/studio");
-  redirect("/studio#team");
+  revalidatePath("/studio", "layout");
+  redirect("/studio/payouts");
 }
 
 export async function removeStoreMemberAction(memberUserId: string): Promise<void> {
@@ -524,6 +524,6 @@ export async function removeStoreMemberAction(memberUserId: string): Promise<voi
     throw new Error("Only a store owner can remove members.");
   }
   const res = await removeStoreMember(store.id, memberUserId);
-  revalidatePath("/studio");
-  redirect(res.ok ? "/studio#team" : `/studio?error=${encodeURIComponent(res.error ?? "Failed.")}#team`);
+  revalidatePath("/studio", "layout");
+  redirect(res.ok ? "/studio/payouts" : `/studio/payouts?error=${encodeURIComponent(res.error ?? "Failed.")}`);
 }

@@ -10,11 +10,11 @@ export default async function HubTabsLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <SiteShell>
+    <SiteShell wide>
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
         <HubTabNav />
+        {children}
       </div>
-      {children}
     </SiteShell>
   );
 }

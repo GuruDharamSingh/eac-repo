@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Pick an image: upload a new one, or choose something already in storage.
@@ -33,6 +33,18 @@ export interface MediaPickerProps {
   uploadEndpoint: string;
   /** GET target returning `{ files: [{url,name}] }` or `{ items: [...] }`. Omit to hide the Library tab. */
   libraryEndpoint?: string;
+  /**
+   * Several places to choose from, instead of one.
+   *
+   * Each becomes its own tab beside Upload — "This site", "My files" — rather
+   * than a toggle nested inside a Library tab. Flattening keeps every source
+   * one click away and makes it obvious that more than one exists, which a
+   * second-level control does not.
+   *
+   * Takes precedence over `libraryEndpoint`, which stays for the callers that
+   * have only one.
+   */
+  libraries?: Array<{ key: string; label: string; endpoint: string }>;
   /** Extra multipart fields sent with the upload (org id, folder, target…). */
   uploadFields?: Record<string, string>;
   label?: string;
@@ -40,18 +52,31 @@ export interface MediaPickerProps {
   accept?: string;
 }
 
-type Tab = "upload" | "library";
+/** "upload", or the key of one of the libraries. */
+type Tab = string;
 
 export function MediaPicker({
   value,
   onChange,
   uploadEndpoint,
   libraryEndpoint,
+  libraries,
   uploadFields,
   label = "Image",
   hint,
   accept = "image/*",
 }: MediaPickerProps) {
+  // One shape internally, whichever prop the caller used.
+  const sources = useMemo(
+    () =>
+      libraries?.length
+        ? libraries
+        : libraryEndpoint
+          ? [{ key: "library", label: "Library", endpoint: libraryEndpoint }]
+          : [],
+    [libraries, libraryEndpoint]
+  );
+
   const [tab, setTab] = useState<Tab>("upload");
   const [library, setLibrary] = useState<MediaPickerItem[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -59,11 +84,13 @@ export function MediaPicker({
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const activeSource = sources.find((s) => s.key === tab);
+
   const loadLibrary = useCallback(async () => {
-    if (!libraryEndpoint) return;
+    if (!activeSource) return;
     setError(null);
     try {
-      const res = await fetch(libraryEndpoint);
+      const res = await fetch(activeSource.endpoint);
       const body = await res.json();
       if (!res.ok) throw new Error(body?.error ?? "Could not load the library");
       // Accept either shape: /api/media/library returns `items`, the
@@ -82,11 +109,11 @@ export function MediaPicker({
       setLibrary([]);
       setError((err as Error).message);
     }
-  }, [libraryEndpoint]);
+  }, [activeSource]);
 
   useEffect(() => {
-    if (tab === "library" && library === null) void loadLibrary();
-  }, [tab, library, loadLibrary]);
+    if (activeSource && library === null) void loadLibrary();
+  }, [activeSource, library, loadLibrary]);
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -121,7 +148,7 @@ export function MediaPicker({
     <div className="eac-picker">
       <div className="eac-picker-label">
         <span>{label}</span>
-        {libraryEndpoint && (
+        {sources.length > 0 && (
           <span className="eac-picker-tabs" role="tablist">
             <button
               type="button"
@@ -132,15 +159,24 @@ export function MediaPicker({
             >
               Upload
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "library"}
-              className={tab === "library" ? "is-active" : undefined}
-              onClick={() => setTab("library")}
-            >
-              Library
-            </button>
+            {sources.map((source) => (
+              <button
+                key={source.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === source.key}
+                className={tab === source.key ? "is-active" : undefined}
+                onClick={() => {
+                  // Drop the cache on the way in, or the new tab briefly shows
+                  // the previous source's files — which look plausible and are
+                  // the wrong person's.
+                  if (tab !== source.key) setLibrary(null);
+                  setTab(source.key);
+                }}
+              >
+                {source.label}
+              </button>
+            ))}
           </span>
         )}
       </div>

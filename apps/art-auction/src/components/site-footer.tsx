@@ -12,7 +12,7 @@ export function SiteFooter() {
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <Link href="/artworks" className="underline-offset-4 hover:underline">
+          <Link href="/" className="underline-offset-4 hover:underline">
             Browse artworks
           </Link>
           <Link href="/lots" className="underline-offset-4 hover:underline">

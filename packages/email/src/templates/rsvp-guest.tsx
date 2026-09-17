@@ -1,8 +1,21 @@
 import * as React from 'react';
-import { Section, Text } from '@react-email/components';
-import { render } from '@react-email/render';
+import { Section, Text, Link } from '@react-email/components';
+import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import { ThreadCard, Prose } from '../components/cards';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
+import { SIGNUP_BY_PURCHASE, REMINDER_OPTIONS_NOTE, paragraphsOf } from '../copy';
+
+// ============================================================================
+// "You are on the list."
+//
+// Sent to whoever just reserved a place. Shares its middle with the welcome
+// email on purpose — same thread card, same materials note, same reminder
+// options — because for someone who signed up *by* reserving a place, the two
+// letters are one thought split across two moments. The difference is that
+// this one assumes the account already exists, so it skips the network letter
+// and the confirm link.
+// ============================================================================
 
 export interface RsvpGuestEmailProps {
   guestName: string;
@@ -17,15 +30,24 @@ export interface RsvpGuestEmailProps {
   materialsUrl?: string;
   orgName?: string;
   primaryColor?: string;
-  /** Dark card/background variant. Defaults to dark, matching today's output. */
   dark?: boolean;
-  /** Small header emblem (e.g. amrit-canada's Khanda). Unset for every other caller. */
   emblemUrl?: string;
   emblemAlt?: string;
-  /** Author-editable copy (email_template_settings config) — shown under "From the author" when present. */
+  /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
+
+  /** The thread's own page — "Navigate back to view details". */
+  threadUrl?: string;
+  threadKind?: string;
+  coverUrl?: string;
+  summary?: string;
+  /** Where the reader turns the reminder off or moves it earlier. */
+  reminderSettingsUrl?: string;
+  calendarUrl?: string;
+  orgHeader?: boolean;
+  orgAccent?: string;
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -33,6 +55,26 @@ const SECTION_LABELS: Record<string, string> = {
   yoga: 'Yoga',
   gurdwara: 'Gurdwara',
 };
+
+const TZ = 'America/Toronto';
+
+function formatWhen(value?: string): string | null {
+  if (!value) return null;
+  try {
+    return new Date(value).toLocaleString('en-CA', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: TZ,
+      timeZoneName: 'short',
+    });
+  } catch {
+    return null;
+  }
+}
 
 function RsvpGuestEmail({
   guestName,
@@ -43,164 +85,152 @@ function RsvpGuestEmail({
   meetingUrl,
   talkRoomUrl,
   materialsUrl,
-  primaryColor = '#c9a84c',
+  orgName,
   dark = true,
   emblemUrl,
   emblemAlt,
   bodyText,
   links = [],
   media = [],
+  threadUrl,
+  threadKind,
+  coverUrl,
+  summary,
+  reminderSettingsUrl,
+  calendarUrl,
+  orgHeader = false,
+  orgAccent,
 }: RsvpGuestEmailProps) {
   const palette = getEmailPalette(dark);
+  const when = formatWhen(scheduledAt);
   const sectionLabel = section ? (SECTION_LABELS[section] ?? section) : null;
-  const bodyParagraphs = bodyText
-    ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
-    : [];
-
-  let dateStr: string | null = null;
-  if (scheduledAt) {
-    try {
-      dateStr = new Date(scheduledAt).toLocaleDateString('en-CA', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/Toronto',
-      });
-    } catch {
-      dateStr = null;
-    }
-  }
-
-  const hasDetails = Boolean(sectionLabel || dateStr || location || meetingUrl || talkRoomUrl || materialsUrl);
+  const orgParagraphs = paragraphsOf(bodyText);
+  const joinUrl = talkRoomUrl ?? meetingUrl;
 
   return (
     <EmailShell
-      previewText={`Your RSVP is confirmed — ${meetingTitle}`}
-      kicker={meetingTitle}
+      previewText={`Your place at ${meetingTitle} is confirmed`}
+      kicker="You are on the list"
       dark={dark}
-      showNfpFooter
       emblemUrl={emblemUrl}
       emblemAlt={emblemAlt}
+      orgName={orgName}
+      orgHeader={orgHeader}
+      orgAccent={orgAccent}
+      showNfpFooter
+      footerText={
+        <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
+          You are receiving this because you reserved a place
+          {orgName ? ` with ${orgName}` : ''}.
+          {reminderSettingsUrl && (
+            <>
+              {' '}
+              <Link href={reminderSettingsUrl} style={{ color: palette.textMuted, textDecoration: 'underline' }}>
+                Change or turn off reminders.
+              </Link>
+            </>
+          )}
+        </Text>
+      }
     >
-      <Text style={{ fontSize: '13px', color: palette.textMuted, marginTop: 0, marginBottom: '2px' }}>
-        This email is for {guestName}.
-      </Text>
-      <Text style={{ fontSize: '17px', color: palette.textPrimary, marginTop: 0, lineHeight: '1.5' }}>
-        Your RSVP for <strong>{meetingTitle}</strong> has been received.
-      </Text>
+      <Prose dark={dark}>{guestName},</Prose>
+      <Prose dark={dark}>
+        Your registration is completed{sectionLabel ? `, in ${sectionLabel}` : ''}.
+      </Prose>
 
-      {hasDetails && (
-        <Section
-          style={{
-            background: palette.boxBg,
-            border: `1px solid ${palette.boxBorder}`,
-            borderLeft: `4px solid ${primaryColor}`,
-            padding: '16px 20px',
-            margin: '22px 0',
-          }}
-        >
-          {sectionLabel && (
-            <Text
-              style={{
-                margin: '0 0 4px',
-                fontSize: '11px',
-                color: palette.textMuted,
-                fontFamily: 'Arial, sans-serif',
-                textTransform: 'uppercase' as const,
-                letterSpacing: '0.08em',
-              }}
-            >
-              {sectionLabel}
-            </Text>
-          )}
-          {dateStr && (
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
-              <strong>When:</strong> {dateStr}
-            </Text>
-          )}
-          {location && (
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
-              <strong>Where:</strong> {location}
-            </Text>
-          )}
-          {meetingUrl && (
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
-              Video link: <a href={meetingUrl} style={{ color: palette.accent }}>{meetingUrl}</a>
-            </Text>
-          )}
-          {talkRoomUrl && (
-            <Text style={{ margin: '0 0 6px', fontSize: '14px', color: palette.textBody }}>
-              Talk room: <a href={talkRoomUrl} style={{ color: palette.accent }}>Join the Talk room</a>
-            </Text>
-          )}
-          {materialsUrl && (
-            <Text style={{ margin: 0, fontSize: '14px', color: palette.textBody }}>
-              Materials: <a href={materialsUrl} style={{ color: palette.accent }}>View materials</a>
-            </Text>
-          )}
-        </Section>
-      )}
+      <ThreadCard
+        title={meetingTitle}
+        kind={threadKind}
+        orgName={orgName}
+        when={when ?? undefined}
+        where={location}
+        summary={summary}
+        coverUrl={coverUrl}
+        url={threadUrl}
+        linkLabel="Navigate back to view details"
+        joinUrl={joinUrl}
+        dark={dark}
+      />
 
-      {bodyParagraphs.length > 0 && (
-        <Section style={{ margin: '20px 0' }}>
-          <Text
-            style={{
-              margin: '0 0 8px',
-              fontSize: '11px',
-              color: palette.textMuted,
-              fontFamily: 'Arial, sans-serif',
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.12em',
-            }}
-          >
-            From the author
-          </Text>
-          {bodyParagraphs.map((paragraph, index) => (
-            <Text key={index} style={{ fontSize: '15px', color: palette.textBody, lineHeight: '1.7' }}>
-              {paragraph}
-            </Text>
-          ))}
-        </Section>
-      )}
-
-      {media.map((item, index) => (
-        <Section key={`media-${index}`} style={{ margin: '16px 0' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.url}
-            alt={item.alt ?? ''}
-            style={{ maxWidth: '100%', display: 'block' }}
-          />
-          {item.caption && (
-            <Text style={{ margin: '6px 0 0', fontSize: '12px', color: palette.textMuted }}>
-              {item.caption}
-            </Text>
-          )}
-        </Section>
+      {SIGNUP_BY_PURCHASE.map((paragraph, i) => (
+        <Prose key={`materials-${i}`} dark={dark}>{paragraph}</Prose>
       ))}
 
+      {materialsUrl && (
+        <Section style={{ margin: '0 0 18px' }}>
+          {materialsUrl && (
+            <Text style={{ margin: '0 0 6px' }}>
+              <Link href={materialsUrl} style={{ color: palette.accent, fontSize: '14px' }}>
+                Open the materials
+              </Link>
+            </Text>
+          )}
+        </Section>
+      )}
+
+      {(reminderSettingsUrl || calendarUrl) && (
+        <Prose dark={dark} muted>
+          {REMINDER_OPTIONS_NOTE}{' '}
+          {reminderSettingsUrl && (
+            <Link href={reminderSettingsUrl} style={{ color: palette.accent }}>
+              Change or turn off the reminder
+            </Link>
+          )}
+          {reminderSettingsUrl && calendarUrl ? ' · ' : ''}
+          {calendarUrl && (
+            <Link href={calendarUrl} style={{ color: palette.accent }}>
+              Add it to your calendar
+            </Link>
+          )}
+        </Prose>
+      )}
+
+      {orgParagraphs.length > 0 && (
+        <Section style={{ margin: '4px 0 0' }}>
+          <Text
+            style={{
+              fontSize: '11px',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.13em',
+              color: palette.textMuted,
+              margin: '0 0 12px',
+            }}
+          >
+            {orgName ? `From ${orgName}` : 'From your hosts'}
+          </Text>
+          {orgParagraphs.map((paragraph, i) => (
+            <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
+          ))}
+        </Section>
+      )}
+
       {links.length > 0 && (
-        <Section style={{ margin: '16px 0' }}>
-          {links.map((link, index) => (
-            <Text key={`link-${index}`} style={{ margin: '0 0 6px', fontSize: '14px' }}>
-              <a href={link.url} style={{ color: palette.accent }}>{link.label}</a>
+        <Section style={{ margin: '10px 0 0' }}>
+          {links.map((link) => (
+            <Text key={link.url} style={{ margin: '0 0 6px' }}>
+              <Link href={link.url} style={{ color: palette.accent, fontSize: '14px' }}>{link.label}</Link>
             </Text>
           ))}
         </Section>
       )}
 
-      <Text style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.75', margin: '24px 0 0' }}>
-        We thank you for signing up with Elkdonis Arts Collective. There&apos;s a lot of other
-        content being developed and constantly coming out — stay tuned for more.
-      </Text>
-      <Text style={{ fontSize: '14px', color: palette.textBody, lineHeight: '1.75', margin: '10px 0 0' }}>
-        You can also expect a reminder email the morning of the meeting.
-      </Text>
+      {media.length > 0 && (
+        <Section style={{ margin: '14px 0 0' }}>
+          {media.map((item) => (
+            <Section key={item.url} style={{ margin: '0 0 12px' }}>
+              <img src={item.url} alt={item.alt ?? ''} width="520" style={{ display: 'block', width: '100%', height: 'auto' }} />
+              {item.caption && (
+                <Text style={{ fontSize: '12px', color: palette.textMuted, margin: '6px 0 0' }}>{item.caption}</Text>
+              )}
+            </Section>
+          ))}
+        </Section>
+      )}
     </EmailShell>
   );
 }
 
 export async function renderRsvpGuestEmail(props: RsvpGuestEmailProps): Promise<string> {
-  return render(React.createElement(RsvpGuestEmail, props));
+  return renderEmail(<RsvpGuestEmail {...props} />);
 }

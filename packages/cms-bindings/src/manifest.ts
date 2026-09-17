@@ -55,6 +55,17 @@ export interface TemplateSection {
   /** `data-trait` attribute names bound in the section's HTML. Live-editor only. */
   traits?: string[];
   /**
+   * The `users.profile_sections` key that must be on for this section to
+   * render (migration 105).
+   *
+   * Only meaningful for templates that describe a PERSON, which is why it is
+   * optional here: an org's workshop page has no such notion. Declaring it in
+   * the manifest rather than in a renderer is what lets the profile sidebar
+   * build its list of switches from the template itself, so adding a section
+   * to a template adds its switch without touching the editing UI.
+   */
+  profileSection?: string;
+  /**
    * Trait → binding: which context value fills which hook, and how it is
    * formatted. This is the edge that used to live as hand-written regex in a
    * per-template `render.ts`; declaring it here lets one engine render every

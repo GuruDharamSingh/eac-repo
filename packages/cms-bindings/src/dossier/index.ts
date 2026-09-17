@@ -2,19 +2,44 @@ export type {
   DossierProfileData,
   DossierOperation,
   DossierChannel,
+  DossierService,
+  DossierDispatch,
+  DossierMovement,
+  DossierExhibit,
+  DossierLot,
+  DossierStorefront,
+  DossierFiling,
+  DossierOrgActivity,
+  DossierActivity,
+  DossierSections,
   DossierTemplates,
 } from "./types";
 
-export { dossierFieldRegistry } from "./field-registry";
-export type { DossierFieldMeta } from "./field-registry";
+export {
+  dossierFieldRegistry,
+  dossierFieldGroups,
+  DOSSIER_SECTION_KEYS,
+} from "./field-registry";
+export type {
+  DossierFieldMeta,
+  DossierFieldGroup,
+  DossierSectionKey,
+} from "./field-registry";
 
 export {
+  DOSSIER_TEMPLATE_ID,
   renderDossier,
-  applyDossierTraits,
-  buildDossierNav,
-  buildDossierIdentity,
-  buildOperationsHtml,
-  buildIntelligenceHtml,
-  buildNetworkHtml,
-  buildFundsHtml,
+  bindPublishedDossier,
+  dossierSectionsFor,
+  toDossierContext,
+  visibleDossierSections,
+  caseNumber,
+  safeHref,
+} from "./render";
+export type {
+  RenderDossierOptions,
+  DossierSectionHtml,
+  DossierContext,
+  DossierContextOptions,
+  DossierPlate,
 } from "./render";

@@ -40,6 +40,34 @@ export interface SurfaceCardProps {
   /** Drawn between the blurb and the title block: server-rendered, so it
    *  costs nothing on the client and is visible before any JS runs. */
   preview?: React.ReactNode;
+  /**
+   * The top row — where the kind's medallion sits by default.
+   *
+   * That row was decoration: a 32px tinted tile restating a kind the card's
+   * own accent, kicker and title already say three other ways, occupying the
+   * most reachable corner of every tile. Anything passed here takes it
+   * instead and is LIVE (the face's content is otherwise inert so the whole
+   * card can be one hit target), so a face can put its most useful control
+   * where the ornament was: an RSVP on the gathering, a personal/team switch
+   * on the drive, a quick-add on the board.
+   *
+   * The glyph is dropped when this is present — two marks competing for one
+   * corner is what the slot exists to stop.
+   */
+  tools?: React.ReactNode;
+  /**
+   * Where the title block sits.
+   *
+   * "footer" (the default) puts kicker/title/blurb at the BOTTOM, under the
+   * preview, so a row of tiles shares a baseline however tall each preview
+   * is. Right for a grid read at a glance.
+   *
+   * "header" leads with the title and puts the live content beneath it —
+   * right for a face you read top-down and then USE, where the preview is
+   * the point (a list of documents, an input, a directory) rather than a
+   * glance-value summary.
+   */
+  layout?: "footer" | "header";
   /** Full-width in the grid. */
   wide?: boolean;
   /** Dense — the compose picker's options. */
@@ -68,6 +96,8 @@ export function SurfaceCard({
   disabled,
   ariaLabel,
   cue,
+  tools,
+  layout = "footer",
   className,
 }: SurfaceCardProps) {
   const surfaces = useSurfaceOptional();
@@ -77,6 +107,8 @@ export function SurfaceCard({
     "eac-face",
     wide && "eac-face--wide",
     small && "eac-face--small",
+    layout === "header" && "eac-face--header",
+    tools && "eac-face--tools",
     disabled && "is-disabled",
     className,
   ]
@@ -84,6 +116,19 @@ export function SurfaceCard({
     .join(" ");
 
   const cueText = cue ?? (href && !surface ? "→" : "+");
+
+  // The kicker names the kind; the title names the thing. When a face is
+  // simply its own kind — Calendar, Compose — the default kicker repeats the
+  // title verbatim, and the card says the same word twice in two type sizes.
+  // A host can still pass one explicitly, and `null` still suppresses it.
+  const defaultKicker = meta.label;
+  const resolvedKicker =
+    kicker === null
+      ? null
+      : (kicker ??
+         (defaultKicker && defaultKicker.toLowerCase() === title.trim().toLowerCase()
+           ? null
+           : defaultKicker));
 
   const hit = disabled ? null : href && !surface ? (
     <a className="eac-face-hit" href={href} aria-label={ariaLabel ?? title} />
@@ -107,23 +152,47 @@ export function SurfaceCard({
     />
   );
 
+  const titleBlock = (
+    <div className="eac-face-head">
+      {resolvedKicker && <span className="eac-face-kicker">{resolvedKicker}</span>}
+      <span className="eac-face-title">{title}</span>
+      {blurb && <span className="eac-face-blurb">{blurb}</span>}
+    </div>
+  );
+
   return (
     <article className={cls} data-kind={kind} aria-disabled={disabled || undefined}>
       {hit}
-      <span className="eac-face-glyph" aria-hidden>
-        {glyph ?? meta.glyph}
-      </span>
-      {!disabled && (
+      {tools ? (
+        // Live, unlike everything else in a face: the whole card is a hit
+        // target behind inert content, and a control in this row has to take
+        // its own clicks back.
+        <div className="eac-face-tools eac-face-live">{tools}</div>
+      ) : layout === "header" ? null : (
+        // Dropped entirely in the header layout. The medallion is absolutely
+        // positioned in the card's top-left, which is exactly where a
+        // header-led face puts its title — drawn, it sits BEHIND the first
+        // word. Reserving a row for it instead would give back the space the
+        // header layout exists to reclaim, and the kind is already said by
+        // the card's accent, its top edge and its kicker. So: a face either
+        // leads with its mark, or leads with its title.
+        <span className="eac-face-glyph" aria-hidden>
+          {glyph ?? meta.glyph}
+        </span>
+      )}
+      {/* The corner cue is a hint that the card opens — a "+" or a "→". On a
+          card carrying a real tools row it is the opposite of useful: an
+          unlabelled mark competing with actual controls for the same band,
+          and the first thing anyone asks about it is what it does. A face
+          with tools has its actions on show; it does not need a hint too. */}
+      {!disabled && !tools && (
         <span className="eac-face-cue" aria-hidden>
           {cueText}
         </span>
       )}
+      {layout === "header" && titleBlock}
       {preview !== undefined && <div className="eac-face-preview">{preview}</div>}
-      {kicker !== null && (kicker ?? meta.label) && (
-        <span className="eac-face-kicker">{kicker ?? meta.label}</span>
-      )}
-      <span className="eac-face-title">{title}</span>
-      {blurb && <span className="eac-face-blurb">{blurb}</span>}
+      {layout === "footer" && titleBlock}
     </article>
   );
 }

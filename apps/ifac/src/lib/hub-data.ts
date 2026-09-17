@@ -62,6 +62,12 @@ export type ProfileSummary = {
   bioLength: number;
   galleryCount: number;
   galleriesCount: number;
+  /**
+   * Which directory this person is listed in, so a link to their page goes to
+   * the right one. The hub used to hardcode /artists/<slug>, which is a 404
+   * for every dealer on the site.
+   */
+  kind: "artist" | "dealer";
 };
 
 /**
@@ -89,10 +95,11 @@ export async function getProfileSummary(
         bio: string | null;
         portfolio: unknown;
         role_title: string | null;
+        tags: string[] | null;
       }>
     >`
       SELECT u.slug, u.display_name, u.avatar_url, u.headline, u.bio,
-             u.portfolio, op.role_title
+             u.portfolio, op.role_title, op.tags
       FROM users u
       LEFT JOIN org_profiles op
         ON op.user_id = u.id AND op.org_id = ${ORG}
@@ -110,6 +117,7 @@ export async function getProfileSummary(
       bioLength: (row.bio ?? "").trim().length,
       galleryCount: portfolio.length,
       galleriesCount: await countUserGalleries(userId),
+      kind: (row.tags ?? []).includes("dealer") ? "dealer" : "artist",
     };
   } catch (error) {
     console.error("[ifac] getProfileSummary error:", error);

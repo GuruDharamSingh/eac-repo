@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { signOut } from "@elkdonis/auth-client";
+import { Button } from "@/components/ui/button";
 
 /**
  * Signs the user out via the shared auth-client helper (POST /api/auth/logout)
@@ -20,16 +21,14 @@ export function LogoutButton({ className }: { className?: string }) {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={handleLogout}
       disabled={pending}
-      className={
-        className ??
-        "inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
-      }
+      className={className}
     >
       {pending ? "Signing out…" : "Log out"}
-    </button>
+    </Button>
   );
 }

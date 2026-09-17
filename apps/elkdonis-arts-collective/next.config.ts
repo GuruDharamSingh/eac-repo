@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 const appDir = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@elkdonis/email", "@elkdonis/ui"],
+  transpilePackages: [
+    "@elkdonis/services","@elkdonis/email", "@elkdonis/ui"],
   turbopack: {
     root: join(appDir, "../.."),
   },

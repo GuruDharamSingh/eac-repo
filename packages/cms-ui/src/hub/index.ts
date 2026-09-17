@@ -16,6 +16,7 @@ export { CalendarFace } from "./CalendarFace";
 export { GalleryFace } from "./GalleryFace";
 export { ComposeFace } from "./ComposeFace";
 export { ProfileFace } from "./ProfileFace";
+export { IdentitiesFace } from "./IdentitiesFace";
 export { DocumentsFace } from "./DocumentsFace";
 export { IdeasFace } from "./IdeasFace";
 export { PipelineFace } from "./PipelineFace";
@@ -29,4 +30,9 @@ export type {
   HubPipelineBoard,
   HubProfileSummary,
   HubStandingMeeting,
+  RsvpFlavourOption,
+  StandingMeetingAttendance,
+  StandingMeetingHistory,
+  StandingMeetingLight,
+  StandingMeetingPast,
 } from "./types";

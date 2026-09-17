@@ -2,6 +2,10 @@
 
 import * as React from "react";
 import type { ComposeOption } from "./catalogue";
+// The file, not the barrel: surface/index.ts re-exports the surfaces, two of
+// which import from this folder. Reaching for the component directly keeps
+// that from becoming a cycle.
+import { SurfaceCard } from "../surface/SurfaceCard";
 
 // ============================================================================
 // The compose popup, shared by every hub.
@@ -147,6 +151,15 @@ export function ComposeSheet({
  *
  * Exported because a hub may want the CMS as a page rather than a popup — the
  * same grid, rendered inline, with no modal around it.
+ *
+ * Each option is a `SurfaceCard` in its dense form, not a bordered box of
+ * Tailwind utilities. That was a real cost, not a stylistic one: the options
+ * were the only part of the compose flow drawn in utility classes, so in the
+ * apps that carry their own stylesheet (ifac, artdirect) they arrived as five
+ * identical grey rectangles while everything around them was themed. As faces
+ * they inherit the kind accents the rest of the network already reads by —
+ * an event is blue here because an event is blue everywhere — and the picker
+ * looks like the hub it was opened from.
  */
 export function ComposePicker({
   options,
@@ -156,51 +169,30 @@ export function ComposePicker({
   onSelect: (option: ComposeOption) => void;
 }) {
   if (options.length === 0) {
-    return (
-      <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-        There is nothing to compose here yet.
-      </p>
-    );
+    return <p className="eac-pick-empty">There is nothing to compose here yet.</p>;
   }
 
   return (
-    <ul className="grid gap-2 sm:grid-cols-2">
-      {options.map((option) => {
-        const inner = (
-          <>
-            <span aria-hidden className="text-lg text-[hsl(var(--muted-foreground))]">
-              {option.icon}
-            </span>
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium text-[hsl(var(--foreground))]">
-                {option.title}
-              </span>
-              <span className="block text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
-                {option.blurb}
-              </span>
-            </span>
-          </>
-        );
-
-        const cls =
-          "flex w-full items-start gap-3 rounded-lg border border-[hsl(var(--border))] p-3 text-left transition-colors hover:border-[hsl(var(--foreground))]/30 hover:bg-[hsl(var(--muted))]/40";
-
-        return (
-          <li key={option.id}>
-            {option.mode === "route" && option.href ? (
-              // A kind whose authoring is too large for a popup navigates
-              // instead — the workshop wizard is ten manifest-derived steps.
-              <a href={option.href} className={cls}>
-                {inner}
-              </a>
-            ) : (
-              <button type="button" onClick={() => onSelect(option)} className={cls}>
-                {inner}
-              </button>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <div className="eac-pick">
+      {options.map((option) => (
+        <SurfaceCard
+          key={option.id}
+          small
+          kind={option.writes.kind}
+          glyph={option.icon}
+          title={option.title}
+          blurb={option.blurb}
+          // The kind's own name is already the glyph's colour and the card's
+          // wash; printing it as a kicker as well would say "Event" three
+          // times on one 90px card.
+          kicker={null}
+          // A kind whose authoring is too large for a popup navigates instead
+          // — the workshop wizard is ten manifest-derived steps.
+          {...(option.mode === "route" && option.href
+            ? { href: option.href, cue: "→" }
+            : { onClick: () => onSelect(option) })}
+        />
+      ))}
+    </div>
   );
 }

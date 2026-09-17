@@ -104,8 +104,9 @@ export default async function GuidePage({ params }: GuidePageProps) {
             store={store.store}
             artworks={store.artworks}
             marketplaceUrl={siteConfig.marketplaceUrl}
+            from="amrit_canada"
             heading={`From ${guide.displayName.split(" ")[0]}’s store`}
-            columns={3}
+            density="normal"
             className="mt-6"
           />
         </div>

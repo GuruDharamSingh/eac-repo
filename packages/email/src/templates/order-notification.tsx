@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   Html, Head, Body, Container, Section, Heading, Text, Hr, Preview,
 } from '@react-email/components';
-import { render } from '@react-email/render';
+import { renderEmail } from '../render-email';
 
 export interface OrderNotificationEmailProps {
   role: 'artist' | 'platform';
@@ -156,5 +156,5 @@ function OrderNotificationEmail({
 }
 
 export async function renderOrderNotificationEmail(props: OrderNotificationEmailProps): Promise<string> {
-  return render(React.createElement(OrderNotificationEmail, props));
+  return renderEmail(React.createElement(OrderNotificationEmail, props));
 }

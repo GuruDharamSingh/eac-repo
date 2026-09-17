@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getOrgFeed } from "@elkdonis/services";
+import { SectionBanner } from "@elkdonis/blocks";
 import { ThreadCard } from "@/components/thread-card";
-import { FeedBanner } from "@/components/feed-banner";
 import {
   getAttendanceCount,
   getCycleStatus,
@@ -73,11 +73,14 @@ export default async function FeedPage({ params }: FeedPageProps) {
           : undefined
       }
     >
-      <FeedBanner
-        eyebrow={feed.presenter ? `Presented by ${feed.presenter}` : null}
+      {/* The banner is a shared block now. It takes a real CSS colour rather
+          than this site's bare HSL triplet, so the wrapping happens here — the
+          same hand-off the --eac-control-* tokens make in globals.css. */}
+      <SectionBanner
+        eyebrow={feed.presenter ? `Presented by ${feed.presenter}` : undefined}
         title={feed.name}
-        subtitle={feed.tagline}
-        accent={accent}
+        subtitle={feed.tagline ?? undefined}
+        accent={accent ? `hsl(${accent})` : undefined}
       />
 
       <div className="mx-auto max-w-5xl px-5 py-12">

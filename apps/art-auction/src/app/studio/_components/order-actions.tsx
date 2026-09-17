@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { Order } from "@elkdonis/commerce/types";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Result = { ok: boolean; error?: string };
 
@@ -14,6 +16,8 @@ export interface OrderActionSet {
   /** Full refund. Omit where the caller cannot issue one (e.g. card orders in the studio). */
   refund?: (orderId: string, reason?: string) => Promise<Result>;
 }
+
+type DialogKind = "confirm" | "cancel" | "fulfil" | "refund" | null;
 
 /**
  * The seller's (or admin's) controls on one order. Headless about WHICH
@@ -33,6 +37,7 @@ export function OrderActions({
 }) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
+  const [dialog, setDialog] = React.useState<DialogKind>(null);
 
   async function run(fn: () => Promise<Result>, success: string) {
     setPending(true);
@@ -40,6 +45,7 @@ export function OrderActions({
       const res = await fn();
       if (res.ok) {
         toast.success(success);
+        setDialog(null);
         router.refresh();
       } else {
         toast.error(res.error ?? "Something went wrong.");
@@ -49,92 +55,95 @@ export function OrderActions({
     }
   }
 
-  const btn =
-    "rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50";
-  const primary =
-    "rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50";
-
   const unpaid =
     order.status === "awaiting_etransfer" ||
     order.status === "pending_payment" ||
     order.status === "payment_received";
 
-  if (unpaid) {
-    return (
-      <div className="flex flex-wrap items-center gap-2">
-        {order.paymentMethod === "etransfer" && (
-          <button
-            type="button"
-            disabled={pending}
-            className={primary}
-            onClick={() => {
-              const ref = window.prompt(
-                `Confirm the eTransfer for ${order.number} arrived. Optional: the transfer reference.`,
-                ""
-              );
-              if (ref === null) return;
-              void run(() => actions.confirm(order.id, ref), "Marked paid — the piece is sold.");
-            }}
-          >
-            {pending ? "…" : "Payment received"}
-          </button>
-        )}
-        <button
-          type="button"
-          disabled={pending}
-          className={btn}
-          onClick={() => {
-            if (!window.confirm(`Cancel ${order.number} and put the piece back on sale?`)) return;
-            void run(() => actions.cancel(order.id), "Order cancelled; the piece is available again.");
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    );
-  }
+  const refundAvailable =
+    actions.refund && (order.status === "paid" || order.status === "fulfilled");
 
-  const refundBtn = actions.refund && (order.status === "paid" || order.status === "fulfilled") && (
-    <button
-      type="button"
-      disabled={pending}
-      className={btn}
-      onClick={() => {
-        const reason = window.prompt(
-          `Refund ${order.number} in full and put the piece back on sale? Optional: reason.`,
-          ""
-        );
-        if (reason === null) return;
-        void run(() => actions.refund!(order.id, reason), "Refunded; the piece is available again.");
-      }}
-    >
+  const refundButton = refundAvailable && (
+    <Button type="button" variant="outline" size="sm" onClick={() => setDialog("refund")}>
       Refund
-    </button>
+    </Button>
   );
 
-  if (order.status === "paid") {
-    return (
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={pending}
-          className={primary}
-          onClick={() => {
-            const note = window.prompt("Mark as shipped. Optional: carrier / tracking note.", "");
-            if (note === null) return;
-            void run(() => actions.fulfil(order.id, note), "Marked shipped.");
-          }}
-        >
-          {pending ? "…" : "Mark shipped"}
-        </button>
-        {refundBtn}
-      </div>
-    );
-  }
+  return (
+    <>
+      {unpaid && (
+        <div className="flex flex-wrap items-center gap-2">
+          {order.paymentMethod === "etransfer" && (
+            <Button type="button" size="sm" onClick={() => setDialog("confirm")}>
+              Payment received
+            </Button>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={() => setDialog("cancel")}>
+            Cancel
+          </Button>
+        </div>
+      )}
 
-  if (order.status === "fulfilled" && refundBtn) {
-    return <div className="flex items-center gap-2">{refundBtn}</div>;
-  }
+      {order.status === "paid" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" onClick={() => setDialog("fulfil")}>
+            Mark shipped
+          </Button>
+          {refundButton}
+        </div>
+      )}
 
-  return null;
+      {order.status === "fulfilled" && refundButton && (
+        <div className="flex items-center gap-2">{refundButton}</div>
+      )}
+
+      <ConfirmDialog
+        open={dialog === "confirm"}
+        onOpenChange={(open) => setDialog(open ? "confirm" : null)}
+        title="Confirm the eTransfer arrived"
+        description={`Mark ${order.number} as paid — the piece is sold.`}
+        field={{ label: "Transfer reference (optional)" }}
+        confirmLabel="Payment received"
+        pending={pending}
+        onConfirm={(ref) => void run(() => actions.confirm(order.id, ref), "Marked paid — the piece is sold.")}
+      />
+
+      <ConfirmDialog
+        open={dialog === "cancel"}
+        onOpenChange={(open) => setDialog(open ? "cancel" : null)}
+        title="Cancel this order?"
+        description={`${order.number} will be cancelled and the piece put back on sale.`}
+        confirmLabel="Cancel order"
+        tone="destructive"
+        pending={pending}
+        onConfirm={() => void run(() => actions.cancel(order.id), "Order cancelled; the piece is available again.")}
+      />
+
+      <ConfirmDialog
+        open={dialog === "fulfil"}
+        onOpenChange={(open) => setDialog(open ? "fulfil" : null)}
+        title="Mark as shipped"
+        field={{ label: "Carrier / tracking note (optional)" }}
+        confirmLabel="Mark shipped"
+        pending={pending}
+        onConfirm={(note) => void run(() => actions.fulfil(order.id, note), "Marked shipped.")}
+      />
+
+      {actions.refund && (
+        <ConfirmDialog
+          open={dialog === "refund"}
+          onOpenChange={(open) => setDialog(open ? "refund" : null)}
+          title="Refund this order?"
+          description={`${order.number} will be refunded in full and the piece put back on sale.`}
+          field={{ label: "Reason (optional)" }}
+          confirmLabel="Refund"
+          tone="destructive"
+          pending={pending}
+          onConfirm={(reason) =>
+            void run(() => actions.refund!(order.id, reason), "Refunded; the piece is available again.")
+          }
+        />
+      )}
+    </>
+  );
 }

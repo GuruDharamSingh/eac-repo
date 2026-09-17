@@ -8,6 +8,7 @@ import {
   type UploadedImage,
 } from "@elkdonis/studio-ui";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
+import { Button } from "@/components/ui/button";
 import {
   createArtworkAction,
   updateArtworkAction,
@@ -38,13 +39,42 @@ export type ArtworkFormInitial = {
 };
 
 const inputCls =
-  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-[2px] focus:ring-ring/50";
+  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const labelCls = "mb-1 block text-sm font-medium";
 
 function numOrNull(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Dimensions are stored in centimetres, but almost nobody measures a canvas
+ * that way — an artist says "four by eight feet". Entering it in the unit you
+ * actually work in and letting the form convert is the difference between the
+ * field being filled in and being skipped, and an empty dimension is why the
+ * 3D gallery cannot hang anything at true scale.
+ */
+const UNITS = {
+  cm: { label: "cm", toCm: 1 },
+  in: { label: "inches", toCm: 2.54 },
+  ft: { label: "feet", toCm: 30.48 },
+} as const;
+
+type UnitKey = keyof typeof UNITS;
+
+function toCm(value: string, unit: UnitKey): number | null {
+  const n = numOrNull(value);
+  if (n == null) return null;
+  // Rounded to the stored scale, numeric(8,2), so what is read back matches
+  // what was typed rather than drifting by a hundredth.
+  return Math.round(n * UNITS[unit].toCm * 100) / 100;
+}
+
+function fromCm(cm: number | null | undefined, unit: UnitKey): string {
+  if (cm == null) return "";
+  const v = cm / UNITS[unit].toCm;
+  return String(Math.round(v * 1000) / 1000);
 }
 
 export function ArtworkForm({
@@ -72,6 +102,7 @@ export function ArtworkForm({
   const [medium, setMedium] = React.useState(initial?.medium ?? "");
   const [style, setStyle] = React.useState(initial?.style ?? "");
   const [subject, setSubject] = React.useState(initial?.subject ?? "");
+  const [unit, setUnit] = React.useState<UnitKey>("cm");
   const [height, setHeight] = React.useState(
     initial?.heightCm != null ? String(initial.heightCm) : ""
   );
@@ -96,6 +127,9 @@ export function ArtworkForm({
   const [inventory, setInventory] = React.useState(
     initial?.inventoryQty != null ? String(initial.inventoryQty) : "1"
   );
+  /** Natural proportions of the lead photo, once the browser has measured it. */
+  const [imageAspect, setImageAspect] = React.useState<number | null>(null);
+
   const [images, setImages] = React.useState<UploadedImage[]>(
     initial?.images ?? []
   );
@@ -110,9 +144,9 @@ export function ArtworkForm({
       medium: medium.trim() || null,
       style: style.trim() || null,
       subject: subject.trim() || null,
-      heightCm: numOrNull(height),
-      widthCm: numOrNull(width),
-      depthCm: numOrNull(depth),
+      heightCm: toCm(height, unit),
+      widthCm: toCm(width, unit),
+      depthCm: toCm(depth, unit),
       certificateOfAuthenticity: coa,
       provenanceNotes: provenance.trim() || null,
       price: Number(price) || 0,
@@ -127,6 +161,72 @@ export function ArtworkForm({
       creditMe: allowMakerChoice ? creditMe : undefined,
     };
   }
+
+  /** Re-express what is already typed when the unit changes, rather than
+   *  silently reinterpreting "4" as four centimetres. */
+  const changeUnit = (next: UnitKey) => {
+    const convert = (v: string) => {
+      const n = numOrNull(v);
+      if (n == null) return v;
+      return fromCm(n * UNITS[unit].toCm, next);
+    };
+    setHeight(convert(height));
+    setWidth(convert(width));
+    setDepth(convert(depth));
+    setUnit(next);
+  };
+
+  const leadImage = images[0]?.url ?? null;
+
+  React.useEffect(() => {
+    if (!leadImage) {
+      setImageAspect(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled && img.naturalWidth && img.naturalHeight) {
+        setImageAspect(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) setImageAspect(null);
+    };
+    // A sized variant is enough to measure proportions, and avoids pulling a
+    // multi-megabyte master just to read two numbers off it.
+    img.src = leadImage.includes("?") ? `${leadImage}&w=256` : `${leadImage}?w=256`;
+    return () => {
+      cancelled = true;
+    };
+  }, [leadImage]);
+
+  const heightCm = toCm(height, unit);
+  const widthCm = toCm(width, unit);
+  const sizeSummary =
+    heightCm != null && widthCm != null ? `${heightCm} × ${widthCm} cm` : null;
+
+  /**
+   * Tells the artist, before they save, what the gallery will actually do with
+   * a photo whose proportions do not match the size they typed — the usual
+   * cause being a detail crop rather than a shot of the whole canvas.
+   */
+  const ratioNote = React.useMemo(() => {
+    if (imageAspect == null || heightCm == null || widthCm == null) return null;
+    if (!(heightCm > 0) || !(widthCm > 0)) return null;
+
+    const recorded = widthCm / heightCm;
+    if (Math.abs(recorded - imageAspect) / recorded <= 0.02) return null;
+
+    const shape = (r: number) =>
+      r > 1.02 ? "landscape" : r < 0.98 ? "portrait" : "square";
+    return (
+      `Your photo is ${shape(imageAspect)} (${imageAspect.toFixed(2)}:1) but the size you entered is ` +
+      `${shape(recorded)} (${recorded.toFixed(2)}:1). The gallery will not stretch the picture — it hangs ` +
+      `the piece at the photo's shape instead, which makes it look smaller than it is. ` +
+      `A photo of the whole canvas, uncropped, is what lets it hang at full size.`
+    );
+  }, [imageAspect, heightCm, widthCm]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -351,46 +451,79 @@ export function ArtworkForm({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:col-span-2">
-          <div>
-            <label className={labelCls} htmlFor="height">
-              Height (cm)
+        <div className="sm:col-span-2">
+          <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm font-medium">Dimensions</span>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Measured in
+              <select
+                aria-label="Unit of measurement"
+                className="rounded-md border border-input bg-transparent px-2 py-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                value={unit}
+                onChange={(e) => changeUnit(e.target.value as UnitKey)}
+              >
+                {(Object.keys(UNITS) as UnitKey[]).map((u) => (
+                  <option key={u} value={u}>
+                    {UNITS[u].label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <input
-              id="height"
-              type="number"
-              step="0.1"
-              className={inputCls}
-              value={height}
-              onChange={(e) => setHeight(e.target.value)}
-            />
           </div>
-          <div>
-            <label className={labelCls} htmlFor="width">
-              Width (cm)
-            </label>
-            <input
-              id="width"
-              type="number"
-              step="0.1"
-              className={inputCls}
-              value={width}
-              onChange={(e) => setWidth(e.target.value)}
-            />
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className={labelCls} htmlFor="height">
+                Height
+              </label>
+              <input
+                id="height"
+                type="number"
+                step="any"
+                className={inputCls}
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="width">
+                Width
+              </label>
+              <input
+                id="width"
+                type="number"
+                step="any"
+                className={inputCls}
+                value={width}
+                onChange={(e) => setWidth(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="depth">
+                Depth
+              </label>
+              <input
+                id="depth"
+                type="number"
+                step="any"
+                className={inputCls}
+                value={depth}
+                onChange={(e) => setDepth(e.target.value)}
+              />
+            </div>
           </div>
-          <div>
-            <label className={labelCls} htmlFor="depth">
-              Depth (cm)
-            </label>
-            <input
-              id="depth"
-              type="number"
-              step="0.1"
-              className={inputCls}
-              value={depth}
-              onChange={(e) => setDepth(e.target.value)}
-            />
-          </div>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            {sizeSummary
+              ? `Stored as ${sizeSummary}. Recording this is what lets the 3D gallery hang the piece at its real size.`
+              : "Optional, but the 3D gallery can only hang a piece at its real size once height and width are recorded."}
+          </p>
+
+          {ratioNote && (
+            <p className="mt-2 rounded-md bg-accent/40 p-2 text-xs text-foreground">
+              {ratioNote}
+            </p>
+          )}
         </div>
 
         <div className="sm:col-span-2">
@@ -417,33 +550,25 @@ export function ArtworkForm({
       </section>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-        >
+        <Button type="submit" disabled={pending}>
           {isEdit ? "Save changes" : "Create draft"}
-        </button>
+        </Button>
 
         {isEdit && (
           <>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={pending}
-              className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
-            >
+            <Button type="button" variant="outline" onClick={handlePublish} disabled={pending}>
               {initial?.status === "available" ? "Re-publish" : "Publish"}
-            </button>
+            </Button>
             {initial?.status !== "archived" && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={handleArchive}
                 disabled={pending}
-                className="inline-flex items-center rounded-md px-4 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 Archive
-              </button>
+              </Button>
             )}
           </>
         )}

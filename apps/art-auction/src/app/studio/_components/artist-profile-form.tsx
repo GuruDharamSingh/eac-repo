@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
+import { MultiImageUploader, type UploadedImage } from "@elkdonis/studio-ui";
+import { Button } from "@/components/ui/button";
 import {
   applyArtistAction,
   updateProfileAction,
@@ -12,7 +14,7 @@ import {
 } from "../actions";
 
 const inputCls =
-  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-[2px] focus:ring-ring/50";
+  "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const labelCls = "mb-1 block text-sm font-medium";
 
 export type ArtistProfileInitial = {
@@ -45,7 +47,9 @@ export function ArtistProfileForm({
   );
   const [headline, setHeadline] = React.useState(initial?.headline ?? "");
   const [city, setCity] = React.useState(initial?.city ?? "");
-  const [photoUrl, setPhotoUrl] = React.useState(initial?.photoUrl ?? "");
+  const [photo, setPhoto] = React.useState<UploadedImage[]>(
+    initial?.photoUrl ? [{ url: initial.photoUrl }] : []
+  );
   const [payoutEmail, setPayoutEmail] = React.useState(
     initial?.payoutEmail ?? ""
   );
@@ -68,7 +72,7 @@ export function ArtistProfileForm({
       displayName,
       headline,
       city,
-      photoUrl,
+      photoUrl: photo[0]?.url ?? "",
       bioHtml,
       payoutEmail,
       links: links.filter((l) => l.url.trim().length > 0),
@@ -148,16 +152,13 @@ export function ArtistProfileForm({
           </p>
         </div>
         )}
-        <div>
-          <label className={labelCls} htmlFor="photoUrl">
-            Photo URL
-          </label>
-          <input
-            id="photoUrl"
-            className={inputCls}
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            placeholder="/api/media/…"
+        <div className="sm:col-span-2">
+          <span className={labelCls}>Photo</span>
+          <MultiImageUploader
+            value={photo}
+            onChange={setPhoto}
+            uploadEndpoint="/api/upload"
+            maxImages={1}
           />
         </div>
       </div>
@@ -206,13 +207,9 @@ export function ArtistProfileForm({
         </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending}>
         {mode === "apply" ? "Submit application" : "Save profile"}
-      </button>
+      </Button>
     </form>
   );
 }

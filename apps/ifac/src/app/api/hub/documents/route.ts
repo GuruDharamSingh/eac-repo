@@ -1,6 +1,7 @@
 import {
   assignOrgDocument,
   createOrgDocument,
+  deleteOrgDocument,
   listOrgDocuments,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
@@ -77,6 +78,29 @@ export async function PATCH(request: Request) {
     payload.documentId,
     payload.ideaId ?? null
   );
+  if (!ok) return Response.json({ error: "No such document" }, { status: 404 });
+  return Response.json({ ok: true });
+}
+
+/**
+ * Take a document off the group's list.
+ *
+ * Editors only — creating and assigning are open to any member, but removing
+ * something from a shared list affects what everyone else can find, which is an
+ * editorial act. The FILE is left in the org's Nextcloud folder either way; see
+ * deleteOrgDocument for why that asymmetry is the point.
+ */
+export async function DELETE(request: Request) {
+  const viewer = await getHubViewer();
+  if (!viewer) return forbidden();
+  if (!viewer.canEdit) return forbidden("Only an owner or guide can remove a document");
+
+  const documentId = new URL(request.url).searchParams.get("documentId") ?? "";
+  if (!documentId) {
+    return Response.json({ error: "documentId is required" }, { status: 400 });
+  }
+
+  const ok = await deleteOrgDocument(siteConfig.orgId, documentId);
   if (!ok) return Response.json({ error: "No such document" }, { status: 404 });
   return Response.json({ ok: true });
 }

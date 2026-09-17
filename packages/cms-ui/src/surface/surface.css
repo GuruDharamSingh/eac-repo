@@ -122,8 +122,8 @@
 
 .eac-face-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
   align-items: stretch;
 }
 
@@ -136,41 +136,88 @@
   justify-content: flex-end;
   gap: 6px;
   min-height: 210px;
-  padding: 20px;
+  /* 56px of top padding, not 20: the glyph medallion is absolutely positioned
+     at top:16 and stands 32px tall, so it occupies the first 48px of the card
+     while taking no space in the flow. A face is justify-content:flex-end, so
+     short content never reached it — but a face carrying a TALL preview (the
+     profile face's avatar and its two buttons) grew upward until the avatar
+     sat under the medallion. Reserving the medallion's own row is the fix
+     that does not depend on how tall any one preview happens to be. */
+  padding: 56px 20px 20px;
   color: var(--sf-fg);
-  background: var(--eac-face-bg, var(--sf-bg));
-  border: 1px solid var(--sf-rule);
+  /* Not a flat fill. The kind's colour enters the card as a wash out of the
+     corner its mark sits in, so a tile is TINTED by what it is rather than
+     banded by it.
+     --eac-face-wash is the strength AT THE CORNER; it reaches zero well
+     before the text block, which keeps its measured contrast against the
+     card's own --sf-bg. 5% is the default because the tightest ink in the
+     network (amrit-canada's muted on its linen card) sits at 4.86:1 with no
+     wash at all, and a heavier tint would eat what little headroom that has.
+     An org whose ground has more room can raise it. */
+  background:
+    radial-gradient(
+      124% 96% at 0% 0%,
+      color-mix(in srgb, var(--sf-kind) var(--eac-face-wash, 5%), transparent),
+      transparent 64%
+    ),
+    var(--eac-face-bg, var(--sf-bg));
+  /* --sf-line, not --sf-rule: the strong rule is for heads and section
+     titles. On a card it drew a hard box, which is half of why a grid of
+     faces read as flat outlines. The lift below does that work instead. */
+  border: 1px solid var(--sf-line);
   border-radius: var(--sf-radius);
   text-align: left;
   font: inherit;
   text-decoration: none;
+  /* A whisper of lift at rest, so faces read as objects ON the page rather
+     than rectangles drawn on it. */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 10px 22px -18px rgba(0, 0, 0, 0.2);
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease;
+    transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
-/* The hairline: three pixels of the kind's colour along the top. It is the
-   thing the surface's masthead repeats, which is what makes the expansion
-   read as the same object getting larger. */
+/* The kind's edge, which the surface's masthead repeats — that repetition is
+   what makes the expansion read as the same object getting larger.
+   It was a solid 3px band across the whole top: a ribbon. Now it starts at
+   the mark and fades out before the halfway point, so the kind is still named
+   at a glance without the card wearing a stripe. */
 .eac-face::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--sf-kind);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--sf-kind),
+    color-mix(in srgb, var(--sf-kind) 34%, transparent) 40%,
+    transparent 66%
+  );
   border-radius: var(--sf-radius) var(--sf-radius) 0 0;
-  opacity: 0.9;
 }
 
 .eac-face:not(.is-disabled):hover,
 .eac-face:not(.is-disabled):focus-within {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.28);
-  border-color: color-mix(in srgb, var(--sf-kind) 55%, var(--sf-line));
+  transform: translateY(-3px);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 24px 44px -22px rgba(0, 0, 0, 0.34);
+  border-color: color-mix(in srgb, var(--sf-kind) 45%, var(--sf-line));
+}
+/* The mark fills on hover — the one moment the kind's colour goes solid. */
+.eac-face:not(.is-disabled):hover > .eac-face-glyph,
+.eac-face:not(.is-disabled):focus-within > .eac-face-glyph {
+  background: var(--sf-kind);
+  border-color: var(--sf-kind);
+  color: var(--sf-on-kind);
 }
 
 .eac-face--wide { grid-column: 1 / -1; min-height: 132px; }
+/* The dense form puts its glyph back IN the flow (below), so it reserves
+   nothing and keeps its own even padding. */
 .eac-face--small { min-height: 0; padding: 14px 16px; gap: 4px; }
 .eac-face.is-disabled { opacity: 0.55; }
 
@@ -219,7 +266,33 @@
   line-height: 1;
   color: var(--sf-kind);
 }
-.eac-face--small .eac-face-glyph { position: static; font-size: 1.1rem; margin-bottom: 4px; }
+/* Inside a face the glyph is a medallion, not a loose character: a tinted
+   tile with a hairline ring. That carries the kind's colour into the body of
+   the card, which is what lets the top edge above be a hairline instead of a
+   band. Scoped to a face's own child — the bare class is reused by the center
+   panels, sky-ui and the thread cards, which keep the plain glyph. */
+.eac-face > .eac-face-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  top: 16px;
+  left: 18px;
+  font-size: 1.05rem;
+  background: color-mix(in srgb, var(--sf-kind) 12%, var(--sf-bg));
+  border: 1px solid color-mix(in srgb, var(--sf-kind) 26%, transparent);
+  border-radius: max(var(--sf-radius), 5px);
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.eac-face--small > .eac-face-glyph {
+  position: static;
+  width: 26px;
+  height: 26px;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
 
 .eac-face-cue {
   position: absolute;
@@ -230,7 +303,30 @@
   color: var(--sf-muted);
   transition: color 160ms ease, transform 160ms ease;
 }
-.eac-face:hover .eac-face-cue { color: var(--sf-kind); transform: translateX(1px); }
+/* In a face the cue is an affordance that only earns its ring on hover, so
+   the resting card is quiet and the hovered one clearly has somewhere to go. */
+.eac-face > .eac-face-cue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  top: 15px;
+  right: 15px;
+  font-size: 0.85rem;
+  color: var(--sf-faint);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease,
+    transform 180ms ease;
+}
+.eac-face:hover > .eac-face-cue,
+.eac-face:focus-within > .eac-face-cue {
+  color: var(--sf-kind);
+  border-color: color-mix(in srgb, var(--sf-kind) 32%, transparent);
+  background: color-mix(in srgb, var(--sf-kind) 9%, transparent);
+  transform: translateX(1px);
+}
 
 .eac-face-kicker {
   font-family: var(--sf-font-record);
@@ -241,11 +337,32 @@
   font-weight: 600;
 }
 
+/* In a face the kicker steps back to the muted ink and takes a short rule in
+   the kind's colour, so the label reads as apparatus and the colour is
+   restated once more in the text block. The bare class keeps full ink for the
+   center panels and thread cards that also use it. */
+.eac-face > .eac-face-kicker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--sf-muted);
+}
+.eac-face > .eac-face-kicker::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--sf-kind);
+}
+
 .eac-face-title {
   font-family: var(--sf-font-title);
-  font-size: 1.2rem;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  font-size: 1.26rem;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
   font-weight: 500;
 }
 .eac-face--small .eac-face-title { font-size: 1rem; }
@@ -263,8 +380,26 @@
   gap: 4px;
   margin: 10px 0 4px;
   font-size: 0.84rem;
+  /* Take the slack.
+     A grid row stretches every card to the height of the tallest — the
+     calendar, with its month — and a face bottom-aligns its content, so
+     every SHORTER card was leaving that difference as dead space above its
+     preview. On a three-card row led by a month grid that is 150px of
+     nothing at the top of two cards out of three, which is exactly the
+     "large amount of the top of the card not being used" it looked like.
+     The preview absorbs it instead, so a cover image gets taller and a list
+     gets more room rather than the card growing a void. */
+  flex: 1;
+  min-height: 0;
 }
 .eac-face-preview:empty { display: none; }
+/* Lists start at the top of the space; a single live region (the month grid,
+   the idea form) keeps its own alignment. */
+.eac-face-preview > * { flex: none; }
+.eac-face-preview::after { content: ""; flex: 1 1 0; min-height: 0; }
+/* …except where the preview IS one filling thing. */
+.eac-face-preview:has(> .eac-preview-cover)::after,
+.eac-face-preview:has(> .eac-face-live:only-child)::after { display: none; }
 
 /* Preview vocabulary — small, so faces agree on what a line looks like. */
 .eac-preview-line { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
@@ -309,7 +444,11 @@
 }
 .eac-preview-cover {
   width: 100%;
+  /* A floor, not a fixed height: the aspect ratio decides the minimum and the
+     image then grows into whatever slack the preview absorbed above. */
+  min-height: 0;
   aspect-ratio: 16 / 7;
+  flex: 1;
   object-fit: cover;
   border-radius: var(--sf-radius-sm);
   margin-bottom: 4px;
@@ -570,7 +709,8 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  dialog.eac-surface, dialog.eac-surface::backdrop, .eac-face, .eac-face-cue {
+  dialog.eac-surface, dialog.eac-surface::backdrop, .eac-face, .eac-face-cue,
+  .eac-face > .eac-face-glyph {
     transition: none;
   }
 }
@@ -898,6 +1038,74 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 .eac-occ-title { display: block; font-weight: 500; font-size: 0.92rem; line-height: 1.3; }
 .eac-occ-meta { display: block; margin-top: 2px; font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
 
+/* ── What a thread holds (migration 131) ───────────────────────────────────
+   The gathered band reuses `.eac-occ` wholesale, so an attachment and a
+   session are the same object at the same size. Two additions only.
+
+   `--static` is the row whose link was WITHHELD — a living document a
+   non-member may know about but not open, since that share grants write
+   access. It must not look disabled (nothing failed) and must not look
+   clickable (nothing will happen), so it keeps the full-contrast title and
+   loses only the pointer and the hover. */
+.eac-occ--static { cursor: default; }
+.eac-occ--static:hover { border-color: var(--sf-line); }
+
+/* Terms read as a run of words rather than a list, because that is what a
+   vocabulary is. Ink stays `--sf-fg` on a neutral ground rather than white on
+   the accent: an org accent is picked for its colour, not for its contrast,
+   and several on this network fall under 3:1 behind white text. */
+.eac-terms { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.eac-term {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg-soft);
+  color: var(--sf-fg);
+  font-size: 0.82rem;
+  line-height: 1.3;
+  text-decoration: none;
+}
+a.eac-term:hover { border-color: color-mix(in srgb, var(--sf-kind) 60%, var(--sf-line)); }
+a.eac-term:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
+
+.eac-gathered-at { margin: 16px 0 0; }
+.eac-gathered-at a { color: inherit; }
+
+/* ── Arranging what a thread holds (the gather surface) ────────────────────
+   Its own input rather than `.eac-input`, which lives in wizard/fields.css —
+   a stylesheet a host has to import separately and several do not. A surface
+   that renders unstyled because of a sibling sheet is the exact failure this
+   package keeps hitting, so this one stands alone on surface tokens. */
+.eac-gather-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.eac-gather-input::placeholder { color: var(--sf-faint); }
+.eac-gather-input:focus-visible { border-color: var(--sf-kind); outline: 2px solid var(--sf-kind); outline-offset: 1px; }
+
+.eac-gather-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.eac-gather-add > .eac-gather-input { flex: 1 1 14rem; min-width: 0; }
+.eac-gather-rel { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--sf-muted); }
+.eac-gather-rel > .eac-gather-input { width: auto; padding: 8px 10px; font-size: 0.85rem; color: var(--sf-fg); }
+
+/* The held row is the same `.eac-occ` as everywhere else with its tools
+   beside it, so an attachment reads as the same object in both surfaces. */
+.eac-gather-held { display: flex; gap: 8px; align-items: center; }
+.eac-gather-held > .eac-occ { flex: 1 1 auto; min-width: 0; }
+.eac-gather-tools { display: flex; gap: 2px; flex: 0 0 auto; }
+.eac-gather-tools .eac-btn { padding: 4px 8px; font-size: 0.78rem; }
+@media (max-width: 520px) {
+  .eac-gather-held { flex-wrap: wrap; }
+  .eac-gather-tools { margin-left: auto; }
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    GALLERY
    ══════════════════════════════════════════════════════════════════════════ */
@@ -1030,7 +1238,17 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
   font-size: 0.8rem;
   cursor: pointer;
 }
-.eac-seg-btn.is-on { background: var(--sf-kind); color: var(--sf-on-kind, #fff); }
+/* The selected segment.
+   Both halves need the surface-level fallback. `--sf-kind` is only defined on
+   an element carrying [data-kind]; the writing room's bar does not, so the
+   background declaration was INVALID and dropped — leaving a transparent pill
+   — while the colour fell through to its own `#fff` default. The active
+   segment was white text on white, which is why "Side by side" looked like a
+   gap between two buttons even though that mode was the one running. */
+.eac-seg-btn.is-on {
+  background: var(--sf-kind, var(--sf-accent));
+  color: var(--sf-on-kind, var(--sf-on-accent, #fff));
+}
 .eac-seg-btn:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 1px; }
 
 .eac-write-panes { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
@@ -1100,11 +1318,22 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 
 /* A row face: the feed listing's card, same vocabulary as a tile. */
 .eac-face--row { min-height: 0; justify-content: flex-start; gap: 8px; padding: 18px 20px 18px 24px; }
-.eac-face--row .eac-face-glyph { position: static; font-size: 1rem; margin-bottom: 2px; }
+.eac-face--row > .eac-face-glyph { position: static; width: 26px; height: 26px; font-size: 0.95rem; margin-bottom: 2px; }
 .eac-face--row .eac-face-title { font-size: 1.35rem; }
 .eac-face--row .eac-face-blurb { max-width: 68ch; }
 .eac-face--row .eac-face-preview { margin: 0 0 4px; }
-.eac-face--row::before { inset: 0 auto 0 0; width: 4px; height: auto; border-radius: var(--sf-radius) 0 0 var(--sf-radius); }
+.eac-face--row::before {
+  inset: 0 auto 0 0;
+  width: 3px;
+  height: auto;
+  background: linear-gradient(
+    180deg,
+    var(--sf-kind),
+    color-mix(in srgb, var(--sf-kind) 34%, transparent) 46%,
+    transparent 78%
+  );
+  border-radius: var(--sf-radius) 0 0 var(--sf-radius);
+}
 .eac-face-cover { width: 100%; aspect-ratio: 21 / 8; object-fit: cover; border-radius: var(--sf-radius-sm); margin: 0 0 6px; }
 .eac-face-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; font-family: var(--sf-font-record); font-size: 0.72rem; color: var(--sf-muted); }
 .eac-face-meta b { color: var(--sf-fg); font-weight: 600; }
@@ -1246,9 +1475,21 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 .eac-forum-feed {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   padding: 6px 10px; border-left: 3px solid var(--eac-forum-feed, var(--sf-line));
+  /* Anchors the stretched link below. */
+  position: relative;
 }
 .eac-forum-feed:hover { background: color-mix(in srgb, var(--sf-fg) 3%, transparent); }
 .eac-forum-feed-name { font-weight: 600; text-decoration: none; color: inherit; min-width: 0; }
+/* The whole row is the target, not just the words.
+   The <a> wraps only the feed's name; the count beside it and the row's own
+   padding sat outside the link, so most of a row that plainly looks clickable
+   did nothing. Stretching the anchor over the row with a pseudo-element gets
+   the hit area without restructuring the markup (an <a> wrapping the count
+   would put a second tab stop and a second announced link on every row).
+   The count keeps its own stacking context so it still paints above. */
+.eac-forum-feed-name::after { content: ""; position: absolute; inset: 0; }
+.eac-forum-feed-count { position: relative; }
+.eac-forum-feed:focus-within { outline: 2px solid var(--sf-kind, var(--sf-accent)); outline-offset: -2px; }
 .eac-forum-feed.is-unread .eac-forum-feed-name { font-weight: 700; }
 .eac-forum-feed-count { font-family: var(--sf-font-record); font-size: 0.72rem; color: var(--sf-muted); white-space: nowrap; }
 .eac-forum-feed-count b { color: var(--sf-kind, var(--sf-accent)); font-weight: 600; }
@@ -1282,8 +1523,11 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 /* The face's glyph is absolutely positioned at its top-left, so a preview
    that reaches the top of the card must clear it — the board's mini does the
    same by bottom-aligning inside a fixed box. */
-.eac-forum-mini { display: grid; gap: 4px; min-height: 84px; align-content: end; padding-top: 22px; }
-.eac-forum-mini-row { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; align-items: baseline; font-size: 0.82rem; }
+/* Starts at the top of the card now and lists what it has, rather than
+   bottom-aligning three rows under a reserved medallion band. */
+.eac-forum-mini { display: grid; gap: 4px; align-content: start; }
+.eac-forum-mini-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 0.82rem; }
+.eac-forum-mini-when { font-family: var(--sf-font-record); font-size: 0.64rem; color: var(--sf-faint); white-space: nowrap; }
 .eac-forum-mini-glyph { color: var(--sf-kind, var(--sf-muted)); font-size: 0.75rem; }
 .eac-forum-mini-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sf-fg); }
 .eac-forum-mini-row.is-unread .eac-forum-mini-title { font-weight: 700; }
@@ -1582,6 +1826,27 @@ dialog.eac-surface[data-morph][open] {
   overflow: hidden;
 }
 .eac-doc-meta { font-family: var(--sf-font-record); font-size: 0.7rem; color: var(--sf-muted); }
+/* Remove-from-list. Quiet by default and only declares itself on hover: it is
+   the one destructive control in a row of neutral ones, and it should be
+   findable rather than prominent. --sf-danger is each host's own. */
+.eac-doc-remove {
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.eac-doc-remove:hover:not(:disabled),
+.eac-doc-remove:focus-visible {
+  border-color: var(--sf-danger);
+  color: var(--sf-danger);
+}
+.eac-doc-remove:disabled { opacity: 0.5; cursor: default; }
+
 .eac-doc-assign { display: flex; align-items: center; gap: 6px; flex: none; }
 .eac-doc-assign select {
   padding: 5px 8px;
@@ -1593,3 +1858,995 @@ dialog.eac-surface[data-morph][open] {
   font-size: 0.82rem;
   max-width: 16rem;
 }
+
+/* The whiteboard's own two status lines, while the scene loads or fails.
+   Plain CSS rather than the Tailwind classes the amrit-local version used:
+   this component is shared now, and `text-muted-foreground` renders as
+   nothing in ifac and artdirect. */
+.eac-board-note {
+  margin: 0;
+  padding: 18px 20px;
+  font-size: 0.88rem;
+  color: var(--sf-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE TOOLS ROW, and the header-led face.
+
+   The top band of a face was the kind's medallion: a tinted 32px tile
+   restating a kind that the card's accent, kicker and title already say. On
+   a grid of a dozen tiles that is a dozen of the most reachable corners spent
+   on ornament. `tools` takes that band instead, and a face that passes one
+   gets its most useful control there.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The title block is a wrapper now (it used to be three loose children of the
+   flex column), so it has to reproduce the column it was taking part in. */
+.eac-face-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Absolute, in the band the padding already reserves — so a face with tools
+   and a face with a medallion keep their titles on the same baseline, and a
+   taller control cannot push the card's content down. */
+.eac-face-tools {
+  /* IN THE FLOW, not floating over it.
+     This was absolutely positioned in the band the padding reserved, on the
+     theory that it would keep titles on a common baseline. What it actually
+     did was sit ON TOP of whatever the preview drew — the meeting's cover
+     image, the calendar's month — so the row that was supposed to claim the
+     top of the card was overlapping the card's content instead, and the
+     content was no larger for it. As the first item of the column it takes
+     the top, the preview below it takes the rest, and the title still ends
+     up at the foot because the preview is what grows. */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: none;
+  margin-bottom: 8px;
+}
+
+/* A face reading top-down: the title leads and the live content follows it,
+   rather than the content leading and the title settling underneath. */
+.eac-face--header {
+  justify-content: flex-start;
+}
+
+.eac-face--header .eac-face-preview {
+  /* The preview is the point of a header-led face, so it takes the room the
+     footer layout gives the title block. */
+  margin-top: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The 56px band exists to clear the absolutely-positioned medallion. A card
+   with tools has no medallion and its row is in the flow, so the band is
+   pure waste there — and it was most of the "top of the card not being
+   used". A header-led card has no medallion either. */
+.eac-face--tools,
+.eac-face--header {
+  padding-top: 18px;
+}
+
+/* --- the controls a tools row tends to hold ----------------------------- *
+   Deliberately plain: a face is not a form, and anything richer than these
+   three shapes is a sign the control belongs in the surface instead. */
+
+.eac-face-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.76rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.eac-face-tool:hover,
+.eac-face-tool:focus-visible {
+  border-color: var(--sf-kind);
+  color: var(--sf-kind);
+  outline: none;
+}
+
+.eac-face-tool:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 2px;
+}
+
+.eac-face-tool[aria-pressed="true"],
+.eac-face-tool.is-on {
+  background: var(--sf-kind);
+  border-color: var(--sf-kind);
+  color: var(--sf-on-kind);
+}
+
+.eac-face-tool:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* A two-position switch — "mine / the group's". One control, not two
+   buttons, so it reads as a single state with two sides. */
+.eac-face-switch {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg-soft);
+}
+
+.eac-face-switch > button {
+  padding: 3px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.eac-face-switch > button[aria-pressed="true"] {
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.eac-face-switch > button:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 1px;
+}
+
+/* A text entry in the tools row — the board's quick-add. */
+.eac-face-tool-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.eac-face-tool-input:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 1px;
+  border-color: var(--sf-kind);
+}
+
+.eac-face-tool-label {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+  white-space: nowrap;
+}
+
+/* --- the ideas face's latest rows --------------------------------------- *
+   Links now, not text: each idea carries the href of its own thread, and the
+   obvious thing to do with a proposal is go and read the replies. */
+
+.eac-idea-latest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;      /* sits at the foot of a header-led face */
+  padding-top: 8px;
+  border-top: 1px solid var(--sf-line);
+}
+
+a.eac-idea-row {
+  color: var(--sf-fg);
+  text-decoration: none;
+}
+
+a.eac-idea-row:hover,
+a.eac-idea-row:focus-visible {
+  color: var(--sf-kind);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- the documents face's directory ------------------------------------- */
+
+.eac-doc-dir {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.eac-doc-dir-row {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 4px;
+  margin: 0 -4px;
+  border-radius: var(--sf-radius-sm);
+  color: var(--sf-fg);
+  font-size: 0.83rem;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.eac-doc-dir-row:hover,
+.eac-doc-dir-row:focus-visible {
+  background: var(--sf-bg-soft);
+  outline: none;
+}
+
+.eac-doc-dir-row:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: -2px;
+}
+
+.eac-doc-dir-glyph {
+  color: var(--sf-kind);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.eac-doc-dir-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-doc-dir-when {
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  color: var(--sf-faint);
+  white-space: nowrap;
+}
+
+/* --- the files face's thumbnails ---------------------------------------- *
+   A media drive should show its media. A column of filenames differing only
+   in their extension is the one thing a picture can replace outright. */
+
+.eac-file-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.eac-file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.eac-file-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.eac-file-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  color: var(--sf-kind);
+  font-size: 1.1rem;
+}
+
+.eac-file-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.eac-file-name {
+  font-size: 0.66rem;
+  line-height: 1.25;
+  color: var(--sf-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE STANDING MEETING'S CARD — a light, an answer, and last week.
+
+   Three controls that only this face draws, all inside the tools row or the
+   preview, both of which are .eac-face-live. Colours are the surface tokens
+   except for the three lights, which cannot be: a status light has to mean
+   green, amber and red to everyone, on an org's own ground.
+
+   MEASURED. Each light is a non-text indicator, so 3:1 is the floor (WCAG
+   1.4.11), and each has to clear it on every ground this card sits on —
+   white, amrit-canada's linen (#faf7f2), IFAC's card (#fbf8f3) and the two
+   dark hub skins (#14161a, #1f2229):
+
+     --eac-light-green  #2f8f4e   4.07 / 3.81 / 3.84 / 4.45 / 3.91
+     --eac-light-amber  #b0761a   3.85 / 3.60 / 3.64 / 4.70 / 4.13
+     --eac-light-red    #d1483a   4.47 / 4.18 / 4.22 / 4.05 / 3.56
+
+   Colour is never the only carrier (WCAG 1.4.1): the dot always sits beside
+   a WORD, the reason is the control's accessible name and its `title`, and
+   the same reason appears as text on hover AND on keyboard focus.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --eac-light-green: #2f8f4e;
+  --eac-light-amber: #b0761a;
+  --eac-light-red: #d1483a;
+}
+
+/* The tools row holds two popovers; it has to out-stack the preview, which
+   is a later sibling at the same z-index. */
+.eac-face .eac-face-tools {
+  z-index: 3;
+}
+
+/* ── The light ──────────────────────────────────────────────────────────── */
+
+.eac-light {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.eac-light-btn {
+  gap: 7px;
+  padding-left: 8px;
+}
+
+.eac-light-btn.is-static {
+  cursor: default;
+}
+
+.eac-light-btn.is-static:hover {
+  border-color: var(--sf-line);
+  color: var(--sf-fg);
+}
+
+.eac-light-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  /* A hairline of the card's own ink around the dot, so it still reads as a
+     disc on a ground close to its own value. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-fg) 22%, transparent);
+}
+
+.eac-light-dot--green { background: var(--eac-light-green); }
+.eac-light-dot--yellow { background: var(--eac-light-amber); }
+.eac-light-dot--red { background: var(--eac-light-red); }
+
+.eac-light-word {
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Why it is what it is. Hidden until the control is hovered OR focused — a
+   keyboard user learns nothing from hover, which is the usual way this
+   pattern fails. */
+.eac-light-why {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  max-width: 260px;
+  padding: 6px 9px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  box-shadow: var(--sf-shadow);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.eac-light:hover > .eac-light-why,
+.eac-light-btn:focus-visible ~ .eac-light-why {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Will you make it? ──────────────────────────────────────────────────── */
+
+.eac-rsvp {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.eac-rsvp-btn {
+  min-width: 0;
+}
+
+.eac-rsvp-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-rsvp-thumb {
+  flex: none;
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+/* A yes and a no are told apart by the mark and the words; the tint is the
+   third carrier, not the only one, and stays faint enough that --sf-fg over
+   it keeps the contrast it was measured at. */
+.eac-rsvp-btn.is-yes {
+  border-color: color-mix(in srgb, var(--eac-light-green) 55%, var(--sf-line));
+  background: color-mix(in srgb, var(--eac-light-green) 9%, var(--sf-bg));
+}
+
+.eac-rsvp-btn.is-no {
+  border-color: color-mix(in srgb, var(--eac-light-red) 45%, var(--sf-line));
+  background: color-mix(in srgb, var(--eac-light-red) 8%, var(--sf-bg));
+}
+
+/* ── The menus ──────────────────────────────────────────────────────────── */
+
+.eac-face-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 232px;
+  max-width: 300px;
+  padding: 6px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius);
+  background: var(--sf-bg);
+  box-shadow: var(--sf-shadow);
+}
+
+.eac-face-menu-head {
+  padding: 4px 8px 6px;
+}
+
+.eac-face-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eac-face-menu-item:hover,
+.eac-face-menu-item:focus-visible {
+  background: var(--sf-bg-soft);
+  outline: none;
+}
+
+.eac-face-menu-item:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: -2px;
+}
+
+.eac-face-menu-item[aria-current="true"] {
+  background: color-mix(in srgb, var(--sf-kind) 12%, transparent);
+}
+
+.eac-face-menu-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.eac-face-menu-item > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.eac-face-menu-label {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.eac-face-menu-note {
+  display: block;
+  color: var(--sf-muted);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.eac-face-menu-item--quiet .eac-face-menu-label {
+  color: var(--sf-muted);
+}
+
+.eac-face-menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px 2px;
+  border-top: 1px solid var(--sf-line);
+  margin-top: 4px;
+}
+
+.eac-face-menu-field .eac-face-tool-input {
+  flex: none;
+}
+
+/* The light's own menu hangs off the left edge; the RSVP's is wider than its
+   button and would otherwise run past the card. */
+.eac-rsvp-menu {
+  left: auto;
+  right: 0;
+}
+
+/* ── Paging back ────────────────────────────────────────────────────────── */
+
+.eac-meet-pager {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  flex: none;
+}
+
+.eac-meet-arrow {
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* What last time produced. Each row opens that one file as a surface layer;
+   nothing here navigates off the hub. */
+.eac-meet-mats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  margin-top: 2px;
+}
+
+.eac-meet-mat {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eac-meet-mat:hover,
+.eac-meet-mat:focus-visible {
+  background: var(--sf-bg-soft);
+  outline: none;
+}
+
+.eac-meet-mat:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: -2px;
+}
+
+.eac-meet-mat-glyph {
+  flex: none;
+  color: var(--sf-kind);
+}
+
+.eac-meet-mat-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-meet-note {
+  color: var(--sf-muted);
+  font-size: 0.74rem;
+}
+
+/* ── One material, expanded ─────────────────────────────────────────────── */
+
+.eac-material {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.eac-material-image,
+.eac-material-player {
+  max-width: 100%;
+  max-height: 68vh;
+  border-radius: var(--sf-radius-sm);
+}
+
+.eac-material-audio {
+  width: 100%;
+}
+
+.eac-material-frame {
+  width: 100%;
+  height: 68vh;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+}
+
+.eac-material-note {
+  color: var(--sf-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+/* The calendar's "next thing on" pill: a date and a title that has to fit
+   whatever room the tools row has left. */
+.eac-face-tool-when {
+  font-family: var(--sf-font-record);
+  color: var(--sf-muted);
+  flex: none;
+}
+
+.eac-face-tool-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The document field and its Create button, on one line. */
+.eac-doc-start-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.eac-doc-start-row > .eac-doc-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 460px) {
+  .eac-doc-start-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* --- the calendar's "next" banner ---------------------------------------- *
+   Spans the tools band rather than sitting in it as a chip, so the month grid
+   below keeps its height. Three facts on one line, ellipsised from the title
+   end because the day and time must never be the part that gets cut. */
+
+.eac-cal-next {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--sf-line);
+  border-left: 3px solid var(--sf-kind);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.eac-cal-next:hover,
+.eac-cal-next:focus-visible {
+  border-color: var(--sf-kind);
+  background: var(--sf-bg);
+  outline: none;
+}
+
+.eac-cal-next:focus-visible {
+  outline: 2px solid var(--sf-kind);
+  outline-offset: 2px;
+}
+
+.eac-cal-next-rubric {
+  flex: none;
+  font-family: var(--sf-font-record);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sf-kind);
+}
+
+.eac-cal-next-when {
+  flex: none;
+  font-family: var(--sf-font-record);
+  font-size: 0.7rem;
+  color: var(--sf-muted);
+}
+
+.eac-cal-next-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+/* The month then starts below the banner rather than under a medallion. */
+.eac-face--tools .eac-cal--compact {
+  margin-top: 2px;
+}
+
+/* The meeting card's pager, now a worded control. */
+.eac-meet-back {
+  margin-left: auto;
+  flex: none;
+}
+
+/* --- walking into a section, inside the popup ---------------------------- */
+
+.eac-forum-back {
+  align-self: flex-start;
+  padding: 3px 8px 3px 4px;
+  margin-bottom: 4px;
+  border: 0;
+  background: none;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border-radius: var(--sf-radius-sm);
+}
+
+.eac-forum-back:hover,
+.eac-forum-back:focus-visible {
+  color: var(--sf-kind, var(--sf-accent));
+  outline: none;
+}
+
+.eac-forum-back:focus-visible {
+  outline: 2px solid var(--sf-kind, var(--sf-accent));
+  outline-offset: 1px;
+}
+
+.eac-forum-feed-all {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+/* The section name is a <button> now, not an <a>. It keeps the stretched-link
+   hit area (the whole row), so this only has to undo the button chrome. */
+button.eac-forum-feed-name {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The board's sections, in the face's top band. Inert — the card opens the
+   popup, and the popup is where a section is walked into. */
+.eac-forum-face-feeds {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.eac-forum-face-feed {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--sf-muted);
+  white-space: nowrap;
+}
+
+.eac-forum-face-feed.is-unread {
+  border-color: color-mix(in srgb, var(--sf-kind) 45%, var(--sf-line));
+  color: var(--sf-kind);
+}
+
+/* ── Identities surface ─────────────────────────────────────────────────────
+   Built entirely from the existing surface tokens (--sf-fg / --sf-muted /
+   --sf-line / --sf-bg-soft / --sf-kind) rather than new colours, so every
+   pair here is one the shell has already measured in both themes. A retired
+   row dims its AVATAR and drops its weight — it never dims the name itself,
+   which would put body text under the muted token and take it below 4.5:1. */
+.eac-ident-list { display: flex; flex-direction: column; gap: 8px; }
+.eac-ident-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+}
+.eac-ident-row.is-retired { border-style: dashed; }
+.eac-ident-row.is-retired .eac-ident-avatar { opacity: 0.55; }
+.eac-ident-avatar {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-line);
+}
+.eac-ident-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.eac-ident-initial {
+  font-family: var(--sf-font-title);
+  font-size: 1rem;
+  color: var(--sf-kind);
+}
+.eac-ident-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.eac-ident-kicker {
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sf-muted);
+}
+.eac-ident-name {
+  font-family: var(--sf-font-title);
+  font-size: 1rem;
+  line-height: 1.25;
+  color: var(--sf-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.eac-ident-note-inline { font-size: 0.8rem; color: var(--sf-muted); }
+.eac-ident-action {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: transparent;
+  color: var(--sf-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.eac-ident-action:hover:not(:disabled) { color: var(--sf-fg); border-color: var(--sf-kind); }
+.eac-ident-action:disabled { opacity: 0.5; cursor: default; }
+.eac-ident-open {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sf-line);
+}
+.eac-ident-label {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sf-muted);
+}
+.eac-ident-hint { text-transform: none; letter-spacing: 0; }
+.eac-ident-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.eac-ident-input:focus { border-color: var(--sf-kind); outline: none; }
+.eac-ident-note { margin: 4px 0 0; color: var(--sf-muted); font-size: 0.8rem; line-height: 1.55; }
+
+/* The face's row of chips. Sized to read at tile scale without wrapping past
+   two lines; the surface behind it is where the full list lives. */
+.eac-ident-face { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+.eac-ident-face-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 9px 3px 3px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg-soft);
+  font-size: 0.78rem;
+  color: var(--sf-fg);
+}
+.eac-ident-face-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--sf-bg);
+  color: var(--sf-kind);
+  font-family: var(--sf-font-record);
+  font-size: 0.62rem;
+}
+.eac-ident-face-dot img { width: 100%; height: 100%; object-fit: cover; }
+.eac-ident-face-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The compose byline. Above the fields, because which name signs a piece
+   changes how it gets written. */
+.eac-compose-byline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--sf-line);
+}
+.eac-compose-byline-label {
+  font-family: var(--sf-font-record);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sf-muted);
+}
+.eac-compose-byline-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.eac-compose-byline-select:focus { border-color: var(--sf-kind); outline: none; }

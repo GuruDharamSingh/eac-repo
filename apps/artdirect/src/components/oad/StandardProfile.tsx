@@ -96,6 +96,7 @@ export function StandardProfile({
           store={store.store}
           artworks={store.artworks}
           marketplaceUrl={marketplaceUrl}
+          from="artdirect"
           className="eac-profile-store"
         />
       )}

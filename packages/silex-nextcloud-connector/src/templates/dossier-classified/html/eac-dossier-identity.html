@@ -1,29 +1,32 @@
-<div class="eac-dossier-identity" data-gjs-type="eac-dossier-identity">
-  <div class="eac-dos-stamp" data-trait="status">UNCLAIMED</div>
+<section class="eac-dossier-identity eac-dos-section" data-gjs-type="eac-dossier-identity">
+  <div class="eac-dos-stamp" data-trait="stampLabel" data-state="unclaimed">Unclaimed</div>
   <div class="eac-dos-header-block">
     <div class="eac-dos-profile-container">
-      <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300&h=375" alt="Subject Profile" class="eac-dos-profile-pic" data-trait="photoUrl">
+      <img src="https://placehold.co/380x480/e9e2d2/5b5347?text=SUBJECT" alt="Subject" class="eac-dos-profile-pic" data-trait="photoUrl">
+      <div class="eac-dos-profile-pic eac-dos-nophoto" data-trait="noPhoto">No photograph on file</div>
     </div>
     <div class="eac-dos-header-content">
-      <h1 class="eac-dos-alias" data-trait="aliasName">MARCUS VANCE</h1>
+      <span class="eac-dos-alias-kicker">Subject</span>
+      <h1 class="eac-dos-alias" data-trait="aliasName">Marcus Vance</h1>
       <div class="eac-dos-form-row">
-        <span class="eac-dos-label">OCCUPATION:</span>
-        <span class="eac-dos-value" data-trait="occupation">Investigative Journalist / Photographer</span>
-      </div>
-      <div class="eac-dos-form-row">
-        <span class="eac-dos-label">LOCATION:</span>
-        <span class="eac-dos-value" data-trait="location">Chicago, IL (Last Known)</span>
+        <span class="eac-dos-label">Occupation</span>
+        <span class="eac-dos-value" data-trait="occupation">Investigative photographer</span>
       </div>
       <div class="eac-dos-form-row">
-        <span class="eac-dos-label">STATUS:</span>
-        <span class="eac-dos-value">ACTIVE - MONITOR CLOSELY</span>
+        <span class="eac-dos-label">Location</span>
+        <span class="eac-dos-value" data-trait="location">Chicago, IL</span>
       </div>
-      <div class="eac-dos-bio" data-trait="bioNotes">
-        <strong>NOTES:</strong> Subject specializes in documenting urban decay and underground subcultures. Known to operate primarily at night using analog 35mm film equipment. Highly evasive but maintains a public portfolio of redacted materials.
+      <div class="eac-dos-form-row">
+        <span class="eac-dos-label">File status</span>
+        <span class="eac-dos-value" data-trait="fileStatus">Open — accepting contact</span>
       </div>
-      <div class="eac-dos-actions">
-        <a href="#" class="eac-dos-btn" data-href-trait="commLink">SECURE COMM LINK</a>
+      <div class="eac-dos-bio" data-trait="bioBlock">
+        <span class="eac-dos-bio-head">Notes</span>
+        <div data-trait="bioNotes"><p>Subject documents urban decay and underground subcultures, working at night on 35mm film.</p></div>
+      </div>
+      <div class="eac-dos-actions" data-trait="contactBlock">
+        <a href="#" class="eac-dos-btn" data-href-trait="contactHref">Make contact</a>
       </div>
     </div>
   </div>
-</div>
+</section>

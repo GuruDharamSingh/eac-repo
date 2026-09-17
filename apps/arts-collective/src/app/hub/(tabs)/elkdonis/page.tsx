@@ -64,7 +64,7 @@ export default async function ElkdonisTabPage() {
   const roster = await getMemberRoster(8);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-12">
+    <div className="w-full py-10">
       <header className="mb-10 space-y-2 border-b border-border pb-8">
         <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Welcome to the Collective

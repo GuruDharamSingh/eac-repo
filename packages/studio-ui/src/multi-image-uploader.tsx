@@ -231,7 +231,7 @@ export function MultiImageUploader({
                 onChange={(e) => setAlt(index, e.target.value)}
                 placeholder="Alt text"
                 disabled={disabled}
-                className="w-full rounded border border-input bg-transparent px-2 py-1 text-xs outline-none focus:ring-[2px] focus:ring-ring/50"
+                className="w-full rounded border border-input bg-transparent px-2 py-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               />
 
               <div className="flex items-center justify-between gap-1">

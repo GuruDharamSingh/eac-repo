@@ -3,11 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { updateOwnProfileAction } from "@/lib/account-actions";
+import { Button, Input, Label, Textarea } from "@elkdonis/primitives";
 
 interface ProfileEditFormProps {
   initial: {

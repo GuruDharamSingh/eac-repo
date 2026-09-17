@@ -1,7 +1,8 @@
 import { db } from "@elkdonis/db";
-import { getOrgFeed } from "@elkdonis/services";
+import { getGathering, getOrgFeed, hasOrgRole } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
+import { termHref, threadHref } from "@/lib/gather";
 
 /**
  * One thread, in the shape the shared surface renders.
@@ -94,6 +95,25 @@ export async function GET(
 
   const feed = row.section ? await getOrgFeed(siteConfig.orgId, row.section).catch(() => null) : null;
 
+  // ── what this thread holds ───────────────────────────────────────────────
+  // This route serves PUBLIC pages as well as the hub, so membership is
+  // established here rather than inferred from the thread's visibility. It is
+  // the only thing standing between a public meeting page and a living
+  // document's share link, which grants edit and delete to anyone holding it.
+  const isMember = viewer
+    ? await hasOrgRole(viewer.userId, siteConfig.orgId, ["owner", "guide", "member"])
+    : false;
+
+  const gathering = await getGathering(row.id, {
+    viewerUserId: viewer?.userId ?? null,
+    isMember,
+    orgId: siteConfig.orgId,
+    hrefFor: threadHref,
+    termHref,
+    // Files dropped into the thread's folder list beside the edges.
+    withFolder: true,
+  });
+
   return Response.json({
     id: row.id,
     title: row.title,
@@ -124,5 +144,6 @@ export async function GET(
     rsvpDeadline: row.rsvp_deadline,
     rsvpCount: row.rsvp_count,
     viewerAttending: row.viewer_attending,
+    ...gathering,
   });
 }

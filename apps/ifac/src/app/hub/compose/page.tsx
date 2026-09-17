@@ -37,7 +37,7 @@ export default async function ComposePage({
       <ThemeStyle orgId={siteConfig.orgId} pageKey="hub" userId={viewer.userId} />
       <SiteHeader />
 
-      <main className="hub">
+      <main className="hub hub-compose-page">
         <div className="hub-welcome">
           <div>
             <p className="kicker">{siteConfig.shortName}</p>
@@ -52,6 +52,10 @@ export default async function ComposePage({
           </a>
         </div>
 
+        {/* The composer, in the same chrome its popup wears — masthead,
+            body, foot — so arriving here from a tile reads as the same object
+            at page size rather than a different screen. `hub-compose` centres
+            it and holds the measure. */}
         <section className="hub-wide hub-compose">
           <ComposeWorkspace
             initialKind={kind}
