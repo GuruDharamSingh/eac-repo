@@ -24,7 +24,10 @@ const globalForDb = globalThis as unknown as {
 
 function createDb() {
   return postgres(databaseUrl!, {
-    max: 20,
+    // ~17 app processes share one Postgres (max_connections = 100). At 20
+    // each, a busy hour could ask for 340. Idle connections close after 20s,
+    // so 5 is plenty per process; raise DB_POOL_MAX for a single hot app.
+    max: Number(process.env.DB_POOL_MAX) || 5,
     idle_timeout: 20,
     connect_timeout: 30,
     debug: process.env.NODE_ENV === 'development',

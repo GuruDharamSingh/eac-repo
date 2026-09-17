@@ -21,6 +21,7 @@
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/forum-ui": "workspace:*",
+    "@elkdonis/newsletter": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/payments": "workspace:*",
     "@elkdonis/redis": "workspace:*",

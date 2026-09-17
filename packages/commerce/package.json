@@ -14,10 +14,12 @@
     "./server": "./src/server/index.ts",
     "./etransfer": "./src/etransfer/index.ts",
     "./settlement": "./src/server/settlement.ts",
-    "./ledger": "./src/server/ledger.ts"
+    "./ledger": "./src/server/ledger.ts",
+    "./links": "./src/links.ts",
+    "./commerce.css": "./src/components/commerce.css"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",

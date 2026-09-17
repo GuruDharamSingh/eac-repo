@@ -12,7 +12,7 @@
     "./forum-theme.css": "./src/forum-theme.css"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "peerDependencies": {
     "react": "^19",

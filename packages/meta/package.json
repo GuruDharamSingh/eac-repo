@@ -1,0 +1,23 @@
+{
+  "name": "@elkdonis/meta",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./tokens": "./src/tokens.ts",
+    "./page": "./src/page.ts",
+    "./instagram": "./src/instagram.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "probe": "node scripts/probe.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

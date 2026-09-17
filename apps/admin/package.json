@@ -8,7 +8,8 @@
         "start": "next start",
         "_check-types-disabled": "KNOWN TYPE DEBT: 32 errors — Meeting/Post types drifted after migration 030 folded them into threads. Rename to check-types to re-enable the gate.",
     "check-types:strict": "tsc --noEmit --incremental false",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@elkdonis/auth-client": "workspace:^",
@@ -17,6 +18,7 @@
         "@elkdonis/db": "workspace:*",
         "@elkdonis/email": "workspace:*",
         "@elkdonis/nextcloud": "workspace:*",
+        "@elkdonis/openclaw-bridge": "workspace:*",
         "@elkdonis/services": "workspace:*",
         "@elkdonis/types": "workspace:*",
         "@elkdonis/ui": "workspace:*",

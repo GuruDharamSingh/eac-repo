@@ -1,7 +1,7 @@
 {
-  "name": "@elkdonis/redis",
+  "name": "@elkdonis/openclaw-bridge",
   "version": "1.0.0",
-  "description": "Redis client package for session caching and general caching",
+  "description": "The only surface an external agent (OpenClaw) may write through. Contract + authorization + draft creation; holds no standing authority of its own.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -21,11 +21,15 @@
     "dist/**"
   ],
   "dependencies": {
-    "ioredis": "^5.4.1"
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "nanoid": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^20.19.17",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.0.0"
   }
 }

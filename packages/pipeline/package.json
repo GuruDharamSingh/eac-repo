@@ -10,7 +10,7 @@
     "./routes": "./src/routes.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

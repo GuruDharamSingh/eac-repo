@@ -15,15 +15,21 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check:fields": "tsx scripts/check-merge-fields.mts",
+    "check-types": "tsc --noEmit && pnpm run check:fields && pnpm run check:portability",
+    "check:portability": "tsx scripts/check-portability.mts",
+    "preview:clients": "tsx scripts/client-preview.mts"
   },
   "files": [
     "dist/**"
   ],
   "dependencies": {
+    "@elkdonis/db": "workspace:*",
     "@react-email/components": "^0.0.32",
     "@react-email/render": "^1.0.0",
     "@sendgrid/mail": "^8.1.4",
+    "nanoid": "^5.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

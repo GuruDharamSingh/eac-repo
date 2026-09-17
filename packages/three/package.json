@@ -20,12 +20,17 @@
       "types": "./dist/inner-temple/index.d.ts",
       "import": "./dist/inner-temple/index.mjs",
       "require": "./dist/inner-temple/index.js"
+    },
+    "./gallery": {
+      "types": "./dist/gallery/index.d.ts",
+      "import": "./dist/gallery/index.mjs",
+      "require": "./dist/gallery/index.js"
     }
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "files": [
     "dist/**"
@@ -45,7 +50,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@types/three": "^0.170.0",
+    "@types/three": "^0.184.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "leva": "^0.9.35",

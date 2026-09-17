@@ -2,29 +2,16 @@
   "name": "@elkdonis/services",
   "version": "1.0.0",
   "description": "Backend services and business logic for meetings, posts, and integrations",
-  "main": "./dist/index.js",
+  "main": "./src/index.ts",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./agreements": {
-      "types": "./dist/agreements.d.ts",
-      "import": "./dist/agreements.mjs",
-      "require": "./dist/agreements.js"
-    }
+    ".": "./src/index.ts",
+    "./agreements": "./src/agreements.ts"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
-  "files": [
-    "dist/**"
-  ],
   "dependencies": {
     "@elkdonis/db": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",

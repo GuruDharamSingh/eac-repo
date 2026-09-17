@@ -19,8 +19,8 @@
  *                                        being applied
  *
  * Env:
- *   DATABASE_URL   postgres connection string
- *                  (default: postgres://postgres:postgres@postgres:5432/elkdonis_dev)
+ *   DATABASE_URL   postgres connection string (required — no default; a
+ *                  runner that guesses a password can migrate the wrong DB)
  */
 
 import postgres from 'postgres';
@@ -32,9 +32,11 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, '..', 'migrations');
 
-const DATABASE_URL =
-  process.env.DATABASE_URL ??
-  'postgres://postgres:postgres@postgres:5432/elkdonis_dev';
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error('✗ DATABASE_URL is not set');
+  process.exit(1);
+}
 
 const sql = postgres(DATABASE_URL, { max: 1, onnotice: () => {} });
 
@@ -72,11 +74,29 @@ async function getApplied() {
   return new Map(rows.map((r) => [r.filename, r]));
 }
 
+/**
+ * 49 of the first 133 files wrap themselves in `BEGIN; ... COMMIT;`. Run as-is
+ * inside sql.begin, the file's COMMIT ends the RUNNER's transaction: anything
+ * after it autocommits and the tracker INSERT lands outside, so a failure
+ * could leave a migration applied but unrecorded. The files cannot be edited
+ * (their checksums are stored), so the statements are dropped here instead and
+ * the runner's transaction is the only one. A line that is exactly `BEGIN;` is
+ * never PL/pgSQL — a block's BEGIN carries no semicolon.
+ */
+const OWN_TX = /^[ \t]*(BEGIN|START[ \t]+TRANSACTION|COMMIT)[ \t]*;[ \t]*(--.*)?$/gim;
+
+function stripOwnTransaction(content) {
+  return content.replace(OWN_TX, '-- (transaction statement removed by migrate.mjs)');
+}
+
+// One runner at a time. Parallel sessions are how five numbers got used twice.
+const LOCK_KEY = 7246001;
+
 async function applyMigration(filename) {
   const { content, checksum } = readMigration(filename);
   process.stdout.write(`  → ${filename} ... `);
   await sql.begin(async (tx) => {
-    await tx.unsafe(content);
+    await tx.unsafe(stripOwnTransaction(content));
     await tx`
       INSERT INTO app_schema_migrations (filename, checksum)
       VALUES (${filename}, ${checksum})
@@ -155,6 +175,30 @@ async function cmdApply() {
     console.log('✓ Database is up to date');
     return;
   }
+
+  // A pending file must not reuse a number. (052, 054, 102, 103 and 112 already
+  // do, and stay: they are applied and renaming them would orphan their rows.)
+  const prefix = (f) => f.match(/^\d+/)?.[0];
+  for (const f of pending) {
+    const clash = files.find((g) => g !== f && prefix(g) && prefix(g) === prefix(f));
+    if (clash) {
+      throw new Error(`${f} reuses migration number ${prefix(f)} (also ${clash}) — renumber it`);
+    }
+  }
+
+  // Edited history is a stop sign, not a --verify footnote.
+  const drifted = files.filter(
+    (f) => applied.has(f) && applied.get(f).checksum !== readMigration(f).checksum
+  );
+  if (drifted.length > 0 && !process.env.MIGRATE_ALLOW_DRIFT) {
+    throw new Error(
+      `applied migration(s) changed on disk: ${drifted.join(', ')} — restore them, ` +
+        'or set MIGRATE_ALLOW_DRIFT=1 if the edit was deliberate'
+    );
+  }
+
+  const [{ locked }] = await sql`SELECT pg_try_advisory_lock(${LOCK_KEY}) AS locked`;
+  if (!locked) throw new Error('another migration run holds the lock');
 
   console.log(`Applying ${pending.length} migration(s):`);
   for (const f of pending) {

@@ -8,7 +8,7 @@
     "./routes": "./src/routes.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@elkdonis/nextcloud": "workspace:*",
@@ -24,5 +24,9 @@
     "react": "^19",
     "react-dom": "^19",
     "next": "^15 || ^16"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19"
   }
 }

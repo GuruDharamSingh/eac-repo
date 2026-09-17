@@ -10,9 +10,7 @@
     "./wiki-render": "./src/wiki-render.ts"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "files": [
     "dist/**"

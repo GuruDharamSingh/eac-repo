@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly --project tsconfig.json",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "db:setup": "tsx -e \"import('./src/schemas.ts').then(m => m.setupDatabase())\"",
     "db:migrate": "node scripts/migrate.mjs",
     "db:migrate:status": "node scripts/migrate.mjs --status",

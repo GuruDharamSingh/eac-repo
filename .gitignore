@@ -86,3 +86,6 @@ astrologychart2.zip
 # apps/danamccool/public and ARE tracked.
 danascreenshots/
 /theme style sheet scss Danamccool.txt
+
+# Rendered email previews (generated)
+.email-preview/

@@ -1,0 +1,33 @@
+{
+  "name": "@elkdonis/blocks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Page blocks: one catalogue of presentational React components, declared as data so the same definition can drive a Silex trait panel, a props table, or a future drag-and-drop editor.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./blocks.css": "./src/blocks.css"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "tsx scripts/smoke.mts"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/node": "^20",
+    "typescript": "^5.3.3",
+    "tsx": "^4.20.6",
+    "react-dom": "^19"
+  },
+  "dependencies": {
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/services": "workspace:*"
+  }
+}

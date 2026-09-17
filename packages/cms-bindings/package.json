@@ -13,8 +13,6 @@
     "./node": "./src/node.ts"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
     "test:engine": "tsx scripts/engine-smoke.mts",
     "audit:template": "tsx scripts/audit-workshop-template.mts",

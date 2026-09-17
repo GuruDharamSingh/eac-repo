@@ -11,8 +11,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-elkdonis_dev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Loopback only: apps reach these over eac-network; host scripts use
+    # localhost. Nothing on the LAN needs the database port (2026-09-17).
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
@@ -76,7 +78,7 @@ services:
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
     ports:
-      - "9998:3000"
+      - "127.0.0.1:9998:3000"
     networks:
       - eac-network
       - nextcloud-network
@@ -105,7 +107,7 @@ services:
       RLIMIT_NOFILE: 1048576
       CLUSTER_STRATEGIES: ""
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     networks:
       - eac-network
       - nextcloud-network
@@ -118,7 +120,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -127,12 +129,33 @@ services:
     networks:
       - eac-network
 
+  # One-shot dependency install. node_modules in this repo belongs to the
+  # containers (Alpine/musl native addons: sweph, sharp), so installs run here
+  # and nowhere else — not on the host, and not as a side effect of starting an
+  # app, which had five services racing each other into one node_modules.
+  #     docker compose run --rm install
+  install:
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    profiles: ["tools"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    # `n` declines pnpm's "remove node_modules and reinstall?" prompt, which
+    # otherwise wipes the modules of every workspace at once.
+    command: sh -c "printf 'n\\n' | pnpm install --config.package-import-method=hardlink"
+    network_mode: bridge
+
   # Admin Dashboard App
   admin:
     build:
       context: .
       dockerfile: Dockerfile
       target: development
+    # One slim image for every app, run as the host user so nothing written
+    # into the bind mount is root-owned. See Dockerfile `development`.
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-admin
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -178,7 +201,7 @@ services:
       - /app/.next
     ports:
       - "3000:3000"
-    command: sh -c "pnpm install && cd apps/admin && pnpm build && pnpm start"
+    command: sh -c "cd apps/admin && pnpm build && pnpm start"
     networks:
       - eac-network
       - nextcloud-network
@@ -189,6 +212,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-forum
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -201,6 +226,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FORUM_URL:-http://localhost:3003}
+      ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
@@ -208,7 +234,6 @@ services:
       NODE_OPTIONS: --max-old-space-size=1024
     volumes:
       - .:/app
-      - /app/node_modules
       - /app/apps/forum/.next
     ports:
       - "3003:3003"
@@ -223,6 +248,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-blog-sunjay
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -266,6 +293,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-blog-guru-dharam
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -309,6 +338,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-blog-tester
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -352,6 +383,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-inner-gathering
     # Production mode: the ceiling has to clear `next build` (the peak), not
     # steady state. Serving afterwards is a fraction of this.
@@ -391,6 +424,7 @@ services:
       NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3000}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       # Cloudflare Turnstile
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
@@ -437,6 +471,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-arts-collective
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -475,6 +511,7 @@ services:
 
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       EAC_OWNER_EMAIL: ${EAC_OWNER_EMAIL:-info@elkdonis-arts.org}
       # Cloudflare Turnstile
@@ -485,7 +522,7 @@ services:
       - /app/apps/elkdonis-arts-collective/.next
     ports:
       - "3005:3005"
-    command: sh -c "pnpm install && cd apps/elkdonis-arts-collective && pnpm dev"
+    command: sh -c "cd apps/elkdonis-arts-collective && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -496,6 +533,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-arts-network
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -521,6 +560,21 @@ services:
       NEXT_PUBLIC_NETWORK_HOST: ${NETWORK_HOST:-localhost:3007}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-}
+      # Email — arts-collective hosts the network's email suite at /hub/email
+      # and BOTH SendGrid webhooks (/api/email/inbound, /api/email/events),
+      # because Inbound Parse allows one endpoint per MX host and the hub is
+      # the one app that already serves every organisation.
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_SANDBOX: ${EMAIL_SANDBOX:-}
+      # Blank until inbound.elkdonis-arts.org has its MX record — see
+      # .env.example. Unset, the Inbox tab says inbound isn't configured
+      # rather than advertising an address that would bounce.
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
+      SENDGRID_INBOUND_PUBLIC_KEY: ${SENDGRID_INBOUND_PUBLIC_KEY:-}
+      SENDGRID_EVENT_PUBLIC_KEY: ${SENDGRID_EVENT_PUBLIC_KEY:-}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
@@ -543,6 +597,7 @@ services:
       # Optional browser-reachable Silex editor origin for /edit/{slug} launch.
       # In prod this should be the reverse-proxied editor origin, e.g.
       # https://edit.example.com. If unset, dev falls back to port 6805.
+      SILEX_BRIDGE_SECRET: ${SILEX_BRIDGE_SECRET:?set SILEX_BRIDGE_SECRET in .env — it gates /api/silex/auth}
       SILEX_EDITOR_PUBLIC_URL: ${SILEX_EDITOR_PUBLIC_URL:-}
       SILEX_PUBLIC_URL: ${SILEX_PUBLIC_URL:-}
       # JWT shared secret for inter-app SSO bridge (Talk room join, etc.),
@@ -574,6 +629,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-artdirect
     restart: unless-stopped
     # Bumped from 3g (2026-09-04): adding the inline profile editor pulled in
@@ -621,7 +678,7 @@ services:
       - /app/apps/artdirect/.next
     ports:
       - "3013:3013"
-    command: sh -c "pnpm install && cd apps/artdirect && pnpm dev"
+    command: sh -c "cd apps/artdirect && pnpm dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -632,6 +689,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-amrit-canada
     restart: unless-stopped
     # Switched to production mode (2026-09-05), same shape as inner-gathering
@@ -690,6 +749,7 @@ services:
       # pointed at the same cards.
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
@@ -718,7 +778,8 @@ services:
     # Same node+pnpm image as amrit-canada: the repo is bind-mounted over /app,
     # so the image only supplies the runtime. Reusing it avoids a second full
     # `pnpm install` layer for an app whose dependencies are identical.
-    image: guru-eac-amrit-canada
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-innergathering
     restart: unless-stopped
     # InnerGathering — the non-Mantine replacement for inner-gathering (org
@@ -770,6 +831,7 @@ services:
       # pointed at the same cards.
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
@@ -790,6 +852,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-pigeonshoot
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -832,6 +896,7 @@ services:
       PIGEONSHOOT_OWNER_EMAIL: ${PIGEONSHOOT_OWNER_EMAIL:-justin.gillisb@gmail.com}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
@@ -841,7 +906,7 @@ services:
     # `pnpm install` first: this app adds sharp, exifr and leaflet, and the
     # bind mount above shadows the image's node_modules. Installing in the
     # container also links sharp's musl binary rather than the host's glibc one.
-    command: sh -c "pnpm install && cd apps/pigeonshoot && pnpm docker:dev"
+    command: sh -c "cd apps/pigeonshoot && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network
@@ -854,6 +919,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-elastrocal
     restart: unless-stopped
     mem_limit: 3g
@@ -889,7 +956,7 @@ services:
       - "3016:3016"
     # `pnpm install` first: the bind mount shadows the image's node_modules,
     # and installing here builds sweph's musl binary rather than using a glibc one.
-    command: sh -c "pnpm install && cd apps/elastrocal && pnpm docker:dev"
+    command: sh -c "cd apps/elastrocal && pnpm docker:dev"
     networks:
       - eac-network
 
@@ -899,6 +966,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-ifac
     restart: unless-stopped
     # ifac serves a live public domain. It OOM'd against a 3g cap with a
@@ -946,6 +1015,7 @@ services:
       REDIS_URL: redis://redis:6379
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       # Nextcloud (external stack via shared network) — member media storage
       NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
@@ -975,6 +1045,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-art-auction
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -1019,6 +1091,7 @@ services:
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
@@ -1036,6 +1109,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-fourth-way-book-readers
     restart: unless-stopped
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
@@ -1066,6 +1141,7 @@ services:
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
     volumes:
       - .:/app
@@ -1086,6 +1162,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-hidden-enneagram
     # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
     # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
@@ -1123,8 +1201,15 @@ services:
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       EAC_OWNER_EMAIL: ${HIDDEN_ENNEAGRAM_OWNER_EMAIL:-}
+      # Signs newsletter unsubscribe links. Without it every unsubscribe link
+      # is dead, so sendNewsletter refuses to send at all rather than mail out
+      # a letter nobody can opt out of. INTER_APP_JWT_SECRET is the fallback
+      # the package reads when NEWSLETTER_SECRET is unset.
+      NEWSLETTER_SECRET: ${NEWSLETTER_SECRET:-}
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:-}
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
     volumes:
@@ -1159,6 +1244,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-danamccool
     restart: unless-stopped
     mem_limit: 3g
@@ -1196,6 +1283,70 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Fourth Way Book Readers — books.elkdonis-arts.org (org: fourth_way_book_readers).
+  # Port 3019: 3010 (the old fourth-way-book-readers stub's port) is held on
+  # this host by open-webui, and 3017 by astrology-dev.
+  fourthway-bookreaders:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-fourthway-bookreaders
+    restart: unless-stopped
+    mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${FOURTHWAY_BOOKREADERS_URL:-http://localhost:3019/books}
+      # Served under a sub-path of the shared elkdonis-arts.org (which
+      # innergathering owns the root of) rather than on a domain of its own —
+      # no DNS record and no certificate needed. Next's `basePath` reads this,
+      # as do withBase() in src/lib/base-path.ts and @elkdonis/auth-client.
+      # Unset it (and repoint the proxy) to move to books.elkdonis-arts.org.
+      NEXT_PUBLIC_BASE_PATH: ${FOURTHWAY_BASE_PATH-/books}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NODE_ENV: development
+      PORT: 3019
+      # 2048, not the 1024 the production-mode services use: this one runs
+      # `next dev`, and a Turbopack compile of the shared editor crosses 1GB —
+      # Next then restarts itself and drops whatever request was in flight.
+      NODE_OPTIONS: --max-old-space-size=2048
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      REDIS_URL: redis://redis:6379
+      # Nextcloud — covers, the side banner, handouts, and the recordings the
+      # front page's theatre lists (EAC_Network/fourth_way_book_readers/Media/Videos).
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts).
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
+    volumes:
+      - .:/app
+      - /app/apps/fourthwayBookreaders/.next
+    ports:
+      - "3019:3019"
+    command: sh -c "cd apps/fourthwayBookreaders && pnpm docker:dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Silex 3.9 - browser-based visual site builder (opt-in custom layout per org).
   # Built from silexlabs/silex-platform:3.9.0 (the current canonical image;
   # `silexlabs/silex` is a deprecated Autobuild name frozen at 3.7.0) with our
@@ -1212,6 +1363,7 @@ services:
       SILEX_URL: ${SILEX_PUBLIC_URL:-http://localhost:6805}
       SILEX_PORT: 6805
       SILEX_SESSION_SECRET: ${SILEX_SESSION_SECRET:?set SILEX_SESSION_SECRET in .env}
+      SILEX_BRIDGE_SECRET: ${SILEX_BRIDGE_SECRET:?set SILEX_BRIDGE_SECRET in .env — it gates /api/silex/auth}
       # Server plugin (Nextcloud storage/hosting + one-time token bridge) and
       # client plugin (editor blocks/templates). Bind-mounted so they can be
       # iterated without an image rebuild.

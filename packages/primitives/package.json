@@ -1,0 +1,32 @@
+{
+  "name": "@elkdonis/primitives",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Token-driven UI primitives. Plain CSS + custom properties (no Tailwind); Radix for headless keyboard/focus behaviour only \u2014 so they render correctly in every app, including the ones that carry their own stylesheet.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./primitives.css": "./src/primitives.css"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "tsx scripts/smoke.mts"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/node": "^20",
+    "typescript": "^5.3.3",
+    "tsx": "^4.20.6",
+    "react-dom": "^19",
+    "@types/react-dom": "^19"
+  },
+  "dependencies": {
+    "radix-ui": "^1.4.3"
+  }
+}

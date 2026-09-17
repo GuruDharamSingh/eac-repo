@@ -27,6 +27,7 @@
     "@elkdonis/silex-render": "workspace:*",
     "@elkdonis/sky-ui": "workspace:*",
     "@elkdonis/three": "workspace:*",
+    "@elkdonis/tokens": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",
     "@hookform/resolvers": "^3.10.0",

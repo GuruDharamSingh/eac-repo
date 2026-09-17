@@ -19,10 +19,19 @@ This is a **multi-organization monorepo** for the Elkdonis Arts Collective - a s
 
 ## Essential Commands
 
+### Operating rules (2026-09-17)
+- **Install only through the container:** `docker compose run --rm install`. `node_modules` holds Alpine/musl native addons (sweph, sharp); a host `pnpm install` fights it, and no app runs `pnpm install` on start any more.
+- **App containers run as the host user** (`user: ${EAC_UID:-3003}`) from one slim image, `eac-dev` (`docker build --target development -t eac-dev .`). Nothing in the tree should be root-owned; if something is, a container is running as root.
+- **Each app's `.next` is a per-container volume**, not the host directory. To force a rebuild of a production-mode app: `docker compose exec <svc> rm -rf /app/apps/<app>/.next/server` then `docker compose restart <svc>`.
+- **Postgres / Redis / PostgREST / Realtime listen on 127.0.0.1 only.** Apps use `eac-network`.
+- **Backups:** `scripts/backup-db.sh` runs nightly from guru's crontab into `~/eac-backups` (14 dailies + monthlies). Same pool as the database — not an off-box copy.
+- **Type check:** the script is named `check-types` in every workspace (turbo silently skips any other name).
+- **Migrations:** never reuse a number; the runner refuses a pending duplicate, refuses drifted history, and strips a file's own `BEGIN;`/`COMMIT;`.
+
 ### Initial Setup
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies (in the container — see Operating rules)
+docker compose run --rm install
 
 # Build shared packages (REQUIRED before starting apps)
 pnpm --filter @elkdonis/db build
@@ -134,7 +143,8 @@ apps/
 ├── fourth-way-book-readers/ Port 3010 - Reading groups & book programs (org: fourth-way)
 ├── blog-tester/         Port 3011 - Sandbox for blog features
 ├── elastrocal/          Port 3016 - Natal charts (org: elastrocal; engine in packages/astro)
-└── danamccool/          Port 3018 - Dana McCool's personal artist site (org: danamccool)
+├── danamccool/          Port 3018 - Dana McCool's personal artist site (org: danamccool)
+└── fourthwayBookreaders/ Port 3019 - Fourth Way Book Readers (org: fourth_way_book_readers). Served at elkdonis-arts.org/books via Next `basePath` (NEXT_PUBLIC_BASE_PATH), beside innergathering on the same domain; supersedes the fourth-way-book-readers stub, whose port 3010 is held by open-webui on this host
 ```
 
 Each app operates independently but queries the same database filtered by its `org_id`.
@@ -192,6 +202,7 @@ When services are running:
 - **Blog Tester:** http://localhost:3011
 - **Elastrocal:** http://localhost:3016
 - **Dana McCool:** http://localhost:3018
+- **Fourth Way Book Readers:** http://localhost:3019/books (the bare root 404s — it runs under a basePath)
 - **Silex Editor:** http://localhost:6805
 - **Nextcloud:** http://localhost:8080
 - **Supabase Auth:** http://localhost:9999

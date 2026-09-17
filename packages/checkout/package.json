@@ -12,7 +12,7 @@
     "./stripe": "./src/server/stripe.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@elkdonis/commerce": "workspace:*",

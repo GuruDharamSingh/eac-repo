@@ -27,20 +27,26 @@
     "./center.css": "./src/center/center.css",
     "./fields.css": "./src/wizard/fields.css",
     "./compose.css": "./src/compose/compose.css",
+    "./writing": "./src/writing/index.ts",
+    "./writing.css": "./src/writing/writing.css",
     "./editor": "./src/editor/index.ts",
     "./editor.css": "./src/editor/editor.css",
     "./pens": "./src/pens/index.ts",
     "./fold-card.css": "./src/pens/fold-card.css",
     "./feed-list.css": "./src/pens/feed-list.css",
-    "./moon-phase.css": "./src/pens/moon-phase.css"
+    "./moon-phase.css": "./src/pens/moon-phase.css",
+    "./whiteboard": "./src/whiteboard/index.ts",
+    "./email": "./src/email/index.ts",
+    "./email.css": "./src/email/email.css"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "peerDependencies": {
     "react": "^19",
     "react-dom": "^19",
-    "next": "^15 || ^16"
+    "next": "^15 || ^16",
+    "@excalidraw/excalidraw": "^0.18.0"
   },
   "devDependencies": {
     "@types/react": "^19",
@@ -69,5 +75,10 @@
     "@tiptap/extension-underline": "^2.8.0",
     "@tiptap/extension-youtube": "^2.8.0",
     "lowlight": "^3.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@excalidraw/excalidraw": {
+      "optional": true
+    }
   }
 }

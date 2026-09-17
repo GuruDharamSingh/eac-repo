@@ -4,8 +4,16 @@ FROM node:20-alpine AS base
 # Accept app name as build argument (default: admin)
 ARG APP_NAME=admin
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+# Install pnpm somewhere every uid can use it. The app containers run as the
+# host user (compose `user:`), not root, so nothing they write into the
+# bind-mounted repo comes out root-owned; corepack's default cache is under
+# /root and would be unreadable to them.
+ENV COREPACK_HOME=/opt/corepack
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate \
+ && chmod -R a+rwX /opt/corepack
+# A writable HOME for a uid that has no passwd entry.
+ENV HOME=/tmp/home
+RUN mkdir -p /tmp/home && chmod 1777 /tmp/home
 
 # Native-addon toolchain. sweph (Swiss Ephemeris, used by @elkdonis/astro)
 # ships only glibc prebuilds, so on Alpine/musl it compiles from source during
@@ -14,26 +22,19 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 RUN apk add --no-cache python3 make g++
 
 # Development stage
+#
+# Deliberately empty of source and node_modules. Every service bind-mounts the
+# repo over /app, which hid whatever was copied and installed here — sixteen
+# ~3GB images each carrying a node_modules nothing could see. One slim image
+# (`eac-dev`) now serves every app. Dependencies are installed into the
+# mounted tree by the one-shot `install` service:
+#     docker compose run --rm install
 FROM base AS development
 
 WORKDIR /app
 
-# Copy all source code (development doesn't need multi-stage optimization)
-COPY . .
-
-# Install dependencies. Hardlink rather than pnpm's default clone/copy: on
-# this host (TrueNAS) copying from the store during a BuildKit build fails with
-# ERR_PNPM_EAGAIN (reproduced 2026-09-11); store and node_modules share the
-# image filesystem, so hardlinks are safe and faster.
-RUN pnpm install --config.package-import-method=hardlink
-
-# Build database package
-WORKDIR /app
-
-# Expose port
 EXPOSE 3000
 
-# Start development server
 CMD ["pnpm", "dev"]
 
 # Production dependencies stage
