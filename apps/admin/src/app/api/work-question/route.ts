@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@elkdonis/db';
+import { requireAdminApi } from '@/lib/require-admin-api';
 
 export async function GET() {
+  const gate = await requireAdminApi();
+  if (gate.deny) return gate.deny;
+
   try {
     const questions = await db`
       SELECT
@@ -34,6 +38,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await requireAdminApi();
+  if (gate.deny) return gate.deny;
+
   try {
     const { question } = await req.json();
     if (!question?.trim()) {

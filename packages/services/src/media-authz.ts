@@ -30,6 +30,7 @@
 import { db } from '@elkdonis/db';
 import { canEditOrgIdentity } from './org-domains';
 import { isEnrolledInWorkshop } from './workshop-offerings';
+import { getIdentityIds } from './identities';
 
 /** Matches both spellings in the wild: code writes EAC_Network, migrations
  *  043/053/055 seeded EAC-Network. Both address the same Team folder. */
@@ -170,7 +171,11 @@ async function sharesOrg(viewerId: string, ownerId: string): Promise<boolean> {
     // org_profiles still counts.
     const rows = await db<Array<{ ok: number }>>`
       WITH viewer_orgs AS (
-        SELECT org_id FROM user_organizations WHERE user_id = ${viewerId}
+        -- Same 'viewer' exclusion as isOrgAffiliate, and for the same reason:
+        -- the self-join route hands that role out ungated, so counting it
+        -- let anyone follow an org to read its members' private files.
+        SELECT org_id FROM user_organizations
+        WHERE user_id = ${viewerId} AND role <> 'viewer'
         UNION
         SELECT org_id FROM org_profiles      WHERE user_id = ${viewerId}
       ),
@@ -252,7 +257,12 @@ export async function canAccessWorkshopMaterials(
       LIMIT 1
     `;
     if (!thread) return false;
-    if (thread.author_id === userId) return true;
+    // The author test runs over every name this account writes as: a workshop
+    // convened under a pen name is still the convener's to open.
+    if (thread.author_id) {
+      const mine = await getIdentityIds(userId);
+      if (mine.includes(thread.author_id)) return true;
+    }
     if (await isEnrolledInWorkshop(threadId, userId)) return true;
     return canEditOrgIdentity(userId, orgId);
   } catch (err) {

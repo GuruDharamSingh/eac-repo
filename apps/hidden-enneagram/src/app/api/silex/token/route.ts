@@ -46,9 +46,11 @@ export async function POST(req: Request) {
       ? body.page
       : null;
 
-  const ncUser = process.env.NEXTCLOUD_ADMIN_USER;
-  const ncPass = process.env.NEXTCLOUD_ADMIN_PASSWORD;
-  if (!process.env.NEXTCLOUD_URL || !ncUser || !ncPass) {
+  if (
+    !process.env.NEXTCLOUD_URL ||
+    !process.env.NEXTCLOUD_ADMIN_USER ||
+    !process.env.NEXTCLOUD_ADMIN_PASSWORD
+  ) {
     return NextResponse.json(
       { error: "Nextcloud is not configured on the server" },
       { status: 500 }
@@ -68,8 +70,6 @@ export async function POST(req: Request) {
     userId: viewer.userId,
     orgId: siteConfig.orgId,
     slug: ORG_SLUG,
-    ncUser,
-    ncPass,
     nextcloudFolderPath,
   });
 

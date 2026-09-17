@@ -32,8 +32,8 @@ export interface SilexTokenPayload {
   userId: string;
   orgId: string;
   slug: string;
-  ncUser: string;
-  ncPass: string;
+  // No Nextcloud credential in here: the redeem route reads it from its own
+  // environment, so the password never sits in Redis or travels in a token.
   nextcloudFolderPath: string;
   issuedAt: number;
 }

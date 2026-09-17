@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@elkdonis/db';
-import { getServerSession } from '@elkdonis/auth-server';
+import { requireAdminApi } from '@/lib/require-admin-api';
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession();
-  if (!session.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const gate = await requireAdminApi();
+  if (gate.deny) return gate.deny;
 
   const { searchParams } = new URL(req.url);
   const section = searchParams.get('section');

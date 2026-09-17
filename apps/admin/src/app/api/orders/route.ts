@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@elkdonis/auth-server";
+import { requireAdminApi } from "@/lib/require-admin-api";
 import { listOrders } from "@elkdonis/commerce/queries";
 import { confirmEtransferReceived } from "@elkdonis/commerce/server";
 import type { OrderStatus } from "@elkdonis/commerce/types";
@@ -16,20 +16,9 @@ const VALID_STATUSES: OrderStatus[] = [
   "refunded",
 ];
 
-async function requireUser() {
-  try {
-    const session = await getServerSession();
-    return session?.user?.id ? session.user : null;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdminApi();
+  if (gate.deny) return gate.deny;
 
   const statusParam = req.nextUrl.searchParams.get("status");
   const status =
@@ -42,10 +31,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdminApi();
+  if (gate.deny) return gate.deny;
 
   const body = (await req.json()) as {
     orderId?: string;
@@ -59,7 +46,7 @@ export async function POST(req: NextRequest) {
   try {
     const order = await confirmEtransferReceived({
       orderId: body.orderId,
-      confirmedByUserId: user.id,
+      confirmedByUserId: gate.userId,
       paymentReference: body.paymentReference,
       notes: body.notes,
     });

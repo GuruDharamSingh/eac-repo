@@ -38,7 +38,12 @@ function getArtsInternalUrl() {
 
 async function redeemToken(token) {
   const base = getArtsInternalUrl();
-  const res = await fetch(`${base}/api/silex/auth?token=${encodeURIComponent(token)}`);
+  // The redeem route answers 404 to anyone who cannot present this.
+  const secret = process.env.SILEX_BRIDGE_SECRET;
+  if (!secret) throw new Error("redeemToken failed: SILEX_BRIDGE_SECRET is not set");
+  const res = await fetch(`${base}/api/silex/auth?token=${encodeURIComponent(token)}`, {
+    headers: { "x-silex-bridge-secret": secret },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(
