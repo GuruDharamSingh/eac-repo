@@ -71,12 +71,15 @@ import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 export function HubSurfaces({
   signedIn,
   canEdit,
+  userId = null,
   displayName,
   feeds,
   children,
 }: {
   signedIn: boolean;
   canEdit: boolean;
+  /** The viewer's account id — what lets an author remove their own thread. */
+  userId?: string | null;
   displayName?: string | null;
   /** The org's sections, so a composed item can be filed into one. */
   feeds: Array<{ slug: string; name: string }>;
@@ -91,7 +94,13 @@ export function HubSurfaces({
         // Publishing for the org is an owner/guide act — the same gate
         // saveContentAction enforces server-side, mirrored here so a member
         // is not offered a form that will refuse them.
-        viewer: { signedIn, canCompose: canEdit, displayName },
+        viewer: {
+          signedIn,
+          canCompose: canEdit,
+          displayName,
+          // Editors take anything down; anyone may take down their own.
+          canRemove: (t) => canEdit || (Boolean(userId) && t.authorId === userId),
+        },
         orgName: siteConfig.orgName,
         timeZone: "America/Toronto",
         board: true,
@@ -116,7 +125,17 @@ export function HubSurfaces({
         // occasion rather than four tiles. IFAC is the first host because it
         // is the only one with all four — a `weekly-meeting` feed, living
         // documents, a Deck board and a forum. See migration 131.
-        gather: true,
+        // Gathering is OFF as a surface action (2026-09-17, user's call): the
+        // "Gather / Arrange what this holds" button was appearing on every
+        // thread popup, which made it feel pasted on. The edge (migration 131)
+        // and the forum's map of it stay; what a thread already holds still
+        // lists, since that comes down with the thread. Gathering as an act
+        // gets its own home when the time comes — flip this back to wire it.
+        gather: false,
+        // Remove from the popup (author or editor) and feature a meeting as
+        // the standing one (editor) — both on the same thread route.
+        remove: true,
+        standing: true,
         ideas: { href: "/forum/ideas" },
         // Identity — name, portrait, bio, links — is the shared `profile`
         // surface type (not `custom`): the same `users` row every org site
@@ -254,7 +273,7 @@ export function HubSurfaces({
           return { ok: true, attending: Boolean(data.attending ?? going), count: data.count };
         },
       }),
-    [signedIn, canEdit, displayName, feeds, router]
+    [signedIn, canEdit, userId, displayName, feeds, router]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

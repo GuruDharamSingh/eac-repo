@@ -17,6 +17,19 @@
 @import "@elkdonis/cms-ui/files-card.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
+/* The members' hub: the welcome, the bands and the errands strip. The same
+   sheet IFAC's hub is built from, so the two rooms are one construction. */
+@import "@elkdonis/cms-ui/hub.css";
+/* Member pages at /artists/<slug>: the same ProfileView ArtDirect renders,
+   and the writing shelf behind an opted-in blog. */
+@import "@elkdonis/cms-ui/profile.css";
+@import "@elkdonis/cms-ui/writing.css";
+/* The Grand Forum at /forum. The board is plain CSS over custom properties;
+   forum-theme.css redefines the --sf-* OUTPUT tokens on .gf-root/.gf-page so
+   the board carries its own reading ground without restyling the hub. */
+@import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
+@import "@elkdonis/forum-ui/forum-theme.css";
 /* The email suite — face, surface and the page at /hub/email. */
 @import "@elkdonis/cms-ui/email.css";
 /* The one rich-text editor, shared by every app. */
@@ -132,6 +145,12 @@
   --eac-surface-accent: hsl(var(--gold));
   --eac-surface-on-accent: hsl(var(--smoke));
   --eac-surface-radius: var(--radius);
+  /* The hub's band rubrics. Navy, not the gold accent: a rubric is small bold
+     uppercase and needs 4.5:1, and gold measures 2.53:1 on parchment (ember,
+     the next candidate, is 4.07:1 — also short). Navy is 13.08:1 and still
+     reads as a rubric rather than body copy, because the sentence beside it
+     is --muted-foreground at 8.16:1. */
+  --eac-hub-rubric: hsl(var(--foreground));
   --eac-font-title: "Venture", Georgia, serif;
   --eac-font-body: "Basteleur", "Cormorant Garamond", Georgia, serif;
   --eac-kind-meeting: hsl(var(--gold));

@@ -149,6 +149,16 @@ export interface HubConnectorOptions extends HostSupplied {
    */
   gather?: boolean;
   /**
+   * Remove (archive) a thread from its popup — DELETE `${routes.thread}/:id`.
+   * Who may is `viewer.canRemove`; the host's route enforces the same rule.
+   */
+  remove?: boolean;
+  /**
+   * Feature a meeting as the org's standing one from its popup — PATCH
+   * `${routes.thread}/:id` with `{ standing }`. Editors only, on the route.
+   */
+  standing?: boolean;
+  /**
    * Suggested ideas. Pass the ideas feed's path on the forum — the face
    * navigates there, so there is nothing sensible to default it to and an
    * org without an `ideas` feed should simply not turn this on.
@@ -431,6 +441,30 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
         const data = await res.json().catch(() => ({}));
         if (!res.ok) return { ok: false, error: data.error ?? "Could not remove it." };
         return { ok: true };
+      },
+    };
+  }
+
+  if (opts.remove) {
+    connectors.removeThread = async (threadId) => {
+      const res = await fetch(`${r.thread}/${encodeURIComponent(threadId)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data.error ?? "Could not remove it." };
+      return { ok: true };
+    };
+  }
+
+  if (opts.standing) {
+    connectors.standing = {
+      async set(threadId, on) {
+        const res = await fetch(`${r.thread}/${encodeURIComponent(threadId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ standing: on }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data.error ?? "Could not change it." };
+        return { ok: true, standing: Boolean(data.standing) };
       },
     };
   }

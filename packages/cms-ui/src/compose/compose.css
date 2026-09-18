@@ -213,3 +213,63 @@ details.eac-group--optional.has-values:not([open]) > summary::after {
   font-size: 0.9rem;
   color: var(--sf-muted, var(--ink-soft, #5e667a));
 }
+
+/* ── The composer's own footer ─────────────────────────────────────────────
+   Three things that sit under a compose form wherever one is drawn: what will
+   happen to what you are about to write, what went wrong, and the button. They
+   were `.ifac-compose-*` in one app; a form that moved between a popup and a
+   page needed them to move with it. */
+
+.eac-compose-note {
+  margin: 4px 0 0;
+  color: var(--sf-muted, #5b5349);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Said in place rather than thrown as a toast: cms-ui depends on no toast
+   library, and a message about the form belongs beside the form. */
+.eac-compose-problem {
+  margin: 8px 0 0;
+  color: var(--sf-danger, #ae3a31);
+  font-size: 0.88rem;
+}
+
+.eac-compose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* What you chose, and the way back out of it. The blurb carries the weight;
+   "something else" is a quiet control beside it, not a second heading. */
+.eac-compose-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--sf-line, #e3ddd1);
+}
+
+.eac-compose-blurb {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--sf-muted, #5b5349);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Height / width / depth, on one line. Wraps on a phone rather than squeezing
+   three number fields into a third of a screen each. */
+.eac-art-dims {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+

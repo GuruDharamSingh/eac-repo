@@ -16,6 +16,7 @@ import { RsvpPanel } from "@/components/rsvp-panel";
 import { ShareButton } from "@/components/share-button";
 import { AttendeeList } from "@/components/attendee-list";
 import { EditThreadButton } from "@/components/edit-thread-button";
+import { RemoveThreadButton } from "@/components/remove-thread-button";
 import {
   getAttendanceCount,
   getCycleStatus,
@@ -104,6 +105,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         >
           <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
             {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            {(viewer?.canEdit || (viewer && viewer.userId === thread.authorId)) && (
+              <RemoveThreadButton threadId={thread.id} title={thread.title} backHref={`/${feed.slug}`} />
+            )}
             <ShareButton title={thread.title} />
           </div>
         </ArticleView>
@@ -202,6 +206,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         footExtra={
           <>
             {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            {(viewer?.canEdit || (viewer && viewer.userId === thread.authorId)) && (
+              <RemoveThreadButton threadId={thread.id} title={thread.title} backHref={`/${feed.slug}`} />
+            )}
             <ShareButton title={thread.title} />
           </>
         }

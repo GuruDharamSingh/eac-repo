@@ -82,6 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               page, a hub tile and a calendar day all open into the same dialog. */}
           <HubSurfaces
             signedIn={Boolean(viewer)}
+            userId={viewer?.userId ?? null}
             canEdit={canEdit}
             displayName={profile?.displayName ?? null}
             feeds={feeds.filter((f) => f.isPublic || canEdit).map((f) => ({ slug: f.slug, name: f.name }))}

@@ -15,9 +15,22 @@ import { saveContentAction } from "@/lib/cms/actions";
 import { saveWorkshopAction } from "@/lib/cms/workshop-actions";
 import { toWorkshopInput } from "@/lib/cms/workshop-adapter";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
+import { PlanAheadSurface } from "@elkdonis/cms-ui/hub";
+import { QuestionnaireComposeSurface } from "@elkdonis/cms-ui/compose";
+import { createQuestionnaireAction } from "@/lib/cms/questionnaire-actions";
+import { ArtPieceGate, BlogGate } from "@/components/hub/publish-gates";
+// The shared canvas. Its own subpath because @excalidraw/excalidraw is an
+// optional peer of cms-ui — a drawing engine must not ride along with the hub.
+import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
 
 const TIME_ZONE = "America/Toronto";
+
+/** What this group promises about who reads the answers. */
+const QUESTIONNAIRE_PRIVACY = {
+  poll: "Everyone who answers sees the running result. It is never public.",
+  questionnaire: "Answers are visible to this group's organisers only.",
+} as const;
 
 /**
  * This site's connectors for the shared surface system.
@@ -32,6 +45,7 @@ const TIME_ZONE = "America/Toronto";
 export function HubSurfaces({
   signedIn,
   canEdit,
+  userId = null,
   displayName,
   feeds,
   talkBaseUrl,
@@ -39,6 +53,8 @@ export function HubSurfaces({
 }: {
   signedIn: boolean;
   canEdit: boolean;
+  /** The viewer's account id — what lets an author remove their own thread. */
+  userId?: string | null;
   displayName?: string | null;
   feeds: Array<{ slug: string; name: string }>;
   talkBaseUrl: string | null;
@@ -49,7 +65,13 @@ export function HubSurfaces({
   const connectors = React.useMemo<SurfaceConnectors>(
     () =>
       createHubConnectors({
-        viewer: { signedIn, canCompose: canEdit, displayName },
+        viewer: {
+          signedIn,
+          canCompose: canEdit,
+          displayName,
+          // Editors take anything down; anyone may take down their own.
+          canRemove: (t) => canEdit || (Boolean(userId) && t.authorId === userId),
+        },
         orgName: siteConfig.orgName,
         timeZone: TIME_ZONE,
         talkBaseUrl,
@@ -59,13 +81,34 @@ export function HubSurfaces({
         profile: true,
         centerLayout: true,
         // Living documents in this org's own Nextcloud folder, behind
-        // /api/hub/documents. No `ideas`: this app serves no forum route, and
-        // that face's only navigation target is the ideas feed on the board.
+        // /api/hub/documents.
+        //
+        // `forum` is on now — this app serves /forum. `listFeed` is what lets
+        // the popup open a SECTION in place instead of navigating out to the
+        // board for it.
         documents: true,
+        forum: {
+          listFeed: async (slug: string) => {
+            const res = await fetch(`/api/hub/forum?feed=${encodeURIComponent(slug)}`);
+            if (!res.ok) return [];
+            const body = await res.json().catch(() => ({}));
+            return Array.isArray(body.threads) ? body.threads : [];
+          },
+        },
         // What a thread holds: the gathering and the document written in it,
         // the terms defined out of that and the board it moved, as one
         // occasion rather than four tiles. See migration 131.
-        gather: true,
+        // Gathering is OFF as a surface action (2026-09-17, user's call): the
+        // "Gather / Arrange what this holds" button was appearing on every
+        // thread popup, which made it feel pasted on. The edge (migration 131)
+        // and the forum's map of it stay; what a thread already holds still
+        // lists, since that comes down with the thread. Gathering as an act
+        // gets its own home when the time comes — flip this back to wire it.
+        gather: false,
+        // Remove from the popup (author or editor) and feature a meeting as
+        // the standing one (editor) — both on the same thread route.
+        remove: true,
+        standing: true,
 
         async saveThread({ kind, answers, status, threadId }) {
           // Workshops carry a page and sessions of their own; they go through
@@ -96,6 +139,10 @@ export function HubSurfaces({
           canManageOrg: canEdit,
           hasWorkshops: true,
           workshopMode: "dialog",
+          // The two door-kinds above. Off by default in the catalogue, so a
+          // host that has not registered their surfaces never offers them.
+          hasMemberBlogs: true,
+          hasArtworks: true,
           hasMeetings: true,
           canCreateDocument: true,
           canCreateTalkRoom: true,
@@ -145,11 +192,53 @@ export function HubSurfaces({
           // page of the site. It refuses itself for a non-editor, because the
           // route does.
           email: ({ descriptor }) => <EmailPopup descriptor={descriptor} />,
+
+          // Who is hosting the coming weeks. Opened from the standing
+          // meeting's "Plan ahead" tool; read by any member, written by an
+          // organiser — or by a member putting themselves down for a week.
+          "meeting-rota": ({ descriptor }) => (
+            <PlanAheadSurface
+              threadId={String(descriptor.props?.threadId ?? "")}
+              canPlan={Boolean(descriptor.props?.canPlan)}
+              timeZone={TIME_ZONE}
+            />
+          ),
+
+          // The shared canvas, at full width: a drawing surface with a
+          // toolbar down one side has nothing to give back at tile-and-a-half.
+          whiteboard: () => <WhiteboardSurface />,
+
+          // The compose catalogue offers a kind that writes `threads` through
+          // `saveThread`; a kind that writes anything ELSE appears only when
+          // the host registers `compose:<id>`, because a questionnaire's save
+          // path is per app and the shared surface cannot guess it. These two
+          // are what put Questionnaire and Poll in the popup alongside post,
+          // event, meeting and workshop rather than only on the page.
+          "compose:questionnaire": () => (
+            <QuestionnaireComposeSurface
+              kind="questionnaire"
+              onSave={createQuestionnaireAction}
+              privacyNote={QUESTIONNAIRE_PRIVACY}
+            />
+          ),
+          // Two kinds that are DOORS, not forms — both act on the member's own
+          // page rather than on the site. Registering them is what puts them
+          // in the publish catalogue at all.
+          "compose:blog": () => <BlogGate />,
+          "compose:art-piece": () => <ArtPieceGate />,
+
+          "compose:poll": () => (
+            <QuestionnaireComposeSurface
+              kind="poll"
+              onSave={createQuestionnaireAction}
+              privacyNote={QUESTIONNAIRE_PRIVACY}
+            />
+          ),
         },
 
         onMutated: () => router.refresh(),
       }),
-    [signedIn, canEdit, displayName, feeds, talkBaseUrl, router]
+    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

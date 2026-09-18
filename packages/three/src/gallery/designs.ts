@@ -157,7 +157,14 @@ export const HALL: RoomDesign = {
 // from outside part of the experience.
 
 const PAVILION_ROOM: RoomDimensions = { width: 26, depth: 17, height: 7 };
-const PAVILION_CENTRE: CentreWall = { length: 15, height: 4.4, thickness: 0.4 };
+/**
+ * Shorter and lower than the hall's, on purpose. A wall the full width of the
+ * room and most of its height simply seals the view — which in a room whose
+ * whole point is the light and the way out is the one thing it must not do.
+ * At this size it holds work in the middle distance while leaving open room
+ * down both sides, so the glazing and the height stay in view behind it.
+ */
+const PAVILION_CENTRE: CentreWall = { length: 10, height: 3.6, thickness: 0.4 };
 
 export const PAVILION: RoomDesign = {
   id: 'pavilion',
@@ -168,11 +175,16 @@ export const PAVILION: RoomDesign = {
   surfaces: [
     // Nothing hangs on the south elevation — it is glass and doors.
     ...perimeterSurfaces({ room: PAVILION_ROOM, maxPieceHeight: 3.8, exclude: ['south'] }),
-    ...centreWallSurfaces(PAVILION_CENTRE, 3.2),
+    ...centreWallSurfaces(PAVILION_CENTRE, 2.9),
   ],
   plinths: { span: 12, bays: [-4.5, 4.9] },
-  // Standing just inside the doors, looking in.
-  start: [0, 0, 7],
+  /**
+   * At the closed end, looking down the room towards the glazing — so the
+   * arrival shot is work in the foreground with daylight and the grounds
+   * beyond it. Standing just inside the doors instead put the whole reason
+   * for this room directly behind the visitor's head.
+   */
+  start: [0, 0, -7.4],
   outdoors: true,
 };
 

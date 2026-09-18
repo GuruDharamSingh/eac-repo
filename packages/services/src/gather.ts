@@ -179,7 +179,7 @@ interface EdgeRow {
  * user through the wiki, so that is exactly the rule applied to them: signed
  * in, yes; signed out, no.
  */
-function visibleToGatherer(viewer: GatherViewer) {
+export function visibleToGatherer(viewer: GatherViewer) {
   if (viewer.isGlobalAdmin) return db`t.status = 'published'`;
   const orgs = Object.keys(viewer.roles);
   const uid = viewer.userId;

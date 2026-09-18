@@ -18,6 +18,8 @@ export function toSurfaceThread(
     rsvpCount: number;
     viewerAttending: boolean | null;
     cycleStatus: ThreadCycleStatus | null;
+    /** This is the org's featured (standing) meeting. */
+    standing?: boolean;
     /** The workshop_pages row and sessions, when the thread is a workshop. */
     workshop?: WorkshopOffering | null;
   }
@@ -36,6 +38,7 @@ export function toSurfaceThread(
       bodyHtml: thread.description,
       coverImageUrl: thread.coverImageUrl,
       authorName: thread.authorName,
+      authorId: thread.authorId ?? null,
       authorPhoto: thread.authorPhoto,
       publishedAt: thread.publishedAt,
       scheduledAt: thread.scheduledAt,
@@ -60,6 +63,7 @@ export function toSurfaceThread(
       rsvpCount: extras.rsvpCount,
       viewerAttending: extras.viewerAttending,
       cycleStatus: extras.cycleStatus,
+      standing: extras.standing,
       price: w?.price ?? null,
       currency: w?.currency ?? null,
       sessions: w

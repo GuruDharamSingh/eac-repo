@@ -41,6 +41,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
     <div className="ifac-hub-scope" data-hub-skin={skin}>
       <HubSurfaces
         signedIn={Boolean(viewer)}
+        userId={viewer?.userId ?? null}
         canEdit={Boolean(viewer?.canEdit)}
         displayName={viewer?.email ?? null}
         feeds={feeds.map((feed) => ({ slug: feed.slug, name: feed.name }))}

@@ -1,14 +1,16 @@
 import { networkHrefs, configureForumMedia } from "@elkdonis/forum-ui";
 
 const trim = (s: string | undefined, fallback: string) => (s ?? fallback).replace(/\/$/, "");
-const NETWORK_URL = trim(process.env.NEXT_PUBLIC_NETWORK_URL, "http://localhost:3007");
-const ARTDIRECT_URL = trim(process.env.ARTDIRECT_URL ?? process.env.NEXT_PUBLIC_ARTDIRECT_URL, "http://localhost:3013");
+export const NETWORK_URL = trim(process.env.NEXT_PUBLIC_NETWORK_URL, "http://localhost:3007");
+export const ARTDIRECT_URL = trim(process.env.ARTDIRECT_URL ?? process.env.NEXT_PUBLIC_ARTDIRECT_URL, "http://localhost:3013");
+/** This host's own public origin — where /api/drawing/<id>/svg is served from. */
+export const FORUM_URL = trim(process.env.NEXT_PUBLIC_APP_URL, "http://localhost:3003");
 /** The host org subdomains hang off, e.g. arts-collective.com. */
 const NETWORK_HOST = (process.env.NETWORK_HOST ?? "localhost:3007").replace(/^https?:\/\//, "");
 
 export const SITE = {
   name: "The Grand Forum",
-  tagline: "The conversation of the Elkdonis Arts Collective network",
+  tagline: "home to all threads",
 };
 
 // This host serves no media; avatars and portraits are stored as paths
@@ -16,32 +18,27 @@ export const SITE = {
 // the whole Nextcloud tree, so everything resolves there.
 configureForumMedia((url) => (url.startsWith("/api/media/") ? `${ARTDIRECT_URL}${url}` : url));
 
-/**
- * Which skin the board wears. Both stylesheets are imported in globals.css;
- * the modern one is inert unless this says so, because every rule in it is
- * scoped under [data-forum-theme="modern"]. Set FORUM_THEME=modern to flip
- * the whole site — index, feeds, threads, search, members — at once.
- */
-export const FORUM_THEME: "classic" | "modern" =
-  process.env.FORUM_THEME === "modern" ? "modern" : "classic";
-
 /** Where the package's form handler is mounted (see app/api/forum/[action]/route.ts). */
 export const ACTION_BASE = "/api/forum";
 
-/**
- * Links for the network host. Sign-in lives on the network site; identity
- * pages live on ArtDirect; an org's site is its verified domain when it has
- * one, else its network subdomain.
- */
-export const hrefs = networkHrefs({
-  signIn: `${NETWORK_URL}/login`,
-  profile: (slug) => (slug ? `${ARTDIRECT_URL}/${slug}` : null),
-  orgSite: (org) => (org.primaryDomain ? `https://${org.primaryDomain}` : `${NETWORK_HOST.startsWith("localhost") ? "http" : "https"}://${org.slug}.${NETWORK_HOST}`),
-});
+/** An org's site is its verified domain when it has one, else its network subdomain. */
+export const orgSiteUrl = (org: { slug: string; primaryDomain?: string | null }) =>
+  org.primaryDomain
+    ? `https://${org.primaryDomain}`
+    : `${NETWORK_HOST.startsWith("localhost") ? "http" : "https"}://${org.slug}.${NETWORK_HOST}`;
 
 /**
- * Where the wiki is edited. The forum renders wiki pages at its own /wiki/…
- * routes but never hosts the editor, so Edit and New link out to the one
- * console on arts-collective.
+ * Links for the network host. Sign-in goes through this host's own /login,
+ * which forwards to the network site with a return address and receives the
+ * session back via /api/auth/handoff/accept. Identity pages live on
+ * ArtDirect. The wiki and the dictionary are the forum's own routes — this
+ * host owns editing them (2026-09-17).
  */
-export const WIKI_CONSOLE = `${NETWORK_URL}/hub/wiki`;
+export const hrefs = networkHrefs({
+  signIn: "/login",
+  profile: (slug) => (slug ? `${ARTDIRECT_URL}/${slug}` : null),
+  orgSite: orgSiteUrl,
+  // Drawings are made here — this is the host with the editor.
+  drawing: (id) => `/draw/${id}`,
+  newDrawing: (from) => (from ? `/draw/new?from=${encodeURIComponent(from)}` : "/draw/new"),
+});

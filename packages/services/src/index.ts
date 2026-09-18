@@ -140,6 +140,7 @@ export {
   listWikiPagesByTopic,
   searchWiki,
   wikiTalkThread,
+  listDefinedTerms,
 } from './wiki';
 export type {
   WikiPage,
@@ -154,6 +155,7 @@ export type {
   WikiSearchHit,
   WikiSearchSpan,
   WikiTalkThread,
+  DefinedTermRow,
 } from './wiki';
 
 // Auth services
@@ -754,6 +756,26 @@ export {
   GatherError,
   GATHER_ANONYMOUS,
 } from './gather';
+// The constellation — every connection one thread has, as a graph, plus a
+// person's own drawn lines (migration 137). See constellation.ts.
+export {
+  getConstellation,
+  getPersonMap,
+  drawLine,
+  eraseLine,
+  LineError,
+} from './constellation';
+export type { Constellation, MapNode, MapEdge, MapEdgeKind } from './constellation';
+
+// Remove a thread as its author or a moderator; feature a meeting as the
+// standing one; and the host route for both. See thread-admin.ts.
+export { removeThread, removeThreadAs, featureMeeting, createThreadAdminRoutes } from './thread-admin';
+export type { RemoveResult, FeatureResult, ThreadAdminRouteHandlers } from './thread-admin';
+
+// Drawings — a post whose body is a picture: Excalidraw scene + exported SVG
+// in metadata.drawing, the SVG served as an image so every host shows it.
+export { getDrawing, createDrawing, updateDrawing, canEditDrawing, DrawingError } from './drawing';
+export type { Drawing, DrawingScene } from './drawing';
 // The same four verbs on every host. See the header in gather-route.ts for why
 // this is a factory and not a third copy of the route.
 export { createGatherRoutes } from './gather-route';
@@ -805,3 +827,27 @@ export type {
   UpdateWritingInput,
   WritingResult,
 } from './writing';
+
+// The rota on a recurring gathering: who is running which occurrence, what
+// happened at one, and who is due a host reminder. See migration 136.
+export {
+  HOST_ROLE,
+  occurrencesOf,
+  getMeetingRota,
+  assignMeetingRole,
+  clearMeetingRole,
+  listRotaCandidates,
+  getOccurrenceRecord,
+  saveOccurrenceRecord,
+  suggestAttendanceFromTalk,
+  listHostRemindersDue,
+  claimHostReminder,
+} from './meeting-rota';
+export type {
+  RotaAssignment,
+  RotaOccurrence,
+  AttendanceEntry,
+  AttendanceSource,
+  OccurrenceRecord,
+  HostDuty,
+} from './meeting-rota';

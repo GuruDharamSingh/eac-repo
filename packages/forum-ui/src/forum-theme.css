@@ -42,35 +42,36 @@
    host with no Tailwind at all (apps/forum, the network host, has none),
    while @theme is the optional extra for hosts that do.
 
-   CONTRAST
-   Both variants are measured, not chosen by eye. Light: body 16.12:1,
-   muted 8.44:1, faint 5.23:1, accent 7.75:1, white-on-accent 8.38:1.
-   Dark: body 14.60:1, muted 7.27:1, faint 5.32:1, accent 8.26:1. All AA,
-   and the dark ground is #16161a rather than black so light text does not
-   halate. If you override a colour, measure the pair — a brand colour that
-   works as a logo often fails as text (IFAC's gold is 2.37:1 on paper).
+   CONTRAST (retuned 2026-09-17 to steel blue / silver / white)
+   Both variants are measured, not chosen by eye. Light, on the #eef1f4
+   paper and the white panel: ink 14.8:1 / 16.2:1, muted 6.9:1, faint
+   4.6:1 / 5.0:1, steel accent 6.5:1 / 7.1:1 as text and 7.1:1 with white
+   on it. Dark is the brushed-steel sheen below, measured at its peak. If
+   you override a colour, measure the pair — a brand colour that works as a
+   logo often fails as text (IFAC's gold is 2.37:1 on paper).
    =========================================================================== */
 
 .gf-root,
 .gf-page {
   /* ── the ground and the ink ─────────────────────────────────────────── */
-  --sf-bg: var(--forum-paper, #f7f6f3);
+  /* Silver-white paper, white sheets on it, cool ink. */
+  --sf-bg: var(--forum-paper, #eef1f4);
   --sf-bg-soft: var(--forum-panel, #ffffff);
-  --sf-fg: var(--forum-ink, #1a1a19);
-  --sf-muted: var(--forum-muted, #4a4844);
-  --sf-faint: var(--forum-faint, #6a675f);
+  --sf-fg: var(--forum-ink, #1b2129);
+  --sf-muted: var(--forum-muted, #4b5563);
+  --sf-faint: var(--forum-faint, #66707c);
 
-  /* ── lines ──────────────────────────────────────────────────────────── */
-  --sf-line: var(--forum-line, #dedcd5);
-  --sf-rule: var(--forum-rule, #b9b6ad);
+  /* ── lines: silver ──────────────────────────────────────────────────── */
+  --sf-line: var(--forum-line, #d3d9df);
+  --sf-rule: var(--forum-rule, #a9b3bd);
 
-  /* ── accent ─────────────────────────────────────────────────────────── */
-  --sf-accent: var(--forum-accent, #34506b);
+  /* ── accent: steel blue, white ink on it ────────────────────────────── */
+  --sf-accent: var(--forum-accent, #3b5b7a);
   --sf-on-accent: var(--forum-on-accent, #ffffff);
-  --sf-danger: var(--forum-danger, #8c3a2c);
+  --sf-danger: var(--forum-danger, #9a3b2e);
 
   /* ── shape, shadow, type ────────────────────────────────────────────── */
-  --sf-radius: var(--forum-radius, 5px);
+  --sf-radius: var(--forum-radius, 3px);
   --sf-radius-sm: max(2px, calc(var(--sf-radius) - 3px));
   --sf-shadow: var(--forum-shadow, 0 18px 44px -20px rgba(20, 20, 25, 0.28), 0 2px 8px rgba(20, 20, 25, 0.06));
   --sf-font-body: var(--forum-font-body, var(--eac-font-body, system-ui, -apple-system, "Segoe UI", sans-serif));
@@ -78,8 +79,8 @@
   --sf-font-record: var(--forum-font-record, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* ── the forum's own tokens ─────────────────────────────────────────── */
-  --gf-blue: var(--forum-link, #34506b);
-  --gf-row-hover: var(--forum-row-hover, rgba(20, 20, 25, 0.035));
+  --gf-blue: var(--forum-link, #3b5b7a);
+  --gf-row-hover: var(--forum-row-hover, rgba(59, 91, 122, 0.06));
   --gf-unread: var(--forum-unread, var(--sf-accent));
   --gf-vote-up: var(--forum-vote-up, #3f6f4a);
   --gf-vote-down: var(--forum-vote-down, #8c3a2c);

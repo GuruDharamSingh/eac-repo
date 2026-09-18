@@ -87,7 +87,25 @@ export function GalleryExperience({
   const hoveredId = useGalleryStore((s) => s.hoveredId);
   const release = useGalleryStore((s) => s.release);
   const approach = useGalleryStore((s) => s.approach);
-  const [layout, setLayout] = useState<GalleryLayout | null>(null);
+  /**
+   * The layout, tagged with the room it was computed for.
+   *
+   * Switching rooms changes `design` a render before the scene remounts and
+   * reports its new layout, so for that one render the old room's slots are
+   * paired with the new room's surfaces. Reading a slot hung on a wall the new
+   * room does not have used to throw mid-render and take the whole gallery
+   * down with it — which is exactly what "the pavilion doesn't load" was.
+   * Holding the id alongside makes that window simply empty instead.
+   */
+  const [layoutFor, setLayoutFor] = useState<
+    { designId: RoomDesignId; layout: GalleryLayout } | null
+  >(null);
+
+  const layout = layoutFor?.designId === design.id ? layoutFor.layout : null;
+  const receiveLayout = useCallback(
+    (next: GalleryLayout) => setLayoutFor({ designId: design.id, layout: next }),
+    [design.id],
+  );
 
   const isTouch = useMediaQuery('(pointer: coarse)');
   const isNarrow = useMediaQuery('(max-width: 640px)');
@@ -406,7 +424,7 @@ export function GalleryExperience({
         </>
       }
     >
-      <GalleryScene key={design.id} pieces={pieces} design={design} onLayout={setLayout} />
+      <GalleryScene key={design.id} pieces={pieces} design={design} onLayout={receiveLayout} />
     </SceneStage>
   );
 }

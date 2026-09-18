@@ -1,40 +1,35 @@
 /*
-  The Grand Forum — the network host's skin (GRAND_FORUM_PLAN.md §4.12).
+  The Grand Forum — the network host's skin (2026-09-17).
 
-  Discourse-clean warmed toward paper; burnt orange leads, slate blue
-  supports; the Gothic lives in the display face on the site title and org
-  mastheads and nowhere else. Everything below is a token the surface layer
-  and forum.css read — no selectors of our own.
+  Steel blue, silver details, white sheets on silver-white paper, crisp
+  lines that read as paper edges. The board's own palette is forum-theme.css
+  (scoped to .gf-root / .gf-page, overridable via --forum-*); the tokens
+  below are for the masthead, which sits outside the board and reads the
+  surface layer's :root tokens instead. Same colours, two token sets, so the
+  header and the board agree in both modes.
 */
 
 @import "@elkdonis/cms-ui/surface.css";
 @import "@elkdonis/cms-ui/profile.css";
+@import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/forum-ui/forum.css";
-/* The optional card-feed skin. Every rule is scoped under
-   [data-forum-theme="modern"], so importing it costs nothing until
-   FORUM_THEME=modern sets that attribute. */
-@import "@elkdonis/forum-ui/forum-modern.css";
+@import "@elkdonis/forum-ui/forum-theme.css";
 
 :root {
   color-scheme: light dark;
 
-  --eac-surface-bg: #fbfaf8;
-  --eac-surface-bg-soft: #f3f1ec;
-  --eac-surface-fg: #1d1c1a;
-  --eac-surface-muted: #6b6762;
-  --eac-surface-line: #e6e2db;
-  --eac-surface-rule: #cfc9bf;
-  /* Burnt orange, deepened from #c2622b 2026-09-12. The original sat in a
-     dead zone where NEITHER white nor near-black cleared AA on it (4.14:1
-     and 4.22:1), so a filled button in it was unreadable either way, and it
-     was also only 3.97:1 as link text on the paper. #ad5623 is the same
-     hue a step down: white on it is 5.08:1, and as a link on paper 4.87:1. */
-  --eac-surface-accent: #ad5623;
-  --eac-surface-on-accent: #fff;      /* 5.08:1 on the accent */
-  --eac-surface-danger: #a63d2f;
-  --eac-surface-radius: 4px;
+  --eac-surface-bg: #eef1f4;
+  --eac-surface-bg-soft: #ffffff;
+  --eac-surface-fg: #1b2129;
+  --eac-surface-muted: #4b5563;
+  --eac-surface-line: #d3d9df;
+  --eac-surface-rule: #a9b3bd;
+  --eac-surface-accent: #3b5b7a;      /* 7.09:1 with white on it; 6.48:1 as text on the paper */
+  --eac-surface-on-accent: #ffffff;
+  --eac-surface-danger: #9a3b2e;
+  --eac-surface-radius: 3px;
 
-  --eac-forum-blue: #3f5f8a;
+  --eac-forum-blue: #3b5b7a;
 
   /* profile.css (the member page header) reads its own token set. */
   --eac-profile-fg: var(--eac-surface-fg);
@@ -47,10 +42,12 @@
   --line: var(--eac-surface-line);
   --gold: var(--eac-surface-accent);
 
-  --eac-kind-post: #c2622b;
-  --eac-kind-meeting: #3f5f8a;
-  --eac-kind-event: #3f5f8a;
-  --eac-kind-workshop: #7a5c3a;
+  /* Per-kind accents: steel leads, the rest sit close to it so the board
+     reads as one material rather than a colour code. */
+  --eac-kind-post: #3b5b7a;
+  --eac-kind-meeting: #4f6b5a;
+  --eac-kind-event: #4f6b5a;
+  --eac-kind-workshop: #6b5a4a;
   --eac-kind-service: #5c6b3f;
   --eac-kind-poll: #5c6b3f;
 
@@ -58,47 +55,50 @@
   --eac-font-display: var(--font-display), "UnifrakturCook", var(--font-title), serif;
   --eac-font-body: var(--font-body), "Inter", system-ui, sans-serif;
   --eac-font-record: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* The board's own fonts, through forum-theme.css's contract. */
+  --forum-font-title: var(--eac-font-title);
+  --forum-font-body: var(--eac-font-body);
+  --forum-font-display: var(--eac-font-display);
 }
 
+/* The masthead in dark: the brushed-steel panel colour the board uses. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --eac-surface-bg: #18191d;
-    --eac-surface-bg-soft: #1f2126;
-    --eac-surface-fg: #e8e5df;
-    --eac-surface-muted: #9a958d;
-    --eac-surface-line: #2a2c33;
-    --eac-surface-rule: #3a3d46;
-    --eac-surface-accent: #d8804d;
-    --eac-surface-danger: #d1665a;
-    --eac-forum-blue: #7d9cc6;
-    --eac-kind-post: #d8804d;
-    --eac-kind-meeting: #7d9cc6;
-    --eac-kind-event: #7d9cc6;
-    --eac-profile-fg: var(--eac-surface-fg);
-    --eac-profile-muted: var(--eac-surface-muted);
-    --eac-profile-line: var(--eac-surface-line);
-    --eac-profile-accent: var(--eac-surface-accent);
-    --ink: var(--eac-surface-fg);
-    --ink-soft: var(--eac-surface-muted);
-    --paper: var(--eac-surface-bg);
-    --line: var(--eac-surface-line);
-    --gold: var(--eac-surface-accent);
+    --eac-surface-bg: #16181d;
+    --eac-surface-bg-soft: #1c1e24;
+    --eac-surface-fg: #f0ede8;
+    --eac-surface-muted: #c8c4bc;
+    --eac-surface-line: #2f323a;
+    --eac-surface-rule: #4c505b;
+    --eac-surface-accent: #9fb9dd;
+    --eac-surface-on-accent: #10161d;
+    --eac-surface-danger: #e8968a;
+    --eac-forum-blue: #9fb9dd;
+    --eac-kind-post: #9fb9dd;
+    --eac-kind-meeting: #8fc0a4;
+    --eac-kind-event: #8fc0a4;
   }
 }
 :root[data-theme="dark"] {
-  --eac-surface-bg: #18191d;
-  --eac-surface-bg-soft: #1f2126;
-  --eac-surface-fg: #e8e5df;
-  --eac-surface-muted: #9a958d;
-  --eac-surface-line: #2a2c33;
-  --eac-surface-rule: #3a3d46;
-  --eac-surface-accent: #d8804d;
-  --eac-surface-danger: #d1665a;
-  --eac-forum-blue: #7d9cc6;
-  --eac-kind-post: #d8804d;
-  --eac-kind-meeting: #7d9cc6;
-  --eac-kind-event: #7d9cc6;
+  --eac-surface-bg: #16181d;
+  --eac-surface-bg-soft: #1c1e24;
+  --eac-surface-fg: #f0ede8;
+  --eac-surface-muted: #c8c4bc;
+  --eac-surface-line: #2f323a;
+  --eac-surface-rule: #4c505b;
+  --eac-surface-accent: #9fb9dd;
+  --eac-surface-on-accent: #10161d;
+  --eac-surface-danger: #e8968a;
+  --eac-forum-blue: #9fb9dd;
+  --eac-kind-post: #9fb9dd;
+  --eac-kind-meeting: #8fc0a4;
+  --eac-kind-event: #8fc0a4;
 }
+/* The reader chose light in the footer: the masthead stays light whatever
+   the system says. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 html, body { margin: 0; padding: 0; }
 body {
@@ -106,4 +106,25 @@ body {
   color: var(--sf-fg);
   font-family: var(--sf-font-body);
   -webkit-font-smoothing: antialiased;
+}
+
+/* The board owns the ground of the whole page on this host, and follows the
+   footer toggle: forum-theme.css paints .gf-page from the .gf-root inside it. */
+.gf-page { min-height: 100vh; }
+.gf-page--embed { padding-top: 12px; }
+
+/* ── the drawing editor (this host only) ─────────────────────────────────── */
+.gf-draw-page { max-width: var(--gf-max); }
+.gf-draw { background: var(--sf-bg-soft); border: 1px solid var(--sf-line); border-radius: 2px; box-shadow: var(--gf-edge); padding: 12px 14px 14px; }
+.gf-draw-head { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 2fr) auto; gap: 8px; align-items: center; margin-bottom: 10px; }
+.gf-draw-head .gf-input { font-size: 14px; padding: 8px 10px; }
+.gf-draw-title { font-family: var(--sf-font-title); font-size: 18px !important; font-weight: 600; }
+.gf-draw-actions { display: inline-flex; gap: 8px; align-items: center; justify-self: end; }
+.gf-draw-canvas { height: min(78vh, 900px); min-height: 480px; border: 1px solid var(--sf-rule); border-radius: 2px; overflow: hidden; background: #fff; }
+.gf-draw-canvas .excalidraw { --color-primary: #3b5b7a; --color-primary-darker: #34506f; --color-primary-darkest: #2c4460; --color-primary-light: #dfe7ef; }
+.gf-draw-hint { margin: 10px 0 0; color: var(--sf-faint); font-family: var(--sf-font-record); font-size: 11.5px; }
+@media (max-width: 900px) {
+  .gf-draw-head { grid-template-columns: minmax(0, 1fr); }
+  .gf-draw-actions { justify-self: start; }
+  .gf-draw-canvas { height: 70vh; }
 }

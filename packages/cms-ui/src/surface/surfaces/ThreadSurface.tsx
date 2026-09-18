@@ -25,7 +25,7 @@ import { buildIcs, icsDataUrl } from "../ics";
 type Descriptor = Extract<SurfaceDescriptor, { type: "thread" }>;
 
 export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
-  const { connectors, push } = useSurface();
+  const { connectors, push, close } = useSurface();
   const layer = useLayer();
   const fmt = { timeZone: connectors.timeZone, locale: connectors.locale };
 
@@ -151,6 +151,54 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
             ? { type: "write", kind: "post", threadId: thread.id }
             : { type: "compose", kind: thread.kind, threadId: thread.id }
         ),
+    });
+  }
+
+  // Featuring: name this the org's standing (weekly) meeting, or stop. An
+  // editor's act, on the meeting itself, so "what does the hub lead with" is
+  // decided where the meeting is rather than in a console.
+  if (canEdit && connectors.standing && (thread.kind === "meeting" || thread.kind === "event")) {
+    const on = !thread.standing;
+    actions.push({
+      label: on ? "Feature as the weekly meeting" : "Stop featuring as the weekly meeting",
+      quiet: true,
+      onClick: async () => {
+        const result = await connectors.standing!.set(thread.id, on);
+        if (result.ok === false) {
+          setNotice(result.error);
+          setNoticeTone("error");
+          return;
+        }
+        setThread({ ...thread, standing: result.standing });
+        setNoticeTone("normal");
+        setNotice(result.standing ? "The hub now leads with this meeting." : "No longer featured — the hub falls back to the next weekly meeting.");
+        connectors.onMutated?.();
+      },
+    });
+  }
+
+  // Removing: the author's own act, or a moderator's. Archives — nothing is
+  // lost that a console cannot restore — and closes the popup, since the
+  // thing it showed is gone.
+  const canRemove = connectors.removeThread
+    ? (connectors.viewer.canRemove ? connectors.viewer.canRemove(thread) : canEdit)
+    : false;
+  if (canRemove) {
+    actions.push({
+      label: "Remove",
+      quiet: true,
+      danger: true,
+      onClick: async () => {
+        if (typeof window !== "undefined" && !window.confirm(`Remove “${thread.title}”? It comes off every page and list. A moderator can restore it.`)) return;
+        const result = await connectors.removeThread!(thread.id);
+        if (result.ok === false) {
+          setNotice(result.error);
+          setNoticeTone("error");
+          return;
+        }
+        connectors.onMutated?.();
+        close();
+      },
     });
   }
 

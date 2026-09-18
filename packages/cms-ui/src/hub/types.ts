@@ -185,3 +185,20 @@ export interface StandingMeetingPast {
   sameSeries: boolean;
   materials: SurfaceMaterial[];
 }
+
+/**
+ * The rota, as the standing-meeting card needs it.
+ *
+ * Opt-in like the light and the RSVP: a host that passes nothing gets exactly
+ * the card it had. The face shows only WHO has the occurrence in front of it —
+ * the full rota is a surface, because a list of eight dates with a person
+ * against each is not a tile.
+ */
+export interface StandingMeetingRota {
+  /** Whoever has the occurrence the card is currently showing. */
+  host?: { name: string; userId?: string | null } | null;
+  /** May this viewer change the rota? Read-only viewers still see it. */
+  canPlan?: boolean;
+  /** The surface key the planner is registered under. */
+  surfaceKey?: string;
+}

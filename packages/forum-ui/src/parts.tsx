@@ -99,6 +99,30 @@ export function kindLabel(kind: string): string {
 
 // ── chrome ──────────────────────────────────────────────────────────────────
 
+/**
+ * A page's main column and its right column. `rail` is the page's own boxes
+ * (thread facts, a board's latest); `boxes` is the shell's set, built once
+ * per request by loadShell and handed to every page — so a page ADDS to the
+ * column above them and never replaces it.
+ */
+export function Layout({ main, rail, boxes }: { main: React.ReactNode; rail?: React.ReactNode; boxes?: React.ReactNode }) {
+  // `id="boxes"` + the close link are the phone's way in and out: under
+  // 1100px the column is a :target drawer, same mechanism as the left rail.
+  const side = rail || boxes ? (
+    <aside className="gf-rail" id="boxes">
+      <a className="gf-rail-close" href="#" aria-label="Close">×</a>
+      {rail}
+      {boxes}
+    </aside>
+  ) : null;
+  return (
+    <div className={`gf-layout${side ? " has-rail" : ""}`}>
+      <div className="gf-main">{main}</div>
+      {side}
+    </div>
+  );
+}
+
 export function Breadcrumb({ items }: { items: Array<{ label: string; href?: string | null }> }) {
   return (
     <nav className="gf-crumb" aria-label="Breadcrumb">
@@ -472,20 +496,6 @@ export function Agenda({ rows, hrefs, showOrg }: { rows: ForumHappeningRow[]; hr
 }
 
 // ── theme toggle + new-topic link ─────────────────────────────────────────
-
-export function ThemeToggle({ currentTheme, actionBase, back }: { currentTheme: "classic" | "modern"; actionBase: string; back: string }) {
-  const next = currentTheme === "classic" ? "modern" : "classic";
-  const base = actionBase.replace(/\/$/, "");
-  return (
-    <form method="post" action={`${base}/set-theme`} className="gf-theme-toggle">
-      <input type="hidden" name="theme" value={next} />
-      <input type="hidden" name="back" value={back} />
-      <button type="submit" className="gf-tool" title={`Switch to ${next} view`}>
-        {currentTheme === "classic" ? "◧ Card view" : "☰ Board view"}
-      </button>
-    </form>
-  );
-}
 
 export function ModeToggle({ currentMode, actionBase, back }: { currentMode: "light" | "dark" | "auto"; actionBase: string; back: string }) {
   // Two-state toggle, because a three-way including "auto" makes the control

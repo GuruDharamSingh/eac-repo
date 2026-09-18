@@ -216,10 +216,11 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-forum
     restart: unless-stopped
-    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
-    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
-    # real headroom while still bounding a runaway to one service.
-    mem_limit: 3g
+    # Raised 2026-09-17: at a 1GB heap Next's memory watchdog restarted the
+    # dev server on every first compile of a heavier route (the wiki editor
+    # pulls Tiptap into the client bundle), dropping requests mid-run. 4GB
+    # heap, 6GB container — bounded, but no longer in the way.
+    mem_limit: 6g
     depends_on:
       postgres:
         condition: service_healthy
@@ -227,11 +228,30 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FORUM_URL:-http://localhost:3003}
       ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NEXT_PUBLIC_NETWORK_URL: ${NETWORK_URL:-http://localhost:3007}
+      NETWORK_HOST: ${NETWORK_HOST:-localhost:3007}
+      # The forum reads the session now that it owns the wiki editor and the
+      # quick-post box — until 2026-09-17 it had no auth env at all.
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      # The sign-in handoff (api/auth/handoff/accept): the network site signs
+      # people in and hands the session to this host with a short-lived JWT.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Who may frame /embed (CSP frame-ancestors). Leave unset for the network's own hosts.
+      FORUM_EMBED_ANCESTORS: ${FORUM_EMBED_ANCESTORS:-}
+      # Non-production only: impersonate a users.id so the board can be exercised without GoTrue.
+      FORUM_DEV_VIEWER_ID: ${FORUM_DEV_VIEWER_ID:-}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
-      NODE_OPTIONS: --max-old-space-size=1024
+      NODE_OPTIONS: --max-old-space-size=4096
     volumes:
       - .:/app
       - /app/apps/forum/.next

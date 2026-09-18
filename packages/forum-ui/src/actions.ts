@@ -14,11 +14,57 @@ import type { ForumConnectors } from "./connectors";
 export type ForumActionName =
   | "reply" | "topic" | "vote" | "heart" | "watch" | "bookmark"
   | "read-all" | "propose-topic" | "moderate" | "notifications-read" | "review-topic"
-  | "set-theme" | "category" | "wiki-talk" | "wiki-define";
+  | "set-theme" | "category" | "wiki-talk" | "wiki-define"
+  | "wiki-create" | "wiki-update" | "wiki-archive" | "wiki-revert" | "line" | "remove";
 
 const ACTIONS = new Set<string>([
   "reply", "topic", "vote", "heart", "watch", "bookmark", "read-all", "propose-topic", "moderate", "notifications-read", "review-topic", "set-theme", "category", "wiki-talk", "wiki-define",
+  "wiki-create", "wiki-update", "wiki-archive", "wiki-revert", "line", "remove",
 ]);
+
+/**
+ * The other end of a line arrives as whatever the person pasted: a topic's
+ * link on any host (…/t/<id>/<slug>), a wiki page's link is NOT accepted
+ * this way (its id isn't in the URL), or a bare id.
+ */
+function parseThreadRef(raw: string): string | null {
+  const v = raw.trim();
+  const m = v.match(/\/t\/([A-Za-z0-9_-]{12,32})(?:[/?#]|$)/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9_-]{12,32}$/.test(v)) return v;
+  return null;
+}
+
+/**
+ * The rail's quick-post and new-category boxes offer one <select> across
+ * every org the viewer may post in, so a single field carries the pair:
+ * "orgId|second". Forms on a board page still send the two fields apart.
+ */
+function pair(fd: FormData, key: string): [string, string] {
+  const v = str(fd, key);
+  const i = v.indexOf("|");
+  return i < 0 ? [v, ""] : [v.slice(0, i), v.slice(i + 1)];
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * A wiki body from a plain <textarea> — the no-JavaScript fallback. Blank
+ * lines make paragraphs; nothing else is interpreted. A host with the editor
+ * island posts HTML and says so with format=html.
+ */
+function wikiBody(fd: FormData): string {
+  const raw = str(fd, "body");
+  if (str(fd, "format") === "html") return raw;
+  return raw
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
 
 function str(fd: FormData, key: string): string {
   const v = fd.get(key);
@@ -98,8 +144,9 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       return done(`${withQuery(base, { page: r.page > 1 ? String(r.page) : null })}#reply-${r.replyId}`);
     }
     case "topic": {
-      const orgId = str(fd, "org");
-      const feedSlug = str(fd, "feed");
+      const [tOrg, tFeed] = pair(fd, "target");
+      const orgId = str(fd, "org") || tOrg;
+      const feedSlug = str(fd, "feed") || tFeed;
       const topicIds = fd.getAll("topics").filter((v): v is string => typeof v === "string");
       const r = await w.createTopic(viewer, { orgId, feedSlug, title: str(fd, "title"), text: str(fd, "text"), topicIds });
       if (r.ok === false) return fail(r.error);
@@ -129,8 +176,10 @@ export async function handleForumAction({ request, action, connectors }: HandleA
     }
     case "category": {
       if (!w.createCategory) return fail("Not available here.");
+      const [cOrg, cSlug] = pair(fd, "target");
+      const orgSlug = str(fd, "orgSlug") || cSlug;
       const r = await w.createCategory(viewer, {
-        orgId: str(fd, "org"),
+        orgId: str(fd, "org") || cOrg,
         name: str(fd, "name"),
         tagline: str(fd, "tagline"),
         audience: str(fd, "audience") === "members" ? "members" : "everyone",
@@ -138,12 +187,19 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       if (r.ok === false) return fail(r.error);
       // Straight into the new category, which is empty and shows its own
       // new-topic form — the next thing they want is to post in it.
-      return done(hrefs.feed(str(fd, "orgSlug"), r.slug), `“${r.name}” added.`);
+      return done(hrefs.feed(orgSlug, r.slug), `“${r.name}” added.`);
     }
     case "propose-topic": {
       const r = await w.proposeTopic(viewer, { name: str(fd, "name"), orgId: str(fd, "org") });
       if (r.ok === false) return fail(r.error);
       return done(back, r.status === "approved" ? "Topic added." : "Topic proposed — an admin will review it.");
+    }
+    // The author taking their own topic down. Moderators have "Archive" in
+    // their menu; this is the same archive, for whoever wrote it.
+    case "remove": {
+      if (!w.removeThread) return fail("Not available here.");
+      const r = await w.removeThread(viewer, str(fd, "thread"));
+      return r.ok === true ? done(hrefs.root(), "Your topic was removed.") : fail(r.error);
     }
     case "moderate": {
       const act = str(fd, "do");
@@ -205,6 +261,75 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       });
       if (!talk) return fail("That page is gone.");
       return done(hrefs.thread(talk.id, talk.slug));
+    }
+    // ── the wiki's own editor, since the forum owns it ──────────────────────
+    case "wiki-create": {
+      const create = connectors.wiki?.create;
+      if (!create) return fail("Not available here.");
+      const title = str(fd, "title").trim();
+      if (!title) return fail("Title is required.");
+      const r = await create({ authorId: viewer.userId, title, body: wikiBody(fd), parentId: str(fd, "parent") || null });
+      if (r.ok === false) return fail(r.error);
+      return done(hrefs.wikiPage?.(r.slug) ?? back, "Page created.");
+    }
+    case "wiki-update": {
+      const update = connectors.wiki?.update;
+      if (!update) return fail("Not available here.");
+      const threadId = str(fd, "thread");
+      const title = str(fd, "title").trim();
+      if (!title) return fail("Title is required.");
+      // "topics_present" tells an unticked set apart from a form with no tag
+      // field at all, so a page's tags are only replaced when they were shown.
+      const topicIds = fd.has("topics_present")
+        ? fd.getAll("topics").filter((v): v is string => typeof v === "string")
+        : undefined;
+      const r = await update({
+        threadId,
+        editorId: viewer.userId,
+        title,
+        body: wikiBody(fd),
+        parentId: str(fd, "parent") || null,
+        expectedUpdatedAt: str(fd, "expectedUpdatedAt") || null,
+        topicIds,
+      });
+      if (r.ok === false) {
+        // A conflict cannot carry their body through a redirect. The editor
+        // reloads on their version; the writer's own text survives in the
+        // browser's back button, which the flash says.
+        if ("conflict" in r) return fail("Someone else saved this page while you were writing — nothing was overwritten. This is now their version; your text is one step back in your browser. Fold it in and save again.");
+        return fail(r.error);
+      }
+      return done(hrefs.wikiPage?.(r.slug) ?? back, "Page saved.");
+    }
+    case "wiki-archive": {
+      const archive = connectors.wiki?.archive;
+      if (!archive) return fail("Not available here.");
+      const r = await archive(str(fd, "thread"));
+      if (r.ok === false) return fail(r.error);
+      return done(hrefs.wiki?.() ?? hrefs.root(), r.orphanedChildren ? `Page removed. ${r.orphanedChildren} sub-page${r.orphanedChildren === 1 ? " is" : "s are"} now top-level.` : "Page removed.");
+    }
+    // Draw (or erase) a line between two threads, as this person. The line
+    // is theirs: it counts on the pages, and lives in full on their own map.
+    case "line": {
+      if (!w.drawLine || !w.eraseLine) return fail("Not available here.");
+      const a = str(fd, "thread");
+      const to = parseThreadRef(str(fd, "to"));
+      if (!a || !to) return fail("Paste the other topic's link, or its id.");
+      if (to === a) return fail("That is this topic.");
+      if (str(fd, "do") === "erase") {
+        const r = await w.eraseLine(viewer, a, to);
+        return r.ok === true ? done(back, r.erased ? "Line erased." : "No line to erase.") : fail(r.error);
+      }
+      const r = await w.drawLine(viewer, a, to, str(fd, "note") || null);
+      if (r.ok === false) return fail(r.error);
+      return done(back, r.created ? "Line drawn — it's on your map." : "You had already drawn that line.");
+    }
+    case "wiki-revert": {
+      const revert = connectors.wiki?.revert;
+      if (!revert) return fail("Not available here.");
+      const r = await revert(str(fd, "thread"), str(fd, "revision"), viewer.userId);
+      if (r.ok === false) return fail(r.error);
+      return done(hrefs.wikiPage?.(r.slug) ?? back, "Reverted — saved as a new edit, nothing erased.");
     }
   }
   return new Response("Not found", { status: 404 });

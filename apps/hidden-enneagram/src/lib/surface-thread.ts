@@ -14,7 +14,7 @@ import type { Thread } from "@/lib/types";
  */
 export function toSurfaceThread(
   thread: Thread,
-  extras: { feed?: { slug: string; name: string } | null } = {}
+  extras: { feed?: { slug: string; name: string } | null; standing?: boolean } = {}
 ) {
   return sharedToSurfaceThread(
     {
@@ -28,11 +28,12 @@ export function toSurfaceThread(
       bodyHtml: thread.description,
       coverImageUrl: thread.coverImageUrl,
       authorName: thread.authorName,
+      authorId: thread.authorId ?? null,
       authorPhoto: thread.authorPhoto,
       publishedAt: thread.publishedAt,
       // Threads live under their feed on this site: /{section}/{slug}.
       href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
     },
-    { feed: extras.feed }
+    { feed: extras.feed, standing: extras.standing }
   );
 }

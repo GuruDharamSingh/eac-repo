@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createThreadAdminRoutes, getStandingMeetingId } from "@elkdonis/services";
 import { getGathering, getOrgFeed } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { termHref, threadHref } from "@/lib/gather";
@@ -63,6 +64,8 @@ export async function GET(
 
   return NextResponse.json(
     toSurfaceThread(thread, {
+      // The org's featured meeting — so the popup can offer to feature/unfeature.
+      standing: (thread.kind === "meeting" || thread.kind === "event") && (await getStandingMeetingId(siteConfig.orgId)) === thread.id,
       feed: feed ? { slug: feed.slug, name: feed.name } : null,
       rsvpCount,
       viewerAttending,
@@ -71,3 +74,15 @@ export async function GET(
     })
   );
 }
+
+/**
+ * Remove (author or editor) and feature-as-weekly-meeting (editor) — the
+ * shared rule in @elkdonis/services; this file supplies only who and where.
+ */
+export const { DELETE, PATCH } = createThreadAdminRoutes({
+  orgId: siteConfig.orgId,
+  viewer: async () => {
+    const v = await getViewer();
+    return v ? { userId: v.userId, canEdit: Boolean(v.canEdit) } : null;
+  },
+});

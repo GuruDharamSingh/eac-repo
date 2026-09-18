@@ -131,6 +131,14 @@
   /* --sf-kind comes from the [data-kind] rules above; a default here would
      out-rank them (same specificity, later in the file). */
   position: relative;
+  /* A grid item's min-width defaults to `auto`, which means "never narrower
+     than my content". A face carrying a tools row of three pills therefore
+     refused to shrink below the ~357px that row wanted, and burst out of a
+     312px track on a 360px phone — the page went 21px wider than the viewport
+     and the body's near-black ground showed down the right edge as a stripe.
+     The tools row wraps now (below) so the content can genuinely be narrower;
+     this is the half that lets the card follow it. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -739,12 +747,21 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 .eac-btn:hover { border-color: var(--sf-fg); }
 .eac-btn:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2px; }
 .eac-btn:disabled, .eac-btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+/* `--sf-kind` is only defined on an element carrying [data-kind]. Used bare,
+   the declaration is INVALID and dropped wherever that is not true — a
+   composer rendered on a page rather than inside a kinded surface got a
+   transparent pill with white-on-white text, which reads as a gap rather than
+   a button. The surface-level accent is the fallback, and every `--sf-kind`
+   outside a [data-kind] subtree needs one. */
 .eac-btn--primary {
-  background: var(--sf-kind);
-  border-color: var(--sf-kind);
-  color: var(--sf-on-kind, #fff);
+  background: var(--sf-kind, var(--sf-accent));
+  border-color: var(--sf-kind, var(--sf-accent));
+  color: var(--sf-on-kind, var(--sf-on-accent, #fff));
 }
-.eac-btn--primary:hover { filter: brightness(0.94); border-color: var(--sf-kind); }
+.eac-btn--primary:hover {
+  filter: brightness(0.94);
+  border-color: var(--sf-kind, var(--sf-accent));
+}
 .eac-btn--quiet { border-color: transparent; color: var(--sf-muted); }
 .eac-btn--quiet:hover { border-color: transparent; color: var(--sf-fg); background: var(--sf-bg-soft); }
 .eac-btn--danger { color: var(--sf-danger); }
@@ -1904,6 +1921,12 @@ dialog.eac-surface[data-morph][open] {
      up at the foot because the preview is what grows. */
   display: flex;
   align-items: center;
+  /* Wraps, because a row that cannot wrap has a min-content width equal to the
+     SUM of its controls, and that sum is what a narrow phone cannot afford.
+     Two short lines of pills is the right answer there; on any normal width
+     this changes nothing. */
+  flex-wrap: wrap;
+  row-gap: 6px;
   gap: 8px;
   min-width: 0;
   flex: none;
@@ -2481,6 +2504,188 @@ a.eac-idea-row:focus-visible {
   white-space: nowrap;
 }
 
+/* Who is running this one, on the face itself.
+
+   "No host yet" is styled as the LOUDER of the two states, not the quieter.
+   It is the one that needs somebody to act, and a rota whose gaps are the
+   faintest thing on the card is a rota nobody fills. */
+.eac-meet-host {
+  font-size: 0.82rem;
+  color: var(--sf-muted);
+}
+
+.eac-meet-host--unassigned {
+  color: var(--sf-accent);
+  font-weight: 600;
+}
+
+/* ── The rota, in its surface ──────────────────────────────────────────── */
+
+.eac-rota-intro,
+.eac-rota-empty {
+  margin: 0 0 12px;
+  color: var(--sf-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.eac-rota {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eac-rota__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Wraps so a date and its picker stack on a phone rather than the select
+     being squeezed to a few characters. */
+  flex-wrap: wrap;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--sf-line);
+}
+
+.eac-rota__row:last-child {
+  border-bottom: 0;
+}
+
+.eac-rota__when {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.92rem;
+}
+
+.eac-rota__flag {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sf-faint);
+}
+
+.eac-rota__pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eac-rota__pick-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+
+.eac-rota__pick .eac-input {
+  min-width: 170px;
+}
+
+/* A past occurrence. Quieter than the plan — it is history — but its record
+   control has to stay findable, so the row dims and the button does not. */
+.eac-rota__row--past {
+  opacity: 0.78;
+}
+
+.eac-rota__row--past:focus-within,
+.eac-rota__row--past:hover {
+  opacity: 1;
+}
+
+/* The record opens BELOW the row, spanning it: a note field beside a date in
+   a flex row would be two characters wide. */
+.eac-rota__record {
+  flex: 1 0 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius);
+  background: var(--sf-bg-soft);
+}
+
+.eac-rota__record-head {
+  margin: 0 0 10px;
+  color: var(--sf-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.eac-rota__people {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eac-rota__people label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+/* Where the name came from. Never the same weight as the name: it is a
+   qualifier on somebody else's evidence, not a fact about the person. */
+.eac-rota__people em {
+  font-style: normal;
+  font-size: 0.76rem;
+  color: var(--sf-faint);
+}
+
+.eac-rota__note {
+  display: block;
+}
+
+.eac-rota__note > span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+
+.eac-rota__note textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.eac-rota__record-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.eac-rota__save {
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+  border-color: var(--sf-accent);
+}
+
+.eac-rota__problem {
+  margin: 8px 0 0;
+  color: var(--sf-danger);
+  font-size: 0.85rem;
+}
+
+.eac-rota__host {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.eac-rota__host--none {
+  font-weight: 500;
+  color: var(--sf-accent);
+}
+
 .eac-meet-note {
   color: var(--sf-muted);
   font-size: 0.74rem;
@@ -2673,10 +2878,16 @@ button.eac-forum-feed-name {
    popup, and the popup is where a section is walked into. */
 .eac-forum-face-feeds {
   display: flex;
-  flex-wrap: nowrap;
+  /* Wraps rather than clipping. These chips are live — each opens that feed —
+     and `nowrap` + `overflow: hidden` cut the last one mid-word, which reads
+     as a rendering fault and leaves a control half-hittable. It only showed
+     once faces stopped bursting out of their grid track and started taking the
+     width they were actually given. A second row of chips is the honest
+     answer; the tools band is `flex: none`, so it simply takes the height. */
+  flex-wrap: wrap;
   gap: 6px;
+  row-gap: 5px;
   min-width: 0;
-  overflow: hidden;
 }
 
 .eac-forum-face-feed {

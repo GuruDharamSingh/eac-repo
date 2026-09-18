@@ -2,13 +2,13 @@ import * as React from "react";
 import type { ForumBoard, ForumReply, ForumSort, ForumViewer, ForumVoters } from "@elkdonis/services";
 import type { ForumConnectors } from "./connectors";
 import {
-  Agenda, BoardTable, Breadcrumb, Empty, Flash, HappeningBlock, LatestBlock, NewTopicLink, OrgMasthead, PageHead, Pagination,
-  PulseStrip, ReadAllForm, SortTabs, TopicList, TopicsBlock, plural,
+  Agenda, BoardTable, Breadcrumb, Empty, Flash, HappeningBlock, LatestBlock, Layout, NewTopicLink, OrgMasthead, PageHead, Pagination,
+  PulseStrip, ReadAllForm, SectionTitle, SortTabs, TopicList, TopicsBlock, plural,
 } from "./parts";
 import { ThreadPageView, canModerate } from "./thread";
-import { NewCategoryPanel } from "./category";
 import { timeAgo } from "./format";
-import { MemberPageView, MembersDirectory, NewMembersBlock, OrgsDirectory, TopicReviewPage, TopicsIndex, WhoIsHereBlock } from "./people";
+import { MemberPageView, MembersDirectory, NewMembersBlock, OrgsDirectory, TopicReviewPage, TopicsIndex } from "./people";
+import { ConstellationSvg, DrawLineForm, EraseLineForm, MapEdgeList, MapLegend, mapSize } from "./map";
 import { ModLog, SearchResults } from "./search";
 
 // ============================================================================
@@ -23,6 +23,8 @@ export interface PageProps {
   searchParams: Record<string, string | string[] | undefined>;
   /** The request path (no query), for forms to come back to. */
   path: string;
+  /** The shell's right-column boxes, built once per request (see shell.tsx). */
+  boxes?: React.ReactNode;
 }
 
 function str(v: string | string[] | undefined): string | undefined {
@@ -54,14 +56,7 @@ function backUrl(path: string, sp: PageProps["searchParams"]): string {
   return s ? `${path}?${s}` : path;
 }
 
-export function Layout({ main, rail }: { main: React.ReactNode; rail?: React.ReactNode }) {
-  return (
-    <div className={`gf-layout${rail ? " has-rail" : ""}`}>
-      <div className="gf-main">{main}</div>
-      {rail && <aside className="gf-rail">{rail}</aside>}
-    </div>
-  );
-}
+export { Layout };
 
 function withSort(href: string, sort: ForumSort): string {
   return sort === "active" ? href : `${href}?sort=${sort}`;
@@ -70,50 +65,38 @@ function withSort(href: string, sort: ForumSort): string {
 // ── / ───────────────────────────────────────────────────────────────────────
 
 export async function IndexPage(props: PageProps) {
-  const { connectors, viewer, searchParams, path } = props;
+  const { connectors, viewer, searchParams, path, boxes } = props;
   const { scope, hrefs } = connectors;
-  if (scope.kind === "org") {
-    const board = (await connectors.listBoards(scope, viewer))[0] ?? null;
-    return <BoardPageView {...props} board={board} />;
-  }
-
-  const [boards, happening, latest, topics, pulse, present, newest] = await Promise.all([
-    connectors.listBoards(scope, viewer),
-    connectors.listHappening(scope, viewer, { limit: 5 }),
-    connectors.listLatest(scope, viewer, { limit: 8 }),
-    connectors.listTopicIndex?.(viewer, 12) ?? Promise.resolve([]),
-    connectors.pulse?.(viewer) ?? Promise.resolve(null),
-    connectors.listPresent?.(15, 12) ?? Promise.resolve(null),
-    connectors.listNewMembers?.(5) ?? Promise.resolve(null),
-  ]);
+  const network = scope.kind === "network";
+  const sort = readSort(searchParams);
+  const page = readPage(searchParams);
   const root = hrefs.root().replace(/\/$/, "");
 
-  // An empty board is not a board: hide orgs with nothing visible, and the
-  // auto-created `general` feed while it holds nothing.
-  const live = boards
-    .filter((b) => b.feeds.some((f) => f.topicCount > 0))
-    .map((b) => ({ ...b, feeds: b.feeds.filter((f) => !(f.slug === "general" && f.topicCount === 0)) }));
+  const [paged, latest, topics, pulse, newest, board] = await Promise.all([
+    connectors.listTopics(network ? { kind: "network" } : { kind: "org", orgId: scope.orgId }, viewer, { sort, page, limit: 25 }),
+    connectors.listLatest(scope, viewer, { limit: 8 }),
+    connectors.listTopicIndex?.(viewer, 12) ?? Promise.resolve([]),
+    network ? connectors.pulse?.(viewer) ?? Promise.resolve(null) : Promise.resolve(null),
+    network ? connectors.listNewMembers?.(5) ?? Promise.resolve(null) : Promise.resolve(null),
+    network ? Promise.resolve(null) : connectors.listBoards(scope, viewer).then((b) => b[0] ?? null),
+  ]);
 
   const main = (
     <>
       <Flash {...flash(searchParams)} />
       {pulse && <PulseStrip pulse={pulse} hrefs={hrefs} />}
-      {live.length === 0 ? (
-        <Empty>No boards yet.</Empty>
-      ) : (
-        live.map((b) => (
-          <section key={b.orgId} className="gf-board-section">
-            <OrgMasthead board={b} hrefs={hrefs} as="row" />
-            <BoardTable board={b} hrefs={hrefs} />
-          </section>
-        ))
-      )}
+      <PageHead
+        title={network ? "All threads" : "Forum"}
+        sub={network
+          ? "Every org, every category, newest activity first."
+          : board ? `${plural(board.feeds.reduce((n, f) => n + f.topicCount, 0), "topic")} · ${plural(board.feeds.reduce((n, f) => n + f.postCount, 0), "post")}` : undefined}
+        aside={<SortTabs current={sort} href={hrefs.root()} />}
+      />
+      <TopicList paged={paged} hrefs={hrefs} showOrg={network} empty="Nothing posted yet — the New topic box on the right is where it starts." />
+      <Pagination paged={paged} href={withSort(hrefs.root(), sort)} />
       {viewer.userId && connectors.actionBase && (
         <div className="gf-index-foot">
           <span className="gf-legend"><span className="gf-unread-dot" /> unread</span>
-          {live.length > 0 && live[0].feeds.length > 0 && (
-            <NewTopicLink href={`${hrefs.feed(live[0].slug, live[0].feeds[0].slug)}#newtopic`} />
-          )}
           <ReadAllForm actionBase={connectors.actionBase} back={backUrl(path, searchParams)} />
         </div>
       )}
@@ -122,75 +105,87 @@ export async function IndexPage(props: PageProps) {
 
   const rail = (
     <>
-      <HappeningBlock rows={happening} hrefs={hrefs} showOrg more={hrefs.happening()} />
       <LatestBlock rows={latest} hrefs={hrefs} more={hrefs.latest()} />
-      {present && <WhoIsHereBlock count={present.count} people={present.people} hrefs={hrefs} />}
       <TopicsBlock rows={topics} hrefs={hrefs} />
       {newest && <NewMembersBlock people={newest} hrefs={hrefs} more={`${root}/members`} />}
     </>
   );
 
-  return <Layout main={main} rail={rail} />;
+  return <Layout boxes={boxes} main={main} rail={rail} />;
 }
 
 // ── /members, /members/[slug], /orgs, /topics, /topics/[slug], /topics/review ──
 
-export async function MembersPage({ connectors, viewer, searchParams, path }: PageProps) {
+export async function MembersPage({ boxes, connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const sortRaw = str(searchParams.sort);
   const sort = sortRaw === "newest" || sortRaw === "name" ? sortRaw : "active";
   const q = str(searchParams.q) ?? "";
   const paged = (await connectors.listMembers?.({ sort, q, page: readPage(searchParams), limit: 50 })) ?? { rows: [], page: 1, limit: 50, total: 0, totalPages: 1 };
   return (
-    <Layout main={<>
+    <Layout boxes={boxes} main={<>
       <Flash {...flash(searchParams)} />
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Members" }]} />
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Members" }]} />
       <MembersDirectory paged={paged} hrefs={hrefs} sort={sort} q={q} href={path} />
     </>} />
   );
 }
 
-export async function MemberPage({ connectors, viewer, searchParams, path, slug }: PageProps & { slug: string }) {
+export async function MemberPage({ boxes, connectors, viewer, searchParams, path, slug }: PageProps & { slug: string }) {
   const member = await connectors.getMember?.(slug);
   if (!member) return null;
+  const self = Boolean(viewer.userId && viewer.userId === member.id);
   const tabRaw = str(searchParams.tab);
-  const tab = tabRaw === "topics" || tabRaw === "replies" ? tabRaw : "activity";
-  const activity = (await connectors.listMemberActivity?.(member.id, viewer, { page: readPage(searchParams), limit: 25, only: tab === "activity" ? undefined : tab === "topics" ? "topic" : "reply" }))
-    ?? { rows: [], page: 1, limit: 25, total: 0, totalPages: 1 };
+  const tab: "activity" | "topics" | "replies" | "watching" | "bookmarks" | "map" =
+    tabRaw === "topics" || tabRaw === "replies" ? tabRaw
+    : tabRaw === "map" && connectors.personMap ? "map"
+    : self && (tabRaw === "watching" || tabRaw === "bookmarks") ? tabRaw
+    : "activity";
+  const page = readPage(searchParams);
+  const empty = { rows: [], page: 1, limit: 25, total: 0, totalPages: 1 };
+  const [activity, followed, map] = await Promise.all([
+    tab === "watching" || tab === "bookmarks" || tab === "map"
+      ? Promise.resolve(empty)
+      : connectors.listMemberActivity?.(member.id, viewer, { page, limit: 25, only: tab === "activity" ? undefined : tab === "topics" ? "topic" : "reply" }) ?? Promise.resolve(empty),
+    tab === "watching" || tab === "bookmarks"
+      ? connectors.listTopics({ kind: tab, scope: connectors.scope }, viewer, { page, limit: 25 })
+      : Promise.resolve(null),
+    tab === "map" ? connectors.personMap!(member.id, viewer) : Promise.resolve(null),
+  ]);
   return (
-    <Layout main={<>
+    <Layout boxes={boxes} main={<>
       <Flash {...flash(searchParams)} />
-      <MemberPageView connectors={connectors} member={member} activity={activity} tab={tab} href={path} profileUrl={connectors.hrefs.profile?.(member.slug) ?? null} />
+      <MemberPageView connectors={connectors} member={member} activity={activity} followed={followed} map={map} tab={tab} self={self} href={path} back={backUrl(path, searchParams)} profileUrl={connectors.hrefs.profile?.(member.slug) ?? null} />
     </>} />
   );
 }
 
-export async function OrgsPage({ connectors, viewer, searchParams }: PageProps) {
+export async function OrgsPage({ boxes, connectors, viewer, searchParams }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const cards = (await connectors.listOrgCards?.(viewer)) ?? [];
   const tierRaw = str(searchParams.tier);
   const tier = tierRaw === "partner" || tierRaw === "supported" || tierRaw === "free" ? tierRaw : null;
   return (
-    <Layout main={<>
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Orgs" }]} />
+    <Layout boxes={boxes} main={<>
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Orgs" }]} />
       <OrgsDirectory cards={cards.filter((c) => c.topicCount > 0 || c.feedCount > 1)} hrefs={hrefs} tier={tier} />
     </>} />
   );
 }
 
-export async function TopicsPage({ connectors, viewer, searchParams, path }: PageProps) {
+export async function TopicsPage({ boxes, connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const entries = (await connectors.listTopicEntries?.(viewer, { includeProposed: Boolean(viewer.isGlobalAdmin) })) ?? [];
   return (
-    <Layout main={<>
+    <Layout boxes={boxes} main={<>
       <Flash {...flash(searchParams)} />
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Topics" }]} />
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Topics" }]} />
       <TopicsIndex entries={entries} hrefs={hrefs} viewer={viewer} connectors={connectors} />
     </>} />
   );
 }
 
-export async function TopicPage({ connectors, viewer, searchParams, path, slug }: PageProps & { slug: string }) {
+export async function TopicPage({ boxes, connectors, viewer, searchParams, path, slug }: PageProps & { slug: string }) {
   const { hrefs, scope, siteName } = connectors;
   const topic = await connectors.getTopicBySlug?.(slug);
   if (!topic) return null;
@@ -198,8 +193,8 @@ export async function TopicPage({ connectors, viewer, searchParams, path, slug }
   const paged = await connectors.listTopics({ kind: "topic", topicId: topic.id }, viewer, { sort, page: readPage(searchParams), limit: 30 });
   const root = hrefs.root().replace(/\/$/, "");
   return (
-    <Layout main={<>
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Topics", href: `${root}/topics` }, { label: topic.name }]} />
+    <Layout boxes={boxes} main={<>
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Topics", href: `${root}/topics` }, { label: topic.name }]} />
       <PageHead title={topic.name} sub={[topic.status === "proposed" ? "proposed · awaiting review" : null, plural(paged.total, "topic")].filter(Boolean).join(" · ")} aside={<SortTabs current={sort} href={path} />}>
         {topic.description && <p className="gf-feed-tagline">{topic.description}</p>}
       </PageHead>
@@ -209,17 +204,17 @@ export async function TopicPage({ connectors, viewer, searchParams, path, slug }
   );
 }
 
-export async function TopicReviewRoute({ connectors, viewer, searchParams, path }: PageProps) {
+export async function TopicReviewRoute({ boxes, connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const root = hrefs.root().replace(/\/$/, "");
   if (!viewer.isGlobalAdmin || !connectors.actionBase) {
-    return <Layout main={<><PageHead title="Review proposed topics" /><Empty>Admins only.</Empty></>} />;
+    return <Layout boxes={boxes} main={<><PageHead title="Review proposed topics" /><Empty>Admins only.</Empty></>} />;
   }
   const entries = (await connectors.listTopicEntries?.(viewer, { includeProposed: true })) ?? [];
   return (
-    <Layout main={<>
+    <Layout boxes={boxes} main={<>
       <Flash {...flash(searchParams)} />
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Topics", href: `${root}/topics` }, { label: "Review" }]} />
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Topics", href: `${root}/topics` }, { label: "Review" }]} />
       <TopicReviewPage entries={entries} hrefs={hrefs} actionBase={connectors.actionBase} back={backUrl(path, searchParams)} />
     </>} />
   );
@@ -227,7 +222,7 @@ export async function TopicReviewRoute({ connectors, viewer, searchParams, path 
 
 // ── /search, /o/[org]/log ───────────────────────────────────────────────────
 
-export async function SearchPage({ connectors, viewer, searchParams, path }: PageProps) {
+export async function SearchPage({ boxes, connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const q = (str(searchParams.q) ?? "").trim();
   const onlyRaw = str(searchParams.only);
@@ -236,30 +231,30 @@ export async function SearchPage({ connectors, viewer, searchParams, path }: Pag
     ? await connectors.searchForum(q, viewer, { scope, page: readPage(searchParams), limit: 25, only: only === "all" ? undefined : only })
     : { rows: [], page: 1, limit: 25, total: 0, totalPages: 1 };
   return (
-    <Layout main={<>
-      <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: "Search" }]} />
+    <Layout boxes={boxes} main={<>
+      <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: "Search" }]} />
       <SearchResults paged={paged} q={q} hrefs={hrefs} href={path} showOrg={scope.kind === "network"} only={only} />
     </>} />
   );
 }
 
-export async function ModLogPage({ connectors, viewer, searchParams, path, orgSlug }: PageProps & { orgSlug: string }) {
+export async function ModLogPage({ boxes, connectors, viewer, searchParams, path, orgSlug }: PageProps & { orgSlug: string }) {
   const { hrefs, scope, siteName } = connectors;
   const board = scope.kind === "network"
     ? await connectors.getBoardBySlug(orgSlug, viewer)
     : (await connectors.listBoards(scope, viewer))[0] ?? null;
   if (!board) return null;
-  const crumb = <Breadcrumb items={[{ label: scope.kind === "network" ? "Boards" : siteName, href: hrefs.root() }, { label: board.name, href: hrefs.board(board.slug) }, { label: "Log" }]} />;
+  const crumb = <Breadcrumb items={[{ label: scope.kind === "network" ? "Forum" : siteName, href: hrefs.root() }, { label: board.name, href: hrefs.board(board.slug) }, { label: "Log" }]} />;
   if (!canModerate(viewer, board.orgId)) {
-    return <Layout main={<>{crumb}<PageHead title="Moderation log" /><Empty>Owners and guides of {board.name} only.</Empty></>} />;
+    return <Layout boxes={boxes} main={<>{crumb}<PageHead title="Moderation log" /><Empty>Owners and guides of {board.name} only.</Empty></>} />;
   }
   const paged = (await connectors.listModLog?.(board.orgId, { page: readPage(searchParams), limit: 50 })) ?? { rows: [], page: 1, limit: 50, total: 0, totalPages: 1 };
-  return <Layout main={<>{crumb}<ModLog paged={paged} hrefs={hrefs} href={path} orgName={board.name} /></>} />;
+  return <Layout boxes={boxes} main={<>{crumb}<ModLog paged={paged} hrefs={hrefs} href={path} orgName={board.name} /></>} />;
 }
 
 // ── /o/[org] ────────────────────────────────────────────────────────────────
 
-export async function BoardPageView({ connectors, viewer, searchParams, path, board }: PageProps & { board: ForumBoard | null }) {
+export async function BoardPageView({ boxes, connectors, viewer, searchParams, path, board }: PageProps & { board: ForumBoard | null }) {
   const { scope, hrefs } = connectors;
   if (!board) return <Empty>No such board.</Empty>;
   const network = scope.kind === "network";
@@ -288,15 +283,7 @@ export async function BoardPageView({ connectors, viewer, searchParams, path, bo
       ) : (
         <PageHead title="Forum" sub={`${plural(topics, "topic")} · ${plural(posts, "post")}`} />
       )}
-      {feeds.length === 0 ? <Empty>No forums yet.</Empty> : <BoardTable board={{ ...board, feeds }} hrefs={hrefs} />}
-      <NewCategoryPanel
-        connectors={connectors}
-        viewer={viewer}
-        orgId={board.orgId}
-        orgSlug={board.slug}
-        orgName={board.name}
-        back={backUrl(path, searchParams)}
-      />
+      {feeds.length === 0 ? <Empty>No categories yet.</Empty> : <BoardTable board={{ ...board, feeds }} hrefs={hrefs} />}
       {viewer.userId && connectors.actionBase && (
         <div className="gf-index-foot">
           <span className="gf-legend"><span className="gf-unread-dot" /> unread</span>
@@ -316,7 +303,7 @@ export async function BoardPageView({ connectors, viewer, searchParams, path, bo
     </>
   );
 
-  return <Layout main={main} rail={rail} />;
+  return <Layout boxes={boxes} main={main} rail={rail} />;
 }
 
 // ── /o/[org]/[feed] ─────────────────────────────────────────────────────────
@@ -397,7 +384,7 @@ async function NewTopicForm({ connectors, viewer, board, feed, back }: {
   );
 }
 
-export async function FeedPage({ connectors, viewer, searchParams, path, orgSlug, feedSlug }: PageProps & { orgSlug: string; feedSlug: string }) {
+export async function FeedPage({ boxes, connectors, viewer, searchParams, path, orgSlug, feedSlug }: PageProps & { orgSlug: string; feedSlug: string }) {
   const { scope, hrefs, siteName } = connectors;
   const network = scope.kind === "network";
 
@@ -417,7 +404,7 @@ export async function FeedPage({ connectors, viewer, searchParams, path, orgSlug
     <div style={feedRow.accent ? ({ ["--gf-feed" as string]: feedRow.accent } as React.CSSProperties) : undefined}>
       <Flash {...flash(searchParams)} />
       <Breadcrumb items={[
-        { label: network ? "Boards" : siteName, href: hrefs.root() },
+        { label: network ? "Forum" : siteName, href: hrefs.root() },
         ...(network ? [{ label: board.name, href: hrefs.board(board.slug) }] : []),
         { label: feedRow.name },
       ]} />
@@ -434,12 +421,12 @@ export async function FeedPage({ connectors, viewer, searchParams, path, orgSlug
     </div>
   );
 
-  return <Layout main={main} />;
+  return <Layout boxes={boxes} main={main} />;
 }
 
 // ── /latest, /unread, /watching, /bookmarks ─────────────────────────────────
 
-export async function ListPage({ connectors, viewer, searchParams, path, view }: PageProps & { view: "latest" | "unread" | "watching" | "bookmarks" }) {
+export async function ListPage({ boxes, connectors, viewer, searchParams, path, view }: PageProps & { view: "latest" | "unread" | "watching" | "bookmarks" }) {
   const { scope, hrefs, siteName } = connectors;
   const network = scope.kind === "network";
   const sort = readSort(searchParams);
@@ -459,8 +446,8 @@ export async function ListPage({ connectors, viewer, searchParams, path, view }:
 
   if (view !== "latest" && !viewer.userId) {
     return (
-      <Layout main={<>
-        <Breadcrumb items={[{ label: network ? "Boards" : siteName, href: hrefs.root() }, { label: titles[view] }]} />
+      <Layout boxes={boxes} main={<>
+        <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: titles[view] }]} />
         <PageHead title={titles[view]} />
         <Empty>{hrefs.signIn ? <a href={hrefs.signIn}>Sign in</a> : "Sign in"} to see your {view}.</Empty>
       </>} />
@@ -471,7 +458,7 @@ export async function ListPage({ connectors, viewer, searchParams, path, view }:
   const main = (
     <>
       <Flash {...flash(searchParams)} />
-      <Breadcrumb items={[{ label: network ? "Boards" : siteName, href: hrefs.root() }, { label: titles[view] }]} />
+      <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: titles[view] }]} />
       <PageHead
         title={titles[view]}
         sub={plural(paged.total, "topic")}
@@ -481,12 +468,12 @@ export async function ListPage({ connectors, viewer, searchParams, path, view }:
       <Pagination paged={paged} href={withSort(href, sort)} />
     </>
   );
-  return <Layout main={main} />;
+  return <Layout boxes={boxes} main={main} />;
 }
 
 // ── /happening ──────────────────────────────────────────────────────────────
 
-export async function HappeningPage({ connectors, viewer, searchParams }: PageProps) {
+export async function HappeningPage({ boxes, connectors, viewer, searchParams }: PageProps) {
   const { scope, hrefs, siteName } = connectors;
   const network = scope.kind === "network";
   const range = str(searchParams.range) === "all" ? "all" : str(searchParams.range) === "month" ? "month" : "week";
@@ -506,22 +493,22 @@ export async function HappeningPage({ connectors, viewer, searchParams }: PagePr
 
   const main = (
     <>
-      <Breadcrumb items={[{ label: network ? "Boards" : siteName, href: hrefs.root() }, { label: "Happening" }]} />
+      <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: "Happening" }]} />
       <PageHead title="Happening" sub={plural(rows.length, "gathering")} aside={tabs} />
       <Agenda rows={rows} hrefs={hrefs} showOrg={network} />
     </>
   );
-  return <Layout main={main} />;
+  return <Layout boxes={boxes} main={main} />;
 }
 
 // ── /notifications ──────────────────────────────────────────────────────────
 
-export async function NotificationsPage({ connectors, viewer, searchParams, path }: PageProps) {
+export async function NotificationsPage({ boxes, connectors, viewer, searchParams, path }: PageProps) {
   const { hrefs, scope, siteName } = connectors;
   const network = scope.kind === "network";
-  const crumb = <Breadcrumb items={[{ label: network ? "Boards" : siteName, href: hrefs.root() }, { label: "Notifications" }]} />;
+  const crumb = <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: "Notifications" }]} />;
   if (!viewer.userId) {
-    return <Layout main={<>{crumb}<PageHead title="Notifications" /><Empty>{hrefs.signIn ? <a href={hrefs.signIn}>Sign in</a> : "Sign in"} to see notifications.</Empty></>} />;
+    return <Layout boxes={boxes} main={<>{crumb}<PageHead title="Notifications" /><Empty>{hrefs.signIn ? <a href={hrefs.signIn}>Sign in</a> : "Sign in"} to see notifications.</Empty></>} />;
   }
   const items = (await connectors.listNotifications?.(viewer.userId, 100)) ?? [];
   const unread = items.filter((n) => !n.readAt).length;
@@ -547,7 +534,7 @@ export async function NotificationsPage({ connectors, viewer, searchParams, path
       )}
     </>
   );
-  return <Layout main={main} />;
+  return <Layout boxes={boxes} main={main} />;
 }
 
 export function NotificationLine({ n, hrefs }: { n: NonNullable<Awaited<ReturnType<NonNullable<ForumConnectors["listNotifications"]>>>>[number]; hrefs: ForumConnectors["hrefs"] }) {
@@ -568,9 +555,73 @@ export function NotificationLine({ n, hrefs }: { n: NonNullable<Awaited<ReturnTy
   );
 }
 
+// ── /t/[id]/[slug]/map ──────────────────────────────────────────────────────
+
+export async function MapPage({ boxes, connectors, viewer, searchParams, path, id }: PageProps & { id: string }) {
+  const { scope, hrefs, siteName } = connectors;
+  if (!connectors.constellation) return null;
+  const thread = await connectors.getThread(id, viewer);
+  if (!thread) return null;
+  const graph = await connectors.constellation(thread.id, viewer, { limit: 40 });
+  if (!graph) return null;
+  const network = scope.kind === "network";
+  const href = hrefs.thread(thread.id, thread.slug);
+  const back = backUrl(path, searchParams);
+  const lineBase = viewer.userId && connectors.write?.drawLine && connectors.actionBase ? connectors.actionBase : null;
+  const mine = graph.edges.filter((e) => e.kind === "line" && e.mine);
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const main = (
+    <>
+      <Flash {...flash(searchParams)} />
+      <Breadcrumb items={[
+        { label: network ? "Forum" : siteName, href: hrefs.root() },
+        ...(network ? [{ label: thread.org.name, href: hrefs.board(thread.org.slug) }] : []),
+        { label: thread.title, href },
+        { label: "Map" },
+      ]} />
+      <PageHead
+        title={<>Map <span className="gf-map-title-of">of</span> {thread.title}</>}
+        sub={graph.edges.length === 0 ? "Nothing is linked to this yet." : `${plural(graph.nodes.length, "connection")}${graph.omitted ? ` shown of ${graph.nodes.length + graph.omitted}` : ""} · every line the network has: what was gathered, what is mentioned, what shares a tag, and lines people drew`}
+        aside={viewer.userId && hrefs.newDrawing?.(thread.id) ? (
+          // The auto-drawn map is the skeleton; a drawing starts from it and
+          // is a post of its own that cites this thread.
+          <a className="eac-btn eac-btn--primary gf-newtopic-btn" href={hrefs.newDrawing(thread.id)!}>✎ Draw over this map</a>
+        ) : undefined}
+      />
+      {graph.edges.length > 0 && (
+        <figure className="gf-map-figure">
+          <ConstellationSvg graph={graph} hrefs={hrefs} size={mapSize(graph)} />
+          <figcaption><MapLegend graph={graph} /></figcaption>
+        </figure>
+      )}
+      <section className="gf-sheet">
+        <SectionTitle>As a list</SectionTitle>
+        {graph.edges.length === 0 ? <Empty>No connections yet{lineBase ? " — draw the first line below." : "."}</Empty> : <MapEdgeList graph={graph} hrefs={hrefs} showOrg={network} />}
+      </section>
+      {lineBase && (
+        <section className="gf-sheet">
+          <SectionTitle>Draw a line from here</SectionTitle>
+          <p className="gf-map-hint">A line is yours: it counts on both topics as one more person who sees them together, and shows in full on your own page. Paste the other topic&rsquo;s link.</p>
+          <DrawLineForm actionBase={lineBase} threadId={thread.id} back={back} />
+          {mine.length > 0 && (
+            <ul className="gf-map-mine">
+              {mine.map((e) => {
+                const other = byId.get(e.to === thread.id ? e.from : e.to);
+                if (!other) return null;
+                return <li key={other.id}><a href={hrefs.thread(other.id, other.slug)}>{other.title}</a> <EraseLineForm actionBase={lineBase} threadId={thread.id} otherId={other.id} back={back} /></li>;
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+    </>
+  );
+  return <Layout boxes={boxes} main={main} />;
+}
+
 // ── /t/[id]/[slug] ──────────────────────────────────────────────────────────
 
-export async function ThreadPage({ connectors, viewer, searchParams, path, id }: PageProps & { id: string }) {
+export async function ThreadPage({ boxes, connectors, viewer, searchParams, path, id }: PageProps & { id: string }) {
   const { scope, hrefs } = connectors;
   const thread = await connectors.getThread(id, viewer);
   if (!thread) return null;
@@ -605,11 +656,16 @@ export async function ThreadPage({ connectors, viewer, searchParams, path, id }:
   const quoted = quoteId ? all.find((r) => r.id === quoteId) ?? null : null;
   const quote = quoted && connectors.write ? connectors.write.htmlToQuote(quoted.contentHtml) : "";
 
-  // One query for every author on the page feeds the hover cards.
-  const cards = (await connectors.listPeopleCards?.([thread.author.id, ...all.map((r) => r.author.id)])) ?? {};
+  // One query for every author on the page feeds the hover cards; one more
+  // draws the small map in the rail.
+  const [cards, constellation] = await Promise.all([
+    connectors.listPeopleCards?.([thread.author.id, ...all.map((r) => r.author.id)]) ?? Promise.resolve({}),
+    connectors.constellation?.(thread.id, viewer, { limit: 14 }) ?? Promise.resolve(null),
+  ]);
 
   const view = (
     <ThreadPageView
+      boxes={boxes}
       connectors={connectors}
       viewer={viewer}
       thread={thread}
@@ -622,6 +678,7 @@ export async function ThreadPage({ connectors, viewer, searchParams, path, id }:
       replyTo={replyTo}
       quote={quote}
       cards={cards}
+      constellation={constellation}
       {...flash(searchParams)}
     />
   );

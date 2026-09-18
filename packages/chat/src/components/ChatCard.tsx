@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Maximize2 } from "lucide-react";
+import { MessageSquare, Maximize2, ExternalLink } from "lucide-react";
 import type { OrgChatIdentity, OrgChatMessage } from "@elkdonis/services";
 import { ChatTranscript } from "./ChatTranscript";
 
@@ -20,6 +20,7 @@ export function ChatCard({
   identity,
   identityEndpoint,
   heightClass = "h-80",
+  nextcloudUrl,
 }: {
   messages: OrgChatMessage[];
   canPost: boolean;
@@ -38,6 +39,15 @@ export function ChatCard({
    * would let the column grow with the conversation instead.
    */
   heightClass?: string;
+  /**
+   * The room in Nextcloud Talk. Shown as a second, clearly separate control:
+   * this transcript is a mirror read over a service account, so voice, video,
+   * screen-share and files all live there and nowhere here. A member who wants
+   * to actually MEET needs the door to it, and hiding that behind "expand"
+   * — which only opens a bigger copy of the same mirror — is the wrong
+   * promise.
+   */
+  nextcloudUrl?: string | null;
 }) {
   return (
     <section
@@ -47,13 +57,30 @@ export function ChatCard({
       <header className="mb-2 flex shrink-0 items-center gap-2">
         <MessageSquare className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold">{title}</h3>
-        <Link
-          href={expandedHref}
-          aria-label={`Open ${title} full screen`}
-          className="ml-auto text-muted-foreground hover:text-foreground"
-        >
-          <Maximize2 className="size-4" />
-        </Link>
+        <span className="ml-auto flex items-center gap-3">
+          {nextcloudUrl && (
+            <a
+              href={nextcloudUrl}
+              target="_blank"
+              rel="noreferrer"
+              // Titled rather than icon-only-and-unexplained: the difference
+              // between "bigger transcript" and "the actual room" is the whole
+              // point of there being two controls.
+              title="Open the room in Nextcloud Talk — voice, video and files"
+              aria-label="Open the room in Nextcloud Talk"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ExternalLink className="size-4" />
+            </a>
+          )}
+          <Link
+            href={expandedHref}
+            aria-label={`Open ${title} full screen`}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Maximize2 className="size-4" />
+          </Link>
+        </span>
       </header>
 
       <ChatTranscript

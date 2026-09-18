@@ -37,7 +37,8 @@
     "./moon-phase.css": "./src/pens/moon-phase.css",
     "./whiteboard": "./src/whiteboard/index.ts",
     "./email": "./src/email/index.ts",
-    "./email.css": "./src/email/email.css"
+    "./email.css": "./src/email/email.css",
+    "./hub.css": "./src/hub/hub.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

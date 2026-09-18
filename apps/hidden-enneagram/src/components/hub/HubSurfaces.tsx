@@ -37,12 +37,14 @@ import { siteConfig } from "@/config/site";
 export function HubSurfaces({
   signedIn,
   canEdit,
+  userId = null,
   displayName,
   feeds,
   children,
 }: {
   signedIn: boolean;
   canEdit: boolean;
+  userId?: string | null;
   displayName?: string | null;
   feeds: Array<{ slug: string; name: string }>;
   children: React.ReactNode;
@@ -59,6 +61,13 @@ export function HubSurfaces({
         // org owns — so the predicate is constant.
         canCompose: canEdit,
         canEdit: () => canEdit,
+        canRemove: (t) => canEdit || (Boolean(userId) && t.authorId === userId),
+      },
+      async removeThread(threadId) {
+        const res = await fetch(`/api/hub/threads/${encodeURIComponent(threadId)}`, { method: "DELETE" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data.error ?? "Could not remove it." };
+        return { ok: true };
       },
       orgName: siteConfig.orgName,
 
@@ -158,7 +167,7 @@ export function HubSurfaces({
         };
       },
     }),
-    [signedIn, canEdit, displayName, feeds, router]
+    [signedIn, canEdit, userId, displayName, feeds, router]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

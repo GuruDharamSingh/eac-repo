@@ -36,3 +36,10 @@ export type {
   StandingMeetingLight,
   StandingMeetingPast,
 } from "./types";
+export {
+  PlanAheadSurface,
+  type PlanAheadData,
+  type PlanAheadOccurrence,
+  type PlanAheadCandidate,
+} from './PlanAheadSurface';
+export { KindTilesFace, type KindTile } from "./KindTilesFace";

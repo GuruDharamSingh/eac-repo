@@ -9,6 +9,8 @@
 // connectors. apps/forum does so for every org; an org site does so scoped to
 // itself at /forum. Every page here is a server component — no hooks, no
 // client state — and reads only the connectors, never a database or a route.
+// The one client thing a host MAY hand in is a wiki editor island
+// (connectors.wiki.editor); without it the wiki edits through a textarea.
 // See GRAND_FORUM_PLAN.md.
 // ============================================================================
 
@@ -19,10 +21,15 @@ export { serviceConnectors, networkHrefs, orgHrefs } from "./connectors";
 export type { ForumConnectors, ForumHrefs, ForumWriteConnectors, ServiceConnectorOptions } from "./connectors";
 export type {
   ForumWikiConnectors,
+  ForumWikiEditorProps,
   ForumWikiPage,
   ForumWikiPageRow,
+  ForumWikiPageSource,
+  ForumWikiRevisionRow,
   ForumWikiSearchHit,
   ForumWikiSearchSpan,
+  ForumWikiTermRow,
+  ForumWikiWriteResult,
 } from "./connectors";
 
 export { handleForumAction } from "./actions";
@@ -34,6 +41,7 @@ export { timeAgo, fullStamp } from "./format";
 export { configureForumMedia, mediaUrl } from "./media";
 
 export { NewCategoryPanel, canAddCategory } from "./category";
+export { ConstellationSvg, MapEdgeList, MapLegend } from "./map";
 
 export { forumFeedThreads, forumSnapshot } from "./snapshot";
 export type { ForumSnapshotOptions } from "./snapshot";

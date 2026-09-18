@@ -405,6 +405,10 @@ export interface SurfaceThread {
   bodyHtml: string | null;
   coverImageUrl: string | null;
   author?: { name: string | null; photo?: string | null } | null;
+  /** The account that wrote it — what `viewer.canRemove` compares against. */
+  authorId?: string | null;
+  /** True when this is the org's featured (standing) meeting. */
+  standing?: boolean;
   publishedAt: string | null;
 
   // Scheduled kinds
@@ -846,6 +850,11 @@ export interface SurfaceViewer {
   canCompose: boolean;
   /** Can edit this particular thread. Defaults to canCompose. */
   canEdit?: (thread: SurfaceThread) => boolean;
+  /**
+   * Can take this thread down. Defaults to canEdit. A host usually answers
+   * "editor, or this is the viewer's own" — `thread.authorId` is there for it.
+   */
+  canRemove?: (thread: SurfaceThread) => boolean;
 }
 
 export interface SurfaceConnectors {
@@ -859,6 +868,18 @@ export interface SurfaceConnectors {
 
   /** A thread by id, as this viewer may see it. Null when not found. */
   loadThread: (id: string) => Promise<SurfaceThread | null>;
+  /**
+   * Take a thread down (archive). Rendered as "Remove" on the popup for
+   * whoever `viewer.canRemove` allows; the rule itself is the host's route.
+   */
+  removeThread?: (threadId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
+   * Name a meeting the org's standing (weekly) meeting, or stop featuring
+   * it — the flag the hub's standing-meeting card reads first. Editors only.
+   */
+  standing?: {
+    set: (threadId: string, on: boolean) => Promise<{ ok: true; standing: boolean } | { ok: false; error: string }>;
+  };
 
   /** Scheduled threads in [from, to). Omit to disable the calendar surface. */
   listEvents?: (from: Date, to: Date) => Promise<SurfaceEvent[]>;

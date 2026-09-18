@@ -16,7 +16,7 @@ import { Button } from "@elkdonis/primitives";
 import { siteConfig } from "@/config/site";
 import { saveContentAction } from "@/lib/cms/actions";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
-import { QuestionnaireBody } from "./questionnaire-composer";
+import { QuestionnairePageBody } from "./questionnaire-composer";
 import { WritingRoomPage } from "./writing-room-page";
 
 /**
@@ -76,7 +76,7 @@ export function ComposeWorkspace({
           }}
         />
       ) : (
-        <QuestionnaireBody
+        <QuestionnairePageBody
           kind={selected.writes.kind as "questionnaire" | "poll"}
           onDone={() => {
             setSelected(null);

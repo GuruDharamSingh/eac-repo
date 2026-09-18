@@ -1242,55 +1242,9 @@ importers:
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      next:
-        specifier: 16.1.6
-        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
-      react:
-        specifier: 19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: 19.1.0
-        version: 19.1.0(react@19.1.0)
-    devDependencies:
-      '@types/node':
-        specifier: ^20
-        version: 20.19.17
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      eslint:
-        specifier: ^9
-        version: 9.34.0(jiti@2.6.0)
-      eslint-config-next:
-        specifier: 16.1.6
-        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
-      typescript:
-        specifier: ^5
-        version: 5.9.2
-
-  apps/fourth-way-book-readers:
-    dependencies:
-      '@elkdonis/auth-client':
-        specifier: workspace:*
-        version: link:../../packages/auth-client
-      '@elkdonis/auth-server':
-        specifier: workspace:*
-        version: link:../../packages/auth-server
-      '@elkdonis/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@elkdonis/nextcloud':
-        specifier: workspace:*
-        version: link:../../packages/nextcloud
-      '@elkdonis/reading-wizard':
-        specifier: workspace:*
-        version: link:../../packages/reading-wizard
-      '@elkdonis/types':
-        specifier: workspace:*
-        version: link:../../packages/types
+      '@excalidraw/excalidraw':
+        specifier: ^0.18.0
+        version: 0.18.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
@@ -1827,12 +1781,18 @@ importers:
       '@elkdonis/cms-ui':
         specifier: workspace:*
         version: link:../../packages/cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@elkdonis/forum-ui':
+        specifier: workspace:*
+        version: link:../../packages/forum-ui
       '@elkdonis/newsletter':
         specifier: workspace:*
         version: link:../../packages/newsletter
@@ -1854,6 +1814,9 @@ importers:
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@excalidraw/excalidraw':
+        specifier: ^0.18.0
+        version: 0.18.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
@@ -14293,7 +14256,7 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.45.0(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@2.6.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@2.6.0))
     transitivePeerDependencies:
       - supports-color
 

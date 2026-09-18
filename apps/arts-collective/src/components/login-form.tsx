@@ -14,10 +14,34 @@ import "@elkdonis/cms-ui/baroque-signup.css";
  * /api/auth/login + /api/auth/signup routes, unchanged); only the
  * org-join-after-auth redirect below is arts-collective-specific.
  */
+/**
+ * Where to go after signing in, from `?next=`. A path stays on this site. An
+ * absolute URL is honoured only on this host or one of its subdomains
+ * (forum.arts-collective.com, an org's subdomain) and goes through
+ * /api/auth/handoff so the session travels with the person — a host-only
+ * cookie set here would not. Anything else is ignored: not an open redirect.
+ */
+export function returnTo(next: string | null): string | null {
+  if (!next) return null;
+  if (next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")) return next;
+  try {
+    const u = new URL(next);
+    const here = window.location.hostname.toLowerCase();
+    const root = here.replace(/^www\./, "");
+    const host = u.hostname.toLowerCase();
+    if (u.protocol !== window.location.protocol && u.protocol !== "https:") return null;
+    if (host === here || host === root || host.endsWith(`.${root}`)) {
+      return `/api/auth/handoff?to=${encodeURIComponent(u.toString())}`;
+    }
+  } catch { /* not a URL */ }
+  return null;
+}
+
 export function LoginForm() {
   const searchParams = useSearchParams();
   const orgSlug = searchParams.get("org");
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin";
+  const next = searchParams.get("next");
 
   return (
     <div className="mx-auto max-w-md py-16">
@@ -49,6 +73,11 @@ export function LoginForm() {
             return;
           }
 
+          const back = returnTo(next);
+          if (back) {
+            window.location.href = back;
+            return;
+          }
           window.location.href = mode === "signup" ? "/hub/elkdonis" : "/hub";
         }}
       />

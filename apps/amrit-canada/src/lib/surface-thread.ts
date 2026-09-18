@@ -19,6 +19,8 @@ export function toSurfaceThread(
     rsvpCount: number;
     viewerAttending: boolean | null;
     cycleStatus: ThreadCycleStatus | null;
+    /** This is the org's featured (standing) meeting. */
+    standing?: boolean;
   }
 ) {
   return sharedToSurfaceThread(
@@ -33,6 +35,7 @@ export function toSurfaceThread(
       bodyHtml: thread.description,
       coverImageUrl: thread.coverImageUrl,
       authorName: thread.authorName,
+      authorId: thread.authorId ?? null,
       authorPhoto: thread.authorPhoto,
       publishedAt: thread.publishedAt,
       scheduledAt: thread.scheduledAt,
@@ -57,6 +60,7 @@ export function toSurfaceThread(
       rsvpCount: extras.rsvpCount,
       viewerAttending: extras.viewerAttending,
       cycleStatus: extras.cycleStatus,
+      standing: extras.standing,
       extra: {
         time_zone: thread.timeZone,
         min_attendees: thread.minAttendees,

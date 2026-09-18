@@ -41,6 +41,7 @@ export interface ThreadMapperInput {
   coverImageUrl: string | null;
   authorName: string | null;
   authorPhoto: string | null;
+  authorId?: string | null;
   publishedAt: Date | string | null;
 
   scheduledAt?: Date | string | null;
@@ -82,6 +83,8 @@ export interface ThreadMapperExtras {
   gathered?: SurfaceGathered[];
   gatheredBy?: SurfaceGatheredBy[];
   terms?: SurfaceTerm[];
+  /** The org's featured (standing) meeting is this thread. */
+  standing?: boolean;
 
   /** Merged onto `SurfaceThread.extra` — a host's own fields for its own
    *  `threadToAnswers`, e.g. a time zone or a minimum-attendance setting. */
@@ -115,6 +118,8 @@ export function toSurfaceThread(
     bodyHtml: thread.bodyHtml,
     coverImageUrl: thread.coverImageUrl,
     author: { name: thread.authorName, photo: thread.authorPhoto },
+    authorId: thread.authorId ?? null,
+    standing: extras.standing ?? false,
     publishedAt: iso(thread.publishedAt),
     scheduledAt: iso(thread.scheduledAt),
     nextOccurrenceAt: iso(thread.nextOccurrenceAt),

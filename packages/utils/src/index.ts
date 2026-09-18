@@ -62,7 +62,7 @@ export {
 // Render-time transforms for wiki bodies. Pure string work, shared because
 // two surfaces render the same stored page at different routes: the stored
 // body carries link TARGETS (data-wiki-slug), never hrefs, so whoever renders
-// it decides where a wikilink points. arts-collective serves /hub/wiki/…, the
-// forum serves /wiki/… — one transform, two basePaths.
+// it decides where a wikilink points. The forum serves /wiki/… and owns editing;
+// an org site's /forum/wiki/… is the same page — one transform, any basePath.
 export { renderWikiBody } from './wiki-render';
 export type { WikiHeading } from './wiki-render';

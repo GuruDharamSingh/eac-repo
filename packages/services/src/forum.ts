@@ -158,6 +158,8 @@ export interface ForumThreadRecord extends ForumTopicRow {
   viewerHearted: boolean;
   /** Where the viewer last got to; null when signed out or never opened. */
   lastReadAt: Date | null;
+  /** A drawing: `metadata.drawing` holds the scene and its SVG (see drawing.ts). */
+  isDrawing: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -609,7 +611,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
   const rows = await db<
     Array<
       TopicRowRaw & {
-        body: string | null; cover_image_url: string | null; duration_minutes: number | null;
+        body: string | null; cover_image_url: string | null; is_drawing: boolean | null; duration_minutes: number | null;
         location: string | null; is_online: boolean | null; meeting_url: string | null;
         nextcloud_talk_token: string | null; document_url: string | null; video_link: string | null;
         recurrence_pattern: string | null; recurrence_until: Date | null; is_rsvp_enabled: boolean;
@@ -623,6 +625,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
     SELECT ${TOPIC_ROW_SELECT}, ${unreadSql(viewer)}, ${viewerReactionSql(viewer, 'thread')},
            ${uid ? db`(SELECT tr.last_read_at FROM thread_reads tr WHERE tr.thread_id = t.id AND tr.user_id = ${uid}::uuid)` : db`NULL::timestamptz`} AS last_read_at,
            t.body, t.metadata->>'coverImageUrl' AS cover_image_url,
+           (t.metadata ? 'drawing') AS is_drawing,
            t.duration_minutes, t.location, t.is_online, t.meeting_url, t.nextcloud_talk_token,
            t.document_url, t.video_link, t.recurrence_pattern, t.recurrence_until,
            COALESCE(t.is_rsvp_enabled, false) AS is_rsvp_enabled, t.attendee_limit, t.rsvp_deadline,
@@ -644,6 +647,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
     ...topicRow(r),
     bodyHtml: r.body,
     coverImageUrl: r.cover_image_url,
+    isDrawing: Boolean(r.is_drawing),
     durationMinutes: r.duration_minutes,
     location: r.location,
     isOnline: r.is_online,

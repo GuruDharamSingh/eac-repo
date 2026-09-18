@@ -155,6 +155,15 @@ export function WhiteboardSurface({
           on this class, having never expected `[popover]` to be involved. */}
       <style>{`
         .excalidraw-modal-container[popover] {
+          /* Excalidraw's own rule on this class is position:absolute, and an
+             author class beats the UA's [popover] position:fixed — so the
+             promoted node anchored to the top of the DOCUMENT. Scroll the
+             hub down to reach the tile (you always have) and its dialog
+             opened above the viewport: half cut off on IFAC, wholly off on
+             innergathering's longer page. Fixed + inset 0 pins it to the
+             viewport; the .Modal inside is absolute inset 0 and fills it. */
+          position: fixed;
+          inset: 0;
           margin: 0;
           padding: 0;
           border: none;

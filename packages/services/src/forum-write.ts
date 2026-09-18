@@ -493,7 +493,7 @@ export async function listTopicChoices(orgId: string): Promise<Array<{ id: strin
  */
 const RESERVED_FEED_SLUGS = new Set([
   'latest', 'unread', 'watching', 'bookmarks', 'happening', 'notifications',
-  'members', 'topics', 'orgs', 'search', 'log', 't',
+  'members', 'topics', 'orgs', 'search', 'log', 't', 'wiki', 'dictionary', 'embed',
 ]);
 
 export interface CreateCategoryInput {

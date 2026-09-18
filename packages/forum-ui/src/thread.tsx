@@ -1,9 +1,10 @@
 import * as React from "react";
-import type { ForumBoard, ForumPersonCard, ForumReply, ForumThreadRecord, ForumViewer, ForumVoters } from "@elkdonis/services";
+import type { Constellation, ForumBoard, ForumPersonCard, ForumReply, ForumThreadRecord, ForumViewer, ForumVoters } from "@elkdonis/services";
 import { SurfacePage, SurfaceSection, threadViewParts } from "@elkdonis/cms-ui/surface";
 import type { ForumConnectors } from "./connectors";
 import { toSurfaceThread } from "./adapters";
-import { Avatar, Breadcrumb, Empty, Flash, Pagination, PersonName, Time, kindLabel, plural } from "./parts";
+import { Avatar, Breadcrumb, Empty, Flash, Layout, Pagination, PersonName, SectionTitle, Time, kindLabel, plural } from "./parts";
+import { ConstellationSvg, DrawLineForm, MapEdgeList } from "./map";
 import { PersonWithCard } from "./people";
 import { timeAgo } from "./format";
 import { mediaUrl } from "./media";
@@ -236,13 +237,19 @@ function Toolbar({ ctx, board }: { ctx: Ctx; board: ForumBoard | null }) {
     return hrefs.signIn ? <div className="gf-toolbar"><a className="gf-tool" href={hrefs.signIn}>☆ Watch</a><a className="gf-tool" href={hrefs.signIn}>⚑ Bookmark</a></div> : null;
   }
   const mod = moderate && canModerate(viewer, thread.org.id);
+  const own = viewer.userId === thread.author.id || Boolean(viewer.identityIds?.includes(thread.author.id));
+  const remove = actionUrl(connectors, "remove");
   const feeds = board?.feeds ?? [];
   const wikiHref = connectors.wiki?.define ? hrefs.wiki?.() : null;
   const defineHref = wikiHref
     ? `${wikiHref}?from=${encodeURIComponent(thread.id)}`
     : null;
+  const editDrawing = thread.isDrawing && hrefs.drawing && (viewer.userId === thread.author.id || viewer.identityIds?.includes(thread.author.id) || mod)
+    ? hrefs.drawing(thread.id)
+    : null;
   return (
     <div className="gf-toolbar">
+      {editDrawing && <a className="gf-tool" href={editDrawing}>✎ Edit drawing</a>}
       {watch && (
         <form method="post" action={watch}>
           <input type="hidden" name="thread" value={thread.id} /><input type="hidden" name="back" value={base} />
@@ -262,6 +269,20 @@ function Toolbar({ ctx, board }: { ctx: Ctx; board: ForumBoard | null }) {
         <a className="gf-tool" href={defineHref} title="Add a word to the dictionary">
           § Define a word
         </a>
+      )}
+      {/* The author's own way out: two steps without a script — open, then
+          confirm. Moderators have Archive in their menu already. */}
+      {own && !mod && remove && (
+        <details className="gf-mod">
+          <summary className="gf-tool">Remove</summary>
+          <div className="gf-mod-menu">
+            <p className="gf-mod-note">Take this topic down? It comes off every list; a moderator can restore it.</p>
+            <form method="post" action={remove}>
+              <input type="hidden" name="thread" value={thread.id} /><input type="hidden" name="back" value={base} />
+              <button type="submit" className="gf-mod-item gf-mod-item--danger">Yes, remove my topic</button>
+            </form>
+          </div>
+        </details>
       )}
       {mod && (
         <details className="gf-mod">
@@ -297,6 +318,7 @@ function Toolbar({ ctx, board }: { ctx: Ctx; board: ForumBoard | null }) {
 }
 
 export interface ThreadPageViewProps {
+  boxes?: React.ReactNode;
   connectors: ForumConnectors;
   viewer: ForumViewer;
   thread: ForumThreadRecord;
@@ -309,6 +331,7 @@ export interface ThreadPageViewProps {
   replyTo: ForumReply | null;
   quote: string;
   cards?: Record<string, ForumPersonCard>;
+  constellation?: Constellation | null;
   notice: string | null;
   error: string | null;
 }
@@ -324,7 +347,7 @@ export function ThreadPageView(p: ThreadPageViewProps) {
   const crumb = (
     <Breadcrumb
       items={[
-        { label: network ? "Boards" : siteName, href: hrefs.root() },
+        { label: network ? "Forum" : siteName, href: hrefs.root() },
         ...(network ? [{ label: thread.org.name, href: hrefs.board(thread.org.slug) }] : []),
         { label: thread.feed.name ?? thread.feed.slug, href: hrefs.feed(thread.org.slug, thread.feed.slug) },
         { label: thread.title },
@@ -335,9 +358,39 @@ export function ThreadPageView(p: ThreadPageViewProps) {
   const kicker = [kindLabel(thread.kind), thread.feed.name, network ? thread.org.name : null].filter(Boolean).join(" · ");
 
   const fromOrg = network && board;
-  const rail = !parts.rail && !fromOrg ? null : (
+  const graph = p.constellation ?? null;
+  const mapHref = `${href}/map`;
+  const lineBase = viewer.userId && connectors.write?.drawLine && connectors.actionBase ? connectors.actionBase : null;
+  // The map, small: what this thread is connected to, and a way to draw a
+  // line from here. Even an unconnected thread shows the box — the form is
+  // how the first line gets drawn.
+  const constellation = graph && (
+    <section className="gf-rail-block gf-box gf-box--map">
+      <SectionTitle more={graph.edges.length > 0 ? mapHref : null} moreLabel="open the map →">Constellation</SectionTitle>
+      {graph.edges.length === 0 ? (
+        <p className="gf-rail-empty">Nothing linked here yet.</p>
+      ) : (
+        <>
+          {/* Not wrapped in a link: every node already is one, and an <a>
+              inside an <a> is invalid HTML that breaks hydration. The title's
+              "open the map →" is the way to the full page. */}
+          <div className="gf-map-link">
+            <ConstellationSvg graph={graph} hrefs={hrefs} size={260} compact />
+          </div>
+          <p className="gf-map-summary">
+            {plural(graph.nodes.length, "connection")}{graph.omitted > 0 ? ` (${graph.omitted} more on the map)` : ""}
+          </p>
+        </>
+      )}
+      {lineBase && <DrawLineForm actionBase={lineBase} threadId={thread.id} back={p.back.split("#")[0]} compact />}
+    </section>
+  );
+  // The facts rail and the org card go to the page's column, above the
+  // shell's boxes, so the thread itself runs the full width of the main pane.
+  const rail = !parts.rail && !fromOrg && !constellation ? null : (
     <>
-      {parts.rail}
+      {parts.rail && <section className="gf-rail-block gf-box gf-box--facts">{parts.rail}</section>}
+      {constellation}
       {fromOrg && (
         <SurfaceSection title={`From ${board.name}`}>
           <div className="gf-from-org">
@@ -375,14 +428,14 @@ export function ThreadPageView(p: ThreadPageViewProps) {
     new Date(r.createdAt).getTime() > since || r.children.some((c) => new Date(c.createdAt).getTime() > since)
   )?.id ?? null;
 
-  return (
+  const main = (
     <div className="gf-thread" data-kind={thread.kind} id="top">
       <Flash notice={p.notice} error={p.error} />
       <div className="gf-thread-top">
         {crumb}
         <Toolbar ctx={ctx} board={board} />
       </div>
-      <SurfacePage kind={thread.kind} title={thread.title} kicker={kicker} rail={rail} status={status}>
+      <SurfacePage kind={thread.kind} title={thread.title} kicker={kicker} status={status} className="gf-sheet">
         <div className="gf-op-byline">
           <CardByline person={thread.author} at={thread.publishedAt ?? thread.createdAt} card={ctx.cards[thread.author.id]} hrefs={hrefs} />
         </div>
@@ -414,6 +467,8 @@ export function ThreadPageView(p: ThreadPageViewProps) {
       </section>
     </div>
   );
+
+  return <Layout boxes={p.boxes} rail={rail} main={main} />;
 }
 
 export { Avatar, PersonName, Time };

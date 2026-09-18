@@ -1,10 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter, UnifrakturCook } from "next/font/google";
-import { NotificationsBell, SearchBox } from "@elkdonis/forum-ui";
-import { countUnreadNotifications, listNotifications, listTopics } from "@elkdonis/services";
-import { getViewer } from "@/lib/viewer";
-import { hrefs, SITE, ACTION_BASE } from "@/lib/site";
+import { cookies } from "next/headers";
+import { SITE } from "@/lib/site";
 
 const title = Cormorant_Garamond({
   subsets: ["latin"],
@@ -25,72 +23,20 @@ export const metadata: Metadata = {
 // is a live read of the boards.
 export const dynamic = "force-dynamic";
 
-const ROOT = hrefs.root().replace(/\/$/, "");
-const NAV: Array<{ label: string; href: string }> = [
-  { label: "Boards", href: hrefs.root() },
-  { label: "Latest", href: hrefs.latest() },
-  { label: "Happening", href: hrefs.happening() },
-  { label: "Topics", href: `${ROOT}/topics` },
-  // A peer of the boards, not one of them — the shared reference surface
-  // sitting next to the discussion.
-  { label: "Wiki", href: `${ROOT}/wiki` },
-  { label: "Orgs", href: `${ROOT}/orgs` },
-  { label: "Members", href: `${ROOT}/members` },
-];
-
+/**
+ * The document only. The masthead lives in (site)/layout.tsx so that /embed
+ * can serve the same forum with no chrome at all.
+ *
+ * The reader's light/dark choice (cookie `forum_mode`, set by the footer
+ * toggle) is mirrored onto <html data-theme> so the masthead — which sits
+ * outside the forum's own .gf-root — changes ground with the board.
+ */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getViewer();
-  const root = hrefs.root().replace(/\/$/, "");
-  // Mark-all-read from the bell returns to the boards; the layout doesn't know the page.
-  const back = hrefs.root();
-
-  // Signed-in furniture: unread count, watching, the bell.
-  const [unreadTopics, bellItems, bellCount] = viewer.userId
-    ? await Promise.all([
-        listTopics({ kind: "unread", scope: { kind: "network" } }, viewer, { limit: 1 }).then((p) => p.total).catch(() => 0),
-        listNotifications(viewer.userId, 12).catch(() => []),
-        countUnreadNotifications(viewer.userId).catch(() => 0),
-      ])
-    : [0, [], 0];
-
+  const mode = (await cookies()).get("forum_mode")?.value;
+  const theme = mode === "dark" || mode === "light" ? mode : undefined;
   return (
-    <html lang="en" suppressHydrationWarning className={`${title.variable} ${body.variable} ${display.variable}`}>
-      <body suppressHydrationWarning>
-        <header className="gf-masthead">
-          <div className="gf-masthead-inner">
-            <div className="gf-masthead-top">
-              <div>
-                <a className="gf-brand" href={hrefs.root()}>{SITE.name}</a>
-                <p className="gf-tagline">{SITE.tagline}</p>
-              </div>
-              <div className="gf-masthead-right">
-                <SearchBox href={`${ROOT}/search`} compact />
-                {viewer.userId ? (
-                  <>
-                    <NotificationsBell items={bellItems} unread={bellCount} hrefs={hrefs} actionBase={ACTION_BASE} back={back} />
-                    <span className="gf-nav-me">{viewer.name}</span>
-                  </>
-                ) : hrefs.signIn ? (
-                  <a href={hrefs.signIn}>Sign in · Join</a>
-                ) : null}
-              </div>
-            </div>
-            <nav className="gf-nav" aria-label="Primary">
-              {NAV.map((n) => <a key={n.href} href={n.href}>{n.label}</a>)}
-              <span className="gf-nav-spacer" />
-              {viewer.userId && (
-                <>
-                  <a href={`${root}/unread`}>Unread{unreadTopics ? ` ${unreadTopics}` : ""}</a>
-                  <a href={`${root}/watching`}>Watching</a>
-                  <a href={`${root}/bookmarks`} title="Bookmarks">⚑</a>
-                </>
-              )}
-            </nav>
-          </div>
-        </header>
-        <main className="gf-page">{children}</main>
-        <footer className="gf-footer">{SITE.name} · every thread on the network, in one place.</footer>
-      </body>
+    <html lang="en" suppressHydrationWarning className={`${title.variable} ${body.variable} ${display.variable}`} data-theme={theme}>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

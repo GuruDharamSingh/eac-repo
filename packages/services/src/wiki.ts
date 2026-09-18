@@ -1093,3 +1093,53 @@ export async function getWikiBacklinks(threadId: string): Promise<WikiPageRef[]>
   `;
   return rows;
 }
+
+// ============================================================================
+// The dictionary index — every term that has been given at least one sense
+// ============================================================================
+
+export interface DefinedTermRow {
+  id: string;
+  slug: string;
+  title: string;
+  /** The first sense given, which is what a tooltip shows. */
+  firstSense: string | null;
+  senseCount: number;
+  aliases: string[];
+  updatedAt: Date;
+}
+
+/**
+ * Pages that are terms — a wiki page becomes a dictionary entry the moment
+ * somebody gives it a sense. Alphabetical by default so it reads as a
+ * dictionary; `recent` for a "lately defined" box.
+ */
+export async function listDefinedTerms(
+  opts: { limit?: number; order?: 'alpha' | 'recent' } = {}
+): Promise<DefinedTermRow[]> {
+  const limit = Math.max(1, Math.min(opts.limit ?? 1000, 1000));
+  const recent = opts.order === 'recent';
+  const rows = await db<Array<any>>`
+    SELECT id, slug, title, updated_at,
+      metadata->'definitions'->0->>'text' AS first_sense,
+      jsonb_array_length(metadata->'definitions') AS sense_count,
+      CASE WHEN jsonb_typeof(metadata->'aliases') = 'array'
+           THEN metadata->'aliases' ELSE '[]'::jsonb END AS aliases
+    FROM threads
+    WHERE kind = 'wiki_page'
+      AND status <> 'archived'
+      AND jsonb_typeof(metadata->'definitions') = 'array'
+      AND jsonb_array_length(metadata->'definitions') > 0
+    ORDER BY ${recent ? db`updated_at DESC` : db`LOWER(title) ASC`}
+    LIMIT ${limit}
+  `;
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    firstSense: r.first_sense ?? null,
+    senseCount: Number(r.sense_count ?? 0),
+    aliases: Array.isArray(r.aliases) ? r.aliases.filter((a: unknown) => typeof a === 'string') : [],
+    updatedAt: r.updated_at,
+  }));
+}

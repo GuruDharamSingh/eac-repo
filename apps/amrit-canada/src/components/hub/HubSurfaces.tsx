@@ -43,6 +43,7 @@ const TIME_ZONE = "America/Toronto";
 export function HubSurfaces({
   signedIn,
   canEdit,
+  userId = null,
   displayName,
   feeds,
   talkBaseUrl,
@@ -50,6 +51,8 @@ export function HubSurfaces({
 }: {
   signedIn: boolean;
   canEdit: boolean;
+  /** The viewer's account id — what lets an author remove their own thread. */
+  userId?: string | null;
   displayName?: string | null;
   feeds: Array<{ slug: string; name: string }>;
   talkBaseUrl: string | null;
@@ -60,7 +63,13 @@ export function HubSurfaces({
   const connectors = React.useMemo<SurfaceConnectors>(
     () => ({
       ...createHubConnectors({
-        viewer: { signedIn, canCompose: canEdit, displayName },
+        viewer: {
+          signedIn,
+          canCompose: canEdit,
+          displayName,
+          // Editors take anything down; anyone may take down their own.
+          canRemove: (t) => canEdit || (Boolean(userId) && t.authorId === userId),
+        },
         orgName: siteConfig.orgName,
         timeZone: TIME_ZONE,
         talkBaseUrl,
@@ -83,7 +92,17 @@ export function HubSurfaces({
         // What a thread holds: the gathering and the document written in it,
         // the terms defined out of that and the board it moved, as one
         // occasion rather than four tiles. See migration 131.
-        gather: true,
+        // Gathering is OFF as a surface action (2026-09-17, user's call): the
+        // "Gather / Arrange what this holds" button was appearing on every
+        // thread popup, which made it feel pasted on. The edge (migration 131)
+        // and the forum's map of it stay; what a thread already holds still
+        // lists, since that comes down with the thread. Gathering as an act
+        // gets its own home when the time comes — flip this back to wire it.
+        gather: false,
+        // Remove from the popup (author or editor) and feature a meeting as
+        // the standing one (editor) — both on the same thread route.
+        remove: true,
+        standing: true,
         ideas: { href: "/forum/ideas" },
 
         // The network dictionary. Defining a term while writing creates its
@@ -166,7 +185,7 @@ export function HubSurfaces({
         ),
       },
     }),
-    [signedIn, canEdit, displayName, feeds, talkBaseUrl, router]
+    [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

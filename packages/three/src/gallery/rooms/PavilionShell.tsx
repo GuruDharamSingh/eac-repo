@@ -46,16 +46,24 @@ export function PavilionShell() {
       </mesh>
 
       {/* Daylight: a low sun through the glazing, plus sky fill. Warmer and
-          far more directional than the hall's downlights. */}
-      <hemisphereLight args={[SKY_TOP, GROUND, 1.1]} />
-      <ambientLight intensity={0.34} color="#eaf1ff" />
+          far more directional than the hall's downlights.
+
+          The hemisphere light's lower colour is a neutral stone, NOT the green
+          of the lawn outside. A hemisphere light tints every downward-facing
+          surface with it, and feeding it the grass turned the whole ceiling
+          green — physically what bounced light does, but a gallery ceiling
+          that colour just reads as a bug. */}
+      <hemisphereLight args={[SKY_TOP, '#c2bcb0', 0.9]} />
+      <ambientLight intensity={0.5} color="#f2f5fa" />
       <directionalLight
         position={[6, 9, 26]}
         intensity={2.4}
         color="#fff2dc"
       />
-      {/* A dimmer bounce from deep in the room so the far wall is not a hole. */}
-      <directionalLight position={[-4, 6, -18]} intensity={0.5} color="#e8eef6" />
+      {/* Fill from behind the visitor. Without it the centre wall's north face
+          — which is hung with work — faces away from the sun and reads
+          noticeably darker than everything around it. */}
+      <directionalLight position={[-4, 6, -18]} intensity={1.0} color="#f0f2f6" />
 
       <Floor room={room} colour="#cfc9bd" />
       <Ceiling room={room} colour="#f2efe9" />

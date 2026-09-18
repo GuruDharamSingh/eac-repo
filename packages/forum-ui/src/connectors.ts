@@ -1,5 +1,7 @@
+import type * as React from "react";
 import { renderWikiBody } from "@elkdonis/utils/wiki-render";
 import type {
+  Constellation,
   CreateCategoryInput,
   CreateTopicInput,
   ForumActivityItem,
@@ -61,6 +63,16 @@ export interface ForumHrefs {
   /** The wiki, inside the forum. Null on a host without a wiki section. */
   wiki?(): string | null;
   wikiPage?(slug: string): string | null;
+  /** The dictionary — the wiki's defined terms, A–Z. */
+  dictionary?(): string | null;
+  /**
+   * Drawings (2026-09-17): the editor for one, and a new one — optionally
+   * drawn over a thread's map. Only a host with the Excalidraw editor
+   * (apps/forum) supplies these; elsewhere the affordances don't render and
+   * a drawing still shows, since it is a post with a picture in it.
+   */
+  drawing?(threadId: string): string | null;
+  newDrawing?(fromThreadId?: string): string | null;
   /** The org's own site, for the "↗" on a masthead. */
   orgSite(board: { slug: string; orgId: string; primaryDomain?: string | null }): string | null;
   /** The network-wide identity page (ArtDirect). Optional. */
@@ -102,6 +114,13 @@ export interface ForumConnectors {
   listTopicEntries?(viewer: ForumViewer, opts?: { includeProposed?: boolean }): Promise<ForumTopicEntry[]>;
   getTopicBySlug?(slug: string): Promise<ForumTopicEntry | null>;
   searchForum?(q: string, viewer: ForumViewer, opts: { scope?: ForumScope; page?: number; limit?: number; only?: "thread" | "reply" }): Promise<Paged<ForumSearchHit>>;
+  /**
+   * The map (2026-09-17). Everything a thread is connected to — gathers,
+   * mentions, shared tags, people's lines — under the viewer's visibility;
+   * and one person's own lines as a map of their own.
+   */
+  constellation?(threadId: string, viewer: ForumViewer, opts?: { limit?: number }): Promise<Constellation | null>;
+  personMap?(userId: string, viewer: ForumViewer, opts?: { limit?: number }): Promise<Constellation>;
   listModLog?(orgId: string, opts: { page?: number; limit?: number }): Promise<Paged<ForumModLogEntry>>;
   /**
    * The network wiki, as a section of the forum. Absent and the /wiki routes
@@ -121,17 +140,9 @@ export interface ForumConnectors {
   /** Where the host mounted handleForumAction, e.g. "/api/forum". */
   actionBase?: string;
   /**
-   * Which skin to render in. One markup, two stylesheets:
-   *
-   *   "classic" (default) — the board. Tables, dense rows, hairlines.
-   *                         Needs only forum.css.
-   *   "modern"            — the same pages as a card feed. Needs
-   *                         forum.css AND forum-modern.css; the host imports
-   *                         both and the second overrides the first, scoped
-   *                         under [data-forum-theme="modern"].
-   *
-   * The attribute is emitted by renderForumRoute, so a host switches themes
-   * by setting this and adding one @import — no markup change anywhere.
+   * @deprecated There is one design now (2026-09-17: steel, silver, paper
+   * edges). Accepted and still emitted as data-forum-theme so an older
+   * host's CSS keeps matching, but forum-modern.css is an empty stub.
    */
   theme?: "classic" | "modern";
   /**
@@ -181,6 +192,54 @@ export interface ForumWikiSearchHit {
   viaDefinition: boolean;
 }
 
+/** A page as the editor needs it: the stored body, unresolved. */
+export interface ForumWikiPageSource {
+  id: string;
+  slug: string;
+  title: string;
+  body: string | null;
+  parentId: string | null;
+  updatedAt: Date;
+  topicIds: string[];
+}
+
+export interface ForumWikiRevisionRow {
+  id: string;
+  title: string;
+  createdAt: Date;
+  editorName: string | null;
+}
+
+export interface ForumWikiTermRow {
+  id: string;
+  slug: string;
+  title: string;
+  firstSense: string | null;
+  senseCount: number;
+  aliases: string[];
+  updatedAt: Date;
+}
+
+/**
+ * What a host-supplied wiki editor receives. The package renders a plain
+ * <textarea name="body"> when no editor is given, so the wiki is editable
+ * with no client JavaScript at all; a host that has JavaScript (apps/forum)
+ * hands in a client component that writes HTML into a hidden `body` field
+ * and sets `format=html`. Either way the form posts the same fields.
+ */
+export interface ForumWikiEditorProps {
+  name: string;
+  defaultValue: string;
+  wikiPages: Array<{ title: string; slug: string }>;
+  sourceThreadId?: string;
+}
+
+export type ForumWikiWriteResult =
+  | { ok: true; slug: string; threadId: string }
+  | { ok: false; error: string }
+  /** Somebody else saved first. Theirs is returned so the two can be reconciled by hand. */
+  | { ok: false; conflict: true; error: string; theirs: { title: string; body: string | null }; updatedAt: string };
+
 export interface ForumWikiConnectors {
   /** Flat list, tree order, for the index outline. */
   listPages(): Promise<ForumWikiPageRow[]>;
@@ -213,8 +272,32 @@ export interface ForumWikiConnectors {
     authorId: string;
     sourceThreadId?: string;
   }): Promise<{ slug: string; created: boolean; senses: number; duplicate: boolean }>;
-  /** Where a page is edited — the wiki's own console, off the forum. */
+  /** The dictionary index: every page that has been given a sense. */
+  listTerms?(opts?: { limit?: number; order?: "alpha" | "recent" }): Promise<ForumWikiTermRow[]>;
+
+  // ── editing, owned by the forum since 2026-09-17 ─────────────────────────
+  // All optional: a host without them shows the wiki read-only, exactly as
+  // before. With them, /wiki/new, /wiki/[slug]/edit and /wiki/[slug]/history
+  // render and the wiki-* actions accept posts.
+  getSource?(slug: string): Promise<ForumWikiPageSource | null>;
+  create?(input: { authorId: string; title: string; body: string; parentId: string | null }): Promise<ForumWikiWriteResult>;
+  update?(input: {
+    threadId: string; editorId: string; title: string; body: string; parentId: string | null;
+    expectedUpdatedAt: string | null; topicIds?: string[];
+  }): Promise<ForumWikiWriteResult>;
+  archive?(threadId: string): Promise<{ ok: true; orphanedChildren: number } | { ok: false; error: string }>;
+  revert?(threadId: string, revisionId: string, editorId: string): Promise<ForumWikiWriteResult>;
+  listRevisions?(threadId: string): Promise<ForumWikiRevisionRow[]>;
+  /** Network topics a page may be tagged with. */
+  listTopicChoices?(): Promise<Array<{ id: string; name: string }>>;
+  /** A client editor island, when the host has JavaScript. See ForumWikiEditorProps. */
+  editor?: React.ComponentType<ForumWikiEditorProps>;
+  /**
+   * @deprecated The forum owns editing now. Kept so a host passing it keeps
+   * compiling; ignored when `create`/`update` are present.
+   */
   editHref?(slug: string): string | null;
+  /** @deprecated see editHref */
   newHref?(title?: string): string | null;
 }
 
@@ -234,10 +317,18 @@ export interface ForumWriteConnectors {
   markNotificationsRead(userId: string): Promise<void>;
   htmlToQuote(html: string): string;
   reviewTopic?(viewer: ForumViewer, topicId: string, decision: "approved" | "rejected"): Promise<ForumWriteResult>;
+  /** Take a topic down as its author (moderators use `moderateThread`). Archives. */
+  removeThread?(viewer: ForumViewer, threadId: string): Promise<ForumWriteResult>;
+  /** A person's line between two threads — theirs, undirected, idempotent. */
+  drawLine?(viewer: ForumViewer, a: string, b: string, note: string | null): Promise<ForumWriteResult<{ created: boolean }>>;
+  eraseLine?(viewer: ForumViewer, a: string, b: string): Promise<ForumWriteResult<{ erased: boolean }>>;
 }
 
 /** Links for the network host: every org visible, boards under /o/. */
-export function networkHrefs(opts: { base?: string; signIn?: string | null; orgSite?: ForumHrefs["orgSite"]; profile?: ForumHrefs["profile"] } = {}): ForumHrefs {
+export function networkHrefs(opts: {
+  base?: string; signIn?: string | null; orgSite?: ForumHrefs["orgSite"]; profile?: ForumHrefs["profile"];
+  drawing?: ForumHrefs["drawing"]; newDrawing?: ForumHrefs["newDrawing"];
+} = {}): ForumHrefs {
   const b = (opts.base ?? "").replace(/\/$/, "");
   return {
     root: () => `${b}/`,
@@ -250,8 +341,11 @@ export function networkHrefs(opts: { base?: string; signIn?: string | null; orgS
     topic: (slug) => `${b}/topics/${slug}`,
     wiki: () => `${b}/wiki`,
     wikiPage: (slug) => `${b}/wiki/${slug}`,
+    dictionary: () => `${b}/dictionary`,
     orgSite: opts.orgSite ?? (() => null),
     profile: opts.profile,
+    drawing: opts.drawing,
+    newDrawing: opts.newDrawing,
     signIn: opts.signIn ?? null,
   };
 }
@@ -270,6 +364,7 @@ export function orgHrefs(opts: { base?: string; signIn?: string | null } = {}): 
     topic: (slug) => `${b}/topics/${slug}`,
     wiki: () => `${b}/wiki`,
     wikiPage: (slug) => `${b}/wiki/${slug}`,
+    dictionary: () => `${b}/dictionary`,
     orgSite: () => null,
     signIn: opts.signIn ?? null,
   };
@@ -287,12 +382,16 @@ export interface ServiceConnectorOptions {
   /** "light" (default), "dark" or "auto". See ForumConnectors.mode. */
   mode?: "light" | "dark" | "auto";
   /**
-   * Where the wiki is EDITED, if anywhere reachable from this host — e.g.
-   * "https://arts-collective.com/hub/wiki". The forum displays the wiki and
-   * links out to its console; it never hosts the editor, so omitting this
-   * simply hides the Edit and New affordances.
+   * @deprecated The forum owns wiki editing itself now (2026-09-17); the
+   * Edit/New affordances point at the forum's own /wiki routes. Accepted and
+   * ignored so an older host keeps compiling.
    */
   wikiConsole?: string;
+  /**
+   * A client editor for the wiki forms, on a host that has JavaScript. Omit
+   * and the forms fall back to a plain textarea — still fully functional.
+   */
+  wikiEditor?: React.ComponentType<ForumWikiEditorProps>;
 }
 
 /**
@@ -334,6 +433,8 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
     getTopicBySlug: s.getTopicBySlug,
     searchForum: s.searchForum,
     listModLog: s.listModLog,
+    constellation: (id, viewer, o) => s.getConstellation(id, { viewer, limit: o?.limit }),
+    personMap: (userId, viewer, o) => s.getPersonMap(userId, { viewer, limit: o?.limit }),
     wiki: wikiConnectors(s, opts),
     write: opts.actionBase
       ? {
@@ -351,6 +452,21 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
           markNotificationsRead: s.markNotificationsRead,
           htmlToQuote: s.htmlToQuote,
           reviewTopic: s.reviewTopicAndNotify,
+          removeThread: (viewer, threadId) => s.removeThread(viewer, threadId).then((r) => (r.ok ? { ok: true } : r)),
+          async drawLine(viewer, a, b, note) {
+            if (!viewer.userId) return { ok: false, error: "Sign in first." };
+            try {
+              const r = await s.drawLine(viewer.userId, a, b, { note, viewer });
+              return { ok: true, created: r.created };
+            } catch (err) {
+              if (err instanceof s.LineError) return { ok: false, error: err.message };
+              throw err;
+            }
+          },
+          async eraseLine(viewer, a, b) {
+            if (!viewer.userId) return { ok: false, error: "Sign in first." };
+            return { ok: true, erased: await s.eraseLine(viewer.userId, a, b) };
+          },
         }
       : undefined,
     actionBase: opts.actionBase,
@@ -378,7 +494,6 @@ function wikiConnectors(
   opts: ServiceConnectorOptions
 ): ForumWikiConnectors {
   const base = opts.hrefs.wiki?.() ?? "/wiki";
-  const console_ = opts.wikiConsole;
 
   return {
     async listPages() {
@@ -416,12 +531,9 @@ function wikiConnectors(
       ]);
 
       const resolved = await s.resolveTerms(page.body ?? "", base);
-      // Read links resolve to the forum's own /wiki/…, but an UNWRITTEN link
-      // has to point at the editing console: the forum has no /wiki/new of
-      // its own, so defaulting would make every red link a 404.
-      const { html } = renderWikiBody(resolved.html, base, {
-        newBase: console_ ? `${console_}/new` : undefined,
-      });
+      // Read links AND unwritten links both resolve to the forum's own
+      // /wiki/… now that it owns the editor: a red link lands on /wiki/new.
+      const { html } = renderWikiBody(resolved.html, base);
 
       return {
         id: page.id,
@@ -467,9 +579,106 @@ function wikiConnectors(
       };
     },
 
-    editHref: console_ ? (slug) => `${console_}/${slug}/edit` : undefined,
-    newHref: console_
-      ? (title) => (title ? `${console_}/new?title=${encodeURIComponent(title)}` : `${console_}/new`)
-      : undefined,
+    listTerms: (o) => s.listDefinedTerms(o),
+
+    async getSource(slug) {
+      const page = await s.getWikiPage(slug);
+      if (!page) return null;
+      const topics = await s.listWikiTopics(page.id);
+      return {
+        id: page.id,
+        slug: page.slug,
+        title: page.title,
+        body: page.body,
+        parentId: page.parentId,
+        updatedAt: page.updatedAt,
+        topicIds: topics.map((t) => t.id),
+      };
+    },
+
+    async create(input) {
+      const { sanitizeRichText } = await import("@elkdonis/utils");
+      const parentId = await validParent(s, input.parentId);
+      if (parentId === INVALID_PARENT) return { ok: false, error: "That parent page does not exist." };
+      const page = await s.createWikiPage({
+        authorId: input.authorId,
+        title: input.title,
+        body: sanitizeRichText(input.body),
+        parentId,
+      });
+      return { ok: true, slug: page.slug, threadId: page.id };
+    },
+
+    async update(input) {
+      const { sanitizeRichText } = await import("@elkdonis/utils");
+      const parentId = await validParent(s, input.parentId, input.threadId);
+      if (parentId === INVALID_PARENT) {
+        return { ok: false, error: "A page can't sit under itself or one of its own subpages." };
+      }
+      let page;
+      try {
+        page = await s.updateWikiPage(input.threadId, input.editorId, {
+          title: input.title,
+          body: sanitizeRichText(input.body),
+          parentId,
+          expectedUpdatedAt: input.expectedUpdatedAt,
+        });
+      } catch (err) {
+        if (err instanceof s.WikiConflictError) {
+          return {
+            ok: false,
+            conflict: true,
+            error: err.message,
+            theirs: { title: err.currentTitle, body: err.currentBody },
+            updatedAt: new Date(err.currentUpdatedAt).toISOString(),
+          };
+        }
+        throw err;
+      }
+      // After the conflict check, so a refused save doesn't retag the page anyway.
+      if (input.topicIds) await s.setWikiTopics(input.threadId, input.topicIds);
+      return { ok: true, slug: page.slug, threadId: page.id };
+    },
+
+    async archive(threadId) {
+      const r = await s.archiveWikiPage(threadId);
+      return r.archived ? { ok: true, orphanedChildren: r.orphanedChildren } : { ok: false, error: "Page not found." };
+    },
+
+    async revert(threadId, revisionId, editorId) {
+      const page = await s.revertWikiPage(threadId, revisionId, editorId);
+      return { ok: true, slug: page.slug, threadId: page.id };
+    },
+
+    async listRevisions(threadId) {
+      const rows = await s.getWikiRevisions(threadId);
+      return rows.map((r) => ({ id: r.id, title: r.title, createdAt: r.createdAt, editorName: r.editorName ?? null }));
+    },
+
+    // The wiki lives under the collective's org, so that is whose proposed
+    // topics are offered alongside the network-approved ones.
+    listTopicChoices: async () => (await s.listTopicChoices("elkdonis")).map((c) => ({ id: c.id, name: c.name })),
+
+    editor: opts.wikiEditor,
   };
+}
+
+const INVALID_PARENT = "__invalid_parent__";
+
+/**
+ * A parent must exist and, when editing, must not be the page itself or one
+ * of its descendants — the picker never offers those, but the field arrives
+ * from a form and forms can say anything.
+ */
+async function validParent(
+  s: typeof import("@elkdonis/services"),
+  requested: string | null | undefined,
+  selfId?: string
+): Promise<string | null | typeof INVALID_PARENT> {
+  if (!requested) return null;
+  if (selfId && requested === selfId) return INVALID_PARENT;
+  const pages = await s.listWikiPages();
+  if (!pages.some((p) => p.id === requested)) return selfId ? null : INVALID_PARENT;
+  if (selfId && s.collectSubtreeIds(pages, selfId).has(requested)) return INVALID_PARENT;
+  return requested;
 }

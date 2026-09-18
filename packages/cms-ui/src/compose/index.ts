@@ -28,3 +28,17 @@ export type {
   ContentFieldGroup,
   ContentFieldContext,
 } from "./content-fields";
+export {
+  QuestionnaireBody,
+  QuestionnaireComposeSurface,
+  type QuestionnaireComposerKind,
+  type QuestionnaireComposerProps,
+  type SaveQuestionnaireResult,
+} from "./QuestionnaireComposer";
+export {
+  ArtPieceComposer,
+  type ArtPieceComposerProps,
+  type ArtPieceInput,
+  type ArtPieceStoreGate,
+} from "./ArtPieceComposer";
+

@@ -1,5 +1,6 @@
 import * as React from "react";
-import type { ForumActivityItem, ForumMember, ForumOrgCard, ForumPerson, ForumPersonCard, ForumTopicEntry, ForumViewer, Paged } from "@elkdonis/services";
+import type { Constellation, ForumActivityItem, ForumMember, ForumOrgCard, ForumPerson, ForumPersonCard, ForumTopicEntry, ForumTopicRow, ForumViewer, Paged } from "@elkdonis/services";
+import { ConstellationSvg, MapEdgeList, MapLegend, mapSize } from "./map";
 import { ProfileView } from "@elkdonis/cms-ui/profile";
 import type { ForumConnectors, ForumHrefs } from "./connectors";
 import { Avatar, Breadcrumb, Empty, Flash, KindGlyph, PageHead, Pagination, PersonName, RoleChip, SectionTitle, Time, TopicList, plural, withParams } from "./parts";
@@ -75,37 +76,72 @@ export function ActivityList({ rows, hrefs, showOrg }: { rows: ForumActivityItem
   );
 }
 
-export function MemberPageView({ connectors, member, activity, tab, href, profileUrl }: {
-  connectors: ForumConnectors; member: ForumMember; activity: Paged<ForumActivityItem>; tab: "activity" | "topics" | "replies"; href: string; profileUrl: string | null;
+type MemberTab = "activity" | "topics" | "replies" | "watching" | "bookmarks" | "map";
+
+export function MemberPageView({ connectors, member, activity, followed, map, tab, self, href, profileUrl }: {
+  connectors: ForumConnectors; member: ForumMember; activity: Paged<ForumActivityItem>; followed: Paged<ForumTopicRow> | null;
+  map?: Constellation | null; tab: MemberTab; self: boolean; href: string; back?: string; profileUrl: string | null;
 }) {
   const { hrefs, scope, siteName } = connectors;
   const network = scope.kind === "network";
   const p = member.profile;
+  const tabList: Array<[MemberTab, string]> = [
+    ["activity", "Activity"],
+    ["topics", `Started ${member.topicCount}`],
+    ["replies", `Replies ${member.replyCount}`],
+    ...(connectors.personMap ? ([["map", "Map"]] as Array<[MemberTab, string]>) : []),
+    ...(self ? ([["watching", "Watching"], ["bookmarks", "Bookmarks"]] as Array<[MemberTab, string]>) : []),
+  ];
   const tabs = (
     <nav className="gf-sorts" aria-label="Activity">
-      {([["activity", "Activity"], ["topics", `Topics started ${member.topicCount}`], ["replies", `Replies ${member.replyCount}`]] as const).map(([k, label]) => (
+      {tabList.map(([k, label]) => (
         <a key={k} href={k === "activity" ? href : `${href}?tab=${k}`} className={`gf-sort${tab === k ? " is-current" : ""}`} aria-current={tab === k ? "page" : undefined}>{label}</a>
       ))}
     </nav>
   );
+  const titles: Record<MemberTab, string> = { activity: "Activity", topics: "Topics started", replies: "Replies", watching: "Watching", bookmarks: "Bookmarks", map: `${self ? "Your" : `${member.name}'s`} map` };
+  const paged = followed ?? activity;
   return (
     <div className="gf-member">
-      <Breadcrumb items={[{ label: network ? "Boards" : siteName, href: hrefs.root() }, { label: "Members", href: `${hrefs.root().replace(/\/$/, "")}/members` }, { label: member.name }]} />
-      <ProfileView
-        person={{
-          displayName: p.displayName, headline: p.headline, bio: p.bio, avatarUrl: mediaUrl(p.avatarUrl), pronouns: p.pronouns,
-          city: p.city, verified: p.verified, portfolioUrl: p.portfolioUrl, socialLinks: p.socialLinks,
-        }}
-      >
-        <div className="gf-member-facts">
-          {member.roles.map((r) => <span key={r.orgId} className="gf-member-role"><RoleChip role={r.role} />{r.role !== "owner" && r.role !== "guide" && <em>{r.role}</em>} · <a href={hrefs.board(r.orgSlug)}>{r.orgName}</a></span>)}
-          <span className="gf-member-joined">Joined {member.joinedAt.toLocaleDateString("en-CA", { month: "long", year: "numeric" })}</span>
-          {profileUrl && <a className="gf-member-artdirect" href={profileUrl} target="_blank" rel="noreferrer">Full profile on ArtDirect ↗</a>}
-        </div>
-      </ProfileView>
-      <PageHead title={tab === "activity" ? "Activity" : tab === "topics" ? "Topics started" : "Replies"} sub={plural(activity.total, tab === "replies" ? "reply" : tab === "topics" ? "topic" : "item", tab === "replies" ? "replies" : undefined)} aside={tabs} />
-      <ActivityList rows={activity.rows} hrefs={hrefs} showOrg={network} />
-      <Pagination paged={activity} href={tab === "activity" ? href : `${href}?tab=${tab}`} />
+      <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: "Members", href: `${hrefs.root().replace(/\/$/, "")}/members` }, { label: member.name }]} />
+      <div className="gf-sheet">
+        <ProfileView
+          person={{
+            displayName: p.displayName, headline: p.headline, bio: p.bio, avatarUrl: mediaUrl(p.avatarUrl), pronouns: p.pronouns,
+            city: p.city, verified: p.verified, portfolioUrl: p.portfolioUrl, socialLinks: p.socialLinks,
+          }}
+        >
+          <div className="gf-member-facts">
+            {member.roles.map((r) => <span key={r.orgId} className="gf-member-role"><RoleChip role={r.role} />{r.role !== "owner" && r.role !== "guide" && <em>{r.role}</em>} · <a href={hrefs.board(r.orgSlug)}>{r.orgName}</a></span>)}
+            <span className="gf-member-joined">Joined {member.joinedAt.toLocaleDateString("en-CA", { month: "long", year: "numeric" })}</span>
+            {profileUrl && <a className="gf-member-artdirect" href={profileUrl} target="_blank" rel="noreferrer">Full profile on ArtDirect ↗</a>}
+          </div>
+        </ProfileView>
+      </div>
+      <PageHead
+        title={titles[tab]}
+        sub={tab === "map"
+          ? (map && map.edges.length > 0 ? `${plural(map.edges.length, "line")} between ${plural(map.nodes.length, "topic")} — the lines ${self ? "you" : "they"} drew` : `No lines drawn yet${self ? " — press “Draw a line” on any topic" : ""}.`)
+          : plural(paged.total, tab === "replies" ? "reply" : tab === "activity" ? "item" : "topic", tab === "replies" ? "replies" : undefined)}
+        aside={tabs}
+      />
+      {tab === "map" ? (
+        map && map.edges.length > 0 ? (
+          <>
+            <figure className="gf-map-figure">
+              <ConstellationSvg graph={map} hrefs={hrefs} size={mapSize(map, 560)} />
+              <figcaption><MapLegend graph={map} /></figcaption>
+            </figure>
+            <section className="gf-sheet">
+              <SectionTitle>As a list</SectionTitle>
+              <MapEdgeList graph={map} hrefs={hrefs} showOrg={network} />
+            </section>
+          </>
+        ) : <Empty>A map grows one line at a time.</Empty>
+      ) : followed
+        ? <TopicList paged={followed} hrefs={hrefs} showOrg={network} empty={tab === "watching" ? "Not watching any topics. Reply to one, or press ☆ Watch on a thread." : "No bookmarks yet."} />
+        : <ActivityList rows={activity.rows} hrefs={hrefs} showOrg={network} />}
+      {tab !== "map" && <Pagination paged={paged} href={tab === "activity" ? href : `${href}?tab=${tab}`} />}
     </div>
   );
 }

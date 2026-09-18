@@ -2,6 +2,7 @@ import { db } from "@elkdonis/db";
 import { getGathering, getOrgFeed, hasOrgRole } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
+import { createThreadAdminRoutes, getStandingMeetingId } from "@elkdonis/services";
 import { termHref, threadHref } from "@/lib/gather";
 
 /**
@@ -24,6 +25,7 @@ export const dynamic = "force-dynamic";
 
 type Row = {
   id: string;
+  author_id: string | null;
   title: string;
   slug: string;
   kind: string;
@@ -61,7 +63,7 @@ export async function GET(
 
   const [row] = await db<Row[]>`
     SELECT
-      t.id, t.title, t.slug, t.kind, t.status, t.visibility, t.section,
+      t.id, t.title, t.slug, t.kind, t.status, t.visibility, t.section, t.author_id,
       t.excerpt, t.body, t.body_format,
       t.metadata->>'coverImageUrl'        AS cover_image_url,
       t.published_at, t.scheduled_at, t.duration_minutes,
@@ -130,6 +132,8 @@ export async function GET(
     bodyHtml: row.body_format === "html" ? row.body : null,
     coverImageUrl: row.cover_image_url,
     author: row.author_name ? { name: row.author_name, photo: row.author_photo } : null,
+    authorId: row.author_id ?? null,
+    standing: (row.kind === "meeting" || row.kind === "event") && (await getStandingMeetingId(siteConfig.orgId)) === row.id,
     publishedAt: row.published_at,
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
@@ -147,3 +151,12 @@ export async function GET(
     ...gathering,
   });
 }
+
+/** Remove (author or editor) and feature-as-weekly-meeting (editor). */
+export const { DELETE, PATCH } = createThreadAdminRoutes({
+  orgId: siteConfig.orgId,
+  viewer: async () => {
+    const v = await getViewer();
+    return v ? { userId: v.userId, canEdit: Boolean(v.canEdit) } : null;
+  },
+});

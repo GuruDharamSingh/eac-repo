@@ -161,10 +161,10 @@ export function ForumSurface() {
             </div>
           )}
 
-          {forum.feeds.length > 0 && (
+          {(forum.feeds?.length ?? 0) > 0 && (
             <SurfaceSection title="Sections">
               <ul className="eac-forum-feeds">
-                {forum.feeds.map((f) => (
+                {(forum.feeds ?? []).map((f) => (
                   <li
                     key={f.slug}
                     className={`eac-forum-feed${f.unreadCount ? " is-unread" : ""}`}
@@ -194,11 +194,11 @@ export function ForumSurface() {
           )}
 
           <SurfaceSection title="Latest">
-            {forum.recent.length === 0 ? (
+            {(forum.recent?.length ?? 0) === 0 ? (
               <p className="eac-surface-muted">Nothing has been posted yet.</p>
             ) : (
               <ul className="eac-forum-rows">
-                {forum.recent.map((t) => (
+                {(forum.recent ?? []).map((t) => (
                   <ThreadRow key={t.id} t={t} onOpen={openThread} />
                 ))}
               </ul>
@@ -302,9 +302,9 @@ export function ForumFace({
       // nothing while the one piece of orientation a board tile owes you
       // ("which rooms are there") sat at the bottom.
       tools={
-        forum.feeds.length > 0 ? (
+        (forum.feeds?.length ?? 0) > 0 ? (
           <span className="eac-forum-face-feeds">
-            {forum.feeds.slice(0, 4).map((f) => (
+            {(forum.feeds ?? []).slice(0, 4).map((f) => (
               <span
                 key={f.slug}
                 className={`eac-forum-face-feed${f.unreadCount ? " is-unread" : ""}`}
@@ -315,7 +315,7 @@ export function ForumFace({
           </span>
         ) : undefined
       }
-      preview={<ForumMini recent={forum.recent} />}
+      preview={<ForumMini recent={forum.recent ?? []} />}
     />
   );
 }

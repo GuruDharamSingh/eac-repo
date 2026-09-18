@@ -14,6 +14,7 @@ import type {
   StandingMeetingHistory,
   StandingMeetingLight,
   StandingMeetingPast,
+  StandingMeetingRota,
   RsvpFlavourOption,
 } from "./types";
 import { faceOf } from "./face-origin";
@@ -137,6 +138,7 @@ export function StandingMeetingFace({
   attendance,
   light,
   history,
+  rota,
 }: {
   standing: HubStandingMeeting | null;
   canEdit: boolean;
@@ -152,6 +154,8 @@ export function StandingMeetingFace({
   light?: StandingMeetingLight;
   /** Opt-in. The arrow back to last time, and what it produced. */
   history?: StandingMeetingHistory;
+  /** Opt-in. Who is running this one, and the way into the whole rota. */
+  rota?: StandingMeetingRota;
 }) {
   const surfaces = useSurface();
   const tz = timeZone ? { timeZone } : {};
@@ -181,6 +185,7 @@ export function StandingMeetingFace({
       attendance={attendance}
       light={light}
       history={history}
+      rota={rota}
       surfaces={surfaces}
     />
   );
@@ -197,6 +202,7 @@ function StandingMeeting({
   attendance,
   light,
   history,
+  rota,
   surfaces,
 }: {
   standing: HubStandingMeeting;
@@ -205,6 +211,7 @@ function StandingMeeting({
   attendance?: StandingMeetingAttendance;
   light?: StandingMeetingLight;
   history?: StandingMeetingHistory;
+  rota?: StandingMeetingRota;
   surfaces: ReturnType<typeof useSurface>;
 }) {
   const { event, at, source } = standing;
@@ -379,7 +386,7 @@ function StandingMeeting({
   const kicker = past ? (past.sameSeries ? "Last time" : "Before that") : KICKER[source];
 
   const tools =
-    currentLight || attendance || history ? (
+    currentLight || attendance || history || rota ? (
       <>
         {currentLight && (
           <LightControl
@@ -402,6 +409,34 @@ function StandingMeeting({
             onChoose={answerWith}
             busy={saving}
           />
+        )}
+
+        {rota && !past && (
+          // The way into the rota. It is a TOOL rather than the card's own
+          // click because the card already opens the gathering itself, and
+          // "who is hosting the next six weeks" is a different question from
+          // "what is this meeting".
+          <button
+            type="button"
+            className="eac-face-tool"
+            onClick={(e) => {
+              e.stopPropagation();
+              surfaces.open(
+                {
+                  type: "custom",
+                  key: rota.surfaceKey ?? "meeting-rota",
+                  title: "Plan ahead",
+                  kind: "meeting",
+                  size: "wide",
+                  props: { threadId: event.id, canPlan: Boolean(rota.canPlan) },
+                },
+                faceOf(e.currentTarget)
+              );
+            }}
+            title="Who is hosting the coming weeks"
+          >
+            Plan ahead
+          </button>
         )}
 
         {history && (
@@ -486,9 +521,25 @@ function StandingMeeting({
               }
             />
           ) : (
-            <span className="eac-preview-cue">
-              {[relative, attendanceLine].filter(Boolean).join(" · ")}
-            </span>
+            <>
+              <span className="eac-preview-cue">
+                {[relative, attendanceLine].filter(Boolean).join(" · ")}
+              </span>
+              {/* Who is running THIS one, on the face. The whole point of a
+                  rota is that the answer is different most weeks, so it has
+                  to be readable without opening anything — and "nobody yet"
+                  is the state worth surfacing loudest, because it is the one
+                  that needs somebody to act. */}
+              {rota && (
+                <span
+                  className={
+                    "eac-meet-host" + (rota.host ? "" : " eac-meet-host--unassigned")
+                  }
+                >
+                  {rota.host ? `Hosted by ${rota.host.name}` : "No host yet"}
+                </span>
+              )}
+            </>
           )}
 
           {note && (

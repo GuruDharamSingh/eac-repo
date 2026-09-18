@@ -47,6 +47,7 @@ export default async function RootLayout({
             page and a hub tile open into the same dialog. */}
         <HubSurfaces
           signedIn={Boolean(viewer)}
+          userId={viewer?.userId ?? null}
           canEdit={canEdit}
           displayName={viewer?.email.split("@")[0] ?? null}
           feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
