@@ -1,7 +1,11 @@
 import { getServerSession } from "@elkdonis/auth-server";
+import { Home, Info, LayoutDashboard, LogIn, MessagesSquare } from "lucide-react";
 import { socialIcon } from "@/lib/social-icons";
 import { siteConfig } from "@/config/site";
+import { listDirectory } from "@/lib/directory";
+import { DirectoryNavModal } from "@/components/directory-nav-modal";
 import type { IfacSiteContent } from "@/lib/types";
+import "./site-nav.css";
 
 const headerSocialLinks = [
   { label: "Facebook", href: "https://www.facebook.com/groups/ifacgroup/" },
@@ -27,7 +31,11 @@ export interface SiteHeaderBanner {
  * banner to them would be a visual change nobody asked for.
  */
 export async function SiteHeader({ banner }: { banner?: SiteHeaderBanner } = {}) {
-  const session = await getServerSession();
+  const [session, directoryArtists, directoryDealers] = await Promise.all([
+    getServerSession(),
+    listDirectory("artist"),
+    listDirectory("dealer"),
+  ]);
 
   return (
     <header className="site-header">
@@ -89,17 +97,38 @@ export async function SiteHeader({ banner }: { banner?: SiteHeaderBanner } = {})
         </section>
       )}
 
-      {/* Its own row under the banner, kept to a single line. Blog and Social
-          are reachable from the page itself and were only lengthening this. */}
-      <nav className="main-nav" aria-label="Primary navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/#artists">Artists</a>
-        <a href="/#dealers">Dealers</a>
-        <a href="/#videos">Videos</a>
-        <a href="/forum">Forum</a>
-        <a href="/#signup">Sign up</a>
-        {session.user ? <a href="/hub">Hub</a> : <a href="/login">Sign in</a>}
+      {/* Its own row under the banner. Six large buttons with an icon each
+          (owner, 2026-09-23: on a phone the row "has to be slid over"; make
+          the buttons larger and more definitive). Six, not eight: Videos is
+          off the menu for now — the videos are a shelf on the home page — and
+          "Sign up" and "Sign in" were two doors onto one form, so a visitor
+          gets one "Join / Sign in" button and a member gets the Hub in that
+          place. The last button is the filled one. See site-nav.css. */}
+      <nav className="main-nav main-nav--buttons" aria-label="Primary navigation">
+        <a href="/">
+          <Home className="nav-icon" aria-hidden />
+          <span>Home</span>
+        </a>
+        <a href="/about">
+          <Info className="nav-icon" aria-hidden />
+          <span>About</span>
+        </a>
+        <DirectoryNavModal artists={directoryArtists} dealers={directoryDealers} />
+        <a href="/forum">
+          <MessagesSquare className="nav-icon" aria-hidden />
+          <span>Forum</span>
+        </a>
+        {session.user ? (
+          <a className="nav-primary" href="/hub">
+            <LayoutDashboard className="nav-icon" aria-hidden />
+            <span>Hub</span>
+          </a>
+        ) : (
+          <a className="nav-primary" href="/#signup">
+            <LogIn className="nav-icon" aria-hidden />
+            <span>Join / Sign in</span>
+          </a>
+        )}
       </nav>
     </header>
   );

@@ -912,6 +912,11 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
    CALENDAR
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Every var(--sf-kind) in the calendar carries the surface accent as a
+   fallback: the page-layout calendar (hubsite HubCalendar) sits outside any
+   [data-kind] subtree, where a bare var(--sf-kind) is invalid and drops —
+   today's circle went transparent and its white number vanished on cream
+   (2026-09-23). */
 .eac-cal { display: flex; flex-direction: column; gap: 10px; }
 
 .eac-cal-head {
@@ -963,9 +968,9 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
 .eac-cal-day.is-pad { border-color: transparent; background: transparent; cursor: default; }
 .eac-cal-day.is-empty { background: var(--sf-bg-soft); }
 .eac-cal-day.is-past .eac-cal-num { color: var(--sf-faint); }
-.eac-cal-day:not(.is-pad):hover { border-color: color-mix(in srgb, var(--sf-kind) 60%, var(--sf-line)); }
-.eac-cal-day.is-selected { border-color: var(--sf-kind); box-shadow: inset 0 0 0 1px var(--sf-kind); }
-.eac-cal-day:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 1px; }
+.eac-cal-day:not(.is-pad):hover { border-color: color-mix(in srgb, var(--sf-kind, var(--sf-accent)) 60%, var(--sf-line)); }
+.eac-cal-day.is-selected { border-color: var(--sf-kind, var(--sf-accent)); box-shadow: inset 0 0 0 1px var(--sf-kind, var(--sf-accent)); }
+.eac-cal-day:focus-visible { outline: 2px solid var(--sf-kind, var(--sf-accent)); outline-offset: 1px; }
 
 .eac-cal-num {
   font-family: var(--sf-font-record);
@@ -980,7 +985,7 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--sf-kind);
+  background: var(--sf-kind, var(--sf-accent));
   color: var(--sf-on-kind, #fff);
   font-weight: 600;
 }
@@ -989,8 +994,8 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
   display: block;
   padding: 1px 5px;
   border-radius: 3px;
-  background: color-mix(in srgb, var(--sf-kind) 16%, transparent);
-  border-left: 2px solid var(--sf-kind);
+  background: color-mix(in srgb, var(--sf-kind, var(--sf-accent)) 16%, transparent);
+  border-left: 2px solid var(--sf-kind, var(--sf-accent));
   font-size: 0.66rem;
   line-height: 1.35;
   overflow: hidden;
@@ -1018,11 +1023,11 @@ dialog.eac-surface[open]::backdrop { opacity: 1; }
   border-radius: 4px;
 }
 .eac-cal--compact .eac-cal-day.is-empty { background: transparent; }
-.eac-cal--compact .eac-cal-day.has-events:hover { background: color-mix(in srgb, var(--sf-kind) 14%, transparent); }
+.eac-cal--compact .eac-cal-day.has-events:hover { background: color-mix(in srgb, var(--sf-kind, var(--sf-accent)) 14%, transparent); }
 .eac-cal--compact .eac-cal-num { font-size: 0.66rem; }
 .eac-cal--compact .eac-cal-day.is-today .eac-cal-num { width: 16px; height: 16px; }
 .eac-cal--compact .eac-cal-dots { display: flex; gap: 2px; height: 4px; align-items: center; }
-.eac-cal--compact .eac-cal-dots > i { width: 4px; height: 4px; border-radius: 50%; background: var(--sf-kind); }
+.eac-cal--compact .eac-cal-dots > i { width: 4px; height: 4px; border-radius: 50%; background: var(--sf-kind, var(--sf-accent)); }
 .eac-cal--compact .eac-cal-weekday { font-size: 0.55rem; padding: 0 0 2px; }
 .eac-cal--compact .eac-cal-head h3 { font-size: 0.8rem; font-family: var(--sf-font-record); }
 
@@ -2441,6 +2446,38 @@ a.eac-idea-row:focus-visible {
   right: 0;
 }
 
+/* One option, plus its "Promise?" checkbox when it has one (next_time only).
+   The option button still takes the click for the ordinary case; the
+   checkbox is a second, independent control beside it. */
+.eac-rsvp-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eac-rsvp-menu-row .eac-face-menu-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.eac-rsvp-promise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.eac-rsvp-promise-cap {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+  white-space: nowrap;
+}
+
 /* ── Paging back ────────────────────────────────────────────────────────── */
 
 .eac-meet-pager {
@@ -2569,10 +2606,23 @@ a.eac-idea-row:focus-visible {
   color: var(--sf-faint);
 }
 
+/* Host and co-host side by side; wraps under the date on a phone. */
+.eac-rota__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .eac-rota__pick {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* A member's self-serve door onto their own row — "I'll host this one" /
+   "Step down" — the same tool style as the card's other buttons. */
+.eac-rota__self {
+  white-space: nowrap;
 }
 
 .eac-rota__pick-label {
@@ -3061,3 +3111,147 @@ button.eac-forum-feed-name {
   font-size: 0.9rem;
 }
 .eac-compose-byline-select:focus { border-color: var(--sf-kind); outline: none; }
+
+/* ── "What your page carries" ─────────────────────────────────────────────
+   The switches for a person's optional profile sections, and whether they can
+   be paid. Only ever drawn on someone's OWN profile. */
+
+.eac-page-panel {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sf-line);
+}
+
+.eac-page-panel__head {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+
+.eac-page-sections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eac-page-sections li,
+.eac-page-payouts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Wraps so a long blurb and its control stack on a phone rather than the
+     button being squeezed to a few characters. */
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sf-line);
+}
+
+.eac-page-sections li:last-child {
+  border-bottom: 0;
+}
+
+.eac-page-payouts {
+  margin-top: 6px;
+  border-top: 1px solid var(--sf-line);
+  border-bottom: 0;
+}
+
+.eac-page-section__id {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.eac-page-section__id strong {
+  font-size: 0.94rem;
+}
+
+.eac-page-section__id em {
+  font-style: normal;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--sf-muted);
+}
+
+/* Why the switch is not there yet. Muted, but not so faint it reads as
+   decoration — it is the only explanation the person gets. */
+.eac-page-section__blocked {
+  flex: none;
+  max-width: 18rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--sf-muted);
+  text-align: right;
+}
+
+
+/* ── The rota's "Covering" line ──────────────────────────────────────────
+   What a given week is about (migration 159), under its host and co-host. A
+   line of text until someone who may change it clicks it — see PlanLine. */
+.eac-rota__plan {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--sf-fg);
+}
+
+.eac-rota__plan-label {
+  font-family: var(--sf-font-record);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+
+.eac-rota__plan-empty {
+  color: var(--sf-faint);
+  font-style: italic;
+}
+
+.eac-rota__plan-edit {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--sf-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.eac-rota__plan-edit:hover,
+.eac-rota__plan-edit:focus-visible {
+  color: var(--sf-fg);
+}
+
+.eac-rota__plan-input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  padding: 5px 8px;
+  min-height: 34px;
+}
+
+.eac-rota__plan-input:focus {
+  outline: none;
+  border-color: var(--sf-fg);
+}

@@ -1,0 +1,215 @@
+/*
+  home-shelves.css — the home page's video shelf and the members' writing
+  shelf (2026-09-23). Loaded by app/page.tsx only.
+
+  On the panel ground #050505:
+    title ink #e8e3e4        16.05:1
+    caption on the scrim     #ffffff on rgba(0,0,0,.72) over any thumbnail
+    current-thumb edge #20d7ff  11.87:1
+    arrow edge #9c40d8       4.02:1 (control boundary, 3:1 needed)
+*/
+
+/* ── Videos ───────────────────────────────────────────────────────────── */
+.video-shelf {
+  display: grid;
+  gap: 14px;
+}
+
+.video-shelf__player {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--frame-soft, #40215c);
+  background: #020202;
+  overflow: hidden;
+}
+
+.video-shelf__player iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-shelf__poster {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: #020202;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.video-shelf__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-shelf__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  border: 3px solid #ffffff;
+}
+
+.video-shelf__play svg {
+  width: 38px;
+  height: 38px;
+  fill: #ffffff;
+  margin-left: 5px;
+}
+
+.video-shelf__poster:hover .video-shelf__play,
+.video-shelf__poster:focus-visible .video-shelf__play {
+  background: #9a3f2f;
+}
+
+.video-shelf__poster:focus-visible {
+  outline: 3px solid #20d7ff;
+  outline-offset: -3px;
+}
+
+.video-shelf__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.8rem 1rem;
+  background: rgba(0, 0, 0, 0.72);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.video-shelf__strip-wrap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.video-shelf__arrow {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--frame, #9c40d8);
+  border-radius: 50%;
+  background: #050505;
+  color: #20d7ff;
+  cursor: pointer;
+}
+
+.video-shelf__arrow:hover,
+.video-shelf__arrow:focus-visible {
+  border-color: #20d7ff;
+  color: #ffffff;
+}
+
+.video-shelf__arrow svg {
+  width: 26px;
+  height: 26px;
+}
+
+.video-shelf__strip {
+  list-style: none;
+  margin: 0;
+  padding: 2px 2px 8px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 220px);
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-color: #9c40d8 #050505;
+}
+
+.video-shelf__strip > li {
+  scroll-snap-align: start;
+}
+
+.video-shelf__thumb {
+  appearance: none;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  background: transparent;
+  color: #e8e3e4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.video-shelf__thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--frame-soft, #40215c);
+}
+
+.video-shelf__thumb-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 0 4px 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.video-shelf__thumb.is-current {
+  border-color: #20d7ff;
+}
+
+.video-shelf__thumb:hover .video-shelf__thumb-title,
+.video-shelf__thumb:focus-visible .video-shelf__thumb-title {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.video-shelf__thumb:focus-visible {
+  outline: 3px solid #20d7ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .video-shelf__arrow {
+    display: none;
+  }
+
+  .video-shelf__strip-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .video-shelf__strip {
+    grid-auto-columns: 62%;
+  }
+}
+
+/* ── Members' writing ─────────────────────────────────────────────────── */
+.home-shelf-empty {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #e8e3e4;
+}

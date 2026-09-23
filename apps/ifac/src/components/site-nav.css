@@ -1,0 +1,101 @@
+/*
+  site-nav.css — the header menu as six large buttons (2026-09-23).
+
+  Owner: on a phone the menu under the banner "has to be slid over"; the
+  buttons should be larger and more definitive. Loaded by site-chrome.tsx, the
+  only place the menu renders. The selectors carry `.main-nav--buttons`, one
+  class more than globals.css's `.site-header .main-nav a`, so this wins
+  whichever file loads first.
+
+  Measured on the header ground #050505:
+    cyan label #20d7ff            11.87:1
+    frame edge #9c40d8            4.02:1  (a control boundary needs 3:1)
+    primary: #050505 on #20d7ff   11.87:1
+    hover: #ffffff on #16071f     19.37:1
+*/
+
+.site-header .main-nav.main-nav--buttons {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: visible;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding-bottom: 0;
+  font-size: 1rem;
+}
+
+.site-header .main-nav.main-nav--buttons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.55rem 1rem;
+  border: 2px solid var(--frame, #9c40d8);
+  border-radius: 6px;
+  background: #050505;
+  color: #20d7ff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.site-header .main-nav.main-nav--buttons a:hover,
+.site-header .main-nav.main-nav--buttons a:focus-visible {
+  background: #16071f;
+  color: #ffffff;
+  border-color: #20d7ff;
+}
+
+.site-header .main-nav.main-nav--buttons a:focus-visible {
+  outline: 3px solid #20d7ff;
+  outline-offset: 2px;
+}
+
+/* The filled one: Join / Sign in for a visitor, the Hub for a member. */
+.site-header .main-nav.main-nav--buttons a.nav-primary {
+  background: #20d7ff;
+  border-color: #20d7ff;
+  color: #050505;
+}
+
+.site-header .main-nav.main-nav--buttons a.nav-primary:hover,
+.site-header .main-nav.main-nav--buttons a.nav-primary:focus-visible {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #050505;
+}
+
+.site-header .main-nav.main-nav--buttons .nav-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+/* A phone: three to a row, two rows, every button the same width. Nothing
+   scrolls sideways. */
+@media (max-width: 760px) {
+  .site-header .main-nav.main-nav--buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .site-header .main-nav.main-nav--buttons a {
+    flex-direction: column;
+    gap: 0.3rem;
+    min-height: 64px;
+    padding: 0.5rem 0.25rem;
+    font-size: 1rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .site-header .main-nav.main-nav--buttons .nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+}

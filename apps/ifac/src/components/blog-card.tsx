@@ -10,6 +10,11 @@ export interface BlogCardPost {
   author: string | null;
   excerpt: string;
   imageUrl: string | null;
+  /**
+   * False for a page on this site (the writing shelf), which opens in place.
+   * Omitted means the Blogger feed, which opens in a new tab as it always has.
+   */
+  external?: boolean;
 }
 
 function formatDate(iso: string): string {
@@ -21,6 +26,10 @@ function formatDate(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function linkProps(post: BlogCardPost) {
+  return post.external === false ? {} : { target: "_blank", rel: "noreferrer" };
 }
 
 function BlogCard({ post, alt }: { post: BlogCardPost; alt?: boolean }) {
@@ -49,12 +58,12 @@ function BlogCard({ post, alt }: { post: BlogCardPost; alt?: boolean }) {
       </div>
       <div className={styles.description}>
         <h3>
-          <a href={post.url} target="_blank" rel="noreferrer">{post.title}</a>
+          <a href={post.url} {...linkProps(post)}>{post.title}</a>
         </h3>
         {post.author && <p className={styles.subtitle}>{post.author}</p>}
         {post.excerpt && <p className={styles.excerpt}>{post.excerpt}</p>}
         <p className={styles.readMore}>
-          <a href={post.url} target="_blank" rel="noreferrer">Read More</a>
+          <a href={post.url} {...linkProps(post)}>Read More</a>
         </p>
       </div>
     </div>

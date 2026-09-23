@@ -178,10 +178,12 @@ export {
   getPublicFileUrl,
   getProxyFileUrl,
   getUploadPath,
+  uploadFilename,
   createCollaborativeDocument,
   getDocumentEmbedUrl,
   getDocumentEditorUrl,
   createTalkRoom,
+  configureTalkRoom,
   sendTalkMessage,
 } from './nextcloud';
 
@@ -338,6 +340,7 @@ export {
   listUserFiles,
   uploadUserFile,
   deleteUserFile,
+  createUserFolder,
   getUserStorageUsage,
   getStorageSlug,
   userStorageRoot,
@@ -560,8 +563,10 @@ export {
 } from './org-deck';
 export type { OrgDeckBoard, OrgDeckComment } from './org-deck';
 
-export { listOrgMediaLibrary, listUserMediaLibrary } from './media-library';
+export { listOrgMediaLibrary, listUserMediaLibrary, browseMediaFolder, cleanBrowsePath } from './media-library';
 export type {
+  BrowseItem,
+  BrowseResult,
   MediaLibraryItem,
   ListOrgMediaLibraryOptions,
   ListUserMediaLibraryOptions,
@@ -610,6 +615,7 @@ export {
   uploadOrgFile,
 } from './org-storage';
 export type { OrgFile, OrgMediaFolder, OrgUploadResult } from './org-storage';
+export { davListDeep } from './dav';
 export type { DavEntry } from './dav';
 
 // One implementation of "serve a media file from Nextcloud": prefix check,
@@ -672,6 +678,14 @@ export type {
   CenterPromoConfig,
   LoadCenterOptions,
 } from './center';
+// The profile popup's Details tab — explicit columns, never USER_COLS.
+export { getProfileDetails, saveProfileDetails } from './center';
+// Post from /center to any org you belong to, or your blog (slice 3).
+export { listPostTargets, createPostAnywhere } from './center';
+// The hub's page layout reads the org's own feed on its own.
+export { listOrgActivity, listNetworkActivity } from './center';
+export type { PostTarget, PostAnywhereInput, PostAnywhereResult } from './center';
+export type { ProfileDetails, ProfileDetailsInput, SaveProfileDetailsResult } from './center';
 
 // The rotating line on a center. The smallest content on the network: no
 // thread, no slug, no page of its own. See quotes.ts and migration 127.
@@ -705,9 +719,11 @@ export {
   listUserGalleries,
   countUserGalleries,
   getUserGallery,
+  getUserGalleryByPage,
   getUserGalleryById,
   createUserGallery,
   updateUserGallery,
+  updateOwnGalleryItems,
   deleteUserGallery,
   reorderUserGalleries,
   asGalleryItems,
@@ -811,6 +827,7 @@ export { OFF_FEED_KINDS, WRITING_KIND } from './thread-kinds';
 // theirs. See writing.ts.
 export {
   listWriting,
+  listOrgWriting,
   countWriting,
   getWritingPost,
   getWritingPostById,
@@ -821,6 +838,7 @@ export {
 export type {
   WritingPost,
   WritingSummary,
+  OrgWritingSummary,
   WritingStatus,
   ListWritingOptions,
   CreateWritingInput,
@@ -832,10 +850,14 @@ export type {
 // happened at one, and who is due a host reminder. See migration 136.
 export {
   HOST_ROLE,
+  CO_HOST_ROLE,
   occurrencesOf,
   getMeetingRota,
+  setOccurrencePlan,
   assignMeetingRole,
   clearMeetingRole,
+  isOccurrenceHost,
+  getRoleHolder,
   listRotaCandidates,
   getOccurrenceRecord,
   saveOccurrenceRecord,
@@ -851,3 +873,145 @@ export type {
   OccurrenceRecord,
   HostDuty,
 } from './meeting-rota';
+
+// Feed write gate + stewardship (migration 138).
+export { canPostToFeed } from './org-feeds';
+
+// Nextcloud access as an org owner sees it: network-admin grant (org_grants)
+// + owner role, member link status, and a queued sync the host runs.
+// See org-nextcloud-access.ts.
+export {
+  hasOrgGrant,
+  listOrgGrants,
+  setOrgGrant,
+  canManageNextcloudAccess,
+  getNextcloudAccessOverview,
+  listNextcloudSyncRequests,
+  requestNextcloudSync,
+  createNextcloudAccessRoutes,
+  getViewerCloud,
+} from './org-nextcloud-access';
+export type {
+  OrgCapability,
+  NextcloudSyncStatus,
+  NextcloudSyncRequest,
+  NextcloudAccessMember,
+  NextcloudAccessOverview,
+  NextcloudAccessRouteHandlers,
+  ViewerCloud,
+} from './org-nextcloud-access';
+
+// The Nextcloud Forum app mirrored per org (migration 144): one category per
+// org scoped to its Team; opted-in topics + their replies sync both ways.
+// See nc-forum.ts.
+export {
+  NC_FORUM_SENTINEL_ID,
+  ncForumConfigured,
+  ncThreadUrl,
+  htmlToBbcode,
+  ncHtmlToSite,
+  getOrgNcForum,
+  ensureOrgNcCategory,
+  pushTopicToNextcloud,
+  pushReplyToNextcloud,
+  pushModerationToNextcloud,
+  threadNcState,
+  syncOrgNcForum,
+  syncOrgNcForumIfStale,
+  runNcForumSyncTick,
+} from './nc-forum';
+export type { OrgNcForum, NcSyncReport, ThreadNcState, NcModeration } from './nc-forum';
+export { listNcCategories, moveNcThreadsToOrg } from './nc-forum';
+
+// Where you show — a person's own switches for where they appear (Brief A
+// slice 2). Self only; see presence.ts for the column behind each cell.
+export { loadPresence, setPresence, listListingRequests, decideListingRequest } from './presence';
+export type {
+  Presence,
+  PresenceColumn,
+  PresenceCell,
+  PresenceRow,
+  PresenceRowKey,
+  PresenceChange,
+  SetPresenceResult,
+  ListingRequest,
+} from './presence';
+
+// Video pipelines (migration 147): a Nextcloud drop folder in, an edited video
+// out. The ffmpeg half is `@elkdonis/services/video-render`, worker only.
+export {
+  PIPELINE_FOLDERS,
+  DEFAULT_PIPELINE_SETTINGS,
+  normalizeSettings as normalizeVideoPipelineSettings,
+  pipelinePath as videoPipelinePath,
+  listVideoPipelines,
+  listEnabledVideoPipelines,
+  getVideoPipeline,
+  createVideoPipeline,
+  updateVideoPipeline,
+  provisionPipelineFolders,
+  listPipelineAssets,
+  listVideoJobs,
+  getVideoJob,
+  scanVideoPipeline,
+  claimNextVideoJob,
+  requeueStaleVideoJobs,
+  updateVideoJobReview,
+  requeueVideoJob,
+  approveVideoJob,
+} from './video-pipeline';
+export type {
+  PipelineSettings as VideoPipelineSettings,
+  VideoPipeline,
+  VideoPipelineSummary,
+  PipelineAsset as VideoPipelineAsset,
+  VideoJob,
+  VideoJobStatus,
+  VideoProbe,
+  VideoAutoEdit,
+  VideoEditOverride,
+  DropSightings,
+} from './video-pipeline';
+
+// Moderation: owners and guides review what members submit, and an org
+// chooses whether members' work waits at all (default: it does not).
+// See moderation.ts.
+export {
+  canModerateOrg,
+  orgRequiresReview,
+  setOrgReview,
+  statusForNewThread,
+  listPendingThreads,
+  listReviewedThreads,
+  countPendingThreads,
+  reviewThread,
+} from './moderation';
+export type { ReviewDecision, PendingThread, ReviewedThread } from './moderation';
+
+// Moderation for a person's designed page hosted inside an org's layout
+// (store panels, to start). Two gates, not one — see user-pages.ts.
+export {
+  orgHostsStorePanels,
+  setOrgStorePanels,
+  submitUserPage,
+  listPendingUserPages,
+  countPendingUserPages,
+  reviewUserPage,
+} from './user-pages';
+export type { UserPageDecision, PendingUserPage } from './user-pages';
+
+// The showcase: an org's published work as one public digest, with the card
+// size its guides chose. See showcase.ts.
+export { getShowcase, listShowcaseSections, getShowcaseCardSize, setShowcaseCardSize } from './showcase';
+export type { ShowcaseItem, ShowcasePage, ShowcaseSection, ShowcaseCardSize } from './showcase';
+
+// The org calendar, two-way with Nextcloud: imports (and adopts) events made
+// there, removes what the hub archived, and takes edits from whichever side
+// changed last. See org-calendar-sync.ts.
+export {
+  reconcileOrgCalendar,
+  syncOrgCalendarIfStale,
+  runOrgCalendarSyncTick,
+  syncEditorWriteAccess,
+} from './org-calendar-sync';
+export type { CalendarSyncReport } from './org-calendar-sync';

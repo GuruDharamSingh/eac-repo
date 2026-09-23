@@ -1,4 +1,9 @@
 import { getServerSession } from "@elkdonis/auth-server";
+import { listOrgWriting } from "@elkdonis/services";
+import { siteConfig } from "@/config/site";
+import { fetchChannelVideos, youtubeIdFromEmbed } from "@/lib/video-feed";
+import { VideoShelf, type ShelfVideo } from "@/components/video-shelf";
+import "./home-shelves.css";
 import { getSiteContent } from "@/lib/data";
 import { listDirectory } from "@/lib/directory";
 import { fetchBlogPosts } from "@/lib/blog-feed";
@@ -11,11 +16,24 @@ import type { GalleryItem, SiteLink } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [content, directoryArtists, directoryDealers] = await Promise.all([
+  const [content, directoryArtists, directoryDealers, channelVideos, writing] = await Promise.all([
     getSiteContent(),
     listDirectory("artist"),
     listDirectory("dealer"),
+    // Both fail soft to [] — see video-feed.ts and listOrgWriting.
+    fetchChannelVideos(12),
+    listOrgWriting(siteConfig.orgId, { limit: 4 }),
   ]);
+
+  // The channel's uploads, or — if YouTube could not be read — the two
+  // hand-picked embeds this section always carried.
+  const videos: ShelfVideo[] =
+    channelVideos.length > 0
+      ? channelVideos.map((v) => ({ id: v.id, title: v.title }))
+      : content.videos.embeds.flatMap((e) => {
+          const id = youtubeIdFromEmbed(e.src);
+          return id ? [{ id, title: e.title }] : [];
+        });
 
   // Only to decide whether the panel offers a form or a way through to the
   // hub — nothing on this page is gated on it.
@@ -36,8 +54,14 @@ export default async function HomePage() {
       />
       <main className="ifac-directory">
         <section id="about" className="ifac-panel intro-panel">
-          <h1>{content.about.kicker}</h1>
-          <p>{content.about.body}</p>
+          <p>
+            <span className="intro-lead">International Fine Art Collectors</span> is an
+            online gallery and artist community representing independent fine artists
+            and art dealers from around the world. IFAC{" "}
+            <a href="/showcase">showcases</a> original works across painting, mixed
+            media, sculpture and other mediums,{" "}
+            <em>connecting collectors with both emerging and established artists</em>.
+          </p>
         </section>
 
         <section id="artists" className="ifac-panel">
@@ -85,19 +109,46 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section id="videos" className="ifac-panel media-panel">
-          <h2><a href={content.videos.playlistUrl} target="_blank" rel="noreferrer">{content.videos.title}</a></h2>
-          <div className="video-grid">
-            {content.videos.embeds.map((video) => (
-              <div className="embed-frame video-frame" key={video.src}>
-                <iframe src={video.src} title={video.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
-              </div>
-            ))}
-          </div>
-          <a className="more-videos" href={content.videos.playlistUrl} target="_blank" rel="noreferrer">
-            More IFAC videos &rarr;
-          </a>
+        {/* Writing by IFAC's own members, under the Blogger shelf: the same
+            card, pointed at the piece's page on this site. Empty, it says how
+            a member starts one rather than disappearing — the shelf is new,
+            and a missing section would not tell anyone it exists. */}
+        <section id="writing" className="ifac-panel media-panel">
+          <h2>Members&rsquo; writing</h2>
+          {writing.length > 0 ? (
+            <BlogCardGrid
+              posts={writing.map((piece) => ({
+                id: piece.id,
+                title: piece.title,
+                url: piece.author.slug
+                  ? `/${piece.author.isDealer ? "dealers" : "artists"}/${piece.author.slug}/writing/${piece.slug}`
+                  : "/showcase",
+                publishedAt: piece.publishedAt ?? piece.updatedAt,
+                author: piece.author.name,
+                excerpt: piece.lede ?? "",
+                imageUrl: piece.coverImageUrl,
+                external: false,
+              }))}
+            />
+          ) : (
+            <p className="home-shelf-empty">
+              Nothing here yet. Members can start a piece from the Writing
+              section of their own IFAC page, and it appears on this shelf.
+            </p>
+          )}
         </section>
+
+        {/* A player and a strip of smaller thumbnails that scrolls sideways
+            (owner, 2026-09-23). Videos also left the header menu. */}
+        {videos.length > 0 && (
+          <section id="videos" className="ifac-panel media-panel">
+            <h2><a href={content.videos.playlistUrl} target="_blank" rel="noreferrer">{content.videos.title}</a></h2>
+            <VideoShelf videos={videos} />
+            <a className="more-videos" href={content.videos.playlistUrl} target="_blank" rel="noreferrer">
+              More IFAC videos &rarr;
+            </a>
+          </section>
+        )}
 
         <section id="social" className="ifac-panel">
           <h2>{content.social.title}</h2>

@@ -1,4 +1,6 @@
-import { listOrgFeeds } from "@elkdonis/services";
+// Large type for the whole members' area, popups included — see the file.
+import "./hub-readable.css";
+import { listOrgFeeds, listRotaCandidates } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getHubViewer } from "@/lib/hub-auth";
 import { getHubSkin } from "@/lib/hub-skin-store";
@@ -26,6 +28,11 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   const feeds = viewer
     ? await listOrgFeeds(siteConfig.orgId, { includePrivate: true }).catch(() => [])
     : [];
+  // Who may host — the rota's own list, so the form's "Who's hosting" and
+  // Plan ahead offer exactly the same people.
+  const hostCandidates = viewer
+    ? await listRotaCandidates(siteConfig.orgId).catch(() => [])
+    : [];
 
   // Which look the hub wears. Read HERE rather than on the page because the
   // single <dialog> every surface opens in is rendered by the provider below,
@@ -43,6 +50,10 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         signedIn={Boolean(viewer)}
         userId={viewer?.userId ?? null}
         canEdit={Boolean(viewer?.canEdit)}
+        // getHubViewer already refused anyone below member, so a viewer here
+        // IS a member — stated explicitly rather than inferred from signedIn.
+        isMember={Boolean(viewer)}
+        hostCandidates={hostCandidates.map((c) => ({ userId: c.userId, displayName: c.displayName }))}
         displayName={viewer?.email ?? null}
         feeds={feeds.map((feed) => ({ slug: feed.slug, name: feed.name }))}
       >

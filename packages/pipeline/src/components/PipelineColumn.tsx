@@ -23,6 +23,7 @@ import type { StackState } from "../deck-ui";
  */
 export function PipelineColumn({
   stack,
+  readable = false,
   canWrite,
   canManage,
   onOpenCard,
@@ -32,6 +33,8 @@ export function PipelineColumn({
   renderCardMenu,
 }: {
   stack: StackState;
+  /** See PipelineBoard's `readable`. */
+  readable?: boolean;
   canWrite: boolean;
   canManage: boolean;
   onOpenCard: (card: DeckCard) => void;
@@ -64,16 +67,29 @@ export function PipelineColumn({
 
   return (
     <section
-      className={`flex w-72 shrink-0 flex-col self-stretch rounded-md border-2 border-foreground/25 bg-muted/40 ${
-        isOver ? "ring-2 ring-primary" : ""
-      }`}
+      className={`flex flex-col self-stretch rounded-md border-2 border-foreground/25 bg-muted/40 ${
+        readable ? "min-w-[15rem] flex-1 basis-0" : "w-72 shrink-0"
+      } ${isOver ? "ring-2 ring-primary" : ""}`}
       aria-label={stack.title}
     >
       <header className="flex items-center gap-2 rounded-t-[4px] border-b-2 border-foreground/70 bg-background px-3 py-2.5">
-        <h3 className="truncate font-mono text-[0.7rem] font-bold uppercase tracking-[0.12em] text-foreground">
+        <h3
+          className={
+            readable
+              ? "truncate text-[1.35rem] font-bold leading-tight text-foreground"
+              : "truncate font-mono text-[0.7rem] font-bold uppercase tracking-[0.12em] text-foreground"
+          }
+        >
           {stack.title}
         </h3>
-        <span className="rounded-sm bg-foreground px-1.5 font-mono text-[0.68rem] font-semibold text-background">
+        <span
+          className={
+            readable
+              ? "rounded-sm bg-foreground px-2 py-0.5 text-base font-bold text-background"
+              : "rounded-sm bg-foreground px-1.5 font-mono text-[0.68rem] font-semibold text-background"
+          }
+          aria-label={`${stack.cards.length} card${stack.cards.length === 1 ? "" : "s"}`}
+        >
           {stack.cards.length}
         </span>
         <div className="ml-auto flex items-center">
@@ -81,11 +97,11 @@ export function PipelineColumn({
             <Button
               size="icon"
               variant="ghost"
-              className="size-7"
+              className={readable ? "size-10" : "size-7"}
               aria-label={`Add a card to ${stack.title}`}
               onClick={() => setComposing(true)}
             >
-              <Plus className="size-4" />
+              <Plus className={readable ? "size-5" : "size-4"} />
             </Button>
           )}
           {canManage && (
@@ -94,10 +110,10 @@ export function PipelineColumn({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="size-7"
+                  className={readable ? "size-10" : "size-7"}
                   aria-label={`Actions for ${stack.title}`}
                 >
-                  <MoreHorizontal className="size-4" />
+                  <MoreHorizontal className={readable ? "size-5" : "size-4"} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -130,15 +146,16 @@ export function PipelineColumn({
       </header>
 
       <SortableContext items={stack.cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-        <div ref={setNodeRef} className="flex min-h-[60vh] flex-1 flex-col gap-2 px-2 pb-2 pt-2">
+        <div ref={setNodeRef} className={`flex flex-1 flex-col gap-2 px-2 pb-2 pt-2 ${readable ? "min-h-[7rem]" : "min-h-[60vh]"}`}>
           {stack.cards.length === 0 && !composing ? (
-            <p className="px-1 py-3 text-xs text-muted-foreground">No cards here yet.</p>
+            <p className={`px-1 py-3 text-muted-foreground ${readable ? "text-base" : "text-xs"}`}>No cards here yet.</p>
           ) : (
             stack.cards.map((card) => (
               <SortablePipelineCard
                 key={card.id}
                 card={card}
                 onOpen={onOpenCard}
+                readable={readable}
                 menu={renderCardMenu(card, stack.id)}
                 disabled={!canWrite}
               />

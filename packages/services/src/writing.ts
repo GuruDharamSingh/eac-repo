@@ -171,13 +171,84 @@ export async function listWriting(
       WHERE t.author_id = ${authorId}::uuid
         AND t.kind = ${WRITING_KIND}
         ${opts.orgId ? db`AND t.org_id = ${opts.orgId}` : db``}
-        ${opts.includeDrafts ? db`` : db`AND t.status = 'published'`}
+        ${opts.includeDrafts ? db`AND t.status IN ('draft', 'published')` : db`AND t.status = 'published'`}
       ORDER BY COALESCE(t.published_at, t.updated_at) DESC
       LIMIT ${limit}
     `;
     return rows.map(mapSummary);
   } catch (err) {
     console.error(`[writing] listWriting(${authorId}):`, err);
+    return [];
+  }
+}
+
+/** A published piece on an org's shelf, with the author it links through. */
+export interface OrgWritingSummary extends WritingSummary {
+  author: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    /** `users.slug`; null when the author has no public profile here. */
+    slug: string | null;
+    /** From `org_profiles.tags` — there is no kind column. */
+    isDealer: boolean;
+  };
+}
+
+/**
+ * The latest published writing across an org's members, newest first — a
+ * home-page shelf, where `listWriting` is one person's.
+ *
+ * Only pieces filed under this org (`t.org_id`), so a member whose blog scope
+ * is "everywhere" still shows here only what they wrote for this org. The
+ * author's slug is returned only when their profile on this org is public:
+ * a hidden profile has no page for the card to link to.
+ */
+export async function listOrgWriting(
+  orgId: string,
+  opts: { limit?: number } = {}
+): Promise<OrgWritingSummary[]> {
+  const limit = Math.min(opts.limit ?? 6, 50);
+  try {
+    const rows = await db<
+      Array<
+        Row & {
+          body_length: number;
+          author_name: string | null;
+          author_avatar: string | null;
+          author_slug: string | null;
+          author_public: boolean | null;
+          author_tags: string[] | null;
+        }
+      >
+    >`
+      SELECT ${SUMMARY_COLS},
+        u.display_name AS author_name,
+        u.avatar_url AS author_avatar,
+        u.slug AS author_slug,
+        op.is_public AS author_public,
+        op.tags AS author_tags
+      FROM threads t
+      JOIN users u ON u.id = t.author_id
+      LEFT JOIN org_profiles op ON op.user_id = t.author_id AND op.org_id = t.org_id
+      WHERE t.org_id = ${orgId}
+        AND t.kind = ${WRITING_KIND}
+        AND t.status = 'published'
+      ORDER BY COALESCE(t.published_at, t.updated_at) DESC
+      LIMIT ${limit}
+    `;
+    return rows.map((row) => ({
+      ...mapSummary(row),
+      author: {
+        id: row.author_id,
+        name: row.author_name?.trim() || 'A member',
+        avatarUrl: row.author_avatar,
+        slug: row.author_public ? row.author_slug : null,
+        isDealer: Boolean(row.author_tags?.includes('dealer')),
+      },
+    }));
+  } catch (err) {
+    console.error(`[writing] listOrgWriting(${orgId}):`, err);
     return [];
   }
 }
@@ -194,7 +265,7 @@ export async function countWriting(
       WHERE t.author_id = ${authorId}::uuid
         AND t.kind = ${WRITING_KIND}
         ${opts.orgId ? db`AND t.org_id = ${opts.orgId}` : db``}
-        ${opts.includeDrafts ? db`` : db`AND t.status = 'published'`}
+        ${opts.includeDrafts ? db`AND t.status IN ('draft', 'published')` : db`AND t.status = 'published'`}
     `;
     return row?.n ?? 0;
   } catch (err) {
@@ -222,7 +293,7 @@ export async function getWritingPost(
       WHERE t.author_id = ${authorId}::uuid
         AND t.kind = ${WRITING_KIND}
         AND t.slug = ${slug}
-        ${opts.includeDrafts ? db`` : db`AND t.status = 'published'`}
+        ${opts.includeDrafts ? db`AND t.status IN ('draft', 'published')` : db`AND t.status = 'published'`}
       LIMIT 1
     `;
     return rows[0] ? mapPost(rows[0]) : null;
@@ -236,7 +307,9 @@ export async function getWritingPost(
 export async function getWritingPostById(id: string): Promise<WritingPost | null> {
   try {
     const rows = await db<Row[]>`
-      SELECT ${COLS} FROM threads t WHERE t.id = ${id} AND t.kind = ${WRITING_KIND} LIMIT 1
+      SELECT ${COLS} FROM threads t
+      WHERE t.id = ${id} AND t.kind = ${WRITING_KIND} AND t.status <> 'archived'
+      LIMIT 1
     `;
     return rows[0] ? mapPost(rows[0]) : null;
   } catch (err) {
@@ -364,11 +437,18 @@ export async function updateWritingPost(
   return post ? { ok: true, post } : { ok: false, error: 'Could not read the piece back.' };
 }
 
-/** Remove a piece for good. Replies and reactions cascade with the thread. */
+/**
+ * Take a piece down. Archived, not deleted, like every thread (removeThread in
+ * thread-admin.ts): replies and reactions keep their keys. The reads above
+ * skip archived rows, so to its author and readers the piece is gone. The
+ * callers have already authorised against the row.
+ */
 export async function deleteWritingPost(id: string): Promise<boolean> {
   try {
     const rows = await db<Array<{ id: string }>>`
-      DELETE FROM threads WHERE id = ${id} AND kind = ${WRITING_KIND} RETURNING id
+      UPDATE threads SET status = 'archived', updated_at = NOW()
+      WHERE id = ${id} AND kind = ${WRITING_KIND} AND status <> 'archived'
+      RETURNING id
     `;
     return rows.length > 0;
   } catch (err) {

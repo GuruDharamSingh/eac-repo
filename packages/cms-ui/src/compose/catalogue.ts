@@ -30,7 +30,11 @@ export type ComposeKindId =
 export interface ComposeOption {
   id: ComposeKindId;
   title: string;
-  /** One line, addressed to the person composing. */
+  /**
+   * A few words, addressed to the person composing — examples, not a
+   * specification. The picker shows it under a one-word title, and a long
+   * sentence there was the part people stopped reading (owner, 2026-09-23).
+   */
   blurb: string;
   /** Single glyph — every hub in the repo already renders one. */
   icon: string;
@@ -81,6 +85,25 @@ export interface ComposeContext {
   /** Owner/guide. Gates the kinds that write org-wide state. */
   canManageOrg?: boolean;
   /**
+   * Whether this viewer may publish DATED things — an event, a meeting — as
+   * opposed to writing a post. Default true, so no existing host changes.
+   *
+   * IFAC (2026-09-19) is the first org to separate the two: a member may post
+   * in the hub, while putting a gathering on the collective's calendar stays
+   * with owners and guides. Without this the catalogue offered a member a
+   * form the server action would then refuse.
+   */
+  canPublishDated?: boolean;
+  /**
+   * Where this same compose lives as a full PAGE, e.g.
+   * "/hub/compose?kind=:kind". Given one, a composing surface offers a way out
+   * of the popup into it — a long form should never be trapped in a modal.
+   * `:kind` is replaced, and the popup adds the title typed so far.
+   */
+  pageHref?: string;
+  /** Who may host a gathering here — offered as "Who's hosting" on dated kinds. */
+  hostCandidates?: Array<{ userId: string; displayName: string }>;
+  /**
    * Whether this org publishes workshops. Off by default: most orgs are not
    * running a workshop programme and the ten-step wizard is noise for them.
    */
@@ -125,7 +148,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
   {
     id: "article",
     title: "Post",
-    blurb: "Writing, an announcement, an update — anything without a date. The writing room is one step in.",
+    blurb: "An announcement, an update, an article",
     icon: "◉",
     mode: "dialog",
     writes: { table: "threads", kind: "post" },
@@ -134,35 +157,37 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
   {
     id: "event",
     title: "Event",
-    blurb: "A one-off gathering, performance, opening or pop-up.",
+    blurb: "An opening, a show, a talk",
     icon: "◆",
     mode: "dialog",
     writes: { table: "threads", kind: "event" },
-    available: (ctx) => ctx.canPublishContent !== false,
+    available: (ctx) => ctx.canPublishContent !== false && ctx.canPublishDated !== false,
   },
   {
     id: "meeting",
     title: "Meeting",
-    blurb: "A gathering with RSVPs, and a room to hold it in.",
+    blurb: "A gathering people can join",
     icon: "◎",
     mode: "dialog",
     writes: { table: "threads", kind: "meeting" },
-    available: (ctx) => ctx.canPublishContent !== false && Boolean(ctx.hasMeetings),
+    available: (ctx) =>
+      ctx.canPublishContent !== false && ctx.canPublishDated !== false && Boolean(ctx.hasMeetings),
   },
   {
     id: "workshop",
     title: "Workshop",
-    blurb: "A full page: schedule, sessions, gallery, registration, facilitator.",
+    blurb: "Sessions, a schedule, sign-up",
     icon: "◈",
     mode: "route",
     href: "/hub/workshops/:orgSlug/new",
     writes: { table: "threads", kind: "workshop" },
-    available: (ctx) => Boolean(ctx.hasWorkshops),
+    // Dated, and an org-wide commitment: same gate as an event.
+    available: (ctx) => Boolean(ctx.hasWorkshops) && ctx.canPublishDated !== false,
   },
   {
     id: "questionnaire",
     title: "Questionnaire",
-    blurb: "Ask your members a set of questions and read the answers.",
+    blurb: "Questions for the members",
     icon: "▤",
     mode: "dialog",
     writes: { table: "questionnaires", kind: "questionnaire" },
@@ -171,7 +196,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
   {
     id: "art-piece",
     title: "Art piece",
-    blurb: "A work, with its image, medium, dimensions and provenance.",
+    blurb: "A work, with its picture and details",
     icon: "▣",
     mode: "dialog",
     // Not a thread: an artwork is an OBJECT with measurements, and the
@@ -183,7 +208,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
   {
     id: "blog",
     title: "Blog",
-    blurb: "Your own voice, as a section of your profile page.",
+    blurb: "Your own writing, on your page",
     icon: "▤",
     mode: "dialog",
     // Also not an org thread — a member's writing belongs to the member. The
@@ -195,7 +220,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
   {
     id: "poll",
     title: "Poll",
-    blurb: "One question, a set of options, and a result bar everyone can see.",
+    blurb: "One question, a quick vote",
     icon: "▥",
     mode: "dialog",
     writes: { table: "questionnaires", kind: "poll" },

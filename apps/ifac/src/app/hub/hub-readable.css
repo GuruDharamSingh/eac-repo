@@ -1,0 +1,345 @@
+/*
+  hub-readable.css — large type for IFAC's members' hub (2026-09-23).
+
+  Many IFAC members are in their seventies, eighties and nineties, and the
+  owner asked for a more readable hub "even on desktop". This file sizes the
+  hub up. Sections 1–6 change no colours, so both skins (basic, salon) and
+  any saved theme keep working; section 7 pins the light-hub control colours
+  on the pipeline board's portalled dialog, which sits outside every skin.
+
+  Loaded by hub/layout.tsx, so it reaches both hub layouts (cards and page)
+  AND every popup they open: the one <dialog> renders inside
+  `.ifac-hub-scope` (see the layout). Nothing here applies outside /hub.
+
+  Three moves:
+  1. The whole hub runs at an 18px root instead of 16px. Almost every size in
+     the shared stylesheets and in Tailwind is in rem, so this one rule lifts
+     the page, the popups and the pipeline board together by 12.5%.
+  2. The "record" face — the small uppercase monospace used for kickers,
+     weekday heads and calendar numbers — becomes the body sans. A thin
+     monospace at 10–11px was the hardest text on the page to read.
+  3. The specific small text the owner named (calendar numbers, Join video,
+     the Forum and Write together doors, the Publish picker) gets its own,
+     larger size below. Sizes are in rem, so they sit on top of move 1.
+
+  Plain CSS on the shared classes. `.ifac-hub-scope` in front of each rule
+  gives it one more class than the shared rule it overrides, so order of
+  loading does not matter.
+*/
+
+/* ── 1. The root size ─────────────────────────────────────────────────── */
+html:has(.ifac-hub-scope) {
+  font-size: 112.5%;
+}
+
+/* ── 2. The record face ───────────────────────────────────────────────── */
+.ifac-hub-scope {
+  --sf-font-record: Arial, Helvetica, sans-serif;
+}
+
+/* Kickers: still small capitals, but a readable size and weight. */
+.ifac-hub-scope .eac-hs-kicker,
+.ifac-hub-scope .eac-face-kicker,
+.ifac-hub-scope .eac-face > .eac-face-kicker {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+/* ── 3. The page layout (cms-ui/hubsite) ──────────────────────────────── */
+
+.ifac-hub-scope .eac-hs-h {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.ifac-hub-scope .eac-hs-muted {
+  font-size: 1rem;
+}
+
+.ifac-hub-scope .eac-hs-link {
+  font-size: 1rem;
+}
+
+/* The weekly meeting. "Join video could be larger" — it is the one control
+   on the page that is time-critical, so it is the largest button on it. */
+.ifac-hub-scope .eac-hs-banner-title {
+  font-size: 2.1rem;
+  font-weight: 600;
+}
+
+.ifac-hub-scope .eac-hs-banner-day {
+  font-size: 2.3rem;
+}
+
+.ifac-hub-scope .eac-hs-banner-dow,
+.ifac-hub-scope .eac-hs-banner-mon {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ifac-hub-scope .eac-hs-banner-plan {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ifac-hub-scope .eac-hs-banner-actions {
+  gap: 14px;
+}
+
+.ifac-hub-scope .eac-hs-banner-actions .eac-btn {
+  min-height: 52px;
+  padding: 0 1.25rem;
+  font-size: 1.1rem;
+}
+
+.ifac-hub-scope .eac-hs-banner-actions a.eac-btn--primary {
+  min-height: 64px;
+  padding: 0 2rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ifac-hub-scope .eac-hs-rsvp-menu button {
+  font-size: 1.05rem;
+  min-height: 48px;
+}
+
+/* The latest feed. */
+.ifac-hub-scope .eac-hs-feed-title {
+  font-size: 1.35rem;
+}
+
+.ifac-hub-scope .eac-hs-feed-meta {
+  font-size: 0.95rem;
+}
+
+/* Files. */
+.ifac-hub-scope .eac-hs-list-name {
+  font-size: 1.1rem;
+}
+
+.ifac-hub-scope .eac-hs-list-meta,
+.ifac-hub-scope .eac-hs-files-foot {
+  font-size: 0.92rem;
+}
+
+.ifac-hub-scope .eac-hs-grid-name {
+  font-size: 0.95rem;
+}
+
+.ifac-hub-scope .eac-hs-board-cta {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* The doors — Forum, Write together, Suggest an idea. "The word forum much
+   bigger, write together bigger": each door is a large heading now, not a
+   bold line, with its note under it at body size. */
+.ifac-hub-scope .eac-hs-doors {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+}
+
+.ifac-hub-scope .eac-hs-door {
+  gap: 6px;
+  min-height: 132px;
+  align-content: center;
+  padding: 1.4rem 1.6rem;
+  border-width: 2px;
+  border-color: var(--sf-fg);
+}
+
+.ifac-hub-scope .eac-hs-door:focus-visible {
+  outline: 3px solid var(--sf-accent);
+  outline-offset: 3px;
+}
+
+.ifac-hub-scope .eac-hs-door-label {
+  font-family: var(--sf-font-title);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.ifac-hub-scope .eac-hs-door .eac-hs-muted {
+  font-size: 1.1rem;
+}
+
+/* Group research, beside the chat (IFAC's own panel). */
+.ifac-hub-scope .ifac-research__door {
+  padding: 1rem 1.1rem;
+  min-height: 72px;
+  border-width: 2px;
+}
+
+.ifac-hub-scope .ifac-research__door strong {
+  font-size: 1.3rem;
+}
+
+.ifac-hub-scope .ifac-research__door em {
+  font-size: 1rem;
+}
+
+.ifac-hub-scope .ifac-research__glyph {
+  font-size: 1.5rem;
+}
+
+/* ── 4. The calendar (both layouts, and the calendar popup) ───────────── */
+/* "The dates on the calendar could be bigger, the numbers." Past days were
+   also drawn in the faint ink; they keep a lighter weight instead, and every
+   number stays at the full-ink contrast. */
+.ifac-hub-scope .eac-cal-weekday {
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  padding-bottom: 8px;
+}
+
+.ifac-hub-scope .eac-cal:not(.eac-cal--compact) .eac-cal-day {
+  min-height: 76px;
+  padding: 7px;
+}
+
+.ifac-hub-scope .eac-cal-num {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sf-fg);
+}
+
+.ifac-hub-scope .eac-cal-day.is-past .eac-cal-num {
+  color: var(--sf-muted);
+  font-weight: 400;
+}
+
+.ifac-hub-scope .eac-cal-day.has-events .eac-cal-num {
+  font-weight: 800;
+}
+
+.ifac-hub-scope .eac-cal-day.is-today .eac-cal-num {
+  width: 34px;
+  height: 34px;
+  /* The on-kind ink, restated: the full-ink rule above would otherwise put
+     dark digits on the filled circle. */
+  color: var(--sf-on-kind, #fff);
+}
+
+.ifac-hub-scope .eac-cal-pip {
+  font-size: 0.82rem;
+  padding: 2px 6px;
+}
+
+.ifac-hub-scope .eac-cal-more {
+  font-size: 0.8rem;
+}
+
+.ifac-hub-scope .eac-cal-head h3 {
+  font-size: 1.35rem;
+}
+
+/* The small month on the card layout's Calendar card. */
+.ifac-hub-scope .eac-cal--compact .eac-cal-num {
+  font-size: 1rem;
+}
+
+.ifac-hub-scope .eac-cal--compact .eac-cal-day.is-today .eac-cal-num {
+  width: 26px;
+  height: 26px;
+}
+
+.ifac-hub-scope .eac-cal--compact .eac-cal-weekday {
+  font-size: 0.72rem;
+}
+
+.ifac-hub-scope .eac-cal--compact .eac-cal-head h3 {
+  font-size: 1rem;
+}
+
+.ifac-hub-scope .eac-cal--compact .eac-cal-dots {
+  height: 6px;
+}
+
+.ifac-hub-scope .eac-cal--compact .eac-cal-dots > i {
+  width: 6px;
+  height: 6px;
+}
+
+/* ── 5. Cards (the card layout's faces) ───────────────────────────────── */
+.ifac-hub-scope .eac-face-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.ifac-hub-scope .eac-face-blurb {
+  font-size: 1rem;
+  max-width: 42ch;
+}
+
+.ifac-hub-scope .eac-face-preview {
+  font-size: 0.95rem;
+}
+
+/* ── 6. The Publish picker (the compose popup's first pane) ───────────── */
+/* "Make the post big, one word, with a medium-sized line under it." The
+   options' blurbs were shortened to a few words in the shared catalogue; here
+   each option's title is a large bold word and the line under it body size. */
+.ifac-hub-scope .eac-options {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+}
+
+.ifac-hub-scope .eac-options .eac-face {
+  min-height: 132px;
+}
+
+.ifac-hub-scope .eac-options .eac-face-title,
+.ifac-hub-scope .eac-face--small .eac-face-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.ifac-hub-scope .eac-options .eac-face-blurb,
+.ifac-hub-scope .eac-face--small .eac-face-blurb {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+/* ── 7. The pipeline board's own dialog and menus ─────────────────────── */
+/* The board (packages/pipeline) opens its card dialog and "…" menus through
+   Radix portals at the end of <body>, OUTSIDE `.ifac-hub-scope`. Its inputs,
+   labels and buttons carry `data-slot`, so the primitives library colours them
+   with --pr-fg — and outside the scope that is the dark chrome's #e8e3e4.
+   Result: a paper dialog with near-white labels, title field, date and
+   Close/Delete (measured 1.24:1; reported 2026-09-23 as "light on light").
+   The same light-hub values `.ifac-hub-scope` sets, pinned on the portalled
+   containers themselves. Only the hub loads this file, and only the board
+   uses these slots there. */
+[data-slot="dialog-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"] {
+  --pr-bg: var(--surface);
+  --pr-fg: var(--ink);
+  --pr-muted: var(--ink-soft);
+  --pr-line: #968870;
+  --pr-soft: #f4efe5;
+  --pr-soft-strong: #e9e1d3;
+  --pr-accent: var(--oxide);
+  --pr-accent-on: #ffffff;
+  --pr-accent-ink: var(--oxide);
+  --pr-focus: var(--oxide);
+  --pr-danger: var(--oxide);
+  --pr-danger-on: #ffffff;
+  color: var(--ink);
+}
+
+/* ── 8. Ink on a filled kind colour, in the light hub ─────────────────── */
+/* `[data-kind]` resolves --sf-on-kind from --eac-surface-on-accent, which
+   IFAC sets at :root to #1a1408 for the GOLD of the dark chrome. The light
+   hub's kind colours are all dark, so a filled mark (today's circle on the
+   Calendar card) drew dark digits on navy: 1.64:1. White on each, measured:
+   blue #273d54 11.16:1, oxide #9a3f2f 6.72:1, moss #596b55 5.74:1,
+   ink-soft #4f4a44 8.77:1. The salon skin sets its own and is left alone. */
+.ifac-hub-scope:not([data-hub-skin="salon"]) {
+  --eac-surface-on-accent: #ffffff;
+}

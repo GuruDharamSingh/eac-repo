@@ -19,6 +19,7 @@ export function PipelineCard({
   menu,
   dragging,
   overlay,
+  readable = false,
 }: {
   card: DeckCard;
   onOpen?: (card: DeckCard) => void;
@@ -27,17 +28,25 @@ export function PipelineCard({
   dragging?: boolean;
   /** Rendered inside DragOverlay: no sortable wiring, no click target. */
   overlay?: boolean;
+  /**
+   * Large type, plus the first lines of the description and the assignees'
+   * names under the title — so a card says what it is about without being
+   * opened. See PipelineBoard's `readable`.
+   */
+  readable?: boolean;
 }) {
   const labels = card.labels ?? [];
   const assignees = card.assignedUsers ?? [];
   const due = card.duedate ? new Date(card.duedate) : null;
   const hasDue = due !== null && !Number.isNaN(due.getTime());
   const isDone = Boolean(card.done);
+  const summary = readable ? describe(card.description) : "";
 
   return (
     <div
       className={cn(
-        "rounded-sm border border-foreground/30 bg-card p-3 text-left text-sm shadow-sm transition-shadow",
+        "rounded-sm border border-foreground/30 bg-card text-left shadow-sm transition-shadow",
+        readable ? "p-3.5 text-base" : "p-3 text-sm",
         !overlay && "hover:shadow-md",
         dragging && "opacity-40",
         overlay && "rotate-2 shadow-lg"
@@ -48,7 +57,7 @@ export function PipelineCard({
           {labels.map((label) => (
             <span
               key={label.id}
-              className="rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight"
+              className={`rounded px-1.5 py-0.5 font-medium leading-tight ${readable ? "text-sm" : "text-[11px]"}`}
               style={{ backgroundColor: `#${label.color}`, color: labelTextColor(label.color) }}
             >
               {label.title}
@@ -65,15 +74,28 @@ export function PipelineCard({
           type="button"
           disabled={overlay}
           onClick={() => onOpen?.(card)}
-          className="flex-1 text-left font-medium leading-snug hover:underline disabled:cursor-default disabled:no-underline"
+          className="flex-1 text-left leading-snug hover:underline disabled:cursor-default disabled:no-underline"
+          // Inline, not utilities: a host whose own stylesheet has an
+          // unlayered `button {}` rule (IFAC's does) beats every Tailwind
+          // class, and the title drew as a grey bordered box.
+          style={{ background: "transparent", border: 0, padding: 0, color: "inherit", font: "inherit" }}
         >
-          {card.title}
+          <span className={readable ? "text-[1.15rem] font-bold" : "font-medium"}>{card.title}</span>
         </button>
         {menu}
       </div>
 
+      {summary && <p className="mt-1.5 line-clamp-3 text-[0.98rem] leading-snug text-foreground/85">{summary}</p>}
+      {/* No notes yet: say when it was added and where the notes go, so the
+          line under the title is never empty in readable mode. */}
+      {readable && !summary && (
+        <p className="mt-1.5 text-[0.95rem] leading-snug text-foreground/80">
+          {addedOn(card.createdAt)}No notes yet &mdash; open it to add some.
+        </p>
+      )}
+
       {(hasDue || card.description || card.attachmentCount || card.commentsCount || assignees.length > 0) && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div className={`mt-2 flex flex-wrap items-center gap-2 ${readable ? "text-sm text-foreground/80" : "text-xs text-muted-foreground"}`}>
           {hasDue && (
             <span
               className={cn(
@@ -98,6 +120,11 @@ export function PipelineCard({
               {card.commentsCount}
             </span>
           )}
+          {readable && assignees.length > 0 ? (
+            <span className="ml-auto">
+              {assignees.map((a) => a.participant.displayname).join(", ")}
+            </span>
+          ) : (
           <span className="ml-auto flex -space-x-1">
             {assignees.map((a) => (
               <span
@@ -109,10 +136,36 @@ export function PipelineCard({
               </span>
             ))}
           </span>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+/** "Added Sep 21 · " from Deck's createdAt (unix seconds), or nothing. */
+function addedOn(createdAt: number | undefined): string {
+  if (!createdAt) return "";
+  const d = new Date(createdAt * 1000);
+  if (Number.isNaN(d.getTime())) return "";
+  // UTC on both sides of hydration: the server and the reader may be in
+  // different zones, and a day-boundary card would otherwise mismatch.
+  return `Added ${d.toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" })} · `;
+}
+
+/**
+ * A card's description as one plain line of prose. Deck stores Markdown, and
+ * a checklist or heading marker at the front of a teaser reads as noise.
+ */
+function describe(markdown: string | null | undefined): string {
+  if (!markdown) return "";
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s*(#{1,6}|[-*+]|\d+\.)\s+(\[[ xX]\]\s+)?/gm, "")
+    .replace(/[*_`~>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** The tile as a drag handle — the whole card moves, as in Deck. */
@@ -121,11 +174,13 @@ export function SortablePipelineCard({
   onOpen,
   menu,
   disabled,
+  readable,
 }: {
   card: DeckCard;
   onOpen: (card: DeckCard) => void;
   menu?: ReactNode;
   disabled: boolean;
+  readable?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
@@ -140,7 +195,7 @@ export function SortablePipelineCard({
       {...listeners}
       className={cn(!disabled && "cursor-grab active:cursor-grabbing")}
     >
-      <PipelineCard card={card} onOpen={onOpen} menu={menu} dragging={isDragging} />
+      <PipelineCard card={card} onOpen={onOpen} menu={menu} dragging={isDragging} readable={readable} />
     </div>
   );
 }

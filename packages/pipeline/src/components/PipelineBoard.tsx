@@ -40,6 +40,7 @@ export function PipelineBoard({
   viewerUid,
   canWrite,
   canManage,
+  readable = false,
 }: {
   board: OrgDeckBoard;
   /** Board participants a card can be assigned to (Nextcloud users only). */
@@ -50,6 +51,13 @@ export function PipelineBoard({
   canWrite: boolean;
   /** Owner/guide: add, rename and delete lists, and delete cards. */
   canManage: boolean;
+  /**
+   * Large type for older readers: list names as bold headings, a line of each
+   * card's description under its title, and lists that fill the row at the
+   * height of their contents instead of a fixed 60vh. Off by default, so the
+   * boards on other sites render as they did.
+   */
+  readable?: boolean;
 }) {
   const router = useRouter();
   const [stacks, setStacks] = useState<StackState[]>(() => toStackState(board.stacks));
@@ -333,11 +341,12 @@ export function PipelineBoard({
   return (
     <>
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex items-stretch gap-4 overflow-x-auto pb-4">
+        <div className={readable ? "flex items-stretch gap-4 overflow-x-auto pb-2" : "flex items-stretch gap-4 overflow-x-auto pb-4"}>
           {stacks.map((stack) => (
             <PipelineColumn
               key={stack.id}
               stack={stack}
+              readable={readable}
               canWrite={canWrite}
               canManage={canManage}
               onOpenCard={(card) => setOpenCardId(card.id)}
@@ -367,7 +376,7 @@ export function PipelineBoard({
           ))}
 
           {canManage && (
-            <div className="w-72 shrink-0">
+            <div className={readable ? "w-56 shrink-0" : "w-72 shrink-0"}>
               {addingStack ? (
                 <div className="rounded-lg border bg-muted/30 p-2">
                   <Input
@@ -418,7 +427,7 @@ export function PipelineBoard({
           )}
         </div>
 
-        <DragOverlay>{activeCard && <PipelineCard card={activeCard} overlay />}</DragOverlay>
+        <DragOverlay>{activeCard && <PipelineCard card={activeCard} overlay readable={readable} />}</DragOverlay>
       </DndContext>
 
       <ArchivedCards canWrite={canWrite} onChanged={() => router.refresh()} />
