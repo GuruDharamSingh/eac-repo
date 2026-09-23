@@ -6,6 +6,7 @@ import {
   templateMeta,
   TEMPLATE_META,
   getOrgEmailIdentity,
+  emailChromeFor,
   renderTemplateBody,
   renderTemplateEnvelope,
   mergeFieldsFor,
@@ -57,21 +58,35 @@ export default async function EmailTemplateEditPage({
   ]);
 
   const orgName = identity.fromName;
+  // The chrome the real letter wears. The ENVELOPE below is drawn around the
+  // canvas so an author composes inside the letter rather than on a blank
+  // page — which only holds if the envelope is this org's, banner and frame
+  // and all, rather than the collective's default.
+  const seed = {
+    orgName,
+    // The same four values the send path resolves. Without `orgHeader` the
+    // envelope drew the collective's kicker band over an org that leads its
+    // own letters, so the editor showed a header the recipient never gets.
+    orgHeader: identity.fromIsOrgDomain,
+    orgAccent: identity.palette?.accent ?? identity.accentColor,
+    bodyFont: identity.palette?.bodyFont,
+    chrome: emailChromeFor(identity),
+  };
 
   // The letter itself, and every other letter as a droppable block. Rendered
   // here because they are React templates — the editor is a client component
   // and cannot render them, so it receives them as markup.
   const [seedHtml, envelope, letters] = await Promise.all([
-    renderTemplateBody(key, { orgName }).catch(() => ""),
+    renderTemplateBody(key, seed).catch(() => ""),
     // The masthead and footer the real letter carries, drawn around the canvas
     // so the author composes inside the letter instead of on a blank page.
-    renderTemplateEnvelope(key, { orgName }).catch(() => null),
+    renderTemplateEnvelope(key, seed).catch(() => null),
     Promise.all(
       TEMPLATE_META.filter((m) => m.editable).map(async (m) => ({
         id: m.key,
         label: m.title,
         hint: m.trigger,
-        html: await renderTemplateBody(m.key, { orgName }).catch(() => ""),
+        html: await renderTemplateBody(m.key, seed).catch(() => ""),
       }))
     ),
   ]);

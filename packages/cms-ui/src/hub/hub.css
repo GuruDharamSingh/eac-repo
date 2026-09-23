@@ -484,3 +484,55 @@ a.eac-kind:focus-visible {
   color: var(--sf-muted, #5b5349);
 }
 
+
+/* ── Cloud (CloudFace / CloudSurface) ─────────────────────────────────────
+   Surface tokens only (--sf-*), so it takes each host's surface theme; no
+   fills of its own, so no new ink-on-fill pair to measure beyond the host's. */
+.eac-cloud {
+  display: grid;
+  gap: 1rem;
+  color: var(--sf-fg);
+}
+.eac-cloud__lede,
+.eac-cloud__note {
+  margin: 0;
+  line-height: 1.55;
+}
+.eac-cloud__note,
+.eac-cloud__path {
+  color: var(--sf-muted);
+  font-size: 0.9rem;
+}
+.eac-cloud__status {
+  margin: 0;
+  font-weight: 600;
+}
+.eac-cloud__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.eac-cloud__links li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+}
+.eac-cloud__steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+  line-height: 1.5;
+}
+/* Hosts like IFAC set `a { color: inherit }`; a prose link must still read as one. */
+.eac-cloud__steps a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.eac-cloud a.eac-btn {
+  text-decoration: none;
+}

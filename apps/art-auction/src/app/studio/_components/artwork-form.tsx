@@ -41,6 +41,23 @@ export type ArtworkFormInitial = {
 const inputCls =
   "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const labelCls = "mb-1 block text-sm font-medium";
+// Its own class list rather than `${inputCls} text-lg` — mixing `text-sm`
+// (from inputCls) and `text-lg` in one className leaves the winner up to
+// Tailwind's generated stylesheet order, not the order the classes are
+// written in, which is exactly how a "bigger price text" fix can silently
+// keep rendering small. Money is also the one field worth a legible size on
+// a phone: it's easy to mistype a price you can't clearly read back.
+const priceInputCls =
+  "min-w-0 flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+// Same reasoning, same trap, the OTHER field: `${inputCls} w-[4.5rem]`
+// carries inputCls's own `w-full` into the class list alongside it. Verified
+// live (CDP screenshot, 2026-09-21) that `w-full` was the one winning —
+// the select rendered at ~294px and squeezed the price box next to it down
+// to 26px, which is the actual bug behind "the price box is too small to
+// see". No shared base class for the currency select; it needs a width
+// utility this one carries, not one it fights.
+const currencySelectCls =
+  "shrink-0 w-[4.5rem] rounded-md border border-input bg-transparent px-1 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 function numOrNull(v: string): number | null {
   if (v.trim() === "") return null;
@@ -134,6 +151,10 @@ export function ArtworkForm({
     initial?.images ?? []
   );
   const [pending, setPending] = React.useState(false);
+  // True while a photo is still uploading to Nextcloud. Without this, a tap
+  // on mobile can submit before the PUT finishes and save a draft with no
+  // image at all — see MultiImageUploader's onBusyChange.
+  const [uploadingImages, setUploadingImages] = React.useState(false);
 
   function buildInput(): ArtworkFormInput {
     return {
@@ -233,6 +254,8 @@ export function ArtworkForm({
     if (!title.trim()) return toast.error("A title is required.");
     if (price.trim() && !(Number(price) >= 0))
       return toast.error("The price must be a number, or blank for price on request.");
+    if (uploadingImages)
+      return toast.error("Still uploading a photo — wait for it to finish before saving.");
     setPending(true);
     try {
       if (isEdit && initial?.id) {
@@ -252,8 +275,36 @@ export function ArtworkForm({
     }
   }
 
+  /** Create, then immediately publish — for someone who already knows this
+   *  piece is ready and doesn't want the extra trip through the edit page. */
+  async function handleCreateAndPublish() {
+    if (!title.trim()) return toast.error("A title is required.");
+    if (price.trim() && !(Number(price) >= 0))
+      return toast.error("The price must be a number, or blank for price on request.");
+    if (uploadingImages)
+      return toast.error("Still uploading a photo — wait for it to finish before publishing.");
+    setPending(true);
+    try {
+      const res = await createArtworkAction(buildInput());
+      if (!res.ok || !res.id)
+        return toast.error(res.error ?? "Failed to create.");
+      const published = await publishArtworkAction(res.id);
+      if (!published.ok) {
+        toast.error(published.error ?? "Created as a draft, but publishing failed.");
+        router.push(`/studio/artworks/${res.id}/edit`);
+        return;
+      }
+      toast.success("Artwork published.");
+      router.push(`/studio/artworks/${res.id}/edit`);
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function handlePublish() {
     if (!initial?.id) return;
+    if (uploadingImages)
+      return toast.error("Still uploading a photo — wait for it to finish before publishing.");
     setPending(true);
     try {
       // Persist current edits before publishing.
@@ -290,7 +341,13 @@ export function ArtworkForm({
           onChange={setImages}
           uploadEndpoint="/api/upload"
           maxImages={12}
+          onBusyChange={setUploadingImages}
         />
+        {images.length === 0 && !uploadingImages && (
+          <p className="text-xs text-muted-foreground">
+            No photo yet — the listing will show a placeholder until one is added.
+          </p>
+        )}
       </section>
 
       {allowMakerChoice && !isEdit && (
@@ -367,14 +424,14 @@ export function ArtworkForm({
               type="number"
               min="0"
               step="0.01"
-              className={inputCls}
+              className={priceInputCls}
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="Leave blank to show “price on request”"
             />
             <select
               aria-label="Currency"
-              className={`${inputCls} w-28 shrink-0`}
+              className={currencySelectCls}
               value={currency}
               onChange={(e) =>
                 setCurrency(e.target.value as ArtworkFormInput["currency"])
@@ -550,13 +607,24 @@ export function ArtworkForm({
       </section>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
-        <Button type="submit" disabled={pending}>
-          {isEdit ? "Save changes" : "Create draft"}
+        <Button type="submit" disabled={pending || uploadingImages}>
+          {uploadingImages ? "Uploading photo…" : isEdit ? "Save changes" : "Create draft"}
         </Button>
+
+        {!isEdit && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCreateAndPublish}
+            disabled={pending || uploadingImages}
+          >
+            {uploadingImages ? "Uploading photo…" : "Create & publish"}
+          </Button>
+        )}
 
         {isEdit && (
           <>
-            <Button type="button" variant="outline" onClick={handlePublish} disabled={pending}>
+            <Button type="button" variant="outline" onClick={handlePublish} disabled={pending || uploadingImages}>
               {initial?.status === "available" ? "Re-publish" : "Publish"}
             </Button>
             {initial?.status !== "archived" && (

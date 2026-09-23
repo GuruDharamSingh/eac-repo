@@ -262,20 +262,87 @@ services:
       - eac-network
       - nextcloud-network
 
-  # Sunjay's Blog
-  blog-sunjay:
+  # Sophia — the network's learning platform (packages/lms + lms-ui).
+  # Canonical home of every course URL: sophia.arts-collective.com. See lms/SYNTHESIS.md.
+  sophia:
     build:
       context: .
       dockerfile: Dockerfile
       target: development
     image: eac-dev
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
-    container_name: eac-blog-sunjay
+    container_name: eac-sophia
     restart: unless-stopped
-    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
-    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
-    # real headroom while still bounding a runaway to one service.
     mem_limit: 3g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_APP_URL: ${SOPHIA_URL:-http://localhost:3020}
+      NEXT_PUBLIC_NETWORK_URL: ${NETWORK_URL:-http://localhost:3007}
+      NEXT_PUBLIC_FORUM_URL: ${FORUM_URL:-http://localhost:3003}
+      ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NETWORK_HOST: ${NETWORK_HOST:-localhost:3007}
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      # Sign-in is the network handoff (api/auth/handoff/accept), as on the forum.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
+      REDIS_URL: redis://redis:6379
+      # "Your guide answered" — course-operational mail only.
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_SANDBOX: ${EMAIL_SANDBOX:-}
+      # Course media: read through services' serveMedia, written by uploadOrgFile.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # Non-production only: impersonate a users.id.
+      SOPHIA_DEV_VIEWER_ID: ${SOPHIA_DEV_VIEWER_ID:-}
+      NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=1536
+    volumes:
+      - .:/app
+      - /app/apps/sophia/.next
+    ports:
+      - "3020:3020"
+    command: sh -c "cd apps/sophia && pnpm dev"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Sunjay's Teaching Circle (org `sunjay`).
+  #
+  # Replaces the `blog-sunjay` service that held this port until 2026-09-19.
+  # That was a Mantine-era blog on the same org; this is the amrit-canada
+  # shape (Tailwind + shadcn + cms-ui surfaces), so the app directory is
+  # apps/sunjay and nothing of the old one is mounted.
+  sunjay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-sunjay
+    restart: unless-stopped
+    # Production mode since 2026-09-19, when the site got a public address.
+    # Same shape as amrit-canada/innergathering: still the "development" build
+    # TARGET (full monorepo + pnpm), just driven with NODE_ENV=production and
+    # build-then-start instead of the dev server.
+    #
+    # The ceiling has to clear `next build` — the brief peak while compiling
+    # and prerendering — not steady-state serving, which is a fraction of it
+    # once `next start` is only handing out prebuilt output.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -283,8 +350,12 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
-      NEXT_PUBLIC_APP_URL: ${BLOG_SUNJAY_URL:-http://localhost:3001}
-      NODE_ENV: development
+      NEXT_PUBLIC_APP_URL: ${SUNJAY_URL:-http://localhost:3001}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      # The marketplace — a member's store section links there
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      NODE_ENV: production
+      PORT: 3001
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
@@ -295,14 +366,63 @@ services:
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      # Owner config — fallback recipient for guest RSVP notifications.
+      SUNJAY_OWNER_EMAIL: ${SUNJAY_OWNER_EMAIL:-fnordj@gmail.com}
+      # Nextcloud — media library, collaborative documents, Talk rooms.
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      # ArtDirect — "My profile" hub tile links out to a member's ArtDirect page.
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts): the
+      # inter-app signing secret and the origins a handoff may target.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # Redis
       REDIS_URL: redis://redis:6379
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # The host every org's inbound reply address sits on. Read server-side by
+      # packages/email `inboundEnabled()`, which gates the email suite's Inbox
+      # tab — UNSET means the tab renders "no inbound address is configured"
+      # even though mail is arriving and visible under Activity. It used to go
+      # only to arts-collective (which receives the webhook), but every app
+      # that RENDERS the suite needs it too.
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
     volumes:
       - .:/app
-      - /app/apps/blog-sunjay/.next
+      - /app/apps/sunjay/.next
     ports:
       - "3001:3001"
-    command: sh -c "cd apps/blog-sunjay && pnpm dev"
+    # Build only when there is no COMPLETED build to serve, then start.
+    #
+    # Both files are tested, because each alone gives a false positive and the
+    # two failures point opposite ways — this was learned the hard way here:
+    #
+    #   BUILD_ID alone            `next dev` writes one too, so a volume that
+    #                             only ever ran the dev server looks built.
+    #   pages-manifest alone      written during COMPILE, before type-checking.
+    #                             A build that compiles and then fails tsc
+    #                             leaves it behind with no BUILD_ID, the guard
+    #                             skips the rebuild, and `next start` dies on
+    #                             "Could not find a production build" forever.
+    #   prerender-manifest        lands before page collection; an OOM-killed
+    #                             build leaves it with no .next/server at all.
+    #
+    # BUILD_ID is written LAST, by a completed build; pages-manifest is what
+    # `next start` then opens. Requiring both means only a real, finished
+    # production build satisfies the guard, and every partial state self-heals
+    # on the next restart.
+    #
+    # NEXT_BUILD_CPUS caps workers so the build fits under mem_limit rather
+    # than being OOM-killed: Next defaults to one worker per CPU and this host
+    # has 32 while the container is capped far below what 31 workers need.
+    command: sh -c "cd apps/sunjay && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -579,6 +699,8 @@ services:
       # client code all see the same value.
       NEXT_PUBLIC_NETWORK_HOST: ${NETWORK_HOST:-localhost:3007}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # Sophia (the LMS). The hub shows its course button only while this answers.
+      NEXT_PUBLIC_SOPHIA_URL: ${SOPHIA_URL:-}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-}
       # Email — arts-collective hosts the network's email suite at /hub/email
       # and BOTH SendGrid webhooks (/api/email/inbound, /api/email/events),
@@ -595,10 +717,22 @@ services:
       EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
       SENDGRID_INBOUND_PUBLIC_KEY: ${SENDGRID_INBOUND_PUBLIC_KEY:-}
       SENDGRID_EVENT_PUBLIC_KEY: ${SENDGRID_EVENT_PUBLIC_KEY:-}
-      NODE_ENV: development
+      # Production mode (2026-09-18). This was `next dev` against the live
+      # arts-collective.com, the last of the public sites still on it.
+      #
+      # It stayed on dev because "the build was broken": every `next build`
+      # died exporting Next's own /_global-error or /_not-found with
+      # `Cannot read properties of null (reading 'useContext')`, ignore-listed
+      # in every stack trace. The build was never broken. The builds were being
+      # run INSIDE this container, which set NODE_ENV=development, so Next
+      # built a production bundle against React's development runtime and its
+      # static prerender of the built-in error pages hit a null dispatcher. The
+      # four apps that built fine all already ran NODE_ENV=production. Setting
+      # it here fixed the build outright — nothing in the app had to change.
+      NODE_ENV: production
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
-      # is a 4.1GB limit per dev server, so six of them can exhaust the
-      # machine before any one of them collects. Cap it instead.
+      # is a 4.1GB limit per server, so several can exhaust the machine
+      # before any one of them collects. Cap it instead.
       NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
@@ -634,7 +768,13 @@ services:
       - /app/apps/arts-collective/.next
     ports:
       - "3007:3007"
-    command: sh -c "cd apps/arts-collective && pnpm dev"
+    # Build only when there is no build to serve, then start — the same shape
+    # as ifac/innergathering/amrit-canada above. server/pages-manifest.json is
+    # the file `next start` actually opens, and only a completed build writes
+    # it. The heap is raised FOR THE BUILD ONLY: this app is the largest on the
+    # network and a Turbopack build of it gets OOM-killed (exit 137) at the
+    # 1024MB the running server is capped to.
+    command: sh -c "cd apps/arts-collective && { [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -771,6 +911,13 @@ services:
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # The host every org's inbound reply address sits on. Read server-side by
+      # packages/email `inboundEnabled()`, which gates the email suite's Inbox
+      # tab — UNSET means the tab renders "no inbound address is configured"
+      # even though mail is arriving and visible under Activity. It used to go
+      # only to arts-collective (which receives the webhook), but every app
+      # that RENDERS the suite needs it too.
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
     volumes:
       - .:/app
       - /app/apps/amrit-canada/.next
@@ -827,6 +974,12 @@ services:
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      # Stripe — ONLY to create Express onboarding links from the hub, so a
+      # member can connect the account that gets paid. Selling itself happens
+      # in the marketplace; this app takes no payments. Blank is a supported
+      # state: the profile panel then says card payments are not switched on
+      # rather than offering a button that cannot work.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       # Owner config
       INNERGATHERING_OWNER_EMAIL: ${INNERGATHERING_OWNER_EMAIL:-info@elkdonis-arts.org}
       # Nextcloud — media library, collaborative documents, Talk rooms.
@@ -842,6 +995,12 @@ services:
       # inter-app signing secret and the origins a handoff may target. Values
       # come from .env; no defaults here on purpose.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      # Nextcloud's "Sign in with Elkdonis" (src/app/api/oidc, ported from
+      # inner-gathering 2026-09-18): the ID-token signing key and Nextcloud's
+      # client secret. Same values inner-gathering used, so tokens and the
+      # sociallogin config carry over unchanged.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs the Nextcloud ID token}
+      NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET:?set NEXTCLOUD_OIDC_SECRET in .env — Nextcloud sociallogin client secret}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # The Pipeline hub tile renders the org's OWN Deck board, resolved from
@@ -853,6 +1012,13 @@ services:
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # The host every org's inbound reply address sits on. Read server-side by
+      # packages/email `inboundEnabled()`, which gates the email suite's Inbox
+      # tab — UNSET means the tab renders "no inbound address is configured"
+      # even though mail is arriving and visible under Activity. It used to go
+      # only to arts-collective (which receives the webhook), but every app
+      # that RENDERS the suite needs it too.
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
     volumes:
       - .:/app
       - /app/apps/innergathering/.next
@@ -865,6 +1031,44 @@ services:
       - eac-network
       - nextcloud-network
 
+
+  # Video pipelines (migration 147) — watches each org's Nextcloud drop
+  # folders, auto-edits the recordings (dead air trimmed, loudness evened,
+  # intro/outro joined) and puts the result back in the folder. Only this
+  # container has ffmpeg; the apps just read video_jobs. Capped at 8 CPUs so
+  # a two-hour encode can't starve the sites sharing the box.
+  video-worker:
+    build:
+      context: .
+      dockerfile: docker/video-worker.Dockerfile
+    image: eac-video-worker
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-video-worker
+    restart: unless-stopped
+    cpus: 8
+    mem_limit: 4g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      VIDEO_WORK_DIR: /work
+      VIDEO_SCAN_SECONDS: ${VIDEO_SCAN_SECONDS:-60}
+      VIDEO_FFMPEG_THREADS: 8
+      NODE_OPTIONS: --max-old-space-size=512
+    volumes:
+      - .:/app
+      # Scratch for downloads and encodes — recordings are gigabytes, so not
+      # the container's own layer.
+      - video-work:/work
+    working_dir: /app/packages/services
+    command: node_modules/.bin/tsx scripts/video-worker.mts
+    networks:
+      - eac-network
+      - nextcloud-network
 
   # Pigeonshoot — Toronto street pigeons, crowdsourced as trading cards
   pigeonshoot:
@@ -1011,6 +1215,12 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
+      # Stripe — IFAC takes no money itself; its artists connect the network's
+      # one Stripe account from the profile popup's Payouts tab, and the
+      # marketplace settles through it. The key is read only to know whether
+      # to offer the control and to start Express onboarding.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       # The marketplace — a member's store section links there
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: production
@@ -1037,6 +1247,13 @@ services:
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # The host every org's inbound reply address sits on. Read server-side by
+      # packages/email `inboundEnabled()`, which gates the email suite's Inbox
+      # tab — UNSET means the tab renders "no inbound address is configured"
+      # even though mail is arriving and visible under Activity. It used to go
+      # only to arts-collective (which receives the webhook), but every app
+      # that RENDERS the suite needs it too.
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
       # Nextcloud (external stack via shared network) — member media storage
       NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
       NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
@@ -1054,7 +1271,13 @@ services:
     # writes it (BUILD_ID and prerender-manifest.json both land too early and
     # can strand a restart loop behind an OOM-killed build). NEXT_BUILD_CPUS
     # caps workers so the build fits under mem_limit instead of being killed.
-    command: sh -c "cd apps/ifac && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    # Guard tests BOTH files. pages-manifest.json is written during COMPILE,
+    # before type-checking, so a build that compiles then fails tsc leaves it
+    # behind with no BUILD_ID — the guard then skips the rebuild forever and
+    # `next start` dies on "Could not find a production build". BUILD_ID alone
+    # false-positives because `next dev` writes one too. (Hit on apps/sunjay,
+    # 2026-09-19.)
+    command: sh -c "cd apps/ifac && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1069,10 +1292,11 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-art-auction
     restart: unless-stopped
-    # 1GB V8 heap + ~700MB of Node/Turbopack native overhead observed at
-    # rest, so 2g sat at 86% on a freshly-started container. 3g leaves
-    # real headroom while still bounding a runaway to one service.
-    mem_limit: 3g
+    # Production mode, same shape as amrit-canada/innergathering: still the
+    # "development" build target (full monorepo image), just driven with
+    # NODE_ENV=production and a guarded `next build` then `next start`. The
+    # ceiling has to clear the build peak, not steady-state serving.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -1081,7 +1305,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ART_AUCTION_URL:-http://localhost:3009}
-      NODE_ENV: development
+      NODE_ENV: production
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
@@ -1106,9 +1330,20 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # Connected-account events (seller onboarding) are signed by the
+      # separate `connect: true` endpoint and need its own secret.
+      STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET:-}
       # The other centralising sites, for profile / hub links from the studio
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      # config/network.ts's "Back to <app>" banner — three more apps that
+      # send members here. Missing until now: config/network.ts fell back to
+      # localhost for all three, which is why the banner's return link only
+      # ever worked in dev. .env already has the plain (non-NEXT_PUBLIC_)
+      # values; ARTDIRECT_URL/ARTS_COLLECTIVE_URL above show the pattern.
+      NEXT_PUBLIC_IFAC_URL: ${IFAC_URL:-http://localhost:3008}
+      NEXT_PUBLIC_AMRIT_CANADA_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
+      NEXT_PUBLIC_INNERGATHERING_URL: ${INNERGATHERING_URL:-http://localhost:3015}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
@@ -1118,7 +1353,9 @@ services:
       - /app/apps/art-auction/.next
     ports:
       - "3009:3009"
-    command: sh -c "cd apps/art-auction && pnpm docker:dev"
+    # Build only when there is no completed build to serve — see amrit-canada
+    # above for why server/pages-manifest.json is the sentinel.
+    command: sh -c "cd apps/art-auction && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1218,7 +1455,12 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-danamccool
     restart: unless-stopped
-    mem_limit: 3g
+    # Production mode, same shape as amrit-canada/art-auction: still the
+    # "development" build target (full monorepo image), driven with
+    # NODE_ENV=production and a guarded `next build` then `next start`. The
+    # ceiling has to clear the build peak, not steady-state serving — bumped
+    # from the dev-mode 3g, matching amrit-canada's 5g.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -1227,7 +1469,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${DANAMCCOOL_URL:-http://localhost:3018}
-      NODE_ENV: development
+      DANAMCCOOL_COMING_SOON: ${DANAMCCOOL_COMING_SOON:-false}
+      NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
@@ -1248,7 +1491,9 @@ services:
       - /app/apps/danamccool/.next
     ports:
       - "3018:3018"
-    command: sh -c "cd apps/danamccool && pnpm dev"
+    # Build only when there is no completed build to serve — see amrit-canada
+    # above for why server/pages-manifest.json is the sentinel.
+    command: sh -c "cd apps/danamccool && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1384,6 +1629,7 @@ volumes:
   postgres_data:
   redis_data:
   photon_data:
+  video-work:
 
 networks:
   eac-network:

@@ -19,8 +19,8 @@ import { requireOrgEditor } from "@/lib/auth";
 import { contentFormSchema, slugifyTitle, type ContentFormValues } from "@/lib/cms/schema";
 import { zonedInputToDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
-import { deriveExcerpt } from "@elkdonis/utils";
-import { ensureUniqueThreadSlug } from "@elkdonis/services";
+import { deriveExcerpt, sanitizeRichText } from "@elkdonis/utils";
+import { ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
 
 /**
  * Server actions for the editorial surface.
@@ -85,7 +85,21 @@ async function provisionNextcloud(
     try {
       // 'public' maps to Talk room type 3, which is what lets people without
       // a Nextcloud account join by link — most attendees here are guests.
-      const token = await createTalkRoom(title, "public");
+      // Whoever wrote the thread becomes a MODERATOR of its room, and the
+      // room is listed for Nextcloud users. Without this the author was a
+      // transient link-visitor in their own meeting's room: unable to add
+      // people, and gone from their conversation list once they left. The
+      // author is read from the thread, which is already saved by now; an
+      // author with no linked Nextcloud account just skips promotion.
+      const [author] = await db<{ nextcloud_user_id: string | null }[]>`
+        SELECT u.nextcloud_user_id FROM threads t
+        JOIN users u ON u.id = t.author_id
+        WHERE t.id = ${threadId}
+      `;
+      const token = await createTalkRoom(title, "public", {
+        moderator: author?.nextcloud_user_id ?? null,
+        listable: 1,
+      });
       if (token) {
         await db`UPDATE threads SET nextcloud_talk_token = ${token} WHERE id = ${threadId}`;
       } else {
@@ -157,7 +171,10 @@ export async function saveContentAction(
 
   const isMeeting = data.kind === "meeting";
   const slug = await ensureUniqueThreadSlug(ORG, slugifyTitle(data.title), threadId);
-  const excerpt = deriveExcerpt(data.body, { explicit: data.excerpt });
+  // Sanitised before either write below: the hosts render `body` with
+  // dangerouslySetInnerHTML, and a server action is a public endpoint.
+  const body = sanitizeRichText(data.body);
+  const excerpt = deriveExcerpt(body, { explicit: data.excerpt });
   const publishedAt = data.status === "published" ? new Date() : null;
 
   // Cover image rides in metadata — threads has no cover_image_url column
@@ -195,7 +212,7 @@ export async function saveContentAction(
           section          = ${data.feedSlug},
           title            = ${data.title},
           slug             = ${slug},
-          body             = ${data.body || null},
+          body             = ${body || null},
           excerpt          = ${excerpt},
           status           = ${data.status},
           visibility       = ${data.visibility},
@@ -243,7 +260,7 @@ export async function saveContentAction(
         notify_on_min_attendees, published_at
       ) VALUES (
         ${id}, ${ORG}, ${editor.userId}, ${data.kind}, ${data.feedSlug},
-        ${data.title}, ${slug}, ${data.body || null}, ${excerpt},
+        ${data.title}, ${slug}, ${body || null}, ${excerpt},
         ${data.status}, ${data.visibility}, ${db.json(metadata)}, ${isMeeting},
         ${scheduledAt}, ${isMeeting ? (data.durationMinutes ?? null) : null},
         ${isMeeting ? data.location || null : null}, ${isMeeting ? data.isOnline : false},
@@ -308,20 +325,27 @@ export async function setStandingMeetingAction(
   return { ok: true };
 }
 
+/**
+ * Take a thread off the site. Archived, not deleted (services' removeThread):
+ * RSVPs, replies and gather edges keep their keys, and "Publish" in /manage
+ * restores it. The org check comes first because removeThread with
+ * `editor: true` trusts the caller's tier for whatever id it is given.
+ */
 export async function deleteContentAction(threadId: string): Promise<ActionResult> {
-  await requireOrgEditor();
+  const editor = await requireOrgEditor();
 
   try {
     const [row] = await db<{ section: string | null }[]>`
-      DELETE FROM threads WHERE id = ${threadId} AND org_id = ${ORG}
-      RETURNING section
+      SELECT section FROM threads WHERE id = ${threadId} AND org_id = ${ORG}
     `;
     if (!row) return { ok: false, error: "Not found" };
+    const res = await removeThreadAs(editor.userId, threadId, { editor: true });
+    if (!res.ok) return { ok: false, error: res.error };
     revalidateFeed(row.section ?? "");
     return { ok: true };
   } catch (err) {
     console.error("[innergathering] deleteContentAction:", err);
-    return { ok: false, error: "Could not delete." };
+    return { ok: false, error: "Could not remove." };
   }
 }
 

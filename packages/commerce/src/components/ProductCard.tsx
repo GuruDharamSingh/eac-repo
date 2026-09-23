@@ -244,7 +244,7 @@ export function ProductCard({
  * single figure, and a piece without one says so in italics rather than
  * leaving a gap that reads as a bug.
  */
-function WallAmount({ artwork, state }: { artwork: Artwork; state: ProductState }) {
+export function WallAmount({ artwork, state }: { artwork: Artwork; state: ProductState }) {
   if (state.kind === "auction") {
     const lot = state.lot;
     const shown = lot.currentBidMinor ?? lot.startingBidMinor;
@@ -369,7 +369,7 @@ const THUMB_WIDTHS = [256, 512, 1024] as const;
  * someone else's host, and bolting a query string onto it would at best be
  * ignored and at worst break a signed link.
  */
-function mediaThumbnail(url: string, width: number): string {
+export function mediaThumbnail(url: string, width: number): string {
   if (!url.includes("/api/media/") || url.includes("?")) return url;
   return `${url}?w=${width}`;
 }
@@ -381,7 +381,7 @@ function mediaThumbnail(url: string, width: number): string {
  * rendered as a row of empty shadows for several seconds, which is exactly
  * what a broken site looks like. The same image at `?w=256` is under 60KB.
  */
-function buildSrcSet(
+export function buildSrcSet(
   url: string | null | undefined,
   thumb: (url: string, width: number) => string
 ): string | undefined {
@@ -400,7 +400,7 @@ function buildSrcSet(
  * "243.84 × 121.92" — true, and unreadable. A gallery rounds: whole numbers
  * above 10cm, one decimal below, where a millimetre on a pendant matters.
  */
-function dimensionLine(a: Artwork): string | null {
+export function dimensionLine(a: Artwork): string | null {
   const dims = [a.heightCm, a.widthCm, a.depthCm].filter((d): d is number => d != null);
   if (dims.length < 2) return null;
   const round = (d: number) =>

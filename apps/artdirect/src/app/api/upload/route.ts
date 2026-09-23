@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
-import { uploadFile, getProxyFileUrl, getProfileBySlug, canEditProfile, updateProfile } from "@elkdonis/services";
+import { uploadFile, getProxyFileUrl, getProfileBySlug, canEditProfile, updateProfile, uploadFilename } from "@elkdonis/services";
 import { getAdminClient, ensurePersonMediaFolder } from "@elkdonis/nextcloud";
 import { getCurrentUser } from "@/lib/session";
 
@@ -52,9 +52,11 @@ export async function POST(request: NextRequest) {
 
     await ensurePersonMediaFolder(getAdminClient(), slug);
 
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address outlives the upload — it is what a stored
+    // page, a gallery item and every <img src> carries. See uploadFilename.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
     const relativePath = `EAC_Network/artdirect/Media/Images/${slug}/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());

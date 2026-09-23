@@ -205,16 +205,16 @@ services:
         limits:
           memory: 1G
 
-  # Blog Sunjay
-  blog-sunjay:
+  # Sunjay's Teaching Circle (replaced the blog-sunjay app, 2026-09-19)
+  sunjay:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
       args:
-        APP_NAME: blog-sunjay
-    image: eac-blog-sunjay:production
-    container_name: eac-blog-sunjay-prod
+        APP_NAME: sunjay
+    image: eac-sunjay:production
+    container_name: eac-sunjay-prod
     depends_on:
       postgres:
         condition: service_healthy

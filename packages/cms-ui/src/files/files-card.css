@@ -128,7 +128,7 @@
   font-weight: 600;
 }
 
-.eac-picker-tabs { display: inline-flex; gap: 4px; }
+.eac-picker-tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .eac-picker-tabs button {
   background: none; border: 1px solid transparent; border-radius: 4px;
   padding: 3px 10px; font: inherit; font-weight: 500; font-size: 0.78rem;
@@ -170,7 +170,7 @@
 .eac-picker-grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px;
-  max-height: 260px; overflow-y: auto;
+  max-height: 360px; overflow-y: auto;
 }
 .eac-picker-grid button {
   padding: 0; border: 1px solid var(--eac-picker-line); border-radius: 4px;
@@ -178,3 +178,55 @@
 }
 .eac-picker-grid button.is-selected { border-color: var(--eac-picker-accent); border-width: 2px; }
 .eac-picker-grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border-radius: 3px; }
+
+.eac-picker-grid button { position: relative; }
+.eac-picker-grid button[draggable="true"] { cursor: grab; }
+.eac-picker-grid button[draggable="true"]:active { cursor: grabbing; }
+
+/* The whole picker is a drop target while a picture is dragged over it. */
+.eac-picker.is-dragging {
+  outline: 2px dashed var(--eac-picker-accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.eac-picker-dropnote {
+  margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--eac-picker-accent);
+}
+
+/* ---- MediaBrowser: folders, a breadcrumb, and a search ---- */
+.eac-browse { display: grid; gap: 8px; }
+.eac-browse-bar { display: grid; gap: 6px; }
+.eac-browse-bar input[type="search"] {
+  width: 100%; min-height: 30px; padding: 4px 8px; font: inherit; font-size: 0.8rem;
+  border: 1px solid var(--eac-picker-line); border-radius: 4px; background: #fff; color: var(--eac-picker-fg);
+}
+.eac-browse-crumbs {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px;
+  font-size: 0.76rem; color: var(--eac-picker-muted);
+}
+.eac-browse-crumbs button {
+  background: none; border: 0; padding: 2px 3px; font: inherit; color: var(--eac-picker-accent);
+  cursor: pointer; text-decoration: underline; word-break: break-all; text-align: left;
+}
+.eac-browse-crumbs button[aria-current="true"] { color: var(--eac-picker-fg); text-decoration: none; font-weight: 600; }
+.eac-browse-folders {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px;
+}
+.eac-browse-folders button {
+  display: flex; align-items: center; gap: 6px; width: 100%; min-height: 34px; padding: 4px 8px;
+  border: 1px solid var(--eac-picker-line); border-radius: 4px; background: #fff;
+  font: inherit; font-size: 0.74rem; color: var(--eac-picker-fg); text-align: left; cursor: pointer;
+}
+.eac-browse-folders button:hover { border-color: var(--eac-picker-accent); }
+.eac-browse-folder-icon {
+  flex: none; width: 16px; height: 12px; border-radius: 2px;
+  background: var(--eac-picker-accent); opacity: 0.75;
+  clip-path: polygon(0 0, 40% 0, 50% 18%, 100% 18%, 100% 100%, 0 100%);
+}
+.eac-browse-folder-name { overflow-wrap: anywhere; line-height: 1.25; }
+.eac-browse-check {
+  position: absolute; top: 3px; right: 3px; display: grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--eac-picker-accent); color: #fff; font-size: 12px; font-weight: 700;
+}

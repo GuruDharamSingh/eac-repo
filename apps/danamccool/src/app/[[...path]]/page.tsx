@@ -9,6 +9,7 @@ import { isValidPagePath } from "@elkdonis/page-builder";
 import { currentOrgId } from "@/lib/site-org";
 import { serverPuckConfig } from "@/lib/puck/config.server";
 import { loadPage } from "@/lib/puck/store";
+import { getViewer } from "@/lib/auth";
 
 // ============================================================================
 // Every URL this site has not already claimed.
@@ -79,10 +80,27 @@ export default async function EditorBuiltPage({
   // returns null for both. A 404 is the truth in either case.
   if (!page) notFound();
 
+  // `canEdit` lets a block offer in-place editing to the site's editors on
+  // the published page (the Gallery grid's drag and resize). Blocks that do
+  // not ask for it ignore it.
+  const viewer = await getViewer().catch(() => null);
   const resolved = await resolveAllData(page.data as Data, serverPuckConfig, {
     orgId: currentOrgId(),
     slug: key,
+    canEdit: Boolean(viewer?.canEdit),
   });
 
-  return <Render config={serverPuckConfig} data={resolved as Data} />;
+  return (
+    <>
+      <Render config={serverPuckConfig} data={resolved as Data} />
+      {viewer?.canEdit ? (
+        // The way into the editor from the page itself. The landing page hides
+        // the whole sidebar (the diamond splash), so without this there was no
+        // link to edit it from anywhere on it.
+        <a className="dm-edit-page" href={`/studio/${key}`}>
+          Edit this page
+        </a>
+      ) : null}
+    </>
+  );
 }

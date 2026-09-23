@@ -2,9 +2,11 @@ import * as React from 'react';
 import { Section, Text, Link } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { ThreadCard, Prose } from '../components/cards';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
-import { SIGNUP_BY_PURCHASE, REMINDER_OPTIONS_NOTE, paragraphsOf } from '../copy';
+import { OrgWords, hasOrgWords, SlotProse } from '../components/org-words';
+import { slotText, slotLine, type CopyOverrides } from '../copy-slots';
 
 // ============================================================================
 // "You are on the list."
@@ -35,6 +37,16 @@ export interface RsvpGuestEmailProps {
   emblemAlt?: string;
   /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
+  /**
+   * This organisation's words for any block of this letter.
+   *
+   * Every sentence below is a SLOT (copy-slots.ts). Passing nothing renders
+   * the network's defaults, which is what every caller did before overriding
+   * existed and what most callers still do.
+   */
+  copy?: CopyOverrides;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
 
@@ -48,6 +60,19 @@ export interface RsvpGuestEmailProps {
   calendarUrl?: string;
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -90,6 +115,8 @@ function RsvpGuestEmail({
   emblemUrl,
   emblemAlt,
   bodyText,
+  bodyHtml,
+  copy,
   links = [],
   media = [],
   threadUrl,
@@ -100,11 +127,13 @@ function RsvpGuestEmail({
   calendarUrl,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
 }: RsvpGuestEmailProps) {
   const palette = getEmailPalette(dark);
   const when = formatWhen(scheduledAt);
   const sectionLabel = section ? (SECTION_LABELS[section] ?? section) : null;
-  const orgParagraphs = paragraphsOf(bodyText);
+  const hasOrg = hasOrgWords(bodyText, bodyHtml);
   const joinUrl = talkRoomUrl ?? meetingUrl;
 
   return (
@@ -117,6 +146,8 @@ function RsvpGuestEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
@@ -152,9 +183,7 @@ function RsvpGuestEmail({
         dark={dark}
       />
 
-      {SIGNUP_BY_PURCHASE.map((paragraph, i) => (
-        <Prose key={`materials-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      <SlotProse copy={copy} id="signup.by_purchase" dark={dark} accent={orgAccent} font={bodyFont} />
 
       {materialsUrl && (
         <Section style={{ margin: '0 0 18px' }}>
@@ -170,7 +199,7 @@ function RsvpGuestEmail({
 
       {(reminderSettingsUrl || calendarUrl) && (
         <Prose dark={dark} muted>
-          {REMINDER_OPTIONS_NOTE}{' '}
+          {slotLine(copy, 'reminder.options')}{' '}
           {reminderSettingsUrl && (
             <Link href={reminderSettingsUrl} style={{ color: palette.accent }}>
               Change or turn off the reminder
@@ -185,7 +214,7 @@ function RsvpGuestEmail({
         </Prose>
       )}
 
-      {orgParagraphs.length > 0 && (
+      {hasOrg && (
         <Section style={{ margin: '4px 0 0' }}>
           <Text
             style={{
@@ -199,9 +228,13 @@ function RsvpGuestEmail({
           >
             {orgName ? `From ${orgName}` : 'From your hosts'}
           </Text>
-          {orgParagraphs.map((paragraph, i) => (
-            <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
-          ))}
+          <OrgWords
+          bodyText={bodyText}
+          bodyHtml={bodyHtml}
+          dark={dark}
+          accent={orgAccent}
+          font={bodyFont}
+        />
         </Section>
       )}
 

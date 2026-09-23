@@ -21,17 +21,16 @@ export interface CheckoutFormProps {
   className?: string;
 }
 
+// Card is opt-in, not a default: whether it can be offered depends on
+// `isCardPaymentAvailable()`, which reads a server-side secret this client
+// component cannot see. A caller that wants it passes `paymentMethods`
+// explicitly after checking. Listing a disabled "coming soon" card option here
+// told every caller that Stripe was unbuilt long after it worked.
 const DEFAULT_METHODS: NonNullable<CheckoutFormProps["paymentMethods"]> = [
   {
     id: "etransfer",
     label: "Interac eTransfer",
     description: "Send the artist an Interac eTransfer after placing the order.",
-  },
-  {
-    id: "stripe",
-    label: "Credit / debit card",
-    description: "Coming soon.",
-    disabled: true,
   },
 ];
 

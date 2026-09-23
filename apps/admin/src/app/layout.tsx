@@ -7,6 +7,7 @@ import '@elkdonis/ui/eac-theme.css';
 import "./globals.css";
 import { EacAtmosphere } from '@elkdonis/ui';
 import { Providers } from "./providers";
+import { AdminShell } from "@/components/admin-shell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <EacAtmosphere>
-          <Providers>{children}</Providers>
+          <Providers>
+            <AdminShell>{children}</AdminShell>
+          </Providers>
         </EacAtmosphere>
       </body>
     </html>

@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid';
 import { canModerate } from './forum-write';
 import { getViewerRoles, type ForumViewer, viewerIdentityIds } from './forum';
 import { getIdentityIds } from './identities';
-import { setStandingMeeting } from './org-calendar';
+import { removeThreadFromCalendar, setStandingMeeting } from './org-calendar';
+import { pushModerationToNextcloud } from './nc-forum';
 
 // ============================================================================
 // Two things a person may do to a thread from wherever it shows — its popup,
@@ -46,6 +47,9 @@ export async function removeThread(
   if (t.status === 'archived') return { ok: true, orgId: t.org_id, kind: t.kind, section: t.section, already: true };
 
   await db`UPDATE threads SET status = 'archived', updated_at = NOW() WHERE id = ${threadId}`;
+  // Off everyone's calendar now, not at the next sync. Best-effort: the
+  // reconciler (org-calendar-sync.ts) removes it anyway if this fails.
+  await removeThreadFromCalendar(t.org_id, threadId).catch(() => {});
   try {
     await db`
       INSERT INTO events (id, org_id, user_id, action, resource_type, resource_id, data, created_at)
@@ -56,6 +60,8 @@ export async function removeThread(
     // The act already happened; losing its log line must not undo it.
     console.error('[thread-admin] log remove:', err);
   }
+  // A topic shared with Nextcloud comes down there too.
+  await pushModerationToNextcloud(threadId, 'delete').catch((err) => console.error('[thread-admin] nc remove:', err));
   return { ok: true, orgId: t.org_id, kind: t.kind, section: t.section, already: false };
 }
 

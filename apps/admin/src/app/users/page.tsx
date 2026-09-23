@@ -23,6 +23,7 @@ import {
   TextInput,
   Alert,
   Tabs,
+  Textarea,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -587,6 +588,9 @@ function ContactsTab({ organizations }: { organizations: Organization[] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const [detailOpened, { open: openDetail, close: closeDetail }] = useDisclosure(false);
+  const [selected, setSelected] = useState<Contact | null>(null);
+
   const loadContacts = useCallback(async () => {
     setLoading(true);
     try {
@@ -614,11 +618,17 @@ function ContactsTab({ organizations }: { organizations: Organization[] }) {
         body: JSON.stringify({ id, status }),
       });
       setContacts((prev) => prev.map((c) => c.id === id ? { ...c, status: status as Contact['status'] } : c));
+      setSelected((s) => s && s.id === id ? { ...s, status: status as Contact['status'] } : s);
     } catch (e) {
       console.error('Error updating contact:', e);
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const openContactDetail = (contact: Contact) => {
+    setSelected(contact);
+    openDetail();
   };
 
   const filtered = contacts.filter((c) => {
@@ -746,14 +756,12 @@ function ContactsTab({ organizations }: { organizations: Organization[] }) {
                   </Table.Td>
                   <Table.Td>
                     {contact.message ? (
-                      <Tooltip label={contact.message} multiline w={300} position="top">
-                        <Group gap={4} style={{ cursor: 'help' }}>
-                          <MessageSquare size={14} color="gray" />
-                          <Text size="xs" c="dimmed" style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {contact.message}
-                          </Text>
-                        </Group>
-                      </Tooltip>
+                      <Group gap={4} style={{ cursor: 'pointer' }} onClick={() => openContactDetail(contact)}>
+                        <MessageSquare size={14} color="gray" />
+                        <Text size="xs" c="dimmed" style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {contact.message}
+                        </Text>
+                      </Group>
                     ) : (
                       <Text size="xs" c="dimmed">—</Text>
                     )}
@@ -764,19 +772,28 @@ function ContactsTab({ organizations }: { organizations: Organization[] }) {
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Select
-                      value={contact.status}
-                      onChange={(v) => { if (v) updateStatus(contact.id, v); }}
-                      data={[
-                        { value: 'new', label: 'New' },
-                        { value: 'contacted', label: 'Contacted' },
-                        { value: 'joined', label: 'Joined' },
-                      ]}
-                      size="xs"
-                      w={120}
-                      disabled={updatingId === contact.id}
-                      styles={{ input: { backgroundColor: '#fff', color: '#212529', fontWeight: 500 }, dropdown: { backgroundColor: '#fff' }, option: { color: '#212529', fontWeight: 500 } }}
-                    />
+                    <Group gap={4} wrap="nowrap">
+                      <Select
+                        value={contact.status}
+                        onChange={(v) => { if (v) updateStatus(contact.id, v); }}
+                        data={[
+                          { value: 'new', label: 'New' },
+                          { value: 'contacted', label: 'Contacted' },
+                          { value: 'joined', label: 'Joined' },
+                        ]}
+                        size="xs"
+                        w={120}
+                        disabled={updatingId === contact.id}
+                        styles={{ input: { backgroundColor: '#fff', color: '#212529', fontWeight: 500 }, dropdown: { backgroundColor: '#fff' }, option: { color: '#212529', fontWeight: 500 } }}
+                      />
+                      {contact.message && (
+                        <Tooltip label="View full message">
+                          <ActionIcon variant="light" color="blue" size="sm" onClick={() => openContactDetail(contact)}>
+                            <Eye size={14} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -784,6 +801,87 @@ function ContactsTab({ organizations }: { organizations: Organization[] }) {
           </Table>
         )}
       </Paper>
+
+      {/* Message Detail Modal */}
+      <Modal
+        opened={detailOpened}
+        onClose={closeDetail}
+        title={
+          <Group gap="sm">
+            <MessageSquare size={18} />
+            <Text fw={600}>Message from {selected?.name ?? selected?.email}</Text>
+          </Group>
+        }
+        size="lg"
+      >
+        {selected && (
+          <Stack gap="md">
+            <Group gap="xl">
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.05em' }}>From</Text>
+                <Text size="sm" fw={500}>{selected.name ?? '—'}</Text>
+              </Stack>
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.05em' }}>Email</Text>
+                <Text size="sm" style={{ fontFamily: 'monospace' }}>{selected.email}</Text>
+              </Stack>
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.05em' }}>Received</Text>
+                <Text size="sm">{new Date(selected.created_at).toLocaleString()}</Text>
+              </Stack>
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.05em' }}>Org</Text>
+                <Badge size="sm" variant="outline" color="gray">{selected.org_id}</Badge>
+              </Stack>
+            </Group>
+
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.05em' }}>Message</Text>
+              <Textarea
+                value={selected.message ?? ''}
+                readOnly
+                autosize
+                minRows={4}
+                styles={{ input: { backgroundColor: '#f8f9fa', color: '#212529' } }}
+              />
+            </Stack>
+
+            <Group justify="space-between" align="center">
+              <Group gap="sm">
+                <Text size="sm" c="dimmed">Status:</Text>
+                <Badge color={STATUS_COLORS[selected.status]} variant="light">{selected.status}</Badge>
+              </Group>
+              <Group gap="sm">
+                {selected.status !== 'contacted' && (
+                  <Button
+                    size="sm"
+                    variant="light"
+                    color="teal"
+                    onClick={() => updateStatus(selected.id, 'contacted')}
+                    loading={updatingId === selected.id}
+                  >
+                    Mark Contacted
+                  </Button>
+                )}
+                {selected.status !== 'joined' && (
+                  <Button
+                    size="sm"
+                    variant="light"
+                    color="green"
+                    onClick={() => updateStatus(selected.id, 'joined')}
+                    loading={updatingId === selected.id}
+                  >
+                    Mark Joined
+                  </Button>
+                )}
+                <Button size="sm" variant="subtle" component="a" href={`mailto:${selected.email}`}>
+                  Reply by email
+                </Button>
+              </Group>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
     </Stack>
   );
 }

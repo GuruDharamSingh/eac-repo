@@ -1,36 +1,42 @@
 import { requireOrgEditor } from "@/lib/auth";
-import { loadPalette } from "@/lib/theme-store";
-import { savePaletteAction } from "@/lib/theme-actions";
-import { PaletteEditor } from "@/components/studio/palette-editor";
+import { loadFonts, loadPalette } from "@/lib/theme-store";
+import { saveThemeAction } from "@/lib/theme-actions";
+import { editorPages, loadNav } from "@/lib/navigation-store";
+import { ThemeStudio } from "@/components/studio/theme-studio";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Colours" };
+export const metadata = { title: "Theme" };
 
 /**
- * The site's palette.
+ * The site's colours and fonts, one part of the site at a time.
  *
  * Gated here so nobody without the role loads the editor, and again in the
  * action — a client component is not an authorisation boundary.
  */
 export default async function ThemePage() {
   await requireOrgEditor("/studio/theme");
-  const palette = await loadPalette();
+  const [palette, fonts, nav, built] = await Promise.all([loadPalette(), loadFonts(), loadNav(), editorPages()]);
+
+  // Pages the Live tab can show: the landing first, then the menu's order,
+  // then anything built but not in the menu.
+  const pages: Array<{ label: string; href: string }> = [];
+  const seen = new Set<string>();
+  for (const p of [{ label: "Home (landing)", href: "/" }, ...nav.filter((n) => !n.external), ...built]) {
+    if (seen.has(p.href)) continue;
+    seen.add(p.href);
+    pages.push({ label: p.label, href: p.href });
+  }
 
   return (
-    <article className="content-page content-page--wide">
-      <h1 className="page-title">Colours</h1>
+    <article className="content-page content-page--wide" style={{ maxWidth: 1280 }}>
+      <h1 className="page-title">Theme</h1>
       <p>
-        One set of colours for the whole site. The sections brought in from
-        outside keep their own markup and take these values, so changing a
-        colour here changes every page at once.
+        The site&rsquo;s colours and fonts, one part at a time — the menu, the pages, the captions. Each preview is drawn by the
+        site&rsquo;s own styles, and <strong>Live page</strong> shows a real page wearing your changes before you save. The same
+        controls are in the page editor, under the Theme tab.
       </p>
-      <p>
-        The numbers beside each pair are contrast ratios. They are the reason
-        text is readable or not, and a failing pair is worth fixing before it
-        ships rather than after someone writes in.
-      </p>
-      <div style={{ marginTop: "2rem" }}>
-        <PaletteEditor initial={palette} onSave={savePaletteAction} />
+      <div style={{ marginTop: "1.5rem" }}>
+        <ThemeStudio initialPalette={palette} initialFonts={fonts} nav={nav} pages={pages} onSave={saveThemeAction} />
       </div>
     </article>
   );

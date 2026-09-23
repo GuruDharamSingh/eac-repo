@@ -28,6 +28,14 @@ export type MultiImageUploaderProps = {
   maxImages?: number;
   disabled?: boolean;
   className?: string;
+  /**
+   * Fires whenever an upload starts or finishes settling (success or error),
+   * so a host form can hold off letting the user submit while a photo is
+   * still in flight — otherwise a draft can save with no image at all if the
+   * submit happens to land before the PUT does, which is exactly what a slow
+   * mobile upload invites.
+   */
+  onBusyChange?: (busy: boolean) => void;
 };
 
 type Pending = { tempId: string; name: string; error?: string };
@@ -47,11 +55,24 @@ export function MultiImageUploader({
   maxImages = 12,
   disabled = false,
   className,
+  onBusyChange,
 }: MultiImageUploaderProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [pending, setPending] = React.useState<Pending[]>([]);
   const [isDragOver, setIsDragOver] = React.useState(false);
   const dragIndex = React.useRef<number | null>(null);
+
+  // Busy means "at least one upload still actually in flight" — an errored
+  // tile sits in `pending` until dismissed but isn't blocking anything, so it
+  // doesn't count.
+  const uploading = pending.some((p) => !p.error);
+  const onBusyChangeRef = React.useRef(onBusyChange);
+  React.useEffect(() => {
+    onBusyChangeRef.current = onBusyChange;
+  }, [onBusyChange]);
+  React.useEffect(() => {
+    onBusyChangeRef.current?.(uploading);
+  }, [uploading]);
 
   const remaining = Math.max(0, maxImages - value.length - pending.length);
 

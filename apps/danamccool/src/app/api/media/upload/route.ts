@@ -1,10 +1,10 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFile, getProxyFileUrl } from "@elkdonis/services";
+import { createUserFolder, uploadFile, getProxyFileUrl, getStorageSlug, resolveUserPath, uploadFilename } from "@elkdonis/services";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
-import { getViewer } from "@/lib/auth";
+import { getSiteOwnerUserId, getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
 const ORG_ID = siteConfig.orgId;
@@ -17,8 +17,17 @@ const MAX_SIZE_MB = 25;
  * amrit-canada's meeting attachments need. Gated the same way as every
  * write here: getViewer().canEdit (owner/guide on org `danamccool`).
  *
- * Stored under EAC_Network/users/<uploader>/, matching IFAC's convention:
- * an artist's work follows them, it isn't org-owned.
+ * WHERE files go. This is Dana's personal site, so everything uploaded here
+ * is hers, whoever at the keyboard did the uploading (`media.uploaded_by`
+ * still records that): EAC_Network/users/<her storage slug>/…
+ *
+ *   no `gallery`      → Media/Images/        (what "My images" lists)
+ *   `gallery=<slug>`  → Galleries/<slug>/    (that gallery's own folder)
+ *
+ * Fixed 2026-09-18: this used to write to users/<uploader's account id>/ —
+ * a folder named by a UUID that no library ever listed, so an upload from the
+ * editor vanished from the picker. Paths are now built through
+ * resolveUserPath, which refuses anything that escapes her folder.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -37,10 +46,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File size must be less than ${MAX_SIZE_MB}MB` }, { status: 400 });
     }
 
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
-    const relativePath = `EAC_Network/users/${viewer.userId}/Media/Images/${filename}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address outlives the upload — it is what a stored
+    // page, a gallery item and every <img src> carries. See uploadFilename.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
+    const ownerId = await getSiteOwnerUserId();
+    const slug = ownerId ? await getStorageSlug(ownerId) : null;
+    if (!slug) return NextResponse.json({ error: "The site owner has no storage folder yet" }, { status: 500 });
+
+    const gallery = String(formData.get("gallery") ?? "").trim();
+    if (gallery && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(gallery)) {
+      return NextResponse.json({ error: "Unknown gallery" }, { status: 400 });
+    }
+    // A gallery's folder may not exist yet — WebDAV PUT into a missing
+    // folder fails (409), so make it first. Idempotent.
+    if (gallery && !(await createUserFolder(slug, `Galleries/${gallery}`))) {
+      return NextResponse.json({ error: "Could not create the gallery folder" }, { status: 500 });
+    }
+    const relativePath = resolveUserPath(
+      slug,
+      gallery ? `Galleries/${gallery}/${filename}` : `Media/Images/${filename}`
+    );
 
     const buffer = Buffer.from(await file.arrayBuffer());
 

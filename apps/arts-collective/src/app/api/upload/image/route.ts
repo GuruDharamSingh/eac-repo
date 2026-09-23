@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@elkdonis/nextcloud";
 import { validateUploadBuffer } from "@elkdonis/utils";
-import { hasOrgRole } from "@elkdonis/services";
+import { hasOrgRole, uploadFilename } from "@elkdonis/services";
 import { isAdmin } from "@elkdonis/auth-server";
 import { getCurrentUser } from "@/lib/session";
 import { getOrgBySlug } from "@/lib/org";
@@ -76,9 +76,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nextcloud not configured" }, { status: 500 });
   }
 
-  const timestamp = Date.now();
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filename = `${timestamp}-${safeName}`;
+  // Named after the work when the surface sends a title, else after the
+  // uploaded file. This address outlives the upload — it is what a stored
+  // page, a gallery item and every <img src> carries. See uploadFilename.
+  const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+  const filename = uploadFilename(file.name, title || null);
   const subfolder = kind === "image" ? "covers" : "videos";
   const contextFolder = context === "workshops" ? "Workshops" : context;
   const folderPath = `EAC_Network/${orgSlug}/${contextFolder}/${subfolder}`;

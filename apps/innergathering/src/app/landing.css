@@ -2765,6 +2765,102 @@ details.member-card,
   }
 }
 
+/* ── Login/signup banner, just above the About / Mutual Aid section,
+   shown only to signed-out visitors. Deliberately its own dark panel
+   (not the surrounding cream) so it reads as a distinct call to action
+   rather than another line of body copy. ─────────────────────────── */
+.site-login-banner {
+  padding: clamp(1.75rem, 4vw, 2.5rem) 1.5rem;
+  background: linear-gradient(135deg, var(--ig-ink, #01124e) 0%, var(--color-violet, #022278) 100%);
+  border-top: 1px solid rgba(183, 154, 85, 0.5);
+  border-bottom: 1px solid rgba(183, 154, 85, 0.5);
+}
+
+.site-login-banner-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  text-align: center;
+}
+
+.site-login-banner-copy {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+  line-height: 1.5;
+  color: #fffdf8;
+  max-width: 560px;
+}
+
+.site-login-banner-copy strong {
+  color: var(--color-gold-light, #d6c38e);
+  font-weight: 600;
+}
+
+.site-login-banner-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+/* Bespoke buttons, not sharing .cta-btn: that class is repeatedly
+   overridden elsewhere in this file for the cream sections (pale fill,
+   ink border) and fighting that cascade produced a washed-out button
+   against this banner's dark ground. These two are self-contained. */
+.site-login-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 1.75rem;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.site-login-banner-btn--filled {
+  background: var(--color-gold, #b79a55);
+  color: var(--ig-ink, #01124e);
+  border: 1px solid var(--color-gold, #b79a55);
+}
+
+.site-login-banner-btn--filled:hover {
+  background: var(--color-gold-light, #d6c38e);
+  border-color: var(--color-gold-light, #d6c38e);
+}
+
+.site-login-banner-btn--ghost {
+  background: transparent;
+  color: var(--color-gold-light, #d6c38e);
+  border: 1px solid var(--color-gold, #b79a55);
+}
+
+.site-login-banner-btn--ghost:hover {
+  background: rgba(183, 154, 85, 0.16);
+  color: #fffdf8;
+}
+
+@media (max-width: 700px) {
+  .site-login-banner-inner {
+    flex-direction: column;
+  }
+
+  .site-login-banner-btn {
+    width: 100%;
+  }
+}
+
 /* ── Mini feed in the Featured Initiative panel slot ───────────── */
 .initiative-feed-panel {
   display: flex;

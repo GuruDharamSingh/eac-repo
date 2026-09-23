@@ -5,6 +5,11 @@
 
 import { Buffer } from 'node:buffer';
 import { asBodyOrBlob } from './bytes';
+import { slugify } from '@elkdonis/utils';
+import { customAlphabet } from 'nanoid';
+
+/** No vowels, no look-alikes (0/O, 1/l/I): a suffix nobody has to read aloud. */
+const shortId = customAlphabet('23456789bcdfghjkmnpqrstvwxyz', 6);
 
 declare const process: any;
 
@@ -226,6 +231,58 @@ export function getProxyFileUrl(path: string): string {
  * Get the appropriate upload path based on visibility
  * Default: Public (Media folder), Private for restricted content
  */
+/**
+ * What an uploaded file should be CALLED.
+ *
+ * Twelve upload routes each wrote their own version of
+ * `file.name.replace(/[^a-zA-Z0-9.-]/g, "_")`, usually behind a `Date.now()-`
+ * prefix, which is how the network ended up serving paths like
+ * `.../1726790000000-il_570xN.302087606.jpg.jpg`. That address is in a stored
+ * page, in a gallery item and in an <img src> for as long as the picture
+ * exists, so it is not a cosmetic detail: it is the only name a visitor, a
+ * search engine or anyone reading the Nextcloud tree ever sees.
+ *
+ * Given the TITLE the person typed, the file is named after the work —
+ * `nightjar-4k9wqp.jpg`. Without one it falls back to the original name,
+ * slugified, which is still an improvement on underscores.
+ *
+ * ── What the suffix is for ─────────────────────────────────────────────────
+ *
+ * Uniqueness, and nothing else. Two pieces may honestly share a title, and a
+ * WebDAV PUT to an existing path OVERWRITES it — so a name derived purely
+ * from the title would let one upload silently replace another person's
+ * picture. The old `Date.now()` prefix was doing this job; a short random
+ * suffix does it without putting a 13-digit number at the front of every URL.
+ *
+ * ── What it refuses ────────────────────────────────────────────────────────
+ *
+ * The title reaches here from a form, and the result becomes a path segment.
+ * `slugify` already strips everything but word characters and dashes, so no
+ * separator, dot-segment or control character survives; the extension is
+ * taken from the original name and whitelisted rather than trusted, because
+ * that is the half an attacker controls most easily.
+ */
+export function uploadFilename(originalName: string, title?: string | null): string {
+  const dot = originalName.lastIndexOf('.');
+  const rawExt = dot > 0 ? originalName.slice(dot + 1).toLowerCase() : '';
+  // A conservative shape, not a list of allowed formats — the content type is
+  // decided by validateUploadBuffer reading the actual bytes, never by this.
+  const ext = /^[a-z0-9]{1,8}$/.test(rawExt) ? rawExt : 'bin';
+
+  // Underscores and dots become spaces first, so slugify turns them into
+  // word breaks. `slugify` counts `_` as a word character and drops `.`
+  // outright, which on its own would render `il_570xN.302087606.jpg` as the
+  // unreadable `il_570xn302087606jpg`.
+  const words = (v: string) => slugify(v.replace(/[._]+/g, ' '));
+  const fromTitle = title ? words(title) : '';
+  const fromName = words(dot > 0 ? originalName.slice(0, dot) : originalName);
+  // Trailing dashes are what slugify leaves behind when a title ends in
+  // punctuation ("Untitled (1976)." -> "untitled-1976-").
+  const base = (fromTitle || fromName || 'file').replace(/^-+|-+$/g, '').slice(0, 60) || 'file';
+
+  return `${base}-${shortId()}.${ext}`;
+}
+
 export function getUploadPath(
   orgId: string,
   mediaType: 'Images' | 'Audio' | 'Videos' | 'Documents',
@@ -274,11 +331,29 @@ export async function uploadFile(
 }
 
 /**
- * Create a Talk room
+ * Create a Talk room.
+ *
+ * Rooms are created BY THE SERVICE ACCOUNT, which becomes their owner. Left
+ * there, that is a trap for whoever asked for the room: the person who made
+ * the meeting is not a member of its room at all. They can only reach it by
+ * the public link, which makes them a transient `self-joined` visitor — so
+ * they cannot add participants, and Talk drops the room from their own
+ * conversation list the moment they leave. Found 2026-09-21 on a real meeting:
+ * its author was self-joined in their own room and could only share the link.
+ *
+ * Pass `moderator` (a Nextcloud user id) to make that person a real member
+ * and a moderator, and `listable` to put it in "Open conversations":
+ *   0 = hidden (Talk's default), 1 = Nextcloud users, 2 = everyone incl. guests
+ *
+ * Both are BEST-EFFORT and never cost the caller the room. By the time they
+ * run the room exists; failing to promote someone must not orphan it by
+ * returning null, which is the exact failure `format=json` below exists to
+ * prevent.
  */
 export async function createTalkRoom(
   name: string,
-  type: 'group' | 'public' = 'public'
+  type: 'group' | 'public' = 'public',
+  opts: { moderator?: string | null; listable?: 0 | 1 | 2 } = {}
 ): Promise<string | null> {
   try {
     // `format=json` is load-bearing: OCS answers in XML by default, so without
@@ -302,12 +377,73 @@ export async function createTalkRoom(
 
     if (response.ok) {
       const data = (await response.json()) as any;
-      return data?.ocs?.data?.token || null;
+      const token: string | null = data?.ocs?.data?.token || null;
+      if (token) await configureTalkRoom(token, opts);
+      return token;
     }
     return null;
   } catch (error) {
     console.error('Error creating Talk room:', error);
     return null;
+  }
+}
+
+/**
+ * Make `moderator` a real member and moderator of a room, and set how
+ * discoverable it is. Exported so an EXISTING room can be repaired too — the
+ * rooms made before this existed all have their author as a mere visitor.
+ * Never throws.
+ */
+export async function configureTalkRoom(
+  token: string,
+  opts: { moderator?: string | null; listable?: 0 | 1 | 2 } = {}
+): Promise<void> {
+  const base = `${NEXTCLOUD_URL}/ocs/v2.php/apps/spreed/api/v4/room/${encodeURIComponent(token)}`;
+  const headers = {
+    Authorization: `Basic ${auth}`,
+    'OCS-APIRequest': 'true',
+    Accept: 'application/json',
+  };
+  const form = (body: Record<string, string>) => ({
+    headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(body),
+  });
+
+  if (opts.moderator) {
+    try {
+      // Invite first. Someone who joined by the public link is
+      // participantType 5 (self-joined), which is not promotable and is
+      // exactly the state this exists to lift them out of.
+      await fetch(`${base}/participants?format=json`, {
+        method: 'POST',
+        ...form({ newParticipant: opts.moderator, source: 'users' }),
+      });
+      const list = await fetch(`${base}/participants?format=json`, { headers });
+      const parts = ((await list.json()) as any)?.ocs?.data ?? [];
+      const me = parts.find(
+        (p: any) => p.actorType === 'users' && p.actorId === opts.moderator
+      );
+      // 1 owner, 2 moderator — already able to manage the room.
+      if (me && me.participantType !== 1 && me.participantType !== 2) {
+        await fetch(`${base}/moderators?format=json`, {
+          method: 'POST',
+          ...form({ attendeeId: String(me.attendeeId) }),
+        });
+      }
+    } catch (err) {
+      console.error(`[talk] could not make ${opts.moderator} a moderator of ${token}:`, err);
+    }
+  }
+
+  if (opts.listable !== undefined) {
+    try {
+      await fetch(`${base}/listable?format=json`, {
+        method: 'PUT',
+        ...form({ scope: String(opts.listable) }),
+      });
+    } catch (err) {
+      console.error(`[talk] could not set listable on ${token}:`, err);
+    }
   }
 }
 

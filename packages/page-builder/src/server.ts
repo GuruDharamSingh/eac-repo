@@ -7,5 +7,13 @@
 // ============================================================================
 
 export { loadPage, savePage, listPages, isValidSlug } from "./store";
+export {
+  loadUserPage,
+  loadPublishedUserPage,
+  saveUserPage,
+  listUserPages,
+  type UserPage,
+  type UserPageStatus,
+} from "./user-store";
 export { isValidPagePath, MAX_PATH_DEPTH } from "./slug";
 export type { PuckPage } from "./store";

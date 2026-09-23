@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>2048 — Elkdonis arcade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    2048 by Gabriele Cirulli, MIT licence (LICENSE.txt, source in UPSTREAM.txt).
+    Game code and stylesheet are upstream, unmodified. This page trims the
+    upstream index to the board and score, and theme.css re-grounds it for the
+    hub's navy arcade cabinet. Framed by the Elkdonis hub tab.
+  -->
+  <link href="style/main.css" rel="stylesheet" type="text/css">
+  <link href="theme.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">2048</h1>
+      <div class="scores-container">
+        <div class="score-container">0</div>
+        <div class="best-container">0</div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <p class="game-intro">Arrows or swipe. Merge to <strong>2048</strong>.</p>
+      <a class="restart-button">New game</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+          <a class="keep-playing-button">Keep going</a>
+          <a class="retry-button">Try again</a>
+        </div>
+      </div>
+      <div class="grid-container">
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+      </div>
+      <div class="tile-container"></div>
+    </div>
+    <p class="credit">2048 by <a href="https://github.com/gabrielecirulli/2048" target="_blank" rel="noopener">Gabriele Cirulli</a> · MIT</p>
+  </div>
+
+  <script src="js/bind_polyfill.js"></script>
+  <script src="js/classlist_polyfill.js"></script>
+  <script src="js/animframe_polyfill.js"></script>
+  <script src="js/keyboard_input_manager.js"></script>
+  <script src="js/html_actuator.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/tile.js"></script>
+  <script src="js/local_storage_manager.js"></script>
+  <script src="js/game_manager.js"></script>
+  <script src="js/application.js"></script>
+  <script>
+    // The upstream phone layout is a fixed 280px column. Scale it to whatever
+    // width the hub gives the frame, so a narrower column never clips the board.
+    (function () {
+      var c = document.querySelector(".container");
+      function fit() {
+        // zoom, not transform: it shrinks the layout box too, so the auto
+        // margins centre the scaled board instead of clipping its right edge.
+        c.style.zoom = Math.min(1.25, (window.innerWidth - 16) / 280);
+      }
+      window.addEventListener("resize", fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

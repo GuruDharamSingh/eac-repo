@@ -7,7 +7,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./reserved-slugs": "./src/reserved-slugs.ts",
-    "./wiki-render": "./src/wiki-render.ts"
+    "./wiki-render": "./src/wiki-render.ts",
+    "./html-to-text": "./src/html-to-text.ts",
+    "./sanitize-email": "./src/sanitize-email.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

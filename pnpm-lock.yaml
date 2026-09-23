@@ -558,7 +558,7 @@ importers:
         specifier: ^4
         version: 4.1.13
       typescript:
-        specifier: ^5
+        specifier: ^5.9.2
         version: 5.9.2
 
   apps/arts-collective:
@@ -793,79 +793,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.13
-      '@types/node':
-        specifier: ^20
-        version: 20.19.17
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      eslint:
-        specifier: ^9
-        version: 9.34.0(jiti@2.6.0)
-      eslint-config-next:
-        specifier: 16.1.6
-        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
-      tailwindcss:
-        specifier: ^4
-        version: 4.1.13
-      typescript:
-        specifier: ^5
-        version: 5.9.2
-
-  apps/blog-sunjay:
-    dependencies:
-      '@elkdonis/auth-client':
-        specifier: workspace:*
-        version: link:../../packages/auth-client
-      '@elkdonis/auth-server':
-        specifier: workspace:*
-        version: link:../../packages/auth-server
-      '@elkdonis/blog-client':
-        specifier: workspace:*
-        version: link:../../packages/blog-client
-      '@elkdonis/blog-server':
-        specifier: workspace:*
-        version: link:../../packages/blog-server
-      '@elkdonis/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@elkdonis/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@elkdonis/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@mantine/core':
-        specifier: ^8.3.2
-        version: 8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/dropzone':
-        specifier: ^8.3.4
-        version: 8.3.4(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@mantine/hooks':
-        specifier: ^8.3.2
-        version: 8.3.2(react@19.1.0)
-      '@mantine/tiptap':
-        specifier: ^8.3.4
-        version: 8.3.4(@mantine/core@8.3.2(@mantine/hooks@8.3.2(react@19.1.0))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.3.2(react@19.1.0))(@tiptap/extension-link@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@tiptap/react@3.31.3(@floating-ui/dom@1.7.4)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
-      nanoid:
-        specifier: ^5.0.0
-        version: 5.1.6
-      next:
-        specifier: 16.1.6
-        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
-      react:
-        specifier: 19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: 19.1.0
-        version: 19.1.0(react@19.1.0)
-    devDependencies:
       '@types/node':
         specifier: ^20
         version: 20.19.17
@@ -1271,7 +1198,7 @@ importers:
         specifier: 16.1.6
         version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
       typescript:
-        specifier: ^5
+        specifier: ^5.9.2
         version: 5.9.2
 
   apps/fourthwayBookreaders:
@@ -1527,6 +1454,9 @@ importers:
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../../packages/live-editor
+      '@elkdonis/newsletter':
+        specifier: workspace:*
+        version: link:../../packages/newsletter
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
@@ -1778,6 +1708,9 @@ importers:
       '@elkdonis/chat':
         specifier: workspace:*
         version: link:../../packages/chat
+      '@elkdonis/checkout':
+        specifier: workspace:*
+        version: link:../../packages/checkout
       '@elkdonis/cms-ui':
         specifier: workspace:*
         version: link:../../packages/cms-ui
@@ -2077,6 +2010,233 @@ importers:
       globals:
         specifier: ^16.4.0
         version: 16.4.0
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.13
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
+  apps/sophia:
+    dependencies:
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../../packages/cms-ui
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@elkdonis/lms':
+        specifier: workspace:*
+        version: link:../../packages/lms
+      '@elkdonis/lms-ui':
+        specifier: workspace:*
+        version: link:../../packages/lms-ui
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
+  apps/sunjay:
+    dependencies:
+      '@dnd-kit/core':
+        specifier: ^6.1.0
+        version: 6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@dnd-kit/sortable':
+        specifier: ^8.0.0
+        version: 8.0.0(@dnd-kit/core@6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.1.0)
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../../packages/auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/blocks':
+        specifier: workspace:*
+        version: link:../../packages/blocks
+      '@elkdonis/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../../packages/cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@elkdonis/forum-ui':
+        specifier: workspace:*
+        version: link:../../packages/forum-ui
+      '@elkdonis/nextcloud':
+        specifier: workspace:*
+        version: link:../../packages/nextcloud
+      '@elkdonis/pipeline':
+        specifier: workspace:*
+        version: link:../../packages/pipeline
+      '@elkdonis/primitives':
+        specifier: workspace:*
+        version: link:../../packages/primitives
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
+      '@elkdonis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@excalidraw/excalidraw':
+        specifier: ^0.18.0
+        version: 0.18.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@hookform/resolvers':
+        specifier: ^3.10.0
+        version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
+      '@marsidev/react-turnstile':
+        specifier: ^1.3.0
+        version: 1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-checkbox':
+        specifier: ^1.1.2
+        version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-label':
+        specifier: ^2.1.0
+        version: 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-radio-group':
+        specifier: ^1.2.1
+        version: 1.3.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-select':
+        specifier: ^2.1.2
+        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-separator':
+        specifier: ^1.1.0
+        version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.1.0
+        version: 1.2.4(@types/react@19.2.14)(react@19.1.0)
+      '@tiptap/extension-link':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-placeholder':
+        specifier: ^2.8.0
+        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
+      '@tiptap/extension-underline':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
+      '@tiptap/pm':
+        specifier: ^2.8.0
+        version: 2.26.4
+      '@tiptap/react':
+        specifier: ^2.8.0
+        version: 2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tiptap/starter-kit':
+        specifier: ^2.8.0
+        version: 2.26.4
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: ^3.6.0
+        version: 3.6.0
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+      react-hook-form:
+        specifier: ^7.73.1
+        version: 7.73.1(react@19.1.0)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
+      tw-animate-css:
+        specifier: ^1.2.0
+        version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.13
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
       tailwindcss:
         specifier: ^4
         version: 4.1.13
@@ -2515,6 +2675,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@react-email/components':
         specifier: ^0.0.32
         version: 0.0.32(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -2633,6 +2796,53 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
+  packages/lms:
+    dependencies:
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
+  packages/lms-ui:
+    dependencies:
+      '@elkdonis/lms':
+        specifier: workspace:*
+        version: link:../lms
+      next:
+        specifier: ^15 || ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
       typescript:
         specifier: ^5.3.3
         version: 5.9.2
@@ -14256,7 +14466,7 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@2.6.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.45.0(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.34.0(jiti@2.6.0))
     transitivePeerDependencies:
       - supports-color
 

@@ -480,7 +480,7 @@ console.log("\nrows");
 
 const wall = sharedCatalogue.get("picture-wall")!;
 const rowsProp = wall.def.props.find((p) => p.name === "pictures")!;
-check("a rows prop declares its columns", (rowsProp.fields?.length ?? 0) === 4, String(rowsProp.fields?.length));
+check("a rows prop declares its columns", (rowsProp.fields?.length ?? 0) === 6, String(rowsProp.fields?.length));
 
 const wallFields = toPuckFields(wall.def);
 const arrayField = wallFields.pictures as {

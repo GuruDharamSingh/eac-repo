@@ -33,9 +33,100 @@ const fontFaceCss = `
 // Header face: Brothers first (embedded above), Cinzel/serif fallback for
 // clients that strip @font-face (Gmail, Outlook desktop).
 export const HEADER_FONT_STACK = "'Brothers', 'Cinzel', Georgia, serif";
-// Body face: Basteleur — the same face the site uses for body copy
-// (root layout's --font-basteleur). No 'Times New Roman' in the fallback.
-export const BODY_FONT_STACK = "'Basteleur', 'Cormorant Garamond', Georgia, serif";
+// ── Body faces ──────────────────────────────────────────────────────────────
+//
+// A NAMED CHOICE, never a free string. A font stack is interpolated straight
+// into a `style` attribute in an email, which is the same reason the org
+// palette next door is a hex allow-list: the safe move is for the code to own
+// every value and the org to pick one by id.
+//
+// The default changed (2026-09-18) from Basteleur — the site's display serif —
+// to a neutral sans. Basteleur is a DISPLAY face: it was drawn for headings,
+// it is delivered by @font-face, and Gmail, Outlook and Yahoo all strip
+// @font-face outright. So in the clients most people actually read mail in,
+// the body was never Basteleur anyway; it was the fallback, which meant a
+// letter looked one way in a preview pane and another in an inbox. A stack
+// whose FIRST entry is installed everywhere removes that gap.
+//
+// The display serif is still available as a choice for an org that wants it.
+
+export type EmailFontId =
+  | 'sans'
+  | 'book'
+  | 'grotesk'
+  | 'humanist'
+  | 'transitional'
+  | 'compact'
+  | 'record'
+  | 'collective';
+
+export interface EmailFont {
+  label: string;
+  /** What it reads like, for the picker. */
+  hint: string;
+  stack: string;
+}
+
+export const EMAIL_FONTS: Record<EmailFontId, EmailFont> = {
+  sans: {
+    label: 'Neutral sans',
+    hint: 'Plain and legible everywhere. The safest choice for mail.',
+    stack: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+  },
+  book: {
+    label: 'Book serif',
+    hint: 'Warmer, for longer letters. Installed on every desktop and phone.',
+    stack: "Georgia, 'Times New Roman', Times, serif",
+  },
+  grotesk: {
+    label: 'Grotesque',
+    hint: 'Tighter and more editorial than the neutral sans.',
+    stack: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  // ── Added 2026-09-20 ────────────────────────────────────────────────────
+  //
+  // Four more, and every one of them chosen on the SAME test as the first
+  // three: the first name in the stack ships with Windows, macOS, iOS and
+  // Android, so no client ever has to substitute. That test is the whole
+  // reason this list is short and the reason it is a list at all rather than
+  // an upload box — Gmail, Outlook and Yahoo strip @font-face outright, so a
+  // face a recipient does not already have is a face they will never see.
+  humanist: {
+    label: 'Wide humanist',
+    hint: 'Verdana. Drawn for screens and the most forgiving at small sizes.',
+    stack: "Verdana, Geneva, 'DejaVu Sans', sans-serif",
+  },
+  transitional: {
+    label: 'Old-style serif',
+    hint: 'Palatino. Rounder and less formal than the book serif.',
+    stack: "Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif",
+  },
+  compact: {
+    label: 'Compact sans',
+    hint: 'Tahoma. Narrow, so more words fit on a line in a phone preview.',
+    stack: "Tahoma, 'Segoe UI', Geneva, Verdana, sans-serif",
+  },
+  record: {
+    label: 'Typewriter',
+    hint: 'Monospace. For letters that read as a notice or a receipt.',
+    stack: "'Courier New', Courier, 'Liberation Mono', monospace",
+  },
+  collective: {
+    label: 'Collective serif',
+    hint: 'The display face from the website. Most inboxes will substitute it.',
+    stack: "'Basteleur', 'Cormorant Garamond', Georgia, serif",
+  },
+};
+
+export const DEFAULT_EMAIL_FONT: EmailFontId = 'sans';
+
+/** A font id → its stack. An unknown or absent id falls back to the default. */
+export function emailFontStack(id?: string): string {
+  return (EMAIL_FONTS[id as EmailFontId] ?? EMAIL_FONTS[DEFAULT_EMAIL_FONT]).stack;
+}
+
+/** The default body stack. Kept as a constant for callers that had one. */
+export const BODY_FONT_STACK = EMAIL_FONTS[DEFAULT_EMAIL_FONT].stack;
 
 export const EAC_GOLD = '#b79a55';
 export const EAC_INK = '#022278';
@@ -85,7 +176,49 @@ export function getEmailPalette(dark = false): EmailPalette {
 const NFP_FOOTER_TEXT =
   "Elkdonis Arts is a not-for-profit and a collective exercise in providing open resources. We're continuing to grow what we offer — thank you for your patience and interest in our work.";
 
-export interface EmailShellProps {
+/**
+ * The letter's chrome: the picture at the top of the card, and the rule
+ * around it.
+ *
+ * Its own interface because it travels as one unit. Every template takes it
+ * as a single `chrome` prop and spreads it onto the shell without reading a
+ * field of it — a template's body has no opinion about the masthead — so
+ * grouping the four keeps nine signatures from each growing four props, and
+ * keeps them from drifting apart the first time one of them is edited alone.
+ */
+export interface EmailChrome {
+  /**
+   * The organisation's own masthead image, shown INSTEAD of the navy-and-gold
+   * wordmark at the top of every letter.
+   *
+   * An absolute https URL, validated where it is stored (identity.ts) rather
+   * than here — this component interpolates it into a `src`, so the same rule
+   * applies as to the palette hexes next door: the code owns what may appear
+   * and the org supplies only a value that passed the check.
+   *
+   * Unlike `orgHeader`, this is NOT gated on the org sending from its own
+   * authenticated domain. A picture is decoration; the From line is a claim
+   * about identity, and only the second is what a spam filter reads. So an
+   * org's banner appears the day it is set, and whose NAME leads the letter
+   * still switches over on the day its DNS lands.
+   */
+  bannerUrl?: string;
+  /** Alt text for the banner. Falls back to the name in the header. */
+  bannerAlt?: string;
+  /**
+   * The rule around the card, and under the masthead.
+   *
+   * The collective's gold hairline is the default. An org that has a frame of
+   * its own on its website — IFAC's 2px purple is the case this was built for
+   * — can carry it into its mail, so a letter and the site it comes from are
+   * recognisably the same thing.
+   */
+  frameColor?: string;
+  /** Frame thickness in px, 1–4. Anything else falls back to 1. */
+  frameWidth?: number;
+}
+
+export interface EmailShellProps extends EmailChrome {
   /** Inbox preview snippet. */
   previewText: string;
   /** Small line under the collective name — e.g. "New RSVP", "Order Confirmation". */
@@ -118,6 +251,12 @@ export interface EmailShellProps {
   orgHeader?: boolean;
   /** The org's own accent. Used for its name and kicker in the header. */
   orgAccent?: string;
+  /**
+   * Which body face this organisation's mail is set in, by id.
+   *
+   * See EMAIL_FONTS. Absent means the network default.
+   */
+  bodyFont?: string;
   children: React.ReactNode;
 }
 
@@ -138,6 +277,11 @@ export function EmailShell({
   orgName,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  bannerUrl,
+  bannerAlt,
+  frameColor,
+  frameWidth,
   children,
 }: EmailShellProps) {
   const palette = getEmailPalette(dark);
@@ -149,6 +293,26 @@ export function EmailShell({
   const ownHeader = orgHeader && !!orgName;
   const headerName = ownHeader ? orgName : 'Elkdonis Arts Collective';
   const accent = (ownHeader && orgAccent) || EAC_GOLD;
+  const bodyStack = emailFontStack(bodyFont);
+
+  // The frame. Hex-only and 1–4px, for the same reason as every other value
+  // that reaches a `style` attribute here; both are already checked where
+  // they are stored, and this is the second line of that defence rather than
+  // the first, because this component is also called directly in tests.
+  const frame = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(String(frameColor ?? ''))
+    ? (frameColor as string)
+    : EAC_GOLD;
+  const frameW =
+    Number.isInteger(frameWidth) && frameWidth! >= 1 && frameWidth! <= 4 ? frameWidth! : 1;
+  const rule = `${frameW}px solid ${frame}`;
+
+  // A banner replaces the wordmark rather than sitting above it: two mastheads
+  // is not branding, it is a letter that starts twice. The org's name still
+  // rides along as the image's alt text, which is what the substantial share
+  // of inboxes that block images by default will show in its place.
+  const banner = typeof bannerUrl === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(bannerUrl)
+    ? bannerUrl
+    : undefined;
 
   return (
     <Html lang="en">
@@ -156,17 +320,69 @@ export function EmailShell({
         <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} />
       </Head>
       <Preview>{previewText}</Preview>
-      <Body style={{ backgroundColor: palette.bodyBg, fontFamily: BODY_FONT_STACK, margin: 0, padding: 0 }}>
+      <Body style={{ backgroundColor: palette.bodyBg, fontFamily: bodyStack, margin: 0, padding: 0 }}>
         <Container style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
           <Section
             style={{
-              border: `1px solid ${EAC_GOLD}`,
+              border: rule,
               background: palette.cardBg,
             }}
           >
             {/* Marked like the body below: the newsletter editor draws this
                 above the region it is editing, so an author composes inside the
                 letter rather than on a blank white page. */}
+            {banner ? (
+              /* The org's own masthead.
+
+                 `width="600"` with `max-width:100%` and `height:auto`: Outlook
+                 renders through Word, which honours the HTML width attribute
+                 and ignores the CSS, so without the attribute a wide banner
+                 blows the 600px column open in exactly the client the MSO
+                 wrapper in render-email.ts exists to contain. `display:block`
+                 kills the baseline gap under an image that otherwise shows as
+                 a hairline of card colour between the banner and the body. */
+              <Section
+                data-eac-header="1"
+                style={{
+                  padding: 0,
+                  fontSize: 0,
+                  lineHeight: 0,
+                  borderBottom: rule,
+                  backgroundColor: '#01124E',
+                }}
+              >
+                <Img
+                  src={banner}
+                  alt={bannerAlt ?? headerName}
+                  width="600"
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '600px',
+                    height: 'auto',
+                    border: 0,
+                  }}
+                />
+                {kicker && (
+                  <Text
+                    style={{
+                      color: accent,
+                      backgroundColor: '#01124E',
+                      fontSize: '11px',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: '0.13em',
+                      lineHeight: '1.4',
+                      textAlign: 'center' as const,
+                      margin: 0,
+                      padding: '8px 32px',
+                    }}
+                  >
+                    {kicker}
+                  </Text>
+                )}
+              </Section>
+            ) : (
             <Section
               data-eac-header="1"
               style={{
@@ -189,7 +405,7 @@ export function EmailShell({
                   'linear-gradient(90deg, #01124E 0%, #022278 54%, #063179 100%)',
                 padding: '20px 32px',
                 textAlign: 'center' as const,
-                borderBottom: `1px solid ${EAC_GOLD}`,
+                borderBottom: rule,
               }}
             >
               {emblemUrl && (
@@ -229,6 +445,7 @@ export function EmailShell({
                 </Text>
               )}
             </Section>
+            )}
 
             {/*
               The org-editable region.
@@ -241,7 +458,7 @@ export function EmailShell({
             */}
             <Section
               data-eac-body="1"
-              style={{ padding: '38px 40px', fontFamily: BODY_FONT_STACK }}
+              style={{ padding: '38px 40px', fontFamily: bodyStack }}
             >
               {children}
             </Section>
@@ -249,7 +466,7 @@ export function EmailShell({
             {(footerText || showNfpFooter) && (
               <Section
                 data-eac-footer="1"
-                style={{ padding: '0 40px 30px', fontFamily: BODY_FONT_STACK }}
+                style={{ padding: '0 40px 30px', fontFamily: bodyStack }}
               >
                 <Hr style={{ border: 'none', borderTop: `1px solid ${palette.boxBorder}`, margin: '0 0 20px' }} />
                 {footerText}

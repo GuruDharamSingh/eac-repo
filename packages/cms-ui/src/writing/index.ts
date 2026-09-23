@@ -4,3 +4,4 @@ export { WritingDesk } from './WritingDesk';
 export type { WritingDeskProps, DeskPatch, DeskResult } from './WritingDesk';
 export { StartPiece } from './StartPiece';
 export type { StartPieceProps } from './StartPiece';
+export { WritingSection, type WritingSectionProps } from "./WritingSection";

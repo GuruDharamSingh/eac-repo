@@ -17,9 +17,13 @@
 export { EmailFace } from "./EmailFace";
 export type { EmailFaceProps } from "./EmailFace";
 export { EmailSurface, EmailCustomSurface } from "./EmailSurface";
+export { TemplateWordsEditor } from "./TemplateWordsEditor";
+export type { TemplateWordsEditorProps } from "./TemplateWordsEditor";
 export type { EmailSurfaceProps, EmailTab } from "./EmailSurface";
 export type {
   EmailActivity,
+  EmailCopySlot,
+  EmailMergeField,
   EmailAddress,
   EmailConnectors,
   EmailDeliveryStats,

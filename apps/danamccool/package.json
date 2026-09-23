@@ -6,6 +6,7 @@
     "dev": "next dev --port 3018 --turbopack",
     "build": "next build --turbopack",
     "start": "next start --port 3018",
+    "docker:start": "next start -H 0.0.0.0 -p 3018",
     "check-types": "tsc --noEmit --incremental false",
     "lint": "eslint"
   },

@@ -13,6 +13,10 @@ const TABS = [
   { href: "/manage/directory", label: "Artists & dealers" },
   { href: "/manage/people", label: "People & access" },
   { href: "/manage/sections", label: "Site copy & events" },
+  { href: "/manage/submissions", label: "Submissions" },
+  { href: "/manage/email", label: "Email" },
+  { href: "/manage/appearance", label: "Appearance" },
+  { href: "/manage/cloud", label: "Cloud storage" },
 ];
 
 export function ManageTabs() {

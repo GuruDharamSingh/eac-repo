@@ -3,62 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@elkdonis/auth-server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
+import {
+  createUserFolder,
+  getProxyFileUrl,
+  getStorageSlug,
+  resolveUserPath,
+  uploadFile,
+  uploadFilename,
+} from "@elkdonis/services";
 
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL || "http://nextcloud-nginx:80";
-const NEXTCLOUD_USER = process.env.NEXTCLOUD_ADMIN_USER || "elkdonis";
-const NEXTCLOUD_PASS = process.env.NEXTCLOUD_ADMIN_PASSWORD || "";
-
-// Root folder (under the Nextcloud account's home) that holds the marketplace.
-// Every artist gets their own subfolder beneath it, so artwork media lives at:
-//   <MARKETPLACE_NEXTCLOUD_ROOT>/<artistFolder>/Images/<file>
-// Env-driven so dev and prod can point at different roots/instances.
-const MARKETPLACE_ROOT = process.env.MARKETPLACE_NEXTCLOUD_ROOT || "marketplace";
 const MAX_IMAGE_MB = 25;
 
-function encodeWebdavPath(path: string): string {
-  return path
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-}
-
-function davUrl(path: string): string {
-  return `${NEXTCLOUD_URL}/remote.php/dav/files/${encodeURIComponent(
-    NEXTCLOUD_USER
-  )}/${encodeWebdavPath(path)}`;
-}
-
-function authHeader(): string {
-  return `Basic ${Buffer.from(`${NEXTCLOUD_USER}:${NEXTCLOUD_PASS}`).toString("base64")}`;
-}
-
 /**
- * Idempotently create each folder in a relative path via WebDAV MKCOL.
- * Nextcloud returns 405 (Method Not Allowed) when a collection already exists,
- * which we treat as success. Without this, the first PUT into a fresh artist
- * folder would 409 because the parent collection doesn't exist yet.
- */
-async function ensureFolderTree(relativeDir: string): Promise<void> {
-  const segments = relativeDir.split("/").filter(Boolean);
-  let current = "";
-  for (const seg of segments) {
-    current = current ? `${current}/${seg}` : seg;
-    const res = await fetch(davUrl(current), {
-      method: "MKCOL",
-      headers: { Authorization: authHeader() },
-    });
-    // 201 created, 405 already exists → both fine. Anything else: surface it.
-    if (res.status !== 201 && res.status !== 405) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`MKCOL ${current} failed ${res.status}: ${text}`);
-    }
-  }
-}
-
-/**
- * Multi-image artwork upload. Auth-gated: only signed-in marketplace artists may
- * upload. Files land in the artist's own subfolder under the marketplace root on
- * Nextcloud (admin-credentialed WebDAV) and are served back through /api/media.
+ * Multi-image artwork upload. Auth-gated: only signed-in marketplace artists
+ * (people who already have a store) may upload.
+ *
+ * Fixed 2026-09-21: this used to hand-roll its own WebDAV PUT into
+ * `marketplace/<owner_user_id>/Images/…`, a tree `/api/media` never
+ * recognises — `canReadMedia` only serves `EAC_Network/…` (media-authz.ts).
+ * Every image ever uploaded through this form 404'd invisibly: the studio
+ * form showed an attached file with no preview, and the public listing
+ * showed a grey placeholder, even though the PUT to Nextcloud had actually
+ * succeeded. This now writes into the same EAC_Network/users/<slug>/Media/
+ * Images/ tree — via the shared dav helpers — every other app's uploads use.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -68,23 +35,28 @@ export async function POST(request: NextRequest) {
     }
     const userId = session.user.db_user_id ?? session.user.id;
 
-    // Each artist gets a personal folder under the marketplace root. We key it
-    // by the store owner's user id (stable + unique). Only people who already
-    // have a store may upload here.
-    let artistFolder: string | null = null;
+    // Only people who already have a store may upload here.
+    let hasStore = false;
     try {
       const rows = (await db`
-        SELECT owner_user_id::text AS uid FROM store
-        WHERE owner_user_id = ${userId} LIMIT 1
-      `) as unknown as Array<{ uid: string }>;
-      if (rows[0]?.uid) artistFolder = rows[0].uid;
+        SELECT 1 AS present FROM store WHERE owner_user_id = ${userId} LIMIT 1
+      `) as unknown as Array<{ present: number }>;
+      hasStore = rows.length > 0;
     } catch {
       // fall through to the 403 below
     }
-    if (!artistFolder) {
+    if (!hasStore) {
       return NextResponse.json(
         { error: "Only marketplace artists can upload artwork media." },
         { status: 403 }
+      );
+    }
+
+    const slug = await getStorageSlug(userId);
+    if (!slug) {
+      return NextResponse.json(
+        { error: "Your account has no storage folder yet." },
+        { status: 500 }
       );
     }
 
@@ -106,14 +78,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
-    const relativeDir = `${MARKETPLACE_ROOT}/${artistFolder}/Images`;
-    const relativePath = `${relativeDir}/${filename}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address outlives the upload — it is what a stored
+    // page, a gallery item and every <img src> carries. See uploadFilename.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     // Verify actual bytes are a raster image (client MIME is spoofable).
     const validation = validateUploadBuffer(buffer, ["image"]);
@@ -127,21 +98,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Make sure marketplace/<artist>/Images exists before the PUT.
-    await ensureFolderTree(relativeDir);
+    // A fresh artist may not have Media/Images yet — WebDAV PUT into a
+    // missing folder 409s, so make it first. Idempotent.
+    if (!(await createUserFolder(slug, "Media/Images"))) {
+      return NextResponse.json(
+        { error: "Could not prepare your storage folder." },
+        { status: 500 }
+      );
+    }
 
-    const res = await fetch(davUrl(relativePath), {
-      method: "PUT",
-      headers: {
-        Authorization: authHeader(),
-        "Content-Type": file.type,
-      },
-      body: buffer,
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error(`[art-auction upload] Nextcloud PUT failed ${res.status}: ${text}`);
+    const relativePath = resolveUserPath(slug, `Media/Images/${filename}`);
+    const uploaded = await uploadFile(relativePath, buffer, file.type);
+    if (!uploaded) {
       return NextResponse.json(
         { error: "Failed to upload file to storage." },
         { status: 502 }
@@ -150,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      url: `/api/media/${relativePath}`,
+      url: getProxyFileUrl(relativePath),
       path: relativePath,
       filename: file.name,
       mimeType: file.type,

@@ -1,3 +1,10 @@
+/* NOTE (2026-09-18): this sheet used to read the INPUT tokens
+   (`--eac-surface-*`). Those are consumed at :root to compute the `--sf-*`
+   outputs every other sheet in the surface system reads, so a theme scope
+   further down the tree could only ever repaint half of this surface. Every
+   reference below is now an output token, which is what makes email-theme.css
+   possible at all. Values are unchanged for any host that sets the inputs. */
+
 /* ============================================================================
    The email suite's own surface.
 
@@ -8,7 +15,7 @@
    theme it is standing in without knowing anything about that org.
 
    Contrast: every pair below was measured, not eyeballed. The muted text is
-   `--eac-surface-muted`, which the surface theme already guarantees against
+   `--sf-muted`, which the surface theme already guarantees against
    its own ground; nothing here introduces a new ink over a new field.
    ============================================================================ */
 
@@ -36,9 +43,9 @@
 }
 
 .eac-email-badge {
-  border: 1px solid var(--eac-surface-accent, currentColor);
-  background: var(--eac-surface-accent, transparent);
-  color: var(--eac-surface-on-accent, #fff);
+  border: 1px solid var(--sf-accent, currentColor);
+  background: var(--sf-accent, transparent);
+  color: var(--sf-on-accent, #fff);
   border-radius: 999px;
   padding: 0.15rem 0.6rem;
   font-size: 0.7rem;
@@ -83,7 +90,7 @@
 
 .eac-email-feed-who,
 .eac-email-feed-when {
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   font-size: 0.75rem;
 }
 
@@ -93,13 +100,13 @@
   opacity: 0.75;
 }
 .eac-email-mark--received {
-  color: var(--eac-surface-accent, currentColor);
+  color: var(--sf-accent, currentColor);
   opacity: 1;
 }
 
 .eac-email-quiet {
   margin: 0;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   font-size: 0.82rem;
 }
 
@@ -110,7 +117,7 @@
 }
 
 .eac-email-chip {
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
   border-radius: 999px;
   padding: 0.25rem 0.7rem;
   font: inherit;
@@ -122,7 +129,7 @@
 }
 .eac-email-chip:hover,
 .eac-email-chip:focus-visible {
-  border-color: var(--eac-surface-accent, currentColor);
+  border-color: var(--sf-accent, currentColor);
 }
 .eac-email-chip--go {
   border-style: dashed;
@@ -140,7 +147,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.15rem;
-  border-bottom: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+  border-bottom: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
   margin-bottom: 0.5rem;
 }
 
@@ -148,7 +155,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   font: inherit;
   font-size: 0.85rem;
   padding: 0.5rem 0.8rem;
@@ -162,16 +169,16 @@
   gap: 0.4rem;
 }
 .eac-email-tab:hover {
-  color: var(--eac-surface-fg, inherit);
+  color: var(--sf-fg, inherit);
 }
 .eac-email-tab.is-current {
-  color: var(--eac-surface-fg, inherit);
-  border-bottom-color: var(--eac-surface-accent, currentColor);
+  color: var(--sf-fg, inherit);
+  border-bottom-color: var(--sf-accent, currentColor);
 }
 
 .eac-email-tab-count {
-  background: var(--eac-surface-accent, #444);
-  color: var(--eac-surface-on-accent, #fff);
+  background: var(--sf-accent, #444);
+  color: var(--sf-on-accent, #fff);
   border-radius: 999px;
   font-size: 0.68rem;
   padding: 0.05rem 0.4rem;
@@ -193,7 +200,7 @@
   align-items: flex-start;
   gap: 0.6rem;
   padding: 0.6rem 0;
-  border-bottom: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--sf-line, rgba(0, 0, 0, 0.08));
   min-width: 0;
 }
 .eac-email-item:last-child {
@@ -202,7 +209,7 @@
 
 /* Unread is marked by a rule and by weight, never by colour alone. */
 .eac-email-item.is-unread {
-  border-left: 2px solid var(--eac-surface-accent, currentColor);
+  border-left: 2px solid var(--sf-accent, currentColor);
   padding-left: 0.6rem;
 }
 .eac-email-item.is-unread .eac-email-item-title {
@@ -246,7 +253,7 @@
 
 .eac-email-item-sub {
   font-size: 0.76rem;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -258,9 +265,26 @@
   margin-top: 0.25rem;
   font-size: 0.76rem;
 }
+/* Accent and underline STATED, not inherited.
+ *
+ * This read `color: inherit` with no `text-decoration`, which relied on the
+ * browser's default underline — and every host of this suite is a Tailwind
+ * app, whose preflight sets `a { color: inherit; text-decoration: inherit }`.
+ * So each of these rendered as plain body text: "Lay it out yourself" sat
+ * under a letter looking like a caption, and the one door to the layout editor
+ * was invisible on all three sites at once.
+ *
+ * The accent is 6.15:1 on the suite's band — a link has to clear 4.5:1 as
+ * text, and be distinguishable from the prose beside it by more than colour,
+ * which is what the underline is for. */
 .eac-email-item-links a {
-  color: inherit;
+  color: var(--sf-accent, inherit);
+  text-decoration: underline;
   text-underline-offset: 3px;
+}
+.eac-email-item-links a:hover,
+.eac-email-item-links a:focus-visible {
+  text-decoration-thickness: 2px;
 }
 
 .eac-email-item-side {
@@ -275,7 +299,7 @@
 .eac-email-item-when,
 .eac-email-item-status {
   font-size: 0.72rem;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   white-space: nowrap;
 }
 .eac-email-item-status.is-faint {
@@ -288,14 +312,14 @@
   background: transparent;
   font: inherit;
   font-size: 0.72rem;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
   padding: 0;
 }
 .eac-email-quietbtn:hover {
-  color: var(--eac-surface-fg, inherit);
+  color: var(--sf-fg, inherit);
 }
 .eac-email-back {
   margin-bottom: 0.6rem;
@@ -315,7 +339,7 @@
   display: contents;
 }
 .eac-email-facts dt {
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
 }
 .eac-email-facts dd {
   margin: 0;
@@ -327,9 +351,9 @@
 .eac-email-body {
   margin: 0 0 0.9rem;
   padding: 0.8rem;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
-  border-radius: var(--eac-surface-radius, 4px);
-  background: var(--eac-surface-bg-soft, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--sf-radius, 4px);
+  background: var(--sf-bg-soft, rgba(0, 0, 0, 0.03));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.78rem;
   line-height: 1.6;
@@ -366,15 +390,15 @@
 }
 
 .eac-email-stat {
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.1));
-  border-radius: var(--eac-surface-radius, 4px);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.1));
+  border-radius: var(--sf-radius, 4px);
   padding: 0.6rem 0.7rem;
 }
 .eac-email-stat dt {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
 }
 .eac-email-stat dd {
   margin: 0.2rem 0 0;
@@ -385,7 +409,7 @@
 /* A failure count is marked by a rule as well as by the word above it — the
    border alone would be colour-only signalling. */
 .eac-email-stat.is-bad {
-  border-color: var(--eac-surface-danger, #b42318);
+  border-color: var(--sf-danger, #b42318);
 }
 
 /* ── Forms ────────────────────────────────────────────────────────────────── */
@@ -395,7 +419,7 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   margin: 0.8rem 0 0.25rem;
 }
 
@@ -405,14 +429,14 @@
   font: inherit;
   font-size: 0.85rem;
   padding: 0.45rem 0.6rem;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.2));
-  border-radius: var(--eac-surface-radius, 4px);
-  background: var(--eac-surface-bg, transparent);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.2));
+  border-radius: var(--sf-radius, 4px);
+  background: var(--sf-bg, transparent);
   color: inherit;
 }
 .eac-email-input:focus-visible,
 .eac-email-textarea:focus-visible {
-  outline: 2px solid var(--eac-surface-accent, currentColor);
+  outline: 2px solid var(--sf-accent, currentColor);
   outline-offset: 1px;
 }
 .eac-email-textarea {
@@ -453,7 +477,7 @@
 .eac-email-hint {
   display: block;
   font-size: 0.74rem;
-  color: var(--eac-surface-muted, #6b7280);
+  color: var(--sf-muted, #6b7280);
   line-height: 1.45;
 }
 
@@ -475,8 +499,8 @@
   width: 2.2rem;
   height: 2.2rem;
   padding: 0;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.2));
-  border-radius: var(--eac-surface-radius, 4px);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.2));
+  border-radius: var(--sf-radius, 4px);
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
@@ -492,16 +516,16 @@
   margin: 0.5rem 0;
   font-size: 0.8rem;
   padding: 0.4rem 0.6rem;
-  border-radius: var(--eac-surface-radius, 4px);
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--sf-radius, 4px);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
 }
 .eac-email-contrast.is-bad {
-  border-color: var(--eac-surface-danger, #b42318);
+  border-color: var(--sf-danger, #b42318);
 }
 
 .eac-email-swatchdemo {
   padding: 1rem;
-  border-radius: var(--eac-surface-radius, 4px);
+  border-radius: var(--sf-radius, 4px);
   font-size: 1.05rem;
   margin: 0.5rem 0 0.9rem;
   text-align: center;
@@ -545,12 +569,12 @@
   margin: 1rem 0 0;
   padding: 0.55rem 0.8rem;
   font-size: 0.82rem;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
-  border-radius: var(--eac-surface-radius, 4px);
-  background: var(--eac-surface-bg, #fff);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
+  border-radius: var(--sf-radius, 4px);
+  background: var(--sf-bg, #fff);
 }
 .eac-email-status.is-error {
-  border-color: var(--eac-surface-danger, #b42318);
+  border-color: var(--sf-danger, #b42318);
 }
 
 /* Two demos side by side: the masthead (accent as ink) and a button (accent as
@@ -588,8 +612,8 @@
   display: block;
   width: 100%;
   height: 22rem;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.15));
-  border-radius: var(--eac-surface-radius, 4px);
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
+  border-radius: var(--sf-radius, 4px);
   /* White, always: the letter draws its own ground, and letting a dark site
      theme show through the iframe would misrepresent what the inbox gets. */
   background: #fff;
@@ -604,9 +628,9 @@
 .eac-email-words {
   margin-bottom: 0.9rem;
   padding: 0.8rem;
-  border: 1px solid var(--eac-surface-line, rgba(0, 0, 0, 0.12));
-  border-radius: var(--eac-surface-radius, 4px);
-  background: var(--eac-surface-bg-soft, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--sf-radius, 4px);
+  background: var(--sf-bg-soft, rgba(0, 0, 0, 0.02));
 }
 .eac-email-words .eac-email-label {
   margin-top: 0;
@@ -621,4 +645,400 @@
 .eac-email-words .eac-email-rowactions {
   margin-top: 0.6rem;
   align-items: center;
+}
+
+/* ===========================================================================
+   Letters — the workspace.
+
+   A row of letters across the top, then two wide columns: what the letter
+   says on the left, the letter itself on the right.
+
+   NOTHING HERE SCROLLS BUT THE PAGE, and that is the whole rule this layout
+   is built on. The version before it put the list AND every box that changes
+   a letter into a 23rem rail with a fixed 52rem height and two nested
+   scrollers inside it. Eight rich-text editors at ~330px wide is already the
+   wrong shape, and it hid a real bug for weeks: Tiptap draws a placeholder as
+   a floated box of ZERO height, so the three-paragraph network defaults this
+   tab passes as placeholders laid themselves straight down over the labels
+   and boxes beneath — a 23px editor with 392px of text coming out of it.
+   Scrolling that column showed a pile of overlapping sentences.
+
+   The placeholder is fixed at source (editor.css clips it to one line). This
+   layout is why nobody saw it: a panel that scrolls inside a page that also
+   scrolls is two scrollbars deep before anyone has typed, and it made 330px
+   look like enough room.
+   =========================================================================== */
+
+.eac-letters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem 1.4rem;
+  border-top: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+}
+
+/* ── the letters, as a row ───────────────────────────────────────────────── */
+
+/* Wrapping, not scrolling sideways. There are eight and their titles are two
+   or three words; on a narrow screen they take three rows, which is legible,
+   where a horizontal scroller hides half of them behind a gesture. */
+.eac-letters-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.eac-letters-pick {
+  display: grid;
+  gap: 0.05rem;
+  text-align: left;
+  appearance: none;
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
+  border-bottom-width: 3px;
+  border-bottom-color: transparent;
+  border-radius: var(--sf-radius, 2px);
+  background: var(--sf-bg, transparent);
+  font: inherit;
+  color: var(--sf-fg, inherit);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+.eac-letters-pick:hover {
+  border-color: var(--sf-rule, rgba(0, 0, 0, 0.25));
+}
+/* The selected letter is marked by the bar it sits on, matching how the tab
+   bar above marks the current tab — one grammar for "you are here". */
+.eac-letters-pick[aria-current="true"] {
+  border-bottom-color: var(--sf-accent, currentColor);
+  background: var(--sf-bg-soft, rgba(0, 0, 0, 0.04));
+}
+.eac-letters-pick-title {
+  font-size: 0.85rem;
+}
+.eac-letters-state {
+  font-size: 0.68rem;
+  color: var(--sf-muted, #6b7280);
+}
+.eac-letters-state.is-words,
+.eac-letters-state.is-layout {
+  color: var(--sf-accent, currentColor);
+}
+
+/* ── the head: which letter, and the way into the editor ─────────────────── */
+
+.eac-letters-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+}
+.eac-letters-headtext {
+  min-width: 0;
+}
+.eac-letters-headtext h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.eac-letters-headtext p {
+  margin: 0.15rem 0 0;
+}
+
+/* Two lines inside the button: what it does, and what will happen. It opens
+   a different tool on a different page, which is worth saying on the control
+   rather than in a sentence somewhere near it. */
+.eac-letters-open,
+.eac-letters-open:hover,
+.eac-letters-open:focus-visible {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 1.1rem;
+  text-align: center;
+  /* Stated here and not left to `.eac-btn`, which already says it: a host
+     with a global `a { text-decoration: underline }` beats a class selector
+     of equal specificity declared earlier, and IFAC has one. The button
+     shipped looking like a link inside a box. */
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.eac-letters-open .eac-email-hint {
+  /* On the accent fill, so it takes the ink that sits ON it rather than the
+     muted grey it would inherit — which measured 1.9:1 against the steel
+     accent, i.e. a subtitle nobody could read. */
+  color: inherit;
+  opacity: 0.85;
+  font-size: 0.68rem;
+  text-decoration: none;
+}
+
+/* ── the two columns ─────────────────────────────────────────────────────── */
+
+/* The preview column is given a MINIMUM of 34rem and the work column takes
+   the rest, rather than a 1fr/1fr split: a letter is 600px wide and a preview
+   narrower than that is showing a layout nobody will receive. Under 1180px
+   there is not enough for both, so they stack and each gets the full width. */
+.eac-letters-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .eac-letters-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.eac-letters-work,
+.eac-letters-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+/* ── the boxes that change it ────────────────────────────────────────────── */
+
+.eac-letters-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--sf-radius, 2px);
+  background: var(--sf-bg-soft, rgba(0, 0, 0, 0.02));
+}
+.eac-letters-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+/* Monospace, and it says the token verbatim: this is a thing you retype or
+   paste, so what is written on it has to be exactly what works. */
+.eac-letters-chip {
+  appearance: none;
+  border: 1px dashed var(--sf-line, rgba(0, 0, 0, 0.2));
+  border-radius: var(--sf-radius, 2px);
+  background: transparent;
+  color: var(--sf-fg, inherit);
+  font-family: var(--sf-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+}
+.eac-letters-chip:hover,
+.eac-letters-chip:focus-visible {
+  border-style: solid;
+  border-color: var(--sf-accent, currentColor);
+}
+
+.eac-letters-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.eac-letters-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.eac-letters-slot-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* The org's own section, set apart from the letter's own words: one is
+   rewriting what the network wrote, the other is adding something that was
+   never there, and they are different acts. */
+.eac-letters-own {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+}
+
+/* The network's default for a block, in full and on demand.
+
+   It cannot be the placeholder — a placeholder is clipped to one line, and
+   before it was clipped these three-paragraph defaults were the overlapping
+   text this whole layout is a response to. Folded, because it is what the
+   box already says: you read it once, decide, and then it is in the way. */
+.eac-letters-default > summary {
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: var(--sf-muted, #6b7280);
+  list-style: none;
+}
+.eac-letters-default > summary::-webkit-details-marker {
+  display: none;
+}
+.eac-letters-default > summary::before {
+  content: "▸ ";
+  font-size: 0.65rem;
+}
+.eac-letters-default[open] > summary::before {
+  content: "▾ ";
+}
+.eac-letters-default p {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--sf-muted, #6b7280);
+}
+
+/* Plain, in flow, at the foot of a column that no longer scrolls on its own.
+   It was `position: sticky` against the inner scroller — necessary then, and
+   now just a bar that would detach from the form it belongs to. */
+.eac-letters-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--sf-line, rgba(0, 0, 0, 0.1));
+}
+
+.eac-letters-deep {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--sf-muted, #6b7280);
+}
+.eac-letters-deep a,
+a.eac-letters-deep {
+  color: var(--sf-accent, inherit);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── the letter itself ───────────────────────────────────────────────────── */
+
+.eac-letters-stagehead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Sticky, so the letter stays beside the box being typed in as the page
+   scrolls past it. Safe here in a way it was not before: this is the only
+   sticky element on the tab, its container is the grid cell, and it has a
+   ground of its own.
+   `top` clears the suite's tab bar; `max-height` keeps it inside the viewport
+   so a tall letter scrolls within its own frame rather than being cut off. */
+@media (min-width: 1181px) {
+  .eac-letters-stage {
+    position: sticky;
+    top: 0.5rem;
+  }
+  .eac-letters-frame {
+    max-height: calc(100vh - 6rem);
+  }
+}
+
+.eac-letters-frame {
+  display: block;
+  width: 100%;
+  height: 44rem;
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+  border-radius: var(--sf-radius, 2px);
+  /* White, and never the suite's ground: this is a real letter rendered as it
+     will arrive, and tinting it would be the preview lying about the one thing
+     it exists to be honest about. */
+  background: #ffffff;
+}
+
+@media (max-width: 1180px) {
+  .eac-letters-frame {
+    height: 34rem;
+  }
+}
+
+/* ── the masthead panel, in Look ─────────────────────────────────────────── */
+
+/* The banner as the letter draws it: capped at the letter's own 600px and on
+   the navy the masthead band sits on, so a picture that looks right in a file
+   browser and wrong at 600px is caught here rather than in an inbox. */
+.eac-email-bannerdemo {
+  margin: 0.6rem 0 0.9rem;
+  max-width: 600px;
+  background: #01124e;
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
+}
+.eac-email-bannerdemo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eac-email-framedemo {
+  margin: 0.5rem 0 0.9rem;
+  max-width: 600px;
+  padding: 1rem;
+  border-style: solid;
+  background: var(--sf-bg, #fff);
+  font-size: 0.85rem;
+  color: var(--sf-muted, #6b7280);
+}
+/* ── the face picker, in Look ────────────────────────────────────────────── */
+
+.eac-email-fonts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.6rem;
+}
+.eac-email-font {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  appearance: none;
+  border: 1px solid var(--sf-line, rgba(0, 0, 0, 0.15));
+  border-radius: var(--sf-radius, 2px);
+  background: transparent;
+  color: var(--sf-fg, inherit);
+  font: inherit;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+.eac-email-font[aria-pressed="true"] {
+  border-color: var(--sf-accent, currentColor);
+  box-shadow: inset 0 0 0 1px var(--sf-accent, currentColor);
+}
+.eac-email-font-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+/* The sample is set in the face it names. The stacks are duplicated from
+   EMAIL_FONTS in @elkdonis/email deliberately — this package does not import
+   the sending package, and a specimen that is not actually set in the face it
+   advertises is worse than no specimen. */
+.eac-email-font-sample {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.eac-email-font-sample[data-font="sans"] {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.eac-email-font-sample[data-font="book"] {
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+.eac-email-font-sample[data-font="grotesk"] {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.eac-email-font-sample[data-font="humanist"] {
+  font-family: Verdana, Geneva, "DejaVu Sans", sans-serif;
+}
+.eac-email-font-sample[data-font="transitional"] {
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+.eac-email-font-sample[data-font="compact"] {
+  font-family: Tahoma, "Segoe UI", Geneva, Verdana, sans-serif;
+}
+.eac-email-font-sample[data-font="record"] {
+  font-family: "Courier New", Courier, "Liberation Mono", monospace;
+}
+.eac-email-font-sample[data-font="collective"] {
+  font-family: "Basteleur", "Cormorant Garamond", Georgia, serif;
 }

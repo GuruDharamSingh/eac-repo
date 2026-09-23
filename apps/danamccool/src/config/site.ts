@@ -19,6 +19,20 @@ export const siteConfig = {
   elkdonisArtsUrl: process.env.NEXT_PUBLIC_ELKDONIS_ARTS_URL ?? "http://localhost:3005",
   ifacUrl: process.env.NEXT_PUBLIC_IFAC_URL ?? "http://localhost:3008",
   ifacProfilePath: "/artists/danamccool",
+  /**
+   * The network marketplace (art-auction). Her artworks are listed in her
+   * store there, so "Enquire / buy" on this site goes to the marketplace's
+   * own page for the piece — one checkout for the whole network, not a second
+   * one here.
+   */
+  marketUrl: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "https://market.arts-collective.com",
+  /**
+   * Site-wide "in progress" gate — the site just went live on danamccool.com
+   * before it's ready for the public. Read at request time (root layout is
+   * `force-dynamic`), so flipping it back off later is a container restart,
+   * not a rebuild. See src/lib/auth.ts's `canBypassComingSoon`.
+   */
+  comingSoon: process.env.DANAMCCOOL_COMING_SOON === "true",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

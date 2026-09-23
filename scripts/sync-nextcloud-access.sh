@@ -34,6 +34,19 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 
+# cron's PATH has no node on this host (it's under nvm) — find it rather than
+# making every crontab line carry a PATH.
+if ! command -v node >/dev/null 2>&1; then
+  NVM_NODE="$(ls -d "$HOME"/.nvm/versions/node/*/bin 2>/dev/null | sort -V | tail -1)"
+  [ -n "$NVM_NODE" ] && export PATH="$NVM_NODE:$PATH"
+fi
+
+# One run at a time: the */10 cron and scripts/nc-sync-queue.mjs (owner-
+# requested syncs) both land here. Wait for a run in progress rather than
+# skip, so a queued request is never marked done by a run that didn't happen.
+exec 9>"${TMPDIR:-/tmp}/nc-access-sync.lock"
+flock -w 900 9 || { echo "[$(date -Is)] nc-access-sync: another run held the lock for 15 min, giving up"; exit 75; }
+
 # Pull credentials from .env only for values not already provided, so a
 # systemd unit or CI can override without editing the file.
 if [ -f .env ]; then
@@ -51,10 +64,21 @@ export DATABASE_URL NEXTCLOUD_URL NEXTCLOUD_ADMIN_USER NEXTCLOUD_ADMIN_PASSWORD
 
 echo "[$(date -Is)] nc-access-sync starting"
 
+# Owner "Sync now" requests and approved claims (nextcloud_sync_requests,
+# migration 139) are answered by this run: claim them now, record the outcome
+# at the end. A queue error never stops the sync.
+CLAIMED="$(node scripts/nc-sync-queue.mjs claim || true)"
+STEP="starting"
+trap 'node scripts/nc-sync-queue.mjs finish failed "$CLAIMED" "Sync failed during: $STEP. Details are in the host log (tag nc-access-sync)." || true' ERR
+
+STEP="folders, circles, membership, shares"
 echo "--- 1/2 folders, circles, membership, shares (OCS) ---"
 node scripts/provision-org-circles.mjs
 
+STEP="team folder permissions"
 echo "--- 2/2 team folder ACLs (occ) ---"
 node scripts/apply-team-folder-acls.mjs --apply
 
+trap - ERR
+node scripts/nc-sync-queue.mjs finish done "$CLAIMED" || true
 echo "[$(date -Is)] nc-access-sync done"

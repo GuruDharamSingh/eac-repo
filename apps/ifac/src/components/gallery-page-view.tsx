@@ -37,7 +37,7 @@ export async function GalleryPageView({
   const viewerId = session.user ? (session.user.db_user_id ?? session.user.id) : null;
   const editable = Boolean(viewerId && (await canEditProfile(viewerId, profile.userId)));
 
-  const gallery = await getUserGallery(profile.userId, gallerySlug);
+  const gallery = await getUserGallery(profile.userId, gallerySlug, { site: "ifac" });
   if (!gallery || (!gallery.isPublic && !editable)) notFound();
 
   const base = kind === "artist" ? "artists" : "dealers";

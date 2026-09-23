@@ -3,7 +3,12 @@ import type { UserSummary } from './user';
 import type { Topic } from './topic';
 import type { Media } from './media';
 
-export type PostStatus = 'draft' | 'published' | 'archived';
+/**
+ * Must match threads_status_check. 'pending' joined it with migration 156:
+ * written, waiting on a moderator, and invisible to every read that filters
+ * `status = 'published'` — which is all of them. See services/moderation.ts.
+ */
+export type PostStatus = 'draft' | 'pending' | 'published' | 'archived';
 /**
  * Must match threads_visibility_check in the database. These are the literal
  * column values, not friendly names — the previous 'org' | 'network' | 'public'

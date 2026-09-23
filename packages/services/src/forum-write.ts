@@ -2,10 +2,11 @@ import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { sanitizeRichText } from '@elkdonis/utils';
 import { createThread } from './posts';
-import { getOrgFeed, canViewFeed, upsertOrgFeed } from './org-feeds';
+import { getOrgFeed, canViewFeed, canPostToFeed, upsertOrgFeed } from './org-feeds';
 import { viewerIdentityIds } from './forum';
 import { getIdentityIds, resolveActor } from './identities';
 import type { ForumPerson, ForumViewer } from './forum';
+import { getOrgNcForum, pushModerationToNextcloud, pushReplyToNextcloud, pushTopicToNextcloud, threadNcState } from './nc-forum';
 
 // ============================================================================
 // The Grand Forum — write layer.
@@ -159,6 +160,12 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
   const thread = await loadThreadForWrite(input.threadId, viewer);
   if (!thread) return { ok: false, error: 'No such thread.' };
   if (thread.locked && !canModerate(viewer, thread.orgId)) return { ok: false, error: 'This topic is locked.' };
+  // A topic shared with Nextcloud is the org Team's conversation: members
+  // reply, unless the org marked its Nextcloud category public.
+  const nc = await threadNcState(thread.id);
+  if (nc.synced && !nc.isPublic && !isOrgMember(viewer, thread.orgId)) {
+    return { ok: false, error: 'This topic is shared with Nextcloud — replies are for members of this organisation.' };
+  }
 
   const html = textToHtml(input.text ?? '');
   if (!html.replace(/<[^>]+>/g, '').trim()) return { ok: false, error: 'Write something first.' };
@@ -195,7 +202,7 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
     // Watchers hear about it; the parent's author hears it as a reply to them.
     await tx`
       INSERT INTO notifications (id, user_id, kind, thread_id, reply_id, actor_id, data)
-      SELECT ${nanoid()} || substr(md5(w.user_id::text), 1, 6), w.user_id,
+      SELECT ${nanoid(15)} || substr(md5(w.user_id::text), 1, 6), w.user_id,
              CASE WHEN w.user_id = ${parentAuthor} THEN 'reply_to_you' ELSE 'reply' END,
              ${thread.id}, ${replyId}, ${uid}, '{}'::jsonb
       FROM watches w
@@ -209,6 +216,10 @@ export async function postReply(viewer: ForumViewer, input: PostReplyInput): Pro
       `;
     }
   });
+
+  // Awaited so the reply's link exists by the time the page reloads; a
+  // failure only marks it for the sync tick to retry — the reply stands.
+  if (nc.synced) await pushReplyToNextcloud(replyId).catch((err) => console.error('[forum] nc reply push:', err));
 
   return { ok: true, replyId, page: await pageOfReply(thread.id, replyId) };
 }
@@ -244,6 +255,13 @@ export interface CreateTopicInput {
    * from a request is a claim, never a permission.
    */
   actingAs?: string | null;
+  /**
+   * Also post it to the org's Nextcloud forum category (migration 144).
+   * Admin level only — owner/guide or global admin — and only where the org
+   * has a category. A synced topic is members-only unless that category is
+   * public, matching who can read it on Nextcloud.
+   */
+  syncToNextcloud?: boolean;
 }
 
 export async function createTopic(viewer: ForumViewer, input: CreateTopicInput): Promise<WriteResult<{ threadId: string; slug: string }>> {
@@ -253,6 +271,7 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
   if (!feed) return { ok: false, error: 'No such forum.' };
   const role = viewer.roles[input.orgId] ?? null;
   if (!viewer.isGlobalAdmin && !canViewFeed(feed, role)) return { ok: false, error: 'This forum is for members.' };
+  if (!viewer.isGlobalAdmin && !canPostToFeed(feed, role)) return { ok: false, error: 'Only the stewards of this forum start topics here — reply to one instead.' };
 
   const title = (input.title ?? '').trim().replace(/\s+/g, ' ');
   if (title.length < 2) return { ok: false, error: 'Give it a title.' };
@@ -264,6 +283,12 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
   const actor = await resolveActor(uid, input.actingAs);
   if (actor.ok === false) return { ok: false, error: actor.error };
 
+  const ncForum = input.syncToNextcloud ? await getOrgNcForum(input.orgId) : null;
+  if (input.syncToNextcloud) {
+    if (!canModerate(viewer, input.orgId)) return { ok: false, error: 'Only owners and guides can share a topic with Nextcloud.' };
+    if (!ncForum) return { ok: false, error: 'This organisation has no Nextcloud forum category yet.' };
+  }
+
   const post = await createThread({
     kind: 'post',
     title,
@@ -271,9 +296,13 @@ export async function createTopic(viewer: ForumViewer, input: CreateTopicInput):
     authorId: actor.identityId,
     body: html,
     status: 'published',
-    visibility: 'PUBLIC',
+    visibility: ncForum && !ncForum.isPublic ? 'ORGANIZATION' : 'PUBLIC',
     section: feed.slug,
   });
+  if (ncForum) {
+    const pushed = await pushTopicToNextcloud(post.id).catch((err) => ({ ok: false, error: String(err) }));
+    if (!pushed.ok) console.error('[forum] nc topic push (will retry):', pushed.error);
+  }
 
   const topicIds = (input.topicIds ?? []).filter(Boolean);
   if (topicIds.length) {
@@ -608,6 +637,7 @@ export async function moderateThread(viewer: ForumViewer, threadId: string, acti
     }
   }
   await logModeration(viewer, t.org_id, threadId, action, arg);
+  if (action !== 'move') await pushModerationToNextcloud(threadId, action).catch((err) => console.error('[forum] nc moderation push:', err));
   return { ok: true };
 }
 

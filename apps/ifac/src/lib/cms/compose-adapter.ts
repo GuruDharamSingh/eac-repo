@@ -88,5 +88,14 @@ export function toSaveContentInput(
     // Prose, not a parsed rule. `threads.recurrence_custom_rule` already
     // existed and had no writer; the calendar still runs off the pattern.
     recurrenceCustomRule: optStr(answers.recurrence_custom_rule),
+    // The two rooms a gathering can be given. Both are acted on AFTER the
+    // thread exists (saveContentAction), because each needs its id.
+    createTalkRoom: bool(answers.create_talk_room),
+    createDocument: bool(answers.create_document),
+    // "Who's hosting": undefined when the form had no such field (no
+    // candidates), "" when someone chose "Nobody" — the two mean different
+    // things, so they are kept apart. See assignNextHosts.
+    hostUserId: answers.host_user_id === undefined ? undefined : str(answers.host_user_id),
+    coHostUserId: answers.co_host_user_id === undefined ? undefined : str(answers.co_host_user_id),
   };
 }

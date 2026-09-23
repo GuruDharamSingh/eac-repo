@@ -21,6 +21,13 @@ export { sanitizeRichText, sanitizePostBody } from './sanitize';
 // HTML sanitization for Silex-published org sites
 export { sanitizeSilexHtml } from './sanitize-silex';
 
+// HTML sanitization + style inlining for rich text going into an email
+export {
+  sanitizeEmailHtml,
+  emailHtmlToText,
+  type EmailHtmlPalette,
+} from './sanitize-email';
+
 // Magic-byte upload validation
 export {
   sniffFileType,

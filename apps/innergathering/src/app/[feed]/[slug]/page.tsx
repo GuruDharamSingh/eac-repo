@@ -190,6 +190,8 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
                 attendanceCount={attendance}
                 attendeeLimit={thread.attendeeLimit}
                 cancelled={cycle === "cancelled"}
+                price={offering.price}
+                priceSlidingMin={offering.priceSlidingMin}
               />
             )}
             {viewer?.isMember && attendance > 0 && (

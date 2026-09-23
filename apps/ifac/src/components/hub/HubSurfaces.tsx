@@ -8,10 +8,16 @@ import {
   defaultThreadToAnswers,
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
-import { createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { CloudSurface, PlanAheadSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
+import {
+  loadProfilePageAction,
+  setProfileSectionAction,
+  startPayoutsAction,
+  disconnectPayoutsAction,
+} from "@/lib/cms/payout-actions";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
 import { FilesSurface } from "./FilesCard";
@@ -71,6 +77,8 @@ import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 export function HubSurfaces({
   signedIn,
   canEdit,
+  isMember = false,
+  hostCandidates = [],
   userId = null,
   displayName,
   feeds,
@@ -78,6 +86,10 @@ export function HubSurfaces({
 }: {
   signedIn: boolean;
   canEdit: boolean;
+  /** Member, guide or owner of IFAC. Members may post in the hub. */
+  isMember?: boolean;
+  /** Who may host a gathering — the rota's own candidate list. */
+  hostCandidates?: Array<{ userId: string; displayName: string }>;
   /** The viewer's account id — what lets an author remove their own thread. */
   userId?: string | null;
   displayName?: string | null;
@@ -90,13 +102,14 @@ export function HubSurfaces({
   const connectors = React.useMemo<SurfaceConnectors>(
     () =>
       createHubConnectors({
-        // canCompose was pinned false while this site had no compose surface.
-        // Publishing for the org is an owner/guide act — the same gate
-        // saveContentAction enforces server-side, mirrored here so a member
-        // is not offered a form that will refuse them.
+        // A MEMBER may compose (owner's call, 2026-09-19): membership is what
+        // lets someone post in the hub. What a member may NOT do is publish a
+        // dated item — `canPublishDated` below — which is the same line
+        // saveContentAction draws server-side, mirrored here so nobody is
+        // offered a form that will refuse them.
         viewer: {
           signedIn,
-          canCompose: canEdit,
+          canCompose: isMember,
           displayName,
           // Editors take anything down; anyone may take down their own.
           canRemove: (t) => canEdit || (Boolean(userId) && t.authorId === userId),
@@ -143,6 +156,17 @@ export function HubSurfaces({
         // /api/center/avatar, which this app now serves the same way
         // amrit-canada and innergathering do.
         profile: true,
+        // "What your page carries" and "Payouts" inside the profile popup.
+        // Payouts is here rather than on a page of its own because being
+        // payable is a fact about the person, and the popup is where a person
+        // already is. IFAC takes no money itself — the account this connects
+        // is the network's one, which the marketplace settles through.
+        profilePage: {
+          load: loadProfilePageAction,
+          setSection: setProfileSectionAction,
+          startPayouts: startPayoutsAction,
+          disconnectPayouts: disconnectPayoutsAction,
+        },
         onMutated: () => router.refresh(),
 
         // What this site can compose. Stated once, here, rather than again on
@@ -151,8 +175,20 @@ export function HubSurfaces({
           orgSlug: siteConfig.orgId,
           feeds,
           canManageOrg: canEdit,
+          // A member writes posts; events and meetings are a guide's act.
+          canPublishDated: canEdit,
+          // The way out of every compose popup, into the same form as a page.
+          pageHref: "/hub/compose?kind=:kind",
+          // "Who's hosting" on a dated kind — the same people Plan ahead
+          // offers, saved onto the same rota row.
+          hostCandidates,
           hasMeetings: true,
           canCreateDocument: true,
+          // "Or make a Talk room": a public room (type 3) joinable by link,
+          // which is how guests get in without a Nextcloud account. Offered
+          // only for a dated kind, and only when no joining link was typed —
+          // the shared field's own `dependsOn`.
+          canCreateTalkRoom: true,
           // Workshops in DIALOG mode, not route. The catalogue's route form
           // points at /hub/workshops/:orgSlug/new — the ten-step template
           // wizard — and IFAC has no such route, so offering it that way
@@ -170,12 +206,23 @@ export function HubSurfaces({
           hasMemberBlogs: true,
         },
 
-        async saveThread({ kind, answers, status }) {
+        async saveThread({ kind, answers, status, threadId }) {
+          // `threadId` is what makes this an EDIT. Dropping it (as this did
+          // until 2026-09-21) made every edit a new thread.
           const result = await saveContentAction(
-            toSaveContentInput(kind, answers, status)
+            toSaveContentInput(kind, answers, status),
+            threadId
           );
           // `!result.ok` does not narrow in this repo — compare explicitly.
           if (result.ok === false) return { ok: false, error: result.error };
+          // Held for a look: say so, or the author sees their piece vanish
+          // from the site they just published it to.
+          if (result.status === "pending") {
+            toast.success("Sent to the guides. It goes up once one of them says yes.");
+          }
+          // The thread saved; a room it asked for did not. Say which, rather
+          // than leaving a meeting that quietly has no room in it.
+          for (const warning of result.warnings ?? []) toast.error(warning);
           return { ok: true, id: result.id, href: null };
         },
 
@@ -223,6 +270,21 @@ export function HubSurfaces({
         // descriptor for one org's filing cabinet.
         custom: {
           files: ({ descriptor }) => <FilesSurface descriptor={descriptor} />,
+          // The shared Cloud card (cms-ui/hub) — Nextcloud linking + deep links.
+          cloud: ({ descriptor }) => <CloudSurface descriptor={descriptor} />,
+
+          // Who hosts each coming week, and what it covers. Registered
+          // 2026-09-21: the standing meeting's "Plan ahead" tool has always
+          // opened `meeting-rota`, and IFAC had never registered it, so the
+          // popup fell through to a bare list of people with no way to
+          // assign anybody.
+          "meeting-rota": ({ descriptor }) => (
+            <PlanAheadSurface
+              threadId={String(descriptor.props?.threadId ?? "")}
+              canPlan={Boolean(descriptor.props?.canPlan)}
+              timeZone="America/Toronto"
+            />
+          ),
           "page-sections": ({ descriptor }) => (
             <PageSectionsSurface descriptor={descriptor} />
           ),
@@ -273,7 +335,7 @@ export function HubSurfaces({
           return { ok: true, attending: Boolean(data.attending ?? going), count: data.count };
         },
       }),
-    [signedIn, canEdit, userId, displayName, feeds, router]
+    [signedIn, canEdit, isMember, hostCandidates, userId, displayName, feeds, router]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

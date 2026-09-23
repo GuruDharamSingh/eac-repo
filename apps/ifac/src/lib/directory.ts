@@ -4,13 +4,7 @@ import {
   type OrgProfile,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import {
-  artists as staticArtists,
-  dealers as staticDealers,
-  type IFACProfile,
-  type Artwork,
-  type ExternalLink,
-} from "@/lib/artists";
+import type { IFACProfile, Artwork, ExternalLink } from "@/lib/artists";
 
 export type { IFACProfile, Artwork, ExternalLink };
 
@@ -117,20 +111,22 @@ function serviceToRow(p: OrgProfile): ProfileRow {
 }
 
 /**
- * List published profiles of a kind. Falls back to the bundled static roster
- * if the DB is empty or unreachable, so the site never renders blank.
+ * List published profiles of a kind, from the database (pictures from Nextcloud).
  */
 export async function listDirectory(kind: "artist" | "dealer"): Promise<IFACProfile[]> {
   const rows = await listOrgProfiles(siteConfig.orgId, {
     onlyPublic: true,
     tags: [kind],
   });
-  if (rows.length > 0) return rows.map((r) => rowToProfile(serviceToRow(r), kind));
-  return kind === "artist" ? staticArtists : staticDealers;
+  // No static fallback any more: the bundled roster carried copies of every
+  // picture in the app itself, so an outage or an empty table quietly served
+  // pictures that were not the ones in the artists' own Nextcloud folders.
+  // Every profile and picture now comes from the database and Nextcloud.
+  return rows.map((r) => rowToProfile(serviceToRow(r), kind));
 }
 
 /**
- * Fetch one profile by slug (artist or dealer). DB first, static fallback.
+ * Fetch one profile by slug (artist or dealer), from the database.
  *
  * A row that EXISTS but is not public means unpublished — not "fall through to
  * the bundled copy". That distinction is what makes unlisting someone in
@@ -148,10 +144,8 @@ export async function getDirectoryProfile(slug: string): Promise<IFACProfile | u
     const kind = row.tags.includes("dealer") ? "dealer" : "artist";
     return rowToProfile(serviceToRow(row), kind);
   }
-  return (
-    staticArtists.find((p) => p.slug === slug) ??
-    staticDealers.find((p) => p.slug === slug)
-  );
+  // A slug the database has never heard of is not a profile (see listDirectory).
+  return undefined;
 }
 
 /** All slugs of a kind — used for generateStaticParams. */
@@ -160,7 +154,5 @@ export async function listDirectorySlugs(kind: "artist" | "dealer"): Promise<str
     onlyPublic: true,
     tags: [kind],
   });
-  const slugs = rows.map((r) => r.slug).filter((s): s is string => Boolean(s));
-  if (slugs.length > 0) return slugs;
-  return (kind === "artist" ? staticArtists : staticDealers).map((p) => p.slug);
+  return rows.map((r) => r.slug).filter((s): s is string => Boolean(s));
 }

@@ -22,3 +22,7 @@ export * from './workshop-materials';
 
 // React components (optional)
 export * from './components';
+
+// Reading a calendar back (the write side is calendar.ts). See calendar-read.ts.
+export { listCalendarObjects, deleteCalendarObject } from './calendar-read';
+export type { CalendarObject, CalendarInstance } from './calendar-read';

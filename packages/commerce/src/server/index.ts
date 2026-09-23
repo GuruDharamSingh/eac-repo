@@ -78,8 +78,20 @@ export {
   listHeld,
   releaseHold,
   releaseOnPayoutAccountReady,
+  recordPayout,
+  getEarningsStatement,
+  listPayable,
 } from "./ledger";
-export type { LedgerEntry, Balance, Party, PartyKind, HoldReason } from "./ledger";
+export type {
+  LedgerEntry,
+  Balance,
+  Party,
+  PartyKind,
+  HoldReason,
+  EarningsLine,
+  RecordPayoutInput,
+  PayableParty,
+} from "./ledger";
 export type { LineSettlement, SettlementInput } from "./settlement";
 export type {
   CreateThreadOrderInput,
@@ -740,6 +752,9 @@ export async function setPayoutIdentity(
     UPDATE users SET
       payout_email  = ${input.payoutEmail !== undefined ? input.payoutEmail : db`payout_email`},
       payout_method = COALESCE(${input.payoutMethod ?? null}, payout_method),
+      -- Where they are is part of being payable, not profile decoration: it
+      -- decides whether an e-Transfer can reach them at all.
+      country       = ${input.country !== undefined ? input.country : db`country`},
       stripe_account_id =
         ${input.stripeAccountId !== undefined ? input.stripeAccountId : db`stripe_account_id`},
       -- Clearing the account clears the KYC stamp with it: a stale
@@ -790,7 +805,7 @@ export async function getPayoutIdentity(
   userId: string
 ): Promise<PayoutIdentity | null> {
   const rows = (await db`
-    SELECT id, payout_email, payout_method, stripe_account_id, stripe_onboarded_at
+    SELECT id, payout_email, payout_method, stripe_account_id, stripe_onboarded_at, country
     FROM users WHERE id = ${userId} LIMIT 1
   `) as unknown as Row[];
   const r = rows[0];
@@ -799,6 +814,7 @@ export async function getPayoutIdentity(
     userId: r.id as string,
     payoutEmail: (r.payout_email as string | null) ?? null,
     payoutMethod: (r.payout_method as PayoutIdentity["payoutMethod"]) ?? "etransfer",
+    country: (r.country as string | null) ?? null,
     stripeAccountId: (r.stripe_account_id as string | null) ?? null,
     stripeOnboardedAt: (r.stripe_onboarded_at as string | null) ?? null,
     // An account id exists from the moment onboarding *starts*, so it cannot

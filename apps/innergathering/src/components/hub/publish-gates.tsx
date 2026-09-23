@@ -153,7 +153,7 @@ export function ArtPieceGate() {
       }}
       onSave={createArtPieceAction}
       marketplaceUrl={MARKETPLACE_URL}
-      media={({ value, onChange, label, hint }) => (
+      media={({ value, onChange, label, hint, fields }) => (
         <MediaPicker
           value={value}
           onChange={onChange}
@@ -161,6 +161,8 @@ export function ArtPieceGate() {
           libraryEndpoint="/api/media/library"
           label={label}
           hint={hint}
+          // The piece's title, so the upload route can name the file after it.
+          uploadFields={fields}
         />
       )}
     />

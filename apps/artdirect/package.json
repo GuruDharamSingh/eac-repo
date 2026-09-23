@@ -22,8 +22,8 @@
     "@elkdonis/live-editor": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/services": "workspace:*",
-    "@elkdonis/utils": "workspace:*",
     "@elkdonis/types": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
     "nanoid": "^5.0.0",
     "next": "16.1.6",
     "react": "19.1.0",
@@ -37,6 +37,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   }
 }

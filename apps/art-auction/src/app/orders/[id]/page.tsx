@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import { getOrderById, getOrderLines } from "@elkdonis/commerce/queries";
 import { canActForOrder } from "@elkdonis/commerce/server";
 import { formatMoney } from "@elkdonis/commerce/money";
-import { isCardPaymentAvailable, syncStripeOrder } from "@elkdonis/checkout/stripe";
+import {
+  CARD_CHARGE_CEILING_MINOR,
+  isCardPaymentAvailable,
+  syncStripeOrder,
+} from "@elkdonis/checkout/stripe";
 import { payOrderByCard, payOrderByEtransfer } from "@/app/actions";
 import { getCurrentUserId, getIsAdmin } from "@/lib/marketplace-auth";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -31,7 +35,7 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ paid?: string; cancelled?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string; card?: string }>;
 }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
 
@@ -59,7 +63,10 @@ export default async function OrderPage({
     tone: "neutral" as const,
   };
   const unpaid = UNPAID.has(order.status);
-  const cardAvailable = isCardPaymentAvailable();
+  // Above Stripe's per-charge ceiling a card button can only bounce back here,
+  // so it isn't offered; e-Transfer has no ceiling and stays.
+  const cardAvailable =
+    isCardPaymentAvailable() && order.totalMinor <= CARD_CHARGE_CEILING_MINOR;
   const isAuctionWin = order.metadata?.kind === "auction";
   const payeeName = (order.paymentMetadata?.payeeName as string | undefined) ?? "the artist";
 
@@ -86,6 +93,22 @@ export default async function OrderPage({
           <p className="mt-3 text-sm text-muted-foreground">
             You left the card payment page before paying. Nothing was charged; the
             piece is still held for you for a short while.
+          </p>
+        )}
+        {/* Sent back here by cardCheckoutUrl when Stripe would not open a
+            session. Same muted tone as the note above: nothing went wrong
+            with the buyer's card, so it must not read as an alarm. */}
+        {sp.card === "over_ceiling" && unpaid && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            This order is more than a card can carry in a single payment, so it
+            can&rsquo;t be paid by card. Nothing was charged — you can pay by
+            e-Transfer below, and the piece is held for you meanwhile.
+          </p>
+        )}
+        {sp.card === "stripe_refused" && unpaid && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Card payment couldn&rsquo;t be started for this order. Nothing was
+            charged. You can try the card again, or pay by e-Transfer below.
           </p>
         )}
       </div>

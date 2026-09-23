@@ -1,5 +1,6 @@
 import { renderWithProps, sampleProps } from './samples';
 import { mergeFieldsFor, mergeValuesFor } from './merge-fields';
+import type { EmailChrome } from './components/EmailShell';
 
 // ============================================================================
 // Turning a letter the network draws into a layout an org can edit.
@@ -127,6 +128,19 @@ export interface SeedOptions {
   orgName?: string;
   orgHeader?: boolean;
   orgAccent?: string;
+  /**
+   * The masthead image and frame, so the ENVELOPE drawn around the editor's
+   * canvas is the org's own.
+   *
+   * `renderTemplateEnvelope` lifts the header and footer out of a rendered
+   * letter and the editor paints them around the region being edited. Without
+   * this, an org with its own banner composed inside the collective's
+   * navy-and-gold masthead — an editor that does not look like the thing being
+   * edited, which is the exact complaint the envelope was added to fix.
+   */
+  chrome?: EmailChrome;
+  /** Which body face the letter is set in, by id. */
+  bodyFont?: string;
 }
 
 /**

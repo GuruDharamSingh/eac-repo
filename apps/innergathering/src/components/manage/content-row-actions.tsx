@@ -125,14 +125,14 @@ export function ContentRowActions({
   }
 
   function remove() {
-    if (!confirm("Delete this permanently? RSVPs attached to it go too.")) return;
+    if (!confirm("Take this off the site? It is archived, not deleted: RSVPs are kept, and Publish restores it.")) return;
     startTransition(async () => {
       const res = await deleteContentAction(threadId);
       if (res.ok) {
-        toast.success("Deleted.");
+        toast.success("Removed. Publish restores it.");
         router.refresh();
       } else {
-        toast.error(res.error ?? "Could not delete.");
+        toast.error(res.error ?? "Could not remove.");
       }
     });
   }
@@ -194,7 +194,7 @@ export function ContentRowActions({
 
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={remove} variant="destructive">
-          Delete
+          Remove
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function ComposePage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string; title?: string }>;
 }) {
   const viewer = await getHubViewer();
   if (!viewer) redirect("/login?redirect=/hub/compose");
@@ -30,7 +30,9 @@ export default async function ComposePage({
   // Private feeds included: an owner composing needs to be able to file
   // something into a members-only section.
   const feeds = await listOrgFeeds(siteConfig.orgId, { includePrivate: true });
-  const { kind } = await searchParams;
+  // `title` arrives from the popup's "Open as a page", so a title typed in
+  // the modal is not retyped here.
+  const { kind, title } = await searchParams;
 
   return (
     <div className="site-shell">
@@ -59,14 +61,19 @@ export default async function ComposePage({
         <section className="hub-wide hub-compose">
           <ComposeWorkspace
             initialKind={kind}
+            initialTitle={title}
             context={{
               orgSlug: siteConfig.orgId,
               canManageOrg: viewer.canEdit,
               // Real now: lib/cms/actions.ts writes threads through the shared
               // createThread. This was false while the app had no save path.
-              canPublishContent: viewer.canEdit,
+              // A member may write a post here; dated kinds are a guide's,
+              // the same line saveContentAction draws. See HubSurfaces.
+              canPublishContent: true,
+              canPublishDated: viewer.canEdit,
               hasMeetings: true,
               canCreateDocument: true,
+              canCreateTalkRoom: true,
               feeds: feeds.map((feed) => ({ slug: feed.slug, name: feed.name })),
             }}
           />

@@ -123,6 +123,11 @@ export interface ForumConnectors {
   personMap?(userId: string, viewer: ForumViewer, opts?: { limit?: number }): Promise<Constellation>;
   listModLog?(orgId: string, opts: { page?: number; limit?: number }): Promise<Paged<ForumModLogEntry>>;
   /**
+   * The org's Nextcloud forum category, when it has one (migration 144).
+   * Present → owners/guides see "Also post to Nextcloud" on New topic.
+   */
+  ncForum?(orgId: string): Promise<{ isPublic: boolean } | null>;
+  /**
    * The network wiki, as a section of the forum. Absent and the /wiki routes
    * 404 and the masthead link doesn't render — same posture as every other
    * optional connector here.
@@ -433,6 +438,7 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
     getTopicBySlug: s.getTopicBySlug,
     searchForum: s.searchForum,
     listModLog: s.listModLog,
+    ncForum: (orgId) => s.getOrgNcForum(orgId).catch(() => null),
     constellation: (id, viewer, o) => s.getConstellation(id, { viewer, limit: o?.limit }),
     personMap: (userId, viewer, o) => s.getPersonMap(userId, { viewer, limit: o?.limit }),
     wiki: wikiConnectors(s, opts),

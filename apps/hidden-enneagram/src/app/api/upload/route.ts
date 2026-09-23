@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
-import { uploadFile, getUploadPath, getProxyFileUrl } from "@elkdonis/services";
+import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
 import { getApiEditor } from "@/lib/auth";
@@ -39,9 +39,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File size must be less than ${MAX_SIZE_MB}MB` }, { status: 400 });
     }
 
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address outlives the upload — it is what a stored
+    // page, a gallery item and every <img src> carries. See uploadFilename.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
     const relativePath = getUploadPath(ORG_ID, "Images", filename, visibility);
 
     const arrayBuffer = await file.arrayBuffer();

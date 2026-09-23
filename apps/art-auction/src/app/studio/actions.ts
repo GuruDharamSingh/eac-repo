@@ -31,6 +31,7 @@ import {
   isCardPaymentAvailable,
   startStripeOnboarding,
 } from "@elkdonis/checkout/stripe";
+import { canEtransfer, normaliseCountry } from "@elkdonis/commerce/payout-rails";
 import type { ArtworkMediaInput, Currency, StoreMemberRole } from "@elkdonis/commerce/types";
 import {
   getCurrentUser,
@@ -472,6 +473,38 @@ export async function setPayoutEmailAction(formData: FormData): Promise<void> {
   await setPayoutIdentity(userId, { payoutEmail: email || null });
   revalidatePath("/studio", "layout");
   redirect("/studio/payouts");
+}
+
+/**
+ * Save the whole payout setup at once: where they are, and the rail that can
+ * reach them there.
+ *
+ * Re-checks the country against the rail server-side. The form only offers
+ * what works, but a rail is the difference between being paid and not, so it
+ * is not a decision to take on the client's word.
+ */
+export async function savePayoutSetupAction(input: {
+  country: string;
+  rail: "etransfer" | "stripe" | "manual";
+  payoutEmail: string | null;
+}): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login?next=/studio");
+
+  const country = normaliseCountry(input.country);
+  if (input.rail === "etransfer") {
+    if (!canEtransfer(country)) {
+      throw new Error("An Interac e-Transfer can only reach a Canadian bank account.");
+    }
+    if (!input.payoutEmail) throw new Error("We need the email to send the e-Transfer to.");
+  }
+
+  await setPayoutIdentity(userId, {
+    country,
+    payoutMethod: input.rail,
+    payoutEmail: input.rail === "etransfer" ? input.payoutEmail : null,
+  });
+  revalidatePath("/studio", "layout");
 }
 
 /** Send the person to Stripe Express onboarding (creates the account first). */

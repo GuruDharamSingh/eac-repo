@@ -71,7 +71,7 @@ export async function createMeetingAction(payload: CreateMeetingActionPayload) {
 
   // Revalidate pages
   revalidatePath("/");
-  revalidatePath("/dashboard");
+  revalidatePath("/meetings");
 
   return { meetingId: meeting.id };
 }

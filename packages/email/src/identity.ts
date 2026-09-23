@@ -1,4 +1,6 @@
 import { db } from '@elkdonis/db';
+import { EMAIL_FONTS } from './components/EmailShell';
+import type { EmailChrome } from './components/EmailShell';
 
 // ============================================================================
 // Who an organisation is, when it sends mail.
@@ -80,6 +82,29 @@ export interface EmailPalette {
   onAccent?: string;
   /** Body text on the card. */
   ink?: string;
+  /**
+   * Which body face this org's mail is set in, by id — see EMAIL_FONTS.
+   *
+   * An ID, never a stack. The value beside it is a hex allow-list for exactly
+   * this reason: both land in a `style` attribute, so the code owns every
+   * string that can appear there and the org picks one by name.
+   */
+  bodyFont?: string;
+  /**
+   * The org's own masthead image, shown at the top of every letter instead of
+   * the collective's navy-and-gold wordmark.
+   *
+   * An absolute `https://` URL and nothing else — see `sanitizeBanner`. It is
+   * normally the same image the org's website leads with, which is the point:
+   * a letter and the site it came from should be recognisably one thing.
+   */
+  bannerUrl?: string;
+  /** Alt text for the banner, for the inboxes that block images. */
+  bannerAlt?: string;
+  /** The rule around the card. Hex; absent means the collective's gold. */
+  frameColor?: string;
+  /** Its thickness, 1–4px. Absent means 1. */
+  frameWidth?: number;
 }
 
 /** The shape stored in site_config — every field optional, all overrides. */
@@ -98,6 +123,23 @@ interface StoredIdentity {
 const HEX = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
 
 /**
+ * Only an absolute https URL with no quote, angle bracket or whitespace in it.
+ *
+ * This value lands in a `src` attribute in HTML that is mailed out, so the
+ * same posture as the hex allow-list above: an allow-list, not an escape.
+ * `https` and not `http` because a mail client that is willing to load an
+ * image over plain HTTP from inside a letter is a mail client showing the
+ * reader a mixed-content warning at best.
+ */
+const IMAGE_URL = /^https:\/\/[^\s"'<>]+$/i;
+
+function sanitizeBanner(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const url = value.trim();
+  return IMAGE_URL.test(url) ? url : undefined;
+}
+
+/**
  * Keep only literal hex values, drop everything else.
  *
  * Not a validation nicety: every one of these is interpolated into a `style`
@@ -112,6 +154,25 @@ function sanitizePalette(input: EmailPalette | undefined): EmailPalette | undefi
     const value = input[role];
     if (typeof value === 'string' && HEX.test(value.trim())) out[role] = value.trim();
   }
+  // Checked against the registry rather than pattern-matched: an id is only
+  // meaningful if it names a stack we ship, and an unknown one falls back to
+  // the default face rather than reaching a style attribute.
+  const font = typeof input.bodyFont === 'string' ? input.bodyFont.trim() : '';
+  if (font && font in EMAIL_FONTS) out.bodyFont = font;
+
+  // The masthead image and the frame around the card. Same posture as the
+  // three colours above: anything that does not pass is dropped, and a
+  // dropped value falls back to the house style rather than failing the save.
+  const banner = sanitizeBanner(input.bannerUrl);
+  if (banner) out.bannerUrl = banner;
+  const alt = typeof input.bannerAlt === 'string' ? input.bannerAlt.trim().slice(0, 140) : '';
+  if (alt) out.bannerAlt = alt;
+  if (typeof input.frameColor === 'string' && HEX.test(input.frameColor.trim())) {
+    out.frameColor = input.frameColor.trim();
+  }
+  const width = Number(input.frameWidth);
+  if (Number.isInteger(width) && width >= 1 && width <= 4) out.frameWidth = width;
+
   return Object.keys(out).length ? out : undefined;
 }
 
@@ -260,6 +321,27 @@ export async function getOrgEmailIdentity(orgId: string): Promise<OrgEmailIdenti
 }
 
 /**
+ * An org's stored look → the chrome every letter wears.
+ *
+ * ONE reader for it, used by the send path and by the preview alike. They had
+ * drifted before over a smaller thing than this — the preview rendered the
+ * network's default copy while the send path rendered the org's — and a
+ * preview showing a different masthead than the letter that leaves is the
+ * same bug with a bigger picture attached.
+ */
+export function emailChromeFor(identity: OrgEmailIdentity): EmailChrome {
+  const p = identity.palette ?? {};
+  return {
+    bannerUrl: p.bannerUrl,
+    // The org's own name is the sensible alt text when nobody wrote one: a
+    // reader whose client blocks images should still see whose letter this is.
+    bannerAlt: p.bannerAlt ?? identity.fromName,
+    frameColor: p.frameColor,
+    frameWidth: p.frameWidth,
+  };
+}
+
+/**
  * Write an org's identity, MERGING with what is stored.
  *
  * Merge and not replace, and that is the whole point of this function's shape.
@@ -328,7 +410,36 @@ export async function saveOrgEmailIdentity(
   setOrClear('accentColor', input.accentColor, (v) =>
     typeof v === 'string' && HEX.test(v.trim()) ? v.trim() : undefined
   );
-  setOrClear('palette', input.palette, (v) => sanitizePalette(v as EmailPalette));
+  // MERGED, one role at a time — not replaced.
+  //
+  // The same argument this function's own header makes about the identity as
+  // a whole now applies one level down. The palette used to be written whole,
+  // which was harmless while the Look tab had a single "Save colours" button
+  // that always sent all four values. It stopped being harmless the moment
+  // that tab grew a second button: saving a masthead image would have sent
+  // `{ bannerUrl }` alone and silently erased the org's three colours and its
+  // chosen face. A partial save means "change these fields" here too.
+  if (input.palette !== undefined) {
+    if (input.palette === null) {
+      delete payload.palette;
+    } else {
+      const next = sanitizePalette(input.palette as EmailPalette);
+      // Only the keys the caller actually sent are considered — a value that
+      // failed sanitising is dropped, and a key that was never mentioned is
+      // left exactly as it was.
+      const sent = input.palette as Record<string, unknown>;
+      const merged: EmailPalette = { ...(payload.palette ?? {}) };
+      for (const key of Object.keys(sent) as Array<keyof EmailPalette>) {
+        const value = next?.[key];
+        // An explicit empty/null CLEARS that one role, which is how an org
+        // takes a banner back off without also losing its colours.
+        if (sent[key] === null || sent[key] === '') delete merged[key];
+        else if (value !== undefined) (merged as Record<string, unknown>)[key] = value;
+      }
+      if (Object.keys(merged).length) payload.palette = merged;
+      else delete payload.palette;
+    }
+  }
   if (input.inboundReplies !== undefined) {
     payload.inboundReplies = input.inboundReplies === true;
   }

@@ -1,8 +1,9 @@
 import { Events } from '@elkdonis/db';
-import { Container, Stack, Title, Text, Paper, Group, Badge, Select, Table, ActionIcon, Tooltip } from '@mantine/core';
-import { Activity, Filter, Eye, EyeOff, Lock, Unlock, Pin, PinOff } from 'lucide-react';
+import { Container, Stack, Title, Text, Paper, Group, Badge, Select, Table } from '@mantine/core';
+import { Activity, Filter } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { ModerationActions } from '@/components/moderation-actions';
 
 dayjs.extend(relativeTime);
 
@@ -174,23 +175,10 @@ export default async function EventsPage({
                     </Table.Td>
                     <Table.Td>
                       {(event.resource_type === 'post' || event.resource_type === 'meeting') && (
-                        <Group gap="xs">
-                          <Tooltip label="Hide from forum">
-                            <ActionIcon variant="subtle" color="orange" size="sm">
-                              <EyeOff className="h-4 w-4" />
-                            </ActionIcon>
-                          </Tooltip>
-                          <Tooltip label="Pin to forum">
-                            <ActionIcon variant="subtle" color="blue" size="sm">
-                              <Pin className="h-4 w-4" />
-                            </ActionIcon>
-                          </Tooltip>
-                          <Tooltip label="Lock thread">
-                            <ActionIcon variant="subtle" color="gray" size="sm">
-                              <Lock className="h-4 w-4" />
-                            </ActionIcon>
-                          </Tooltip>
-                        </Group>
+                        <ModerationActions
+                          resourceType={event.resource_type}
+                          resourceId={event.resource_id}
+                        />
                       )}
                     </Table.Td>
                   </Table.Tr>

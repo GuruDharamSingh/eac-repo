@@ -2,17 +2,10 @@ import * as React from 'react';
 import { Section, Text, Button, Img, Link, Hr } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette, EAC_GOLD, HEADER_FONT_STACK } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { ProfileCard, ThreadCard, Prose, ReadMore, type ThreadCardProps } from '../components/cards';
-import {
-  NETWORK_MANIFESTO,
-  NETWORK_RESOURCES,
-  SIGNUP_CONFIRM,
-  SIGNUP_NETWORK_NOTE,
-  SIGNUP_BY_PURCHASE,
-  REMINDER_OPTIONS_NOTE,
-  fill,
-  paragraphsOf,
-} from '../copy';
+import { OrgWords, hasOrgWords, SlotProse, slotIsRich } from '../components/org-words';
+import { slotText, slotLine, type CopyOverrides } from '../copy-slots';
 
 // ============================================================================
 // The one letter the network sends on its own behalf.
@@ -82,6 +75,16 @@ export interface WelcomeEmailProps {
 
   /** The org's own words, shown as its own section. */
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
+  /**
+   * This organisation's words for any block of this letter.
+   *
+   * Every sentence below is a SLOT (copy-slots.ts). Passing nothing renders
+   * the network's defaults, which is what every caller did before overriding
+   * existed and what most callers still do.
+   */
+  copy?: CopyOverrides;
   /** Extra links from the org. The confirm button is separate and always wins. */
   links?: WelcomeLinkItem[];
   media?: WelcomeMediaItem[];
@@ -97,6 +100,19 @@ export interface WelcomeEmailProps {
   /** True once the org sends from its own authenticated domain. */
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 const NETWORK_URL = 'https://arts-collective.com';
@@ -115,23 +131,35 @@ function WelcomeEmail({
   networkUrl = NETWORK_URL,
   collectiveUrl = COLLECTIVE_URL,
   bodyText,
+  bodyHtml,
   links,
   media = [],
   portalUrl = COLLECTIVE_URL,
   dark = true,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
+  copy,
 }: WelcomeEmailProps) {
   const palette = getEmailPalette(dark);
   const org = orgName ?? 'the Elkdonis Arts Collective';
 
-  const confirmParagraphs = fill(SIGNUP_CONFIRM, { org });
-  const orgParagraphs = paragraphsOf(bodyText);
+  const confirmParagraphs = slotText(copy, 'signup.confirm', { org });
+  // Read once: the letter shows the first two paragraphs and folds the rest
+  // behind "read more", so both halves have to come from the same resolved list.
+  const about = slotText(copy, 'network.about');
+  const aboutIsRich = slotIsRich(copy, 'network.about');
+  const confirmIsRich = slotIsRich(copy, 'signup.confirm');
+  const confirmBlock = confirmIsRich ? [] : confirmParagraphs;
+  const hasOrg = hasOrgWords(bodyText, bodyHtml);
   const primaryUrl = confirmUrl ?? portalUrl;
   // Confirming is optional — GOTRUE_MAILER_AUTOCONFIRM is on, so the address
   // is already confirmed, and nothing is withheld from someone who never
   // clicks. The link is offered, not pressed: no urgency copy underneath it.
-  const primaryLabel = confirmUrl ? 'Confirm account' : 'Enter the Collective';
+  const primaryLabel = confirmUrl
+    ? slotLine(copy, 'signup.button')
+    : slotLine(copy, 'signup.button_alt');
   const extraLinks = (links ?? []).filter((link) => link.url && link.url !== primaryUrl);
 
   const divider = (
@@ -161,6 +189,8 @@ function WelcomeEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
@@ -171,9 +201,13 @@ function WelcomeEmail({
       }
     >
       {/* 1 — the confirmation itself */}
-      {confirmParagraphs.map((paragraph, i) => (
-        <Prose key={`confirm-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      {confirmIsRich ? (
+        <SlotProse copy={copy} id="signup.confirm" values={{ org }} dark={dark} accent={orgAccent} font={bodyFont} />
+      ) : (
+        confirmBlock.map((paragraph, i) => (
+          <Prose key={`confirm-${i}`} dark={dark}>{paragraph}</Prose>
+        ))
+      )}
 
       <ProfileCard
         displayName={displayName}
@@ -193,13 +227,11 @@ function WelcomeEmail({
             orgName={thread.orgName ?? orgName}
             dark={dark}
           />
-          {SIGNUP_BY_PURCHASE.map((paragraph, i) => (
-            <Prose key={`purchase-${i}`} dark={dark}>{paragraph}</Prose>
-          ))}
+          <SlotProse copy={copy} id="signup.by_purchase" dark={dark} accent={orgAccent} font={bodyFont} />
 
           {(reminderSettingsUrl || calendarUrl) && (
             <Prose dark={dark} muted>
-              {REMINDER_OPTIONS_NOTE}{' '}
+              {slotLine(copy, 'reminder.options')}{' '}
               {reminderSettingsUrl && (
                 <Link href={reminderSettingsUrl} style={{ color: palette.accent }}>
                   Change or turn off the reminder
@@ -249,13 +281,17 @@ function WelcomeEmail({
       )}
 
       {/* 3 — the org's own words, if it has written any */}
-      {orgParagraphs.length > 0 && (
+      {hasOrg && (
         <>
           {divider}
-          {sectionLabel(orgName ? `From ${orgName}` : 'From your hosts')}
-          {orgParagraphs.map((paragraph, i) => (
-            <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
-          ))}
+          {sectionLabel(slotLine(copy, 'signup.heading_org', { org }))}
+          <OrgWords
+          bodyText={bodyText}
+          bodyHtml={bodyHtml}
+          dark={dark}
+          accent={orgAccent}
+          font={bodyFont}
+        />
         </>
       )}
 
@@ -276,9 +312,7 @@ function WelcomeEmail({
 
       {/* 4 — the network this account actually joins */}
       {divider}
-      {fill(SIGNUP_NETWORK_NOTE, { org }).map((paragraph, i) => (
-        <Prose key={`net-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      <SlotProse copy={copy} id="signup.membership" values={{ org }} dark={dark} accent={orgAccent} font={bodyFont} />
       <Prose dark={dark}>
         You can visit{' '}
         <Link href={networkUrl} style={{ color: palette.accent }}>arts-collective.com</Link>{' '}
@@ -296,18 +330,26 @@ function WelcomeEmail({
         is the right way for that to fail.
       */}
       {divider}
-      {sectionLabel('About the collective')}
-      {NETWORK_MANIFESTO.slice(0, 2).map((paragraph, i) => (
-        <Prose key={`manifesto-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      {sectionLabel(slotLine(copy, 'signup.heading_network'))}
+      {/* The split only applies to the network's own paragraphs. An org that
+          has rewritten this block with formatting gets it whole and up front:
+          you cannot slice an HTML fragment in half by paragraph without
+          parsing it, and a disclosure that swallowed the back half of
+          somebody's formatted text would be a strange thing to have written. */}
+      {aboutIsRich ? (
+        <SlotProse copy={copy} id="network.about" dark={dark} accent={orgAccent} font={bodyFont} />
+      ) : (
+        about.slice(0, 2).map((paragraph, i) => (
+          <Prose key={`manifesto-${i}`} dark={dark}>{paragraph}</Prose>
+        ))
+      )}
 
       <ReadMore label="Read more about the collective" dark={dark}>
-        {NETWORK_MANIFESTO.slice(2).map((paragraph, i) => (
-          <Prose key={`manifesto-rest-${i}`} dark={dark}>{paragraph}</Prose>
-        ))}
-        {NETWORK_RESOURCES.map((paragraph, i) => (
-          <Prose key={`resources-${i}`} dark={dark}>{paragraph}</Prose>
-        ))}
+        {!aboutIsRich &&
+          about.slice(2).map((paragraph, i) => (
+            <Prose key={`manifesto-rest-${i}`} dark={dark}>{paragraph}</Prose>
+          ))}
+        <SlotProse copy={copy} id="network.resources" dark={dark} accent={orgAccent} font={bodyFont} />
       </ReadMore>
     </EmailShell>
   );

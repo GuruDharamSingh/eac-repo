@@ -206,6 +206,9 @@ async function main() {
       FROM user_organizations uo
       JOIN users u ON u.id = uo.user_id
       WHERE uo.org_id = ${org.id} AND u.nextcloud_user_id IS NOT NULL
+        -- A viewer is a follower (every signup lands there); the org's folder
+        -- and circle are for the people it has made members.
+        AND uo.role IN ('member', 'guide', 'owner')
       ORDER BY uo.role, u.display_name
     `;
 

@@ -13,6 +13,7 @@ const TABS = [
   { href: "/manage/feeds", label: "Pages" },
   { href: "/manage/pages", label: "Site copy" },
   { href: "/manage/people", label: "People" },
+  { href: "/manage/video", label: "Video" },
 ];
 
 export default async function ManageLayout({ children }: { children: React.ReactNode }) {

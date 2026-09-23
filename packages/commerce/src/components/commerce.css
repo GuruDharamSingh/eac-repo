@@ -476,3 +476,368 @@
   .eac-pc--wall .eac-pc__work { font-size: 0.9375rem; }
   .eac-pc--wall .eac-pc__label { margin-top: 0.8rem; }
 }
+
+/* ─── Earnings statement + payout setup ─────────────────────────────────── */
+/* The money-owed surfaces. Same `--pc-*` contract as everything above, so an
+   artist's statement inherits the ink of whatever page it lands on: the
+   studio, an org hub, or an admin console.
+
+   Amounts are `tabular-nums` throughout. A column of figures that shifts
+   width per digit is unreadable as a column, which is the only way anyone
+   checks that a statement adds up. */
+
+.eac-earn { display: block; }
+
+.eac-earn-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.5rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--pc-line);
+}
+.eac-earn-total { display: flex; flex-direction: column; gap: 0.15rem; }
+.eac-earn-total-label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pc-ink-soft);
+}
+.eac-earn-total-figure {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--pc-ink);
+}
+.eac-earn-total-note { font-size: 0.8125rem; color: var(--pc-ink-soft); }
+/* Held money is still the artist's; it is just not payable today. Dimming the
+   figure would read as "less real", so only the label softens. */
+.eac-earn-total--held .eac-earn-total-figure { color: var(--pc-ink-soft); }
+
+.eac-earn-empty {
+  margin: 1.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--pc-ink-soft);
+}
+
+.eac-earn-list { list-style: none; margin: 0; padding: 0; }
+.eac-earn-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--pc-line);
+}
+.eac-earn-row:last-child { border-bottom: 0; }
+.eac-earn-row-main { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.eac-earn-row-title { font-size: 0.9375rem; color: var(--pc-ink); }
+.eac-earn-row-meta { font-size: 0.8125rem; color: var(--pc-ink-soft); }
+
+.eac-earn-flag {
+  align-self: flex-start;
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--pc-ink-soft);
+}
+
+.eac-earn-row-amount {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  color: var(--pc-ink);
+}
+/* Money going out reads as a deduction. Not red: a payout is a good event,
+   and colouring it like an error makes a statement look alarming. */
+.eac-earn-row-amount--out { color: var(--pc-ink-soft); }
+.eac-earn-row-amount--held { color: var(--pc-ink-faint); }
+
+.eac-payout { display: flex; flex-direction: column; gap: 1.25rem; }
+.eac-payout-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.eac-payout-label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pc-ink-soft);
+}
+.eac-payout-help { font-size: 0.8125rem; color: var(--pc-ink-soft); }
+.eac-payout-input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-radius);
+  background: var(--pc-surface);
+  color: var(--pc-ink);
+  font: inherit;
+  max-width: 24rem;
+}
+
+.eac-payout-rails { display: flex; flex-direction: column; gap: 0.6rem; border: 0; margin: 0; padding: 0; }
+.eac-payout-rail {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-radius);
+  cursor: pointer;
+}
+.eac-payout-rail--on { border-color: var(--pc-ink-soft); background: var(--pc-mat); }
+.eac-payout-rail > span { display: flex; flex-direction: column; gap: 0.15rem; }
+.eac-payout-rail-name { font-size: 0.9375rem; color: var(--pc-ink); }
+.eac-payout-rail-detail { font-size: 0.8125rem; color: var(--pc-ink-soft); }
+
+.eac-payout-actions { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+.eac-payout-msg { font-size: 0.875rem; color: var(--pc-ink-soft); }
+
+@media (max-width: 40rem) {
+  .eac-earn-totals { gap: 1rem 1.5rem; }
+  .eac-earn-total-figure { font-size: 1.5rem; }
+  .eac-earn-row { gap: 1rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ShopCard — three looks for designed store sections (ShopCard.tsx).
+
+   poster · tag · feature. Colours that sit on a PICTURE or on the card's own
+   mat are fixed (they cannot follow the page — the page is not behind them);
+   everything else follows --pc-*, so a store box's palette carries through.
+   Measured: white on the poster scrim at its thinnest over a white picture
+   9.4:1; the live chip #176b3a 6.2:1, urgent 6.1:1, quiet 8.9:1; mat ink
+   17.3:1, mat byline 7.7:1; tag ink on tag 14.3:1.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.eac-sc {
+  position: relative;
+  min-width: 0;
+  --sc-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.eac-sc__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.eac-sc__empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.8rem;
+  color: var(--pc-ink-faint);
+  background: var(--pc-mat);
+}
+/* One stretched link per card, as on ProductCard. */
+.eac-sc__hit { color: inherit; text-decoration: none; }
+.eac-sc__hit::after { content: ""; position: absolute; inset: 0; z-index: 2; }
+.eac-sc__hit:focus-visible { outline: none; }
+.eac-sc__hit:focus-visible::after { outline: 3px solid var(--pc-accent); outline-offset: 3px; }
+.eac-sc .eac-pc__amount { margin: 0; }
+
+/* ── poster ─────────────────────────────────────────────────────────────── */
+.eac-sc--poster {
+  overflow: hidden;
+  border-radius: var(--pc-radius);
+  aspect-ratio: 4 / 5;
+  background: #1a1a1a;
+  isolation: isolate;
+}
+.eac-sc--poster[data-large] { aspect-ratio: auto; min-height: 100%; }
+.eac-sc--poster .eac-sc__media { position: absolute; inset: 0; }
+.eac-sc--poster .eac-sc__img { transition: transform 0.9s var(--sc-ease); }
+/* The scrim is what keeps the words legible on ANY picture: they sit on a
+   fade that reaches ~88% black under the text, never on the picture itself. */
+.eac-sc--poster .eac-sc__over {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 3.5rem 1rem 1rem;
+  color: #ffffff;
+  background: linear-gradient(to top, rgb(8 8 10 / 0.9) 0%, rgb(8 8 10 / 0.78) 55%, rgb(8 8 10 / 0) 100%);
+}
+.eac-sc--poster .eac-sc__title {
+  margin: 0;
+  font-family: var(--pc-title-font, inherit);
+  font-size: 1.15rem;
+  line-height: 1.2;
+  transition: transform 0.5s var(--sc-ease);
+}
+.eac-sc--poster[data-large] .eac-sc__title { font-size: clamp(1.3rem, 3.2cqi, 2rem); }
+.eac-sc--poster .eac-sc__by { margin: 0; font-size: 0.8rem; color: #e6e6e6; }
+.eac-sc--poster .eac-pc__amount,
+.eac-sc--poster .eac-pc__amount[data-ask="true"] { color: #ffffff; font-size: 0.9rem; }
+.eac-sc--poster .eac-sc__mark {
+  justify-self: start;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #4a4a4a;
+}
+.eac-sc--poster .eac-sc__mark[data-tone="live"] { background: #176b3a; }
+.eac-sc--poster .eac-sc__mark[data-tone="urgent"] { background: #b4331f; }
+.eac-sc--poster .eac-sc__cue {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition: opacity 0.35s ease, transform 0.35s var(--sc-ease);
+}
+.eac-sc--poster[data-status="sold"] .eac-sc__img { filter: grayscale(0.7); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .eac-sc--poster:hover .eac-sc__img,
+  .eac-sc--poster:focus-within .eac-sc__img { transform: scale(1.06); }
+  .eac-sc--poster:hover .eac-sc__title,
+  .eac-sc--poster:focus-within .eac-sc__title { transform: translateY(-0.2rem); }
+  .eac-sc--poster:hover .eac-sc__cue,
+  .eac-sc--poster:focus-within .eac-sc__cue { opacity: 1; transform: none; }
+}
+/* Without hover (touch) or motion, the cue is simply there. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .eac-sc--poster .eac-sc__cue { opacity: 1; transform: none; }
+}
+
+/* ── tag ────────────────────────────────────────────────────────────────── */
+.eac-sc--tag {
+  padding: 0.6rem 0.4rem 0.2rem;
+  --sc-tilt: -1.4deg;
+}
+.eac-sc--tag:nth-child(2n) { --sc-tilt: 1.2deg; }
+.eac-sc--tag:nth-child(3n) { --sc-tilt: -0.6deg; }
+.eac-sc--tag .eac-sc__mat {
+  padding: 0.7rem 0.7rem 0.9rem;
+  background: #ffffff;
+  color: #1d1a16;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.18),
+    0 10px 24px -8px rgb(0 0 0 / 0.35);
+  transform: rotate(var(--sc-tilt));
+  transition: transform 0.45s var(--sc-ease), box-shadow 0.45s ease;
+}
+.eac-sc--tag .eac-sc__media { aspect-ratio: 1; background: #f1efeb; overflow: hidden; }
+.eac-sc--tag .eac-sc__title {
+  margin: 0.7rem 0 0;
+  font-family: var(--pc-title-font, inherit);
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+.eac-sc--tag .eac-sc__by { margin: 0.15rem 0 0; font-size: 0.78rem; color: #5a5249; }
+/* The tag hangs off the top right corner on a string. */
+.eac-sc--tag .eac-sc__tag {
+  position: absolute;
+  top: 0;
+  right: 0.2rem;
+  z-index: 3;
+  padding: 0.35rem 0.7rem 0.35rem 1.25rem;
+  color: #2a2118;
+  background: #fbf3dc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  clip-path: polygon(0.7rem 0, 100% 0, 100% 100%, 0.7rem 100%, 0 50%);
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+  transform: rotate(4deg);
+  transform-origin: 100% 0;
+  pointer-events: none;
+}
+.eac-sc--tag .eac-sc__tag::before {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-top: -0.175rem;
+  border-radius: 50%;
+  background: #8c7a55;
+}
+.eac-sc--tag .eac-sc__tag .eac-pc__amount,
+.eac-sc--tag .eac-sc__tag .eac-pc__amount[data-ask="true"] { color: #2a2118; font-size: 0.8rem; margin: 0; }
+.eac-sc--tag[data-status="sold"] .eac-sc__img { opacity: 0.6; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .eac-sc--tag:hover .eac-sc__mat,
+  .eac-sc--tag:focus-within .eac-sc__mat {
+    transform: rotate(0deg) translateY(-4px);
+    box-shadow:
+      0 2px 4px rgb(0 0 0 / 0.18),
+      0 18px 34px -10px rgb(0 0 0 / 0.4);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eac-sc--tag .eac-sc__mat { transition: none; }
+}
+
+/* ── feature ────────────────────────────────────────────────────────────── */
+.eac-sc--feature {
+  container-type: inline-size;
+  display: grid;
+  /* Side by side while each half gets 15rem, stacked below that — by the
+     card's own width, with no query (a container cannot query itself). */
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 1.5rem;
+  align-items: center;
+  color: var(--pc-ink);
+}
+.eac-sc--feature .eac-sc__media {
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--pc-radius);
+  background: var(--pc-mat);
+  box-shadow: var(--pc-shadow);
+}
+.eac-sc--feature .eac-sc__img { object-fit: contain; transition: transform 1.2s var(--sc-ease); }
+.eac-sc--feature .eac-sc__text { display: grid; gap: 0.45rem; justify-items: start; }
+.eac-sc--feature .eac-sc__mark {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-soft);
+}
+.eac-sc--feature .eac-sc__title {
+  margin: 0;
+  font-family: var(--pc-title-font, Georgia, serif);
+  font-size: clamp(1.5rem, 5cqi, 2.4rem);
+  line-height: 1.1;
+}
+.eac-sc--feature .eac-sc__by { margin: 0; color: var(--pc-ink-soft); }
+.eac-sc--feature .eac-sc__spec { margin: 0; font-size: 0.85rem; color: var(--pc-ink-soft); }
+.eac-sc--feature .eac-pc__amount { font-size: 1.15rem; margin-top: 0.3rem; }
+.eac-sc--feature .eac-sc__cta {
+  margin-top: 0.6rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  background: var(--pc-accent);
+  color: var(--pc-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.25s var(--sc-ease), box-shadow 0.25s ease;
+}
+.eac-sc--feature .eac-sc__cta:focus-visible { outline: 3px solid var(--pc-accent); outline-offset: 3px; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .eac-sc--feature .eac-sc__cta:hover { transform: translateY(-2px); box-shadow: var(--pc-shadow); }
+  .eac-sc--feature:hover .eac-sc__img { transform: scale(1.03); }
+}
+
+/* ── Inside a store box (blocks' .blk-frame) ──────────────────────────────
+   A box with a palette carries its own ground, so the cards in it take the
+   box's measured inks instead of the host's. Here rather than in blocks.css:
+   hosts import that sheet in a cascade layer, and a layered rule loses to
+   the unlayered .eac-commerce defaults above (and IFAC's overrides) whatever
+   its specificity. */
+.blk-frame[data-palette]:not([data-palette="inherit"]) .eac-commerce {
+  --pc-ink: var(--blk-fg);
+  --pc-ink-soft: var(--blk-muted);
+  --pc-ink-faint: var(--blk-muted);
+  --pc-line: var(--blk-line);
+  --pc-mat: var(--blk-bg-soft);
+  --pc-accent: var(--blk-accent);
+  --pc-on-accent: var(--blk-on-accent);
+}

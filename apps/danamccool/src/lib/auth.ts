@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@elkdonis/auth-server";
+import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 import { getOrgRole, type OrgRole } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { siteConfig } from "@/config/site";
@@ -37,6 +37,18 @@ export async function getViewer(): Promise<Viewer | null> {
     role,
     canEdit: role !== null && EDITOR_ROLES.includes(role),
   };
+}
+
+/**
+ * Who gets past the site-wide "in progress" wall (siteConfig.comingSoon):
+ * the org's owner, or a platform admin ("dev"). Deliberately narrower than
+ * `canEdit` — a `guide` can edit content but shouldn't be treated as
+ * production-ready to show the still-unfinished public site.
+ */
+export async function canBypassComingSoon(viewer: Viewer | null): Promise<boolean> {
+  if (!viewer) return false;
+  if (viewer.role === "owner") return true;
+  return isAdmin(viewer.userId).catch(() => false);
 }
 
 /** Gate for editing routes/actions. Redirects signed-out visitors to login. */

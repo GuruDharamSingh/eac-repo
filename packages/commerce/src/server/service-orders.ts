@@ -21,6 +21,7 @@ import type { Currency, Order } from "../types";
 import { buildEtransferInstructions, generateOrderNumber } from "../etransfer";
 import { mapOrder, type Row } from "./map-order";
 import { resolveSettlement } from "./settlement";
+import { STRIPE_GRACE_MINUTES } from "./orders";
 
 /**
  * The thread kinds that can be bought.
@@ -54,7 +55,10 @@ export interface CreateThreadOrderInput {
    * set); must fall within [floor, list price]. Omit to pay list price.
    */
   amountMinor?: number;
-  /** The seam for card payments — 'stripe' throws until keys land. */
+  /**
+   * Which rail. A card order is created unpaid and is paid by handing its id
+   * to `startStripeCheckout`; nothing here talks to Stripe.
+   */
   paymentMethod?: "etransfer" | "stripe";
   /**
    * @deprecated Ignored since 2026-09-05. The payee is the service's author,
@@ -68,10 +72,7 @@ export interface CreateThreadOrderInput {
 }
 
 export async function createThreadOrder(input: CreateThreadOrderInput): Promise<Order> {
-  const method = input.paymentMethod ?? "etransfer";
-  if (method === "stripe") {
-    throw new Error("Card payments are not yet available. Please pay by eTransfer.");
-  }
+  const rail = input.paymentMethod ?? "etransfer";
 
   const rows = (await db`
     SELECT t.id, t.title, t.author_id, t.status, t.price, t.currency, t.kind,
@@ -123,22 +124,32 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
     amountMinor,
   });
 
+  // An eTransfer has to name someone to send money to; a card payment does
+  // not — it lands in the host account and the ledger records who it is owed
+  // to, which is the same fallback every card sale uses when the payee has no
+  // connected account.
   const payoutEmail = settlement.payoutEmail;
-  if (!payoutEmail) {
+  if (rail === "etransfer" && !payoutEmail) {
     throw new Error("This practitioner takes card payments only, which this booking form does not offer yet.");
   }
 
   const orderNumber = generateOrderNumber();
-  const dueHours = input.etransferDueHours ?? 72;
-  const instructions = buildEtransferInstructions({
-    orderNumber,
-    totalMinor: amountMinor,
-    currency,
-    artistName: settlement.payeeName,
-    payoutEmail,
-    paymentDueAt: new Date(Date.now() + dueHours * 3600_000).toISOString(),
-    itemNoun: input.itemNoun ?? "booking",
-  });
+  const dueHours =
+    rail === "etransfer"
+      ? input.etransferDueHours ?? 72
+      : (60 + STRIPE_GRACE_MINUTES) / 60;
+  const instructions =
+    rail === "etransfer"
+      ? buildEtransferInstructions({
+          orderNumber,
+          totalMinor: amountMinor,
+          currency,
+          artistName: settlement.payeeName,
+          payoutEmail: payoutEmail!,
+          paymentDueAt: new Date(Date.now() + dueHours * 3600_000).toISOString(),
+          itemNoun: input.itemNoun ?? "booking",
+        })
+      : null;
 
   const order = await db.begin(async (tx) => {
     const orderRows = (await tx`
@@ -149,8 +160,8 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
         notes, metadata, payment_metadata
       ) VALUES (
         ${orderNumber}, ${input.customerId ?? null}, ${input.customerEmail},
-        ${input.customerName ?? null}, 'awaiting_etransfer',
-        'etransfer', ${instructions.paymentReference}, ${instructions.buyerInstructions},
+        ${input.customerName ?? null}, ${rail === "etransfer" ? "awaiting_etransfer" : "pending_payment"},
+        ${rail}, ${instructions?.paymentReference ?? null}, ${instructions?.buyerInstructions ?? null},
         NOW() + (${dueHours} || ' hours')::interval,
         ${amountMinor}, ${amountMinor}, ${currency},
         ${input.notes ?? null},
@@ -202,7 +213,10 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
       currency,
     },
   ];
-  void (async () => {
+  // Only the eTransfer rail is announced at creation: it is the one that asks
+  // the buyer to go and do something. A card order is still unpaid at this
+  // point and `confirmOrderPaid` tells both sides once it is not.
+  if (rail === "etransfer") void (async () => {
     try {
       const { sendOrderInvoice, sendOrderNotification } = await import("@elkdonis/email");
       await Promise.all([
@@ -212,12 +226,12 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
           items: emailItems,
           totalMinor: amountMinor,
           currency,
-          paymentInstructions: instructions.buyerInstructions,
+          paymentInstructions: instructions!.buyerInstructions,
           artistName: settlement.payeeName,
-          artistPayoutEmail: payoutEmail,
+          artistPayoutEmail: payoutEmail!,
           paymentDueAt,
         }),
-        sendOrderNotification(payoutEmail, {
+        sendOrderNotification(payoutEmail!, {
           role: "artist",
           orderNumber,
           customerName: input.customerName ?? null,

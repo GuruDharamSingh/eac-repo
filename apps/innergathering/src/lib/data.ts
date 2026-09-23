@@ -545,3 +545,72 @@ export async function getSiteSections(): Promise<SiteSections> {
     return {};
   }
 }
+
+/**
+ * The group's writing, across every member — for the Blog page's shelf.
+ *
+ * `listWriting` in @elkdonis/services answers for ONE author, which is right
+ * for a profile and wrong here: a blog page is the org's, and its shelf mixes
+ * people. Each piece still LIVES on its author's page, so the row carries its
+ * own href rather than deriving one from a shared base.
+ */
+export async function listOrgWriting(limit = 12): Promise<
+  Array<{
+    id: string;
+    slug: string;
+    title: string;
+    lede: string | null;
+    coverImageUrl: string | null;
+    publishedAt: string | null;
+    authorName: string | null;
+    href: string;
+  }>
+> {
+  try {
+    const rows = await db<
+      Array<{
+        id: string;
+        slug: string | null;
+        title: string;
+        excerpt: string | null;
+        cover_image_url: string | null;
+        published_at: string | null;
+        display_name: string | null;
+        author_slug: string | null;
+      }>
+    >`
+      -- The cover lives in metadata->>'coverImageUrl'. The threads table has
+      -- no cover column at all, and naming one compiles fine in TypeScript
+      -- and fails at RUNTIME -- which the catch below turns into an empty
+      -- shelf on a page that still answers 200.
+      SELECT t.id, t.slug, t.title, t.excerpt, t.published_at,
+             t.metadata->>'coverImageUrl' AS cover_image_url,
+             u.display_name, u.slug AS author_slug
+      FROM threads t
+      JOIN users u ON u.id = t.author_id
+      WHERE t.org_id = ${siteConfig.orgId}
+        AND t.kind = 'writing'
+        AND t.status = 'published'
+        -- Only a member who has switched the section on: a piece reachable
+        -- from the blog must be reachable on its author's page too, and that
+        -- page 404s the writing route when the section is off.
+        AND COALESCE((u.profile_sections->>'blog')::boolean, false) = true
+        AND u.slug IS NOT NULL
+      ORDER BY COALESCE(t.published_at, t.updated_at) DESC
+      LIMIT ${limit}
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      slug: r.slug ?? r.id,
+      title: r.title,
+      lede: r.excerpt,
+      coverImageUrl: r.cover_image_url,
+      publishedAt: r.published_at,
+      authorName: r.display_name,
+      href: `/artists/${r.author_slug}/writing/${r.slug ?? r.id}`,
+    }));
+  } catch (error) {
+    console.error("[innergathering] listOrgWriting:", error);
+    return [];
+  }
+}

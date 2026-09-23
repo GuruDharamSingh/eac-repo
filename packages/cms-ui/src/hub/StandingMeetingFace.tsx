@@ -227,6 +227,11 @@ function StandingMeeting({
   const [plainStatus, setPlainStatus] = React.useState<string | null>(
     attendance?.answered?.status ?? null
   );
+  // Only ever meaningful alongside `answer === "next_time"` — see the inline
+  // "Promise?" checkbox on that option.
+  const [promiseNext, setPromiseNext] = React.useState<boolean>(
+    Boolean(attendance?.answered?.promiseNext)
+  );
   const [saving, setSaving] = React.useState(false);
   const [currentLight, setCurrentLight] = React.useState<StandingMeetingLight | null>(
     light ?? null
@@ -274,17 +279,20 @@ function StandingMeeting({
 
   // ── Answering ────────────────────────────────────────────────────────────
 
-  async function answerWith(option: RsvpFlavourOption | null) {
+  async function answerWith(option: RsvpFlavourOption | null, promise?: boolean) {
     if (!attendance) return;
     setSaving(true);
     setNote(null);
+    // Only the "no, next time" answer carries a promise; picking anything
+    // else drops it, matching the write path's own rule.
+    const nextPromise = option?.key === "next_time" && Boolean(promise);
     try {
       const res = await fetch(attendance.endpoint ?? ATTENDANCE_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           option
-            ? { threadId: event.id, flavour: option.key }
+            ? { threadId: event.id, flavour: option.key, promiseNext: nextPromise }
             : { threadId: event.id, clear: true }
         ),
       });
@@ -295,6 +303,7 @@ function StandingMeeting({
       }
       setAnswer(option?.key ?? null);
       setPlainStatus(option?.status ?? null);
+      setPromiseNext(nextPromise);
       // The light may have just turned green: an answer can be the one that
       // meets the minimum. The route says so rather than the card guessing.
       if (data.light) setCurrentLight(data.light as StandingMeetingLight);
@@ -403,6 +412,7 @@ function StandingMeeting({
           <RsvpControl
             flavours={flavours}
             chosen={chosen}
+            promiseNext={promiseNext}
             plainStatus={plainStatus}
             open={menu === "rsvp"}
             onToggle={() => setMenu(menu === "rsvp" ? null : "rsvp")}
@@ -600,7 +610,11 @@ function LightControl({
   const [reason, setReason] = React.useState("");
   const word = LIGHT_WORD[light.state];
   const label = `Is it happening: ${word}. ${light.reason}`;
-  const settable = canEdit && light.canSet !== false;
+  // `canSet`, when the host actually computed one, is authoritative — that is
+  // what lets a page widen this past its own `canEdit` to whoever is hosting
+  // THIS occurrence (self-assigned or not), without every other org that
+  // never passes it losing the old canEdit-only behaviour.
+  const settable = light.canSet ?? canEdit;
 
   const body = (
     <>
@@ -689,6 +703,7 @@ function RsvpControl({
   flavours,
   chosen,
   plainStatus,
+  promiseNext,
   open,
   onToggle,
   onChoose,
@@ -697,9 +712,11 @@ function RsvpControl({
   flavours: RsvpFlavourOption[];
   chosen: RsvpFlavourOption | null;
   plainStatus: string | null;
+  /** Only ever meaningful when `chosen?.key === "next_time"`. */
+  promiseNext: boolean;
   open: boolean;
   onToggle: () => void;
-  onChoose: (option: RsvpFlavourOption | null) => void;
+  onChoose: (option: RsvpFlavourOption | null, promise?: boolean) => void;
   busy: boolean;
 }) {
   // The thumb is the state, not decoration: up once they have said a yes of
@@ -728,22 +745,41 @@ function RsvpControl({
         <div className="eac-face-menu eac-rsvp-menu" role="menu" aria-label="Will you make it?">
           <span className="eac-face-tool-label eac-face-menu-head">Will you make it?</span>
           {flavours.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              role="menuitem"
-              className="eac-face-menu-item"
-              disabled={busy}
-              aria-current={chosen?.key === option.key || undefined}
-              onClick={() => onChoose(option)}
-            >
-              <span className="eac-rsvp-thumb" aria-hidden>
-                {option.status === "yes" ? "▲" : "▼"}
-              </span>
-              <span>
-                <span className="eac-face-menu-label">{option.label}</span>
-              </span>
-            </button>
+            <span key={option.key} className="eac-rsvp-menu-row">
+              <button
+                type="button"
+                role="menuitem"
+                className="eac-face-menu-item"
+                disabled={busy}
+                aria-current={chosen?.key === option.key || undefined}
+                onClick={() => onChoose(option, option.key === "next_time" && promiseNext)}
+              >
+                <span className="eac-rsvp-thumb" aria-hidden>
+                  {option.status === "yes" ? "▲" : "▼"}
+                </span>
+                <span>
+                  <span className="eac-face-menu-label">{option.label}</span>
+                </span>
+              </button>
+              {/* A soft commitment to the occurrence AFTER this one — the one
+                  place a promise means anything, since every other answer is
+                  already about coming or not. Migration 155. */}
+              {option.key === "next_time" && (
+                <label
+                  className="eac-rsvp-promise"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Promise to make the one after this?"
+                >
+                  <span className="eac-rsvp-promise-cap">Promise?</span>
+                  <input
+                    type="checkbox"
+                    disabled={busy}
+                    checked={chosen?.key === "next_time" && promiseNext}
+                    onChange={(e) => onChoose(option, e.target.checked)}
+                  />
+                </label>
+              )}
+            </span>
           ))}
           {(chosen || plainStatus) && (
             <button

@@ -52,6 +52,10 @@ const nextConfig: NextConfig = {
     "@elkdonis/utils",
     "@elkdonis/auth-client",
     "@elkdonis/services",
+    // Paid workshops: the order, the Stripe glue and the provider beneath it.
+    "@elkdonis/commerce",
+    "@elkdonis/checkout",
+    "@elkdonis/payments",
     // Source-exported and unbundled, like the other cms-ui consumers — the
     // matching `@source` in globals.css is what makes Tailwind scan it.
     "@elkdonis/cms-ui",

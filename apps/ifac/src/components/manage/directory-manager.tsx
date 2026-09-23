@@ -321,7 +321,7 @@ export function DirectoryManager({
                   set("artworksText", (draft.artworksText ? draft.artworksText + "\n" : "") + `${url} | ${filename.replace(/\.[^.]+$/, "")}`)
                 }
               />
-              <textarea id="d-artworks" value={draft.artworksText} onChange={(e) => set("artworksText", e.currentTarget.value)} rows={6} placeholder="/ifac/artists/slug/painting.jpg | Sunrise Study" style={{ marginTop: "0.4rem" }} />
+              <textarea id="d-artworks" value={draft.artworksText} onChange={(e) => set("artworksText", e.currentTarget.value)} rows={6} placeholder="/api/media/EAC_Network/users/slug/Media/Images/painting.jpg | Sunrise Study" style={{ marginTop: "0.4rem" }} />
             </div>
 
             <div className="field">

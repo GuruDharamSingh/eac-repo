@@ -197,11 +197,33 @@
   border-radius: var(--ed-radius);
 }
 
-/* Tiptap's placeholder: only on the first empty block, never on every line. */
+/* Tiptap's placeholder: only on the first empty block, never on every line.
+
+   ABSOLUTE AND CLIPPED, not `float: left; height: 0`.
+
+   That is the shape Tiptap ships and it is only safe for a placeholder of a
+   few words. A floated box of zero height still LAYS OUT its text — it just
+   takes no vertical room — so a long placeholder renders straight down over
+   whatever follows it. The email suite's Letters tab passes each block's
+   network default as the placeholder, and two of those are three paragraphs:
+   at 330px wide they drew ~370px of text across the labels, the toolbars and
+   the boxes underneath, which is the "scrambled text" that sent me here
+   (verified 2026-09-20: a 23px-tall editor with a 392px scrollHeight).
+
+   Out of flow and clipped to one line, a placeholder of any length occupies
+   exactly the first line of the box and can never reach the next control.
+   `.eac-ed-content` is the positioning context; it has no padding of its own,
+   so `inset: 0 0 auto` lands on the first paragraph's own box. */
+.eac-ed-content {
+  position: relative;
+}
 .eac-ed-content p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
-  float: left;
-  height: 0;
+  position: absolute;
+  inset: 0 0 auto 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--ed-muted);
   pointer-events: none;
 }

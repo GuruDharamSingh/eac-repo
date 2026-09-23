@@ -421,6 +421,343 @@
   .blk-split { --split-cols: 1fr; }
 }
 
+/* ── Grid (blocks/grid.tsx) ──────────────────────────────────────────────── */
+
+.blk-grid {
+  container-type: inline-size;
+}
+.blk-grid-cells {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols, 3), minmax(0, 1fr));
+  gap: var(--grid-gap, 1.5rem);
+  align-items: var(--grid-align, stretch);
+}
+.blk-grid[data-cols="2"] { --grid-cols: 2; }
+.blk-grid[data-cols="3"] { --grid-cols: 3; }
+.blk-grid[data-cols="4"] { --grid-cols: 4; }
+.blk-grid[data-cols="5"] { --grid-cols: 5; }
+.blk-grid[data-cols="6"] { --grid-cols: 6; }
+.blk-grid[data-cols="auto"] .blk-grid-cells {
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min, 220px), 100%), 1fr));
+}
+
+.blk-grid[data-gap="none"]    { --grid-gap: 0; }
+.blk-grid[data-gap="tight"]   { --grid-gap: 0.75rem; }
+.blk-grid[data-gap="regular"] { --grid-gap: 1.5rem; }
+.blk-grid[data-gap="loose"]   { --grid-gap: 3rem; }
+
+.blk-grid[data-align="stretch"] { --grid-align: stretch; }
+.blk-grid[data-align="start"]   { --grid-align: start; }
+.blk-grid[data-align="center"]  { --grid-align: center; }
+
+/* A cell's content must not push its track wider than its share. */
+.blk-grid-cells > * {
+  min-width: 0;
+}
+
+/* Fewer columns as the GRID narrows (not the screen — see grid.tsx). */
+/* On the CELLS: an element cannot query its own container, only an
+   ancestor's, and .blk-grid is the container here. */
+@container (max-width: 44rem) {
+  .blk-grid:is([data-cols="4"], [data-cols="5"], [data-cols="6"]) > .blk-grid-cells { --grid-cols: 3; }
+}
+@container (max-width: 34rem) {
+  .blk-grid:not([data-cols="auto"], [data-cols="2"]) > .blk-grid-cells { --grid-cols: 2; }
+}
+@container (max-width: 22rem) {
+  .blk-grid:not([data-cols="auto"]) > .blk-grid-cells { --grid-cols: 1; }
+}
+
+/* ── Store box (blocks/store-frame.tsx) ──────────────────────────────────
+   Each palette is a measured set, declared as RESOLVED tokens (--blk-*) on
+   the box — see the note in store-frame.tsx for why not the inputs.
+   Ratios (ink / soft ink / accent as text / text on accent):
+     paper       15.3 / 6.9 / 6.9 / 7.7      gallery  18.3 / 7.0 / 18.3 / 18.3
+     ink         16.3 / 9.1 / 11.0 / 11.0    sage     11.7 / 6.2 / 6.0 / 7.6
+     night       12.0 / 7.4 / 7.8 / 10.4 (at its brighter stop #34265c)
+     terracotta   6.2 / 5.3 / 6.0 / 8.6      blush    12.0 / 6.5 / 5.8 / 7.2
+     veil-dark    7.6 / 5.6 on the veil over a white picture (worst case)
+     veil-light  11.0 / 7.4 on the veil over a black picture (worst case)
+   The bridge to product cards (--pc-*) is in commerce.css: those rules are
+   unlayered there and would beat anything written here. */
+
+.blk-frame {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--blk-fg);
+  background: var(--frame-bg, transparent);
+  --frame-pad: clamp(1.25rem, 4vw, 2.25rem);
+  padding: var(--frame-pad);
+}
+.blk-frame-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.blk-frame[data-palette="paper"] {
+  --frame-bg: #f6f1e7; --blk-bg: #f6f1e7; --blk-bg-soft: #efe7d8; --blk-fg: #1f1a14; --blk-muted: #5b5146;
+  --blk-faint: #5b5146; --blk-line: #d9cfbf; --blk-accent: #8a3b12; --blk-on-accent: #ffffff; --blk-accent-ink: #8a3b12;
+}
+.blk-frame[data-palette="gallery"] {
+  --frame-bg: #ffffff; --blk-bg: #ffffff; --blk-bg-soft: #f4f4f4; --blk-fg: #151515; --blk-muted: #595959;
+  --blk-faint: #595959; --blk-line: #e2e2e2; --blk-accent: #151515; --blk-on-accent: #ffffff; --blk-accent-ink: #151515;
+}
+.blk-frame[data-palette="ink"] {
+  --frame-bg: #111214; --blk-bg: #111214; --blk-bg-soft: #1b1c20; --blk-fg: #f1efe9; --blk-muted: #b8b4ab;
+  --blk-faint: #b8b4ab; --blk-line: #34353a; --blk-accent: #e8c170; --blk-on-accent: #111214; --blk-accent-ink: #e8c170;
+}
+.blk-frame[data-palette="night"] {
+  --frame-bg: linear-gradient(135deg, #141a33 0%, #34265c 100%); --blk-bg: #221f45; --blk-bg-soft: #2b2752;
+  --blk-fg: #f4f1ff; --blk-muted: #c3bde0; --blk-faint: #c3bde0; --blk-line: #4a4478;
+  --blk-accent: #ffb86b; --blk-on-accent: #1a1330; --blk-accent-ink: #ffb86b;
+}
+.blk-frame[data-palette="terracotta"] {
+  --frame-bg: #9a4322; --blk-bg: #9a4322; --blk-bg-soft: #8a3b1d; --blk-fg: #fff7ef; --blk-muted: #ffe0cc;
+  --blk-faint: #ffe0cc; --blk-line: #c0704d; --blk-accent: #fff4e6; --blk-on-accent: #7a2f12; --blk-accent-ink: #fff4e6;
+}
+.blk-frame[data-palette="sage"] {
+  --frame-bg: #dfe6d8; --blk-bg: #dfe6d8; --blk-bg-soft: #d3dccb; --blk-fg: #1d2a1f; --blk-muted: #465548;
+  --blk-faint: #465548; --blk-line: #b9c5b0; --blk-accent: #2f5d3a; --blk-on-accent: #ffffff; --blk-accent-ink: #2f5d3a;
+}
+.blk-frame[data-palette="blush"] {
+  --frame-bg: #f7e1dc; --blk-bg: #f7e1dc; --blk-bg-soft: #f0d3cc; --blk-fg: #3a1f24; --blk-muted: #6a464c;
+  --blk-faint: #6a464c; --blk-line: #e2bdb5; --blk-accent: #9c2f45; --blk-on-accent: #ffffff; --blk-accent-ink: #9c2f45;
+}
+/* A picture ground: the veil is part of the background, under the words. */
+.blk-frame[data-palette="veil-dark"] {
+  --frame-bg: linear-gradient(rgb(10 10 14 / 0.72), rgb(10 10 14 / 0.72)), var(--frame-image) center / cover no-repeat;
+  --blk-bg: #26262a; --blk-bg-soft: rgb(255 255 255 / 0.08); --blk-fg: #f6f3ee; --blk-muted: #d6d2ca; --blk-faint: #d6d2ca;
+  --blk-line: rgb(255 255 255 / 0.25); --blk-accent: #f6f3ee; --blk-on-accent: #141416; --blk-accent-ink: #f6f3ee;
+}
+.blk-frame[data-palette="veil-light"] {
+  --frame-bg: linear-gradient(rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.82)), var(--frame-image) center / cover no-repeat;
+  --blk-bg: #f2f2f2; --blk-bg-soft: rgb(0 0 0 / 0.05); --blk-fg: #1a1a1a; --blk-muted: #3d3d3d; --blk-faint: #3d3d3d;
+  --blk-line: rgb(0 0 0 / 0.2); --blk-accent: #1a1a1a; --blk-on-accent: #ffffff; --blk-accent-ink: #1a1a1a;
+}
+
+.blk-frame[data-padding="tight"] { --frame-pad: 1rem; }
+.blk-frame[data-padding="roomy"] { --frame-pad: clamp(2rem, 6vw, 3.5rem); }
+
+.blk-frame[data-edge="soft"],
+.blk-frame[data-edge="hairline"] { border-radius: 14px; }
+.blk-frame[data-edge="hairline"] { border: 1px solid var(--blk-line); }
+.blk-frame[data-edge="double"] { border: 4px double var(--blk-line); }
+/* Two gold rules with the ground between them. Inset shadows stack
+   first-on-top, so the middle ring must be painted in the ground colour —
+   a transparent one lets the outer gold show through as one thick band. */
+.blk-frame[data-edge="gilt"] {
+  box-shadow:
+    inset 0 0 0 2px #b8903f,
+    inset 0 0 0 6px var(--blk-bg),
+    inset 0 0 0 7px #b8903f;
+}
+
+/* Texture, drawn in the ink at low strength over the ground. */
+.blk-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  --frame-tex: color-mix(in srgb, var(--blk-fg) 11%, transparent);
+}
+.blk-frame[data-pattern="dots"]::before {
+  background: radial-gradient(var(--frame-tex) 1.1px, transparent 1.6px) 0 0 / 18px 18px;
+}
+.blk-frame[data-pattern="lines"]::before {
+  background: repeating-linear-gradient(135deg, var(--frame-tex) 0 1px, transparent 1px 11px);
+}
+.blk-frame[data-pattern="grid"]::before {
+  background:
+    linear-gradient(var(--frame-tex) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, var(--frame-tex) 1px, transparent 1px) 0 0 / 22px 22px;
+}
+.blk-frame[data-pattern="grain"]::before {
+  opacity: 0.22;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ── Store header (blocks/store-header.tsx) ─────────────────────────────── */
+
+.blk-sh {
+  container-type: inline-size;
+  display: grid;
+  gap: 0.45rem;
+  color: var(--blk-fg);
+  --sh-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --sh-size: clamp(1.9rem, 7cqi, 2.9rem);
+}
+.blk-sh[data-size="regular"] { --sh-size: clamp(1.4rem, 4.5cqi, 1.9rem); }
+.blk-sh[data-size="huge"] { --sh-size: clamp(2.4rem, 11cqi, 4.6rem); }
+.blk-sh[data-align="center"] { text-align: center; justify-items: center; }
+.blk-sh-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blk-accent-ink);
+}
+.blk-sh-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-size: var(--sh-size);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.blk-sh-sub { margin: 0; max-width: 38rem; color: var(--blk-muted); line-height: 1.5; }
+.blk-sh-word { display: inline-block; white-space: nowrap; }
+.blk-sh-ch { display: inline-block; }
+
+/* marquee: shown statically without motion (the first run is in view). */
+.blk-sh-marquee {
+  overflow: hidden;
+  margin-inline: calc(var(--frame-pad, 0px) * -1);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.blk-sh-track { display: flex; width: max-content; }
+.blk-sh-run { display: flex; }
+.blk-sh-item {
+  padding-inline: 0.4em;
+  font-family: var(--blk-font-title);
+  font-size: var(--sh-size);
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.blk-sh-star { padding-left: 0.8em; font-size: 0.5em; vertical-align: middle; color: var(--blk-accent-ink); }
+
+/* underline: the rule is always there; motion only draws it in. */
+.blk-sh[data-effect="underline"] .blk-sh-title { position: relative; display: inline-block; padding-bottom: 0.3em; }
+.blk-sh[data-effect="underline"] .blk-sh-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: max(3px, 0.09em);
+  border-radius: 2px;
+  background: var(--blk-accent-ink);
+  transform-origin: left center;
+}
+.blk-sh[data-effect="underline"][data-align="center"] .blk-sh-title::after { transform-origin: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .blk-sh[data-effect="reveal"] .blk-sh-ch {
+    opacity: 0;
+    transform: translateY(0.55em) rotate(5deg);
+    animation: blk-sh-rise 0.7s var(--sh-ease) forwards;
+    animation-delay: calc(var(--i, 0) * 30ms + 100ms);
+  }
+  .blk-sh[data-effect="reveal"]:not([data-split]) .blk-sh-title,
+  .blk-sh[data-effect="reveal"] .blk-sh-kicker,
+  .blk-sh[data-effect="reveal"] .blk-sh-sub {
+    animation: blk-sh-rise 0.8s var(--sh-ease) 0.15s both;
+  }
+  .blk-sh[data-effect="reveal"] .blk-sh-sub { animation-delay: 0.45s; }
+  .blk-sh[data-effect="reveal"] .blk-sh-kicker { transform: translateY(0.4em); }
+
+  .blk-sh-track { animation: blk-sh-run 26s linear infinite; }
+  .blk-sh-marquee:hover .blk-sh-track { animation-play-state: paused; }
+
+  .blk-sh[data-effect="shimmer"] .blk-sh-title {
+    background: linear-gradient(100deg, var(--blk-fg) 0 38%, var(--blk-accent-ink) 50%, var(--blk-fg) 62% 100%);
+    background-size: 260% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: blk-sh-shine 5s ease-in-out infinite;
+  }
+
+  .blk-sh[data-effect="underline"] .blk-sh-title::after {
+    animation: blk-sh-draw 1.1s var(--sh-ease) 0.25s both;
+  }
+}
+@keyframes blk-sh-rise { from { opacity: 0; } to { opacity: 1; transform: none; } }
+@keyframes blk-sh-run { to { transform: translateX(-50%); } }
+@keyframes blk-sh-shine { 0% { background-position: 100% 0; } 55%, 100% { background-position: 0 0; } }
+@keyframes blk-sh-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ── Store shelf (blocks/store-shelf.tsx) ───────────────────────────────── */
+
+.blk-shelf {
+  container-type: inline-size;
+  display: grid;
+  gap: 1.25rem;
+  color: var(--blk-fg);
+  --shelf-cols: 3;
+  --shelf-gap: 1.25rem;
+}
+.blk-shelf[data-cols="2"] { --shelf-cols: 2; }
+.blk-shelf[data-cols="4"] { --shelf-cols: 4; }
+.blk-shelf-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+}
+.blk-shelf-heading { margin: 0; font-family: var(--blk-font-title); font-size: 1.6rem; line-height: 1.15; }
+.blk-shelf-intro { margin: 0.3rem 0 0; color: var(--blk-muted); }
+.blk-shelf-intro a,
+.blk-shelf-link { color: var(--blk-accent-ink); font-weight: 600; text-underline-offset: 0.2em; }
+.blk-shelf-link { text-decoration: none; white-space: nowrap; }
+.blk-shelf-link:hover { text-decoration: underline; }
+.blk-shelf-items {
+  display: grid;
+  grid-template-columns: repeat(var(--shelf-cols), minmax(0, 1fr));
+  /* Read here so the container rules below can narrow it. */
+  gap: var(--shelf-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.blk-shelf[data-card="tag"] { --shelf-gap: 1.75rem 1.25rem; }
+.blk-shelf-item { min-width: 0; }
+
+/* featured: the first piece takes a 2 × 2 block. */
+.blk-shelf[data-layout="featured"] .blk-shelf-item[data-first] { grid-column: span 2; grid-row: span 2; }
+
+/* single: Feature cards, or a shelf of one — one per row. */
+.blk-shelf[data-layout="single"] .blk-shelf-items { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
+
+/* strip: one row that scrolls, snapping card by card. */
+.blk-shelf[data-layout="strip"] .blk-shelf-items {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  /* A third of a card more than the column count, so the next card always
+     peeks in at the edge — the only sign a row scrolls. */
+  grid-auto-columns: max(9.5rem, calc((100% - (var(--shelf-cols) - 1) * 1.25rem) / (var(--shelf-cols) + 0.35)));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--blk-line) transparent;
+}
+.blk-shelf[data-layout="strip"] .blk-shelf-item { scroll-snap-align: start; }
+
+/* Fewer columns as the SHELF narrows — on the list, which is inside the
+   container; the container cannot query itself. */
+@container (max-width: 44rem) {
+  .blk-shelf[data-cols="4"] .blk-shelf-items { --shelf-cols: 3; }
+}
+@container (max-width: 32rem) {
+  .blk-shelf[data-cols] .blk-shelf-items { --shelf-cols: 2; }
+}
+@container (max-width: 22rem) {
+  .blk-shelf:not([data-layout="strip"]) .blk-shelf-items { --shelf-cols: 1; }
+  .blk-shelf[data-layout="featured"] .blk-shelf-item[data-first] { grid-column: auto; grid-row: auto; }
+}
+
 /* ── Screen-reader-only text ─────────────────────────────────────────────── */
 
 /*
@@ -1157,6 +1494,80 @@ a.blk-card:focus-visible {
   case auto-fit gets wrong — a minimum wider than the container produces a
   single column that overflows sideways.
 */
+/* A data-driven wall names itself. The typography is section-heading's
+   (.blk-heading-title) so a gallery's title and a hand-written heading on the
+   same page match; only the spacing under it belongs to the wall. */
+.blk-wall-title { margin: 0 0 1rem; }
+
+/* ---- gallery grid (gallery-grid) ---- */
+/* Full width, explicitly. The grid measures its container to size its
+   columns, and inside the editor's canvas the block sits in a shrink-to-fit
+   wrapper — at width 0 every tile stacks into one narrow column. */
+.blk-gallery-grid,
+.dm-grid-wrap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.blk-gallery-grid {
+  margin: 0 0 3rem;
+}
+.dm-grid-note p {
+  margin: 0 0 0.5rem;
+}
+.dm-grid-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.dm-grid-tools button {
+  min-height: 34px;
+  padding: 0 0.8rem;
+  border: 1px solid var(--blk-line);
+  border-radius: var(--blk-radius-sm);
+  background: var(--blk-bg);
+  color: var(--blk-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.dm-grid-tools button:hover {
+  background: var(--blk-fg);
+  color: var(--blk-bg);
+}
+.dm-grid-tools button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dm-grid-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--blk-bg-soft);
+  color: var(--blk-fg);
+  font-size: 0.85rem;
+  border-radius: var(--blk-radius-sm);
+}
+/* The resize corner's own icon defaults to a dark stroke; make it visible
+   whatever the block's own background is set to. */
+.dm-grid-wrap[data-editable="true"] .react-resizable-handle::after {
+  border-color: var(--blk-bg) !important;
+}
+.dm-grid-cap-title,
+.dm-grid-cap-meta,
+.dm-grid-cap-price {
+  display: block;
+  font-family: var(--blk-font-body);
+}
+.dm-grid-cap-title {
+  font-style: italic;
+  font-weight: 500;
+}
+.dm-grid-cap-meta,
+.dm-grid-cap-price {
+  font-size: 12px;
+  opacity: 0.92;
+}
+
 .blk-wall {
   list-style: none;
   margin: 0;
@@ -1189,6 +1600,61 @@ a.blk-card:focus-visible {
 .blk-wall-link:focus-visible { outline: 2px solid var(--blk-accent-ink); outline-offset: 3px; }
 
 .blk-wall-caption { font-size: 0.875rem; color: var(--blk-muted); line-height: 1.45; }
+
+/*
+  Caption styling chosen on the wall. Two classes deep on purpose: a site's
+  own caption theme (one class) still applies when these are left on "the
+  site's", and loses only to a choice someone actually made here.
+*/
+.blk-wall[data-caption-weight="bold"] .blk-wall-caption { font-weight: 700; }
+.blk-wall[data-caption-font="title"] .blk-wall-caption { font-family: var(--blk-font-title); }
+.blk-wall[data-caption-font="body"]  .blk-wall-caption { font-family: var(--blk-font-body); }
+.blk-wall[data-caption-size="s"]  .blk-wall-caption { font-size: 0.875rem; }
+.blk-wall[data-caption-size="m"]  .blk-wall-caption { font-size: 1.125rem; }
+.blk-wall[data-caption-size="l"]  .blk-wall-caption { font-size: 1.5rem; line-height: 1.2; }
+.blk-wall[data-caption-size="xl"] .blk-wall-caption { font-size: 2rem; line-height: 1.1; }
+
+/*
+  On the picture: the figure becomes the positioning box and the caption sits
+  in a 3×3 grid over it. The shade is a gradient from the caption's own edge,
+  not a band, so it darkens only where the words are.
+*/
+.blk-wall-figure--on { position: relative; display: block; }
+.blk-wall-figure--on .blk-wall-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  padding: 0.9rem 1rem;
+  border-radius: var(--blk-radius);
+  pointer-events: none;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+/* White by default; three classes deep to beat a site theme's caption ink,
+   which is chosen for words on the page, not on a picture. */
+.blk-wall[data-caption="on"] .blk-wall-figure--on .blk-wall-caption { color: #fff; }
+.blk-wall-caption-text { max-width: 100%; }
+
+.blk-wall-caption[data-at^="top"]    { align-items: flex-start; }
+.blk-wall-caption[data-at="left"],
+.blk-wall-caption[data-at="center"],
+.blk-wall-caption[data-at="right"]   { align-items: center; }
+.blk-wall-caption[data-at^="bottom"] { align-items: flex-end; }
+.blk-wall-caption[data-at$="left"]   { justify-content: flex-start; text-align: start; }
+.blk-wall-caption[data-at="top"],
+.blk-wall-caption[data-at="center"],
+.blk-wall-caption[data-at="bottom"]  { justify-content: center; text-align: center; }
+.blk-wall-caption[data-at$="right"]  { justify-content: flex-end; text-align: end; }
+
+.blk-wall[data-scrim="soft"]   .blk-wall-figure--on .blk-wall-caption { --blk-wall-shade: rgb(0 0 0 / 0.45); }
+.blk-wall[data-scrim="strong"] .blk-wall-figure--on .blk-wall-caption { --blk-wall-shade: rgb(0 0 0 / 0.7); }
+.blk-wall:not([data-scrim="none"]) .blk-wall-caption[data-at^="top"]    { background: linear-gradient(to bottom, var(--blk-wall-shade), transparent 60%); }
+.blk-wall:not([data-scrim="none"]) .blk-wall-caption[data-at^="bottom"] { background: linear-gradient(to top, var(--blk-wall-shade), transparent 60%); }
+.blk-wall:not([data-scrim="none"]) .blk-wall-caption[data-at="left"]    { background: linear-gradient(to right, var(--blk-wall-shade), transparent 70%); }
+.blk-wall:not([data-scrim="none"]) .blk-wall-caption[data-at="right"]   { background: linear-gradient(to left, var(--blk-wall-shade), transparent 70%); }
+.blk-wall:not([data-scrim="none"]) .blk-wall-caption[data-at="center"]  { background: radial-gradient(closest-side, var(--blk-wall-shade), transparent); }
+/* Without a shade, a text shadow is the least that keeps words off a busy picture. */
+.blk-wall[data-scrim="none"] .blk-wall-figure--on .blk-wall-caption { text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
 
 /* ── Video ───────────────────────────────────────────────────────────────── */
 

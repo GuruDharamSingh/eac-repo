@@ -22,7 +22,7 @@ Self-hosted network of interconnected apps with shared authentication and conten
 ```
 apps/
 ├── admin/                       Port 3000 - Admin dashboard
-├── blog-sunjay/                 Port 3001 - Personal blog (org: sunjay)
+├── sunjay/                      Port 3001 - Sunjay's Teaching Circle (org: sunjay)
 ├── blog-guru-dharam/            Port 3002 - Personal blog (org: guru-dharam)
 ├── forum/                       Port 3003 - Cross-org content aggregator
 ├── inner-gathering/             Port 3004 - Mobile-first community app
@@ -105,7 +105,7 @@ cd apps/inner-gathering && pnpm dev
 
 **Access:**
 - Admin: http://localhost:3000
-- Blog Sunjay: http://localhost:3001
+- Sunjay's Teaching Circle: http://localhost:3001
 - Blog Guru Dharam: http://localhost:3002
 - Forum: http://localhost:3003
 - Inner Gathering: http://localhost:3004
@@ -194,7 +194,7 @@ docker-compose -f docker-compose.production.yml logs -f
 
 Without domains, access via IP:port:
 - Admin: `http://YOUR_SERVER_IP:3000`
-- Blog Sunjay: `http://YOUR_SERVER_IP:3001`
+- Sunjay's Teaching Circle: `http://YOUR_SERVER_IP:3001`
 - Blog Guru Dharam: `http://YOUR_SERVER_IP:3002`
 - Forum: `http://YOUR_SERVER_IP:3003`
 - Inner Gathering: `http://YOUR_SERVER_IP:3004`

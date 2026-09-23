@@ -508,3 +508,257 @@ export async function loadCenter(opts: LoadCenterOptions): Promise<CenterData> {
 
   return { person, org, orgs, feed, pinned, featured, network, promo };
 }
+
+// ============================================================================
+// The profile popup's Details tab.
+//
+// The fields a person owns on their `users` row beyond what the card shows:
+// postal code, portfolio link, comment colour, and the slug (their URL on the
+// network). Read with an explicit column list, never USER_COLS, which fans
+// `claimed_by`/`created_by`/`source_note` out and must not reach a browser.
+//
+// Authorisation is the caller's: these write the row they are given. The
+// /api/center/profile route only ever passes the signed-in person's own id.
+// ============================================================================
+
+export interface ProfileDetails {
+  postalCode: string | null;
+  portfolioUrl: string | null;
+  /** `#rrggbb`, used for the person's name on replies. */
+  commentColor: string | null;
+  slug: string | null;
+  /** Read-only facts about the account, for the Details tab's foot. */
+  email: string | null;
+  createdAt: string | null;
+  /** The Nextcloud login this person was given, once they have signed in there. */
+  nextcloudUserId: string | null;
+}
+
+export interface ProfileDetailsInput {
+  postalCode?: string | null;
+  portfolioUrl?: string | null;
+  commentColor?: string | null;
+  /** Never null: clearing a slug would take the person's page down. */
+  slug?: string;
+}
+
+export type SaveProfileDetailsResult =
+  | { ok: true; slug: string | null }
+  | {
+      ok: false;
+      error: 'slug_taken' | 'invalid_slug' | 'reserved_slug' | 'bad_color' | 'bad_url';
+    };
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+export async function getProfileDetails(userId: string): Promise<ProfileDetails | null> {
+  const [row] = await db<
+    Array<{
+      postal_code: string | null;
+      portfolio_url: string | null;
+      comment_color: string | null;
+      slug: string | null;
+      email: string | null;
+      created_at: Date | null;
+      nextcloud_user_id: string | null;
+    }>
+  >`
+    SELECT postal_code, portfolio_url, comment_color, slug, email, created_at, nextcloud_user_id
+      FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  if (!row) return null;
+  return {
+    postalCode: row.postal_code,
+    portfolioUrl: row.portfolio_url,
+    commentColor: row.comment_color,
+    slug: row.slug,
+    email: row.email,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    nextcloudUserId: row.nextcloud_user_id,
+  };
+}
+
+export async function saveProfileDetails(
+  userId: string,
+  input: ProfileDetailsInput
+): Promise<SaveProfileDetailsResult> {
+  const { slugify, isReservedSlug } = await import('@elkdonis/utils');
+  const sets: Record<string, unknown> = {};
+
+  if (input.postalCode !== undefined) {
+    sets.postal_code = input.postalCode?.trim().slice(0, 20) || null;
+  }
+  if (input.portfolioUrl !== undefined) {
+    const url = input.portfolioUrl?.trim() || null;
+    if (url && !/^https?:\/\/\S+$/i.test(url)) return { ok: false, error: 'bad_url' };
+    sets.portfolio_url = url ? url.slice(0, 500) : null;
+  }
+  if (input.commentColor !== undefined) {
+    const c = input.commentColor?.trim() || null;
+    if (c && !HEX.test(c)) return { ok: false, error: 'bad_color' };
+    sets.comment_color = c ? c.toLowerCase() : null;
+  }
+
+  let slug: string | null | undefined;
+  if (input.slug !== undefined) {
+    const normalized = slugify(input.slug);
+    if (!normalized) return { ok: false, error: 'invalid_slug' };
+    if (isReservedSlug(normalized)) return { ok: false, error: 'reserved_slug' };
+    const [clash] = await db<Array<{ id: string }>>`
+      SELECT id FROM users WHERE slug = ${normalized} AND id <> ${userId} LIMIT 1
+    `;
+    if (clash) return { ok: false, error: 'slug_taken' };
+    sets.slug = normalized;
+    slug = normalized;
+  }
+
+  if (Object.keys(sets).length > 0) {
+    try {
+      await db`UPDATE users SET ${db(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+    } catch (err) {
+      // The unique index is the real guard; the SELECT above only gives the
+      // common case a friendly answer.
+      if ((err as { code?: string }).code === '23505') return { ok: false, error: 'slug_taken' };
+      throw err;
+    }
+  }
+  if (slug === undefined) {
+    const [row] = await db<Array<{ slug: string | null }>>`SELECT slug FROM users WHERE id = ${userId}`;
+    slug = row?.slug ?? null;
+  }
+  return { ok: true, slug };
+}
+
+// ============================================================================
+// Post from /center to anywhere you belong (Brief A slice 3).
+//
+// A person on one org's /center may start a topic in ANY org they are part
+// of, as themselves — not only the org whose site they opened /center on.
+// Or write on their own blog. One destination per post (user, 2026-09-18).
+//
+// The picker's value is `orgId|feedSlug` (the forum's shape, see forum-ui
+// `pair()`) or `blog`. The list is a convenience; the write re-checks: an
+// org post goes through the forum's own createTopic, which refuses a feed the
+// viewer may not post in, whatever the browser sent. A blog piece is
+// `kind='writing'`, which OFF_FEED_KINDS keeps off every org feed.
+// ============================================================================
+
+export interface PostTarget {
+  /** `orgId|feedSlug`, or `blog`. */
+  value: string;
+  kind: 'feed' | 'blog';
+  orgId: string | null;
+  orgName: string;
+  feedSlug: string | null;
+  feedName: string;
+}
+
+export async function listPostTargets(userId: string, opts: { blogOrgId?: string | null } = {}): Promise<PostTarget[]> {
+  const [{ getViewerRoles }, { listOrgFeeds, canPostToFeed }] = await Promise.all([
+    import('./forum'),
+    import('./org-feeds'),
+  ]);
+  const roles = await getViewerRoles(userId);
+  const orgIds = Object.keys(roles);
+  if (orgIds.length === 0 && !opts.blogOrgId) return [];
+
+  const names = orgIds.length
+    ? await db<Array<{ id: string; name: string }>>`SELECT id, name FROM organizations WHERE id = ANY(${orgIds})`
+    : [];
+  const nameOf = new Map(names.map((n) => [n.id, n.name] as const));
+
+  const out: PostTarget[] = [];
+  if (opts.blogOrgId) {
+    out.push({ value: 'blog', kind: 'blog', orgId: opts.blogOrgId, orgName: 'You', feedSlug: null, feedName: 'My blog' });
+  }
+  const perOrg = await Promise.all(
+    orgIds.map(async (orgId) => {
+      const feeds = await listOrgFeeds(orgId).catch(() => []);
+      return feeds
+        .filter((f) => canPostToFeed(f, roles[orgId] ?? null))
+        .map<PostTarget>((f) => ({
+          value: `${orgId}|${f.slug}`,
+          kind: 'feed',
+          orgId,
+          orgName: nameOf.get(orgId) ?? orgId,
+          feedSlug: f.slug,
+          feedName: f.name,
+        }));
+    })
+  );
+  const feeds = perOrg.flat().sort((a, b) => a.orgName.localeCompare(b.orgName));
+  return [...out, ...feeds];
+}
+
+export interface PostAnywhereInput {
+  target: string;
+  title: string;
+  /** Plain text; blank lines make paragraphs (the forum's textToHtml). */
+  text: string;
+  /** The org whose site "My blog" lives on — the host's own org. */
+  blogOrgId?: string | null;
+}
+
+export type PostAnywhereResult =
+  | { ok: true; kind: 'feed'; threadId: string; slug: string; orgId: string; feedSlug: string }
+  | { ok: true; kind: 'blog'; threadId: string; slug: string; orgId: string }
+  | { ok: false; error: string };
+
+export async function createPostAnywhere(userId: string, input: PostAnywhereInput): Promise<PostAnywhereResult> {
+  const target = (input.target ?? '').trim();
+  const title = (input.title ?? '').trim();
+
+  if (target === 'blog') {
+    if (!input.blogOrgId) return { ok: false, error: 'This site has no blog for you.' };
+    const [{ createWritingPost, updateWritingPost }, { textToHtml }] = await Promise.all([
+      import('./writing'),
+      import('./forum-write'),
+    ]);
+    const body = textToHtml(input.text ?? '');
+    if (!body.replace(/<[^>]+>/g, '').trim()) return { ok: false, error: 'Write something first.' };
+    const created = await createWritingPost({ authorId: userId, orgId: input.blogOrgId, title });
+    if (created.ok === false) return created;
+    const published = await updateWritingPost(created.post.id, { bodyHtml: body, status: 'published' });
+    if (published.ok === false) return published;
+    return { ok: true, kind: 'blog', threadId: published.post.id, slug: published.post.slug, orgId: input.blogOrgId };
+  }
+
+  const i = target.indexOf('|');
+  const orgId = i < 0 ? '' : target.slice(0, i);
+  const feedSlug = i < 0 ? '' : target.slice(i + 1);
+  if (!orgId || !feedSlug) return { ok: false, error: 'Choose where to post it.' };
+
+  const [{ getViewerRoles }, { createTopic }] = await Promise.all([import('./forum'), import('./forum-write')]);
+  // The viewer's real roles, read now — never the list the browser was shown.
+  // createTopic checks the feed's min_role/post_role against them.
+  const roles = await getViewerRoles(userId);
+  if (!roles[orgId]) return { ok: false, error: 'You are not part of that organisation.' };
+  const result = await createTopic({ userId, roles }, { orgId, feedSlug, title, text: input.text ?? '' });
+  if (result.ok === false) return { ok: false, error: result.error };
+  return { ok: true, kind: 'feed', threadId: result.threadId, slug: result.slug, orgId, feedSlug };
+}
+
+/**
+ * An org's own threads for a member-facing feed (the hub's page layout):
+ * the same read as /center's feed — published, off-feed kinds excluded,
+ * org-only threads for affiliates — without the rest of loadCenter.
+ */
+export async function listOrgActivity(
+  orgId: string,
+  userId: string,
+  opts: { affiliated: boolean; limit?: number }
+): Promise<CenterThread[]> {
+  return loadFeed(orgId, userId, opts.affiliated, Math.min(Math.max(opts.limit ?? 8, 1), 30));
+}
+
+/**
+ * Other orgs' threads this org carries or the network shares, for the hub's
+ * "across the collective" cycler — /center's network read on its own.
+ */
+export async function listNetworkActivity(
+  orgId: string,
+  userId: string,
+  opts: { memberOrgIds?: string[]; limit?: number } = {}
+): Promise<CenterThread[]> {
+  return loadNetwork(orgId, userId, opts.memberOrgIds ?? [], Math.min(Math.max(opts.limit ?? 8, 1), 30));
+}

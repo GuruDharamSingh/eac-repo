@@ -33,6 +33,7 @@ import {
   UNPAID_ORDER_STATUSES,
 } from "@elkdonis/commerce/server";
 import { getOrderById, getOrderLines } from "@elkdonis/commerce/queries";
+import { normaliseCountry } from "@elkdonis/commerce/payout-rails";
 import type { Order, PayoutIdentity } from "@elkdonis/commerce/types";
 
 /** Whether the card option should be offered at all. */
@@ -80,6 +81,34 @@ async function resolveDestination(orderId: string): Promise<{
  * buyer to. Works for an order created on either rail — a buyer who was given
  * eTransfer instructions can still pay by card from the order page.
  */
+/**
+ * The most Stripe will put on one card charge, in minor units ($999,999.99 in
+ * CAD/USD/EUR). Above it no payment method qualifies, and Stripe says so in
+ * the least helpful way available: "No valid payment method types for this
+ * Checkout Session", which points at dashboard settings that are fine. A
+ * $123-billion test price produced exactly that on 2026-09-21.
+ *
+ * Deliberately NOT enforced when a work is listed: a fine-art sale above it is
+ * legitimate and simply goes by e-Transfer, which has no ceiling.
+ */
+export const CARD_CHARGE_CEILING_MINOR = 99_999_999;
+
+/**
+ * Card checkout could not start, for a reason the buyer can act on. Callers
+ * catch this and send the buyer to their order page — which already offers
+ * e-Transfer and a retry — instead of letting it surface as an error page.
+ * The order itself is untouched and still payable.
+ */
+export class CardCheckoutRefused extends Error {
+  constructor(
+    public readonly reason: "over_ceiling" | "stripe_refused",
+    message: string
+  ) {
+    super(message);
+    this.name = "CardCheckoutRefused";
+  }
+}
+
 export async function startStripeCheckout(input: {
   orderId: string;
   successUrl: string;
@@ -113,19 +142,38 @@ export async function startStripeCheckout(input: {
     };
   });
 
+  if (order.totalMinor > CARD_CHARGE_CEILING_MINOR) {
+    throw new CardCheckoutRefused(
+      "over_ceiling",
+      `Order ${order.number} is more than a card can carry in one payment.`
+    );
+  }
+
   const { destinationAccountId, applicationFeeMinor } = await resolveDestination(order.id);
 
-  const session = await stripe.createCheckoutSession({
-    orderId: order.id,
-    orderNumber: order.number,
-    customerEmail: order.customerEmail,
-    lines,
-    successUrl: input.successUrl,
-    cancelUrl: input.cancelUrl,
-    destinationAccountId,
-    applicationFeeMinor,
-    expiresInMinutes: 60,
-  });
+  let session: Awaited<ReturnType<typeof stripe.createCheckoutSession>>;
+  try {
+    session = await stripe.createCheckoutSession({
+      orderId: order.id,
+      orderNumber: order.number,
+      customerEmail: order.customerEmail,
+      lines,
+      successUrl: input.successUrl,
+      cancelUrl: input.cancelUrl,
+      destinationAccountId,
+      applicationFeeMinor,
+      expiresInMinutes: 60,
+    });
+  } catch (err) {
+    // Stripe declining the SESSION (as opposed to the card, which happens on
+    // Stripe's own page) is something about this order the buyer can route
+    // around. Anything else — no network, a bad key — is ours and stays loud.
+    if ((err as { type?: string })?.type === "StripeInvalidRequestError") {
+      console.error(`[checkout] Stripe refused a session for ${order.number}:`, err);
+      throw new CardCheckoutRefused("stripe_refused", (err as Error).message);
+    }
+    throw err;
+  }
 
   await recordStripeCheckout({
     orderId: order.id,
@@ -273,18 +321,135 @@ export async function startStripeOnboarding(input: {
   let identity = await getPayoutIdentity(input.userId);
   if (!identity) throw new Error("No such user.");
 
-  if (!identity.stripeAccountId) {
-    const { accountId } = await stripe.createExpressAccount({ email: input.email });
-    await setPayoutIdentity(input.userId, { stripeAccountId: accountId });
-    identity = { ...identity, stripeAccountId: accountId };
+  try {
+    if (!identity.stripeAccountId) {
+      // The account's country is fixed at creation and never changes after —
+      // Stripe's hosted onboarding then requires the individual's own address
+      // to match it. Omitting this let every account fall back to the
+      // platform's own country (CA), so a US (or any non-Canadian) artist's
+      // real address could never match and onboarding failed with "address
+      // must match account country" (2026-09-20). `identity.country` is
+      // whatever PayoutSetup saved; when it's unset we still have nothing
+      // better to offer than the provider's own default.
+      const { accountId } = await stripe.createExpressAccount({
+        email: input.email,
+        country: identity.country ?? undefined,
+      });
+      await setPayoutIdentity(input.userId, { stripeAccountId: accountId });
+      identity = { ...identity, stripeAccountId: accountId };
+    }
+
+    const link = await stripe.createAccountOnboardingLink({
+      accountId: identity.stripeAccountId!,
+      refreshUrl: input.refreshUrl,
+      returnUrl: input.returnUrl,
+    });
+    return { url: link.url };
+  } catch (err) {
+    // A RESTRICTED key (`rk_…`) can be perfectly able to take payments and
+    // still be unable to create a connected account — onboarding needs
+    // `connected_account_write` and `account_link_write`, which are separate
+    // permissions and off by default. Saying "could not reach Stripe" sends
+    // whoever sees it looking for a network fault that isn't there.
+    if ((err as { code?: string })?.code === "more_permissions_required") {
+      throw new Error(
+        "Stripe payouts are not finished being set up on this platform: the API key in use cannot " +
+          "create connected accounts. An administrator needs to enable the Connect 'Accounts write' " +
+          "and 'Account links write' permissions on it."
+      );
+    }
+    throw err;
+  }
+}
+
+/**
+ * What the Payouts tab says before anyone presses Connect.
+ *
+ * Network-wide on purpose: every org on this platform shares one Stripe
+ * account, one ledger and one set of KYC hurdles, so the explanation is the
+ * same wherever the tab is mounted. It lived in innergathering until IFAC
+ * needed the identical four paragraphs (2026-09-20). A host that needs its
+ * own wording still passes its own `onboarding`; this is the default, not a
+ * requirement.
+ */
+export const PAYOUT_ONBOARDING_COPY: { title: string; paragraphs: string[] } = {
+  title: "Elkdonis Onboarding",
+  paragraphs: [
+    "As a not-for-profit, EAC directs a variety of projects — Art Dealing, Education, Business, and Agency. We hire or contract artists or groups to fulfill the directives of these projects. If you wish to get more involved with the direction of projects, go to arts-collective.com/hub/elkdonis to see where we align.",
+    "Know Your Customer rules mean Stripe will request your banking information and perhaps ID verification. We hope you consider these institutional hurdles as part of the formalization of you as your own company. Stripe allows us to pay the international network of Elkdonis instantly, and provides refund security for artist and client.",
+    "You can also continue without a Stripe account, and post your offerings until the day someone wishes to make a transaction with you. You can also choose to be paid by Elkdonis through PayPal, though this comes with higher fees. Stripe has a fairly standard rate for card payments of 2.5% + 30¢ per transaction.",
+    "Elkdonis and Mutual Aid provide this institutional gateway for the collective and well-being of everyone's interconnected nature.",
+  ],
+};;
+
+/**
+ * The whole "connect me to Stripe" step, as one call a host can make.
+ *
+ * Every site that mounts the profile surface's Payouts tab needs the same
+ * five things: refuse when the platform has no key, demand a country the
+ * first time (and save it BEFORE the account exists, because Stripe fixes it
+ * at creation and never changes it after), start or resume onboarding, send
+ * Stripe somewhere to return to, and pass a real error through instead of
+ * "could not reach Stripe". That was written once per app and drifted; this
+ * is the one copy. A host supplies only what it alone knows — who is asking
+ * and its own origin.
+ *
+ * `returnPath` is where Stripe sends them back. The host must make that route
+ * call `refreshStripeAccountStatus`, otherwise the person returns to a page
+ * that isn't listening and stays "not finished" despite Stripe being happy —
+ * which is exactly how two fully-payable accounts sat unstamped until
+ * 2026-09-20.
+ */
+export async function startPayoutsFor(input: {
+  userId: string;
+  email: string;
+  /** Absolute origin of the host site, e.g. https://ifac.example. */
+  origin: string;
+  /** Path Stripe returns to; `?payouts=done|refresh` is appended. */
+  returnPath?: string;
+  /** ISO-3166 alpha-2 from the surface's picker; required before an account exists. */
+  country?: string;
+}): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  if (!isStripeConfigured()) {
+    return { ok: false, error: "Card payments are not switched on for this platform yet." };
   }
 
-  const link = await stripe.createAccountOnboardingLink({
-    accountId: identity.stripeAccountId!,
-    refreshUrl: input.refreshUrl,
-    returnUrl: input.returnUrl,
-  });
-  return { url: link.url };
+  try {
+    const identity = await getPayoutIdentity(input.userId);
+    if (!identity?.stripeAccountId && !identity?.country) {
+      // No account yet and nothing on file — the one moment Stripe will ever
+      // accept a country for it, so a request with none is refused rather
+      // than quietly defaulting to the platform's own.
+      const normalised = normaliseCountry(input.country);
+      if (!normalised) return { ok: false, error: "Choose where you are first." };
+      await setPayoutIdentity(input.userId, { country: normalised });
+    }
+  } catch (err) {
+    console.error(`[checkout] startPayoutsFor(${input.userId}) country:`, err);
+    return { ok: false, error: "Could not save that." };
+  }
+
+  const path = input.returnPath ?? "/account";
+  const sep = path.includes("?") ? "&" : "?";
+  try {
+    const { url } = await startStripeOnboarding({
+      userId: input.userId,
+      email: input.email,
+      // Stripe uses both: refresh when the link has expired, return when done.
+      refreshUrl: `${input.origin}${path}${sep}payouts=refresh`,
+      returnUrl: `${input.origin}${path}${sep}payouts=done`,
+    });
+    return { ok: true, url };
+  } catch (err) {
+    console.error(`[checkout] startPayoutsFor(${input.userId}):`, err);
+    // Pass the real reason through. A generic "could not reach Stripe" hid a
+    // key-permission problem behind what read as an outage.
+    const message =
+      err instanceof Error && err.message.startsWith("Stripe payouts are not finished")
+        ? err.message
+        : "Could not reach Stripe.";
+    return { ok: false, error: message };
+  }
 }
 
 /**
@@ -312,6 +477,25 @@ export async function refreshStripeAccountStatus(
     console.error(`[checkout] refreshStripeAccountStatus(${userId}):`, err);
   }
   return identity;
+}
+
+/**
+ * Disconnect AND forget the country — the only way out of an account Stripe
+ * created under the wrong one, since it never lets that change on an existing
+ * account. Clearing the country is the half that matters: leave it and the
+ * next attempt silently reuses it and rebuilds the same broken account.
+ */
+export async function disconnectPayoutsFor(
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await disconnectStripeAccount(userId);
+    await setPayoutIdentity(userId, { country: null });
+    return { ok: true };
+  } catch (err) {
+    console.error(`[checkout] disconnectPayoutsFor(${userId}):`, err);
+    return { ok: false, error: "Could not disconnect that." };
+  }
 }
 
 /** Disconnect a person's Stripe account; they fall back to manual settlement. */

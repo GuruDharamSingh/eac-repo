@@ -183,6 +183,14 @@
 .gf-chip { display: inline-block; padding: 1px 7px; border-radius: 99px; background: var(--sf-bg); border: 1px solid var(--sf-line); color: var(--sf-muted); font-size: 11px; font-family: var(--sf-font-record); vertical-align: middle; margin-left: 6px; }
 .gf-chip small { opacity: 0.7; }
 .gf-chip--members { background: color-mix(in srgb, var(--gf-blue) 12%, transparent); color: var(--gf-blue); border-color: transparent; }
+/* Nextcloud-shared posts. The NC blue marks the border and tint only; the
+   text stays on the ink token so it reads on every host's ground. */
+.gf-chip--nc { background: color-mix(in srgb, #0082c9 12%, transparent); border-color: color-mix(in srgb, #0082c9 55%, transparent); color: var(--sf-fg); font-weight: 600; letter-spacing: 0.04em; text-decoration: none; }
+a.gf-chip--nc:hover { border-color: #0082c9; }
+.gf-nc-link { margin-left: 8px; font-size: 12px; color: var(--sf-fg); text-decoration: underline; text-underline-offset: 2px; }
+.gf-nc-sync { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 10px; font-size: 13px; }
+.gf-nc-sync input { margin-top: 3px; }
+.gf-nc-sync .gf-chip { margin-left: 4px; }
 .gf-chip--current { background: var(--sf-accent); color: var(--sf-on-accent); border-color: transparent; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
 .gf-mark { margin-right: 4px; font-size: 13px; }
 .gf-dot { color: var(--sf-faint); margin: 0 6px; }
@@ -233,6 +241,11 @@ h1.gf-org-name { font-size: 32px; }
 .gf-feedrow td { padding: calc(10px * var(--gf-density)) 10px; border-bottom: 1px solid var(--sf-line); vertical-align: top; }
 .gf-feedrow:hover td { background: var(--gf-row-hover); }
 .gf-feedrow .gf-feedcell { border-left: 3px solid var(--gf-feed, transparent); }
+/* A sub-category, indented under its parent. The indent is on the CELL, not
+   the row, so the coloured feed stripe on the left edge stays aligned with
+   every other row and the table does not look ragged. */
+.gf-feedrow--child .gf-feedcell { padding-left: 30px; }
+.gf-subcat-mark { color: var(--sf-muted); margin-right: 2px; }
 .gf-feedname { font-weight: 600; font-size: 15px; }
 .gf-feedpresenter { display: block; color: var(--sf-muted); font-size: 12px; margin-top: 2px; }
 .gf-lastcell { width: 34%; }

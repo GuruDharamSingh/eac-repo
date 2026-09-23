@@ -1,0 +1,333 @@
+/*
+  showcase.css — the digest.
+
+  A reading shelf, not a hub: rules instead of boxes, one column of type at a
+  comfortable measure, and the pictures given room only where they earn it.
+  Everything is plain CSS on IFAC's own tokens (--ink, --ink-soft, --line,
+  --paper), because this page is deliberately outside the app chrome.
+
+  The three card sizes are the SAME markup through one grid — [data-size] only
+  changes the track width and how much of a card is shown.
+*/
+
+.ifac-sc {
+  background: var(--paper, #f8f5ef);
+  color: var(--ink, #171615);
+  min-height: 100vh;
+  padding-bottom: 5rem;
+}
+
+.ifac-sc a {
+  color: inherit;
+}
+
+/* ── the slim strip ─────────────────────────────────────────────────────── */
+.ifac-sc-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.9rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--line, #d8d0c2);
+}
+
+.ifac-sc-bar__home {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.ifac-sc-bar__nav {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+.ifac-sc-bar__nav a {
+  text-decoration: none;
+  color: var(--ink-soft, #4f4a44);
+}
+
+.ifac-sc-bar__nav a:hover,
+.ifac-sc-bar__nav a:focus-visible {
+  color: var(--ink, #171615);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* ── the masthead ───────────────────────────────────────────────────────── */
+.ifac-sc-head {
+  padding: clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 3rem) 1.25rem;
+}
+
+.ifac-sc-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #4f4a44);
+}
+
+.ifac-sc-h1 {
+  margin: 0.3rem 0 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  font-weight: 500;
+}
+
+.ifac-sc-sub {
+  margin: 0.5rem 0 0;
+  max-width: 54ch;
+  color: var(--ink-soft, #4f4a44);
+}
+
+/* ── body: index beside the shelf ───────────────────────────────────────── */
+.ifac-sc-body {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (max-width: 780px) {
+  .ifac-sc-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ifac-sc-index ul {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0 0;
+  display: grid;
+  gap: 0.35rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.ifac-sc-index a {
+  display: block;
+  padding: 0.2rem 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft, #4f4a44);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.ifac-sc-index a:hover,
+.ifac-sc-index a:focus-visible,
+.ifac-sc-index a.is-on {
+  color: var(--ink, #171615);
+  border-bottom-color: var(--ink, #171615);
+}
+
+/* On a phone the index is a row of links above the shelf, not a column. */
+@media (max-width: 780px) {
+  .ifac-sc-index ul {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* ── the pinned hero ────────────────────────────────────────────────────── */
+.ifac-sc-lead {
+  border-bottom: 2px solid var(--ink, #171615);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.ifac-sc-lead a {
+  text-decoration: none;
+  display: block;
+}
+
+.ifac-sc-lead__cover {
+  display: block;
+  width: 100%;
+  height: min(46vh, 380px);
+  object-fit: cover;
+  margin-bottom: 1rem;
+}
+
+.ifac-sc-lead__meta {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #4f4a44);
+}
+
+.ifac-sc-lead__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.ifac-sc-lead__excerpt {
+  margin: 0.6rem 0 0;
+  max-width: 60ch;
+  color: var(--ink-soft, #4f4a44);
+  line-height: 1.55;
+}
+
+/* ── the guide's one control ────────────────────────────────────────────── */
+.ifac-sc-arrange {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
+}
+
+.ifac-sc-arrange__label {
+  color: var(--ink-soft, #4f4a44);
+  margin-right: 0.2rem;
+}
+
+.ifac-sc-arrange button {
+  appearance: none;
+  border: 1px solid var(--line, #d8d0c2);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.ifac-sc-arrange button.is-on {
+  border-color: var(--ink, #171615);
+  background: var(--ink, #171615);
+  color: var(--paper, #f8f5ef);
+}
+
+.ifac-sc-arrange button:disabled {
+  cursor: default;
+}
+
+/* ── the shelf ──────────────────────────────────────────────────────────── */
+.ifac-sc-feed {
+  display: grid;
+  gap: 1.75rem 2rem;
+}
+
+/* Small: a dense index — three or four to a row, picture as a thumbnail. */
+.ifac-sc-feed[data-size="small"] {
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+/* Medium: the default reading width, two to a row on a laptop. */
+.ifac-sc-feed[data-size="medium"] {
+  grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+}
+
+/* Large: one piece per row, at the measure — closest to a blog. */
+.ifac-sc-feed[data-size="large"] {
+  grid-template-columns: minmax(0, 68ch);
+}
+
+.ifac-sc-card {
+  border-top: 1px solid var(--line, #d8d0c2);
+  padding-top: 0.9rem;
+  min-width: 0;
+}
+
+.ifac-sc-card__link {
+  text-decoration: none;
+  display: block;
+}
+
+.ifac-sc-card__cover {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  margin-bottom: 0.7rem;
+  height: 10rem;
+}
+
+.ifac-sc-feed[data-size="small"] .ifac-sc-card__cover {
+  height: 7rem;
+}
+
+.ifac-sc-feed[data-size="large"] .ifac-sc-card__cover {
+  height: 18rem;
+}
+
+.ifac-sc-card__meta {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #4f4a44);
+}
+
+.ifac-sc-card__title {
+  margin: 0.3rem 0 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+.ifac-sc-feed[data-size="large"] .ifac-sc-card__title {
+  font-size: 1.6rem;
+}
+
+.ifac-sc-feed[data-size="small"] .ifac-sc-card__title {
+  font-size: 1rem;
+}
+
+.ifac-sc-card__excerpt {
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft, #4f4a44);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* A dense shelf shows the title and the date, not the standfirst. */
+.ifac-sc-feed[data-size="small"] .ifac-sc-card__excerpt {
+  display: none;
+}
+
+.ifac-sc-card__by {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft, #4f4a44);
+}
+
+.ifac-sc-card__by a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.ifac-sc-empty {
+  color: var(--ink-soft, #4f4a44);
+  padding: 2rem 0;
+}
+
+/* ── pager ──────────────────────────────────────────────────────────────── */
+.ifac-sc-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line, #d8d0c2);
+  font-size: 0.9rem;
+}
+
+/* The count beside a section. Quiet: it is a hint at how much is there, not
+   a number anyone reads first. */
+.ifac-sc-index__n {
+  font-size: 0.75rem;
+  color: var(--ink-soft, #4f4a44);
+}

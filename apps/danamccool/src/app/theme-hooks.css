@@ -1,0 +1,39 @@
+/* ============================================================================
+   The theme's reach into the SHARED blocks' captions and subtitles.
+
+   Unlayered, and that is the point of the file: @elkdonis/blocks/blocks.css is
+   unlayered, site.css is imported into `@layer base`, and an unlayered rule
+   beats a layered one whatever its specificity — so a caption rule written in
+   site.css could never reach a `.blk-*` element. These are only variable
+   hooks; every value is set in /studio/theme (lib/fonts.ts, lib/theme.ts).
+
+   Size and slant fall back to each element's OWN value when the theme leaves
+   them unset, because they differ: a hero's subtitle is large and italic, a
+   figure caption small and upright.
+   ============================================================================ */
+
+/* Captions under pictures — on the page ground, so they take the caption ink. */
+.blk-figure-caption,
+.blk-wall-caption,
+.blk-textimg-caption,
+.blk-video-caption {
+  color: var(--dm-caption-ink, inherit);
+  font-family: var(--dm-font-caption, inherit);
+  font-size: var(--dm-caption-size, 0.875rem);
+  font-style: var(--dm-caption-style, normal);
+}
+
+/* A heading's subtitle — on the page ground too. */
+.blk-heading-sub {
+  color: var(--dm-caption-ink, inherit);
+  font-family: var(--dm-font-caption, inherit);
+  font-style: var(--dm-caption-style, normal);
+}
+
+/* Subtitles on a picture or a coloured band keep the band's own ink and
+   size — only the face and slant follow the theme. */
+.blk-hero-sub,
+.blk-banner-sub {
+  font-family: var(--dm-font-caption, inherit);
+  font-style: var(--dm-caption-style, italic);
+}

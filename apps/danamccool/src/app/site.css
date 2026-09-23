@@ -16,6 +16,33 @@
   --cyan: #48d0ed; /* active nav + inline links, sampled rgb(72,208,237) */
   --orange: #ef4926; /* social/contact marks, sampled */
   --sidebar-w: 208px;
+
+  /* Fonts — set in /studio/theme (lib/fonts.ts writes these on :root) and
+     overridable per page. These are the site's originals. */
+  --dm-font-body: "Helvetica Neue", "Segoe UI", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+  --dm-font-heading: var(--dm-font-body);
+  --dm-font-nav: var(--dm-font-body);
+  --dm-nav-weight: 500;
+  /* Everything that reads its own font token follows the site's. */
+  --eac-block-font-body: var(--dm-font-body);
+  --eac-block-font-title: var(--dm-font-heading);
+  --font-sans: var(--dm-font-body);
+  --font-serif: var(--dm-font-heading);
+
+  /* The menu and the captions, per component — set in /studio/theme (and the
+     editor's Theme tab). Each FOLLOWS a site colour until given its own:
+     declared here as var(--…), so an unset one tracks what it follows. */
+  --dm-sidebar-bg: var(--violet);
+  --dm-nav-ink: var(--ink);
+  --dm-nav-active: var(--cyan);
+  --dm-nav-hover: var(--cyan);
+  --dm-nav-size: 0.72rem;
+  --dm-nav-case: uppercase;
+  --dm-nav-tracking: 0.06em;
+  --dm-caption-ink: var(--ink);
+  --dm-font-caption: var(--dm-font-body);
+  /* --dm-caption-size / --dm-caption-style are deliberately NOT defaulted:
+     unset, every caption keeps its own size and slant (theme-hooks.css). */
 }
 
 * {
@@ -31,7 +58,7 @@ body {
 body {
   background: var(--violet);
   color: var(--ink);
-  font-family: "Helvetica Neue", "Segoe UI", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--dm-font-body);
   font-weight: 300;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
@@ -65,24 +92,112 @@ a:hover {
   height: 100vh;
   padding: 1.75rem 1.25rem;
   overflow-y: auto;
+  background: var(--dm-sidebar-bg);
+}
+
+/* The drawer is the nav + contact marks. On a desktop it is simply the rest
+   of the sidebar column; on a phone it slides out from the left. */
+.side-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.nav-toggle,
+.nav-scrim {
+  display: none;
 }
 
 @media (max-width: 720px) {
   .site-shell {
     flex-direction: column;
   }
+  /* A slim bar across the top: her mark on the left, the menu on the right. */
   .site-sidebar {
-    position: static;
+    position: sticky;
+    z-index: 40;
     width: 100%;
     flex: none;
     height: auto;
     flex-direction: row;
-    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: var(--dm-sidebar-bg);
+    overflow: visible;
   }
-  .side-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
+  .site-sidebar .brand-mark {
+    width: 52px;
+  }
+  /* The shell is a column here, and a column flex item shrinks to its
+     content unless told to stretch — a full-screen block then stopped short
+     of the right edge and left a violet strip. */
+  .site-content {
+    align-self: stretch;
+    width: 100%;
+  }
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 0.9rem;
+    border: 1px solid var(--dm-nav-ink);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--dm-nav-ink);
+    font: inherit;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .nav-toggle-bars {
+    display: inline-block;
+    width: 18px;
+    height: 12px;
+    background: linear-gradient(var(--dm-nav-ink) 0 0) 0 0 / 100% 2px no-repeat,
+      linear-gradient(var(--dm-nav-ink) 0 0) 0 50% / 100% 2px no-repeat,
+      linear-gradient(var(--dm-nav-ink) 0 0) 0 100% / 100% 2px no-repeat;
+  }
+  .side-drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: min(82vw, 300px);
+    padding: 1.5rem 1.4rem 2rem;
+    overflow-y: auto;
+    background: var(--violet-panel);
+    box-shadow: 0 0 40px rgba(6, 6, 6, 0.35);
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform 0.28s ease, visibility 0s linear 0.28s;
+  }
+  .site-sidebar[data-open="true"] .side-drawer {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.28s ease;
+  }
+  .site-sidebar[data-open="true"] .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    padding: 0;
+    background: rgba(6, 6, 6, 0.45);
+    cursor: pointer;
+  }
+  .side-nav-link {
+    /* A thumb needs a bigger target than a pointer; never smaller than this. */
+    font-size: max(var(--dm-nav-size), 0.85rem);
+    padding: 0.35rem 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .side-drawer,
+    .site-sidebar[data-open="true"] .side-drawer {
+      transition: none;
+    }
   }
 }
 
@@ -107,24 +222,28 @@ a:hover {
 }
 
 .side-nav-link {
-  color: var(--ink);
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  color: var(--dm-nav-ink);
+  /* Every one of these is a theme choice (/studio/theme → Menu). */
+  font-family: var(--dm-font-nav);
+  font-weight: var(--dm-nav-weight);
+  text-transform: var(--dm-nav-case);
+  font-size: var(--dm-nav-size);
+  letter-spacing: var(--dm-nav-tracking);
   line-height: 1.4;
 }
-.side-nav-link:hover {
-  color: var(--cyan);
+.side-nav-link:hover,
+.side-nav-link[data-preview-hover] {
+  color: var(--dm-nav-hover);
   text-decoration: none;
 }
 .side-nav-link.is-active {
-  color: var(--cyan);
+  color: var(--dm-nav-active);
   font-weight: 600;
 }
 .side-nav-link--manage {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(6, 6, 6, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--dm-nav-ink) 20%, transparent);
 }
 
 .social-row {
@@ -445,8 +564,820 @@ a:hover {
 
   /* No serif. Her site is one weight of Helvetica Neue throughout, and the
      block library's Georgia default would introduce a typeface she never uses. */
-  --eac-block-font-title: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-  --eac-block-font-body: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  /* The theme's fonts (see the :root block at the top and lib/fonts.ts). */
+  --eac-block-font-title: var(--dm-font-heading);
+  --eac-block-font-body: var(--dm-font-body);
 
   --eac-block-measure: 52rem;
+}
+
+
+/* ============================================================================
+   Her own blocks (src/blocks/*): dm-star-diamond, dm-image-set, dm-plate,
+   dm-artwork-wall. Plain CSS so they look the same in Puck's canvas, which
+   mirrors this stylesheet, as on the published page.
+   ============================================================================ */
+
+.dm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- the diamond landing ---- */
+
+.dm-diamond {
+  --dm-diamond-size: 58vmin;
+  position: relative;
+  display: grid;
+  /* Full width, explicitly: in the editor's canvas a block sits in a
+     shrink-to-fit wrapper, and the landing drew across only half of it. */
+  width: 100%;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: #0b0b12;
+  background-image: linear-gradient(rgba(0, 0, 0, var(--dm-diamond-dim, 0)), rgba(0, 0, 0, var(--dm-diamond-dim, 0))),
+    var(--dm-diamond-image, none);
+  background-size: cover;
+  background-position: center;
+}
+
+/* A splash: the site steps aside while the diamond is on the page. The
+   sidebar and footer come back on every other page, and on this one as soon
+   as the block is removed or "Hide the site around it" is switched off. */
+body:has(.dm-diamond[data-splash="true"]) .site-sidebar,
+body:has(.dm-diamond[data-splash="true"]) .site-footer {
+  display: none;
+}
+body:has(.dm-diamond[data-splash="true"]) .site-content {
+  padding: 0;
+}
+
+.dm-diamond-stage {
+  position: relative;
+  width: var(--dm-diamond-size);
+  height: var(--dm-diamond-size);
+  min-width: 260px;
+  min-height: 260px;
+}
+
+/* The white square, turned. It is inset so that its points — not its
+   corners before rotation — touch the edges of the stage. */
+.dm-diamond-shape {
+  position: absolute;
+  inset: 14.6%;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.35);
+}
+
+.dm-diamond-content {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* minmax(0, …), not bare 1fr: a bare 1fr track still grows to fit its
+     content, so "COLLECTIONS" on the left pushed the name off-centre. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  padding: 22%;
+  text-align: center;
+  color: #060606;
+}
+
+.dm-diamond-name {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 0.6rem 0.8rem;
+}
+.dm-diamond-title {
+  margin: 0;
+  font-size: clamp(1rem, 2.6vmin, 1.6rem);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.dm-diamond-sub {
+  margin: 0.25rem 0 0;
+  font-family: var(--dm-font-caption);
+  font-size: clamp(0.7rem, 1.6vmin, 0.95rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.dm-diamond-link {
+  color: #060606;
+  font-size: clamp(0.66rem, 1.5vmin, 0.85rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  min-height: 24px;
+}
+.dm-diamond-link:hover,
+.dm-diamond-link:focus-visible {
+  color: #060606;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.dm-diamond-link--top {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+}
+.dm-diamond-link--left {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: end;
+}
+.dm-diamond-link--right {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: start;
+}
+.dm-diamond-link--bottom {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+}
+
+@media (max-width: 520px) {
+  .dm-diamond {
+    --dm-diamond-size: 92vmin !important;
+  }
+  .dm-diamond-content {
+    padding: 19%;
+  }
+}
+
+/* ---- image set ---- */
+
+.dm-set {
+  margin: 2.5rem auto;
+  max-width: 62rem;
+}
+.dm-set-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.dm-set[data-band="true"] .dm-set-title {
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(6, 6, 6, 0.35);
+}
+.dm-set-intro {
+  max-width: 40rem;
+  margin: 0 auto 1.25rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.dm-set-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--dm-set-min, 150px), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-set-cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+.dm-set-thumb {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.dm-set-thumb img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+.dm-set-grid[data-shape="square"] .dm-set-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dm-set-thumb:hover img,
+.dm-set-thumb:focus-visible img {
+  transform: scale(1.03);
+}
+
+/* Full size, shown by :target — no script. */
+.dm-set-full {
+  display: none;
+}
+.dm-set-full:target {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 3rem 3.5rem;
+  background: rgba(6, 6, 6, 0.96);
+}
+.dm-set-figure {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  max-height: 100%;
+}
+.dm-set-figure img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 8rem);
+  object-fit: contain;
+}
+.dm-set-figure figcaption {
+  /* On the dark full-size view: the caption's face and size, never its ink. */
+  color: #f4f4f4;
+  font-family: var(--dm-font-caption);
+  font-style: var(--dm-caption-style, normal);
+  font-size: var(--dm-caption-size, 0.9rem);
+  text-align: center;
+}
+.dm-set-close,
+.dm-set-step {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #f4f4f4;
+  font-size: 2rem;
+  line-height: 1;
+}
+.dm-set-close:hover,
+.dm-set-step:hover {
+  color: var(--cyan);
+  text-decoration: none;
+}
+.dm-set-close {
+  top: 0.75rem;
+  right: 0.75rem;
+}
+.dm-set-step {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3rem;
+}
+.dm-set-step--prev {
+  left: 0.5rem;
+}
+.dm-set-step--next {
+  right: 0.5rem;
+}
+
+/* Nested galleries: the way in, and the trail back up. */
+.dm-set-into {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+}
+.dm-set-into-go {
+  background: none;
+  cursor: pointer;
+  color: #f4f4f4;
+  font-family: var(--dm-font-nav, inherit);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(244, 244, 244, 0.55);
+}
+.dm-set-into-go em {
+  font-style: normal;
+  color: var(--cyan);
+}
+.dm-set-into-go:hover,
+.dm-set-into-go:focus-visible {
+  border-color: var(--cyan);
+  text-decoration: none;
+}
+.dm-set-into-strip {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-set-into-strip :is(a, button) {
+  display: block;
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  outline-offset: 2px;
+}
+.dm-set-into-strip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+.dm-set-into-strip :is(a, button):hover img,
+.dm-set-into-strip :is(a, button):focus-visible img {
+  opacity: 1;
+}
+.dm-set-full:has(.dm-set-into) .dm-set-figure img:not(.dm-set-into-strip img) {
+  max-height: calc(100vh - 14rem);
+}
+.dm-set-trail {
+  position: absolute;
+  top: 1.1rem;
+  left: 1rem;
+  right: 4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  color: #c9c9c9;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.dm-set-trail a {
+  color: #f4f4f4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dm-set-trail a:hover {
+  color: var(--cyan);
+}
+.dm-set-trail [aria-current] {
+  color: var(--cyan);
+}
+.dm-set-trail-count {
+  color: #c9c9c9;
+  margin-left: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- plate ---- */
+
+.dm-plate {
+  margin: 2.5rem auto 3.5rem;
+  max-width: 60rem;
+  text-align: center;
+}
+.dm-plate[data-align="start"] {
+  text-align: left;
+}
+.dm-plate-picture {
+  display: block;
+  width: var(--dm-plate-width, 60%);
+  margin: 0 auto 1.5rem;
+}
+.dm-plate-picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* Her headings were orange on violet, which measures about 1.2:1 — the
+   words are ink here and the orange is kept as the rule beneath them. */
+.dm-plate-heads {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  margin: 0 auto 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dm-plate[data-align="start"] .dm-plate-heads {
+  justify-items: start;
+}
+.dm-plate-heads::after {
+  content: "";
+  width: 3rem;
+  height: 3px;
+  margin-top: 0.6rem;
+  background: var(--orange);
+}
+.dm-plate-body {
+  max-width: 34rem;
+  margin: 0 auto;
+}
+.dm-plate[data-align="start"] .dm-plate-body {
+  margin: 0;
+}
+.dm-plate[data-size="small"] .dm-plate-body {
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+.dm-plate-body p {
+  margin: 0 0 0.9rem;
+}
+.dm-plate-link a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-underline-offset: 3px;
+}
+@media (max-width: 720px) {
+  .dm-plate-picture {
+    width: 100%;
+  }
+}
+
+/* ---- artworks for sale ---- */
+
+.dm-works {
+  margin: 2.5rem 0;
+}
+.dm-works-title {
+  margin: 0 0 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dm-works-empty {
+  font-size: 0.9rem;
+}
+.dm-works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: 2.5rem 2rem;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-works[data-layout="tiles"] .dm-works-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 42rem;
+}
+.dm-work-picture {
+  display: block;
+}
+.dm-work-picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dm-works[data-layout="tiles"] .dm-work-picture img {
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.dm-work-label {
+  margin-top: 0.7rem;
+  color: var(--dm-caption-ink);
+  font-family: var(--dm-font-caption);
+  font-size: var(--dm-caption-size, 0.85rem);
+  font-style: var(--dm-caption-style, normal);
+  line-height: 1.45;
+}
+.dm-work-label p {
+  margin: 0;
+}
+.dm-work-title cite {
+  font-style: italic;
+  font-weight: 500;
+}
+.dm-work-price {
+  margin-top: 0.2rem !important;
+  letter-spacing: 0.04em;
+}
+.dm-work[data-status="sold"] .dm-work-price::before {
+  content: "● ";
+  color: var(--orange);
+}
+.dm-work-buy {
+  display: inline-block;
+  margin-top: 0.55rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dm-work-buy:hover,
+.dm-work-buy:focus-visible {
+  background: var(--ink);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ---- /manage/artworks ---- */
+
+.dm-manage-list {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+}
+.dm-manage-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-top: 1px solid rgba(6, 6, 6, 0.25);
+}
+.dm-manage-row img,
+.dm-manage-noimg {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  background: rgba(6, 6, 6, 0.15);
+}
+.dm-manage-row[data-mode="hidden"] img {
+  opacity: 0.45;
+}
+.dm-manage-form {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  align-items: center;
+}
+.dm-manage-title {
+  flex: 1 1 18rem;
+}
+/* Paper fields: ink on her violet's soft tint is 3.96:1, on paper 18.43:1. */
+.dm-manage input,
+.dm-manage select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--ink);
+  background: #fbfaf7;
+  color: var(--ink);
+  font: inherit;
+}
+.dm-manage select {
+  width: auto;
+}
+.dm-manage button {
+  min-height: 40px;
+  padding: 0 1rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.dm-manage-meta {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+}
+.dm-manage-flag {
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  background: var(--ink);
+  color: #fff;
+  font-style: normal;
+  font-size: 0.72rem;
+}
+.dm-manage-locked {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.dm-plate-sale {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.dm-plate[data-align="start"] .dm-plate-sale {
+  justify-content: flex-start;
+}
+.dm-set-sale {
+  color: #f4f4f4;
+  text-decoration: underline;
+}
+
+/* ---- picture beside words (Manifestos) ---- */
+
+.dm-ct {
+  display: grid;
+  grid-template-columns: var(--dm-ct-w, 220px) minmax(0, 1fr);
+  gap: 2rem 2.5rem;
+  align-items: start;
+  max-width: 50rem;
+  margin: 2.5rem 0 3rem;
+}
+.dm-ct[data-side="right"] {
+  grid-template-columns: minmax(0, 1fr) var(--dm-ct-w, 220px);
+}
+.dm-ct[data-side="right"] .dm-ct-picture {
+  order: 2;
+}
+.dm-ct-picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dm-ct[data-shape="circle"] .dm-ct-picture img {
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.dm-ct-heading {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dm-ct-words p {
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+@media (max-width: 720px) {
+  .dm-ct,
+  .dm-ct[data-side="right"] {
+    grid-template-columns: 1fr;
+  }
+  .dm-ct[data-side="right"] .dm-ct-picture {
+    order: 0;
+  }
+  .dm-ct-picture {
+    width: min(var(--dm-ct-w, 220px), 70vw);
+  }
+}
+
+/* Image set, circle thumbnails (her planet row). */
+.dm-set-grid[data-shape="circle"] .dm-set-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+/* No heading band and no heading: a plain row of pictures. */
+.dm-set[data-band="false"] .dm-set-title {
+  text-align: center;
+}
+
+
+/* ---- the blog (/blog) ----
+   The shared reader (@elkdonis/cms-ui/article) and shelf read their colours
+   from --read-*. Her violet is mid-toned, so no grey passes on it: the blog
+   reads on a PAPER panel instead, with these inks (measured on #fbfaf7):
+     ink    #141414 — 17.4:1
+     muted  #474747 —  9.0:1
+     faint  #5b5b5b —  6.6:1  (apparatus, never body text)
+     accent #4b35c4 —  7.8:1  (her violet, deepened)
+   Scoped to .dm-blog so nothing else on the site changes. */
+.dm-blog {
+  --read-ink: #141414;
+  --read-muted: #474747;
+  --read-faint: #5b5b5b;
+  --read-rule: #d9d6ce;
+  --read-accent: #4b35c4;
+  --eac-color-surface: #fbfaf7;
+  --eac-color-danger: #a33a00;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background: #fbfaf7;
+  color: #141414;
+  border-radius: 4px;
+}
+.dm-blog a {
+  color: #4b35c4;
+}
+.dm-blog-back {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+}
+.dm-blog-edit {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+
+/* ---- fonts: headings everywhere take the heading face ----
+   Except the editor's own chrome: Puck's header and panels live in the same
+   document as the site's CSS, and her Cinzel in the editor's "Page" heading
+   is not a theme choice anyone made. `.Puck` is Puck's stable root class. */
+:is(h1, h2, h3, h4):not(:where(.Puck, .Puck *)),
+.page-title,
+.dm-diamond-title,
+.dm-plate-heads,
+.dm-ct-heading,
+.dm-set-title,
+.dm-works-title {
+  font-family: var(--dm-font-heading);
+}
+/* The HUD and the editor chrome keep their own UI face. */
+.dm-hud h2,
+.dm-hud h3 {
+  font-family: inherit;
+}
+/* The blog reads in its own face when one is chosen. */
+.dm-blog {
+  --eac-font-prose: var(--dm-font-reading, "EB Garamond", Garamond, Georgia, serif);
+}
+/* A page with its own fonts (Page settings in the editor). */
+.dm-page-fonts {
+  font-family: var(--dm-font-body);
+}
+
+/* ---- gallery grid (dm-gallery-grid) ---- */
+/* Full width, explicitly. The grid measures its container to size its
+   columns, and inside the editor's canvas the block sits in a shrink-to-fit
+   wrapper — at width 0 every tile stacked into one narrow column. */
+.dm-grid,
+.dm-grid-wrap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.dm-grid {
+  margin: 0 0 3rem;
+}
+.dm-grid-note p {
+  margin: 0 0 0.5rem;
+}
+.dm-grid-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.dm-grid-tools button {
+  min-height: 34px;
+  padding: 0 0.8rem;
+  border: 1px solid #141414;
+  border-radius: 3px;
+  background: #fff;
+  color: #141414;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.dm-grid-tools button:hover {
+  background: #141414;
+  color: #fff;
+}
+.dm-grid-tools button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dm-grid-title {
+  margin-bottom: 1.25rem;
+}
+.dm-grid-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fbfaf7;
+  color: #141414;
+  font-size: 0.85rem;
+  border-radius: 3px;
+}
+/* The resize corner on her violet: make it visible on any picture. */
+.dm-grid-wrap[data-editable="true"] .react-resizable-handle::after {
+  border-color: #fff !important;
+}
+.dm-grid-cap-title,
+.dm-grid-cap-meta,
+.dm-grid-cap-price {
+  display: block;
+  font-family: var(--dm-font-caption);
+}
+.dm-grid-cap-title {
+  font-style: italic;
+  font-weight: 500;
+}
+.dm-grid-cap-meta,
+.dm-grid-cap-price {
+  font-size: 12px;
+  opacity: 0.92;
+}
+
+
+/* The editor's canvas carries the site's `.site-shell` flex row on its body,
+   with no sidebar in it — so Puck's page area is a flex item that only grows
+   to its content. Text blocks hid that; the Gallery grid, whose tiles are all
+   absolutely placed, measured 112px and drew nothing. Let whatever is not the
+   sidebar take the room. (On the site this is .site-content, which already
+   grows — this changes nothing there.) */
+.site-shell > :not(.site-sidebar) {
+  flex: 1 1 auto;
+  min-width: 0;
 }

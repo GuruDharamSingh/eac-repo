@@ -1,10 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Puck, type Config, type Data } from "@puckeditor/core";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Puck, type Config, type Data, type Plugin, type Viewports } from "@puckeditor/core";
 // The declared public specifier, not the deep dist path — both resolve today,
 // only one is a promise.
 import "@puckeditor/core/puck.css";
+// Our additions to the canvas and panels. Imported here, beside Puck's own
+// sheet, so it is in the document when Puck mirrors the host's styles into
+// the canvas iframe — see editor.css for what it fixes.
+import "./editor.css";
+import { blockDescription, resolverKeysFor } from "./config";
 
 /**
  * The editor.
@@ -31,6 +36,27 @@ export interface PuckEditorProps {
   metadata?: Record<string, unknown>;
   onPublish: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>;
   orgId: string;
+  /**
+   * Extra tabs for the editor's left rail, beside Blocks and Outline — the
+   * site's own panels (its pages, galleries, media…). Puck always keeps its
+   * default tabs and appends these. Each needs a `name`, `label`, `icon` and
+   * `render`; inside `render`, `useGetPuck()` reaches the editor's state.
+   */
+  plugins?: Plugin[];
+  /** Shown as the header title. Defaults to the page's public address. */
+  title?: string;
+  /**
+   * Replace Puck's default phone/tablet/desktop switcher with the exact
+   * space this document will actually occupy — a store panel renders inside
+   * a fixed, bounded section of an org's own page, not a whole page of
+   * unknown width. Passing this makes the editor's canvas the REAL box
+   * rather than an approximation of it; what fits here fits there.
+   *
+   * This alone enforces nothing at RENDER time — that is the host page's own
+   * CSS container. It only stops the person designing for space they were
+   * never going to have.
+   */
+  viewports?: Viewports;
 }
 
 export function PuckEditor({
@@ -40,9 +66,24 @@ export function PuckEditor({
   metadata,
   onPublish,
   orgId,
+  plugins,
+  title,
+  viewports,
 }: PuckEditorProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  // What "saved" looks like, as a normalised string. Compared on every change
+  // instead of flipping `dirty` on the first onChange, because Puck calls
+  // onChange for things nobody did: resolvers refreshing a block's rows on
+  // load, root defaults being applied. The first version marked every page
+  // "Unsaved changes" the moment it opened, which teaches people to ignore
+  // the one warning that matters.
+  const saved = useRef<Data>(initial);
+  useEffect(() => {
+    // Moving to another page (Puck is re-keyed below) starts clean.
+    saved.current = initial;
+    setDirty(false);
+  }, [slug, initial]);
   // A ref rather than state: two fast clicks would both read the same `false`
   // from a state value captured at render, and publish twice. The stock header
   // never passes `loading` to its own button, so it will not stop this for us.
@@ -72,6 +113,7 @@ export function PuckEditor({
       publishing.current = false;
 
       if (res.ok) {
+        saved.current = data;
         setDirty(false);
         setStatus("Published");
       } else {
@@ -98,11 +140,60 @@ export function PuckEditor({
         // and every resolver — which is how a data-driven block learns which
         // org and page it is on.
         metadata={{ ...metadata, orgId, slug }}
-        onChange={() => setDirty(true)}
+        onChange={(data: Data) => setDirty(signature(data) !== signature(saved.current))}
         onPublish={publish}
-        headerTitle={`/p/${slug}`}
+        plugins={plugins}
+        headerTitle={title ?? `/p/${slug}`}
         headerPath={status ?? (dirty ? "Unsaved changes" : undefined)}
+        viewports={viewports}
+        overrides={OVERRIDES}
       />
     </div>
   );
+}
+
+/**
+ * Puck's chrome, adjusted. Module-level so the object is stable — Puck
+ * re-derives its whole UI when `overrides` changes identity.
+ */
+const OVERRIDES = {
+  // A name alone does not say which block is which. `children` is Puck's own
+  // item (name + drag icon); the description goes under it, inside the same
+  // draggable element, so the whole card still picks up.
+  drawerItem: ({ children, name }: { children: ReactNode; name: string }) => {
+    const about = blockDescription(name);
+    return (
+      <div title={about}>
+        {children}
+        {about ? <div className="eac-drawer-item-about">{about}</div> : null}
+      </div>
+    );
+  },
+};
+
+/**
+ * A page reduced to what an author can have changed: resolver-filled props,
+ * Puck's own readOnly markers, empty values and empty zone maps are dropped,
+ * and keys are sorted, so two documents that differ only in those compare
+ * equal.
+ */
+function signature(data: Data): string {
+  const walk = (value: unknown, type?: string): unknown => {
+    if (Array.isArray(value)) return value.map((v) => walk(v));
+    if (!value || typeof value !== "object") return value;
+    const node = value as Record<string, unknown>;
+    const nodeType = typeof node.type === "string" && "props" in node ? node.type : undefined;
+    const skip = type ? resolverKeysFor(type) : undefined;
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(node).sort()) {
+      const v = node[key];
+      if (key === "readOnly" || skip?.has(key)) continue;
+      if (v === undefined || v === null || v === "") continue;
+      if (key === "zones" && typeof v === "object" && Object.keys(v as object).length === 0) continue;
+      // A node's props are checked against its own type's resolver keys.
+      out[key] = key === "props" ? walk(v, nodeType) : walk(v);
+    }
+    return out;
+  };
+  return JSON.stringify(walk(data));
 }

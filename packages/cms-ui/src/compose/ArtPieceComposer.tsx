@@ -61,6 +61,14 @@ export interface ArtPieceComposerProps {
     onChange: (url: string) => void;
     label: string;
     hint?: string;
+    /**
+     * Extra multipart fields to send with the upload — today, the title, so
+     * the stored file can be named after the work rather than after whatever
+     * the camera called it. A host forwards these to MediaPicker's
+     * `uploadFields`; one that ignores them loses the nicer filename and
+     * nothing else.
+     */
+    fields?: Record<string, string>;
   }) => React.ReactNode;
   /** Where the store itself lives, for the "you have no store" case. */
   marketplaceUrl?: string;
@@ -186,14 +194,14 @@ export function ArtPieceComposer({
       }
     >
       <div className="eac-compose">
-        {/* The image leads. Everything under it describes the thing in it. */}
-        {media({
-          value: imageUrl || undefined,
-          onChange: setImageUrl,
-          label: "The piece",
-          hint: "One image, as large as you have it — this is what a collector sees first.",
-        })}
-
+        {/* The title leads, and it used to come second.
+            The image did, on the reasoning that "the image leads; everything
+            under it describes the thing in it" — true of how the form READS,
+            and wrong about the order things happen in. The upload carries the
+            title so the stored file can be named after the work, and a field
+            below the picker is always empty at the moment the file is sent.
+            Naming the piece before picking its picture is also the order
+            someone catalogues in. */}
         <div className="eac-field">
           <label className="eac-field-label" htmlFor="ap-title">Title</label>
           <input
@@ -203,6 +211,17 @@ export function ArtPieceComposer({
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
+
+        {media({
+          value: imageUrl || undefined,
+          onChange: setImageUrl,
+          label: "The piece",
+          hint: "One image, as large as you have it — this is what a collector sees first.",
+          // Sent with the upload. The host forwards it to the picker, which
+          // posts it alongside the file; a route that does not read it is
+          // unaffected.
+          fields: { title: title.trim() },
+        })}
 
         <div className="eac-field">
           <label className="eac-field-label" htmlFor="ap-medium">Medium</label>

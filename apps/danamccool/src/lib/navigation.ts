@@ -35,11 +35,15 @@ export const DEFAULT_NAV: NavItem[] = [
   { label: "Elkdonis Arts", href: siteConfig.elkdonisArtsUrl, external: true },
   { label: "Manifestos", href: "/manifestos" },
   { label: "Collections", href: "/collections" },
+  // Added 2026-09-18: her listed works, each with an enquire / buy link to the
+  // marketplace. Not on her old site, which had no way to buy anything.
+  { label: "Artworks", href: "/artworks" },
   { label: "Mixed Media", href: "/mixed-media" },
   { label: "Past Exhibitions", href: "/exhibitions" },
   { label: "Vimeo", href: "/vimeo" },
   { label: "Art Archive", href: "/art-archive" },
   { label: "Biography", href: "/biography" },
+  { label: "Writing", href: "/blog" },
   { label: "Contact", href: "/contact" },
   {
     label: "IFAC / Art Collectors",

@@ -3,10 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getProfileBySlug, listWriting } from "@elkdonis/services";
 import { ProfileView } from "@elkdonis/cms-ui/profile";
-import { WritingShelf } from "@elkdonis/cms-ui/writing";
+import { WritingSection, StartPiece } from "@elkdonis/cms-ui/writing";
 import { StoreShowcase } from "@elkdonis/commerce/components";
 import { getStoreShowcaseForUser } from "@elkdonis/commerce/queries";
 import { hasProfileSection, isMember } from "@/lib/members";
+import { startPieceAction } from "@/lib/writing-actions";
+import { getServerSession } from "@elkdonis/auth-server";
+import { canEditProfile } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 
 /**
@@ -45,6 +48,13 @@ export default async function MemberPage({ params }: Props) {
   const profile = await getProfileBySlug(slug);
   if (!profile || !(await isMember(profile.userId))) notFound();
 
+  // Whether the person reading this is the person it is about (or an admin).
+  // It decides two things on the writing shelf: drafts show, and the way to
+  // start a piece appears.
+  const session = await getServerSession();
+  const viewerId = session.user ? (session.user.db_user_id ?? session.user.id) : null;
+  const editable = Boolean(viewerId && (await canEditProfile(viewerId, profile.userId)));
+
   // Optional sections, each switched on by the person themselves.
   const [showWriting, showStore] = await Promise.all([
     hasProfileSection(profile.userId, "blog"),
@@ -55,7 +65,9 @@ export default async function MemberPage({ params }: Props) {
     // Read across every org, not just this one: a member's writing is theirs,
     // and a shelf that hid the pieces they filed elsewhere would be a
     // confusing half-answer on their own page.
-    showWriting ? listWriting(profile.userId, { limit: 5 }).catch(() => []) : [],
+    showWriting
+      ? listWriting(profile.userId, { includeDrafts: editable, limit: 5 }).catch(() => [])
+      : [],
     showStore
       ? getStoreShowcaseForUser(profile.userId, { limit: 6 }).catch(() => null)
       : null,
@@ -97,28 +109,23 @@ export default async function MemberPage({ params }: Props) {
           ) : undefined
         }
       >
-        {writing.length > 0 && (
-          <section className="hub-band" aria-labelledby="member-writing">
-            <div className="hub-band-head">
-              <h2 id="member-writing">Writing</h2>
-              <p>Pieces {profile.displayName} has published.</p>
-            </div>
-            {/* `basePath` is how the shelf builds each piece's link — it
-                appends the slug itself, so the reading room lives under this
-                person's own page rather than a site-wide /writing. */}
-            <WritingShelf
-              items={writing.slice(0, 4).map((piece) => ({
-                id: piece.id,
-                slug: piece.slug ?? piece.id,
-                title: piece.title,
-                lede: piece.excerpt ?? null,
-                publishedAt: piece.publishedAt ?? null,
-                readingMinutes: piece.readingMinutes ?? null,
-              }))}
-              basePath={`/artists/${slug}/writing`}
-              heading=""
-            />
-          </section>
+        {/* The same section IFAC's profiles carry — shelf, drafts for the
+            owner, the way to start a piece, and the link to the rest. Shared,
+            so the two sites cannot drift into two different blogs. */}
+        {showWriting && (
+          <WritingSection
+            items={writing}
+            basePath={`/artists/${slug}/writing`}
+            editable={editable}
+            startPiece={
+              editable ? (
+                <StartPiece
+                  onCreate={startPieceAction.bind(null, profile.userId)}
+                  basePath={`/artists/${slug}/writing`}
+                />
+              ) : undefined
+            }
+          />
         )}
 
         {storeShowcase && (

@@ -2,8 +2,10 @@ import * as React from 'react';
 import { Section, Text, Button, Link } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette, EAC_GOLD, HEADER_FONT_STACK } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { Prose } from '../components/cards';
-import { PROVISIONING, fill, paragraphsOf } from '../copy';
+import { OrgWords, hasOrgWords, SlotProse, slotIsRich } from '../components/org-words';
+import { slotText, type CopyOverrides } from '../copy-slots';
 
 // ============================================================================
 // "Your cloud account is ready to claim."
@@ -30,9 +32,32 @@ export interface ProvisioningEmailProps {
   teamFolderName?: string;
   /** The org's own words, if it has written any. */
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
+  /**
+   * This organisation's words for any block of this letter.
+   *
+   * Every sentence below is a SLOT (copy-slots.ts). Passing nothing renders
+   * the network's defaults, which is what every caller did before overriding
+   * existed and what most callers still do.
+   */
+  copy?: CopyOverrides;
   dark?: boolean;
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 function ProvisioningEmail({
@@ -42,14 +67,20 @@ function ProvisioningEmail({
   nextcloudUsername,
   teamFolderName,
   bodyText,
+  bodyHtml,
+  copy,
   dark = true,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
 }: ProvisioningEmailProps) {
   const palette = getEmailPalette(dark);
   const org = orgName ?? 'the collective';
-  const paragraphs = fill(PROVISIONING, { org });
-  const orgParagraphs = paragraphsOf(bodyText);
+  const paragraphs = slotText(copy, 'provisioning.intro', { org });
+  const introIsRich = slotIsRich(copy, 'provisioning.intro');
+  const plainBody = introIsRich ? [] : paragraphs;
+  const hasOrg = hasOrgWords(bodyText, bodyHtml);
 
   return (
     <EmailShell
@@ -59,6 +90,8 @@ function ProvisioningEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
@@ -69,9 +102,13 @@ function ProvisioningEmail({
     >
       <Prose dark={dark}>{displayName},</Prose>
 
-      {paragraphs.map((paragraph, i) => (
-        <Prose key={`provision-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      {introIsRich ? (
+        <SlotProse copy={copy} id="provisioning.intro" values={{ org }} dark={dark} accent={orgAccent} font={bodyFont} />
+      ) : (
+        plainBody.map((paragraph, i) => (
+          <Prose key={`provision-${i}`} dark={dark}>{paragraph}</Prose>
+        ))
+      )}
 
       <Section style={{ textAlign: 'center' as const, margin: '28px 0 10px' }}>
         <Button
@@ -121,12 +158,14 @@ function ProvisioningEmail({
         the organization, provided by the server this platform runs on.
       </Prose>
 
-      {orgParagraphs.length > 0 && (
-        <>
-          {orgParagraphs.map((paragraph, i) => (
-            <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
-          ))}
-        </>
+      {hasOrg && (
+        <OrgWords
+          bodyText={bodyText}
+          bodyHtml={bodyHtml}
+          dark={dark}
+          accent={orgAccent}
+          font={bodyFont}
+        />
       )}
 
       <Prose dark={dark} muted>

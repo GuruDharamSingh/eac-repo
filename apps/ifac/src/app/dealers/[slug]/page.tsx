@@ -72,7 +72,7 @@ export default async function DealerPage({ params, searchParams }: Props) {
 
   // Their gallery pages. Hidden ones are listed only for the owner/admin.
   const galleries = profile.userId
-    ? await listUserGalleries(profile.userId, { onlyPublic: !editable })
+    ? await listUserGalleries(profile.userId, { onlyPublic: !editable, site: "ifac" })
     : [];
 
   const galleryItems = profile.artworks.map((w, i) => ({

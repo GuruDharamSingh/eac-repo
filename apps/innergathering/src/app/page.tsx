@@ -148,6 +148,22 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* ── Login / signup banner — shown to signed-out visitors only ── */}
+      {!viewer && (
+        <section className="site-login-banner">
+          <div className="site-login-banner-inner">
+            <p className="site-login-banner-copy">
+              Already part of the collective? <strong>Sign in</strong> to join the conversation, or{" "}
+              <strong>create an account</strong> to get started.
+            </p>
+            <div className="site-login-banner-actions">
+              <Link href="/login" className="site-login-banner-btn site-login-banner-btn--filled">Create account</Link>
+              <Link href="/login" className="site-login-banner-btn site-login-banner-btn--ghost">Sign in</Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── About / Mutual Aid ── */}
       <section id="about" className="about-section">
         <div style={{ maxWidth: "var(--content-max)", margin: "0 auto", padding: "0 1.5rem" }}>

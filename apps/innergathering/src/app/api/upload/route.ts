@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFile, getUploadPath, getProxyFileUrl } from '@elkdonis/services';
+import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename } from '@elkdonis/services';
 import { validateUploadBuffer } from '@elkdonis/utils';
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
@@ -96,10 +96,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename and paths
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${timestamp}-${sanitizedName}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address ends up in stored pages and gallery items,
+    // so it outlives the upload by years — see uploadFilename.
+    const title = String(formData.get('title') ?? '').trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
     
     // Determine media type folder
     const mediaTypeFolder = mediaConfig.folder.split('/')[1] as 'Images' | 'Audio' | 'Videos' | 'Documents';

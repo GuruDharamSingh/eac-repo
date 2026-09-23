@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/commerce/commerce.css";
+/* The page blocks a store panel is built from (/panel/[orgSlug]). Without it
+   the panel editor drew every block unstyled — headings, picture walls and
+   grids with no layout — which read as blocks "not rendering". */
+@import "@elkdonis/blocks/blocks.css" layer(components);
 
 /* ---------------------------------------------------------------------------
    Shared packages ship Tailwind class names in their own source. Tailwind v4
@@ -16,6 +20,20 @@
 @source "../../../../packages/three/src";
 
 @custom-variant dark (&:is(.dark *));
+
+/* The shared rich-text editor's palette falls back to --sf-fg/--ink, tokens
+   from the surface-system design language, none of which this app defines —
+   it uses shadcn/ui's hsl() tokens instead. Unset, --ed-fg fell all the way
+   to its hardcoded default (a near-black #16181d), which on this app's dark
+   mode is dark-navy text on a near-black background: unreadable. Map it to
+   this app's own tokens so it follows light/dark like everything else. */
+.eac-ed {
+  --ed-fg: hsl(var(--foreground));
+  --ed-muted: hsl(var(--muted-foreground));
+  --ed-line: hsl(var(--border));
+  --ed-bg-soft: hsl(var(--muted));
+  --ed-accent: hsl(var(--primary));
+}
 
 :root {
   --radius: 0.625rem;

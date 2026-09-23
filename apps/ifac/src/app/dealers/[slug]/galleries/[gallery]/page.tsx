@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, gallery } = await params;
   const profile = await getDirectoryProfile(slug);
   if (!profile || profile.kind !== "dealer" || !profile.userId) return {};
-  const g = await getUserGallery(profile.userId, gallery);
+  const g = await getUserGallery(profile.userId, gallery, { site: "ifac" });
   if (!g || !g.isPublic) return {};
   return { title: `${g.title} — ${profile.name} on IFAC` };
 }

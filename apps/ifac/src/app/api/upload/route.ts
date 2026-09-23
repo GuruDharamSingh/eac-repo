@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { getServerSession } from "@elkdonis/auth-server";
 import { db } from "@elkdonis/db";
-import { uploadFile, getProxyFileUrl } from "@elkdonis/services";
+import { uploadFile, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
 import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { nanoid } from "nanoid";
 import { canManageIfac } from "@/lib/data";
@@ -93,9 +93,11 @@ export async function POST(request: NextRequest) {
     // writing there again would rebuild the split this replaced.
     const memberFolder = await ensureUserFolder(getAdminClient(), memberSlug);
 
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}-${sanitizedName}`;
+    // Named after the work when the surface sends a title, else after the
+    // uploaded file. This address outlives the upload — it is what a stored
+    // page, a gallery item and every <img src> carries. See uploadFilename.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
     const relativePath = `${memberFolder}/Media/Images/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());

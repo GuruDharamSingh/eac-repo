@@ -8,6 +8,10 @@ export {
   type ThreadFeedItem,
 } from "./thread-feed";
 export { SplitRow, splitRow, type SplitRowProps } from "./split-row";
+export { Grid, grid, type GridProps } from "./grid";
+export { StoreFrame, storeFrame, type StoreFrameProps } from "./store-frame";
+export { StoreHeader, storeHeader, type StoreHeaderProps } from "./store-header";
+export { StoreShelf, storeShelf, type StoreShelfProps } from "./store-shelf";
 export { Prose, prose, type ProseProps } from "./prose";
 export { SectionHeading, sectionHeading, type SectionHeadingProps } from "./section-heading";
 export { Figure, figure, type FigureProps } from "./figure";
@@ -35,6 +39,21 @@ export {
   type ProfileGalleriesProps,
   type ProfileGalleryItem,
 } from "./profile-galleries";
+export {
+  ProfileGallery,
+  profileGallery,
+  type ProfileGalleryProps,
+} from "./profile-gallery";
+export {
+  ProfileStore,
+  profileStore,
+  type ProfileStoreProps,
+} from "./profile-store";
+export {
+  GalleryGrid,
+  galleryGrid,
+  type GalleryGridProps,
+} from "./gallery-grid";
 export {
   ProfileRecord,
   profileRecord,

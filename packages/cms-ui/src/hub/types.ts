@@ -131,11 +131,13 @@ export interface StandingMeetingAttendance {
   /** What is on offer, firmest first. Defaults to the shared six. */
   options?: RsvpFlavourOption[];
   /** What this viewer has already said, when they have said anything. */
-  answered?: { status?: string | null; flavour?: string | null } | null;
+  answered?: { status?: string | null; flavour?: string | null; promiseNext?: boolean | null } | null;
   /**
-   * POST `{threadId, flavour}` to answer, `{threadId, clear:true}` to take it
-   * back. May answer `{light}` with the recomputed light, since an answer can
-   * be the one that meets the minimum.
+   * POST `{threadId, flavour, promiseNext?}` to answer, `{threadId,
+   * clear:true}` to take it back. `promiseNext` only ever means anything
+   * alongside the `'next_time'` flavour — see the inline "Promise?" checkbox
+   * on that option (migration 155). May answer `{light}` with the recomputed
+   * light, since an answer can be the one that meets the minimum.
    * Defaults to `/api/hub/meeting/attendance`.
    */
   endpoint?: string;
@@ -151,9 +153,12 @@ export interface StandingMeetingLight {
   /** `host` — a guide said so; `derived` — from the attendance minimum. */
   source?: "host" | "derived" | "default";
   /**
-   * Whether an editor may change it here. Defaults to true, gated by the
-   * face's own `canEdit` — pass false to show the light read-only even to
-   * owners.
+   * Who may change it here, as the host computed it server-side. Omit it and
+   * this falls back to the face's own `canEdit` (owners/guides only, as
+   * before). Pass it explicitly to say something different — `false` shows
+   * the light read-only even to an owner, `true` lets someone set it who is
+   * NOT `canEdit`, which is how "whoever is hosting this occurrence" gets the
+   * button without being made an org editor.
    */
   canSet?: boolean;
   /**

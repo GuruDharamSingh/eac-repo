@@ -14,6 +14,28 @@ export {
 } from "./server/thread-feed.server";
 
 export {
+  ProfileGalleryBlock,
+  loadProfileGallery,
+  type ProfileGalleryBlockProps,
+  type LoadProfileGalleryOptions,
+} from "./server/profile.server";
+
+export {
+  ProfileStoreBlock,
+  loadProfileStore,
+  type ProfileStoreBlockProps,
+  type LoadProfileStoreOptions,
+} from "./server/profile.server";
+
+export {
+  loadGalleryGridData,
+  loadNestedGalleries,
+  type LoadGalleryGridOptions,
+} from "./server/gallery-grid.server";
+
+export { storePanelServerResolvers } from "./server/store-panel.server";
+
+export {
   ProfileFeedBlock,
   loadProfileFeed,
   ProfileGalleriesBlock,

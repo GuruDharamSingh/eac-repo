@@ -1,0 +1,261 @@
+/* ============================================================================
+   The Gallery grid's "Pictures" panel (gallery-pictures-field.tsx), in Puck's
+   right column. Imported at the root layout — Puck's panels live in the
+   parent document. Plain, readable paper-and-ink; Puck's own font.
+   ============================================================================ */
+
+.dm-gp {
+  --gp-ink: #141414;
+  --gp-soft: #5b5b5b;
+  --gp-line: #d9d6ce;
+  --gp-accent: #4b35c4;
+  display: grid;
+  gap: 10px;
+  color: var(--gp-ink);
+  font-size: 13px;
+}
+.dm-gp h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.dm-gp p {
+  margin: 0;
+}
+.dm-gp-muted {
+  color: var(--gp-soft);
+  font-size: 12px;
+}
+.dm-gp-note {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #eef6ef;
+  color: #1d6b3a;
+  font-weight: 600;
+  font-size: 12px;
+}
+.dm-gp-note[data-error] {
+  background: #fbefe8;
+  color: #8a3b0a;
+}
+.dm-gp button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--gp-line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--gp-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dm-gp button:hover {
+  border-color: var(--gp-accent);
+}
+.dm-gp button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.dm-gp button.is-active,
+.dm-gp .dm-gp-primary {
+  border-color: var(--gp-accent);
+  background: var(--gp-accent);
+  color: #fff;
+}
+.dm-gp .dm-gp-link {
+  min-height: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--gp-accent);
+  text-decoration: underline;
+}
+.dm-gp-input {
+  width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--gp-ink);
+  font: inherit;
+  font-size: 12px;
+}
+textarea.dm-gp-input {
+  resize: vertical;
+  line-height: 1.4;
+}
+.dm-gp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.dm-gp-section {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gp-line);
+}
+.dm-gp-panel {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  background: #fbfaf7;
+}
+.dm-gp-field {
+  display: grid;
+  gap: 3px;
+}
+.dm-gp-field > span,
+.dm-gp-card-fields label > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gp-soft);
+}
+.dm-gp-check-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 12px;
+}
+
+/* ---- picture cards ---- */
+.dm-gp-cards {
+  display: grid;
+  gap: 8px;
+  max-height: 640px;
+  margin: 0;
+  padding: 0 2px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.dm-gp-card {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.dm-gp-card-img {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #efece5;
+}
+.dm-gp-card-fields {
+  display: grid;
+  gap: 5px;
+}
+.dm-gp-card-fields label {
+  display: grid;
+  gap: 2px;
+}
+.dm-gp-artwork {
+  font-size: 12px;
+}
+.dm-gp-artwork span {
+  color: var(--gp-soft);
+}
+.dm-gp-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.dm-gp-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #ece8fb;
+  color: var(--gp-accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ---- choosing pictures ---- */
+.dm-gp-choose {
+  display: grid;
+  gap: 6px;
+}
+.dm-gp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.dm-gp-grid li {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+}
+.dm-gp-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.dm-gp .dm-gp-grid button:not(.dm-gp-link) {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  background: none;
+}
+.dm-gp .dm-gp-grid button.is-on {
+  border-color: var(--gp-accent);
+}
+.dm-gp-check {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gp-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+/* ---- sub-galleries ---- */
+.dm-gp-subs {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-gp-sub {
+  display: grid;
+  gap: 6px;
+}
+.dm-gp-sub-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.dm-gp-sub-head img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.dm-gp-sub-head > div {
+  display: grid;
+  min-width: 0;
+}

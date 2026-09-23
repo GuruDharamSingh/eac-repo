@@ -697,6 +697,31 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
         );
       }
     }
+
+    // Paying IS how you enrol. A workshop or event sold on a thread line has
+    // no inventory to decrement — what it has is a seat, and the seat is the
+    // thing the buyer just bought. Done inside the transaction so a confirmed
+    // payment can never leave someone charged but not enrolled; a webhook
+    // retry re-runs it harmlessly (the upsert is idempotent, and the status
+    // guard above means only one confirmation gets this far at all).
+    //
+    // A guest checkout has no customer_id and so cannot be enrolled — the
+    // callers gate paid joins behind signing in for exactly this reason.
+    const customerId = (order.customer_id as string | null) ?? null;
+    if (customerId) {
+      await tx`
+        INSERT INTO thread_rsvps (thread_id, user_id, status)
+        SELECT l.thread_id, ${customerId}, 'yes'
+        FROM commerce_order_line l
+        JOIN threads t ON t.id = l.thread_id
+        WHERE l.order_id = ${input.orderId}
+          AND l.thread_id IS NOT NULL
+          AND t.kind IN ('workshop', 'event')
+        ON CONFLICT (thread_id, user_id)
+        DO UPDATE SET status = 'yes', updated_at = NOW()
+      `;
+    }
+
     return { order, lineRows };
   });
 

@@ -51,8 +51,10 @@ export async function saveNav(items: NavItem[]): Promise<{ ok: boolean; error?: 
  */
 export async function editorPages(): Promise<Array<{ label: string; href: string }>> {
   const pages = await listPages(currentOrgId());
-  return pages.map((p) => ({
-    label: p.slug.split("/").pop()!.replace(/-/g, " "),
-    href: `/${p.slug}`,
-  }));
+  return pages.map((p) =>
+    // The landing page is stored as `home` but lives at "/".
+    p.slug === "home"
+      ? { label: "Home", href: "/" }
+      : { label: p.slug.split("/").pop()!.replace(/-/g, " "), href: `/${p.slug}` }
+  );
 }

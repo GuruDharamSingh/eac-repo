@@ -24,6 +24,24 @@
    and the writing shelf behind an opted-in blog. */
 @import "@elkdonis/cms-ui/profile.css";
 @import "@elkdonis/cms-ui/writing.css";
+
+/* ── The member profile, in this site's colours ────────────────────────────
+   profile.css's own fallbacks reproduce ArtDirect's DARK defaults
+   (`var(--ink, #f7f1e3)`), and this site defines none of those names — so an
+   unpinned profile rendered near-white ink on parchment, about 1.03:1. The
+   OUTPUT tokens are redefined here for the same reason `.ifac-hub-scope`
+   redefines `--sf-*`: the inputs resolve where they are declared.
+
+   Measured on the card ground #fffdf8: navy 13.75:1, the blue 8.58:1. The
+   gold accent is 2.66:1 and is deliberately NOT used for text — the headline
+   and the "verified" chip take the blue, which also clears 3:1 as a border. */
+.eac-profile {
+  --eac-profile-bg: hsl(var(--card));
+  --eac-profile-fg: hsl(var(--foreground));
+  --eac-profile-muted: hsl(var(--muted-foreground));
+  --eac-profile-line: hsl(var(--border));
+  --eac-profile-accent: hsl(var(--muted-foreground));
+}
 /* The Grand Forum at /forum. The board is plain CSS over custom properties;
    forum-theme.css redefines the --sf-* OUTPUT tokens on .gf-root/.gf-page so
    the board carries its own reading ground without restyling the hub. */
@@ -32,6 +50,9 @@
 @import "@elkdonis/forum-ui/forum-theme.css";
 /* The email suite — face, surface and the page at /hub/email. */
 @import "@elkdonis/cms-ui/email.css";
+/* The suite as a STUDIO — steel, square, record face for the meta. Opt-in, the
+   same way the forum carries its own reading ground rather than the site's. */
+@import "@elkdonis/cms-ui/email-theme.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/cms-ui/baroque-signup.css";

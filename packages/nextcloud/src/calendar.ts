@@ -669,6 +669,49 @@ export async function unshareCalendarWithUser(
  * Needed to reconcile rather than blindly re-share: without a read there is no
  * way to revoke access for someone who left the org.
  */
+/**
+ * Who a calendar is shared with, AND at what level — `read` or `read-write`.
+ *
+ * `listCalendarShares` below reads the same PROPFIND and keeps only the uids.
+ * The level matters to anyone who re-applies shares: Nextcloud rate-limits
+ * share REQUESTS per account ("Too many addressbook or calendar share
+ * requests"), so a reconciler must be able to see that a share is already
+ * right and send nothing. A PROPFIND is not a share request and costs nothing
+ * against that limit.
+ */
+export async function listCalendarShareAccess(
+  client: NextcloudClient,
+  calendarName: string
+): Promise<Map<string, 'read' | 'read-write'>> {
+  const body = `<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:" xmlns:oc="http://owncloud.org/ns">
+  <D:prop><oc:invite/></D:prop>
+</D:propfind>`;
+  const out = new Map<string, 'read' | 'read-write'>();
+  try {
+    const response = await axios.request<string>({
+      method: 'PROPFIND',
+      url: getCalendarUrl(client, calendarName),
+      auth: { username: client.config.username, password: client.config.password },
+      headers: { Depth: '0', 'Content-Type': 'application/xml; charset=utf-8' },
+      data: body,
+      responseType: 'text',
+    });
+    const xml = response.data ?? '';
+    // One <oc:user> block per sharee: its href, then its <oc:access>.
+    const users = xml.match(/<(?:[A-Za-z]+:)?user\b[\s\S]*?<\/(?:[A-Za-z]+:)?user>/g) ?? [];
+    for (const u of users) {
+      const uid = u.match(/principal:principals\/users\/([^<\s]+)/)?.[1];
+      if (!uid) continue;
+      out.set(decodeURIComponent(uid), /read-write/.test(u) ? 'read-write' : 'read');
+    }
+    return out;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return out;
+    throw error;
+  }
+}
+
 export async function listCalendarShares(
   client: NextcloudClient,
   calendarName: string

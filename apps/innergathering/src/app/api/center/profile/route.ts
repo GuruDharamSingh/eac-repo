@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { canEditOrgIdentity, getOrgIdentity, getProfile, updateProfile } from "@elkdonis/services";
+import {
+  canEditOrgIdentity,
+  getOrgIdentity,
+  getProfile,
+  getProfileDetails,
+  saveProfileDetails,
+  updateProfile,
+} from "@elkdonis/services";
 import type { SurfaceProfile, SurfaceProfileInput } from "@elkdonis/cms-ui/surface";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
@@ -16,6 +23,7 @@ import { getViewer } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+const NEXTCLOUD_PUBLIC_URL = (process.env.NEXTCLOUD_PUBLIC_URL ?? process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "");
 const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
 const NETWORK_PROTO = NETWORK_HOST.includes("localhost") ? "http" : "https";
 
@@ -48,6 +56,9 @@ export async function GET(request: NextRequest) {
 
   const p = await getProfile(target.targetUserId);
   if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // The Details tab: own profile only. Explicit columns (getProfileDetails),
+  // so nothing like claimed_by/source_note can ride along to the browser.
+  const details = target.kind === "person" ? await getProfileDetails(target.targetUserId) : null;
 
   const out: SurfaceProfile = {
     kind: target.kind,
@@ -72,9 +83,35 @@ export async function GET(request: NextRequest) {
       target.kind === "person"
         ? { files: null, blog: null, store: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? null }
         : undefined,
+    details: details
+      ? {
+          postalCode: details.postalCode,
+          portfolioUrl: details.portfolioUrl,
+          commentColor: details.commentColor,
+          pageBase: ARTDIRECT_URL ? `${ARTDIRECT_URL}/` : null,
+          account: {
+            email: details.email,
+            createdAt: details.createdAt,
+            cloud:
+              details.nextcloudUserId && NEXTCLOUD_PUBLIC_URL
+                ? { url: NEXTCLOUD_PUBLIC_URL, username: details.nextcloudUserId }
+                : null,
+            signOutEndpoint: "/api/auth/logout",
+            signOutTo: "/",
+          },
+        }
+      : undefined,
   };
   return NextResponse.json(out);
 }
+
+const DETAIL_ERRORS = {
+  slug_taken: "Someone already has that page address.",
+  invalid_slug: "A page address needs letters or numbers.",
+  reserved_slug: "That page address is reserved by the network.",
+  bad_color: "The comment colour must be a hex colour like #3a5f8c.",
+  bad_url: "The portfolio link must start with http:// or https://.",
+} as const;
 
 const str = (v: unknown, max: number) =>
   typeof v === "string" ? v.slice(0, max) : v === null ? null : undefined;
@@ -105,6 +142,31 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "That image location is not allowed" }, { status: 400 });
   }
 
+  // Details-tab fields: a person's own row only, never an org identity.
+  // First, because these are the ones that can be refused (a taken slug) and
+  // a refusal should leave nothing half-saved.
+  if (target.kind === "person") {
+    const touched =
+      body.postalCode !== undefined ||
+      body.portfolioUrl !== undefined ||
+      body.commentColor !== undefined ||
+      typeof body.slug === "string";
+    if (touched) {
+      const result = await saveProfileDetails(target.targetUserId, {
+        postalCode: str(body.postalCode, 20),
+        portfolioUrl: str(body.portfolioUrl, 500),
+        commentColor: str(body.commentColor, 7),
+        slug: typeof body.slug === "string" ? body.slug.slice(0, 80) : undefined,
+      }).catch((err) => {
+        console.error("[center] profile details PATCH:", err);
+        return null;
+      });
+      if (!result) return NextResponse.json({ error: "Could not save that." }, { status: 500 });
+      if (result.ok === false) {
+        return NextResponse.json({ error: DETAIL_ERRORS[result.error] }, { status: 400 });
+      }
+    }
+  }
   try {
     await updateProfile(target.targetUserId, {
       displayName,
@@ -121,5 +183,6 @@ export async function PATCH(request: NextRequest) {
     console.error("[center] profile PATCH:", err);
     return NextResponse.json({ error: "Could not save that." }, { status: 500 });
   }
+
   return NextResponse.json({ ok: true });
 }

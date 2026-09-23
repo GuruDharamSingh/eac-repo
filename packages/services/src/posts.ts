@@ -1,7 +1,7 @@
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import type { Post, PostStatus, PostVisibility } from '@elkdonis/types';
-import { deriveExcerpt } from '@elkdonis/utils';
+import { deriveExcerpt, sanitizePostBody } from '@elkdonis/utils';
 import { ensureUniqueThreadSlug } from './thread-slug';
 
 interface CreatePostData {
@@ -76,7 +76,11 @@ export async function createThread(data: CreateThreadData): Promise<Post> {
     ? await ensureUniqueThreadSlug(data.orgId, data.slug)
     : await ensureUniqueThreadSlug(data.orgId, data.title);
 
-  const excerpt = data.excerpt || deriveExcerpt(data.body);
+  // Sanitised here so every caller is covered: hosts render `body` with
+  // dangerouslySetInnerHTML, and members can post through this path (IFAC).
+  // sanitizePostBody rather than sanitizeRichText so <eac-embed> markers survive.
+  const body = data.body ? sanitizePostBody(data.body) : '';
+  const excerpt = data.excerpt || deriveExcerpt(body);
   const metadata = data.metadata ?? {};
   const scheduledAt = data.scheduledAt
     ? new Date(data.scheduledAt as string | Date)
@@ -96,7 +100,7 @@ export async function createThread(data: CreateThreadData): Promise<Post> {
       ${slug},
       ${data.orgId},
       ${data.authorId},
-      ${data.body || null},
+      ${body || null},
       ${excerpt},
       ${status},
       ${visibility},
@@ -236,7 +240,9 @@ export async function updatePost(
   const updates: Record<string, unknown> = {};
 
   if (data.title !== undefined) updates.title = data.title;
-  if (data.body !== undefined) updates.body = data.body;
+  // Sanitised for the same reason as in createThread.
+  const body = data.body !== undefined ? sanitizePostBody(data.body) : undefined;
+  if (body !== undefined) updates.body = body;
   if (data.visibility !== undefined) updates.visibility = data.visibility;
   if (data.nextcloudFileId !== undefined) updates.nextcloud_file_id = data.nextcloudFileId;
   if (data.nextcloudLastSync !== undefined) updates.nextcloud_last_sync = data.nextcloudLastSync;
@@ -251,8 +257,8 @@ export async function updatePost(
   // Re-derive the excerpt when the body changed and the author didn't supply one.
   if (data.excerpt !== undefined) {
     updates.excerpt = data.excerpt;
-  } else if (data.body !== undefined) {
-    updates.excerpt = deriveExcerpt(data.body);
+  } else if (body !== undefined) {
+    updates.excerpt = deriveExcerpt(body);
   }
 
   const status = data.status;

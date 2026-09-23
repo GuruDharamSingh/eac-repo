@@ -190,6 +190,8 @@ export interface PayoutIdentityInput {
   stripeAccountId?: string | null;
   /** Set once Stripe reports the account payouts-enabled. */
   stripeOnboardedAt?: string | null;
+  /** ISO-3166 alpha-2. Decides which rails can reach this person at all. */
+  country?: string | null;
 }
 
 /** A person's payout identity as stored. */
@@ -197,6 +199,8 @@ export interface PayoutIdentity {
   userId: string;
   payoutEmail: string | null;
   payoutMethod: PayoutMethod;
+  /** ISO-3166 alpha-2, where known. An e-Transfer only reaches Canada. */
+  country: string | null;
   stripeAccountId: string | null;
   stripeOnboardedAt: string | null;
   /** Derived: whether a sale to this person can take a destination charge. */

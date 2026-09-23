@@ -223,6 +223,14 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
       surface: true,
       href: links.editProfileHref,
     },
+    {
+      id: "details",
+      label: "Your details",
+      note: "location, links, account",
+      surface: true,
+      surfaceTab: "details",
+      href: links.editProfileHref,
+    },
     ...(links.profileHref
       ? [{ id: "page", label: "Your public page", note: "how the network sees you", href: links.profileHref }]
       : []),

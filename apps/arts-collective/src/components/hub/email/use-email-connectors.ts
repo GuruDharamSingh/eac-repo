@@ -75,14 +75,27 @@ export function useEmailConnectors(orgSlug: string): EmailConnectors {
       saveIdentity: (input) =>
         send("/identity", { method: "PATCH", body: JSON.stringify(input) }),
 
-      saveTemplate: (key, bodyText) =>
+      saveTemplate: (key, bodyText, bodyHtml) =>
         send(`/template/${encodeURIComponent(key)}`, {
           method: "PUT",
-          body: JSON.stringify({ bodyText }),
+          body: JSON.stringify({ bodyText, bodyHtml: bodyHtml ?? "" }),
         }),
 
       // Not routed through `send`: this one wants the HTML or an explanation,
       // not an { ok } envelope.
+      // One sentence of a letter, not the section appended to it. Same route,
+      // different keys in the body — the store merges per block, so saving one
+      // never disturbs another.
+      saveCopy: (key, slotId, text, html) =>
+        send(`/template/${encodeURIComponent(key)}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            copySlot: slotId,
+            copyText: text,
+            copyHtml: html ?? "",
+          }),
+        }),
+
       previewTemplate: async (key) => {
         try {
           const res = await fetch(`${base}/preview/${encodeURIComponent(key)}`, {

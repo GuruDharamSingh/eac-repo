@@ -41,5 +41,9 @@ export {
   type PlanAheadData,
   type PlanAheadOccurrence,
   type PlanAheadCandidate,
+  type PlanAheadPerson,
 } from './PlanAheadSurface';
 export { KindTilesFace, type KindTile } from "./KindTilesFace";
+// The member's way into Nextcloud — links out (Nextcloud can't be framed
+// cross-site). Host registers `custom: { cloud: CloudSurface }`.
+export { CloudFace, CloudSurface, type HubCloud } from "./CloudFace";

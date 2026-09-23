@@ -148,7 +148,10 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       const orgId = str(fd, "org") || tOrg;
       const feedSlug = str(fd, "feed") || tFeed;
       const topicIds = fd.getAll("topics").filter((v): v is string => typeof v === "string");
-      const r = await w.createTopic(viewer, { orgId, feedSlug, title: str(fd, "title"), text: str(fd, "text"), topicIds });
+      const r = await w.createTopic(viewer, {
+        orgId, feedSlug, title: str(fd, "title"), text: str(fd, "text"), topicIds,
+        syncToNextcloud: str(fd, "nc_sync") === "1",
+      });
       if (r.ok === false) return fail(r.error);
       return done(hrefs.thread(r.threadId, r.slug));
     }

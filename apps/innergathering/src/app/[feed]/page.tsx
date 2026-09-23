@@ -8,7 +8,9 @@ import {
   getCycleStatus,
   getSiteSections,
   getThreadsForFeed,
+  listOrgWriting,
 } from "@/lib/data";
+import { WritingShelf } from "@elkdonis/cms-ui/writing";
 import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
 
@@ -46,6 +48,15 @@ export default async function FeedPage({ params }: FeedPageProps) {
   if (!feed || !feed.isPublic) notFound();
 
   const threads = await getThreadsForFeed(feed.slug);
+
+  // The blog feed leads with the members' own writing.
+  //
+  // It is the one section whose subject is people writing, and the shelf is
+  // how writing is read everywhere else in the network — on a profile, in the
+  // reading room. Putting the threads first would have made the page's own
+  // name a heading over somebody else's content. The feed's posts still
+  // follow, under their own heading.
+  const writing = feed.slug === "blog" ? await listOrgWriting(7) : [];
 
   const enriched = await Promise.all(
     threads.map(async (thread) => ({
@@ -85,12 +96,34 @@ export default async function FeedPage({ params }: FeedPageProps) {
           <p className="max-w-3xl text-lg leading-relaxed">{feed.description}</p>
         )}
 
+        {writing.length > 0 && (
+          <div className="mt-10">
+            <WritingShelf
+              items={writing.map((piece) => ({
+                id: piece.id,
+                slug: piece.slug,
+                title: piece.title,
+                lede: piece.lede,
+                coverImageUrl: piece.coverImageUrl,
+                publishedAt: piece.publishedAt,
+                authorName: piece.authorName,
+                // Each piece lives on its author's page, so the row carries
+                // its own link rather than deriving one from a shared base.
+                href: piece.href,
+              }))}
+              basePath="/artists"
+              heading="From the members"
+              kicker={null}
+            />
+          </div>
+        )}
+
         {enriched.length === 0 ? (
           <p className="card-natural mt-10 p-10 text-center italic text-muted-foreground">
             Nothing scheduled here yet. Check back soon.
           </p>
         ) : (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2" aria-label={feed.name}>
             {enriched.map(({ thread, cycleStatus, attendanceCount }) => (
               <ThreadCard
                 feedName={feed.name}

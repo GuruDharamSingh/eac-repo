@@ -397,6 +397,19 @@ export async function listOrgEventsInRange(
   to: Date,
   limit = 200
 ): Promise<OrgCalendarEvent[]> {
+  // Take in anything changed in Nextcloud first, if the last sync is more than
+  // two minutes old. Every hub's calendar reads through here — the card, the
+  // page layout, the month route — so this one line is what makes an event
+  // added in Nextcloud appear on every /hub. Bounded (1.5s): past that the
+  // page renders what it has and the sync finishes in the background.
+  // Dynamic import: org-calendar-sync imports this file.
+  try {
+    const { syncOrgCalendarIfStale } = await import('./org-calendar-sync');
+    await syncOrgCalendarIfStale(orgId, 1_500);
+  } catch (error) {
+    console.warn(`[org-calendar] sync-if-stale ${orgId}:`, error);
+  }
+
   try {
     const rows = await db<
       Array<{

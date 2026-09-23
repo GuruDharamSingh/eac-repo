@@ -318,11 +318,29 @@ export function BoardTable({ board, hrefs, caption }: { board: ForumBoard; hrefs
         </tr>
       </thead>
       <tbody>
-        {board.feeds.map((f) => (
-          <tr key={f.slug} className="gf-feedrow" style={f.accent ? ({ ["--gf-feed" as string]: f.accent } as React.CSSProperties) : undefined}>
+        {board.feeds.map((f) => {
+          /*
+            A sub-category is indented under its parent rather than given its
+            own table: the columns (topics / posts / last post) mean the same
+            thing at either level, and a second table would break that
+            alignment for one row. `parentSlug` comes from the Nextcloud
+            category tree — see migration 163.
+
+            The parent is looked up rather than assumed present: it may be
+            filtered out of this board for THIS viewer (min_role), and an
+            orphan must still render at top level rather than vanish.
+          */
+          const nested = Boolean(
+            f.parentSlug && board.feeds.some((p) => p.slug === f.parentSlug)
+          );
+          return (
+          <tr key={f.slug} className={`gf-feedrow${nested ? " gf-feedrow--child" : ""}`} style={f.accent ? ({ ["--gf-feed" as string]: f.accent } as React.CSSProperties) : undefined}>
             <td className="gf-feedcell">
               <a className={`gf-feedname${f.unreadCount ? " is-unread" : ""}`} href={hrefs.feed(board.slug, f.slug)}>
                 {f.unreadCount ? <span className="gf-unread-dot" title={plural(f.unreadCount, "unread topic")} /> : null}
+                {/* Marks the nesting for anyone not seeing the indent — a
+                    screen reader reads the rows as a flat list otherwise. */}
+                {nested ? <span className="gf-subcat-mark" aria-label="Sub-category of">↳ </span> : null}
                 {f.name}
               </a>
               {f.unreadCount ? <span className="gf-chip gf-chip--unread">{f.unreadCount} unread</span> : null}
@@ -333,7 +351,8 @@ export function BoardTable({ board, hrefs, caption }: { board: ForumBoard; hrefs
             <td className="gf-num" data-label={f.postCount === 1 ? "post" : "posts"}>{f.postCount.toLocaleString("en-CA")}</td>
             <td className="gf-lastcell"><FeedRowLast feed={f} hrefs={hrefs} orgSlug={board.slug} /></td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
     </table>
   );
@@ -359,6 +378,7 @@ export function TopicRow({ row, hrefs, showOrg, showFeed = true }: { row: ForumT
           {row.locked && <span className="gf-mark" title="Locked">🔒</span>}
           <a className="gf-topic-title" href={titleHref}>{row.title}</a>
           {row.visibility === "ORGANIZATION" && <span className="gf-chip gf-chip--members">members</span>}
+          {row.nextcloudSynced && <span className="gf-chip gf-chip--nc" title="Shared with the Nextcloud forum">NC</span>}
         </div>
         {row.excerpt && <p className="gf-topic-excerpt">{row.excerpt}</p>}
         <p className="gf-topic-kicker">

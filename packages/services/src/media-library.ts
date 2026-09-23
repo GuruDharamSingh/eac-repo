@@ -2,6 +2,7 @@ import { db } from '@elkdonis/db';
 import { listFiles } from './nextcloud';
 import { getOrgFolderPath } from '@elkdonis/nextcloud';
 import { getStorageSlug, listUserFiles, resolveUserPath } from './user-storage';
+import { davList, davListDeep } from './dav';
 
 // ============================================================================
 // An org's media library — what is already in its storage, for a picker.
@@ -193,4 +194,92 @@ export async function listUserMediaLibrary(
   }
 
   return [...items.values()];
+}
+
+// ============================================================================
+// BROWSING a storage folder — folders and pictures, one level at a time.
+//
+// The listings above are FLAT: the files directly in Media/Images and nothing
+// below it. A person whose work is filed in folders (Dana's old site: one
+// folder per page, ~700 pictures, four levels down) saw one picture and no way
+// in. This walks a tree instead: a caller names a ROOT it has already decided
+// the viewer may see, and a path relative to it.
+//
+// The root is the authorization boundary and is never taken from a request.
+// `path` is, so it is checked: no `..`, no absolute path, no escaping the root.
+// Private/ folders and dotfiles are never shown.
+// ============================================================================
+
+export interface BrowseItem {
+  name: string;
+  /** Relative to the root — pass back as `path` to open a folder. */
+  path: string;
+  isFolder: boolean;
+  /** Platform URL of a picture (absent for a folder). */
+  url?: string;
+  /** A small version of the picture for a thumbnail. */
+  thumb?: string;
+}
+
+export interface BrowseResult {
+  /** The folder listed, relative to the root ('' = the root itself). */
+  path: string;
+  items: BrowseItem[];
+  /** True when the listing was a search across the whole root. */
+  search?: boolean;
+}
+
+const HIDDEN = /(^|\/)(Private|\.[^/]*)(\/|$)/;
+
+/** A caller-supplied relative path, or null if it tries to leave the root. */
+export function cleanBrowsePath(raw: unknown): string | null {
+  const s = typeof raw === 'string' ? raw.trim().replace(/^\/+|\/+$/g, '') : '';
+  if (!s) return '';
+  const parts = s.split('/');
+  if (parts.some((p) => !p || p === '.' || p === '..' || p.includes('\\'))) return null;
+  if (HIDDEN.test(s)) return null;
+  return s;
+}
+
+function thumbOf(url: string) {
+  return `${url}?w=240`;
+}
+
+export async function browseMediaFolder(
+  root: string,
+  rawPath: unknown,
+  options: { q?: string | null; limit?: number } = {}
+): Promise<BrowseResult | { error: string }> {
+  const path = cleanBrowsePath(rawPath);
+  if (path === null) return { error: 'Not a folder here.' };
+  const q = options.q?.trim().toLowerCase();
+
+  if (q) {
+    // A name search across everything under the root — the only way to find
+    // one picture among hundreds without knowing its folder.
+    const all = await davListDeep(root);
+    const hits = all
+      .filter((f) => IMAGE_EXT.test(f.name) && f.name.toLowerCase().includes(q))
+      .map((f) => ({ ...f, rel: f.path.slice(root.length + 1) }))
+      .filter((f) => !HIDDEN.test(f.rel))
+      .slice(0, options.limit ?? 200);
+    return {
+      path: '',
+      search: true,
+      items: hits.map((f) => ({ name: f.name, path: f.rel, isFolder: false, url: f.url, thumb: thumbOf(f.url) })),
+    };
+  }
+
+  const entries = await davList(path ? `${root}/${path}` : root);
+  const items: BrowseItem[] = [];
+  for (const e of entries) {
+    if (e.name.startsWith('.') || (e.isFolder && e.name === 'Private')) continue;
+    const rel = path ? `${path}/${e.name}` : e.name;
+    if (e.isFolder) items.push({ name: e.name, path: rel, isFolder: true });
+    else if (IMAGE_EXT.test(e.name)) items.push({ name: e.name, path: rel, isFolder: false, url: e.url, thumb: thumbOf(e.url) });
+  }
+  items.sort((a, b) =>
+    a.isFolder === b.isFolder ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.isFolder ? -1 : 1
+  );
+  return { path, items };
 }

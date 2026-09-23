@@ -19,6 +19,8 @@ export async function savePageAction(
   if (!viewer?.canEdit) return { ok: false, error: "Only the site owner can publish pages." };
 
   const result = await savePage(slug, data);
-  if (result.ok) revalidatePath(`/p/${slug}`);
+  // Pages are served at their own address ("home" at "/"); the /p/ prefix
+  // is what the first version used.
+  if (result.ok) revalidatePath(slug === "home" ? "/" : `/${slug}`);
   return result;
 }

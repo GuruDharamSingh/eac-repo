@@ -1,23 +1,47 @@
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { defaultSiteContent } from "@/lib/default-content";
+import { getDirectoryProfile } from "@/lib/directory";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "About — IFAC Team" };
 
-const teamMembers = [
-  { name: "Eric Brummel", role: "Artist, Art Dealer", href: "/artists/ericbrummel", photo: "/ifac/artists/ericbrummel/ericbrummel500.jpg" },
-  { name: "Hans Maack", role: "Art Dealer, Audio/Video", href: "/dealers/hansmaack", photo: "/ifac/dealers/hansmaack/hans400.jpg" },
-  { name: "Berni Laplante", role: "Art Dealer, Blog Writer", href: "/dealers/bernilaplante", photo: "/ifac/dealers/bernilaplante/BERNIS31.jpg" },
-  { name: "Iven Lourie", role: "Artist, Auctioneer", href: undefined, photo: "/ifac/about/iven1.jpg" },
-  { name: "Michele DeParis", role: "Artist, Consultant", href: "/artists/micheledeparis", photo: "/ifac/artists/micheledeparis/michelemarie.jpg" },
-  { name: "William Albin", role: "Art Dealer, Liaison", href: "/dealers/billalbin", photo: "/ifac/dealers/billalbin/billalbin500.png" },
-  { name: "Kevin Meadows", role: "Art Dealer, Audio/Video", href: "/dealers/kevinmeadows", photo: "/ifac/dealers/kevinmeadows/kevin 500.png" },
-  { name: "Jaswant Bains", role: "Artist, Art Classes", href: "/artists/jaswantbains", photo: "/ifac/artists/jaswantbains/jazzy1.png" },
-  { name: "Grant Abrams", role: "Coin & Art Dealer, Auctioneer", href: undefined, photo: "/ifac/about/Grant1.jpg" },
-  { name: "Michael McDonnell", role: "Art Dealer", href: "/dealers/mmcdonnell", photo: "/ifac/about/mike.jpg" },
+const SITE_IMAGES = "/api/media/EAC_Network/ifac/Media/Images/Site/";
+
+/**
+ * The team. A member with a profile (`slug`) is shown with THEIR portrait —
+ * the avatar in their own Nextcloud folder, the same picture their profile
+ * page shows — so a new photo appears here without editing this file. Only
+ * the two people with no account on the network have a picture of their own
+ * here, and it lives in IFAC's Nextcloud folder, not in the app bundle.
+ */
+const teamMembers: Array<{ name: string; role: string; slug?: string; kind?: "artists" | "dealers"; photo?: string }> = [
+  { name: "Eric Brummel", role: "Artist, Art Dealer", slug: "ericbrummel", kind: "artists" },
+  { name: "Hans Maack", role: "Art Dealer, Audio/Video", slug: "hansmaack", kind: "dealers" },
+  { name: "Berni Laplante", role: "Art Dealer, Blog Writer", slug: "bernilaplante", kind: "dealers" },
+  { name: "Iven Lourie", role: "Artist, Auctioneer", photo: `${SITE_IMAGES}iven1.jpg` },
+  { name: "Michele DeParis", role: "Artist, Consultant", slug: "micheledeparis", kind: "artists" },
+  { name: "William Albin", role: "Art Dealer, Liaison", slug: "billalbin", kind: "dealers" },
+  { name: "Kevin Meadows", role: "Art Dealer, Audio/Video", slug: "kevinmeadows", kind: "dealers" },
+  { name: "Jaswant Bains", role: "Artist, Art Classes", slug: "jaswantbains", kind: "artists" },
+  { name: "Grant Abrams", role: "Coin & Art Dealer, Auctioneer", photo: `${SITE_IMAGES}Grant1.jpg` },
+  { name: "Michael McDonnell", role: "Art Dealer", slug: "mmcdonnell", kind: "dealers" },
 ];
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  // Each member's live profile: their portrait, and whether their page is up.
+  const profiles = await Promise.all(teamMembers.map((m) => (m.slug ? getDirectoryProfile(m.slug) : undefined)));
+  const team = teamMembers.map((m, i) => {
+    const profile = profiles[i];
+    return {
+      ...m,
+      photo: profile?.portrait || m.photo || "",
+      // An unlisted profile is not linked to.
+      href: profile && m.kind ? `/${m.kind}/${m.slug}` : undefined,
+    };
+  });
+
   return (
     <div className="site-shell">
       <SiteHeader />
@@ -37,10 +61,14 @@ export default function AboutPage() {
           </div>
 
           <div className="team-grid">
-            {teamMembers.map((member) => {
+            {team.map((member) => {
               const inner = (
                 <>
-                  <img src={encodeSpaces(member.photo)} alt={member.name} className="team-photo" loading="lazy" />
+                  {member.photo ? (
+                    <img src={encodeSpaces(member.photo)} alt={member.name} className="team-photo" loading="lazy" />
+                  ) : (
+                    <span className="team-photo" aria-hidden="true" />
+                  )}
                   <p className="team-name">{member.name}</p>
                   <p className="team-role">{member.role}</p>
                 </>

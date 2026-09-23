@@ -21,6 +21,8 @@ import { expandOccurrences } from '@elkdonis/utils';
 
 /** The canonical role. Others may exist; this is the one the card shows. */
 export const HOST_ROLE = 'host';
+/** A second pair of hands on the same occurrence — same table, another row. */
+export const CO_HOST_ROLE = 'co-host';
 
 export interface RotaAssignment {
   role: string;
@@ -41,6 +43,8 @@ export interface RotaOccurrence {
   roles: RotaAssignment[];
   /** Whether a record has been written for it afterwards. */
   hasRecord: boolean;
+  /** What this one is covering — the reading, the piece, the topic. */
+  plan: string | null;
 }
 
 interface MeetingRow {
@@ -150,12 +154,17 @@ export async function getMeetingRota(
       AND h.occurrence_at = ANY(${isos}::timestamptz[])
   `;
 
-  const recorded = await db<Array<{ occurrence_at: string }>>`
-    SELECT occurrence_at FROM meeting_occurrence_notes
+  // `note` says whether anything was written AFTERWARDS; `plan` is what the
+  // week is for. A row can carry either or both (migration 159).
+  const recorded = await db<Array<{ occurrence_at: string; note: string | null; plan: string | null }>>`
+    SELECT occurrence_at, note, plan FROM meeting_occurrence_notes
     WHERE thread_id = ${threadId}
       AND occurrence_at = ANY(${isos}::timestamptz[])
   `;
-  const hasRecord = new Set(recorded.map((r) => new Date(r.occurrence_at).toISOString()));
+  const hasRecord = new Set(
+    recorded.filter((r) => r.note !== null).map((r) => new Date(r.occurrence_at).toISOString())
+  );
+  const plans = new Map(recorded.map((r) => [new Date(r.occurrence_at).toISOString(), r.plan]));
 
   const byInstant = new Map<string, RotaAssignment[]>();
   for (const row of rows) {
@@ -182,9 +191,35 @@ export async function getMeetingRota(
         host: roles.find((r) => r.role === HOST_ROLE) ?? null,
         roles,
         hasRecord: hasRecord.has(key),
+        plan: plans.get(key) ?? null,
       };
     }),
   };
+}
+
+/**
+ * Say what one occurrence is covering — or clear it with an empty string.
+ *
+ * The caller authorises: the route lets an organiser write any week, and the
+ * week's own host write theirs (a host saying what they are bringing is the
+ * ordinary case, and should not need an owner).
+ */
+export async function setOccurrencePlan(input: {
+  threadId: string;
+  occurrenceAt: string | Date;
+  plan: string | null;
+  actorUserId: string;
+}): Promise<void> {
+  const at = new Date(input.occurrenceAt).toISOString();
+  const plan = input.plan?.trim() ? input.plan.trim() : null;
+  await db`
+    INSERT INTO meeting_occurrence_notes (thread_id, occurrence_at, plan, planned_by, planned_at)
+    VALUES (${input.threadId}, ${at}::timestamptz, ${plan}, ${input.actorUserId}, NOW())
+    ON CONFLICT (thread_id, occurrence_at) DO UPDATE
+      SET plan = EXCLUDED.plan,
+          planned_by = EXCLUDED.planned_by,
+          planned_at = NOW()
+  `;
 }
 
 /**
@@ -229,6 +264,44 @@ export async function clearMeetingRole(
       AND occurrence_at = ${new Date(occurrenceAt).toISOString()}::timestamptz
       AND role = ${role}
   `;
+}
+
+/**
+ * The "eligible host group" for one occurrence: whoever already holds the
+ * host or co-host role on it. This is what lets a person who volunteered for
+ * a week — not only an org's owner or guide — say the gathering is on, off,
+ * or in doubt from the card. `getMeetingRota`/the rota route are the read
+ * path for the fuller picture; this is the one cheap check a route needs
+ * before trusting a light-status write.
+ */
+/** Who currently holds one specific role on one occurrence, or null. */
+export async function getRoleHolder(
+  threadId: string,
+  occurrenceAt: string | Date,
+  role: string
+): Promise<string | null> {
+  const [row] = await db<Array<{ user_id: string | null }>>`
+    SELECT user_id FROM meeting_hosts
+    WHERE thread_id = ${threadId}
+      AND occurrence_at = ${new Date(occurrenceAt).toISOString()}::timestamptz
+      AND role = ${role}
+  `;
+  return row?.user_id ?? null;
+}
+
+export async function isOccurrenceHost(
+  threadId: string,
+  occurrenceAt: string | Date,
+  userId: string
+): Promise<boolean> {
+  const [row] = await db<Array<{ user_id: string }>>`
+    SELECT user_id FROM meeting_hosts
+    WHERE thread_id = ${threadId}
+      AND occurrence_at = ${new Date(occurrenceAt).toISOString()}::timestamptz
+      AND role IN (${HOST_ROLE}, ${CO_HOST_ROLE})
+      AND user_id = ${userId}
+  `;
+  return Boolean(row);
 }
 
 /**

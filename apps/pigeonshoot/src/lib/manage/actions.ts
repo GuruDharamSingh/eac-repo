@@ -420,7 +420,7 @@ export async function saveSection(
   try {
     await db`
       INSERT INTO org_site_sections (org_id, section_key, content, updated_by, updated_at)
-      VALUES (${ORG}, ${sectionKey}, ${JSON.stringify(content)}::jsonb, ${viewer.userId}, NOW())
+      VALUES (${ORG}, ${sectionKey}, ${db.json(content)}, ${viewer.userId}, NOW())
       ON CONFLICT (org_id, section_key)
       DO UPDATE SET content = EXCLUDED.content, updated_by = EXCLUDED.updated_by, updated_at = NOW()
     `;

@@ -9,6 +9,9 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "tw-animate-css";
 @import "@elkdonis/commerce/commerce.css";
+/* The page blocks a member's designed store panel is built from (artist
+   pages). Layered, so IFAC's own rules and utilities win. */
+@import "@elkdonis/blocks/blocks.css" layer(components);
 
 /* MediaPicker styles itself with plain CSS custom properties rather than
    Tailwind utilities, so the @source directive below does not reach it — this
@@ -52,6 +55,23 @@
 @import "@elkdonis/cms-ui/compose.css";
 /* The hub's own page chrome: the welcome, the bands, the errands strip. */
 @import "@elkdonis/cms-ui/hub.css";
+
+/* ---------------------------------------------------------------------------
+   Email.
+
+   email.css is the suite — five tabs over this gallery's correspondence.
+   email-theme.css is the look it wears: a steely, purpose-built studio face
+   that redefines the --sf-* OUTPUT tokens inside `.eac-email` only.
+
+   ORDER MATTERS: the theme has to come after the suite it retints, for the
+   same reason forum-theme.css follows forum.css above. And it is a theme over
+   OUTPUT tokens rather than the --eac-surface-* inputs, because inputs only
+   resolve at `:root` — a scope that redefined those would repaint half the
+   surface and leave the other half in the host's colours, which is exactly
+   what the suite did before those 51 reads were converted.
+   --------------------------------------------------------------------------- */
+@import "@elkdonis/cms-ui/email.css";
+@import "@elkdonis/cms-ui/email-theme.css";
 
 /* ---------------------------------------------------------------------------
    The shared controls — buttons, inputs, selects, tabs, switches.
@@ -812,7 +832,6 @@ nextjs-portal {
   color: #e8e3e4;
 }
 
-.ifac-panel h1,
 .ifac-panel h2 {
   margin: 0 0 12px;
   color: #ff8c00;
@@ -823,8 +842,24 @@ nextjs-portal {
   text-transform: uppercase;
 }
 
-.intro-panel h1 {
-  font-size: clamp(1.8rem, 4vw, 3rem);
+.intro-lead {
+  font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+  font-weight: 700;
+  color: #ff8c00;
+}
+
+/* The global `a { color: inherit }` reset leaves an inline link
+   indistinguishable from surrounding body copy — needs its own color here. */
+.intro-panel p a {
+  color: #20d7ff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.intro-panel p a:hover,
+.intro-panel p a:focus-visible {
+  color: #ffffff;
 }
 
 .ifac-panel p {
@@ -904,6 +939,149 @@ nextjs-portal {
 
 @media (prefers-reduced-motion: reduce) {
   .directory-avatar { transition: none; }
+}
+
+/* What the header nav's Artists/Dealers links open: DirectoryNavModal —
+   a grid of profile cards rather than the main page's thin link rows. */
+.ifac-dir-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3.5rem);
+  background: rgba(2, 2, 2, 0.92);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.ifac-dir-modal {
+  width: 100%;
+  max-width: 980px;
+  max-height: 100%;
+  overflow-y: auto;
+  border: var(--frame-width) solid var(--frame);
+  background: #050505;
+  padding: 18px;
+}
+
+.ifac-dir-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ifac-dir-modal-head h2 {
+  margin: 0;
+  color: #ff8c00;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ifac-dir-modal-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--frame-soft);
+  background: #020202;
+  color: #20d7ff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.ifac-dir-modal-close:hover,
+.ifac-dir-modal-close:focus-visible {
+  border-color: #20d7ff;
+  color: #ffffff;
+}
+
+.ifac-dir-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.ifac-dir-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--frame-soft);
+  background: #020202;
+  color: #e8e3e4;
+  text-decoration: none;
+}
+
+.ifac-dir-card:hover,
+.ifac-dir-card:focus-visible {
+  border-color: #20d7ff;
+}
+
+.ifac-dir-card-portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #0a0a0a;
+  filter: saturate(0.85);
+  transition: filter 140ms ease;
+}
+
+.ifac-dir-card:hover .ifac-dir-card-portrait,
+.ifac-dir-card:focus-visible .ifac-dir-card-portrait {
+  filter: none;
+}
+
+.ifac-dir-card-portrait--empty {
+  display: grid;
+  place-items: center;
+  font-size: 42px;
+  font-weight: 700;
+  color: #40215c;
+}
+
+.ifac-dir-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px 12px;
+}
+
+.ifac-dir-card-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.ifac-dir-card-role {
+  color: #ff8c00;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.ifac-dir-card-bio {
+  overflow: hidden;
+  color: #e8e3e4;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.ifac-dir-card-more {
+  margin-top: 2px;
+  color: #20d7ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.ifac-dir-card:hover .ifac-dir-card-more,
+.ifac-dir-card:focus-visible .ifac-dir-card-more {
+  color: #ffffff;
 }
 
 .image-link {
@@ -2732,36 +2910,18 @@ a.team-card:hover .team-photo {
 
 /* The section on a profile page wears the same purple frame as the galleries
    beside it, so the page reads as one object with several panels. */
+/* IFAC's own frame, over the shared `.eac-writing-section` default. Both
+   classes are on the element, so these four declarations are the difference
+   between the network's quiet panel and this site's black one. */
 .profile-writing {
-  width: min(1000px, calc(100% - 24px));
-  margin: 0 auto 32px;
   border: var(--frame-width) solid var(--frame);
+  border-radius: 0;
   background: #050505;
-  padding: 14px;
 }
 
 /* Inside the frame the shelf keeps its own measure, but it should not be
    narrower than the panel it sits in on a wide screen. */
-.profile-writing .eac-shelf {
-  padding-block: 0.5rem 1rem;
-}
-
-.profile-writing-more {
-  margin: 1rem 0 0;
-  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.profile-writing-more a {
-  color: var(--read-muted);
-  border-bottom: 1px solid var(--read-rule);
-}
-
-.profile-writing-more a:hover {
-  color: var(--read-ink);
-}
+/* `.profile-writing-more` is `.eac-writing-more` in writing.css now. */
 
 /* The standing pages (/writing and one piece) sit on the page's own ground
    rather than in a frame — a reading room is a room, not a card. */
@@ -2919,11 +3079,27 @@ a.team-card:hover .team-photo {
   text-underline-offset: 2px;
 }
 
-/* …but not the tabs or the buttons, which are already their own shapes. */
+/* …but not the tabs or the buttons, which are already their own shapes.
+
+   `.eac-btn` is on the list because the shared surfaces (the email suite, the
+   compose surface) render their own buttons as anchors when they navigate,
+   and this rule outranks the package's own `text-decoration: none` — two
+   class selectors to one. The email suite's "Open in Editor" shipped as an
+   underlined cyan link sitting on a steel fill. Any shared button dropped
+   into this console would have done the same. */
 .manage-console .manage-tab,
 .manage-console .button,
-.manage-console .button-secondary {
+.manage-console .button-secondary,
+.manage-console .eac-btn,
+.manage-console .eac-btn * {
+  color: inherit;
   text-decoration: none;
+}
+/* The primary variant supplies its own pair, so it must not inherit the
+   console's ink either — `color: inherit` above would otherwise hand a filled
+   button the surrounding body colour. */
+.manage-console .eac-btn--primary {
+  color: var(--sf-on-kind, var(--sf-on-accent, #fff));
 }
 
 /* The "← Back to the hub" link and any other link in the hub's intro. Oxide
@@ -3732,4 +3908,415 @@ a.team-card:hover .team-photo {
   padding: 18px 20px 24px;
   border: 1px solid #2a2a33;
   border-radius: 4px;
+}
+
+/* ==========================================================================
+   The forum, on this site: the full three-column shell.
+   ==========================================================================
+   This block used to hide the board's right rail (`.gf-rail { display: none }`
+   plus a one-column `.gf-layout.has-rail`), on the argument that a 300px
+   column of cross-references made the sheet read as the narrow thing on the
+   page. Restored 2026-09-20 at the owner's request: IFAC gets the same latest
+   posts / wiki / dictionary column every other forum host has, and the shared
+   stylesheet's own breakpoint still collapses it to one column under 1100px. */
+
+/* ==========================================================================
+   Showcase — everything the collective has put out.
+   ==========================================================================
+   Measured on the card ground #fffdf8: ink 17.78:1, ink-soft 8.62:1, oxide
+   6.61:1, white on oxide 6.72:1. Gold is 2.54:1 and is used only as the
+   pinned card's EDGE, never for text — the pin also carries a word. */
+
+.showcase {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 72px;
+}
+
+.showcase-head {
+  margin-bottom: 26px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.showcase-head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.05;
+}
+
+.showcase-sub {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.showcase-empty,
+.showcase-problem {
+  margin: 0;
+  padding: 28px 0;
+  color: var(--ink-soft);
+}
+
+.showcase-problem {
+  color: var(--oxide);
+  padding: 12px 0 0;
+}
+
+.showcase-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.showcase-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  /* The ink, explicitly. This site's chrome is near-black with light type, so
+     a card that sets a cream GROUND and leaves the colour to inherit gets
+     light ink on cream — the title was the only text here without its own
+     colour and it was the only one that vanished. 17.78:1. */
+  color: var(--ink);
+}
+
+/* A pinned card is marked on its leading edge rather than by a different
+   ground — a second background colour in a grid reads as a second kind of
+   thing, which is not what pinning means. */
+.showcase-card.is-pinned {
+  border-left: 3px solid var(--gold);
+}
+
+.showcase-card__hit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 16px 16px 18px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.showcase-card__hit:hover .showcase-card__title,
+.showcase-card__hit:focus-visible .showcase-card__title {
+  color: var(--oxide);
+}
+
+.showcase-card__cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin: -16px -16px 8px;
+  width: calc(100% + 32px);
+  max-width: none;
+}
+
+.showcase-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.showcase-card__kind {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--oxide);
+}
+
+/* The pin says the word. Colour is never the only carrier — WCAG 1.4.1. */
+.showcase-card__pin {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--oxide);
+  padding: 2px 7px;
+}
+
+.showcase-card__title {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.showcase-card__lede {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  /* Two lines: a card is a door, not the piece. */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.showcase-card__foot {
+  margin-top: auto;
+  padding-top: 8px;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.showcase-card__pinbtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.showcase-card__pinbtn:hover,
+.showcase-card__pinbtn:focus-visible {
+  border-color: var(--oxide);
+  color: var(--oxide);
+}
+
+
+/* ===========================================================================
+   Email — the page around the suite.
+
+   The suite itself is @elkdonis/cms-ui/email.css wearing email-theme.css, and
+   nothing below reaches inside it. These are the three things that belong to
+   the PAGE: its measure, and the two-column split on a single letter.
+   =========================================================================== */
+
+/* The bar that replaced the welcome block.
+   One strip between the site header and the workspace: where this mail comes
+   from, and the way back. Everything the old block said that was worth saying,
+   in 44px instead of 190. */
+.hub-email-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 24px 0;
+}
+
+.hub-email-where {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.hub-email-from {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+/* The workspace starts immediately under the bar rather than at the hub's
+   usual 24px band spacing — this page has no bands. */
+.hub-email-workspace {
+  margin-top: 10px;
+}
+
+/* One letter: the words on the left, what actually sends on the right.
+   Side by side because the whole claim of the preview is that it shows the
+   consequence of the box beside it — stacked, that claim needs a scroll to
+   verify. Collapses under 900px, where side-by-side would give each column
+   about 40 characters. */
+.hub-email-letter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .hub-email-letter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.hub-email-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* White, and not the page's ground: this is a REAL letter rendered as it will
+   arrive, and tinting it would be the preview lying about the one thing it
+   exists to be honest about. */
+.hub-email-preview iframe {
+  display: block;
+  width: 100%;
+  height: 36rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #ffffff;
+}
+
+/* The welcome row's right-hand controls: the Cards/Page layout toggle beside
+   the drawer. Added 2026-09-19 with the page layout (app/hub/site-view.tsx);
+   the toggle's own styling is hubsite.css's .eac-hs-seg. */
+.hub-welcome-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Submissions (/manage/submissions) ───────────────────────────────────
+   The queue and its switch. Scoped to the console, which is dark: every ink
+   here is measured against #0a0a0a, the panel ground set further up. */
+.manage-submissions {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.manage-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.manage-switch input {
+  margin-top: 0.3rem;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.manage-switch strong {
+  display: block;
+}
+
+.manage-switch em {
+  display: block;
+  font-style: normal;
+  font-size: 0.9rem;
+  color: #b3a9b1;
+}
+
+.manage-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.manage-sub-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.manage-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: center;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #6b5a77;
+}
+
+.manage-sub-list--quiet .manage-sub {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.manage-sub__cover {
+  width: 84px;
+  height: 64px;
+  object-fit: cover;
+  flex: none;
+}
+
+.manage-sub__body {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.manage-sub__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b3a9b1;
+}
+
+.manage-sub__title {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+}
+
+.manage-sub__excerpt {
+  margin: 0.25rem 0 0;
+  color: #b3a9b1;
+  font-size: 0.92rem;
+}
+
+.manage-sub__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex: none;
+}
+
+/* ---------------------------------------------------------------------------
+   A member's store on their artist page — the designed panel (page blocks)
+   or the plain showcase.
+
+   The .eac-commerce mapping above hands the cards IFAC's PAPER palette
+   (--ink #171615), but the artist page is the black directory treatment, so
+   the store heading and every artwork title rendered near-black on #020202.
+   Here, where the ground is known to be black, both the commerce cards and
+   the page blocks get light ink. Blocks read --blk-* (declared at :root from
+   --eac-block-*), so those are redeclared directly; setting --eac-block-*
+   here would change nothing.
+   Contrast on #020202: #e8e3e4 17.3:1, #b9b2b4 10.4:1, #20d7ff 12.0:1.
+   ------------------------------------------------------------------------ */
+.profile-store-panel {
+  color: #e8e3e4;
+  --blk-bg: #020202;
+  --blk-bg-soft: #111111;
+  --blk-fg: #e8e3e4;
+  --blk-muted: #b9b2b4;
+  --blk-faint: #8f898b;
+  --blk-line: #3a3537;
+  --blk-accent: #20d7ff;
+  --blk-on-accent: #020202;
+  --blk-accent-ink: #20d7ff;
+  --blk-field-bg: #111111;
+  --blk-field-fg: #e8e3e4;
+  --blk-field-line: #5a5456;
+}
+.profile-store-panel .eac-commerce {
+  --pc-ink: #e8e3e4;
+  --pc-ink-soft: #b9b2b4;
+  --pc-ink-faint: #b9b2b4;
+  --pc-line: #3a3537;
+  --pc-mat: #111111;
+  --pc-accent: #20d7ff;
+  --pc-on-accent: #020202;
 }

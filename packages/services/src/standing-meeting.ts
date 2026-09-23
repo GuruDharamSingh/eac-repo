@@ -83,6 +83,12 @@ export function rsvpFlavour(key: string | null | undefined): RsvpFlavour | null 
 export interface MeetingAttendance {
   status: string;
   flavour: string | null;
+  /**
+   * Set alongside `flavour = 'next_time'` only — a soft commitment to the
+   * occurrence after this one. Migration 155. Never true under any other
+   * flavour; `setMeetingAttendance` enforces that on every write.
+   */
+  promiseNext: boolean;
 }
 
 /** What this person has said about this thread, or null if they never have. */
@@ -90,11 +96,11 @@ export async function getMeetingAttendance(
   threadId: string,
   userId: string
 ): Promise<MeetingAttendance | null> {
-  const [row] = await db<Array<{ status: string; flavour: string | null }>>`
-    SELECT status, flavour FROM thread_rsvps
+  const [row] = await db<Array<{ status: string; flavour: string | null; promise_next: boolean }>>`
+    SELECT status, flavour, promise_next FROM thread_rsvps
     WHERE thread_id = ${threadId} AND user_id = ${userId}
   `;
-  return row ? { status: row.status, flavour: row.flavour ?? null } : null;
+  return row ? { status: row.status, flavour: row.flavour ?? null, promiseNext: row.promise_next } : null;
 }
 
 /**
@@ -112,20 +118,24 @@ export async function getMeetingAttendance(
 export async function setMeetingAttendance(
   threadId: string,
   userId: string,
-  flavourKey: string
+  flavourKey: string,
+  /** Only ever stored when `flavourKey` is `'next_time'` — forced false otherwise. */
+  promiseNext = false
 ): Promise<MeetingAttendance | null> {
   const flavour = rsvpFlavour(flavourKey);
   if (!flavour) return null;
+  const promise = flavour.key === 'next_time' && promiseNext;
 
   await db`
-    INSERT INTO thread_rsvps (thread_id, user_id, status, flavour)
-    VALUES (${threadId}, ${userId}, ${flavour.status}, ${flavour.key})
+    INSERT INTO thread_rsvps (thread_id, user_id, status, flavour, promise_next)
+    VALUES (${threadId}, ${userId}, ${flavour.status}, ${flavour.key}, ${promise})
     ON CONFLICT (thread_id, user_id)
     DO UPDATE SET status = EXCLUDED.status,
                   flavour = EXCLUDED.flavour,
+                  promise_next = EXCLUDED.promise_next,
                   updated_at = NOW()
   `;
-  return { status: flavour.status, flavour: flavour.key };
+  return { status: flavour.status, flavour: flavour.key, promiseNext: promise };
 }
 
 /** Take the answer back entirely — not the same as answering no. */

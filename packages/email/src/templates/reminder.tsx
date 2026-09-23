@@ -2,9 +2,11 @@ import * as React from 'react';
 import { Section, Text, Link } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette, EAC_GOLD } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { ThreadCard, Prose } from '../components/cards';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
-import { REMINDER_INTRO, REMINDER_ORG_NOTE, fill, paragraphsOf } from '../copy';
+import { OrgWords, hasOrgWords, SlotProse } from '../components/org-words';
+import { slotText, type CopyOverrides } from '../copy-slots';
 
 // ============================================================================
 // "This begins soon."
@@ -33,6 +35,16 @@ export interface ReminderEmailProps {
   emblemAlt?: string;
   /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
+  /**
+   * This organisation's words for any block of this letter.
+   *
+   * Every sentence below is a SLOT (copy-slots.ts). Passing nothing renders
+   * the network's defaults, which is what every caller did before overriding
+   * existed and what most callers still do.
+   */
+  copy?: CopyOverrides;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
 
@@ -46,6 +58,19 @@ export interface ReminderEmailProps {
   dark?: boolean;
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 const TZ = 'America/Toronto';
@@ -97,6 +122,8 @@ function ReminderEmail({
   emblemUrl,
   emblemAlt,
   bodyText,
+  bodyHtml,
+  copy,
   links = [],
   media = [],
   threadKind,
@@ -107,12 +134,14 @@ function ReminderEmail({
   dark = true,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
 }: ReminderEmailProps) {
   const palette = getEmailPalette(dark);
   const org = orgName ?? 'the collective';
   const relative = relativeWhen(scheduledAt);
   const absolute = absoluteWhen(scheduledAt);
-  const orgParagraphs = paragraphsOf(bodyText);
+  const hasOrg = hasOrgWords(bodyText, bodyHtml);
 
   const joinUrl = talkJoinUrl ?? meetingUrl;
 
@@ -126,6 +155,8 @@ function ReminderEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
@@ -143,9 +174,7 @@ function ReminderEmail({
     >
       <Prose dark={dark}>{guestName},</Prose>
 
-      {fill(REMINDER_INTRO, { thread: meetingTitle, org }).map((paragraph, i) => (
-        <Prose key={`intro-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      <SlotProse copy={copy} id="reminder.intro" values={{ thread: meetingTitle, org }} dark={dark} accent={orgAccent} font={bodyFont} />
 
       {/* The whole point of the email, given its own weight. */}
       {(relative || absolute) && (
@@ -205,9 +234,15 @@ function ReminderEmail({
       )}
 
       {/* The org's own words, when it has written any. */}
-      {orgParagraphs.map((paragraph, i) => (
-        <Prose key={`org-${i}`} dark={dark}>{paragraph}</Prose>
-      ))}
+      {hasOrg && (
+        <OrgWords
+          bodyText={bodyText}
+          bodyHtml={bodyHtml}
+          dark={dark}
+          accent={orgAccent}
+          font={bodyFont}
+        />
+      )}
 
       {links.length > 0 && (
         <Section style={{ margin: '18px 0 0' }}>
@@ -234,9 +269,7 @@ function ReminderEmail({
         </Section>
       )}
 
-      {fill(REMINDER_ORG_NOTE, { org }).map((paragraph, i) => (
-        <Prose key={`orgnote-${i}`} dark={dark} muted>{paragraph}</Prose>
-      ))}
+      <SlotProse copy={copy} id="reminder.org_note" values={{ org }} dark={dark} accent={orgAccent} font={bodyFont} />
     </EmailShell>
   );
 }

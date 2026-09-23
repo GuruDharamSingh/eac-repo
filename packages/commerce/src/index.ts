@@ -8,7 +8,9 @@
  *   - "@elkdonis/commerce/queries"     (server-only DB reads)
  *   - "@elkdonis/commerce/server"      (server-only mutations)
  *   - "@elkdonis/commerce/etransfer"   (eTransfer instruction composer)
+ *   - "@elkdonis/commerce/payout-rails" (how a person can be paid, by country)
  */
 
 export * from "./types";
 export * from "./money";
+export * from "./payout-rails";

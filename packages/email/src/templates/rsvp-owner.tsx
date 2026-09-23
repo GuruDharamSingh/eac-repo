@@ -2,7 +2,9 @@ import * as React from 'react';
 import { Section, Text, Link } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { ProfileCard, ThreadCard, Prose } from '../components/cards';
+import { OrgWords } from '../components/org-words';
 
 // ============================================================================
 // "Someone just arrived." — the letter that goes to whoever runs the thing.
@@ -74,7 +76,22 @@ export interface RsvpOwnerEmailProps {
   emblemAlt?: string;
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
 }
@@ -152,7 +169,10 @@ function OwnerNotificationEmail({
   emblemAlt,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
   bodyText,
+  bodyHtml,
   links = [],
   media = [],
 }: RsvpOwnerEmailProps) {
@@ -172,6 +192,8 @@ function OwnerNotificationEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
           You are receiving this because you are listed as a contact for
@@ -256,7 +278,13 @@ function OwnerNotificationEmail({
         </Section>
       )}
 
-      {bodyText && <Prose dark={dark}>{bodyText}</Prose>}
+      <OrgWords
+          bodyText={bodyText}
+          bodyHtml={bodyHtml}
+          dark={dark}
+          accent={orgAccent}
+          font={bodyFont}
+        />
 
       {links.length > 0 && (
         <Section style={{ margin: '14px 0 0' }}>

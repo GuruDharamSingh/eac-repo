@@ -2,7 +2,7 @@ import { db } from "@elkdonis/db";
 import { getGathering, getOrgFeed, hasOrgRole } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
-import { createThreadAdminRoutes, getStandingMeetingId } from "@elkdonis/services";
+import { createThreadAdminRoutes, getMeetingRota, getStandingMeetingId } from "@elkdonis/services";
 import { termHref, threadHref } from "@/lib/gather";
 
 /**
@@ -43,6 +43,7 @@ type Row = {
   format: string | null;
   meeting_url: string | null;
   talk_token: string | null;
+  document_url: string | null;
   recurrence_pattern: string | null;
   recurrence_until: string | null;
   is_rsvp_enabled: boolean;
@@ -69,6 +70,7 @@ export async function GET(
       t.published_at, t.scheduled_at, t.duration_minutes,
       t.location, t.format, t.meeting_url,
       t.nextcloud_talk_token              AS talk_token,
+      t.document_url                      AS document_url,
       t.recurrence_pattern, t.recurrence_until,
       t.is_rsvp_enabled, t.attendee_limit, t.rsvp_deadline,
       (SELECT COUNT(*)::int FROM thread_rsvps r
@@ -148,8 +150,35 @@ export async function GET(
     rsvpDeadline: row.rsvp_deadline,
     rsvpCount: row.rsvp_count,
     viewerAttending: row.viewer_attending,
+    // Only for someone in the org — a document's link grants edit to whoever
+    // holds it, the same line `gathering` draws above. The compose form reads
+    // it (as "does this already have a document?"), which is why an edit no
+    // longer opens with that switch off.
+    documentUrl: isMember ? row.document_url : null,
+    // Who is down for the NEXT occurrence, so the edit form's "Who's hosting"
+    // opens on the truth rather than on "Nobody yet". Members only: the rota
+    // is not public information.
+    extra: isMember && (row.kind === "meeting" || row.kind === "event")
+      ? await nextHosts(row.id)
+      : undefined,
     ...gathering,
   });
+}
+
+/** The rota's host and co-host for the coming occurrence, as form values. */
+async function nextHosts(threadId: string): Promise<Record<string, string>> {
+  try {
+    const rota = await getMeetingRota(threadId, { from: new Date(), count: 1 });
+    const next = rota.occurrences[0];
+    if (!next) return {};
+    const coHost = next.roles.find((r) => r.role === "co-host");
+    return {
+      next_host_user_id: next.host?.userId ?? "",
+      next_co_host_user_id: coHost?.userId ?? "",
+    };
+  } catch {
+    return {};
+  }
 }
 
 /** Remove (author or editor) and feature-as-weekly-meeting (editor). */

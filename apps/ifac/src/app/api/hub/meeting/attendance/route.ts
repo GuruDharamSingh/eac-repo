@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const viewer = await getHubViewer();
   if (!viewer) return forbidden();
 
-  let payload: { threadId?: string; flavour?: string; clear?: boolean };
+  let payload: { threadId?: string; flavour?: string; promiseNext?: boolean; clear?: boolean };
   try {
     payload = await request.json();
   } catch {
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       ok: true,
       status: null,
       flavour: null,
+      promiseNext: false,
       confirmed: await countConfirmedRsvps(threadId),
       light: await resolveMeetingLight(threadId),
     });
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const saved = await setMeetingAttendance(threadId, viewer.userId, flavour.key);
+  const saved = await setMeetingAttendance(threadId, viewer.userId, flavour.key, Boolean(payload.promiseNext));
   if (!saved) {
     return Response.json({ error: "That isn't one of the answers" }, { status: 400 });
   }
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
     ok: true,
     status: saved.status,
     flavour: saved.flavour,
+    promiseNext: saved.promiseNext,
     confirmed: await countConfirmedRsvps(threadId),
     // An answer can be the one that meets the minimum, so the light comes
     // back with it rather than waiting for the next page load.

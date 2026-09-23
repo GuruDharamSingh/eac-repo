@@ -11,6 +11,7 @@ import {
 import {
   isCardPaymentAvailable,
   startStripeCheckout,
+  CardCheckoutRefused,
 } from "@elkdonis/checkout/stripe";
 import type { CheckoutFormValues } from "@elkdonis/checkout";
 import {
@@ -115,15 +116,36 @@ export async function placeOrder(values: CheckoutFormValues): Promise<void> {
   await clearCartToken();
 
   if (rail === "stripe") {
-    const { url } = await startStripeCheckout({
-      orderId: order.id,
-      successUrl: orderUrl(order.id, "?paid=1"),
-      cancelUrl: orderUrl(order.id, "?cancelled=1"),
-      imageBase: siteConfig.url,
-    });
-    redirect(url);
+    redirect(await cardCheckoutUrl(order.id));
   }
   redirect(`/orders/${order.id}`);
+}
+
+/**
+ * Where to send a buyer who chose card: Stripe's page, or — when Stripe will
+ * not open a session for this order — back to the order itself, which already
+ * offers e-Transfer and a retry, with a note saying why. The order is placed
+ * and reserved either way; only the rail changes. Before this, a refusal
+ * surfaced as the site's error page with the buyer's cart already emptied.
+ *
+ * `redirect()` works by throwing, so it must stay OUTSIDE the try: caught
+ * here, it would be mistaken for a Stripe failure.
+ */
+async function cardCheckoutUrl(orderId: string): Promise<string> {
+  try {
+    const { url } = await startStripeCheckout({
+      orderId,
+      successUrl: orderUrl(orderId, "?paid=1"),
+      cancelUrl: orderUrl(orderId, "?cancelled=1"),
+      imageBase: siteConfig.url,
+    });
+    return url;
+  } catch (err) {
+    if (err instanceof CardCheckoutRefused) {
+      return `/orders/${orderId}?card=${err.reason}`;
+    }
+    throw err;
+  }
 }
 
 /** From the order page: pay (or retry paying) an unpaid order by card. */
@@ -131,13 +153,7 @@ export async function payOrderByCard(orderId: string): Promise<void> {
   if (!isCardPaymentAvailable()) {
     throw new Error("Card payments are not available right now.");
   }
-  const { url } = await startStripeCheckout({
-    orderId,
-    successUrl: orderUrl(orderId, "?paid=1"),
-    cancelUrl: orderUrl(orderId, "?cancelled=1"),
-    imageBase: siteConfig.url,
-  });
-  redirect(url);
+  redirect(await cardCheckoutUrl(orderId));
 }
 
 /** From the order page: switch an unpaid order to eTransfer instructions. */

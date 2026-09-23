@@ -39,12 +39,17 @@ export {
 } from "./editor";
 
 export * from "./blocks";
+export { WALL_PROPS } from "./blocks/picture-wall";
 
 import { heroBanner } from "./blocks/hero-banner";
 import { sectionBanner } from "./blocks/section-banner";
 import { cycleBadge } from "./blocks/cycle-badge";
 import { threadFeed } from "./blocks/thread-feed";
 import { splitRow } from "./blocks/split-row";
+import { grid } from "./blocks/grid";
+import { storeFrame } from "./blocks/store-frame";
+import { storeHeader } from "./blocks/store-header";
+import { storeShelf } from "./blocks/store-shelf";
 import { prose } from "./blocks/prose";
 import { sectionHeading } from "./blocks/section-heading";
 import { figure } from "./blocks/figure";
@@ -62,6 +67,9 @@ import { featureCard } from "./blocks/feature-card";
 import { linkButton } from "./blocks/link-button";
 import { profileFeed } from "./blocks/profile-feed";
 import { profileGalleries } from "./blocks/profile-galleries";
+import { profileGallery } from "./blocks/profile-gallery";
+import { profileStore } from "./blocks/profile-store";
+import { galleryGrid } from "./blocks/gallery-grid";
 import { profileRecord } from "./blocks/profile-record";
 import { createCatalogue } from "./registry";
 import type { Block } from "./types";
@@ -82,6 +90,7 @@ export const SHARED_BLOCKS = [
   threadFeed,
   // Layout
   splitRow,
+  grid,
   flowColumn,
   cardGrid,
   divider,
@@ -107,7 +116,54 @@ export const SHARED_BLOCKS = [
   // duplication this package exists to end.
   profileFeed,
   profileGalleries,
+  profileGallery,
+  profileStore,
   profileRecord,
+  galleryGrid,
+  // A designed store section: a box, a header with an effect, a shelf.
+  storeFrame,
+  storeHeader,
+  storeShelf,
 ] as unknown as Block<never>[];
 
 export const sharedCatalogue = createCatalogue(SHARED_BLOCKS);
+
+/**
+ * The STORE PANEL's own catalogue — a small, fixed set for a small, fixed
+ * space.
+ *
+ * Every store panel renders inside a bounded square section of an org's own
+ * page (the editor's Puck `viewports` sets the canvas to that size), so the
+ * palette is restricted to blocks suited to a handful of pieces rather than
+ * everything a full page might use — no hero banners, no thread feeds, no
+ * contact forms. Restricting the LIST is simpler and safer than restricting
+ * what a general-purpose block does inside a small space, and it is the
+ * difference between designing a section and designing a page.
+ *
+ * `profileGallery` and `profileStore` are both here on purpose, as two
+ * different answers to "what goes in this panel": a curated gallery someone
+ * has arranged by hand, or their live inventory shown automatically. Someone
+ * may use either, or both, on different pages of their panel.
+ */
+export const STORE_PANEL_BLOCKS = [
+  storeFrame,
+  storeHeader,
+  storeShelf,
+  sectionHeading,
+  grid,
+  prose,
+  figure,
+  pictureWall,
+  cardGrid,
+  featureCard,
+  profileGallery,
+  galleryGrid,
+  profileStore,
+  divider,
+  linkButton,
+] as unknown as Block<never>[];
+
+export const storePanelCatalogue = createCatalogue(STORE_PANEL_BLOCKS);
+
+// Starting points for a designed store section. Data only — see templates/store.ts.
+export { STORE_TEMPLATES, type PageTemplate, type TemplateNode } from "./templates/store";

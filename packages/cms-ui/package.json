@@ -38,7 +38,12 @@
     "./whiteboard": "./src/whiteboard/index.ts",
     "./email": "./src/email/index.ts",
     "./email.css": "./src/email/email.css",
-    "./hub.css": "./src/hub/hub.css"
+    "./hub.css": "./src/hub/hub.css",
+    "./hubsite": "./src/hubsite/index.ts",
+    "./hubsite.css": "./src/hubsite/hubsite.css",
+    "./nextcloud-access": "./src/nextcloud-access/index.ts",
+    "./nextcloud-access.css": "./src/nextcloud-access/nextcloud-access.css",
+    "./email-theme.css": "./src/email/email-theme.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

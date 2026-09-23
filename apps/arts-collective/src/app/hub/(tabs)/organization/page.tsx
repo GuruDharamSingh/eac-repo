@@ -8,6 +8,7 @@ import {
   getThemeOverrides,
   listOrgFeeds,
   listOrgEventsInRange,
+  listListingRequests,
 } from "@elkdonis/services";
 import { getOrgBySlug, getOrgFeed } from "@/lib/org";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
@@ -19,6 +20,7 @@ import { CrossOrgForum } from "@/components/hub/console/CrossOrgForum";
 import { JoinTiers } from "@/components/hub/JoinTiers";
 import { MyAppearancePanel } from "@/components/hub/MyAppearancePanel";
 import { OrgStrip, type OrgStripItem } from "@elkdonis/cms-ui/center";
+import { ListingRequestsPanel } from "./ListingRequestsPanel";
 import { TierBadge } from "@/components/hub/TierBadge";
 import { saveOrgIdentityAction } from "@/lib/org-identity-actions";
 import { SITE_THEME_VARS, THEMEABLE_PAGES } from "@/lib/theme-tokens";
@@ -107,6 +109,13 @@ export default async function OrganizationTabPage({
     ]);
   const homeUrl = orgHomeUrl(homes, selected.orgSlug);
   const homeLabel = homeUrl.replace(/^https?:\/\//, "");
+  // "Open site" only where the address works: a verified own domain, or the
+  // collective itself. *.arts-collective.com resolves but has no certificate
+  // in production (checked 2026-09-18), so a subdomain link is an error page.
+  const siteLive = Boolean(identity?.primaryDomain) || selected.orgSlug === "elkdonis";
+  const ARTDIRECT = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+  // Members show by default; these hid themselves and asked back (migration 149).
+  const listingRequests = canEdit ? await listListingRequests(selected.orgId).catch(() => []) : [];
   const tier = org?.tier ?? "free";
 
   // Editor-only: the site's own theme overrides, each scope unmerged — the
@@ -204,11 +213,13 @@ export default async function OrganizationTabPage({
 
           <div className="flex flex-wrap items-center gap-2">
             {canEdit && <SettingsButton />}
-            <Button asChild variant="outline" size="sm">
-              <a href={homeUrl} target="_blank" rel="noopener">
-                Open site ↗
-              </a>
-            </Button>
+            {siteLive && (
+              <Button asChild variant="outline" size="sm">
+                <a href={homeUrl} target="_blank" rel="noopener">
+                  Open site ↗
+                </a>
+              </Button>
+            )}
             <Button asChild variant="ghost" size="sm">
               <Link href={startingNew ? selfHref : `${selfHref}&new=1`}>
                 {startingNew ? "Cancel" : "Start something new"}
@@ -248,6 +259,22 @@ export default async function OrganizationTabPage({
 
         {canEdit ? (
           <>
+            {listingRequests.length > 0 && (
+              <div className="mb-8">
+                <ListingRequestsPanel
+                  orgId={selected.orgId}
+                  orgName={selected.orgName}
+                  requests={listingRequests.map((r) => ({
+                    id: r.id,
+                    displayName: r.displayName,
+                    avatarUrl: r.avatarUrl,
+                    createdAt: r.createdAt,
+                    href: r.slug && ARTDIRECT ? `${ARTDIRECT}/${r.slug}` : null,
+                  }))}
+                />
+              </div>
+            )}
+
             <AttentionBands state={consoleState} orgHomeUrl={homeUrl} />
 
             <ConsoleFaces events={events} canEdit={canEdit} email={emailSuite} />

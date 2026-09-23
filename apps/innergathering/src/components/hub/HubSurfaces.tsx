@@ -7,7 +7,7 @@ import {
   defaultThreadToAnswers,
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
-import { createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { CloudSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { EmailPopup } from "./email/EmailPopup";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
@@ -18,6 +18,12 @@ import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { PlanAheadSurface } from "@elkdonis/cms-ui/hub";
 import { QuestionnaireComposeSurface } from "@elkdonis/cms-ui/compose";
 import { createQuestionnaireAction } from "@/lib/cms/questionnaire-actions";
+import {
+  loadProfilePageAction,
+  setProfileSectionAction,
+  startPayoutsAction,
+  disconnectPayoutsAction,
+} from "@/lib/cms/blog-actions";
 import { ArtPieceGate, BlogGate } from "@/components/hub/publish-gates";
 // The shared canvas. Its own subpath because @excalidraw/excalidraw is an
 // optional peer of cms-ui — a drawing engine must not ride along with the hub.
@@ -79,6 +85,20 @@ export function HubSurfaces({
 
         board: true,
         profile: true,
+        // The "What your page carries" panel inside the profile popup: the
+        // same switches the Blog tile offers, plus the way to be paid. The
+        // tile is the door for somebody who came to write; this is the door
+        // for somebody already looking at their own profile.
+        profilePage: {
+          load: loadProfilePageAction,
+          setSection: setProfileSectionAction,
+          startPayouts: startPayoutsAction,
+          disconnectPayouts: disconnectPayoutsAction,
+        },
+        // "Where you show" in the same popup, at /api/center/presence.
+        presence: true,
+        // "Post to…" from /center: any org you're part of, or your blog.
+        postTo: true,
         centerLayout: true,
         // Living documents in this org's own Nextcloud folder, behind
         // /api/hub/documents.
@@ -192,6 +212,8 @@ export function HubSurfaces({
           // page of the site. It refuses itself for a non-editor, because the
           // route does.
           email: ({ descriptor }) => <EmailPopup descriptor={descriptor} />,
+          // The shared Cloud card (cms-ui/hub) — Nextcloud linking + deep links.
+          cloud: ({ descriptor }) => <CloudSurface descriptor={descriptor} />,
 
           // Who is hosting the coming weeks. Opened from the standing
           // meeting's "Plan ahead" tool; read by any member, written by an

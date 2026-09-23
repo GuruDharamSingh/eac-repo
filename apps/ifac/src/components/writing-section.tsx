@@ -1,20 +1,17 @@
 import { listWriting } from "@elkdonis/services";
 import { blogOrgScopeFor } from "@/lib/cms/blog-actions";
-import { WritingShelf, StartPiece } from "@elkdonis/cms-ui/writing";
-import { siteConfig } from "@/config/site";
+import { WritingSection as SharedWritingSection, StartPiece } from "@elkdonis/cms-ui/writing";
 import { FRAME_THEME_VARS } from "@/lib/theme-tokens";
 import { startPieceAction } from "@/lib/writing-actions";
 
 /**
- * The writing section on a profile page — the first few pieces, and the way
- * in to the rest.
+ * The writing section on a profile page — IFAC's binding of the shared one.
  *
- * Opt-in: the profile page only mounts this when the person has switched
- * "Writing" on in their hub (users.profile_sections.blog). Somebody who does
- * not write does not get an empty shelf on their page.
- *
- * The owner sees it even while it is empty, with the field to start a piece —
- * a section you turned on should show you what it is for.
+ * The section moved to @elkdonis/cms-ui/writing so every org gets the same
+ * shelf, frame and owner affordances. What stays here is this app's: the read
+ * (including whose scope to honour) and the server action behind "start a
+ * piece". `.profile-writing` keeps IFAC's own framed black panel — the shared
+ * default is a quiet token-driven one, and a host with a frame passes it in.
  */
 export async function WritingSection({
   profileUserId,
@@ -36,38 +33,25 @@ export async function WritingSection({
     limit: limit + 1,
   });
 
-  if (items.length === 0 && !editable) return null;
-
   const writingHref = `/${kind}/${profileSlug}/writing`;
-  const shown = items.slice(0, limit);
-  const more = items.length > limit;
 
   return (
-    <section
+    <SharedWritingSection
+      items={items}
+      basePath={writingHref}
+      editable={editable}
+      limit={limit}
       className="profile-writing"
-      data-theme-vars={FRAME_THEME_VARS}
-      data-theme-label="Writing"
-    >
-      <WritingShelf
-        items={shown}
-        basePath={writingHref}
-        heading="Writing"
-        showDrafts={editable}
-        emptyNote={
-          editable
-            ? "Nothing here yet. Start a piece — it stays a draft until you publish it."
-            : "Nothing published yet."
-        }
-      >
-        {editable && (
-          <StartPiece onCreate={startPieceAction.bind(null, profileUserId)} basePath={writingHref} />
-        )}
-        {more && (
-          <p className="profile-writing-more">
-            <a href={writingHref}>All writing →</a>
-          </p>
-        )}
-      </WritingShelf>
-    </section>
+      themeVars={FRAME_THEME_VARS}
+      themeLabel="Writing"
+      startPiece={
+        editable ? (
+          <StartPiece
+            onCreate={startPieceAction.bind(null, profileUserId)}
+            basePath={writingHref}
+          />
+        ) : undefined
+      }
+    />
   );
 }

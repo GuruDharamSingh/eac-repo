@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Section, Text } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 
 export interface ContactOwnerEmailProps {
   senderName: string;
@@ -9,6 +10,19 @@ export interface ContactOwnerEmailProps {
   message?: string;
   orgName?: string;
   source?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 function ContactOwnerEmail({
@@ -17,11 +31,15 @@ function ContactOwnerEmail({
   message,
   orgName = 'Elkdonis Arts Collective',
   source,
+  bodyFont,
+  chrome,
 }: ContactOwnerEmailProps) {
   return (
     <EmailShell
       previewText={`Contact form message from ${senderName}`}
       kicker={`New contact message — ${orgName}`}
+      bodyFont={bodyFont}
+      {...chrome}
       footerText={
         <Text style={{ margin: 0, fontSize: '12px', color: '#999' }}>
           Reply to this email to respond directly to {senderName}.

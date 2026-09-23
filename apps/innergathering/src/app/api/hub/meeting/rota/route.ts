@@ -3,7 +3,9 @@ import {
   assignMeetingRole,
   clearMeetingRole,
   getMeetingRota,
+  getRoleHolder,
   listRotaCandidates,
+  setOccurrencePlan,
 } from "@elkdonis/services";
 // The route-handler viewer: returns null rather than redirecting, which is
 // what a fetch from the surface needs (a 302 to /login inside a JSON fetch
@@ -17,7 +19,10 @@ import { db } from "@elkdonis/db";
  *
  * READ is members-and-up: knowing who is hosting is most of the rota's value,
  * and four of the five people on it cannot edit the org. WRITE is editors —
- * with one deliberate exception below.
+ * with two deliberate exceptions: a plain member may put THEMSELVES down for
+ * a role (host or co-host) on a coming occurrence, and may take themselves
+ * back OFF a role they currently hold. Neither needs an owner, and neither
+ * lets anyone touch somebody else's row.
  *
  * Every write checks the thread belongs to THIS org before touching it. The
  * service writes what it is told, by design, so the ownership check is the
@@ -60,10 +65,18 @@ export async function GET(request: NextRequest) {
       host: o.host
         ? { userId: o.host.userId, displayName: o.host.displayName, note: o.host.note }
         : null,
+      coHost: (() => {
+        const c = o.roles.find((r) => r.role === "co-host");
+        return c ? { userId: c.userId, displayName: c.displayName, note: c.note } : null;
+      })(),
       hasRecord: o.hasRecord,
+      plan: o.plan,
     })),
     candidates,
     canPlan: viewer.canEdit,
+    // So the surface can tell "is this me" against host/co-host without a
+    // second round trip, and offer self-serve controls to a plain member.
+    viewerId: viewer.userId,
   });
 }
 
@@ -76,6 +89,8 @@ export async function POST(request: NextRequest) {
     occurrenceAt?: string;
     role?: string;
     userId?: string | null;
+    /** What the week covers. Present means "write this", not "assign". */
+    plan?: string | null;
   };
 
   const { threadId, occurrenceAt } = body;
@@ -84,19 +99,45 @@ export async function POST(request: NextRequest) {
   if (!(await threadInOrg(threadId)))
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // An editor may assign anyone. A plain member may only put THEMSELVES down
-  // or take themselves off — volunteering for a week should not need an
-  // owner, but neither should anyone be able to sign up a colleague.
-  const assigningSelf = body.userId === viewer.userId;
-  if (!viewer.canEdit && !assigningSelf) {
-    return NextResponse.json(
-      { error: "Only an organiser can assign somebody else." },
-      { status: 403 }
-    );
+  // What the week is covering (migration 159). Handled FIRST and returned from:
+  // a body carrying `plan` and no `userId` would otherwise fall through to the
+  // clearing branch below and take the host off the week. An organiser may
+  // write any week; that week's host or co-host may write theirs.
+  if (body.plan !== undefined) {
+    if (!viewer.canEdit) {
+      const [host, coHost] = await Promise.all([
+        getRoleHolder(threadId, occurrenceAt, "host"),
+        getRoleHolder(threadId, occurrenceAt, "co-host"),
+      ]);
+      if (host !== viewer.userId && coHost !== viewer.userId) {
+        return NextResponse.json(
+          { error: "Only an organiser, or that week's host, can say what it covers." },
+          { status: 403 }
+        );
+      }
+    }
+    await setOccurrencePlan({
+      threadId,
+      occurrenceAt,
+      plan: body.plan,
+      actorUserId: viewer.userId,
+    });
+    return NextResponse.json({ ok: true });
   }
 
   const role = body.role || "host";
+
   if (body.userId) {
+    // An editor may assign anyone. A plain member may only put THEMSELVES
+    // down — volunteering for a week (as host or co-host) should not need
+    // an owner, but neither should anyone be able to sign up a colleague.
+    const assigningSelf = body.userId === viewer.userId;
+    if (!viewer.canEdit && !assigningSelf) {
+      return NextResponse.json(
+        { error: "Only an organiser can assign somebody else." },
+        { status: 403 }
+      );
+    }
     await assignMeetingRole({
       threadId,
       occurrenceAt,
@@ -104,14 +145,23 @@ export async function POST(request: NextRequest) {
       userId: body.userId,
       actorUserId: viewer.userId,
     });
-  } else if (viewer.canEdit) {
+    return NextResponse.json({ ok: true });
+  }
+
+  // Clearing. An editor may clear anyone's row; a plain member may only step
+  // themselves back off a role they currently hold — checked against the
+  // database, never trusted from the request.
+  if (viewer.canEdit) {
     await clearMeetingRole(threadId, occurrenceAt, role);
-  } else {
+    return NextResponse.json({ ok: true });
+  }
+  const holder = await getRoleHolder(threadId, occurrenceAt, role);
+  if (holder !== viewer.userId) {
     return NextResponse.json(
-      { error: "Only an organiser can clear a host." },
+      { error: "Only an organiser can clear somebody else's spot." },
       { status: 403 }
     );
   }
-
+  await clearMeetingRole(threadId, occurrenceAt, role);
   return NextResponse.json({ ok: true });
 }

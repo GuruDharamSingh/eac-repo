@@ -42,6 +42,21 @@ export function canModerate(viewer: ForumViewer, orgId: string): boolean {
   return r === "owner" || r === "guide";
 }
 
+/** Member and up (not a follower's `viewer` role) — mirrors services isOrgMember. */
+export function isOrgMember(viewer: ForumViewer, orgId: string): boolean {
+  if (viewer.isGlobalAdmin) return true;
+  const r = viewer.roles[orgId];
+  return r === "owner" || r === "guide" || r === "member";
+}
+
+/** Marks a post that lives in the Nextcloud forum too. */
+export function NcBadge({ href, label = "NC" }: { href?: string | null; label?: string }) {
+  const title = "Shared with the Nextcloud forum";
+  return href
+    ? <a className="gf-chip gf-chip--nc" href={href} target="_blank" rel="noopener noreferrer" title={title}>{label}</a>
+    : <span className="gf-chip gf-chip--nc" title={title}>{label}</span>;
+}
+
 export function ReplyBody({ html }: { html: string }) {
   return <div className="gf-reply-body eac-surface-prose" dangerouslySetInnerHTML={{ __html: html }} />;
 }
@@ -156,6 +171,7 @@ export function ReplyItem({ ctx, reply, replies: children, nested = false, isFir
       <article id={`reply-${reply.id}`} className={`gf-reply${nested ? " gf-reply--nested" : ""}`}>
         <div className="gf-reply-head">
           <CardByline person={reply.author} role={reply.authorRole} at={reply.createdAt} edited={reply.editedAt} card={ctx.cards[reply.author.id]} hrefs={hrefs} size={nested ? 24 : 32} />
+          {reply.viaNextcloud && <NcBadge label="via Nextcloud" />}
           {reply.replyingTo && (
             <span className="gf-reply-to">↳ replying to <a href={`#reply-${reply.replyingTo.id}`}>{reply.replyingTo.name}</a></span>
           )}
@@ -186,6 +202,9 @@ function ReplyBox({ ctx, replyTo, quote }: { ctx: Ctx; replyTo: ForumReply | nul
   const { hrefs } = connectors;
   const url = actionUrl(connectors, "reply");
   if (thread.locked) return <div className="gf-replybox gf-replybox--gate"><p>🔒 This topic is locked.</p></div>;
+  if (viewer.userId && thread.nextcloudSynced && !thread.nextcloudPublic && !isOrgMember(viewer, thread.org.id)) {
+    return <div className="gf-replybox gf-replybox--gate"><p>This topic is shared with {thread.org.name}'s Nextcloud — replies are for its members.</p></div>;
+  }
   if (!url) return <div className="gf-replybox gf-replybox--gate"><p>Replying isn't available on this host.</p></div>;
   if (!viewer.userId) {
     return (
@@ -417,6 +436,10 @@ export function ThreadPageView(p: ThreadPageViewProps) {
       {thread.pinned && <span className="gf-chip">📌 Pinned</span>}
       {thread.locked && <span className="gf-chip">🔒 Locked</span>}
       {thread.visibility === "ORGANIZATION" && <span className="gf-chip gf-chip--members">members</span>}
+      {thread.nextcloudSynced && <NcBadge />}
+      {thread.nextcloudUrl && (
+        <a className="gf-nc-link" href={thread.nextcloudUrl} target="_blank" rel="noopener noreferrer">See on Nextcloud ↗</a>
+      )}
       <span className="gf-thread-counts">{plural(thread.viewCount, "view")}</span>
     </span>
   );

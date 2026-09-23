@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import type { NavItem } from "@/lib/navigation";
@@ -23,13 +24,42 @@ import type { NavItem } from "@/lib/navigation";
  */
 export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] }) {
   const pathname = usePathname();
+  // Phones only: the nav slides out from the left. On a desktop the drawer is
+  // just the rest of the sidebar and this flag changes nothing (site.css).
+  const [open, setOpen] = useState(false);
+
+  // Following a link closes it — the page changes underneath, and a drawer
+  // still covering the new page reads as the link having done nothing.
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
-    <aside className="site-sidebar">
+    <aside className="site-sidebar" data-open={open ? "true" : "false"}>
       <Link href="/" className="brand-mark" aria-label="Dana McCool home">
         <img src="/images/logo-uranus.png" alt="" width={150} height={136} />
       </Link>
 
+      <button
+        type="button"
+        className="nav-toggle"
+        aria-expanded={open}
+        aria-controls="side-drawer"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="nav-toggle-bars" aria-hidden="true" />
+        {open ? "Close" : "Menu"}
+      </button>
+      {open ? <button type="button" className="nav-scrim" aria-label="Close the menu" onClick={() => setOpen(false)} /> : null}
+
+      <div className="side-drawer" id="side-drawer">
       <nav className="side-nav" aria-label="Primary">
         {nav.map((link) => {
           const active = !link.external && (pathname === link.href || pathname.startsWith(`${link.href}/`));
@@ -47,8 +77,8 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
         })}
         {canEdit && (
           <>
-            <Link href="/gallery" className="side-nav-link side-nav-link--manage">
-              Manage
+            <Link href="/hub" className="side-nav-link side-nav-link--manage">
+              Hub
             </Link>
             {/* The editor had no way in until this link existed. The routes are
                 /studio/<slug> and /p/<slug>, and a page builder nobody can find
@@ -56,11 +86,14 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
             <Link href="/studio" className="side-nav-link side-nav-link--manage">
               Pages
             </Link>
+            <Link href="/manage/artworks" className="side-nav-link side-nav-link--manage">
+              Artwork listings
+            </Link>
             <Link href="/manage/messages" className="side-nav-link side-nav-link--manage">
               Messages
             </Link>
             <Link href="/studio/theme" className="side-nav-link side-nav-link--manage">
-              Colours
+              Theme
             </Link>
             <Link href="/studio/navigation" className="side-nav-link side-nav-link--manage">
               Navigation
@@ -83,6 +116,7 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
           </a>
         </li>
       </ul>
+      </div>
     </aside>
   );
 }

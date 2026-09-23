@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export interface LightboxImage {
   url: string;
@@ -14,6 +14,19 @@ export interface SimpleLightboxProps {
   index: number | null;
   onClose: () => void;
   onIndexChange: (next: number) => void;
+  /**
+   * Where the viewer is, when it can be inside more than one set — e.g.
+   * "Medicine Buddha › Invocation series", as links. Drawn over the top-left.
+   * Absent: nothing is drawn (the plain slideshow).
+   */
+  trail?: ReactNode;
+  /** More under the caption for the picture on show, e.g. a way into a nested gallery. */
+  extra?: ReactNode;
+  /**
+   * Escape normally closes. A caller with levels passes this to go UP one
+   * instead; the close button still closes.
+   */
+  onEscape?: () => void;
 }
 
 /**
@@ -35,7 +48,7 @@ export interface SimpleLightboxProps {
  *   - Each image gets its own loading state, so switching between large photos
  *     shows a spinner rather than the previous image lingering.
  */
-export function SimpleLightbox({ images, index, onClose, onIndexChange }: SimpleLightboxProps) {
+export function SimpleLightbox({ images, index, onClose, onIndexChange, trail, extra, onEscape }: SimpleLightboxProps) {
   const open = index !== null && index >= 0 && index < images.length;
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef<Element | null>(null);
@@ -57,7 +70,7 @@ export function SimpleLightbox({ images, index, onClose, onIndexChange }: Simple
       if (index === null) return;
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        (onEscape ?? onClose)();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         onIndexChange((index + 1) % images.length);
@@ -77,7 +90,7 @@ export function SimpleLightbox({ images, index, onClose, onIndexChange }: Simple
       const restore = restoreFocusRef.current;
       if (restore instanceof HTMLElement) restore.focus();
     };
-  }, [open, index, images.length, onClose, onIndexChange]);
+  }, [open, index, images.length, onClose, onIndexChange, onEscape]);
 
   if (!open || index === null) return null;
   const image = images[index];
@@ -91,6 +104,12 @@ export function SimpleLightbox({ images, index, onClose, onIndexChange }: Simple
       aria-label={image.alt || "Image viewer"}
       onClick={onClose}
     >
+      {trail ? (
+        <nav className="eac-lb-trail" aria-label="Where you are" onClick={(e) => e.stopPropagation()}>
+          {trail}
+        </nav>
+      ) : null}
+
       <button
         ref={closeRef}
         type="button"
@@ -131,6 +150,7 @@ export function SimpleLightbox({ images, index, onClose, onIndexChange }: Simple
           draggable={false}
         />
         {image.alt && <figcaption className="eac-lb-caption">{image.alt}</figcaption>}
+        {extra ? <div className="eac-lb-extra">{extra}</div> : null}
       </figure>
 
       {many && (

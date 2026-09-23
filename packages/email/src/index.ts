@@ -3,6 +3,7 @@ import {
   getOrgEmailIdentity,
   saveOrgEmailIdentity,
   clearEmailIdentityCache,
+  emailChromeFor,
   EMAIL_IDENTITY_KEY,
   type OrgEmailIdentity,
   type EmailPalette,
@@ -21,6 +22,22 @@ import { renderProvisioningEmail, type ProvisioningEmailProps } from './template
 import { renderOwnerNotificationEmail, type OwnerNotificationEmailProps, type OwnerNotificationKind } from './templates/rsvp-owner';
 import { ProfileCard, ThreadCard, Prose, type ProfileCardProps, type ThreadCardProps } from './components/cards';
 import * as copy from './copy';
+import {
+  COPY_SLOTS,
+  TEMPLATE_SLOTS,
+  copySlotsFor,
+  slotText,
+  slotLine,
+  parseCopyOverrides,
+  type CopyOverrides,
+  type CopySlot,
+} from './copy-slots';
+import {
+  EMAIL_FONTS,
+  DEFAULT_EMAIL_FONT,
+  emailFontStack,
+  type EmailFontId,
+} from './components/EmailShell';
 import { renderSample, renderWithProps, sampleProps, templateMeta, TEMPLATE_META, type TemplateMeta, type SampleOptions } from './samples';
 import {
   renderTemplateBody,
@@ -97,6 +114,9 @@ import {
   type TemplateKey,
   type OrgTemplate,
 } from './template-store';
+
+export type { CopyOverrides, CopySlot } from './copy-slots';
+export type { EmailFontId, EmailFont, EmailChrome } from './components/EmailShell';
 
 export type {
   SendEmailResult,
@@ -202,6 +222,18 @@ export {
   Prose,
   // The network's default words, as data. Editing copy happens here.
   copy,
+  // Every block of every letter, addressable — what the Letters editor lists
+  // and what an org may rewrite one at a time.
+  COPY_SLOTS,
+  TEMPLATE_SLOTS,
+  copySlotsFor,
+  slotText,
+  slotLine,
+  parseCopyOverrides,
+  // The body faces an org may choose between.
+  EMAIL_FONTS,
+  DEFAULT_EMAIL_FONT,
+  emailFontStack,
   // An org's own layout, wrapped in the network's envelope.
   renderAdvancedEmail,
   bodyOf,
@@ -229,6 +261,8 @@ export {
   fillHtml,
   templateMeta,
   TEMPLATE_META,
+  // One org's stored look → the chrome every letter wears.
+  emailChromeFor,
 };
 
 // ----------------------------------------------------------------------------
@@ -244,12 +278,16 @@ interface OverridableProps {
   orgId?: string;
   threadId?: string;
   bodyText?: string;
+  bodyHtml?: string;
+  /** This org's words for the letter's own blocks. See copy-slots.ts. */
+  copy?: CopyOverrides;
   links?: { label: string; url: string }[];
   media?: { url: string; alt?: string; caption?: string }[];
   /** Filled in from the org's identity — callers do not pass these. */
   orgName?: string;
   orgHeader?: boolean;
   orgAccent?: string;
+  bodyFont?: string;
 }
 
 async function renderWithOverrides<P extends OverridableProps>(
@@ -275,6 +313,15 @@ async function renderWithOverrides<P extends OverridableProps>(
         orgName: data.orgName ?? identity.fromName,
         orgHeader: identity.fromIsOrgDomain,
         orgAccent: identity.accentColor,
+        // The masthead image and the frame. Like the face below and unlike
+        // the header NAME above, these are not gated on the authenticated
+        // domain: a picture and a rule make no claim a spam filter reads.
+        chrome: emailChromeFor(identity),
+        // Unlike the header colour, the face applies whether or not the org
+        // sends from its own domain: it is how the letter READS, not a claim
+        // about who sent it, so there is nothing for a spam filter to
+        // disagree with.
+        bodyFont: identity.palette?.bodyFont,
       }
     : {};
 
@@ -299,6 +346,15 @@ async function renderWithOverrides<P extends OverridableProps>(
     ...data,
     ...branding,
     bodyText: data.bodyText ?? template?.bodyText,
+    // Taken together with bodyText, not instead of it: a caller that passes a
+    // per-send plain message must not have the org's STORED rich version
+    // rendered over the top of it, so the rich layer only applies when the
+    // plain one came from the same place.
+    bodyHtml: data.bodyHtml ?? (data.bodyText ? undefined : template?.bodyHtml),
+    // NOT `??`: a caller passing one block's words must not silently discard
+    // every other block this org has rewritten. The caller's slots win
+    // individually, the stored ones fill the rest.
+    copy: { ...(template?.copy ?? {}), ...(data.copy ?? {}) },
     links: data.links ?? template?.links,
     media: data.media ?? template?.media,
   });

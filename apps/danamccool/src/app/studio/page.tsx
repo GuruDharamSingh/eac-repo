@@ -43,7 +43,7 @@ export default async function StudioIndex({
             <li key={page.slug}>
               <Link href={`/studio/${page.slug}`}>{page.slug.replace(/-/g, " ")}</Link>{" "}
               <span style={{ fontSize: ".8rem" }}>
-                — <Link href={`/p/${page.slug}`}>view</Link>, last published{" "}
+                — <Link href={page.slug === "home" ? "/" : `/${page.slug}`}>view</Link>, last published{" "}
                 {new Date(page.updatedAt).toLocaleDateString()}
               </span>
             </li>

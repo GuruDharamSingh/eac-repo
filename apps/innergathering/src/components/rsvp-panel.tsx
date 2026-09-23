@@ -16,7 +16,14 @@ interface RsvpPanelProps {
   attendanceCount: number;
   attendeeLimit: number | null;
   cancelled: boolean;
+  /** MAJOR units, as stored. null or 0 means free — the ordinary RSVP. */
+  price?: number | null;
+  /** MAJOR units. Set means the buyer may choose anything from here up to `price`. */
+  priceSlidingMin?: number | null;
 }
+
+const money = (major: number) =>
+  major.toLocaleString(undefined, { style: "currency", currency: "CAD", minimumFractionDigits: 0 });
 
 /**
  * Two RSVP paths, on purpose.
@@ -34,6 +41,8 @@ export function RsvpPanel({
   attendanceCount,
   attendeeLimit,
   cancelled,
+  price,
+  priceSlidingMin,
 }: RsvpPanelProps) {
   const router = useRouter();
   const [attending, setAttending] = useState(alreadyAttending);
@@ -42,6 +51,15 @@ export function RsvpPanel({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [wantsReminder, setWantsReminder] = useState(true);
+
+  const listPrice = price ?? 0;
+  // Paid, but only for someone who has not already bought their place.
+  const mustPay = listPrice > 0 && !attending;
+  const slidingMin =
+    priceSlidingMin != null && priceSlidingMin > 0 && priceSlidingMin < listPrice
+      ? priceSlidingMin
+      : null;
+  const [amount, setAmount] = useState(String(listPrice));
 
   const full = attendeeLimit !== null && attendanceCount >= attendeeLimit && !attending;
 
@@ -63,12 +81,27 @@ export function RsvpPanel({
       const res = await fetch(`/api/threads/${threadId}/rsvp`, {
         method: attending ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: attending ? undefined : JSON.stringify({ receiveEmailNotice: true }),
+        body: attending
+          ? undefined
+          : JSON.stringify({
+              receiveEmailNotice: true,
+              ...(mustPay && slidingMin
+                ? { amountMinor: Math.round((Number(amount) || listPrice) * 100) }
+                : {}),
+            }),
       });
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         toast.error(data.error ?? "Could not update your RSVP.");
+        return;
+      }
+
+      // A priced place is bought, not claimed: the server hands back a Stripe
+      // hosted-checkout URL and enrolment follows the payment, so leave the
+      // page rather than marking anyone as attending here.
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl as string;
         return;
       }
 
@@ -127,9 +160,59 @@ export function RsvpPanel({
             This gathering is full. Get in touch if you&rsquo;d like to be added to the waitlist.
           </p>
         ) : signedIn ? (
-          <Button onClick={toggleMemberRsvp} disabled={busy} variant={attending ? "outline" : "default"}>
-            {busy ? "Saving…" : attending ? "I can't make it after all" : "Yes, I'm coming"}
-          </Button>
+          <div className="space-y-4">
+            {mustPay && slidingMin && (
+              <div className="space-y-1.5">
+                <Label htmlFor="rsvp-amount">
+                  What you pay — anything from {money(slidingMin)} to {money(listPrice)}
+                </Label>
+                <Input
+                  id="rsvp-amount"
+                  type="number"
+                  inputMode="decimal"
+                  min={slidingMin}
+                  max={listPrice}
+                  step="1"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="max-w-40"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Pay what you can. The same place either way.
+                </p>
+              </div>
+            )}
+            <Button onClick={toggleMemberRsvp} disabled={busy} variant={attending ? "outline" : "default"}>
+              {busy
+                ? mustPay
+                  ? "Taking you to checkout…"
+                  : "Saving…"
+                : attending
+                  ? "I can't make it after all"
+                  : mustPay
+                    ? `Pay ${money(slidingMin ? Number(amount) || listPrice : listPrice)} and join`
+                    : "Yes, I'm coming"}
+            </Button>
+            {mustPay && (
+              <p className="text-sm text-muted-foreground">
+                You&rsquo;ll pay securely on Stripe and come straight back. Your place is held once the
+                payment goes through.
+              </p>
+            )}
+          </div>
+        ) : mustPay ? (
+          <div className="space-y-2">
+            <p className="text-sm">
+              This one is {money(listPrice)}
+              {slidingMin ? `, or from ${money(slidingMin)} if that works better` : ""}.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <a href="/login" className="underline underline-offset-2">
+                Sign in
+              </a>{" "}
+              to book a place — a paid place is tied to your account so you can find it again.
+            </p>
+          </div>
         ) : guestDone ? (
           <p className="text-sm">
             You&rsquo;re on the list. We&rsquo;ve sent a confirmation to <strong>{email}</strong>.

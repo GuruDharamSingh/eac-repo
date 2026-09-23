@@ -1,4 +1,5 @@
 import * as React from "react";
+import { sanitizeRichText } from "@elkdonis/utils";
 import type { SurfaceGathered, SurfaceThread } from "./types";
 import { PRICED_KINDS, SCHEDULED_KINDS } from "./types";
 import { SurfaceFacts, SurfaceSection } from "./SurfaceShell";
@@ -152,7 +153,13 @@ export function threadViewParts(
       )}
       {thread.excerpt && <p className="eac-surface-lede">{thread.excerpt}</p>}
       {thread.bodyHtml ? (
-        <div className="eac-surface-prose" dangerouslySetInnerHTML={{ __html: thread.bodyHtml }} />
+        // Sanitised here as well as on write: hosts' GET routes return the stored
+        // body as-is, and rows written before the write path sanitised, or by a
+        // hand-written INSERT, reach this renderer unchanged.
+        <div
+          className="eac-surface-prose"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(thread.bodyHtml) }}
+        />
       ) : !thread.excerpt ? (
         <p className="eac-surface-muted">No description yet.</p>
       ) : null}

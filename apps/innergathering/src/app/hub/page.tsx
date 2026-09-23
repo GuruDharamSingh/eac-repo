@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
+import { HubViewToggle, HUB_VIEW_COOKIE } from "@elkdonis/cms-ui/hubsite";
+import { HubSiteView } from "./site-view";
 import {
   getOrgChatIdentity,
   getOrgChatRoom,
@@ -8,15 +11,21 @@ import {
   listOrgMediaLibrary,
   getStandingMeeting,
   getViewerAlerts,
+  getViewerCloud,
   listOrgEventsInRange,
   getMeetingRota,
   getOrgChatNextcloudUrl,
+  getMeetingAttendance,
+  resolveMeetingLight,
+  isOccurrenceHost,
+  RSVP_FLAVOURS,
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { ChatCard, ProvisionChat } from "@elkdonis/chat";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
 import {
   CalendarFace,
+  CloudFace,
   DocumentsFace,
   GalleryFace,
   PipelineFace,
@@ -39,6 +48,8 @@ export const dynamic = "force-dynamic";
  *  face was shared; it belongs to the site, not to the component. */
 const TIME_ZONE = "America/Toronto";
 
+const MOBILE_UA = /Mobi|Android|iPhone|iPad|iPod/i;
+
 /**
  * The members' hub: a grid of faces, each the tile-sized form of the popup it
  * opens. Every read the tiles need happens here, in parallel, server-side.
@@ -48,8 +59,22 @@ const TIME_ZONE = "America/Toronto";
 export default async function HubPage() {
   const viewer = await requireOrgMember("/hub");
 
+  // The page layout, when this person chose it with the toggle in either
+  // view — that always wins. Absent a choice, phones default to Page: the
+  // classic (Cards) branch below fires off several service calls with no
+  // .catch, and a transient failure among them has no /hub/error.tsx to
+  // land on, only the app's global-error screen (see hub crash, 2026-09-20).
+  // Page is the more defensively-coded branch, so it is the safer default
+  // until those calls are hardened — a temporary bias, not a real fix.
+  // Checked before any read below, so the card hub's data is not loaded twice.
+  const chosenView = (await cookies()).get(HUB_VIEW_COOKIE)?.value;
+  const isMobile = MOBILE_UA.test((await headers()).get("user-agent") ?? "");
+  if (chosenView === "site" || (!chosenView && isMobile)) {
+    return <HubSiteView viewer={viewer} />;
+  }
+
   const calendarFrom = startOfMonth(new Date());
-  const [profile, chatRoom, events, standing, board, documents, media, alerts, email, forum] =
+  const [profile, chatRoom, events, standing, board, documents, media, alerts, email, forum, cloud] =
     await Promise.all([
     getProfile(viewer.userId),
     getOrgChatRoom(siteConfig.orgId),
@@ -84,6 +109,8 @@ export default async function HubPage() {
     // The board, as one snapshot. Counts are per viewer, because visibility
     // is. A forum outage costs the tile, not the hub.
     getForumSnapshot().catch(() => null),
+    // The Cloud card: this member's Nextcloud link and folder deep links.
+    getViewerCloud(viewer.userId, siteConfig.orgId),
   ]);
 
   // Who is hosting the occurrence the card will show. Read AFTER `standing`
@@ -94,6 +121,17 @@ export default async function HubPage() {
     ? await getMeetingRota(standing.event.id, { from: standing.at, count: 1 }).catch(() => null)
     : null;
   const nextHost = rota?.occurrences[0]?.host ?? null;
+
+  // Is it happening, what has this member already said, and are they this
+  // occurrence's eligible host group (assigned or self-assigned as host or
+  // co-host) — which is what lets the traffic light widen past canEdit.
+  const [meetingLight, meetingAnswer, isEligibleHost] = standing
+    ? await Promise.all([
+        resolveMeetingLight(standing.event.id, { occurrence: standing.at }),
+        getMeetingAttendance(standing.event.id, viewer.userId),
+        isOccurrenceHost(standing.event.id, standing.at, viewer.userId),
+      ])
+    : [null, null, false];
 
   // The door to the real room. The card's transcript is a mirror read over the
   // service account; voice, video and files only exist in Talk itself.
@@ -135,6 +173,7 @@ export default async function HubPage() {
             Here is what the group has on, and what you can add to it.
           </p>
         </div>
+        <HubViewToggle current="classic" />
       </div>
 
       {/*
@@ -172,6 +211,21 @@ export default async function HubPage() {
                 ? { name: nextHost.displayName, userId: nextHost.userId }
                 : null,
               canPlan: viewer.canEdit,
+            }}
+            light={
+              meetingLight
+                ? {
+                    ...meetingLight,
+                    // Widened past canEdit: an owner/guide always may, and so
+                    // may whoever the rota has down as this occurrence's host
+                    // or co-host (self-assigned counts).
+                    canSet: viewer.canEdit || isEligibleHost,
+                  }
+                : undefined
+            }
+            attendance={{
+              options: RSVP_FLAVOURS.map((f) => ({ key: f.key, label: f.label, status: f.status === "no" ? "no" : "yes" })),
+              answered: meetingAnswer,
             }}
           />
           <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
@@ -215,6 +269,8 @@ export default async function HubPage() {
           )}
           {forum && <PipelineFace board={board} canEdit={viewer.canEdit} />}
           <DocumentsFace documents={documents} />
+          {/* Nextcloud itself — linking, the apps, folder deep links. */}
+          <CloudFace cloud={cloud} orgName={siteConfig.orgName} />
           {viewer.canEdit && <GalleryFace images={media} />}
           {/* The shared canvas. Any member may draw — see the route. It opens
               at full width; a toolbar down one side gives nothing back at

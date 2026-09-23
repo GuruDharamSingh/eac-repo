@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { emailHtmlToText } from "@elkdonis/utils/html-to-text";
 import { SurfaceFrame, SurfaceSection, type SurfaceDescriptor } from "../surface";
+import { RichTextEditor } from "../editor";
 import type {
   EmailConnectors,
+  EmailCopySlot,
   EmailMessage,
   EmailSuiteData,
   EmailAddress,
@@ -288,6 +291,11 @@ function InboxTab({
   busy: boolean;
 }) {
   const [openId, setOpenId] = React.useState<string | null>(null);
+  // The reply composer, open per message. Keyed by id so backing out of a
+  // message and into another does not carry a half-written reply across.
+  const [replyFor, setReplyFor] = React.useState<string | null>(null);
+  const [replyBody, setReplyBody] = React.useState("");
+  const [replySubject, setReplySubject] = React.useState("");
 
   if (!data.identity.inboundAddress) {
     return (
@@ -351,20 +359,104 @@ function InboxTab({
           </ul>
         )}
 
-        {canEdit && (
+        {canEdit && replyFor === open.id && connectors?.sendReply && (
+          /*
+            Replying in place, as the ORG.
+            A mailto sends from whoever the browser's mail app is signed in as,
+            so the recipient sees a person, the org's inbox never learns a
+            reply happened, and the thread splits across someone's personal
+            Sent folder. This posts through the host's route instead, which
+            sends with the org identity and writes the ledger row the Activity
+            tab reads.
+          */
+          <form
+            className="eac-email-reply"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const ok = await run("Reply sent", () =>
+                connectors.sendReply!({
+                  messageId: open.id,
+                  subject: replySubject,
+                  body: replyBody,
+                })
+              );
+              if (ok) {
+                setReplyFor(null);
+                setReplyBody("");
+                setReplySubject("");
+              }
+            }}
+          >
+            <label className="eac-email-label" htmlFor="eac-email-reply-subject">
+              Subject
+            </label>
+            <input
+              id="eac-email-reply-subject"
+              className="eac-field"
+              value={replySubject}
+              onChange={(e) => setReplySubject(e.target.value)}
+            />
+            <label className="eac-email-label" htmlFor="eac-email-reply-body">
+              Your reply — sent as {data.identity.fromName}
+            </label>
+            <textarea
+              id="eac-email-reply-body"
+              className="eac-field"
+              rows={7}
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              placeholder={`Replying to ${open.fromEmail}`}
+            />
+            <div className="eac-email-rowactions">
+              <button
+                type="submit"
+                className="eac-btn eac-btn--primary"
+                disabled={busy || !replyBody.trim()}
+              >
+                {busy ? "Sending…" : "Send reply"}
+              </button>
+              <button
+                type="button"
+                className="eac-btn eac-btn--quiet"
+                onClick={() => setReplyFor(null)}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {canEdit && replyFor !== open.id && (
           <div className="eac-email-rowactions">
-            {/* mailto and not an in-app composer: replying from the org's
-                address needs the identity, the templates and a send — that is
-                the newsletter editor's job, and a half-composer here would be
-                a fifth attempt at the thing this suite exists to consolidate. */}
-            <a
-              className="eac-btn eac-btn--primary"
-              href={`mailto:${encodeURIComponent(open.fromEmail)}?subject=${encodeURIComponent(
-                open.subject?.startsWith("Re:") ? open.subject : `Re: ${open.subject ?? ""}`
-              )}`}
-            >
-              Reply
-            </a>
+            {connectors?.sendReply ? (
+              <button
+                type="button"
+                className="eac-btn eac-btn--primary"
+                onClick={() => {
+                  setReplyFor(open.id);
+                  setReplyBody("");
+                  setReplySubject(
+                    open.subject?.startsWith("Re:")
+                      ? open.subject
+                      : `Re: ${open.subject ?? ""}`
+                  );
+                }}
+              >
+                Reply
+              </button>
+            ) : (
+              /* No route wired on this host — hand the browser's mail app the
+                 message rather than showing a button that cannot send. */
+              <a
+                className="eac-btn eac-btn--primary"
+                href={`mailto:${encodeURIComponent(open.fromEmail)}?subject=${encodeURIComponent(
+                  open.subject?.startsWith("Re:") ? open.subject : `Re: ${open.subject ?? ""}`
+                )}`}
+              >
+                Reply
+              </a>
+            )}
             {connectors?.setMessageState && (
               <button
                 type="button"
@@ -633,6 +725,48 @@ const OVERRIDE_LABEL = {
   layout: "Your layout",
 } as const;
 
+/**
+ * Plain stored words → paragraphs the rich editor can open on.
+ *
+ * Every letter written before the editor existed holds plain `bodyText`. Handing
+ * that to Tiptap raw would collapse the blank lines between paragraphs into one
+ * run-on block the first time somebody re-saved, so the breaks are made explicit
+ * here. Escaped, because this string goes into an editor as HTML and the words
+ * are an org's own — a stray `<` in "opens <7pm" must stay a `<`.
+ */
+function textToHtml(text?: string | null): string {
+  const value = (text ?? "").trim();
+  if (!value) return "";
+  return value
+    .split(/\n{2,}|\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(
+      (line) =>
+        `<p>${line
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}</p>`
+    )
+    .join("");
+}
+
+/**
+ * A placeholder's worth of a block's default.
+ *
+ * A placeholder occupies exactly one line — editor.css clips it, and before
+ * that clip a three-paragraph default drew itself over the whole column. So
+ * the box is seeded with the opening clause and the default in full is
+ * offered beside it, where length costs nothing.
+ */
+function firstLine(text: string, max = 88): string {
+  const line = text.split(/\n/)[0]?.trim() ?? "";
+  if (line.length <= max) return line;
+  const cut = line.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 40 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
 function LettersTab({
   data,
   connectors,
@@ -645,18 +779,57 @@ function LettersTab({
   const href = (template: string | undefined, key: string) =>
     template ? template.replace("{key}", encodeURIComponent(key)) : undefined;
 
-  // Which letter is open, and its rendered HTML once it arrives. One at a
-  // time, loaded on demand: rendering all eight up front would make everyone
-  // who opens the hub pay for the one person who opened this tab.
-  const [openKey, setOpenKey] = React.useState<string | null>(null);
+  // ── The shape of this tab ────────────────────────────────────────────────
+  //
+  // Third attempt, and the first two are worth recording because the third is
+  // a reaction to a measured failure rather than a preference.
+  //
+  //   1. A COLUMN OF ROWS that expanded in place. The thing you were editing
+  //      and the thing you were editing it FOR were never legible at once,
+  //      and the page grew by a screen and a half per row opened.
+  //
+  //   2. A RAIL AND A STAGE: the letters and every box that changed them in a
+  //      23rem column on the left, the letter at full size on the right. The
+  //      rail was a 52rem box with TWO nested scrollers inside it — the list,
+  //      then the work on it — and eight rich-text editors in ~330px.
+  //
+  //      That shipped genuinely broken. Each editor took the block's network
+  //      default as its placeholder, two of those are three paragraphs, and
+  //      Tiptap draws a placeholder as a floated box of ZERO height: a 23px
+  //      editor with 392px of placeholder text laid straight down over the
+  //      labels, toolbars and boxes under it. Scrolling that column showed a
+  //      pile of overlapping sentences. (The floated placeholder is fixed at
+  //      source in editor.css; this layout is why it was never noticed.)
+  //
+  //   3. HERE. The letters are a row of chips across the top, and everything
+  //      below is two wide columns: what the letter says on the left, the
+  //      letter itself on the right. NOTHING scrolls but the page.
+  //
+  // That last clause is the design. A panel that scrolls inside a page that
+  // also scrolls is two scrollbars deep before anyone has typed a word, and
+  // it is what made a 23rem column seem like enough room for eight editors.
+  // Give the boxes the width of half a screen and none of it is needed.
+
+  const [selected, setSelected] = React.useState<string | null>(
+    () => data.templates.find((t) => t.editable)?.key ?? data.templates[0]?.key ?? null
+  );
   const [preview, setPreview] = React.useState<
     Record<string, { html?: string; error?: string } | "loading">
   >({});
-  // The org's own words, per letter, while being edited. Seeded from whatever
-  // the host passed in `bodyText`; `undefined` means "not touched yet".
-  const [drafts, setDrafts] = React.useState<Record<string, string>>({});
-  const [saving, setSaving] = React.useState<string | null>(null);
-  const [saved, setSaved] = React.useState<string | null>(null);
+  // The org's APPENDED section, per letter, as HTML.
+  const [bodyDrafts, setBodyDrafts] = React.useState<Record<string, string>>({});
+  // One letter's own sentences, keyed `<letter>:<slot>`. Prose holds HTML,
+  // a line holds plain text — the control differs, so the draft does too.
+  const [slotDrafts, setSlotDrafts] = React.useState<Record<string, string>>({});
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState<string | null>(null);
+
+  const letter = data.templates.find((t) => t.key === selected) ?? null;
+  const slots = letter?.slots ?? [];
+  const fields = letter?.mergeFields ?? [];
+  const editable = Boolean(letter?.editable && canEdit);
+  const layoutHref = letter ? href(data.templateLayoutHref, letter.key) : undefined;
 
   function render(key: string) {
     if (!connectors?.previewTemplate) return;
@@ -669,169 +842,340 @@ function LettersTab({
       );
   }
 
-  function toggle(key: string) {
-    if (openKey === key) {
-      setOpenKey(null);
-      return;
-    }
-    setOpenKey(key);
-    setSaved(null);
-    if (!preview[key]) render(key);
+  // Draw whichever letter is selected, once. The preview is the whole right
+  // half of this tab, so unlike the old expanding rows there is never a moment
+  // where nothing is shown.
+  React.useEffect(() => {
+    if (selected && !preview[selected]) render(selected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
+  function pick(key: string) {
+    setSelected(key);
+    setStatus(null);
   }
 
-  async function save(key: string) {
-    if (!connectors?.saveTemplate) return;
-    setSaving(key);
-    setSaved(null);
+  const slotKey = (id: string) => `${selected}:${id}`;
+
+  /** What a block currently says — the draft, this org's words, or the network's. */
+  function slotValue(slot: EmailCopySlot): string {
+    const draft = slotDrafts[slotKey(slot.id)];
+    if (draft !== undefined) return draft;
+    if (slot.kind === "line") return slot.text ?? "";
+    return slot.html ?? textToHtml(slot.text) ?? "";
+  }
+
+  function setSlot(id: string, value: string) {
+    setSlotDrafts((d) => ({ ...d, [slotKey(id)]: value }));
+    setStatus(null);
+  }
+
+  const bodyValue =
+    selected === null
+      ? ""
+      : (bodyDrafts[selected] ?? letter?.bodyHtml ?? textToHtml(letter?.bodyText) ?? "");
+
+  const dirty =
+    selected !== null &&
+    (bodyDrafts[selected] !== undefined ||
+      slots.some((s) => slotDrafts[slotKey(s.id)] !== undefined));
+
+  async function save() {
+    if (!selected || !letter) return;
+    setSaving(true);
+    setStatus(null);
     try {
-      const result = await connectors.saveTemplate(key, drafts[key] ?? "");
-      if (!result.ok) {
-        setSaved(result.error ?? "Couldn't save.");
-        return;
+      // Each block through its own connector, and the appended section through
+      // its own: they are different objects in the store, and writing one must
+      // never disturb the other.
+      for (const slot of slots) {
+        const draft = slotDrafts[slotKey(slot.id)];
+        if (draft === undefined) continue;
+        if (!connectors?.saveCopy) continue;
+        const text = slot.kind === "line" ? draft.trim() : emailHtmlToText(draft);
+        const result = await connectors.saveCopy(
+          selected,
+          slot.id,
+          text,
+          slot.kind === "line" ? undefined : text ? draft : ""
+        );
+        if (!result.ok) {
+          setStatus(result.error ?? `Couldn't save “${slot.label}”.`);
+          return;
+        }
       }
-      setSaved("Saved.");
+
+      if (bodyDrafts[selected] !== undefined && connectors?.saveTemplate) {
+        const html = bodyDrafts[selected] ?? "";
+        const text = emailHtmlToText(html);
+        const result = await connectors.saveTemplate(selected, text, text ? html : "");
+        if (!result.ok) {
+          setStatus(result.error ?? "Couldn't save.");
+          return;
+        }
+      }
+
+      setStatus("Saved.");
+      setSlotDrafts({});
+      setBodyDrafts({});
       // Re-render, because the preview's whole claim is that it shows what
       // will actually send — and it just changed.
-      render(key);
-      await connectors.refresh?.();
+      render(selected);
+      await connectors?.refresh?.();
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
   }
 
+  function revert() {
+    setSlotDrafts({});
+    setBodyDrafts({});
+    setStatus(null);
+  }
+
+  /** Put a token on the clipboard, so it can be pasted into any box. */
+  function copyToken(name: string) {
+    const token = `{${name}}`;
+    try {
+      void navigator.clipboard?.writeText(token);
+      setCopied(name);
+      window.setTimeout(() => setCopied(null), 1400);
+    } catch {
+      // A clipboard an iframe is not allowed to touch is not an error worth
+      // reporting — the token is written on the chip, and it can be typed.
+      setCopied(null);
+    }
+  }
+
+  const shown = selected ? preview[selected] : undefined;
+
   return (
-    <>
-      <SurfaceSection title="A newsletter">
-        <p className="eac-surface-muted">
-          The letters below are sent for you, when something happens. A
-          newsletter is one you write and send yourself, to everyone on the
-          list.
-        </p>
-        {data.newsletterHref ? (
-          <a className="eac-btn eac-btn--primary" href={data.newsletterHref}>
-            Open the newsletter editor
-          </a>
-        ) : (
-          <p className="eac-surface-muted">
-            The editor is not wired into this site yet.
-          </p>
-        )}
-      </SurfaceSection>
+    <div className="eac-letters">
+      {/* The letters, as a row.
 
-      <SurfaceSection title="Every letter this organisation sends">
-        <ul className="eac-email-list">
-          {data.templates.map((t) => (
-            <li key={t.key} className="eac-email-item">
-              <span className="eac-email-item-main">
-                <span className="eac-email-item-title">{t.title}</span>
-                <span className="eac-email-item-sub">
-                  {t.trigger} · to {t.recipient}
-                </span>
-                {t.editable && href(data.templateLayoutHref, t.key) && (
-                  <span className="eac-email-item-links">
-                    {/* Only the LAYOUT editor is still a link. It is GrapesJS —
-                        a page's worth of client code — so it stays a route,
-                        and a host that does not serve one shows no link rather
-                        than a 404. Writing the words happens right here. */}
-                    <a href={href(data.templateLayoutHref, t.key)}>Lay it out yourself</a>
-                  </span>
-                )}
+          There are eight of them and their titles are two or three words, so
+          a 23rem vertical rail spent a fifth of the screen's width on a list
+          that fits on one line. Across the top it costs one row, and the two
+          columns underneath each gain about 150px — which is the difference
+          between a rich-text box you can write a paragraph in and one you
+          cannot. */}
+      <nav className="eac-letters-pickers" aria-label="Letters">
+        {data.templates.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            className="eac-letters-pick"
+            aria-current={t.key === selected ? "true" : undefined}
+            onClick={() => pick(t.key)}
+          >
+            <span className="eac-letters-pick-title">{t.title}</span>
+            <span className={`eac-letters-state is-${t.override}`}>
+              {OVERRIDE_LABEL[t.override]}
+            </span>
+          </button>
+        ))}
+      </nav>
+
+      {letter && (
+        <div className="eac-letters-head">
+          <div className="eac-letters-headtext">
+            <h3>{letter.title}</h3>
+            <p className="eac-email-hint">
+              {letter.trigger}. Goes to {letter.recipient.toLowerCase()}.
+            </p>
+          </div>
+
+          {/* The way through to the layout editor, as a BUTTON and at the top.
+
+              It was one line of small print at the very bottom of a column
+              that scrolled — "Lay the whole thing out yourself" — under eight
+              editors, which is to say invisible. It is the one control here
+              that opens a different tool, so it belongs where a control that
+              leaves the page belongs: beside the title of the thing it would
+              open. */}
+          {layoutHref && letter.editable && canEdit && (
+            <a className="eac-btn eac-btn--primary eac-letters-open" href={layoutHref}>
+              Open in Editor
+              <span className="eac-email-hint">
+                {letter.override === "layout"
+                  ? "your own layout is what sends"
+                  : "lay the whole letter out yourself"}
               </span>
-              <span className="eac-email-item-side">
-                <span
-                  className={`eac-email-item-status${
-                    t.override === "default" ? " is-faint" : ""
-                  }`}
-                >
-                  {OVERRIDE_LABEL[t.override]}
+            </a>
+          )}
+        </div>
+      )}
+
+      {letter && (
+        <div className="eac-letters-body">
+          <section className="eac-letters-work" aria-label="What this letter says">
+            {!editable && (
+              <p className="eac-email-hint">
+                {letter.editable
+                  ? "Only this organisation's owners and guides can change what it says."
+                  : "This letter goes to you rather than out, so there is nothing to word."}
+              </p>
+            )}
+
+            {editable && fields.length > 0 && (
+              // One wrapping strip, not a disclosure.
+              //
+              // It was a <details> that cost ~200px open at the top of a
+              // column with ~400px to give, so the first box you could type
+              // in started below the fold — and closed it was a row that said
+              // nothing. In a full-width column the chips wrap onto one or
+              // two lines and are simply always there.
+              <div className="eac-letters-tokens">
+                <span className="eac-email-label">Fills in when it sends</span>
+                <div className="eac-letters-chips">
+                  {fields.map((f) => (
+                    <button
+                      key={f.name}
+                      type="button"
+                      className="eac-letters-chip"
+                      title={`${f.label} — click to copy`}
+                      onClick={() => copyToken(f.name)}
+                    >
+                      {copied === f.name ? "copied" : `{${f.name}}`}
+                    </button>
+                  ))}
+                </div>
+                <span className="eac-email-hint">
+                  Put one of these anywhere in the boxes below and it becomes
+                  the real value for each person.
                 </span>
-                {connectors?.previewTemplate && (
-                  <button
-                    type="button"
-                    className="eac-email-quietbtn"
-                    aria-expanded={openKey === t.key}
-                    onClick={() => toggle(t.key)}
-                  >
-                    {openKey === t.key ? "Hide" : canEdit ? "Read & edit" : "Read it"}
-                  </button>
-                )}
-              </span>
+              </div>
+            )}
 
-              {openKey === t.key && (
-                <div className="eac-email-preview">
-                  {/* Write the org's own words beside the letter they land in,
-                      rather than on another page. A connector has no route in
-                      it, so this one editor serves a single-tenant site and an
-                      org-switching console alike. */}
-                  {t.editable && canEdit && connectors?.saveTemplate && (
-                    <div className="eac-email-words">
-                      <label className="eac-email-label" htmlFor={`words-${t.key}`}>
-                        Your own words
-                      </label>
-                      <textarea
-                        id={`words-${t.key}`}
-                        className="eac-email-textarea"
-                        rows={4}
-                        value={drafts[t.key] ?? t.bodyText ?? ""}
-                        onChange={(e) =>
-                          setDrafts((d) => ({ ...d, [t.key]: e.target.value }))
-                        }
-                        placeholder="Leave empty to send the network's words."
-                      />
-                      {t.editHint && <span className="eac-email-hint">{t.editHint}</span>}
-                      <div className="eac-email-rowactions">
-                        <button
-                          type="button"
-                          className="eac-btn eac-btn--primary"
-                          disabled={saving === t.key}
-                          onClick={() => void save(t.key)}
-                        >
-                          {saving === t.key ? "Saving…" : "Save these words"}
-                        </button>
-                        {connectors.testTemplate && (
-                          <button
-                            type="button"
-                            className="eac-btn eac-btn--quiet"
-                            onClick={() => void connectors.testTemplate!(t.key)}
-                          >
-                            Send me one
-                          </button>
-                        )}
-                        {saved && openKey === t.key && (
-                          <span className="eac-email-hint">{saved}</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {preview[t.key] === "loading" && (
-                    <p className="eac-surface-muted">Rendering…</p>
-                  )}
-                  {typeof preview[t.key] === "object" && preview[t.key] !== null && (
-                    (preview[t.key] as { html?: string; error?: string }).html ? (
-                      <iframe
-                        title={`${t.title} preview`}
-                        srcDoc={(preview[t.key] as { html: string }).html}
-                        // sandbox with NO allow-scripts. This is HTML an org
-                        // owner composed in the newsletter editor, rendered
-                        // inside a signed-in session — the one place in the
-                        // product where stored markup and a live session meet.
-                        sandbox=""
-                        className="eac-email-preview-frame"
+            {editable && slots.length > 0 && connectors?.saveCopy && (
+              <div className="eac-letters-slots">
+                <span className="eac-email-label">What this letter says</span>
+                {slots.map((slot) => (
+                  <div key={slot.id} className="eac-letters-slot">
+                    <span className="eac-letters-slot-label">{slot.label}</span>
+                    <span className="eac-email-hint">{slot.hint}</span>
+                    {slot.kind === "line" ? (
+                      <input
+                        className="eac-email-input"
+                        value={slotValue(slot)}
+                        placeholder={slot.fallback}
+                        onChange={(e) => setSlot(slot.id, e.target.value)}
                       />
                     ) : (
-                      <p className="eac-surface-muted">
-                        {(preview[t.key] as { error?: string }).error}
-                      </p>
-                    )
-                  )}
-                </div>
+                      <>
+                        <RichTextEditor
+                          value={slotValue(slot)}
+                          onChange={(html) => setSlot(slot.id, html)}
+                          toolbar="compact"
+                          minHeight={120}
+                          ariaLabel={slot.label}
+                          placeholder={firstLine(slot.fallback)}
+                        />
+                        {/* The network's words, in full, BESIDE the box
+                            rather than inside it as a placeholder.
+
+                            A placeholder is one line — it has to be, or it
+                            escapes the box it belongs to. But these defaults
+                            are three paragraphs and they are the thing an org
+                            is deciding whether to replace, so they have to be
+                            readable somewhere. Here, where they can be as
+                            long as they are. */}
+                        {!slotValue(slot) && slot.fallback.length > 90 && (
+                          <details className="eac-letters-default">
+                            <summary>What it says today</summary>
+                            {slot.fallback.split("\n\n").map((para, i) => (
+                              <p key={i}>{para}</p>
+                            ))}
+                          </details>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {editable && connectors?.saveTemplate && (
+              <div className="eac-letters-slot eac-letters-own">
+                <span className="eac-email-label">Anything of your own</span>
+                <span className="eac-email-hint">
+                  {letter.editHint ??
+                    "Added as its own section, under the letter's own words."}
+                </span>
+                <RichTextEditor
+                  value={bodyValue}
+                  onChange={(html) =>
+                    setBodyDrafts((d) => ({ ...d, [selected as string]: html }))
+                  }
+                  toolbar="compact"
+                  minHeight={140}
+                  ariaLabel="Anything of your own"
+                  placeholder="Leave empty to send only the letter above."
+                />
+              </div>
+            )}
+
+            {editable && (
+              <div className="eac-letters-actions">
+                <button
+                  type="button"
+                  className="eac-btn eac-btn--primary"
+                  disabled={saving || !dirty}
+                  onClick={() => void save()}
+                >
+                  {saving ? "Saving…" : "Save changes"}
+                </button>
+                {dirty && (
+                  <button type="button" className="eac-btn eac-btn--quiet" onClick={revert}>
+                    Undo
+                  </button>
+                )}
+                {connectors?.testTemplate && (
+                  <button
+                    type="button"
+                    className="eac-btn eac-btn--quiet"
+                    onClick={() => void connectors.testTemplate!(selected as string)}
+                  >
+                    Send me one
+                  </button>
+                )}
+                {status && <span className="eac-email-hint">{status}</span>}
+              </div>
+            )}
+          </section>
+
+          <section className="eac-letters-stage" aria-label="What sends today">
+            <div className="eac-letters-stagehead">
+              <span className="eac-email-label">{letter.title} — what sends today</span>
+              {data.newsletterHref && (
+                <a className="eac-letters-deep" href={data.newsletterHref}>
+                  Write a newsletter
+                </a>
               )}
-            </li>
-          ))}
-        </ul>
-      </SurfaceSection>
-    </>
+            </div>
+
+            {shown === "loading" && <p className="eac-surface-muted">Rendering…</p>}
+            {typeof shown === "object" && shown !== null ? (
+              shown.html ? (
+                <iframe
+                  title={`${letter.title} preview`}
+                  srcDoc={shown.html}
+                  // sandbox with NO allow-scripts. This is HTML an org owner
+                  // composed, rendered inside a signed-in session — the one place
+                  // in the product where stored markup and a live session meet.
+                  sandbox=""
+                  className="eac-letters-frame"
+                />
+              ) : (
+                <p className="eac-surface-muted">{shown.error}</p>
+              )
+            ) : shown === undefined ? (
+              <p className="eac-surface-muted">Pick a letter to see it.</p>
+            ) : null}
+          </section>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -895,8 +1239,30 @@ function LookTab({
   // failure that keeps shipping here. The house ink passes at 5.17:1.
   const [onAccent, setOnAccent] = React.useState(palette.onAccent ?? EAC_INK);
   const [ink, setInk] = React.useState(palette.ink ?? EAC_INK);
+  const [bodyFont, setBodyFont] = React.useState(palette.bodyFont ?? "");
+  const fonts = data.identity.fonts ?? [];
   const [replyTo, setReplyTo] = React.useState(data.identity.replyTo ?? "");
   const [routeIn, setRouteIn] = React.useState(data.identity.inboundReplies);
+
+  // ── The masthead and the frame ──────────────────────────────────────────
+  //
+  // Moved here 2026-09-20, with the faces and the colours, because all four
+  // are one decision — what an org's mail LOOKS like — and none of them is
+  // per-letter. They were nowhere at all before; the only route to a letter
+  // that did not wear the collective's navy-and-gold masthead was to rebuild
+  // the whole thing in the layout editor.
+  const [bannerUrl, setBannerUrl] = React.useState(palette.bannerUrl ?? "");
+  const [bannerAlt, setBannerAlt] = React.useState(palette.bannerAlt ?? "");
+  const [frameColor, setFrameColor] = React.useState(palette.frameColor ?? EAC_GOLD);
+  const [frameWidth, setFrameWidth] = React.useState(palette.frameWidth ?? 1);
+
+  // https only, matching what the store will accept (identity.ts's IMAGE_URL).
+  // Checked as you type rather than on save, because the failure mode this
+  // replaces is a save that reports success and changes nothing: the store
+  // drops a value that does not pass, so a silent drop looked exactly like a
+  // broken save.
+  const bannerTrimmed = bannerUrl.trim();
+  const bannerOk = bannerTrimmed === "" || /^https:\/\/[^\s"'<>]+$/i.test(bannerTrimmed);
 
   // Two pairs, because the template uses the accent two different ways and
   // only one of them is a fill. The masthead sets the org's colour as INK on a
@@ -934,6 +1300,190 @@ function LookTab({
           </p>
         )}
       </SurfaceSection>
+
+      {canEdit && connectors?.saveIdentity && (
+        <SurfaceSection title="The top of the letter">
+          <p className="eac-surface-muted">
+            Your own masthead, in place of the collective&rsquo;s navy-and-gold
+            wordmark. Use the same picture your website leads with and a letter
+            and the site it came from read as one thing. Leave it empty and
+            your mail wears the collective&rsquo;s.
+          </p>
+
+          <label className="eac-email-label" htmlFor="eac-email-banner">
+            Banner image address
+          </label>
+          <input
+            id="eac-email-banner"
+            className="eac-email-input"
+            type="url"
+            value={bannerUrl}
+            onChange={(e) => setBannerUrl(e.target.value)}
+            placeholder="https://example.org/banner.jpg"
+            spellCheck={false}
+            aria-invalid={bannerOk ? undefined : true}
+          />
+          <p className="eac-surface-muted">
+            {/* An email cannot reach a relative path or a private host: it is
+                fetched by a mail client, from wherever the reader is, hours
+                later. So the address has to be the public one, and https —
+                which is exactly the mistake somebody copying an image
+                address out of a page editor would make. */}
+            It has to be a public <code>https://</code> address — a mail client
+            fetches it from the reader&rsquo;s machine, not from this site.
+            About 600&nbsp;pixels wide suits the letter; anything wider is
+            scaled down to fit.
+          </p>
+          {!bannerOk && (
+            <p className="eac-email-contrast is-bad">
+              <strong>That address will not be saved.</strong>
+              <span className="eac-email-hint">
+                It has to begin with https:// and contain no spaces or quotes.
+              </span>
+            </p>
+          )}
+
+          <label className="eac-email-label" htmlFor="eac-email-banner-alt">
+            What the picture says
+          </label>
+          <input
+            id="eac-email-banner-alt"
+            className="eac-email-input"
+            value={bannerAlt}
+            onChange={(e) => setBannerAlt(e.target.value)}
+            placeholder={data.orgName}
+          />
+          <p className="eac-surface-muted">
+            {/* Not an accessibility afterthought: Outlook and Gmail both
+                block remote images by DEFAULT, so for a large share of
+                readers this text IS the masthead. */}
+            Shown instead of the picture by the many inboxes that block images
+            until a reader asks for them — so for a good share of your readers
+            this line is the masthead. Leave it empty to use your name.
+          </p>
+
+          {bannerOk && bannerTrimmed && (
+            /* Drawn as the letter draws it: full width of a 600px column, on
+               the same navy the masthead band sits on. A banner that looks
+               right in a file browser and wrong at 600px is the thing this
+               catches. */
+            <div className="eac-email-bannerdemo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={bannerTrimmed} alt={bannerAlt || data.orgName} />
+            </div>
+          )}
+
+          <div className="eac-email-palette">
+            <Swatch
+              label="Frame"
+              hint="the rule around the card"
+              value={frameColor}
+              onChange={setFrameColor}
+            />
+            <div className="eac-email-swatch">
+              <label className="eac-email-label" htmlFor="eac-email-framew">
+                Frame thickness
+              </label>
+              <select
+                id="eac-email-framew"
+                className="eac-email-input"
+                value={String(frameWidth)}
+                onChange={(e) => setFrameWidth(Number(e.target.value))}
+              >
+                <option value="1">Hairline (1px)</option>
+                <option value="2">Medium (2px)</option>
+                <option value="3">Heavy (3px)</option>
+                <option value="4">Very heavy (4px)</option>
+              </select>
+              <span className="eac-email-hint">
+                Matches a frame your site already uses, if it has one.
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="eac-email-framedemo"
+            style={{ borderWidth: `${frameWidth}px`, borderColor: frameColor }}
+          >
+            The letter sits inside this.
+          </div>
+
+          <button
+            type="button"
+            className="eac-btn eac-btn--primary"
+            disabled={busy || !bannerOk}
+            onClick={() =>
+              run("Masthead saved.", () =>
+                connectors.saveIdentity!({
+                  palette: {
+                    // Empty string clears one role and leaves the rest —
+                    // saveOrgEmailIdentity merges the palette per field, so
+                    // taking a banner off no longer costs the colours.
+                    bannerUrl: bannerTrimmed,
+                    bannerAlt: bannerAlt.trim(),
+                    frameColor,
+                    frameWidth,
+                  },
+                })
+              )
+            }
+          >
+            Save the masthead
+          </button>
+        </SurfaceSection>
+      )}
+
+      {canEdit && connectors?.saveIdentity && fonts.length > 0 && (
+        <SurfaceSection title="How it reads">
+          <p className="eac-surface-muted">
+            The face your letters are set in. Every one of these is installed on
+            more or less every phone and desktop — which is the point: a mail
+            client that has to substitute a face substitutes badly, and the
+            letter arrives looking like a form.
+          </p>
+          <div className="eac-email-fonts">
+            {fonts.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className="eac-email-font"
+                aria-pressed={bodyFont === f.id || (!bodyFont && f.id === "sans")}
+                onClick={() => setBodyFont(f.id)}
+              >
+                <span
+                  className="eac-email-font-sample"
+                  // The only place in the suite where a font stack is set from
+                  // data — and the ids come from the sending package, which
+                  // owns every stack, so there is no free string here.
+                  data-font={f.id}
+                >
+                  The next viewing is on the 3rd.
+                </span>
+                <span className="eac-email-font-name">{f.label}</span>
+                <span className="eac-email-hint">{f.hint}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Its own Save. The face used to be written by the "Save colours"
+              button two sections down, which meant picking one and pressing
+              the obvious button under it did nothing at all. Possible now
+              only because saveOrgEmailIdentity merges the palette per field
+              rather than replacing it whole. */}
+          <button
+            type="button"
+            className="eac-btn eac-btn--primary"
+            disabled={busy}
+            onClick={() =>
+              run("Face saved.", () =>
+                connectors.saveIdentity!({ palette: { bodyFont: bodyFont || "sans" } })
+              )
+            }
+          >
+            Save the face
+          </button>
+        </SurfaceSection>
+      )}
 
       {canEdit && connectors?.saveIdentity && (
         <>
@@ -987,7 +1537,9 @@ function LookTab({
               disabled={busy}
               onClick={() =>
                 run("Colours saved.", () =>
-                  connectors.saveIdentity!({ palette: { accent, onAccent, ink } })
+                  connectors.saveIdentity!({
+                    palette: { accent, onAccent, ink, bodyFont: bodyFont || undefined },
+                  })
                 )
               }
             >

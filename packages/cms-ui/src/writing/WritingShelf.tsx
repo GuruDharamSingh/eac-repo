@@ -25,6 +25,16 @@ export interface ShelfItem {
   publishedAt?: string | Date | null;
   updatedAt?: string | Date | null;
   readingMinutes?: number | null;
+  /**
+   * Where this piece lives, when it is not `${basePath}/${slug}`.
+   *
+   * A shelf of ONE person's writing derives every link from the base. A shelf
+   * that gathers several people's — an org's blog page — cannot, because each
+   * piece lives under its own author. Set this and it wins.
+   */
+  href?: string | null;
+  /** Who wrote it. Shown only on a shelf that mixes authors. */
+  authorName?: string | null;
 }
 
 export interface WritingShelfProps {
@@ -64,6 +74,10 @@ function formatDate(value: string | Date | null | undefined): string | null {
 function Dateline({ item }: { item: ShelfItem }) {
   const date = formatDate(item.publishedAt ?? item.updatedAt);
   const parts: string[] = [];
+  // Who wrote it leads the dateline, and only where it was supplied — on a
+  // person's own shelf every piece is theirs and repeating the name down the
+  // page says nothing.
+  if (item.authorName) parts.push(item.authorName);
   // Not the word "Draft" — the chip beside the title already says it, and
   // saying it twice in one card reads as two different facts.
   if (date) parts.push(date);
@@ -109,7 +123,7 @@ export function WritingShelf({
           {leadItem && (
             <a
               className="eac-shelf__lead"
-              href={`${base}/${leadItem.slug}`}
+              href={leadItem.href || `${base}/${leadItem.slug}`}
               data-has-cover={leadItem.coverImageUrl ? 'true' : 'false'}
             >
               {leadItem.coverImageUrl && (
@@ -133,7 +147,7 @@ export function WritingShelf({
             <ol className="eac-shelf__list">
               {rest.map((item) => (
                 <li key={item.id} className="eac-shelf__row">
-                  <a className="eac-shelf__row-link" href={`${base}/${item.slug}`}>
+                  <a className="eac-shelf__row-link" href={item.href || `${base}/${item.slug}`}>
                     <div className="eac-shelf__row-text">
                       <h3 className="eac-shelf__row-title">
                         {item.title}

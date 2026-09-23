@@ -56,8 +56,13 @@ export function ImageField({
 
   // Puck applies no label to a custom field — it hands you the raw slot and
   // expects you to render FieldLabel yourself.
+  //
+  // `el="div"`: FieldLabel is a <label> by default, and a click anywhere in a
+  // label is forwarded to its first control — here the Upload tab. So choosing
+  // "Site images" flipped straight back to Upload, and the libraries looked
+  // unreachable.
   return (
-    <FieldLabel label={label}>
+    <FieldLabel label={label} el="div">
       {readOnly ? (
         // A resolver owns this value, or the viewer may not edit. Show what is
         // set rather than a disabled picker that invites a click.

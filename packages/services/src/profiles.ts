@@ -48,6 +48,35 @@ export interface PortfolioItem {
   y?: number;
   w?: number;
   h?: number;
+  /**
+   * When the picture IS one of the person's artworks (an `artwork` row), its
+   * id. `url`/`title` then hold a snapshot for components that know nothing
+   * of artworks; a site that does reads the record for the live title and
+   * sale status. Added with migration 146.
+   */
+  artworkId?: string;
+  /** A second line under the title — shown on hover and in the slideshow. */
+  subtitle?: string;
+  /**
+   * Another of the owner's galleries (its id, user_galleries.id) that this picture OPENS: in the
+   * full-size view a visitor can go into that gallery instead of stepping on
+   * through this one. Galleries nest by pointer — any depth, no tree table;
+   * a site that shows it guards against loops. Absent = an ordinary picture.
+   */
+  opens?: string;
+  /**
+   * How the picture sits inside its tile: the focal point (0–100 %, as CSS
+   * object-position) and a zoom (1 = fill the tile, up to 4). Absent = centred,
+   * no zoom — how every picture has always been shown.
+   */
+  fx?: number;
+  fy?: number;
+  zoom?: number;
+  /**
+   * A layout the owner saved to come back to ("my layout"), separate from
+   * the one on show — so trying Reset or Randomize never loses it.
+   */
+  saved?: { x: number; y: number; w: number; h: number };
 }
 
 export type ClaimStatus = 'unclaimed' | 'pending' | 'claimed';
@@ -687,7 +716,7 @@ export async function requestClaim(sentinelUserId: string, claimantUserId: strin
  * A loud failure that names the tables is recoverable; silent deletion is not.
  */
 const UNCARRIED_ON_MERGE = [
-  'thread_rsvps', 'org_agreement_acceptances', 'org_followers', 'store_member',
+  'thread_rsvps', 'org_agreement_acceptances', 'org_followers',
   'content_drafts', 'questionnaire_responses', 'question_poll_votes',
   'availability_poll_responses', 'artwork_favorite', 'bookmarks', 'watches',
   'reactions', 'notifications', 'conversation_participant',
@@ -710,6 +739,32 @@ async function uncarriedRows(sentinelUserId: string): Promise<string[]> {
   return found;
 }
 
+/**
+ * Orgs where BOTH people already run a storefront.
+ *
+ * A store is unique per (org_id, owner_user_id), so the sentinel's cannot
+ * simply be repointed at someone who already has one there — and the two hold
+ * different inventory, payout settings and commission rates, which is a human
+ * decision, not something a merge may guess at. Checked before anything is
+ * written so the refusal costs nothing.
+ */
+async function storeOwnershipClashes(sentinelUserId: string, targetUserId: string): Promise<string[]> {
+  try {
+    const rows = await db<{ org_id: string }[]>`
+      SELECT s.org_id FROM store s
+      WHERE s.owner_user_id = ${sentinelUserId}
+        AND EXISTS (
+          SELECT 1 FROM store t
+          WHERE t.org_id = s.org_id AND t.owner_user_id = ${targetUserId}
+        )
+    `;
+    return rows.map((r) => r.org_id);
+  } catch {
+    // No store table in this deployment — not a reason to block a merge.
+    return [];
+  }
+}
+
 export async function mergeProfile(sentinelUserId: string, targetUserId: string): Promise<{ ok: boolean; error?: string }> {
   if (sentinelUserId === targetUserId) return { ok: false, error: 'Cannot merge a profile into itself.' };
 
@@ -717,6 +772,17 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
   const [target] = await db<{ id: string }[]>`SELECT id FROM users WHERE id = ${targetUserId} LIMIT 1`;
   if (!sentinel) return { ok: false, error: 'Profile not found.' };
   if (!target) return { ok: false, error: 'Target account not found.' };
+
+  const clashingStores = await storeOwnershipClashes(sentinelUserId, targetUserId);
+  if (clashingStores.length > 0) {
+    return {
+      ok: false,
+      error:
+        `Both accounts already run a store in ${clashingStores.join(', ')}. ` +
+        `Decide which one keeps the inventory and close the other first — a ` +
+        `merge cannot choose between two storefronts.`,
+    };
+  }
 
   const stranded = await uncarriedRows(sentinelUserId);
   if (stranded.length > 0) {
@@ -788,6 +854,44 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
 
   await db`UPDATE threads SET author_id = ${targetUserId} WHERE author_id = ${sentinelUserId}`;
   await db`UPDATE media SET uploaded_by = ${targetUserId} WHERE uploaded_by = ${sentinelUserId}`;
+
+  // A person's storefront and the work in it follow them into their real
+  // account — the same principle as threads and media above, and the reason
+  // the identity fields are COALESCEd rather than overwritten: what the
+  // person made is theirs.
+  //
+  // Not optional: `store.owner_user_id` is ON DELETE CASCADE, so leaving it
+  // pointed at the sentinel means the DELETE below takes the store and every
+  // artwork in it. In practice it aborted instead — `artwork.artist_user_id`
+  // is NO ACTION, so the delete raised a bare foreign-key violation and the
+  // guide who clicked "this is so-and-so" saw a Postgres error with no
+  // explanation (found 2026-09-20 on IFAC, whose owner Eric Brummel is an
+  // unclaimed sentinel holding a store of six works).
+  await db`UPDATE store SET owner_user_id = ${targetUserId} WHERE owner_user_id = ${sentinelUserId}`.catch(
+    (err: unknown) => {
+      console.error(`[profiles] mergeProfile store carry (${sentinelUserId}):`, err);
+      throw err;
+    }
+  );
+  await db`UPDATE artwork SET artist_user_id = ${targetUserId} WHERE artist_user_id = ${sentinelUserId}`.catch(
+    (err: unknown) => {
+      console.error(`[profiles] mergeProfile artwork carry (${sentinelUserId}):`, err);
+      throw err;
+    }
+  );
+  // Standing in someone ELSE's store — an org's storefront they help run —
+  // moves too. It was on the refusal list above, which meant a roster entry
+  // that had been made an owner of its org's store could never be claimed at
+  // all: the merge refused, naming a table nobody could act on. The primary
+  // key is (store_id, user_id), so a target who already stands in that store
+  // keeps the standing they have.
+  await db`
+    INSERT INTO store_member (store_id, user_id, role, added_by)
+    SELECT store_id, ${targetUserId}, role, added_by
+    FROM store_member WHERE user_id = ${sentinelUserId}
+    ON CONFLICT (store_id, user_id) DO NOTHING
+  `;
+  await db`DELETE FROM store_member WHERE user_id = ${sentinelUserId}`;
   await db`UPDATE users SET claimed_by = ${targetUserId} WHERE claimed_by = ${sentinelUserId}`;
   await db`UPDATE users SET created_by = ${targetUserId} WHERE created_by = ${sentinelUserId}`;
 

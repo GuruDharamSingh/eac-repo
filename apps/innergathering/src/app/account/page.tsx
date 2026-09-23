@@ -22,9 +22,23 @@ interface RsvpRow {
   status: string;
 }
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ payouts?: string }>;
+}) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login?next=/account");
+
+  // Stripe sends a returning seller here with ?payouts=done. Asking Stripe
+  // then and there is what stamps them payable — the account.updated webhook
+  // says the same thing, but a person who has just finished the form should
+  // not have to wait for it (and before the Connect endpoint existed, it
+  // never arrived at all: two payable accounts sat unstamped for two days).
+  if ((await searchParams)?.payouts === "done") {
+    const { refreshStripeAccountStatus } = await import("@elkdonis/checkout/stripe");
+    await refreshStripeAccountStatus(viewer.userId).catch(() => null);
+  }
 
   const profile = await getProfile(viewer.userId);
 

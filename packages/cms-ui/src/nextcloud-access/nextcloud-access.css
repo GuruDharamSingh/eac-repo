@@ -1,0 +1,193 @@
+/*
+  nextcloud-access.css — the owner's Nextcloud access panel.
+
+  The panel paints its own ground from its own tokens, so every ink below is
+  measured against a known background whatever the host looks like. Defaults
+  are a light set; a dark host overrides the --ncx-* tokens on an ancestor
+  (IFAC does, for its /manage console). Both shipped sets are ≥ 4.5:1 on
+  every text pair — re-measure if you change one.
+
+  Plain CSS, not Tailwind: hosts that didn't @source cms-ui would render it
+  unstyled.
+*/
+
+.eac-ncaccess {
+  --_bg: var(--ncx-bg, #fffdf8);
+  --_ink: var(--ncx-ink, #171615);
+  --_soft: var(--ncx-soft, #4f4a44);
+  --_line: var(--ncx-line, #d8d0c2);
+  --_ok: var(--ncx-ok, #1d6b3a);
+  --_warn: var(--ncx-warn, #8a4b00);
+  --_bad: var(--ncx-bad, #a1260d);
+  --_btn-bg: var(--ncx-btn-bg, #171615);
+  --_btn-ink: var(--ncx-btn-ink, #fffdf8);
+
+  background: var(--_bg);
+  color: var(--_ink);
+  border: 1px solid var(--_line);
+  padding: clamp(1rem, 3vw, 1.75rem);
+  display: grid;
+  gap: 1rem;
+}
+
+.eac-ncaccess a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.eac-ncaccess code {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.eac-ncaccess__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.eac-ncaccess__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--_soft);
+}
+
+.eac-ncaccess__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.eac-ncaccess__lede {
+  margin: 0;
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.eac-ncaccess__action {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.eac-ncaccess__button {
+  appearance: none;
+  border: 1px solid var(--_btn-bg);
+  background: var(--_btn-bg);
+  color: var(--_btn-ink);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.eac-ncaccess__button:disabled {
+  /* Not faded (fading costs contrast): an outline instead of a fill. */
+  background: transparent;
+  color: var(--_ink);
+  border-style: dashed;
+  cursor: default;
+}
+
+.eac-ncaccess__button:focus-visible {
+  outline: 2px solid var(--_ink);
+  outline-offset: 2px;
+}
+
+.eac-ncaccess__muted {
+  margin: 0;
+  color: var(--_soft);
+  font-size: 0.9rem;
+}
+
+.eac-ncaccess__note,
+.eac-ncaccess__howto,
+.eac-ncaccess__summary {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.eac-ncaccess__note {
+  border-left: 3px solid var(--_ok);
+  padding-left: 0.75rem;
+}
+
+.eac-ncaccess__error {
+  margin: 0;
+  color: var(--_bad);
+}
+
+.eac-ncaccess__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.eac-ncaccess__table th,
+.eac-ncaccess__table td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--_line);
+  vertical-align: top;
+}
+
+.eac-ncaccess__table th {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--_soft);
+  font-weight: 600;
+}
+
+.eac-ncaccess__name {
+  font-weight: 600;
+}
+
+/* On a phone the email drops to its own line instead of widening the table. */
+@media (max-width: 600px) {
+  .eac-ncaccess__table td .eac-ncaccess__muted {
+    display: block;
+  }
+}
+
+/* States are ink, never a fill — a coloured text on the panel's own ground. */
+.eac-ncaccess__state {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eac-ncaccess__state::before {
+  content: "●";
+  margin-right: 0.35em;
+  font-size: 0.7em;
+  vertical-align: 0.15em;
+}
+.eac-ncaccess__state.is-linked,
+.eac-ncaccess__state.is-done {
+  color: var(--_ok);
+}
+.eac-ncaccess__state.is-unlinked,
+.eac-ncaccess__state.is-pending,
+.eac-ncaccess__state.is-running {
+  color: var(--_warn);
+}
+.eac-ncaccess__state.is-failed {
+  color: var(--_bad);
+}
+
+.eac-ncaccess__history summary {
+  cursor: pointer;
+  color: var(--_soft);
+}
+.eac-ncaccess__history ul {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}

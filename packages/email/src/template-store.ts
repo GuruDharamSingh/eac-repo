@@ -59,6 +59,9 @@ export function threadTemplateKey(key: TemplateKey, threadId: string): string {
   return `${key}:${threadId}`;
 }
 
+import { parseCopyOverrides, type CopyOverrides } from './copy-slots';
+export type { CopyOverrides } from './copy-slots';
+
 export interface EmailLinkItem {
   label: string;
   url: string;
@@ -73,8 +76,27 @@ export interface EmailMediaItem {
 export interface OrgTemplate {
   orgId: string;
   templateKey: string;
-  /** Layer 2 — the org's words. */
+  /** Layer 2 — the org's words, as plain paragraphs. */
   bodyText?: string;
+  /**
+   * Layer 2, enriched — the same words with emphasis, links and lists, as the
+   * rich-text editor wrote them.
+   *
+   * Stored ALONGSIDE `bodyText` rather than instead of it, and the pair is
+   * written together by the editor: `bodyText` is derived from this by
+   * `emailHtmlToText`. That is what lets a template which has not been taught
+   * about rich text keep rendering the plain paragraphs it always did, and
+   * what gives the text/plain part of a message something true to carry.
+   */
+  bodyHtml?: string;
+  /**
+   * Layer 2, per BLOCK — this org's words for any named slot of the letter.
+   *
+   * `bodyText`/`bodyHtml` above is the one section an org APPENDS. This is
+   * every sentence the letter already had: the confirmation line, the button,
+   * the headings, the network description. See copy-slots.ts.
+   */
+  copy?: CopyOverrides;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
   materialIds?: string[];
@@ -171,6 +193,9 @@ export async function loadOrgTemplate(
       orgId,
       templateKey,
       bodyText: typeof c.bodyText === 'string' ? c.bodyText : undefined,
+      bodyHtml:
+        typeof c.bodyHtml === 'string' && c.bodyHtml.trim() ? c.bodyHtml : undefined,
+      copy: parseCopyOverrides(c.copy),
       links: cleanLinks(c.links),
       media: cleanMedia(c.media),
       materialIds: cleanStrings(c.materialIds, 50),
@@ -227,6 +252,9 @@ export async function listOrgTemplates(orgId: string): Promise<OrgTemplate[]> {
         orgId,
         templateKey: row.template_key,
         bodyText: typeof c.bodyText === 'string' ? c.bodyText : undefined,
+        bodyHtml:
+          typeof c.bodyHtml === 'string' && c.bodyHtml.trim() ? c.bodyHtml : undefined,
+        copy: parseCopyOverrides(c.copy),
         html: typeof c.html === 'string' && c.html.trim() ? c.html : undefined,
         updatedAt: row.updated_at,
       };
@@ -270,8 +298,35 @@ export async function saveOrgTemplate(
     return current === undefined || current === null ? {} : { [key]: current };
   };
 
+  /**
+   * Fold one save's slot edits into what is already stored.
+   *
+   * A slot set to `null` is REMOVED — that is how "go back to the network's
+   * words" is expressed for one block, and it has to be distinguishable from
+   * "leave that block alone", which is what omitting it means.
+   */
+  function keepCopy(
+    current: CopyOverrides | undefined,
+    incoming: typeof input.copy
+  ): Record<string, unknown> {
+    if (incoming === null) return {};
+    const merged: CopyOverrides = { ...(current ?? {}) };
+    if (incoming) {
+      for (const [id, value] of Object.entries(incoming)) {
+        if (value === null || value === undefined) delete merged[id];
+        else merged[id] = value;
+      }
+    }
+    return Object.keys(merged).length ? { copy: merged } : {};
+  }
+
   const config: Record<string, unknown> = {
     ...keep('bodyText', existing?.bodyText),
+    ...keep('bodyHtml', existing?.bodyHtml),
+    // Merged per BLOCK, not wholesale: the editor saves one slot at a time,
+    // and replacing the object would drop every other block's words on each
+    // keystroke-and-save. `null` on the whole `copy` key still clears the lot.
+    ...keepCopy(existing?.copy, input.copy),
     ...keep('links', existing?.links),
     ...keep('media', existing?.media),
     ...keep('materialIds', existing?.materialIds),

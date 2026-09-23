@@ -1,24 +1,33 @@
-import { NextResponse } from "next/server";
-import { listUserMediaLibrary } from "@elkdonis/services";
-import { getViewer } from "@/lib/auth";
+import { NextResponse, type NextRequest } from "next/server";
+import { browseMediaFolder, getStorageSlug } from "@elkdonis/services";
+import { getSiteOwnerUserId, getViewer } from "@/lib/auth";
 
 /**
- * The signed-in person's OWN images.
+ * DANA's own pictures — her personal Nextcloud folder (EAC_Network/users/<her
+ * slug>), browsed a folder at a time (`?path=`) or searched (`?q=`).
  *
- * Sibling of ../route.ts, and the thing that matters is what is NOT here: the
- * user id comes from the SESSION and is never read from the request. A
- * `?userId=` parameter would be a way to read anyone's private uploads by
- * guessing an id, and no amount of care further down would fix that.
+ * The SITE OWNER's folder, not the signed-in person's: this is her site, and
+ * the picker's "Dana's images" must show her work when a guide is editing it.
+ * That is why it is editors only — it lists someone else's storage. The owner
+ * comes from the membership table, never from the request. Private/ is never
+ * listed (browseMediaFolder).
  *
- * This is where Dana's own uploads land — /api/media/upload writes to her
- * folder, not the org's, because an artist's work follows her between sites.
+ * Uploads through /api/media/upload land in this folder too.
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const viewer = await getViewer();
-  if (!viewer) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!viewer?.canEdit) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
-  const items = await listUserMediaLibrary(viewer.userId);
-  return NextResponse.json({ items });
+  const owner = await getSiteOwnerUserId();
+  const slug = owner ? await getStorageSlug(owner) : null;
+  if (!slug) return NextResponse.json({ path: "", items: [], browsable: true });
+
+  const url = new URL(req.url);
+  const result = await browseMediaFolder(`EAC_Network/users/${slug}`, url.searchParams.get("path"), {
+    q: url.searchParams.get("q"),
+  });
+  if ("error" in result) return NextResponse.json(result, { status: 400 });
+  return NextResponse.json({ ...result, browsable: true });
 }

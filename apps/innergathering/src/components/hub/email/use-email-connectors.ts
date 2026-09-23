@@ -84,10 +84,27 @@ export function useEmailConnectors(): EmailConnectors {
       // This app already had these two routes — they are what the retired
       // /hub/email/<key> page posted to. The suite reuses them rather than
       // adding a third way to save the same field.
-      saveTemplate: (key, bodyText) =>
+      saveTemplate: (key, bodyText, bodyHtml) =>
         send(`/${encodeURIComponent(key)}`, {
           method: "PUT",
-          body: JSON.stringify({ bodyText }),
+          // Both layers in one write: the rich markup the editor produced and
+          // the plain text derived from it. The route stores them together so
+          // a template that has not been taught about rich text still has
+          // something true to render.
+          body: JSON.stringify({ bodyText, bodyHtml: bodyHtml ?? "" }),
+        }),
+
+      // One sentence of a letter, not the section appended to it. Same route,
+      // different keys in the body — the store merges per block, so saving one
+      // never disturbs another.
+      saveCopy: (key, slotId, text, html) =>
+        send(`/${encodeURIComponent(key)}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            copySlot: slotId,
+            copyText: text,
+            copyHtml: html ?? "",
+          }),
         }),
 
       testTemplate: (key) =>

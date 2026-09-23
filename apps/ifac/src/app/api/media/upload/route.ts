@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFile, getUploadPath, getProxyFileUrl } from "@elkdonis/services";
+import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
@@ -84,7 +84,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    // The name the piece was given, when the surface sends one. A stored page
+    // keeps this address for as long as the picture exists, so it is worth the
+    // form field: `nightjar-4k9wqp.jpg` rather than
+    // `1726790000000-il_570xN.302087606.jpg.jpg`. Blank or absent falls back to
+    // the uploaded file's own name.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
     const relativePath = getUploadPath(ORG_ID, config.folder, filename, visibility);
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -128,7 +134,17 @@ export async function POST(request: NextRequest) {
       console.error("[ifac] org media upload — row not recorded:", error);
     }
 
-    return NextResponse.json({ success: true, id: mediaId, url, path: relativePath, type: config.type });
+    // `name` is the ORIGINAL file name, not the stored one: a picker offering
+    // to fill in a title wants what the person recognises ("Nightjar.jpg"),
+    // not the slug we derived from it.
+    return NextResponse.json({
+      success: true,
+      id: mediaId,
+      url,
+      path: relativePath,
+      type: config.type,
+      name: file.name,
+    });
   } catch (error) {
     console.error("[ifac] org media upload:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

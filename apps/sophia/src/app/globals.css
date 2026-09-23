@@ -1,0 +1,8 @@
+@import "@elkdonis/lms-ui/lms.css";
+/* The shared rich-text editor — studio only. */
+@import "@elkdonis/cms-ui/editor.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: #f6f3ec; }
+@media (prefers-color-scheme: dark) { body { background: #0e1422; } }

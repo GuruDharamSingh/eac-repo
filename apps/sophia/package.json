@@ -1,0 +1,33 @@
+{
+  "name": "sophia",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 --port 3020 --turbopack",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 --port 3020",
+    "check-types": "tsc --noEmit --incremental false",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
+    "@elkdonis/lms": "workspace:*",
+    "@elkdonis/lms-ui": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "next": "16.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "typescript": "^5"
+  }
+}

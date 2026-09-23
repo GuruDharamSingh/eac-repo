@@ -1,7 +1,7 @@
 import { createElement, type ComponentType, type ReactNode } from "react";
 import type { Config } from "@puckeditor/core";
 import { SHARED_BLOCKS, toDefaultProps, toPuckFields } from "@elkdonis/blocks";
-import type { Block, BlockCategory, PropDef, PropKind } from "@elkdonis/blocks";
+import type { Block, BlockCategory, BlockDef, PropDef, PropKind } from "@elkdonis/blocks";
 
 // ============================================================================
 // Our block catalogue, expressed as a Puck config.
@@ -89,6 +89,122 @@ export type FieldRender = (
   prop: PropDef
 ) => ((props: Record<string, unknown>) => React.ReactElement) | null;
 
+// ── Not re-fetching on every keystroke ──────────────────────────────────────
+//
+// Puck runs a block's resolveData after EVERY change to that block, and while
+// one is in flight it lays a loading overlay over the WHOLE fields panel (50ms
+// after it starts — any real fetch is longer). So typing a heading into an
+// artwork wall re-fetched the artworks once per letter and locked the form
+// under a spinner in between: the panel "sometimes felt fine and sometimes
+// didn't", depending only on whether the block had a resolver.
+//
+// A resolver's answer depends only on the props and metadata it READS, so
+// that is what is remembered: the call runs against proxies that note each key
+// touched, and the next call is answered from memory when none of those keys
+// changed. Instant, so Puck's 50ms overlay never appears. Nothing has to
+// declare its dependencies — they are observed. A "force" (the HUD asking for
+// fresh rows) and a "load" (opening a page) always go to the source.
+
+type Resolved = Record<string, unknown>;
+interface Remembered {
+  type: string;
+  props: Resolved;
+  metadata: Resolved;
+  /** Keys read; "*" = it enumerated the whole object, so every key counts. */
+  propReads: Set<string>;
+  metaReads: Set<string>;
+  result: Resolved;
+}
+
+const remembered = new Map<string, Remembered>();
+
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || typeof b !== "object" || !a || !b) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+function tracked<T extends object>(target: T, reads: Set<string>): T {
+  return new Proxy(target, {
+    get(t, key, receiver) {
+      if (typeof key === "string") reads.add(key);
+      return Reflect.get(t, key, receiver);
+    },
+    has(t, key) {
+      if (typeof key === "string") reads.add(key);
+      return Reflect.has(t, key);
+    },
+    ownKeys(t) {
+      reads.add("*");
+      return Reflect.ownKeys(t);
+    },
+  });
+}
+
+function unchanged(reads: Set<string>, before: Resolved, now: Resolved, ignore: Resolved = {}): boolean {
+  const keys = reads.has("*")
+    ? new Set([...Object.keys(before), ...Object.keys(now)].filter((k) => !(k in ignore)))
+    : reads;
+  for (const key of keys) if (!sameValue(before[key], now[key])) return false;
+  return true;
+}
+
+async function remember(
+  type: string,
+  resolve: BlockResolvers[string],
+  props: Resolved,
+  metadata: Resolved,
+  trigger: string | undefined
+): Promise<Resolved> {
+  const id = `${type}:${String(props.id ?? "")}`;
+  const last = remembered.get(id);
+  if (
+    last &&
+    trigger !== "force" &&
+    trigger !== "load" &&
+    unchanged(last.propReads, last.props, props, last.result) &&
+    unchanged(last.metaReads, last.metadata, metadata)
+  ) {
+    return last.result;
+  }
+
+  const propReads = new Set<string>();
+  const metaReads = new Set<string>();
+  const result = await resolve(tracked({ ...props }, propReads), tracked({ ...metadata }, metaReads));
+  remembered.set(id, { type, props, metadata, propReads, metaReads, result });
+  return result;
+}
+
+/**
+ * Which props each block type's resolver fills in — the block's DATA, as
+ * opposed to what an author typed. The editor ignores these when deciding
+ * whether anything is unsaved: a resolver refreshing the rows on load is not
+ * an edit, and treating it as one put "Unsaved changes" on every page the
+ * moment it opened.
+ */
+const resolvedKeys = new Map<string, Set<string>>();
+
+function noteResolvedKeys(type: string, props: Resolved) {
+  const keys = resolvedKeys.get(type) ?? new Set<string>();
+  for (const key of Object.keys(props)) keys.add(key);
+  resolvedKeys.set(type, keys);
+}
+
+/** Each block's one-line description, for the editor's block list. */
+const descriptions = new Map<string, string>();
+
+export function blockDescription(type: string): string | undefined {
+  return descriptions.get(type);
+}
+
+export function resolverKeysFor(type: string): ReadonlySet<string> | undefined {
+  return resolvedKeys.get(type);
+}
+
 export interface PuckConfigOptions {
   /** How data-driven blocks get their rows. See BlockResolvers. */
   resolvers?: BlockResolvers;
@@ -119,6 +235,19 @@ export interface PuckConfigOptions {
    * nothing to drag.
    */
   decorate?: (block: Block<never>, Component: ComponentType<never>) => ComponentType<never>;
+
+  /**
+   * The site's own PAGE settings — what the fields panel shows when no block
+   * is selected, beside "Page title". Declared as PropDefs like a block's,
+   * so they get the same fields (selects, sliders…). `wrap` receives the
+   * page's settings and its content, and may wrap the content — e.g. in an
+   * element carrying the page's own fonts. Omit `wrap` and settings are only
+   * stored.
+   */
+  root?: {
+    props: PropDef[];
+    wrap?: ComponentType<{ settings: Record<string, unknown>; children?: ReactNode }>;
+  };
 }
 
 export function buildPuckConfig({
@@ -126,6 +255,7 @@ export function buildPuckConfig({
   blocks = SHARED_BLOCKS,
   fields: fieldRenders = {},
   decorate,
+  root: siteRoot,
 }: PuckConfigOptions = {}): Config {
   // Typed as Puck's own map rather than Record<string, unknown>, so the
   // compiler actually checks that toPuckFields() produces field shapes Puck
@@ -195,9 +325,10 @@ export function buildPuckConfig({
         ? {
             resolveData: async (
               data: { props: Record<string, unknown> },
-              ctx: { metadata?: Record<string, unknown> }
+              ctx: { metadata?: Record<string, unknown>; trigger?: string }
             ) => {
-              const props = await resolve(data.props, ctx.metadata ?? {});
+              const props = await remember(def.id, resolve, data.props, ctx.metadata ?? {}, ctx.trigger);
+              noteResolvedKeys(def.id, props);
               // readOnly tells the editor these props belong to the resolver,
               // so the fields panel locks them instead of offering an author a
               // control whose value is about to be overwritten.
@@ -230,6 +361,8 @@ export function buildPuckConfig({
       })(),
     };
 
+    if (def.description) descriptions.set(def.id, def.description);
+
     const category = def.category ?? "content";
     (grouped[category] ??= []).push(def.id);
   }
@@ -251,13 +384,19 @@ export function buildPuckConfig({
     // clicking the canvas background, the normal "give me page settings"
     // gesture, does nothing at all. Root defaults are also the one kind an
     // editor applies at load rather than only at insert.
-    root: {
-      fields: { title: { type: "text", label: "Page title" } },
-      defaultProps: { title: "" },
-      // `children` IS the page's root drop region. Returning anything that
-      // does not render it yields a blank page.
-      render: ({ children }: { children?: ReactNode }) => children ?? null,
-    },
+    root: (() => {
+      const extra = siteRoot?.props ?? [];
+      const def = { id: "root", label: "Page", description: "", memberSafe: true, styling: "tokens", props: extra } as BlockDef;
+      const Wrap = siteRoot?.wrap;
+      return {
+        fields: { title: { type: "text", label: "Page title" }, ...toPuckFields(def) },
+        defaultProps: { title: "", ...toDefaultProps(def) },
+        // `children` IS the page's root drop region. Returning anything that
+        // does not render it yields a blank page.
+        render: ({ children, ...settings }: { children?: ReactNode } & Record<string, unknown>) =>
+          Wrap ? createElement(Wrap, { settings }, children ?? null) : (children ?? null),
+      };
+    })(),
   } as Config;
 }
 

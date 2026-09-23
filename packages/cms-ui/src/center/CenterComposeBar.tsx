@@ -24,7 +24,12 @@ export function CenterComposeBar({
   canCompose: boolean;
 }) {
   const surfaces = useSurfaceOptional();
-  const inPlace = Boolean(surfaces) && canCompose;
+  // With "Post to…" on the host, anyone who belongs somewhere may post — to
+  // any org they are part of, not only this site's (Brief A slice 3); the
+  // surface itself says so when there is nowhere. Otherwise the writing
+  // room, for this org's editors only, as before.
+  const anywhere = Boolean(surfaces?.connectors.postTo);
+  const inPlace = Boolean(surfaces) && (anywhere || canCompose);
   if (!inPlace && !href) return null;
 
   const body = (
@@ -54,7 +59,9 @@ export function CenterComposeBar({
       type="button"
       className={cls}
       aria-haspopup="dialog"
-      onClick={(e) => surfaces?.open({ type: "write", kind: "post" }, e.currentTarget)}
+      onClick={(e) =>
+        surfaces?.open(anywhere ? { type: "postTo" } : { type: "write", kind: "post" }, e.currentTarget)
+      }
     >
       {body}
     </button>

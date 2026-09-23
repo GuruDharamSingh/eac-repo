@@ -43,6 +43,15 @@ export interface StripeProviderOptions {
   secretKey: string;
   publishableKey?: string | null;
   webhookSecret?: string | null;
+  /**
+   * The CONNECT endpoint's signing secret. Stripe signs a connected account's
+   * events (account.updated and friends) with the secret of a `connect: true`
+   * endpoint, which is a different endpoint — and so a different secret —
+   * from the one that signs the platform's own events. One secret cannot
+   * verify both, which is why seller onboarding never stamped: the events
+   * were delivered to an endpoint that could not exist for them.
+   */
+  connectWebhookSecret?: string | null;
   /** ISO country for new Express accounts. Defaults to CA — the NFP is Canadian. */
   defaultAccountCountry?: string;
 }
@@ -57,6 +66,7 @@ export function getStripeConfigFromEnv(
     secretKey,
     publishableKey: env.STRIPE_PUBLISHABLE_KEY?.trim() || env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || null,
     webhookSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || null,
+    connectWebhookSecret: env.STRIPE_CONNECT_WEBHOOK_SECRET?.trim() || null,
     defaultAccountCountry: env.STRIPE_ACCOUNT_COUNTRY?.trim() || "CA",
   };
 }
@@ -219,10 +229,24 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
   }
 
   function parseWebhook(rawBody: string, signature: string): Stripe.Event {
-    if (!opts.webhookSecret) {
+    // Both endpoints post to the same route, so the only way to tell whose
+    // event this is, is to try each secret. Order is cheapest-first: platform
+    // traffic (orders) far outweighs connected-account traffic (onboarding).
+    const secrets = [opts.webhookSecret, opts.connectWebhookSecret].filter(
+      (s): s is string => Boolean(s)
+    );
+    if (secrets.length === 0) {
       throw new Error("STRIPE_WEBHOOK_SECRET is not set; refusing to trust an unsigned webhook.");
     }
-    return client.webhooks.constructEvent(rawBody, signature, opts.webhookSecret);
+    let lastError: unknown;
+    for (const secret of secrets) {
+      try {
+        return client.webhooks.constructEvent(rawBody, signature, secret);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
   }
 
   async function createExpressAccount(input: { email: string; country?: string }) {
@@ -269,7 +293,7 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
     description: "Pay securely by card through Stripe. The artwork is yours as soon as the payment clears.",
     client,
     publishableKey: opts.publishableKey ?? null,
-    canVerifyWebhooks: Boolean(opts.webhookSecret),
+    canVerifyWebhooks: Boolean(opts.webhookSecret || opts.connectWebhookSecret),
 
     createCheckoutSession,
     retrieveCheckoutSession,

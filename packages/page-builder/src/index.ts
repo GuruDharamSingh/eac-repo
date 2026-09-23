@@ -29,13 +29,18 @@ export type { EditorConfigOptions } from "./config.client";
 
 export { PuckEditor } from "./editor";
 export type { PuckEditorProps } from "./editor";
+export type { Viewports } from "@puckeditor/core";
 
 export { ImageField } from "./fields/image-field";
 export type { ImageFieldProps, MediaSources } from "./fields/image-field";
 export { SizeField } from "./fields/size-field";
 export type { SizeFieldProps } from "./fields/size-field";
+export { ColorField } from "./fields/color-field";
+export type { ColorFieldProps } from "./fields/color-field";
 
 export { CanvasDrag } from "./drag/canvas-drag";
+
+export { templatesPlugin } from "./templates/templates-plugin";
 export type { CanvasDragProps } from "./drag/canvas-drag";
 
 export { validatePage } from "./validate";
@@ -45,3 +50,9 @@ export type { PageProblem, ValidationResult } from "./validate";
 // @elkdonis/db, and re-exporting through it would put a database client in
 // every client bundle that only wanted to check a page name.
 export { isValidSlug, isValidPagePath, MAX_PATH_DEPTH } from "./slug";
+
+// Same split as isValidSlug above: this rule is checked before the editor
+// even asks the server whether a key is free, and user-store.ts imports
+// @elkdonis/db — so the RULE lives in a module that does not, and user-store
+// re-exports it rather than owning it.
+export { isValidUserPageKey } from "./user-page-key";

@@ -24,6 +24,7 @@ import {
   davConfigured,
   davDelete,
   davList,
+  davMkcol,
   davPut,
   resolveWithin,
   type DavEntry,
@@ -123,6 +124,22 @@ export async function uploadUserFile(
     return { ok: false, error: 'Upload failed' };
   }
   return { ok: true, path, url: `/api/media/${path}` };
+}
+
+/**
+ * Create a folder inside a person's storage, and every missing folder above
+ * it — MKCOL is not recursive. Idempotent: an existing folder is success.
+ * The twin of createOrgFolder in org-storage.ts.
+ */
+export async function createUserFolder(slug: string, relative: string): Promise<boolean> {
+  const parts = relative.split('/').filter(Boolean);
+  if (parts.length === 0) return false; // refuse to "create" the root
+  let ok = true;
+  for (let i = 1; i <= parts.length; i++) {
+    ok = await davMkcol(resolveUserPath(slug, parts.slice(0, i).join('/')));
+    if (!ok) return false;
+  }
+  return ok;
 }
 
 /** Delete something inside a person's own folder. Never the root itself. */

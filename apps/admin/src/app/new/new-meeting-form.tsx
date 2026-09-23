@@ -47,7 +47,7 @@ export function NewMeetingForm({ organizations }: NewMeetingFormProps) {
   };
 
   const handleSuccess = () => {
-    router.push("/dashboard");
+    router.push("/meetings");
     router.refresh();
   };
 

@@ -9,6 +9,9 @@ import type {
   SurfaceForumThread,
   SurfaceGathered,
   SurfaceGatherCandidate,
+  SurfaceProfilePageConnectors,
+  SurfacePresence,
+  SurfacePostTarget,
 } from "../surface";
 
 // ============================================================================
@@ -63,6 +66,10 @@ export interface HubRoutes {
   ideas: string;
   /** POST form-encoded; answers 303. */
   forumReadAll: string;
+  /** GET → SurfacePresence; POST `{row,column,on}`. */
+  presence: string;
+  /** GET → `{targets}`; POST `{target,title,text}` → `{href,label}`. */
+  postTo: string;
 }
 
 const DEFAULT_ROUTES: HubRoutes = {
@@ -80,6 +87,8 @@ const DEFAULT_ROUTES: HubRoutes = {
   documents: "/api/hub/documents",
   ideas: "/api/hub/ideas",
   forumReadAll: "/api/forum/read-all",
+  presence: "/api/center/presence",
+  postTo: "/api/center/post",
 };
 
 /** The Deck card JSON the pipeline API returns, as far as the board reads it. */
@@ -166,6 +175,23 @@ export interface HubConnectorOptions extends HostSupplied {
   ideas?: { href: string } | false;
   /** Whether this host serves the profile and center-layout routes. */
   profile?: boolean;
+  /**
+   * What a person's own page carries — the optional sections (writing, a
+   * store) and whether they can be paid. Supplied by the host because both
+   * answers are its own: the sections are rows it owns, and payouts mean
+   * Stripe keys it holds. Omit and the profile surface is the card it was.
+   */
+  profilePage?: SurfaceProfilePageConnectors;
+  /**
+   * "Where you show" in the profile popup, served at `routes.presence`
+   * (GET → SurfacePresence, POST {row,column,on}). Brief A slice 2.
+   */
+  presence?: boolean;
+  /**
+   * "Post to…" from /center, served at `routes.postTo` (GET → targets,
+   * POST {target,title,text} → {href,label}). Brief A slice 3.
+   */
+  postTo?: boolean;
   centerLayout?: boolean;
   routes?: Partial<HubRoutes>;
 }
@@ -258,6 +284,27 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
     };
   }
 
+  if (opts.postTo) {
+    connectors.postTo = {
+      async targets() {
+        const res = await fetch(r.postTo);
+        if (!res.ok) throw new Error(`postTo ${res.status}`);
+        const data = await res.json();
+        return Array.isArray(data.targets) ? (data.targets as SurfacePostTarget[]) : [];
+      },
+      async create(input) {
+        const res = await fetch(r.postTo, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false as const, error: data.error ?? "Could not post that." };
+        return { ok: true as const, href: (data.href as string | null) ?? null, label: String(data.label ?? "") };
+      },
+    };
+  }
+
   if (opts.profile) {
     connectors.profile = {
       async load(target) {
@@ -278,6 +325,28 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
         if (!res.ok) return { ok: false, error: data.error ?? "Could not save that." };
         return { ok: true };
       },
+      ...(opts.profilePage ? { page: opts.profilePage } : {}),
+      ...(opts.presence
+        ? {
+            presence: {
+              async load() {
+                const res = await fetch(r.presence);
+                if (!res.ok) throw new Error(`presence ${res.status}`);
+                return (await res.json()) as SurfacePresence;
+              },
+              async set(change) {
+                const res = await fetch(r.presence, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(change),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) return { ok: false as const, error: data.error ?? "Could not save that." };
+                return { ok: true as const, pending: Boolean(data.pending) };
+              },
+            },
+          }
+        : {}),
       async uploadAvatar(file) {
         const body = new FormData();
         body.append("file", file);

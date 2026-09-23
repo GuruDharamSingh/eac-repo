@@ -7,6 +7,8 @@ import { renderMeetingTriggerEmail } from './templates/meeting-trigger';
 import { renderContactOwnerEmail } from './templates/contact-owner';
 import { renderNewsletterEmail } from './templates/newsletter';
 import type { TemplateKey } from './template-store';
+import type { CopyOverrides } from './copy-slots';
+import type { EmailChrome } from './components/EmailShell';
 
 // ============================================================================
 // One sample of each letter, so every surface that shows the suite shows the
@@ -111,6 +113,27 @@ export interface SampleOptions {
   orgAccent?: string;
   /** The org's stored words, so a preview shows what will actually send. */
   bodyText?: string;
+  /** The same words as rich text, when the org wrote them in the editor. */
+  bodyHtml?: string;
+  /**
+   * This org's words for the letter's own blocks (copy-slots.ts).
+   *
+   * Passed through to every sample so a preview shows the letter as this
+   * organisation has actually rewritten it — which is the whole claim the
+   * preview pane makes.
+   */
+  copy?: CopyOverrides;
+  /** Which body face to render in, by id. See EMAIL_FONTS. */
+  bodyFont?: string;
+  /**
+   * The masthead image and the frame around the card — see `EmailChrome`.
+   *
+   * A preview that did not take this would show the collective's gold-on-navy
+   * wordmark above a letter that actually sends with the org's own banner,
+   * which is the preview lying about the one thing it exists to be honest
+   * about.
+   */
+  chrome?: EmailChrome;
 }
 
 const THREAD_TITLE = 'The Fourth Way: Attention and the Moving Centre';
@@ -133,8 +156,21 @@ export function sampleProps(
   key: string,
   opts: SampleOptions = {}
 ): Record<string, unknown> {
-  const { orgName = 'Your Organization', orgHeader, orgAccent, bodyText } = opts;
-  const brand = { orgName, orgHeader, orgAccent };
+  const {
+    orgName = 'Your Organization',
+    orgHeader,
+    orgAccent,
+    bodyText,
+    bodyHtml,
+    copy,
+    bodyFont,
+    chrome,
+  } = opts;
+  // `copy` rides with the brand: every letter takes it, including the three
+  // that have no editable prose of their own but still render shared blocks.
+  // `chrome` rides with it for the same reason — every letter wears the same
+  // masthead, so there is no letter for which it would be wrong.
+  const brand = { orgName, orgHeader, orgAccent, copy, bodyFont, chrome };
 
   const soon = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
   const later = new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString();
@@ -157,6 +193,7 @@ export function sampleProps(
         username: 'adaw',
         confirmUrl: 'https://example.org/auth/confirm?token=sample',
         bodyText,
+        bodyHtml,
       };
 
     case 'provisioning':
@@ -167,6 +204,7 @@ export function sampleProps(
         nextcloudUsername: 'ada.whitfield',
         teamFolderName: `EAC_Network/${orgName}`,
         bodyText,
+        bodyHtml,
       };
 
     case 'rsvp-guest':
@@ -184,6 +222,7 @@ export function sampleProps(
         reminderSettingsUrl: 'https://example.org/account/reminders',
         calendarUrl: 'https://example.org/api/calendar/sample.ics',
         bodyText,
+        bodyHtml,
       };
 
     case 'rsvp-owner':
@@ -202,6 +241,7 @@ export function sampleProps(
         threadUrl: thread.url,
         rsvpCount: 7,
         bodyText,
+        bodyHtml,
       };
 
     case 'reminder':
@@ -219,6 +259,7 @@ export function sampleProps(
         reminderSettingsUrl: 'https://example.org/account/reminders',
         calendarUrl: 'https://example.org/api/calendar/sample.ics',
         bodyText,
+        bodyHtml,
       };
 
     case 'meeting-trigger':
@@ -235,6 +276,7 @@ export function sampleProps(
         materialsUrl: 'https://cloud.elkdonis-arts.org/f/sample',
         rsvpCount: 7,
         bodyText,
+        bodyHtml,
       };
 
     case 'contact-owner':
@@ -250,6 +292,7 @@ export function sampleProps(
         orgName,
         title: 'What we are working on this month',
         bodyText: bodyText ?? 'A short letter about the season ahead.',
+        bodyHtml,
       };
 
     default:

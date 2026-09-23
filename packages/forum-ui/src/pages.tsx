@@ -338,6 +338,7 @@ async function NewTopicForm({ connectors, viewer, board, feed, back }: {
   }
   const choices = (await connectors.listTopicChoices?.(board.orgId)) ?? [];
   const mod = canModerate(viewer, board.orgId);
+  const nc = mod ? await connectors.ncForum?.(board.orgId) : null;
   const base = actionBase.replace(/\/$/, "");
   return (
     <div className="gf-newtopic" id="newtopic">
@@ -364,6 +365,19 @@ async function NewTopicForm({ connectors, viewer, board, feed, back }: {
           <span className="gf-field-label">Body</span>
           <textarea name="text" className="gf-textarea" rows={7} required placeholder="Blank lines make paragraphs; lines starting with > quote." />
         </label>
+        {nc && (
+          <label className="gf-field gf-field--check gf-nc-sync">
+            <input type="checkbox" name="nc_sync" value="1" />
+            <span>
+              Also post to Nextcloud <span className="gf-chip gf-chip--nc">NC</span>
+              <span className="gf-field-hint">
+                {nc.isPublic
+                  ? " Shared in the org's Nextcloud forum; anyone signed in can reply."
+                  : " Shared in the org's Nextcloud forum; members-only here, and replies are for members."}
+              </span>
+            </span>
+          </label>
+        )}
         <div className="gf-replybox-foot">
           <span className="gf-replybox-hint">Events, meetings and media are made on {network ? board.name : "the site"} →</span>
           <button type="submit" className="eac-btn eac-btn--primary">Post topic</button>

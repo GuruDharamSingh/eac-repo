@@ -1,4 +1,4 @@
-import type { SurfaceDescriptor } from "./types";
+import type { SurfaceDescriptor, SurfaceProfileTab } from "./types";
 
 // ============================================================================
 // A surface in the address bar.
@@ -10,6 +10,12 @@ import type { SurfaceDescriptor } from "./types";
 // ============================================================================
 
 export const SURFACE_PARAM = "surface";
+
+/** A post destination: `blog` or `orgId|feedSlug`. */
+const SAFE_TARGET = /^(blog|[a-z0-9_-]{1,50}\|[a-z0-9_-]{1,50})$/i;
+
+/** `profile:<tab>` — "profile" itself is the bare form. */
+const PROFILE_TABS = new Set<string>(["details", "show", "page", "payouts"]);
 
 export function serializeDescriptor(d: SurfaceDescriptor): string | null {
   switch (d.type) {
@@ -48,6 +54,7 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       return null;
     case "profile":
       if (d.target) return `profile:org:${d.target.orgId}`;
+      if (d.tab && d.tab !== "profile") return `profile:${d.tab}`;
       return d.mode === "edit" ? "profile:edit" : "profile";
     case "define":
       // Encoded: a term may hold spaces, punctuation, even a colon, and the
@@ -65,6 +72,9 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
       // arrange it" is a link worth being able to send. The title is dropped
       // and refetched with the thread, like every other seeded preview here.
       return `gather:${d.threadId}`;
+    case "postTo":
+      // The destination may be in the address; what was typed never is.
+      return d.target && SAFE_TARGET.test(d.target) ? `postTo:${encodeURIComponent(d.target)}` : "postTo";
     case "custom":
       return null;
   }
@@ -119,9 +129,19 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return { type: "forum" };
     case "profile":
       if (a === "org" && b && SAFE.test(b)) return { type: "profile", target: { kind: "org", orgId: b } };
+      if (a && PROFILE_TABS.has(a)) return { type: "profile", tab: a as SurfaceProfileTab };
       return { type: "profile", mode: a === "edit" ? "edit" : undefined };
     case "centerLayout":
       return a && SAFE.test(a) ? { type: "centerLayout", orgId: a } : null;
+    case "postTo": {
+      let target: string | undefined;
+      try {
+        target = a ? decodeURIComponent(a) : undefined;
+      } catch {
+        target = undefined;
+      }
+      return { type: "postTo", target: target && SAFE_TARGET.test(target) ? target : undefined };
+    }
     case "define": {
       // Bounded: this arrives from the address bar, so it is somebody's input.
       const term = decodeTerm(a);

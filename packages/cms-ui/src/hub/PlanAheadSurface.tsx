@@ -13,17 +13,29 @@ import { SurfaceFrame, fmtDateTime, useSurface } from "../surface";
  * The card shows who has the NEXT one; this shows the run, which is the view
  * you need to volunteer for a week or notice that three Mondays have nobody.
  *
- * Read-only for a member, editable for whoever runs the org. A member seeing
- * the rota matters: knowing who is hosting is most of the value, and hiding it
- * behind an edit permission would leave four of the five people unable to see
- * their own turn.
+ * An organiser gets the full picker (anyone, either slot). A plain member
+ * gets a narrower, self-serve door onto the SAME data: "I'll host this one" /
+ * "I'll co-host" when a slot is open, "Step down" when it is their own name
+ * in it, and just the name — no control — when it is somebody else's. The
+ * backend enforces the same split (a member's write can only ever be about
+ * themselves), so this is a convenience, not the permission.
  */
+
+export interface PlanAheadPerson {
+  userId: string | null;
+  displayName: string | null;
+  note: string | null;
+}
 
 export interface PlanAheadOccurrence {
   at: string;
   isPast?: boolean;
-  host: { userId: string | null; displayName: string | null; note: string | null } | null;
+  host: PlanAheadPerson | null;
+  /** A second pair of hands on the same occurrence. Same self-serve rules. */
+  coHost?: PlanAheadPerson | null;
   hasRecord: boolean;
+  /** What this one is covering — the reading, the piece, the topic. */
+  plan?: string | null;
 }
 
 export interface PlanAheadCandidate {
@@ -36,6 +48,8 @@ export interface PlanAheadData {
   occurrences: PlanAheadOccurrence[];
   candidates: PlanAheadCandidate[];
   canPlan: boolean;
+  /** So the surface can tell "is this me" without a second round trip. */
+  viewerId?: string | null;
 }
 
 const DEFAULT_ENDPOINT = "/api/hub/meeting/rota";
@@ -86,14 +100,43 @@ export function PlanAheadSurface({
     void load();
   }, [load]);
 
-  async function assign(at: string, userId: string | null) {
-    setSavingAt(at);
+  /**
+   * What this week is covering. An organiser may write any week; the week's
+   * own host may write theirs — saying what you are bringing should not need
+   * an owner. The server makes the same check; this only decides what to show.
+   */
+  async function savePlan(at: string, plan: string) {
+    setSavingAt(`${at}:plan`);
+    setError(null);
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ threadId, occurrenceAt: at, plan }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(body.error ?? "Could not save what it is covering.");
+        return;
+      }
+      await load();
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setSavingAt(null);
+    }
+  }
+
+  async function assign(at: string, userId: string | null, role: string = "host") {
+    // Keyed by occurrence AND role, so taking yourself off co-host does not
+    // grey out the host control for the same row.
+    setSavingAt(`${at}:${role}`);
     setError(null);
     try {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId, occurrenceAt: at, role: "host", userId }),
+        body: JSON.stringify({ threadId, occurrenceAt: at, role, userId }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -112,7 +155,12 @@ export function PlanAheadSurface({
     }
   }
 
-  const editable = canPlan && (data?.canPlan ?? false);
+  // The SERVER decides who may plan (the route checks the viewer's role on
+  // every write, too). This used to require the opener's `canPlan` prop AS
+  // WELL, and the page-layout banner opens this without one — so an owner who
+  // opened Plan ahead from the banner got a read-only list of names and no way
+  // to put anyone down. The prop is now only the fallback before data loads.
+  const editable = data ? Boolean(data.canPlan) : canPlan;
 
   return (
     <SurfaceFrame
@@ -134,12 +182,12 @@ export function PlanAheadSurface({
           <p className="eac-rota-intro">
             {editable
               ? "Who is running each one. Anybody in the group can take a week."
-              : "Who is running each one."}
+              : "Who is running each one. Open a week to take it yourself."}
           </p>
           <ol className="eac-rota">
             {data.occurrences.map((occurrence) => {
               const when = new Date(occurrence.at);
-              const busy = savingAt === occurrence.at;
+              const open = !occurrence.isPast;
               return (
                 <li
                   key={occurrence.at}
@@ -152,36 +200,50 @@ export function PlanAheadSurface({
                     )}
                   </div>
 
-                  {editable && !occurrence.isPast ? (
-                    <label className="eac-rota__pick">
-                      <span className="eac-rota__pick-label">Host</span>
-                      <select
-                        className="eac-input"
-                        value={occurrence.host?.userId ?? ""}
-                        disabled={busy}
-                        onChange={(e) => void assign(occurrence.at, e.target.value || null)}
-                      >
-                        {/* "" is the real, meaningful option here — nobody has
-                            this week — so it carries a word rather than being
-                            an empty row. */}
-                        <option value="">Nobody yet</option>
-                        {data.candidates.map((c) => (
-                          <option key={c.userId} value={c.userId}>
-                            {c.displayName}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : (
-                    <span
-                      className={
-                        "eac-rota__host" +
-                        (occurrence.host?.displayName ? "" : " eac-rota__host--none")
-                      }
-                    >
-                      {occurrence.host?.displayName ?? "No host yet"}
-                    </span>
-                  )}
+                  <div className="eac-rota__roles">
+                    <RoleSlot
+                      label="Host"
+                      role="host"
+                      person={occurrence.host ?? null}
+                      occurrenceAt={occurrence.at}
+                      open={open}
+                      editable={editable}
+                      viewerId={data.viewerId ?? null}
+                      candidates={data.candidates}
+                      savingAt={savingAt}
+                      onAssign={assign}
+                    />
+                    {/* Co-host is always offered, whether or not this rota
+                        actively uses it — an empty slot nobody has ever
+                        touched is just "Nobody yet", same as host. */}
+                    <RoleSlot
+                      label="Co-host"
+                      role="co-host"
+                      person={occurrence.coHost ?? null}
+                      occurrenceAt={occurrence.at}
+                      open={open}
+                      editable={editable}
+                      viewerId={data.viewerId ?? null}
+                      candidates={data.candidates}
+                      savingAt={savingAt}
+                      onAssign={assign}
+                    />
+                  </div>
+
+                  <PlanLine
+                    at={occurrence.at}
+                    plan={occurrence.plan ?? null}
+                    saving={savingAt === `${occurrence.at}:plan`}
+                    canWrite={
+                      editable ||
+                      Boolean(
+                        data.viewerId &&
+                          (occurrence.host?.userId === data.viewerId ||
+                            occurrence.coHost?.userId === data.viewerId)
+                      )
+                    }
+                    onSave={savePlan}
+                  />
 
                   {occurrence.isPast && (
                     <OccurrenceRecord
@@ -198,6 +260,181 @@ export function PlanAheadSurface({
         </>
       )}
     </SurfaceFrame>
+  );
+}
+
+/**
+ * One role on one occurrence: the organiser's picker, or a member's
+ * self-serve door onto the same row.
+ */
+/**
+ * "Covering: …" — what a given week is about.
+ *
+ * Reads as a line of text until someone who may change it clicks, which is
+ * the right weight for a field that is usually a book chapter or a title. A
+ * week with nothing said shows the invitation only to those who can answer it.
+ */
+function PlanLine({
+  at,
+  plan,
+  saving,
+  canWrite,
+  onSave,
+}: {
+  at: string;
+  plan: string | null;
+  saving: boolean;
+  canWrite: boolean;
+  onSave: (at: string, plan: string) => void | Promise<void>;
+}) {
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(plan ?? "");
+
+  React.useEffect(() => {
+    setDraft(plan ?? "");
+  }, [plan]);
+
+  if (!canWrite && !plan) return null;
+
+  if (!editing) {
+    return (
+      <p className="eac-rota__plan">
+        {plan ? (
+          <>
+            <span className="eac-rota__plan-label">Covering</span> {plan}
+          </>
+        ) : (
+          <span className="eac-rota__plan-empty">Nothing said yet</span>
+        )}
+        {canWrite && (
+          <button type="button" className="eac-rota__plan-edit" onClick={() => setEditing(true)}>
+            {plan ? "Change" : "Say what it covers"}
+          </button>
+        )}
+      </p>
+    );
+  }
+
+  const commit = async () => {
+    setEditing(false);
+    if (draft.trim() !== (plan ?? "").trim()) await onSave(at, draft);
+  };
+
+  return (
+    <p className="eac-rota__plan">
+      <label className="eac-rota__plan-label" htmlFor={`plan-${at}`}>
+        Covering
+      </label>
+      <input
+        id={`plan-${at}`}
+        className="eac-rota__plan-input"
+        value={draft}
+        autoFocus
+        disabled={saving}
+        placeholder="A reading, a piece, a topic…"
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void commit();
+          }
+          if (e.key === "Escape") {
+            setDraft(plan ?? "");
+            setEditing(false);
+          }
+        }}
+        onBlur={() => void commit()}
+      />
+    </p>
+  );
+}
+
+function RoleSlot({
+  label,
+  role,
+  person,
+  occurrenceAt,
+  open,
+  editable,
+  viewerId,
+  candidates,
+  savingAt,
+  onAssign,
+}: {
+  label: string;
+  role: string;
+  person: PlanAheadPerson | null;
+  occurrenceAt: string;
+  open: boolean;
+  editable: boolean;
+  viewerId: string | null;
+  candidates: PlanAheadCandidate[];
+  savingAt: string | null;
+  onAssign: (at: string, userId: string | null, role: string) => Promise<void>;
+}) {
+  const busy = savingAt === `${occurrenceAt}:${role}`;
+
+  if (editable && open) {
+    return (
+      <label className="eac-rota__pick">
+        <span className="eac-rota__pick-label">{label}</span>
+        <select
+          className="eac-input"
+          value={person?.userId ?? ""}
+          disabled={busy}
+          onChange={(e) => void onAssign(occurrenceAt, e.target.value || null, role)}
+        >
+          {/* "" is the real, meaningful option here — nobody has this week —
+              so it carries a word rather than being an empty row. */}
+          <option value="">Nobody yet</option>
+          {candidates.map((c) => (
+            <option key={c.userId} value={c.userId}>
+              {c.displayName}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  const isMe = Boolean(viewerId) && person?.userId === viewerId;
+
+  if (!editable && open && (isMe || !person)) {
+    // A member's self-serve door: take an open slot, or step back off their
+    // own. Never a way to touch somebody else's name.
+    return (
+      <div className="eac-rota__pick">
+        <span className="eac-rota__pick-label">{label}</span>
+        {isMe ? (
+          <button
+            type="button"
+            className="eac-face-tool eac-rota__self"
+            disabled={busy}
+            onClick={() => void onAssign(occurrenceAt, null, role)}
+          >
+            {busy ? "…" : "Step down"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="eac-face-tool eac-rota__self"
+            disabled={busy}
+            onClick={() => void onAssign(occurrenceAt, viewerId, role)}
+          >
+            {busy ? "…" : `I'll ${role === "host" ? "host this one" : "co-host"}`}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="eac-rota__pick">
+      <span className="eac-rota__pick-label">{label}</span>
+      <span className={"eac-rota__host" + (person?.displayName ? "" : " eac-rota__host--none")}>
+        {person?.displayName ?? "Nobody yet"}
+      </span>
+    </div>
   );
 }
 

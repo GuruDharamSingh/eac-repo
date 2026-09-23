@@ -45,6 +45,8 @@ export interface ProfileCardAction {
   href?: string | null;
   /** Opens the profile surface in place when a provider is mounted above. */
   surface?: boolean;
+  /** Which tab of the profile popup it opens on. */
+  surfaceTab?: "profile" | "details" | "show" | "page" | "payouts";
 }
 
 export function ProfileFlipCard({
@@ -178,7 +180,12 @@ export function ProfileFlipCard({
                         <button
                           type="button"
                           aria-haspopup="dialog"
-                          onClick={(e) => surfaces.open({ type: "profile" }, e.currentTarget)}
+                          onClick={(e) =>
+                            surfaces.open(
+                              { type: "profile", tab: a.surfaceTab && a.surfaceTab !== "profile" ? a.surfaceTab : undefined },
+                              e.currentTarget
+                            )
+                          }
                         >
                           {body}
                         </button>

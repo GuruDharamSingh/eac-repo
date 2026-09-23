@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { MediaBrowser, isMediaDrag, readMediaDrop } from "./MediaBrowser";
 
 /**
  * Pick an image: upload a new one, or choose something already in storage.
@@ -78,42 +79,12 @@ export function MediaPicker({
   );
 
   const [tab, setTab] = useState<Tab>("upload");
-  const [library, setLibrary] = useState<MediaPickerItem[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activeSource = sources.find((s) => s.key === tab);
-
-  const loadLibrary = useCallback(async () => {
-    if (!activeSource) return;
-    setError(null);
-    try {
-      const res = await fetch(activeSource.endpoint);
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error ?? "Could not load the library");
-      // Accept either shape: /api/media/library returns `items`, the
-      // per-person /api/my-files returns `files`.
-      const raw: unknown[] = body.items ?? body.files ?? [];
-      setLibrary(
-        raw
-          .map((r) => r as Record<string, unknown>)
-          .filter((r) => typeof r.url === "string" && !r.isFolder)
-          .map((r) => ({
-            url: String(r.url),
-            name: String(r.name ?? r.filename ?? r.url),
-          }))
-      );
-    } catch (err) {
-      setLibrary([]);
-      setError((err as Error).message);
-    }
-  }, [activeSource]);
-
-  useEffect(() => {
-    if (activeSource && library === null) void loadLibrary();
-  }, [activeSource, library, loadLibrary]);
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -133,9 +104,6 @@ export function MediaPicker({
         throw new Error(body?.error ?? "Upload failed");
       }
       onChange(body.url);
-      // A newly uploaded file belongs in the library too — drop the cache so
-      // reopening that tab shows it rather than a stale list.
-      setLibrary(null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -144,8 +112,34 @@ export function MediaPicker({
     }
   }
 
+  // The WHOLE picker takes a drop: a picture dragged from a library tile, from
+  // the editor's Media panel, or a file from the desktop (which is uploaded).
+  // Aiming at a small upload box was the hard part of "drag it in".
   return (
-    <div className="eac-picker">
+    <div
+      className={`eac-picker${dragging ? " is-dragging" : ""}`}
+      onDragOver={(e) => {
+        if (!isMediaDrag(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(e) => {
+        if (!isMediaDrag(e)) return;
+        e.preventDefault();
+        setDragging(false);
+        const picture = readMediaDrop(e);
+        if (picture) {
+          setError(null);
+          onChange(picture.url);
+        } else {
+          void upload(e.dataTransfer.files?.[0]);
+        }
+      }}
+    >
       <div className="eac-picker-label">
         <span>{label}</span>
         {sources.length > 0 && (
@@ -166,13 +160,7 @@ export function MediaPicker({
                 role="tab"
                 aria-selected={tab === source.key}
                 className={tab === source.key ? "is-active" : undefined}
-                onClick={() => {
-                  // Drop the cache on the way in, or the new tab briefly shows
-                  // the previous source's files — which look plausible and are
-                  // the wrong person's.
-                  if (tab !== source.key) setLibrary(null);
-                  setTab(source.key);
-                }}
+                onClick={() => setTab(source.key)}
               >
                 {source.label}
               </button>
@@ -190,20 +178,11 @@ export function MediaPicker({
           </button>
         </div>
       )}
+      {dragging ? <p className="eac-picker-dropnote">Drop to use this picture</p> : null}
 
       {tab === "upload" ? (
         <div
           className={`eac-picker-drop${dragging ? " is-dragging" : ""}`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            void upload(e.dataTransfer.files?.[0]);
-          }}
           onClick={() => inputRef.current?.click()}
           role="button"
           tabIndex={0}
@@ -221,27 +200,11 @@ export function MediaPicker({
           <p>{busy ? "Uploading…" : "Drop a file here, or click to choose"}</p>
           {hint && <p className="eac-picker-hint">{hint}</p>}
         </div>
-      ) : library === null ? (
-        <p className="eac-picker-hint">Loading…</p>
-      ) : library.length === 0 ? (
-        <p className="eac-picker-hint">Nothing stored yet.</p>
-      ) : (
-        <ul className="eac-picker-grid">
-          {library.map((item) => (
-            <li key={item.url}>
-              <button
-                type="button"
-                onClick={() => onChange(item.url)}
-                className={item.url === value ? "is-selected" : undefined}
-                title={item.name}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt="" loading="lazy" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      ) : activeSource ? (
+        // Keyed by source: another person's folder never flashes up under
+        // the wrong tab while the new one loads.
+        <MediaBrowser key={activeSource.key} endpoint={activeSource.endpoint} value={value} onPick={(item) => onChange(item.url)} />
+      ) : null}
 
       {error && <p className="eac-picker-error">{error}</p>}
     </div>

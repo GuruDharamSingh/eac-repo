@@ -1,0 +1,16 @@
+/* Hub arcade cabinet: navy ground, gold title. Always the phone layout —
+   the frame is a side column, never 520px wide. Tiles keep upstream colours. */
+html, body { background: #0f1a2e; color: #d9dde6; font-size: 15px; overflow: hidden; }
+body { margin: 0; padding: 8px; }
+.container { width: 280px; margin: 0 auto; }
+h1.title { font-size: 27px; margin-top: 10px; color: #e2bd62; }
+.heading { margin-bottom: 8px; }
+.score-container, .best-container { margin-top: 0; padding: 15px 10px; min-width: 40px; background: #24365a; }
+.score-container:after, .best-container:after { color: #c5cbd8; }
+.above-game { display: flex; align-items: center; gap: 8px; }
+.game-intro { float: none; flex: 1; line-height: 1.35; margin: 0; font-size: 13px; color: #c5cbd8; }
+.game-intro strong { color: #e2bd62; }
+.restart-button { float: none; width: auto; padding: 0 12px; margin: 0; height: 36px; line-height: 36px; background: #e2bd62; color: #0f1a2e; }
+.game-container { margin-top: 12px; }
+.credit { margin: 8px 0 0; font-size: 11px; color: #9aa3b5; text-align: center; }
+.credit a { color: #e2bd62; }

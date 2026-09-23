@@ -101,6 +101,57 @@ export function parsePropfind(xml: string, basePath: string): DavEntry[] {
   );
 }
 
+/**
+ * A whole folder TREE in one request (Depth: infinity) — files only, each
+ * with its path from `path`. For catalogues and audits, not for browsing:
+ * `limit` caps it, and a missing folder is [] rather than a throw.
+ * Nextcloud allows infinite depth for the service account; if a server
+ * refuses (403/501), this degrades to [] and logs.
+ */
+export async function davListDeep(path: string, limit = 5000): Promise<DavEntry[]> {
+  if (!davConfigured()) return [];
+  const res = await fetch(davUrl(path), {
+    method: 'PROPFIND',
+    headers: {
+      Authorization: davAuthHeader(),
+      Depth: 'infinity',
+      'Content-Type': 'application/xml',
+    },
+    body: PROPFIND_BODY,
+  });
+  if (res.status === 404) return [];
+  if (res.status !== 207) {
+    console.error(`[dav] PROPFIND(infinity) ${path} -> ${res.status}`);
+    return [];
+  }
+  const xml = await res.text();
+  const base = decodeURIComponent(
+    `/remote.php/dav/files/${encodeURIComponent(NEXTCLOUD_USER)}/${encodePath(path)}`
+  ).replace(/\/$/, '');
+  const out: DavEntry[] = [];
+  for (const block of xml.split(/<\/(?:d:|D:)?response>/i)) {
+    if (out.length >= limit) break;
+    const href = block.match(/<(?:d:|D:)?href>([^<]+)<\/(?:d:|D:)?href>/i);
+    if (!href) continue;
+    if (/<(?:d:|D:)?collection\s*\/>/i.test(block)) continue; // files only
+    const decoded = decodeURIComponent(href[1]);
+    if (!decoded.startsWith(base + '/')) continue;
+    const rel = decoded.slice(base.length + 1);
+    const name = rel.split('/').pop() ?? rel;
+    const full = `${path}/${rel}`;
+    out.push({
+      name,
+      path: full,
+      url: `/api/media/${full}`,
+      size: Number(block.match(/<(?:d:|D:)?getcontentlength>(\d+)</i)?.[1] ?? 0),
+      mimeType: block.match(/<(?:d:|D:)?getcontenttype>([^<]+)</i)?.[1] ?? null,
+      lastModified: block.match(/<(?:d:|D:)?getlastmodified>([^<]+)</i)?.[1] ?? null,
+      isFolder: false,
+    });
+  }
+  return out;
+}
+
 /** One level of a folder. Missing folder → [], never a throw. */
 export async function davList(path: string): Promise<DavEntry[]> {
   if (!davConfigured()) return [];
@@ -180,6 +231,20 @@ export async function davMkcol(path: string): Promise<boolean> {
     headers: { Authorization: davAuthHeader() },
   });
   return res.ok || res.status === 405;
+}
+
+/**
+ * Move or rename. Never overwrites: a name clash is a 412 and returns false,
+ * so the caller picks a new name instead of silently destroying a file.
+ */
+export async function davMove(from: string, to: string): Promise<boolean> {
+  if (!davConfigured()) return false;
+  const res = await fetch(davUrl(from), {
+    method: 'MOVE',
+    headers: { Authorization: davAuthHeader(), Destination: davUrl(to), Overwrite: 'F' },
+  });
+  if (!res.ok) console.error(`[dav] MOVE ${from} -> ${to}: ${res.status}`);
+  return res.ok;
 }
 
 /** Delete. Already-gone (404) counts as success — it's the desired end state. */

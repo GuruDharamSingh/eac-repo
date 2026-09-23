@@ -16,7 +16,8 @@
     "./settlement": "./src/server/settlement.ts",
     "./ledger": "./src/server/ledger.ts",
     "./links": "./src/links.ts",
-    "./commerce.css": "./src/components/commerce.css"
+    "./commerce.css": "./src/components/commerce.css",
+    "./payout-rails": "./src/payout-rails.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

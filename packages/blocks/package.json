@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",
-    "@elkdonis/services": "workspace:*"
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*"
   }
 }

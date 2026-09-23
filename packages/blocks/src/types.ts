@@ -194,6 +194,35 @@ export interface PropDef {
    * drag rather than after saving a page that renders wrong.
    */
   allow?: readonly string[];
+
+  /**
+   * For a `string` prop holding a RECORD ID — the kind of record it binds to,
+   * e.g. `"artwork"`.
+   *
+   * The pattern every block that shows a record follows: bound OR typed, never
+   * forced. The block keeps its ordinary manual fields (picture, title,
+   * caption); this prop, when filled, supplies the values those fields fall
+   * back to. So a block works with nothing bound, works fully bound, and an
+   * author can bind a record and still retype just its caption for one page.
+   * A manual value always wins over a bound one.
+   *
+   * Only the ID is stored in the page — never a copy of the record — and the
+   * record is read again when the page renders, so a retitled or sold piece is
+   * right everywhere without anybody editing a page.
+   *
+   * It is still a plain string to everything else (attribute parsing, Silex
+   * traits, coercion). An editor that understands the source offers a picker
+   * for it; one that does not shows a text box holding the id.
+   */
+  binds?: string;
+
+  /**
+   * For a `string` prop — what the text IS, so an editor can offer a better
+   * control than a text box. `"color"` is a CSS hex colour (`#1a1a1a`); empty
+   * means "the theme's own". Still a plain string everywhere else, and the
+   * block must validate it before use: a typed value can be anything.
+   */
+  format?: "color";
 }
 
 /**

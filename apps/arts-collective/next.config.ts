@@ -18,8 +18,15 @@ const nextConfig: NextConfig = {
     "@elkdonis/sky-ui",
     "@elkdonis/tokens",
   ],
-  // sweph (the Swiss Ephemeris) is a native addon: require it at runtime.
-  serverExternalPackages: ["sweph"],
+  // Packages the server must REQUIRE at runtime rather than have bundled.
+  //
+  //   sweph   the Swiss Ephemeris — a native addon.
+  //   jsdom   pulled in by isomorphic-dompurify (the HTML sanitisers in
+  //           @elkdonis/utils). It loads `browser/default-stylesheet.css`
+  //           from its own package directory at runtime, and a bundler that
+  //           inlines the JS without carrying that asset produces a server
+  //           build that dies with ENOENT the first time anything sanitises.
+  serverExternalPackages: ["sweph", "jsdom", "isomorphic-dompurify"],
   // Pin tracing root to the monorepo so Next doesn't pick up the stray
   // /home/elkdonis/pnpm-lock.yaml as the "workspace root".
   outputFileTracingRoot: path.resolve(__dirname, "../.."),

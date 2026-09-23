@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 import { TierBadge } from "@/components/hub/TierBadge";
 import { FilesCard } from "@elkdonis/cms-ui/files";
+import { OrgSwitcher, PersonPanel, type OrgSwitcherItem } from "@elkdonis/cms-ui/center";
+import { getProfile, listOrgHomes, listUserMemberships } from "@elkdonis/services";
+import { networkUrl } from "@/lib/org-url";
+import { NetworkCenterHost } from "./NetworkCenterHost";
 
 /**
  * Reads the session cookie, so it can never be a static page. Declared
@@ -19,16 +23,70 @@ export const dynamic = "force-dynamic";
 
 const TIER_ORDER: Record<string, number> = { partner: 0, supported: 1, free: 2 };
 
-export default async function NetworkTabPage() {
-  const user = await requireUser();
+const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+const EDITOR_ROLES = new Set(["owner", "guide"]);
 
-  const [feed, roster, editableOrgs, orgRows, homes] = await Promise.all([
+export default async function NetworkTabPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ org?: string }>;
+}) {
+  const user = await requireUser();
+  const { org: orgParam } = await searchParams;
+
+  const [feed, roster, editableOrgs, orgRows, homes, profile, memberships, verifiedHomes] = await Promise.all([
     getCommunityFeed(10),
     getMemberRoster(24),
     getEditableOrgsForUser(user.id),
     getOrgRows(),
     orgHomeUrlMap(),
+    getProfile(user.id),
+    listUserMemberships(user.id),
+    listOrgHomes().catch(() => []),
   ]);
+
+  // An org's site is linked only when it has a VERIFIED domain of its own:
+  // *.arts-collective.com resolves but has no certificate in production, so
+  // a subdomain link is a browser error page. The collective's own org is
+  // this site. (Brief A: "Open site" only for an org whose URL resolves.)
+  const verified = new Map(
+    verifiedHomes.filter((h) => h.primaryDomain).map((h) => [h.orgSlug, `https://${h.primaryDomain}`] as const)
+  );
+  const liveSite = (slug: string): string | null =>
+    verified.get(slug) ?? (slug === "elkdonis" ? networkUrl() : null);
+
+  // The same "current" rule as the Organization tab, so both tabs agree.
+  const current =
+    memberships.find((m) => m.orgSlug === orgParam) ??
+    memberships.find((m) => EDITOR_ROLES.has(m.role)) ??
+    memberships[0] ??
+    null;
+  const rowBySlug = new Map(orgRows.map((o) => [o.slug, o] as const));
+  const yourOrgs: OrgSwitcherItem[] = memberships.map((m) => {
+    const row = rowBySlug.get(m.orgSlug);
+    const site = liveSite(m.orgSlug);
+    return {
+      orgId: m.orgId,
+      orgName: m.orgName,
+      role: m.role,
+      tier: row?.tier ?? null,
+      isCurrent: current?.orgId === m.orgId,
+      facts: row
+        ? [
+            `${row.member_count} ${row.member_count === 1 ? "member" : "members"}`,
+            ...(row.published_count > 0 ? [`${row.published_count} published`] : []),
+          ]
+        : [],
+      actions: [
+        {
+          label: "Open its hub",
+          href: `/hub/organization?org=${encodeURIComponent(m.orgSlug)}`,
+          primary: true,
+        },
+        ...(site ? [{ label: "Open site", href: site, external: true }] : []),
+      ],
+    };
+  });
 
   const hasOrg = editableOrgs.length > 0;
 
@@ -44,6 +102,20 @@ export default async function NetworkTabPage() {
 
   return (
     <div className="w-full py-10">
+      {/* You across the network — the same card, popup, Where you show and
+          "Post to…" as /center (Brief A slice 4), then the orgs you're in. */}
+      <NetworkCenterHost displayName={profile?.displayName ?? null}>
+        <div className="mb-10 grid gap-6">
+          <PersonPanel
+            name={profile?.displayName ?? user.email}
+            avatarUrl={profile?.avatarUrl ?? null}
+            headline={profile?.headline ?? null}
+            pageHref={profile?.slug && ARTDIRECT_URL ? `${ARTDIRECT_URL}/${profile.slug}` : null}
+          />
+          <OrgSwitcher orgs={yourOrgs} />
+        </div>
+      </NetworkCenterHost>
+
       {/* A person's own cloud storage. Everyone has a folder at
           EAC_Network/users/<slug>/ whether or not they have a Nextcloud
           login, so this is the only way most members can reach it. */}
@@ -110,6 +182,7 @@ export default async function NetworkTabPage() {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {orgs.map((o) => {
               const url = orgHomeUrl(homes, o.slug);
+              const site = liveSite(o.slug);
               return (
                 <li
                   key={o.id}
@@ -130,11 +203,13 @@ export default async function NetworkTabPage() {
                       {o.published_count > 0 && ` · ${o.published_count} published`}
                     </p>
                   </div>
-                  <Button asChild size="sm" variant="outline" className="w-fit">
-                    <a href={url} target="_blank" rel="noopener">
-                      Visit →
-                    </a>
-                  </Button>
+                  {site && (
+                    <Button asChild size="sm" variant="outline" className="w-fit">
+                      <a href={site} target="_blank" rel="noopener">
+                        Visit →
+                      </a>
+                    </Button>
+                  )}
                 </li>
               );
             })}
@@ -238,11 +313,13 @@ export default async function NetworkTabPage() {
                     {m.bio}
                   </p>
                 )}
-                <div className="mt-4 pt-2">
-                  <Button asChild size="sm" variant="outline">
-                    <a href={orgHomeUrl(homes, m.slug)}>Visit site</a>
-                  </Button>
-                </div>
+                {liveSite(m.slug) && (
+                  <div className="mt-4 pt-2">
+                    <Button asChild size="sm" variant="outline">
+                      <a href={liveSite(m.slug)!}>Visit site</a>
+                    </Button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

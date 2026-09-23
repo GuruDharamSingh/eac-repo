@@ -7,13 +7,25 @@ import {
   isBusinessComplete,
   isBusinessInProgress,
 } from "@/lib/profile";
-import { getMemberRoster } from "@/lib/network";
+import { getNetworkCounts } from "@/lib/network";
 import { getEditableOrgsForUser } from "@/lib/org";
-import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
-import { HubCard } from "@/components/hub/HubCard";
-import { HUB_CARDS, SITE_PANELS, type CardStatus } from "@/lib/hub-cards";
-import { Button } from "@/components/ui/button";
+import { getArcadeArtwork } from "@/lib/arcade";
+import {
+  ELKDONIS_FEEDS,
+  forumBase,
+  sophiaLive,
+  forumHref,
+  forumViewerFor,
+  getCrossPostCandidates,
+  getElkdonisTopics,
+  getViewerCard,
+} from "@/lib/elkdonis-hub";
 import { YourSubmissions } from "@/components/hub/YourSubmissions";
+import { ComposeForm } from "@/components/hub/elkdonis/ComposeForm";
+import { Arcade } from "@/components/hub/elkdonis/Arcade";
+import { CrossPostSlider, type PromoSlide } from "@/components/hub/elkdonis/CrossPostSlider";
+import { WizardRail, type WizardCard } from "@/components/hub/elkdonis/WizardRail";
+import "./elkdonis-hub.css";
 
 /**
  * Reads the session cookie, so it can never be a static page. Declared
@@ -22,248 +34,350 @@ import { YourSubmissions } from "@/components/hub/YourSubmissions";
  */
 export const dynamic = "force-dynamic";
 
+const KIND_LABEL: Record<string, string> = {
+  post: "Post",
+  meeting: "Gathering",
+  workshop: "Workshop",
+  event: "Event",
+  reading_group: "Reading group",
+  service: "Offering",
+};
+
+function when(d: Date | string | null): string {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+}
+
 export default async function ElkdonisTabPage() {
   const user = await requireUser();
-  const [profile, editableOrgs, homes] = await Promise.all([
-    getProfileForUser(user.id),
-    getEditableOrgsForUser(user.id),
-    orgHomeUrlMap(),
-  ]);
-  const isNewMember = editableOrgs.length === 0;
+  const viewer = await forumViewerFor(user.id);
 
-  const complete = isProfileComplete(profile);
-  const inProgress = isProfileInProgress(profile);
-  const bizComplete = isBusinessComplete(profile);
-  const bizInProgress = isBusinessInProgress(profile);
+  const [profile, editableOrgs, counts, card, announcements, feedback, candidates, artwork] =
+    await Promise.all([
+      getProfileForUser(user.id),
+      getEditableOrgsForUser(user.id),
+      getNetworkCounts(),
+      getViewerCard(user.id, user.email, viewer),
+      getElkdonisTopics(ELKDONIS_FEEDS.announcements, viewer, 6, "newest"),
+      getElkdonisTopics(ELKDONIS_FEEDS.feedback, viewer, 6, "active"),
+      getCrossPostCandidates(8),
+      getArcadeArtwork(),
+    ]);
 
-  const cardStatus = (id: string): CardStatus => {
-    if (id === "artist_profile") {
-      if (complete) return "complete";
-      if (inProgress) return "in_progress";
-      return "not_started";
-    }
-    if (id === "structure_business") {
-      if (bizComplete) return "complete";
-      if (bizInProgress) return "in_progress";
-      return "not_started";
-    }
-    const card = HUB_CARDS.find((c) => c.id === id);
-    return card?.available ? "not_started" : "locked";
-  };
+  const profileStatus = isProfileComplete(profile)
+    ? "Complete"
+    : isProfileInProgress(profile)
+      ? "In progress"
+      : "Not started";
+  const bizStatus = isBusinessComplete(profile)
+    ? "Complete"
+    : isBusinessInProgress(profile)
+      ? "In progress"
+      : "Not started";
 
-  const panelStatus = (id: string): CardStatus => {
-    const p = SITE_PANELS.find((c) => c.id === id);
-    return p?.available ? "not_started" : "locked";
-  };
+  const firstOrg = editableOrgs[0] ?? null;
+  const wizards: WizardCard[] = [
+    { id: "profile", title: "Artist Profile", blurb: "The first onboarding flow. It shapes your public page.", href: "/wizard", status: profileStatus },
+    { id: "business", title: "Structure Your Business", blurb: "Entity, pricing, capacity and what support you need.", href: "/wizard/business", status: bizStatus },
+    firstOrg
+      ? { id: "workshop", title: "Guided Workshop", blurb: `Step-by-step: put a workshop up for ${firstOrg.name}.`, href: `/hub/workshops/${firstOrg.slug}/guided` }
+      : { id: "workshop", title: "Start an Organization", blurb: "Claim a subdomain, then list workshops and members.", href: "/hub/organization" },
+    { id: "org", title: "Organization Console", blurb: "Drafts, what's coming up, members, files and settings.", href: "/hub/organization" },
+    { id: "email", title: "Email Suite", blurb: "Letters, templates and your org's sending identity.", href: "/email" },
+    { id: "agreements", title: "Agreements", blurb: "The terms between you, your store and the collective.", href: "/hub/agreements" },
+    { id: "quotes", title: "Quotes", blurb: "Keep the lines that carry the work.", href: "/hub/quotes" },
+    { id: "wiki", title: "Write a Wiki Page", blurb: "Define a term, or start a page on the network wiki.", href: `${forumBase()}/wiki/new`, external: true },
+    { id: "temple", title: "Inner Temple", blurb: "A walkable 3D space for the collective.", href: "/inner-temple" },
+    { id: "account", title: "Elkdonis Account", blurb: "Sign-in, avatar and comment colour.", href: "/account" },
+  ];
 
-  const resumeCard = HUB_CARDS.find((c) => c.id === "artist_profile");
-  const resumeStatus = cardStatus("artist_profile");
-  const showResume =
-    resumeStatus === "not_started" || resumeStatus === "in_progress";
+  const slides: PromoSlide[] = candidates.map((c) => ({
+    id: c.id,
+    title: c.title,
+    orgName: c.org_name,
+    kind: KIND_LABEL[c.kind] ?? c.kind,
+    excerpt: c.excerpt,
+    href: forumHref.thread(c.id, c.slug),
+  }));
 
-  const roster = await getMemberRoster(8);
+  const sophia = await sophiaLive();
+  const today = new Date().toLocaleDateString("en-CA", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <div className="w-full py-10">
-      <header className="mb-10 space-y-2 border-b border-border pb-8">
-        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-          Welcome to the Collective
-        </p>
-        <h1 className="font-serif text-4xl leading-tight text-foreground md:text-5xl">
-          Arts Collective is the main free offering of Elkdonis Arts
-          Collective.
-        </h1>
-        <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
-          We separate <em>Arts Collective</em> as a network from the full
-          name <em>Elkdonis Arts Collective</em> to allow users and artists
-          to be put first — and to suggest the generality and diffused
-          quality this work really has. By that we refer to the core
-          Elkdonis principle of the group, and of group support in creating
-          something for the benefit of all beings.
-        </p>
+    <div className="ekh">
+      {/* ── Banner ─────────────────────────────────────────────────────── */}
+      <header className="ekh-mast">
+        <div className="ekh-ticker">
+          <span className="ekh-ticker__label">Notices</span>
+          <div className="ekh-ticker__window">
+            <p className="ekh-ticker__scroll">
+              {announcements.rows.length
+                ? announcements.rows.map((a) => a.title).join("   ·   ")
+                : "Welcome to the Elkdonis hub — announcements from the collective appear here."}
+            </p>
+          </div>
+        </div>
+        <div className="ekh-mast__row">
+          <div className="ekh-mast__ear">
+            <span className="ekh-kicker">{today}</span>
+            <span className="ekh-small">Elkdonis Arts Collective</span>
+          </div>
+          <div className="ekh-mast__title">
+            <h1>The Elkdonis Hub</h1>
+            <p>
+              <em>Arts Collective</em> is the main free offering of Elkdonis Arts Collective —
+              artists first, and group support in making something for the benefit of all beings.
+            </p>
+          </div>
+          <div className="ekh-mast__ear ekh-mast__ear--r">
+            <span className="ekh-mast__count">{counts.members}</span>
+            <span className="ekh-kicker">members</span>
+            <span className="ekh-mast__count">{counts.orgs}</span>
+            <span className="ekh-kicker">organizations</span>
+          </div>
+        </div>
       </header>
 
-      {isNewMember && (
-        <section className="mb-10 rounded-lg border border-primary/30 bg-accent/30 p-6">
-          <p className="text-xs uppercase tracking-wider text-primary">
-            Welcome
-          </p>
-          <h2 className="mt-1 font-serif text-2xl leading-tight text-foreground">
-            You&apos;re in. Where would you like to start?
-          </h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            There&apos;s no wrong door. Browse and take part without running
-            anything of your own, or claim a subdomain and get the full set
-            of tools — you can always do the other later.
-          </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
-              <h3 className="font-serif text-lg text-foreground">
-                Explore the network
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Community feed, artist directory, events across the
-                collective — no setup required.
-              </p>
-              <Button asChild variant="outline" className="mt-auto w-fit">
-                <Link href="/hub/network">Go to Network →</Link>
-              </Button>
-            </div>
-            <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
-              <h3 className="font-serif text-lg text-foreground">
-                Create your organization
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Claim a subdomain, publish your site, list workshops, and
-                manage members.
-              </p>
-              <Button asChild className="mt-auto w-fit">
-                <Link href="/hub/organization">Start your org →</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="mb-10 max-w-2xl space-y-4 border-l-2 border-accent/70 pl-5">
-        <p className="text-base leading-relaxed text-foreground/90">
-          This network aims to be as transparent as possible in providing
-          the structured web portal that will aid in connecting people who
-          are interested in artists to the artists — and artists to other
-          artists, and to the people around them.
-        </p>
-        <p className="text-base leading-relaxed text-foreground/90">
-          We are not looking to control or manage any of the offerings being
-          presented through our network. We do ask that people are willing
-          to participate in the aims of the network — openness, mutual aid,
-          support. There are opportunities to go deeper into what our
-          collective is, but that&apos;s not necessary — it&apos;s not even
-          necessarily encouraged. If you show up as an active artist in the
-          community, there is space and attention for you to become more
-          integrated. You might also use our site and never try to deepen
-          your connection with the network, and that&apos;s totally fine.
-          You&apos;re doing enough by being present. Thank you.
-        </p>
-      </section>
-
-      {showResume && resumeCard && (
-        <section className="mb-10 rounded-lg border border-primary/30 bg-accent/30 p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* ── Tall row: forum + welcome ──────────────────────────────────── */}
+      <div className="ekh-split">
+        <section className="ekh-box" aria-labelledby="ekh-forum">
+          <div className="ekh-box__head">
             <div>
-              <p className="text-xs uppercase tracking-wider text-primary">
-                {resumeStatus === "in_progress" ? "Next step" : "Start here"}
-              </p>
-              <h2 className="mt-1 font-serif text-xl leading-tight">
-                {resumeStatus === "in_progress"
-                  ? "Finish your Artist Profile"
-                  : "Begin your Artist Profile"}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {resumeStatus === "in_progress"
-                  ? "Pick up where you left off."
-                  : "The first onboarding process. It shapes your public page."}
-              </p>
+              <span className="ekh-kicker">The Grand Forum · Elkdonis</span>
+              <h2 id="ekh-forum">Feedback</h2>
             </div>
-            <Button asChild size="lg">
-              <Link href={resumeCard.href ?? "#"}>
-                {resumeStatus === "in_progress" ? "Resume" : "Start"}
-              </Link>
-            </Button>
+            <a className="ekh-link" href={forumHref.feed(ELKDONIS_FEEDS.feedback)} target="_blank" rel="noopener">
+              All {feedback.total} →
+            </a>
+          </div>
+          <p className="ekh-small">
+            One topic per thing — bugs, wishes, confusions, thanks. Everything here is indexed on the
+            forum, and the inner group reads every one.
+          </p>
+          {feedback.rows.length === 0 ? (
+            <p className="ekh-empty">No feedback yet. Be the first.</p>
+          ) : (
+            <ul className="ekh-topics">
+              {feedback.rows.map((t) => (
+                <li key={t.id}>
+                  <a href={forumHref.thread(t.id, t.slug)} target="_blank" rel="noopener">
+                    <strong>{t.title}</strong>
+                    <span className="ekh-meta">
+                      {t.author.name} · {when(t.lastActivityAt)} · {t.replyCount}{" "}
+                      {t.replyCount === 1 ? "reply" : "replies"}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          <details className="ekh-details">
+            <summary className="ekh-btn ekh-btn--ghost">Leave feedback</summary>
+            <ComposeForm
+              feed={ELKDONIS_FEEDS.feedback}
+              submitLabel="Post feedback"
+              titlePlaceholder="In a line: what's working, or what isn't?"
+              textPlaceholder="What happened, where, and what you expected."
+            />
+          </details>
+          <div className="ekh-box__foot">
+            <a className="ekh-link" href={forumHref.feed(ELKDONIS_FEEDS.crossPosts)} target="_blank" rel="noopener">Cross-post suggestions</a>
+            <a className="ekh-link" href={`${forumBase()}/o/elkdonis`} target="_blank" rel="noopener">Every Elkdonis category</a>
           </div>
         </section>
-      )}
 
-      <section className="space-y-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-serif text-2xl text-foreground">
-            Deepen your ties
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            {HUB_CARDS.filter((c) => c.available).length} active ·{" "}
-            {HUB_CARDS.filter((c) => !c.available).length} coming soon
-          </span>
-        </div>
-        <div className="-mx-6 overflow-x-auto px-6 pb-4">
-          <div className="flex gap-4">
-            {HUB_CARDS.map((card) => (
-              <HubCard key={card.id} card={card} status={cardStatus(card.id)} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-12 space-y-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-serif text-2xl text-foreground">
-            Platform &amp; account
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            {SITE_PANELS.filter((c) => c.available).length} active
-          </span>
-        </div>
-        <div className="-mx-6 overflow-x-auto px-6 pb-4">
-          <div className="flex gap-4">
-            {SITE_PANELS.map((card) => (
-              <HubCard key={card.id} card={card} status={panelStatus(card.id)} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-12 space-y-4">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-serif text-2xl text-foreground">
-            Get to know other members
-          </h2>
-          <Link
-            href="/artists"
-            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Browse all artists →
-          </Link>
-        </div>
-        {roster.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No members listed yet.
-          </p>
-        ) : (
-          <div className="-mx-6 overflow-x-auto px-6 pb-4">
-            <div className="flex gap-4">
-              {roster.map((m) => (
-                <a
-                  key={m.user_id}
-                  href={orgHomeUrl(homes, m.slug)}
-                  target="_blank"
-                  rel="noopener"
-                  className="flex h-full min-h-[140px] w-[240px] shrink-0 flex-col justify-between rounded-lg border border-border bg-card p-4 transition hover:border-primary/60"
-                >
-                  <div className="space-y-1">
-                    <p className="font-serif text-base leading-snug text-foreground">
-                      {m.display_name}
-                    </p>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {m.city}
-                    </p>
-                  </div>
-                  {m.bio && (
-                    <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
-                      {m.bio}
-                    </p>
-                  )}
-                </a>
-              ))}
+        <section className="ekh-box ekh-welcome" aria-labelledby="ekh-welcome">
+          <span className="ekh-kicker">Welcome back</span>
+          <div className="ekh-welcome__id">
+            {card.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={card.avatarUrl} alt="" className="ekh-avatar" />
+            ) : (
+              <span className="ekh-avatar ekh-avatar--initials" aria-hidden>{initials(card.displayName)}</span>
+            )}
+            <div>
+              <h2 id="ekh-welcome">{card.displayName}</h2>
+              <p className="ekh-small">{card.email}</p>
+              {card.isSteward && <span className="ekh-badge">Steward · inner group</span>}
             </div>
           </div>
-        )}
+
+          <dl className="ekh-facts">
+            <div><dt>Artist profile</dt><dd>{profileStatus}</dd></div>
+            <div><dt>Business</dt><dd>{bizStatus}</dd></div>
+            {card.joinedAt && <div><dt>Member since</dt><dd>{when(card.joinedAt)} {new Date(card.joinedAt).getFullYear()}</dd></div>}
+          </dl>
+
+          <div>
+            <span className="ekh-kicker">Your organizations</span>
+            {card.memberships.length === 0 ? (
+              <p className="ekh-small">None yet — you can take part without one, or <Link href="/hub/organization" className="ekh-link">start your own</Link>.</p>
+            ) : (
+              <ul className="ekh-orgs">
+                {card.memberships.map((m) => (
+                  <li key={m.orgSlug}>
+                    <span>{m.orgName}</span>
+                    <span className="ekh-role">{m.role}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="ekh-welcome__actions">
+            {profileStatus !== "Complete" && (
+              <Link href="/wizard" className="ekh-btn ekh-btn--gold">
+                {profileStatus === "In progress" ? "Finish your profile" : "Begin your profile"}
+              </Link>
+            )}
+            <Link href="/account" className="ekh-btn ekh-btn--ghost">Account</Link>
+            <Link href="/hub/network" className="ekh-btn ekh-btn--ghost">Community</Link>
+          </div>
+        </section>
+      </div>
+
+      {/* ── Three columns: arcade · announcements · promotion ──────────── */}
+      <div className="ekh-three">
+        <aside className="ekh-box ekh-box--side" aria-label="Arcade">
+          <Arcade artwork={artwork} />
+        </aside>
+
+        <section className="ekh-box ekh-news" aria-labelledby="ekh-news">
+          <div className="ekh-box__head">
+            <div>
+              <span className="ekh-kicker">From the stewards</span>
+              <h2 id="ekh-news">Elkdonis Announcements</h2>
+            </div>
+            <a className="ekh-link" href={forumHref.feed(ELKDONIS_FEEDS.announcements)} target="_blank" rel="noopener">
+              Archive →
+            </a>
+          </div>
+          {announcements.rows.length === 0 ? (
+            <p className="ekh-empty">
+              Nothing announced yet. Announcements are posted by the inner group, who steward the
+              collective.
+            </p>
+          ) : (
+            <ol className="ekh-stories">
+              {announcements.rows.map((a, n) => (
+                <li key={a.id} className={n === 0 ? "ekh-story ekh-story--lead" : "ekh-story"}>
+                  <span className="ekh-kicker">{when(a.publishedAt ?? a.lastActivityAt)} · {a.author.name}</span>
+                  <a href={forumHref.thread(a.id, a.slug)} target="_blank" rel="noopener" className="ekh-story__title">
+                    {a.title}
+                  </a>
+                  {a.excerpt && <p className="ekh-story__excerpt">{a.excerpt}</p>}
+                  <span className="ekh-meta">{a.replyCount} {a.replyCount === 1 ? "reply" : "replies"}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {card.isSteward && (
+            <details className="ekh-details">
+              <summary className="ekh-btn ekh-btn--ghost">Post an announcement</summary>
+              <ComposeForm
+                feed={ELKDONIS_FEEDS.announcements}
+                submitLabel="Announce"
+                titlePlaceholder="Headline"
+                textPlaceholder="What the collective should know. Blank lines make paragraphs."
+              />
+            </details>
+          )}
+        </section>
+
+        <aside className="ekh-box ekh-box--side" aria-label="Across the network">
+          <div className="ekh-box__head">
+            <div>
+              <span className="ekh-kicker">Across the network</span>
+              <h2>Cross-posts</h2>
+            </div>
+          </div>
+          <CrossPostSlider
+            slides={slides}
+            suggest={
+              <ComposeForm
+                feed={ELKDONIS_FEEDS.crossPosts}
+                submitLabel="Suggest it"
+                titlePlaceholder="What is it?"
+                textPlaceholder="Why the network should see it (optional)"
+                withLink
+                compact
+              />
+            }
+          />
+        </aside>
+      </div>
+
+      {/* ── Wizards ────────────────────────────────────────────────────── */}
+      <section className="ekh-band" aria-labelledby="ekh-wizards">
+        <div className="ekh-band__head">
+          <h2 id="ekh-wizards">Wizards</h2>
+          <span className="ekh-small">Guided flows that work today</span>
+        </div>
+        <WizardRail cards={wizards} />
       </section>
 
-      <YourSubmissions userId={user.id} />
-
-      <section className="mt-12 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row">
-        <Button asChild size="lg" variant="outline">
-          <Link href="/hub/network">See what&apos;s happening across the network</Link>
-        </Button>
+      {/* ── Elkdonis Course ───────────────────────────────────────────── */}
+      <section className="ekh-course" aria-labelledby="ekh-course">
+        <div className="ekh-course__intro">
+          <span className="ekh-kicker">{sophia ? "Early outline · on Sophia" : "In preparation"}</span>
+          <h2 id="ekh-course">Elkdonis Course</h2>
+          <p>
+            A curriculum from the collective. It opens with <strong>The Elkdonis Path</strong>, a
+            walkable course taken at your own pace, one step at a time: short readings, then a
+            reflection that asks one question at a time and is answered, not graded. Later runs will
+            be cohorts with live sessions, like the workshops already on the network.
+          </p>
+        </div>
+        <ol className="ekh-course__shape">
+          <li>
+            <strong>Modules</strong>
+            <span>A few themed chapters, taken in order.</span>
+          </li>
+          <li>
+            <strong>Steps</strong>
+            <span>A lesson, a reflection, a live session or a resource. Each one opens when the step before it is done.</span>
+          </li>
+          <li>
+            <strong>Reflections</strong>
+            <span>Written for yourself first. Asked again after a day, a week and a month.</span>
+          </li>
+          <li>
+            <strong>Completion</strong>
+            <span>A record that you walked the Path, and later a badge you can verify.</span>
+          </li>
+        </ol>
+        <div className="ekh-course__foot">
+          <p className="ekh-small">{sophia ? "The first outline is up on Sophia, the collective’s new home for courses. " : ""}What should the Path teach?</p>
+          <div className="ekh-welcome__actions">
+            {sophia && (
+              <a className="ekh-btn ekh-btn--gold" href={`${sophia}/elkdonis-path`} target="_blank" rel="noopener">
+                Open the Elkdonis Path
+              </a>
+            )}
+            <a className="ekh-btn ekh-btn--ghost" href={forumHref.feed(ELKDONIS_FEEDS.feedback)} target="_blank" rel="noopener">
+              Suggest a subject
+            </a>
+          </div>
+        </div>
       </section>
+
+      <div className="ekh-submissions">
+        <YourSubmissions userId={user.id} />
+      </div>
     </div>
   );
 }

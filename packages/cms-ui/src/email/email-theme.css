@@ -1,0 +1,153 @@
+/* ==========================================================================
+   The email suite as a STUDIO.
+   ==========================================================================
+
+   Opt-in, and modelled on `forum-theme.css`: the board gets its own reading
+   ground rather than wearing whatever the host site is painted in, because a
+   board is a place you go rather than a panel on a page. The same is true of
+   this. Composing, addressing and sending correspondence is a workroom, and a
+   workroom that changes colour depending on which org's hub you opened it
+   from is harder to learn than one that always looks the same.
+
+   So this redefines the OUTPUT tokens (`--sf-*`) on `.eac-email`, exactly as
+   the forum does on `.gf-root`. Import it and the suite is steel; leave it out
+   and the suite wears the host's palette as before:
+
+       @import "@elkdonis/cms-ui/email-theme.css";
+
+   CONTRAST, measured rather than chosen. On the panel #ffffff: ink 16.20:1,
+   muted 7.56:1, faint 5.03:1, steel accent 7.09:1 as text and 7.09:1 with
+   white on it. On the ground #eceff3: 14.05 / 6.55 / 4.36 / 6.14. The control
+   edge is its own token at 4.48:1, NOT the hairline: a rule between two
+   panels may be 1.4:1, but the border of an input is the only thing saying it
+   is a control (WCAG 1.4.11 wants 3:1).
+   ========================================================================== */
+
+.eac-email {
+  /* ── grounds ─────────────────────────────────────────────────────────── */
+  --sf-bg: var(--email-panel, #ffffff);
+  --sf-bg-soft: var(--email-paper, #eceff3);
+  --sf-fg: var(--email-ink, #1b2129);
+  --sf-muted: var(--email-muted, #4b5563);
+  --sf-faint: var(--email-faint, #66707c);
+
+  /* A hairline between panels, and the stronger rule under a heading. */
+  --sf-line: var(--email-line, #d3d9df);
+  --sf-rule: var(--email-rule, #a9b3bd);
+
+  /* ── accent: steel blue, white ink on it ─────────────────────────────── */
+  --sf-accent: var(--email-accent, #3b5b7a);
+  --sf-on-accent: var(--email-on-accent, #ffffff);
+  --sf-danger: var(--email-danger, #9a3b2e);
+
+  /* ── the workroom's hand ─────────────────────────────────────────────── */
+  /* Square. A studio's surfaces are cut, not rounded. */
+  --sf-radius: var(--email-radius, 2px);
+  --sf-radius-sm: 2px;
+  /* Meta — addresses, timestamps, counts — is set in the record face, which
+     is what makes a list of correspondence scannable down its left edge. */
+  --sf-font-record: var(
+    --email-font-record,
+    ui-monospace, "SF Mono", Menlo, Consolas, monospace
+  );
+
+  /* The suite's own faces, not the host's.
+     A workroom half-set in a site's display serif reads as a panel someone
+     dropped into a page; the forum takes its own faces for the same reason.
+     A grotesque here is also the honest one: this is a tool, and the thing
+     being composed has its own typography inside the letter body below. */
+  --sf-font-body: var(
+    --email-font-body,
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
+  );
+  --sf-font-title: var(--email-font-title, var(--sf-font-body));
+
+  background: var(--sf-bg-soft);
+  color: var(--sf-fg);
+  font-family: var(--sf-font-body);
+}
+
+/* Headings inside the suite follow it too — otherwise the tab bar is a
+   workroom and the section above it is still the site. */
+.eac-email h1,
+.eac-email h2,
+.eac-email h3 {
+  font-family: var(--sf-font-title);
+  letter-spacing: -0.005em;
+}
+
+/* The control edge. Applied where a border is the only thing identifying an
+   interactive element, rather than raising `--sf-line` everywhere — a
+   hairline between two panels at 4.5:1 would draw a grid over the page. */
+.eac-email input,
+.eac-email textarea,
+.eac-email select,
+.eac-email .eac-email-chip,
+.eac-email .eac-email-quietbtn {
+  border-color: var(--email-control-edge, #6e7884);
+}
+
+/* ── the tab bar, as a workbench rail ───────────────────────────────────── */
+
+.eac-email-tabs {
+  background: var(--sf-bg);
+  border-bottom: 1px solid var(--sf-rule);
+  padding-inline: 4px;
+}
+
+.eac-email-tab {
+  font-family: var(--sf-font-record);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The current tab is marked by a solid bar it sits on, not by a colour swap:
+   a steel ground with one tab in a different fill reads as a button someone
+   forgot to finish. */
+.eac-email-tab.is-current {
+  background: transparent;
+  color: var(--sf-fg);
+  box-shadow: inset 0 -3px 0 var(--sf-accent);
+}
+
+/* ── the list ───────────────────────────────────────────────────────────── */
+
+.eac-email-item {
+  background: var(--sf-bg);
+  border-bottom: 1px solid var(--sf-line);
+}
+
+/* A row being read leans on the accent at its leading edge, which is how the
+   board marks a feed too — one visual grammar across both places. */
+.eac-email-item:hover,
+.eac-email-item:focus-within {
+  box-shadow: inset 3px 0 0 var(--sf-accent);
+}
+
+.eac-email-item-sub,
+.eac-email-item-status,
+.eac-email-feed-when,
+.eac-email-feed-who {
+  font-family: var(--sf-font-record);
+  font-size: 12px;
+  color: var(--sf-muted);
+}
+
+.eac-email-facts {
+  background: var(--sf-bg-soft);
+  border: 1px solid var(--sf-line);
+  font-family: var(--sf-font-record);
+  font-size: 12px;
+}
+
+/* ── the letter itself ──────────────────────────────────────────────────── */
+
+/* The one place that is deliberately NOT steel: a letter is read as it will
+   be sent, so the body keeps a paper ground and its own measure rather than
+   taking on the workroom's colour. */
+.eac-email-body {
+  background: #ffffff;
+  border: 1px solid var(--sf-line);
+  max-width: 68ch;
+}

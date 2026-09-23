@@ -3,13 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getOrgEmailIdentity,
+  emailChromeFor,
   loadOrgTemplate,
   renderSample,
   templateMeta,
 } from "@elkdonis/email";
 import { requireOrgEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { EmailTemplateForm } from "@/components/hub/EmailTemplateForm";
+import { TemplateWordsEditor } from "@elkdonis/cms-ui/email";
 
 export const metadata: Metadata = { title: "Email template" };
 export const dynamic = "force-dynamic";
@@ -43,7 +44,19 @@ export default async function EmailTemplatePage({
     orgName: identity.fromName,
     orgHeader: identity.fromIsOrgDomain,
     orgAccent: identity.accentColor,
+    // And the face it is set in, so the preview is not quieter or louder
+    // than the letter that leaves.
+    bodyFont: identity.palette?.bodyFont,
+    // The masthead image and the frame around the card, so the preview
+    // wears the org's own banner rather than the collective's wordmark —
+    // which is what the letter that leaves will do.
+    chrome: emailChromeFor(identity),
     bodyText: stored?.bodyText,
+    bodyHtml: stored?.bodyHtml,
+    // The letter's OWN sentences, as this org has rewritten them. Without
+    // this the preview renders the network's defaults and quietly disagrees
+    // with what will actually send.
+    copy: stored?.copy,
   });
 
   return (
@@ -59,9 +72,15 @@ export default async function EmailTemplatePage({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div>
-          <EmailTemplateForm
+          {/* The shared editor, not this app's own form. It was a plain
+              textarea, which meant the one thing an org actually wants to add
+              to a letter — a sentence with a link in it — arrived as a bare
+              URL in running text. Rich now, and shared, so IFAC's copy of this
+              page and the suite's inline box are the same editor. */}
+          <TemplateWordsEditor
             templateKey={key}
-            initialBodyText={stored?.bodyText ?? ""}
+            initialBodyHtml={stored?.bodyHtml}
+            initialBodyText={stored?.bodyText}
             hint={meta.editHint}
             hasOwnLayout={Boolean(stored?.html)}
             editHref={`/hub/email/${key}/edit`}

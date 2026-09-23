@@ -78,6 +78,13 @@ export interface ContentFieldContext {
   canShareToNetwork?: boolean;
   /** The zone times are entered in, when the org is one physical room. */
   defaultTimeZone?: string;
+  /**
+   * The people who can host a gathering here. Given any, a dated kind gets a
+   * "Who's hosting" choice, which the host saves onto the rota for the NEXT
+   * occurrence (services' assignMeetingRole) — the same row Plan ahead
+   * edits, so the form and the rota can never disagree about who it is.
+   */
+  hostCandidates?: Array<{ userId: string; displayName: string }>;
 }
 
 const VISIBILITY: ContentFieldSpec = {
@@ -234,6 +241,36 @@ export function buildContentFields(
         },
       ],
     });
+
+    // Who is running it. Only where the host said who could: a site with no
+    // rota has no candidates, and a picker of nobody is worse than none.
+    if (ctx.hostCandidates && ctx.hostCandidates.length > 0) {
+      groups.push({
+        id: "hosting",
+        label: "Who's hosting",
+        blurb: "For the next time it happens — later weeks are set in Plan ahead",
+        fields: [
+          {
+            name: "host_user_id",
+            label: "Host",
+            input: "select",
+            inline: true,
+            // The control's own empty option carries this label — adding a
+            // "" option as well showed two ways of saying nobody.
+            placeholder: "Nobody yet",
+            options: ctx.hostCandidates.map((c) => ({ value: c.userId, label: c.displayName })),
+          },
+          {
+            name: "co_host_user_id",
+            label: "Co-host",
+            input: "select",
+            inline: true,
+            placeholder: "Nobody",
+            options: ctx.hostCandidates.map((c) => ({ value: c.userId, label: c.displayName })),
+          },
+        ],
+      });
+    }
 
     // The toggle is the disclosure: switching RSVPs on reveals the rest.
     groups.push({

@@ -1,0 +1,669 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@elkdonis/commerce/commerce.css";
+
+@source "../../../../packages/pipeline/src";
+@source "../../../../packages/chat/src";
+
+
+/* @elkdonis/cms-ui ships source, not a bundle, so Tailwind has to be told to
+   scan it or the compose sheet renders unstyled. */
+@source "../../../../packages/cms-ui/src";
+
+/* The reading layer for published writing. Plain CSS with custom-property
+   fallbacks, so it picks up this site's ink and rule colours. */
+@import "@elkdonis/cms-ui/article.css";
+/* The surface system — every popup on the hub (a meeting, the month, the
+   gallery, quick-add) and the faces that open them. gallery.css carries the
+   lightbox the gallery surface uses. Both plain CSS; tokens mapped below. */
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
+@import "@elkdonis/cms-ui/profile.css";
+/* The Grand Forum at /forum, in this site's tokens. */
+@import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
+@import "@elkdonis/cms-ui/gallery.css";
+/* The five-band members' hub. amrit-canada draws a flat grid and does not
+   import this; this site uses the bands, so it must. */
+@import "@elkdonis/cms-ui/hub.css";
+@import "@elkdonis/cms-ui/hubsite.css";
+@import "@elkdonis/cms-ui/writing.css";
+/* MediaPicker (the composer's cover-image pane) is styled here too. */
+@import "@elkdonis/cms-ui/files-card.css";
+/* Field controls and the composer's groups — plain CSS, so the same form
+   sets correctly in every app. */
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
+/* The shared controls — buttons, inputs, cards, tabs, select. Plain CSS driven
+   by --eac-control-* tokens, mapped to this site's palette below. Replaced the
+   17 shadcn copies that used to live in src/components/ui.
+
+   layer(components) is REQUIRED, not decoration. Tailwind v4 orders its layers
+   theme → base → components → utilities, and an UNLAYERED rule beats every
+   layered one no matter its specificity. Imported bare, this stylesheet would
+   overpower every utility class a caller passes in — `<Button className="text-
+   [#fdf5e6]/80">` would silently render in the default ink instead. Thirty call
+   sites in this app pass exactly that kind of override. Importing into the
+   components layer puts the library underneath utilities, which is where the
+   shadcn copies effectively sat. */
+@import "@elkdonis/primitives/primitives.css" layer(components);
+
+/* Page blocks — the section banner and the status badge on the feed pages.
+   Same layer reasoning as the primitives above. */
+@import "@elkdonis/blocks/blocks.css" layer(components);
+/* The same reading tokens as Tailwind utilities, so anything built AROUND a
+   post (a feed strip, an author note) lines up with the prose inside it. */
+@import "@elkdonis/cms-ui/reading-theme.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   The shared controls, in this site's palette.
+
+   Every token here is a hand-off: @elkdonis/primitives never reads --primary
+   itself, because this site stores it as a bare HSL triplet ("45 79% 52%")
+   that is only a valid colour once wrapped in hsl(). Doing that wrapping is
+   this file's job — it is the only place that knows the storage format.
+
+   --accent-ink is PINNED to a literal rather than left to the library default.
+   The library DARKENS the accent with color-mix to make it usable as ink on
+   paper — which is exactly the wrong direction on a dark ground, and Lightning
+   CSS compiles it behind a @supports guard whose fallback is the raw accent
+   anyway. Pinned here to the lifted bronze, which is already ink: #c9ae79
+   measures 7.83:1 on the ground and 6.95:1 on a card.
+
+   This value INVERTED when the site went dark. The light-mode #7c6a46 is
+   2.84:1 on the card — it was left behind by the palette swap and would have
+   made every accent link and focus ring in @elkdonis/primitives unreadable.
+   ========================================================================== */
+
+:root {
+  --eac-control-bg: hsl(var(--background));
+  --eac-control-fg: hsl(var(--foreground));
+  --eac-control-muted: hsl(var(--muted-foreground));
+  --eac-control-line: hsl(var(--border));
+  --eac-control-accent: hsl(var(--primary));
+  --eac-control-accent-on: hsl(var(--primary-foreground));
+  --eac-control-accent-ink: #c9ae79;   /* lifted bronze — 7.83:1 on ground, 6.95:1 on card */
+  --eac-control-danger: hsl(var(--destructive));
+  --eac-control-radius: var(--radius);
+
+  --eac-card-bg: hsl(var(--card));
+  --eac-card-fg: hsl(var(--card-foreground));
+}
+
+/* ==========================================================================
+   @elkdonis/blocks, in this site's palette.
+
+   --band is the chrome behind a section banner. It matches .bg-header-footer,
+   which the header and footer use directly.
+
+   --ok is mapped to the primary bronze rather than left green, so "it's on"
+   is said in one of this site's own two accents rather than a third colour
+   that appears nowhere else.
+   ========================================================================== */
+
+:root {
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  --eac-block-danger: hsl(var(--destructive));
+  --eac-block-ok: hsl(var(--primary));
+
+  /* Flat and one step ABOVE the ground, matching .bg-header-footer: on a
+     dark page a banner separates by lifting, not by darkening. Bone on it
+     is 10.63:1. */
+  --eac-block-band: #2B3134;
+  --eac-block-band-fg: hsl(var(--background));
+
+  --eac-block-font-title: var(--font-fraunces), Georgia, serif;
+  --eac-block-radius: var(--radius);
+}
+
+/* ==========================================================================
+   Para Theater's palette — DARK, flat, stone and bronze.
+
+   The site is dark by default (owner's call, 2026-09-19): these values live on
+   `:root`, not behind `.dark`. The ground is a flat slate — no gradient, no
+   background-attachment — because a wash on a dark backdrop reads as a smudge
+   rather than as depth.
+
+   EVERY pair below was measured, not chosen by eye, and the ratio is recorded
+   beside it. Inverting a palette is exactly where contrast silently breaks:
+   an accent that was dark enough to carry white on paper is usually too dark
+   to be read AS ink on a dark ground, so the accents here were re-picked
+   light and the ink on a filled accent is now the GROUND, not the card.
+
+   Stored as bare HSL triplets and wrapped in hsl() at the use site.
+   ========================================================================== */
+
+:root {
+  --radius: 0rem;
+
+  --background: 204 8% 12%;          /* flat slate  #1B1E20 */
+  --foreground: 40 21% 89%;          /* warm bone   #E9E5DD — 13.34:1 */
+
+  --card: 200 8% 15%;                /* raised      #24282A — bone 11.84:1 */
+  --card-foreground: 40 21% 89%;
+
+  --popover: 200 8% 15%;
+  --popover-foreground: 40 21% 89%;
+
+  --primary: 40 43% 63%;             /* lifted bronze #C9AE79 — 7.83:1 as ink */
+  /* The ink ON a filled primary is the GROUND, not the card: #1B1E20 on
+     #C9AE79 is 7.83:1, while the bone would be 1.70:1 and unreadable. */
+  --primary-foreground: 204 8% 12%;
+
+  --secondary: 200 7% 21%;
+  --secondary-foreground: 40 21% 89%;
+
+  --muted: 200 7% 19%;
+  --muted-foreground: 40 5% 62%;     /* #A3A09A — 6.43:1 on ground */
+
+  --accent: 40 20% 28%;              /* a raised ground for hovers, not ink */
+  --accent-foreground: 40 21% 89%;
+
+  /* Rust, used on purpose: links, italic subheads, second-tier accents.
+     5.98:1 as ink on the ground; the ground on it as a fill is the same. */
+  --rust: 23 52% 60%;                /* #CE8B62 */
+  --rust-deep: 23 44% 52%;
+
+  --destructive: 0 58% 62%;
+  --destructive-foreground: 204 8% 12%;
+
+  /* Two different jobs, two different values.
+     --border is a DIVIDER: decoration, and 3:1 does not apply to it.
+     --input is the visible boundary of a form control, which WCAG 1.4.11
+     does require to be perceivable — #6B7478 is 3.51:1 on the ground and
+     3.11:1 on a card, so a text field reads as a field on both. */
+  --border: 203 7% 23%;              /* #373C3F */
+  --input: 200 5% 45%;               /* #6B7478 */
+  --ring: 40 43% 63%;
+
+  /* Per-feed accents. org_feeds.accent is the source of truth and is applied
+     inline as --feed on the page wrapper. These are the fallbacks, lifted for
+     the dark ground — the seeded database values are the LIGHT-mode ones and
+     would sit at ~2:1 here, so a feed page that sets --feed inline is the one
+     place this site can still go dim. Worth revisiting if feeds get pages
+     with heavy accent fills. */
+  --feed-gatherings: 40 43% 63%;     /* #C9AE79 — ground on it 7.83:1 */
+  --feed-writing: 32 52% 60%;        /* #CE9A62 */
+  --feed-materials: 102 18% 60%;     /* #8DA882 */
+
+  /* The surface system, in this site's voice. */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  /*
+    Pinned, not derived — and deliberately EQUAL to --eac-surface-muted.
+
+    surface.css computes `--sf-faint` as
+    `color-mix(in srgb, var(--sf-muted) 60%, var(--sf-bg))`. On a light ground
+    that mixes toward white and stays legible; here it mixes toward the dark
+    ground and lands on #706F6C, which is 2.58:1 on a calendar cell — past
+    dates, the "+" cue and the forum's timestamps were all effectively
+    invisible. Measured, not guessed.
+
+    Nothing dimmer works: the calendar cell (#2D3234) is the tightest ground on
+    the site, and #9B978F only reaches 4.46:1 on it. So the faint/muted
+    distinction collapses on this palette. The hierarchy it was carrying is
+    still drawn — surface.css gives a day WITH events `--sf-fg` and 600 weight
+    — so the difference survives in weight and colour-strength rather than in
+    a dimmer grey that cannot be read.
+  */
+  --eac-surface-faint: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-radius: var(--radius);
+  --eac-font-title: var(--font-fraunces), Georgia, serif;
+
+  /* Kind accents. Each is used as a FILL with a label on it, so each names
+     its own ink — and on a dark ground that ink is the GROUND, which is the
+     opposite of what the light palette needed. */
+  --eac-kind-meeting: hsl(var(--feed-gatherings));
+  --eac-kind-event: hsl(var(--feed-gatherings));
+  --eac-kind-post: hsl(var(--feed-writing));
+  --eac-kind-post-on: hsl(var(--background));
+  --eac-kind-workshop: hsl(var(--feed-materials));
+  --eac-kind-calendar: hsl(var(--foreground));
+  --eac-kind-calendar-on: hsl(var(--background));
+  --eac-kind-gallery: hsl(var(--rust));
+  --eac-kind-gallery-on: hsl(var(--background));
+  --eac-kind-forum-on: hsl(var(--background));
+  --eac-kind-compose: hsl(var(--foreground));
+  --eac-kind-compose-on: hsl(var(--background));
+  --eac-kind-board: hsl(var(--feed-materials));
+  --eac-kind-board-on: hsl(var(--background));
+
+  /* The hub's band headings — the bone ink, 13.34:1. Not the bronze accent,
+     which is decorative at rubric size. */
+  --eac-hub-rubric: hsl(var(--foreground));
+}
+
+/*
+  `.dark` is kept as an ALIAS of the root, not a second palette.
+
+  Shared components and next-themes both key off this class, and a site that
+  is dark at :root but light under .dark would flip to the wrong scheme the
+  moment anything set it. Inheriting is enough — every token above is already
+  the dark value.
+*/
+.dark {
+  color-scheme: dark;
+}
+
+/* Tell the browser too, so form controls, scrollbars and the caret are drawn
+   dark rather than as light widgets on a dark page. */
+:root {
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Set by the feed page wrapper from org_feeds.accent. */
+  --color-feed: var(--feed, hsl(var(--primary)));
+
+  --font-serif: var(--font-fraunces);
+  --font-sans: var(--font-spectral);
+
+  /* Pinned to 0, not derived: calc(0px - 4px) is NEGATIVE, and a negative
+     border-radius is invalid, so the whole declaration would be dropped and
+     the browser would fall back to the UA default. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  /* FLAT. The gradient this replaced was a stone wash for a light ground; on
+     a dark backdrop the same treatment reads as a smudge rather than depth,
+     and `background-attachment: fixed` made it swim under the scroll. */
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* No `.dark body` override: the root ground is already the dark one. */
+
+/* ==========================================================================
+   Decorative layer.
+
+   The structure is amrit-canada's (same class names, so the shared components
+   and page markup need no changes), but the treatment is this site's: a
+   stone-bordered card that lifts on a soft shadow instead of a saffron glow,
+   and slate chrome instead of charcoal. Rock, not flame.
+   ========================================================================== */
+
+/* Cards: a flat raised panel, a hairline border, a shadow that deepens on
+   hover. A balanced stone photograph is the loudest thing on this site and
+   the frame should not compete with it.
+
+   Flat `--card`, not a gradient: on a dark ground the card is separated from
+   the page by being LIGHTER, and a gradient across it fights that one job. */
+.card-natural {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.35s ease;
+}
+
+.card-natural:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--primary) / 0.45);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* No `.dark .card-natural`: the root card is already the dark one. */
+
+/* Respect a reduced-motion preference: the lift is decoration, and the
+   border/shadow change already carries the hover state on its own. */
+@media (prefers-reduced-motion: reduce) {
+  .card-natural,
+  .card-natural:hover,
+  .portal-tile,
+  .portal-tile:hover {
+    transform: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+}
+
+/* Chrome — header, footer, section banners.
+
+   On the light site this was a dark band that stood out by being darker than
+   the page. The page is now darker than it was, so the chrome LIFTS instead:
+   one flat step above the ground. Going darker still would have made the
+   header a black bar on a near-black page. */
+.bg-header-footer {
+  background: #2B3134;
+}
+
+/* Kept under amrit's class name so shared markup needs no edit. */
+.saffron-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.65), transparent);
+  border: none;
+  margin: 2rem 0;
+}
+
+/* A gradient FILL on text kills the contrast guarantee, because the ink is no
+   longer a colour anything can measure. Used only on large display type, and
+   both stops are dark enough on stone to stand alone: bronze 4.65:1,
+   rust 5.72:1. */
+.gradient-text {
+  background: linear-gradient(135deg, #c9ae79, #ce8b62);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* No `.dark .gradient-text`: the root stops are already the light-on-dark ones. */
+
+blockquote.site-quote {
+  border-left: 4px solid hsl(var(--primary));
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.09) 0%, transparent 100%);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  border-radius: 0;
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: hsl(var(--foreground));
+  box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Portal tiles on the home page. The glow colour comes from the feed's own
+   accent (--feed), so a new section gets the treatment without new CSS. */
+.portal-tile {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.portal-tile:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px var(--feed-glow, rgba(124, 106, 70, 0.28));
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
+   Rich text — both the editor pane and the published output.
+
+   The editor markup asks for Tailwind's `prose` classes, but
+   @tailwindcss/typography isn't installed, so those were no-ops: pressing
+   "Heading 2" changed the HTML and nothing on screen, which reads as a broken
+   editor. Styling both surfaces with the same rules keeps what an author sees
+   while typing honest about what visitors get.
+   ========================================================================== */
+.tiptap-content :where(h2) {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 1.2rem 0 0.5rem;
+}
+.tiptap-content :where(h3) {
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+}
+.tiptap-content :where(p) {
+  margin: 0.5rem 0;
+  line-height: 1.65;
+}
+.tiptap-content :where(ul, ol) {
+  margin: 0.5rem 0 0.5rem 1.35rem;
+  list-style: revert;
+}
+.tiptap-content :where(li) {
+  margin-bottom: 0.25rem;
+}
+.tiptap-content :where(li p) {
+  margin: 0;
+}
+.tiptap-content :where(a) {
+  color: hsl(var(--rust-deep));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 0.9rem;
+  margin: 0.8rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+.tiptap-content :where(strong) {
+  font-weight: 700;
+}
+
+/* The placeholder only renders when the document is genuinely empty. */
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Published output. */
+.prose-site :where(p) {
+  margin-bottom: 0.85rem;
+  line-height: 1.7;
+}
+.prose-site :where(h2, h3) {
+  margin: 1.6rem 0 0.6rem;
+  font-weight: 600;
+  font-family: var(--font-serif), Palatino, Georgia, serif;
+}
+.prose-site :where(ul, ol) {
+  margin: 0 0 0.85rem 1.25rem;
+  list-style: revert;
+}
+.prose-site :where(li) {
+  margin-bottom: 0.3rem;
+}
+.prose-site :where(a) {
+  color: hsl(var(--secondary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-site :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1.2rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+/* A guide's marketplace store, embedded on their about page. Themed onto the
+   site's shadcn tokens so the card reads as part of the page; the accent is
+   `primary`, not the saffron `accent`, which is a hover wash and far too pale
+   to carry white text or a focus ring. */
+.eac-commerce {
+  --pc-ink: hsl(var(--foreground));
+  --pc-ink-soft: hsl(var(--muted-foreground));
+  --pc-ink-faint: hsl(var(--muted-foreground));
+  --pc-line: hsl(var(--border));
+  --pc-mat: hsl(var(--muted));
+  --pc-surface: transparent;
+  --pc-accent: hsl(var(--primary));
+  --pc-on-accent: hsl(var(--primary-foreground));
+  --pc-radius: var(--radius);
+}
+
+/* ==========================================================================
+   The shared sign-up card (@elkdonis/cms-ui/auth), in this site's palette.
+
+   It ships gilt-on-parchment and is fully token-driven, so re-skinning it is
+   a variable override rather than a fork. Used on /login and in the landing
+   page's sign-up column.
+
+   --eac-bq-gilt carries TWO roles, and they pull in opposite directions:
+   it is link/heading INK on the parchment ground (wants to be dark) and it is
+   the FILL behind the submit button's hardcoded #2a2010 text (wants to be
+   light). No single value clears 4.5:1 in both — bronze scores 4.98:1 as ink
+   and only 3.05:1 as that fill. So the roles are split: the token takes the
+   ink value, and the button's ink is overridden below to the pale card
+   colour, which is 4.98:1 on the same bronze.
+   ========================================================================== */
+/*
+  `:root:root`, not `:root`.
+
+  baroque-signup.css is imported by the CLIENT COMPONENT that uses it, so Next
+  emits it as its own chunk and its load order relative to this file is not
+  guaranteed. At equal specificity the later sheet wins, and the first attempt
+  at this override silently lost — the card kept rendering gilt. Doubling the
+  selector raises specificity to (0,2,0) so these values win on merit rather
+  than on ordering luck.
+*/
+:root:root {
+  --eac-bq-parchment: #24282A;   /* the card, not paper — this site is dark */
+  --eac-bq-parchment-deep: #1B1E20;
+  --eac-bq-ink: #e9e5dd;         /* bone — 11.84:1 on the card above */
+  --eac-bq-ink-soft: #a3a09a;    /* 5.70:1 */
+  --eac-bq-gilt: #c9ae79;        /* lifted bronze — 6.95:1 as ink on the card */
+  --eac-bq-gilt-bright: #ddc79a;
+  --eac-bq-violet: #ce8b62;      /* rust, not violet: this site has no purple */
+  --eac-bq-vermilion: #d97070;
+  --eac-bq-display: var(--font-fraunces), Georgia, serif;
+}
+
+/*
+  The other half of the split described above.
+
+  `:not(.eac-bq-cta--google)` is REQUIRED, not tidiness. The Google button
+  carries this same base class over a WHITE background with its own dark ink;
+  an unscoped override painted its label #fbf9f5 on #fff and the button
+  rendered as a bare Google logo with invisible text. Caught by rendering it.
+
+  The ink INVERTED when the site went dark: the gilt is now a LIFTED bronze
+  (#c9ae79 → #ddc79a), so the label has to be the dark ground. The bone that
+  was correct on the old deep bronze measures 1.55:1 here.
+*/
+.eac-bq-cta:not(.eac-bq-cta--google) {
+  color: #1b1e20 !important;   /* 7.83:1 on the lifted bronze fill */
+}
+
+/* ==========================================================================
+   The reading layer (@elkdonis/cms-ui writing + article), on a dark ground.
+
+   Those stylesheets paint no background — they sit on whatever the host gives
+   them — but their INK falls back to light-mode literals (`--read-ink:
+   #16181d`, `--read-muted: #5a6070`, `--read-faint: #8b90a0`). On this ground
+   that is near-black on near-black: the writing shelf rendered as a heading
+   and two entries you could only find by selecting them.
+
+   Measured on the page ground / the card: ink 13.34 / 11.84, muted 7.75 /
+   6.88, faint 5.76 / 5.11. The rule is a divider, so 3:1 does not apply.
+   ========================================================================== */
+:root {
+  --read-ink: #e9e5dd;
+  --read-muted: #b4b0a8;
+  --read-faint: #9b978f;
+  --read-rule: #3a4043;
+  --read-accent: #c9ae79;
+  --read-face-title: var(--font-fraunces), Georgia, serif;
+  --read-face-prose: var(--font-spectral), Georgia, serif;
+}
+
+/* ==========================================================================
+   The standing-gathering card on the landing page.
+
+   The shared face is built for a GRID of tiles: min-height 210px, a 1px box
+   rule, and 56px of top padding reserving the glyph medallion's row. Alone and
+   full width that reads as a wide, shallow band with a lot of air trapped
+   inside a hard outline — which is what the owner was looking at.
+
+   Taller, and quieter: the rule drops to a hairline rendered only where the
+   card meets the page, and the top padding comes back to something that suits
+   one card rather than a row of them. Scoped to `.landing-standing` so every
+   other face in the network keeps the grid geometry it was designed for.
+   ========================================================================== */
+.landing-standing > .eac-face {
+  min-height: 300px;
+  padding: 40px 26px 26px;
+  border-color: color-mix(in srgb, var(--sf-line), transparent 45%);
+}
+
+/* The medallion is absolutely positioned against the face, so its offset has
+   to follow the padding above or it detaches from the text block. The class is
+   `.eac-face-glyph` (surface.css:282) — and it is scoped there as a face's own
+   CHILD because the bare class is reused by the center panels and the thread
+   cards, so this override has to be just as specific or it would reach them. */
+.landing-standing > .eac-face > .eac-face-glyph {
+  top: 18px;
+  left: 24px;
+}
+
+/* ==========================================================================
+   Square corners, everywhere.
+
+   The tokens above cover every shared control that derives its radius from
+   --radius. They do NOT cover literals inside shared packages (a `rounded-full`
+   avatar in cms-ui, a 50% portrait, a pill badge), and this site is not the
+   owner of those files — so the rule is applied here, at the leaf, rather than
+   by editing components that IFAC and innergathering also render rounded.
+
+   `!important` because Tailwind's `rounded-*` utilities sit in the utilities
+   layer, which beats anything unlayered this file could otherwise say.
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}

@@ -106,6 +106,9 @@ async function main() {
     ) x ON x.user_id = u.id
     LEFT JOIN user_organizations uo ON uo.user_id = u.id AND uo.org_id = x.org_id
     WHERE u.nextcloud_user_id IS NOT NULL
+      -- Viewers are followers, not members: no read on the org folder.
+      -- (Additive only — this stops new grants, it never revokes old ones.)
+      AND COALESCE(uo.role, 'member') IN ('member', 'guide', 'owner')
   `;
 
   const cmds = [];
@@ -186,6 +189,43 @@ async function main() {
       console.log("  FAIL " + line + "  -> " + (err.stderr || err.message).toString().trim().split("\n")[0]);
     }
   }
+  // 6. Put each affiliated person IN the group, so the team folder mounts for
+  //    them at all. Folder 2 is assigned only to the ${GROUP} group; the rules
+  //    above decide what inside it each person sees, but someone outside the
+  //    group has no mount and sees nothing — which is what happened to every
+  //    SSO signup (sociallogin's defaultGroup is empty, and nothing else ever
+  //    added them; the ones who were in it had been added by hand).
+  //    LAST, and only if every rule above applied: joining the group while a
+  //    deny were missing would show them other orgs' folders.
+  const wanted = [...new Set([...affiliations.map((a) => a.nc), ...people.map((p) => p.nextcloud_user_id)])];
+  let inGroup = new Set();
+  try {
+    inGroup = new Set(JSON.parse(occ(["group:list", "--output=json"]))[GROUP] ?? []);
+  } catch (err) {
+    console.log(`\n# could not read ${GROUP} members — skipping group adds: ${(err.message || "").split("\n")[0]}`);
+    wanted.length = 0;
+  }
+  const toAdd = wanted.filter((uid) => !inGroup.has(uid));
+  console.log(`\n# add to group ${GROUP} — ${toAdd.length} missing of ${wanted.length} affiliated`);
+  for (const uid of toAdd) {
+    const args = ["group:adduser", GROUP, uid];
+    if (!APPLY) {
+      console.log("  occ " + args.join(" "));
+      continue;
+    }
+    if (failed > 0) {
+      console.log(`  SKIP occ ${args.join(" ")}  -> ${failed} rule(s) failed above; not widening access`);
+      continue;
+    }
+    try {
+      occ(args);
+      console.log("  ok   occ " + args.join(" "));
+    } catch (err) {
+      failed++;
+      console.log("  FAIL occ " + args.join(" ") + "  -> " + (err.stderr || err.message).toString().trim().split("\n")[0]);
+    }
+  }
+
   if (APPLY) console.log(`\nDone. ${failed} failure(s).`);
   else console.log("\n(dry run — pass --apply to execute)");
 

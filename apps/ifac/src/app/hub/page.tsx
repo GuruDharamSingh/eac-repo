@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@elkdonis/db";
 import {
@@ -5,7 +6,6 @@ import {
   getOrgChatIdentity,
   getOrgChatRoom,
   getStandingMeeting,
-  getThemeOverrides,
   getViewerAlerts,
   listOrgChatMessages,
   listOrgDocuments,
@@ -24,6 +24,8 @@ import { getForumSnapshot } from "@/lib/forum";
 import { getPipelineBoard } from "@/lib/pipeline";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import { HubViewToggle, HUB_VIEW_COOKIE } from "@elkdonis/cms-ui/hubsite";
+import { HubSiteView } from "./site-view";
 import {
   CalendarFace,
   DocumentsFace,
@@ -36,15 +38,11 @@ import { HubDrawer } from "@/components/hub/HubDrawer";
 import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
 import { KindTilesFace } from "@/components/hub/KindTilesFace";
 import { HelpErrand } from "@/components/hub/HelpErrand";
-import { AppearanceCard } from "@/components/hub/AppearanceCard";
 import { FilesFace } from "@/components/hub/FilesCard";
 import { PageSectionsFace, type HubSections } from "@/components/hub/PageSectionsCard";
 import type { StoreEntryState } from "@elkdonis/commerce/links";
 import { getStoreForUser } from "@elkdonis/commerce/queries";
-import { IFAC_THEME_VARS, IFAC_THEMEABLE_PAGES } from "@/lib/theme-tokens";
-import { saveIfacThemeAction } from "@/lib/theme-actions";
 import { getHubSkin } from "@/lib/hub-skin-store";
-import { saveHubSkinAction } from "@/lib/hub-skin-actions";
 
 /**
  * The IFAC members' hub.
@@ -67,7 +65,11 @@ export const dynamic = "force-dynamic";
 /** This org's zone, for the faces that render a time. */
 const TIME_ZONE = "America/Toronto";
 
-export default async function HubPage() {
+export default async function HubPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ payouts?: string }>;
+}) {
   const viewer = await getHubViewer();
   if (!viewer) {
     // Two different failures, two different destinations: not signed in at all
@@ -75,6 +77,33 @@ export default async function HubPage() {
     const { getServerSession } = await import("@elkdonis/auth-server");
     const session = await getServerSession();
     redirect(session.user ? "/?notice=members-only" : "/login?next=/hub");
+  }
+
+  // Stripe returns a seller here with ?payouts=done. Asking Stripe then and
+  // there is what stamps them payable; the account.updated webhook says the
+  // same, but nobody who has just finished the form should have to wait for
+  // it. Before the Connect endpoint existed (2026-09-20) it never arrived at
+  // all, and two payable accounts sat unstamped for two days.
+  if ((await searchParams)?.payouts === "done") {
+    const { refreshStripeAccountStatus } = await import("@elkdonis/checkout/stripe");
+    await refreshStripeAccountStatus(viewer.userId).catch(() => null);
+  }
+
+  // The page layout, when this person chose it. Read before the batch below,
+  // so the card hub's dozen reads never happen for someone who won't see them.
+  // Cards remain the default: only someone who pressed "Page" gets this.
+  if ((await cookies()).get(HUB_VIEW_COOKIE)?.value === "site") {
+    const siteContent = await getSiteContent();
+    return (
+      <div className="site-shell">
+        <ThemeStyle orgId={siteConfig.orgId} pageKey="hub" userId={viewer.userId} />
+        <SiteHeader />
+        <main className="hub">
+          <HubSiteView viewer={viewer} />
+        </main>
+        <SiteFooter content={siteContent.footer} />
+      </div>
+    );
   }
 
   const content = await getSiteContent();
@@ -163,18 +192,6 @@ export default async function HubPage() {
   // indexed single-row lookup against a value the page has to show anyway.
   const skin = await getHubSkin(siteConfig.orgId);
 
-  const overridesByPage: Record<string, Record<string, string>> = {};
-  if (viewer.canEdit) {
-    // Each scope's own overrides, unmerged — the editor shows what a scope
-    // sets, not what it inherits. Only an admin sees the Appearance card, so
-    // only an admin pays for these reads.
-    for (const page of IFAC_THEMEABLE_PAGES) {
-      overridesByPage[page.key] = await getThemeOverrides({
-        orgId: siteConfig.orgId,
-        pageKey: page.key,
-      });
-    }
-  }
 
   const displayName = profile?.displayName ?? viewer.email.split("@")[0];
   // Just the given name for the greeting. A display name may be a full name,
@@ -207,10 +224,13 @@ export default async function HubPage() {
               Here is what the collective has on, and what you can add to it.
             </p>
           </div>
-          <HubDrawer
-            displayName={displayName}
-            profileHref={profile?.slug ? `/artists/${profile.slug}` : null}
-          />
+          <div className="hub-welcome-tools">
+            <HubViewToggle current="classic" />
+            <HubDrawer
+              displayName={displayName}
+              profileHref={profile?.slug ? `/artists/${profile.slug}` : null}
+            />
+          </div>
         </div>
 
         {/*
@@ -256,6 +276,14 @@ export default async function HubPage() {
               standing={standing}
               canEdit={viewer.canEdit}
               timeZone={TIME_ZONE}
+              // Plan ahead — who hosts each coming week, and what it covers.
+              // IFAC never passed this, so its card had no way into the rota.
+              // Only for a gathering that repeats: a one-off has nothing ahead.
+              rota={
+                standing?.event.recurrencePattern
+                  ? { host: null, canPlan: viewer.canEdit }
+                  : undefined
+              }
               attendance={{ answered: meetingAnswer }}
               light={meetingLight ?? undefined}
               history={{}}
@@ -304,7 +332,19 @@ export default async function HubPage() {
 
             <FilesFace initialFiles={files} canEdit={viewer.canEdit} />
 
+            {/* Nextcloud itself. HIDDEN 2026-09-19 (owner: the Cloud card
+                "is not the greatest either"). The face, its data and its
+                registered surface all stay wired (CloudFace in cms-ui/hub,
+                services' getViewerCloud, and the `cloud` key in HubSurfaces) —
+                restoring it is this line plus that one read:
+                <CloudFace cloud={cloud} orgName="IFAC" /> */}
+
             <PipelineFace board={board} canEdit={viewer.canEdit} />
+
+            {/* Email MOVED to /manage/email 2026-09-19 (owner): the words
+                sent in IFAC's name, and every address they reach, are
+                administration rather than a members' tile. /hub/email
+                redirects there; the five-tab suite is unchanged. */}
 
             {/* The shared canvas. It sits with the things you make rather
                 than with the things you read, and it opens at `full` width —
@@ -458,16 +498,8 @@ export default async function HubPage() {
             <HelpErrand />
           </div>
 
-          {viewer.canEdit && (
-            <AppearanceCard
-              vars={IFAC_THEME_VARS}
-              pages={IFAC_THEMEABLE_PAGES}
-              overridesByPage={overridesByPage}
-              onSaveSite={saveIfacThemeAction}
-              skin={skin}
-              onSaveSkin={saveHubSkinAction}
-            />
-          )}
+          {/* Appearance MOVED to /manage/appearance 2026-09-19 (owner),
+              with Email: repainting the whole site is administration. */}
         </section>
 
       </main>

@@ -10,6 +10,9 @@ import {
   inboundAddressFor,
   inboundEnabled,
   TEMPLATE_META,
+  copySlotsFor,
+  mergeFieldsFor,
+  EMAIL_FONTS,
 } from "@elkdonis/email";
 import type { EmailSuiteData } from "@elkdonis/cms-ui/email";
 import { siteConfig } from "@/config/site";
@@ -73,6 +76,13 @@ export async function loadEmailSuite(): Promise<EmailSuiteData> {
       ownerEmails: identity.ownerEmails,
       fromIsOrgDomain: identity.fromIsOrgDomain,
       palette: identity.palette,
+      // The faces an org may choose between, straight from the sending
+      // package — the suite never invents a font stack of its own.
+      fonts: Object.entries(EMAIL_FONTS).map(([id, font]) => ({
+        id,
+        label: font.label,
+        hint: font.hint,
+      })),
       inboundReplies: identity.inboundReplies,
       // Null when the network has no Inbound Parse host configured at all —
       // the Inbox tab then says so plainly instead of advertising an address
@@ -95,6 +105,27 @@ export async function loadEmailSuite(): Promise<EmailSuiteData> {
         // The words themselves, so the Letters tab's editor opens on what the
         // org actually says today rather than on an empty box.
         bodyText: override?.bodyText ?? null,
+        // The rich version too, so the Letters tab's editor opens on the
+        // formatting the org actually wrote rather than on its flattened twin.
+        bodyHtml: override?.bodyHtml ?? null,
+        // Every sentence of this letter, with whatever this org has already
+        // rewritten. The registry is the source of truth for WHICH blocks
+        // exist; the override supplies only the words.
+        slots: copySlotsFor(meta.key).map((slot) => ({
+          id: slot.id,
+          label: slot.label,
+          hint: slot.hint,
+          kind: slot.kind,
+          fallback: slot.value.join("\n\n"),
+          text: override?.copy?.[slot.id]?.text ?? null,
+          html: override?.copy?.[slot.id]?.html ?? null,
+          tokens: slot.tokens,
+        })),
+        // What this letter fills in per recipient — the token palette.
+        mergeFields: mergeFieldsFor(meta.key).map((f) => ({
+          name: f.name,
+          label: f.label,
+        })),
         override: override?.html ? "layout" : override?.bodyText ? "words" : "default",
       };
     }),

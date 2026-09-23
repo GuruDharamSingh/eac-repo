@@ -3,6 +3,7 @@ import {
   renderSample,
   templateMeta,
   getOrgEmailIdentity,
+  emailChromeFor,
   loadOrgTemplate,
   isTemplateKey,
 } from "@elkdonis/email";
@@ -45,7 +46,19 @@ export async function GET(
       orgName: identity.fromName,
       orgHeader: identity.fromIsOrgDomain,
       orgAccent: identity.palette?.accent ?? identity.accentColor,
+      // And the face it is set in, so the preview is not quieter or louder
+      // than the letter that leaves.
+      bodyFont: identity.palette?.bodyFont,
+      // The masthead image and the frame around the card, so the preview
+      // wears the org's own banner rather than the collective's wordmark —
+      // which is what the letter that leaves will do.
+      chrome: emailChromeFor(identity),
       bodyText: override?.bodyText,
+      bodyHtml: override?.bodyHtml,
+      // The letter's OWN sentences, as this org has rewritten them. Without
+      // this the preview renders the network's defaults and quietly disagrees
+      // with what will actually send.
+      copy: override?.copy,
     });
     return NextResponse.json({ html });
   } catch (err) {

@@ -1,6 +1,9 @@
 import {
   getAuthoredThreads,
   listUserGalleries,
+  getUserGallery,
+  getUserGalleryById,
+  getUserGalleryByPage,
   listOrgHomes,
   WRITING_KIND,
   SCHEDULED_KINDS,
@@ -14,6 +17,10 @@ import {
   type ProfileGalleriesProps,
   type ProfileGalleryItem,
 } from "../blocks/profile-galleries";
+import { ProfileGallery, type ProfileGalleryProps } from "../blocks/profile-gallery";
+import { ProfileStore, type ProfileStoreProps } from "../blocks/profile-store";
+import type { RowValue } from "../types";
+import { getStoreShowcaseForUser, hasProfileSection } from "@elkdonis/commerce/queries";
 
 // ============================================================================
 // The fetching halves of the profile blocks.
@@ -147,6 +154,18 @@ export interface LoadProfileGalleriesOptions {
   viewerId?: string;
   /** Where a room lives. Required: galleries have no canonical host app yet. */
   href: (gallery: { slug: string }) => string;
+  /**
+   * The site asking, as an org id.
+   *
+   * A gallery names the sites it must NOT appear on (`hidden_on`, migration
+   * 146) — "a gallery made on Dana's site starts with {ifac}; appearing on
+   * IFAC is her choice". Passing the asking site is what makes that choice
+   * mean anything, and this loader is the only shared reader of the table.
+   *
+   * Optional rather than required so existing callers keep compiling, but a
+   * host that leaves it out is showing galleries their owner excluded.
+   */
+  site?: string;
 }
 
 export async function loadProfileGalleries(
@@ -155,7 +174,7 @@ export async function loadProfileGalleries(
 ): Promise<ProfileGalleryItem[]> {
   const isSelf = Boolean(options.viewerId && options.viewerId === userId);
   try {
-    const rows = await listUserGalleries(userId, { onlyPublic: !isSelf });
+    const rows = await listUserGalleries(userId, { onlyPublic: !isSelf, site: options.site });
     return rows.map((g) => ({
       id: g.id,
       title: g.title,
@@ -178,8 +197,207 @@ export async function ProfileGalleriesBlock({
   userId,
   viewerId,
   href,
+  site,
   ...display
 }: ProfileGalleriesBlockProps) {
-  const items = await loadProfileGalleries(userId, { viewerId, href });
+  // `site` is destructured, not left in `display`: it is a question for the
+  // query, and anything still in `display` is spread onto the component and
+  // from there onto the DOM.
+  const items = await loadProfileGalleries(userId, { viewerId, href, site });
   return <ProfileGalleries {...display} items={items} />;
+}
+
+
+export interface LoadProfileGalleryOptions {
+  /** A gallery's id or its slug. Omitted: the one for `pagePath`, else their first. */
+  gallery?: string;
+  /**
+   * The site asking, as an org id. A gallery listing it in `hidden_on` is not
+   * shown — see LoadProfileGalleriesOptions.site. An author placing the block
+   * cannot override this; it is the gallery owner's setting, not the page's.
+   */
+  site?: string;
+  /** The page being rendered, for a gallery tied to a `page_path`. */
+  pagePath?: string;
+  limit?: number;
+  /** The signed-in user. A private gallery shows only to its owner. */
+  viewerId?: string;
+  /** Which of the block's link modes to build. */
+  link?: string;
+  /** Where a gallery's own page lives, for `link: "gallery"`. */
+  galleryHref?: (gallery: { slug: string }) => string;
+  /**
+   * Where a listed piece lives, for `link: "marketplace"`.
+   *
+   * A FUNCTION rather than a marketplace URL, and the only way this loader
+   * will ever link to one: resolving an artwork id to a sale page means
+   * reading the artwork table, and @elkdonis/blocks must not grow a commerce
+   * dependency to render a picture. A host that wants that mode knows how to
+   * build the link; one that does not passes nothing and the pictures simply
+   * do not link.
+   */
+  artworkHref?: (artworkId: string) => string | null;
+}
+
+/**
+ * One gallery's pictures, in PictureWall's row shape.
+ *
+ * Reads `items[].url` and stops. An item may carry an `artworkId`, but the
+ * url and title beside it are a snapshot written when the item was added
+ * (migration 146) — which is exactly what lets this draw a piece that is a
+ * draft, is archived, is sold, or was never in a store at all. Whether
+ * something is for sale is a question for whoever asked for
+ * `link: "marketplace"`, never a gate on the picture appearing.
+ */
+export async function loadProfileGallery(
+  userId: string,
+  options: LoadProfileGalleryOptions = {}
+): Promise<{ title: string; pictures: RowValue[] } | null> {
+  const isSelf = Boolean(options.viewerId && options.viewerId === userId);
+  try {
+    // An explicit choice first, then the page's own, then whatever they have.
+    // `getUserGalleryById` takes a bare id and so cannot be scoped to a user
+    // in the query — hence the ownership check below, which every path goes
+    // through rather than being repeated per branch.
+    const chosen =
+      (options.gallery
+        ? ((await getUserGalleryById(options.gallery)) ??
+          (await getUserGallery(userId, options.gallery)))
+        : null) ??
+      (options.pagePath ? await getUserGalleryByPage(userId, options.pagePath) : null) ??
+      (await firstVisibleGallery(userId, isSelf, options.site));
+
+    if (!chosen || chosen.userId !== userId) return null;
+    if (!chosen.isPublic && !isSelf) return null;
+    if (options.site && chosen.hiddenOn.includes(options.site)) return null;
+
+    const limit = Math.min(Math.max(Math.trunc(options.limit ?? 24), 1), 200);
+    const href = (item: { url: string; artworkId?: string }): string => {
+      switch (options.link) {
+        case "image":
+          return item.url;
+        case "gallery":
+          return options.galleryHref?.({ slug: chosen.slug }) ?? "";
+        case "marketplace":
+          return (item.artworkId && options.artworkHref?.(item.artworkId)) || "";
+        default:
+          return "";
+      }
+    };
+
+    return {
+      title: chosen.title,
+      pictures: chosen.items.slice(0, limit).map((i) => ({
+        src: i.url,
+        caption: i.title ?? "",
+        // The title doubles as the alt text. A gallery item has one piece of
+        // writing about it, and a picture with no description at all is worse
+        // for a reader than one whose description repeats its caption.
+        alt: i.title ?? "",
+        href: href(i),
+      })),
+    };
+  } catch (err) {
+    console.error(`[blocks] loadProfileGallery(${userId}):`, err);
+    return null;
+  }
+}
+
+/** Their first gallery this site is allowed to show. */
+async function firstVisibleGallery(userId: string, isSelf: boolean, site?: string) {
+  // The listing already applies both `is_public` and `hidden_on`, so the
+  // fallback cannot land on a gallery the site was never allowed to show.
+  const [first] = await listUserGalleries(userId, { onlyPublic: !isSelf, site });
+  return first ? await getUserGalleryById(first.id) : null;
+}
+
+export type ProfileGalleryBlockProps = Omit<
+  ProfileGalleryProps,
+  "pictures" | "galleryTitle"
+> &
+  LoadProfileGalleryOptions & { userId: string };
+
+export async function ProfileGalleryBlock({
+  userId,
+  site,
+  pagePath,
+  viewerId,
+  galleryHref,
+  artworkHref,
+  ...display
+}: ProfileGalleryBlockProps) {
+  const loaded = await loadProfileGallery(userId, {
+    gallery: typeof display.gallery === "string" ? display.gallery : undefined,
+    site,
+    pagePath,
+    viewerId,
+    galleryHref,
+    artworkHref,
+    link: typeof display.link === "string" ? display.link : undefined,
+    limit: typeof display.limit === "number" ? display.limit : 24,
+  });
+  return (
+    <ProfileGallery
+      {...(display as ProfileGalleryProps)}
+      galleryTitle={loaded?.title ?? null}
+      pictures={loaded?.pictures ?? []}
+    />
+  );
+}
+
+
+const MARKETPLACE_URL = process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009";
+
+export interface LoadProfileStoreOptions {
+  limit?: number;
+}
+
+/**
+ * One person's storefront, or nothing.
+ *
+ * ── The rule this loader must not break ─────────────────────────────────────
+ *
+ * The consent check lives HERE, not in the host. `users.profile_sections.store`
+ * is how a person says "show my store on other people's sites", and a block
+ * any editor on any org can drag onto any page is exactly the thing that must
+ * not be able to forget to ask. Same posture as viewerId in loadProfileFeed:
+ * one place, no second place to get it wrong.
+ *
+ * ── This is the FOR-SALE question ────────────────────────────────────────
+ *
+ * Unlike loadProfileGallery, this reads the artwork table and returns null
+ * for anyone without an active, approved store. It must not fall back to
+ * anything when it does — a "Store" heading over portfolio pictures would be
+ * a lie about what is for sale. That question has its own block
+ * (profile-gallery).
+ */
+export async function loadProfileStore(userId: string, options: LoadProfileStoreOptions = {}) {
+  try {
+    if (!(await hasProfileSection(userId, "store"))) return null;
+    return await getStoreShowcaseForUser(userId, { limit: options.limit ?? 6 });
+  } catch (err) {
+    console.error(`[blocks] loadProfileStore(${userId}):`, err);
+    return null;
+  }
+}
+
+export type ProfileStoreBlockProps = Omit<
+  ProfileStoreProps,
+  "store" | "artworks" | "marketplaceUrl"
+> &
+  LoadProfileStoreOptions & { userId: string; from?: string | null };
+
+export async function ProfileStoreBlock({ userId, from, ...display }: ProfileStoreBlockProps) {
+  const showcase = await loadProfileStore(userId, {
+    limit: typeof display.limit === "number" ? display.limit : 6,
+  });
+  return (
+    <ProfileStore
+      {...(display as ProfileStoreProps)}
+      store={showcase?.store ?? null}
+      artworks={showcase?.artworks ?? []}
+      marketplaceUrl={MARKETPLACE_URL}
+      from={from}
+    />
+  );
 }

@@ -565,3 +565,43 @@
     display: none;
   }
 }
+
+/* ── The writing section on a profile page ─────────────────────────────────
+   A quiet panel by default, driven by the reading tokens so it sits on
+   whatever ground the host gives it. A host with its own frame passes a
+   className and overrides this — IFAC's `.profile-writing` does exactly that,
+   which is why nothing here uses a fixed colour. */
+
+.eac-writing-section {
+  width: min(1000px, calc(100% - 24px));
+  margin: 0 auto 32px;
+  padding: 14px;
+  border: 1px solid var(--read-rule, var(--sf-line, #e3ddd1));
+  border-radius: var(--sf-radius, 6px);
+  background: var(--read-bg, var(--sf-bg, #fffdf8));
+}
+
+.eac-writing-section .eac-shelf {
+  padding-block: 0.5rem 1rem;
+}
+
+/* The way to the rest. Set in the record face and uppercased so it reads as
+   an index entry rather than as another piece's title. */
+.eac-writing-more {
+  margin: 1rem 0 0;
+  font-family: var(--read-face-record, ui-monospace, Menlo, monospace);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eac-writing-more a {
+  color: var(--read-muted, var(--sf-muted, #5b5349));
+  border-bottom: 1px solid var(--read-rule, var(--sf-line, #e3ddd1));
+  text-decoration: none;
+}
+
+.eac-writing-more a:hover {
+  color: var(--read-ink, var(--sf-fg, #24201b));
+}
+

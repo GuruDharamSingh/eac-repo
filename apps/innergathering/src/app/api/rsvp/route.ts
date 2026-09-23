@@ -44,12 +44,15 @@ export async function POST(request: NextRequest) {
         is_rsvp_enabled: boolean;
         rsvp_deadline: Date | null;
         author_email: string | null;
+        price: string | number | null;
       }[]
     >`
       SELECT t.id, t.title, t.slug, t.section, t.scheduled_at,
-             t.is_rsvp_enabled, t.rsvp_deadline, u.email AS author_email
+             t.is_rsvp_enabled, t.rsvp_deadline, u.email AS author_email,
+             COALESCE(wp.price_member, t.price) AS price
       FROM threads t
       LEFT JOIN users u ON u.id = t.author_id
+      LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
       WHERE t.id = ${threadId}
         AND t.org_id = ${siteConfig.orgId}
         AND t.status = 'published'
@@ -64,6 +67,15 @@ export async function POST(request: NextRequest) {
     }
     if (thread.rsvp_deadline && new Date(thread.rsvp_deadline) < new Date()) {
       return NextResponse.json({ error: "The RSVP deadline has passed." }, { status: 409 });
+    }
+    // A paid place is bought through the member route, which enrols on payment.
+    // Guests have no `users` row, and `thread_rsvps` needs one — so letting a
+    // guest through here would hand out a paid place for nothing.
+    if (Number(thread.price ?? 0) > 0) {
+      return NextResponse.json(
+        { error: "This one is paid — please sign in to book a place." },
+        { status: 409 }
+      );
     }
 
     await db`

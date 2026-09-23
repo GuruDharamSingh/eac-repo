@@ -1,0 +1,94 @@
+/* ---------------------------------------------------------------------------
+   @elkdonis/page-builder — the editor's own additions to Puck.
+
+   Loaded by editor.tsx beside Puck's sheet. Puck mirrors the host document's
+   styles into the canvas iframe, so the canvas rules below apply there too.
+   Every rule is scoped to Puck's own markers ([data-puck-*], .Puck), so a
+   published page — which never loads this file anyway — is untouched.
+   -------------------------------------------------------------------------- */
+
+/* ── Typing on the page, when there is nothing there yet ────────────────────
+   An inline-editable prop is drawn as a <span> Puck makes editable on hover.
+   With an empty value the span is zero pixels wide: the text box exists and
+   cannot be clicked, which is exactly how "the text box isn't clickable"
+   presented. Give an empty one a size, a dashed edge and a prompt. */
+[data-puck-component] span[data-puck-overlay-portal]:empty {
+  display: inline-block;
+  min-width: 8ch;
+  min-height: 1em;
+  outline: 1px dashed color-mix(in srgb, currentColor 45%, transparent);
+  outline-offset: 3px;
+  cursor: text;
+}
+[data-puck-component] span[data-puck-overlay-portal]:empty::before {
+  content: "Click to type…";
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
+[data-puck-component] span[data-puck-overlay-portal]:empty:focus::before {
+  content: "";
+}
+/* ── A block with nothing to draw yet (drag/empty-block.tsx) ─────────────── */
+.eac-empty-block {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-height: 72px;
+  margin: 8px 0;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border: 2px dashed #8a93a6;
+  border-radius: 8px;
+  background: #f3f5f9;
+  /* Fixed, not inherited: this sits on any site's ground, including Dana's
+     violet and IFAC's black, and must read the same on all of them.
+     #1d2330 on #f3f5f9 is 14.6:1; #4a5263 is 7.4:1. */
+  color: #1d2330;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: start;
+}
+.eac-empty-block-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.eac-empty-block-about,
+.eac-empty-block-next {
+  color: #4a5263;
+  font-size: 13px;
+}
+.eac-empty-block-fill {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 1px solid #0158ad;
+  border-radius: 6px;
+  /* White on Puck's own azure-04: 6.3:1. */
+  background: #0158ad;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.eac-empty-block-fill:hover {
+  background: #014292;
+}
+.eac-empty-block-fill:focus-visible {
+  outline: 2px solid #0158ad;
+  outline-offset: 2px;
+}
+
+/* ── The block list: what each block is for ─────────────────────────────────
+   The drawer shows only a name, and "Figure", "Plate" and "Picture wall"
+   do not say which one is the banner-width picture. Each item carries its
+   description under the name (editor.tsx, drawerItem override). */
+.eac-drawer-item-about {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 4px 2px 0;
+  color: var(--puck-color-text-secondary, #5a5a5a);
+  font-size: 12px;
+  line-height: 1.35;
+}

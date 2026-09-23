@@ -16,6 +16,15 @@ export interface GalleryItem {
   y?: number;
   w?: number;
   h?: number;
+  /** A second line under the title. */
+  subtitle?: string;
+  /** The picture's focal point in its tile, 0–100 % (CSS object-position). */
+  fx?: number;
+  fy?: number;
+  /** 1 = fill the tile; up to 4. */
+  zoom?: number;
+  /** Anything else the caller keeps on an item travels through untouched. */
+  [extra: string]: unknown;
 }
 
 export interface ProfileGalleryProps {
@@ -42,6 +51,50 @@ export interface ProfileGalleryProps {
   /** Shown in the empty editable state. */
   emptyHint?: string;
   className?: string;
+
+  // --- Presentation options. All off by default: IFAC's grid is unchanged. ---
+
+  /**
+   * Keep tiles SQUARE at every width: the row height follows the column
+   * width, so a tile 4 wide and 4 tall is a square on a phone and on a wide
+   * screen alike. Off, rows are a fixed 40px and a tile's shape drifts with
+   * the page width.
+   */
+  squareTiles?: boolean;
+  /** Space between tiles, px. Default 8. */
+  gap?: number;
+  /**
+   * Titles for visitors: "hover" lays each tile's title over it when pointed
+   * at or focused. Tiles with no title show nothing. Default "never" — the
+   * grid has always shown titles only to its editor.
+   */
+  captions?: "never" | "hover";
+  /**
+   * The address to draw a TILE from, e.g. a downscaled variant. The
+   * slideshow still opens the full image. Default: the item's own url.
+   */
+  thumb?: (url: string) => string;
+  /**
+   * What the hover caption holds, when it is more than a title — e.g. a
+   * listing's year, price and an enquire link. Links inside it stay clickable
+   * (the rest of the caption lets clicks through to the tile). Only used with
+   * `captions="hover"`. Default: the item's title.
+   */
+  renderCaption?: (item: GalleryItem) => React.ReactNode;
+  /** The slideshow's caption for an item. Default: its title. */
+  lightboxCaption?: (item: GalleryItem) => string;
+  /**
+   * Let the editor FRAME each picture inside its tile — drag to move the
+   * painting within its square, wheel or +/− to zoom. Saved on the item as
+   * fx / fy / zoom and shown to everyone. Off by default.
+   */
+  framing?: boolean;
+  /**
+   * Take over what opening a picture does: called with the item's index
+   * instead of showing the built-in slideshow — for a caller whose viewer
+   * does more (e.g. nested galleries). Absent: the built-in slideshow.
+   */
+  onOpenItem?: (index: number) => void;
 }
 
 const COLS = 12;
@@ -63,8 +116,9 @@ function placeMissing(items: GalleryItem[]): GalleryItem[] {
   });
 }
 
-function toLayout(items: GalleryItem[]): Layout {
+function toLayout(items: GalleryItem[], pinned: string | null = null): Layout {
   return items.map((item): LayoutItem => ({
+    ...(item.id === pinned ? { static: true } : {}),
     i: item.id,
     x: item.x!,
     y: item.y!,
@@ -95,12 +149,25 @@ export function ProfileGallery({
   librarySourceLabels,
   emptyHint,
   className,
+  squareTiles = false,
+  gap = 8,
+  captions = "never",
+  thumb,
+  renderCaption,
+  lightboxCaption,
+  framing = false,
+  onOpenItem,
 }: ProfileGalleryProps) {
   const [items, setItems] = useState<GalleryItem[]>(() => placeMissing(itemsProp));
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxIndex, setLightboxIndexState] = useState<number | null>(null);
+  const setLightboxIndex = (index: number | null) =>
+    index !== null && onOpenItem ? onOpenItem(index) : setLightboxIndexState(index);
   const [uploading, setUploading] = useState(false);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  // The tile whose picture is being framed; it is pinned in the grid meanwhile.
+  const [framingId, setFramingId] = useState<string | null>(null);
+  const panFrom = useRef<{ x: number; y: number; fx: number; fy: number; w: number; h: number } | null>(null);
   // Where the pointer went down on a tile, so a click can be told apart from
   // a drag WITHOUT relying on react-grid-layout's onDrag firing (which it does
   // on a pixel of jitter, so a flag set from it swallows ordinary clicks too).
@@ -168,8 +235,14 @@ export function ProfileGallery({
     if (added.length) commit(placeMissing([...items, ...added]));
   }
 
-  const layout = toLayout(items);
-  const lightboxImages = items.map((i) => ({ url: i.url, alt: i.title }));
+  const layout = toLayout(items, framingId);
+
+  function setFrame(id: string, patch: Partial<Pick<GalleryItem, "fx" | "fy" | "zoom">>) {
+    commit(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  }
+  // Square tiles: one row as tall as one column is wide, so w === h is square.
+  const rowHeight = squareTiles && width > 0 ? Math.max(12, (width - (COLS - 1) * gap) / COLS) : ROW_HEIGHT;
+  const lightboxImages = items.map((i) => ({ url: i.url, alt: lightboxCaption ? lightboxCaption(i) : i.title }));
 
   return (
     <div ref={containerRef} className={className}>
@@ -177,7 +250,7 @@ export function ProfileGallery({
         <GridLayout
           width={width}
           layout={layout}
-          gridConfig={{ cols: COLS, rowHeight: ROW_HEIGHT, margin: [8, 8], containerPadding: [0, 0], maxRows: Infinity }}
+          gridConfig={{ cols: COLS, rowHeight, margin: [gap, gap], containerPadding: [0, 0], maxRows: Infinity }}
           dragConfig={{ enabled: editable, bounded: false, threshold: 4 }}
           resizeConfig={{ enabled: editable, handles: ["se"] }}
           onLayoutChange={handleLayoutChange}
@@ -191,6 +264,19 @@ export function ProfileGallery({
             // caption stopPropagation, so they still do their own thing.
             <div
               key={item.id}
+              className={captions === "hover" && !editable ? "eac-gallery-tile eac-gallery-tile--captioned" : "eac-gallery-tile"}
+              // A tile opens the slideshow, so it is reachable and operable
+              // from the keyboard too — Enter or Space, like a button.
+              role="button"
+              tabIndex={0}
+              aria-label={item.title ? `${item.title} — open full size` : "Open full size"}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setLightboxIndex(index);
+                }
+              }}
               onPointerDown={(e) => {
                 pressAt.current = { x: e.clientX, y: e.clientY };
               }}
@@ -211,13 +297,90 @@ export function ProfileGallery({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={item.url}
+                src={thumb ? thumb(item.url) : item.url}
                 alt={item.title}
                 draggable={false}
-                style={{ width: "100%", height: "100%", objectFit: "cover", userSelect: "none" }}
+                loading="lazy"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  userSelect: "none",
+                  objectPosition: `${item.fx ?? 50}% ${item.fy ?? 50}%`,
+                  ...(item.zoom && item.zoom !== 1
+                    ? { transform: `scale(${item.zoom})`, transformOrigin: `${item.fx ?? 50}% ${item.fy ?? 50}%` }
+                    : {}),
+                }}
               />
+              {editable && framing && framingId === item.id ? (
+                <div
+                  className="eac-frame-surface"
+                  aria-label="Drag to move the picture inside its square; scroll to zoom"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                    const r = e.currentTarget.getBoundingClientRect();
+                    panFrom.current = { x: e.clientX, y: e.clientY, fx: item.fx ?? 50, fy: item.fy ?? 50, w: r.width, h: r.height };
+                  }}
+                  onPointerMove={(e) => {
+                    const p = panFrom.current;
+                    if (!p) return;
+                    // Dragging the picture right shows more of its left side.
+                    const clamp = (v: number) => Math.min(100, Math.max(0, Math.round(v * 10) / 10));
+                    const z = item.zoom ?? 1;
+                    setFrame(item.id, {
+                      fx: clamp(p.fx - ((e.clientX - p.x) / p.w) * (100 / z)),
+                      fy: clamp(p.fy - ((e.clientY - p.y) / p.h) * (100 / z)),
+                    });
+                  }}
+                  onPointerUp={() => {
+                    panFrom.current = null;
+                  }}
+                  onWheel={(e) => {
+                    e.preventDefault();
+                    const z = Math.min(4, Math.max(1, Math.round(((item.zoom ?? 1) - e.deltaY * 0.0015) * 100) / 100));
+                    setFrame(item.id, { zoom: z });
+                  }}
+                >
+                  <div className="eac-frame-tools" onPointerDown={(e) => e.stopPropagation()}>
+                    <button type="button" aria-label="Zoom out" onClick={() => setFrame(item.id, { zoom: Math.max(1, Math.round(((item.zoom ?? 1) - 0.25) * 100) / 100) })}>−</button>
+                    <button type="button" aria-label="Zoom in" onClick={() => setFrame(item.id, { zoom: Math.min(4, Math.round(((item.zoom ?? 1) + 0.25) * 100) / 100) })}>+</button>
+                    <button type="button" onClick={() => setFrame(item.id, { fx: 50, fy: 50, zoom: 1 })}>Centre</button>
+                    <button type="button" onClick={() => setFramingId(null)}>Done</button>
+                  </div>
+                </div>
+              ) : null}
+              {(() => {
+                if (captions !== "hover" || editable) return null;
+                const content = renderCaption ? renderCaption(item) : item.title;
+                // Nothing to say, no scrim: an empty dark band on hover reads as broken.
+                if (content === null || content === undefined || content === "" || content === false) return null;
+                return (
+                <span
+                  className="eac-gallery-caption"
+                  // A link inside the caption must not also open the slideshow.
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a")) e.stopPropagation();
+                  }}
+                >
+                  {content}
+                </span>
+                );
+              })()}
               {editable && (
                 <>
+                  {framing && framingId !== item.id ? (
+                    <button
+                      type="button"
+                      aria-label="Frame this picture — move and zoom it inside its square"
+                      title="Frame: move and zoom the picture inside its square"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setFramingId(item.id); }}
+                      style={{ ...removeBtnStyle, right: "auto", left: 4 }}
+                    >
+                      ⤧
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     aria-label="Remove image"

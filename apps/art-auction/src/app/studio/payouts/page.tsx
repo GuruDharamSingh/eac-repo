@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { listStoreMembers } from "@elkdonis/commerce/queries";
-import { getBalance, getPayoutIdentity, type Balance } from "@elkdonis/commerce/server";
+import {
+  getBalance,
+  getEarningsStatement,
+  getPayoutIdentity,
+  type Balance,
+  type EarningsLine,
+} from "@elkdonis/commerce/server";
 import { isCardPaymentAvailable, refreshStripeAccountStatus } from "@elkdonis/checkout/stripe";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { requireStudioStore } from "@/lib/marketplace-auth";
@@ -32,13 +38,20 @@ export default async function StudioPayoutsPage({
     isOwn ? Promise.resolve([]) : listStoreMembers(store.id),
   ]);
 
+  const party = isOwn
+    ? ({ kind: "user", userId } as const)
+    : ({ kind: "org", orgId: store.ownerOrgId! } as const);
+
   let balance: Balance | null = null;
+  let earnings: EarningsLine[] = [];
   try {
-    balance = isOwn
-      ? await getBalance({ kind: "user", userId })
-      : await getBalance({ kind: "org", orgId: store.ownerOrgId! });
+    [balance, earnings] = await Promise.all([
+      getBalance(party),
+      getEarningsStatement(party, { limit: 100 }),
+    ]);
   } catch {
     balance = null;
+    earnings = [];
   }
 
   const cardAvailable = isCardPaymentAvailable();
@@ -57,6 +70,7 @@ export default async function StudioPayoutsPage({
           <PayoutPanel
             identity={identity}
             balance={balance}
+            earnings={earnings}
             cardAvailable={cardAvailable}
             stripeReturn={sp.stripe ?? null}
             ledgerUrl={`${net.artsCollectiveUrl}/hub/admin/ledger`}

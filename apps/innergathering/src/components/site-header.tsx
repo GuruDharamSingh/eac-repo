@@ -64,6 +64,11 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
               Manage
             </Link>
           )}
+          {!signedIn && (
+            <Link href="/login" className={linkClass(isActive("/login"))}>
+              Login
+            </Link>
+          )}
           <Link href={signedIn ? "/account" : "/login"} className="ig-nav-link ig-nav-link--door">
             {signedIn ? "Account" : "Web-Portal"}
           </Link>
@@ -89,6 +94,9 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
           ))}
           {signedIn && <Link href={homeHref} onClick={() => setOpen(false)}>{homeLabel}</Link>}
           {canEdit && <Link href="/manage" onClick={() => setOpen(false)}>Manage</Link>}
+          {!signedIn && (
+            <Link href="/login" onClick={() => setOpen(false)}>Login</Link>
+          )}
           <Link href={signedIn ? "/account" : "/login"} onClick={() => setOpen(false)} className="is-door">
             {signedIn ? "Account" : "Web-Portal"}
           </Link>

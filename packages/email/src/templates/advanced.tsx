@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { renderEmail } from '../render-email';
 import { EmailShell } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import { fillHtml } from '../merge-fields';
 
 // ============================================================================
@@ -42,6 +43,19 @@ export interface AdvancedEmailProps {
   orgName?: string;
   orgHeader?: boolean;
   orgAccent?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
 }
 
 /**
@@ -71,6 +85,8 @@ function AdvancedEmail({
   orgName,
   orgHeader = false,
   orgAccent,
+  bodyFont,
+  chrome,
 }: AdvancedEmailProps) {
   return (
     <EmailShell
@@ -82,6 +98,8 @@ function AdvancedEmail({
       orgName={orgName}
       orgHeader={orgHeader}
       orgAccent={orgAccent}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter={showNfpFooter}
       footerText={
         footerText ? (

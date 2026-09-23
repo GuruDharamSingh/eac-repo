@@ -1,6 +1,5 @@
 import { Extension, type Editor } from '@tiptap/core';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
-import type { EditorView } from '@tiptap/pm/view';
 
 /**
  * `[[` autocomplete.
@@ -55,7 +54,26 @@ function triggerAt(state: EditorState): WikilinkTrigger | null {
   };
 }
 
-function coordsOf(view: EditorView, pos: number) {
+/**
+ * Typed STRUCTURALLY, not as prosemirror's `EditorView`.
+ *
+ * The monorepo resolves two physical copies of prosemirror-view (1.41.3 under
+ * @tiptap/pm v2, 1.42.3 under v3). `EditorView` is a class with a PRIVATE
+ * field, so the two copies are nominally incompatible and TypeScript refuses
+ * to pass one where the other is declared — "Types have separate declarations
+ * of a private property 'directPlugins'". That error is type-only and
+ * invisible to `next dev`, but it FAILS `next build`, so it blocked the first
+ * production build of any app importing this file.
+ *
+ * This function needs exactly one method. Asking for that method instead of
+ * for the class makes it work with either copy, and is the more honest
+ * signature anyway: it does not care what kind of view it is given.
+ *
+ * The real fix is deduping prosemirror-view with a pnpm override, which is a
+ * root-package change plus a full reinstall across ~15 apps — worth doing
+ * deliberately, not as a side effect of one site's launch.
+ */
+function coordsOf(view: { coordsAtPos(pos: number): { left: number; bottom: number } }, pos: number) {
   const box = view.coordsAtPos(pos);
   return { left: box.left, bottom: box.bottom };
 }

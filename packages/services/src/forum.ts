@@ -75,6 +75,13 @@ export interface ForumPerson {
 export interface ForumFeedRow {
   orgId: string;
   slug: string;
+  /**
+   * The feed this one sits inside, or null at top level.
+   *
+   * Set by the Nextcloud sync, which mirrors that forum's category tree
+   * (migration 163). The renderer nests on it; nothing else needs to care.
+   */
+  parentSlug: string | null;
   name: string;
   tagline: string | null;
   presenter: string | null;
@@ -133,6 +140,10 @@ export interface ForumTopicRow {
   topics: Array<{ id: string; slug: string; name: string }>;
   /** Activity the viewer hasn't seen. Null when signed out. */
   unread: boolean | null;
+  /** The same topic in the Nextcloud forum, when it is shared there (nc-forum.ts). */
+  nextcloudUrl: string | null;
+  /** Shared with Nextcloud at all — true even when no public URL is configured. */
+  nextcloudSynced: boolean;
 }
 
 export interface ForumThreadRecord extends ForumTopicRow {
@@ -158,6 +169,11 @@ export interface ForumThreadRecord extends ForumTopicRow {
   viewerHearted: boolean;
   /** Where the viewer last got to; null when signed out or never opened. */
   lastReadAt: Date | null;
+  /**
+   * Its org's Nextcloud category is public — anyone signed in may reply.
+   * Only meaningful when `nextcloudSynced`; otherwise false.
+   */
+  nextcloudPublic: boolean;
   /** A drawing: `metadata.drawing` holds the scene and its SVG (see drawing.ts). */
   isDrawing: boolean;
   createdAt: Date;
@@ -184,6 +200,8 @@ export interface ForumReply {
   childCount: number;
   /** Set on nested replies whose parent is itself nested — the flatten marker. */
   replyingTo: { id: string; name: string } | null;
+  /** Written in the Nextcloud forum and brought in by the sync. */
+  viaNextcloud: boolean;
 }
 
 export interface ForumHappeningRow {
@@ -352,14 +370,14 @@ export async function listBoards(scope: ForumScope, viewer: ForumViewer): Promis
   const uid = viewer.userId;
   const feeds = await db<
     Array<{
-      org_id: string; slug: string; name: string; tagline: string | null; presenter: string | null;
+      org_id: string; slug: string; parent_slug: string | null; name: string; tagline: string | null; presenter: string | null;
       accent: string | null; min_role: string | null; sort_order: number;
       topic_count: number; post_count: number; unread_count: number | null;
       lt_id: string | null; lt_slug: string | null; lt_title: string | null; lt_kind: string | null;
       lt_at: Date | null;
     } & PersonRow>
   >`
-    SELECT f.org_id, f.slug, f.name, f.tagline, f.presenter, f.accent, f.min_role, f.sort_order,
+    SELECT f.org_id, f.slug, f.parent_slug, f.name, f.tagline, f.presenter, f.accent, f.min_role, f.sort_order,
            s.topic_count, s.post_count, s.unread_count,
            lt.id AS lt_id, lt.slug AS lt_slug, lt.title AS lt_title, lt.kind AS lt_kind,
            lt.last_activity_at AS lt_at,
@@ -399,7 +417,12 @@ export async function listBoards(scope: ForumScope, viewer: ForumViewer): Promis
     -- 'general' (migrations 110/113) is is_public=f for exactly that reason
     -- and no longer needs its special case.
     WHERE TRUE ${scope.kind === 'org' ? db`AND f.org_id = ${scope.orgId}` : db``}
-    ORDER BY f.org_id, f.sort_order, f.name
+    -- Parents before children, so the renderer can nest in one pass without
+    -- holding the whole set. COALESCE groups a child directly under its
+    -- parent's key, and the 0/1 rank keeps the parent itself first.
+    ORDER BY f.org_id, COALESCE(f.parent_slug, f.slug),
+             CASE WHEN f.parent_slug IS NULL THEN 0 ELSE 1 END,
+             f.sort_order, f.name
   `;
 
   const byOrg = new Map<string, ForumFeedRow[]>();
@@ -409,6 +432,7 @@ export async function listBoards(scope: ForumScope, viewer: ForumViewer): Promis
     const row: ForumFeedRow = {
       orgId: f.org_id,
       slug: f.slug,
+      parentSlug: f.parent_slug,
       name: f.name,
       tagline: f.tagline,
       presenter: f.presenter,
@@ -494,7 +518,8 @@ const TOPIC_ROW_SELECT = db`
   t.scheduled_at,
   a.id AS a_id, a.slug AS a_slug, a.display_name AS a_name, a.avatar_url AS a_avatar, a.comment_color AS a_color,
   lp.id AS p_id, lp.slug AS p_slug, lp.display_name AS p_name, lp.avatar_url AS p_avatar, lp.comment_color AS p_color,
-  COALESCE(tp.topics, '[]'::json) AS topics
+  COALESCE(tp.topics, '[]'::json) AS topics,
+  t.metadata->'nextcloud'->>'url' AS nc_url, COALESCE(t.metadata ? 'nextcloud', false) AS nc_synced
 `;
 
 const TOPIC_ROW_JOINS = db`
@@ -519,6 +544,7 @@ type TopicRowRaw = {
   a_id: string; a_slug: string | null; a_name: string | null; a_avatar: string | null; a_color: string | null;
   topics: Array<{ id: string; slug: string; name: string }>;
   unread: boolean | null;
+  nc_url: string | null; nc_synced: boolean;
 } & PersonRow;
 
 function topicRow(r: TopicRowRaw): ForumTopicRow {
@@ -544,6 +570,8 @@ function topicRow(r: TopicRowRaw): ForumTopicRow {
     lastPoster: person(r),
     topics: r.topics ?? [],
     unread: r.unread,
+    nextcloudUrl: r.nc_url ?? null,
+    nextcloudSynced: Boolean(r.nc_synced),
   };
 }
 
@@ -618,7 +646,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
         attendee_limit: number | null; rsvp_deadline: Date | null; rsvp_count: number;
         viewer_attending: boolean | null; viewer_watching: boolean; viewer_bookmarked: boolean;
         viewer_vote: 'up' | 'down' | null; viewer_hearted: boolean; last_read_at: Date | null;
-        updated_at: Date;
+        updated_at: Date; nc_public: boolean | null;
       }
     >
   >`
@@ -630,6 +658,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
            t.document_url, t.video_link, t.recurrence_pattern, t.recurrence_until,
            COALESCE(t.is_rsvp_enabled, false) AS is_rsvp_enabled, t.attendee_limit, t.rsvp_deadline,
            t.updated_at,
+           (SELECT f.is_public FROM org_nc_forum f WHERE f.org_id = t.org_id) AS nc_public,
            (SELECT COUNT(*)::int FROM thread_rsvps rs WHERE rs.thread_id = t.id AND rs.status = 'yes') AS rsvp_count,
            CASE WHEN ${uid}::uuid IS NULL THEN NULL
                 ELSE EXISTS (SELECT 1 FROM thread_rsvps rs WHERE rs.thread_id = t.id AND rs.user_id = ${uid}::uuid AND rs.status = 'yes')
@@ -667,6 +696,7 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
     viewerVote: r.viewer_vote,
     viewerHearted: r.viewer_hearted,
     lastReadAt: r.last_read_at,
+    nextcloudPublic: Boolean(r.nc_public),
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -689,6 +719,7 @@ type ReplyRaw = {
   number: number | null; author_role: string | null;
   rt_id: string | null; rt_name: string | null;
   viewer_vote: 'up' | 'down' | null; viewer_hearted: boolean;
+  via_nc: boolean;
 } & PersonRow;
 
 function replyRow(r: ReplyRaw): ForumReply {
@@ -708,6 +739,7 @@ function replyRow(r: ReplyRaw): ForumReply {
     viewerHearted: r.viewer_hearted,
     childCount: r.child_count,
     replyingTo: r.rt_id ? { id: r.rt_id, name: r.rt_name ?? 'Someone' } : null,
+    viaNextcloud: Boolean(r.via_nc),
   };
 }
 
@@ -738,6 +770,7 @@ export async function listReplies(
              uo.role AS author_role,
              NULL::varchar AS rt_id, NULL::varchar AS rt_name,
              ${viewerReactionSql(viewer, 'reply')},
+             EXISTS (SELECT 1 FROM nc_forum_links l WHERE l.local_reply_id = r.id AND l.origin = 'nextcloud') AS via_nc,
              u.id AS p_id, u.slug AS p_slug, u.display_name AS p_name, u.avatar_url AS p_avatar, u.comment_color AS p_color
       FROM top r
       JOIN users u ON u.id = r.user_id
@@ -773,6 +806,7 @@ export async function listReplyChildren(parentId: string, viewer: ForumViewer = 
            CASE WHEN r.parent_reply_id <> ${parentId} THEN pr.id END AS rt_id,
            CASE WHEN r.parent_reply_id <> ${parentId} THEN pu.display_name END AS rt_name,
            ${viewerReactionSql(viewer, 'reply')},
+           EXISTS (SELECT 1 FROM nc_forum_links l WHERE l.local_reply_id = r.id AND l.origin = 'nextcloud') AS via_nc,
            u.id AS p_id, u.slug AS p_slug, u.display_name AS p_name, u.avatar_url AS p_avatar, u.comment_color AS p_color
     FROM sub r
     JOIN users u ON u.id = r.user_id
@@ -922,10 +956,31 @@ export async function firstUnreadReply(
   return { replyId: row.id, page: Math.max(1, Math.ceil(row.n / perPage)) };
 }
 
-/** The viewer's org roles, for building a ForumViewer from a session. */
+const ROLE_ORDER = ['viewer', 'member', 'guide', 'owner'];
+
+/**
+ * The viewer's org roles, for building a ForumViewer from a session.
+ *
+ * Includes stewardship (migration 138): an owner or guide of an org that
+ * stewards another (`organizations.steward_org_id`) counts as at least a
+ * `guide` of the stewarded org — here, in the forum, and nowhere else. This is
+ * how the inner group moderates the `elkdonis` categories and posts its
+ * announcements without a second copy of its roster. getOrgRole is untouched
+ * on purpose, so stewardship never reaches org settings or membership.
+ */
 export async function getViewerRoles(userId: string): Promise<Record<string, string>> {
   const rows = await db<Array<{ org_id: string; role: string }>>`
     SELECT org_id, role FROM user_organizations WHERE user_id = ${userId}
+    UNION ALL
+    SELECT o.id AS org_id, 'guide' AS role
+    FROM organizations o
+    JOIN user_organizations s ON s.org_id = o.steward_org_id
+    WHERE s.user_id = ${userId} AND s.role IN ('owner', 'guide')
   `;
-  return Object.fromEntries(rows.map((r) => [r.org_id, r.role]));
+  const roles: Record<string, string> = {};
+  for (const r of rows) {
+    const held = roles[r.org_id];
+    if (!held || ROLE_ORDER.indexOf(r.role) > ROLE_ORDER.indexOf(held)) roles[r.org_id] = r.role;
+  }
+  return roles;
 }

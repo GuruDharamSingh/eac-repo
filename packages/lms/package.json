@@ -1,0 +1,31 @@
+{
+  "name": "@elkdonis/lms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sophia — the network's learning platform. Content, delivery and record services, the unlock engine and the step-type registry.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./unlock": "./src/unlock.ts",
+    "./step-types": "./src/step-types.ts",
+    "./seo": "./src/seo.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "seed:path": "tsx scripts/seed-elkdonis-path.mts",
+    "seed:test": "tsx scripts/seed-test-course.mts",
+    "test:unlock": "tsx scripts/test-unlock.mts"
+  },
+  "dependencies": {
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.20.6",
+    "typescript": "^5.3.3"
+  }
+}

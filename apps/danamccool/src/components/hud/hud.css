@@ -1,0 +1,351 @@
+/* ============================================================================
+   The HUD — Pages, Galleries, Media panels.
+
+   Mounted in two places with one stylesheet: the editor's left rail (Puck's
+   parent document, ~290px wide, Puck's own light chrome) and /hub (her violet
+   site, full width). So the panels carry their OWN ground and ink rather than
+   inheriting either host's, and lay themselves out by CONTAINER width — the
+   rail gets one column, /hub gets a grid, from the same markup.
+
+   Plain CSS on purpose (no Tailwind): the editor chrome and the site are two
+   different styling contexts, and custom properties cross both.
+   ============================================================================ */
+
+.dm-hud {
+  --hud-bg: #fbfaf7;
+  --hud-ink: #141414;
+  --hud-soft: #5b5b5b; /* 6.6:1 on --hud-bg */
+  --hud-line: #d9d6ce;
+  --hud-accent: #4b35c4; /* her violet, deepened: 7.9:1 on --hud-bg */
+  --hud-ok: #1d6b3a;
+  --hud-warn: #8a3b0a;
+  container-type: inline-size;
+  background: var(--hud-bg);
+  color: var(--hud-ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 12px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.dm-hud *,
+.dm-hud *::before,
+.dm-hud *::after {
+  box-sizing: border-box;
+}
+.dm-hud a {
+  color: var(--hud-accent);
+}
+.dm-hud h2,
+.dm-hud h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.dm-hud h3 {
+  font-size: 13px;
+}
+.dm-hud p {
+  margin: 0 0 8px;
+}
+.dm-hud-muted {
+  color: var(--hud-soft);
+  font-size: 12px;
+}
+.dm-hud-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dm-hud-spread {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+}
+.dm-hud-stack > * + * {
+  margin-top: 10px;
+}
+
+.dm-hud button,
+.dm-hud .dm-hud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--hud-line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--hud-ink);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.dm-hud button:hover,
+.dm-hud .dm-hud-btn:hover {
+  border-color: var(--hud-accent);
+}
+.dm-hud button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.dm-hud .dm-hud-primary {
+  background: var(--hud-accent);
+  border-color: var(--hud-accent);
+  color: #fff;
+}
+.dm-hud .dm-hud-icon {
+  min-width: 30px;
+  padding: 0 6px;
+  justify-content: center;
+}
+.dm-hud input[type="text"],
+.dm-hud input[type="search"],
+.dm-hud select,
+.dm-hud textarea {
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--hud-line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--hud-ink);
+  font: inherit;
+}
+.dm-hud label.dm-hud-check {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dm-hud-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.dm-hud-tabs button[aria-pressed="true"] {
+  background: var(--hud-accent);
+  border-color: var(--hud-accent);
+  color: #fff;
+}
+
+.dm-hud-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--hud-line);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--hud-soft);
+  background: #fff;
+}
+.dm-hud-chip[data-tone="ok"] {
+  color: var(--hud-ok);
+  border-color: currentColor;
+}
+.dm-hud-chip[data-tone="warn"] {
+  color: var(--hud-warn);
+  border-color: currentColor;
+}
+.dm-hud-chip[data-tone="accent"] {
+  color: var(--hud-accent);
+  border-color: currentColor;
+}
+
+.dm-hud-error {
+  padding: 6px 8px;
+  border: 1px solid var(--hud-warn);
+  border-radius: 5px;
+  color: var(--hud-warn);
+  background: #fff7f2;
+}
+
+/* A list of things: one column in the rail, a grid on /hub. */
+.dm-hud-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@container (min-width: 560px) {
+  .dm-hud-list[data-grid] {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+.dm-hud-card {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.dm-hud-card[data-current="true"] {
+  border-color: var(--hud-accent);
+  box-shadow: inset 3px 0 0 var(--hud-accent);
+}
+.dm-hud-thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: #ece9e1;
+}
+.dm-hud-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.dm-hud-card-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A gallery's items — picture tiles with controls. */
+.dm-hud-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@container (min-width: 560px) {
+  .dm-hud-items {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+.dm-hud-item {
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+.dm-hud-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #ece9e1;
+}
+.dm-hud-item-body {
+  padding: 6px;
+}
+.dm-hud-item-body input,
+.dm-hud-item-body select {
+  min-height: 26px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+.dm-hud-opens {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+}
+.dm-hud-opens select {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+}
+.dm-hud-item-tools {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
+.dm-hud-item-tools button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+/* The catalogue picker, and the media grid. */
+.dm-hud-pick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@container (min-width: 560px) {
+  .dm-hud-pick {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}
+.dm-hud-pick button {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  text-align: left;
+  background: transparent;
+}
+.dm-hud-pick button[aria-pressed="true"] {
+  border-color: var(--hud-accent);
+}
+.dm-hud-pick img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 3px;
+  background: #ece9e1;
+}
+.dm-hud-pick span {
+  display: block;
+  padding: 2px 1px;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-hud details {
+  border: 1px solid var(--hud-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.dm-hud details + details {
+  margin-top: 6px;
+}
+.dm-hud summary {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.dm-hud details > div {
+  padding: 0 8px 8px;
+}
+.dm-hud-files {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dm-hud-file {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.dm-hud-file-name {
+  font-size: 12px;
+  word-break: break-all;
+}

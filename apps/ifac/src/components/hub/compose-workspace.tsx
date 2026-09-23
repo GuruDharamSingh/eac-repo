@@ -37,10 +37,13 @@ import { WritingRoomPage } from "./writing-room-page";
 export function ComposeWorkspace({
   context,
   initialKind,
+  initialTitle,
 }: {
   context: ComposeContext;
   /** Preselect a kind, so a card's "Add an event" lands on the right form. */
   initialKind?: string;
+  /** A title typed elsewhere — the compose popup's "Open as a page". */
+  initialTitle?: string;
 }) {
   const router = useRouter();
   const catalogue = React.useMemo(() => buildComposeCatalogue(context), [context]);
@@ -69,7 +72,8 @@ export function ComposeWorkspace({
       ) : selected.writes.table === "threads" ? (
         <ContentBody
           kind={selected.writes.kind as "post" | "event" | "meeting" | "workshop"}
-          feeds={context.feeds ?? []}
+          context={context}
+          initialTitle={initialTitle}
           onDone={() => {
             setSelected(null);
             router.refresh();
@@ -112,24 +116,41 @@ export function ComposeWorkspace({
  */
 function ContentBody({
   kind,
-  feeds,
+  context,
   onDone,
+  initialTitle,
 }: {
   kind: "post" | "event" | "meeting" | "workshop";
-  feeds: Array<{ slug: string; name: string }>;
+  /** The page's whole compose context — not just its feeds. */
+  context: ComposeContext;
   onDone: () => void;
+  /** Carried in from the popup, so the first field is already filled. */
+  initialTitle?: string;
 }) {
   const { connectors } = useSurface();
   const dated = kind !== "post";
 
+  // The CAPABILITIES have to come through, not only the feeds: the shared
+  // field list hides "make a Talk room" and "make a document" unless the host
+  // says it can make them (content-fields.ts). Passing `{ feeds, orgSlug }`
+  // alone is why this page offered neither, while the popup — which forwards
+  // the same flags off `connectors.compose` — offered the document.
   const fieldContext = React.useMemo(
-    () => ({ feeds, orgSlug: siteConfig.orgId }),
-    [feeds]
+    () => ({
+      feeds: context.feeds ?? [],
+      orgSlug: siteConfig.orgId,
+      canShareToNetwork: context.canShareToNetwork,
+      canCreateDocument: context.canCreateDocument,
+      canCreateTalkRoom: context.canCreateTalkRoom,
+      hostCandidates: context.hostCandidates,
+    }),
+    [context]
   );
 
-  const [answers, setAnswers] = React.useState<Record<string, unknown>>(() =>
-    emptyContentAnswers(kind, fieldContext)
-  );
+  const [answers, setAnswers] = React.useState<Record<string, unknown>>(() => ({
+    ...emptyContentAnswers(kind, fieldContext),
+    ...(initialTitle?.trim() ? { title: initialTitle.trim() } : {}),
+  }));
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = React.useState(false);
 

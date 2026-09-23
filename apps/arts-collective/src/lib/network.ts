@@ -65,6 +65,10 @@ export async function getMemberRoster(
       WHERE u.slug IS NOT NULL
         AND u.display_name IS NOT NULL
         AND u.entity_type = 'person'
+        -- The person's own "Network directory" switch (/center → Where you
+        -- show). Without it an unlisted person stayed on this roster with a
+        -- card linking to a 404 (artists/[slug] already honours it).
+        AND u.directory_listed IS NOT FALSE
       ORDER BY u.display_name ASC
       LIMIT ${limit}
     `;

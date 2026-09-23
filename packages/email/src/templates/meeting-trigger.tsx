@@ -2,7 +2,9 @@ import * as React from 'react';
 import { Section, Text, Button, Img } from '@react-email/components';
 import { renderEmail } from '../render-email';
 import { EmailShell, getEmailPalette } from '../components/EmailShell';
+import type { EmailChrome } from '../components/EmailShell';
 import type { EmailLinkItem, EmailMediaItem } from './rsvp-owner';
+import { OrgWords, hasOrgWords } from '../components/org-words';
 
 export type MeetingTriggerType = 'reminder' | 'cancellation' | 'confirmation';
 
@@ -32,6 +34,21 @@ export interface MeetingTriggerEmailProps {
   emblemAlt?: string;
   /** Author-editable copy (email_template_settings config). */
   bodyText?: string;
+  /** The same words with emphasis, links and lists. Wins over bodyText. */
+  bodyHtml?: string;
+  /** Which body face this organisation's mail is set in, by id. */
+  bodyFont?: string;
+  /**
+   * The organisation's own masthead image and frame — see `EmailChrome`.
+   *
+   * ONE bag rather than four more props, and passed straight through to the
+   * shell without this template reading any of it. Every other brand value
+   * here (`orgName`, `orgAccent`, `bodyFont`) is threaded individually
+   * because the BODY uses it too; nothing in a body has an opinion about the
+   * picture at the top of the card, so spreading it is both shorter and the
+   * honest description of what happens to it.
+   */
+  chrome?: EmailChrome;
   links?: EmailLinkItem[];
   media?: EmailMediaItem[];
 }
@@ -64,6 +81,9 @@ function MeetingTriggerEmail({
   emblemUrl,
   emblemAlt,
   bodyText,
+  bodyHtml,
+  bodyFont,
+  chrome,
   links = [],
   media = [],
 }: MeetingTriggerEmailProps) {
@@ -88,9 +108,7 @@ function MeetingTriggerEmail({
 
   const countdown = type === 'reminder' && scheduledAt ? formatCountdown(scheduledAt) : null;
   const hasDetails = Boolean(dateStr || location || meetingUrl || talkRoomUrl || materialsUrl || rsvpCount !== undefined);
-  const bodyParagraphs = bodyText
-    ? bodyText.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean)
-    : [];
+  const hasOrg = hasOrgWords(bodyText, bodyHtml);
   const rsvpHref = rsvpUrl ?? confirmUrl;
 
   return (
@@ -104,6 +122,8 @@ function MeetingTriggerEmail({
       }
       kicker={meetingTitle}
       dark={dark}
+      bodyFont={bodyFont}
+      {...chrome}
       showNfpFooter
       emblemUrl={emblemUrl}
       emblemAlt={emblemAlt}
@@ -173,7 +193,7 @@ function MeetingTriggerEmail({
         </Section>
       )}
 
-      {bodyParagraphs.length > 0 && (
+      {hasOrg && (
         <Section style={{ margin: '20px 0' }}>
           <Text
             style={{
@@ -187,11 +207,7 @@ function MeetingTriggerEmail({
           >
             From the author
           </Text>
-          {bodyParagraphs.map((paragraph, index) => (
-            <Text key={index} style={{ fontSize: '15px', color: palette.textBody, lineHeight: '1.7' }}>
-              {paragraph}
-            </Text>
-          ))}
+          <OrgWords bodyText={bodyText} bodyHtml={bodyHtml} dark={dark} font={bodyFont} />
         </Section>
       )}
 

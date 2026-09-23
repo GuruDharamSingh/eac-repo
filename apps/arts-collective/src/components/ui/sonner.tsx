@@ -7,15 +7,30 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+/**
+ * The toast host, in the root layout.
+ *
+ * `theme` is stated rather than read from `next-themes`.
+ *
+ * This used to call `useTheme()`, and there is no `<ThemeProvider>` anywhere in
+ * this app — so the hook only ever returned its default, "system", which is
+ * what is passed here now. What it also did was put a `useContext` call from a
+ * dual-package dependency into the ROOT LAYOUT, on every route including the
+ * two Next prerenders statically at build time (`/_not-found`,
+ * `/_global-error`). Those two were the only static pages in the app, both died
+ * with `Cannot read properties of null (reading 'useContext')` inside a Next
+ * internal chunk, and the export aborted — which is why this app had no
+ * production build for two weeks while its dev server carried the live domain.
+ *
+ * If a real theme switcher ever lands, it brings its own provider and this
+ * reads from it again.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="system"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

@@ -77,6 +77,12 @@ export type SurfaceDescriptor =
        * messages never lands in a form. Defaults to "details".
        */
       mode?: "details" | "edit";
+      /**
+       * Which tab of a person's own profile opens first. Deep-linkable
+       * (`?surface=profile:details`); tabs the host cannot fill are hidden and
+       * a link to one lands on Profile. Ignored for an org `target`.
+       */
+      tab?: SurfaceProfileTab;
     }
   | {
       /** Arrange an org's center: which sections, in what order, with which knobs. */
@@ -205,6 +211,18 @@ export type SurfaceDescriptor =
       kind?: "post";
       threadId?: string;
       prefill?: Record<string, unknown>;
+    }
+  | {
+      /**
+       * Post from /center to any org the person is part of, or their own
+       * blog (Brief A slice 3). `target` preselects a destination
+       * (`orgId|feedSlug` or `blog`); the list itself comes from
+       * `connectors.postTo`, and the server re-checks the choice.
+       */
+      type: "postTo";
+      target?: string;
+      /** A title already typed (the hub's one-line compose). Not in the URL. */
+      title?: string;
     }
   | {
       /** Anything a host registers under `connectors.custom`. */
@@ -776,6 +794,36 @@ export interface SurfaceProfile {
     /** Things they have said they are coming to. */
     upcoming?: number;
   };
+  /** The Details tab's fields. Own profile only; absent means no tab. */
+  details?: SurfaceProfileDetails;
+}
+
+/** The tabs of a person's own profile popup. "profile" is the card itself. */
+export type SurfaceProfileTab = "profile" | "details" | "show" | "page" | "payouts";
+
+/**
+ * What the Details tab edits beyond the card: the rest of a person's own
+ * `users` row. Present only on the viewer's OWN profile, and only when the
+ * host serves it — omit it and there is no Details tab.
+ */
+export interface SurfaceProfileDetails {
+  postalCode: string | null;
+  portfolioUrl: string | null;
+  /** `#rrggbb`: the colour of their name on replies. */
+  commentColor: string | null;
+  /** Where the slug shows, e.g. "https://artdirect.example/" — for the preview. */
+  pageBase?: string | null;
+  /** Read-only facts about the account, shown at the foot of Details. */
+  account?: {
+    email: string | null;
+    /** ISO date the account was made. */
+    createdAt: string | null;
+    /** Their Nextcloud, once they have signed in there. */
+    cloud?: { url: string; username: string } | null;
+    /** POSTed to sign out; the surface then goes to `signOutTo`. Omit to hide. */
+    signOutEndpoint?: string | null;
+    signOutTo?: string | null;
+  };
 }
 
 export interface SurfaceProfileInput {
@@ -788,6 +836,12 @@ export interface SurfaceProfileInput {
   region?: string | null;
   country?: string | null;
   socialLinks?: SurfaceProfileLink[];
+  // Details tab (own profile only; the route ignores them for an org).
+  postalCode?: string | null;
+  portfolioUrl?: string | null;
+  commentColor?: string | null;
+  /** Changes the person's URL. Never null. */
+  slug?: string;
 }
 
 export type SaveProfileResult = { ok: true } | { ok: false; error: string };
@@ -799,6 +853,154 @@ export interface SurfaceProfileConnectors {
   save: (target: SurfaceProfileTarget, input: SurfaceProfileInput) => Promise<SaveProfileResult>;
   /** Omit to hide the avatar control. Resolves to the stored URL. */
   uploadAvatar?: (file: File) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
+  /**
+   * What the person's own page carries, and whether they can be paid.
+   *
+   * Optional, and only ever offered on a viewer's OWN profile — an org
+   * identity has no writing shelf and no payouts. Omit it and the surface is
+   * exactly the card it has always been, which is why amrit-canada and
+   * artdirect are untouched by this.
+   */
+  page?: SurfaceProfilePageConnectors;
+  /** "Where you show" — own profile only. Omit and there is no such tab. */
+  presence?: SurfacePresenceConnectors;
+}
+
+// ── Where you show (Brief A slice 2) ─────────────────────────────────────
+// Structurally the same as @elkdonis/services' Presence; cms-ui has no
+// services dependency, so it declares its own.
+
+export interface SurfacePresenceColumn {
+  /** 'directory' | 'page' | 'market' | `org:<orgId>` */
+  key: string;
+  label: string;
+  kind: "directory" | "page" | "org" | "market";
+  orgId?: string;
+  /** Where that place is, when the host knows. */
+  href?: string | null;
+}
+
+export type SurfacePresenceCell =
+  | { state: "switch"; on: boolean; note?: string | null }
+  | { state: "request"; pending: boolean; note?: string | null }
+  | { state: "status"; label: string; note?: string | null };
+
+export interface SurfacePresenceRow {
+  key: "you" | "blog" | "store" | "galleries";
+  label: string;
+  cells: Record<string, SurfacePresenceCell>;
+}
+
+export interface SurfacePresence {
+  columns: SurfacePresenceColumn[];
+  rows: SurfacePresenceRow[];
+}
+
+export interface SurfacePresenceConnectors {
+  load: () => Promise<SurfacePresence>;
+  set: (change: {
+    row: SurfacePresenceRow["key"];
+    column: string;
+    on: boolean;
+  }) => Promise<{ ok: true; pending?: boolean } | { ok: false; error: string }>;
+}
+
+/** One optional section on a person's own page. */
+export interface SurfaceProfileSection {
+  key: string;
+  label: string;
+  /** One line saying what turning it on does. */
+  blurb?: string;
+  on: boolean;
+  /**
+   * Set when the section cannot be turned on yet and why — "you have no store
+   * on the network". Rendered instead of the switch, because a control that
+   * silently refuses is worse than one that explains.
+   */
+  blockedReason?: string | null;
+  /** Where the section shows once it is on. */
+  href?: string | null;
+}
+
+/**
+ * Being payable.
+ *
+ * Only ever about a PERSON: the money model settled 2026-09-05 makes the
+ * maker the payee, and an org's share is a ledger balance inside the host
+ * account rather than a connected account of its own.
+ */
+/** One line of a person's ledger — a sale that paid them, or a payout that settled it. */
+export interface SurfaceProfilePayoutLine {
+  id: string;
+  /** What moved, in a phrase — an order number, a payout method, whatever the host resolved. */
+  label: string;
+  amountMinor: number;
+  at: string;
+  /** Accrued but not yet payable (still held). */
+  held: boolean;
+}
+
+export interface SurfaceProfilePayouts {
+  /** Stripe Express: none | started but not payable | payable. */
+  state: "none" | "pending" | "ready";
+  /** Shown when `ready`, so a person can see which account they connected. */
+  accountLabel?: string | null;
+  /** Absent when the platform has no Stripe keys — the control then says so. */
+  available: boolean;
+  /**
+   * ISO-3166 alpha-2, when the host already knows it. Stripe fixes a
+   * connected account's country at creation and never changes it after, so
+   * this must be asked BEFORE the account exists — null here (with
+   * `state: "none"`) is what tells the surface to ask rather than assume the
+   * platform's own country (see the 2026-09-20 CA-default bug).
+   */
+  country?: string | null;
+  /**
+   * What has actually moved for this person — omitted where the host has no
+   * ledger to read. cms-ui declares its own shape here rather than depending
+   * on @elkdonis/commerce (see SurfacePresence above for the same reasoning),
+   * so a host with no commerce package still type-checks against this.
+   */
+  work?: {
+    currency: string;
+    payableMinor: number;
+    heldMinor: number;
+    totalMinor: number;
+    lines: SurfaceProfilePayoutLine[];
+  } | null;
+  /**
+   * A host-authored explanation, collapsed under its own summary — e.g. why
+   * sales here route through Stripe, or what the fees are. Per-host copy, so
+   * it lives in data the connector supplies, not in this shared component.
+   */
+  onboarding?: { title: string; paragraphs: string[] } | null;
+}
+
+export interface SurfaceProfilePageConnectors {
+  load: () => Promise<{
+    sections: SurfaceProfileSection[];
+    payouts?: SurfaceProfilePayouts | null;
+  }>;
+  setSection: (
+    key: string,
+    on: boolean
+  ) => Promise<{ ok: true; href?: string | null } | { ok: false; error: string }>;
+  /**
+   * Begin (or resume) Stripe Express onboarding, returning the URL to send
+   * the person to. Omit when this host does not handle money.
+   *
+   * `country` (ISO-3166 alpha-2) is required the FIRST time — before any
+   * account exists — because that is the only moment it can still be set;
+   * the surface collects it and passes it through. Once an account already
+   * exists (resuming onboarding), the host doesn't need it again.
+   */
+  startPayouts?: (country?: string) => Promise<{ ok: true; url: string } | { ok: false; error: string }>;
+  /**
+   * Disconnect a connected account and start over — the only way out of one
+   * created with the wrong country (Stripe never lets it change). Omit to
+   * hide the control; hosts that predate this stay exactly as they were.
+   */
+  disconnectPayouts?: () => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 // ── Arranging a center ────────────────────────────────────────────────────
@@ -863,6 +1065,8 @@ export interface SurfaceConnectors {
   orgName?: string;
   /** The profile surface. Omit and profile faces simply navigate. */
   profile?: SurfaceProfileConnectors;
+  /** "Post to…" from /center — every place the viewer may post. Omit to hide. */
+  postTo?: SurfacePostToConnectors;
   /** Arranging a center's definition (owners, guides; admins for the network default). */
   centerLayout?: SurfaceCenterLayoutConnectors;
 
@@ -985,3 +1189,24 @@ export interface SurfaceConnectors {
 export const SCHEDULED_KINDS: ReadonlySet<string> = new Set(["event", "meeting", "workshop", "reading_group"]);
 /** Whether a kind has a price. Which kinds are *purchasable* is commerce's call. */
 export const PRICED_KINDS: ReadonlySet<string> = new Set(["workshop", "service", "product"]);
+
+// ── Post to… (Brief A slice 3) ──────────────────────────────────────────────
+
+export interface SurfacePostTarget {
+  /** `orgId|feedSlug`, or `blog`. */
+  value: string;
+  kind: "feed" | "blog";
+  orgId: string | null;
+  orgName: string;
+  feedSlug: string | null;
+  feedName: string;
+}
+
+export interface SurfacePostToConnectors {
+  targets: () => Promise<SurfacePostTarget[]>;
+  create: (input: {
+    target: string;
+    title: string;
+    text: string;
+  }) => Promise<{ ok: true; href: string | null; label: string } | { ok: false; error: string }>;
+}

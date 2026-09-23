@@ -44,6 +44,11 @@ export interface OrgFeed {
   isPublic: boolean;
   /** Lowest org role that may read this feed. null = anyone. */
   minRole: 'member' | 'guide' | 'owner' | null;
+  /**
+   * Lowest org role that may START a topic here (migration 138). null = anyone
+   * who can read it. Replies are not gated — an announcement can be answered.
+   */
+  postRole: 'member' | 'guide' | 'owner' | null;
 }
 
 /**
@@ -60,6 +65,17 @@ export function canViewFeed(
   if (!feed.minRole) return true;
   if (!role) return false;
   return (ROLE_RANK[role] ?? 0) >= (ROLE_RANK[feed.minRole] ?? 0);
+}
+
+/** Whether a viewer holding `role` in this org may start a topic in `feed`. */
+export function canPostToFeed(
+  feed: Pick<OrgFeed, 'minRole' | 'postRole'>,
+  role: string | null
+): boolean {
+  if (!canViewFeed(feed, role)) return false;
+  if (!feed.postRole) return true;
+  if (!role) return false;
+  return (ROLE_RANK[role] ?? 0) >= (ROLE_RANK[feed.postRole] ?? 0);
 }
 
 export interface OrgFeedInput {
@@ -84,6 +100,7 @@ interface FeedRow {
   sort_order: number;
   is_public: boolean;
   min_role: 'member' | 'guide' | 'owner' | null;
+  post_role: 'member' | 'guide' | 'owner' | null;
 }
 
 function mapFeed(row: FeedRow): OrgFeed {
@@ -98,6 +115,7 @@ function mapFeed(row: FeedRow): OrgFeed {
     sortOrder: row.sort_order,
     isPublic: row.is_public,
     minRole: row.min_role,
+    postRole: row.post_role ?? null,
   };
 }
 
@@ -112,7 +130,7 @@ export async function listOrgFeeds(
   options: { includePrivate?: boolean } = {}
 ): Promise<OrgFeed[]> {
   const rows = await db<FeedRow[]>`
-    SELECT org_id, slug, name, tagline, description, presenter, accent, sort_order, is_public, min_role
+    SELECT org_id, slug, name, tagline, description, presenter, accent, sort_order, is_public, min_role, post_role
     FROM org_feeds
     WHERE org_id = ${orgId}
       ${options.includePrivate ? db`` : db`AND is_public`}
@@ -124,7 +142,7 @@ export async function listOrgFeeds(
 /** One feed by slug, or null. */
 export async function getOrgFeed(orgId: string, slug: string): Promise<OrgFeed | null> {
   const [row] = await db<FeedRow[]>`
-    SELECT org_id, slug, name, tagline, description, presenter, accent, sort_order, is_public, min_role
+    SELECT org_id, slug, name, tagline, description, presenter, accent, sort_order, is_public, min_role, post_role
     FROM org_feeds
     WHERE org_id = ${orgId} AND slug = ${slug}
   `;

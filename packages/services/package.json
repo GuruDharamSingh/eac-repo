@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./agreements": "./src/agreements.ts"
+    "./agreements": "./src/agreements.ts",
+    "./video-render": "./src/video-render.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

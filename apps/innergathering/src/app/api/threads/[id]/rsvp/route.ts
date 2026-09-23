@@ -6,9 +6,12 @@ import {
   getRsvpStatus,
   setRsvpStatus,
 } from "@elkdonis/services";
+import { createThreadOrder } from "@elkdonis/commerce/server";
+import { isCardPaymentAvailable, startStripeCheckout } from "@elkdonis/checkout/stripe";
 import { sendRsvpConfirmation, sendRsvpNotification } from "@elkdonis/email";
 import { isWithinCurrentCycle } from "@elkdonis/utils";
 import { getViewer } from "@/lib/auth";
+import { publicOrigin } from "@/lib/public-origin";
 import { shareWorkshopMaterials } from "@/lib/workshop-share";
 import { siteConfig } from "@/config/site";
 
@@ -41,6 +44,9 @@ interface ThreadRow {
   min_attendees_notified: boolean;
   author_id: string;
   author_email: string | null;
+  /** MAJOR units, as stored. Dual-written to threads.price / wp.price_member. */
+  price: string | number | null;
+  price_sliding_min: string | number | null;
 }
 
 async function loadThread(threadId: string): Promise<ThreadRow | null> {
@@ -48,9 +54,12 @@ async function loadThread(threadId: string): Promise<ThreadRow | null> {
     SELECT t.id, t.kind, t.title, t.slug, t.section, t.scheduled_at, t.duration_minutes,
            t.recurrence_pattern, t.location, t.meeting_url,
            t.min_attendees, t.notify_on_min_attendees, t.min_attendees_notified,
-           t.author_id, u.email AS author_email
+           t.author_id, u.email AS author_email,
+           COALESCE(wp.price_member, t.price) AS price,
+           wp.price_sliding_min
     FROM threads t
     LEFT JOIN users u ON u.id = t.author_id
+    LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
     WHERE t.id = ${threadId}
       AND t.org_id = ${siteConfig.orgId}
       AND t.status = 'published'
@@ -58,6 +67,13 @@ async function loadThread(threadId: string): Promise<ThreadRow | null> {
   `;
   return row ?? null;
 }
+
+/** MAJOR → minor, the boundary commerce works in. */
+function toMinor(v: string | number | null | undefined): number {
+  const n = v == null ? 0 : Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
 
 export async function GET(
   _request: NextRequest,
@@ -115,6 +131,55 @@ export async function POST(
   }
 
   const previous = await getRsvpStatus(id, viewer.userId);
+
+  // A priced offering is not joined, it is bought. Enrolment is granted by
+  // `confirmOrderPaid` when the payment lands (webhook, or the return hop in
+  // /api/checkout/return), never here — so nothing below this point runs for
+  // someone who has not paid. Re-joining after paying is free: `previous` is
+  // already 'yes', and charging twice for one seat would be the bug.
+  const priceMinor = toMinor(thread.price);
+  if (priceMinor > 0 && previous !== "yes") {
+    if (!isCardPaymentAvailable()) {
+      return NextResponse.json(
+        { error: "This one is paid, and card payments are not switched on yet. Please get in touch." },
+        { status: 503 }
+      );
+    }
+
+    const floorMinor = toMinor(thread.price_sliding_min);
+    const chosen = Number(body.amountMinor);
+    const amountMinor = Number.isFinite(chosen) && chosen > 0 ? Math.round(chosen) : priceMinor;
+
+    const threadPath = thread.section ? `/${thread.section}/${thread.slug}` : "/";
+    try {
+      const order = await createThreadOrder({
+        orgId: siteConfig.orgId,
+        threadId: id,
+        kinds: ["workshop", "event"],
+        itemNoun: "place",
+        customerEmail: viewer.email,
+        customerId: viewer.userId,
+        paymentMethod: "stripe",
+        // Only pass a chosen amount where a sliding scale actually exists;
+        // commerce rejects one otherwise, and rejects anything out of range.
+        amountMinor: floorMinor > 0 ? amountMinor : undefined,
+      });
+
+      const origin = publicOrigin(request);
+      const { url } = await startStripeCheckout({
+        orderId: order.id,
+        successUrl: `${origin}/api/checkout/return?order=${order.id}&to=${encodeURIComponent(threadPath)}`,
+        cancelUrl: `${origin}${threadPath}?payment=cancelled`,
+        imageBase: origin,
+      });
+      return NextResponse.json({ requiresPayment: true, checkoutUrl: url, orderId: order.id });
+    } catch (err) {
+      console.error(`[innergathering] paid join ${id}:`, err);
+      const message = err instanceof Error ? err.message : "Could not start checkout.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
   await setRsvpStatus(id, viewer.userId, "yes");
 
   // Joining a workshop opens its materials. The page reads that from the

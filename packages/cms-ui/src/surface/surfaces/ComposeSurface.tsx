@@ -34,13 +34,13 @@ import { fmtDate, toDatetimeLocal } from "../format";
 type Descriptor = Extract<SurfaceDescriptor, { type: "compose" }>;
 
 export function ComposeSurface({ descriptor }: { descriptor: Descriptor }) {
-  if (!descriptor.kind) return <CataloguePane />;
+  if (!descriptor.kind) return <CataloguePane prefill={descriptor.prefill} />;
   return <FormPane descriptor={descriptor} />;
 }
 
 // ── the catalogue ──────────────────────────────────────────────────────────
 
-function CataloguePane() {
+function CataloguePane({ prefill }: { prefill?: Record<string, unknown> }) {
   const { connectors, push } = useSurface();
   const options = React.useMemo(
     () => (connectors.compose ? buildComposeCatalogue(connectors.compose) : []),
@@ -55,8 +55,21 @@ function CataloguePane() {
     return Boolean(connectors.custom?.[`compose:${o.id}`]);
   });
 
+  // The same way out the form has: a host with a compose PAGE offers it from
+  // the catalogue too, so someone who would rather not work in a modal never
+  // has to choose a kind first to find the door.
+  const pageTemplate = connectors.compose?.pageHref;
+  const pageHref = pageTemplate
+    ? pageTemplate.replace(/[?&]kind=:kind/, "").replace(":kind", "") || "/"
+    : null;
+
   return (
-    <SurfaceFrame kind="compose" title="Compose" kicker="What are you making?">
+    <SurfaceFrame
+      kind="compose"
+      title="Compose"
+      kicker="What are you making?"
+      actions={pageHref ? [{ label: "Open as a page", quiet: true, href: pageHref }] : undefined}
+    >
       {usable.length === 0 ? (
         <p className="eac-surface-empty">There is nothing to compose here yet.</p>
       ) : (
@@ -75,7 +88,7 @@ function CataloguePane() {
                 onClick={
                   option.mode === "route"
                     ? undefined
-                    : () => pushFor(option, push, Boolean(connectors.custom?.[`compose:${option.id}`]))
+                    : () => pushFor(option, push, Boolean(connectors.custom?.[`compose:${option.id}`]), prefill)
                 }
               />
             </li>
@@ -89,11 +102,13 @@ function CataloguePane() {
 function pushFor(
   option: ComposeOption,
   push: (d: SurfaceDescriptor) => void,
-  hasCustom: boolean
+  hasCustom: boolean,
+  /** What was typed before the kind was chosen — a title from a compose bar. */
+  prefill?: Record<string, unknown>
 ) {
   if (option.writes.table === "threads") {
-    if (option.surface === "writing") push({ type: "write", kind: "post" });
-    else push({ type: "compose", kind: option.writes.kind, tier: "full" });
+    if (option.surface === "writing") push({ type: "write", kind: "post", ...(prefill ? { prefill } : {}) });
+    else push({ type: "compose", kind: option.writes.kind, tier: "full", ...(prefill ? { prefill } : {}) });
   } else if (hasCustom) {
     push({
       type: "custom",
@@ -119,6 +134,7 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
       canShareToNetwork: connectors.compose?.canShareToNetwork,
       canCreateDocument: connectors.compose?.canCreateDocument,
       canCreateTalkRoom: connectors.compose?.canCreateTalkRoom,
+      hostCandidates: connectors.compose?.hostCandidates,
     }),
     [connectors.compose]
   );
@@ -252,7 +268,26 @@ function FormPane({ descriptor }: { descriptor: Descriptor }) {
   }
 
   const canSave = Boolean(connectors.saveThread) && !loading;
+
+  // The way OUT of the modal. A host that has the same compose as a page says
+  // so once (`compose.pageHref`), and every kind gets this — a long form
+  // should never be a trap, and the page is where the writing room, the
+  // media picker and a stray browser refresh all behave better. The title
+  // typed so far rides along so nothing is retyped.
+  const pageTemplate = connectors.compose?.pageHref;
+  const pageHref = pageTemplate
+    ? (() => {
+        const base = pageTemplate.replace(":kind", encodeURIComponent(kind));
+        const title = String(answers.title ?? "").trim();
+        if (!title) return base;
+        return `${base}${base.includes("?") ? "&" : "?"}title=${encodeURIComponent(title)}`;
+      })()
+    : null;
+
   const actions: SurfaceAction[] = [
+    ...(pageHref
+      ? [{ label: "Open as a page", quiet: true, href: pageHref } satisfies SurfaceAction]
+      : []),
     // Writing has a bigger room one step in: same row, same answers, a
     // preview of the finished page beside them. Not a different kind.
     ...(kind === "post"
@@ -392,6 +427,18 @@ export function defaultThreadToAnswers(
     min_attendees: (t.extra?.min_attendees as number | null | undefined) ?? undefined,
     notify_on_min_attendees: Boolean(t.extra?.notify_on_min_attendees),
     video_link: t.videoLink ?? "",
+    // The rooms this thread ALREADY has. Without these two the edit form
+    // opened with both switches off on a meeting that has a Talk room and a
+    // document — the form said "no room" about a meeting people were joining,
+    // and a host who flicked the switch back on risked a second room. Hosts
+    // treat them as "make one if there isn't one" (see provisionNextcloud /
+    // attachRooms), so an ON switch over an existing room is a no-op.
+    create_talk_room: Boolean(t.talkToken),
+    create_document: Boolean(t.documentUrl),
+    // Who's hosting the next occurrence, when the host sent it (it lives on
+    // the rota, not the thread — see content-fields' "Who's hosting").
+    ...(typeof t.extra?.next_host_user_id === "string" ? { host_user_id: t.extra.next_host_user_id } : {}),
+    ...(typeof t.extra?.next_co_host_user_id === "string" ? { co_host_user_id: t.extra.next_co_host_user_id } : {}),
     // Workshop presentation and sessions ride in `extra`, keyed as the fields.
     ...(t.kind === "workshop" ? workshopExtras(t.extra ?? {}) : {}),
   };

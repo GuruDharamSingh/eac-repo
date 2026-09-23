@@ -118,6 +118,8 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: d.title ?? "Gallery", kind: "gallery", size: "wide" };
     case "write":
       return { title: d.threadId ? "Edit" : "New post", kind: "post", size: "full" };
+    case "postTo":
+      return { title: "New post", kind: "post", size: "standard" };
     case "board":
       return { title: "Board", kind: "board", size: "full" };
     case "boardCard":

@@ -10,13 +10,30 @@ import "@elkdonis/blocks/blocks.css";
 // The media picker's styling, for the image field in the editor panel.
 import "@elkdonis/cms-ui/files-card.css";
 import "./globals.css";
+// The HUD panels — imported at the root so the editor (Puck's parent
+// document) and /hub both have them; see components/hud/hud.css.
+import "@/components/hud/hud.css";
+// The theme studio — /studio/theme and the editor's Theme tab.
+import "@/components/studio/theme-studio.css";
+// The Gallery grid's Pictures panel (editor right column).
+import "@/components/studio/gallery-fields.css";
+// Her blog (/blog) — the shared reader and shelf, the same as IFAC's.
+import "@elkdonis/cms-ui/article.css";
+import "@elkdonis/cms-ui/writing.css";
+// The theme's hooks into the shared blocks' captions and subtitles. UNLAYERED
+// on purpose — blocks.css is unlayered, and site.css sits in @layer base, so a
+// rule there could never reach a `.blk-*` element. See theme-hooks.css.
+import "./theme-hooks.css";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ComingSoonWall } from "@/components/coming-soon-wall";
 import { siteConfig } from "@/config/site";
-import { getViewer } from "@/lib/auth";
+import { canBypassComingSoon, getViewer } from "@/lib/auth";
 import { paletteCss } from "@/lib/theme";
-import { loadPalette } from "@/lib/theme-store";
+import { loadFonts, loadPalette } from "@/lib/theme-store";
+import { fontCss, fontsHrefFor, type SiteFonts } from "@/lib/fonts";
 import { loadNav } from "@/lib/navigation-store";
 
 export const metadata: Metadata = {
@@ -36,12 +53,25 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [viewer, palette, nav] = await Promise.all([
+  const [viewer, palette, nav, fonts, reqHeaders] = await Promise.all([
     getViewer().catch(() => null),
     loadPalette().catch(() => ({})),
     loadNav().catch(() => []),
+    loadFonts().catch((): SiteFonts => ({})),
+    headers(),
   ]);
-  const css = paletteCss(palette);
+  // The site's fonts ride in the same <style> as its colours, for the same
+  // reason (Puck's canvas mirrors <style>/<link> from the parent document).
+  const css = [paletteCss(palette), fontCss(fonts)].filter(Boolean).join("\n");
+  const fontsHref = fontsHrefFor(fonts);
+
+  // Site-wide "in progress" wall (siteConfig.comingSoon). /login still
+  // renders — inside the SAME minimal shell, so the real nav never leaks —
+  // everything else shows the wall's own message instead of `children`.
+  // middleware.ts forwards the pathname since a Server Component has no
+  // direct route access.
+  const isLoginPath = reqHeaders.get("x-pathname") === "/login";
+  const gated = siteConfig.comingSoon && !(await canBypassComingSoon(viewer));
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -70,12 +100,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: css }}
         />
       ) : null}
+      {fontsHref ? (
+        // React 19 hoists a stylesheet <link> with a `precedence` into <head>.
+        <link rel="stylesheet" href={fontsHref} precedence="default" />
+      ) : null}
       <body suppressHydrationWarning className="site-shell">
-        <SiteHeader canEdit={Boolean(viewer?.canEdit)} nav={nav} />
-        <div className="site-content">
-          <main>{children}</main>
-          <SiteFooter />
-        </div>
+        {gated ? (
+          <ComingSoonWall>{isLoginPath ? children : undefined}</ComingSoonWall>
+        ) : (
+          <>
+            <SiteHeader canEdit={Boolean(viewer?.canEdit)} nav={nav} />
+            <div className="site-content">
+              <main>{children}</main>
+              <SiteFooter />
+            </div>
+          </>
+        )}
       </body>
     </html>
   );

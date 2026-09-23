@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { serveMedia } from "@elkdonis/services";
+import { parseThumbnailWidth, serveMedia } from "@elkdonis/services";
 import { getServerSession } from "@elkdonis/auth-server";
 import { siteConfig } from "@/config/site";
 
@@ -20,5 +20,8 @@ export async function GET(
     viewerId: session.user?.db_user_id ?? session.user?.id ?? null,
     allowedPrefixes: [`EAC_Network/${siteConfig.orgId}/`, "EAC_Network/users/"],
     range: request.headers.get("range"),
+    // `?w=` asks for a downscaled variant. Her masters run to 22MB (the
+    // butterflies detail); a gallery tile has no use for that.
+    width: parseThumbnailWidth(request.nextUrl.searchParams.get("w")),
   });
 }

@@ -340,3 +340,244 @@ export async function releaseOnPayoutAccountReady(
   }
   return held.length;
 }
+
+// ─── Settling up ─────────────────────────────────────────────────────────────
+
+export interface RecordPayoutInput {
+  party: Party;
+  /** POSITIVE minor units — the amount handed over. Stored as a negative entry. */
+  amountMinor: number;
+  currency?: string;
+  /** How it was actually sent. 'etransfer' for the Canadian rail. */
+  method: string;
+  /** The e-Transfer confirmation, wire reference, whatever can be looked up. */
+  reference?: string | null;
+  actorUserId: string;
+  note?: string | null;
+}
+
+/**
+ * Record money actually handed to someone, outside Stripe.
+ *
+ * This is the manual tier's other half: `confirmOrderPaid` writes what is
+ * owed the moment a sale lands, and this writes that the debt was settled.
+ * Both the `payout` row (the audit trail — method, reference, when) and the
+ * negative ledger entry are written in ONE transaction, because a payout
+ * recorded without the ledger entry would leave the balance still claiming
+ * the money is owed, and someone would be paid twice.
+ *
+ * Refuses to pay more than is payable. Held money is not payable by
+ * definition, so an amount sitting under a dispute window or waiting on a
+ * payout account cannot be settled by accident — release it first.
+ */
+export async function recordPayout(
+  input: RecordPayoutInput
+): Promise<{ ok: boolean; error?: string; payoutId?: string }> {
+  assertParty(input.party);
+  const currency = input.currency ?? "CAD";
+  const amount = Math.round(input.amountMinor);
+  if (!(amount > 0)) return { ok: false, error: "A payout has to be a positive amount." };
+
+  const balance = await getBalance(input.party, currency);
+  if (amount > balance.payableMinor) {
+    return {
+      ok: false,
+      error:
+        balance.heldMinor > 0
+          ? `Only ${balance.payableMinor / 100} ${currency} is payable right now; the rest is held.`
+          : `That is more than the ${balance.payableMinor / 100} ${currency} owed.`,
+    };
+  }
+
+  const payoutId = await db.begin(async (tx) => {
+    const rows = (await tx`
+      INSERT INTO payout (
+        artist_user_id, party_org_id, amount_minor, currency,
+        method, reference, status, sent_at, notes
+      ) VALUES (
+        ${input.party.kind === "user" ? input.party.userId! : null},
+        ${input.party.kind === "org" ? input.party.orgId! : null},
+        ${amount}, ${currency},
+        ${input.method}, ${input.reference ?? null},
+        'sent', NOW(), ${input.note ?? null}
+      )
+      RETURNING id
+    `) as unknown as Row[];
+    const id = rows[0]!.id as string;
+
+    await writeEntry(
+      {
+        party: input.party,
+        entryType: "payout",
+        amountMinor: -amount,
+        currency,
+        payoutId: id,
+        note: input.note ?? `Paid by ${input.method}`,
+        createdBy: input.actorUserId,
+      },
+      tx as unknown as typeof db
+    );
+
+    return id;
+  });
+
+  return { ok: true, payoutId };
+}
+
+export interface PayableParty {
+  party: Party;
+  partyName: string | null;
+  payableMinor: number;
+  heldMinor: number;
+  currency: string;
+  /** Oldest unpaid accrual — how long someone has been waiting. */
+  owedSince: string | null;
+  /** Null for an org: an org is settled internally, never sent money. */
+  payoutMethod: string | null;
+  payoutEmail: string | null;
+  country: string | null;
+  stripeOnboardedAt: string | null;
+}
+
+/**
+ * Everyone the collective currently owes — the settle-up queue.
+ *
+ * `getBalance` answers for one party, which is the wrong shape for the person
+ * doing the paying: they need to know who is waiting, how long, and by what
+ * rail before they open their banking app. Payout details are joined in for
+ * the same reason — an admin who has to go and look up each artist's email
+ * separately will batch it, and batching is how people end up waiting weeks.
+ *
+ * Held money is reported alongside but is NOT part of `payableMinor`, so the
+ * queue can never invite someone to send money that is under a dispute window.
+ */
+export async function listPayable(
+  opts: { currency?: string; limit?: number } = {}
+): Promise<PayableParty[]> {
+  const currency = opts.currency ?? "CAD";
+  const limit = Math.min(opts.limit ?? 100, 500);
+  const rows = (await db`
+    WITH entries AS (
+      SELECT
+        pl.*,
+        (
+          pl.hold_reason IS NULL
+          OR EXISTS (
+            SELECT 1 FROM payout_ledger r
+            WHERE r.releases_entry_id = pl.id AND r.entry_type = 'release'
+          )
+        ) AS payable
+      FROM payout_ledger pl
+      WHERE pl.currency = ${currency}
+    ),
+    totals AS (
+      SELECT
+        party_kind, party_user_id, party_org_id,
+        COALESCE(SUM(amount_minor) FILTER (WHERE payable), 0)::bigint AS payable_minor,
+        COALESCE(SUM(amount_minor) FILTER (WHERE NOT payable), 0)::bigint AS held_minor,
+        MIN(created_at) FILTER (WHERE payable AND entry_type = 'accrual') AS owed_since
+      FROM entries
+      GROUP BY party_kind, party_user_id, party_org_id
+    )
+    SELECT
+      t.*,
+      COALESCE(u.display_name, u.email, o.name) AS party_name,
+      u.payout_method, u.payout_email, u.country, u.stripe_onboarded_at
+    FROM totals t
+    LEFT JOIN users u         ON u.id = t.party_user_id
+    LEFT JOIN organizations o ON o.id = t.party_org_id
+    WHERE t.payable_minor > 0
+    ORDER BY t.owed_since ASC NULLS LAST
+    LIMIT ${limit}
+  `) as unknown as Row[];
+
+  return rows.map((r) => ({
+    party: {
+      kind: r.party_kind as PartyKind,
+      userId: (r.party_user_id as string | null) ?? null,
+      orgId: (r.party_org_id as string | null) ?? null,
+    },
+    partyName: (r.party_name as string | null) ?? null,
+    payableMinor: Number(r.payable_minor),
+    heldMinor: Number(r.held_minor),
+    currency,
+    owedSince: (r.owed_since as string | null) ?? null,
+    payoutMethod: (r.payout_method as string | null) ?? null,
+    payoutEmail: (r.payout_email as string | null) ?? null,
+    country: (r.country as string | null) ?? null,
+    stripeOnboardedAt: (r.stripe_onboarded_at as string | null) ?? null,
+  }));
+}
+
+export interface EarningsLine {
+  entryId: string;
+  entryType: EntryType;
+  amountMinor: number;
+  currency: string;
+  createdAt: string;
+  /** Held and not yet released — shown to the artist as "not payable yet". */
+  held: boolean;
+  holdReason: HoldReason | null;
+  note: string | null;
+  /** What was sold, where the entry came from a sale. */
+  orderNumber: string | null;
+  description: string | null;
+  /** How it was sent, where this line IS a payout. */
+  payoutMethod: string | null;
+  payoutReference: string | null;
+}
+
+/**
+ * One party's money, line by line — the statement an artist should be able to
+ * read without asking anyone.
+ *
+ * `getBalance` answers "how much", which is not the same as "why". This joins
+ * each entry back to the sale that caused it, and to the payout that settled
+ * it, so "owed for this piece, paid on this date by e-Transfer" is legible
+ * from the record rather than from someone's memory.
+ */
+export async function getEarningsStatement(
+  party: Party,
+  opts: { limit?: number; currency?: string } = {}
+): Promise<EarningsLine[]> {
+  assertParty(party);
+  const limit = Math.min(opts.limit ?? 100, 500);
+  const rows = (await db`
+    SELECT
+      pl.*,
+      o.number AS order_number,
+      l.description AS line_description,
+      p.method AS payout_method,
+      p.reference AS payout_reference,
+      EXISTS (
+        SELECT 1 FROM payout_ledger r
+        WHERE r.releases_entry_id = pl.id AND r.entry_type = 'release'
+      ) AS released
+    FROM payout_ledger pl
+    LEFT JOIN commerce_order o      ON o.id = pl.order_id
+    LEFT JOIN commerce_order_line l ON l.id = pl.order_line_id
+    LEFT JOIN payout p              ON p.id = pl.payout_id
+    WHERE ${partyWhere(party, db)}
+      ${opts.currency ? db`AND pl.currency = ${opts.currency}` : db``}
+      -- A release carries no money; it explains the accrual it points at,
+      -- which already shows as payable once released.
+      AND pl.entry_type <> 'release'
+    ORDER BY pl.created_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+
+  return rows.map((r) => ({
+    entryId: r.id as string,
+    entryType: r.entry_type as EntryType,
+    amountMinor: Number(r.amount_minor),
+    currency: r.currency as string,
+    createdAt: r.created_at as string,
+    held: Boolean(r.hold_reason) && !r.released,
+    holdReason: (r.hold_reason as HoldReason | null) ?? null,
+    note: (r.note as string | null) ?? null,
+    orderNumber: (r.order_number as string | null) ?? null,
+    description: (r.line_description as string | null) ?? null,
+    payoutMethod: (r.payout_method as string | null) ?? null,
+    payoutReference: (r.payout_reference as string | null) ?? null,
+  }));
+}
