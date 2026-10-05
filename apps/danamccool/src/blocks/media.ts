@@ -23,5 +23,9 @@ export function sized(src: string, width: number): string {
 /** A srcset over the route's widths, or undefined for a fixed file. */
 export function srcSet(src: string): string | undefined {
   if (!isResizable(src)) return undefined;
-  return WIDTHS.map((w) => `${src}?w=${w} ${w}w`).join(", ");
+  // A srcset is split on whitespace and commas, and her folder names have
+  // spaces ("DANAS FORMAT WEBSITE"): escape both, or the browser reads each
+  // candidate as several broken ones. `src` itself tolerates a raw space.
+  const url = src.replace(/ /g, "%20").replace(/,/g, "%2C");
+  return WIDTHS.map((w) => `${url}?w=${w} ${w}w`).join(", ");
 }

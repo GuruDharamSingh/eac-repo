@@ -158,6 +158,13 @@ export interface ServeMediaOptions {
    * for ranged requests and for anything that is not a resizable image.
    */
   width?: number | null;
+  /**
+   * The caller has already decided this viewer may read this path, by a rule
+   * canReadMedia does not know (e.g. a reading circle open to an org's
+   * viewers). Skips canReadMedia only; allowedPrefixes still applies, and the
+   * caller should pass a narrow one. Default false.
+   */
+  preAuthorized?: boolean;
 }
 
 /**
@@ -165,7 +172,7 @@ export interface ServeMediaOptions {
  * allowed" — a media proxy that distinguishes them leaks which paths exist.
  */
 export async function serveMedia(options: ServeMediaOptions): Promise<Response> {
-  const { filePath, viewerId, allowedPrefixes, range, width } = options;
+  const { filePath, viewerId, allowedPrefixes, range, width, preAuthorized } = options;
 
   if (!filePath || filePath.includes('..') || filePath.includes('\\')) {
     return new Response(JSON.stringify({ error: 'Not found' }), {
@@ -181,7 +188,7 @@ export async function serveMedia(options: ServeMediaOptions): Promise<Response> 
     });
   }
 
-  if (!(await canReadMedia(viewerId, filePath))) {
+  if (!preAuthorized && !(await canReadMedia(viewerId, filePath))) {
     return new Response(JSON.stringify({ error: 'Not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },

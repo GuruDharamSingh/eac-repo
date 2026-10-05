@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { defineBlock, type PropsOf } from "../registry";
-import { Paragraphs, toParagraphs } from "../text";
+import { hasText as hasWords, RichText } from "../text";
 
 // ============================================================================
 // Text with an image in it — one block, wrapping guaranteed.
@@ -37,9 +37,9 @@ const props = [
   },
   {
     name: "body",
-    kind: "text",
+    kind: "richtext",
     label: "Text",
-    description: "Leave a blank line between paragraphs.",
+    description: "Type on the page. Select words for bold, italic, a link or a list.",
     required: true,
   },
   {
@@ -145,7 +145,7 @@ export function TextImage({
   caption,
   gap = "regular",
 }: TextImageProps) {
-  const hasText = toParagraphs(body).length > 0;
+  const hasText = hasWords(body);
 
   // Half a block is still a block: an image with no words yet is a legitimate
   // half-finished state and should draw. Neither is nothing to draw.
@@ -183,9 +183,7 @@ export function TextImage({
   ) : null;
 
   const text = hasText ? (
-    <div className="blk-textimg-body">
-      <Paragraphs body={body} />
-    </div>
+    <RichText className="blk-textimg-body" body={body} />
   ) : null;
 
   // DOM order follows VISUAL order, rather than being fixed with the image

@@ -1,0 +1,14 @@
+{
+  "name": "eac-reel-render",
+  "private": true,
+  "description": "Installed into /opt/reel by docker/reel-render.Dockerfile. Not a workspace package: the renderer needs glibc builds, and the workspace node_modules is musl. Keep versions equal to packages/reels/package.json.",
+  "dependencies": {
+    "@remotion/bundler": "4.0.532",
+    "@remotion/renderer": "4.0.532",
+    "@remotion/transitions": "4.0.532",
+    "postgres": "3.4.7",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.532"
+  }
+}

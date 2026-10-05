@@ -135,10 +135,10 @@ async function shareWith(path, recipient, permissions) {
 
 async function main() {
   const people = await sql`
-    SELECT slug, display_name, nextcloud_user_id
+    SELECT storage_folder AS folder, slug, display_name, nextcloud_user_id
     FROM users
     WHERE entity_type = 'person'
-      AND slug IS NOT NULL
+      AND storage_folder IS NOT NULL
       ${SLUG_FILTER.length ? sql`AND slug = ANY(${SLUG_FILTER})` : sql``}
     ORDER BY slug
   `;
@@ -158,7 +158,8 @@ async function main() {
   const failures = [];
 
   for (const p of people) {
-    const base = `${ROOT}/users/${p.slug}`;
+    // users.storage_folder (migration 169), not the renameable slug.
+    const base = `${ROOT}/users/${p.folder}`;
 
     if (DRY_RUN) {
       console.log(

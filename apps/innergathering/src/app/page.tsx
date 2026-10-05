@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { Reveal } from "@/components/landing/Reveal";
-import { WorkQuestion } from "@/components/landing/WorkQuestion";
 import { GallerySlider } from "@/components/landing/GallerySlider";
 import { JoinSection } from "@/components/landing/JoinSection";
-import { StickyBar } from "@/components/landing/StickyBar";
-import { getLandingConfig, getWorkQuestion, listFeaturedThreads, listMiniFeed, mediaSrc } from "@/lib/landing";
-import { getGuides, getSiteSections } from "@/lib/data";
+import { OfferingsBand, type OfferingItem } from "@/components/landing/OfferingsBand";
+import { getLandingConfig, getWorkQuestion, getWorkQuestionThread, mediaSrc } from "@/lib/landing";
+import { renderForumRoute } from "@elkdonis/forum-ui";
+import { getForumConnectors } from "@/lib/forum";
+import { GuestAnswer } from "@/components/landing/GuestAnswer";
+import {
+  getAttendanceCount,
+  getCycleStatus,
+  getBoard,
+  getSiteSections,
+  getThreadRsvpForUser,
+  getThreadsForFeed,
+} from "@/lib/data";
 import { getViewer } from "@/lib/auth";
-import { formatDateTime, formatRecurrence } from "@/lib/format";
+import type { Thread } from "@/lib/types";
 
 /**
  * The landing page, carried over from inner-gathering's (marketing) route
@@ -18,15 +27,31 @@ import { formatDateTime, formatRecurrence } from "@/lib/format";
  * Mantine-free one.
  */
 export default async function LandingPage() {
-  const [config, workQuestion, mini, board, viewer, sections] = await Promise.all([
+  const [config, workQuestion, offeringThreads, board, viewer, sections] = await Promise.all([
     getLandingConfig(),
     getWorkQuestion(),
-    listMiniFeed(),
-    getGuides(),
+    getThreadsForFeed("offerings"),
+    getBoard(),
     getViewer().catch(() => null),
     getSiteSections(),
   ]);
-  const featured = await listFeaturedThreads(config.featuredThreadIds);
+  const [offerings, forumThread] = await Promise.all([
+    loadOfferings(offeringThreads, viewer?.userId ?? null),
+    workQuestion ? getWorkQuestionThread(workQuestion.question.question) : Promise.resolve(null),
+  ]);
+  // The forum itself, opened on the work question's thread: the same render
+  // /forum/t/<id>/<slug> produces, so every link and form in it leads into
+  // the forum proper.
+  const forumEmbed = forumThread
+    ? await renderForumRoute({
+        connectors: await getForumConnectors(),
+        segments: ["t", forumThread.id, forumThread.slug],
+        searchParams: {},
+      }).catch((err) => {
+        console.error("[innergathering] landing forum embed:", err);
+        return null;
+      })
+    : null;
 
   // The wording on the header was hard-coded, which meant /manage/pages'
   // "Home page header" card wrote rows nothing ever read. These are the words
@@ -48,25 +73,6 @@ export default async function LandingPage() {
     mediaSrc(config.imageSpaces.intro_banner?.path)
   );
 
-  const initiative = {
-    eyebrow: config.initiative.eyebrow ?? "Current Offerings - Spring 2026",
-    heading: config.initiative.heading ?? "Web Portal",
-    body:
-      config.initiative.body ??
-      "Excited to share our site with you that is now being soft launched as Inquiry in to What Is Art For, and facilitated on our web portal. This is an example of what's to come as an offering to anyone wishing to have something similar for their groups!",
-    cta: config.initiative.cta ?? "Make an Inquiry",
-  };
-  const artist = {
-    eyebrow: config.featuredArtist.eyebrow ?? "Featured Arts",
-    name: config.featuredArtist.name ?? "Dana McCool",
-    description: config.featuredArtist.description ?? "Surrealist Writing",
-    image: mediaSrc(config.imageSpaces.featured_artist?.path, mediaSrc(config.featuredArtist.image_url, "/danamccool.jpg")),
-    goals: config.featuredArtist.goals ?? "",
-    links: [
-      { label: config.featuredArtist.link1_label, url: config.featuredArtist.link1_url },
-      { label: config.featuredArtist.link2_label, url: config.featuredArtist.link2_url },
-    ].filter((l) => l.label && l.url) as Array<{ label: string; url: string }>,
-  };
   const fundraising = {
     goal: config.fundraising.goal ?? 25000,
     raised: config.fundraising.raised ?? 0,
@@ -74,11 +80,6 @@ export default async function LandingPage() {
     currency: config.fundraising.currency ?? "CAD",
   };
   const pct = fundraising.goal > 0 ? Math.min(100, Math.round((fundraising.raised / fundraising.goal) * 100)) : 0;
-  // The hero falls back to the intro banner when no hero image is set, and
-  // the same photograph twice on one page reads as a mistake rather than a
-  // motif — so the standalone banner steps aside when it is that photograph.
-  const introBannerSrc = mediaSrc(config.imageSpaces.intro_banner?.path);
-  const introBanner = introBannerSrc === heroImage ? null : introBannerSrc;
   const gallery = (config.imageSpaces.gallery?.images ?? [])
     .map((p) => (typeof p === "string" ? mediaSrc(p) : null))
     .filter((s): s is string => Boolean(s));
@@ -127,26 +128,12 @@ export default async function LandingPage() {
         <div className="ig-hero-cue" aria-hidden="true"><span /></div>
       </header>
 
-      {/* ── Current Work Question ── */}
-      {workQuestion && (
-        <section className="cwq-section">
-          <div className="section-inner" style={{ maxWidth: 1100 }}>
-            <p className="section-eyebrow">Current Work Question</p>
-            <div style={{ minWidth: 0, marginTop: "1.25rem" }}>
-              <WorkQuestion question={workQuestion.question} responses={workQuestion.responses} signedIn={Boolean(viewer)} />
-            </div>
-            {!viewer && (
-              <div className="cwq-login-bar">
-                <span className="cwq-login-prompt">Join the conversation</span>
-                <div className="cwq-login-actions">
-                  <Link href="/login" className="cwq-login-btn cwq-login-btn--primary">Create account</Link>
-                  <Link href="/login" className="cwq-login-link">Sign in</Link>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+      {/* ── Current offerings — the public ways in, with their RSVP ── */}
+      <OfferingsBand
+        items={offerings}
+        signedIn={Boolean(viewer)}
+        nextcloudUrl={process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? null}
+      />
 
       {/* ── Login / signup banner — shown to signed-out visitors only ── */}
       {!viewer && (
@@ -189,153 +176,40 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── Banner image space (admin-set) ── */}
-      {introBanner && (
-        <section className="image-space-banner" aria-label="Collective banner image">
-          <div className="image-space-banner-inner">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="image-space-banner-img" src={introBanner} alt={config.imageSpaces.intro_banner?.alt ?? "Elkdonis Arts Collective banner"} loading="lazy" />
-          </div>
-        </section>
-      )}
-
-      {/* ── Featured Initiative + mini feed ── */}
-      <section id="initiative" className="initiative-section">
-        <div className="section-inner">
-          <Reveal style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: "4rem", alignItems: "center" }}>
-            <div className="initiative-copy">
-              <p className="section-eyebrow">{initiative.eyebrow}</p>
-              <h2 className="section-heading" style={{ fontFamily: '"Brothers", sans-serif' }}>{initiative.heading}</h2>
-              <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0" } as React.CSSProperties} />
-              <div style={{ fontFamily: '"Basteleur", serif', color: "#063179", lineHeight: 1.8, marginBottom: "1.25rem" }}>
-                {initiative.body.split(/\n+/).map((para, i) => (
-                  <p key={i} style={{ margin: "0 0 0.75em" }}>{para}</p>
-                ))}
-              </div>
-              <div className="initiative-actions" style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "2rem" }}>
-                <a href="#contact" className="cta-btn" style={{ display: "inline-flex" }}>{initiative.cta}</a>
-                <Link href={viewer ? "/hub" : "/login"} className="cta-btn" style={{ display: "inline-flex" }}>Web Portal</Link>
-              </div>
-            </div>
-
-            {mini.length > 0 ? (
-              <div className="initiative-feed-panel">
-                <div className="initiative-feed-inner">
-                  <p className="initiative-feed-eyebrow">Standing gatherings</p>
-                  <ul className="initiative-feed-list">
-                    {mini.map((t) => (
-                      <li key={t.id} className="initiative-feed-card">
-                        <Link href={t.href} className="initiative-feed-title">{t.title}</Link>
-                        <span className="initiative-feed-meta">
-                          {[t.scheduledAt && formatDateTime(t.scheduledAt), formatRecurrence(t.recurrencePattern), t.isOnline ? "Online" : t.location]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/offerings" className="initiative-feed-all">All offerings →</Link>
-                </div>
-              </div>
-            ) : (
-              <div className="initiative-panel" aria-hidden="true">
-                <div className="initiative-panel-inner">
-                  <div className="initiative-diamond" />
-                  <p className="initiative-stat">Open-Source</p>
-                  <p className="initiative-stat-label">Backend</p>
-                  <div className="initiative-divider" />
-                  <p className="initiative-stat">Mutual Aid</p>
-                  <p className="initiative-stat-label">Fund</p>
-                  <div className="initiative-divider" />
-                  <p className="initiative-stat">Artists&rsquo;</p>
-                  <p className="initiative-stat-label">Online Directory</p>
-                </div>
-              </div>
-            )}
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Featured Gatherings ── */}
-      {featured.length > 0 && (
-        <section id="featured-events" className="featured-events-section">
-          <Reveal className="section-inner">
-            <div className="featured-events-header">
-              <p className="section-eyebrow">Featured Gatherings</p>
-              <h2 className="section-heading">Upcoming Threads</h2>
-              <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.5rem 0" } as React.CSSProperties} />
-            </div>
-            <div className="featured-events-table" role="table" aria-label="Featured gatherings and threads">
-              <div className="featured-events-row featured-events-head" role="row">
-                <span role="columnheader">Profile</span>
-                <span role="columnheader">Meeting</span>
-                <span role="columnheader">Date + Time</span>
-                <span role="columnheader">Link</span>
-              </div>
-              <div className="featured-events-scroll">
-                {featured.map((t) => (
-                  <Link key={t.id} className="featured-events-row featured-events-item" href={t.href} role="row">
-                    <span className="featured-events-avatar" role="cell" aria-label={t.authorName ?? "Elkdonis Arts"}>
-                      {t.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={t.avatarUrl} alt="" />
-                      ) : (
-                        <span>{initials(t.authorName)}</span>
-                      )}
-                    </span>
-                    <span className="featured-events-title" role="cell">
-                      {t.title}
-                      <small>{t.kind}</small>
-                    </span>
-                    <strong className="featured-events-date" role="cell">{t.scheduledAt ? formatDateTime(t.scheduledAt) : "Date TBA"}</strong>
-                    <span className="featured-events-link" role="cell">View</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-        </section>
-      )}
-
-      {/* ── Featured Arts ── */}
-      <section id="grant-program" className="grant-section">
-        <Reveal className="section-inner" style={{ display: "grid", gridTemplateColumns: artist.goals || artist.links.length ? "minmax(120px, 180px) 1fr 1fr" : "minmax(120px, 180px) 1fr", gap: "2.5rem", alignItems: "start" }}>
-          <div className="grant-left">
-            <p className="section-eyebrow" style={{ margin: "0 0 0.75rem" }}>{artist.eyebrow}</p>
-            <div className="grant-image">
-              {artist.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={artist.image} alt={artist.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-              )}
-            </div>
-          </div>
-          <div className="grant-right">
-            <h2 className="section-heading" style={{ margin: 0 }}>{artist.name}</h2>
-            <hr className="gold-rule" style={{ "--rule-width": "50px", margin: "1.25rem 0 1.5rem" } as React.CSSProperties} />
-            <p className="grant-body">{artist.description}</p>
-          </div>
-          {(artist.goals || artist.links.length > 0) && (
-            <div style={{ borderLeft: "1px solid rgba(198,164,90,0.18)", paddingLeft: "2rem" }}>
-              <p className="section-eyebrow">Goals &amp; Work</p>
-              <hr className="gold-rule" style={{ "--rule-width": "40px", margin: "1rem 0 1.5rem" } as React.CSSProperties} />
-              {artist.goals && <p className="grant-body" style={{ marginBottom: "1.5rem" }}>{artist.goals}</p>}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                {artist.links.map((l) => (
-                  <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="cta-btn" style={{ display: "inline-flex", fontSize: "0.75rem", height: 40 }}>
-                    {l.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </Reveal>
-      </section>
-
       {/* ── Gallery (admin-set images) ── */}
       <GallerySlider slides={gallery} />
 
       {/* ── Join the Collective ── */}
       <JoinSection />
+
+      {/* ── The Grand Forum ──
+          The forum itself, full width, opened on the work question's thread,
+          under a short heading that says what it is: the network's forum,
+          larger than this one group. A visitor without an account can still
+          answer below it. */}
+      {(forumEmbed || workQuestion) && (
+        <section id="grand-forum" className="ig-forum-section" aria-labelledby="ig-forum-heading">
+          <div className="ig-forum-head">
+            <div>
+              <p className="ig-forum-eyebrow">Across the arts collectives</p>
+              <h2 id="ig-forum-heading" className="ig-forum-heading">The Grand Forum</h2>
+            </div>
+            <p className="ig-forum-lede">
+              The independent forum used across the arts collectives, shared by every group in the
+              network rather than owned by any one of them.
+            </p>
+            <Link href="/forum" className="ig-forum-btn ig-forum-btn--primary">Enter the forum</Link>
+          </div>
+
+          {forumEmbed && <div className="gf-page ig-forum-embed">{forumEmbed}</div>}
+
+          {!viewer && workQuestion && (
+            <div className="ig-forum-guest">
+              <GuestAnswer questionId={workQuestion.question.id} question={workQuestion.question.question} />
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── Fundraising Goal / Community Support ── */}
       <section id="fundraising" className="fundraising-section">
@@ -426,7 +300,6 @@ export default async function LandingPage() {
       </section>
 
       <div id="contact" />
-      <StickyBar signedIn={Boolean(viewer)} />
     </div>
   );
 }
@@ -435,6 +308,32 @@ export default async function LandingPage() {
  * Ask the media proxy for a downscaled copy. Only our own /api/media paths
  * understand `?w=`; an absolute URL to somewhere else is returned untouched.
  */
+/**
+ * Upcoming public gatherings in the offerings feed, with what the band needs
+ * to show beside each: this cycle's status, the RSVP count and whether the
+ * viewer has already said yes. Posts and past one-offs are left out; the feed
+ * query itself keeps a one-off listed after it has happened.
+ */
+async function loadOfferings(threads: Thread[], viewerId: string | null): Promise<OfferingItem[]> {
+  const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+  const upcoming = threads
+    .filter((t) => ["meeting", "event", "workshop"].includes(t.kind))
+    .filter((t) => t.nextOccurrenceAt && new Date(t.nextOccurrenceAt).getTime() >= cutoff)
+    .sort((a, b) => new Date(a.nextOccurrenceAt!).getTime() - new Date(b.nextOccurrenceAt!).getTime())
+    .slice(0, 4);
+  return Promise.all(
+    upcoming.map(async (thread) => {
+      const recurring = Boolean(thread.recurrencePattern && thread.recurrencePattern !== "NONE");
+      const [cycleStatus, attendanceCount, attending] = await Promise.all([
+        recurring ? getCycleStatus(thread) : Promise.resolve(null),
+        thread.isRsvpEnabled ? getAttendanceCount(thread) : Promise.resolve(0),
+        viewerId ? getThreadRsvpForUser(thread, viewerId) : Promise.resolve(false),
+      ]);
+      return { thread, cycleStatus, attendanceCount, attending };
+    })
+  );
+}
+
 function variant(src: string, width: number): string {
   return src.startsWith("/api/media/") ? `${src}?w=${width}` : src;
 }

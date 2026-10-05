@@ -4,6 +4,8 @@ Sprint board: `SPRINT_2026-09-18_onboarding.md`. You own `packages/forum-ui/**`,
 `apps/forum/**`, `apps/*/src/app/forum/**`. Read memory *The Grand Forum* and
 `GRAND_FORUM_PLAN.md` first.
 
+Design (2026-09-25, awaiting decisions D1–D3): `DESIGN_B_FORUM_SCOPE_SWITCHER_2026-09-25.md`.
+
 ## The ask (user's words, 2026-09-18)
 The `/forum` page on each org site gets an embedded forum with a **switcher**:
 - **Scope:** *This org* (default) ↔ *The collective* (network-wide).

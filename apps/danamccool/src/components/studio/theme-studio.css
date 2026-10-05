@@ -300,6 +300,10 @@
   border-radius: 6px;
   background: #fff;
 }
+.dm-nav-card--sub {
+  margin-left: 24px;
+  border-left-width: 3px;
+}
 .dm-nav-n {
   min-width: 1.5em;
   color: var(--hud-soft);

@@ -41,4 +41,4 @@ export function isOrgStaff(viewer: LmsViewer, orgId: string): boolean {
 /** Routes the package owns under a course; a step may not take these slugs. */
 export const RESERVED_STEP_SLUGS = new Set(['guide', 'journal', 'circle', 'begin', 'run', 'runs', 'edit']);
 /** Routes the host owns at the root; a course may not take these slugs. */
-export const RESERVED_COURSE_SLUGS = new Set(['api', 'login', 'journal', 'guide', 'about', 'care', 'sitemap.xml', 'robots.txt', '_next', 'studio']);
+export const RESERVED_COURSE_SLUGS = new Set(['api', 'login', 'journal', 'guide', 'about', 'care', 'sitemap.xml', 'robots.txt', '_next', 'studio', 'workshops', 'inner', 'outer', 'guides', 'traditions', 'schedule', 'courses']);

@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +35,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var today: TextView
     private lateinit var log: LinearLayout
     private lateinit var logEmpty: TextView
+
+    private lateinit var alertLabel: TextView
+    private lateinit var graph: SignalGraph
+    private lateinit var graphInfo: TextView
+    private val rangeButtons = mutableListOf<Button>()
+    private val rangeHours = longArrayOf(1, 6, 24, 120)
+    private val rangeNames = arrayOf("1 h", "6 h", "24 h", "5 d")
 
     private val handler = Handler(Looper.getMainLooper())
     private val refresh = object : Runnable {
@@ -56,6 +64,39 @@ class MainActivity : AppCompatActivity() {
 
         card.background = (card.background as GradientDrawable).mutate()
 
+        alertLabel = findViewById(R.id.alertLabel)
+        graph = findViewById(R.id.graph)
+        graphInfo = findViewById(R.id.graphInfo)
+        val dial = findViewById<SeekBar>(R.id.alertDial)
+        dial.progress = dialFromDbm(Prefs.alertDbm(this))
+        showAlertLabel(dial.progress)
+        dial.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, value: Int, fromUser: Boolean) {
+                showAlertLabel(value)
+                if (fromUser) { Prefs.setAlertDbm(this@MainActivity, dbmFromDial(value)); lastGraphKey = ""; MonitorService.poll(this@MainActivity); renderGraph() }
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
+
+        val ranges = findViewById<LinearLayout>(R.id.ranges)
+        for (i in rangeNames.indices) {
+            val b = Button(this)
+            b.text = rangeNames[i]
+            b.isAllCaps = false
+            b.textSize = 13f
+            b.minWidth = 0; b.minimumWidth = 0
+            b.layoutParams = LinearLayout.LayoutParams(0, dp(38), 1f).apply { if (i > 0) marginStart = dp(6) }
+            b.setOnClickListener { Prefs.setGraphRange(this, i); renderGraph() }
+            ranges.addView(b)
+            rangeButtons += b
+        }
+        graph.onPick = { s ->
+            graphInfo.text = if (s == null) "" else
+                Notes.time(s.t) + " · " + (if (s.level == 0) "no service" else "${s.level}/4 bars" + (s.dbm?.let { " · $it dBm" } ?: ""))
+        }
+
+        findViewById<Button>(R.id.heart).setOnClickListener { floatHearts(it) }
         toggle.setOnClickListener { onToggle() }
         battery.setOnClickListener { requestBatteryExemption() }
         findViewById<Button>(R.id.share).setOnClickListener { share() }
@@ -147,6 +188,41 @@ class MainActivity : AppCompatActivity() {
         battery.visibility = if (running && !ignoringBattery()) View.VISIBLE else View.GONE
 
         renderLog()
+        renderGraph()
+        showAlertLabel(findViewById<SeekBar>(R.id.alertDial).progress)
+    }
+
+    // Dial 0 = no service only; 1..15 = -130..-60 dBm in 5 dB steps (right = alerts sooner).
+    private fun dbmFromDial(v: Int) = if (v == 0) 0 else -130 + (v - 1) * 5
+    private fun dialFromDbm(d: Int) = if (d == 0) 0 else ((d + 130) / 5 + 1).coerceIn(1, 15)
+
+    private fun showAlertLabel(v: Int) {
+        val now = MonitorService.liveDbm?.let { " Now: $it dBm." } ?: ""
+        alertLabel.text = if (v == 0) "Alert only when there is no service.$now"
+        else "Alert when signal falls to ${dbmFromDial(v)} dBm or weaker, or on no service. Beep when it rises above.$now"
+    }
+
+    private var lastGraphKey = ""
+
+    private fun renderGraph() {
+        val sel = Prefs.graphRange(this).coerceIn(0, rangeHours.size - 1)
+        for (i in rangeButtons.indices) {
+            rangeButtons[i].setBackgroundColor(ContextCompat.getColor(this, if (i == sel) R.color.accent else R.color.card))
+            rangeButtons[i].setTextColor(ContextCompat.getColor(this, R.color.on_dark))
+        }
+        val now = System.currentTimeMillis()
+        val key = "$sel:${now / 30_000}:${Prefs.alertDbm(this)}"
+        if (key == lastGraphKey) return
+        lastGraphKey = key
+        val from = now - rangeHours[sel] * 3_600_000L
+        val data = EventStore.get(this).samples(from)
+        graph.threshold = Prefs.alertDbm(this)
+        graph.setData(data, from, now)
+        val dbms = data.mapNotNull { it.dbm }
+        val outMin = data.zipWithNext().filter { it.first.level == 0 && it.second.t - it.first.t <= 4 * 60_000L }
+            .sumOf { it.second.t - it.first.t } / 60_000
+        graphInfo.text = if (data.isEmpty()) "" else
+            "Range ${dbms.minOrNull() ?: "-"} to ${dbms.maxOrNull() ?: "-"} dBm · average ${if (dbms.isEmpty()) "-" else dbms.average().toInt()} dBm · about $outMin min without service. Touch the graph to read a point."
     }
 
     private var lastLogKey = ""
@@ -221,6 +297,41 @@ class MainActivity : AppCompatActivity() {
         return bits.joinToString(" · ")
     }
 
+    private fun floatHearts(anchor: View) {
+        val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+        val loc = IntArray(2); anchor.getLocationInWindow(loc)
+        val rootLoc = IntArray(2); root.getLocationInWindow(rootLoc)
+        val cx = loc[0] - rootLoc[0] + anchor.width / 2f
+        val cy = loc[1] - rootLoc[1] + anchor.height / 2f
+        val rnd = java.util.Random()
+        anchor.animate().scaleX(1.25f).scaleY(1.25f).setDuration(90).withEndAction {
+            anchor.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+        }.start()
+        repeat(9) { i ->
+            val h = TextView(this)
+            h.text = "♥"
+            h.textSize = (18 + rnd.nextInt(22)).toFloat()
+            h.setTextColor(intArrayOf(0xFFE5484D.toInt(), 0xFFFF6B8A.toInt(), 0xFFFF9EB5.toInt())[rnd.nextInt(3)])
+            h.measure(0, 0)
+            h.x = cx - h.measuredWidth / 2f
+            h.y = cy - h.measuredHeight / 2f
+            h.alpha = 0f
+            h.scaleX = 0.4f; h.scaleY = 0.4f
+            root.addView(h, android.widget.FrameLayout.LayoutParams(-2, -2))
+            h.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f)
+                .translationXBy((rnd.nextInt(dp(160)) - dp(80)).toFloat())
+                .translationYBy(dp(140 + rnd.nextInt(160)).toFloat())
+                .setStartDelay(i * 60L)
+                .setDuration(1100L + rnd.nextInt(500))
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .withEndAction {
+                    h.animate().alpha(0f).setStartDelay(0).setDuration(350).withEndAction { root.removeView(h) }.start()
+                }
+                .start()
+        }
+    }
+
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     // ---------------------------------------------------------------- share / clear
@@ -253,7 +364,7 @@ class MainActivity : AppCompatActivity() {
     private fun clearLog() {
         AlertDialog.Builder(this)
             .setMessage("Clear the whole log?")
-            .setPositiveButton("Clear") { _, _ -> EventStore.get(this).clear(); lastLogKey = ""; render() }
+            .setPositiveButton("Clear") { _, _ -> EventStore.get(this).clear(); lastLogKey = ""; lastGraphKey = ""; render() }
             .setNegativeButton("Cancel", null)
             .show()
     }

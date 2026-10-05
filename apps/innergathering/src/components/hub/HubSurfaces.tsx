@@ -97,6 +97,9 @@ export function HubSurfaces({
         },
         // "Where you show" in the same popup, at /api/center/presence.
         presence: true,
+        // "Show on" under it, at /api/center/listings: which org sites list
+        // each public post.
+        listings: true,
         // "Post to…" from /center: any org you're part of, or your blog.
         postTo: true,
         centerLayout: true,

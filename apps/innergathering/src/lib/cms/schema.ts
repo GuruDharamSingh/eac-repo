@@ -46,6 +46,8 @@ const baseFields = {
   createTalkRoom: z.boolean().default(false),
   status: z.enum(["draft", "published"]).default("draft"),
   visibility: z.enum(["PUBLIC", "ORGANIZATION", "INVITE_ONLY"]).default("PUBLIC"),
+  /** Who may read it (everyone … only me). When present it decides visibility and min_role. */
+  audience: z.enum(["everyone", "followers", "members", "guides", "owners", "author"]).optional(),
 };
 
 export const postFormSchema = z.object({
@@ -69,6 +71,7 @@ export const meetingFormSchema = z.object({
   // a first-class field rather than an advanced option.
   recurrencePattern: z.enum(["NONE", "DAILY", "WEEKLY", "MONTHLY"]).default("NONE"),
   recurrenceUntil: z.string().optional().or(z.literal("")),
+  showCycleBadge: z.boolean().default(true),
 
   isRsvpEnabled: z.boolean().default(true),
   rsvpDeadline: z.string().optional().or(z.literal("")),

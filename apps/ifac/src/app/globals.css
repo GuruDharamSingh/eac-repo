@@ -37,6 +37,11 @@
 @import "@elkdonis/cms-ui/article.css";
 @import "@elkdonis/cms-ui/writing.css";
 @import "@elkdonis/cms-ui/editor.css";
+/* A person's page (/artists/<slug>, /dealers/<slug>): the shared PersonPage
+   layout. In layer(components) so this file's unlayered rules (the `a` reset,
+   .gallery-card, .claim-prompt) keep winning inside the slots; IFAC's colours
+   are mapped onto it in "Profile pages" below. */
+@import "@elkdonis/cms-ui/person-page.css" layer(components);
 
 /* ---------------------------------------------------------------------------
    The authoring controls.
@@ -1287,12 +1292,6 @@ nextjs-portal {
   text-transform: uppercase;
 }
 
-.profile-role {
-  margin: 0 0 14px;
-  color: #20d7ff;
-  font-size: 1rem;
-}
-
 .claim-prompt {
   margin: 0 0 14px;
   padding: 10px 14px;
@@ -1311,38 +1310,6 @@ nextjs-portal {
   color: #fff;
 }
 
-.profile-body {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 16px;
-  width: min(1000px, calc(100% - 24px));
-  margin: 0 auto 32px;
-  align-items: start;
-}
-
-.profile-sidebar {
-  border: var(--frame-width) solid var(--frame);
-  background: #050505;
-  padding: 14px;
-  color: #e8e3e4;
-}
-
-.profile-portrait {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  margin-bottom: 14px;
-  border: 1px solid var(--frame-soft);
-}
-
-.profile-bio p {
-  margin: 0 0 10px;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #e8e3e4;
-}
-
 .profile-email {
   display: inline-block;
   margin-top: 4px;
@@ -1356,81 +1323,40 @@ nextjs-portal {
   color: #fff;
 }
 
-.profile-links {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.profile-links li {
-  display: block;
-}
-
-.profile-links a {
-  color: #20d7ff;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.profile-links a:hover {
-  color: #fff;
-}
-
-.profile-gallery {
-  border: var(--frame-width) solid var(--frame);
-  background: #050505;
-  padding: 14px;
-  min-height: 200px;
-}
-
-.artwork-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.artwork-card {
-  margin: 0;
-  border: 1px solid var(--frame-soft);
-  background: #020202;
-  overflow: hidden;
-}
-
-.artwork-card img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: #111;
-}
-
-.artwork-card figcaption {
-  padding: 7px 8px;
-  color: #e8e3e4;
-  font-size: 0.9rem;
-  line-height: 1.3;
-}
-
 .profile-no-work {
   color: #bca7cf;
   font-size: 1rem;
 }
 
-@media (max-width: 760px) {
-  .profile-body {
-    grid-template-columns: 1fr;
-  }
-
-  .artwork-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* The shared PersonPage renders in the "frame" look, IFAC's black-frame
+   treatment, which now lives in person-page.css (`.eac-person-page--frame`,
+   shared with ArtDirect since 2026-09-26). That sheet is imported in a layer
+   here, so IFAC's unlayered `a` reset above outranks its link colours; the
+   per-part link colours below restore them. */
+.eac-person-back,
+.eac-person-links a,
+.eac-person-network a,
+.eac-person-list a {
+  color: #20d7ff;
 }
 
-@media (max-width: 480px) {
-  .artwork-grid {
-    grid-template-columns: 1fr;
-  }
+.eac-person-back:hover,
+.eac-person-links a:hover,
+.eac-person-network a:hover,
+.eac-person-list a:hover {
+  color: #fff;
+}
+
+/* IFAC's own sections carry their frame and width; the slot sets both. */
+.eac-person-slot > .profile-galleries,
+.eac-person-slot > .profile-writing {
+  width: auto;
+  margin: 0;
+}
+
+/* The store keeps its wider grid (max-w-6xl), as before PersonPage. */
+.eac-person-slot[data-person-section="store"] {
+  width: auto;
 }
 
 /* About page */

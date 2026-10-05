@@ -11,6 +11,8 @@ import {
   getArtworkContactUserId,
 } from "@elkdonis/commerce/queries";
 import { getCurrentUserId } from "@/lib/marketplace-auth";
+import { trackServerEvent } from "@elkdonis/analytics/events";
+import { analyticsOptions } from "@/lib/analytics";
 
 /** Post a message into a conversation the signed-in user belongs to. */
 export async function sendMessageAction(input: {
@@ -76,6 +78,7 @@ export async function messageArtistAction(input: {
       subject: artwork.title,
     });
     await sendMessage({ conversationId, senderId: userId, body: input.body });
+    await trackServerEvent("artist_messaged", { artworkId: artwork.id }, analyticsOptions);
     revalidatePath("/messages");
     return { ok: true, conversationId };
   } catch (err) {

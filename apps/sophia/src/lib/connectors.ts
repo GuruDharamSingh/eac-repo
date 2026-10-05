@@ -4,7 +4,7 @@ import { sendEmail } from "@elkdonis/email";
 import type { LmsConnectors } from "@elkdonis/lms-ui";
 import { getViewer } from "./viewer";
 import { EditorIsland } from "@/components/EditorIsland";
-import { FORUM_URL, SITE, SOPHIA_URL } from "./site";
+import { FORUM_URL, NETWORK_URL, SITE, SOPHIA_URL } from "./site";
 
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -24,10 +24,36 @@ export const connectors: LmsConnectors = {
     studioCourse: (c) => `/studio/${c}`,
     studioStep: (c, id) => `/studio/${c}/${id}`,
     studioPool: (c) => `/studio/${c}/pool`,
-    guide: () => "/guide",
+    guide: (course) => `/journal${course ? `?course=${encodeURIComponent(course)}` : ""}#to-answer`,
     care: () => "/care",
     signIn: (next) => `/login?next=${encodeURIComponent(next)}`,
     forumThread: (id, slug) => `${FORUM_URL}/t/${id}/${slug}`,
+    workshops: () => "/workshops",
+    studioWorkshops: () => "/studio/workshops",
+    side: (realm) => `/${realm}`,
+    courses: () => "/courses",
+    guides: () => "/guides",
+    traditions: () => "/traditions",
+    schedule: (week) => (week ? `/schedule?week=${week}` : "/schedule"),
+    studioGuides: () => "/studio/guides",
+    studioTraditions: () => "/studio/traditions",
+    studioSchedule: () => "/studio/schedule",
+  },
+
+  // The weekly schedule is the inner group's Offerings feed (innergathering).
+  // Its site resolves /meetings/<id> to wherever the offering lives.
+  offerings: { orgId: "inner_group", section: "offerings" },
+  offeringUrl: (o) => (o.primaryDomain ? `https://${o.primaryDomain}/meetings/${o.id}` : `${FORUM_URL}/t/${o.id}/${o.slug}`),
+
+  // A workshop's own page. The inner group's site (innergathering, on its own
+  // domain) resolves /workshops/<id> to wherever the workshop lives; an org on
+  // the network shows it at <org>.<network>/workshop/<slug>. Orgs on other
+  // domains set their link in the studio (linkOverride).
+  workshopUrl: (w) => {
+    if (w.linkOverride) return w.linkOverride;
+    if (w.orgId === "inner_group" && w.primaryDomain) return `https://${w.primaryDomain}/workshops/${w.id}`;
+    const net = new URL(NETWORK_URL);
+    return `${net.protocol}//${w.orgSlug}.${net.host}/workshop/${w.slug}`;
   },
   // Media is served by this host's own /api/media (services' serveMedia — the
   // shared read path, authorised per file), so stored paths are used as they are.
@@ -84,7 +110,7 @@ export const connectors: LmsConnectors = {
       to: n.learnerEmail,
       orgId: "elkdonis",
       subject: `${n.guideName} answered your reflection`,
-      html: `<p>Hello ${esc(n.learnerName)},</p><p>${esc(n.guideName)} left you a few words on <strong>${esc(n.stepTitle)}</strong>.</p><p><a href="${stepUrl}">Read them on ${esc(SITE.name)}</a></p><p style="color:#666;font-size:13px">You’re getting this because you chose to show that reflection to your guide. What you wrote is not included in this email.</p>`,
+      html: `<p>Hello ${esc(n.learnerName)},</p><p>${esc(n.guideName)} left you a few words on <strong>${esc(n.stepTitle)}</strong>.</p><p><a href="${stepUrl}">Read them in the ${esc(SITE.name)}</a></p><p style="color:#666;font-size:13px">You’re getting this because you chose to show that reflection to your guide. What you wrote is not included in this email.</p>`,
     });
   },
 };

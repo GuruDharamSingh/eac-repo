@@ -4,6 +4,7 @@ import type { ForumConnectors, ForumWikiPageRow, ForumWikiTermRow } from "./conn
 import { Avatar, HappeningBlock, SectionTitle, Time, plural } from "./parts";
 import { canAddCategory } from "./category";
 import { WhoIsHereBlock } from "./people";
+import { MatchLight } from "./match-light";
 
 // ============================================================================
 // The shell: a slim rail of places on the left, the page in the middle, and
@@ -119,6 +120,7 @@ function SideNav({ connectors, viewer, boards, unread, path, card }: {
             <SideLink href={`${root}/watching`} path={path} glyph="★">Watching</SideLink>
             <SideLink href={`${root}/bookmarks`} path={path} glyph="⚑">Bookmarks</SideLink>
             <SideLink href={`${root}/notifications`} path={path} glyph="◍">Notifications</SideLink>
+            <SideLink href={`${root}/insights`} path={path} glyph="▥">Insights</SideLink>
             {me && <SideLink href={me} path={path} glyph="◐">My page</SideLink>}
           </ul>
         </nav>
@@ -133,6 +135,9 @@ function SideNav({ connectors, viewer, boards, unread, path, card }: {
           </ul>
         </nav>
       )}
+
+      {/* Above the boards, which can run long: the switch stays in view on load. */}
+      {connectors.matchLight && <MatchLight mode={connectors.mode ?? "light"} />}
 
       <nav className="gf-side-group gf-side-boards" aria-label={network ? "Boards" : "Categories"}>
         <h2 className="gf-side-heading">{network ? "Boards" : "Categories"}</h2>
@@ -218,6 +223,7 @@ function ProfileBox({ connectors, viewer, card, unread }: { connectors: ForumCon
         <li><a href={`${root}/watching`}>Watching</a></li>
         <li><a href={`${root}/bookmarks`}>Bookmarks</a></li>
         <li><a href={`${root}/notifications`}>Notifications</a></li>
+        <li><a href={`${root}/insights`}>Insights</a></li>
       </ul>
     </Box>
   );

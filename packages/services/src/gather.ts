@@ -1,4 +1,5 @@
 import { db } from '@elkdonis/db';
+import { restrictedReadSql } from './thread-access';
 import { nanoid } from 'nanoid';
 import { listOrgDocuments } from './org-documents';
 import { getOrgDeckBoard } from './org-deck';
@@ -187,6 +188,7 @@ export function visibleToGatherer(viewer: GatherViewer) {
     t.status = 'published' AND (
       t.visibility = 'PUBLIC'
       OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs}))
+      OR ${restrictedReadSql(viewer.roles)}
       OR (t.kind = 'wiki_page' AND ${uid}::uuid IS NOT NULL)
       OR (${uid}::uuid IS NOT NULL AND t.author_id = ${uid}::uuid)
     )

@@ -36,6 +36,22 @@ export interface DeskResult {
   slug?: string;
 }
 
+/**
+ * "Show on": the org sites that list this piece besides its home
+ * (thread_orgs; person pages, 2026-09-26). Each tick saves at once through
+ * `onChange`, separately from Save, because it is not part of the text.
+ */
+export interface DeskListing {
+  /** Sites the author may list on (member, guide or owner). */
+  orgs: Array<{ orgId: string; name: string }>;
+  /** Org ids listing the piece now, home excluded. */
+  selected: string[];
+  /** Shown ticked and fixed when it is one of `orgs`. */
+  homeOrgId?: string | null;
+  /** Receives the full set of listing org ids. */
+  onChange: (orgIds: string[]) => Promise<DeskResult>;
+}
+
 export interface WritingDeskProps {
   post: {
     id: string;
@@ -61,6 +77,8 @@ export interface WritingDeskProps {
   wikiPages?: WikiPageRef[];
   /** Named in the preview's byline. The desk never guesses at an author. */
   authorName?: string | null;
+  /** Omit to hide the "Show on" field. */
+  listing?: DeskListing;
 }
 
 export function WritingDesk({
@@ -71,6 +89,7 @@ export function WritingDesk({
   upload,
   wikiPages,
   authorName,
+  listing,
 }: WritingDeskProps) {
   const base = basePath.replace(/\/$/, '');
 
@@ -86,6 +105,8 @@ export function WritingDesk({
   const [error, setError] = React.useState<string | null>(null);
   const [note, setNote] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
+  const [listedOn, setListedOn] = React.useState<string[]>(listing?.selected ?? []);
+  const [listingBusy, setListingBusy] = React.useState(false);
 
   // A little of the writing room, here on the profile.
   //
@@ -96,9 +117,9 @@ export function WritingDesk({
   // read on the right, set by the same `ArticleView` that renders it once
   // published. Not the whole room — there is no publish-to-a-feed decision
   // here, because a blog post goes on this page and nowhere else.
-  const [view, setView] = React.useState<'write' | 'split' | 'preview'>(() =>
-    typeof window !== 'undefined' && window.innerWidth < 1000 ? 'write' : 'split'
-  );
+  // Opens on "Write" (developer, 2026-09-27): the words first; side by side
+  // and preview are one click away in the bar.
+  const [view, setView] = React.useState<'write' | 'split' | 'preview'>('write');
 
   // Words and a reading time, the room's own status line. Cheap enough to do
   // on every keystroke: it is a regex over the body, not a parse.
@@ -186,6 +207,27 @@ export function WritingDesk({
     }
   }
 
+  async function toggleListing(orgId: string, on: boolean) {
+    if (!listing) return;
+    const next = on ? [...listedOn.filter((x) => x !== orgId), orgId] : listedOn.filter((x) => x !== orgId);
+    setListingBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      const result = await listing.onChange(next);
+      if (!result.ok) {
+        setError(result.error ?? 'Could not change where this shows.');
+        return;
+      }
+      setListedOn(next);
+      setNote('Saved where it shows.');
+    } catch {
+      setError('Could not reach the server.');
+    } finally {
+      setListingBusy(false);
+    }
+  }
+
   async function remove() {
     if (!onDelete) return;
     const sure = window.confirm(
@@ -212,7 +254,7 @@ export function WritingDesk({
   const canPublish = title.trim().length > 0;
 
   return (
-    <div className="eac-desk">
+    <div className="eac-desk" data-view={view}>
       <div className="eac-desk__bar">
         <span className="eac-desk__status">
           {status === 'published' ? 'Published' : 'Draft'}
@@ -238,6 +280,35 @@ export function WritingDesk({
         </span>
 
         <span className="eac-desk__spacer" />
+        {/* "Show on" as a menu in the bar rather than a field in the form: it
+            is a setting about the piece, not part of writing it. */}
+        {listing && listing.orgs.length > 0 && (
+          <details className="eac-desk__menu">
+            <summary className="eac-desk__btn">
+              Show on{listedOn.length > 0 ? ` (${listedOn.length + 1})` : ''} ▾
+            </summary>
+            <div className="eac-desk__menu-panel" role="group" aria-label="Show on">
+              {listing.orgs.map((o) => {
+                const home = o.orgId === listing.homeOrgId;
+                return (
+                  <label key={o.orgId} className="eac-desk__show-on-item">
+                    <input
+                      type="checkbox"
+                      checked={home || listedOn.includes(o.orgId)}
+                      disabled={home || listingBusy}
+                      onChange={(e) => void toggleListing(o.orgId, e.target.checked)}
+                    />
+                    {o.name}
+                    {home ? ' (home)' : ''}
+                  </label>
+                );
+              })}
+              <p className="eac-desk__note">
+                Lists the piece on your page on those sites too. It is readable by anyone either way.
+              </p>
+            </div>
+          </details>
+        )}
 
         <a className="eac-desk__btn" href={base}>
           All writing
@@ -361,7 +432,6 @@ export function WritingDesk({
           </div>
         </div>
       )}
-
       <div className="eac-desk__field eac-desk__body">
         <label className="eac-desk__label">The piece</label>
         <RichTextEditor

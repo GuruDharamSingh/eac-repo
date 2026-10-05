@@ -1,14 +1,17 @@
 import { db } from '@elkdonis/db';
 import { deriveExcerpt, sanitizeRichText } from '@elkdonis/utils';
+import { renderEssayHtml, type EssayDoc } from '@elkdonis/utils/essay';
 import { createThread } from './posts';
 import { ensureUniqueThreadSlug } from './thread-slug';
 import { WRITING_KIND } from './thread-kinds';
+import { PERSONAL_ORG_ID, listListableOrgs, listedOnClause, setThreadListing } from './thread-listing';
 
 // ============================================================================
 // A person's own writing — the blog behind a profile page.
 //
-// Threads with `kind='writing'`, authored by the person and carried by the org
-// whose site they are read on (/artists/<slug>/writing/<post> on IFAC). Two
+// Threads with `kind='writing'`, authored by the person, homed in `oad`
+// (ArtDirect) since 2026-09-26 and listed on the org sites they are read on
+// (/artists/<slug>/writing/<post> on IFAC); see thread-listing.ts. Two
 // deliberate consequences of that shape:
 //
 //   - it is the SAME substrate as every other piece of writing on the network,
@@ -33,6 +36,21 @@ export { WRITING_KIND };
 
 export type WritingStatus = 'draft' | 'published';
 
+export interface WritingSeo {
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  noindex: boolean;
+}
+
+export interface WritingByline {
+  userId: string;
+  name: string;
+}
+
+export type WritingLayout = 'essay' | 'feature' | 'note' | 'announcement' | 'document';
+export const WRITING_LAYOUTS: WritingLayout[] = ['essay', 'feature', 'note', 'announcement', 'document'];
+
 export interface WritingPost {
   id: string;
   authorId: string;
@@ -43,12 +61,42 @@ export interface WritingPost {
   lede: string | null;
   /** Sanitized HTML, safe to render. */
   bodyHtml: string;
+  /** The essay canvas's document when the body was rendered from one (body_format 'doc'). */
+  bodyDoc: EssayDoc | null;
+  bodyFormat: 'html' | 'md' | 'mdx' | 'doc';
   coverImageUrl: string | null;
+  /** Reading layout preset (metadata.layout); null = the author's default, then 'essay'. */
+  layout: WritingLayout | null;
+  /** The series this piece is filed under on the author's page (metadata.series); free text. */
+  series: string | null;
+  /**
+   * Who the piece is published as (metadata.byline): one of the account's
+   * acting identities (identities.ts) — a pen name or an org. Null = the
+   * author's own name. The author stays the owner (author_id) either way,
+   * so membership, listing and drafts keep working (dev, 2026-09-27).
+   */
+  byline: WritingByline | null;
+  /** Search and sharing overrides (metadata.seo). Each falls back to the piece's own fields. */
+  seo: WritingSeo | null;
   status: WritingStatus;
   publishedAt: string | null;
   updatedAt: string;
   /** Estimated, from the body. Null when there is nothing to estimate from. */
   readingMinutes: number | null;
+  /** A published reel (metadata.video), shown in the cover's place. */
+  video: WritingVideo | null;
+}
+
+/**
+ * A Studio reel published as a piece (reels.ts publishReel). `src` and
+ * `poster` are public media URLs (a copy outside Private/); `reelId` ties
+ * the piece back to its reel so publishing again updates the same piece.
+ */
+export interface WritingVideo {
+  src: string;
+  poster: string | null;
+  durationS: number | null;
+  reelId: string;
 }
 
 /** What a shelf card needs — no body payload. */
@@ -58,6 +106,7 @@ export interface WritingSummary {
   title: string;
   lede: string | null;
   coverImageUrl: string | null;
+  series: string | null;
   status: WritingStatus;
   publishedAt: string | null;
   updatedAt: string;
@@ -72,7 +121,14 @@ interface Row {
   title: string;
   excerpt: string | null;
   body: string | null;
+  body_doc: EssayDoc | null;
+  body_format: string | null;
   cover_image_url: string | null;
+  layout: string | null;
+  series: string | null;
+  byline: { userId?: unknown; name?: unknown } | null;
+  seo: { title?: unknown; description?: unknown; imageUrl?: unknown; noindex?: unknown } | null;
+  video?: { src?: unknown; poster?: unknown; durationS?: unknown; reelId?: unknown } | null;
   status: string;
   published_at: Date | string | null;
   updated_at: Date | string;
@@ -80,8 +136,13 @@ interface Row {
 
 /** Columns every read here selects, over alias `t`. */
 const COLS = db`
-  t.id, t.author_id, t.org_id, t.slug, t.title, t.excerpt, t.body, t.status,
+  t.id, t.author_id, t.org_id, t.slug, t.title, t.excerpt, t.body, t.body_doc, t.body_format, t.status,
   t.metadata->>'coverImageUrl' AS cover_image_url,
+  t.metadata->>'layout' AS layout,
+  t.metadata->>'series' AS series,
+  t.metadata->'byline' AS byline,
+  t.metadata->'seo' AS seo,
+  t.metadata->'video' AS video,
   t.published_at, t.updated_at
 `;
 
@@ -89,6 +150,10 @@ const COLS = db`
 const SUMMARY_COLS = db`
   t.id, t.author_id, t.org_id, t.slug, t.title, t.excerpt, t.status,
   t.metadata->>'coverImageUrl' AS cover_image_url,
+  t.metadata->>'layout' AS layout,
+  t.metadata->>'series' AS series,
+  t.metadata->'byline' AS byline,
+  t.metadata->'seo' AS seo,
   t.published_at, t.updated_at,
   LENGTH(REGEXP_REPLACE(COALESCE(t.body, ''), '<[^>]*>', ' ', 'g')) AS body_length
 `;
@@ -122,16 +187,50 @@ function mapPost(row: Row): WritingPost {
     // Sanitized on write, and again here: a row that predates the write path
     // (or was seeded by hand) must not reach a page as raw HTML.
     bodyHtml: sanitizeRichText(row.body),
+    bodyDoc: row.body_format === 'doc' && row.body_doc && typeof row.body_doc === 'object' ? row.body_doc : null,
+    bodyFormat:
+      row.body_format === 'doc' || row.body_format === 'md' || row.body_format === 'mdx' ? row.body_format : 'html',
     coverImageUrl: row.cover_image_url,
+    layout: (WRITING_LAYOUTS as string[]).includes(row.layout ?? '') ? (row.layout as WritingLayout) : null,
+    series: row.series?.trim() || null,
+    byline:
+      row.byline && typeof row.byline === 'object' && typeof row.byline.userId === 'string' && typeof row.byline.name === 'string'
+        ? { userId: row.byline.userId, name: row.byline.name }
+        : null,
+    seo: mapSeo(row.seo),
     status: row.status === 'draft' ? 'draft' : 'published',
     publishedAt: iso(row.published_at),
     updatedAt: iso(row.updated_at) ?? new Date().toISOString(),
     readingMinutes: readingMinutes(plainLength(row.body)),
+    video: mapVideo(row.video),
   };
+}
+
+const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
+function mapVideo(v: Row['video']): WritingVideo | null {
+  if (!v || typeof v !== 'object') return null;
+  const src = str(v.src);
+  const reelId = str(v.reelId);
+  // Only our own media route: metadata is written by publishReel, but a
+  // hand-edited row must not put an arbitrary URL in a <video>.
+  if (!src || !reelId || !src.startsWith('/api/media/')) return null;
+  const poster = str(v.poster);
+  return {
+    src,
+    poster: poster && poster.startsWith('/api/media/') ? poster : null,
+    durationS: typeof v.durationS === 'number' ? v.durationS : null,
+    reelId,
+  };
+}
+function mapSeo(v: Row['seo']): WritingSeo | null {
+  if (!v || typeof v !== 'object') return null;
+  const seo = { title: str(v.title), description: str(v.description), imageUrl: str(v.imageUrl), noindex: v.noindex === true };
+  return seo.title || seo.description || seo.imageUrl || seo.noindex ? seo : null;
 }
 
 function mapSummary(row: Row & { body_length: number }): WritingSummary {
   return {
+    series: row.series?.trim() || null,
     id: row.id,
     slug: row.slug,
     title: row.title,
@@ -145,7 +244,10 @@ function mapSummary(row: Row & { body_length: number }): WritingSummary {
 }
 
 export interface ListWritingOptions {
-  /** Restrict to one org's site. Omit for everything the person has written. */
+  /**
+   * Restrict to what one org's site shows: pieces homed there or listed there
+   * (thread_orgs). Omit for everything the person has written.
+   */
   orgId?: string;
   /** Drafts are the author's own business — only true for them or an admin. */
   includeDrafts?: boolean;
@@ -170,7 +272,7 @@ export async function listWriting(
       FROM threads t
       WHERE t.author_id = ${authorId}::uuid
         AND t.kind = ${WRITING_KIND}
-        ${opts.orgId ? db`AND t.org_id = ${opts.orgId}` : db``}
+        ${opts.orgId ? db`AND ${listedOnClause(opts.orgId)}` : db``}
         ${opts.includeDrafts ? db`AND t.status IN ('draft', 'published')` : db`AND t.status = 'published'`}
       ORDER BY COALESCE(t.published_at, t.updated_at) DESC
       LIMIT ${limit}
@@ -178,6 +280,23 @@ export async function listWriting(
     return rows.map(mapSummary);
   } catch (err) {
     console.error(`[writing] listWriting(${authorId}):`, err);
+    return [];
+  }
+}
+
+/** The author's series: distinct names over their pieces, most recent first, with counts. */
+export async function listWritingSeries(authorId: string): Promise<Array<{ name: string; count: number }>> {
+  try {
+    const rows = await db<Array<{ name: string; count: number }>>`
+      SELECT t.metadata->>'series' AS name, COUNT(*)::int AS count
+      FROM threads t
+      WHERE t.author_id = ${authorId}::uuid AND t.kind = ${WRITING_KIND}
+        AND t.status IN ('draft', 'published') AND COALESCE(t.metadata->>'series', '') <> ''
+      GROUP BY 1 ORDER BY MAX(COALESCE(t.published_at, t.updated_at)) DESC
+    `;
+    return rows.map((r) => ({ name: r.name, count: Number(r.count) }));
+  } catch (err) {
+    console.error(`[writing] listWritingSeries(${authorId}):`, err);
     return [];
   }
 }
@@ -199,10 +318,10 @@ export interface OrgWritingSummary extends WritingSummary {
  * The latest published writing across an org's members, newest first — a
  * home-page shelf, where `listWriting` is one person's.
  *
- * Only pieces filed under this org (`t.org_id`), so a member whose blog scope
- * is "everywhere" still shows here only what they wrote for this org. The
- * author's slug is returned only when their profile on this org is public:
- * a hidden profile has no page for the card to link to.
+ * Only pieces shown on this org: homed here or listed here (thread_orgs,
+ * see thread-listing.ts). The author's slug is returned only when their
+ * profile on this org is public: a hidden profile has no page for the card
+ * to link to.
  */
 export async function listOrgWriting(
   orgId: string,
@@ -230,8 +349,8 @@ export async function listOrgWriting(
         op.tags AS author_tags
       FROM threads t
       JOIN users u ON u.id = t.author_id
-      LEFT JOIN org_profiles op ON op.user_id = t.author_id AND op.org_id = t.org_id
-      WHERE t.org_id = ${orgId}
+      LEFT JOIN org_profiles op ON op.user_id = t.author_id AND op.org_id = ${orgId}
+      WHERE ${listedOnClause(orgId)}
         AND t.kind = ${WRITING_KIND}
         AND t.status = 'published'
       ORDER BY COALESCE(t.published_at, t.updated_at) DESC
@@ -320,7 +439,11 @@ export async function getWritingPostById(id: string): Promise<WritingPost | null
 
 export interface CreateWritingInput {
   authorId: string;
-  /** The org whose site this is read on. */
+  /**
+   * The org whose site the piece is started on. The piece is homed in
+   * PERSONAL_ORG_ID (ArtDirect) and listed on this org when the author is a
+   * member there; otherwise it is homed here, as before 2026-09-26.
+   */
   orgId: string;
   title: string;
 }
@@ -344,10 +467,18 @@ export async function createWritingPost(
   if (title.length > 200) return { ok: false, error: 'That title is too long.' };
 
   try {
+    // Personal content lives on the author's network page and is listed on
+    // the site it was started from (PERSON_PAGES_BRIEF decision 1). An author
+    // who cannot list there (not a member) keeps the old org-homed behaviour,
+    // so the piece still appears on the page they are writing from.
+    const listOn =
+      input.orgId !== PERSONAL_ORG_ID &&
+      (await listListableOrgs(input.authorId)).some((o) => o.orgId === input.orgId);
+    const homeOrgId = listOn || input.orgId === PERSONAL_ORG_ID ? PERSONAL_ORG_ID : input.orgId;
     const created = await createThread({
       kind: WRITING_KIND,
       title,
-      orgId: input.orgId,
+      orgId: homeOrgId,
       authorId: input.authorId,
       status: 'draft',
       // PUBLIC is the truth about a published piece: anyone may read it on the
@@ -355,6 +486,10 @@ export async function createWritingPost(
       // the org's own surfaces — see thread-kinds.ts.
       visibility: 'PUBLIC',
     });
+    if (listOn) {
+      const listed = await setThreadListing(input.authorId, created.id, input.orgId, true);
+      if (!listed.ok) console.error(`[writing] createWritingPost: listing on ${input.orgId}:`, listed.error);
+    }
     const post = await getWritingPostById(created.id);
     return post
       ? { ok: true, post }
@@ -369,7 +504,23 @@ export interface UpdateWritingInput {
   title?: string;
   lede?: string | null;
   bodyHtml?: string;
+  /**
+   * The essay canvas's document. When given it wins over bodyHtml: the body
+   * is rendered from it on the server (renderEssayHtml, then sanitised) and
+   * body_format becomes 'doc'. The browser's HTML is never stored.
+   */
+  bodyDoc?: EssayDoc;
   coverImageUrl?: string | null;
+  /** null clears it (back to the author's default). */
+  layout?: WritingLayout | null;
+  /** Series name; null takes the piece out of its series. */
+  series?: string | null;
+  /** Validated by the caller against the account's acting identities; null = own name. */
+  byline?: WritingByline | null;
+  /** Search and sharing; null clears. */
+  seo?: Partial<WritingSeo> | null;
+  /** A published reel; null removes it. Written by reels.ts publishReel. */
+  video?: WritingVideo | null;
   status?: WritingStatus;
 }
 
@@ -397,8 +548,12 @@ export async function updateWritingPost(
     return { ok: false, error: 'A piece needs a title.' };
   }
 
-  const body =
-    patch.bodyHtml === undefined ? undefined : sanitizeRichText(patch.bodyHtml);
+  const fromDoc = patch.bodyDoc !== undefined;
+  const body = fromDoc
+    ? sanitizeRichText(renderEssayHtml(patch.bodyDoc))
+    : patch.bodyHtml === undefined
+      ? undefined
+      : sanitizeRichText(patch.bodyHtml);
 
   // An explicit lede wins; a blank one falls back to a derived excerpt so a
   // shelf card is never empty, and an empty body derives nothing.
@@ -419,9 +574,31 @@ export async function updateWritingPost(
         title = ${nextTitle},
         slug = ${slug},
         ${patch.lede !== undefined || body !== undefined ? db`excerpt = ${lede ?? existing.lede},` : db``}
-        ${body !== undefined ? db`body = ${body}, body_format = 'html',` : db``}
-        ${patch.coverImageUrl !== undefined
-          ? db`metadata = COALESCE(metadata, '{}'::jsonb) || ${db.json({ coverImageUrl: patch.coverImageUrl } as never)},`
+        ${body !== undefined
+          ? fromDoc
+            ? db`body = ${body}, body_doc = ${db.json(patch.bodyDoc as never)}, body_format = 'doc',`
+            : db`body = ${body}, body_doc = NULL, body_format = 'html',`
+          : db``}
+        ${patch.coverImageUrl !== undefined || patch.layout !== undefined || patch.series !== undefined || patch.byline !== undefined || patch.seo !== undefined || patch.video !== undefined
+          ? db`metadata = COALESCE(metadata, '{}'::jsonb) || ${db.json({
+              ...(patch.video !== undefined ? { video: patch.video } : {}),
+              ...(patch.coverImageUrl !== undefined ? { coverImageUrl: patch.coverImageUrl } : {}),
+              ...(patch.layout !== undefined ? { layout: patch.layout } : {}),
+              ...(patch.series !== undefined ? { series: patch.series?.trim().slice(0, 120) || null } : {}),
+              ...(patch.byline !== undefined ? { byline: patch.byline ? { userId: patch.byline.userId, name: patch.byline.name.slice(0, 120) } : null } : {}),
+              ...(patch.seo !== undefined
+                ? {
+                    seo: patch.seo
+                      ? {
+                          title: patch.seo.title?.trim().slice(0, 160) || null,
+                          description: patch.seo.description?.trim().slice(0, 320) || null,
+                          imageUrl: patch.seo.imageUrl?.trim().slice(0, 500) || null,
+                          noindex: patch.seo.noindex === true,
+                        }
+                      : null,
+                  }
+                : {}),
+            } as never)},`
           : db``}
         ${patch.status !== undefined ? db`status = ${patch.status},` : db``}
         ${publishing ? db`published_at = NOW(),` : db``}

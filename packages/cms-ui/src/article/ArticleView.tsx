@@ -58,6 +58,12 @@ export interface ArticleViewProps {
   coverImageUrl?: string | null;
   /** Minutes. Omit to hide — an estimate nobody asked for is noise. */
   readingMinutes?: number | null;
+  /**
+   * The thread's id, so the analytics beacon (@elkdonis/analytics) can credit
+   * the view to the post. Renders a hidden marker; the collector decides what
+   * is stored (a non-public thread keeps no path).
+   */
+  threadId?: string | null;
   provenance?: ArticleProvenance | null;
   /**
    * Which voice to read in. All three share the same structure — measure,
@@ -70,11 +76,25 @@ export interface ArticleViewProps {
    *   quiet    sans, no cap, no rules                    modern and restrained
    */
   reading?: ReadingVoice;
+  /**
+   * The piece's layout preset (Studio, 2026-09-27): where the cover sits and
+   * how loud the title is. Orthogonal to `reading`, which is the org's voice.
+   * essay (default) · feature · note · announcement · document.
+   */
+  layout?: ArticleLayout | null;
+  /** The series the piece is filed under, shown as a kicker above the title. */
+  series?: string | null;
+  /**
+   * A video in place of the cover (Studio reels published as a piece,
+   * 2026-10-04). `poster` defaults to the cover image.
+   */
+  video?: { src: string; poster?: string | null } | null;
   /** Rendered under the colophon: a live editor's controls, a back link. */
   children?: React.ReactNode;
 }
 
 export type ReadingVoice = "journal" | "gazette" | "quiet";
+export type ArticleLayout = "essay" | "feature" | "note" | "announcement" | "document";
 
 /**
  * Spelled-out and absolute. Relative times ("3 days ago") are for feeds, where
@@ -101,8 +121,12 @@ export function ArticleView({
   org,
   coverImageUrl,
   readingMinutes,
+  threadId,
   provenance,
   reading = "journal",
+  layout,
+  series,
+  video,
   children,
 }: ArticleViewProps) {
   const date = publishedAt ? formatDate(publishedAt) : null;
@@ -117,7 +141,8 @@ export function ArticleView({
   const publishedOn = provenance?.publishedOn ?? [];
 
   return (
-    <article className="eac-article" data-reading={reading}>
+    <article className="eac-article" data-reading={reading} data-layout={layout ?? undefined}>
+      {threadId && <span hidden data-eac-thread={threadId} />}
       {(kindLabel || org) && (
         <div className="eac-article__eyebrow">
           {kindLabel && <p className="eac-article__label">{kindLabel}</p>}
@@ -128,6 +153,8 @@ export function ArticleView({
           )}
         </div>
       )}
+
+      {series && <p className="eac-article__series">{series}</p>}
 
       <h1 className="eac-article__title">{title}</h1>
 
@@ -148,7 +175,16 @@ export function ArticleView({
         </div>
       )}
 
-      {coverImageUrl && (
+      {video ? (
+        <video
+          className="eac-article__cover eac-article__video"
+          src={video.src}
+          poster={video.poster ?? coverImageUrl ?? undefined}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      ) : coverImageUrl && (
         <img className="eac-article__cover" src={coverImageUrl} alt="" />
       )}
 

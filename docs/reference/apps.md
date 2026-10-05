@@ -33,9 +33,9 @@ no container on 2026-09-23 (`docker compose ps`).
 | artdirect | 3013 | artdirect | dev | network (no fixed org) | directory.arts-collective.com | live |
 | pigeonshoot | 3014 | pigeonshoot | dev | `pigeonshoot` | none | not running |
 | innergathering | 3015 | innergathering | prod | `inner_group` | elkdonis-arts.org | live |
-| elastrocal | 3016 | elastrocal | dev | `elastrocal` | arts-collective.com/astro | not running |
+| elastrocal | 3016 | elastrocal | dev | `elastrocal` | arts-collective.com/astro | live (started 2026-09-26) |
 | danamccool | 3018 | danamccool | prod | `danamccool` | danamccool.com | live |
-| fourthwayBookreaders | 3019 | fourthway-bookreaders | dev | `fourth_way_book_readers` | elkdonis-arts.org/books | live |
+| fourthwayBookreaders | 3019 | fourthway-bookreaders | prod | `fourth_way_book_readers` | elkdonis-arts.org/books | live |
 | sophia | 3020 | sophia | dev | no fixed org | none (URL var set) | not running |
 | signal-watch | — | — | — | — | — | not a web app |
 
@@ -59,7 +59,7 @@ containers on this host. Launch procedure and edge details:
 - `NEXT_PUBLIC_APP_URL` is inlined at build time. On 2026-09-23 it resolves to a
   `localhost` value for hidden-enneagram (`HIDDEN_ENNEAGRAM_URL` unset) and
   fourthway-bookreaders (`FOURTHWAY_BOOKREADERS_URL` unset), although both are
-  public. danamccool's `NEXT_PUBLIC_ELKDONIS_ARTS_URL` is `http://localhost:3005`.
+  public. danamccool's `NEXT_PUBLIC_ELKDONIS_ARTS_URL` comes from `ELKDONIS_ARTS_URL` in `.env`, set to `https://elkdonis-arts.org` (claude, 2026-09-25; was the `http://localhost:3005` compose default).
 - Template stack for org sites (amrit-canada, sunjay, innergathering, ifac,
   pigeonshoot, elastrocal, fourthwayBookreaders): Tailwind v4 CSS-first, shadcn
   "new-york" vendored in `src/components/ui/*` where present, `@elkdonis/cms-ui`
@@ -107,7 +107,8 @@ containers on this host. Launch procedure and edge details:
 - Domain: `FORUM_URL`; sign-in forwards to `NETWORK_URL/login?next=…` and
   returns through `/api/auth/handoff/accept`.
 - UI: plain CSS from forum-ui (no Tailwind), steel/silver design; light/dark
-  via `forum_mode` cookie. Tiptap wiki editor island.
+  via `forum_mode` cookie, also set by the match light in the left rail
+  (`matchLight: true`, 2026-09-26). Tiptap wiki editor island.
 - Entry: `src/app/(site)`, `src/app/embed/[[...segments]]` (iframe mode,
   `frame-ancestors` from `FORUM_EMBED_ANCESTORS`), `src/lib/connectors.ts`,
   `src/lib/viewer.ts`.
@@ -154,6 +155,77 @@ containers on this host. Launch procedure and edge details:
 - Entry: `src/middleware.ts` (host → `/sites/<slug>` rewrite),
   `src/lib/org-console.ts`, `src/lib/org-forum.ts`, `src/lib/cms/draft-actions.ts`,
   `src/app/hub/(tabs)/*`.
+- Studio (2026-09-27): `/studio` mounts `@elkdonis/studio` (`StudioShell`) with
+  actions in `src/lib/studio-actions.ts`; `?org=<org_id>` preselects "Writing
+  as", `?id=` opens a piece. Linked from the landing masthead and each org
+  Center (`CenterLinks.studioHref`). Writing only; other kinds are tabs marked
+  "soon". Deployed 2026-09-27 (verified: signed-in render through the edge,
+  screenshots at 1440 and 400px, no page errors). Restyled the same day to
+  the mockup's own identity: `studio.css` carries its palette (light and
+  dark, ◐ toggle in the shell, remembered per browser) and maps the editor's
+  `--sf-*` and the article's `--read-*` tokens onto it; the page loads
+  Newsreader and IBM Plex Sans with `next/font` as `--studio-serif` /
+  `--studio-sans`. Two traps found on the way: Tailwind `@theme inline`
+  variables such as `--font-serif` are not real custom properties, and
+  `article.css` resolves `--eac-*` on `:root`, so only the `--read-*` tokens
+  can be overridden lower down. Later the same day: opening lands on a blank
+  piece (the row is created on its first autosave, titled "Untitled" until
+  it has a title), "New ▾" in the top bar replaces the kinds row and the
+  title-then-Start form, and the cover is a thin row with a thumbnail. Token
+  contrast is measured and recorded at the top of `studio.css`.
+  Brief: `docs/open/STUDIO_BRIEF_2026-09-27.md`.
+- Essay canvas (2026-09-27, builds 11–13): "Use blocks" in the Studio's
+  settings switches a piece to `packages/studio/src/canvas/` (TipTap block
+  document: image, pull quote, aside, divider, per-kind cards with a picker
+  over the writer's own threads and artworks; margin drag handle; Library
+  and desktop drops). The doc is saved as `threads.body_doc` (migration 173)
+  and rendered to `body` on the server by `@elkdonis/utils/essay`
+  (`renderEssayHtml`), then sanitised; `body_format = 'doc'`. Sites render
+  `body` as before; `cms-ui/article/essay.css` (imported by article.css)
+  carries the content/wide/full grid and block styles. Traps found: send a
+  JSON-cloned doc to the server action (ProseMirror attrs have a null
+  prototype and become "temporary references" that throw on access); jsonb
+  reorders keys, so compare against what was sent, not what came back.
+  Builds 15–17 (same evening): wider canvas column, a `+` at the foot of
+  the hovered block opening the block menu (the top bar keeps formatting
+  only), the margin grip kept inside the editor's box so it no longer hides
+  on approach, width toggles on cards, Picture-with-text and Gallery blocks,
+  artwork cards with the store's primary image (`artwork_media`, served from
+  the market host). Two more traps: `@tiptap/extension-drag-handle-react`'s
+  element is moved out of React's tree by tippy, so it and any conditional
+  siblings need wrappers of their own or React throws `insertBefore`
+  DOMExceptions; and `next/font/google` failed two Turbopack builds out of
+  four on the fetch, so the Studio loads its faces by `<link>`.
+  Build 18: `canvas/schema/keys.ts` makes blocks behave like paragraphs
+  (typing on a selected block starts a paragraph after it; Enter leaves a
+  pull quote, aside or picture-with-text; Backspace in an empty one
+  removes it; Escape steps out; the document always ends with an empty
+  paragraph), a Paragraph entry and a `+ Block` button in the bar (works
+  from the cursor, on touch too), a permanent "Add a block at the end",
+  half a screen of bottom room, the cover control in the kicker row, and no
+  bleeds or hover chrome below 1000px.
+  Builds 19–21: `/` on an empty line opens the block menu (replacing the
+  line), Ctrl/Cmd-Alt-↑/↓ moves a block, the width toggle and tools sit in
+  one row above the block; layout presets (`metadata.layout`, `ArticleView`
+  `layout` prop, `data-layout` presets in article.css: feature, note,
+  announcement, document) and series (`metadata.series`, `listWritingSeries`,
+  a kicker above the title) in the settings panel. Org sites show a
+  piece's layout and series once their piece pages pass `layout`/`series`
+  to `ArticleView` (not yet wired). Root `pnpm.overrides` now pin the
+  `prosemirror-*` packages: see `.claude/rules/areas/packages.md`.
+  Build 22: "Publish as" lists the account's acting identities
+  (`listActingIdentities`: self, pen names, orgs owned or guided) and saves
+  `metadata.byline {userId,name}`; `author_id` stays the account, so
+  ownership and listing are unchanged. IFAC's piece view passes
+  `post.byline?.name`, `layout` and `series` to `ArticleView` (pending its
+  rebuild).
+  Builds 23–24: "Search and sharing" (`metadata.seo`: title, description,
+  share image, noindex; IFAC's piece `generateMetadata` reads it) and the
+  drawer's Library (`MediaBrowser` over `/api/my-files?path=Media/Images`
+  and `/api/media/library?org=<slug>`; tiles drag onto the canvas as an
+  image block or onto the cover row). The user's pictures live under
+  `Media/Images`, not `Images`, in their storage.
+  Brief: `docs/open/BLOCK_CANVAS_BRIEF_2026-09-27.md`.
 - Traps: production mode since 2026-09-18 (the override that pinned it to
   `next dev` was removed), so edits need a rebuild. Hub connectors use per-org
   routes `/api/org/[slug]/…`, not `siteConfig`. `@import` of cms-ui CSS in
@@ -194,6 +266,11 @@ containers on this host. Launch procedure and edge details:
 - Runs `next dev` behind a public host. Photon geocoder via `PHOTON_URL`.
 - Trap: `src/app/api/auth/signup/route.ts:11` is the last bare
   `export { handleSignup as POST }` in the repo.
+- Trap: on 2026-09-27 the dev server kept serving the old
+  `src/app/globals.css` chunk after edits (and after `touch`), while TSX and
+  newly imported CSS files compiled. Verified by fetching the chunk inside the
+  container. Put new rules in a CSS file imported by a component (e.g.
+  `components/oad/person-frame.css`), or restart the service. (claude, 2026-09-27)
 
 ### pigeonshoot (3014)
 - Purpose: street-pigeon photos as crowdsourced trading cards (migration 077).
@@ -232,6 +309,17 @@ containers on this host. Launch procedure and edge details:
   (imported into `layer(base)`), unlayered `theme-hooks.css`.
 - Entry: `src/blocks/index.ts` (block rules at the top), `components/hud/*`,
   `components/studio/*`, `lib/theme.ts`, `lib/fonts.ts`, `/manage/artworks`.
+- Every block carries a "Text style" (font by name or site role, weight,
+  capitals, spacing, colour, presets), via page-builder's opt-in `blockStyle`
+  option: `lib/puck/text-style.tsx`, control `components/studio/text-style-field.tsx`,
+  CSS in `app/theme-hooks.css`. Block `dm-collection-nav` stores its tiles in
+  the page and its arrangement in a `layout` JSON prop set in the "Arrange tiles"
+  window. Both written 2026-09-25; type-checked and rendered to HTML with a
+  script, not yet built or seen in a browser. (claude, 2026-09-25)
+- The shared Card (`feature-card`) has a "Filled from (live)" record here:
+  `artwork:<id>` or `gallery:<id>`, read by `lib/card-records.ts` (server
+  resolver) and `/api/blocks/card-record` (editor). Threads are not offered:
+  the org has none and no route to show one (2026-09-25). (claude, 2026-09-25)
 - Traps: see `.claude/rules/apps/danamccool.md`. History:
   `docs/archive/HANDOVER_2026-09-18_danamccool.md`.
 
@@ -240,13 +328,105 @@ containers on this host. Launch procedure and edge details:
   `fourthway-bookreaders`, service `fourthway-bookreaders`; supersedes the
   deleted `fourth-way-book-readers` stub.
 - Served at elkdonis-arts.org/books via basePath (`FOURTHWAY_BASE_PATH`,
-  default `/books`); bare root 404s. Runs `next dev` publicly (heap 2048).
+  default `/books`); bare root 404s. Production mode since 2026-09-26: guarded
+  `next build` (heap 3072) with the two-file sentinel, then `next start` (heap
+  1024); source edits need a rebuild (claude, 2026-09-26; was `next dev`).
 - UI: plain CSS `src/app/site.css`, not Tailwind.
 - Entry: `src/lib/data.ts` (`mapThread`), `src/lib/manage-actions.ts`,
   `src/lib/base-path.ts`, `components/manage/section-form.tsx`, `seed.sql`
   (idempotent starter copy, not a numbered migration).
 - Model: a `kind='reading_group'` thread is the group; a `yes` RSVP is joining;
   sittings become `post` rows linked by `thread_gathers` relation `produced`.
+- Reading circles (claude, 2026-09-26; migration 165, applied 2026-09-26):
+  - `/groups/<slug>` for a `reading_group` is the circle page
+    (`src/components/circle/circle-page.tsx`, loader `src/lib/circle-page.ts`).
+    Head (cover, group box) and progress/structure are public; the three
+    session tabs (previous / this / next), session folders and discussion are
+    org members only; "Manage this circle" (`circle-manage.tsx`) is
+    owners/guides. The header drops its form shelf on this route (`data-slim`).
+  - Sessions, not chapters, divide the page. Each sitting (an occurrence of
+    the circle thread) gets a `post` topic in the circle's feed with
+    `metadata.circleSession {circleId, occurrenceAt, number}`, gathered onto
+    the circle as `produced`; RSVP, comments (forum replies) and the session
+    document live on it. Host = `meeting_hosts` (role `host`); host notes,
+    plan line and stop point = `meeting_occurrence_notes`
+    (`note`, `plan`, `stop_unit_id`, `stop_position`). Topics are made on
+    first use or by "Stage".
+  - Plan = `circle_units`; a sitting covers `metadata.circle.pace` units from
+    where the previous sitting stopped.
+  - Session document: `ensureCircleSessionDocument` writes
+    `Private/Circles/<slug>/Meeting Recordings/<YYYY-MM-DD> Session NN/Session notes.md`
+    with an editable public share; members only.
+  - Pop-ups: cms-ui `SurfaceProvider` mounted on this page only
+    (`circle-surfaces.tsx`): thread (`/api/hub/threads/[id]`), compose
+    (saves via `createSessionThread`, gathered onto the sitting), define
+    (`src/lib/dictionary-actions.ts`).
+  - PDF reader: a pop-up drawn with pdf.js in the browser (`src/components/circle/pdf-reader.tsx`), works on phones; worker, WASM decoders and fonts are served from `public/pdfjs/<version>/` — recopy them from `node_modules/pdfjs-dist` when the version changes, and update `PDFJS_VERSION`. Talk call and
+    session document embed in the page (Nextcloud app `eac_embed`, see
+    nextcloud.md).
+  - Access (2026-09-26, owner's call): the circle's space is for anyone with a
+    role in the org, `viewer` included; "Join the group" (RSVP on the circle)
+    grants `viewer` to a signed-in person with no role. The circle's feed has
+    no `min_role`; session topics and threads started from a session are
+    `ORGANIZATION`-visible (off public listings, hidden from anonymous).
+    Circle files under `Private/Circles/` are served by `/api/circle-file/…`,
+    which checks the role itself and calls `serveMedia({ preAuthorized })`
+    (new option; `/api/media` still admits members only). Editing, staging,
+    host notes and "Where did we stop?" are in the manage section
+    (owners/guides; stop and notes also the sitting's host).
+  - Session topic default title: "Session N · <unit label — title>" (the unit
+    the sitting starts in).
+  - `/manage/groups`: every group with readers, progress, sessions, next date,
+    and "Feature" (org_site_sections `featured_group` = { threadId }).
+  - Featured group on the home page (`src/lib/featured.ts`): "The page we're on"
+    shows the passage a host or editor posted (`metadata.circle.excerpt`
+    {text, where, page, at}; from the stop form or "Where we are" in the
+    manage section), else the site's own book; "What we're reading" shows the
+    circle's cover and the unit the next sitting starts. Automatic PDF page
+    rendering was built and dropped at the owner's request (2026-09-26).
+  - Listings use `PUBLIC_FILTER` (excludes feeds with `min_role`); the
+    single-feed and single-thread reads use `PUBLISHED_FILTER` and their pages
+    check `canViewFeed`.
+  - Seed: `scripts/seed-totm-circle.mts` + `seed/totm-units.json` created
+    "Talk of the Month" (`UK6Akh87Iyq51mzSr3dXh`, 99 units, material in
+    `Material/TOTM-Collection/`, cover in `Media/Images`). No schedule yet.
+  - Recording (2026-09-26; `packages/services/src/circle-recording.ts`,
+    scheduled in `apps/fourthwayBookreaders/src/instrumentation.ts`):
+    every 30 s, during a sitting's window (10 min before to 30 min after its
+    scheduled end), once 2+ people are in the circle's call, the service
+    account (room owner) starts a video recording via
+    `POST spreed/api/v1/recording/{token}`. Talk stores it in the starter's
+    `Talk/Recording/<token>/`; every 2 min the filer moves the service
+    account's settled files (3 min unchanged) into
+    `Private/Circles/<slug>/Meeting Recordings/<date> Session NN/`. Recordings
+    started by hand stay in that person's own Talk folder. Consent: a notice
+    under "Join the Talk room" (owner's choice). `DISABLE_CIRCLE_RECORDING=1`
+    turns it off. Verified: API reads and an authorised start refused only
+    for "no call"; not yet verified in a live call.
+    `packages/nextcloud/src/talk.ts` `startRecording`/`stopRecording` use a
+    wrong endpoint and have no callers.
+  - Not built: transcripts (Whisper container, later).
+  - `src/components/group-panels.tsx` (old bookmark + write-up forms) is no
+    longer rendered.
+- Akhand Path (claude, 2026-10-03; migration 191): a private complete reading of
+  the Sri Guru Granth Sahib at `/akhand-path` (+ `/akhand-path/day/<YYYY-MM-DD>`).
+  - A `reading_group` thread (slug `akhand-path`) with `visibility INVITE_ONLY`
+    and no schedule, so every listing, feed, forum and calendar query hides it.
+    Readers = the author + `yes` RSVPs (Justin, Guru Dharam Singh); made PUBLIC,
+    anyone with an org role may read. Access: `src/lib/paath.ts` `getPaathReader`.
+  - 3,921 passages are `circle_units` (text in `metadata.english/gurmukhi`, from
+    the WSL chunker's `chunker/sggs.py`), seeded by `scripts/seed-akhand-path.mts`
+    from `~/sggs-corpus/chunks.jsonl` on stdin. Check mark = status `done`,
+    `done_at`, `done_by` (191); thoughts = `circle_unit_notes` (191). A day's entry
+    = passages done that day (site zone) + its `meeting_occurrence_notes` row keyed
+    by local midnight (note, stop point) + `<folder>/Meeting Recordings/<date> Day N/`.
+  - Recording: in-browser MediaRecorder upload (`/api/akhand-path/recording`), or
+    "Record the call" in its Talk room (service account, audio); call files are
+    moved from `Talk/Recording/<token>/` into the day folder when the page loads
+    (the circle watcher/filer skip it: no `scheduled_at`).
+  - `/api/circle-file` asks `paathFileAllowed` first, so the private folder is
+    readers-only, not org-wide.
+  - Public `/granth` (index) and `/granth/<ang>` read the same passages, text only (`getGranthIndex`, `getAng`); nothing of the private reading. (claude, 2026-10-03)
 
 ### sophia (3020)
 - Purpose: the network LMS host over `@elkdonis/lms` + `lms-ui`. Not running;

@@ -29,6 +29,7 @@ export interface SilexTrait {
 const SILEX_TYPE: Record<PropDef["kind"], SilexTrait["type"]> = {
   string: "text",
   text: "text",
+  richtext: "text",
   url: "text",
   image: "text",
   number: "number",
@@ -110,7 +111,17 @@ export type PuckField =
       /** What an editor calls one row when the list is collapsed. */
       getItemSummary?: (item: Record<string, unknown>, index?: number) => string;
     }
-  | { type: "slot"; label?: string; allow?: string[]; disallow?: string[] };
+  | { type: "slot"; label?: string; allow?: string[]; disallow?: string[] }
+  | {
+      // Puck's formatted-text field. Only an EDITOR config asks for it (see
+      // `richText` in @elkdonis/page-builder); everywhere else a richtext prop
+      // is a textarea, so a published page never goes through Puck's own
+      // renderer, whose loading fallback writes the stored HTML unsanitised.
+      type: "richtext";
+      label?: string;
+      contentEditable?: boolean;
+      options?: Record<string, unknown>;
+    };
 
 const PUCK_TYPE: Record<PropDef["kind"], PuckField["type"]> = {
   string: "text",
@@ -119,6 +130,8 @@ const PUCK_TYPE: Record<PropDef["kind"], PuckField["type"]> = {
   url: "text",
   image: "text",
   text: "textarea",
+  // A textarea, not Puck's "richtext" — see the PuckField note above.
+  richtext: "textarea",
   number: "number",
   boolean: "radio",
   select: "select",

@@ -56,6 +56,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
         title={thread.title}
         lede={thread.excerpt}
         bodyHtml={thread.description ?? ""}
+        threadId={thread.id}
         authorName={thread.authorName}
         publishedAt={thread.publishedAt}
         kindLabel="Service"

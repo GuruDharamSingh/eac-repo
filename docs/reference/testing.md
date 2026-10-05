@@ -26,7 +26,9 @@ on this date).
   in `~/.cache/ms-playwright` lacks `libatk-1.0.so.0`). The image
   `zenika/alpine-chrome:latest` (Chromium 124.0.6367.78) is pulled, and
   `playwright-core` 1.60.0 is installed at `/tmp/node_modules`. Host Node is
-  v20.20.2. `node:22-alpine` and `node:24-alpine` images are present.
+  v20.20.2. Correction 2026-09-25: `/tmp/node_modules` no longer
+  exists; `npm i --prefix <scratchpad> playwright-core@1.60.0` works with the
+  Chrome 124 container (claude, 2026-09-25). `node:22-alpine` and `node:24-alpine` images are present.
 - Auth cookie: name is `SUPABASE_AUTH_STORAGE_KEY` or `sb-eac-auth`
   (`packages/auth-server/src/index.ts:50-52`), `@supabase/ssr` 0.5.2. GoTrue is
   reachable from the host at `http://localhost:9999` (no `/auth/v1` prefix).
@@ -155,6 +157,13 @@ request-derived or env-derived (`NEXT_PUBLIC_APP_URL`, baked at build); see
    `document.documentElement.scrollWidth` against the viewport for overflow.
 9. WebGL (three.js) pages need `--use-gl=angle --use-angle=swiftshader
    --enable-unsafe-swiftshader` instead of `--disable-gpu`.
+   To check a `packages/three` change without rebuilding a production app,
+   bundle the component from source with esbuild inside `eac-dev`
+   (`/app/node_modules/.pnpm/esbuild@0.25.10/.../lib/main.js`, `nodePaths:
+   ['/app/packages/three/node_modules']`, `jsx: 'automatic'`), serve the
+   folder from a `node:24-alpine` container on `guru-eac_eac-network`, and
+   point the Chrome container at it by container name. Screenshots under
+   swiftshader matched the expected scene (claude, 2026-09-26, inner temple).
 10. Give every CDP call its own timeout, and write log lines to a file as you
     go: `process.exit(0)` drops buffered stdout. After many navigations a page
     target stops answering; recreate the container.

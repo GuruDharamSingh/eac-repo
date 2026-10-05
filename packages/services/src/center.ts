@@ -640,7 +640,10 @@ export async function saveProfileDetails(
 // `pair()`) or `blog`. The list is a convenience; the write re-checks: an
 // org post goes through the forum's own createTopic, which refuses a feed the
 // viewer may not post in, whatever the browser sent. A blog piece is
-// `kind='writing'`, which OFF_FEED_KINDS keeps off every org feed.
+// `kind='writing'`, which OFF_FEED_KINDS keeps off every org feed. Since
+// 2026-09-26 createWritingPost homes it in PERSONAL_ORG_ID (`oad`) and lists
+// it on `blogOrgId` when that is an org the author belongs to; the network
+// hub passes PERSONAL_ORG_ID itself (no listing).
 // ============================================================================
 
 export interface PostTarget {
@@ -695,7 +698,7 @@ export interface PostAnywhereInput {
   title: string;
   /** Plain text; blank lines make paragraphs (the forum's textToHtml). */
   text: string;
-  /** The org whose site "My blog" lives on — the host's own org. */
+  /** The host's own org, listed on the new piece; PERSONAL_ORG_ID on the network hub. */
   blogOrgId?: string | null;
 }
 

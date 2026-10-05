@@ -59,11 +59,13 @@ export default async function BlogPiecePage({ params, searchParams }: Props) {
           title={post.title}
           lede={post.lede}
           bodyHtml={post.bodyHtml}
+          threadId={post.id}
           authorName={siteConfig.orgName}
           publishedAt={post.publishedAt ?? post.updatedAt}
           kindLabel={post.status === "draft" ? "Draft" : "Writing"}
           org={{ name: siteConfig.orgName, href: "/" }}
           coverImageUrl={post.coverImageUrl}
+          video={post.video ? { src: post.video.src, poster: post.video.poster } : null}
           readingMinutes={post.readingMinutes}
           provenance={{ publishedOn: [{ name: siteConfig.shortName, href: "/" }], record: `/blog/${post.slug}` }}
         >

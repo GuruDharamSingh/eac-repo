@@ -125,4 +125,16 @@ export interface CenterLinks {
   orgProfileHref: string | null;
   /** Where the compose bar goes when no surface can open. Null hides the bar. */
   composeHref: string | null;
+  /**
+   * "Gain your space": where a person who is not yet an artist of the
+   * collective starts (the network's artist onboarding). The host decides
+   * who sees it and passes null otherwise; absent or null hides it.
+   */
+  gainSpaceHref?: string | null;
+  /**
+   * The Studio on the network hub, where the person manages everything they
+   * have made (docs/open/STUDIO_BRIEF_2026-09-27.md). Usually
+   * `<network>/studio?org=<org_id>`. Absent or null hides it.
+   */
+  studioHref?: string | null;
 }

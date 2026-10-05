@@ -40,7 +40,7 @@ covers only where payment meets enrolment. Last verified: 2026-09-23 (code read,
 
 ### RSVP is kind-agnostic
 
-- `thread_rsvps(thread_id, user_id, status, created_at, updated_at, flavour, promise_next)` has no `kind`
+- `thread_rsvps(thread_id, user_id, status, registered_at, updated_at, flavour, promise_next)` has no `kind`
   column. Eligibility columns live on every thread: `is_rsvp_enabled`, `rsvp_deadline`, `attendee_limit`.
 - `packages/services/src/thread-rsvp.ts` holds the primitives, all side-effect free:
   `checkRsvpEligibility(threadId, extraConfirmedCount)` (:29), `countConfirmedRsvps` (:63),
@@ -155,8 +155,8 @@ importing a book (pdf/epub/audio/link) into reading units. No app or package dep
 
 ### Sophia LMS
 
-- Uncommitted as of 2026-09-23: `apps/sophia/`, `packages/lms/`, `packages/lms-ui/`, `lms/` and migrations
-  140–145 are untracked in git.
+- ~~Uncommitted as of 2026-09-23: `apps/sophia/`, `packages/lms/`, `packages/lms-ui/`, `lms/` and migrations
+  140–145 are untracked in git.~~ 2026-09-25: committed in `56f5639` (`git ls-files`).
 - Migrations applied (from `app_schema_migrations`): 140 `lms_content`, 141 `lms_delivery`, 142 `lms_record`
   (2026-09-18 16:24), 143 `lms_run_discussions` (16:30), 145 `lms_course_pool` (17:50). 144 is
   `nc_forum_sync`, another area. 19 `lms_*` tables exist.
@@ -259,7 +259,7 @@ Left in place; summary only.
    (`./scripts/add-proxy-host.sh`), then a start. Not built: automatic RSVP → enrolment, enrolment-gated run
    discussions (currently ordinary threads in the `elkdonis-path` feed), a `course` media target, badge
    signing, payments. Flagship content is placeholder and awaits the guide.
-8. Sophia code and migrations 140–145 are uncommitted.
+8. ~~Sophia code and migrations 140–145 are uncommitted.~~ Committed in `56f5639` (2026-09-25 check).
 9. `@elkdonis/reading-wizard` has no consumer; keep or remove is undecided.
 10. **unknown**: whether any course or workshop email has been delivered end to end.
 

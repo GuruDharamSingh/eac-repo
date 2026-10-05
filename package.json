@@ -30,7 +30,11 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.2.14",
-      "@types/react-dom": "19.2.3"
+      "@types/react-dom": "19.2.3",
+      "prosemirror-view": "1.42.3",
+      "prosemirror-model": "1.25.11",
+      "prosemirror-transform": "1.12.1",
+      "prosemirror-state": "1.4.4"
     }
   }
 }

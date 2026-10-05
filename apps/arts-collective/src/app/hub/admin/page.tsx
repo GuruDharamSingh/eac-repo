@@ -56,6 +56,9 @@ export default async function NetworkAdminPage() {
             <a className="underline" href="/hub/admin/ledger">
               Held funds →
             </a>
+            <a className="underline" href="/hub/analytics">
+              Visitors →
+            </a>
             <a className="underline" href="/hub/quotes">
               The line on every center →
             </a>

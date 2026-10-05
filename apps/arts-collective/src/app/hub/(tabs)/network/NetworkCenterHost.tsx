@@ -29,7 +29,10 @@ export function NetworkCenterHost({
         timeZone: "America/Toronto",
         profile: true,
         presence: true,
+        listings: true,
         postTo: true,
+        // The consent routes live on this host (api/connections/*).
+        connections: { startUrl: "/api/connections/start" },
         onMutated: () => router.refresh(),
       }),
     [displayName, router]

@@ -58,6 +58,7 @@ export function ProfileFlipCard({
   links,
   actions = [],
   backKicker = "Your profile",
+  frontAction,
 }: {
   image: string | null;
   glyph: string;
@@ -68,6 +69,13 @@ export function ProfileFlipCard({
   /** What the back offers. Empty means no back and no flip. */
   actions?: ProfileCardAction[];
   backKicker?: string;
+  /**
+   * One large button on the front plate (IFAC's "See profile", 2026-09-24),
+   * for people who miss the corner ✎. When given, hovering no longer turns
+   * the card: a mouse on its way to this button would otherwise flip the
+   * button out of reach. The ✎ still turns it.
+   */
+  frontAction?: ProfileCardAction;
 }) {
   const surfaces = useSurfaceOptional();
   const [flipped, setFlipped] = React.useState(false);
@@ -83,8 +91,9 @@ export function ProfileFlipCard({
   // `.eac-face-live`, which is why the card used to turn only over the ✎.
   // The face itself does get pointer events, and a pointer over any part of
   // the card is a pointer over the face, so that is where the listener goes.
+  const hoverFlips = hasBack && !frontAction;
   React.useEffect(() => {
-    if (!hasBack) return;
+    if (!hoverFlips) return;
     const face = root.current?.closest<HTMLElement>(".eac-face");
     if (!face) return;
     // Which pointer, not which device. A media query ("hover: hover") reports
@@ -101,9 +110,36 @@ export function ProfileFlipCard({
       face.removeEventListener("pointerenter", enter);
       face.removeEventListener("pointerleave", leave);
     };
-  }, [hasBack]);
+  }, [hoverFlips]);
 
   const show = hasBack && flipped;
+
+  // A surface action falls back to its href where no provider is mounted, so
+  // the card works on a site without one.
+  function control(a: ProfileCardAction, body: React.ReactNode, className?: string) {
+    if (a.surface && surfaces) {
+      return (
+        <button
+          type="button"
+          className={className}
+          aria-haspopup="dialog"
+          onClick={(e) =>
+            surfaces.open(
+              { type: "profile", tab: a.surfaceTab && a.surfaceTab !== "profile" ? a.surfaceTab : undefined },
+              e.currentTarget
+            )
+          }
+        >
+          {body}
+        </button>
+      );
+    }
+    return a.href ? (
+      <a className={className} href={a.href}>
+        {body}
+      </a>
+    ) : null;
+  }
 
   return (
     <div ref={root} className="eac-pcard" data-flipped={show || undefined}>
@@ -142,6 +178,11 @@ export function ProfileFlipCard({
             <div className="eac-pcard-name">{name}</div>
             {subtitle && <div className="eac-pcard-sub">{subtitle}</div>}
             {note && <div className="eac-pcard-note">{note}</div>}
+            {frontAction && (
+              <div className="eac-face-live eac-pcard-front-action">
+                {control(frontAction, frontAction.label, "eac-btn eac-btn--primary")}
+              </div>
+            )}
           </div>
 
           {hasBack && (
@@ -172,31 +213,8 @@ export function ProfileFlipCard({
                       {a.note && <span className="eac-pcard-action-note">{a.note}</span>}
                     </>
                   );
-                  // A surface action falls back to its href where no provider
-                  // is mounted, so the card works on a site without one.
-                  if (a.surface && surfaces) {
-                    return (
-                      <li key={a.id}>
-                        <button
-                          type="button"
-                          aria-haspopup="dialog"
-                          onClick={(e) =>
-                            surfaces.open(
-                              { type: "profile", tab: a.surfaceTab && a.surfaceTab !== "profile" ? a.surfaceTab : undefined },
-                              e.currentTarget
-                            )
-                          }
-                        >
-                          {body}
-                        </button>
-                      </li>
-                    );
-                  }
-                  return a.href ? (
-                    <li key={a.id}>
-                      <a href={a.href}>{body}</a>
-                    </li>
-                  ) : null;
+                  const c = control(a, body);
+                  return c ? <li key={a.id}>{c}</li> : null;
                 })}
               </ul>
               <button

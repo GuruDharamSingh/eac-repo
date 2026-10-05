@@ -12,7 +12,9 @@ import {
 } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { Hero, type HeroImage } from "@/components/home/hero";
+import { Hero, type HeroFeatured, type HeroImage } from "@/components/home/hero";
+import { getFeaturedCircle } from "@/lib/featured";
+import { formatWhen } from "@/lib/format";
 import {
   CurrentCircle,
   FeatureTiles,
@@ -25,7 +27,7 @@ import { Theatre } from "@/components/home/theatre";
 import { Shelf } from "@/components/home/shelf";
 import { Closing } from "@/components/home/closing";
 
-import { withBaseMaybe } from "@/lib/base-path";
+import { withBase, withBaseMaybe } from "@/lib/base-path";
 
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 /** A stored media path, ready for an `src`/`href`. */
@@ -62,11 +64,22 @@ export default async function HomePage() {
   const suggested = readSuggestedBooks(sections);
   const structure = readMeetingStructure(sections);
 
-  const [attending, going, shelf] = await Promise.all([
+  const [attending, going, shelf, featuredCircle] = await Promise.all([
     thread ? getAttendanceCount(thread.id) : 0,
     thread ? isGoing(thread.id, viewer?.userId ?? null) : false,
     getShelfItems(suggested, book),
+    getFeaturedCircle().catch((err) => { console.error("[fourthway] featured circle:", err); return null; }),
   ]);
+  const featured: HeroFeatured | null = featuredCircle
+    ? {
+        groupTitle: featuredCircle.title,
+        href: featuredCircle.href,
+        coverImageUrl: featuredCircle.coverImageUrl,
+        unitName: featuredCircle.unitName,
+        nextSitting: formatWhen(featuredCircle.nextSitting),
+        excerpt: featuredCircle.excerpt,
+      }
+    : null;
 
   const heroUrl = media(sections.hero_image?.url);
   const heroImage: HeroImage | null = heroUrl
@@ -79,7 +92,7 @@ export default async function HomePage() {
   return (
     <>
       <div className="column">
-        <Hero book={book} image={heroImage} initialPage={book?.currentPage ?? null} />
+        <Hero book={book} featured={featured} image={heroImage} initialPage={book?.currentPage ?? null} />
 
         <section className="band">
           <div className="split">
@@ -132,6 +145,18 @@ export default async function HomePage() {
             going={going}
             talkBaseUrl={talkBaseUrl}
           />
+        </section>
+
+        {/* Moved here from the header (2026-09-26). A plain GET form: /suggest
+            reads ?title= and opens the full suggestion form with it filled. */}
+        <section className="band band--tight">
+          <form className="formbox suggest-box" action={withBase("/suggest")} method="get">
+            <label className="formbox__label" htmlFor="home-suggest">Suggest a book</label>
+            <div className="formbox__row">
+              <input id="home-suggest" name="title" type="text" placeholder="title" />
+              <button type="submit">Send</button>
+            </div>
+          </form>
         </section>
       </div>
     </>

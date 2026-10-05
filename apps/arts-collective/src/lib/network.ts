@@ -147,6 +147,9 @@ export type NetworkFeedItem = {
   scheduled_at: string | null;
   view_count: number | null;
   reply_count: number | null;
+  /** From metadata->>'coverImageUrl' (threads has no such column). Feeds the
+   *  newsroom's "Leading the network" feature photo. */
+  coverImageUrl: string | null;
 };
 
 /**
@@ -158,11 +161,12 @@ export async function getNetworkFrontFeed(
   limit: number = 20
 ): Promise<NetworkFeedItem[]> {
   try {
-    return await db<NetworkFeedItem[]>`
+    const rows = await db<(Omit<NetworkFeedItem, "coverImageUrl"> & { cover_image_url: string | null })[]>`
       SELECT
         t.id, t.slug, t.title, t.kind, t.excerpt, t.body,
         o.slug AS org_slug, o.name AS org_name,
-        t.published_at, t.scheduled_at, t.view_count, t.reply_count
+        t.published_at, t.scheduled_at, t.view_count, t.reply_count,
+        t.metadata->>'coverImageUrl' AS cover_image_url
       FROM threads t
       JOIN organizations o ON o.id = t.org_id
       WHERE t.status = 'published'
@@ -176,6 +180,7 @@ export async function getNetworkFrontFeed(
       ORDER BY t.pinned DESC, COALESCE(t.published_at, t.created_at) DESC
       LIMIT ${limit}
     `;
+    return rows.map(({ cover_image_url, ...r }) => ({ ...r, coverImageUrl: cover_image_url }));
   } catch {
     return [];
   }

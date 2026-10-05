@@ -76,3 +76,13 @@ export async function getApiMember(): Promise<Viewer | null> {
   const viewer = await getViewer();
   return viewer?.isMember ? viewer : null;
 }
+
+/**
+ * Route-handler check for a reading circle's space: anyone with a role in this
+ * org, `viewer` (a follower, or someone who joined a group) included. The
+ * owner opened circles to viewers on 2026-09-26; editing stays owner/guide.
+ */
+export async function getApiAffiliate(): Promise<Viewer | null> {
+  const viewer = await getViewer();
+  return viewer?.isAffiliate ? viewer : null;
+}

@@ -7,9 +7,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./reserved-slugs": "./src/reserved-slugs.ts",
+    "./sanitize": "./src/sanitize.ts",
     "./wiki-render": "./src/wiki-render.ts",
     "./html-to-text": "./src/html-to-text.ts",
-    "./sanitize-email": "./src/sanitize-email.ts"
+    "./sanitize-email": "./src/sanitize-email.ts",
+    "./essay": "./src/essay.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

@@ -66,7 +66,9 @@ Run it after `supabase-auth` is healthy: migration 052 fails loudly if
   live schema with the files; see `thread_revisions` below.
 - Also `--status`, and `--backfill` (records files as applied without running them).
 - 2026-09-23: 163 files, 163 applied, 0 pending. Highest number **163**
-  (`163_forum_subcategories.sql`, applied 2026-09-23). Numbering starts at 002
+  (`163_forum_subcategories.sql`, applied 2026-09-23). 2026-09-25: 164 files;
+  `164_network_arrivals.sql` is untracked, applied status **unknown** (no
+  database access from the checking session). Numbering starts at 002
   and skips 026–029.
 - Migration 030's `CREATE TABLE IF NOT EXISTS threads` was a no-op (the baseline
   table already existed), so columns listed only in 030 never landed. Trust
@@ -84,7 +86,7 @@ Key columns (live `\d threads`):
 - `org_id`, `author_id uuid NOT NULL` → `users(id)`, `kind varchar(20)`,
   `title`, `slug`, `section` (an `org_feeds.slug`, no FK), `status`, `visibility`,
   `pinned`, `locked`, `share_to_network` (ignored by the forum).
-- Body: `body text`, `excerpt`, `body_format` (`html|md|mdx`, CHECK; all 67 rows
+- Body: `body text`, `excerpt`, `body_doc jsonb` (173: the essay canvas's TipTap document; `body` is rendered from it on the server when `body_format = 'doc'`), `body_format` (`html|md|mdx|doc`, CHECK; all 67 rows
   are `html`), `body_source`, `static_path`/`static_published_at`
   (`thread-publish.ts`), `search_tsv` (generated, migration 114) with a trigram
   index on `title`.
@@ -109,7 +111,7 @@ Constraints (live, 2026-09-23):
 | `threads_status_check` | `draft`, `pending`, `published`, `archived` |
 | `threads_visibility_check` | `PUBLIC`, `ORGANIZATION`, `INVITE_ONLY` |
 | `threads_wiki_never_public` | `kind <> 'wiki_page' OR visibility <> 'PUBLIC'` (123) |
-| `threads_body_format_check` | `html`, `md`, `mdx` |
+| `threads_body_format_check` | `html`, `md`, `mdx`, `doc` (173) |
 | `threads_format_check` | `in_person`, `online`, `hybrid` |
 | `threads_recurrence_pattern_check` | NULL or `DAILY`/`WEEKLY`/`MONTHLY`/`CUSTOM` |
 | `threads_org_id_slug_key` | UNIQUE `(org_id, slug)` |
@@ -146,6 +148,32 @@ columns inside a swallowing `try/catch` and recorded nothing.
 Two archived `inner_group` rows hold double-encoded `metadata` (one jsonb string,
 one array), the result of `JSON.stringify(x)::jsonb` writes. Code that reads
 `metadata->>'key'` gets NULL for them.
+
+### Who may read a thread: audiences and `threads.min_role` (188)
+(claude, 2026-10-03; migration 188 written, **unapplied** on `elkdonis_dev`.)
+- `visibility` is `PUBLIC`, `ORGANIZATION` (any role in the org, followers
+  included) or `INVITE_ONLY`. `min_role` (`viewer`, `member`, `guide`, `owner`,
+  or NULL) narrows `INVITE_ONLY` to a role and above, per org.
+- The six audiences a writer picks map to the two columns in
+  `packages/services/src/thread-audience.ts` (pure, client-safe):
+  everyone = PUBLIC; followers = ORGANIZATION; members / guides / owners =
+  INVITE_ONLY + `min_role`; only me = INVITE_ONLY, no `min_role`. SQL helper
+  `restrictedReadSql(roles)` is in `thread-access.ts` (imports the db client; server only).
+- A narrow audience is stored as `INVITE_ONLY` on purpose: a query written before
+  188 hides it from everyone but the author (fails closed). Queries that admit
+  it: `forum.ts` `visibleTo`, `forum-search.ts`, `forum-people.ts`,
+  `gather.ts` `visibleToGatherer`, `forum-write.ts` (write gate), and
+  `apps/innergathering/src/lib/data.ts` (`mayRead`). Others (`center.ts`, `lms/pool.ts`,
+  per-app listings) still hide such rows: add `restrictedReadSql` when one needs them.
+- Only innergathering's `/manage` form offers the audiences. Platform admins and
+  the author read everything; unpublished threads need an editor who meets `min_role`.
+- Verified 2026-10-03 on a scratch copy: `packages/services/scripts/check-thread-access.mts`
+  (SQL and JS rules agree for author, owner, guide, member, follower, outsider,
+  admin, owner of another org).
+- Correction 2026-10-03: `getThreadBySlug` in innergathering and amrit-canada
+  returned any published thread to anyone, so a members-only post opened by
+  direct URL signed out (verified by curl on both live sites; hidden-enneagram
+  and fourthway returned 404). Fixed in source (`mayRead`); live after rebuild.
 
 ### Kinds kept off shared surfaces
 
@@ -208,9 +236,13 @@ logs `content_hidden` to `events`, and is idempotent. `deletePost`
 (`posts.ts:284`), `deleteOrgDocument` and a rejected submission also archive.
 39 tables reference `threads(id)`, most with `ON DELETE CASCADE`
 (replies, reactions, RSVPs, gathers, rota rows), so a hard delete removes them.
-Hard deletes that remain (2026-09-23): `deleteContentAction` in
+~~Hard deletes that remain (2026-09-23): `deleteContentAction` in
 `apps/{innergathering,amrit-canada,sunjay}/src/lib/cms/actions.ts:330` and
-`deleteWritingPost` (`packages/services/src/writing.ts:368`).
+`deleteWritingPost` (`packages/services/src/writing.ts:368`).~~ Correction
+2026-09-25: both archive as of `56f5639`. `deleteContentAction`
+(`apps/{innergathering,amrit-canada,sunjay}/src/lib/cms/actions.ts:334`) calls
+`removeThreadAs(..., { editor: true })`; `deleteWritingPost`
+(`packages/services/src/writing.ts:446`) sets `status = 'archived'`.
 
 ### Moderation (156)
 
@@ -315,12 +347,15 @@ Renderers (`ArticleView` in `@elkdonis/cms-ui/article`, `ThreadView` in
 `@elkdonis/cms-ui/surface`, forum-ui) insert `bodyHtml` with
 `dangerouslySetInnerHTML` and do not sanitise; the caller is expected to.
 Sanitised on write: `forum-write.ts`, `writing.ts`, `nc-forum.ts`, forum-ui wiki
-connectors, `openclaw-bridge`, `inner-gathering` `/api/content`. Sanitised on
-read: arts-collective `ArticleBody.tsx:50`, `article-render.ts:112`. Neither on
-write nor read (grep, 2026-09-23): `saveContentAction` in ifac,
-innergathering, amrit-canada, sunjay, and the hub thread routes that return
-`row.body` (for example `apps/ifac/src/app/api/hub/threads/[id]/route.ts:134`).
-See Open items.
+connectors, `openclaw-bridge`, `inner-gathering` `/api/content`, and (as of
+`56f5639`, checked 2026-09-25) `createThread` (`posts.ts:82`) and `updatePost`
+(`posts.ts:244`) with `sanitizePostBody`, ifac's `updateExisting`
+(`apps/ifac/src/lib/cms/actions.ts:244`), and `saveContentAction` in
+innergathering, amrit-canada and sunjay (`actions.ts:176`, `sanitizeRichText`).
+Sanitised on read: arts-collective `ArticleBody.tsx:50`,
+`article-render.ts:112`. Not sanitised on read: the hub thread routes that
+return `row.body` (for example `apps/ifac/src/app/api/hub/threads/[id]/route.ts:134`);
+rows written before the write-path fix are served as stored. See Open items.
 
 ### Query conventions
 
@@ -359,13 +394,16 @@ See Open items.
 
 ## Open items
 
-- Unsanitised thread bodies (verified by reading code 2026-09-23, not exploited):
+- ~~Unsanitised thread bodies (verified by reading code 2026-09-23, not exploited):
   IFAC lets members post (`apps/ifac/src/lib/cms/actions.ts:293`); the body goes
   through `createThread` unsanitised and is returned raw by
   `/api/hub/threads/[id]` to `ThreadView`. The innergathering/amrit-canada/sunjay
-  actions are editor-only but also unsanitised. Next step: sanitise in
-  `createThread`/`updatePost` or at each action, and on read in the hub routes.
-- Hard deletes in `deleteContentAction` (three org sites) and `deleteWritingPost`.
+  actions are editor-only but also unsanitised.~~ 2026-09-25: write paths
+  sanitise as of `56f5639` (see Sanitisation). Open: the hub thread routes do not
+  sanitise on read, so bodies stored before the fix are served unchanged; whether
+  any such row holds unsafe markup is **unknown** (not queried).
+- ~~Hard deletes in `deleteContentAction` (three org sites) and `deleteWritingPost`.~~
+  2026-09-25: both archive as of `56f5639`.
 - `thread_revisions` live schema differs from 031; reconcile the file or retire
   the table once `apps/inner-gathering` is removed.
 - About 20 hand-written `INSERT INTO threads` sites remain; `updatePost`

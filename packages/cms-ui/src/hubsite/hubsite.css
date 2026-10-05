@@ -700,3 +700,177 @@ a.eac-hs-cross-card:hover { border-color: var(--sf-muted); }
 }
 .eac-hs-cross-text { display: grid; gap: 4px; padding: 14px 16px; }
 .eac-hs-cross-title { font-family: var(--sf-font-title); font-size: 1.2rem; line-height: 1.2; }
+
+/* ── Card column and month column (2026-09-26) ─────────────────────────────
+   The portrait row as a pair of stacks: the member's card with "Your page"
+   under it, and the month with Publish under it, so the two columns end near
+   the same height. From apps/ifac's hub. */
+.eac-hs-person,
+.eac-hs-side {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* ── Publish (PublishDoors) ────────────────────────────────────────────────
+   One door per thing a member can put out. Label ink is --sf-fg and notes
+   --sf-muted on --sf-bg, the same pairs the rest of this sheet uses; the
+   dashed "Coming soon" doors keep the note at --sf-muted rather than fading. */
+.eac-hs-publish { display: grid; gap: 0.75rem; }
+.eac-hs-publish__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; }
+.eac-hs-publish__title {
+  margin: 0;
+  font-family: var(--sf-font-title);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--sf-fg);
+}
+.eac-hs-publish--row .eac-hs-publish__title { font-size: clamp(2rem, 1.6rem + 1.4vw, 2.6rem); }
+.eac-hs-publish__sub { margin: 0; font-size: 1.02rem; color: var(--sf-muted); }
+
+.eac-hs-publish__doors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.eac-hs-publish--column .eac-hs-publish__doors { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 900px) {
+  .eac-hs-publish--row .eac-hs-publish__doors,
+  .eac-hs-publish--compact .eac-hs-publish__doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 540px) {
+  /* Same specificity as the tablet rule above, or it wins on phones. */
+  .eac-hs-publish--row .eac-hs-publish__doors,
+  .eac-hs-publish--compact .eac-hs-publish__doors { grid-template-columns: minmax(0, 1fr); }
+}
+.eac-hs-publish__doors > li { display: flex; }
+
+.eac-hs-publish__door {
+  appearance: none;
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.7rem;
+  row-gap: 0.1rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border: 2px solid var(--sf-fg);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+.eac-hs-publish--row .eac-hs-publish__door { padding: 1.1rem 1.2rem; min-height: 96px; }
+a.eac-hs-publish__door:hover,
+button.eac-hs-publish__door:hover { background: var(--sf-bg-soft); box-shadow: inset 0 0 0 1px var(--sf-fg); }
+.eac-hs-publish__door:focus-visible { outline: 3px solid var(--sf-fg); outline-offset: 3px; }
+
+.eac-hs-publish__icon {
+  grid-row: 1 / span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sf-accent, var(--sf-fg)) 12%, transparent);
+  /* --sf-fg, not the accent: innergathering's gold accent measured 2.3:1 on
+     its paper, under the 3:1 an icon needs (2026-09-26). The tint behind it
+     is decorative and stays the accent. */
+  color: var(--sf-fg);
+}
+.eac-hs-publish__icon svg { width: 22px; height: 22px; }
+.eac-hs-publish--row .eac-hs-publish__icon { width: 52px; height: 52px; }
+.eac-hs-publish--row .eac-hs-publish__icon svg { width: 28px; height: 28px; }
+.eac-hs-publish__label { font-size: 1.2rem; font-weight: 700; line-height: 1.15; }
+.eac-hs-publish--row .eac-hs-publish__label { font-size: 1.5rem; }
+.eac-hs-publish__note { font-size: 0.98rem; line-height: 1.3; color: var(--sf-muted); }
+
+.eac-hs-publish__door.is-soon { border-style: dashed; border-color: var(--sf-muted); cursor: default; }
+.eac-hs-publish__door.is-soon .eac-hs-publish__icon {
+  background: transparent;
+  color: var(--sf-muted);
+  border: 2px dashed var(--sf-muted);
+}
+
+/* ── Your page (PageSectionSwitches) ───────────────────────────────────── */
+.eac-hs-sections { display: grid; gap: 0.6rem; }
+.eac-hs-sections__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.eac-hs-sections__title {
+  margin: 0;
+  font-family: var(--sf-font-title);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--sf-fg);
+}
+.eac-hs-sections__link {
+  /* Text, so --sf-fg: the accent is a fill colour on some hosts (gold link
+     measured 2.28:1 on innergathering, 2026-09-26). */
+  color: var(--sf-fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+.eac-hs-sections__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.eac-hs-sections__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  cursor: pointer;
+}
+.eac-hs-sections__row.is-blocked { cursor: default; }
+.eac-hs-sections__text { display: grid; gap: 0.1rem; min-width: 0; }
+.eac-hs-sections__label { font-size: 1.2rem; font-weight: 700; line-height: 1.15; }
+.eac-hs-sections__note { margin: 0; font-size: 0.98rem; line-height: 1.3; color: var(--sf-muted); }
+
+/* A switch drawn from the checkbox itself (48×28); the native input keeps
+   keyboard and screen-reader behaviour. Border and knob are --sf-fg, a
+   non-text indicator well over 3:1 on --sf-bg. */
+.eac-hs-sections__switch {
+  appearance: none;
+  flex-shrink: 0;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  border: 2px solid var(--sf-fg);
+  background: var(--sf-bg);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.eac-hs-sections__switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sf-fg);
+  transition: transform 120ms ease;
+}
+.eac-hs-sections__switch:checked {
+  background: var(--sf-fg);
+  border-color: var(--sf-fg);
+}
+.eac-hs-sections__switch:checked::after { transform: translateX(20px); background: var(--sf-bg); }
+.eac-hs-sections__switch:focus-visible { outline: 3px solid var(--sf-fg); outline-offset: 3px; }
+.eac-hs-sections__switch:disabled { opacity: 0.6; cursor: progress; }
+.eac-hs-sections__error { margin: 0; color: var(--sf-danger, var(--sf-fg)); font-weight: 600; }

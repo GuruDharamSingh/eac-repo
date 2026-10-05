@@ -455,7 +455,13 @@ export async function createCollaborativeDocument(
   orgId: string,
   meetingTitle: string,
   meetingId: string,
-  initialContent?: string
+  initialContent?: string,
+  /**
+   * Where to write it, relative to the org root (the folder must exist), and
+   * under what name. Default: Media/Documents/<ts>-<id>.md, which has no
+   * Private segment, so media-authz serves it to anonymous visitors.
+   */
+  placement?: { folder: string; filename: string }
 ): Promise<{
   fileId: string;
   /** Storage path, so a caller can read the body back later. */
@@ -466,8 +472,10 @@ export async function createCollaborativeDocument(
 } | null> {
   try {
     const timestamp = Date.now();
-    const filename = `${timestamp}-${meetingId}.md`;
-    const path = `EAC_Network/${orgId}/Media/Documents/${filename}`;
+    const filename = placement?.filename ?? `${timestamp}-${meetingId}.md`;
+    const path = placement
+      ? `EAC_Network/${orgId}/${placement.folder.replace(/^\/+|\/+$/g, '')}/${filename}`
+      : `EAC_Network/${orgId}/Media/Documents/${filename}`;
     
     // Create initial document content
     const content = initialContent || `# ${meetingTitle}

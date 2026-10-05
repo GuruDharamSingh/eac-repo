@@ -1,0 +1,183 @@
+/* ============================================================================
+   The essay canvas inside the Studio. The blocks read with essay.css's own
+   rules (the same the sites use); this file adds the editing chrome: the
+   grip, the insert bar, the width toggle, the caption and alt fields, the
+   picker and the "Turn into" bubble. Tokens are the Studio's (--st-*).
+   ============================================================================ */
+
+.studio-cv { position: relative; }
+/* The left margin is inside the editor's own box: the grip and the + live
+   there, so moving onto them never counts as leaving the editor (which is
+   what hid the grip before). */
+.studio-cv__content { outline: none; min-height: 40vh; padding-left: 44px; margin-left: -44px; }
+.studio-cv__content > *:hover { outline: 1px dashed var(--st-control-line); outline-offset: 6px; border-radius: 4px; }
+.studio-cv__content > .studio-cv__block:hover { outline: none; }
+.studio-cv__content > * + * { margin-top: 0; }
+.studio-cv__content p { margin: 0 0 1em; font-family: var(--st-serif); font-size: 19.5px; line-height: 1.6; overflow-wrap: anywhere; }
+.studio-cv__content h2 { font-family: var(--st-serif); font-size: 26px; font-weight: 500; margin: 1.4em 0 .5em; }
+.studio-cv__content h3 { font-family: var(--st-serif); font-size: 22px; font-weight: 500; margin: 1.2em 0 .4em; }
+.studio-cv__content blockquote:not(.eac-pull) { margin: 1em 0; padding-left: 1em; border-left: 3px solid var(--st-accent); color: var(--st-muted); font-style: italic; font-family: var(--st-serif); font-size: 19.5px; }
+.studio-cv__content ul, .studio-cv__content ol { font-family: var(--st-serif); font-size: 19.5px; line-height: 1.6; margin: 0 0 1em; padding-left: 1.4em; }
+.studio-cv__content a { color: var(--st-accent); }
+.studio-cv__content mark { background: var(--st-accent-soft); color: inherit; }
+.studio-cv__content pre { background: var(--st-panel-2); padding: 12px; border-radius: 6px; font-size: 14px; overflow-x: auto; }
+.studio-cv__content p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--st-faint); float: left; height: 0; pointer-events: none; }
+
+/* The canvas column keeps the reading measure; wide and full blocks step
+   out of it visually so the writer sees the breakout while writing. */
+.studio-cv__block { position: relative; margin: 0 0 1.15em; }
+.studio-cv__block.is-wide { margin-left: calc(-1 * var(--st-cv-bleed, 6rem)); margin-right: calc(-1 * var(--st-cv-bleed, 6rem)); }
+.studio-cv__block.is-full { margin-left: calc(-1 * var(--st-cv-bleed, 10vw)); margin-right: calc(-1 * var(--st-cv-bleed, 10vw)); }
+@media (max-width: 1100px) { .studio-cv__block.is-wide, .studio-cv__block.is-full { margin-left: 0; margin-right: 0; } }
+.studio-cv__block.is-selected::before, .studio-cv__block:has(:focus)::before {
+  content: ""; position: absolute; inset: -6px; border: 1px dashed var(--st-control-line); border-radius: 6px; pointer-events: none;
+}
+.ProseMirror-selectednode.studio-cv__block::before { border-style: solid; border-color: var(--st-accent); }
+
+/* the grip, positioned by the drag-handle extension */
+.studio-cv__grip {
+  width: 22px; height: 26px; display: flex; align-items: center; justify-content: center;
+  border-radius: 5px; color: var(--st-faint); cursor: grab; font-size: 16px; letter-spacing: -2px; margin-left: -30px;
+}
+.studio-cv__grip:hover { background: var(--st-panel-2); color: var(--st-ink); }
+.drag-handle { position: absolute; z-index: 3; }
+.studio-cv__plus {
+  position: absolute; left: -46px; z-index: 5; width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--st-line); background: var(--st-panel); color: var(--st-muted); font-size: 15px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; box-shadow: var(--st-shadow);
+}
+.studio-cv__plus:hover { border-color: var(--st-accent); color: var(--st-ink); }
+.studio-cv__menu {
+  position: absolute; left: -46px; z-index: 30; min-width: 250px; padding: 6px;
+  background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 10px; box-shadow: var(--st-shadow);
+  display: grid; gap: 1px;
+}
+.studio-cv__menu button { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border: 0; border-radius: 6px; background: none; text-align: left; color: var(--st-ink); cursor: pointer; }
+.studio-cv__menu button:hover { background: var(--st-panel-2); }
+.studio-cv__menu b { font-weight: 500; font-size: 13.5px; }
+.studio-cv__menu span { font-size: 12px; color: var(--st-muted); }
+.studio-cv__insert-add { font-weight: 600 !important; color: var(--st-ink) !important; }
+.studio-cv__addend { display: block; width: 100%; margin: 6px 0 0; padding: 10px; border: 1px dashed var(--st-control-line); border-radius: 8px; background: transparent; color: var(--st-muted); cursor: pointer; }
+.studio-cv__addend:hover { color: var(--st-ink); border-color: var(--st-muted); }
+.studio-cv__pickbtn { padding: 10px 14px; border: 1px dashed var(--st-control-line); border-radius: 6px; background: transparent; color: var(--st-muted); cursor: pointer; }
+.studio-cv__pickbtn:hover { color: var(--st-ink); border-color: var(--st-muted); }
+
+/* chrome that appears on hover / selection */
+.studio-cv__wtog, .studio-cv__tools { position: absolute; z-index: 4; opacity: 0; transition: opacity .12s; }
+.studio-cv__block:hover .studio-cv__wtog, .studio-cv__block:hover .studio-cv__tools,
+.studio-cv__block.is-selected .studio-cv__wtog, .studio-cv__block.is-selected .studio-cv__tools,
+.studio-cv__block:has(:focus) .studio-cv__wtog, .studio-cv__block:has(:focus) .studio-cv__tools { opacity: 1; }
+/* One row above the block: the width toggle, then the tools. Easier to
+   find than the right margin (dev, 2026-09-27). */
+.studio-cv__wtog { left: 0; top: -38px; display: flex; gap: 2px; padding: 3px; background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 7px; box-shadow: var(--st-shadow); }
+.studio-cv__wtog button { width: 32px; height: 24px; border: 0; border-radius: 4px; background: none; color: var(--st-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.studio-cv__wtog button i { display: block; height: 9px; border: 1.5px solid currentColor; border-radius: 2px; }
+.studio-cv__wtog button[aria-pressed="true"] { background: var(--st-accent-soft); color: var(--st-ink); }
+.studio-cv__tools { left: 0; top: -38px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 7px; box-shadow: var(--st-shadow); }
+.studio-cv__block:has(.studio-cv__wtog) .studio-cv__tools { left: 124px; }
+.studio-cv__tools button { padding: 3px 8px; border: 0; border-radius: 4px; background: none; font-size: 12px; color: var(--st-muted); text-align: left; white-space: nowrap; cursor: pointer; }
+.studio-cv__tools button:hover { background: var(--st-panel-2); color: var(--st-ink); }
+.studio-cv__tools button[aria-pressed="true"] { color: var(--st-ink); background: var(--st-accent-soft); }
+.studio-cv__block.is-full .studio-cv__wtog { left: 8px; }
+.studio-cv__block.is-full:has(.studio-cv__wtog) .studio-cv__tools { left: 132px; }
+@media (max-width: 1000px) {
+  .studio-cv__content { padding-left: 0; margin-left: 0; }
+  .studio-cv__content > *:hover { outline: none; }
+  .studio-cv__plus, .studio-cv__handle-slot, .drag-handle { display: none !important; }
+  .studio-cv__menu { left: 0; right: 0; min-width: 0; }
+  .studio-cv__block.is-wide, .studio-cv__block.is-full { margin-left: 0; margin-right: 0; }
+  .studio-cv__insert { position: static; }
+}
+
+/* image */
+.studio-cv__image figure { margin: 0; }
+.studio-cv__pic { position: relative; width: 100%; background: var(--st-panel-2); border-radius: 4px; overflow: hidden; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+.studio-cv__pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.studio-cv__block.is-full .studio-cv__pic { border-radius: 0; }
+.studio-cv__focal { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.35); box-shadow: 0 0 0 1px rgba(0,0,0,.4); transform: translate(-50%,-50%); cursor: move; padding: 0; }
+.studio-cv__caption, .studio-cv__cite {
+  display: block; width: 100%; margin-top: 8px; border: 0; background: transparent; color: var(--st-muted);
+  font-family: var(--st-sans); font-size: 13px; line-height: 1.45; padding: 2px 0; outline: none;
+}
+.studio-cv__caption::placeholder, .studio-cv__cite::placeholder { color: var(--st-faint); }
+.studio-cv__caption:focus-visible, .studio-cv__cite:focus-visible { outline: 2px solid var(--st-accent); outline-offset: 4px; border-radius: 2px; }
+.studio-cv__alt { display: flex; gap: 8px; align-items: center; margin-top: 4px; font-size: 12px; color: var(--st-muted); }
+.studio-cv__alt input { flex: 1; min-width: 0; background: var(--st-panel-2); border: 1px solid var(--st-control-line); border-radius: 5px; padding: 4px 8px; font-size: 12.5px; color: var(--st-ink); }
+.studio-cv__alt input[aria-invalid="true"] { border-color: var(--st-danger); }
+
+/* pull quote, aside, divider in the canvas: essay.css draws them; these add the editing bits */
+.studio-cv__pull .eac-pull { font-family: var(--st-serif); font-style: italic; font-size: 28px; line-height: 1.3; text-align: center; padding: .4em 1em; margin: 0; color: var(--st-ink); }
+.studio-cv__pull .eac-pull p { font-size: inherit; line-height: inherit; margin: 0; }
+.studio-cv__block.is-wide .eac-pull { font-size: 32px; }
+.studio-cv__cite { text-align: center; }
+.studio-cv__aside .eac-aside { font-family: var(--st-sans); font-size: 13.5px; line-height: 1.5; color: var(--st-muted); border-top: 1px solid var(--st-line); padding-top: 8px; margin: 0; }
+.studio-cv__aside .eac-aside p { font-family: var(--st-sans); font-size: 13.5px; line-height: 1.5; margin: 0; }
+.studio-cv__label { display: block; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--st-faint); margin-bottom: 4px; }
+.studio-cv__divider .eac-divider { border: 0; margin: 1.2em 0; }
+.studio-cv__divider .eac-divider--rule { height: 1px; background: var(--st-line); }
+.studio-cv__divider .eac-divider--space { height: 1.5em; background: repeating-linear-gradient(90deg, var(--st-line) 0 4px, transparent 4px 10px) center / 100% 1px no-repeat; }
+.studio-cv__divider .eac-divider--ornament { text-align: center; height: auto; }
+.studio-cv__divider .eac-divider--ornament::before { content: "· · ·"; letter-spacing: .6em; color: var(--st-faint); font-family: var(--st-serif); font-size: 22px; }
+
+/* picture with text */
+.studio-cv__figtext .eac-figtext { display: grid; grid-template-columns: var(--share, 45%) minmax(0, 1fr); gap: 20px; align-items: start; margin: 0; }
+.studio-cv__figtext .eac-figtext--right { grid-template-columns: minmax(0, 1fr) var(--share, 45%); }
+.studio-cv__figtext .eac-figtext--right .studio-cv__figtext-pic { order: 2; }
+.studio-cv__figtext .eac-figtext > div:last-child { grid-column: 1 / -1; }
+.studio-cv__figtext-pic { min-height: 160px; }
+.studio-cv__figtext .eac-figtext__text p { font-family: var(--st-serif); font-size: 18.5px; line-height: 1.55; margin: 0; }
+@media (max-width: 760px) { .studio-cv__figtext .eac-figtext, .studio-cv__figtext .eac-figtext--right { grid-template-columns: 1fr; } .studio-cv__figtext .eac-figtext--right .studio-cv__figtext-pic { order: 0; } }
+
+/* gallery */
+.studio-cv__gallery .eac-gallery { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.studio-cv__gallery .eac-gallery__row { display: flex; gap: 6px; }
+.studio-cv__gallery .eac-gallery__item { position: relative; margin: 0; min-width: 0; border-radius: 3px; overflow: hidden; cursor: pointer; background: var(--st-panel-2); }
+.studio-cv__gallery .eac-gallery__item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.studio-cv__gallery .eac-gallery__item.is-open { outline: 2px solid var(--st-accent); outline-offset: -2px; }
+.studio-cv__gal-ctl { position: absolute; right: 6px; top: 6px; display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.studio-cv__gallery .eac-gallery__item:hover .studio-cv__gal-ctl { opacity: 1; }
+.studio-cv__gal-ctl button { width: 24px; height: 24px; border: 0; border-radius: 4px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; cursor: pointer; }
+.studio-cv__gal-fields { display: flex; flex-direction: column; gap: 4px; padding: 6px 0 0; }
+
+/* card */
+.studio-cv__card .eac-card { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin: 0; padding: 12px 14px; border: 1px solid var(--st-line); border-radius: 8px; background: var(--st-panel); }
+.studio-cv__card .eac-card:has(.eac-card__cover) { grid-template-columns: 96px minmax(0,1fr); align-items: center; }
+.studio-cv__card .eac-card__cover { width: 96px; height: 72px; object-fit: cover; border-radius: 4px; }
+.studio-cv__card figcaption { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.studio-cv__card .eac-card__kind { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--st-faint); }
+.studio-cv__card .eac-card__title { font-family: var(--st-serif); font-size: 17px; font-weight: 500; color: var(--st-ink); }
+.studio-cv__card .eac-card__meta { font-size: 13px; color: var(--st-muted); }
+.studio-cv__card .eac-card__price { font-weight: 600; color: var(--st-ink); }
+.studio-cv__card .eac-card__price--nfs { font-weight: 400; color: var(--st-faint); }
+.studio-cv__live { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--st-faint); margin-top: 4px; }
+.studio-cv__picker { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px dashed var(--st-control-line); border-radius: 8px; background: var(--st-panel); }
+.studio-cv__picker-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--st-muted); }
+.studio-cv__picker-h select { font-size: 12.5px; padding: 3px 6px; letter-spacing: 0; text-transform: none; }
+.studio-cv__picker input { padding: 7px 9px; border: 1px solid var(--st-control-line); border-radius: 6px; background: var(--st-panel-2); color: var(--st-ink); }
+.studio-cv__hits { display: flex; flex-direction: column; gap: 2px; max-height: 240px; overflow: auto; }
+.studio-cv__hits button { display: flex; flex-direction: column; gap: 1px; text-align: left; padding: 7px 9px; border: 0; border-radius: 6px; background: none; color: var(--st-ink); cursor: pointer; }
+.studio-cv__hits button:hover { background: var(--st-panel-2); }
+.studio-cv__hits button b { font-weight: 500; }
+.studio-cv__hits button span { font-size: 12px; color: var(--st-muted); }
+
+/* insert bar (sticky, like the small editor's toolbar) */
+.studio-cv__insert {
+  position: sticky; top: 62px; z-index: 5; display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+  width: fit-content; max-width: 100%; margin: 8px 0 14px; padding: 4px;
+  background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 8px; box-shadow: var(--st-shadow);
+}
+.studio-cv__insert > span { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--st-faint); padding: 0 6px; }
+.studio-cv__insert-sep { width: 1px; height: 16px; background: var(--st-line); margin: 0 4px; padding: 0 !important; }
+.studio-cv__insert button { min-width: 30px; height: 28px; padding: 0 8px; border: 0; border-radius: 5px; background: none; color: var(--st-muted); font-size: 13px; cursor: pointer; }
+.studio-cv__insert button:hover:not(:disabled) { background: var(--st-panel-2); color: var(--st-ink); }
+.studio-cv__insert button:disabled { opacity: .4; cursor: default; }
+.studio-cv__insert button[aria-pressed="true"] { background: var(--st-accent-soft); color: var(--st-ink); }
+
+/* "Turn into" bubble */
+.studio-cv__turn { display: flex; gap: 2px; padding: 4px; background: var(--st-panel); border: 1px solid var(--st-line); border-radius: 8px; box-shadow: var(--st-shadow); }
+.studio-cv__turn span { align-self: center; font-size: 11px; color: var(--st-faint); padding: 0 6px 0 4px; letter-spacing: .06em; text-transform: uppercase; }
+.studio-cv__turn button { padding: 4px 9px; border: 0; border-radius: 5px; background: none; font-size: 12.5px; color: var(--st-ink); cursor: pointer; }
+.studio-cv__turn button:hover { background: var(--st-panel-2); }
+
+/* drop cursor */
+.ProseMirror-dropcursor, .prosemirror-dropcursor-block { background: var(--st-accent) !important; }

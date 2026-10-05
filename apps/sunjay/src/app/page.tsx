@@ -26,11 +26,22 @@ import { getForumSnapshot } from "@/lib/forum";
 import { getImageSpaces, listGalleryImages, listWritingShelf, mediaSrc } from "@/lib/landing";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { renderPuckPage } from "@/lib/puck/render";
+import { HOME_SLUG } from "@/lib/puck/store";
 
 const TIME_ZONE = "America/Toronto";
 
 /**
- * The landing page, in the order the owner asked for (revised 2026-09-19):
+ * `/`: the home page built in the page editor when one is published, otherwise
+ * the original landing page below. The fallback stays until the editor-built
+ * page is approved; deleting `LegacyHome` is what completes the move.
+ */
+export default async function HomePage() {
+  return (await renderPuckPage(HOME_SLUG)) ?? <LegacyHome />;
+}
+
+/**
+ * The original landing page, in the order the owner asked for (revised 2026-09-19):
  *
  *   banner                a hero photograph, with the hero copy over it
  *   next gathering        PAGE WIDE, on its own
@@ -50,7 +61,7 @@ const TIME_ZONE = "America/Toronto";
  * provider is mounted in the root layout (HubSurfaces), which is what makes
  * them legal on a public page at all.
  */
-export default async function HomePage() {
+async function LegacyHome() {
   const now = new Date();
   const calFrom = startOfMonth(now);
 

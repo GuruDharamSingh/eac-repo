@@ -16,7 +16,7 @@ export const siteConfig = {
   tagline: "Artist",
   ownerEmail: process.env.NEXT_PUBLIC_DANAMCCOOL_OWNER_EMAIL ?? "danamccoolart@gmail.com",
   /** Cross-network links her real nav points at (ELKDONIS ARTS, IFAC / ART COLLECTORS). */
-  elkdonisArtsUrl: process.env.NEXT_PUBLIC_ELKDONIS_ARTS_URL ?? "http://localhost:3005",
+  elkdonisArtsUrl: process.env.NEXT_PUBLIC_ELKDONIS_ARTS_URL ?? "https://elkdonis-arts.org",
   ifacUrl: process.env.NEXT_PUBLIC_IFAC_URL ?? "http://localhost:3008",
   ifacProfilePath: "/artists/danamccool",
   /**

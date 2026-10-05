@@ -20,6 +20,8 @@ export interface Thread {
   feedSlug: string | null;
   status: string;
   visibility: string;
+  /** Pinned from /manage; leads the landing page. */
+  pinned: boolean;
   /** threads.body — rich text HTML. */
   description: string | null;
   excerpt: string | null;

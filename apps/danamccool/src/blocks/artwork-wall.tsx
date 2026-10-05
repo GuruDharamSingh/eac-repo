@@ -1,4 +1,4 @@
-import { defineBlock, type PropsOf } from "@elkdonis/blocks";
+import { defineBlock, editItem, type PropsOf } from "@elkdonis/blocks";
 import { sized, srcSet } from "./media";
 import {
   artworkProp,
@@ -124,6 +124,8 @@ interface Entry {
   item: ArtworkItem;
   caption: string | null;
   pictureOnly: boolean;
+  /** Its row in `chosen`, when hand-picked — so the editor can open that row. */
+  row?: number;
 }
 
 export function ArtworkWall({
@@ -139,12 +141,12 @@ export function ArtworkWall({
 }: ArtworkWallProps) {
   const entries: Entry[] =
     source === "chosen"
-      ? (chosen ?? []).flatMap((row) => {
+      ? (chosen ?? []).flatMap((row, index) => {
           const item = lookup(bound, row.artwork);
           // A row whose artwork is gone (withdrawn, or never chosen) draws
           // nothing rather than an empty frame.
           if (!item) return [];
-          return [{ item, caption: pick(row.caption, null) || null, pictureOnly: row.display === "picture" }];
+          return [{ item, caption: pick(row.caption, null) || null, pictureOnly: row.display === "picture", row: index }];
         })
       : source === "gallery"
         ? items.map((item) => ({ item, caption: null, pictureOnly: item.status === "portfolio" && !item.href }))
@@ -166,7 +168,7 @@ export function ArtworkWall({
         </p>
       ) : (
         <ul className="dm-works-grid">
-          {shown.map(({ item, caption, pictureOnly }, i) => {
+          {shown.map(({ item, caption, pictureOnly, row }, i) => {
             const selling = isForSale(item) && !pictureOnly && !!item.href;
             const meta = [item.medium, item.dimensions].filter(Boolean).join(" · ");
             const picture = (
@@ -181,7 +183,12 @@ export function ArtworkWall({
             );
             const priceText = pictureOnly ? "" : priceOf(item);
             return (
-              <li key={`${item.id}-${i}`} className="dm-work" data-status={pictureOnly ? "picture" : item.status}>
+              <li
+                key={`${item.id}-${i}`}
+                className="dm-work"
+                data-status={pictureOnly ? "picture" : item.status}
+                {...(row === undefined ? {} : editItem("chosen", row))}
+              >
                 {selling ? (
                   <a className="dm-work-picture" href={item.href!} target="_blank" rel="noopener noreferrer">
                     {picture}

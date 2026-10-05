@@ -81,6 +81,7 @@ export default async function ManageDashboard() {
                     </Link>
                     <span className="ml-2 text-xs capitalize text-muted-foreground">
                       {thread.kind}
+                      {thread.pinned ? " · pinned" : ""}
                     </span>
                   </td>
                   <td className="py-3 pr-4 text-muted-foreground">
@@ -126,6 +127,7 @@ export default async function ManageDashboard() {
                       hasRsvps={Boolean(attendance && attendance > 0)}
                       isDated={Boolean(thread.scheduledAt)}
                       isStanding={thread.id === standingId}
+                      isPinned={thread.pinned}
                     />
                   </td>
                 </tr>

@@ -7,6 +7,7 @@ import { StoreShowcase } from "@elkdonis/commerce/components";
 import { getGuideBySlug, getGuideStore, getThreadsByAuthor } from "@/lib/data";
 import { siteConfig } from "@/config/site";
 import { toPlainText } from "@/lib/format";
+import { listWriting } from "@elkdonis/services";
 
 interface GuidePageProps {
   params: Promise<{ slug: string }>;
@@ -29,9 +30,10 @@ export default async function GuidePage({ params }: GuidePageProps) {
 
   // Everything they've published here — the substance of the page. A teacher
   // page that's only a bio goes stale; one that lists their classes doesn't.
-  const [threads, store] = await Promise.all([
+  const [threads, store, writing] = await Promise.all([
     getThreadsByAuthor(guide.userId),
     getGuideStore(guide.userId),
+    listWriting(guide.userId, { orgId: siteConfig.orgId, limit: 5 }),
   ]);
 
   return (
@@ -110,6 +112,30 @@ export default async function GuidePage({ params }: GuidePageProps) {
             className="mt-6"
           />
         </div>
+      )}
+
+      {/* Published pieces from the writing room (/write). */}
+      {writing.length > 0 && (
+        <section className="mt-12">
+          <hr className="saffron-divider" />
+          <h2 className="font-serif text-2xl">Writing</h2>
+          <ul className="mt-4 border-t border-foreground/25">
+            {writing.map((piece) => (
+              <li key={piece.id} className="border-b border-foreground/25 py-3">
+                <Link
+                  href={`/writing/${guide.slug}/${piece.slug}`}
+                  className="font-serif text-lg underline-offset-4 hover:underline"
+                >
+                  {piece.title}
+                </Link>
+                {piece.lede && <p className="mt-1 text-sm text-muted-foreground">{piece.lede}</p>}
+              </li>
+            ))}
+          </ul>
+          <Link href={`/writing/${guide.slug}`} className="mt-3 inline-block text-sm underline underline-offset-4">
+            All writing
+          </Link>
+        </section>
       )}
 
       {threads.length > 0 && (

@@ -26,6 +26,13 @@ const ORG_ID = siteConfig.orgId;
 //   org — only pieces written here. The default, because a reader arriving
 //         from IFAC expects IFAC.
 //   all — everything they have written anywhere on the network.
+//
+// 2026-09-26: the scope is no longer read. The profile, the shelf and the
+// piece reader show what is homed on or listed on IFAC (thread_orgs; see
+// packages/services/src/thread-listing.ts and
+// docs/open/PERSON_PAGES_BRIEF_2026-09-26.md). `blogScope` is still read and
+// written below so the hub control keeps working until it is replaced by the
+// per-post "Show on" control.
 // ============================================================================
 
 export type BlogScope = "org" | "all";
@@ -100,29 +107,5 @@ export async function setBlogStateAction(input: {
   } catch (error) {
     console.error("[ifac] setBlogStateAction:", error);
     return { ok: false, error: "Could not save that" };
-  }
-}
-
-/**
- * The scope a given member's blog is set to, for the public read paths.
- *
- * Not the viewer's — the PAGE OWNER's. The shelf on an artist's page shows
- * what that artist chose to show, whoever is reading it.
- *
- * Returns `undefined` for "everything", because that is what `listWriting`
- * wants for an unscoped read: its `orgId` is optional and omitting it reads
- * the author across every org they write from.
- */
-export async function blogOrgScopeFor(userId: string): Promise<string | undefined> {
-  try {
-    const [row] = await db<Array<{ profile_sections: Record<string, unknown> | null }>>`
-      SELECT profile_sections FROM users WHERE id = ${userId} LIMIT 1
-    `;
-    return row?.profile_sections?.blogScope === "all" ? undefined : ORG_ID;
-  } catch (error) {
-    // The safe default is the narrow one: showing only what was written here
-    // can never surface writing the author did not mean to gather.
-    console.error("[ifac] blogOrgScopeFor:", error);
-    return ORG_ID;
   }
 }

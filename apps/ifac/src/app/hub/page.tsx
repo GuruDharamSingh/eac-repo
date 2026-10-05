@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@elkdonis/db";
 import {
   getMeetingAttendance,
   getOrgChatIdentity,
@@ -19,6 +18,7 @@ import { ChatCard, ProvisionChat } from "@elkdonis/chat";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { getProfileSummary } from "@/lib/hub-data";
+import { readProfileSections } from "@/lib/profile-sections";
 import { getHubViewer } from "@/lib/hub-auth";
 import { getForumSnapshot } from "@/lib/forum";
 import { getPipelineBoard } from "@/lib/pipeline";
@@ -39,9 +39,7 @@ import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
 import { KindTilesFace } from "@/components/hub/KindTilesFace";
 import { HelpErrand } from "@/components/hub/HelpErrand";
 import { FilesFace } from "@/components/hub/FilesCard";
-import { PageSectionsFace, type HubSections } from "@/components/hub/PageSectionsCard";
-import type { StoreEntryState } from "@elkdonis/commerce/links";
-import { getStoreForUser } from "@elkdonis/commerce/queries";
+import { PageSectionsFace } from "@/components/hub/PageSectionsCard";
 import { getHubSkin } from "@/lib/hub-skin-store";
 
 /**
@@ -89,10 +87,10 @@ export default async function HubPage({
     await refreshStripeAccountStatus(viewer.userId).catch(() => null);
   }
 
-  // The page layout, when this person chose it. Read before the batch below,
-  // so the card hub's dozen reads never happen for someone who won't see them.
-  // Cards remain the default: only someone who pressed "Page" gets this.
-  if ((await cookies()).get(HUB_VIEW_COOKIE)?.value === "site") {
+  // The page layout, read before the batch below so the card hub's dozen
+  // reads never happen for someone who won't see them. Page is the default
+  // (owner, 2026-09-24); only someone who pressed "Cards" gets the cards.
+  if ((await cookies()).get(HUB_VIEW_COOKIE)?.value !== "classic") {
     const siteContent = await getSiteContent();
     return (
       <div className="site-shell">
@@ -507,43 +505,4 @@ export default async function HubPage({
       <SiteFooter content={content.footer} />
     </div>
   );
-}
-
-/**
- * Which optional sections this person shows on their own page.
- *
- * Read here rather than folded into getProfileSummary because it is a
- * preference about their page, not a fact about their profile, and the two
- * have different lifetimes.
- */
-async function readProfileSections(userId: string): Promise<HubSections> {
-  const empty: HubSections = {
-    elkdonisFeed: false,
-    store: false,
-    blog: false,
-    storeState: "none",
-    storeId: null,
-    storeName: null,
-  };
-  try {
-    const [row] = await db<Array<{ profile_sections: Record<string, unknown> }>>`
-      SELECT profile_sections FROM users WHERE id = ${userId}
-    `;
-    // Their marketplace store, in whatever state it is actually in. This used
-    // to collapse to `hasStore: status === "active"`, which told a member
-    // whose application was under review to go and open a store — the one
-    // thing they had already done.
-    const store = await getStoreForUser(userId).catch(() => null);
-    return {
-      elkdonisFeed: Boolean(row?.profile_sections?.elkdonisFeed),
-      store: Boolean(row?.profile_sections?.store),
-      blog: Boolean(row?.profile_sections?.blog),
-      storeState: (store?.status as StoreEntryState) ?? "none",
-      storeId: store?.id ?? null,
-      storeName: store?.displayName ?? null,
-    };
-  } catch (error) {
-    console.error("[ifac] readProfileSections error:", error);
-    return empty;
-  }
 }

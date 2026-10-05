@@ -1,6 +1,6 @@
 # Package catalogue and conventions
 
-Every directory in `packages/` (41), with its purpose, how it is consumed
+Every directory in `packages/` (42), with its purpose, how it is consumed
 (built `dist/` or source export), its main consumers, and a status. Followed by
 the conventions that decide whether a change to a package type-checks, builds
 and renders in the apps that use it. Build mode is read from each
@@ -33,7 +33,9 @@ apps), unused (no consumer), dormant (consumers not running).
 
 | Package | Purpose | Build | Main consumers | Status |
 |---|---|---|---|---|
+| analytics | First-party cookieless visit analytics: beacon (`/beacon`), collector route (`/route`), queries and access (`/server`), shared dashboard (`/dashboard`, Recharts); tables in migration 180 | src | amrit-canada, arts-collective | new 2026-10-01, not deployed — see package README |
 | astro | Natal-chart engine on `sweph`; root is client-safe, `/server` engine, `/svg`, `/wheel`, `/keywords` | src | elastrocal, arts-collective, sky-ui | active |
+| astro-corpus | Astro Studio corpus: factor registry, text tagger, question screening; `/server` corpus tables (migration 167); `build:tagger` bundles a standalone tagger into `dist/` | src | none yet (elastrocal studio planned) | active — docs/open/ASTRO_STUDIO_BRIEF_2026-09-26.md |
 | auth-client | Browser auth calls (`/api/auth/*`, Google), basePath-aware | src | 16 apps, cms-ui, ui | active |
 | auth-server | GoTrue session, route handlers (`handleSignup`, `handleOAuthCallback`, handoff) | dist | 19 apps | active |
 | blocks | Page-block catalogue declared as data; `/server` resolvers | src | amrit-canada, art-auction, danamccool, ifac, innergathering, sunjay, page-builder | active |
@@ -68,12 +70,13 @@ apps), unused (no consumer), dormant (consumers not running).
 | silex-nextcloud-connector | Silex storage connector to Nextcloud | n/a (JS) | Compose `silex` | active |
 | silex-render | Fetch → bind → render Silex-published org sites | src | arts-collective, hidden-enneagram | active |
 | sky-ui | Current-sky face/surface/page components + `sky.css` | src | elastrocal, arts-collective | active |
+| studio | The Studio frame (`StudioShell`): pieces drawer, writing editor with autosave, settings, and the essay canvas (`canvas/`: TipTap block schema, node views, drag handle); host binds server actions (`StudioActions`); `studio.css` | src | arts-collective | new 2026-09-27 |
 | studio-ui | Non-Mantine Tailwind + Tiptap authoring components | src | art-auction, pigeonshoot | active |
 | three | Three.js / R3F components (`/gallery`, `/inner-temple`, `/endless-runner`) | dist | art-auction, arts-collective | active |
 | tokens | DTCG token file → CSS custom properties | src | arts-collective | active (no UI) |
 | types | Shared TypeScript types | dist | 16 apps, 8 packages | active |
 | ui | Mantine component library, `eac-theme.css` (`BaroqueSignup` also exists in `cms-ui/auth`) | dist | admin, blog-guru-dharam, blog-tester, elkdonis-arts-collective, inner-gathering, blog-client | legacy |
-| utils | Pure helpers: recurrence maths, sanitise, reserved slugs, wiki render | src | 14 apps, 13 packages | active |
+| utils | Pure helpers: recurrence maths, sanitise, reserved slugs, wiki render, `./essay` (the essay document model and `renderEssayHtml`) | src | 14 apps, 13 packages | active |
 
 ## Rules and constraints
 

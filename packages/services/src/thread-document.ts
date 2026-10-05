@@ -1,6 +1,7 @@
 import { db } from '@elkdonis/db';
 import { davGetText, davLastModified, davMkcol, davPut } from './dav';
 import { getStorageSlug, resolveUserPath } from './user-storage';
+import { markArtistByFolder } from './artist-membership';
 
 // ============================================================================
 // A thread and a Nextcloud document, kept in step.
@@ -104,6 +105,8 @@ export async function attachThreadDocument(
       console.error(`[thread-document] PUT failed for ${path}`);
       return null;
     }
+    // A document in the author's own folder gains their space.
+    await markArtistByFolder(storageSlug);
 
     const now = new Date();
     await db`

@@ -128,7 +128,8 @@ export async function PATCH(request: NextRequest) {
   if (body.action === "assign") {
     const memberId = String(body.memberId ?? "");
     if (!memberId) return NextResponse.json({ error: "memberId is required." }, { status: 400 });
-    const result = await assignProfile(id, memberId);
+    const actorId = session.user ? (session.user.db_user_id ?? session.user.id) : null;
+    const result = await assignProfile(id, memberId, actorId);
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
     revalidate();
     const [profiles, assignableMembers] = await Promise.all([listAllDirectory(), listAssignableMembers()]);

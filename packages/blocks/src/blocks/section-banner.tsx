@@ -25,6 +25,7 @@ const props = [
     kind: "string",
     label: "Title",
     required: true,
+    inlineEditable: true,
   },
   {
     name: "eyebrow",
@@ -36,6 +37,7 @@ const props = [
     name: "subtitle",
     kind: "string",
     label: "Subtitle",
+    inlineEditable: true,
   },
   {
     name: "accent",
@@ -44,17 +46,33 @@ const props = [
     description:
       "Any CSS colour — the rule beneath, the pill and the title all take it. Defaults to the site accent.",
   },
+  {
+    name: "height",
+    kind: "number",
+    label: "Height",
+    description:
+      "0 is as tall as its words. More sets its least height, with the words centred. Also set by dragging the handle under the selected banner.",
+    default: 0,
+    min: 0,
+    max: 1200,
+    step: 10,
+    unit: "px",
+  },
 ] as const;
 
 export type SectionBannerProps = PropsOf<typeof props>;
 
-export function SectionBanner({ title, eyebrow, subtitle, accent }: SectionBannerProps) {
+export function SectionBanner({ title, eyebrow, subtitle, accent, height = 0 }: SectionBannerProps) {
+  const style: Record<string, string> = {};
+  // Set as a custom property rather than on each element: the CSS decides
+  // where the colour lands, so a theme can move it without touching this.
+  if (accent) style["--blk-banner-accent"] = accent;
+  if (height > 0) style.minHeight = `${height}px`;
   return (
     <div
       className="blk blk-banner"
-      // Set as a custom property rather than on each element: the CSS decides
-      // where the colour lands, so a theme can move it without touching this.
-      style={accent ? ({ "--blk-banner-accent": accent } as React.CSSProperties) : undefined}
+      {...(height > 0 ? { "data-tall": "" } : {})}
+      style={Object.keys(style).length ? (style as React.CSSProperties) : undefined}
     >
       <div className="blk-shell">
         {eyebrow && <span className="blk-banner-eyebrow">{eyebrow}</span>}
@@ -75,6 +93,7 @@ export const sectionBanner = defineBlock(
     props,
     memberSafe: true,
     styling: "tokens",
+    resize: { height: "height" },
   },
   SectionBanner,
   () => ({

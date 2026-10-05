@@ -22,6 +22,7 @@ export type ComposeKindId =
   | "event"
   | "meeting"
   | "workshop"
+  | "service"
   | "questionnaire"
   | "poll"
   | "art-piece"
@@ -120,6 +121,12 @@ export interface ComposeContext {
    * template).
    */
   workshopMode?: "route" | "dialog";
+  /**
+   * Whether this org (or person) offers services — sessions, readings,
+   * lessons someone books and pays for. Adds "Service", which writes a
+   * `threads` row of kind `service` plus its booking fields (2026-09-27).
+   */
+  hasServices?: boolean;
 
   // ── Passed through to the field builder ────────────────────────────────────
   // One context object rather than two: a hub describes its org once, and both
@@ -183,6 +190,15 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     writes: { table: "threads", kind: "workshop" },
     // Dated, and an org-wide commitment: same gate as an event.
     available: (ctx) => Boolean(ctx.hasWorkshops) && ctx.canPublishDated !== false,
+  },
+  {
+    id: "service",
+    title: "Service",
+    blurb: "A session, a reading, a lesson — booked and paid",
+    icon: "◇",
+    mode: "dialog",
+    writes: { table: "threads", kind: "service" },
+    available: (ctx) => ctx.canPublishContent !== false && Boolean(ctx.hasServices),
   },
   {
     id: "questionnaire",

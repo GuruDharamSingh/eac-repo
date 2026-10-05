@@ -7,7 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { deriveCookieDomain, resolveSupabasePublicConfig, getSupabaseServer } from './index';
+import { deriveCookieDomain, resolveSupabasePublicConfig, getSupabaseServer, invalidateSessionCache } from './index';
+import { ARRIVAL_COOKIE, SSO_COOKIE, markSignedOutEverywhere, ssoCookieValue } from './sso-state';
 
 type CookieToSet = {
   name: string;
@@ -109,11 +110,71 @@ export function createRouteSupabaseClient(request: NextRequest) {
   return { supabase, applyCookies };
 }
 
+export interface SignInOrgOptions {
+  /**
+   * Orgs every successful sign-in on this site joins when the account is not
+   * already in them. For per-org sites (IFAC): an existing network account
+   * that signs in there becomes one of that org's viewers, which is what puts
+   * it on the org's people list. Existing rows are left as they are, so a
+   * sign-in never changes anyone's role.
+   */
+  joinOrgs?: { id: string; role: string }[];
+}
+
+/**
+ * Add the membership and draft (unlisted) org profile rows a sign-in grants.
+ * Soft-fails: a database error here must not fail the sign-in itself.
+ */
+export async function joinOrgsOnSignIn(
+  authUserId: string,
+  orgs: { id: string; role: string }[] | undefined,
+  tag: string
+): Promise<void> {
+  if (!orgs?.length) return;
+  try {
+    const { db } = await import('@elkdonis/db');
+    // Same lookup as getServerSession: users.id is usually the GoTrue id, but
+    // some rows carry it in auth_user_id instead.
+    const [row] = await db<{ id: string }[]>`
+      SELECT id FROM users WHERE id = ${authUserId} OR auth_user_id = ${authUserId} LIMIT 1
+    `;
+    if (!row) return;
+    const userId = row.id;
+    for (const org of orgs) {
+      await db`
+        INSERT INTO user_organizations (user_id, org_id, role, joined_at)
+        VALUES (${userId}, ${org.id}, ${org.role}, NOW())
+        ON CONFLICT (user_id, org_id) DO NOTHING
+      `;
+      await db`
+        INSERT INTO org_profiles (org_id, user_id)
+        VALUES (${org.id}, ${userId})
+        ON CONFLICT (org_id, user_id) DO NOTHING
+      `;
+    }
+  } catch (dbError) {
+    console.error(`[${tag}] joinOrgs error:`, dbError);
+  }
+}
+
 /**
  * POST /api/auth/login
  * Handle email/password login server-side
+ *
+ * Takes the request only, so apps can `export { handleLogin as POST }` (Next
+ * passes the route context as a second argument). A site that joins signers-in
+ * to its org uses createLoginHandler instead.
  */
 export async function handleLogin(request: NextRequest) {
+  return login(request, {});
+}
+
+/** handleLogin with SignInOrgOptions bound — `export const POST = createLoginHandler({...})`. */
+export function createLoginHandler(options: SignInOrgOptions) {
+  return (request: NextRequest) => login(request, options);
+}
+
+async function login(request: NextRequest, options: SignInOrgOptions) {
   try {
     const { email, password } = await request.json();
 
@@ -136,6 +197,8 @@ export async function handleLogin(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    if (data.user) await joinOrgsOnSignIn(data.user.id, options.joinOrgs, 'AUTH');
 
     const response = NextResponse.json({
       user: data.user,
@@ -363,23 +426,16 @@ export async function handleSignup(
 
 /**
  * POST /api/auth/logout
- * Handle logout server-side
+ * Sign out everywhere on the network: GoTrue's global sign-out revokes every
+ * refresh token, and markSignedOutEverywhere makes every site's
+ * getServerSession refuse the access tokens it still holds (sso-state.ts).
  */
 export async function handleLogout(request: NextRequest) {
   try {
-    const { supabase, applyCookies } = createRouteSupabaseClient(request);
-    const { error } = await supabase.auth.signOut();
-
+    const { response, error } = await signOutEverywhere(request, NextResponse.json({ message: 'Logged out' }));
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error }, { status: 400 });
     }
-
-    const response = NextResponse.json({ message: 'Logged out' });
-    await applyCookies(response);
-
     return response;
   } catch (error: any) {
     console.error('Logout error:', error);
@@ -388,6 +444,50 @@ export async function handleLogout(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * GET /api/auth/logout?next=/path — the same sign-out for a plain link
+ * (`<a href="/api/auth/logout">`), landing on `next` (default `/`).
+ */
+export async function handleLogoutRedirect(request: NextRequest) {
+  const next = request.nextUrl.searchParams.get('next');
+  const path = next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/';
+  const fwdProto = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')).split(',')[0].trim();
+  const fwdHost = (request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host).split(',')[0].trim();
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  const target = `${fwdProto}://${fwdHost}${path.startsWith(base) ? path : `${base}${path}`}`;
+  try {
+    const { response } = await signOutEverywhere(request, NextResponse.redirect(target, 303));
+    return response;
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.redirect(target, 303);
+  }
+}
+
+async function signOutEverywhere(
+  request: NextRequest,
+  response: NextResponse
+): Promise<{ response: NextResponse; error: string | null }> {
+  const { supabase, applyCookies } = createRouteSupabaseClient(request);
+  const { data } = await supabase.auth.getSession();
+  const authUserId = data.session?.user?.id ?? null;
+
+  const { error } = await supabase.auth.signOut({ scope: 'global' });
+  if (authUserId) {
+    await markSignedOutEverywhere(authUserId);
+    await invalidateSessionCache(authUserId);
+  }
+  if (error && !authUserId) return { response, error: error.message };
+
+  await applyCookies(response);
+  const secure = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol).startsWith('https');
+  // Signed out on purpose: the arrival check (sso-proxy.ts) waits its normal
+  // interval before asking the network host again.
+  response.cookies.set(SSO_COOKIE, ssoCookieValue('a'), { path: '/', sameSite: 'lax', httpOnly: true, secure, maxAge: 60 * 60 * 24 });
+  response.cookies.set(ARRIVAL_COOKIE, '', { path: '/', maxAge: 0 });
+  return { response, error: null };
 }
 
 /**
@@ -438,6 +538,8 @@ export interface OAuthCallbackOptions {
    * previous default, `/feed?nc_connect=1`, 404s on the live site.
    */
   postSignupPath?: string;
+  /** Orgs every Google sign-in joins, new account or not — see SignInOrgOptions. */
+  joinOrgs?: { id: string; role: string }[];
 }
 
 export async function handleOAuthCallback(
@@ -588,6 +690,8 @@ export async function handleOAuthCallback(
       console.error('[oauth] Welcome email error:', emailError);
     }
   }
+
+  if (authUser?.id) await joinOrgsOnSignIn(authUser.id, options.joinOrgs, 'oauth');
 
   const rawDest = request.cookies.get('eac_pkce_dest')?.value;
   // Default new signups to /feed (inside the (app) layout, where the

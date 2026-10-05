@@ -38,6 +38,18 @@ export async function POST(
   if (!eligible.ok) return NextResponse.json({ error: eligible.error }, { status: 409 });
 
   await setRsvpStatus(id, viewer.userId, "yes");
+
+  // Joining a reading group opens its space, which needs a role in this org:
+  // give a signed-in person with none the `viewer` role (named explicitly —
+  // the column defaults to member). An existing role is never changed.
+  const [kind] = await db<{ kind: string }[]>`SELECT kind FROM threads WHERE id = ${id} AND org_id = ${siteConfig.orgId}`;
+  if (kind?.kind === "reading_group" && viewer.role === null) {
+    await db`
+      INSERT INTO user_organizations (user_id, org_id, role)
+      VALUES (${viewer.userId}, ${siteConfig.orgId}, 'viewer')
+      ON CONFLICT DO NOTHING
+    `.catch((err) => console.error("[fourthway] join-as-viewer:", err));
+  }
   return NextResponse.json({ ok: true, status: "yes" });
 }
 

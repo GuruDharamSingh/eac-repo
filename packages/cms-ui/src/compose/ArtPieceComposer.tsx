@@ -25,8 +25,9 @@ import { SurfaceFrame, useSurface } from "../surface";
  *   onSave     — the server action, and therefore the permission gate.
  *   media      — the picker, wired to that app's own upload endpoints.
  *
- * It saves a DRAFT. Price, store cut and publication involve an agreement
- * about money; none of that should follow from filling in a popup.
+ * What a save does is the host's call. `onSave` returning a `url` means the
+ * piece was published and the member is sent to it (IFAC, 2026-09-24); no
+ * `url` means it was kept as a draft and the popup just closes.
  */
 
 export interface ArtPieceInput {
@@ -55,7 +56,7 @@ export interface ArtPieceComposerProps {
   checkStore: () => Promise<ArtPieceStoreGate>;
   onSave: (
     input: ArtPieceInput
-  ) => Promise<{ ok: true; id?: string } | { ok: false; error: string }>;
+  ) => Promise<{ ok: true; id?: string; url?: string } | { ok: false; error: string }>;
   media: (props: {
     value?: string;
     onChange: (url: string) => void;
@@ -72,6 +73,8 @@ export interface ArtPieceComposerProps {
   }) => React.ReactNode;
   /** Where the store itself lives, for the "you have no store" case. */
   marketplaceUrl?: string;
+  /** True when `onSave` publishes the piece rather than keeping a draft. */
+  publishes?: boolean;
 }
 
 const KINDS = [
@@ -85,6 +88,7 @@ export function ArtPieceComposer({
   onSave,
   media,
   marketplaceUrl,
+  publishes = false,
 }: ArtPieceComposerProps) {
   const surfaces = useSurface();
   const [gate, setGate] = React.useState<ArtPieceStoreGate | null>(null);
@@ -140,6 +144,10 @@ export function ArtPieceComposer({
         return;
       }
       surfaces.connectors.onMutated?.();
+      if ("url" in result && result.url) {
+        window.location.assign(result.url);
+        return;
+      }
       surfaces.close();
     } catch {
       setProblem("Could not reach the server.");
@@ -190,7 +198,11 @@ export function ArtPieceComposer({
       title="Add a piece"
       kicker={gate.storeName ? `Into ${gate.storeName}` : "Your work"}
       status={
-        saving ? "Saving…" : "Saves as a draft — price and publish it in your store"
+        saving
+          ? publishes ? "Publishing…" : "Saving…"
+          : publishes
+            ? "Publishes to the marketplace and opens it there"
+            : "Saves as a draft — price and publish it in your store"
       }
     >
       <div className="eac-compose">
@@ -333,7 +345,9 @@ export function ArtPieceComposer({
             disabled={saving || !title.trim() || !imageUrl}
             aria-busy={saving}
           >
-            {saving ? "Saving…" : "Save the piece"}
+            {saving
+              ? publishes ? "Publishing…" : "Saving…"
+              : publishes ? "Publish the piece" : "Save the piece"}
           </button>
         </div>
       </div>

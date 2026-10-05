@@ -33,6 +33,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/artworks", label: "Artworks" },
     { href: "/admin/users", label: "Members" },
     { href: "/admin/money", label: "Money" },
+    { href: "/admin/pages", label: "Pages" },
+    { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/applications", label: "Applications", count: pendingApplications.length },
   ];
 

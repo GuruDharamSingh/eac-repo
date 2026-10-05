@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom";
 import { useGetPuck, createUsePuck, walkTree, type Data } from "@puckeditor/core";
 import type { BlockDef } from "@elkdonis/blocks";
+import { HeightHandle } from "./height-handle";
 
 // ============================================================================
 // Moving a picture by picking it up.
@@ -72,13 +73,15 @@ export function CanvasDrag({ id, def, isEditing, children }: CanvasDragProps) {
   // Only the SELECTED block gets handles. Overlays on every image would sit in
   // front of Puck's own hover and click targets and make the canvas unusable.
   const selectedId = usePuckSelector((s) => s.selectedItem?.props?.id as string | undefined);
-  const selected = isEditing && !!manipulate && selectedId === id;
+  const selected = isEditing && (!!manipulate || !!def.resize) && selectedId === id;
 
   if (!selected) return <>{children}</>;
   return (
     <>
       {children}
-      <DragHandles id={id} manipulate={manipulate!} />
+      {manipulate ? <DragHandles id={id} manipulate={manipulate} /> : null}
+      {/* A bar under the block to pull it taller — see height-handle.tsx. */}
+      {def.resize ? <HeightHandle id={id} def={def} /> : null}
     </>
   );
 }

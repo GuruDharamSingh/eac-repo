@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { ElementDoor } from './ElementDoor';
 import { ZodiacCeiling } from './ZodiacCeiling';
 import { CameraDirector } from './controls/CameraDirector';
-import { ReturnButton } from './ReturnButton';
 import { AirEastScene } from './scenes/AirEastScene';
 import { FireSouthScene } from './scenes/FireSouthScene';
 import { WaterWestScene } from './scenes/WaterWestScene';
@@ -22,47 +21,49 @@ function StoneRoom() {
 
   useFrame((_state, delta) => {
     elapsed.current += delta;
-    const target = phase === 'templeRoom' ? 1.2 : 0.4;
+    // Physical light units (three r155+): intensity is candela with
+    // inverse-square falloff, so values near 1 light nothing at 3 m.
+    const target = phase === 'templeRoom' ? 30 : 10;
     damp(lightRef.current, 'intensity', target, 0.5, delta);
   });
 
   return (
     <>
-      <ambientLight intensity={0.05} color="#402010" />
-      <pointLight ref={lightRef} position={[0, 3, 0]} intensity={0} color="#ffd090" distance={20} />
+      <ambientLight intensity={0.35} color="#806040" />
+      <pointLight ref={lightRef} position={[0, 3.5, 0]} intensity={0} color="#ffd090" distance={20} />
 
       {/* Torch lights at 4 walls */}
-      <pointLight position={[HALF - 0.5, 2.5, 0]} intensity={0.4} color="#ff9030" distance={8} />
-      <pointLight position={[-HALF + 0.5, 2.5, 0]} intensity={0.4} color="#ff9030" distance={8} />
-      <pointLight position={[0, 2.5, HALF - 0.5]} intensity={0.4} color="#ff9030" distance={8} />
-      <pointLight position={[0, 2.5, -HALF + 0.5]} intensity={0.4} color="#ff9030" distance={8} />
+      <pointLight position={[HALF - 0.5, 2.5, 0]} intensity={6} color="#ff9030" distance={8} />
+      <pointLight position={[-HALF + 0.5, 2.5, 0]} intensity={6} color="#ff9030" distance={8} />
+      <pointLight position={[0, 2.5, HALF - 0.5]} intensity={6} color="#ff9030" distance={8} />
+      <pointLight position={[0, 2.5, -HALF + 0.5]} intensity={6} color="#ff9030" distance={8} />
 
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
         <planeGeometry args={[HALF * 2, HALF * 2, 8, 8]} />
-        <meshStandardMaterial color="#2a1a0e" roughness={0.95} />
+        <meshStandardMaterial color="#5a4632" roughness={0.95} />
       </mesh>
 
       {/* 4 walls (inside-facing) */}
       {/* North */}
       <mesh position={[0, WALL_H / 2 - 0.5, -HALF]} rotation={[0, 0, 0]}>
         <planeGeometry args={[HALF * 2, WALL_H]} />
-        <meshStandardMaterial color="#1e140a" roughness={1} side={2} />
+        <meshStandardMaterial color="#4a3a2a" roughness={1} side={2} />
       </mesh>
       {/* South */}
       <mesh position={[0, WALL_H / 2 - 0.5, HALF]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[HALF * 2, WALL_H]} />
-        <meshStandardMaterial color="#1e140a" roughness={1} side={2} />
+        <meshStandardMaterial color="#4a3a2a" roughness={1} side={2} />
       </mesh>
       {/* East */}
       <mesh position={[HALF, WALL_H / 2 - 0.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[HALF * 2, WALL_H]} />
-        <meshStandardMaterial color="#1e140a" roughness={1} side={2} />
+        <meshStandardMaterial color="#4a3a2a" roughness={1} side={2} />
       </mesh>
       {/* West */}
       <mesh position={[-HALF, WALL_H / 2 - 0.5, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[HALF * 2, WALL_H]} />
-        <meshStandardMaterial color="#1e140a" roughness={1} side={2} />
+        <meshStandardMaterial color="#4a3a2a" roughness={1} side={2} />
       </mesh>
     </>
   );
@@ -77,11 +78,11 @@ export function TempleRoom() {
         <ZodiacCeiling />
       </Suspense>
 
-      {/* Air — East (+X wall) */}
+      {/* Air — East (+X wall); green per the developer's door scheme */}
       <ElementDoor
         direction="east"
-        color="#d4b800"
-        position={[HALF, 1.0, 0]}
+        color="#2e8b3a"
+        position={[HALF, 1.5, 0]}
         rotation={[0, -Math.PI / 2, 0]}
       >
         <AirEastScene />
@@ -91,7 +92,7 @@ export function TempleRoom() {
       <ElementDoor
         direction="south"
         color="#cc2200"
-        position={[0, 1.0, HALF]}
+        position={[0, 1.5, HALF]}
         rotation={[0, Math.PI, 0]}
       >
         <FireSouthScene />
@@ -101,7 +102,7 @@ export function TempleRoom() {
       <ElementDoor
         direction="west"
         color="#004488"
-        position={[-HALF, 1.0, 0]}
+        position={[-HALF, 1.5, 0]}
         rotation={[0, Math.PI / 2, 0]}
       >
         <WaterWestScene />
@@ -111,13 +112,11 @@ export function TempleRoom() {
       <ElementDoor
         direction="north"
         color="#111111"
-        position={[0, 1.0, -HALF]}
+        position={[0, 1.5, -HALF]}
         rotation={[0, 0, 0]}
       >
         <EarthNorthScene />
       </ElementDoor>
-
-      <ReturnButton />
     </>
   );
 }

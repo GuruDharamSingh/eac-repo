@@ -31,6 +31,7 @@ import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
 import { termHref, threadHref } from "@/lib/gather";
 import { CycleBadge } from "@elkdonis/blocks";
+import { AnalyticsThread } from "@elkdonis/analytics/thread";
 
 interface ThreadPageProps {
   params: Promise<{ feed: string; slug: string }>;
@@ -97,6 +98,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           title={thread.title}
           lede={thread.excerpt}
           bodyHtml={thread.description ?? ""}
+          threadId={thread.id}
           authorName={thread.authorName}
           publishedAt={thread.publishedAt}
           kindLabel="Writing"
@@ -189,6 +191,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
       className="mx-auto max-w-5xl px-5 py-10"
       style={accent ? ({ ["--feed" as string]: `hsl(${accent})` } as React.CSSProperties) : undefined}
     >
+      <AnalyticsThread id={thread.id} />
       <SurfacePage
         kind={thread.kind}
         title={thread.title}

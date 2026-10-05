@@ -343,3 +343,20 @@ html:has(.ifac-hub-scope) {
 .ifac-hub-scope:not([data-hub-skin="salon"]) {
   --eac-surface-on-accent: #ffffff;
 }
+
+/* ── 8. The writing room's preview ────────────────────────────────────── */
+/* The preview pane (packages/cms-ui writing-room.tsx) is paper (#fffdf8),
+   but ArticleView takes its ink from --read-*, which fall back to the dark
+   chrome's #e8e3e4. Title and labels measured 1.2:1 and body text #8f888a
+   ("beige on beige", reported 2026-09-26). Pin the light-hub ink on the pane
+   itself, unscoped because the popup version portals outside
+   `.ifac-hub-scope`. The published page keeps the dark reading theme.
+   Ink 17.8:1, muted 8.6:1, faint 5.4:1, accent 6.6:1 on #fffdf8. */
+.eac-write-preview {
+  --read-ink: var(--ink, #171615);
+  --read-muted: var(--ink-soft, #4f4a44);
+  --read-faint: #6b645c;
+  --read-rule: #d8d0c2;
+  --read-accent: var(--oxide, #9a3f2f);
+  color: var(--read-ink);
+}

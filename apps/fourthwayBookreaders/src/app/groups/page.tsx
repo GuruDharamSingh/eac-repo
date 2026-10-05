@@ -6,6 +6,7 @@ import { threadHref } from "@/components/thread-card";
 import { formatDay } from "@/lib/format";
 import { ThreadCard } from "@/components/thread-card";
 import { Invitation } from "@/components/home/bands";
+import { getPaathReader } from "@/lib/paath";
 
 export const metadata: Metadata = { title: "Reading groups" };
 
@@ -16,6 +17,8 @@ export default async function GroupsPage() {
     getFinishedGroups(12),
   ]);
   const readers = await Promise.all(groups.map((g) => getAttendanceCount(g.id)));
+  // Private: shown only to its readers (src/lib/paath.ts).
+  const paath = await getPaathReader().catch(() => null);
   // One-off gatherings (a talk, a visit) sit under the groups, not among them.
   const others = upcoming.filter((t) => t.kind !== READING_GROUP_KIND);
   return (
@@ -53,6 +56,24 @@ export default async function GroupsPage() {
           )}
         </div>
         <div>
+          {paath && (
+            <div className="card" style={{ marginBottom: 24 }}>
+              <p className="eyebrow">{paath.circle.isPrivate ? "Private · only its readers see this" : "Reading now"}</p>
+              <h2 className="card__title">Akhand Path</h2>
+              <p className="card__body">A complete reading of the Sri Guru Granth Sahib, passage by passage, day by day.</p>
+              <div className="card__actions">
+                <Link href="/akhand-path" className="btn btn--primary">Continue reading</Link>
+              </div>
+            </div>
+          )}
+          <div className="card" style={{ marginBottom: 24 }}>
+            <p className="eyebrow">Read online</p>
+            <h2 className="card__title">Sri Guru Granth Sahib</h2>
+            <p className="card__body">The whole Granth, Ang by Ang, in Gurmukhi with an English translation.</p>
+            <div className="card__actions">
+              <Link href="/granth" className="btn">Open the Granth</Link>
+            </div>
+          </div>
           <Invitation />
           <div className="card" id="host" style={{ marginTop: 24, scrollMarginTop: 90 }}>
             <h2 className="card__title">Host a session</h2>

@@ -1,0 +1,33 @@
+{
+  "name": "@elkdonis/astro-corpus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Astro Studio: factor registry, text tagger, corpus import and review data for training an astrologer AI",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "tsx scripts/smoke.ts",
+    "scan:aspects": "tsx scripts/scan-aspects.ts",
+    "extract:questions": "tsx scripts/extract-questions.ts",
+    "seed:factors": "tsx scripts/seed-factors.ts",
+    "import:hf": "tsx scripts/import-hf.ts",
+    "build:tagger": "node scripts/build-tagger.mjs",
+    "tag:jsonl": "tsx scripts/tag-jsonl.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@elkdonis/astro": "workspace:*",
+    "@elkdonis/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "esbuild": "0.25.10",
+    "tsx": "^4.19.1",
+    "typescript": "^5"
+  }
+}

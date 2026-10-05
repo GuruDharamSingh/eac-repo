@@ -11,10 +11,13 @@ import type {
   SurfacePresenceCell,
   SurfacePresenceColumn,
   SurfacePresenceRow,
+  SurfaceListablePost,
+  SurfaceListingOrg,
 } from "../types";
 import { useLayer, useSurface } from "../context";
 import { SurfaceFrame, SurfaceSkeleton } from "../SurfaceShell";
 import { serializeDescriptor, urlWithSurface, SURFACE_PARAM } from "../url";
+import { ConnectionsPanel } from "../ConnectionsPanel";
 
 // ============================================================================
 // The flip side of a profile card — and, on your own card, the control panel.
@@ -83,6 +86,7 @@ const TAB_LABEL: Record<SurfaceProfileTab, string> = {
   show: "Where you show",
   page: "Page",
   payouts: "Payouts",
+  connections: "Connections",
 };
 
 type CardDraft = {
@@ -230,6 +234,11 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   >(null);
   const presenceConnectors = !target ? connectors.profile?.presence : undefined;
   const [presence, setPresence] = React.useState<SurfacePresence | null>(null);
+  // "Show on": which org sites list each public post. Own profile only.
+  const listingsConnectors = !target ? connectors.profile?.listings : undefined;
+  const [listings, setListings] = React.useState<{ posts: SurfaceListablePost[]; orgs: SurfaceListingOrg[] } | null>(
+    null
+  );
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -253,13 +262,15 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
       // The page panel loads alongside and fails soft on its own: the card is
       // the point, and a panel that cannot load must not take it down. It is
       // awaited so a link to the Page tab does not flash the Profile tab first.
-      const [p, pg, pr] = await Promise.all([
+      const [p, pg, pr, ls] = await Promise.all([
         connectors.profile.load(target),
         pageConnectors ? pageConnectors.load().catch(() => null) : Promise.resolve(null),
         presenceConnectors ? presenceConnectors.load().catch(() => null) : Promise.resolve(null),
+        listingsConnectors ? listingsConnectors.load().catch(() => null) : Promise.resolve(null),
       ]);
       setPage(pg);
       setPresence(pr);
+      setListings(ls);
       if (!p) {
         setState("missing");
         return;
@@ -335,9 +346,13 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
   // top of "show" (see pagePanel calls below) — just not under its own tab.
   const hasPage = Boolean(own && page && page.sections.length > 0);
   const hasPresence = Boolean(own && presence && presence.rows.length > 0);
-  if (hasPage || hasPresence) tabs.push("show");
+  // Only when there is a post and a second site to show it on.
+  const hasListings = Boolean(own && listings && listings.posts.length > 0 && listings.orgs.length > 0);
+  if (hasPage || hasPresence || hasListings) tabs.push("show");
   if (own && page?.payouts) tabs.push("payouts");
   if (hasDetails) tabs.push("details");
+  // Connections (migration 192): the person's own YouTube links.
+  if (own && connectors.profile?.connections) tabs.push("connections");
   const current: SurfaceProfileTab = tabs.includes(tab) ? tab : "profile";
 
   function selectTab(next: SurfaceProfileTab) {
@@ -1003,6 +1018,84 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
     );
   }
 
+  // ── Show on ──────────────────────────────────────────────────────────────
+  async function toggleListing(post: SurfaceListablePost, orgId: string, on: boolean) {
+    if (!listingsConnectors) return;
+    const key = `listing|${post.id}`;
+    const next = on ? [...post.listedOn.filter((x) => x !== orgId), orgId] : post.listedOn.filter((x) => x !== orgId);
+    setBusyKey(key);
+    setNotice(null);
+    const result = await listingsConnectors
+      .set(post.id, next)
+      .catch(() => ({ ok: false, error: "Could not save that." }));
+    setBusyKey(null);
+    if (!result.ok) {
+      fail(result.error || "Could not save that.");
+    } else {
+      setTone("normal");
+      setNotice("Saved");
+    }
+    // Re-read either way: a partial refusal leaves earlier changes applied.
+    listingsConnectors.load().then(setListings).catch(() => {});
+    connectors.onMutated?.();
+  }
+
+  function listingsPanel() {
+    if (!listings || listings.posts.length === 0 || listings.orgs.length === 0) return null;
+    const { posts, orgs } = listings;
+    return (
+      <section aria-labelledby="eac-show-on-head" className="grid gap-3">
+        <h3 id="eac-show-on-head" className="text-[0.95rem] font-semibold">
+          Show your posts on
+        </h3>
+        <p className="text-[0.9rem] text-[color:var(--sf-muted)]">
+          A post always shows where it was made. Tick another site to list it on your page there too. Only public posts
+          can be listed; it does not change who can read them.
+        </p>
+        <ul className="m-0 grid list-none gap-0 p-0">
+          {posts.map((post) => {
+            const busy = busyKey === `listing|${post.id}`;
+            return (
+              <li key={post.id} className="border-b border-[color:var(--sf-line)] py-3 last:border-b-0">
+                <div className="mb-1 text-[0.95rem] font-semibold leading-snug">{post.title || "Untitled"}</div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {!orgs.some((o) => o.orgId === post.homeOrgId) && (
+                    <label className="inline-flex items-center gap-2 text-[0.88rem] text-[color:var(--sf-muted)]">
+                      <input type="checkbox" checked disabled readOnly />
+                      {post.homeOrgName} <span className="text-[0.78rem]">(home)</span>
+                    </label>
+                  )}
+                  {orgs.map((o) => {
+                    const home = o.orgId === post.homeOrgId;
+                    const checked = home || post.listedOn.includes(o.orgId);
+                    return (
+                      <label
+                        key={o.orgId}
+                        className={
+                          "inline-flex items-center gap-2 text-[0.88rem]" +
+                          (home ? " text-[color:var(--sf-muted)]" : "")
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={home || busy}
+                          onChange={(e) => void toggleListing(post, o.orgId, e.target.checked)}
+                        />
+                        {o.name}
+                        {home && <span className="text-[0.78rem]">(home)</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  }
+
   function pagePanel(inline: boolean, includePayouts: boolean = inline) {
     if (!page || page.sections.length === 0) return null;
     return (
@@ -1226,10 +1319,25 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
       <div className="grid gap-6">
         {pagePanel(true, false)}
         {presencePanel()}
+        {listingsPanel()}
       </div>
     );
   else if (current === "details") body = detailsForm;
   else if (current === "payouts") body = payoutsPanel(false);
+  else if (current === "connections" && connectors.profile?.connections)
+    body = (
+      <ConnectionsPanel
+        api={connectors.profile.connections}
+        // Back to this tab after Google: the address with the tab in it.
+        returnTo={typeof window === "undefined" ? undefined : window.location.origin + urlWithSurface(serializeDescriptor({ type: "profile", tab: "connections" }))}
+        intro={
+          <p className={HINT}>
+            Your own accounts on outside services. A YouTube connection lets recordings of your groups go to your
+            channel. You create the Google Cloud client yourself, so uploads count against your project.
+          </p>
+        }
+      />
+    );
   else
     body = (
       <div className="grid gap-4">

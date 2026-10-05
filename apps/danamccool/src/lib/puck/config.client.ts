@@ -7,6 +7,11 @@ import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { ArtworkPickerField } from "@/components/studio/artwork-picker";
 import { GalleryPickerField } from "@/components/studio/gallery-picker";
 import { GalleryPicturesField } from "@/components/studio/gallery-pictures-field";
+import { TextStyleField } from "@/components/studio/text-style-field";
+import { PageLinkField, TileKeyField } from "@/components/studio/tile-fields";
+import { TileArrangeField } from "@/components/studio/tile-arrange-field";
+import { TextStyleWrap } from "@/lib/puck/text-style";
+import { RecordPickerField } from "@/components/studio/record-picker";
 import { SITE_BLOCKS } from "@/blocks";
 import { PAGE_SETTINGS, PageSettingsWrap } from "@/lib/puck/page-settings";
 import { boundIds } from "@/blocks/binding-ids";
@@ -50,6 +55,13 @@ async function fetchBound(props: Record<string, unknown>) {
 }
 
 const clientResolvers: BlockResolvers = {
+  // A Card's "Filled from (live)", over HTTP — see lib/card-records.ts.
+  "feature-card": async (props) => ({
+    bound:
+      typeof props.record === "string" && props.record
+        ? await getJson(`/api/blocks/card-record?ref=${encodeURIComponent(props.record)}`, "record", null)
+        : null,
+  }),
   "thread-feed": async (props) => {
     const params = new URLSearchParams();
     if (typeof props.limit === "number") params.set("limit", String(props.limit));
@@ -115,6 +127,15 @@ export const puckConfig = buildEditorConfig({
   blocks: [...SHARED_BLOCKS, ...SITE_BLOCKS],
   // The page's own settings (fonts) — see lib/puck/page-settings.tsx.
   root: { props: PAGE_SETTINGS, wrap: PageSettingsWrap },
+  // Every block's "Text style", at the foot of its fields. The same wrap as
+  // config.server.ts, so the canvas and the published page agree.
+  blockStyle: {
+    name: "textStyle",
+    field: function TextStyleProp(props: Record<string, unknown>) {
+      return createElement(TextStyleField, props as never);
+    },
+    wrap: TextStyleWrap,
+  },
   fields: {
     // A string that BINDS to a record gets a picker for that record; every
     // other string keeps Puck's own text box (null = leave it alone).
@@ -134,6 +155,22 @@ export const puckConfig = buildEditorConfig({
           : prop.binds === "gallery-pictures"
             ? function GalleryPicturesProp(props: Record<string, unknown>) {
                 return createElement(GalleryPicturesField, props as never);
+              }
+          : prop.binds === "record"
+            ? function RecordProp(props: Record<string, unknown>) {
+                return createElement(RecordPickerField, props as never);
+              }
+          : prop.binds === "page-link"
+            ? function PageLinkProp(props: Record<string, unknown>) {
+                return createElement(PageLinkField, props as never);
+              }
+          : prop.binds === "tile-key"
+            ? function TileKeyProp(props: Record<string, unknown>) {
+                return createElement(TileKeyField, props as never);
+              }
+          : prop.binds === "tile-layout"
+            ? function TileLayoutProp(props: Record<string, unknown>) {
+                return createElement(TileArrangeField, props as never);
               }
             : null,
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { FieldLabel, useGetPuck } from "@puckeditor/core";
+import { useFocusedItem } from "@elkdonis/page-builder";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MediaBrowser } from "@elkdonis/cms-ui/files";
 import {
@@ -30,6 +31,10 @@ import {
 //                   that stays in this gallery — or change what is in one.
 //   Pictures        every picture as a card: the picture, its title and its
 //                   caption, edited in place.
+//
+// A click on one picture in the grid on the canvas opens just that picture's
+// card here, with ‹ › to step through the gallery in grid order
+// (useFocusedItem; the tile marks itself in gallery-grid.client.tsx).
 //
 // Everything is written to the GALLERY as it happens (not on Publish): the
 // words and groupings belong to the pictures, and every page showing the
@@ -118,7 +123,7 @@ export function GalleryPicturesField({ field }: { field?: { label?: string } }) 
   );
 
   const saveText = useCallback(
-    async (item: HudItem, patch: { title?: string; subtitle?: string }) => {
+    async (item: HudItem, patch: { title?: string; subtitle?: string; link?: string }) => {
       if (!galleryId) return;
       const res = await updateGalleryItemTextAction(galleryId, item.key, patch);
       if ("error" in res) return setNote({ text: res.error, error: true });
@@ -131,6 +136,25 @@ export function GalleryPicturesField({ field }: { field?: { label?: string } }) 
 
   const byId = useMemo(() => new Map(galleries.map((g) => [g.id, g])), [galleries]);
   const subs = useMemo(() => (items ?? []).filter((i) => i.opens), [items]);
+
+  // The picture clicked on the canvas, when there is one and it is in this gallery.
+  const focused = useFocusedItem();
+  const at = focused && items ? items.findIndex((i) => i.key === focused.key) : -1;
+
+  const card = (it: HudItem) => (
+    <PictureCard
+      key={it.key}
+      item={it}
+      opensTitle={it.opens ? byId.get(it.opens)?.title : undefined}
+      onText={(patch) => void saveText(it, patch)}
+      onRemove={async () => {
+        if (!galleryId) return;
+        if (!window.confirm(`Take “${it.title || "this picture"}” out of ${galleryTitle}? The file stays in storage.`)) return;
+        const res = await removeGalleryPicturesAction(galleryId, [it.key]);
+        await after(res, "Taken out of the gallery.");
+      }}
+    />
+  );
 
   const shown = (items ?? []).filter((i) => {
     const q = query.trim().toLowerCase();
@@ -152,6 +176,31 @@ export function GalleryPicturesField({ field }: { field?: { label?: string } }) 
           </p>
         ) : items === null ? (
           <p className="dm-gp-muted">Loading…</p>
+        ) : focused && at >= 0 ? (
+          <section className="dm-gp-section">
+            <div className="dm-gp-step">
+              <button
+                type="button"
+                aria-label="Previous picture"
+                disabled={at === 0}
+                onClick={() => focused.open(items[at - 1]!.key)}
+              >
+                ‹
+              </button>
+              <span>
+                Picture {at + 1} of {items.length} in <strong>{galleryTitle}</strong>
+              </span>
+              <button
+                type="button"
+                aria-label="Next picture"
+                disabled={at >= items.length - 1}
+                onClick={() => focused.open(items[at + 1]!.key)}
+              >
+                ›
+              </button>
+            </div>
+            <ul className="dm-gp-cards">{card(items[at]!)}</ul>
+          </section>
         ) : (
           <>
             <p className="dm-gp-muted">
@@ -227,22 +276,7 @@ export function GalleryPicturesField({ field }: { field?: { label?: string } }) 
                 aria-label="Find a picture"
                 className="dm-gp-input"
               />
-              <ul className="dm-gp-cards">
-                {shown.map((it) => (
-                  <PictureCard
-                    key={it.key}
-                    item={it}
-                    opensTitle={it.opens ? byId.get(it.opens)?.title : undefined}
-                    onText={(patch) => void saveText(it, patch)}
-                    onRemove={async () => {
-                      if (!galleryId) return;
-                      if (!window.confirm(`Take “${it.title || "this picture"}” out of ${galleryTitle}? The file stays in storage.`)) return;
-                      const res = await removeGalleryPicturesAction(galleryId, [it.key]);
-                      await after(res, "Taken out of the gallery.");
-                    }}
-                  />
-                ))}
-              </ul>
+              <ul className="dm-gp-cards">{shown.map(card)}</ul>
             </section>
           </>
         )}
@@ -261,7 +295,7 @@ function PictureCard({
 }: {
   item: HudItem;
   opensTitle?: string;
-  onText: (patch: { title?: string; subtitle?: string }) => void;
+  onText: (patch: { title?: string; subtitle?: string; link?: string }) => void;
   onRemove: () => void;
 }) {
   return (
@@ -298,6 +332,20 @@ function PictureCard({
             onBlur={(e) => {
               const v = e.target.value.trim();
               if (v !== (item.subtitle ?? "")) onText({ subtitle: v });
+            }}
+          />
+        </label>
+        <label>
+          <span>Links to</span>
+          <input
+            type="text"
+            inputMode="url"
+            className="dm-gp-input"
+            defaultValue={item.link ?? ""}
+            placeholder="/about or https://… — empty: opens full size"
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v !== (item.link ?? "")) onText({ link: v });
             }}
           />
         </label>

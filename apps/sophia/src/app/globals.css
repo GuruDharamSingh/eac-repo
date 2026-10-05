@@ -4,5 +4,5 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: #f6f3ec; }
-@media (prefers-color-scheme: dark) { body { background: #0e1422; } }
+/* The newsroom sheet sits on the same ground as arts-collective.com. */
+body { margin: 0; background: #c8c0b0; }

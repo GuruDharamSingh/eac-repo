@@ -323,6 +323,10 @@ export {
 } from './org-membership';
 export type { OrgRole, OrgMembership, OrgMember, OrgFollower } from './org-membership';
 
+// Signed-in arrivals through the network SSO handoff (migration 164).
+export { listOrgArrivals } from './network-arrivals';
+export type { OrgArrival } from './network-arrivals';
+
 // Authorization for /api/media/* reads. The single Nextcloud service account
 // means storage-layer ACLs cannot enforce per-user rules on app traffic —
 // this is where that enforcement lives. See media-authz.ts.
@@ -348,6 +352,24 @@ export {
   USER_MEDIA_FOLDERS,
 } from './user-storage';
 export type { UserFile, UserMediaFolder, UploadResult } from './user-storage';
+
+// "Gain your space": oad membership marks an artist of the collective; also
+// lists them on ArtDirect, files their artist profile and creates storage.
+export { gainSpace, hasGainedSpace, ARTIST_SPACE_ORG_ID } from './artist-space';
+export { markArtist, markArtistByFolder } from './artist-membership';
+// A person's own offerings on ArtDirect (meeting, service), homed in oad.
+export {
+  OFFERING_KINDS,
+  isOfferingKind,
+  saveOffering,
+  setOfferingStatus,
+  setFeaturedOffering,
+  listOfferings,
+  getFeaturedOffering,
+  getOwnOffering,
+} from './artist-offerings';
+export type { Offering, OfferingInput, OfferingKind, OfferingSaveResult } from './artist-offerings';
+export type { GainSpaceResult } from './artist-space';
 
 // Where an org lives — its verified primary custom domain from org_domains,
 // or null when it sits at its network subdomain. Data only; URL assembly is
@@ -382,6 +404,10 @@ export {
   listAllServiceOfferingsForOrg,
   upsertServiceOffering,
   deleteServiceOffering,
+  serviceInputFromAnswers,
+  serviceAnswersFromOffering,
+  validateServiceInput,
+  servicePriceLabel,
 } from './service-offerings';
 export type {
   ServiceOffering,
@@ -615,7 +641,7 @@ export {
   uploadOrgFile,
 } from './org-storage';
 export type { OrgFile, OrgMediaFolder, OrgUploadResult } from './org-storage';
-export { davListDeep } from './dav';
+export { davListDeep, davList, davMkcol, davMove, davPut, davUrl, davAuthHeader } from './dav';
 export type { DavEntry } from './dav';
 
 // One implementation of "serve a media file from Nextcloud": prefix check,
@@ -727,6 +753,7 @@ export {
   deleteUserGallery,
   reorderUserGalleries,
   asGalleryItems,
+  cleanGalleryLink,
 } from './galleries';
 export type {
   UserGallery,
@@ -834,6 +861,7 @@ export {
   createWritingPost,
   updateWritingPost,
   deleteWritingPost,
+  listWritingSeries,
 } from './writing';
 export type {
   WritingPost,
@@ -844,6 +872,10 @@ export type {
   CreateWritingInput,
   UpdateWritingInput,
   WritingResult,
+  WritingLayout,
+  WritingByline,
+  WritingSeo,
+  WritingVideo,
 } from './writing';
 
 // The rota on a recurring gathering: who is running which occurrence, what
@@ -925,7 +957,7 @@ export { listNcCategories, moveNcThreadsToOrg } from './nc-forum';
 
 // Where you show — a person's own switches for where they appear (Brief A
 // slice 2). Self only; see presence.ts for the column behind each cell.
-export { loadPresence, setPresence, listListingRequests, decideListingRequest } from './presence';
+export { loadPresence, setPresence, listListingRequests, decideListingRequest, PRESENCE_ROW_KEYS } from './presence';
 export type {
   Presence,
   PresenceColumn,
@@ -936,6 +968,40 @@ export type {
   SetPresenceResult,
   ListingRequest,
 } from './presence';
+
+// Person pages (2026-09-26): one network profile presented per org — per-org
+// section switches and per-post listings. docs/open/PERSON_PAGES_BRIEF_2026-09-26.md.
+export {
+  PERSONAL_ORG_ID,
+  listedOnClause,
+  isListedOn,
+  listListableOrgs,
+  listThreadListings,
+  setThreadListing,
+  setThreadListings,
+} from './thread-listing';
+export type { ListingOrg, ListingResult } from './thread-listing';
+export {
+  PERSON_SECTIONS,
+  PERSON_SECTION_LABELS,
+  SERVICE_KINDS,
+  offeredSections,
+  resolvePersonSections,
+  setPersonOrgSection,
+  setPersonSectionOrder,
+  listPersonThreads,
+  personThreadHref,
+  getPersonPage,
+  listMyListablePosts,
+} from './person-page';
+export type {
+  PersonSection,
+  PersonSectionState,
+  PersonThread,
+  PersonPageData,
+  GetPersonPageOptions,
+  MyListablePost,
+} from './person-page';
 
 // Video pipelines (migration 147): a Nextcloud drop folder in, an edited video
 // out. The ffmpeg half is `@elkdonis/services/video-render`, worker only.
@@ -992,6 +1058,7 @@ export type { ReviewDecision, PendingThread, ReviewedThread } from './moderation
 // (store panels, to start). Two gates, not one — see user-pages.ts.
 export {
   orgHostsStorePanels,
+  publishesWithoutReview,
   setOrgStorePanels,
   submitUserPage,
   listPendingUserPages,
@@ -1015,3 +1082,84 @@ export {
   syncEditorWriteAccess,
 } from './org-calendar-sync';
 export type { CalendarSyncReport } from './org-calendar-sync';
+
+// Reading circles (migration 165): a circle's plan of units, where each
+// sitting stopped, the projected timeline, and its folder/Talk room/feed.
+// See reading-circle.ts.
+export {
+  CIRCLE_UNIT_KINDS,
+  CIRCLE_UNIT_STATUSES,
+  CIRCLE_MATERIAL,
+  CIRCLE_RECORDINGS,
+  listCircleUnits,
+  addCircleUnits,
+  updateCircleUnit,
+  removeCircleUnit,
+  moveCircleUnit,
+  listCircleSessions,
+  getCircleResume,
+  recordCircleStop,
+  projectCircleTimeline,
+  baselineCircleTargets,
+  ensureCircleSpace,
+  circleMeta,
+  circleFolderName,
+  formatCirclePosition,
+  parseCirclePosition,
+  circleOccurrenceNumber,
+  listCircleSessionTopics,
+  ensureCircleSessionTopic,
+  ensureCircleSessionDocument,
+  circleSessionFolderName,
+  setCircleSessionNotes,
+  setCircleSessionPlan,
+  setCircleSchedule,
+  updateCircleMeta,
+  setCircleCover,
+} from './reading-circle';
+export type {
+  CircleUnit,
+  CircleUnitKind,
+  CircleUnitStatus,
+  CircleLengthUnit,
+  NewCircleUnit,
+  CircleSession,
+  CircleResume,
+  CircleTimeline,
+  CircleMeta,
+  CircleSessionTopic,
+} from './reading-circle';
+
+// Reading circles: auto-record the call once two people are in it during a
+// session, and file the recording into the session folder. See circle-recording.ts.
+export { runCircleRecordingTick, fileCircleRecordings } from './circle-recording';
+export type { CircleRecordingReport } from './circle-recording';
+
+// Connections: a person's own OAuth links (YouTube first), migration 192. See connections.ts.
+export {
+  listConnections,
+  getConnection,
+  describeConnection,
+  createConnection,
+  updateConnection,
+  deleteConnection,
+  checkConnection,
+  beginConnectionAuth,
+  completeConnectionAuth,
+  connectionIdFromState,
+  getConnectionAccessToken,
+  connectionRedirectUri,
+  connectionStartUrl,
+  connectionsHandlers,
+  CONNECTION_PROVIDERS,
+} from './connections';
+export type { UserConnection, ConnectionProvider, ConnectionStatus, ConnectionResult } from './connections';
+
+// Where a thread's recordings are published (threads.metadata.publish). See publish-target.ts.
+export { getPublishTarget, setPublishTarget } from './publish-target';
+export type { PublishTargetView, YoutubePublishTarget, PublishPrivacy, PublishMode } from './publish-target';
+
+// Recordings to YouTube: the queue (migration 193). The uploader itself
+// (youtube-uploader.ts) is worker only and not exported here.
+export { listThreadUploads, actOnUpload, scanYoutubeUploads, RECORDINGS_FOLDER } from './youtube-uploads';
+export type { VideoUpload, VideoUploadStatus } from './youtube-uploads';

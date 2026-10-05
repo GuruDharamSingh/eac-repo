@@ -26,6 +26,8 @@ import {
   type DropSightings,
 } from '../src/video-pipeline.ts';
 import { ffmpegAvailable, processVideoJob } from '../src/video-render.ts';
+import { claimNextUpload, requeueStaleUploads, scanYoutubeUploads } from '../src/youtube-uploads.ts';
+import { processUpload } from '../src/youtube-uploader.ts';
 
 const SCAN_MS = Number(process.env.VIDEO_SCAN_SECONDS || 60) * 1000;
 const once = process.argv.includes('--once');
@@ -62,6 +64,25 @@ async function drain(): Promise<void> {
   }
 }
 
+// Recordings to YouTube (migration 193): find new files under publishing
+// threads, then upload what is queued, one at a time, after the encodes.
+async function scanUploads(): Promise<void> {
+  try {
+    const r = await scanYoutubeUploads();
+    if (r.added) log(`[upload] ${r.added} new recording(s) found across ${r.threads} thread(s)`);
+  } catch (err) {
+    log('[upload] scan failed:', err);
+  }
+}
+
+async function drainUploads(): Promise<void> {
+  while (!stopping) {
+    const job = await claimNextUpload();
+    if (!job) return;
+    await processUpload(job, log);
+  }
+}
+
 async function main() {
   const version = await ffmpegAvailable();
   if (!version) {
@@ -73,10 +94,14 @@ async function main() {
   // Single worker: anything 'processing' at start was ours and died with us.
   const requeued = await requeueStaleVideoJobs(0);
   if (requeued) log(`[video] requeued ${requeued} interrupted job(s)`);
+  const requeuedUploads = await requeueStaleUploads(0);
+  if (requeuedUploads) log(`[upload] requeued ${requeuedUploads} interrupted upload(s)`);
 
   for (;;) {
     await scanAll();
     await drain();
+    await scanUploads();
+    await drainUploads();
     if (once || stopping) break;
     await new Promise((r) => setTimeout(r, SCAN_MS));
     if (stopping) break;

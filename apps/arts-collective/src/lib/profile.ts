@@ -47,6 +47,8 @@ export type ArtistProfileRow = {
   biz_skill_share: string | null;
   biz_main_barrier: string | null;
   biz_revenue_goal: string | null;
+
+  updated_at: Date | null;
 };
 
 /**

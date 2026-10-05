@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Puck, type Config, type Data, type Plugin, type Viewports } from "@puckeditor/core";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Button, Puck, useGetPuck, walkTree, type Config, type Data, type Plugin, type Viewports } from "@puckeditor/core";
+import { textToHtml } from "@elkdonis/blocks";
 // The declared public specifier, not the deep dist path — both resolve today,
 // only one is a promise.
 import "@puckeditor/core/puck.css";
@@ -10,6 +11,8 @@ import "@puckeditor/core/puck.css";
 // the canvas iframe — see editor.css for what it fixes.
 import "./editor.css";
 import { blockDescription, resolverKeysFor } from "./config";
+import { FocusedFields, ItemPicker } from "./drag/item-focus";
+import { CanvasMenu } from "./drag/canvas-menu";
 
 /**
  * The editor.
@@ -57,11 +60,20 @@ export interface PuckEditorProps {
    * never going to have.
    */
   viewports?: Viewports;
+  /**
+   * Save without publishing. When given, the header gets a "Save draft"
+   * button beside Publish, for a host whose Publish goes live at once
+   * (ArtDirect's person pages) and so needs a way to keep work that is not
+   * ready. Omitted, the header is unchanged and Publish is the only save.
+   */
+  onSaveDraft?: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>;
+  /** Status shown after a successful Publish. Default "Published". */
+  publishedLabel?: string;
 }
 
 export function PuckEditor({
   slug,
-  initial,
+  initial: stored,
   config,
   metadata,
   onPublish,
@@ -69,7 +81,13 @@ export function PuckEditor({
   plugins,
   title,
   viewports,
+  onSaveDraft,
+  publishedLabel = "Published",
 }: PuckEditorProps) {
+  // Plain-text bodies from before a prop became rich, as paragraphs the rich
+  // editor can hold. Also what "saved" is compared against, so opening an old
+  // page does not read as an unsaved change.
+  const initial = useMemo(() => upgradeRichText(stored, config), [stored, config]);
   const [status, setStatus] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   // What "saved" looks like, as a normalised string. Compared on every change
@@ -115,14 +133,52 @@ export function PuckEditor({
       if (res.ok) {
         saved.current = data;
         setDirty(false);
-        setStatus("Published");
+        setStatus(publishedLabel);
       } else {
         // Keep `dirty` true on failure: the work is still only in this tab, so
         // the leave-warning must stay armed.
         setStatus(res.error ?? "Could not save");
       }
     },
-    [slug, onPublish]
+    [slug, onPublish, publishedLabel]
+  );
+
+  // Same guard and bookkeeping as publish: a saved draft is what "saved"
+  // now means, so the leave-warning disarms until the next change.
+  const saveDraft = useCallback(
+    async (data: Data) => {
+      if (!onSaveDraft || publishing.current) return;
+      publishing.current = true;
+      setStatus("Saving…");
+      const res = await onSaveDraft(slug, data);
+      publishing.current = false;
+      if (res.ok) {
+        saved.current = data;
+        setDirty(false);
+        setStatus("Draft saved");
+      } else {
+        setStatus(res.error ?? "Could not save");
+      }
+    },
+    [slug, onSaveDraft]
+  );
+
+  // Stable unless the host's draft action changes: Puck re-derives its whole
+  // UI when `overrides` changes identity.
+  const overrides = useMemo(
+    () =>
+      onSaveDraft
+        ? {
+            ...OVERRIDES,
+            headerActions: ({ children }: { children: ReactNode }) => (
+              <>
+                <SaveDraftButton onSave={saveDraft} />
+                {children}
+              </>
+            ),
+          }
+        : OVERRIDES,
+    [onSaveDraft, saveDraft]
   );
 
   return (
@@ -146,9 +202,19 @@ export function PuckEditor({
         headerTitle={title ?? `/p/${slug}`}
         headerPath={status ?? (dirty ? "Unsaved changes" : undefined)}
         viewports={viewports}
-        overrides={OVERRIDES}
+        overrides={overrides}
       />
     </div>
+  );
+}
+
+/** "Save draft", beside Publish. Reads the document at the moment of the click. */
+function SaveDraftButton({ onSave }: { onSave: (data: Data) => Promise<void> }) {
+  const getPuck = useGetPuck();
+  return (
+    <Button variant="secondary" onClick={() => onSave(getPuck().appState.data as Data)}>
+      Save draft
+    </Button>
   );
 }
 
@@ -169,7 +235,45 @@ const OVERRIDES = {
       </div>
     );
   },
+  // Clicking one picture of a many-picture block edits that picture: the
+  // canvas side finds the row clicked, the panel side shows only its fields
+  // (drag/item-focus.tsx). Right-click and double-click menus on the canvas:
+  // drag/canvas-menu.tsx.
+  iframe: ({ children, document }: { children: ReactNode; document?: Document }) => (
+    <ItemPicker doc={document}>
+      {children}
+      <CanvasMenu doc={document} />
+    </ItemPicker>
+  ),
+  fields: ({ children }: { children: ReactNode }) => <FocusedFields>{children}</FocusedFields>,
 };
+
+/**
+ * Give every rich-text prop holding PLAIN text (typed before the prop was
+ * rich) the HTML the rich editor expects. Without this the editor reads the
+ * whole body as one paragraph and the first keystroke saves it that way,
+ * losing the blank-line breaks. Nothing is written until the page is saved.
+ */
+function upgradeRichText(data: Data, config: Config): Data {
+  const rich = (type: string) =>
+    Object.entries(config.components[type]?.fields ?? {})
+      .filter(([, f]) => (f as { type?: string }).type === "richtext")
+      .map(([name]) => name);
+  return walkTree(data, config, (content) =>
+    content.map((node) => {
+      const props = node.props as Record<string, unknown>;
+      let next: Record<string, unknown> | null = null;
+      for (const name of rich(node.type as string)) {
+        const value = props[name];
+        if (typeof value === "string" && value.trim()) {
+          const html = textToHtml(value);
+          if (html !== value) (next ??= { ...props })[name] = html;
+        }
+      }
+      return next ? { ...node, props: next as typeof node.props } : node;
+    })
+  ) as Data;
+}
 
 /**
  * A page reduced to what an author can have changed: resolver-filled props,

@@ -36,6 +36,27 @@ const num = (v: unknown): number => (v == null ? 0 : Number(v));
 export { createThreadOrder, createServiceOrder, PURCHASABLE_THREAD_KINDS } from "./service-orders";
 export { resolveSettlement, HOST_PAYOUT_EMAIL } from "./settlement";
 
+// Scheduling a booked one-to-one service (migration 174).
+export {
+  MAX_PROPOSED_TIMES,
+  parseProposedTimes,
+  createServiceBooking,
+  markServiceBookingPaid,
+  listSellerBookings,
+  getSellerBooking,
+  getBookingByToken,
+  sellerConfirmTime,
+  sellerProposeTimes,
+  sellerCancelBooking,
+  buyerConfirmTime,
+  buyerProposeTimes,
+  bookingIcs,
+  formatTime as formatBookingTime,
+  sellerBookingsUrl,
+  buyerBookingUrl,
+} from "./service-bookings";
+export type { ServiceBooking, BuyerServiceBooking, ServiceBookingStatus, CreateServiceBookingInput } from "./service-bookings";
+
 // Artwork orders — create on either rail, confirm, cancel, expire, fulfil.
 export {
   createOrder,

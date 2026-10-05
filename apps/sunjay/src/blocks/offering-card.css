@@ -1,0 +1,331 @@
+/* The offering card (offering-card.client.tsx): innergathering's "Current
+   Offerings" lead card in Para Theater's dark, square-cornered, bronze
+   identity. Tokens only; text pairs measured against the site tokens:
+   foreground on card 11.84:1, muted-foreground on card >= 5.5:1,
+   primary as ink on card >= 6.5:1, primary-foreground on primary 7.83:1. */
+
+.pt-offer-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) 1rem;
+}
+
+.pt-offer-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.pt-offer-eyebrow {
+  order: 2;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+.pt-offer-heading {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-empty {
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0;
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+}
+
+.pt-offer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* No cover: the body and the right column share the card. */
+.pt-offer-card:not(:has(.pt-offer-media)) {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+
+/* Call open: the cover steps aside, the body keeps the left, and the call
+   fills the rest edge to edge, as tall as the card. */
+.pt-offer-card--call {
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.75fr);
+  min-height: max(680px, 80vh);
+}
+
+.pt-offer-media {
+  display: block;
+  min-height: 260px;
+  background: hsl(var(--muted));
+}
+
+.pt-offer-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pt-offer-body {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.pt-offer-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+.pt-offer-title {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.15;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pt-offer-title a:hover {
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary));
+  text-underline-offset: 4px;
+}
+
+.pt-offer-blurb {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.pt-offer-facts dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-facts dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1rem;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-localtime {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.pt-offer-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 1.1rem;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pt-offer-btn:hover {
+  background: hsl(var(--primary) / 0.12);
+}
+
+.pt-offer-btn--primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.pt-offer-btn--primary:hover {
+  background: hsl(var(--primary) / 0.88);
+}
+
+.pt-offer-btn:focus-visible,
+.pt-offer-link:focus-visible,
+.pt-offer-call-tools button:focus-visible,
+.pt-offer-call-tools a:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+.pt-offer-link {
+  font-size: 0.85rem;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary) / 0.6);
+  text-underline-offset: 4px;
+}
+
+/* ── right column: the RSVP ── */
+
+.pt-offer-rsvp {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  background: hsl(var(--background));
+  border-left: 1px solid hsl(var(--border));
+  min-width: 0;
+}
+
+/* The shared RsvpPanel draws its own bordered card (.card-natural); inside
+   this column the column is the card. */
+.pt-offer-rsvp .card-natural {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pt-offer-rsvp .card-natural:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.pt-offer-rsvp h2 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-rsvp .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.pt-offer-rsvp .grid {
+  grid-template-columns: 1fr;
+}
+
+/* ── right column: the call ── */
+
+.pt-offer-call {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+  border-left: 1px solid hsl(var(--border));
+  /* Clear a fixed site header if the page scrolls the call into view. */
+  scroll-margin-top: 96px;
+}
+
+.pt-offer-call-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.85rem;
+  color: hsl(var(--foreground));
+}
+
+.pt-offer-call-tools {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pt-offer-call-tools button,
+.pt-offer-call-tools a {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--primary));
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pt-offer-call-tools button:hover,
+.pt-offer-call-tools a:hover {
+  background: hsl(var(--primary) / 0.12);
+}
+
+.pt-offer-call iframe {
+  display: block;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 600px;
+  border: 0;
+  background: hsl(var(--background));
+}
+
+/* ── narrow: stack ── */
+
+@media (max-width: 900px) {
+  .pt-offer-card,
+  .pt-offer-card:not(:has(.pt-offer-media)),
+  .pt-offer-card--call {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .pt-offer-media {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .pt-offer-rsvp,
+  .pt-offer-call {
+    border-left: 0;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .pt-offer-call iframe {
+    height: max(600px, 78vh);
+    flex: none;
+  }
+}

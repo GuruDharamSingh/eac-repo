@@ -67,6 +67,11 @@ import type { SlotValue } from "./slot";
 export type PropKind =
   | "string"
   | "text"
+  // Formatted text — paragraphs, emphasis, links, lists — stored as HTML.
+  // Typed on the page in an editor; rendered only through <RichText> in
+  // ./text, which sanitises it. Plain text from before a prop became rich
+  // still renders, as paragraphs.
+  | "richtext"
   | "number"
   | "boolean"
   | "select"
@@ -327,6 +332,19 @@ export interface BlockDef {
     size?: string;
     /** Prop holding how far down the text it starts, in pixels. */
     offset?: string;
+  };
+
+  /**
+   * A height an editor may set by dragging the block's bottom edge down.
+   *
+   * `height` names a number prop in pixels, where 0 means "as tall as its
+   * content" — so the same value works as a slider in the fields panel. The
+   * editor puts a handle under the element marked `data-resize-target` with
+   * the value of `target`, or under the whole block when `target` is absent.
+   */
+  resize?: {
+    height: string;
+    target?: string;
   };
 
   /**

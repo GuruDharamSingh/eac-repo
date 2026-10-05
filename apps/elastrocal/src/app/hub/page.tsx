@@ -40,6 +40,7 @@ export default async function HubPage() {
     glyph: string;
     detail?: string;
     editorOnly?: boolean;
+    ownerOnly?: boolean;
     muted?: boolean;
   }[] = [
     {
@@ -65,6 +66,22 @@ export default async function HubPage() {
       detail: `${charts.length} chart${charts.length === 1 ? "" : "s"}`,
     },
     {
+      href: "/hub/studio",
+      title: "Studio",
+      blurb: "Grade, correct and write interpretations for the astrologer AI.",
+      glyph: "✶",
+      detail: "Owners",
+      ownerOnly: true,
+    },
+    {
+      href: "/hub/readings",
+      title: "Readings",
+      blurb: "Readings and bookmarked dates gathered in the Jerusalem app.",
+      glyph: "◐",
+      detail: "Owners",
+      ownerOnly: true,
+    },
+    {
       href: "/hub",
       title: "Chat",
       blurb: "A room for the group, on the network's Nextcloud Talk.",
@@ -79,7 +96,7 @@ export default async function HubPage() {
       muted: true,
     },
   ];
-  const visible = tiles.filter((t) => !t.editorOnly || viewer.canEdit);
+  const visible = tiles.filter((t) => (!t.editorOnly || viewer.canEdit) && (!t.ownerOnly || viewer.role === "owner"));
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">

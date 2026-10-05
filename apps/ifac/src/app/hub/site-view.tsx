@@ -36,16 +36,23 @@ import {
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { getProfileSummary } from "@/lib/hub-data";
+import { readProfileSections } from "@/lib/profile-sections";
 import { getPipelineBoard, listPipelineAssignees } from "@/lib/pipeline";
 import { siteConfig } from "@/config/site";
 import type { HubViewer } from "@/lib/hub-auth";
 import { PublishBanner } from "@/components/hub/site/PublishBanner";
+import { PageSectionSwitches } from "@/components/hub/site/PageSectionSwitches";
 import { ResearchPanel } from "@/components/hub/site/ResearchPanel";
 import { PipelinePanel } from "@/components/hub/site/PipelinePanel";
 
 const TIME_ZONE = "America/Toronto";
 const IMAGE = /\.(jpe?g|png|gif|webp|avif)$/i;
 const TALK_BASE = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "");
+// Nextcloud's "Log in with Elkdonis" entry (sociallogin provider `elkdonis`,
+// read off cloud.elkdonis-arts.org/login on 2026-09-24). It hands straight to
+// the network's OIDC provider, so a signed-in member skips Nextcloud's own
+// login form; the first visit also creates their Nextcloud account.
+const NEXTCLOUD_SSO = TALK_BASE ? `${TALK_BASE}/apps/sociallogin/custom_oauth2/elkdonis` : null;
 
 /**
  * IFAC's hub as a PAGE rather than a grid of cards — the second run at the
@@ -77,7 +84,7 @@ const TALK_BASE = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "
  */
 export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
   const calendarFrom = startOfMonth(new Date());
-  const [profile, standing, events, activity, library, chatRoom, memberships, homes, board] =
+  const [profile, standing, events, activity, library, chatRoom, memberships, homes, board, sections] =
     await Promise.all([
       getProfileSummary(viewer.userId),
       getStandingMeeting(siteConfig.orgId).catch(() => null),
@@ -95,9 +102,13 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
       listUserMemberships(viewer.userId).catch(() => []),
       listOrgHomes().catch(() => []),
       getPipelineBoard().catch(() => null),
+      readProfileSections(viewer.userId),
     ]);
 
   const name = profile?.displayName?.trim() || viewer.email.split("@")[0];
+  const profileHref = profile?.slug
+    ? `/${profile.kind === "dealer" ? "dealers" : "artists"}/${profile.slug}`
+    : null;
 
   // Keyed on things the batch above produces, so they cannot join it.
   const [chatMessages, chatIdentity, chatRoomUrl] = chatRoom
@@ -195,6 +206,19 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
     <div className="eac-hs ifac-hs">
       <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
 
+      {/* The way into the group's cloud (developer, 2026-09-24). */}
+      {NEXTCLOUD_SSO && (
+        <section className="ifac-hs-cloud" aria-label="Nextcloud">
+          <p className="ifac-hs-cloud__text">
+            <strong>Your cloud storage.</strong> The IFAC team folder, your own folder, calendar and chat, in
+            Nextcloud.
+          </p>
+          <a className="eac-btn eac-btn--primary ifac-hs-cloud__open" href={NEXTCLOUD_SSO} target="_blank" rel="noopener">
+            Open Nextcloud
+          </a>
+        </section>
+      )}
+
       <div className="eac-hs-two eac-hs-two--portrait">
         {/* The turning card from /center, not hubsite's flat portrait: the
             owner asked for the one that flips, and its back is where a member
@@ -208,20 +232,33 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
             note={null}
             links={[]}
             backKicker="Your profile"
+            frontAction={{ id: "see", label: "See profile", surface: true, surfaceTab: "profile" }}
             actions={[
               { id: "profile", label: "Edit your profile", note: "Name, picture, the line under it", surface: true, surfaceTab: "profile" },
               { id: "show", label: "What shows on your page", note: "Sections and galleries", surface: true, surfaceTab: "show" },
-              ...(profile?.slug
-                ? [{ id: "page", label: "Your public page", note: `ifacgroup.com/artists/${profile.slug}`, href: `/artists/${profile.slug}` }]
+              ...(profileHref
+                ? [{ id: "page", label: "Your public page", note: `ifacgroup.com${profileHref}`, href: profileHref }]
                 : []),
             ]}
           />
+          {/* The sections of the member's own page, under the card
+              (owner, 2026-09-24). */}
+          {profile && (
+            <PageSectionSwitches
+              sections={sections}
+              profileHref={profileHref}
+              marketplaceUrl={siteConfig.marketplaceUrl}
+            />
+          )}
         </section>
-        <HubCalendar initialEvents={events} />
+        {/* Publish sits under the month, three doors across, so the right
+            column fills beside the card and its sections (owner,
+            2026-09-26: the stacked doors left a gap on desktop). */}
+        <div className="ifac-hs-side">
+          <HubCalendar initialEvents={events} />
+          <PublishBanner variant="compact" />
+        </div>
       </div>
-
-      {/* Publish first, then what the group has been making. */}
-      <PublishBanner />
 
       <ActivityFeed
         items={activity.map((t) => ({

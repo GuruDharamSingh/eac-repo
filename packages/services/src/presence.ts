@@ -1,5 +1,17 @@
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
+import {
+  EVENT_KINDS,
+  SERVICE_KINDS,
+  PERSON_SECTIONS,
+  PERSON_SECTION_LABELS,
+  resolvePersonSections,
+  setPersonOrgSection,
+  type PersonSection,
+  type PersonSectionState,
+} from './person-page';
+import { PERSONAL_ORG_ID } from './thread-listing';
+import { OFF_FEED_KINDS } from './thread-kinds';
 
 // ============================================================================
 // Where you show — the person's own switches for where they appear.
@@ -20,9 +32,22 @@ import { nanoid } from 'nanoid';
 //                                                            decide, not you
 //   galleries × your page profile_sections.galleries +      switch
 //                         user_galleries.is_public
-//   galleries × org X     user_galleries.hidden_on ∋ X      switch, only for
-//                                                            sites that honour
-//                                                            hidden_on
+//   galleries × org X     org_profiles.sections.galleries   switch (see the
+//                         + user_galleries.hidden_on ∋ X    galleries note in
+//                                                            setPresence)
+//   S × org X             org_profiles.sections[S]          switch, for every
+//                         (migration 166)                    person-page section
+//                                                            S the org offers
+//
+// Section rows (person pages, 2026-09-26; docs/open/PERSON_PAGES_BRIEF_2026-09-26.md)
+// follow PERSON_SECTIONS. A row appears only when it has something to show:
+// portfolio items, posts, events, a store, galleries. `blog` keeps its row
+// always, as before. The `page` column of blog/store/galleries stays the
+// network default in users.profile_sections; the new rows (portfolio, posts,
+// events) have org cells only, since ArtDirect has no switch for them yet.
+// An org cell shows the effective state on that org (resolvePersonSections →
+// `on`) and a flip writes an explicit override (setPersonOrgSection), so it
+// stops following the network default for that org.
 //
 // A request to be shown is a row in `org_listing_requests` (migration 149)
 // plus a `listing_request` notification to the org's owners and guides, who
@@ -35,7 +60,10 @@ import { nanoid } from 'nanoid';
 // touches is_public and nothing else.
 // ============================================================================
 
-export type PresenceRowKey = 'you' | 'blog' | 'store' | 'galleries';
+export type PresenceRowKey = 'you' | PersonSection;
+
+/** Row keys setPresence accepts; for the routes' allow-lists. */
+export const PRESENCE_ROW_KEYS: readonly PresenceRowKey[] = ['you', ...PERSON_SECTIONS];
 
 export interface PresenceColumn {
   /** 'directory' | 'page' | 'market' | `org:<orgId>` */
@@ -79,12 +107,21 @@ export type SetPresenceResult =
 /** Roles whose people an org lists. A follower (viewer) is not on a roster. */
 const LISTED_ROLES = ['member', 'guide', 'owner'];
 
-/**
- * Sites whose gallery readers pass `site` and so honour `hidden_on`. Today
- * only IFAC does; adding a key here without a reader would be a switch that
- * does nothing.
- */
-const GALLERY_SITES = new Set(['ifac']);
+/** Row labels: "Your <section>", from PERSON_SECTION_LABELS. */
+const ROW_LABELS = Object.fromEntries(
+  PERSON_SECTIONS.map((k) => [k, `Your ${PERSON_SECTION_LABELS[k].toLowerCase()}`])
+) as Record<PersonSection, string>;
+
+/** One org's section switch for this person, or nothing when the org does not offer it. */
+function sectionCell(states: PersonSectionState[] | undefined, key: PersonSection): PresenceCell | null {
+  const st = states?.find((x) => x.key === key);
+  if (!st || !st.offered) return null;
+  return {
+    state: 'switch',
+    on: st.on,
+    note: st.orgOverride === null ? null : 'Set for this site',
+  };
+}
 
 async function listedOrgs(userId: string) {
   return db<Array<{ org_id: string; org_name: string; org_slug: string; role: string; is_public: boolean | null }>>`
@@ -121,8 +158,25 @@ const STORE_LABEL: Record<string, { label: string; note: string }> = {
 
 export async function loadPresence(userId: string): Promise<Presence> {
   const [[user], orgs, pending, stores, galleries] = await Promise.all([
-    db<Array<{ directory_listed: boolean | null; profile_sections: Record<string, unknown> | null; slug: string | null }>>`
-      SELECT directory_listed, profile_sections, slug FROM users WHERE id = ${userId} LIMIT 1
+    db<Array<{
+      directory_listed: boolean | null;
+      profile_sections: Record<string, unknown> | null;
+      slug: string | null;
+      portfolio_count: number;
+      has_posts: boolean;
+      has_events: boolean;
+      has_services: boolean;
+    }>>`
+      SELECT u.directory_listed, u.profile_sections, u.slug,
+             CASE WHEN jsonb_typeof(u.portfolio) = 'array' THEN jsonb_array_length(u.portfolio) ELSE 0 END AS portfolio_count,
+             EXISTS (SELECT 1 FROM threads t WHERE t.author_id = u.id AND t.status <> 'archived'
+                       AND t.kind <> ALL(${OFF_FEED_KINDS}) AND t.kind <> ALL(${EVENT_KINDS})
+                       AND t.kind <> ALL(${SERVICE_KINDS})) AS has_posts,
+             EXISTS (SELECT 1 FROM threads t WHERE t.author_id = u.id AND t.status <> 'archived'
+                       AND t.kind = ANY(${EVENT_KINDS})) AS has_events,
+             EXISTS (SELECT 1 FROM threads t WHERE t.author_id = u.id AND t.status <> 'archived'
+                       AND t.kind = ANY(${SERVICE_KINDS})) AS has_services
+        FROM users u WHERE u.id = ${userId} LIMIT 1
     `,
     listedOrgs(userId),
     pendingRequests(userId),
@@ -138,6 +192,24 @@ export async function loadPresence(userId: string): Promise<Presence> {
 
   const sections = user.profile_sections ?? {};
   const store = stores[0] ?? null;
+
+  // Per-org section states. Only orgs where the person has an org_profiles
+  // row: setPersonOrgSection writes that row and nothing else. `is_public`
+  // comes from a LEFT JOIN, so null means no row.
+  const sectionOrgs = orgs.filter((o) => o.is_public !== null && o.org_id !== PERSONAL_ORG_ID);
+  const sectionStates = new Map(
+    await Promise.all(
+      sectionOrgs.map(async (o) => [o.org_id, await resolvePersonSections(userId, o.org_id)] as const)
+    )
+  );
+  /** Add one org cell per org that offers `key`. */
+  const addOrgCells = (cells: Record<string, PresenceCell>, key: PersonSection) => {
+    for (const o of sectionOrgs) {
+      const cell = sectionCell(sectionStates.get(o.org_id), key);
+      if (cell) cells[`org:${o.org_id}`] = cell;
+    }
+    return cells;
+  };
 
   const columns: PresenceColumn[] = [
     { key: 'directory', label: 'Network directory', kind: 'directory' },
@@ -168,27 +240,48 @@ export async function loadPresence(userId: string): Promise<Presence> {
   }
   rows.push(you);
 
+  const byKey = new Map<PersonSection, PresenceRow>();
+
+  // Featured work — the portfolio on the person's profile.
+  if (user.portfolio_count > 0) {
+    const cells = addOrgCells({}, 'portfolio');
+    if (Object.keys(cells).length) byKey.set('portfolio', { key: 'portfolio', label: ROW_LABELS.portfolio, cells });
+  }
+
   // Blog — the writing shelf on your own page.
-  rows.push({
+  byKey.set('blog', {
     key: 'blog',
-    label: 'Your writing',
-    cells: { page: { state: 'switch', on: sections.blog === true || sections.blog === 'true' } },
+    label: ROW_LABELS.blog,
+    cells: addOrgCells({ page: { state: 'switch', on: sections.blog === true || sections.blog === 'true' } }, 'blog'),
   });
+
+  // Posts and events — the person's threads homed on or listed on each org.
+  if (user.has_posts) {
+    const cells = addOrgCells({}, 'posts');
+    if (Object.keys(cells).length) byKey.set('posts', { key: 'posts', label: ROW_LABELS.posts, cells });
+  }
+  if (user.has_events) {
+    const cells = addOrgCells({}, 'events');
+    if (Object.keys(cells).length) byKey.set('events', { key: 'events', label: ROW_LABELS.events, cells });
+  }
+  if (user.has_services) {
+    const cells = addOrgCells({}, 'services');
+    if (Object.keys(cells).length) byKey.set('services', { key: 'services', label: ROW_LABELS.services, cells });
+  }
 
   // Store — only when there is one; a section with nothing returns nothing.
   if (store) {
     const s = STORE_LABEL[store.status] ?? { label: store.status, note: '' };
-    rows.push({
-      key: 'store',
-      label: 'Your store',
-      cells: {
-        page:
-          store.status === 'active'
-            ? { state: 'switch', on: sections.store === true || sections.store === 'true' }
-            : { state: 'status', label: 'Not yet', note: 'Shows once the store is open.' },
-        market: { state: 'status', label: s.label, note: s.note },
-      },
-    });
+    const cells: Record<string, PresenceCell> = {
+      page:
+        store.status === 'active'
+          ? { state: 'switch', on: sections.store === true || sections.store === 'true' }
+          : { state: 'status', label: 'Not yet', note: 'Shows once the store is open.' },
+      market: { state: 'status', label: s.label, note: s.note },
+    };
+    // Org pages show a store only once it is open, as the page cell does.
+    if (store.status === 'active') addOrgCells(cells, 'store');
+    byKey.set('store', { key: 'store', label: ROW_LABELS.store, cells });
   }
 
   // Galleries — all of them together; per-gallery control stays in the gallery.
@@ -208,16 +301,26 @@ export async function loadPresence(userId: string): Promise<Presence> {
             : `${publicCount} of ${galleries.length} shown`,
       },
     };
-    for (const o of orgs) {
-      if (!GALLERY_SITES.has(o.org_id)) continue;
+    // Every org (the GALLERY_SITES = {'ifac'} limit is gone): getPersonPage
+    // reads galleries with `site = orgId`, so hidden_on applies on every org
+    // page. Shown on X = the section on for X AND at least one gallery not
+    // hidden on X.
+    for (const o of sectionOrgs) {
+      const st = sectionStates.get(o.org_id)?.find((x) => x.key === 'galleries');
+      if (!st || !st.offered) continue;
       const hidden = galleries.filter((g) => (g.hidden_on ?? []).includes(o.org_id)).length;
       cells[`org:${o.org_id}`] = {
         state: 'switch',
-        on: hidden === 0,
+        on: st.on && hidden < galleries.length,
         note: hidden > 0 && hidden < galleries.length ? `${galleries.length - hidden} of ${galleries.length} shown` : null,
       };
     }
-    rows.push({ key: 'galleries', label: 'Your galleries', cells });
+    byKey.set('galleries', { key: 'galleries', label: ROW_LABELS.galleries, cells });
+  }
+
+  for (const key of PERSON_SECTIONS) {
+    const row = byKey.get(key);
+    if (row) rows.push(row);
   }
 
   return { columns, rows };
@@ -288,8 +391,14 @@ export async function setPresence(userId: string, change: PresenceChange): Promi
         return { ok: true };
       }
       break;
+    case 'portfolio':
+    case 'posts':
+    case 'events':
+      if (orgId) return setPersonOrgSection(userId, orgId, change.row, on);
+      break;
     case 'blog':
     case 'store':
+      if (orgId) return setPersonOrgSection(userId, orgId, change.row, on);
       if (change.column === 'page') {
         const key = change.row;
         await db`
@@ -317,6 +426,12 @@ export async function setPresence(userId: string, change: PresenceChange): Promi
         return { ok: true };
       }
       if (orgId) {
+        // Galleries on org X: both the section override and hidden_on are
+        // written, so readers of either agree (IFAC's gallery reader checks
+        // hidden_on only; getPersonPage checks both). On clears X from every
+        // gallery's hidden_on, as before; off hides every gallery on X.
+        const section = await setPersonOrgSection(userId, orgId, 'galleries', on);
+        if (section.ok === false) return section;
         if (on) {
           await db`
             UPDATE user_galleries SET hidden_on = array_remove(hidden_on, ${orgId}::text), updated_at = NOW()

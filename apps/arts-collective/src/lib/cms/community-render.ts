@@ -488,7 +488,7 @@ export function buildPortalHtml(opts: BuildOpts): string {
 
   const joinHtml = isUserLoggedIn
     ? `<div class="ep-member-bar">
-        <span>Signed in as <strong>${esc(userDisplayName ?? "member")}</strong> &mdash; <a href="/hub">your hub</a> &middot; <a href="/">artist page</a></span>
+        <span>Signed in as <strong>${esc(userDisplayName ?? "member")}</strong> &mdash; <a href="/hub">your hub</a> &middot; <a href="/studio">studio</a> &middot; <a href="/">artist page</a></span>
         <span class="ep-ok">&#10003; Network member</span>
       </div>`
     : `<div class="ep-join">
@@ -551,7 +551,8 @@ export function buildPortalHtml(opts: BuildOpts): string {
           <div class="ep-mast-side__name">${esc(userDisplayName ?? "member")}</div>
           <div class="ep-mast-side__sub">Elkdonis Arts Collective</div>
         </div>
-        <a class="ep-mast-link" href="/hub">Your hub &rarr;</a>`
+        <a class="ep-mast-link" href="/hub">Your hub &rarr;</a>
+        <a class="ep-mast-link" href="/studio">Studio &rarr;</a>`
       : `<div>
           <div class="ep-mast-side__eyebrow">Join the network</div>
           <div class="ep-mast-side__sub" style="margin-bottom:8px">One account, every collective site.</div>
@@ -873,7 +874,7 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
 
   const joinHtml = isUserLoggedIn
     ? `<div class="ep-member-bar">
-        <span>Signed in as <strong>${esc(userDisplayName ?? "member")}</strong> &mdash; <a href="/hub">your hub</a></span>
+        <span>Signed in as <strong>${esc(userDisplayName ?? "member")}</strong> &mdash; <a href="/hub">your hub</a> &middot; <a href="/studio">studio</a></span>
         <span class="ep-ok">&#10003; Network member</span>
       </div>`
     : `<div class="ep-join">
@@ -926,7 +927,8 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
           <div class="ep-mast-side__name">${esc(userDisplayName ?? "member")}</div>
           <div class="ep-mast-side__sub">Elkdonis Arts Collective</div>
         </div>
-        <a class="ep-mast-link" href="/hub">Your hub &rarr;</a>`
+        <a class="ep-mast-link" href="/hub">Your hub &rarr;</a>
+        <a class="ep-mast-link" href="/studio">Studio &rarr;</a>`
       : `<div>
           <div class="ep-mast-side__eyebrow">Join the network</div>
           <div class="ep-mast-side__sub" style="margin-bottom:8px">One account, every collective site.</div>
@@ -974,9 +976,11 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
 
     ${lead ? `<div class="ep-feat">
       <div class="ep-feat__section">Leading the network</div>
-      <div class="ep-feat__img" role="img">
+      ${lead.coverImageUrl
+        ? `<img class="ep-feat__img" src="${esc(lead.coverImageUrl)}" alt="${esc(lead.title)}" loading="lazy" />`
+        : `<div class="ep-feat__img" role="img">
         <span style="font-family:var(--mono);font-size:13px;letter-spacing:0.06em;opacity:0.4">[NETWORK PHOTO]</span>
-      </div>
+      </div>`}
       <h2 class="ep-feat__h">${esc(lead.title)}</h2>
       ${lead.excerpt ? `<p class="ep-feat__p">${esc(lead.excerpt)}</p>` : ""}
       <div class="ep-feat__by">

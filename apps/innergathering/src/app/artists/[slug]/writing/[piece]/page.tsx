@@ -55,9 +55,11 @@ export default async function MemberWritingPiecePage({ params }: Props) {
         title={post.title}
         lede={post.lede}
         bodyHtml={post.bodyHtml}
+        threadId={post.id}
         authorName={profile.displayName}
         publishedAt={post.publishedAt}
         coverImageUrl={post.coverImageUrl}
+        video={post.video ? { src: post.video.src, poster: post.video.poster } : null}
         readingMinutes={post.readingMinutes}
       />
     </main>

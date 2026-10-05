@@ -5,12 +5,13 @@ import {
 } from "@elkdonis/lms";
 import {
   addRunGuideByEmail, createCourse, createRun, editOutline, getCourseById, publishCourse, syncWorkshopEnrolments, updateCourse,
-  updateRun, upsertStepDraft, canEditCourse, getDraft, addToPool, updatePoolItem, usePoolItem, type CourseVisibility, type OutlineOp, type RunMode, type StepMedia, type UnlockRule,
+  updateRun, upsertStepDraft, canEditCourse, getDraft, addToPool, updatePoolItem, usePoolItem, setWorkshopListing, setRealm, saveTradition, deleteTradition, addGuideByEmail, saveGuide, removeGuide, type Realm, type WorkshopAfterAccess, type CourseVisibility, type OutlineOp, type RunMode, type StepMedia, type UnlockRule,
 } from "@elkdonis/lms";
 import type { LmsConnectors } from "./connectors";
 
 const ACTIONS = new Set(["begin", "complete", "respond", "delete-response", "acknowledge", "waive", "open-discussions", "adopt", "withdraw",
-  "studio-create-course", "studio-save-course", "studio-outline", "studio-save-step", "studio-publish", "studio-create-run", "studio-save-run", "studio-add-guide", "studio-sync-rsvps", "studio-upload", "pool-add", "pool-edit", "pool-use"]);
+  "studio-create-course", "studio-save-course", "studio-outline", "studio-save-step", "studio-publish", "studio-create-run", "studio-save-run", "studio-add-guide", "studio-sync-rsvps", "studio-upload", "pool-add", "pool-edit", "pool-use", "studio-workshop-listing",
+  "studio-realm", "studio-tradition-save", "studio-tradition-delete", "studio-guide-add", "studio-guide-save", "studio-guide-remove"]);
 
 const str = (fd: FormData, k: string) => { const v = fd.get(k); return typeof v === "string" ? v.trim() : ""; };
 
@@ -254,6 +255,45 @@ export async function handleLmsAction({ request, action, connectors }: { request
     case "studio-add-guide": {
       const r = await addRunGuideByEmail(viewer, str(fd, "run"), str(fd, "email"));
       return r.ok === false ? fail(r.error) : done(back, "They can now see this group’s guide desk.");
+    }
+    case "studio-workshop-listing": {
+      const r = await setWorkshopListing(viewer, str(fd, "thread"), {
+        listed: str(fd, "listed") === "1",
+        afterAccess: (str(fd, "after") || "none") as WorkshopAfterAccess,
+        afterPrice: Number(str(fd, "price")) || null,
+        linkOverride: str(fd, "link") || null,
+      });
+      if (r.ok === false) return fail(r.error);
+      const side = await setRealm(viewer, "thread", str(fd, "thread"), (str(fd, "realm") || null) as Realm | null);
+      return side.ok === false ? fail(side.error) : done(back, "Saved.");
+    }
+    case "studio-realm": {
+      const kind = str(fd, "kind") === "course" ? "course" : "thread";
+      const r = await setRealm(viewer, kind, str(fd, "id"), (str(fd, "realm") || null) as Realm | null);
+      return r.ok === false ? fail(r.error) : done(back, "Saved.");
+    }
+    case "studio-tradition-save": {
+      const r = await saveTradition(viewer, { id: str(fd, "id") || undefined, name: str(fd, "name"), description: str(fd, "description") || null });
+      return r.ok === false ? fail(r.error) : done(back, "Saved.");
+    }
+    case "studio-tradition-delete": {
+      const r = await deleteTradition(viewer, str(fd, "id"));
+      return r.ok === false ? fail(r.error) : done(back, "Removed.");
+    }
+    case "studio-guide-add": {
+      const r = await addGuideByEmail(viewer, str(fd, "email"));
+      return r.ok === false ? fail(r.error) : done(back, "Added. Give them a bio and their traditions below.");
+    }
+    case "studio-guide-save": {
+      const r = await saveGuide(viewer, str(fd, "user"), {
+        bio: str(fd, "bio") || null, photoUrl: str(fd, "photo") || null, realm: (str(fd, "realm") || null) as Realm | null,
+        isListed: str(fd, "listed") === "1", traditionIds: fd.getAll("tradition").filter((v): v is string => typeof v === "string"),
+      });
+      return r.ok === false ? fail(r.error) : done(back, "Saved.");
+    }
+    case "studio-guide-remove": {
+      const r = await removeGuide(viewer, str(fd, "user"));
+      return r.ok === false ? fail(r.error) : done(back, "Taken off the list.");
     }
     case "studio-sync-rsvps": {
       const r = await syncWorkshopEnrolments(viewer, str(fd, "run"));

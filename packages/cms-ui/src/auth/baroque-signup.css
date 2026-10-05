@@ -7,7 +7,7 @@
 
    The look is gilt-on-parchment rather than gilt-on-black: bright ground,
    aubergine ink, gold leaf drawn with gradients, and geometry (the sigil,
-   the lozenge corners) carrying the occult note instead of darkness.
+   the carved frame) carrying the occult note instead of darkness.
 
    Import once per app:  @import "@elkdonis/cms-ui/baroque-signup.css";
    Point --eac-bq-display at a display face if the app ships one.
@@ -23,47 +23,82 @@
   --eac-bq-violet: #5b3e7a;
   --eac-bq-vermilion: #a8322b;
   --eac-bq-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  /* Width of the opening the form sits in. The frame is sized from it. */
+  --eac-bq-w: min(21.5rem, calc(100vw - 5rem));
 
   color: var(--eac-bq-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  max-width: 27rem;
   margin: 0 auto;
 }
-
-/* Double frame: an outer gilt hairline, an inner rule inset from it — the
-   cheapest honest way to read as "baroque" without imagery. */
-.eac-bq-frame {
-  position: relative;
-  padding: 42px 34px 34px;
-  background:
-    radial-gradient(120% 90% at 50% 0%, #fffdf8 0%, var(--eac-bq-parchment) 55%, var(--eac-bq-parchment-deep) 100%);
-  border: 1px solid var(--eac-bq-gilt);
-  box-shadow:
-    0 0 0 1px rgba(176, 132, 50, 0.28) inset,
-    0 0 0 7px var(--eac-bq-parchment) inset,
-    0 0 0 8px rgba(176, 132, 50, 0.45) inset,
-    0 18px 44px -22px rgba(36, 27, 47, 0.45);
+/* Not every consuming app ships a reset; widths below assume border-box. */
+.eac-bq *,
+.eac-bq *::before,
+.eac-bq *::after {
+  box-sizing: border-box;
 }
 
-/* Corner lozenges. Two pseudo-elements, mirrored, give all four corners. */
+/* Carved giltwood frame (baroque-frame.webp, 739x1000, transparent opening
+   118/116 px in from left/right, 119/110 px in from top/bottom, so the
+   opening is 505x771). The frame is never stretched: .eac-bq-frame is the
+   opening, and the frame image (::after) is sized from the opening's height
+   at the image's own aspect ratio, overhanging it on all four sides.
+   min-height (width x 771/505) keeps the opening at least as wide as the
+   form; a taller form (long subtitle, error) scales the whole frame up
+   evenly. The parchment (::before) fills the opening at the same ratio and
+   runs slightly under the inner moulding. */
+.eac-bq-frame {
+  position: relative;
+  isolation: isolate;
+  width: var(--eac-bq-w);
+  min-height: calc(var(--eac-bq-w) * 1.527);
+  margin: calc(var(--eac-bq-w) * 0.24) auto calc(var(--eac-bq-w) * 0.22);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  filter: drop-shadow(0 16px 22px rgba(36, 27, 47, 0.32));
+}
+
 .eac-bq-frame::before,
 .eac-bq-frame::after {
   content: "";
   position: absolute;
-  width: 13px;
-  height: 13px;
-  background: linear-gradient(135deg, var(--eac-bq-gilt-bright), var(--eac-bq-gilt));
-  transform: rotate(45deg);
-  box-shadow: 0 0 0 1px var(--eac-bq-parchment);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
 }
-.eac-bq-frame::before { top: -7px; left: -7px; }
-.eac-bq-frame::after { bottom: -7px; right: -7px; }
+
+.eac-bq-frame::before {
+  top: -1.5%;
+  bottom: -1.5%;
+  aspect-ratio: 525 / 794;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #fffdf8 0%, var(--eac-bq-parchment) 55%, var(--eac-bq-parchment-deep) 100%);
+}
+
+.eac-bq-frame::after {
+  top: -15.43%;
+  bottom: -14.27%;
+  aspect-ratio: 739 / 1000;
+  background: url("./baroque-frame.webp") center / 100% 100% no-repeat;
+}
+
+/* Phones: the frame is wider than the screen; let its outer carving run off
+   both edges instead of shrinking the form. */
+@media (max-width: 520px) {
+  .eac-bq {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    overflow-x: clip;
+  }
+}
 
 .eac-bq-sigil {
   display: block;
-  width: 46px;
-  height: 46px;
-  margin: 0 auto 14px;
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 8px;
   fill: none;
   stroke: var(--eac-bq-gilt);
   stroke-width: 1;
@@ -89,7 +124,7 @@
   text-align: center;
   font-family: var(--eac-bq-display);
   font-weight: 600;
-  font-size: clamp(1.5rem, 4vw, 1.95rem);
+  font-size: clamp(1.35rem, 5.5vw, 1.65rem);
   line-height: 1.15;
   letter-spacing: 0.005em;
   text-wrap: balance;
@@ -99,16 +134,16 @@
 .eac-bq-rule {
   border: 0;
   height: 1px;
-  margin: 16px auto 18px;
+  margin: 10px auto 12px;
   width: 72%;
   background: linear-gradient(90deg, transparent, var(--eac-bq-gilt), transparent);
 }
 
 .eac-bq-subtitle {
-  margin: -6px 0 18px;
+  margin: -2px 0 12px;
   text-align: center;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: var(--eac-bq-ink-soft);
 }
 
@@ -116,13 +151,14 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .eac-bq-toggle-btn {
-  padding: 8px 10px;
+  padding: 7px 4px;
   font: inherit;
-  font-size: 0.78rem;
-  letter-spacing: 0.09em;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
   text-transform: uppercase;
   color: var(--eac-bq-ink-soft);
   background: transparent;
@@ -141,12 +177,12 @@
   outline-offset: 2px;
 }
 
-.eac-bq-row { margin-bottom: 14px; }
+.eac-bq-row { margin-bottom: 10px; }
 
 .eac-bq-label {
   display: block;
-  margin-bottom: 5px;
-  font-size: 0.72rem;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--eac-bq-ink-soft);
@@ -154,9 +190,9 @@
 
 .eac-bq-input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--eac-bq-ink);
   background: #fffdf9;
   border: 1px solid rgba(176, 132, 50, 0.45);
@@ -169,7 +205,7 @@
   box-shadow: 0 0 0 3px rgba(91, 62, 122, 0.16);
 }
 
-.eac-bq-turnstile { margin: 14px 0; }
+.eac-bq-turnstile { margin: 10px 0; }
 
 .eac-bq-error {
   margin: 12px 0 0;
@@ -182,10 +218,10 @@
 
 .eac-bq-cta {
   width: 100%;
-  margin-top: 18px;
-  padding: 12px 18px;
+  margin-top: 12px;
+  padding: 10px 12px;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -212,16 +248,16 @@
   color: #3c4043;
   background: #fff;
   border-color: rgba(36, 27, 47, 0.18);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: none;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .eac-bq-or {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 18px 0 12px;
+  margin: 10px 0 8px;
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;

@@ -15,6 +15,7 @@ import {
   setStandingMeeting,
   type OrgRole,
 } from "@elkdonis/services";
+import { audienceToStorage, canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
 import { requireOrgEditor } from "@/lib/auth";
 import { contentFormSchema, slugifyTitle, type ContentFormValues } from "@/lib/cms/schema";
 import { zonedInputToDate } from "@/lib/format";
@@ -169,6 +170,12 @@ export async function saveContentAction(
   const feed = await getOrgFeed(ORG, data.feedSlug);
   if (!feed) return { ok: false, error: "That page doesn't exist" };
 
+  // The audience decides both columns; a form that sends only `visibility`
+  // (older callers) keeps it and has no minimum role.
+  const { visibility, minRole } = data.audience
+    ? audienceToStorage(data.audience)
+    : { visibility: data.visibility, minRole: null };
+
   const isMeeting = data.kind === "meeting";
   const slug = await ensureUniqueThreadSlug(ORG, slugifyTitle(data.title), threadId);
   // Sanitised before either write below: the hosts render `body` with
@@ -180,11 +187,13 @@ export async function saveContentAction(
   // Cover image rides in metadata — threads has no cover_image_url column
   // (see the note in lib/data.ts).
   const timeZone = isMeeting && data.timeZone ? data.timeZone : null;
-  // Record<string, string>, not <string, unknown>: db.json takes a JSONValue,
-  // and `unknown` is not assignable to it. Both entries here are strings.
-  const metadata: Record<string, string> = {};
+  // Record<string, string | boolean>, not <string, unknown>: db.json takes a
+  // JSONValue, and `unknown` is not assignable to it.
+  const metadata: Record<string, string | boolean> = {};
   if (data.coverImageUrl) metadata.coverImageUrl = data.coverImageUrl;
   if (timeZone) metadata.timeZone = timeZone;
+  // Stored only when off: absent means shown, which is every older meeting.
+  if (isMeeting && data.showCycleBadge === false) metadata.showCycleBadge = false;
 
   // Times are entered as wall-clock in the chosen zone (Toronto by default);
   // convert rather than letting the server's own timezone (UTC in the
@@ -201,10 +210,16 @@ export async function saveContentAction(
 
   try {
     if (threadId) {
-      const [existing] = await db<{ id: string }[]>`
-        SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG} LIMIT 1
+      const [existing] = await db<{ id: string; visibility: string; min_role: string | null; author_id: string; status: string }[]>`
+        SELECT id, visibility, min_role, author_id, status FROM threads WHERE id = ${threadId} AND org_id = ${ORG} LIMIT 1
       `;
       if (!existing) return { ok: false, error: "Not found" };
+      // An editor cannot change what they could not open: a guide may not edit
+      // an owners-only post.
+      if (!canViewThread(
+        { visibility: existing.visibility, minRole: existing.min_role, authorId: existing.author_id, status: existing.status },
+        { userId: editor.userId, role: (editor.role as ThreadRole | null) ?? null }
+      )) return { ok: false, error: "Not found" };
 
       await db`
         UPDATE threads SET
@@ -215,8 +230,13 @@ export async function saveContentAction(
           body             = ${body || null},
           excerpt          = ${excerpt},
           status           = ${data.status},
-          visibility       = ${data.visibility},
-          metadata         = ${db.json(metadata)},
+          visibility       = ${visibility},
+          min_role         = ${minRole},
+          -- Merged, not replaced: other writers keep state in metadata too
+          -- (the meeting light, meetingLight). Only the keys this form owns
+          -- are cleared before the form's values are laid over.
+          metadata         = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl' - 'timeZone' - 'showCycleBadge')
+                             || ${db.json(metadata)},
           is_meeting       = ${isMeeting},
           scheduled_at     = ${scheduledAt},
           duration_minutes = ${isMeeting ? (data.durationMinutes ?? null) : null},
@@ -253,7 +273,7 @@ export async function saveContentAction(
     await db`
       INSERT INTO threads (
         id, org_id, author_id, kind, section, title, slug, body, excerpt,
-        status, visibility, metadata, is_meeting,
+        status, visibility, min_role, metadata, is_meeting,
         scheduled_at, duration_minutes, location, is_online, meeting_url, video_link,
         recurrence_pattern, recurrence_until,
         is_rsvp_enabled, rsvp_deadline, attendee_limit, min_attendees,
@@ -261,7 +281,7 @@ export async function saveContentAction(
       ) VALUES (
         ${id}, ${ORG}, ${editor.userId}, ${data.kind}, ${data.feedSlug},
         ${data.title}, ${slug}, ${body || null}, ${excerpt},
-        ${data.status}, ${data.visibility}, ${db.json(metadata)}, ${isMeeting},
+        ${data.status}, ${visibility}, ${minRole}, ${db.json(metadata)}, ${isMeeting},
         ${scheduledAt}, ${isMeeting ? (data.durationMinutes ?? null) : null},
         ${isMeeting ? data.location || null : null}, ${isMeeting ? data.isOnline : false},
         ${isMeeting ? data.meetingUrl || null : null}, ${isMeeting ? data.videoLink || null : null},
@@ -340,7 +360,7 @@ export async function deleteContentAction(threadId: string): Promise<ActionResul
     `;
     if (!row) return { ok: false, error: "Not found" };
     const res = await removeThreadAs(editor.userId, threadId, { editor: true });
-    if (!res.ok) return { ok: false, error: res.error };
+    if (!res.ok) return { ok: false, error: "error" in res ? res.error : "Could not remove." };
     revalidateFeed(row.section ?? "");
     return { ok: true };
   } catch (err) {

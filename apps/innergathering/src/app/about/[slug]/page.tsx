@@ -1,17 +1,22 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { sanitizeRichText } from "@elkdonis/utils";
 import type { Metadata } from "next";
-import { ExternalLink } from "lucide-react";
-import { ThreadCard } from "@/components/thread-card";
-import { getGuideBySlug, getThreadsByAuthor } from "@/lib/data";
+import type { ReactNode } from "react";
+import { getPersonPage, personThreadHref, type PersonThread } from "@elkdonis/services";
+import { PersonPage, PersonThreadList } from "@elkdonis/cms-ui/profile";
+import { getGuideBySlug } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
-import { toPlainText } from "@/lib/format";
+import { siteConfig } from "@/config/site";
+import { formatDate, formatDateTime, toPlainText } from "@/lib/format";
 
 interface MemberPageProps {
   params: Promise<{ slug: string }>;
 }
 
-const ARTDIRECT_URL = process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "http://localhost:3013";
+const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "http://localhost:3013").replace(/\/$/, "");
+const NETWORK_URL =
+  process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ??
+  `https://${process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com"}`;
 
 export async function generateMetadata({ params }: MemberPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -20,84 +25,121 @@ export async function generateMetadata({ params }: MemberPageProps): Promise<Met
   return { title: member.displayName, description: member.roleTitle ?? toPlainText(member.bio, 160) };
 }
 
+/** Posts homed here open on this site's `/<feed>/<slug>` route (ThreadCard's convention). */
+function threadHref(t: PersonThread): string {
+  return personThreadHref(t, {
+    networkUrl: NETWORK_URL,
+    localOrgId: siteConfig.orgId,
+    localHref: (x) => (x.section ? `/${x.section}/${x.slug}` : null),
+  });
+}
+
 /**
  * A member's page.
  *
- * The profile is the member's own — `users` plus this org's `org_profiles`
- * row — and it is edited on ArtDirect, where every member of the network
- * keeps one profile that each site reads. So this page has no editor: the
- * owner sees a link to ArtDirect, and what they change there shows here.
- * Everything they have published on this site follows, because a page that
- * is only a bio goes stale and one that lists their work does not.
+ * Read from the member's network profile through getPersonPage
+ * (docs/open/PERSON_PAGES_BRIEF_2026-09-26.md): `users` plus this org's
+ * `org_profiles` row, edited on ArtDirect. This page has no editor; the owner
+ * sees a link to ArtDirect. Which sections show is the member's per-org
+ * choice; posts include those listed here from other orgs, which link out.
  */
 export default async function MemberPage({ params }: MemberPageProps) {
   const { slug } = await params;
-  const [member, viewer] = await Promise.all([getGuideBySlug(slug), getViewer().catch(() => null)]);
-  if (!member) notFound();
+  const viewer = await getViewer().catch(() => null);
+  const page = await getPersonPage(slug, { orgId: siteConfig.orgId, viewerId: viewer?.userId ?? null });
+  if (!page) notFound();
 
-  const threads = await getThreadsByAuthor(member.userId);
-  const isOwner = viewer?.userId === member.userId;
-  const initials = member.displayName.charAt(0);
+  const { profile, orgProfile } = page;
+  const memberSlug = profile.slug ?? slug;
+  const isOwner = page.isSelf;
+  const bio = profile.bio;
+  const bioIsHtml = Boolean(bio && bio.includes("<"));
+
+  const slots: Record<string, ReactNode> = {
+    posts: page.show.posts ? (
+      <PersonThreadList
+        title="Posts"
+        items={page.posts.map((t) => {
+          const foreign = t.orgId !== siteConfig.orgId;
+          return {
+            href: threadHref(t),
+            title: t.title,
+            meta: [t.publishedAt ? formatDate(t.publishedAt) : null, foreign ? `on ${t.orgName}` : null]
+              .filter(Boolean)
+              .join(" · ") || null,
+            excerpt: t.excerpt ? toPlainText(t.excerpt, 200) : null,
+            external: foreign,
+            draft: t.status !== "published",
+          };
+        })}
+        empty={page.canEdit ? "Nothing posted here yet." : null}
+      />
+    ) : null,
+    events: page.show.events ? (
+      <PersonThreadList
+        title="Events"
+        items={page.events.map((t) => {
+          const foreign = t.orgId !== siteConfig.orgId;
+          return {
+            href: threadHref(t),
+            title: t.title,
+            meta: [t.scheduledAt ? formatDateTime(t.scheduledAt) : null, t.location, foreign ? `on ${t.orgName}` : null]
+              .filter(Boolean)
+              .join(" · ") || null,
+            external: foreign,
+            draft: t.status !== "published",
+          };
+        })}
+        empty={page.canEdit ? "No events yet." : null}
+      />
+    ) : null,
+    // Writing reads at /artists/<slug>/writing/<piece>; drafts open the
+    // owner's shelf, since the reader shows published pieces only.
+    blog:
+      page.show.blog || (page.canEdit && page.writing.length > 0) ? (
+        <PersonThreadList
+          title="Writing"
+          items={page.writing.map((w) => ({
+            href:
+              w.status === "published"
+                ? `/artists/${memberSlug}/writing/${w.slug}`
+                : `/artists/${memberSlug}/writing#${w.slug}`,
+            title: w.title,
+            meta: w.publishedAt ? formatDate(w.publishedAt) : null,
+            excerpt: w.lede,
+            draft: w.status !== "published",
+          }))}
+          empty={page.canEdit ? "Nothing written yet." : null}
+        />
+      ) : null,
+  };
 
   return (
-    <div className="ig-page">
-      <Link href="/about" className="ig-kicker" style={{ textDecoration: "none" }}>← The Collective</Link>
-
-      <header className="ig-member-hero" style={{ marginTop: "1.5rem" }}>
-        {member.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={member.photoUrl} alt="" />
-        ) : (
-          <span className="ig-member-initials" aria-hidden style={{ width: 180, height: 180, fontSize: "3rem" }}>{initials}</span>
-        )}
-        <div>
-          <h1>{member.displayName}</h1>
-          {member.roleTitle && <p className="ig-member-title" style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>{member.roleTitle}</p>}
-          {member.city && <p className="ig-kicker" style={{ marginTop: "0.35rem", color: "#104b8C" }}>{member.city}</p>}
-          {(isOwner || viewer?.canEdit) && (
-            <a className="ig-edit-link" href={`${ARTDIRECT_URL}/${member.slug}`} target="_blank" rel="noreferrer">
-              {isOwner ? "Edit your profile on ArtDirect →" : "Open on ArtDirect →"}
-            </a>
-          )}
-        </div>
-      </header>
-
-      {member.bio && (
-        <div className="prose-amrit" style={{ marginTop: "2rem" }}>
-          {member.bio.includes("<") ? (
-            <div dangerouslySetInnerHTML={{ __html: member.bio }} />
-          ) : (
-            member.bio.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
-          )}
-        </div>
-      )}
-
-      {member.socialLinks.length > 0 && (
-        <ul className="mt-6 flex flex-wrap gap-3">
-          {member.socialLinks
-            .filter((l) => l.url)
-            .map((link, i) => (
-              <li key={i}>
-                <a href={link.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-sm hover:bg-accent/20" style={{ fontFamily: '"Venture", serif', letterSpacing: "0.08em" }}>
-                  {link.label ?? link.url}
-                  <ExternalLink className="size-3.5" aria-hidden />
-                </a>
-              </li>
-            ))}
-        </ul>
-      )}
-
-      {threads.length > 0 && (
-        <section style={{ marginTop: "3rem" }}>
-          <hr className="saffron-divider" />
-          <h2 className="ig-h2">With {member.displayName.split(" ")[0]}</h2>
-          <div className="mt-5 grid gap-5">
-            {threads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} feedName={thread.feedSlug === "blog" ? "Blog" : "Offerings"} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
+    <PersonPage
+      person={{
+        displayName: profile.displayName,
+        role: orgProfile?.roleTitle ?? profile.headline,
+        bio: bioIsHtml ? null : bio,
+        // Sanitised here: PersonPage renders bioHtml as given.
+        bioHtml: bioIsHtml ? sanitizeRichText(bio) : null,
+        avatarUrl: profile.avatarUrl,
+        city: profile.city,
+        verified: profile.verified,
+        socialLinks: profile.socialLinks,
+      }}
+      back={{ href: "/about", label: "← The Collective" }}
+      intro={
+        isOwner || viewer?.canEdit ? (
+          <a className="ig-edit-link" href={`${ARTDIRECT_URL}/${memberSlug}`} target="_blank" rel="noreferrer">
+            {isOwner ? "Edit your profile on ArtDirect →" : "Open on ArtDirect →"}
+          </a>
+        ) : null
+      }
+      portfolio={page.portfolio.map((p) => ({ url: p.url, title: p.title }))}
+      emptyFeatured={null}
+      order={page.sections.map((s) => s.key)}
+      slots={slots}
+      networkLink={ARTDIRECT_URL ? { href: `${ARTDIRECT_URL}/${memberSlug}` } : null}
+    />
   );
 }

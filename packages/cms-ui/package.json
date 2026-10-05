@@ -14,6 +14,7 @@
     "./reading-theme.css": "./src/article/reading-theme.css",
     "./profile": "./src/profile/index.ts",
     "./profile.css": "./src/profile/profile.css",
+    "./person-page.css": "./src/profile/person-page.css",
     "./files": "./src/files/index.ts",
     "./files-card.css": "./src/files/files-card.css",
     "./auth": "./src/auth/index.ts",
@@ -24,6 +25,7 @@
     "./surface.css": "./src/surface/surface.css",
     "./hub": "./src/hub/index.ts",
     "./center": "./src/center/index.ts",
+    "./network": "./src/network/index.ts",
     "./center.css": "./src/center/center.css",
     "./fields.css": "./src/wizard/fields.css",
     "./compose.css": "./src/compose/compose.css",
@@ -61,13 +63,9 @@
   },
   "dependencies": {
     "@elkdonis/auth-client": "workspace:*",
-    "@marsidev/react-turnstile": "^1.3.0",
-    "react-grid-layout": "^2.2.4",
     "@elkdonis/utils": "workspace:*",
+    "@marsidev/react-turnstile": "^1.3.0",
     "@tiptap/core": "^2.8.0",
-    "@tiptap/pm": "^2.8.0",
-    "@tiptap/react": "^2.8.0",
-    "@tiptap/starter-kit": "^2.8.0",
     "@tiptap/extension-code-block-lowlight": "^2.8.0",
     "@tiptap/extension-highlight": "^2.8.0",
     "@tiptap/extension-image": "^2.8.0",
@@ -80,7 +78,11 @@
     "@tiptap/extension-text-align": "^2.8.0",
     "@tiptap/extension-underline": "^2.8.0",
     "@tiptap/extension-youtube": "^2.8.0",
-    "lowlight": "^3.3.0"
+    "@tiptap/pm": "^2.8.0",
+    "@tiptap/react": "^2.8.0",
+    "@tiptap/starter-kit": "^2.8.0",
+    "lowlight": "^3.3.0",
+    "react-grid-layout": "^2.2.4"
   },
   "peerDependenciesMeta": {
     "@excalidraw/excalidraw": {

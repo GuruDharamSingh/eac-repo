@@ -33,6 +33,11 @@ const ALLOWED_TAGS = [
   // Media
   'img',
   'iframe', // YouTube embeds (src is locked down below)
+  // The essay canvas (@elkdonis/utils/essay): captioned figures with responsive
+  // sources, margin asides, and its cards. Inert markup; the classes and
+  // data-* it carries are what article.css and the sites' card resolvers key
+  // on, so they must survive the save boundary.
+  'figure', 'figcaption', 'picture', 'source', 'aside', 'cite',
   // Tables
   'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'colgroup', 'col',
 ];
@@ -40,8 +45,10 @@ const ALLOWED_TAGS = [
 const ALLOWED_ATTR = [
   // Links
   'href', 'target', 'rel',
-  // Images
-  'src', 'alt', 'title', 'width', 'height',
+  // Images. srcset/sizes/loading/decoding are what the essay renderer emits
+  // for responsive pictures; without them every canvas image is stripped
+  // back to one source on save.
+  'src', 'alt', 'title', 'width', 'height', 'srcset', 'sizes', 'loading', 'decoding',
   // Inline styling (color, font-size, text-align, highlight background)
   'style',
   // Code highlighting / alignment classes from lowlight + TipTap
@@ -157,5 +164,34 @@ export function sanitizePostBody(html: string | null | undefined): string {
       attributeNameCheck: /^data-[a-z-]+$/,
       allowCustomizedBuiltInElements: false,
     },
+  });
+}
+
+/**
+ * The words of a page block — the Text block and the text beside an image,
+ * typed on the page in the editor (@elkdonis/blocks text.tsx).
+ *
+ * Narrower than `sanitizeRichText` on purpose: a block's text is paragraphs
+ * with emphasis, links, lists, subheadings and quotes, and nothing else. No
+ * images or embeds (those are blocks of their own), no inline `style` or
+ * `class` (the site's theme decides how text looks), no tables. What the
+ * editor's toolbar cannot produce is not let through.
+ */
+const PAGE_TEXT_TAGS = [
+  'p', 'br',
+  'h2', 'h3', 'h4',
+  'blockquote',
+  'ul', 'ol', 'li',
+  'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
+  'a',
+];
+
+export function sanitizePageText(html: string | null | undefined): string {
+  if (!html) return '';
+  registerHooks();
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: PAGE_TEXT_TAGS,
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    ALLOW_DATA_ATTR: false,
   });
 }

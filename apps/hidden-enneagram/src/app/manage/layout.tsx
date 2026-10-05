@@ -13,6 +13,8 @@ const TABS = [
   { href: "/manage/contacts", label: "Contacts" },
 ];
 
+const OWNER_TABS = [{ href: "/manage/analytics", label: "Visitors" }];
+
 export default async function ManageLayout({ children }: { children: React.ReactNode }) {
   const viewer = await requireOrgEditor();
 
@@ -26,7 +28,7 @@ export default async function ManageLayout({ children }: { children: React.React
       </header>
 
       <nav className="mt-6 flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((tab) => (
+        {[...TABS, ...(viewer.role === "owner" ? OWNER_TABS : [])].map((tab) => (
           <Link
             key={tab.href}
             href={tab.href}

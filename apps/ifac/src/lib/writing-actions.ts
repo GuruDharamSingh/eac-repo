@@ -9,6 +9,9 @@ import {
   getWritingPostById,
   updateWritingPost,
   deleteWritingPost,
+  listListableOrgs,
+  listThreadListings,
+  setThreadListings,
 } from "@elkdonis/services";
 import type { DeskPatch, DeskResult } from "@elkdonis/cms-ui/writing";
 import { siteConfig } from "@/config/site";
@@ -99,6 +102,42 @@ export async function deletePieceAction(postId: string): Promise<DeskResult> {
   if (!auth.ok) return auth;
   const ok = await deleteWritingPost(postId);
   if (!ok) return { ok: false, error: "Could not delete that piece." };
+  await revalidateWritingPaths(auth.post.authorId, auth.post.slug);
+  return { ok: true };
+}
+
+/**
+ * "Show on" for the desk (person pages, 2026-09-26): the sites the viewer may
+ * list this piece on, and those listing it now. Null when the viewer may not
+ * edit it. Pass the result, with setPieceListingAction bound to the post id,
+ * as WritingDesk's `listing` prop.
+ */
+export async function loadPieceListingAction(
+  postId: string
+): Promise<{ orgs: Array<{ orgId: string; name: string }>; selected: string[]; homeOrgId: string } | null> {
+  const auth = await authorizePost(postId);
+  if (!auth.ok) return null;
+  const viewer = await viewerId();
+  if (!viewer) return null;
+  const [orgs, selected] = await Promise.all([listListableOrgs(viewer), listThreadListings(postId)]);
+  return {
+    orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name })),
+    selected,
+    homeOrgId: auth.post.orgId,
+  };
+}
+
+/**
+ * Make the piece's listings exactly `orgIds`. The acting user is the session's;
+ * setThreadListings applies the author and membership gates per org.
+ */
+export async function setPieceListingAction(postId: string, orgIds: string[]): Promise<DeskResult> {
+  const auth = await authorizePost(postId);
+  if (!auth.ok) return auth;
+  const viewer = await viewerId();
+  if (!viewer) return { ok: false, error: "Sign in required." };
+  const result = await setThreadListings(viewer, postId, orgIds.slice(0, 100));
+  if (!result.ok) return { ok: false, error: result.error ?? "Could not change where this shows." };
   await revalidateWritingPaths(auth.post.authorId, auth.post.slug);
   return { ok: true };
 }

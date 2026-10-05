@@ -730,6 +730,15 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     void notifySellerOfCardSale(result.order, result.lineRows);
   }
 
+  // A booked one-to-one service has a time to agree (migration 174): open
+  // the buyer's proposed times to the seller. Idempotent, and a no-op for
+  // any order without a service_bookings row.
+  if (result.lineRows.some((l) => l.thread_id != null)) {
+    void import("./service-bookings")
+      .then(({ markServiceBookingPaid }) => markServiceBookingPaid(input.orderId))
+      .catch((err) => console.error("[commerce] markServiceBookingPaid:", err));
+  }
+
   return mapOrder(result.order);
 }
 

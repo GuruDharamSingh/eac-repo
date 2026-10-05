@@ -461,7 +461,10 @@ function MenuPreview({ nav, compact }: { nav: NavItem[]; compact?: boolean }) {
         key={`${item.href}-${i}`}
         className={i === active ? "side-nav-link is-active" : "side-nav-link"}
         data-preview-hover={i === hover ? "" : undefined}
-        style={phone ? { fontSize: "max(var(--dm-nav-size), 0.85rem)", padding: "0.35rem 0" } : undefined}
+        style={{
+          ...(phone ? { fontSize: "max(var(--dm-nav-size), 0.85rem)", padding: "0.35rem 0" } : null),
+          ...(item.sub ? { paddingLeft: "0.8rem" } : null),
+        }}
       >
         {item.label}
       </span>

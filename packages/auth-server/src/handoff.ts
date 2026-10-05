@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { getServerSession, getSupabaseServer } from './index';
 import { createRouteSupabaseClient } from './api-routes';
+import { ARRIVAL_COOKIE, SSO_COOKIE, networkOriginFromEnv, ssoCookieValue } from './sso-state';
 
 // ============================================================================
 // Site-to-site session handoff — the network's SSO hop.
@@ -12,18 +13,25 @@ import { createRouteSupabaseClient } from './api-routes';
 // be carried across in a redirect, the way the Nextcloud bridge already
 // carries it (INTER_APP_JWT_SECRET, a short-lived token, one hop).
 //
-//   GET /api/auth/handoff?to=<absolute url>&next=<path on that site>
-//     Signed in here → sign a 90-second token bound to the destination's
+//   GET /api/auth/handoff?to=<absolute url>&next=<path on that site>[&via=<origin>]
+//     Signed in here → sign a 60-second token bound to the destination's
 //     origin → redirect to <dest>/api/auth/handoff/accept?token=…&next=…
 //     Not signed in, or an origin we don't know → just go there, signed out.
+//     `via` names the site the person was really coming from when this hop
+//     is the network host answering another site's arrival check
+//     (sso-proxy.ts); it rides in the token for the arrival record.
+//     `plain=1` → only the redirect, and only to an allowed origin: the last
+//     leg of a mirror (sso-proxy.ts), which must not mint a second session.
 //
 //   GET /api/auth/handoff/accept?token=…&next=…
 //     Verify the token (secret, expiry, audience = this site) → ask GoTrue,
 //     with the service key, for a one-time magic-link token for that account
 //     → verify it server-side, which yields a session → set THIS site's
-//     cookies → land on `next`.
+//     cookies → land on `next`. Already signed in here as the same person:
+//     keep that session. Records the arrival (network_arrivals) when the
+//     app passes its org (createHandoffAcceptHandler).
 //
-// The magic-link token is single-use and the JWT lives 90 seconds, so a
+// The magic-link token is single-use and the JWT lives 60 seconds, so a
 // leaked handoff URL is worth very little. Destinations are limited to the
 // origins GoTrue itself may redirect to (ADDITIONAL_REDIRECT_URLS) plus the
 // network host and its subdomains. HS256 is done with Node's crypto so this
@@ -32,14 +40,7 @@ import { createRouteSupabaseClient } from './api-routes';
 
 const HANDOFF_TTL_SECONDS = 60;
 
-/** The network host's origin (e.g. https://arts-collective.com), or null if unset. */
-function networkOriginServer(): string | null {
-  const host = process.env.NEXT_PUBLIC_NETWORK_HOST;
-  if (!host) return null;
-  const bare = host.split(':')[0];
-  const proto = bare === 'localhost' || bare === '127.0.0.1' ? 'http' : 'https';
-  return `${proto}://${host}`;
-}
+const networkOriginServer = networkOriginFromEnv;
 
 /** This request's own public origin, from next/headers — for server components. */
 export async function currentOrigin(): Promise<string> {
@@ -169,6 +170,11 @@ export async function handleHandoffStart(request: NextRequest): Promise<NextResp
   const landing = `${dest.origin}${nextPath}`;
 
   const here = publicOriginOf(request);
+
+  if (request.nextUrl.searchParams.get('plain') === '1') {
+    return NextResponse.redirect(isAllowedHandoffOrigin(dest.origin) ? landing : `${here}/`);
+  }
+
   const secret = process.env.INTER_APP_JWT_SECRET;
   const session = await getServerSession().catch(() => ({ user: null }));
 
@@ -178,6 +184,7 @@ export async function handleHandoffStart(request: NextRequest): Promise<NextResp
   }
 
   const now = Math.floor(Date.now() / 1000);
+  const via = viaOrigin(request.nextUrl.searchParams.get('via'));
   const token = signHs256(
     {
       sub: session.user.db_user_id ?? session.user.id,
@@ -187,20 +194,48 @@ export async function handleHandoffStart(request: NextRequest): Promise<NextResp
       jti: randomUUID(),
       iat: now,
       exp: now + HANDOFF_TTL_SECONDS,
+      ...(via ? { via } : {}),
     },
     secret
   );
   const q = new URLSearchParams({ token, next: nextPath });
   // The destination's BASE, not just its origin: an app served under a
   // sub-path answers /<base>/api/auth/handoff/accept, and this host cannot
-  // know that unless the caller's `to` carries it. A `to` of a bare origin —
-  // every caller before sub-path hosting existed — leaves this unchanged.
-  const destBase = `${dest.origin}${dest.pathname.replace(/\/+$/, '')}`;
+  // know that unless the caller's `to` carries it. Only when `next` is given:
+  // without it, a path on `to` is the landing page (see nextPath above), and
+  // center pages and the network login pass full page URLs that way.
+  const destBase = nextParam ? `${dest.origin}${dest.pathname.replace(/\/+$/, '')}` : dest.origin;
   return NextResponse.redirect(`${destBase}/api/auth/handoff/accept?${q.toString()}`);
+}
+
+/** An origin from the `via` parameter, or null. Any site may be named: it is only recorded. */
+function viaOrigin(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return url.origin.slice(0, 255);
+  } catch {
+    return null;
+  }
+}
+
+export interface HandoffAcceptOptions {
+  /** This site's org. With it, each arrival is recorded for the org's people page. */
+  orgId?: string;
+}
+
+/** handleHandoffAccept with the site's org bound — `export const GET = createHandoffAcceptHandler({ orgId })`. */
+export function createHandoffAcceptHandler(options: HandoffAcceptOptions) {
+  return (request: NextRequest) => acceptHandoff(request, options);
 }
 
 /** GET /api/auth/handoff/accept — arrive on this site carrying the session. */
 export async function handleHandoffAccept(request: NextRequest): Promise<NextResponse> {
+  return acceptHandoff(request, {});
+}
+
+async function acceptHandoff(request: NextRequest, options: HandoffAcceptOptions): Promise<NextResponse> {
   const here = publicOriginOf(request);
   const nextPath = safeNextPath(request.nextUrl.searchParams.get('next'));
   const fail = (reason: string) => {
@@ -241,6 +276,35 @@ export async function handleHandoffAccept(request: NextRequest): Promise<NextRes
     console.warn('[handoff] Redis unavailable, token replay not tracked:', (err as Error).message);
   }
 
+  const secure = here.startsWith('https:');
+  const sub = typeof payload.sub === 'string' ? payload.sub : null;
+  const via = typeof payload.via === 'string' ? payload.via : null;
+  const finish = async (response: NextResponse) => {
+    response.cookies.set(SSO_COOKIE, ssoCookieValue('m'), { path: '/', sameSite: 'lax', httpOnly: true, secure });
+    if (sub && options.orgId && here !== networkOriginServer()) {
+      const arrivalId = await recordArrival({
+        userId: sub,
+        orgId: options.orgId,
+        host: new URL(here).host,
+        path: nextPath,
+        from: via ?? (payload.iss !== networkOriginServer() ? (payload.iss as string) : null),
+      });
+      if (arrivalId) {
+        // Readable by the page: the notice (cms-ui ArrivalNotice) fetches only
+        // when it is present. The id is useless to anyone but this user.
+        response.cookies.set(ARRIVAL_COOKIE, arrivalId, { path: '/', sameSite: 'lax', httpOnly: false, secure, maxAge: 60 * 30 });
+      }
+    }
+    return response;
+  };
+
+  // Already signed in here as the same person (a mirror hop, or a second
+  // tab): keep that session rather than minting another GoTrue session.
+  const current = await getServerSession().catch(() => ({ user: null }));
+  if (current.user && (current.user.db_user_id === sub || current.user.email?.toLowerCase() === email.toLowerCase())) {
+    return finish(NextResponse.redirect(`${here}${nextPath}`));
+  }
+
   // A one-time magic-link token for this account, verified here on the
   // server, is what turns "we trust this person arrived" into a session on
   // this host. The person never sees the link.
@@ -263,5 +327,52 @@ export async function handleHandoffAccept(request: NextRequest): Promise<NextRes
 
   const response = NextResponse.redirect(`${here}${nextPath}`);
   await applyCookies(response);
-  return response;
+  return finish(response);
+}
+
+/**
+ * Record an arrival in network_arrivals and return its id — only when it says
+ * something: the person came from a known site, or this is their first
+ * arrival on this host. A sign-in mirrored back to the site it started on
+ * (no source, not new) is not an arrival. Soft-fails: a missing table or a
+ * database error must not break the sign-in.
+ */
+async function recordArrival(a: {
+  userId: string;
+  orgId: string;
+  host: string;
+  path: string;
+  from: string | null;
+}): Promise<string | null> {
+  try {
+    const { db } = await import('@elkdonis/db');
+    let fromHost: string | null = null;
+    if (a.from) {
+      try {
+        fromHost = new URL(a.from).host.toLowerCase();
+      } catch {
+        fromHost = null;
+      }
+    }
+    if (fromHost === a.host.toLowerCase()) fromHost = null;
+    if (!fromHost) {
+      const [seen] = await db<{ n: number }[]>`
+        SELECT 1 AS n FROM network_arrivals WHERE user_id = ${a.userId} AND host = ${a.host} LIMIT 1
+      `;
+      if (seen) return null;
+    }
+    const fromDomain = fromHost ? fromHost.split(':')[0].replace(/^www\./, '') : null;
+    const [row] = await db<{ id: string }[]>`
+      INSERT INTO network_arrivals (user_id, org_id, host, path, from_host, from_org_id)
+      VALUES (
+        ${a.userId}, ${a.orgId}, ${a.host}, ${a.path.slice(0, 500)}, ${fromHost},
+        ${fromDomain ? db`(SELECT org_id FROM org_domains WHERE domain IN (${fromDomain}, ${'www.' + fromDomain}) LIMIT 1)` : null}
+      )
+      RETURNING id
+    `;
+    return row?.id ?? null;
+  } catch (err) {
+    console.warn('[handoff] arrival not recorded:', (err as Error).message);
+    return null;
+  }
 }

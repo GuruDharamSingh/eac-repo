@@ -491,7 +491,8 @@ export function ThreadPageView(p: ThreadPageViewProps) {
     </div>
   );
 
-  return <Layout boxes={p.boxes} rail={rail} main={main} />;
+  // The marker lets the analytics beacon (@elkdonis/analytics) credit this view to the thread.
+  return <Layout boxes={p.boxes} rail={rail} main={<><span hidden data-eac-thread={thread.id} />{main}</>} />;
 }
 
 export { Avatar, PersonName, Time };

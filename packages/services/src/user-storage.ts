@@ -29,6 +29,7 @@ import {
   resolveWithin,
   type DavEntry,
 } from './dav';
+import { markArtistByFolder } from './artist-membership';
 
 const ROOT = process.env.NEXTCLOUD_ORG_ROOT_FOLDER || 'EAC_Network';
 
@@ -57,13 +58,19 @@ export function resolveUserPath(slug: string, relative = ''): string {
   return resolveWithin(userStorageRoot(slug), relative);
 }
 
-/** Look up a person's storage slug from their platform user id. */
+/**
+ * Look up a person's storage folder name from their platform user id.
+ *
+ * This is `users.storage_folder` (migration 169), not `users.slug`: the slug
+ * can be renamed from the profile editor, the folder name cannot. The name
+ * "slug" is kept on this function and its callers' variables for continuity.
+ */
 export async function getStorageSlug(userId: string): Promise<string | null> {
   try {
-    const rows = await db<Array<{ slug: string | null }>>`
-      SELECT slug FROM users WHERE id = ${userId} OR auth_user_id = ${userId} LIMIT 1
+    const rows = await db<Array<{ storage_folder: string | null }>>`
+      SELECT storage_folder FROM users WHERE id = ${userId} OR auth_user_id = ${userId} LIMIT 1
     `;
-    return rows[0]?.slug ?? null;
+    return rows[0]?.storage_folder ?? null;
   } catch (err) {
     console.error('[user-storage] getStorageSlug:', err);
     return null;
@@ -120,6 +127,13 @@ export async function uploadUserFile(
     return { ok: false, error: (err as Error).message };
   }
 
+  // The folder is not guaranteed to exist: signup does not create it, and the
+  // provisioning script runs by hand. A PUT under a missing parent fails, so
+  // create the chain first (idempotent: an existing folder is success).
+  if (!(await davMkcol(userStorageRoot(slug))) || !(await createUserFolder(slug, `Media/${folder}`))) {
+    return { ok: false, error: 'Could not create your storage folder' };
+  }
+
   if (!(await davPut(path, body as Uint8Array, mimeType || 'application/octet-stream'))) {
     return { ok: false, error: 'Upload failed' };
   }
@@ -139,6 +153,9 @@ export async function createUserFolder(slug: string, relative: string): Promise<
     ok = await davMkcol(resolveUserPath(slug, parts.slice(0, i).join('/')));
     if (!ok) return false;
   }
+  // Storing in a person's folder gains their space (artist-membership.ts).
+  // Every per-person upload creates its target folder here first.
+  if (ok) await markArtistByFolder(slug);
   return ok;
 }
 

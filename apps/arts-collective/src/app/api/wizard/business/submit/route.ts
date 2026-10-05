@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
-import { getOwnedOrgId } from "@elkdonis/services";
+import { gainSpace } from "@elkdonis/services";
 import { requireUser } from "@/lib/session";
 import { businessWizardSchema } from "@/lib/business-schema";
 
@@ -23,10 +23,10 @@ export async function POST(req: Request) {
   }
   const a = parsed.data;
 
-  const orgId = await getOwnedOrgId(user.id);
-  if (!orgId) {
-    return NextResponse.json({ error: "No org" }, { status: 400 });
-  }
+  // Any artist of the collective may fill this in; no owned org is needed.
+  // gainSpace is idempotent and returns the org the profile is filed under
+  // (their own org if they own one, else oad).
+  const { profileOrgId: orgId } = await gainSpace(user.id);
 
   const fields: Record<string, unknown> = {};
   const set = (col: string, val: unknown) => {

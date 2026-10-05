@@ -74,6 +74,8 @@ export interface WizardFieldSpec {
   options?: WizardFieldOption[];
   min?: number;
   max?: number;
+  /** `<input step>` for number fields; "any" allows decimals (prices, hours). */
+  step?: number | "any";
   /** Render on the same line as the neighbouring `inline` fields. */
   inline?: boolean;
   dependsOn?: WizardFieldDependency;
@@ -336,6 +338,7 @@ function Control({
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}
+          step={field.step}
           aria-describedby={describedBy}
           onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
         />

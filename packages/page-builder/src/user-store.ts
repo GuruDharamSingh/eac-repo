@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { sanitizeRichValues } from "@elkdonis/blocks";
 import { validatePage } from "./validate";
 import { isValidUserPageKey } from "./user-page-key";
 
@@ -115,6 +116,9 @@ export async function saveUserPage(
   if (!isValidUserPageKey(key)) {
     return { ok: false, error: "That page name is not usable." };
   }
+  // Rich text is cut down to what a page's text may hold before it is
+  // stored (the blocks sanitise again when they render).
+  data = sanitizeRichValues(data);
   const check = validatePage(data);
   if (!check.ok) {
     console.error(`[user-pages] refusing to save ${userId}/${orgId}/${key}:`, check.errors);
@@ -141,6 +145,53 @@ export async function saveUserPage(
   } catch (err) {
     console.error(`[user-pages] saveUserPage(${userId}, ${orgId}, ${key}):`, err);
     return { ok: false, error: "Could not save this page." };
+  }
+}
+
+/**
+ * Write a document straight to `published`, with no review.
+ *
+ * For an org whose person pages are the person's own and go live on Publish
+ * — the personal org (`oad`, ArtDirect: a person's profile and featured
+ * pages, 2026-09-26). Whether an org may do this is @elkdonis/services'
+ * decision (`publishesWithoutReview`), which the caller must check first; an
+ * org that reviews pages (IFAC's store panels) goes through saveUserPage and
+ * submitUserPage instead. Same sanitising, validation and size cap as
+ * saveUserPage.
+ */
+export async function publishUserPage(
+  userId: string,
+  orgId: string,
+  key: string,
+  data: unknown
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isValidUserPageKey(key)) {
+    return { ok: false, error: "That page name is not usable." };
+  }
+  data = sanitizeRichValues(data);
+  const check = validatePage(data);
+  if (!check.ok) {
+    console.error(`[user-pages] refusing to publish ${userId}/${orgId}/${key}:`, check.errors);
+    return { ok: false, error: "That page is not in a shape we can store." };
+  }
+  if (JSON.stringify(data).length > MAX_PAGE_BYTES) {
+    return { ok: false, error: "That page is too large to save." };
+  }
+  try {
+    await db`
+      INSERT INTO user_pages (user_id, org_id, key, data, status, updated_at)
+      VALUES (${userId}, ${orgId}, ${key}, ${db.json(data as never)}, 'published', NOW())
+      ON CONFLICT (user_id, org_id, key)
+      DO UPDATE SET data = EXCLUDED.data,
+                    status = 'published',
+                    reviewed_by = NULL,
+                    reviewed_at = NULL,
+                    updated_at = NOW()
+    `;
+    return { ok: true };
+  } catch (err) {
+    console.error(`[user-pages] publishUserPage(${userId}, ${orgId}, ${key}):`, err);
+    return { ok: false, error: "Could not publish this page." };
   }
 }
 

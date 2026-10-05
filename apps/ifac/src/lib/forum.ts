@@ -55,6 +55,11 @@ export async function getForumConnectors(): Promise<ForumConnectors> {
     actionBase: "/api/forum",
     theme,
     mode,
+    // Many members read with poor eyesight (owner's request, 2026-09-23):
+    // the forum opens in large type and the card layout. A reader can change
+    // either from the controls above the board; the cookie then wins.
+    size: "large",
+    layout: "cards",
   });
 }
 

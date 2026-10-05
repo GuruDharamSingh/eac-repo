@@ -318,6 +318,13 @@ export type CreateLotFormInput = {
   reserve?: number | null;
   bidIncrement?: number | null;
   antiSnipeMinutes?: number | null;
+  /**
+   * Which auction this lot belongs to: a short name kept in the lot's metadata
+   * (`auction_lot.metadata.event`). The page blocks filter on it, so one site
+   * can run a silent auction page for one event and another for the next.
+   * Empty means no tag.
+   */
+  event?: string | null;
 };
 
 export async function createLotAction(
@@ -335,6 +342,15 @@ export async function createLotAction(
       bidIncrementMinor: input.bidIncrement != null && input.bidIncrement > 0 ? toMinor(input.bidIncrement) : undefined,
       antiSnipeMinutes: input.antiSnipeMinutes ?? undefined,
     });
+    // createLot has already checked this person may act for the store; the tag
+    // is only a label on the row it made.
+    const event = (input.event ?? "").trim();
+    if (event && /^[\w -]{1,60}$/.test(event)) {
+      await db`
+        UPDATE auction_lot SET metadata = metadata || ${db.json({ event } as never)}
+        WHERE id = ${lot.id}
+      `;
+    }
     revalidatePath("/studio", "layout");
     revalidatePath("/lots");
     revalidatePath(`/artworks/${input.artworkId}`);

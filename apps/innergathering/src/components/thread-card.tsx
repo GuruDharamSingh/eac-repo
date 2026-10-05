@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { kindMeta, useSurfaceOptional } from "@elkdonis/cms-ui/surface";
-import { CycleBadge } from "@/components/cycle-badge";
 import {
   formatDuration,
   formatRecurrence,
@@ -10,12 +9,10 @@ import {
   formatTime,
   toPlainText,
 } from "@/lib/format";
-import type { Thread, ThreadCycleStatus } from "@/lib/types";
+import type { Thread } from "@/lib/types";
 
 interface ThreadCardProps {
   thread: Thread;
-  /** Only meaningful for dated, recurring items — omitted for posts. */
-  cycleStatus?: ThreadCycleStatus;
   attendanceCount?: number;
   /** The feed's name, for the kicker. */
   feedName?: string;
@@ -31,7 +28,7 @@ interface ThreadCardProps {
  * without JavaScript, in a reader, or from a search result they still go to
  * the page; a modifier-click keeps its meaning.
  */
-export function ThreadCard({ thread, cycleStatus, attendanceCount, feedName }: ThreadCardProps) {
+export function ThreadCard({ thread, attendanceCount, feedName }: ThreadCardProps) {
   const surfaces = useSurfaceOptional();
   const href = `/${thread.feedSlug}/${thread.slug}`;
   const when = thread.nextOccurrenceAt;
@@ -99,12 +96,6 @@ export function ThreadCard({ thread, cycleStatus, attendanceCount, feedName }: T
         )}
         {thread.authorName && <span>with {thread.authorName}</span>}
       </div>
-
-      {cycleStatus && (
-        <div style={{ marginTop: 8 }}>
-          <CycleBadge status={cycleStatus} />
-        </div>
-      )}
 
       <div className="eac-face-actions">
         <Link href={href} className="eac-btn eac-btn--quiet" style={{ padding: "4px 8px" }}>

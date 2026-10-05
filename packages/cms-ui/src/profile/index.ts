@@ -12,3 +12,17 @@ export {
   resolveLayout,
 } from "./profile-layouts";
 export type { ProfileLayoutOption } from "./profile-layouts";
+
+export {
+  PersonPage,
+  PersonSectionPanel,
+  PersonThreadList,
+  PersonGalleryCards,
+} from "./PersonPage";
+export type {
+  PersonPageProps,
+  PersonPagePerson,
+  PersonPageLink,
+  PersonListItem,
+  PersonGalleryCard,
+} from "./PersonPage";

@@ -240,6 +240,72 @@ a:hover {
   color: var(--dm-nav-active);
   font-weight: 600;
 }
+/* Submenus (lib/navigation.ts groupNav): the parent link plus a caret that
+   opens its sub-links, indented under it. */
+.side-nav-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.side-nav-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dm-nav-ink);
+  font-size: var(--dm-nav-size);
+  cursor: pointer;
+}
+.side-nav-caret span {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.side-nav-group[data-open="true"] .side-nav-caret span {
+  transform: rotate(90deg);
+}
+.side-nav-caret:hover {
+  color: var(--dm-nav-hover);
+}
+.side-nav-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  padding-left: 0.8rem;
+  border-left: 1px solid color-mix(in srgb, var(--dm-nav-ink) 25%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .side-nav-caret span {
+    transition: none;
+  }
+}
+
+/* /about: the About group's pages as a list of links. */
+.about-links {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.about-links a {
+  font-family: var(--dm-font-nav);
+  font-size: 1.25rem;
+  letter-spacing: var(--dm-nav-tracking);
+  text-transform: var(--dm-nav-case);
+}
+.about-links a,
+.about-links a:visited {
+  /* Ink, not cyan: nothing light reaches 4.5:1 on her violet. */
+  color: var(--ink);
+}
+.about-links a:hover {
+  text-decoration: underline;
+}
 .side-nav-link--manage {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
@@ -1380,4 +1446,89 @@ body:has(.dm-diamond[data-splash="true"]) .site-content {
 .site-shell > :not(.site-sidebar) {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Collections navigator (blocks/collection-nav.tsx).
+
+   The Gallery grid's geometry in CSS: 12 columns, rows as tall as a column is
+   wide (container units), each tile placed by inline grid-column / grid-row.
+   Below 560px the arrangement gives way to two squares across — the inline
+   placement is overridden, hence !important there only.
+
+   Names: white on a shade by default (white on rgb(0 0 0 / .45) over a light
+   picture is about 4.6:1; "strong" .7 is about 9:1), in the menu's lettering.
+   --------------------------------------------------------------------------- */
+.dm-cnav { container-type: inline-size; margin: 0 0 2rem; }
+.dm-cnav-title { margin: 0 0 1rem; }
+.dm-cnav-empty { padding: 1.5rem; border: 1px dashed currentColor; opacity: 0.8; }
+.dm-cnav-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: calc((100cqi - 11 * var(--cnav-gap, 12px)) / 12);
+  gap: var(--cnav-gap, 12px);
+}
+.dm-cnav-cell { position: relative; overflow: hidden; border-radius: 4px; background: #111; }
+.dm-cnav-tile { position: absolute; inset: 0; display: block; color: inherit; text-decoration: none; }
+.dm-cnav-tile:focus-visible { outline: 3px solid #fff; outline-offset: -6px; box-shadow: inset 0 0 0 6px var(--ink, #060606); }
+.dm-cnav-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.dm-cnav-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  padding: 0.9rem 1rem;
+  color: #fff;
+  font-family: var(--dm-font-nav, inherit);
+  font-weight: var(--dm-nav-weight, 500);
+  text-transform: var(--dm-nav-case, uppercase);
+  letter-spacing: var(--dm-nav-tracking, 0.06em);
+  line-height: 1.2;
+  text-wrap: balance;
+  pointer-events: none;
+}
+.dm-cnav-label-text { max-width: 100%; }
+.dm-cnav[data-size="s"]  .dm-cnav-label { font-size: 0.85rem; }
+.dm-cnav[data-size="m"]  .dm-cnav-label { font-size: 1.1rem; }
+.dm-cnav[data-size="l"]  .dm-cnav-label { font-size: 1.5rem; }
+.dm-cnav[data-size="xl"] .dm-cnav-label { font-size: 2rem; line-height: 1.1; }
+
+.dm-cnav[data-at^="top"]    .dm-cnav-label { align-items: flex-start; }
+.dm-cnav[data-at="left"]    .dm-cnav-label,
+.dm-cnav[data-at="center"]  .dm-cnav-label,
+.dm-cnav[data-at="right"]   .dm-cnav-label { align-items: center; }
+.dm-cnav[data-at^="bottom"] .dm-cnav-label { align-items: flex-end; }
+.dm-cnav[data-at$="left"]   .dm-cnav-label { justify-content: flex-start; text-align: start; }
+.dm-cnav[data-at="top"]     .dm-cnav-label,
+.dm-cnav[data-at="center"]  .dm-cnav-label,
+.dm-cnav[data-at="bottom"]  .dm-cnav-label { justify-content: center; text-align: center; }
+.dm-cnav[data-at$="right"]  .dm-cnav-label { justify-content: flex-end; text-align: end; }
+
+.dm-cnav[data-shade="soft"]   { --cnav-shade: rgb(0 0 0 / 0.45); }
+.dm-cnav[data-shade="strong"] { --cnav-shade: rgb(0 0 0 / 0.7); }
+.dm-cnav:not([data-shade="none"])[data-at^="top"]    .dm-cnav-label { background: linear-gradient(to bottom, var(--cnav-shade), transparent 65%); }
+.dm-cnav:not([data-shade="none"])[data-at^="bottom"] .dm-cnav-label { background: linear-gradient(to top, var(--cnav-shade), transparent 65%); }
+.dm-cnav:not([data-shade="none"])[data-at="left"]    .dm-cnav-label { background: linear-gradient(to right, var(--cnav-shade), transparent 70%); }
+.dm-cnav:not([data-shade="none"])[data-at="right"]   .dm-cnav-label { background: linear-gradient(to left, var(--cnav-shade), transparent 70%); }
+.dm-cnav:not([data-shade="none"])[data-at="center"]  .dm-cnav-label { background: radial-gradient(closest-side, var(--cnav-shade), transparent); }
+.dm-cnav[data-shade="none"] .dm-cnav-label { text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
+
+/* Names on hover: only where there is a pointer to hover with. */
+@media (hover: hover) {
+  .dm-cnav[data-show="hover"] .dm-cnav-label { opacity: 0; transition: opacity 0.2s ease; }
+  .dm-cnav[data-show="hover"] .dm-cnav-cell:hover .dm-cnav-label,
+  .dm-cnav[data-show="hover"] .dm-cnav-cell:focus-within .dm-cnav-label { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dm-cnav .dm-cnav-label { transition: none; }
+}
+
+@container (max-width: 560px) {
+  .dm-cnav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+  .dm-cnav-cell { grid-column: auto !important; grid-row: auto !important; aspect-ratio: 1; }
+  .dm-cnav[data-size="l"]  .dm-cnav-label,
+  .dm-cnav[data-size="xl"] .dm-cnav-label { font-size: 1.15rem; }
 }

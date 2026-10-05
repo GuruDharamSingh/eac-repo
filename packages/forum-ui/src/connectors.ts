@@ -157,7 +157,30 @@ export interface ForumConnectors {
    * forum-theme.css carries the palettes.
    */
   mode?: "light" | "dark" | "auto";
+  /**
+   * The host's default text size (2026-09-25). A reader's own choice, saved
+   * in the `forum_size` cookie by the reader controls, wins over this; see
+   * resolveReaderPrefs in routes.tsx. Emitted as data-forum-size; forum.css
+   * scales every font size by it.
+   */
+  size?: ForumTextSize;
+  /**
+   * The host's default layout: "board" (rows, the default) or "cards" (one
+   * card per topic, category and reply; the side column moves under the
+   * page). Cookie `forum_layout` overrides it. Emitted as data-forum-layout.
+   */
+  layout?: ForumLayout;
+  /**
+   * Put the match-and-tealight light switch at the foot of the left rail
+   * (match-light.tsx, 2026-09-26). Lighting it sets light mode, snuffing it
+   * dark mode, through the same forum_mode cookie. Needs JavaScript; the
+   * reader controls' button remains either way.
+   */
+  matchLight?: boolean;
 }
+
+export type ForumTextSize = "standard" | "large" | "largest";
+export type ForumLayout = "board" | "cards";
 
 /** A wiki page as the forum needs it — shaped here so forum-ui stays free of
  *  any dependency on @elkdonis/services. */
@@ -386,6 +409,12 @@ export interface ServiceConnectorOptions {
   theme?: "classic" | "modern";
   /** "light" (default), "dark" or "auto". See ForumConnectors.mode. */
   mode?: "light" | "dark" | "auto";
+  /** Default text size. See ForumConnectors.size. */
+  size?: ForumTextSize;
+  /** Default layout. See ForumConnectors.layout. */
+  layout?: ForumLayout;
+  /** The match light switch in the left rail. See ForumConnectors.matchLight. */
+  matchLight?: boolean;
   /**
    * @deprecated The forum owns wiki editing itself now (2026-09-17); the
    * Edit/New affordances point at the forum's own /wiki routes. Accepted and
@@ -478,6 +507,9 @@ export async function serviceConnectors(opts: ServiceConnectorOptions): Promise<
     actionBase: opts.actionBase,
     theme: opts.theme,
     mode: opts.mode,
+    matchLight: opts.matchLight,
+    size: opts.size,
+    layout: opts.layout,
     hrefs: opts.hrefs,
   };
 }

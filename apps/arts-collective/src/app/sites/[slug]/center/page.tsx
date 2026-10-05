@@ -107,6 +107,12 @@ export default async function SiteCenterPage({
     homePreviewUrl: thisHome,
     orgProfileHref: "/profile",
     composeHref: process.env.NEXT_PUBLIC_FORUM_URL ?? null,
+    // Shown until the person is an artist of the collective (oad member).
+    gainSpaceHref: data.orgs.some((o) => o.orgId === "oad" && o.role !== "viewer")
+      ? null
+      : xs(`${network}/wizard`),
+    // The Studio, keyed to this org so "Writing as" starts here.
+    studioHref: xs(`${network}/studio?org=${encodeURIComponent(org.id)}`),
   };
 
   return (

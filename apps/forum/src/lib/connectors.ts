@@ -41,6 +41,7 @@ export async function getConnectors(opts: ConnectorOptions = {}): Promise<ForumC
     hrefs: links,
     actionBase: ACTION_BASE,
     mode,
+    matchLight: true,
     wikiEditor: WikiEditorIsland,
   });
 }

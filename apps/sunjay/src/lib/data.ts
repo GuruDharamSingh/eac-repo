@@ -13,6 +13,9 @@ import {
   OFF_FEED_KINDS,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { isAdmin } from "@elkdonis/auth-server";
+import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
+import { getViewer } from "@/lib/auth";
 import type {
   Attendee,
   Guide,
@@ -256,6 +259,22 @@ async function withTerms(thread: Thread | null): Promise<Thread | null> {
   }
 }
 
+/**
+ * Whether the current visitor may read a thread by its visibility. Until
+ * 2026-10-03 getThreadBySlug returned any published thread to anyone, so a
+ * members-only (ORGANIZATION) post opened by direct URL. Rows with a minimum
+ * role (INVITE_ONLY, migration 188) are not offered by this app's form and stay
+ * author/admin-only here.
+ */
+async function mayRead(thread: Thread): Promise<boolean> {
+  const viewer = await getViewer().catch(() => null);
+  const isGlobalAdmin = viewer ? await isAdmin(viewer.userId).catch(() => false) : false;
+  return canViewThread(
+    { visibility: thread.visibility, minRole: null, authorId: thread.authorId, status: thread.status },
+    { userId: viewer?.userId ?? null, role: (viewer?.role as ThreadRole | null) ?? null, isGlobalAdmin }
+  );
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -266,7 +285,10 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
         AND t.status = 'published'
       LIMIT 1
     `;
-    return row ? await withTerms(mapThread(row)) : null;
+    if (!row) return null;
+    const thread = mapThread(row);
+    if (!(await mayRead(thread))) return null;
+    return await withTerms(thread);
   } catch (err) {
     console.error(`[sunjay] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;

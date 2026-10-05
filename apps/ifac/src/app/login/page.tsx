@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { currentOrigin, getServerSession, ssoCheckUrl } from "@elkdonis/auth-server";
+import { currentOrigin, getServerSession, joinOrgsOnSignIn, ssoCheckUrl } from "@elkdonis/auth-server";
 import { LoginForm } from "@/components/login-form";
 import { siteConfig } from "@/config/site";
 
@@ -15,7 +15,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getServerSession();
   // Already signed in — nothing to do here. Honour ?next so a claim-prompt
   // or /manage-style round trip lands where it meant to.
-  if (session.user) redirect(next ?? "/hub");
+  // A session found here — typically by the silent network check below —
+  // is a sign-in through IFAC, so the account joins as a viewer (an existing
+  // row keeps its role), same as the password and Google routes.
+  if (session.user) {
+    await joinOrgsOnSignIn(session.user.id, [{ id: siteConfig.orgId, role: "viewer" }], "login");
+    redirect(next ?? "/hub");
+  }
 
   // One silent trip through the network host before showing the form: if the
   // person signed in on another site of the collective, this finds that

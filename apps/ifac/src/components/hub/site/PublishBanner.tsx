@@ -33,7 +33,14 @@ type Door = {
   soon?: boolean;
 };
 
-export function PublishBanner() {
+/**
+ * `column` stacks the doors one to a row, for a narrow column. `compact` keeps
+ * them three across at a smaller size, for the space under the hub calendar
+ * (owner, 2026-09-26).
+ */
+export function PublishBanner({
+  variant = "row",
+}: { variant?: "row" | "column" | "compact" } = {}) {
   const { connectors, open } = useSurface();
 
   const canCompose = Boolean(connectors.viewer.canCompose && connectors.saveThread);
@@ -87,7 +94,10 @@ export function PublishBanner() {
   }
 
   return (
-    <section className="ifac-publish" aria-labelledby="ifac-publish-h">
+    <section
+      className={variant === "row" ? "ifac-publish" : `ifac-publish ifac-publish--${variant}`}
+      aria-labelledby="ifac-publish-h"
+    >
       <header className="ifac-publish__head">
         <h2 id="ifac-publish-h" className="ifac-publish__title">
           Publish

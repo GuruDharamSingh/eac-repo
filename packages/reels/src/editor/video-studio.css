@@ -1,0 +1,141 @@
+/* The Studio's Video page. Sits inside `.studio` and uses its tokens
+   (packages/studio/src/studio.css), so light/dark and type match the
+   writing side. Three columns above 1100px; stacked below. */
+
+.vs h2 {
+  font: 600 11px/1.2 var(--st-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-muted);
+  margin: 18px 0 8px;
+}
+.vs h3 { font: 600 13px/1.3 var(--st-sans); margin: 10px 0 6px; }
+.vs-faint { color: var(--st-faint); font-size: 12.5px; margin: 4px 0; }
+.vs-error {
+  background: var(--st-panel-2);
+  color: var(--st-danger);
+  border-bottom: 1px solid var(--st-line);
+  padding: 8px 16px;
+}
+.vs-error button { background: none; border: 0; color: inherit; font-size: 16px; cursor: pointer; }
+
+.vs-projects h2, .vs-panel h2, .vs-stage h2 {
+  font: 600 11px/1.2 var(--st-sans); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--st-muted); margin: 6px 0 4px;
+}
+.vs-projects h3, .vs-panel h3, .vs-stage h3 { font: 600 13px/1.3 var(--st-sans); margin: 10px 0 6px; }
+/* The Video kind's side columns scroll on their own (desktop): the slot
+   panel is long. The columns themselves stick under the bar; a sticky panel
+   inside them would not, because their overflow makes each its own scroll
+   container (measured 2026-10-04: the panel scrolled away with the page). */
+@media (min-width: 1001px) {
+  .studio-frame--wide-settings .studio-drawer,
+  .studio-frame--wide-settings .studio-settings {
+    position: sticky; top: 52px; align-self: start;
+    height: calc(100vh - 52px); overflow-y: auto;
+  }
+  .studio-frame--wide-settings .studio-panel { position: static; }
+}
+.vs-projects ul { list-style: none; margin: 0; padding: 0; }
+.vs-projects li button {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 7px 8px; border-radius: 6px; color: var(--st-ink); font: inherit; cursor: pointer;
+}
+.vs-projects li button small { display: block; color: var(--st-faint); font-size: 11.5px; }
+.vs-projects li button:hover, .vs-projects li button[aria-current="true"] { background: var(--st-panel-2); }
+.vs-template {
+  display: block; width: 100%; text-align: left; margin-bottom: 8px;
+  background: var(--st-panel-2); border: 1px solid var(--st-control-line); border-radius: 8px;
+  padding: 10px; color: var(--st-ink); font: inherit; cursor: pointer;
+}
+.vs-template span { display: block; color: var(--st-muted); font-size: 12px; margin-top: 3px; }
+.vs-template:hover { border-color: var(--st-accent); }
+
+.vs-stage {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 18px 20px 40px; overflow-y: auto; gap: 12px;
+}
+.vs-title {
+  width: min(420px, 100%); text-align: center; background: transparent; border: 0;
+  border-bottom: 1px solid var(--st-line); color: var(--st-ink);
+  font: 500 22px/1.3 var(--st-serif); padding: 4px;
+}
+.vs-title:focus { outline: none; border-bottom-color: var(--st-accent); }
+.vs-player {
+  flex-shrink: 0;
+  height: min(72vh, 760px); aspect-ratio: 9 / 16; max-width: 100%;
+  background: #000; border-radius: 10px; overflow: hidden; box-shadow: var(--st-shadow);
+}
+.vs-empty { margin: auto; max-width: 420px; text-align: center; color: var(--st-muted); }
+.vs-done {
+  flex-shrink: 0;
+  width: min(420px, 100%); background: var(--st-panel); border: 1px solid var(--st-line);
+  border-radius: 10px; padding: 12px; display: grid; gap: 8px;
+}
+.vs-done video { width: 100%; border-radius: 6px; background: #000; max-height: 60vh; }
+
+.vs-slot {
+  border: 1px solid var(--st-line); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;
+  background: var(--st-panel);
+}
+.vs-slot[data-filled="true"] { border-color: var(--st-control-line); }
+.vs-slot header { display: flex; justify-content: space-between; align-items: baseline; }
+.vs-req { color: var(--st-warn); font-weight: 400; font-size: 11.5px; }
+.vs-file { font-size: 12.5px; color: var(--st-ink); word-break: break-all; margin: 4px 0; }
+.vs-pick { display: inline-block; margin-top: 4px; cursor: pointer; }
+.vs-slot progress { width: 100%; }
+.vs-link {
+  background: none; border: 0; padding: 0; color: var(--st-accent);
+  font: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline;
+}
+.vs-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 12.5px; }
+.vs-row label { display: flex; gap: 6px; align-items: center; }
+.vs-row input[type="number"] { width: 72px; }
+.vs-field { display: grid; gap: 4px; font-size: 12.5px; color: var(--st-muted); margin-top: 8px; }
+.vs input[type="number"], .vs-panel input[type="number"], .vs-field input {
+  background: var(--st-panel-2); color: var(--st-ink); border: 1px solid var(--st-control-line);
+  border-radius: 6px; padding: 6px 8px; font: inherit;
+}
+.vs-tracks { margin-top: 6px; }
+.vs-track { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.vs-track > button:first-child {
+  flex: 1; text-align: left; background: none; border: 0; padding: 5px 6px; border-radius: 5px;
+  color: var(--st-ink); font: inherit; font-size: 12.5px; cursor: pointer; word-break: break-all;
+}
+.vs-track[aria-current="true"] > button:first-child,
+.vs-track > button:first-child:hover { background: var(--st-panel-2); }
+.vs-archive { margin-top: 16px; color: var(--st-danger); }
+
+
+.vs-recorder { margin-top: 8px; display: grid; gap: 6px; }
+.vs-recorder__view {
+  position: relative; background: #000; border-radius: 8px; overflow: hidden;
+  aspect-ratio: 9 / 16; max-height: 360px; display: grid; place-items: center;
+}
+.vs-recorder__view[data-source="screen"] { aspect-ratio: 16 / 9; }
+.vs-recorder__view video { width: 100%; height: 100%; object-fit: cover; }
+.vs-recorder__view[data-source="camera"] video { transform: scaleX(-1); }
+.vs-recorder__view .vs-faint { color: #b8b3aa; }
+.vs-recorder__rec {
+  position: absolute; top: 8px; left: 8px; background: rgba(0, 0, 0, 0.6);
+  color: #ff6b6b; font: 600 13px/1 var(--st-sans); padding: 5px 8px; border-radius: 4px;
+}
+
+
+.vs-library { margin-top: 8px; border-top: 1px solid var(--st-line); padding-top: 8px; display: grid; gap: 6px; }
+.vs-library__bar { margin-top: 0; }
+.vs-library .studio-btn[aria-pressed="true"] { background: var(--st-accent); color: var(--st-accent-ink); border-color: var(--st-accent); }
+.vs-reels { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.vs-reels button {
+  display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; background: none;
+  border: 1px solid var(--st-line); border-radius: 6px; padding: 4px; color: var(--st-ink); font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.vs-reels button:hover { border-color: var(--st-accent); }
+.vs-reels img, .vs-reels__blank { width: 34px; height: 60px; object-fit: cover; border-radius: 3px; background: #000; flex: none; }
+.vs-reels small { display: block; color: var(--st-faint); }
+.vs-publish p { margin: 0; font-size: 13px; }
+.vs-publish a { color: var(--st-accent); word-break: break-all; }
+.vs-field textarea {
+  background: var(--st-panel-2); color: var(--st-ink); border: 1px solid var(--st-control-line);
+  border-radius: 6px; padding: 6px 8px; font: inherit; resize: vertical;
+}

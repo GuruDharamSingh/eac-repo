@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { gainSpace } from "@elkdonis/services";
 import { requireUser } from "@/lib/session";
 import { getProfileForUser } from "@/lib/profile";
 import { BusinessWizardProvider } from "@/components/wizard/BusinessWizardProvider";
@@ -14,11 +15,11 @@ export const dynamic = "force-dynamic";
 
 export default async function BusinessWizardPage() {
   const user = await requireUser();
+  // Starting any artist onboarding gains the person's space (oad membership,
+  // listing, storage, profile row); owning an org is not required.
+  await gainSpace(user.id);
   const profile = await getProfileForUser(user.id);
-
-  if (!profile) {
-    redirect("/signup/setup");
-  }
+  if (!profile) redirect("/hub");
 
   // Map database profile to BusinessWizardAnswers
   const initial: Partial<BusinessWizardAnswers> = {

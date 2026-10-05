@@ -234,7 +234,7 @@ export async function loadGalleryGrid(opts: {
     `;
     if (!g || !Array.isArray(g.items)) return { galleryId: g?.id ?? null, title: g?.title ?? "", items: [] };
     type Raw = {
-      id?: string; url?: string; title?: string; artworkId?: string; subtitle?: string; opens?: string;
+      id?: string; url?: string; title?: string; artworkId?: string; subtitle?: string; opens?: string; link?: string;
       x?: number; y?: number; w?: number; h?: number; fx?: number; fy?: number; zoom?: number;
       saved?: { x: number; y: number; w: number; h: number };
     };
@@ -253,6 +253,8 @@ export async function loadGalleryGrid(opts: {
         ...(i.saved ? { saved: i.saved } : {}),
         ...(i.subtitle ? { subtitle: i.subtitle } : {}),
         ...(galleryIdOf(i.opens) ? { opens: i.opens } : {}),
+        // Stored already cleaned (asGalleryItems / cleanGalleryLink).
+        ...(typeof i.link === "string" && i.link ? { link: i.link } : {}),
       };
       items.push({
         id: i.id ?? `item-${n}`,

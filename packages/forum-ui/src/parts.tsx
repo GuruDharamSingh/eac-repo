@@ -12,7 +12,7 @@ import type {
   Paged,
 } from "@elkdonis/services";
 import { kindMeta } from "@elkdonis/cms-ui/surface";
-import type { ForumHrefs } from "./connectors";
+import type { ForumHrefs, ForumLayout, ForumTextSize } from "./connectors";
 import { clock, dayHeading, dayKey, fullStamp, plural, timeAgo } from "./format";
 import { mediaUrl } from "./media";
 
@@ -517,19 +517,44 @@ export function Agenda({ rows, hrefs, showOrg }: { rows: ForumHappeningRow[]; hr
 
 // ── theme toggle + new-topic link ─────────────────────────────────────────
 
-export function ModeToggle({ currentMode, actionBase, back }: { currentMode: "light" | "dark" | "auto"; actionBase: string; back: string }) {
-  // Two-state toggle, because a three-way including "auto" makes the control
-  // say something the reader has to decode. "auto" resolves to whichever it
-  // is currently showing, and flipping it commits to the opposite.
-  const next = currentMode === "dark" ? "light" : "dark";
+/**
+ * The reader's controls: text size, layout, light/dark (2026-09-25). One
+ * form, one submit button per choice, so it works with no script and each
+ * button posts only its own name/value. Rendered above every page rather
+ * than in the footer, where a reader who needs larger type would have to
+ * scroll the small type to find it.
+ */
+export function ReaderControls({ size, layout, mode, actionBase, back }: {
+  size: ForumTextSize; layout: ForumLayout; mode: "light" | "dark" | "auto"; actionBase: string; back: string;
+}) {
   const base = actionBase.replace(/\/$/, "");
+  const nextMode = mode === "dark" ? "light" : "dark";
+  const sizes: Array<[ForumTextSize, string]> = [["standard", "Standard"], ["large", "Large"], ["largest", "Largest"]];
+  const layouts: Array<[ForumLayout, string]> = [["board", "List"], ["cards", "Cards"]];
   return (
-    <form method="post" action={`${base}/set-theme`} className="gf-mode-toggle">
-      <input type="hidden" name="mode" value={next} />
+    <form method="post" action={`${base}/set-theme`} className="gf-reader" aria-label="Reading options">
       <input type="hidden" name="back" value={back} />
-      <button type="submit" className="gf-tool" title={`Switch to ${next} background`}>
-        {currentMode === "dark" ? "☀ Light" : "◑ Dark"}
-      </button>
+      <span className="gf-reader-group" role="group" aria-labelledby="gf-reader-size">
+        <span id="gf-reader-size" className="gf-reader-label">Text size</span>
+        {sizes.map(([v, label]) => (
+          <button key={v} type="submit" name="size" value={v} className={`gf-tool gf-reader-size gf-reader-size--${v}${size === v ? " is-on" : ""}`} aria-pressed={size === v}>
+            {label}
+          </button>
+        ))}
+      </span>
+      <span className="gf-reader-group" role="group" aria-labelledby="gf-reader-layout">
+        <span id="gf-reader-layout" className="gf-reader-label">Layout</span>
+        {layouts.map(([v, label]) => (
+          <button key={v} type="submit" name="layout" value={v} className={`gf-tool${layout === v ? " is-on" : ""}`} aria-pressed={layout === v}>
+            {label}
+          </button>
+        ))}
+      </span>
+      <span className="gf-reader-group">
+        <button type="submit" name="mode" value={nextMode} className="gf-tool" title={`Switch to ${nextMode} background`}>
+          {mode === "dark" ? "☀ Light background" : "◑ Dark background"}
+        </button>
+      </span>
     </form>
   );
 }

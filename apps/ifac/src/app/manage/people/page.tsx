@@ -2,6 +2,8 @@ import { listManageContacts, listManageMembers } from "@/lib/manage";
 import { PeopleTable } from "@/components/manage/people-table";
 import { requireIfacManager } from "@/lib/manage-auth";
 import { siteConfig } from "@/config/site";
+import { listOrgArrivals } from "@elkdonis/services";
+import { ArrivalsTable } from "@elkdonis/cms-ui/network";
 
 export const metadata = { title: "People & access — IFAC" };
 export const dynamic = "force-dynamic";
@@ -16,14 +18,21 @@ export const dynamic = "force-dynamic";
  */
 export default async function ManagePeoplePage() {
   const viewer = await requireIfacManager("/manage/people");
-  const [members, contacts] = await Promise.all([listManageMembers(), listManageContacts()]);
+  const [members, contacts, arrivals] = await Promise.all([
+    listManageMembers(),
+    listManageContacts(),
+    listOrgArrivals(siteConfig.orgId).catch(() => []),
+  ]);
 
   return (
-    <PeopleTable
-      initialMembers={members}
-      initialContacts={contacts}
-      viewerUserId={viewer.userId}
-      centralAdminUrl={siteConfig.centralAdminUrl}
-    />
+    <>
+      <PeopleTable
+        initialMembers={members}
+        initialContacts={contacts}
+        viewerUserId={viewer.userId}
+        centralAdminUrl={siteConfig.centralAdminUrl}
+      />
+      <ArrivalsTable arrivals={arrivals} />
+    </>
   );
 }

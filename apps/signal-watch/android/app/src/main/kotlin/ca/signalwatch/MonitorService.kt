@@ -40,6 +40,9 @@ class MonitorService : Service() {
     companion object {
         const val ACTION_START = "ca.signalwatch.START"
         const val ACTION_STOP = "ca.signalwatch.STOP"
+        const val ACTION_POLL = "ca.signalwatch.POLL"
+        /** Minimum gap between graph samples taken on signal changes. The 60 s tick always samples. */
+        const val SAMPLE_MIN_MS = 5_000L
 
         /** A change must persist this long before it counts. Stops flapping alerts. */
         const val STABLE_MS = 15_000L
@@ -54,10 +57,16 @@ class MonitorService : Service() {
         @Volatile var since = 0L
         @Volatile var detail = ""
         @Volatile var dataOk: Boolean? = null
+        @Volatile var liveDbm: Int? = null
 
         fun start(ctx: Context) {
             Prefs.setWatching(ctx, true)
             ContextCompat.startForegroundService(ctx, Intent(ctx, MonitorService::class.java).setAction(ACTION_START))
+        }
+
+        /** Re-check the alert level now (after the dial moves). */
+        fun poll(ctx: Context) {
+            if (running) ctx.startService(Intent(ctx, MonitorService::class.java).setAction(ACTION_POLL))
         }
 
         fun stop(ctx: Context) {
@@ -84,6 +93,15 @@ class MonitorService : Service() {
     private var pending = false
     private val commitRunnable = Runnable { commitPending() }
 
+    // Alert state: separate from the logged status because the alert level is adjustable.
+    private var alertBad = false
+    private var alertKnown = false
+    private var alertPending = false
+    private val alertRunnable = Runnable { commitAlert() }
+    private var lastSampleT = 0L
+    private var lastSampleLevel = -2
+    private var lastSampleDbm: Int? = null
+
     // Data connectivity (default network, any transport)
     private var liveDataOk: Boolean? = null
     private var loggedDataOk: Boolean? = null
@@ -94,6 +112,7 @@ class MonitorService : Service() {
     private var ringing = false
     private var callStart = 0L
     private var callIncoming = false
+    private var lastCallEnd = 0L
 
     // Data usage
     private var lastMobileBytes = -1L
@@ -109,7 +128,7 @@ class MonitorService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!running) begin()
+        if (!running) begin() else if (intent?.action == ACTION_POLL) poll()
         return START_STICKY
     }
 
@@ -136,15 +155,12 @@ class MonitorService : Service() {
         current = Status.UNKNOWN
         since = 0L
 
-        // If we were restarted while service was out, keep the persistent alert consistent.
-        val last = store.lastStatus()
-        if (last != null && last.status == Status.NONE.name && System.currentTimeMillis() - last.t < 6 * 3_600_000L) {
-            stable = Status.NONE
-            stableSince = last.t
-            current = stable
-            since = stableSince
-            nm.notify(Notes.ID_DROP, Notes.drop(this, stableSince))
-        }
+        // Restarted during an active alert: keep the persistent alert in the shade.
+        val since0 = Prefs.alertSince(this)
+        if (since0 > 0 && System.currentTimeMillis() - since0 < 6 * 3_600_000L) {
+            alertBad = true
+            nm.notify(Notes.ID_DROP, Notes.drop(this, since0, "Signal alert active"))
+        } else if (since0 > 0) Prefs.setAlertSince(this, 0)
 
         store.add(System.currentTimeMillis(), EventStore.KIND_NOTE, null, "Started watching")
 
@@ -166,6 +182,7 @@ class MonitorService : Service() {
             store.add(System.currentTimeMillis(), EventStore.KIND_NOTE, null, "Stopped watching")
             nm.cancel(Notes.ID_DROP)
             nm.cancel(Notes.ID_BACK)
+            if (!Prefs.watching(this)) Prefs.setAlertSince(this, 0)
         }
         running = false
         current = Status.UNKNOWN
@@ -227,6 +244,7 @@ class MonitorService : Service() {
                 .map { it.dbm }
                 .firstOrNull { it != Int.MAX_VALUE && it != Int.MIN_VALUE && it != 0 }
         } else null
+        liveDbm = dbm
         refresh()
     }
 
@@ -269,6 +287,8 @@ class MonitorService : Service() {
     private fun refresh() {
         val raw = compute()
         detail = buildDetail()
+        evaluateAlert(raw)
+        recordSample(false)
         if (stable == Status.UNKNOWN) {
             if (raw != Status.UNKNOWN) commit(raw, initial = true)
             return
@@ -289,9 +309,7 @@ class MonitorService : Service() {
     }
 
     private fun commit(s: Status, initial: Boolean = false) {
-        val prev = stable
         val now = System.currentTimeMillis()
-        val outFor = if (prev == Status.NONE && stableSince > 0) now - stableSince else 0L
         stable = s
         stableSince = now
         current = s
@@ -300,14 +318,81 @@ class MonitorService : Service() {
         val id = store.add(now, EventStore.KIND_STATUS, s.name, if (initial) "started watching" else null, dbm)
         captureLocation(id)
 
-        if (s == Status.NONE) {
-            nm.cancel(Notes.ID_BACK)
-            nm.notify(Notes.ID_DROP, Notes.drop(this, now))
-        } else if (prev == Status.NONE) {
-            nm.cancel(Notes.ID_DROP)
-            nm.notify(Notes.ID_BACK, Notes.back(this, outFor, s))
-        }
         updateStatusNotification()
+    }
+
+    // ---------------------------------------------------------------- alerts
+
+    /** Bars 0-4, where 0 also covers out of service; -1 while nothing has been read yet. */
+    private fun bars(raw: Status): Int = when {
+        raw == Status.NONE -> 0
+        raw == Status.UNKNOWN -> -1
+        else -> level.coerceIn(0, 4)
+    }
+
+    /** No service is always bad. Otherwise bad when dBm is at or below the dial; null when it cannot be judged. */
+    private fun isBad(raw: Status): Boolean? {
+        if (raw == Status.NONE) return true
+        if (raw == Status.UNKNOWN) return null
+        val thr = Prefs.alertDbm(this)
+        if (thr == 0) return false
+        val d = dbm ?: return null
+        return d <= thr
+    }
+
+    private fun evaluateAlert(raw: Status) {
+        val bad = isBad(raw) ?: return
+        if (!alertKnown) {
+            alertKnown = true
+            if (bad != alertBad) applyAlert(bad, raw)
+            return
+        }
+        if (bad == alertBad) {
+            if (alertPending) { alertPending = false; handler.removeCallbacks(alertRunnable) }
+        } else if (!alertPending) {
+            alertPending = true
+            handler.postDelayed(alertRunnable, STABLE_MS)
+        }
+    }
+
+    private fun commitAlert() {
+        alertPending = false
+        val raw = compute()
+        val bad = isBad(raw) ?: return
+        if (bad != alertBad) applyAlert(bad, raw)
+    }
+
+    private fun applyAlert(bad: Boolean, raw: Status) {
+        val now = System.currentTimeMillis()
+        val threshold = Prefs.alertDbm(this)
+        val level = if (threshold == 0) "no service only" else "$threshold dBm"
+        alertBad = bad
+        if (bad) {
+            Prefs.setAlertSince(this, now)
+            val title = if (raw == Status.NONE) "No service" else "Signal low: ${dbm} dBm"
+            store.add(now, EventStore.KIND_NOTE, null, "Alert: $title (alert level: $level)", dbm)
+            nm.cancel(Notes.ID_BACK)
+            nm.notify(Notes.ID_DROP, Notes.drop(this, now, title))
+        } else {
+            val since0 = Prefs.alertSince(this)
+            val outFor = if (since0 > 0) now - since0 else 0L
+            Prefs.setAlertSince(this, 0)
+            store.add(now, EventStore.KIND_NOTE, null, "Signal back above alert level ($level)", dbm)
+            nm.cancel(Notes.ID_DROP)
+            nm.notify(Notes.ID_BACK, Notes.back(this, outFor, raw))
+        }
+    }
+
+    private fun recordSample(force: Boolean) {
+        val raw = compute()
+        val b = bars(raw)
+        if (b < 0) return
+        val now = System.currentTimeMillis()
+        val d = if (b == 0) null else dbm
+        val changed = b != lastSampleLevel || d != lastSampleDbm
+        if (!force && (!changed || now - lastSampleT < SAMPLE_MIN_MS)) return
+        lastSampleT = now; lastSampleLevel = b; lastSampleDbm = d
+        store.addSample(now, b, d)
     }
 
     private fun updateStatusNotification() {
@@ -351,7 +436,8 @@ class MonitorService : Service() {
         loggedDataOk = ok
         store.add(
             System.currentTimeMillis(), EventStore.KIND_DATA, stable.name,
-            if (ok) "Data working again" + (if (dataTransport == "wifi") " (wifi)" else "") else "Data stopped working"
+            if (ok) "Data working again" + (if (dataTransport == "wifi") " (wifi)" else "")
+            else "Data stopped working" + (if (lastCallEnd > 0 && System.currentTimeMillis() - lastCallEnd < 5 * 60_000L) " (${Notes.duration(System.currentTimeMillis() - lastCallEnd)} after a call)" else "")
         )
     }
 
@@ -369,6 +455,7 @@ class MonitorService : Service() {
                         (if (callIncoming) "Incoming" else "Outgoing") + " call, " + Notes.duration(now - callStart)
                     )
                     callStart = 0L
+                    lastCallEnd = now
                 } else if (ringing) {
                     store.add(now, EventStore.KIND_CALL, stable.name, "Missed call")
                 }
@@ -383,6 +470,7 @@ class MonitorService : Service() {
         override fun run() {
             sampleData()
             poll()
+            recordSample(true)
             handler.postDelayed(this, TICK_MS)
         }
     }

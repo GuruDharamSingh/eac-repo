@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
     "@elkdonis/utils",
     "@elkdonis/auth-client",
     "@elkdonis/services",
+    // Service booking on the services page template (checkout → commerce + payments).
+    "@elkdonis/checkout",
+    "@elkdonis/commerce",
+    "@elkdonis/payments",
     // Source-exported and unbundled, like the other cms-ui consumers — the
     // matching `@source` in globals.css is what makes Tailwind scan it.
     "@elkdonis/cms-ui",

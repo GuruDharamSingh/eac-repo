@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
+    "./edit-item": "./src/edit-item.ts",
     "./blocks.css": "./src/blocks.css"
   },
   "scripts": {
@@ -30,6 +31,7 @@
     "@elkdonis/db": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
-    "@elkdonis/cms-ui": "workspace:*"
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/utils": "workspace:*"
   }
 }

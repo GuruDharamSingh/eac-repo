@@ -10,6 +10,7 @@ import { SizeField } from "./fields/size-field";
 import { ColorField } from "./fields/color-field";
 import { CanvasDrag } from "./drag/canvas-drag";
 import { EmptyBlock } from "./drag/empty-block";
+import { StyleField } from "./style/field";
 
 // ============================================================================
 // The catalogue as the EDITOR sees it.
@@ -29,6 +30,15 @@ export interface EditorConfigOptions extends PuckConfigOptions {
 export function buildEditorConfig({ media, ...options }: EditorConfigOptions): Config {
   return buildPuckConfig({
     ...options,
+    // Text blocks are typed on the page, formatted. Editor only — see the
+    // note on `richText` in ./config.
+    richText: options.richText ?? true,
+    // The generic "Style" control, at the foot of every block's fields.
+    styleField:
+      options.styleField ??
+      (function BlockStyleControl(props: Record<string, unknown>) {
+        return createElement(StyleField, props as never);
+      }),
     // Blocks that declare `manipulate` get handles on the canvas — the image
     // is picked up and moved rather than positioned from a dropdown. Blocks
     // that declare nothing are passed through untouched and cost nothing.

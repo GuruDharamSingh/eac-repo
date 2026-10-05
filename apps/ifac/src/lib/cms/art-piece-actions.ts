@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createArtwork } from "@elkdonis/commerce/server";
+import { createArtwork, publishArtwork } from "@elkdonis/commerce/server";
 import { getStoreForUser } from "@elkdonis/commerce/queries";
+import { marketplaceLinks } from "@elkdonis/commerce/links";
 import type { ArtworkKind } from "@elkdonis/commerce/types";
 import { getHubViewer } from "@/lib/hub-auth";
+import { siteConfig } from "@/config/site";
 
 // ============================================================================
 // Listing a piece of work, from the hub.
@@ -16,9 +18,10 @@ import { getHubViewer } from "@/lib/hub-auth";
 // network, and a second write path is how two representations of the same
 // object start to drift.
 //
-// A piece is created as a DRAFT. Publishing work for sale involves a price, a
-// store and an agreement about the cut; none of that should happen because
-// someone filled in a form on a hub tile.
+// A piece is published as soon as it is saved (decided 2026-09-24): it goes
+// live on art-auction and the member is sent to its page there. Only members
+// with an active store reach the form, so the store and its cut are already
+// agreed. A blank price publishes as "price on request".
 // ============================================================================
 
 export interface ArtPieceInput {
@@ -39,7 +42,7 @@ export interface ArtPieceInput {
 }
 
 export type ArtPieceResult =
-  | { ok: true; id: string; slug: string }
+  | { ok: true; id: string; slug: string; url: string }
   | { ok: false; error: string };
 
 function num(value: string | undefined): number | null {
@@ -94,16 +97,19 @@ export async function createArtPieceAction(
       certificateOfAuthenticity: Boolean(input.certificateOfAuthenticity),
       provenanceNotes: input.provenanceNotes?.trim() || null,
       // Minor units. A blank price is zero rather than an error — a piece can
-      // be catalogued before it is priced, and the draft status means nothing
-      // is on sale either way.
+      // be catalogued before it is priced; published at zero it shows as
+      // "price on request" and cannot be added to a cart.
       priceMinor: Math.max(0, Math.round((num(input.price) ?? 0) * 100)),
       // "hero", not "primary" — the role vocabulary is hero | detail | scale |
       // wall | video, and the first hero becomes the artwork's primary_image_id.
       images: [{ url: input.imageUrl.trim(), role: "hero", alt: title }],
     });
 
+    await publishArtwork(id, viewer.userId);
+
     revalidatePath("/hub");
-    return { ok: true, id, slug };
+    const url = marketplaceLinks(siteConfig.marketplaceUrl, { from: "ifac", handoff: true }).artwork(id);
+    return { ok: true, id, slug, url };
   } catch (error) {
     console.error("[ifac] createArtPieceAction:", error);
     // `requireActiveStore` throws prose meant to be read — pass it through

@@ -21,7 +21,8 @@ type Rendered<P extends PropDef> =
   // An inline-editable prop is a ReactNode inside the editor and a string
   // everywhere else, so the component has to accept both — and, being a
   // ReactNode, can only be rendered, never parsed. That is the whole contract.
-  P extends { inlineEditable: true } ? string | ReactNode : PropValue<P["kind"]>;
+  // Rich text likewise: the editor hands the block its on-page editor.
+  P extends { inlineEditable: true } | { kind: "richtext" } ? string | ReactNode : PropValue<P["kind"]>;
 
 export type PropsOf<D extends readonly PropDef[]> = {
   [P in D[number] as P extends { required: true } ? P["name"] : never]: Rendered<P>;

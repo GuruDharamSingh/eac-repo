@@ -43,9 +43,14 @@ export default async function ChartPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
-      <Link href="/charts" className="text-sm text-muted-foreground hover:text-foreground">
-        ← Your charts
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/charts" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Your charts
+        </Link>
+        <Link href={`/charts/${saved.id}/explore`} className="text-sm text-primary hover:underline">
+          Explore the chart →
+        </Link>
+      </div>
       <div className="mt-4 mb-2">
         <ChartActions id={saved.id} name={saved.name} isFavorite={saved.isFavorite} />
       </div>

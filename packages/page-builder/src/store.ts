@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { sanitizeRichValues } from "@elkdonis/blocks";
 import { validatePage } from "./validate";
 import { isValidPagePath, isValidSlug } from "./slug";
 
@@ -81,6 +82,9 @@ export async function savePage(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isValidPagePath(slug)) return { ok: false, error: "That page name is not usable in a URL." };
 
+  // Rich text is cut down to what a page's text may hold before it is
+  // stored (the blocks sanitise again when they render).
+  data = sanitizeRichValues(data);
   const check = validatePage(data);
   if (!check.ok) {
     console.error(`[puck] refusing to save ${slug}:`, check.errors);

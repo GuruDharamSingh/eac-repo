@@ -117,6 +117,12 @@ export type {
   SurfacePresenceCell,
   SurfacePresenceRow,
   SurfacePresenceConnectors,
+  SurfaceListingOrg,
+  SurfaceListablePost,
+  SurfaceListingsConnectors,
+  SurfaceConnection,
+  SurfaceConnectionResult,
+  SurfaceConnectionsConnectors,
   SurfacePostTarget,
   SurfacePostToConnectors,
   SurfaceProfileSection,
@@ -129,3 +135,6 @@ export type {
   SaveThreadResult,
   RsvpResult,
 } from "./types";
+
+export { ConnectionsPanel, createConnectionsConnectors } from "./ConnectionsPanel";
+export type { ConnectionsPanelProps } from "./ConnectionsPanel";

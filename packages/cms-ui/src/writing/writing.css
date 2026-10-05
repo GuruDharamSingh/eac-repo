@@ -225,10 +225,20 @@
    and the article: what you type looks like what will be read, which is the
    only reliable way to know how long a paragraph really is. */
 
+/* The desk sizes itself to the window, not to the page column it sits in
+   (developer, 2026-09-27): about 1000px to write or preview, the whole window
+   side by side. `--desk-w` is the width; the negative inline margins let it
+   extend past a narrower parent (ArtDirect .oad-reading is 900px, IFAC's
+   profile column narrower) while staying centred. 48px keeps it clear of the
+   window edges and of a vertical scrollbar. */
 .eac-desk {
-  max-width: var(--read-measure, 63ch);
-  margin-inline: auto;
+  --desk-w: min(calc(100vw - 48px), var(--desk-max, 1000px));
+  width: var(--desk-w);
+  margin-inline: calc((100% - var(--desk-w)) / 2);
   color: var(--read-ink, #16181d);
+}
+.eac-desk[data-view="split"] {
+  --desk-max: 100vw;
 }
 
 .eac-desk__bar {
@@ -403,6 +413,39 @@
 
 .eac-desk__note {
   color: var(--read-faint, #8b90a0);
+}
+
+/* "Show on": a menu in the bar (a <details>), its checkboxes in a panel. */
+.eac-desk__menu {
+  position: relative;
+}
+.eac-desk__menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.eac-desk__menu > summary::-webkit-details-marker {
+  display: none;
+}
+.eac-desk__menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 6;
+  display: grid;
+  gap: 0.5rem;
+  min-width: 16rem;
+  max-width: min(24rem, calc(100vw - 32px));
+  padding: 0.85rem 1rem;
+  background: var(--read-bg, #fff);
+  border: 1px solid var(--read-rule, #e1e3ea);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.eac-desk__show-on-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .eac-desk__error {

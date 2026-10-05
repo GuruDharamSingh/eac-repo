@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
-import { getOwnedOrgId } from "@elkdonis/services";
+import { gainSpace } from "@elkdonis/services";
 import { requireUser } from "@/lib/session";
 import { wizardSchema } from "@/lib/schema";
 
@@ -23,16 +23,10 @@ export async function POST(req: Request) {
   }
   const a = parsed.data;
 
-  const orgId = await getOwnedOrgId(user.id);
-  if (!orgId) {
-    return NextResponse.json(
-      {
-        error:
-          "You don't have an org yet. Go back through the welcome flow to claim your subdomain.",
-      },
-      { status: 400 }
-    );
-  }
+  // Finishing the onboarding holds the space too (idempotent). The profile is
+  // filed under the person's own org if they own one, else oad; no owned org
+  // is required.
+  const { profileOrgId: orgId } = await gainSpace(user.id);
 
   try {
     await db.begin(async (tx) => {

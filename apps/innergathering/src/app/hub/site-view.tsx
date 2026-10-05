@@ -17,7 +17,6 @@ import {
   getStandingMeeting,
   listOrgActivity,
   listOrgEventsInRange,
-  listOrgFeeds,
   listOrgMediaLibrary,
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
@@ -30,7 +29,8 @@ import {
   HubDoors,
   HubPortrait,
   HubViewToggle,
-  InlineCompose,
+  PageSectionSwitches,
+  PublishDoors,
   MeetingBanner,
   WhiteboardPanel,
   type MeetingBannerData,
@@ -59,12 +59,11 @@ const TALK_BASE = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "
  */
 export async function HubSiteView({ viewer }: { viewer: Viewer }) {
   const calendarFrom = startOfMonth(new Date());
-  const [profile, standing, events, activity, feeds, library, chatRoom, memberships, homes] = await Promise.all([
+  const [profile, standing, events, activity, library, chatRoom, memberships, homes] = await Promise.all([
     getProfile(viewer.userId),
     getStandingMeeting(siteConfig.orgId),
     listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1)),
     listOrgActivity(siteConfig.orgId, viewer.userId, { affiliated: true, limit: 8 }).catch(() => []),
-    listOrgFeeds(siteConfig.orgId).catch(() => []),
     // Editors only, as on the card hub: the library lists unpublished files.
     viewer.canEdit
       ? listOrgMediaLibrary(siteConfig.orgId)
@@ -184,9 +183,18 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
 
         <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
 
+        {/* The card with "Your page" under it; the month with Publish under
+            it — the same arrangement as IFAC's hub (owner, 2026-09-26). The
+            Publish doors replace the one-line compose that sat lower down. */}
         <div className="eac-hs-two eac-hs-two--portrait">
-          <HubPortrait name={name} avatarUrl={profile?.avatarUrl ?? null} centerHref="/center" />
-          <HubCalendar initialEvents={events} />
+          <div className="eac-hs-person">
+            <HubPortrait name={name} avatarUrl={profile?.avatarUrl ?? null} centerHref="/center" />
+            <PageSectionSwitches profileHref={profile?.slug ? `/artists/${profile.slug}` : null} />
+          </div>
+          <div className="eac-hs-side">
+            <HubCalendar initialEvents={events} />
+            <PublishDoors variant="compact" />
+          </div>
         </div>
 
         <ActivityFeed
@@ -234,8 +242,6 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
             />
           </div>
         )}
-
-        <InlineCompose name={name} avatarUrl={profile?.avatarUrl ?? null} feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))} />
 
         <div className="grid gap-4">
           <div className="eac-hs-two">

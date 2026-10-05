@@ -1,0 +1,155 @@
+/*
+ * ServiceBookingForm — plain CSS, no Tailwind (hosts do not compile Tailwind
+ * over packages/checkout). Text inherits the host's ink; a host restyles the
+ * form by setting the --eac-booking-* hooks on an ancestor.
+ *
+ * Fallback contrast (measured on white #fff):
+ *   button #fff on #1f1f1f        16.9:1
+ *   error  #a4161a                 7.3:1
+ *   input border = currentColor   full ink (>= 3:1 wherever the text passes)
+ * A dark host must set --eac-booking-accent / -on-accent / -error.
+ */
+
+.eac-booking {
+  display: grid;
+  gap: 1rem;
+  max-width: 32rem;
+  font: inherit;
+  color: inherit;
+}
+
+.eac-booking-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.eac-booking-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.eac-booking-input {
+  font: inherit;
+  color: inherit;
+  background: var(--eac-booking-field, transparent);
+  border: 1px solid var(--eac-booking-border, currentColor);
+  border-radius: var(--eac-booking-radius, 0.375rem);
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eac-booking-input:focus-visible,
+.eac-booking-submit:focus-visible {
+  outline: 2px solid var(--eac-booking-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.eac-booking-hint {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.eac-booking-error {
+  margin: 0;
+  font-weight: 600;
+  color: var(--eac-booking-error, #a4161a);
+}
+
+.eac-booking-submit {
+  font: inherit;
+  font-weight: 600;
+  justify-self: start;
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--eac-booking-radius, 0.375rem);
+  padding: 0.7rem 1.2rem;
+  background: var(--eac-booking-accent, #1f1f1f);
+  color: var(--eac-booking-on-accent, #fff);
+}
+
+.eac-booking-submit:disabled {
+  cursor: progress;
+}
+
+/* ── Proposing times and the scheduler panel (BookingScheduler) ── */
+
+.eac-booking-times {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.eac-booking-time {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eac-booking-time-n {
+  font-size: 0.9rem;
+}
+
+.eac-booking-status,
+.eac-booking-note {
+  margin: 0;
+}
+
+.eac-booking-choices,
+.eac-booking-list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.eac-booking-choices {
+  list-style: none;
+}
+
+.eac-booking-list {
+  padding-left: 1.25rem;
+}
+
+.eac-booking-choice {
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  cursor: pointer;
+  background: var(--eac-booking-field, transparent);
+  border: 1px solid var(--eac-booking-border, currentColor);
+  border-radius: var(--eac-booking-radius, 0.375rem);
+  padding: 0.6rem 0.8rem;
+}
+
+.eac-booking-choice-cue {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.eac-booking-choice:focus-visible {
+  outline: 2px solid var(--eac-booking-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.eac-booking-more > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.eac-booking-more > .eac-booking {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 30rem) {
+  .eac-booking-time {
+    grid-template-columns: 1fr;
+  }
+}

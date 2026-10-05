@@ -1,0 +1,38 @@
+/* "Admin details" on the Akhand Path page (admin-details.tsx). */
+.paath-admin { margin-top: 40px; padding-top: 16px; border-top: 1px dotted var(--rule); display: flex; justify-content: flex-end; }
+.paath-admin-dialog {
+  width: min(680px, 96vw);
+  margin: auto; /* centred: the site reset sets dialog margins to 0 */
+  max-height: 92vh;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: #fffaf0;
+  color: var(--ink);
+}
+.paath-admin-dialog::backdrop { background: rgba(20, 12, 8, 0.6); }
+.paath-admin-dialog__head {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 18px; background: var(--paper-edge); border-bottom: 1px solid var(--rule-strong);
+}
+.paath-admin-dialog__head h2 { margin: 0; font-size: 1.15rem; }
+.paath-admin-dialog__section { padding: 16px 18px; display: grid; gap: 10px; }
+.paath-admin-dialog__section + .paath-admin-dialog__section { border-top: 1px dotted var(--rule); }
+.paath-admin-dialog__section h3 { margin: 0; font-size: 1rem; }
+.paath-admin-dialog__section p { margin: 0; }
+.paath-admin-dialog__grid { display: grid; gap: 12px; }
+.paath-admin-dialog__grid label { display: grid; gap: 4px; }
+.paath-admin-dialog__grid select { font: inherit; padding: 6px 8px; max-width: 24rem; }
+.paath-admin-dialog__label { display: block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+.paath-admin-dialog__muted { opacity: 0.8; font-size: 0.92rem; }
+.paath-admin-dialog__error { color: var(--crimson, #9b2b22); }
+@media (max-width: 700px) {
+  .paath-admin-dialog { width: 100vw; max-height: 100dvh; height: 100dvh; border: 0; border-radius: 0; }
+}
+.paath-uploads { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.paath-uploads__item { border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; display: grid; gap: 4px; }
+.paath-uploads__item[data-status="failed"] { border-color: var(--crimson, #9b2b22); }
+.paath-uploads__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+.paath-uploads__status { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.8; }
+.paath-uploads__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

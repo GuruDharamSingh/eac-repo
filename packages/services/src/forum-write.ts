@@ -4,6 +4,7 @@ import { sanitizeRichText } from '@elkdonis/utils';
 import { createThread } from './posts';
 import { getOrgFeed, canViewFeed, canPostToFeed, upsertOrgFeed } from './org-feeds';
 import { viewerIdentityIds } from './forum';
+import { meetsMinRole, type ThreadRole } from './thread-access';
 import { getIdentityIds, resolveActor } from './identities';
 import type { ForumPerson, ForumViewer } from './forum';
 import { getOrgNcForum, pushModerationToNextcloud, pushReplyToNextcloud, pushTopicToNextcloud, threadNcState } from './nc-forum';
@@ -104,8 +105,8 @@ interface ThreadGate {
 }
 
 async function loadThreadForWrite(threadId: string, viewer: ForumViewer): Promise<ThreadGate | null> {
-  const [t] = await db<Array<{ id: string; org_id: string; author_id: string; section: string | null; locked: boolean; visibility: string; status: string; title: string; min_role: string | null }>>`
-    SELECT t.id, t.org_id, t.author_id, t.section, COALESCE(t.locked, false) AS locked, t.visibility, t.status, t.title, f.min_role
+  const [t] = await db<Array<{ id: string; org_id: string; author_id: string; section: string | null; locked: boolean; visibility: string; status: string; title: string; min_role: string | null; thread_min_role: string | null }>>`
+    SELECT t.id, t.org_id, t.author_id, t.section, COALESCE(t.locked, false) AS locked, t.visibility, t.status, t.title, f.min_role, t.min_role AS thread_min_role
     FROM threads t
     LEFT JOIN org_feeds f ON f.org_id = t.org_id AND f.slug = COALESCE(t.section, 'general')
     WHERE t.id = ${threadId}
@@ -118,6 +119,8 @@ async function loadThreadForWrite(threadId: string, viewer: ForumViewer): Promis
     (t.status === 'published' &&
       (t.visibility === 'PUBLIC' ||
         (t.visibility === 'ORGANIZATION' && role !== null) ||
+        // A narrower audience (migration 188): INVITE_ONLY with a minimum role.
+        (t.visibility === 'INVITE_ONLY' && Boolean(t.thread_min_role) && meetsMinRole(role as ThreadRole | null, t.thread_min_role)) ||
         mine.includes(t.author_id)));
   if (!visible) return null;
   if (!viewer.isGlobalAdmin && !canViewFeed({ minRole: t.min_role as 'member' | 'guide' | 'owner' | null }, role)) return null;

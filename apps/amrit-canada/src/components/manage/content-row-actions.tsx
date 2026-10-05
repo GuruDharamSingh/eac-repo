@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   deleteContentAction,
+  setContentPinnedAction,
   setContentStatusAction,
   setStandingMeetingAction,
 } from "@/lib/cms/actions";
@@ -30,6 +31,8 @@ interface ContentRowActionsProps {
   isDated: boolean;
   /** Already the one the hub leads with. */
   isStanding: boolean;
+  /** Leads the landing page. */
+  isPinned: boolean;
 }
 
 export function ContentRowActions({
@@ -41,6 +44,7 @@ export function ContentRowActions({
   hasRsvps,
   isDated,
   isStanding,
+  isPinned,
 }: ContentRowActionsProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -124,6 +128,18 @@ export function ContentRowActions({
     });
   }
 
+  function togglePinned() {
+    startTransition(async () => {
+      const res = await setContentPinnedAction(threadId, !isPinned);
+      if (res.ok) {
+        toast.success(isPinned ? "Unpinned from the home page." : "Pinned to the top of the home page.");
+        router.refresh();
+      } else {
+        toast.error(res.error ?? "Could not update.");
+      }
+    });
+  }
+
   function remove() {
     if (!confirm("Take this off the site? It is archived, not deleted: RSVPs are kept, and Publish restores it.")) return;
     startTransition(async () => {
@@ -157,6 +173,10 @@ export function ContentRowActions({
         )}
         <DropdownMenuItem onSelect={toggleStatus}>
           {status === "published" ? "Move to draft" : "Publish"}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onSelect={togglePinned}>
+          {isPinned ? "Unpin from home page" : "Pin to home page"}
         </DropdownMenuItem>
 
         {isDated && (

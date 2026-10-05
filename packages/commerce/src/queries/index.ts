@@ -30,6 +30,13 @@ type Row = Record<string, unknown>;
 
 const num = (v: unknown): number => (v == null ? 0 : Number(v));
 const opt = <T>(v: unknown): T | null => (v == null ? null : (v as T));
+/**
+ * Nullable bigint money column. postgres.js returns bigint as a string, and a
+ * string reaching the bid widget turned `current + increment` into
+ * concatenation: "1500" + 1000 = "15001000", a minimum bid of $150,010
+ * (lot e61caa91, 2026-09-29). Use this, not `opt`, for every *_minor column.
+ */
+const optNum = (v: unknown): number | null => (v == null ? null : Number(v));
 
 function mapArtwork(r: Row): Artwork {
   return {
@@ -104,11 +111,11 @@ function mapLot(r: Row): AuctionLot {
     startAt: r.start_at as string,
     endAt: r.end_at as string,
     startingBidMinor: num(r.starting_bid_minor),
-    reserveMinor: opt<number>(r.reserve_minor),
-    buyNowMinor: opt<number>(r.buy_now_minor),
+    reserveMinor: optNum(r.reserve_minor),
+    buyNowMinor: optNum(r.buy_now_minor),
     bidIncrementMinor: num(r.bid_increment_minor),
     antiSnipeMinutes: num(r.anti_snipe_minutes),
-    currentBidMinor: opt<number>(r.current_bid_minor),
+    currentBidMinor: optNum(r.current_bid_minor),
     currentBidId: opt(r.current_bid_id),
     bidCount: num(r.bid_count),
     currency: r.currency as AuctionLot["currency"],
@@ -1094,7 +1101,7 @@ export async function listBidsForLot(lotId: string, limit = 25): Promise<Bid[]> 
     lotId: r.lot_id as string,
     bidderId: r.bidder_id as string,
     amountMinor: num(r.amount_minor),
-    maxAmountMinor: opt<number>(r.max_amount_minor),
+    maxAmountMinor: optNum(r.max_amount_minor),
     isMaxBid: Boolean(r.is_max_bid),
     status: r.status as Bid["status"],
     placedAt: r.placed_at as string,
@@ -1267,8 +1274,8 @@ function mapOrderLine(r: Row): OrderLine {
     description: r.description as string,
     quantity: num(r.quantity),
     unitPriceMinor: num(r.unit_price_minor),
-    artistShareMinor: opt(r.artist_share_minor),
-    galleryShareMinor: opt(r.gallery_share_minor),
+    artistShareMinor: optNum(r.artist_share_minor),
+    galleryShareMinor: optNum(r.gallery_share_minor),
     currency: r.currency as OrderLine["currency"],
     metadata: (r.metadata as Record<string, unknown>) ?? {},
     createdAt: r.created_at as string,

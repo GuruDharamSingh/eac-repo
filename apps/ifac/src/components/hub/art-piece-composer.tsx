@@ -27,6 +27,7 @@ export function ArtPieceComposerCard() {
       }}
       onSave={createArtPieceAction}
       marketplaceUrl={siteConfig.marketplaceUrl}
+      publishes
       media={({ value, onChange, label, hint, fields }) => (
         <MediaPicker
           value={value}

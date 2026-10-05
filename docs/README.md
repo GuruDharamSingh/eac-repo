@@ -28,6 +28,7 @@ rules are summarised at the end of this file).
 | BRIEF_E_HUB_TOUR_2026-09-18 | frontend-ui | Not started |
 | COMPONENT_CENSUS_2026-09-15 | frontend-ui | Duplication data and extraction order |
 | HYGIENE_SWEEP_BRIEF_2026-09-03 | packages | Partly done; status unclear |
+| PERSON_PAGES_BRIEF_2026-09-26 | identity, frontend-ui | Built and deployed 2026-09-26 except IFAC rebuild; ArtDirect Puck pages in progress |
 | SILEX_3.9_UPGRADE_BRIEF | authoring | Phase 0 done; phases 1–3 pending |
 | SPRINT_2026-09-18_onboarding | process | Live sprint board (workstreams A–F) |
 | news-aggregation-groundwork | data-model | Design only; not built |

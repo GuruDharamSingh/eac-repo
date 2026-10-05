@@ -274,8 +274,8 @@ export interface ViewerCloud {
  * person could never stay signed in inside it. So the card links out.
  */
 export async function getViewerCloud(userId: string, orgId: string): Promise<ViewerCloud> {
-  const [u] = await db<Array<{ nextcloud_user_id: string | null; slug: string | null }>>`
-    SELECT nextcloud_user_id, slug FROM users WHERE id = ${userId}
+  const [u] = await db<Array<{ nextcloud_user_id: string | null; storage_folder: string | null }>>`
+    SELECT nextcloud_user_id, storage_folder FROM users WHERE id = ${userId}
   `;
   const nc = (process.env.NEXTCLOUD_PUBLIC_URL || process.env.NEXT_PUBLIC_NEXTCLOUD_URL || 'https://cloud.elkdonis-arts.org')
     .replace(/\/$/, '');
@@ -288,7 +288,7 @@ export async function getViewerCloud(userId: string, orgId: string): Promise<Vie
     nextcloudUrl: nc,
     teamFolderUrl: filesAt(team),
     teamFolderLabel: team,
-    personalFolderUrl: u?.slug ? filesAt(`${ROOT}/users/${u.slug}`) : null,
+    personalFolderUrl: u?.storage_folder ? filesAt(`${ROOT}/users/${u.storage_folder}`) : null,
   };
 }
 

@@ -1,0 +1,137 @@
+/* ============================================================================
+   Right-column controls shared by many blocks: "Text style"
+   (text-style-field.tsx) and the Collections navigator's "Arrange tiles"
+   window (tile-arrange-field.tsx). Imported at the root layout — Puck's panels
+   live in the parent document. Same paper-and-ink as gallery-fields.css.
+   Contrast: #141414 on #fff 18:1; #5b5b5b on #fff 6.9:1; #4b35c4 on #fff 7.6:1.
+   ============================================================================ */
+
+.dm-tsf,
+.dm-arr {
+  --gp-ink: #141414;
+  --gp-soft: #5b5b5b;
+  --gp-line: #d9d6ce;
+  --gp-accent: #4b35c4;
+  --gp-pick: #ece8ff;
+  color: var(--gp-ink);
+  font-size: 13px;
+}
+
+/* ---- Text style ---- */
+.dm-tsf { display: grid; gap: 10px; }
+.dm-tsf-hint { margin: 0; color: var(--gp-soft); font-size: 12px; line-height: 1.4; }
+.dm-tsf-sample {
+  padding: 10px 12px;
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 15px;
+  line-height: 1.3;
+}
+.dm-tsf-group { margin: 0; padding: 0; border: 0; display: grid; gap: 6px; }
+.dm-tsf-group legend { padding: 0; margin-bottom: 4px; font-weight: 650; font-size: 12px; }
+.dm-tsf-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-tsf-chip {
+  padding: 5px 9px;
+  border: 1px solid var(--gp-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--gp-ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+.dm-tsf-chip:hover { border-color: var(--gp-accent); }
+.dm-tsf-fonts {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.dm-tsf-font {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--gp-ink);
+  font-size: 15px;
+  text-align: start;
+  cursor: pointer;
+}
+.dm-tsf-font:hover { background: #f4f2ec; }
+.dm-tsf-font[aria-selected="true"] { background: var(--gp-pick); outline: 1px solid var(--gp-accent); }
+.dm-tsf-sep {
+  margin: 6px 8px 2px;
+  color: var(--gp-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dm-tsf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dm-tsf-row label { display: grid; gap: 3px; font-size: 12px; }
+.dm-tsf-row select {
+  padding: 4px 6px;
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--gp-ink);
+  font: inherit;
+}
+.dm-tsf-row .dm-tsf-check { display: flex; align-items: center; gap: 6px; align-self: end; }
+.dm-tsf-clear {
+  justify-self: start;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--gp-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.dm-tsf button:focus-visible,
+.dm-tsf select:focus-visible { outline: 2px solid var(--gp-accent); outline-offset: 1px; }
+
+/* ---- Arrange tiles (Collections navigator) ---- */
+.dm-arr { display: grid; gap: 8px; }
+.dm-arr-open {
+  padding: 7px 12px;
+  border: 1px solid var(--gp-accent);
+  border-radius: 6px;
+  background: var(--gp-accent);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dm-arr-note { margin: 0; color: var(--gp-soft); font-size: 12px; line-height: 1.4; }
+.dm-arr-dialog {
+  width: min(1100px, 94vw);
+  max-height: 92vh;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+}
+.dm-arr-dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+.dm-arr-body { display: grid; gap: 12px; padding: 16px 20px 20px; color: #141414; font-size: 14px; }
+.dm-arr-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.dm-arr-head h2 { margin: 0; font-size: 17px; }
+.dm-arr-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-arr-tools button {
+  padding: 5px 10px;
+  border: 1px solid #d9d6ce;
+  border-radius: 5px;
+  background: #fff;
+  color: #141414;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dm-arr-tools .dm-arr-done { border-color: #4b35c4; background: #4b35c4; color: #fff; }
+.dm-arr-canvas { max-height: 70vh; overflow-y: auto; padding: 4px; background: #f4f2ec; border-radius: 6px; }
+/* ProfileGallery's own remove and rename controls: tiles are removed and
+   named in their rows, so here the name is shown but not editable. */
+.dm-arr-canvas button[aria-label="Remove image"] { display: none; }
+.dm-arr-canvas [title="Click to rename"] { pointer-events: none; }

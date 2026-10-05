@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
-import { GuidePage } from "@elkdonis/lms-ui";
-import { connectors } from "@/lib/connectors";
-import { settle } from "@/lib/settle";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Guide desk", robots: { index: false, follow: false } };
-
-export default async function Page({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string; course?: string; all?: string }> }) {
-  const q = await searchParams;
-  return settle(await GuidePage({ c: connectors, q, courseSlug: q.course, all: q.all === "1" }), { permanent: false });
+/**
+ * The guide desk is now the journal's "To answer" section. Old links (and
+ * bookmarks) land there, keeping their course filter.
+ */
+export default async function Page({ searchParams }: { searchParams: Promise<{ course?: string; all?: string }> }) {
+  const { course, all } = await searchParams;
+  const qs = new URLSearchParams();
+  if (course) qs.set("course", course);
+  if (all === "1") qs.set("all", "1");
+  const query = qs.toString();
+  redirect(`/journal${query ? `?${query}` : ""}#to-answer`);
 }

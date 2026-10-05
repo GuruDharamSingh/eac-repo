@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 
 export const metadata: Metadata = {
   title: "ArtDirect — the open artist directory",
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnalyticsBeacon />
+      </body>
     </html>
   );
 }

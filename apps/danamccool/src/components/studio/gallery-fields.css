@@ -259,3 +259,17 @@ textarea.dm-gp-input {
   display: grid;
   min-width: 0;
 }
+
+/* One picture, opened by clicking it on the canvas: ‹ Picture 3 of 149 › */
+.dm-gp-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--gp-soft);
+}
+.dm-gp-step button {
+  min-width: 30px;
+  font-size: 16px;
+  line-height: 1;
+}

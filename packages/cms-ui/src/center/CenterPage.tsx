@@ -237,10 +237,14 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
     ...(links.filesHref
       ? [{ id: "files", label: "Your files", note: "yours wherever you sign in", href: links.filesHref }]
       : []),
+    ...(links.studioHref
+      ? [{ id: "studio", label: "Studio", note: "manage everything you have made", href: links.studioHref }]
+      : []),
     { id: "account", label: "Account settings", note: "sign-in and email", href: links.accountHref },
   ];
 
   const buttons: Array<{ label: string; href: string }> = [
+    ...(links.studioHref ? [{ label: "Studio", href: links.studioHref }] : []),
     { label: "Account", href: links.accountHref },
     ...(links.notificationsHref ? [{ label: "Notifications", href: links.notificationsHref }] : []),
     ...(links.filesHref ? [{ label: "Files", href: links.filesHref }] : []),
@@ -316,6 +320,17 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
             />
           }
         />
+        {links.gainSpaceHref && (
+          <div className="eac-center-gain">
+            <p>
+              Join the collective as an artist: a listing on ArtDirect and file
+              storage of your own. No organisation needed.
+            </p>
+            <a className="eac-center-btn eac-center-btn--primary" href={links.gainSpaceHref}>
+              Gain your space
+            </a>
+          </div>
+        )}
       </>
     ),
     buttons: (

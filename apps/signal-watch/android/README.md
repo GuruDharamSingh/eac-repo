@@ -6,7 +6,9 @@ A single-purpose Android app: it watches the phone's cellular signal in the back
 
 - **Reads the real signal.** Uses the phone's own signal meter (bars and dBm) and service state. Nothing is pinged, so monitoring costs no data.
 - **Runs with the screen off.** A foreground service keeps watching; a quiet status line sits in the notification shade showing the current state.
-- **Alerts only on real changes.** A change has to hold for 15 seconds before it counts. When service drops you get **one** alert that stays in the shade, with a running timer, until service returns. When it returns you get one "Service is back, was out for N min". Good ↔ Weak wobbles are logged but never alert.
+- **Alerts only on real changes.** A change has to hold for 15 seconds before it counts. When the signal crosses the alert level you get **one** alert that stays in the shade, with a running timer, until service returns. When it returns you get one "Service is back, was out for N min". Good ↔ Weak wobbles are logged but never alert.
+- **Alert level dial.** Slider on the main screen: left end alerts only on no service (default); otherwise -130 to -60 dBm in 5 dB steps. Signal at or below the setting (or no service) alerts, and rising above it beeps. The graph draws the setting as a dashed line. Same 15 s hold.
+- **Signal graph.** dBm over 1 h / 6 h / 24 h / 5 d, red bands for outages, a bars strip underneath, touch to read a point. Samples are taken on each signal change (at most every 5 s) and every 60 s, kept 5 days.
 - **Keeps a 5-day log.** Every drop and recovery with time and dBm, plus:
   - phone calls (incoming/outgoing, duration, missed) and what the signal was at the time
   - "Data stopped working / working again" when the internet stops validating even though there's signal

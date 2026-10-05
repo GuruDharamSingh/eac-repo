@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createThreadAdminRoutes, getStandingMeetingId } from "@elkdonis/services";
+import { createThreadAdminRoutes, getServiceOfferingById, getStandingMeetingId } from "@elkdonis/services";
 import { getOrgFeed } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
@@ -40,15 +40,18 @@ export async function GET(
     Boolean(viewer?.canEdit);
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const feed = thread.feedSlug
-    ? await getOrgFeed(siteConfig.orgId, thread.feedSlug)
-    : null;
+  const [feed, service] = await Promise.all([
+    thread.feedSlug ? getOrgFeed(siteConfig.orgId, thread.feedSlug) : null,
+    // A service's booking fields live in its sidecar; the popup edits them.
+    thread.kind === "service" ? getServiceOfferingById(siteConfig.orgId, thread.id) : null,
+  ]);
 
   return NextResponse.json(
     toSurfaceThread(thread, {
       // The org's featured meeting — so the popup can offer to feature/unfeature.
       standing: (thread.kind === "meeting" || thread.kind === "event") && (await getStandingMeetingId(siteConfig.orgId)) === thread.id,
       feed: feed ? { slug: feed.slug, name: feed.name } : null,
+      service,
     })
   );
 }

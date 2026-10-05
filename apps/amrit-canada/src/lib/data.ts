@@ -13,6 +13,9 @@ import {
   OFF_FEED_KINDS,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { isAdmin } from "@elkdonis/auth-server";
+import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
+import { getViewer } from "@/lib/auth";
 import type {
   Attendee,
   Guide,
@@ -52,7 +55,7 @@ const THREAD_COLUMNS = db`
   t.is_rsvp_enabled, t.rsvp_deadline, t.attendee_limit, t.min_attendees,
   t.notify_on_min_attendees, t.reminder_minutes_before,
   t.recurrence_pattern, t.recurrence_until,
-  t.author_id, t.published_at, t.created_at,
+  t.author_id, t.published_at, t.created_at, t.pinned,
   u.display_name AS author_name,
   u.slug         AS author_slug,
   COALESCE(op.photo_override, u.avatar_url) AS author_photo
@@ -99,6 +102,7 @@ interface ThreadRow {
   author_id: string | null;
   published_at: Date | null;
   created_at: Date;
+  pinned: boolean | null;
   author_name: string | null;
   author_slug: string | null;
   author_photo: string | null;
@@ -139,6 +143,7 @@ function mapThread(row: ThreadRow): Thread {
     authorPhoto: row.author_photo,
     publishedAt: row.published_at,
     createdAt: row.created_at,
+    pinned: row.pinned ?? false,
     // The occurrence a visitor is actually looking at. For a recurring
     // meeting this rolls forward each cycle; for a one-off it's scheduledAt.
     nextOccurrenceAt: row.scheduled_at
@@ -148,10 +153,13 @@ function mapThread(row: ThreadRow): Thread {
 }
 
 /** Published, publicly visible threads only — the filter every public read shares. */
+// OFF_FEED_KINDS: personal writing from /write is PUBLIC but belongs on its
+// author's shelf, not in listings, the guide page's thread list or the landing.
 const PUBLIC_FILTER = db`
   t.org_id = ${ORG}
   AND t.status = 'published'
   AND t.visibility = 'PUBLIC'
+  AND t.kind <> ALL(${OFF_FEED_KINDS})
 `;
 
 /** Upcoming or undated; a meeting stays listed until 6h past its start. */
@@ -192,6 +200,25 @@ export async function getUpcomingThreads(limit = 12): Promise<Thread[]> {
     return rows.map(mapThread);
   } catch (err) {
     console.error("[amrit-canada] getUpcomingThreads:", err);
+    return [];
+  }
+}
+
+/**
+ * What an editor pinned from /manage — the first thing under the header on the
+ * landing page. Stays until unpinned, dated or not.
+ */
+export async function getPinnedThreads(limit = 3): Promise<Thread[]> {
+  try {
+    const rows = await db<ThreadRow[]>`
+      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
+      WHERE ${PUBLIC_FILTER} AND t.pinned = true
+      ORDER BY COALESCE(t.published_at, t.created_at) DESC
+      LIMIT ${limit}
+    `;
+    return rows.map(mapThread);
+  } catch (err) {
+    console.error("[amrit-canada] getPinnedThreads:", err);
     return [];
   }
 }
@@ -256,6 +283,22 @@ async function withTerms(thread: Thread | null): Promise<Thread | null> {
   }
 }
 
+/**
+ * Whether the current visitor may read a thread by its visibility. Until
+ * 2026-10-03 getThreadBySlug returned any published thread to anyone, so a
+ * members-only (ORGANIZATION) post opened by direct URL. Rows with a minimum
+ * role (INVITE_ONLY, migration 188) are not offered by this app's form and stay
+ * author/admin-only here.
+ */
+async function mayRead(thread: Thread): Promise<boolean> {
+  const viewer = await getViewer().catch(() => null);
+  const isGlobalAdmin = viewer ? await isAdmin(viewer.userId).catch(() => false) : false;
+  return canViewThread(
+    { visibility: thread.visibility, minRole: null, authorId: thread.authorId, status: thread.status },
+    { userId: viewer?.userId ?? null, role: (viewer?.role as ThreadRole | null) ?? null, isGlobalAdmin }
+  );
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -266,7 +309,10 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
         AND t.status = 'published'
       LIMIT 1
     `;
-    return row ? await withTerms(mapThread(row)) : null;
+    if (!row) return null;
+    const thread = mapThread(row);
+    if (!(await mayRead(thread))) return null;
+    return await withTerms(thread);
   } catch (err) {
     console.error(`[amrit-canada] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -515,14 +561,35 @@ export async function getThreadMaterials(threadId: string): Promise<Material[]> 
 // changes.
 // ---------------------------------------------------------------------------
 
-function mapGuide(op: OrgProfile): Guide {
+/**
+ * This org's photo overrides (org_profiles.photo_override), by user id. The
+ * shared profile query returns only users.avatar_url, which can point at
+ * another org's folder that /api/media here will not serve. Kept local so the
+ * other apps reading listOrgProfiles are unchanged (2026-09-26).
+ */
+async function getPhotoOverrides(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  try {
+    const rows = await db<{ user_id: string; photo_override: string }[]>`
+      SELECT user_id, photo_override FROM org_profiles
+      WHERE org_id = ${ORG} AND user_id = ANY(${userIds}::uuid[])
+        AND photo_override IS NOT NULL
+    `;
+    return new Map(rows.map((r) => [r.user_id, r.photo_override]));
+  } catch (err) {
+    console.error("[amrit-canada] getPhotoOverrides:", err);
+    return new Map();
+  }
+}
+
+function mapGuide(op: OrgProfile, overrides?: Map<string, string>): Guide {
   return {
     userId: op.userId,
     slug: op.slug ?? op.userId,
     displayName: op.displayName,
     roleTitle: op.roleTitle,
     bio: op.bio,
-    photoUrl: op.avatarUrl,
+    photoUrl: overrides?.get(op.userId) ?? op.avatarUrl,
     city: op.city,
     socialLinks: op.socialLinks as Guide["socialLinks"],
     sortOrder: op.sortOrder,
@@ -536,12 +603,14 @@ function mapGuide(op: OrgProfile): Guide {
  */
 export async function getGuides(): Promise<Guide[]> {
   const rows = await listOrgProfiles(ORG, { onlyPublic: true });
-  return rows.map(mapGuide);
+  const overrides = await getPhotoOverrides(rows.map((r) => r.userId));
+  return rows.map((r) => mapGuide(r, overrides));
 }
 
 export async function getGuideBySlug(slug: string): Promise<Guide | null> {
   const row = await getOrgProfileBySlug(ORG, slug);
-  return row ? mapGuide(row) : null;
+  if (!row) return null;
+  return mapGuide(row, await getPhotoOverrides([row.userId]));
 }
 
 /**

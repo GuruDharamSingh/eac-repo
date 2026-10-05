@@ -3,19 +3,21 @@ import { getServerSession } from "@elkdonis/auth-server";
 import {
   canEditProfile,
   getWritingPost,
+  isListedOn,
   listWriting,
 } from "@elkdonis/services";
 import { ArticleView } from "@elkdonis/cms-ui/article";
 import { WritingShelf, WritingDesk, StartPiece } from "@elkdonis/cms-ui/writing";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
-import { blogOrgScopeFor } from "@/lib/cms/blog-actions";
 import { getDirectoryProfile } from "@/lib/directory";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { defaultSiteContent } from "@/lib/default-content";
 import { siteConfig } from "@/config/site";
 import {
   deletePieceAction,
+  loadPieceListingAction,
   savePieceAction,
+  setPieceListingAction,
   startPieceAction,
 } from "@/lib/writing-actions";
 
@@ -32,6 +34,10 @@ import {
  * Drafts exist only for their author (and admins). For everyone else an
  * unpublished piece is not a locked page, it is not a page — same rule as a
  * hidden gallery.
+ *
+ * Both views show what IFAC shows: pieces homed on IFAC or listed on it
+ * (thread_orgs; packages/services/src/thread-listing.ts). A piece the author
+ * has not put on IFAC is not readable under an IFAC address.
  */
 
 async function context(kind: "artist" | "dealer", slug: string) {
@@ -61,12 +67,8 @@ export async function WritingShelfPage({
   slug: string;
 }) {
   const ctx = await context(kind, slug);
-  // The AUTHOR's choice, not this site's: a member who asked for everything
-  // they write across the network gets an unscoped read (`orgId` undefined).
-  // See blogOrgScopeFor — without this the scope control would be a setting
-  // that changed nothing.
   const items = await listWriting(ctx.userId, {
-    orgId: await blogOrgScopeFor(ctx.userId),
+    orgId: siteConfig.orgId,
     includeDrafts: ctx.editable,
   });
 
@@ -127,8 +129,12 @@ export async function WritingPieceView({
     includeDrafts: ctx.editable,
   });
   if (!post) notFound();
+  // The author (or an admin) can still open it here to edit it.
+  if (!ctx.editable && !(await isListedOn(post.id, siteConfig.orgId))) notFound();
 
   const editing = startEditing && ctx.editable;
+  // "Show on": which of the author's orgs list this piece (thread_orgs).
+  const listing = editing ? await loadPieceListingAction(post.id) : null;
 
   return (
     <div className="site-shell">
@@ -145,11 +151,12 @@ export async function WritingPieceView({
 
         {editing ? (
           <WritingDesk
-          authorName={ctx.profile.name}
+          authorName={post.byline?.name ?? ctx.profile.name}
             post={post}
             basePath={ctx.writingHref}
             onSave={savePieceAction.bind(null, post.id)}
             onDelete={deletePieceAction.bind(null, post.id)}
+            listing={listing ? { ...listing, onChange: setPieceListingAction.bind(null, post.id) } : undefined}
             upload={{
               endpoint: "/api/upload",
               // The file lands in the author's own folder, not IFAC's tree —
@@ -163,11 +170,15 @@ export async function WritingPieceView({
             title={post.title}
             lede={post.lede}
             bodyHtml={post.bodyHtml}
-            authorName={ctx.profile.name}
+            threadId={post.id}
+            layout={post.layout}
+            series={post.series}
+            authorName={post.byline?.name ?? ctx.profile.name}
             publishedAt={post.publishedAt ?? post.updatedAt}
             kindLabel={post.status === "draft" ? "Draft" : "Writing"}
             org={{ name: ctx.profile.name, href: ctx.profileHref }}
             coverImageUrl={post.coverImageUrl}
+            video={post.video ? { src: post.video.src, poster: post.video.poster } : null}
             readingMinutes={post.readingMinutes}
             provenance={{
               publishedOn: [{ name: siteConfig.shortName, href: "/" }],

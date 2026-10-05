@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { getCommunityFeed } from "@/lib/community-feed";
 import { getMemberRoster } from "@/lib/network";
 import { getEditableOrgsForUser } from "@/lib/org";
@@ -13,6 +13,7 @@ import { OrgSwitcher, PersonPanel, type OrgSwitcherItem } from "@elkdonis/cms-ui
 import { getProfile, listOrgHomes, listUserMemberships } from "@elkdonis/services";
 import { networkUrl } from "@/lib/org-url";
 import { NetworkCenterHost } from "./NetworkCenterHost";
+import { NewsroomSection } from "@/components/hub/NewsroomSection";
 
 /**
  * Reads the session cookie, so it can never be a static page. Declared
@@ -31,7 +32,19 @@ export default async function NetworkTabPage({
 }: {
   searchParams: Promise<{ org?: string }>;
 }) {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+
+  // Signed out, the tab is the network newsroom alone (the public landing
+  // until 2026-10-03); everything below it is about the signed-in person.
+  if (!user) {
+    return (
+      <div className="w-full py-10">
+        <CommunityHeader />
+        <NewsroomSection user={null} />
+      </div>
+    );
+  }
+
   const { org: orgParam } = await searchParams;
 
   const [feed, roster, editableOrgs, orgRows, homes, profile, memberships, verifiedHomes] = await Promise.all([
@@ -121,18 +134,9 @@ export default async function NetworkTabPage({
           login, so this is the only way most members can reach it. */}
       <FilesCard />
 
-      <header className="mb-10 space-y-2 border-b border-border pb-8">
-        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-          Community
-        </p>
-        <h1 className="font-serif text-4xl leading-tight text-foreground">
-          What&apos;s happening across the collective.
-        </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          You don&apos;t need your own org to be part of this. Browse what
-          member sites are publishing, meet other artists, and take part.
-        </p>
-      </header>
+      <CommunityHeader />
+
+      <NewsroomSection user={user} />
 
       <section className="mb-10 grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-5">
@@ -326,5 +330,22 @@ export default async function NetworkTabPage({
         )}
       </section>
     </div>
+  );
+}
+
+function CommunityHeader() {
+  return (
+    <header className="mb-10 space-y-2 border-b border-border pb-8">
+      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+        Community
+      </p>
+      <h1 className="font-serif text-4xl leading-tight text-foreground">
+        What&apos;s happening across the collective.
+      </h1>
+      <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+        You don&apos;t need your own org to be part of this. Browse what
+        member sites are publishing, meet other artists, and take part.
+      </p>
+    </header>
   );
 }

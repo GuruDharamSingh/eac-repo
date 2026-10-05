@@ -254,3 +254,26 @@ export async function listMiniFeed(): Promise<LandingThread[]> {
     return [];
   }
 }
+
+// ── the forum thread for the work question ──────────────────────────────────
+
+/**
+ * The public forum thread that carries the current work question: the newest
+ * published, public thread in this org whose title is the question itself.
+ * Matching on the title rather than storing an id means a new question only
+ * needs a thread of the same name to move the landing page's forum with it.
+ */
+export async function getWorkQuestionThread(question: string): Promise<{ id: string; slug: string } | null> {
+  try {
+    const [row] = await db<{ id: string; slug: string | null }[]>`
+      SELECT id, slug FROM threads
+      WHERE org_id = ${ORG} AND status = 'published' AND visibility = 'PUBLIC'
+        AND lower(trim(title)) = lower(trim(${question}))
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    return row ? { id: row.id, slug: row.slug ?? "topic" } : null;
+  } catch (err) {
+    console.error("[innergathering] work question thread:", err);
+    return null;
+  }
+}

@@ -115,10 +115,11 @@ async function resolveViewerId(viewerId: string): Promise<string | null> {
   }
 }
 
+/** Owner of a users/<folder> path. The segment is users.storage_folder (migration 169), not the renameable slug. */
 async function getUserIdBySlug(slug: string): Promise<string | null> {
   try {
     const rows = await db<Array<{ id: string }>>`
-      SELECT id FROM users WHERE slug = ${slug} LIMIT 1
+      SELECT id FROM users WHERE storage_folder = ${slug} LIMIT 1
     `;
     return rows[0]?.id ?? null;
   } catch (err) {

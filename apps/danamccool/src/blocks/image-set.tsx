@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { defineBlock, type PropsOf } from "@elkdonis/blocks";
+import { defineBlock, editItem, type PropsOf } from "@elkdonis/blocks";
 import { sized, srcSet } from "./media";
 import { artworkProp, captionOf, isForSale, lookup, pick, type Bound } from "./artwork-data";
 import { galleryIdOf, NEST_DEPTH, type Nested, type NestedGallery } from "./nested";
@@ -250,9 +250,10 @@ export function ImageSet({
   // Each row resolved to what it will actually show: typed values first,
   // then the bound artwork's, then nothing.
   const shown = (pictures ?? [])
-    .map((p) => {
+    .map((p, row) => {
       const item = lookup(bound, p.artwork);
       return {
+        row,
         src: pick(p.src, item?.image),
         alt: pick(p.alt, item?.title),
         caption: pick(p.caption, captionOf(item)),
@@ -287,7 +288,7 @@ export function ImageSet({
           const src = String(p.src);
           const alt = String(p.alt ?? "");
           return (
-            <li key={i} className="dm-set-cell">
+            <li key={i} className="dm-set-cell" {...editItem("pictures", p.row)}>
               <a className="dm-set-thumb" href={`#${anchor(i)}`} aria-label={alt || `Picture ${i + 1}, full size`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

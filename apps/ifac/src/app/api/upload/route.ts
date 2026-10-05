@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { getServerSession } from "@elkdonis/auth-server";
 import { db } from "@elkdonis/db";
-import { uploadFile, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
+import { uploadFile, getProxyFileUrl, uploadFilename, markArtist } from "@elkdonis/services";
 import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { nanoid } from "nanoid";
 import { canManageIfac } from "@/lib/data";
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (!memberSlug) return NextResponse.json({ error: "memberSlug is required" }, { status: 400 });
 
-    const [member] = await db<{ id: string }[]>`
-      SELECT u.id FROM org_profiles op JOIN users u ON u.id = op.user_id
+    const [member] = await db<{ id: string; storage_folder: string | null }[]>`
+      SELECT u.id, u.storage_folder FROM org_profiles op JOIN users u ON u.id = op.user_id
       WHERE op.org_id = ${ORG_ID} AND u.slug = ${memberSlug}
       LIMIT 1
     `;
@@ -91,7 +91,13 @@ export async function POST(request: NextRequest) {
     // every org they're published on. The old per-org location
     // (EAC_Network/ifac/Media/Images/<slug>/) has been migrated and emptied —
     // writing there again would rebuild the split this replaced.
-    const memberFolder = await ensureUserFolder(getAdminClient(), memberSlug);
+    // Folder name is users.storage_folder (migration 169), which survives a
+    // slug rename. A profile not saved yet has no row; its folder will be
+    // assigned from this same slug when the row is created.
+    const memberFolder = await ensureUserFolder(getAdminClient(), member?.storage_folder ?? memberSlug);
+    // A folder of their own makes them an artist of the collective (oad
+    // member, listed). Best effort; the upload does not depend on it.
+    if (member) await markArtist(member.id).catch((err) => console.error("[ifac upload] markArtist:", err));
 
     // Named after the work when the surface sends a title, else after the
     // uploaded file. This address outlives the upload — it is what a stored

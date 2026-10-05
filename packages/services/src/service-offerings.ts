@@ -1,4 +1,5 @@
 import { db } from '@elkdonis/db';
+import { deriveExcerpt, sanitizePostBody } from '@elkdonis/utils';
 import { ensureUniqueThreadSlug as ensureUniqueSlug } from './thread-slug';
 import { nanoid } from 'nanoid';
 
@@ -15,8 +16,15 @@ import { nanoid } from 'nanoid';
 //
 // Booking type (one_on_one | group | async) rides in threads.metadata; it's
 // presentational only today. Services are never RSVP'd — payment via
-// commerce_order (see @elkdonis/commerce's createServiceOrder) is the
+// commerce_order (see @elkdonis/commerce's createThreadOrder) is the
 // registration, so is_rsvp_enabled is always false here.
+//
+// This is the one write path for services on every site, ArtDirect included
+// (2026-09-27): a person's own services are homed in `oad` and saved here
+// with `authorOnly`, so they carry the same sidecar and book the same way.
+// The compose surface's answer keys (booking_type, sliding_scale, …) are
+// translated in serviceInputFromAnswers / serviceAnswersFromOffering below,
+// once, rather than by an adapter in each app.
 //
 // Reads are fail-soft (log + empty/null) — the convention shared with every
 // other public read layer in this monorepo.
@@ -53,6 +61,7 @@ export interface ServiceOffering {
   heroMediaUrl: string | null;
   heroMediaType: 'image' | 'video' | null;
   authorId: string | null;
+  shareToNetwork: boolean;
   publishedAt: string | null;
   updatedAt: string;
 }
@@ -76,16 +85,19 @@ export interface ServiceOfferingInput {
   coverImageUrl?: string | null;
   bannerImageUrl?: string | null;
   status: 'draft' | 'published';
-  visibility?: 'PUBLIC' | 'ORGANIZATION';
-  /** org_feeds slug this offering appears under. Defaults to 'services'. */
-  section?: string;
+  visibility?: 'PUBLIC' | 'ORGANIZATION' | 'INVITE_ONLY';
+  /** org_feeds slug this offering appears under. Defaults to 'services'; null files it nowhere. */
+  section?: string | null;
+  /** threads.share_to_network. Left unchanged when omitted. */
+  shareToNetwork?: boolean;
 }
 
 type Row = Record<string, unknown>;
 
 const COLUMNS = db`
   t.id, t.org_id, t.slug, t.title, t.body, t.status, t.visibility, t.section,
-  t.metadata, t.price, t.currency, t.format, t.author_id, t.published_at, t.updated_at,
+  t.metadata, t.price, t.currency, t.format, t.author_id, t.share_to_network,
+  t.published_at, t.updated_at,
   wp.subtitle, wp.description_short,
   wp.price_sliding_min, wp.sliding_scale_note, wp.registration_status,
   wp.session_count, wp.session_duration_hrs, wp.recurrence_label,
@@ -123,6 +135,7 @@ function mapOffering(row: Row): ServiceOffering {
     heroMediaUrl: (row.hero_media_url as string | null) ?? null,
     heroMediaType: (row.hero_media_type as 'image' | 'video' | null) ?? null,
     authorId: (row.author_id as string | null) ?? null,
+    shareToNetwork: Boolean(row.share_to_network),
     publishedAt: (row.published_at as string | null) ?? null,
     updatedAt: row.updated_at as string,
   };
@@ -179,6 +192,7 @@ export async function getServiceOfferingById(orgId: string, id: string): Promise
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
       WHERE t.org_id = ${orgId} AND t.kind = 'service' AND t.id = ${id}
+        AND t.status <> 'archived'
       LIMIT 1
     `) as unknown as Row[];
     return row ? mapOffering(row) : null;
@@ -195,7 +209,7 @@ export async function listAllServiceOfferingsForOrg(orgId: string): Promise<Serv
       SELECT ${COLUMNS}
       FROM threads t
       LEFT JOIN workshop_pages wp ON wp.thread_id = t.id
-      WHERE t.org_id = ${orgId} AND t.kind = 'service'
+      WHERE t.org_id = ${orgId} AND t.kind = 'service' AND t.status <> 'archived'
       ORDER BY t.updated_at DESC
     `) as unknown as Row[];
     return rows.map(mapOffering);
@@ -221,41 +235,59 @@ function slugify(title: string): string {
 /**
  * Create or update a service offering. Caller is responsible for
  * authorisation (check hasOrgRole first) — this only writes.
+ *
+ * `authorOnly` restricts an update to a service `authorId` wrote, for homes
+ * where every member is a plain member and authorship is the only right to
+ * edit (ArtDirect's `oad`). An id that fails the check is "not found".
  */
 export async function upsertServiceOffering(
   orgId: string,
   authorId: string,
   input: ServiceOfferingInput,
-  threadId?: string
+  threadId?: string,
+  options: { authorOnly?: boolean } = {}
 ): Promise<{ id: string; slug: string }> {
-  const section = input.section ?? 'services';
+  const section = input.section === undefined ? 'services' : input.section;
   const slug = await ensureUniqueSlug(orgId, slugify(input.title), threadId);
   const publishedAt = input.status === 'published' ? new Date() : null;
-  const metadata = { bookingType: input.bookingType };
+  // Feeds and cards read the cover from metadata->>'coverImageUrl' (threads
+  // has no column), so it is written there as well as to the sidecar.
+  const metadata: Record<string, string> = { bookingType: input.bookingType };
+  if (input.coverImageUrl) metadata.coverImageUrl = input.coverImageUrl;
+  // sanitizePostBody keeps <eac-embed> markers, as createThread does.
+  const body = sanitizePostBody(input.body ?? '');
+  const excerpt = input.descriptionShort?.trim() || deriveExcerpt(body) || null;
+  const shareToNetwork = input.shareToNetwork ?? null;
 
   const id = threadId ?? nanoid(21);
 
   await db.begin(async (tx) => {
     if (threadId) {
       const [existing] = await tx<{ id: string }[]>`
-        SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${orgId} LIMIT 1
+        SELECT id FROM threads
+        WHERE id = ${threadId} AND org_id = ${orgId}
+          ${options.authorOnly ? tx`AND author_id = ${authorId} AND kind = 'service'` : tx``}
+        LIMIT 1
       `;
       if (!existing) throw new Error('Service not found');
 
+      // Metadata is merged, not assigned: other features write keys there.
+      // The cover key is dropped first so clearing the image clears it.
       await tx`
         UPDATE threads SET
           kind          = 'service',
           section       = ${section},
           title         = ${input.title},
           slug          = ${slug},
-          body          = ${input.body || null},
-          excerpt       = ${input.descriptionShort || null},
+          body          = ${body || null},
+          excerpt       = ${excerpt},
           status        = ${input.status},
           visibility    = ${input.visibility ?? 'PUBLIC'},
-          metadata      = ${tx.json(metadata)},
+          metadata      = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl') || ${tx.json(metadata)},
           price         = ${input.price},
           currency      = ${input.currency ?? 'CAD'},
           format        = ${input.format ?? null},
+          share_to_network = COALESCE(${shareToNetwork}::boolean, share_to_network),
           is_rsvp_enabled = FALSE,
           published_at  = COALESCE(published_at, ${publishedAt}),
           updated_at    = NOW()
@@ -266,13 +298,13 @@ export async function upsertServiceOffering(
         INSERT INTO threads (
           id, org_id, author_id, kind, section, title, slug, body, excerpt,
           status, visibility, metadata, price, currency, format,
-          is_rsvp_enabled, published_at
+          share_to_network, is_rsvp_enabled, published_at
         ) VALUES (
           ${id}, ${orgId}, ${authorId}, 'service', ${section},
-          ${input.title}, ${slug}, ${input.body || null}, ${input.descriptionShort || null},
+          ${input.title}, ${slug}, ${body || null}, ${excerpt},
           ${input.status}, ${input.visibility ?? 'PUBLIC'}, ${tx.json(metadata)},
           ${input.price}, ${input.currency ?? 'CAD'}, ${input.format ?? null},
-          FALSE, ${publishedAt}
+          ${shareToNetwork ?? false}, FALSE, ${publishedAt}
         )
       `;
     }
@@ -308,10 +340,16 @@ export async function upsertServiceOffering(
   return { id, slug };
 }
 
+/**
+ * Take a service down for good. Archives rather than deletes: a service that
+ * was ever booked is referenced by commerce_order_line.thread_id, and a
+ * DELETE would cascade its replies and gathers away (threads rule, 2026-09-27).
+ */
 export async function deleteServiceOffering(orgId: string, threadId: string): Promise<boolean> {
   try {
     const [row] = await db<{ id: string }[]>`
-      DELETE FROM threads WHERE id = ${threadId} AND org_id = ${orgId} AND kind = 'service'
+      UPDATE threads SET status = 'archived', updated_at = NOW()
+      WHERE id = ${threadId} AND org_id = ${orgId} AND kind = 'service'
       RETURNING id
     `;
     return !!row;
@@ -319,4 +357,118 @@ export async function deleteServiceOffering(orgId: string, threadId: string): Pr
     console.error(`[service-offerings] deleteServiceOffering(${orgId}, ${threadId}):`, err);
     return false;
   }
+}
+
+// ── The compose surface's vocabulary ─────────────────────────────────────────
+// `@elkdonis/cms-ui/compose` declares a service's fields once
+// (buildContentFields('service')) and names them as the columns do. These two
+// functions are the only translation between those answers and this layer,
+// so every host — hidden-enneagram, elastrocal, ArtDirect — saves and edits a
+// service the same way.
+
+const BOOKING_TYPES: readonly BookingType[] = ['one_on_one', 'group', 'async'];
+const FORMATS: readonly ServiceFormat[] = ['in_person', 'online', 'hybrid'];
+const REGISTRATION: readonly RegistrationStatus[] = ['open', 'waitlist', 'full', 'closed'];
+
+function answerStr(v: unknown): string {
+  return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
+}
+function answerNum(v: unknown): number | null {
+  if (v === '' || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function pick<T extends string>(v: unknown, allowed: readonly T[]): T | null {
+  const s = answerStr(v);
+  return (allowed as readonly string[]).includes(s) ? (s as T) : null;
+}
+
+/**
+ * Compose answers → a service to save. Unknown or malformed values fall back
+ * to the defaults rather than failing, except where {@link validateServiceInput}
+ * says otherwise. `feed_slug` becomes the section when present.
+ */
+export function serviceInputFromAnswers(
+  answers: Record<string, unknown>,
+  status: 'draft' | 'published'
+): ServiceOfferingInput {
+  const price = Math.max(0, answerNum(answers.price) ?? 0);
+  const sliding = answers.sliding_scale === true || answers.sliding_scale === 'true';
+  const floor = sliding ? answerNum(answers.price_sliding_min) : null;
+  const count = answerNum(answers.session_count);
+  const hours = answerNum(answers.session_duration_hrs);
+  const visibility = answerStr(answers.visibility);
+  const feed = answerStr(answers.feed_slug);
+  return {
+    title: answerStr(answers.title),
+    subtitle: answerStr(answers.subtitle) || null,
+    descriptionShort: answerStr(answers.excerpt) || null,
+    body: typeof answers.body === 'string' ? answers.body : null,
+    bookingType: pick(answers.booking_type, BOOKING_TYPES) ?? 'one_on_one',
+    format: pick(answers.format, FORMATS),
+    price,
+    currency: (answerStr(answers.currency) || 'CAD').toUpperCase().slice(0, 3),
+    priceSlidingMin: floor != null && floor >= 0 ? floor : null,
+    slidingScaleNote: sliding ? answerStr(answers.sliding_scale_note) || null : null,
+    registrationStatus: pick(answers.registration_status, REGISTRATION) ?? 'open',
+    sessionCount: count != null && count >= 1 ? Math.round(count) : null,
+    sessionDurationHrs: hours != null && hours > 0 ? hours : null,
+    recurrenceLabel: answerStr(answers.recurrence_label) || null,
+    location: answerStr(answers.location) || null,
+    coverImageUrl: answerStr(answers.cover_image_url) || null,
+    bannerImageUrl: answerStr(answers.banner_image_url) || null,
+    status,
+    visibility:
+      visibility === 'ORGANIZATION' || visibility === 'INVITE_ONLY' ? visibility : 'PUBLIC',
+    ...(feed ? { section: feed } : {}),
+    ...(answers.share_to_network !== undefined
+      ? { shareToNetwork: answers.share_to_network === true || answers.share_to_network === 'true' }
+      : {}),
+  };
+}
+
+/** What stops a service from saving, in words for the author; null when it can. */
+export function validateServiceInput(input: ServiceOfferingInput): string | null {
+  if (!input.title.trim()) return 'Give it a title.';
+  if (input.priceSlidingMin != null && input.priceSlidingMin > input.price) {
+    return 'The lowest sliding-scale amount cannot be above the price.';
+  }
+  return null;
+}
+
+/**
+ * A saved service → the compose answers that are not shared thread columns
+ * (hosts pass this as `SurfaceThread.extra`; cms-ui's defaultThreadToAnswers
+ * reads it back for kind 'service').
+ */
+export function serviceAnswersFromOffering(o: ServiceOffering): Record<string, unknown> {
+  return {
+    subtitle: o.subtitle ?? '',
+    booking_type: o.bookingType ?? 'one_on_one',
+    sliding_scale: o.priceSlidingMin != null,
+    price_sliding_min: o.priceSlidingMin ?? undefined,
+    sliding_scale_note: o.slidingScaleNote ?? '',
+    registration_status: o.registrationStatus,
+    session_count: o.sessionCount ?? undefined,
+    session_duration_hrs: o.sessionDurationHrs ?? undefined,
+    recurrence_label: o.recurrenceLabel ?? '',
+    location: o.location ?? '',
+    banner_image_url: o.bannerImageUrl ?? '',
+    share_to_network: o.shareToNetwork,
+  };
+}
+
+/** "CA$80", "CA$40–80", "Free" — one price line for cards and pages. */
+export function servicePriceLabel(o: {
+  price: number | null;
+  currency: string | null;
+  priceSlidingMin: number | null;
+}): string | null {
+  if (o.price == null) return null;
+  if (o.price === 0) return 'Free';
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('en-CA', { style: 'currency', currency: o.currency || 'CAD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
+  return o.priceSlidingMin != null && o.priceSlidingMin < o.price
+    ? `${fmt(o.priceSlidingMin)}–${fmt(o.price)}`
+    : fmt(o.price);
 }

@@ -111,6 +111,14 @@ function serviceToRow(p: OrgProfile): ProfileRow {
 }
 
 /**
+ * One org profile in the IFACProfile shape. Artist vs dealer comes from the
+ * tags: a row carrying `dealer` is a dealer, every other row an artist.
+ */
+export function toIFACProfile(p: OrgProfile): IFACProfile {
+  return rowToProfile(serviceToRow(p), p.tags.includes("dealer") ? "dealer" : "artist");
+}
+
+/**
  * List published profiles of a kind, from the database (pictures from Nextcloud).
  */
 export async function listDirectory(kind: "artist" | "dealer"): Promise<IFACProfile[]> {
@@ -141,8 +149,7 @@ export async function getDirectoryProfile(slug: string): Promise<IFACProfile | u
   const row = await getOrgProfileBySlug(siteConfig.orgId, slug, { includePrivate: true });
   if (row) {
     if (!row.isPublic) return undefined;
-    const kind = row.tags.includes("dealer") ? "dealer" : "artist";
-    return rowToProfile(serviceToRow(row), kind);
+    return toIFACProfile(row);
   }
   // A slug the database has never heard of is not a profile (see listDirectory).
   return undefined;

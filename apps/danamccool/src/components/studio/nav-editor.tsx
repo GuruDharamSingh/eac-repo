@@ -10,6 +10,8 @@ import type { NavItem } from "@/lib/navigation";
  * list of sixteen links is reordered perfectly well by keyboard, and every
  * assistive technology understands a button.
  *
+ * Indenting a link (⇥) puts it in a submenu under the nearest link above it.
+ *
  * One card per link rather than a table, so the same editor fits the full
  * /studio/navigation page and the page editor's narrow Menu tab. How the menu
  * LOOKS (colours, font, size) is the theme's — see /studio/theme.
@@ -67,7 +69,7 @@ export function NavEditor({
 
       <ol className="dm-nav-list">
         {items.map((item, i) => (
-          <li key={`${item.href}-${i}`} className="dm-nav-card">
+          <li key={`${item.href}-${i}`} className={item.sub ? "dm-nav-card dm-nav-card--sub" : "dm-nav-card"}>
             <span className="dm-nav-n" aria-hidden="true">
               {i + 1}
             </span>
@@ -100,6 +102,17 @@ export function NavEditor({
                 aria-label={`Move ${item.label} down`}
               >
                 ↓
+              </button>
+              <button
+                type="button"
+                className="dm-hud-icon"
+                onClick={() => edit(i, { sub: item.sub ? undefined : true })}
+                disabled={i === 0 && !item.sub}
+                aria-pressed={Boolean(item.sub)}
+                aria-label={item.sub ? `Move ${item.label} back to the main menu` : `Put ${item.label} under the link above`}
+                title={item.sub ? "Back to the main menu" : "Put under the link above"}
+              >
+                {item.sub ? "⇤" : "⇥"}
               </button>
               <button type="button" className="dm-hud-icon" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} aria-label={`Remove ${item.label}`}>
                 ×

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { listOrgHomes, loadPresence, setPresence, type PresenceRowKey } from "@elkdonis/services";
+import { PRESENCE_ROW_KEYS, listOrgHomes, loadPresence, setPresence, type PresenceRowKey } from "@elkdonis/services";
 import type { SurfacePresence } from "@elkdonis/cms-ui/surface";
 import { getCurrentUser } from "@/lib/session";
 
@@ -15,7 +15,9 @@ export const dynamic = "force-dynamic";
 const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
 const MARKET_URL = process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? null;
 
-const ROWS: PresenceRowKey[] = ["you", "blog", "store", "galleries"];
+// "you" plus every person-page section (portfolio, galleries, blog, posts,
+// events, store); setPresence still refuses a cell the matrix did not offer.
+const ROWS: readonly PresenceRowKey[] = PRESENCE_ROW_KEYS;
 
 export async function GET() {
   const user = await getCurrentUser();

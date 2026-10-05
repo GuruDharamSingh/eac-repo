@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getServiceOfferingById } from "@elkdonis/services";
+import { getServiceOfferingById, serviceAnswersFromOffering } from "@elkdonis/services";
 import { requireOrgEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { ServiceForm } from "@/components/hub/service-form";
+import { ServiceComposer } from "@/components/hub/service-composer";
 
 export const metadata: Metadata = { title: "Edit service" };
 export const dynamic = "force-dynamic";
@@ -15,6 +15,20 @@ export default async function HubServiceEditPage({ params }: { params: Promise<{
   const { id } = await params;
   const service = id === "new" ? null : await getServiceOfferingById(siteConfig.orgId, id).catch(() => null);
   if (id !== "new" && !service) notFound();
+
+  // The saved service as the composer's answers: shared columns here, the
+  // booking fields from its sidecar (serviceAnswersFromOffering).
+  const initialAnswers = service
+    ? {
+        title: service.title,
+        excerpt: service.descriptionShort ?? "",
+        body: service.body ?? "",
+        price: service.price ?? undefined,
+        currency: service.currency,
+        format: service.format ?? "online",
+        ...serviceAnswersFromOffering(service),
+      }
+    : undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
@@ -31,26 +45,7 @@ export default async function HubServiceEditPage({ params }: { params: Promise<{
         </p>
       )}
       <div className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <ServiceForm
-          threadId={service?.id}
-          initial={{
-            title: service?.title ?? "",
-            subtitle: service?.subtitle ?? "",
-            descriptionShort: service?.descriptionShort ?? "",
-            body: service?.body ?? "",
-            bookingType: service?.bookingType ?? "one_on_one",
-            format: service?.format ?? undefined,
-            price: service?.price ?? 0,
-            currency: service?.currency ?? "CAD",
-            priceSlidingMin: service?.priceSlidingMin ?? undefined,
-            slidingScaleNote: service?.slidingScaleNote ?? "",
-            sessionDurationHrs: service?.sessionDurationHrs ?? undefined,
-            recurrenceLabel: service?.recurrenceLabel ?? "",
-            location: service?.location ?? "",
-            registrationStatus: service?.registrationStatus ?? "open",
-            status: service?.status === "published" ? "published" : "draft",
-          }}
-        />
+        <ServiceComposer key={service?.id ?? "new"} threadId={service?.id} initialAnswers={initialAnswers} />
       </div>
     </div>
   );

@@ -1,10 +1,14 @@
 import React, { useRef } from 'react';
 import { MeshPortalMaterial, useCursor } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useSceneStore, type Direction } from '../store/sceneStore';
 import { Drape } from './Drape';
+import { SWIPE_MIN_PX } from './controls/CameraDirector';
 import { damp } from 'maath/easing';
-import type { MeshPortalMaterialType } from '@react-three/drei';
+import type { ThreeElements } from '@react-three/fiber';
+
+/** drei 10 exports no instance type for the portal; its ref is typed as the element. */
+type PortalMaterial = ThreeElements['portalMaterialImpl'];
 
 interface ElementDoorProps {
   direction: Direction;
@@ -18,7 +22,7 @@ export function ElementDoor({ direction, color, position, rotation, children }: 
   const phase = useSceneStore((s) => s.phase);
   const setPhase = useSceneStore((s) => s.setPhase);
   const returnToRoom = useSceneStore((s) => s.returnToRoom);
-  const portalRef = useRef<MeshPortalMaterialType>(null!);
+  const portalRef = useRef<PortalMaterial>(null!);
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
 
@@ -34,7 +38,9 @@ export function ElementDoor({ direction, color, position, rotation, children }: 
     }
   });
 
-  const handleClick = () => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    // A swipe that ends on the door is a turn, not a tap (see CameraDirector).
+    if (e.delta > SWIPE_MIN_PX / 2) return;
     if (phase === 'templeRoom') {
       setPhase(`walkingTo:${direction}`);
     } else if (phase === `scene:${direction}`) {
@@ -57,7 +63,7 @@ export function ElementDoor({ direction, color, position, rotation, children }: 
         onPointerOut={() => setHovered(false)}
       >
         <planeGeometry args={[2.0, 3.0]} />
-        <MeshPortalMaterial ref={portalRef}>
+        <MeshPortalMaterial ref={portalRef} blur={0} resolution={512}>
           {children}
         </MeshPortalMaterial>
       </mesh>

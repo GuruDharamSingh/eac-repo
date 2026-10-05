@@ -95,6 +95,18 @@ export interface ProfileGalleryProps {
    * does more (e.g. nested galleries). Absent: the built-in slideshow.
    */
   onOpenItem?: (index: number) => void;
+  /**
+   * For a caller whose `onOpenItem` follows a link for some pictures: true
+   * for those, so the tile is announced as a link and shows a pointer rather
+   * than a zoom cursor. Absent: every tile opens full size.
+   */
+  isLink?: (item: GalleryItem) => boolean;
+  /**
+   * Extra attributes for a tile's element — e.g. a page editor's marker for
+   * which picture the tile draws (`editItem` in @elkdonis/blocks). Absent:
+   * none.
+   */
+  tileAttributes?: (item: GalleryItem) => Record<string, string>;
 }
 
 const COLS = 12;
@@ -157,6 +169,8 @@ export function ProfileGallery({
   lightboxCaption,
   framing = false,
   onOpenItem,
+  isLink,
+  tileAttributes,
 }: ProfileGalleryProps) {
   const [items, setItems] = useState<GalleryItem[]>(() => placeMissing(itemsProp));
   const [lightboxIndex, setLightboxIndexState] = useState<number | null>(null);
@@ -256,7 +270,9 @@ export function ProfileGallery({
           onLayoutChange={handleLayoutChange}
           onDragStart={() => { pressAt.current = null; }}
         >
-          {items.map((item, index) => (
+          {items.map((item, index) => {
+            const linked = !editable && !!isLink?.(item);
+            return (
             // Handlers sit on the TILE, not the <img>: in edit mode
             // react-grid-layout owns pointer events on the item, and hanging
             // the click off the image alone made it dependent on the event
@@ -264,12 +280,17 @@ export function ProfileGallery({
             // caption stopPropagation, so they still do their own thing.
             <div
               key={item.id}
+              {...tileAttributes?.(item)}
               className={captions === "hover" && !editable ? "eac-gallery-tile eac-gallery-tile--captioned" : "eac-gallery-tile"}
               // A tile opens the slideshow, so it is reachable and operable
               // from the keyboard too — Enter or Space, like a button.
-              role="button"
+              role={linked ? "link" : "button"}
               tabIndex={0}
-              aria-label={item.title ? `${item.title} — open full size` : "Open full size"}
+              aria-label={
+                linked
+                  ? item.title ? `${item.title} — open link` : "Open link"
+                  : item.title ? `${item.title} — open full size` : "Open full size"
+              }
               onKeyDown={(e) => {
                 if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
@@ -293,7 +314,7 @@ export function ProfileGallery({
                 if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 5) return;
                 setLightboxIndex(index);
               }}
-              style={{ position: "relative", overflow: "hidden", borderRadius: 4, background: "#111", cursor: "zoom-in" }}
+              style={{ position: "relative", overflow: "hidden", borderRadius: 4, background: "#111", cursor: linked ? "pointer" : "zoom-in" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -410,7 +431,8 @@ export function ProfileGallery({
                 </>
               )}
             </div>
-          ))}
+            );
+          })}
         </GridLayout>
       )}
 

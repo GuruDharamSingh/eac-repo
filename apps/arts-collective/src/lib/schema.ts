@@ -148,9 +148,12 @@ export const step1Schema = z.object({
   pronouns: z.string().max(40).optional().default(""),
   city: z.string().min(1, "Where are you based?").max(120),
   bio: z.string().min(1, "Tell us a bit about yourself").max(800),
+  // A pasted link, or a platform media path from the picker (uploads and the
+  // artist's own folder return `/api/media/...`, which every site serves).
   photoUrl: z
     .string()
     .url("Must be a valid URL")
+    .or(z.string().regex(/^\/api\/media\/[^\s]+$/, "Must be a valid URL"))
     .or(z.literal(""))
     .optional()
     .default(""),

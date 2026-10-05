@@ -15,7 +15,7 @@ const SITE_IMAGES = "/api/media/EAC_Network/ifac/Media/Images/Site/";
  * here, and it lives in IFAC's Nextcloud folder, not in the app bundle.
  */
 const teamMembers: Array<{ name: string; role: string; slug?: string; kind?: "artists" | "dealers"; photo?: string }> = [
-  { name: "Eric Brummel", role: "Artist, Art Dealer", slug: "ericbrummel", kind: "artists" },
+  { name: "Eric Brummel", role: "Artist, Art Dealer", slug: "eric-brummel", kind: "dealers" },
   { name: "Hans Maack", role: "Art Dealer, Audio/Video", slug: "hansmaack", kind: "dealers" },
   { name: "Berni Laplante", role: "Art Dealer, Blog Writer", slug: "bernilaplante", kind: "dealers" },
   { name: "Iven Lourie", role: "Artist, Auctioneer", photo: `${SITE_IMAGES}iven1.jpg` },

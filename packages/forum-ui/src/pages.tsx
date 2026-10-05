@@ -10,6 +10,10 @@ import { timeAgo } from "./format";
 import { MemberPageView, MembersDirectory, NewMembersBlock, OrgsDirectory, TopicReviewPage, TopicsIndex } from "./people";
 import { ConstellationSvg, DrawLineForm, EraseLineForm, MapEdgeList, MapLegend, mapSize } from "./map";
 import { ModLog, SearchResults } from "./search";
+import { getAuthorInsights } from "@elkdonis/analytics/server";
+import { AuthorInsightsView } from "@elkdonis/analytics/insights";
+import { parseRangeKey } from "@elkdonis/analytics";
+import "@elkdonis/analytics/dashboard.css";
 
 // ============================================================================
 // The pages. Each is an async server component that takes the connectors
@@ -704,4 +708,38 @@ export async function ThreadPage({ boxes, connectors, viewer, searchParams, path
     void connectors.write.markThreadRead(viewer.userId, thread.id, last);
   }
   return view;
+}
+
+
+// ── /insights: what happened to the viewer's own posts ──────────────────────
+
+export async function InsightsPage({ boxes, connectors, viewer, searchParams, path }: PageProps) {
+  const { hrefs, scope, siteName } = connectors;
+  const network = scope.kind === "network";
+  const crumb = <Breadcrumb items={[{ label: network ? "Forum" : siteName, href: hrefs.root() }, { label: "Insights" }]} />;
+  if (!viewer.userId) {
+    return <Layout boxes={boxes} main={<>{crumb}<PageHead title="Insights" /><Empty>{hrefs.signIn ? <a href={hrefs.signIn}>Sign in</a> : "Sign in"} to see how your posts are doing.</Empty></>} />;
+  }
+  const data = await getAuthorInsights({
+    // The person's own id plus any pen-name identities (ForumViewer.identityIds).
+    authorIds: viewer.identityIds?.length ? viewer.identityIds : [viewer.userId],
+    range: parseRangeKey(searchParams.range),
+    orgId: scope.kind === "org" ? scope.orgId : null,
+  });
+  return (
+    <Layout
+      boxes={boxes}
+      main={
+        <>
+          {crumb}
+          <AuthorInsightsView
+            data={data}
+            title={network ? "Your posts" : `Your posts · ${siteName}`}
+            basePath={path}
+            postHref={(p) => hrefs.thread(p.threadId, p.slug)}
+          />
+        </>
+      }
+    />
+  );
 }

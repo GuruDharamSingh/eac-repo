@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies, headers } from 'next/headers';
+import { isSignedOutEverywhere } from './sso-state';
+import { deviceTokenUser } from './device-tokens';
 
 /**
  * Derive the Domain attribute for auth cookies so a session set on the root
@@ -270,11 +272,22 @@ const SESSION_CACHE_TTL = 60 * 10;
  */
 export async function getServerSession(): Promise<Session> {
   try {
+    // A device token (the network's own apps) stands in for the cookie; an
+    // unknown or revoked one is no session at all, never a cookie fallback.
+    const device = await deviceTokenUser();
+    if (device !== undefined) return { user: device };
+
     const supabase = await getServerAuth();
 
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error || !session?.user) {
+      return { user: null };
+    }
+
+    // Signed out on another site of the network since this token was issued
+    // (sso-state.ts): this site's cookie is stale, not a session.
+    if (await isSignedOutEverywhere(session.access_token)) {
       return { user: null };
     }
 
@@ -394,3 +407,6 @@ export async function invalidateSessionCache(userId: string): Promise<void> {
 // Export API route handlers
 export * from './api-routes';
 export * from './handoff';
+export * from './arrival';
+export { DEVICE_TOKEN_PREFIX, createDeviceToken, listDeviceTokens, revokeDeviceToken, revokeRequestDeviceToken, type DeviceTokenRow } from './device-tokens';
+export { SSO_COOKIE, ARRIVAL_COOKIE, markSignedOutEverywhere } from './sso-state';

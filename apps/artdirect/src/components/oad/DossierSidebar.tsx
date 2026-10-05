@@ -60,6 +60,18 @@ export interface DossierSidebarProps {
   hasStore: boolean;
   marketplaceUrl: string;
   networkUrl: string;
+  /**
+   * The page designer's entry points (their profile and featured pages,
+   * 2026-09-26). Omitted, the panel shows no design section.
+   */
+  design?: {
+    profileHref: string;
+    featuredHref: string;
+    /** The live featured page, when one is published. */
+    featuredLiveHref?: string | null;
+    /** A designed profile is live. */
+    profileLive?: boolean;
+  };
 }
 
 export function DossierSidebar(props: DossierSidebarProps) {
@@ -172,6 +184,8 @@ export function DossierSidebar(props: DossierSidebarProps) {
 
         {error && <p className="eac-dos-side-error" role="alert">{error}</p>}
 
+        {props.design ? <DesignLinks {...props.design} layout={layout} /> : null}
+
         <LayoutPicker current={layout} busy={busy === "layout"} onChoose={chooseLayout} />
 
         {/* A person on the plain page can still set every field — the same
@@ -206,6 +220,43 @@ export function DossierSidebar(props: DossierSidebarProps) {
         ))}
       </aside>
     </>
+  );
+}
+
+function DesignLinks({
+  profileHref,
+  featuredHref,
+  featuredLiveHref,
+  profileLive,
+  layout,
+}: NonNullable<DossierSidebarProps["design"]> & { layout: string }) {
+  return (
+    <section className="eac-dos-side-group">
+      <h3>Design your pages</h3>
+      <p className="eac-dos-side-blurb">
+        Arrange this page in the page designer, and make a featured page for one of your works, workshops or
+        pieces of writing. Publishing puts a page live straight away.
+      </p>
+      {layout === "dossier" ? (
+        <p className="eac-dos-side-blurb">A designed page shows on the standard layout, not the dossier.</p>
+      ) : null}
+      <p className="eac-dos-side-blurb">
+        <a className="eac-dos-side-out" href={profileHref}>
+          {profileLive ? "Edit this page's design →" : "Design this page →"}
+        </a>
+      </p>
+      <p className="eac-dos-side-blurb">
+        <a className="eac-dos-side-out" href={featuredHref}>
+          {featuredLiveHref ? "Edit your featured page →" : "Make a featured page →"}
+        </a>
+        {featuredLiveHref ? (
+          <>
+            {" "}
+            (<a href={featuredLiveHref}>view it</a>)
+          </>
+        ) : null}
+      </p>
+    </section>
   );
 }
 

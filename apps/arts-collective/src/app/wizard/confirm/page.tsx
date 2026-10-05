@@ -53,7 +53,7 @@ export default async function ConfirmPage() {
           </CardTitle>
           <CardDescription>
             Here&apos;s what you told us. If it still fits, you&apos;re done.
-            Otherwise you can start over.
+            Otherwise you can edit your answers or start over.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -191,9 +191,14 @@ export default async function ConfirmPage() {
                 Start over
               </Button>
             </form>
-            <Button asChild>
-              <Link href="/hub">Looks good</Link>
-            </Button>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <Button asChild variant="outline">
+                <Link href="/wizard?edit=1">Edit answers</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/hub">Looks good</Link>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -97,6 +97,23 @@ function cleanSites(value: unknown): string[] {
   return [...new Set(value.map(String).filter((v) => SITE_ID.test(v)))].slice(0, 20);
 }
 
+/**
+ * A picture's click-through address, or undefined. A same-site path, or an
+ * http(s)/mailto URL: it is rendered as a link target, so `javascript:` and
+ * other schemes are refused, and a protocol-relative `//host` is not a path.
+ */
+export function cleanGalleryLink(value: unknown): string | undefined {
+  const s = typeof value === 'string' ? value.trim().slice(0, 500) : '';
+  if (!s) return undefined;
+  if (s.startsWith('/')) return s.startsWith('//') ? undefined : s;
+  try {
+    const u = new URL(s);
+    return ['http:', 'https:', 'mailto:'].includes(u.protocol) ? u.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Same tolerant parse as profiles.ts's asPortfolio — a malformed entry is dropped, not fatal. */
 export function asGalleryItems(value: unknown): PortfolioItem[] {
   if (!Array.isArray(value)) return [];
@@ -115,6 +132,7 @@ export function asGalleryItems(value: unknown): PortfolioItem[] {
       const artworkId =
         typeof r.artworkId === 'string' && UUID.test(r.artworkId) ? r.artworkId : undefined;
       const opens = typeof r.opens === 'string' && GALLERY_ID.test(r.opens) ? r.opens : undefined;
+      const link = cleanGalleryLink(r.link);
       const pct = (v: unknown) => {
         const n = num(v);
         return n === undefined ? undefined : Math.min(100, Math.max(0, n));
@@ -133,6 +151,7 @@ export function asGalleryItems(value: unknown): PortfolioItem[] {
         x: num(r.x), y: num(r.y), w: num(r.w), h: num(r.h),
         ...(artworkId ? { artworkId } : {}),
         ...(opens ? { opens } : {}),
+        ...(link ? { link } : {}),
         ...(subtitle ? { subtitle } : {}),
         ...(pct(r.fx) !== undefined ? { fx: pct(r.fx) } : {}),
         ...(pct(r.fy) !== undefined ? { fy: pct(r.fy) } : {}),

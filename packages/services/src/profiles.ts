@@ -65,6 +65,12 @@ export interface PortfolioItem {
    */
   opens?: string;
   /**
+   * Where a click on the picture goes, instead of the full-size view: a path
+   * on the same site (`/about`) or an http(s)/mailto address. Absent = the
+   * picture opens full size, as before. Cleaned by `cleanGalleryLink`.
+   */
+  link?: string;
+  /**
    * How the picture sits inside its tile: the focal point (0–100 %, as CSS
    * object-position) and a zoom (1 = fill the tile, up to 4). Absent = centred,
    * no zoom — how every picture has always been shown.
@@ -248,7 +254,7 @@ function mapUser(row: UserRow): Profile {
   return {
     userId: row.id,
     entityType: row.entity_type,
-    profileLayout: row.profile_layout ?? 'dossier',
+    profileLayout: row.profile_layout ?? 'standard',
     slug: row.slug,
     displayName: row.display_name ?? 'Member',
     headline: row.headline,
@@ -600,9 +606,8 @@ export interface CreateUnclaimedProfileInput {
   oadDossier?: Record<string, unknown>;
   createdBy?: string | null;
   entityType?: EntityType;
-  /** 'standard' = the plain React page. Defaults to 'dossier' (the DB
-   *  default, written for people) — callers creating an organization
-   *  profile should pass 'standard' explicitly. */
+  /** 'standard' = the React page (PersonPage). Defaults to 'standard', the
+   *  DB default since migration 168 (was 'dossier'). */
   profileLayout?: string;
 }
 
@@ -632,7 +637,7 @@ export async function createUnclaimedProfile(
         ${input.city ?? null}, ${input.region ?? null}, ${input.country ?? null},
         ${input.postalCode ?? null}, ${input.lat ?? null}, ${input.lng ?? null}, ${jsonb(input.socialLinks ?? [])},
         ${slug}, ${input.sourceNote ?? null}, ${jsonb(input.oadDossier ?? {})}, ${input.createdBy ?? null}, 'unclaimed',
-        ${input.entityType ?? 'person'}, ${input.profileLayout ?? 'dossier'}
+        ${input.entityType ?? 'person'}, ${input.profileLayout ?? 'standard'}
       )
     `;
     return { ok: true, userId: newId, slug };

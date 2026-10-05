@@ -23,6 +23,8 @@
 /* Member pages at /artists/<slug>: the same ProfileView ArtDirect renders,
    and the writing shelf behind an opted-in blog. */
 @import "@elkdonis/cms-ui/profile.css";
+/* Person pages at /about/<slug> (PersonPage). */
+@import "@elkdonis/cms-ui/person-page.css";
 @import "@elkdonis/cms-ui/writing.css";
 
 /* ── The member profile, in this site's colours ────────────────────────────
@@ -61,6 +63,8 @@
 /* The landing page's own stylesheet, carried over from inner-gathering's
    (marketing) route group as it stood — scoped to .marketing-root. */
 @import "./landing.css";
+/* The offering's Talk room (components/landing/OfferingCall.tsx). Separate file, so edits to landing.css cannot drop it. */
+@import "../components/landing/offering-call.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -475,3 +479,9 @@ h1, h2, h3, h4 {
 .ws-gallery figure { margin: 0; }
 .ws-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; border: 1px solid rgba(183,154,85,0.45); }
 .ws-gallery figcaption { font-size: 0.8rem; color: #104b8C; margin-top: 0.3rem; }
+
+/* Person pages (/about/<slug>): headings in the site face and navy, as .ig-page h1. */
+.eac-person-page {
+  --eac-person-heading-font: "Venture", Georgia, serif;
+  --eac-person-heading: #01124E;
+}

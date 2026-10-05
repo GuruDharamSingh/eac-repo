@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@elkdonis/db";
 import { getOrgRole, removeOrgMember, setOrgRole, type OrgRole } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import { setProfileVisibility } from "@/lib/directory-admin";
+import { queueNextcloudSync, setProfileVisibility } from "@/lib/directory-admin";
 
 /**
  * People management for /manage/people.
@@ -183,6 +183,9 @@ export async function setMemberRole(
   if (!allowed.ok) return allowed;
 
   await setOrgRole(targetUserId, siteConfig.orgId, role as OrgRole);
+  // Member and guide carry Nextcloud access; a demotion to viewer takes it
+  // away. Either way the circle has to catch up (developer, 2026-09-24).
+  await queueNextcloudSync(actorUserId, "role-change");
   return { ok: true };
 }
 
@@ -199,6 +202,17 @@ export async function setMemberListed(
   if (targetUserId !== actorUserId) {
     const allowed = await guard(targetUserId, actorUserId);
     if (!allowed.ok) return allowed;
+  }
+  // The public site lists only rows tagged artist or dealer (listDirectory),
+  // so listing an untagged row — anyone who joined by signing in — would show
+  // "On the site" here and appear nowhere. Tag it artist, which is also what
+  // this console already displays for an untagged row (listManageMembers).
+  if (isPublic) {
+    await db`
+      UPDATE org_profiles SET tags = array_append(tags, 'artist'), updated_at = NOW()
+      WHERE org_id = ${siteConfig.orgId} AND user_id = ${targetUserId}
+        AND NOT (tags && ARRAY['artist', 'dealer']::text[])
+    `;
   }
   const ok = await setProfileVisibility(targetUserId, isPublic);
   return ok ? { ok: true } : { ok: false, error: "That person has no IFAC profile to list." };

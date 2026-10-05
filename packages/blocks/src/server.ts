@@ -45,3 +45,10 @@ export {
   type ProfileGalleriesBlockProps,
   type LoadProfileGalleriesOptions,
 } from "./server/profile.server";
+
+// A person page for the person blocks (ArtDirect profile and featured pages):
+// one load, handed to Puck as `metadata.person`. See ./person-context.ts.
+export {
+  loadPersonBlockContext,
+  type LoadPersonBlockContextOptions,
+} from "./server/person-page.server";

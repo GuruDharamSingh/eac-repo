@@ -31,7 +31,7 @@ outside the org's storage (settled 2026-09-07).
 Division of labour between the two visual editors (user decision 2026-09-15):
 Silex/GrapesJS for static pages and templates; Puck for pages inside the
 React apps. One block catalogue is meant to serve both (`BlockDef.silexRoot`,
-the pens' `react` pointer); the Silex side of that bridge is not built.
+the pens' `react` pointer); the Silex side of that bridge is not built (2026-10-04: the pens' `react` field is read by nothing and `silexRoot` is walked by nothing; the two share only CSS tokens). Survey: `docs/open/SILEX_PUCK_SURVEY_2026-10-04.md`.
 
 On mixed sites, **Silex renders content and the React app owns the chrome**
 (nav, auth, search, dialogs): `SilexSite` takes `omitSections` to drop a
@@ -44,7 +44,11 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
 | Surface | Host apps | Notes |
 |---|---|---|
 | Puck, org pages | `apps/danamccool` (3018, org `danamccool`), `apps/innergathering` (3015, `inner_group`) | `site_config` key `puck:<path>`; 27 rows for danamccool, 3 for inner_group |
+| Puck, hybrid org site (2026-10-02) | `apps/sunjay` (3001, `sunjay`) | Flat slugs, `site_config` key `puck:<slug>`; `/` renders `puck:home` when published, else the hard-coded `LegacyHome` (`src/app/page.tsx`); `/[feed]` falls through to a page when no feed has the name (`src/lib/puck/actions.ts` `slugProblem` refuses feed and reserved names). Editor `/studio/<slug>`, list in `/manage/builder`. Site-local blocks `src/blocks/` (`pt-*`). Resolver output must be plain JSON: Puck deep-copies a `Date` into `{}`. Built and deployed 2026-10-02; `puck:home` was published 2026-10-02 20:45 and `/` renders it (claude, corrected 2026-10-04: this row said no page was published) |
+| Puck, generated pages on sunjay (2026-10-03, built; not deployed) | `apps/sunjay` | Template documents `puck:event-detail` (drawn for any thread with `threads.metadata.detailPage`, `app/[feed]/[slug]/page.tsx`, toggled by `setDetailPageAction`, which also makes a Talk room) and `puck:journal-piece` (drawn at `/journal/<piece>` for Studio pieces from `listOrgWriting`, not the section-scoped thread route). Both are in `TEMPLATE_SLUGS` (`src/lib/puck/reserved.ts`): editable at `/studio/<slug>`, never served at `/<slug>`. Page starts: services, writing, plain. Services block set books group and self-paced services through `@elkdonis/checkout` (`src/lib/booking-actions.ts`, `/api/checkout/return`); one-to-one services get the enquiry form until migration 174 is applied. Event blocks read `metadata.threadId`; service blocks `metadata.service` (`?service=`); a resolver key must not equal a declared prop name (`pt-service` uses `chosen`). Offering card `pt-offering-card` is innergathering's lead card. Blocks `src/blocks/`, loaders `src/lib/puck/data-*.ts` (claude, 2026-10-03) |
+| Puck, art-auction (2026-10-04, built and previewed; not deployed) | `apps/art-auction` (3009, org `market`) | Designed pages at `/<slug>` (`app/[slug]`, flat; names in `lib/puck/reserved.ts`), editor `/edit/<slug>`, list `/admin/pages`. **No `home` page by design: `/` is the catalogue.** Editors: platform admins and `market` owners/guides (`lib/puck/auth.ts`). Live blocks `au-*` poll `/api/auction/live` (3 s server cache, server clock for countdowns, bidders shown only as `Paddle NNN`); lots are grouped by `auction_lot.metadata.event`, set by the new "Auction" field on the studio lot form (existing lots are untagged). Articles: `/read/<slug>` draws a public `post` thread of org `market` in a PUBLIC feed (`org_feeds.is_public` and no `min_role`) with its replies; replying happens on the forum (`NEXT_PUBLIC_FORUM_URL`, default forum.arts-collective.com). Template doc `article-detail`. `ha-*` blocks adapted from HyperUI (MIT; `blocks/harvest/NOTICE.md`). Templates: featured, auction, article-detail, card-kit. Needs rebuild; no Stripe key in the preview (claude, 2026-10-04) |
 | Puck, per-person store panels | editor `apps/art-auction/src/app/panel/[orgSlug]`; rendered on `apps/ifac/src/app/artists/[slug]/page.tsx:104` | `user_pages` (migration 157); 3 IFAC rows |
+| Puck, a person's own pages (2026-09-26) | ArtDirect only: editor `/<slug>/design`, `/<slug>/featured/design`; rendered on `/<slug>`, `/<slug>/featured` | `user_pages` org `oad`, keys `profile`/`featured` (live) and `profiledraft`/`featureddraft`; no rows yet |
 | `@elkdonis/blocks` without Puck | amrit-canada, sunjay (`section-banner`, `cycle-badge` on `[feed]` pages) | `fourthwayBookreaders` lists the dependency but imports nothing (verified by grep) |
 | Silex over the page | `apps/hidden-enneagram` (3012), the one org with `layout_mode='silex'` | "Edit page" opens Silex on the current page |
 | Silex as org layout | arts-collective `/sites/[slug]` when `layout_mode='silex'` (`apps/arts-collective/src/app/sites/[slug]/page.tsx:25`) | 17 orgs `default`, 1 `silex` |
@@ -54,6 +58,7 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
 
 ### Puck: `@elkdonis/page-builder` + `@elkdonis/blocks`
 
+- Generic "Style" on every block (2026-10-03, code written and type-checked in all six editing hosts; rebuilt into sunjay, danamccool, innergathering, ifac and art-auction on 2026-10-04; artdirect runs from source): `packages/page-builder/src/style/` (`schema.ts` pure model and sanitiser, `wrap.tsx` published wrapper, `field.tsx` editor control). Stored in each block's props as `blkStyle`; colours are `--blk-*` tokens or hex; a block with nothing set renders with no wrapper and the hoisted `<style href="blk-style">` appears only with the first styled block. **Verified** (sunjay dev preview, 2026-10-04): wrapper markup, token colours, phone-width hide, hover attribute, the editor control (presets, sections, CSS box flagging rejected lines) and no wrapper on an unstyled page. **Unverified**: danamccool, innergathering, ifac, art-auction and artdirect were only type-checked; a person-page block inside `.eac-person-page` with a style set gains a wrapper `div` that child-combinator CSS in `person-page.css` would not match.
 - Package: `@puckeditor/core@0.23.0` everywhere (page-builder, art-auction,
   danamccool, ifac, innergathering). `@measured/puck` is the deprecated name
   (renamed in 0.21); do not add it.
@@ -72,7 +77,7 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
   uses the thread vocabulary `draft/pending/published/archived`; an org opts in
   with `organizations.member_store_panels` (default false; IFAC set true in
   migration 158). Rendered with `STORE_PANEL_BLOCKS`
-  (`packages/blocks/src/index.ts:141`, 12 blocks).
+  (`packages/blocks/src/index.ts:149`, 15 blocks; corrected 2026-10-04, was 12 at `:141`).
 - Validation: `validatePage` (`packages/page-builder/src/validate.ts:61`) is
   shallow and non-throwing (root object, content array, nested slot arrays,
   missing/duplicate ids, unknown types). `loadPage` validates on read and
@@ -105,6 +110,40 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
   Tailwind with preflight; site CSS in `layer(base)` after a declared
   `@layer theme, base, components, utilities;`.
 
+### Person pages on ArtDirect (2026-09-26)
+
+Developer's decision: Puck is used for people only on ArtDirect, not on org
+sites. Each person has two documents in `user_pages` (org `oad`):
+
+- `profile`: their root page `/<slug>`. A published one replaces the
+  `standard` layout (the `dossier` layout is left as it is); without one the
+  plain `PersonPage` renders as before. Starting document:
+  `PROFILE_TEMPLATE` (`packages/blocks/src/templates/person.ts`), today's
+  frame page as blocks.
+- `featured`: `/<slug>/featured`, one or more offerings brought forward.
+  Template "Single spotlight" (`SPOTLIGHT_TEMPLATE`, block
+  `offering-spotlight`). 404 for visitors until published. When published,
+  `/<slug>` links to it under the role.
+
+Mechanics:
+- Blocks: `PROFILE_PAGE_BLOCKS`, `FEATURED_PAGE_BLOCKS`
+  (`packages/blocks/src/index.ts`). The `person-*` blocks draw cms-ui
+  `PersonPage` markup and take their look from `person-page.css`; they need
+  a `.eac-person-page` ancestor and carry no `.blk` class. `--blk-*` are
+  mapped to the frame look in `person-page.css` for the ordinary blocks.
+- Data: the host loads the whole page once (`loadPersonBlockContext`,
+  `@elkdonis/blocks/server`) and passes it as `metadata.person`;
+  `personPageResolvers()` only pick from it, so editor and published render
+  use the same resolvers and there is no block API route.
+- Saving: "Save draft" writes `<kind>draft`; "Publish" writes `<kind>` with
+  status `published` (`publishUserPage`, page-builder) and the draft, live at
+  once. Gate: services `publishesWithoutReview(orgId)`, true only for `oad`;
+  `member_store_panels` and the review queue are untouched. Resolver-filled
+  props (`readOnly`) are stripped before storing
+  (`apps/artdirect/src/lib/person-pages.ts` `stripResolved`).
+- Auth: editor routes and actions use `canEditProfile` with the session user
+  (self or global admin); anyone else gets a 404.
+
 ### Block library rules (`packages/blocks`)
 
 - A block is `defineBlock({ def, Component, sample? })`. `def.props` is a
@@ -112,7 +151,7 @@ template's own nav (`packages/silex-render/src/silex-site.tsx:121`).
   same array drives Puck fields (`toPuckFields`), Silex traits
   (`toSilexTraits`) and attribute parsing (`propsFromAttributes`).
   `@elkdonis/blocks` imports nothing from Puck.
-- `SHARED_BLOCKS` (`packages/blocks/src/index.ts:83`) has 27 blocks.
+- `SHARED_BLOCKS` (`packages/blocks/src/index.ts:87`) has 30 blocks (corrected 2026-10-04; was 27 at `:83`).
   Categories are a closed union `layout | headers | content | listings |
   actions` (`packages/blocks/src/types.ts:106`).
 - `createCatalogue` throws on: a prop named `id`, `puck`, `editMode` or
@@ -389,9 +428,9 @@ Reasons for each are given in Current state above.
 - Two workshop session models: `threads.sessions` JSONB (arts-collective) vs
   `workshop_sessions` table.
 - Tailwind apps other than danamccool do not `@source` `packages/blocks/src`.
-- `apps/danamccool/src/app/puck-harness-tmp/` is a temporary harness created
+- ~~`apps/danamccool/src/app/puck-harness-tmp/` is a temporary harness created
   2026-09-23 by another session, marked "delete me"; it is publicly routable
-  while it exists.
+  while it exists.~~ 2026-09-25: directory removed; it was never committed.
 - Puck ships no data version; run `migrate()` as a batch step on upgrade, not
   on load, and keep a sidecar version.
 - `packages/silex-nextcloud-connector/README.md` still says publishing is not

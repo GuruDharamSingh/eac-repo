@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>eac_embed</id>
+    <name>EAC embed</name>
+    <summary>Let the collective's own sites show Nextcloud pages in a frame</summary>
+    <description>Adds the origins in the app value `frame_ancestors` (comma-separated; default https://elkdonis-arts.org) to Nextcloud's frame-ancestors Content-Security-Policy, so a Talk call or a shared document can open inside a page of those sites. Source: the EAC monorepo, docker/nextcloud-apps/eac_embed.</description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author>Elkdonis Arts Collective</author>
+    <namespace>EacEmbed</namespace>
+    <category>integration</category>
+    <dependencies>
+        <nextcloud min-version="30" max-version="34"/>
+    </dependencies>
+</info>

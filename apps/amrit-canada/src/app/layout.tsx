@@ -4,9 +4,10 @@ import { Cinzel, Lora } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { KundaliniPanel } from "@/components/kundalini-panel-loader";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { siteConfig } from "@/config/site";
+import { ArrivalNotice } from "@elkdonis/cms-ui/network";
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import { getSiteSections } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
@@ -68,15 +69,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning className={`${cinzel.variable} ${lora.variable}`}>
+      {/* The left-column Kundalini animation (components/kundalini-panel*)
+          was taken off 2026-09-26; the component is kept for reuse. */}
       <body suppressHydrationWarning className="flex min-h-screen">
-        {/* Runs the full length of the page, from the very top -- the header
-            sits beside its top portion rather than above it. */}
-        <aside className="w-14 shrink-0 sm:w-20 md:w-32 lg:w-64">
-          <div className="sticky top-0 h-full">
-            <KundaliniPanel showWord />
-          </div>
-        </aside>
-
         <div className="flex min-w-0 flex-1 flex-col">
           {/* One surface system for the whole site: a listing card on a feed
               page, a hub tile and a calendar day all open into the same dialog. */}
@@ -97,6 +92,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <main className="flex-1">{children}</main>
             <SiteFooter content={sections.footer} />
             <Toaster position="top-right" />
+            <ArrivalNotice endpoint="/api/network/arrival" />
+            <AnalyticsBeacon />
           </HubSurfaces>
         </div>
       </body>

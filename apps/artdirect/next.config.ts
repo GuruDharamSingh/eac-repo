@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     "@elkdonis/live-editor",
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
+    // Service booking (checkout → commerce + payments), 2026-09-27.
+    "@elkdonis/checkout",
+    "@elkdonis/payments",
     "@elkdonis/cms-bindings",
     "@elkdonis/cms-ui",
     "@elkdonis/db",

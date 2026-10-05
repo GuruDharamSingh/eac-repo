@@ -3255,3 +3255,62 @@ button.eac-forum-feed-name {
   outline: none;
   border-color: var(--sf-fg);
 }
+
+/* ── Connections panel (ConnectionsPanel.tsx; migration 192) ──────────────
+   Plain classes: it also renders outside popups, in hosts without Tailwind. */
+.eac-conn { display: grid; gap: 14px; color: var(--sf-fg); }
+.eac-conn__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.eac-conn__item {
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+  background: var(--sf-bg);
+}
+.eac-conn__item[data-status="error"] { border-color: var(--sf-danger); }
+.eac-conn__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.eac-conn__status {
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-conn__item[data-status="connected"] .eac-conn__status { color: var(--sf-fg); }
+.eac-conn__meta, .eac-conn__muted { font-size: 0.9rem; color: var(--sf-muted); margin: 0; }
+.eac-conn__meta a { color: inherit; text-decoration: underline; }
+.eac-conn__error { font-size: 0.9rem; color: var(--sf-danger); margin: 0; }
+.eac-conn__notice { font-size: 0.9rem; margin: 0; }
+.eac-conn__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.eac-conn__pick { display: inline-flex; align-items: center; gap: 4px; font-size: 0.9rem; }
+.eac-conn__form { display: grid; gap: 12px; border-top: 1px solid var(--sf-line); padding-top: 14px; }
+.eac-conn__field { display: grid; gap: 4px; font-size: 0.9rem; }
+.eac-conn__field > span {
+  font-family: var(--sf-font-record);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-conn__field input, .eac-conn__field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  padding: 8px 10px;
+  font: inherit;
+}
+.eac-conn__field small { color: var(--sf-muted); font-size: 0.8rem; }
+.eac-conn__code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: var(--sf-font-record);
+  font-size: 0.82rem;
+  padding: 8px 10px;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-bg-soft);
+  user-select: all;
+}

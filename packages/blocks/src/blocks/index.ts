@@ -25,7 +25,7 @@ export { PictureWall, pictureWall, type PictureWallProps } from "./picture-wall"
 export { ContactForm, contactForm, type ContactFormProps } from "./contact-form";
 export { Divider, divider, type DividerProps } from "./divider";
 export { CardGrid, cardGrid, type CardGridProps } from "./card-grid";
-export { FeatureCard, featureCard, type FeatureCardProps } from "./feature-card";
+export { FeatureCard, featureCard, type FeatureCardProps, type CardRecord } from "./feature-card";
 export { LinkButton, linkButton, type LinkButtonProps } from "./link-button";
 export {
   ProfileFeed,
@@ -60,3 +60,21 @@ export {
   type ProfileRecordProps,
   type ProfileRecordEntry,
 } from "./profile-record";
+
+// A person page's parts, as blocks (ArtDirect profile and featured pages,
+// 2026-09-26). See person-header.tsx and ../person-context.ts.
+export { PersonHeader, personHeader, type PersonHeaderProps } from "./person-header";
+export { PersonCard, personCard, type PersonCardProps } from "./person-card";
+export { PersonColumns, personColumns, type PersonColumnsProps } from "./person-columns";
+export { PersonPortfolio, personPortfolio, type PersonPortfolioProps } from "./person-portfolio";
+export { PersonGalleries, personGalleries, type PersonGalleriesProps } from "./person-galleries";
+export { PersonWriting, personWriting, type PersonWritingProps } from "./person-writing";
+export { PersonThreads, personThreads, type PersonThreadsProps } from "./person-threads";
+export {
+  PersonMemberships,
+  personMemberships,
+  type PersonMembershipsProps,
+  type PersonMembership,
+} from "./person-memberships";
+export { PersonStore, personStore, type PersonStoreProps } from "./person-store";
+export { OfferingSpotlight, offeringSpotlight, type OfferingSpotlightProps } from "./offering-spotlight";

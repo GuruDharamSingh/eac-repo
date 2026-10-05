@@ -128,6 +128,15 @@ export async function handleForumAction({ request, action, connectors }: HandleA
       const mode = raw === "dark" || raw === "auto" ? raw : "light";
       cookies.push(`forum_mode=${mode}; Path=/; SameSite=Lax; Max-Age=31536000`);
     }
+    if (fd.has("size")) {
+      const raw = str(fd, "size");
+      const size = raw === "large" || raw === "largest" ? raw : "standard";
+      cookies.push(`forum_size=${size}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    }
+    if (fd.has("layout")) {
+      const layout = str(fd, "layout") === "cards" ? "cards" : "board";
+      cookies.push(`forum_layout=${layout}; Path=/; SameSite=Lax; Max-Age=31536000`);
+    }
     for (const c of cookies) res.headers.append("Set-Cookie", c);
     return res;
   }

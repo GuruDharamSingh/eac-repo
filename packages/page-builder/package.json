@@ -11,7 +11,8 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "node scripts/smoke-style.cjs"
   },
   "peerDependencies": {
     "react": "^19",

@@ -125,6 +125,9 @@ export function HubSurfaces({
         canShareToNetwork: false,
         hasWorkshops: false,
         hasMeetings: false,
+        // Readings and typing sessions: the shared service form, saved by
+        // compose-adapter → saveContentAction → upsertServiceOffering.
+        hasServices: canEdit,
       },
 
       composeSlots: {

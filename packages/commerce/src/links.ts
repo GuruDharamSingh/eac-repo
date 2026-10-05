@@ -28,6 +28,13 @@ export interface MarketplaceLinkOptions {
    * store, adding a piece. Passed as `?next=`.
    */
   returnTo?: string | null;
+  /**
+   * Route every link through the calling app's own `/api/auth/handoff`, so a
+   * signed-in member arrives on the marketplace signed in (a different domain
+   * cannot share the cookie). Only for apps that mount that route; a
+   * signed-out visitor is passed straight through.
+   */
+  handoff?: boolean;
 }
 
 export interface MarketplaceLinks {
@@ -90,25 +97,30 @@ export function marketplaceLinks(
     const frag = hash === -1 ? "" : path.slice(hash);
     return `${base}${route}${route.includes("?") ? "&" : "?"}${q}${frag}`;
   };
+  const via = (url: string): string => {
+    if (!opts.handoff || !/^https?:\/\//.test(base)) return url;
+    const next = url.slice(base.length) || "/";
+    return `/api/auth/handoff?${new URLSearchParams({ to: base, next }).toString()}`;
+  };
 
   return {
-    home: at("/"),
+    home: via(at("/")),
     // The catalogue is the site root; /artworks still permanently redirects
     // here, but there is no reason to send anyone through the extra hop.
-    browse: at("/"),
-    auctions: at("/lots"),
-    artists: at("/artists"),
-    artwork: (id) => at(`/artworks/${encodeURIComponent(id)}`),
-    store: (handle) => at(`/artists/${encodeURIComponent(handle)}`),
-    lot: (id) => at(`/lots/${encodeURIComponent(id)}`),
+    browse: via(at("/")),
+    auctions: via(at("/lots")),
+    artists: via(at("/artists")),
+    artwork: (id) => via(at(`/artworks/${encodeURIComponent(id)}`)),
+    store: (handle) => via(at(`/artists/${encodeURIComponent(handle)}`)),
+    lot: (id) => via(at(`/lots/${encodeURIComponent(id)}`)),
     studio: (storeId) =>
-      storeId ? at("/studio", [["store", storeId]]) : at("/studio"),
-    openStore: at("/studio/apply"),
-    newListing: at("/studio/artworks/new"),
-    sales: at("/studio/sales"),
-    payouts: at("/studio/payouts"),
-    myOrders: at("/account"),
-    cart: at("/cart"),
+      storeId ? via(at("/studio", [["store", storeId]])) : via(at("/studio")),
+    openStore: via(at("/studio/apply")),
+    newListing: via(at("/studio/artworks/new")),
+    sales: via(at("/studio/sales")),
+    payouts: via(at("/studio/payouts")),
+    myOrders: via(at("/account")),
+    cart: via(at("/cart")),
   };
 }
 

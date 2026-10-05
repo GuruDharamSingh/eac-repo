@@ -137,7 +137,12 @@ export function buildContentFields(
         input: "text",
         required: true,
         quick: true,
-        placeholder: kind === "post" ? "What are you writing about?" : "What is happening?",
+        placeholder:
+          kind === "post"
+            ? "What are you writing about?"
+            : kind === "service"
+              ? "What are you offering?"
+              : "What is happening?",
       },
       // The body is `custom`: every app has its own rich-text editor, and
       // cms-ui carries none.
@@ -380,15 +385,111 @@ export function buildContentFields(
     });
   }
 
-  if (PRICED.includes(kind)) {
+  // ── a service: how it is booked ──
+  // A service is not scheduled (someone books it and a time is agreed), so it
+  // has none of the "When and where" group. What it has instead is the shape
+  // of the booking. Answer keys are the ones service-offerings.ts reads
+  // (serviceInputFromAnswers), so every host saves them the same way.
+  if (kind === "service") {
     groups.push({
-      id: "pricing",
-      label: "Price",
+      id: "booking",
+      label: "The booking",
       fields: [
-        { name: "price", label: "Price", input: "number", min: 0, placeholder: "0", quick: true, inline: true },
-        { name: "currency", label: "Currency", input: "text", placeholder: "USD", inline: true },
+        {
+          name: "booking_type",
+          label: "Who it is for",
+          input: "select",
+          required: true,
+          inline: true,
+          options: [
+            { value: "one_on_one", label: "One person" },
+            { value: "group", label: "A group" },
+            { value: "async", label: "Self-paced, no meeting" },
+          ],
+        },
+        FORMAT,
+        {
+          name: "session_duration_hrs",
+          label: "Length (hours)",
+          input: "number",
+          min: 0,
+          step: "any",
+          inline: true,
+          placeholder: "1",
+        },
+        {
+          name: "session_count",
+          label: "Sessions",
+          input: "number",
+          min: 1,
+          inline: true,
+          placeholder: "1",
+        },
+        {
+          name: "location",
+          label: "Where",
+          input: "text",
+          inline: true,
+          placeholder: "An address, or leave empty for online",
+          dependsOn: { field: "format", not: "online" },
+        },
+        {
+          name: "recurrence_label",
+          label: "How often",
+          input: "text",
+          placeholder: "Weekly, by arrangement, once…",
+        },
+        { name: "subtitle", label: "Subtitle", input: "text", placeholder: "One line under the title" },
       ],
     });
+  }
+
+  if (PRICED.includes(kind)) {
+    const pricing: ContentFieldSpec[] = [
+      { name: "price", label: "Price", input: "number", min: 0, step: "any", placeholder: "0", quick: true, inline: true },
+      { name: "currency", label: "Currency", input: "text", placeholder: kind === "service" ? "CAD" : "USD", inline: true },
+    ];
+    if (kind === "service") {
+      pricing.push(
+        {
+          name: "sliding_scale",
+          label: "Sliding scale",
+          input: "toggle",
+          placeholder: "people choose what they pay, down to a floor",
+        },
+        {
+          name: "price_sliding_min",
+          label: "Lowest amount",
+          input: "number",
+          min: 0,
+          step: "any",
+          inline: true,
+          dependsOn: { field: "sliding_scale" },
+        },
+        {
+          name: "sliding_scale_note",
+          label: "A note about the scale",
+          input: "text",
+          placeholder: "Pay what you can; the full price supports someone else",
+          dependsOn: { field: "sliding_scale" },
+        },
+        {
+          name: "registration_status",
+          label: "Booking is",
+          input: "select",
+          required: true,
+          inline: true,
+          options: [
+            { value: "open", label: "Open" },
+            { value: "waitlist", label: "Waitlist only" },
+            { value: "full", label: "Full" },
+            { value: "closed", label: "Closed" },
+          ],
+          hint: "Only an open service can be booked and paid for.",
+        },
+      );
+    }
+    groups.push({ id: "pricing", label: "Price", fields: pricing });
   }
 
   // ── links and rooms ──
@@ -521,7 +622,22 @@ export function emptyContentAnswers(
           notify_on_min_attendees: false,
         }
       : {}),
-    ...(PRICED.includes(kind) ? { price: undefined, currency: "USD" } : {}),
+    ...(PRICED.includes(kind) ? { price: undefined, currency: kind === "service" ? "CAD" : "USD" } : {}),
+    ...(kind === "service"
+      ? {
+          booking_type: "one_on_one",
+          format: "online",
+          location: "",
+          session_duration_hrs: undefined,
+          session_count: undefined,
+          recurrence_label: "",
+          subtitle: "",
+          sliding_scale: false,
+          price_sliding_min: undefined,
+          sliding_scale_note: "",
+          registration_status: "open",
+        }
+      : {}),
     ...(kind === "workshop"
       ? {
           subtitle: "",

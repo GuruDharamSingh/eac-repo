@@ -1,6 +1,13 @@
 import "server-only";
 import { db } from "@elkdonis/db";
-import { ensureUniqueUserSlug, adminAssignProfile, type ClaimStatus } from "@elkdonis/services";
+import {
+  ensureUniqueUserSlug,
+  adminAssignProfile,
+  getOrgRole,
+  requestNextcloudSync,
+  setOrgRole,
+  type ClaimStatus,
+} from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import type { Artwork, ExternalLink } from "@/lib/artists";
 
@@ -250,6 +257,34 @@ export async function listAssignableMembers(): Promise<AssignableMember[]> {
  * canManageIfac first — see api/manage/directory/route.ts), matching
  * adminAssignProfile's trust convention.
  */
-export async function assignProfile(sentinelId: string, memberId: string): Promise<{ ok: boolean; error?: string }> {
-  return adminAssignProfile(sentinelId, memberId);
+export async function assignProfile(
+  sentinelId: string,
+  memberId: string,
+  actorId: string | null = null
+): Promise<{ ok: boolean; error?: string }> {
+  const result = await adminAssignProfile(sentinelId, memberId);
+  if (!result.ok) return result;
+
+  // A roster artist is a member (developer, 2026-09-24). Sign-ups land as
+  // `viewer` and the roster placeholders carry no user_organizations row into
+  // the merge, so without this the matched artist stays a viewer and the
+  // Nextcloud reconciler (member/guide/owner only) skips them. Never lowers
+  // a guide or owner.
+  const role = await getOrgRole(memberId, siteConfig.orgId);
+  if (role === null || role === "viewer") {
+    await setOrgRole(memberId, siteConfig.orgId, "member");
+  }
+  await queueNextcloudSync(actorId, "roster-assign");
+  return result;
+}
+
+/**
+ * Ask the next reconciler run (sync-nextcloud-access.sh, every 10 minutes) to
+ * bring IFAC's Nextcloud circle and shares up to date, and record why. A
+ * failure here never fails the membership change: the scheduled run covers it.
+ */
+export async function queueNextcloudSync(actorId: string | null, reason: string): Promise<void> {
+  await requestNextcloudSync(siteConfig.orgId, actorId, reason).catch((err) => {
+    console.error("[ifac] requestNextcloudSync:", err);
+  });
 }

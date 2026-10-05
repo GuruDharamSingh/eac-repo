@@ -10,6 +10,8 @@ export interface StoreShowcaseProps {
   marketplaceUrl: string;
   /** Which app this is embedded on, so the marketplace can send them back. */
   from?: string | null;
+  /** Carry the member's sign-in to the marketplace (see marketplaceLinks). */
+  handoff?: boolean;
   /** Section heading. Default: "Store". */
   heading?: React.ReactNode;
   /** Copy under the heading. Default explains where the sale happens. */
@@ -44,13 +46,14 @@ export function StoreShowcase({
   artworks,
   marketplaceUrl,
   from,
+  handoff,
   heading = "Store",
   blurb,
   density,
   columns,
   className,
 }: StoreShowcaseProps) {
-  const links = marketplaceLinks(marketplaceUrl, { from });
+  const links = marketplaceLinks(marketplaceUrl, { from, handoff });
   const storeHref = store.slug ? links.store(store.slug) : links.browse;
 
   return (

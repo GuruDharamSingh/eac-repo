@@ -36,7 +36,7 @@ const TABS: { key: Tab; label: string }[] = [
 
 // Matches .card's own gradient base in guide-profile-card.module.css --
 // the gradient panel fades into this so it reads as one continuous surface.
-const CARD_BASE_COLOR = "#faf0e6";
+const CARD_BASE_COLOR = "#ffffff";
 
 /**
  * Ported from the tabbed profile-card design the user supplied. The

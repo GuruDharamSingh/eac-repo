@@ -17,6 +17,8 @@ export interface HubSections {
   elkdonisFeed: boolean;
   store: boolean;
   blog: boolean;
+  /** On unless switched off — IFAC always showed galleries (lib/profile-sections.ts). */
+  galleries: boolean;
   storeState: StoreEntryState;
   storeId: string | null;
   storeName: string | null;
@@ -76,6 +78,7 @@ export function PageSectionsFace({
     sections.blog && "Writing",
     sections.elkdonisFeed && "Blog feed",
     sections.store && "Store",
+    sections.galleries && "Galleries",
   ].filter(Boolean);
 
   const storeNote =
@@ -122,6 +125,7 @@ export function PageSectionsSurface({
     elkdonisFeed: false,
     store: false,
     blog: false,
+    galleries: true,
     storeState: "none" as const,
     storeId: null,
     storeName: null,
@@ -131,12 +135,13 @@ export function PageSectionsSurface({
   const [feedOn, setFeedOn] = useState(sections.elkdonisFeed);
   const [blogOn, setBlogOn] = useState(sections.blog);
   const [storeOn, setStoreOn] = useState(sections.store);
+  const [galleriesOn, setGalleriesOn] = useState(sections.galleries);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // One builder for every marketplace address, told which app the member is
   // coming from so art-auction can offer them the way back.
-  const links = marketplaceLinks(marketplaceUrl, { from: "ifac" });
+  const links = marketplaceLinks(marketplaceUrl, { from: "ifac", handoff: true });
   const entry = storeEntry(links, sections.storeState, {
     storeId: sections.storeId,
     storeName: sections.storeName,
@@ -242,6 +247,26 @@ export function PageSectionsSurface({
                   <a href={`${profileHref}/writing`}>Open it</a>.
                 </>
               )}
+            </span>
+          </span>
+        </label>
+
+        <label className="hub-toggle">
+          <input
+            type="checkbox"
+            checked={galleriesOn}
+            disabled={saving}
+            onChange={(e) => {
+              const next = e.target.checked;
+              setGalleriesOn(next);
+              void patch({ galleries: next }, () => setGalleriesOn(!next));
+            }}
+          />
+          <span>
+            <strong>My galleries</strong>
+            <span className="hub-muted">
+              Your gallery pages, listed on your page. Switched off, visitors
+              no longer see them; you still do, so you can keep working on them.
             </span>
           </span>
         </label>

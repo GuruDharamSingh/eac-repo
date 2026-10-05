@@ -11,9 +11,15 @@ import {
 } from "@/lib/data";
 import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
+import { puckPageMetadata, renderPuckPage } from "@/lib/puck/render";
 
 /**
- * Every section of the site is this one route.
+ * Every section of the site is this one route — and, when no section answers
+ * to the name, a page built in the page editor (`/manage/builder`).
+ *
+ * The order matters: a section wins. Saving a page under a section's name is
+ * refused (lib/puck/actions.ts `slugProblem`), so the fallback below can only
+ * ever be reached by a name no section has.
  *
  * Before the rebuild /sadhana, /yoga and /gurdwara were three line-for-line
  * duplicate files. Feed identity, accent, presenter and pull-quote now come
@@ -22,19 +28,20 @@ import { siteConfig } from "@/config/site";
 
 interface FeedPageProps {
   params: Promise<{ feed: string }>;
+  searchParams?: Promise<{ service?: string }>;
 }
 
 export async function generateMetadata({ params }: FeedPageProps): Promise<Metadata> {
   const { feed: slug } = await params;
   const feed = await getOrgFeed(siteConfig.orgId, slug);
-  if (!feed) return {};
+  if (!feed) return (await puckPageMetadata(slug)) ?? {};
   return {
     title: feed.name,
     description: feed.tagline ?? feed.description ?? undefined,
   };
 }
 
-export default async function FeedPage({ params }: FeedPageProps) {
+export default async function FeedPage({ params, searchParams }: FeedPageProps) {
   const { feed: slug } = await params;
   const [feed, sections] = await Promise.all([
     getOrgFeed(siteConfig.orgId, slug),
@@ -43,7 +50,15 @@ export default async function FeedPage({ params }: FeedPageProps) {
 
   // A private feed 404s for the public rather than 403-ing: an unpublished
   // section shouldn't confirm its own existence.
-  if (!feed || !feed.isPublic) notFound();
+  if (!feed || !feed.isPublic) {
+    // No public section by this name: a designed page, or nothing.
+    // `?service=<slug>` is the visitor's choice on a services page; the
+    // service blocks read it from the page metadata.
+    const service = (await searchParams)?.service;
+    const page = feed ? null : await renderPuckPage(slug, { metadata: { service } });
+    if (!page) notFound();
+    return page;
+  }
 
   const threads = await getThreadsForFeed(feed.slug);
 

@@ -57,6 +57,18 @@ const props = [
     ],
   },
   {
+    name: "height",
+    kind: "number",
+    label: "Height",
+    description:
+      "0 keeps the picture's own shape. Taller or shorter crops it to fill. Also set by dragging the handle under the selected image.",
+    default: 0,
+    min: 0,
+    max: 1200,
+    step: 10,
+    unit: "px",
+  },
+  {
     name: "float",
     kind: "select",
     label: "Text flow",
@@ -114,6 +126,7 @@ export function Figure({
   caption,
   width = "measure",
   ratio = "auto",
+  height = 0,
   float = "none",
   size = 40,
   offsetY = 0,
@@ -159,6 +172,10 @@ export function Figure({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="blk-figure-img"
+        // The editor's height handle sits under this — see BlockDef.resize.
+        data-resize-target="image"
+        // A chosen height crops to fill it and overrides the Shape.
+        style={height > 0 ? { height: `${height}px`, aspectRatio: "auto", objectFit: "cover" } : undefined}
         src={src}
         alt={alt}
         loading="lazy"
@@ -179,6 +196,7 @@ export const figure = defineBlock(
     styling: "tokens",
     // Only meaningful once it is floated; the editor checks that for itself.
     manipulate: { target: "image", place: "float", size: "size", offset: "offsetY" },
+    resize: { height: "height", target: "image" },
     props,
   },
   Figure,

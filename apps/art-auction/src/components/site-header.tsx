@@ -24,7 +24,12 @@ export async function SiteHeader() {
   const unread = user ? await getUnreadCount(user.id) : 0;
   // Any store the person can act for — their own or an org's — opens the studio.
   const seller = stores.some((s) => s.status === "active");
-  const studioHref = seller ? "/studio" : "/studio/apply";
+  // Always /studio: its guard decides server-side, per request, whether to
+  // show the studio, send a signed-out visitor to sign in (returning to
+  // /studio), or send someone without an active store on to /studio/apply.
+  // Pointing non-sellers straight at /studio/apply left anyone the header
+  // misread (e.g. a failed store lookup) on the apply page.
+  const studioHref = "/studio";
 
   const links: NavLink[] = [
     { href: "/", label: "Artworks" },

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileGallery, SimpleLightbox, type GalleryItem } from "@elkdonis/cms-ui/gallery";
+import { editItem } from "@elkdonis/blocks/edit-item";
 import { saveGalleryItemsAction } from "@/lib/gallery-actions";
 import { sized } from "./media";
 import { NEST_DEPTH, type Nested, type NestedPicture } from "./nested";
@@ -31,6 +32,8 @@ export interface GridItem {
   saved?: { x: number; y: number; w: number; h: number };
   /** Another of her galleries this picture opens — see nested.ts. */
   opens?: string;
+  /** Where a click on the picture goes, instead of the slideshow. */
+  link?: string;
 }
 
 /** One gallery the slideshow is inside; the last in the stack is on show. */
@@ -251,7 +254,16 @@ export function GalleryGridView({
   const [stack, setStack] = useState<Level[]>([]);
   const top = stack[stack.length - 1];
   const topPic = top?.pics[top.index];
-  const openGrid = (index: number) =>
+  const openGrid = (index: number) => {
+    // A picture with a link goes there instead. Not while arranging in place:
+    // there a click is part of moving and framing, and the slideshow is the
+    // way to look at a picture.
+    const link = !editable ? current[index]?.link : undefined;
+    if (link) {
+      if (link.startsWith("/")) window.location.assign(link);
+      else window.open(link, "_blank", "noopener,noreferrer");
+      return;
+    }
     setStack([
       {
         id: galleryId,
@@ -267,6 +279,7 @@ export function GalleryGridView({
         })),
       },
     ]);
+  };
   const enter = (id: string, index = 0) => {
     const g = nested[id];
     if (!g || g.items.length === 0) return;
@@ -334,6 +347,10 @@ export function GalleryGridView({
         lightboxCaption={slideCaption}
         framing
         onOpenItem={openGrid}
+        isLink={(tile) => !!byId.get(tile.id)?.link}
+        // In the editor, a click on a tile opens that picture in the block's
+        // "Pictures" field (the tile id is the gallery item's id).
+        tileAttributes={(tile) => editItem("pictures", tile.id)}
       />
       <SimpleLightbox
         images={top ? top.pics.map((p) => ({ url: p.url, alt: p.caption })) : []}

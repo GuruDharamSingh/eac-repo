@@ -20,6 +20,8 @@ interface RsvpPanelProps {
   price?: number | null;
   /** MAJOR units. Set means the buyer may choose anything from here up to `price`. */
   priceSlidingMin?: number | null;
+  /** Replaces the default card wrapper, for a page that places the panel itself. */
+  className?: string;
 }
 
 const money = (major: number) =>
@@ -43,6 +45,7 @@ export function RsvpPanel({
   cancelled,
   price,
   priceSlidingMin,
+  className = "card-natural mt-8 p-6",
 }: RsvpPanelProps) {
   const router = useRouter();
   const [attending, setAttending] = useState(alreadyAttending);
@@ -142,7 +145,7 @@ export function RsvpPanel({
   }
 
   return (
-    <section className="card-natural mt-8 p-6">
+    <section className={className}>
       <h2 className="font-serif text-xl">
         {attending || guestDone ? "You're coming" : "Are you coming?"}
       </h2>

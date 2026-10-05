@@ -1,9 +1,9 @@
 import {
-  canEditCourse, draftDiff, getCourseBySlug, getDraft, listAuthorOrgs, listEditableCourses, listLooseSteps, listRunGuides, listRuns,
+  canEditCourse, draftDiff, getCourseBySlug, getDraft, getRealms, listAuthorOrgs, listEditableCourses, listLooseSteps, listRunGuides, listRuns,
   listStepTypes, stepTypeDef, type OutlineStepRef, type Run, type UnlockRule,
 } from "@elkdonis/lms";
 import type { LmsConnectors } from "./connectors";
-import { ActionForm, Flash } from "./parts";
+import { ActionForm, Flash, RealmChoice } from "./parts";
 import type { PageQuery, PageResult } from "./pages";
 
 const RULE_WORDS: Record<UnlockRule["kind"], string> = {
@@ -30,6 +30,7 @@ export async function StudioHomePage({ c, q }: { c: LmsConnectors; q: PageQuery 
         <span className="so-kicker">Studio</span>
         <h1>Your courses</h1>
         <p>Write here as freely as you like. Nothing reaches a reader until you publish, and publishing never changes a lesson under someone who is part-way through it.</p>
+        <p className="so-hublinks">Around the courses: <a href={c.hrefs.studioWorkshops()}>Workshops</a> · <a href={c.hrefs.studioSchedule()}>Schedule</a> · <a href={c.hrefs.studioGuides()}>Guides</a> · <a href={c.hrefs.studioTraditions()}>Traditions</a></p>
       </header>
       <ul className="so-cards">
         {courses.map((k) => (
@@ -83,7 +84,7 @@ export async function StudioCoursePage({ c, courseSlug, q }: { c: LmsConnectors;
         <div className="so-hero__act">
           {course.publishedVersionId && <a className="so-btn so-btn--quiet" href={c.hrefs.course(course.slug)}>See it as a reader</a>}
           <a className="so-btn so-btn--quiet" href={c.hrefs.studioPool(course.slug)}>The pool</a>
-          <a className="so-btn so-btn--quiet" href={`${c.hrefs.guide()}?course=${course.slug}`}>Guide desk</a>
+          <a className="so-btn so-btn--quiet" href={c.hrefs.guide(course.slug)}>To answer</a>
         </div>
       </header>
 
@@ -114,7 +115,7 @@ export async function StudioCoursePage({ c, courseSlug, q }: { c: LmsConnectors;
         {modules.map((m, mi) => (
           <section key={m.id} className="so-smodule">
             <details>
-              <summary><span className="so-module__n">{mi + 1}</span> {m.title} <span className="so-meta">· {m.steps.length} step{m.steps.length === 1 ? "" : "s"} · rename, move</span></summary>
+              <summary>{m.title} <span className="so-meta">· {m.steps.length} step{m.steps.length === 1 ? "" : "s"} · rename, move</span></summary>
               <ActionForm c={c} action="studio-outline" back={here} fields={{ ...F, op: "edit-module", module: m.id }} className="so-form so-fields">
                 <label>Module title<input name="title" defaultValue={m.title} required /></label>
                 <label>What this module is, in a line<input name="summary" defaultValue={m.summary ?? ""} /></label>
@@ -185,6 +186,14 @@ export async function StudioCoursePage({ c, courseSlug, q }: { c: LmsConnectors;
             ))}
           </fieldset>
           <button type="submit" className="so-btn so-btn--quiet">Save</button>
+        </ActionForm>
+      </section>
+
+      <section aria-labelledby="side-h">
+        <h2 id="side-h" className="so-h2">Inner or outer</h2>
+        <ActionForm c={c} action="studio-realm" back={`${here}#side-h`} fields={{ kind: "course", id: course.id }} className="so-form so-fields">
+          <RealmChoice value={(await getRealms("course", [course.id])).get(course.id) ?? null} legend="Which side of the hub this course belongs to" />
+          <button type="submit" className="so-btn">Save</button>
         </ActionForm>
       </section>
 

@@ -178,6 +178,8 @@
 }
 .eac-picker-grid button.is-selected { border-color: var(--eac-picker-accent); border-width: 2px; }
 .eac-picker-grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border-radius: 3px; }
+.eac-picker-grid video { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border-radius: 3px; background: #000; pointer-events: none; }
+.eac-browse-name { display: block; font-size: 11px; line-height: 1.25; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
 
 .eac-picker-grid button { position: relative; }
 .eac-picker-grid button[draggable="true"] { cursor: grab; }

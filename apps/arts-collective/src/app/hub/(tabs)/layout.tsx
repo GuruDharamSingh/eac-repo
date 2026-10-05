@@ -1,5 +1,6 @@
 import { SiteShell } from "@/components/site-shell";
 import { HubTabNav } from "@/components/hub/HubTabNav";
+import { GainSpaceBand } from "@/components/hub/GainSpaceBand";
 
 /**
  * No auth gate here on purpose. Each tab enforces its own: elkdonis and network
@@ -13,6 +14,7 @@ export default async function HubTabsLayout({
     <SiteShell wide>
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
         <HubTabNav />
+        <GainSpaceBand />
         {children}
       </div>
     </SiteShell>

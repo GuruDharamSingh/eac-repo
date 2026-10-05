@@ -33,6 +33,13 @@ export const siteConfig = {
    * for their profile (users.profile_sections, migration 105).
    */
   marketplaceUrl: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009",
+  /**
+   * People whose visit to "/" opens the writing room instead of the landing
+   * page (developer request, 2026-09-26). Routing only, not authorisation:
+   * the room itself admits anyone with a user_organizations row here, since a
+   * piece written there is the author's own and shows only on their shelf.
+   */
+  writingRoomEmails: ["justin.gillisb@gmail.com", "gurudharamsingh@gmail.com"],
 } as const;
 
 export type SiteConfig = typeof siteConfig;

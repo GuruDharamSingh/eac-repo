@@ -15,6 +15,8 @@ const TABS = [
   { href: "/manage/people", label: "People" },
 ];
 
+const OWNER_TABS = [{ href: "/manage/analytics", label: "Visitors" }];
+
 export default async function ManageLayout({ children }: { children: React.ReactNode }) {
   // Gate here so every /manage route inherits it — a page that forgets the
   // check still can't render.
@@ -30,7 +32,7 @@ export default async function ManageLayout({ children }: { children: React.React
       </header>
 
       <nav className="mt-6 flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((tab) => (
+        {[...TABS, ...(viewer.role === "owner" ? OWNER_TABS : [])].map((tab) => (
           <Link
             key={tab.href}
             href={tab.href}

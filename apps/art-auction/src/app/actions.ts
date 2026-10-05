@@ -22,7 +22,9 @@ import {
   setArtworkFavorite,
   switchOrderToEtransfer,
 } from "@elkdonis/commerce/server";
+import { trackServerEvent } from "@elkdonis/analytics/events";
 import { siteConfig } from "@/config/site";
+import { analyticsOptions } from "@/lib/analytics";
 
 async function currentUserId(): Promise<string | null> {
   try {
@@ -53,6 +55,11 @@ export async function addArtworkToCart(
     },
     { userId }
   );
+  await trackServerEvent(
+    "add_to_cart",
+    { artworkId: input.artworkId, variantId: input.artworkVariantId, viaStore: viaStoreId },
+    analyticsOptions
+  );
   revalidatePath("/cart");
   return { cartToken, redirectTo: "/cart" };
 }
@@ -60,6 +67,7 @@ export async function addArtworkToCart(
 /** Remove a line from the cart. */
 export async function removeFromCart(lineId: string): Promise<void> {
   await removeCartLine({ lineId });
+  await trackServerEvent("remove_from_cart", { lineId }, analyticsOptions);
   revalidatePath("/cart");
 }
 
@@ -78,6 +86,7 @@ export async function toggleFavoriteAction(input: {
     artworkId: input.artworkId,
     favorited: input.favorited,
   });
+  await trackServerEvent(res.favorited ? "favourite_added" : "favourite_removed", { artworkId: input.artworkId }, analyticsOptions);
   revalidatePath("/account");
   revalidatePath(`/artworks/${input.artworkId}`);
   return { ok: true, favorited: res.favorited };
@@ -114,6 +123,7 @@ export async function placeOrder(values: CheckoutFormValues): Promise<void> {
   });
 
   await clearCartToken();
+  await trackServerEvent("order_placed", { orderId: order.id, rail, signedIn: Boolean(userId) }, analyticsOptions);
 
   if (rail === "stripe") {
     redirect(await cardCheckoutUrl(order.id));
@@ -153,12 +163,14 @@ export async function payOrderByCard(orderId: string): Promise<void> {
   if (!isCardPaymentAvailable()) {
     throw new Error("Card payments are not available right now.");
   }
+  await trackServerEvent("pay_card_started", { orderId }, analyticsOptions);
   redirect(await cardCheckoutUrl(orderId));
 }
 
 /** From the order page: switch an unpaid order to eTransfer instructions. */
 export async function payOrderByEtransfer(orderId: string): Promise<void> {
   await switchOrderToEtransfer({ orderId, dueHours: siteConfig.etransferDueHours });
+  await trackServerEvent("pay_etransfer_chosen", { orderId }, analyticsOptions);
   revalidatePath(`/orders/${orderId}`);
   redirect(`/orders/${orderId}`);
 }
@@ -179,6 +191,7 @@ export async function placeBidAction(input: {
     amountMinor: input.amountMinor,
     maxAmountMinor: input.maxAmountMinor ?? null,
   });
+  await trackServerEvent(result.ok ? "bid_placed" : "bid_rejected", { lotId: input.lotId }, analyticsOptions);
   revalidatePath(`/lots/${input.lotId}`);
   return result;
 }

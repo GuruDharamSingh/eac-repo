@@ -1,3 +1,4 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import type { Metadata, Viewport } from "next";
 import { listOrgFeeds } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
@@ -54,6 +55,7 @@ export default async function RootLayout({
         >
           {children}
         </HubSurfaces>
+        <AnalyticsBeacon />
       </body>
     </html>
   );

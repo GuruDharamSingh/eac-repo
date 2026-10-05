@@ -202,7 +202,14 @@ export async function reconcileOrgCalendar(
 
     // The hub decides whether it is visible at all.
     if (thread.status !== 'published' || !thread.scheduled_at) {
-      if (!dry) await deleteCalendarObject(nc, obj.href).catch(() => {});
+      if (!dry) {
+        await deleteCalendarObject(nc, obj.href).catch(() => {});
+        // The hub removed it, not Nextcloud: forget the push, or the next run
+        // after the thread is republished or rescheduled finds it "missing"
+        // with a push on record and archives it as deleted there
+        // (Talk of the Month, 2026-09-26, archived twice this way).
+        await db`UPDATE threads SET nextcloud_last_sync = NULL WHERE id = ${thread.id} AND org_id = ${orgId}`;
+      }
       report.removed++;
       detail.push(`remove ${thread.status} "${thread.title}"`);
       continue;

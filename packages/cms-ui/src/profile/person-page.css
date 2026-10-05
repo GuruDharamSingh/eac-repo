@@ -1,0 +1,387 @@
+/* ==========================================================================
+   PersonPage — a person's page on one site (PersonPage.tsx).
+
+   Layout from IFAC's /artists/[slug]. Colours are custom properties whose
+   defaults inherit the site (currentColor mixes), so a light or dark site
+   gets a readable page without mapping anything. A site restyles by setting
+   the tokens on `.eac-person-page` (not `.eac-person`: cms-ui hub.css owns that name for its person chip) (IFAC maps its dark frame palette; see
+   apps/ifac/src/app/globals.css).
+
+   Import once per app, e.g. in globals.css:
+     @import "@elkdonis/cms-ui/person-page.css";
+   ========================================================================== */
+
+.eac-person-page {
+  --eac-person-fg: inherit;
+  --eac-person-muted: color-mix(in srgb, currentColor 68%, transparent);
+  --eac-person-line: color-mix(in srgb, currentColor 18%, transparent);
+  --eac-person-heading: inherit;
+  --eac-person-link: inherit;
+  --eac-person-link-hover: inherit;
+  --eac-person-panel-bg: transparent;
+  --eac-person-panel-border: 1px solid var(--eac-person-line);
+  --eac-person-heading-font: inherit;
+  --eac-person-heading-case: none;
+  --eac-person-width: 1000px;
+
+  color: var(--eac-person-fg);
+  padding: 18px 0 48px;
+}
+
+/* Links inside page blocks (`.blk`, @elkdonis/blocks) keep the blocks' own
+   styling: a designed person page (ArtDirect, 2026-09-26) places buttons and
+   cards here, and a page-wide link colour would, for one, turn a filled
+   button's text into its own fill colour on hover. `:where()` keeps these
+   rules at their previous specificity. */
+.eac-person-page a:where(:not(.blk, .blk *)) {
+  color: var(--eac-person-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.eac-person-page a:where(:not(.blk, .blk *)):hover {
+  color: var(--eac-person-link-hover);
+}
+
+.eac-person-intro,
+.eac-person-editor,
+.eac-person-body,
+.eac-person-slot {
+  width: min(var(--eac-person-width), calc(100% - 32px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.eac-person-back {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.eac-person-name {
+  margin: 0 0 4px;
+  color: var(--eac-person-heading);
+  font-family: var(--eac-person-heading-font);
+  text-transform: var(--eac-person-heading-case);
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.eac-person-role {
+  margin: 0 0 14px;
+  color: var(--eac-person-muted);
+  font-size: 1rem;
+}
+
+.eac-person-editor {
+  margin-bottom: 16px;
+}
+
+.eac-person-panel {
+  border: var(--eac-person-panel-border);
+  background: var(--eac-person-panel-bg);
+  padding: 14px;
+}
+
+.eac-person-body {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 32px;
+}
+.eac-person-body--single {
+  grid-template-columns: minmax(0, 640px);
+}
+
+.eac-person-portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  margin-bottom: 14px;
+}
+
+.eac-person-bio p {
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
+
+.eac-person-links {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.eac-person-network {
+  margin: 14px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--eac-person-line);
+  font-size: 0.9rem;
+}
+
+.eac-person-featured {
+  min-height: 200px;
+}
+
+.eac-person-work {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.eac-person-work img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.eac-person-work span {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--eac-person-muted);
+}
+
+.eac-person-empty {
+  margin: 0;
+  color: var(--eac-person-muted);
+}
+
+.eac-person-slot {
+  margin-bottom: 32px;
+}
+/* The writing shelf (cms-ui writing.css) sets its own width; the slot does. */
+.eac-person-slot > .eac-writing-section {
+  width: auto;
+  margin: 0;
+}
+
+/* A slot whose component rendered nothing (an empty list returns null). */
+.eac-person-slot:empty {
+  display: none;
+}
+
+.eac-person-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.eac-person-section-title {
+  margin: 0;
+  color: var(--eac-person-heading);
+  font-family: var(--eac-person-heading-font);
+  text-transform: var(--eac-person-heading-case);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.eac-person-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.eac-person-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--eac-person-line);
+}
+.eac-person-list li:last-child {
+  border-bottom: 0;
+}
+.eac-person-list a {
+  font-weight: 700;
+}
+
+.eac-person-meta,
+.eac-person-excerpt {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--eac-person-muted);
+}
+
+.eac-person-draft {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--eac-person-line);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--eac-person-muted);
+}
+
+.eac-person-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.eac-person-card {
+  display: block;
+  border: 1px solid var(--eac-person-line);
+  text-decoration: none;
+  overflow: hidden;
+}
+.eac-person-page .eac-person-card {
+  text-decoration: none;
+}
+.eac-person-card-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.eac-person-card-cover--blank {
+  background: var(--eac-person-line);
+}
+.eac-person-card-body {
+  display: block;
+  padding: 8px 10px 10px;
+}
+.eac-person-card-title {
+  display: block;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .eac-person-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   The "frame" look — IFAC's artist page (apps/ifac, 2026-09-26), shared so
+   ArtDirect's standard page and IFAC render from one source. Add the class
+   `eac-person-page--frame` to PersonPage.
+
+   Black framed panels on a near-black ground. The frame follows --frame,
+   --frame-width and --frame-soft, which a person's own palette (users.theme,
+   injected by ThemeStyle) may set; the rest is fixed.
+   Contrast on #050505 (WCAG): #e8e3e4 16.1:1, #bca7cf 9.3:1, #20d7ff 11.9:1,
+   #ff8c00 8.7:1.
+
+   A host whose own unlayered `a` reset outranks this sheet (IFAC imports it
+   in a layer) sets the per-part link colours itself.
+   ========================================================================== */
+.eac-person-page--frame {
+  --eac-person-fg: #e8e3e4;
+  --eac-person-muted: #bca7cf;
+  --eac-person-line: var(--frame-soft, #40215c);
+  --eac-person-heading: #ff8c00;
+  --eac-person-heading-font: Arial, Helvetica, sans-serif;
+  --eac-person-heading-case: uppercase;
+  --eac-person-link: #20d7ff;
+  --eac-person-link-hover: #fff;
+  --eac-person-panel-bg: #050505;
+  --eac-person-panel-border: var(--frame-width, 2px) solid var(--frame, #9c40d8);
+  --eac-person-ground: #020202;
+
+  /* The reading layer (writing shelf) on the dark panel. */
+  --read-ink: #e8e3e4;
+  --read-muted: #b8b0b2;
+  --read-faint: #8f888a;
+  --read-rule: #2f2a2d;
+  --read-accent: var(--frame, #9c40d8);
+  --read-bg: #050505;
+
+  /* Page blocks (@elkdonis/blocks, --blk-*) on the frame, for a person page
+     designed in the editor. Contrast (WCAG): #e8e3e4 on #050505 16.1:1,
+     #bca7cf 9.3:1, #8f898b 5.9:1, #20d7ff 11.9:1; #020202 on #20d7ff
+     12.1:1; frame #9c40d8 on #020202 4.1:1 (lines, outline button edge);
+     field edge #6f686a on #111 3.5:1. */
+  --blk-bg: #050505;
+  --blk-bg-soft: #111111;
+  --blk-fg: #e8e3e4;
+  --blk-muted: #bca7cf;
+  --blk-faint: #8f898b;
+  --blk-line: var(--frame, #9c40d8);
+  --blk-accent: #20d7ff;
+  --blk-on-accent: #020202;
+  --blk-accent-ink: #20d7ff;
+  --blk-band: #050505;
+  --blk-band-fg: #e8e3e4;
+  --blk-field-bg: #111111;
+  --blk-field-fg: #e8e3e4;
+  --blk-field-line: #6f686a;
+  --blk-radius: 0px;
+  --blk-radius-sm: 0px;
+  --blk-font-title: Arial, Helvetica, sans-serif;
+
+  background: var(--eac-person-ground);
+  color: var(--eac-person-fg);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.eac-person-page--frame a:where(:not(.blk, .blk *)) {
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.eac-person-page--frame .eac-person-role {
+  color: var(--eac-person-link);
+}
+
+.eac-person-page--frame .eac-person-portrait {
+  border: 1px solid var(--eac-person-line);
+}
+
+.eac-person-page--frame .eac-person-bio p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.eac-person-page--frame .eac-person-card {
+  border-color: var(--eac-person-line);
+  background: var(--eac-person-ground);
+  transition: border-color 140ms;
+}
+.eac-person-page--frame .eac-person-card:hover {
+  border-color: var(--eac-person-link);
+}
+.eac-person-page--frame .eac-person-card-title {
+  color: var(--eac-person-link);
+}
+.eac-person-page--frame .eac-person-card-cover--blank {
+  background: #111;
+}
+
+/* The marketplace card (StoreShowcase) on the dark ground. */
+.eac-person-page--frame .eac-commerce {
+  --pc-ink: #e8e3e4;
+  --pc-ink-soft: #b9b2b4;
+  --pc-ink-faint: #b9b2b4;
+  --pc-line: #3a3537;
+  --pc-mat: #111;
+  --pc-accent: #20d7ff;
+  --pc-on-accent: #020202;
+}
+
+/* The writing shelf as a frame panel. */
+.eac-person-page--frame .eac-writing-section {
+  border: var(--eac-person-panel-border);
+  border-radius: 0;
+  background: var(--eac-person-panel-bg);
+}
+
+/* The shelf's heading as a frame section heading. */
+.eac-person-page--frame .eac-shelf__heading {
+  color: var(--eac-person-heading);
+  font-family: var(--eac-person-heading-font);
+  text-transform: var(--eac-person-heading-case);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: normal;
+}

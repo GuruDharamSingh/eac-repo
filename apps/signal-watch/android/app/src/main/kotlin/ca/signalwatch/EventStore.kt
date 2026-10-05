@@ -19,9 +19,12 @@ data class Event(
     val lon: Double?,
 )
 
+/** One reading of the modem: bars 0-4 (0 also means no service) and dBm when the modem reports it. */
+data class Sample(val t: Long, val level: Int, val dbm: Int?)
+
 /** Plain SQLite. Keeps the last [RETENTION_DAYS] days of events plus a per-day mobile data total. */
 class EventStore private constructor(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "signalwatch.db", null, 1) {
+    SQLiteOpenHelper(context.applicationContext, "signalwatch.db", null, 2) {
 
     companion object {
         const val RETENTION_DAYS = 5L
@@ -45,9 +48,29 @@ class EventStore private constructor(context: Context) :
         )
         db.execSQL("CREATE INDEX events_t ON events(t)")
         db.execSQL("CREATE TABLE days(day TEXT PRIMARY KEY, mobile_bytes INTEGER NOT NULL DEFAULT 0)")
+        createSamples(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createSamples(db)
+    }
+
+    private fun createSamples(db: SQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS samples(t INTEGER NOT NULL, level INTEGER NOT NULL, dbm INTEGER)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS samples_t ON samples(t)")
+    }
+
+    @Synchronized
+    fun addSample(t: Long, level: Int, dbm: Int?) {
+        val cv = ContentValues().apply { put("t", t); put("level", level); if (dbm != null) put("dbm", dbm) }
+        writableDatabase.insert("samples", null, cv)
+        prune()
+    }
+
+    fun samples(from: Long): List<Sample> =
+        readableDatabase.rawQuery("SELECT t,level,dbm FROM samples WHERE t>=? ORDER BY t", arrayOf(from.toString())).use { c ->
+            buildList { while (c.moveToNext()) add(Sample(c.getLong(0), c.getInt(1), if (c.isNull(2)) null else c.getInt(2))) }
+        }
 
     @Synchronized
     fun add(t: Long, kind: String, status: String? = null, detail: String? = null, dbm: Int? = null): Long {
@@ -114,6 +137,7 @@ class EventStore private constructor(context: Context) :
     fun clear() {
         writableDatabase.delete("events", null, null)
         writableDatabase.delete("days", null, null)
+        writableDatabase.delete("samples", null, null)
     }
 
     private fun cutoff(): Long = System.currentTimeMillis() - RETENTION_DAYS * 86_400_000L
@@ -121,6 +145,7 @@ class EventStore private constructor(context: Context) :
     private fun prune() {
         val c = cutoff()
         writableDatabase.delete("events", "t<?", arrayOf(c.toString()))
+        writableDatabase.delete("samples", "t<?", arrayOf(c.toString()))
         writableDatabase.delete("days", "day<?", arrayOf(dayKey(c)))
     }
 }

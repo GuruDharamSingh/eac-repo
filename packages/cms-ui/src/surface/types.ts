@@ -799,7 +799,7 @@ export interface SurfaceProfile {
 }
 
 /** The tabs of a person's own profile popup. "profile" is the card itself. */
-export type SurfaceProfileTab = "profile" | "details" | "show" | "page" | "payouts";
+export type SurfaceProfileTab = "profile" | "details" | "show" | "page" | "payouts" | "connections";
 
 /**
  * What the Details tab edits beyond the card: the rest of a person's own
@@ -864,6 +864,44 @@ export interface SurfaceProfileConnectors {
   page?: SurfaceProfilePageConnectors;
   /** "Where you show" — own profile only. Omit and there is no such tab. */
   presence?: SurfacePresenceConnectors;
+  /**
+   * "Show on" — which org sites list each of the person's public posts
+   * (thread_orgs). Own profile only; rendered under "Where you show".
+   */
+  listings?: SurfaceListingsConnectors;
+  /** "Connections" — the person's own OAuth links (YouTube). Own profile only. */
+  connections?: SurfaceConnectionsConnectors;
+}
+
+// ── Connections (migration 192) ──────────────────────────────────────────
+// Structurally @elkdonis/services' UserConnection, minus nothing: no secret
+// or token ever reaches the browser.
+
+export interface SurfaceConnection {
+  id: string;
+  provider: "youtube";
+  label: string;
+  clientId: string;
+  status: "pending" | "connected" | "error";
+  error: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  accountUrl: string | null;
+  connectedAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export type SurfaceConnectionResult = { ok: true } | { ok: false; error: string };
+
+export interface SurfaceConnectionsConnectors {
+  load: () => Promise<{ connections: SurfaceConnection[]; redirectUri: string }>;
+  create: (input: { provider: "youtube"; label: string; clientId: string; clientSecret: string }) => Promise<SurfaceConnectionResult>;
+  update: (id: string, input: { label?: string; clientId?: string; clientSecret?: string }) => Promise<SurfaceConnectionResult>;
+  check: (id: string) => Promise<SurfaceConnectionResult>;
+  remove: (id: string) => Promise<SurfaceConnectionResult>;
+  /** A link that starts consent at Google; `returnTo` is where to come back. */
+  startHref: (id: string, returnTo?: string) => string;
 }
 
 // ── Where you show (Brief A slice 2) ─────────────────────────────────────
@@ -886,7 +924,8 @@ export type SurfacePresenceCell =
   | { state: "status"; label: string; note?: string | null };
 
 export interface SurfacePresenceRow {
-  key: "you" | "blog" | "store" | "galleries";
+  /** "you", or a person-page section (services PERSON_SECTIONS). */
+  key: "you" | "portfolio" | "galleries" | "blog" | "services" | "posts" | "events" | "store";
   label: string;
   cells: Record<string, SurfacePresenceCell>;
 }
@@ -903,6 +942,33 @@ export interface SurfacePresenceConnectors {
     column: string;
     on: boolean;
   }) => Promise<{ ok: true; pending?: boolean } | { ok: false; error: string }>;
+}
+
+// ── Show on (person pages, 2026-09-26) ───────────────────────────────────
+// Structurally the same as @elkdonis/services' listMyListablePosts result.
+
+export interface SurfaceListingOrg {
+  orgId: string;
+  name: string;
+  slug: string;
+}
+
+export interface SurfaceListablePost {
+  id: string;
+  title: string;
+  kind: string;
+  /** Home org: always shows the post; not a listing. */
+  homeOrgId: string;
+  homeOrgName: string;
+  publishedAt: string | null;
+  /** Orgs listing it, excluding home. */
+  listedOn: string[];
+}
+
+export interface SurfaceListingsConnectors {
+  load: () => Promise<{ posts: SurfaceListablePost[]; orgs: SurfaceListingOrg[] }>;
+  /** Make the post's listings exactly `orgIds` (home excluded). */
+  set: (threadId: string, orgIds: string[]) => Promise<{ ok: boolean; error?: string }>;
 }
 
 /** One optional section on a person's own page. */

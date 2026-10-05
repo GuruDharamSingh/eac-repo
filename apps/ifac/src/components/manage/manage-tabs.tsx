@@ -17,6 +17,7 @@ const TABS = [
   { href: "/manage/email", label: "Email" },
   { href: "/manage/appearance", label: "Appearance" },
   { href: "/manage/cloud", label: "Cloud storage" },
+  { href: "/manage/analytics", label: "Visitors" },
 ];
 
 export function ManageTabs() {

@@ -31,6 +31,7 @@
 
 import { createRequire } from "module";
 import { execFileSync } from "node:child_process";
+import { accessSync, constants as fsConstants } from "node:fs";
 
 const requireFromDb = createRequire(
   new URL("../packages/db/package.json", import.meta.url)
@@ -58,29 +59,34 @@ const FOLDER_TO_ORG = { artdirect: "oad" };
 
 const sql = postgres(DB_URL);
 
+// Since 2026-09-25 guru reaches Docker through passwordless `sudo docker`, not
+// the docker group; a plain `docker` call from cron got "permission denied" on
+// every run. Use sudo only when the socket is not writable to us, so this
+// keeps working if the group membership comes back.
+const DOCKER = (() => {
+  try {
+    accessSync("/var/run/docker.sock", fsConstants.W_OK);
+    return ["docker"];
+  } catch {
+    return ["sudo", "-n", "docker"];
+  }
+})();
+
+function docker(args) {
+  return execFileSync(DOCKER[0], [...DOCKER.slice(1), ...args], { encoding: "utf8" });
+}
+
 function occ(args) {
-  return execFileSync(
-    "docker",
-    ["exec", "-u", "www-data", NC_CONTAINER, "php", "occ", ...args],
-    { encoding: "utf8" }
-  );
+  return docker(["exec", "-u", "www-data", NC_CONTAINER, "php", "occ", ...args]);
 }
 
 function listUserFolders() {
-  const out = execFileSync(
-    "docker",
-    ["exec", NC_CONTAINER, "sh", "-c", `ls -p /mnt/ncdata/__groupfolders/${FOLDER_ID}/files/users 2>/dev/null || true`],
-    { encoding: "utf8" }
-  );
+  const out = docker(["exec", NC_CONTAINER, "sh", "-c", `ls -p /mnt/ncdata/__groupfolders/${FOLDER_ID}/files/users 2>/dev/null || true`]);
   return out.split("\n").filter((l) => l.endsWith("/")).map((l) => l.slice(0, -1));
 }
 
 function listTopLevelFolders() {
-  const out = execFileSync(
-    "docker",
-    ["exec", NC_CONTAINER, "sh", "-c", `ls -p /mnt/ncdata/__groupfolders/${FOLDER_ID}/files`],
-    { encoding: "utf8" }
-  );
+  const out = docker(["exec", NC_CONTAINER, "sh", "-c", `ls -p /mnt/ncdata/__groupfolders/${FOLDER_ID}/files`]);
   // Trailing slash marks a directory; loose files (openbook.jpg) are skipped.
   return out.split("\n").filter((l) => l.endsWith("/")).map((l) => l.slice(0, -1));
 }
@@ -91,9 +97,9 @@ async function main() {
   const hasUsers = folders.includes("users");
 
   const people = await sql`
-    SELECT id, slug, display_name, nextcloud_user_id
+    SELECT id, storage_folder, display_name, nextcloud_user_id
     FROM users
-    WHERE nextcloud_user_id IS NOT NULL AND slug IS NOT NULL
+    WHERE nextcloud_user_id IS NOT NULL AND storage_folder IS NOT NULL
   `;
 
   const affiliations = await sql`
@@ -143,9 +149,16 @@ async function main() {
 
   // 4. Each person sees only their own folder under users/.
   if (hasUsers) {
-    note("per-user allows on their own users/<slug> folder");
+    // Folder name is users.storage_folder (migration 169), not the slug.
+    // Skip people whose folder does not exist yet: folders are created when a
+    // person first stores something, and a rule on a missing path fails —
+    // which also blocked the group adds below on every run (aeon, jason-ford,
+    // eric-brummel until 2026-09-27).
+    note("per-user allows on their own users/<storage_folder> folder");
+    const existing = new Set(listUserFolders());
     for (const p of people) {
-      add(["groupfolders:permissions", FOLDER_ID, `users/${p.slug}`, "-u", p.nextcloud_user_id, "--", "+read", "+write"]);
+      if (!existing.has(p.storage_folder)) continue;
+      add(["groupfolders:permissions", FOLDER_ID, `users/${p.storage_folder}`, "-u", p.nextcloud_user_id, "--", "+read", "+write"]);
     }
   }
 

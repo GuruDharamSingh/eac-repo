@@ -167,11 +167,25 @@ function mapThread(row: ThreadRow): Thread {
  * site's feeds. Without it a member's own blog post could lead the home page.
  * (Suggestions — kind `idea` — stay out by being ORGANIZATION-visible.)
  */
-const PUBLIC_FILTER = db`
+const PUBLISHED_FILTER = db`
   t.org_id = ${ORG}
   AND t.status = 'published'
   AND t.visibility = 'PUBLIC'
   AND t.kind <> ALL(${OFF_FEED_KINDS})
+`;
+
+/**
+ * PUBLISHED_FILTER minus threads filed in a feed that gates its readers
+ * (org_feeds.min_role — e.g. a reading circle's members-only discussion).
+ * Every listing uses this one. The two reads that stay on PUBLISHED_FILTER
+ * (a single feed, a single thread) are gated by their page with canViewFeed.
+ */
+const PUBLIC_FILTER = db`
+  ${PUBLISHED_FILTER}
+  AND NOT EXISTS (
+    SELECT 1 FROM org_feeds gf
+    WHERE gf.org_id = t.org_id AND gf.slug = t.section AND gf.min_role IS NOT NULL
+  )
 `;
 
 /** Upcoming or undated; a meeting stays listed until 6h past its start. */
@@ -184,7 +198,7 @@ export async function getThreadsForFeed(feedSlug: string, limit = 30): Promise<T
   try {
     const rows = await db<ThreadRow[]>`
       SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
-      WHERE ${PUBLIC_FILTER} AND t.section = ${feedSlug}
+      WHERE ${PUBLISHED_FILTER} AND t.section = ${feedSlug}
       ORDER BY t.scheduled_at ASC NULLS LAST,
                COALESCE(t.published_at, t.created_at) DESC
       LIMIT ${limit}
@@ -333,11 +347,23 @@ export async function getSessionNotes(groupId: string, limit = 40): Promise<Sess
   }
 }
 
-export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
+/** PUBLISHED_FILTER, plus ORGANIZATION-visible threads (a circle's sessions) for viewers with a role here. */
+const AFFILIATE_FILTER = db`
+  t.org_id = ${ORG}
+  AND t.status = 'published'
+  AND t.visibility IN ('PUBLIC', 'ORGANIZATION')
+  AND t.kind <> ALL(${OFF_FEED_KINDS})
+`;
+
+export async function getThreadBySlug(
+  feedSlug: string,
+  slug: string,
+  opts: { orgVisible?: boolean } = {}
+): Promise<Thread | null> {
   try {
     const rows = await db<ThreadRow[]>`
       SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
-      WHERE ${PUBLIC_FILTER}
+      WHERE ${opts.orgVisible ? AFFILIATE_FILTER : PUBLISHED_FILTER}
         -- A thread with no section is linked under /groups (see threadHref),
         -- and one with no slug is linked by id.
         AND (t.section = ${feedSlug} OR (t.section IS NULL AND ${feedSlug} = 'groups'))
@@ -641,5 +667,23 @@ export async function getArchive(q: string | null, limit = 60): Promise<Thread[]
   } catch (err) {
     console.error("[fourthway] getArchive:", err);
     return [];
+  }
+}
+
+/**
+ * One published thread of this org by id, for the pop-up read route. The
+ * caller decides access from `feedSlug` (a feed with min_role gates it).
+ */
+export async function getThreadById(id: string, opts: { orgVisible?: boolean } = {}): Promise<Thread | null> {
+  try {
+    const rows = await db<ThreadRow[]>`
+      SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
+      WHERE ${opts.orgVisible ? AFFILIATE_FILTER : PUBLISHED_FILTER} AND t.id = ${id}
+      LIMIT 1
+    `;
+    return rows[0] ? mapThread(rows[0]) : null;
+  } catch (err) {
+    console.error(`[fourthway] getThreadById(${id}):`, err);
+    return null;
   }
 }

@@ -1,11 +1,12 @@
 import * as React from "react";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import type { ForumConnectors } from "./connectors";
+import type { ForumConnectors, ForumLayout, ForumTextSize } from "./connectors";
 import {
-  BoardPageView, FeedPage, HappeningPage, IndexPage, ListPage, MapPage, MemberPage, MembersPage, ModLogPage, NotificationsPage,
+  BoardPageView, FeedPage, HappeningPage, IndexPage, ListPage, MapPage, MemberPage, MembersPage, ModLogPage, NotificationsPage, InsightsPage,
   OrgsPage, SearchPage, ThreadPage, TopicPage, TopicReviewRoute, TopicsPage,
 } from "./pages";
-import { ModeToggle } from "./parts";
+import { ReaderControls } from "./parts";
 import { loadShell } from "./shell";
 import { DictionaryPage, WikiEditPage, WikiHistoryPage, WikiIndexPage, WikiNewPage, WikiPageView } from "./wiki-pages";
 
@@ -47,6 +48,7 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
   else if (segments.length === 1 && (a === "latest" || a === "unread" || a === "watching" || a === "bookmarks")) el = await ListPage({ ...props, view: a });
   else if (a === "happening" && segments.length === 1) el = await HappeningPage(props);
   else if (a === "notifications" && segments.length === 1) el = await NotificationsPage(props);
+  else if (a === "insights" && segments.length === 1) el = await InsightsPage(props);
   else if (a === "members" && segments.length === 1) el = await MembersPage(props);
   else if (a === "members" && b && segments.length === 2) el = await MemberPage({ ...props, slug: b });
   else if (a === "topics" && segments.length === 1) el = await TopicsPage(props);
@@ -89,21 +91,21 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
 
   const theme = connectors.theme ?? "classic";
   const mode = connectors.mode ?? "light";
+  const { size, layout } = await resolveReaderPrefs(connectors);
 
-  // Both attributes go here rather than on the host's own wrapper, so every
+  // The attributes go here rather than on the host's own wrapper, so every
   // page carries them and no host has to touch its markup. forum-theme.css
-  // reaches the host's outer .gf-page via :has(), so the ground changes too.
+  // reaches the host's outer .gf-page via :has(), so the ground changes too;
+  // forum.css does the same for the text size.
   return (
-    <div className="gf-root" data-forum-theme={theme} data-forum-mode={mode}>
+    <div className="gf-root" data-forum-theme={theme} data-forum-mode={mode} data-forum-size={size} data-forum-layout={layout}>
       <div className="gf-shell">
         {shell.side}
         <div className="gf-body">
-          {el}
           {connectors.actionBase && (
-            <footer className="gf-footer">
-              <ModeToggle currentMode={mode} actionBase={connectors.actionBase} back={path} />
-            </footer>
+            <ReaderControls size={size} layout={layout} mode={mode} actionBase={connectors.actionBase} back={path} />
           )}
+          {el}
         </div>
       </div>
       {/* The phone's way into the two rails: links, so they work with no script. */}
@@ -111,4 +113,27 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
       <a className="gf-boxes-btn" href="#boxes" aria-label="Open the side column">▤ <span>Post · You · Wiki</span></a>
     </div>
   );
+}
+
+/**
+ * Text size and layout: the reader's cookie, else the host's default, else
+ * standard/board. Read here rather than in each host's connectors (as
+ * forum_mode is) so every site that mounts the forum offers the controls
+ * without code of its own; a host only sets `size`/`layout` to change its
+ * default. Cookies are per domain, so the choice is remembered per site.
+ */
+async function resolveReaderPrefs(connectors: ForumConnectors): Promise<{ size: ForumTextSize; layout: ForumLayout }> {
+  let rawSize: string | undefined;
+  let rawLayout: string | undefined;
+  try {
+    const jar = await cookies();
+    rawSize = jar.get("forum_size")?.value;
+    rawLayout = jar.get("forum_layout")?.value;
+  } catch {
+    // Outside a request (a static render): host defaults only.
+  }
+  const size: ForumTextSize =
+    rawSize === "standard" || rawSize === "large" || rawSize === "largest" ? rawSize : connectors.size ?? "standard";
+  const layout: ForumLayout = rawLayout === "board" || rawLayout === "cards" ? rawLayout : connectors.layout ?? "board";
+  return { size, layout };
 }

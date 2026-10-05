@@ -42,6 +42,19 @@
 /* Drag-to-arrange gallery grid. artdirect never imported the old
    @elkdonis/ui/rgl-theme.css, so its ProfileGallery had no grid styles. */
 @import "@elkdonis/cms-ui/gallery.css";
+/* The standard layout of /<slug> (PersonPage) and the writing reader at
+   /<slug>/writing. Tokens mapped at the end of this file. */
+@import "@elkdonis/cms-ui/person-page.css";
+@import "@elkdonis/cms-ui/article.css";
+@import "@elkdonis/cms-ui/writing.css";
+/* Page blocks, for a person's designed pages (/<slug> and /<slug>/featured,
+   2026-09-26). In the global sheet, not a route, so Puck's canvas iframe
+   (/<slug>/design) copies it. Unlayered, unlike other Tailwind apps: this
+   file's own unlayered `a { color: inherit }` would otherwise beat every
+   block's link colour (a filled button's text among them), and no Tailwind
+   utility is passed to a block here. --blk-* are mapped to the frame look in
+   person-page.css. */
+@import "@elkdonis/blocks/blocks.css";
 
 * { box-sizing: border-box; }
 
@@ -55,9 +68,9 @@ html, body {
 
 a { color: inherit; }
 
-/* The standard profile layout now lives in @elkdonis/cms-ui/profile so
-   arts-collective renders the same page. Imported above; only ArtDirect-
-   specific editing chrome remains below. */
+/* The standard layout of /<slug> is cms-ui PersonPage (person-page.css,
+   tokens mapped at the end of this file); profile.css still styles the
+   gallery and store pieces it hosts. ArtDirect-specific editing chrome below. */
 
 /* Owner-only editing chrome — see ProfileEditorPanel. */
 .oad-editor {
@@ -104,4 +117,77 @@ a { color: inherit; }
   --pc-accent: var(--gold, #c79a42);
   --pc-on-accent: var(--paper, #121413);
   --pc-radius: 0.375rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Person page (standard layout): the shared "frame" look from IFAC's artist
+   page (person-page.css, `.eac-person-page--frame`; developer's choice,
+   2026-09-26). It covers the person page only: the directory index and the
+   dossier keep ArtDirect's dark Courier ground, so the body takes the frame
+   ground only while a frame page is on it.
+   ------------------------------------------------------------------------ */
+body:has(.eac-person-page--frame) {
+  background: #020202;
+}
+
+.oad-person.eac-person-page--frame {
+  min-height: 100vh;
+}
+
+/* The reading layer (article.css, writing.css) ships dark ink for light
+   grounds; its tokens are declared on :root, so they are redefined here. */
+:root {
+  --read-ink: var(--ink, #f7f1e3);
+  --read-muted: var(--ink-soft, #a9a293);
+  --read-faint: var(--ink-soft, #a9a293);
+  --read-rule: var(--line, #35322c);
+  --read-accent: var(--gold, #c79a42);
+  --read-bg: var(--paper, #121413);
+  --eac-color-surface: var(--paper, #121413);
+}
+
+.oad-reading {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 18px 0 64px;
+}
+
+.oad-reading-back {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+   A designed person page (Puck document, /<slug> and /<slug>/featured,
+   2026-09-26): the document sits in one column the width of the plain page;
+   its blocks space themselves (blocks.css `.blk-person-section`).
+   ------------------------------------------------------------------------ */
+.oad-person-doc {
+  width: min(var(--eac-person-width, 1000px), calc(100% - 32px));
+  margin: 0 auto;
+}
+
+/* The row above a designed page: the way back, and the owner's links. */
+.oad-person-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 20px;
+  margin-bottom: 8px;
+}
+.oad-person-bar .eac-person-back {
+  margin-bottom: 0;
+}
+.oad-person-bar-link {
+  font-size: 0.9rem;
+}
+
+/* The link to a published featured page, under the role on /<slug>. */
+.oad-person-featured-link {
+  margin: 0 0 14px;
+  font-size: 1rem;
+}
+.oad-person-bar .oad-person-featured-link {
+  margin: 0;
 }

@@ -1,5 +1,5 @@
 import { defineBlock, type PropsOf } from "../registry";
-import { Paragraphs, toParagraphs } from "../text";
+import { hasText, RichText } from "../text";
 
 // ============================================================================
 // Prose — words on a page.
@@ -8,17 +8,19 @@ import { Paragraphs, toParagraphs } from "../text";
 // there was no way to put a paragraph anywhere. Every other block was a frame
 // around content that had nowhere to come from.
 //
-// Text is split on blank lines into paragraphs and rendered as TEXT NODES,
-// never as HTML — see ../text, which is where that rule now lives so that this
-// block and the image-and-text block cannot drift apart on it.
+// Rich text since 2026-09-25: typed on the page with bold, italic, links,
+// lists, subheadings and quotes, stored as HTML and rendered only after
+// sanitising — see <RichText> in ../text, shared with the image-and-text
+// block so the two cannot drift apart. Bodies typed before then are plain
+// text and still render as paragraphs split on blank lines.
 // ============================================================================
 
 const props = [
   {
     name: "body",
-    kind: "text",
+    kind: "richtext",
     label: "Text",
-    description: "Leave a blank line between paragraphs.",
+    description: "Type on the page. Select words for bold, italic, a link or a list.",
     required: true,
   },
   {
@@ -55,12 +57,16 @@ export type ProseProps = PropsOf<typeof props>;
 
 export function Prose({ body, size = "regular", align = "start", measure = true }: ProseProps) {
   // Nothing typed is nothing to draw, rather than an empty box with padding.
-  if (toParagraphs(body).length === 0) return null;
+  if (!hasText(body)) return null;
 
   return (
-    <div className="blk blk-prose" data-size={size} data-align={align} data-measure={measure ? "on" : "off"}>
-      <Paragraphs body={body} />
-    </div>
+    <RichText
+      className="blk blk-prose"
+      data-size={size}
+      data-align={align}
+      data-measure={measure ? "on" : "off"}
+      body={body}
+    />
   );
 }
 
@@ -69,7 +75,7 @@ export const prose = defineBlock(
     id: "prose",
     label: "Text",
     category: "content",
-    description: "One or more paragraphs. Blank lines separate them.",
+    description: "Paragraphs typed on the page, with bold, italic, links, lists and subheadings.",
     memberSafe: true,
     styling: "tokens",
     props,

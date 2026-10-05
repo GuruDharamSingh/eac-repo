@@ -1,0 +1,40 @@
+{
+  "name": "@elkdonis/analytics",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./beacon": "./src/beacon.tsx",
+    "./thread": "./src/thread.tsx",
+    "./route": "./src/route.ts",
+    "./server": "./src/server.ts",
+    "./dashboard": "./src/dashboard.tsx",
+    "./insights": "./src/insights-view.tsx",
+    "./journey": "./src/journey-view.tsx",
+    "./events": "./src/server-events.ts",
+    "./dashboard.css": "./src/dashboard.css"
+  },
+  "dependencies": {
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "maxmind": "^4.3.25",
+    "recharts": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "tsx": "^4"
+  },
+  "peerDependencies": {
+    "next": "^16",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "check:collector": "tsx scripts/check-collector.mts"
+  }
+}

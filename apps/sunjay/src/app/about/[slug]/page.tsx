@@ -1,16 +1,24 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { sanitizeRichText } from "@elkdonis/utils";
 import type { Metadata } from "next";
-import { ExternalLink } from "lucide-react";
-import { ThreadCard } from "@/components/thread-card";
+import type { ReactNode } from "react";
+import { getServerSession } from "@elkdonis/auth-server";
+import { getPersonPage, personThreadHref, type PersonThread } from "@elkdonis/services";
+import { PersonPage, PersonThreadList } from "@elkdonis/cms-ui/profile";
 import { StoreShowcase } from "@elkdonis/commerce/components";
-import { getGuideBySlug, getGuideStore, getThreadsByAuthor } from "@/lib/data";
+import { getStoreShowcaseForUser } from "@elkdonis/commerce/queries";
+import { getGuideBySlug } from "@/lib/data";
 import { siteConfig } from "@/config/site";
-import { toPlainText } from "@/lib/format";
+import { formatDate, formatDateTime, toPlainText } from "@/lib/format";
 
 interface GuidePageProps {
   params: Promise<{ slug: string }>;
 }
+
+const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+const NETWORK_URL =
+  process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ??
+  `https://${process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com"}`;
 
 export async function generateMetadata({ params }: GuidePageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -22,107 +30,113 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
   };
 }
 
+/** Posts homed here open on this site's `/<feed>/<slug>` route (ThreadCard's convention). */
+function threadHref(t: PersonThread): string {
+  return personThreadHref(t, {
+    networkUrl: NETWORK_URL,
+    localOrgId: siteConfig.orgId,
+    localHref: (x) => (x.section ? `/${x.section}/${x.slug}` : null),
+  });
+}
+
+/**
+ * A person's page on this site, from their network profile
+ * (getPersonPage; docs/open/PERSON_PAGES_BRIEF_2026-09-26.md). Which sections
+ * show is the person's per-org choice; posts include those listed here from
+ * other orgs, which link out to their home site.
+ */
 export default async function GuidePage({ params }: GuidePageProps) {
   const { slug } = await params;
-  const guide = await getGuideBySlug(slug);
-  if (!guide) notFound();
+  const session = await getServerSession();
+  const viewerId = session.user?.db_user_id ?? session.user?.id ?? null;
 
-  // Everything they've published here — the substance of the page. A teacher
-  // page that's only a bio goes stale; one that lists their classes doesn't.
-  const [threads, store] = await Promise.all([
-    getThreadsByAuthor(guide.userId),
-    getGuideStore(guide.userId),
+  // getGuideBySlug applies this site's org_profiles.bio_override; the
+  // network bio is the fallback (see readBioOverride in lib/data.ts).
+  const [page, guide] = await Promise.all([
+    getPersonPage(slug, { orgId: siteConfig.orgId, viewerId }),
+    getGuideBySlug(slug),
   ]);
+  if (!page) notFound();
+
+  const { profile, orgProfile } = page;
+  const store = page.show.store ? await getStoreShowcaseForUser(profile.userId, { limit: 6 }).catch(() => null) : null;
+
+  const bio = guide?.bio ?? profile.bio;
+  const bioIsHtml = Boolean(bio && bio.includes("<"));
+  // The site's own guide has a given short name (site config); for anyone
+  // else the first word of the display name stands in, as before.
+  const firstName = profile.slug === siteConfig.guideSlug ? siteConfig.guideShortName : profile.displayName.split(" ")[0];
+
+  const slots: Record<string, ReactNode> = {
+    posts: page.show.posts ? (
+      <PersonThreadList
+        title="Posts"
+        items={page.posts.map((t) => {
+          const foreign = t.orgId !== siteConfig.orgId;
+          return {
+            href: threadHref(t),
+            title: t.title,
+            meta: [t.publishedAt ? formatDate(t.publishedAt) : null, foreign ? `on ${t.orgName}` : null]
+              .filter(Boolean)
+              .join(" · ") || null,
+            excerpt: t.excerpt ? toPlainText(t.excerpt, 200) : null,
+            external: foreign,
+            draft: t.status !== "published",
+          };
+        })}
+        empty={page.canEdit ? "Nothing posted here yet." : null}
+      />
+    ) : null,
+    events: page.show.events ? (
+      <PersonThreadList
+        title="Events"
+        items={page.events.map((t) => {
+          const foreign = t.orgId !== siteConfig.orgId;
+          return {
+            href: threadHref(t),
+            title: t.title,
+            meta: [t.scheduledAt ? formatDateTime(t.scheduledAt) : null, t.location, foreign ? `on ${t.orgName}` : null]
+              .filter(Boolean)
+              .join(" · ") || null,
+            external: foreign,
+            draft: t.status !== "published",
+          };
+        })}
+        empty={page.canEdit ? "No events yet." : null}
+      />
+    ) : null,
+    // Their marketplace store: a window, not a checkout.
+    store: store ? (
+      <StoreShowcase
+        store={store.store}
+        artworks={store.artworks}
+        marketplaceUrl={siteConfig.marketplaceUrl}
+        from={siteConfig.orgId}
+        heading={`From ${firstName}’s store`}
+        density="normal"
+      />
+    ) : null,
+  };
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
-      <Link href="/about" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-        ← About
-      </Link>
-
-      <header className="mt-6 flex flex-wrap items-start gap-6">
-        {guide.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={guide.photoUrl}
-            alt=""
-            className="size-28 shrink-0 rounded-full border-4 border-[#f4c430] object-cover shadow-[0_8px_24px_rgba(244,196,48,0.25)]"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="flex size-28 shrink-0 items-center justify-center rounded-full bg-primary/20 font-serif text-3xl"
-          >
-            {guide.displayName.charAt(0)}
-          </span>
-        )}
-        <div>
-          <h1 className="font-serif text-4xl">{guide.displayName}</h1>
-          {guide.roleTitle && (
-            <p className="mt-1 italic text-[hsl(var(--terracotta-deep))]">{guide.roleTitle}</p>
-          )}
-          {guide.city && <p className="mt-0.5 text-sm text-muted-foreground">{guide.city}</p>}
-        </div>
-      </header>
-
-      {guide.bio && (
-        <div className="prose-site mt-8 max-w-none">
-          {guide.bio.includes("<") ? (
-            <div dangerouslySetInnerHTML={{ __html: guide.bio }} />
-          ) : (
-            guide.bio.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
-          )}
-        </div>
-      )}
-
-      {guide.socialLinks.length > 0 && (
-        <ul className="mt-6 flex flex-wrap gap-3">
-          {guide.socialLinks
-            .filter((l) => l.url)
-            .map((link, i) => (
-              <li key={i}>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent/40"
-                >
-                  {link.label ?? link.url}
-                  <ExternalLink className="size-3.5" aria-hidden />
-                </a>
-              </li>
-            ))}
-        </ul>
-      )}
-
-      {/* Their marketplace store — a window, not a checkout. Shown only when
-          they have switched the section on for their profile (/account). */}
-      {store && (
-        <div className="mt-12">
-          <hr className="saffron-divider" />
-          <StoreShowcase
-            store={store.store}
-            artworks={store.artworks}
-            marketplaceUrl={siteConfig.marketplaceUrl}
-            from={siteConfig.orgId}
-            heading={`From ${guide.displayName.split(" ")[0]}’s store`}
-            density="normal"
-            className="mt-6"
-          />
-        </div>
-      )}
-
-      {threads.length > 0 && (
-        <section className="mt-12">
-          <hr className="saffron-divider" />
-          <h2 className="font-serif text-2xl">With {guide.displayName.split(" ")[0]}</h2>
-          <div className="mt-5 grid gap-5">
-            {threads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
+    <PersonPage
+      person={{
+        displayName: profile.displayName,
+        role: orgProfile?.roleTitle ?? profile.headline,
+        bio: bioIsHtml ? null : bio,
+        // Sanitised here: PersonPage renders bioHtml as given.
+        bioHtml: bioIsHtml ? sanitizeRichText(bio) : null,
+        avatarUrl: profile.avatarUrl,
+        city: profile.city,
+        verified: profile.verified,
+        socialLinks: profile.socialLinks,
+      }}
+      back={{ href: "/about", label: "← About" }}
+      portfolio={page.portfolio.map((p) => ({ url: p.url, title: p.title }))}
+      emptyFeatured={null}
+      order={page.sections.map((s) => s.key)}
+      slots={slots}
+      networkLink={ARTDIRECT_URL && profile.slug ? { href: `${ARTDIRECT_URL}/${profile.slug}` } : null}
+    />
   );
 }

@@ -141,6 +141,22 @@
   align-items: center;
   gap: 10px;
 }
+/* "Gain your space" under the person's card (CenterLinks.gainSpaceHref).
+   Text is --sf-muted on the card ground, the same pair as the section notes. */
+.eac-center-gain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 12px;
+}
+.eac-center-gain p {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--sf-muted);
+}
 .eac-center-error {
   font-size: 0.78rem;
   color: var(--sf-danger);
@@ -645,6 +661,22 @@
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   color: var(--sf-muted);
+}
+
+/* The optional front button (frontAction): a full-size target for people who
+   miss the corner control. It stops short of the right edge so the ✎ keeps
+   its corner; colours are .eac-btn--primary's accent + on-accent pair. */
+.eac-pcard-front-action {
+  margin: 10px 40px 0 0;
+}
+.eac-pcard-front-action > .eac-btn {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 /* The corner control. The only way over on touch, where there is no hover. */

@@ -340,7 +340,7 @@ export async function deleteContentAction(threadId: string): Promise<ActionResul
     `;
     if (!row) return { ok: false, error: "Not found" };
     const res = await removeThreadAs(editor.userId, threadId, { editor: true });
-    if (!res.ok) return { ok: false, error: res.error };
+    if (!res.ok) return { ok: false, error: "error" in res ? res.error : "Could not remove." };
     revalidateFeed(row.section ?? "");
     return { ok: true };
   } catch (err) {
@@ -373,6 +373,28 @@ export async function setContentStatusAction(
     return { ok: true };
   } catch (err) {
     console.error("[amrit-canada] setContentStatusAction:", err);
+    return { ok: false, error: "Could not update." };
+  }
+}
+
+/** Pin to, or unpin from, the top of the landing page. */
+export async function setContentPinnedAction(
+  threadId: string,
+  pinned: boolean
+): Promise<ActionResult> {
+  await requireOrgEditor();
+
+  try {
+    const [row] = await db<{ section: string | null; slug: string }[]>`
+      UPDATE threads SET pinned = ${pinned}, updated_at = NOW()
+      WHERE id = ${threadId} AND org_id = ${ORG}
+      RETURNING section, slug
+    `;
+    if (!row) return { ok: false, error: "Not found" };
+    revalidateFeed(row.section ?? "", row.slug);
+    return { ok: true };
+  } catch (err) {
+    console.error("[amrit-canada] setContentPinnedAction:", err);
     return { ok: false, error: "Could not update." };
   }
 }

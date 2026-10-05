@@ -50,6 +50,14 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   - `users/<users.slug>/` — a person's own work (avatar, portfolio). Created for
     every principal whether or not they have a Nextcloud login
     (`ensureUserFolder`, `org-folders.ts:131`; `scripts/provision-user-folders.mjs`).
+- Folder name is `users.storage_folder` (migration 169, 2026-09-27), not `users.slug`.
+  It is set once from the slug by trigger `trg_users_storage_folder`, never follows a
+  slug rename (the `/center` editor can rename slugs), and is unique, so a freed
+  slug cannot resolve to another person's files. `getStorageSlug()` returns it.
+  Folders are created on first upload (`uploadUserFile` creates the chain), not at
+  signup; `apply-team-folder-acls.mjs` skips people whose folder does not exist.
+  Orphans from renames before 169: `ario`, `ericbrummel`, `justin-gillis`,
+  `rev-dr-sunjye-…` (not re-linked). (claude, 2026-09-27)
 - Principal-canonical, share-not-sync: one folder per principal; connecting a
   Nextcloud account adds a share or ACL allow and never moves files. The database
   is the authority on access; a path is a filing convention.
@@ -99,6 +107,12 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   `*/10 * * * * …/scripts/sync-nextcloud-access.sh 2>&1 | logger -t nc-access-sync`
   (verified `crontab -l` 2026-09-23; `journalctl -t nc-access-sync` shows 446
   completed runs since 2026-09-20).
+- 2026-09-25 07:40 to 2026-09-26 09:20: every run's ACL step failed with
+  "permission denied" on the Docker socket (620 log lines), because `guru` is
+  no longer in the `docker` group; Docker is reached through passwordless
+  `sudo docker`. `apply-team-folder-acls.mjs` now uses `sudo -n docker` when
+  the socket is not writable. The run at 09:24 applied, with 3 per-user
+  `users/<slug>` failures (see Open items). (claude, 2026-09-26)
 - It only adds access. Demoting or removing a member revokes nothing.
 - Apps request a sync with `requestNextcloudSync`
   (`packages/services/src/org-nextcloud-access.ts:233`, migration 139, which also
@@ -140,8 +154,9 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
 - 2026-09-23: 56 users, 10 with `nextcloud_user_id`, 1 with a stored
   `nextcloud_app_password` (which is the account password, not a per-app
   password — `docs/archive/nextcloud-security.md`).
-- Nextcloud cannot be iframed (frame-ancestors 'self', SameSite cookies); hub
-  surfaces link out.
+- Nextcloud cannot be iframed from other sites (frame-ancestors, SameSite
+  cookies); hub surfaces link out. Exception since 2026-09-26: elkdonis-arts.org
+  via the `eac_embed` app (below). (claude, 2026-09-26)
 
 ### Deck boards
 - Migration 101 adds `organizations.deck_board_id`; 3 orgs have a board
@@ -195,6 +210,12 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   than 2 at once is treated as a reset and re-pushed). Runs every 3 minutes from
   `apps/innergathering/src/instrumentation.ts:29-47`, and on hub reads older
   than 2 minutes (`STALE_MS`, `org-calendar-sync.ts:474`).
+- 2026-09-26: when the sync removed an event itself (thread unpublished or
+  unscheduled) it kept `threads.nextcloud_last_sync`, so after the thread was
+  rescheduled the missing event read as "deleted in Nextcloud" and the thread
+  was archived (Talk of the Month, twice). `org-calendar-sync.ts` now clears
+  the marker on that removal. Live since innergathering (which runs the tick)
+  was rebuilt 2026-09-26 11:30 EDT, build `eHfEZ1Ktn0wER3JxMHC-5`. (claude, 2026-09-26)
 - Share levels: members get read shares (`syncOrgCalendarShares`,
   `packages/services/src/org-calendar.ts:192`); owners/guides get read-write
   (`syncEditorWriteAccess`, `org-calendar-sync.ts:441`), which only re-shares
@@ -254,6 +275,131 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   via silencedetect, refuses if under 20% would remain (`video-render.ts:183`).
 - UI: innergathering `/manage/video`. YouTube publish, Talk-recording ingestion and
   matching recordings to meetings are not built.
+
+### Reels (Remotion) — 2026-10-03
+- Templates are Remotion components in `packages/reels` (`@elkdonis/reels`). A
+  composition takes `ReelInput` = the stored edit (`ReelEdit`, Nextcloud paths)
+  plus a path→URL map, and converts it itself (`toArtworkReelProps`,
+  `src/types.ts`), so the browser preview (`@remotion/player`) and the render
+  run the same code. First template: `artwork-reel` (9:16, 1 s logo intro,
+  dissolve to artwork with pan, clip, optional clip, optional extra, end card,
+  music lowered under clips marked as speaking).
+- 2026-10-04: the Video page is now a Studio kind at `/studio?kind=video`
+  (`packages/reels/src/editor/VideoKind.tsx`, registered by
+  `apps/arts-collective/src/components/studio/StudioApp.tsx`); `/studio/video`
+  redirects. Publishing: `publishReel` (reels.ts) copies the latest render to
+  `users/<f>/Media/Videos/reel-<project id>.mp4` (+ `Media/Images/…jpg`) and
+  publishes a `writing` piece with `metadata.video`; shown by ArtDirect's piece
+  page. Unpublish sets the piece to draft; the public copy stays.
+- (superseded 2026-10-04) Studio page: arts-collective `/studio/video` (`apps/arts-collective/src/app/studio/video/page.tsx`,
+  actions `src/lib/video-actions.ts`, upload `src/app/api/reels/upload/route.ts`,
+  which streams the raw body to Nextcloud). Linked from the Studio "New ▾" menu
+  (`packages/studio/src/kinds.ts`, `href`). Editor: `packages/reels/src/editor/VideoStudio.tsx`.
+- Data: migration 189 (`reel_projects`, `reel_renders`); services
+  `@elkdonis/services/reels` (`packages/services/src/reels.ts`). Queries are
+  scoped by `owner_id`; `pathsAllowed` refuses an edit naming a file outside
+  the project folder or the two music folders.
+- Storage: project `<owner root>/Private/Video/Reels/<id>/` (`oad`/"Just me" →
+  `users/<storage_folder>`, org → `EAC_Network/<org>`), output in `Finished/`.
+  Music: personal `users/<storage_folder>/Private/Music/`; network
+  `EAC_Network/oad/Private/Music/` (`oad` is the network's org, dev
+  2026-10-03), filled by "Share" (WebDAV COPY). Read access is the ordinary
+  org rule: `oad` affiliates only (24 members, 2026-10-03). ~~`_network`~~
+  folder and media-authz rule were added and removed the same day.
+- Recorder: "Record…" on the clip slots (`packages/reels/src/editor/Recorder.tsx`,
+  camera or screen, MediaRecorder, capped at the slot's length). WebM is
+  re-encoded to H.264 by the worker with Remotion's bundled ffmpeg
+  (`render.mjs` `normalizeClips`) because MediaRecorder WebM has no duration or
+  seek index. Needs a secure context (HTTPS or localhost).
+- Renderer: compose service `reel-render` (`--worker`, polls `reel_renders`
+  every 5 s, image `eac-reel-render`, `docker/reel-render.Dockerfile`, 8 CPUs,
+  6 GB, volume `reel-work`). Debian, not `eac-dev`: Remotion does not support
+  Alpine. The renderer lives in the image at `/opt/reel`
+  (`packages/reels/render/image-deps.json`, glibc builds); the workspace copy of
+  `remotion`/`@remotion/player` (musl tree, pure JS) serves the browser only.
+  Keep both at 4.0.532. Templates are read from the bind mount: restart the
+  worker after editing one; rebuild the image after changing a version.
+  Folder renders by hand: `docker compose run --rm reel-render --project "<path>" [--init]`.
+- Verified 2026-10-03 (render + frame extraction + ffprobe): 16.6 s 1080×1920
+  H.264/AAC rendered in 18–20 s (≈30 s with download, bundle and upload), peak
+  memory ≈5 GB at `REEL_CONCURRENCY=4`. Test folder project:
+  `EAC_Network/brief_a_test/Private/Video/Reels/Test reel`. `tsc` clean for
+  `@elkdonis/reels` and arts-collective.
+- Verified 2026-10-03 (signed-in headless Chrome against the rebuilt
+  arts-collective, test account removed afterwards): create reel, upload
+  logo/artwork/clip/music, autosave, queue, worker render, playback of the
+  result; recording 4.4 s from a fake camera into a slot and rendering it
+  (17.0 s output). Migration 189 applied 2026-10-03; `reel-render` running.
+- Reuse (2026-10-03): every slot has "From my files…" (`packages/reels/src/editor/SlotLibrary.tsx`):
+  the person's finished reels (`listFinishedReels`, latest done render per
+  project) and cms-ui `MediaBrowser` over `/api/my-files?kind=image|video`.
+  The edit names the picked file where it is (no copy); `pathsAllowed` and the
+  worker accept anything under the requester's own `users/<storage_folder>/`.
+  Verified 2026-10-03 signed in: reel A rendered, reel B took A as its clip and
+  an artwork picked by folder browsing, rendered 19.8 s (A's 12.9 s inside).
+- `/api/my-files` (arts-collective) fixed 2026-10-03: MediaBrowser appends its
+  own `path` (a full storage path) after the host's `?path=`, and the route read
+  only the first, so opening a folder re-listed the start folder. It now takes
+  the last `path`, strips the person's root, filters by `kind`, and searches
+  with `q` (davListDeep, 200 results). The writing Library uses `kind=image`.
+- Not verified: music ducking level; phone HEVC/HDR clips in the preview in
+  every browser (no preview copies yet); the edge's upload size limit for
+  large video; network music playback for a non-`oad` viewer (refused by design).
+
+### Server OBS (broadcast) — 2026-10-03
+- Compose service `obs` (container `eac-obs`, image `eac-obs`, `docker/obs/Dockerfile`):
+  Ubuntu 24.04, OBS 32.2.0 from the OBS PPA, Xvfb :99 at 1920x1080, fluxbox,
+  x11vnc + noVNC on `127.0.0.1:6080` (password `OBS_VNC_PASSWORD`), PulseAudio
+  null sink. `/dev/dri` passed in (groups 107 render, 44 video). 8 CPUs, 6 GB.
+  Volumes `obs-home` (OBS config, scene collection), `obs-recordings`.
+- `docker/obs/start.sh` seeds the config on every start: profile `EAC`
+  (Advanced output, MKV to `/recordings`, CBR `OBS_VIDEO_KBPS` default 6000),
+  obs-websocket on 4455 with `OBS_WEBSOCKET_PASSWORD`, preview off, browser
+  hardware acceleration off. Encoder `ffmpeg_vaapi` (AMD Radeon 610M iGPU) when
+  vainfo reports H.264 encode, else `obs_x264`; `OBS_ENCODER=x264` in `.env`
+  forces x264 (compose does not see shell variables on this host).
+- `docker/obs/agent.mjs` (bind-mounted; restart the container after editing):
+  the only websocket client; HTTP on `obs:4456`, bearer `OBS_AGENT_SECRET`.
+  Creates scenes Holding / Browser (input "Browser page") / Media (input
+  "Media file"), lays them out, starts on Holding. Saves recordings to Nextcloud
+  as MP4 (`ffmpeg -c copy`) into `users/<storage_folder>/Private/Video/Broadcasts/`.
+- One session at a time (dev, 2026-10-03): the agent holds a lease
+  (`POST /lock`, holder `<user id>:<tab id>`, built server-side in
+  `broadcast-actions.ts`); every other POST and `/screenshot` need `X-Holder`
+  equal to it, else 423. The console renews every 5 s; the lease lapses 20 s
+  after the last renewal; `pagehide` sends a beacon to `/api/broadcast/release`.
+  A second tab, even of the same person, sees "open in another session".
+  Verified 2026-10-03: rules against the agent directly, and two tabs on the
+  rebuilt page (second refused, took over 5.3 s after the first closed).
+  The lease is in agent memory: restarting the obs container frees it.
+- UI: arts-collective `/studio/broadcast` (admins only, `isAdmin`;
+  `src/lib/broadcast-actions.ts`, client `packages/reels/src/broadcast/`,
+  services client `@elkdonis/services/obs`). Linked from `/studio/video` for admins.
+- Rules, each found by failure on 2026-10-03: delete `$CFG/.sentinel` at start
+  (OBS 32 otherwise asks to run in Safe Mode, which disables obs-websocket);
+  delete `plugin_config/obs-browser/Singleton*` at start (CEF exit code 21,
+  "profile in use", after a container recreate); keep `BrowserHWAccel=false`
+  (black browser source on llvmpipe); scenes and inputs share one name space;
+  Node 22's WebSocket fires only `error` on a refused connect, so the agent
+  retries on either event; the browser source's first load after start is
+  refreshed by the agent (it raced the network and stayed black).
+- Measured 2026-10-03 (docker stats, 4-sample means, 1080p30; motion = 1080p
+  testsrc2 clip in the Media scene; stream to a local MediaMTX RTMP server, probed
+  as H.264 1920x1080 ~30 fps + AAC; 0 encode/stream frames skipped in every run):
+  | State | iGPU (VA-API) | x264 |
+  |---|---|---|
+  | Holding scene, idle | ~0.8 core | ~0.8 core |
+  | Static web page on air | ~1.65 | ~1.65 |
+  | Static page, recording | ~2.1–2.2 | ~2.3 |
+  | Motion clip on air | 2.6 | 2.7 |
+  | Motion, streaming | 3.2 | 3.8 |
+  | Motion, streaming + recording | 3.2 | 3.8 |
+  Recording shares the stream encoder (`RecEncoder=none`), so it adds no
+  encode cost. Compositing and the browser source are software GL (llvmpipe):
+  the virtual display has no DRI3, so the iGPU encodes but does not render.
+- Not verified: streaming to a real YouTube/other ingest; audio from the browser
+  source in a recording; noVNC through an SSH tunnel; long sessions (only ~50 s
+  runs); multiple simultaneous outputs beyond one stream + one recording.
 
 ### Media serving and authorisation
 - `canReadMedia(viewerId, path)` and `parseMediaPath`
@@ -315,6 +461,17 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   (default URL in `client.ts`, username derivation in `users.ts`) are superseded:
   `client.ts` now requires `NEXTCLOUD_URL`, and `users.ts` links by email via
   `findNextcloudUserIdByEmail`.
+- App `eac_embed` 1.0.0 in `custom_apps` (claude, 2026-09-26; source
+  `docker/nextcloud-apps/eac_embed`): adds the origins in app value
+  `frame_ancestors` (now `https://elkdonis-arts.org`) to the CSP
+  frame-ancestors of every page. Verified by header read (Talk `/call/…`,
+  `/login`, `/s/…`). `X-Frame-Options: SAMEORIGIN` is still sent; browsers
+  ignore it when frame-ancestors is present (**assumed**, not tested in a
+  browser at elkdonis-arts.org). Only same-site hosts can embed with a
+  session: Nextcloud cookies are SameSite=Lax. Used by: fourthwayBookreaders
+  circle page (session links: Talk room, session document) and innergathering's
+  landing offering card ("Join the room" opens the call in the RSVP column,
+  `apps/innergathering/src/components/landing/OfferingCall.tsx`).
 - Host timer `nextcloud-talk-fix.timer` (enabled; last ran 2026-06-05) runs a
   script outside the repo that fixes the Talk TURN relay IP and iptables rules.
 
@@ -339,8 +496,10 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
 - Do not add code to `calendar-sync.ts` or `nextcloud-sync.ts`: they target columns and webhooks that do not exist; use `org-calendar-sync.ts`.
 
 ## Open items
-- Two per-user ACL allows on `users/<slug>` fail on every reconciler run (436 and 21
-  occurrences since 2026-09-20). Cause unknown. Because the script skips group
+- ~~Two per-user ACL allows on `users/<slug>` fail on every reconciler run (436 and 21
+  occurrences since 2026-09-20). Cause unknown.~~ 2026-09-27: three (aeon,
+  jason-ford, eric-brummel), all Nextcloud-linked people with no folder; the script
+  now skips missing folders (dry run verified; first live run not yet checked). Because the script skips group
   adds whenever any rule failed, a newly linked member will not be added to
   `EAC_Network` (and gets no mount) until the failure is fixed.
 - `social_login_auto_redirect` reads `false`, contrary to the 2026-07-11 setting.

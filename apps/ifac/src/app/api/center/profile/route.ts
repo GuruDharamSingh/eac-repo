@@ -3,6 +3,7 @@ import { canEditOrgIdentity, getOrgIdentity, getProfile, updateProfile } from "@
 import type { SurfaceProfile, SurfaceProfileInput } from "@elkdonis/cms-ui/surface";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
+import { getDirectoryProfile } from "@/lib/directory";
 
 /**
  * The profile surface's read and write.
@@ -16,7 +17,6 @@ import { getViewer } from "@/lib/auth";
  */
 export const dynamic = "force-dynamic";
 
-const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
 const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
 const NETWORK_PROTO = NETWORK_HOST.includes("localhost") ? "http" : "https";
 
@@ -41,6 +41,19 @@ async function resolveTarget(userId: string, orgId: string | null) {
   };
 }
 
+/**
+ * A person's own page on this site: /artists/<slug> or /dealers/<slug>.
+ * Replaced the ArtDirect link (directory.arts-collective.com) on 2026-09-24
+ * at the developer's request. Null when they have no published IFAC roster
+ * row, so the popup offers no link rather than one that 404s.
+ */
+async function ifacPageHref(slug: string | null | undefined): Promise<string | null> {
+  if (!slug) return null;
+  const entry = await getDirectoryProfile(slug).catch(() => undefined);
+  if (!entry) return null;
+  return `/${entry.kind === "dealer" ? "dealers" : "artists"}/${slug}`;
+}
+
 export async function GET(request: NextRequest) {
   const viewer = await getViewer();
   if (!viewer) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
@@ -63,12 +76,7 @@ export async function GET(request: NextRequest) {
     country: p.country,
     socialLinks: p.socialLinks,
     slug: p.slug,
-    pageHref:
-      target.kind === "person"
-        ? p.slug && ARTDIRECT_URL
-          ? `${ARTDIRECT_URL}/${p.slug}`
-          : null
-        : target.pageHref,
+    pageHref: target.kind === "person" ? await ifacPageHref(p.slug) : target.pageHref,
     canEdit: target.canEdit,
     hrefs: target.kind === "person" ? { store: siteConfig.marketplaceUrl } : undefined,
   };

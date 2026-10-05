@@ -92,3 +92,178 @@
   font-size: 12px;
   line-height: 1.35;
 }
+
+/* ── One row of a block, open on its own (drag/item-focus.tsx) ──────────────
+   A click on one picture of a picture wall shows that picture's fields in
+   the panel instead of the whole block's. Puck's own field spacing is a
+   CSS-module class we cannot name, so the fields are spaced here. */
+.eac-row-focus {
+  display: grid;
+  gap: var(--puck-space-4, 16px);
+  padding: var(--puck-space-4, 16px);
+  font-family: var(--puck-font-family);
+}
+.eac-row-focus-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: var(--puck-space-3, 12px);
+  border-bottom: 1px solid var(--puck-color-border, #dcdcdc);
+}
+.eac-row-focus-back,
+.eac-row-focus-step button {
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-m, 4px);
+  background: var(--puck-color-surface, #fff);
+  /* Puck's azure-04 on white: 6.3:1. */
+  color: #0158ad;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.eac-row-focus-back {
+  padding: 5px 10px;
+}
+.eac-row-focus-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--puck-color-text-secondary, #5a5a5a);
+  font-size: 13px;
+}
+.eac-row-focus-step button {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  line-height: 1;
+}
+.eac-row-focus-back:hover,
+.eac-row-focus-step button:hover:not(:disabled) {
+  background: var(--puck-color-azure-11, #f3f6fb);
+}
+.eac-row-focus-back:focus-visible,
+.eac-row-focus-step button:focus-visible {
+  outline: 2px solid #0158ad;
+  outline-offset: 2px;
+}
+.eac-row-focus-step button:disabled {
+  color: var(--puck-color-grey-07, #ababab);
+  cursor: default;
+}
+.eac-row-focus-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--puck-color-text, #000);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ── Height handle (drag/height-handle.tsx) ─────────────────────────────────
+   A bar across the bottom edge of the selected block; drag it down. Above
+   the image move overlay (z-index 40 in canvas-drag.tsx). */
+.eac-height-handle {
+  z-index: 41;
+  box-sizing: border-box;
+  border: 2px solid #0158ad;
+  border-radius: 6px;
+  /* White with Puck's azure-04 edge: the edge is 6.3:1 on white, and the
+     white body separates it from any photo behind it. */
+  background: #ffffff;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.eac-height-handle::before {
+  content: "";
+  position: absolute;
+  inset: 3px 14px;
+  border-block: 1px solid #0158ad;
+}
+.eac-height-handle-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #0158ad;
+  color: #ffffff;
+  font: 500 12px/1.6 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Canvas menu (drag/canvas-menu.tsx) ─────────────────────────────────────
+   Drawn INSIDE the canvas iframe, where the site's own stylesheet also
+   applies — so every property a site might set on buttons, paragraphs or
+   rules is set here explicitly. Colours fixed, not inherited: #1d2330 on
+   white is 15.1:1; #4a5263 is 7.9:1; #a4161a is 7.5:1. */
+.eac-canvas-menu {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  min-width: 190px;
+  max-width: 260px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid #c9ced8;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  color: #1d2330;
+  font: 14px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: start;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.eac-canvas-menu button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #1d2330;
+  font: inherit;
+  text-align: start;
+  text-transform: none;
+  letter-spacing: normal;
+  box-shadow: none;
+  cursor: pointer;
+}
+.eac-canvas-menu button:hover:not(:disabled),
+.eac-canvas-menu button:focus-visible {
+  background: #e7eef7;
+  outline: none;
+}
+.eac-canvas-menu button:disabled {
+  color: #9aa1ae;
+  cursor: default;
+}
+.eac-canvas-menu .eac-menu-danger:not(:disabled) {
+  color: #a4161a;
+}
+.eac-canvas-menu .eac-menu-back {
+  color: #4a5263;
+  font-size: 13px;
+}
+.eac-canvas-menu .eac-menu-title {
+  margin: 2px 10px 4px;
+  color: #4a5263;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.eac-canvas-menu .eac-menu-note {
+  margin: 4px 10px 6px;
+  color: #4a5263;
+  font-size: 13px;
+}
+.eac-canvas-menu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 1px solid #e1e4ea;
+}

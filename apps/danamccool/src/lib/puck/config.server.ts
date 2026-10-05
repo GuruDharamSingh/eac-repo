@@ -4,6 +4,8 @@ import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { currentOrgId } from "@/lib/site-org";
 import { SITE_BLOCKS } from "@/blocks";
 import { PAGE_SETTINGS, PageSettingsWrap } from "@/lib/puck/page-settings";
+import { TextStyleWrap } from "@/lib/puck/text-style";
+import { loadCardRecord } from "@/lib/card-records";
 import { listWriting } from "@elkdonis/services";
 import { getSiteOwnerUserId } from "@/lib/auth";
 import { boundIds, loadArtworks, loadArtworksByIds, loadGalleryGrid, loadGalleryWorks, loadNestedGalleries } from "@/lib/artworks";
@@ -25,6 +27,8 @@ import { opensIds } from "@/blocks/nested";
  * it was saved.
  */
 const serverResolvers: BlockResolvers = {
+  // A Card's "Filled from (live)": read at every render; typed fields still win.
+  "feature-card": async (props) => ({ bound: props.record ? await loadCardRecord(props.record) : null }),
   "thread-feed": async (props) => {
     const items = await loadThreadFeed(currentOrgId(), {
       limit: typeof props.limit === "number" ? props.limit : 10,
@@ -87,4 +91,6 @@ export const serverPuckConfig = buildPuckConfig({
   blocks: [...SHARED_BLOCKS, ...SITE_BLOCKS],
   // The page's own settings (fonts) — see lib/puck/page-settings.tsx.
   root: { props: PAGE_SETTINGS, wrap: PageSettingsWrap },
+  // Every block's "Text style" — the published half (no field here).
+  blockStyle: { name: "textStyle", wrap: TextStyleWrap },
 });

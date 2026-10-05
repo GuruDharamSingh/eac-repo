@@ -31,6 +31,9 @@ import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
 import { termHref, threadHref } from "@/lib/gather";
 import { CycleBadge } from "@elkdonis/blocks";
+import { EventPageToggle } from "@/components/event-page-toggle";
+import { renderPuckPage } from "@/lib/puck/render";
+import { readDetailPage } from "@/lib/puck/event-flag";
 
 interface ThreadPageProps {
   params: Promise<{ feed: string; slug: string }>;
@@ -97,6 +100,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           title={thread.title}
           lede={thread.excerpt}
           bodyHtml={thread.description ?? ""}
+          threadId={thread.id}
           authorName={thread.authorName}
           publishedAt={thread.publishedAt}
           kindLabel="Writing"
@@ -113,6 +117,31 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         </ArticleView>
       </div>
     );
+  }
+
+  // A gathering that asked for a detail page is drawn from the `event-detail`
+  // template document (lib/puck/templates.ts), once one is published. Until
+  // then, and for every other gathering, the page below is unchanged. Editors
+  // get a switch under the page either way.
+  const detailOn = await readDetailPage(thread.id);
+  if (detailOn) {
+    const designed = await renderPuckPage("event-detail", {
+      template: true,
+      metadata: { threadId: thread.id },
+    });
+    if (designed) {
+      return (
+        <>
+          {designed}
+          {viewer?.canEdit ? (
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-3 px-5 pb-10">
+              <EditThreadButton threadId={thread.id} kind={thread.kind} />
+              <EventPageToggle threadId={thread.id} on />
+            </div>
+          ) : null}
+        </>
+      );
+    }
   }
 
   const isRecurring = Boolean(
@@ -206,6 +235,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         footExtra={
           <>
             {viewer?.canEdit && <EditThreadButton threadId={thread.id} kind={thread.kind} />}
+            {viewer?.canEdit && <EventPageToggle threadId={thread.id} on={false} />}
             {(viewer?.canEdit || (viewer && viewer.userId === thread.authorId)) && (
               <RemoveThreadButton threadId={thread.id} title={thread.title} backHref={`/${feed.slug}`} />
             )}

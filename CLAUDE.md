@@ -99,10 +99,10 @@ Do not run a bare root `pnpm dev` (it starts every app).
 | artdirect | 3013 | network | directory.arts-collective.com | live |
 | pigeonshoot | 3014 | pigeonshoot | — | not running |
 | innergathering | 3015 | inner_group | elkdonis-arts.org | live |
-| elastrocal | 3016 | elastrocal | arts-collective.com/astro | not running |
+| elastrocal | 3016 | elastrocal | arts-collective.com/astro | live (dev mode); `/hub/studio` review deck |
 | danamccool | 3018 | danamccool | danamccool.com | live; Puck pages |
 | fourthwayBookreaders | 3019 | fourth_way_book_readers | elkdonis-arts.org/books | live; basePath `/books` |
-| sophia | 3020 | — | — | LMS; not deployed, uncommitted |
+| sophia | 3020 | — | — | LMS; not deployed |
 | signal-watch | — | — | — | Android app, outside the web platform |
 
 Details, run modes and per-app traps: `docs/reference/apps.md`. Ports 3010 and
@@ -113,6 +113,57 @@ Packages (41, in `packages/`): catalogue and conventions in
 (business logic, source-exported), `auth-server`/`auth-client`, `cms-ui`,
 `primitives`, `nextcloud`, `email`, `commerce`/`payments`/`checkout`,
 `blocks`/`page-builder`.
+
+## Current work (2026-09-25)
+
+- Onboarding sprint, workstreams A–F: `docs/open/SPRINT_2026-09-18_onboarding.md`.
+- Open security fix: `getServerSession()` does not verify the session token.
+  Thread-body sanitising and archive-not-delete landed in `56f5639`.
+- Network sign-in arrival check and global sign-out: uncommitted; migration 164
+  applied and six apps rebuilt 2026-09-25; signed-in browser test and
+  fourthway/forum restarts open. `docs/sessions/2026-09-25_network-sso.md`.
+- artdirect (3013) and forum (3003) are down (edge 502). forum was restarted 2026-09-26 and
+  stopped again the same day at the developer's request; match light is in its source.
+- Fourth Way reading circles (2026-09-26): circle page with session tabs, manage section,
+  /manage/groups, Talk/doc embedding (`eac_embed` NC app); recording capture and transcripts
+  not started. `docs/reference/apps.md` fourthwayBookreaders.
+- Open briefs not started: forum switcher (B), hub tour (E), Silex 3.9 phases 2–3,
+  person pages (built and deployed 2026-09-26 except IFAC's rebuild; Puck
+  profile/featured pages on ArtDirect in progress;
+  `docs/open/PERSON_PAGES_BRIEF_2026-09-26.md`).
+- Astro Studio (2026-09-26): migration 167 applied, corpus imported, review deck live at
+  /astro/hub/studio (owners); 150-question test set served first; export and scoring
+  written; helper/scoring blocked on ANTHROPIC_WORKSPACE_ID. Book importer from the WSL chunker
+  written; migration 176 written, unapplied (174 pending ahead of it). `docs/open/ASTRO_DIGESTION_BRIEF_2026-09-27.md`.
+- Studio (2026-09-27): `packages/studio` + arts-collective `/studio` (Writing tab, autosave,
+  Show on, blank piece on open, "New ▾" menu) deployed 2026-09-27 in its own light/dark
+  identity (ten arts-collective rebuilds; signed-in render, screenshots, font and token
+  probes checked). Center and landing link to it. Essay canvas ("Use blocks") deployed
+  the same evening with migration 173 (`threads.body_doc`); article.css now lays the
+  body on a breakout grid for every site (visible on their next rebuilds). Layout presets,
+  series, Publish as, SEO and the Library followed (24 builds; all in `threads.metadata`).
+  Root `pnpm.overrides` pin `prosemirror-*`. Focus mode (writing-room look, side menu) is
+  the default since 2026-10-03 (brief §4.2a). Next: revisions, the `.docx` route
+  (`docs/open/STUDIO_BRIEF_2026-09-27.md`, `docs/open/BLOCK_CANVAS_BRIEF_2026-09-27.md`).
+- Services as offerings (2026-09-27, uncommitted): one service layer, `service` compose kind, OAD Services
+  section, card booking via `@elkdonis/checkout/booking`, time scheduling (migration 174 written, not applied);
+  containers not recreated. `docs/reference/commerce.md`.
+- Analytics (2026-10-02): `packages/analytics` (beacon, `/api/pulse` collector, shared dashboard; migration 180) live on
+  amrit-canada (`/manage/analytics`, owners) and arts-collective (`/hub/analytics`, admins + owners); other sites have no
+  beacon; no GeoLite2 database yet. `packages/analytics/README.md`.
+- Thread audiences (2026-10-03, source only): migration 188 `threads.min_role` **unapplied**; apply it before rebuilding any app
+  (shared queries select it). innergathering/amrit `getThreadBySlug` served members-only posts to anyone; fixed in source.
+  `docs/reference/data-model.md`.
+- Studio Video (2026-10-03): arts-collective `/studio/video` (reels from Remotion templates in `packages/reels`,
+  browser recorder, music in `users/<f>/Private/Music` + `oad/Private/Music`), worker `reel-render`, migration 189
+  applied; verified signed in. 2026-10-04: Video is a Studio kind (`/studio?kind=video`, shared frame `@elkdonis/studio/frame`);
+  reels publish to the ArtDirect page as writing pieces. `docs/reference/nextcloud.md` "Reels".
+- Server OBS (2026-10-03): `obs` container + `/studio/broadcast` (admins), record/stream verified to a local RTMP
+  server; GPU work to continue on a machine with a GPU. `docs/reference/nextcloud.md` "Server OBS".
+- Known failing: `check-types` in `@elkdonis/cms-bindings` (hub template fails
+  `validate:template`).
+
+Update this section when work starts or finishes; keep it under ten lines.
 
 ## Documentation
 

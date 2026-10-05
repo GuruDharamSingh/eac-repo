@@ -23,6 +23,7 @@ import {
 import { toSurfaceThread } from "@/lib/surface-thread";
 import { CycleBadge } from "@/components/cycle-badge";
 import { RsvpPanel } from "@/components/rsvp-panel";
+import { CallSlot, OfferingCallProvider, TalkLinkInterceptor } from "@/components/landing/OfferingCall";
 import { ShareButton } from "@/components/share-button";
 import { AttendeeList } from "@/components/attendee-list";
 import { EditThreadButton } from "@/components/edit-thread-button";
@@ -106,6 +107,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           title={thread.title}
           lede={thread.excerpt}
           bodyHtml={thread.description ?? ""}
+          threadId={thread.id}
           authorName={thread.authorName}
           publishedAt={thread.publishedAt}
           kindLabel="Writing"
@@ -273,6 +275,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   }
 
   return (
+    <OfferingCallProvider>
     <div
       className="mx-auto max-w-5xl px-5 py-10"
       style={accent ? ({ ["--feed" as string]: `hsl(${accent})` } as React.CSSProperties) : undefined}
@@ -285,7 +288,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         rail={parts.rail}
         actions={actions}
         status={
-          isRecurring && thread.scheduledAt ? (
+          isRecurring && thread.scheduledAt && thread.showCycleBadge ? (
             <CycleBadge status={cycleStatus} />
           ) : thread.isRsvpEnabled && attendanceCount > 0 ? (
             `${attendanceCount} coming`
@@ -330,7 +333,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         )}
       </SurfacePage>
 
-      {thread.isRsvpEnabled && (
+      {talkUrl && <TalkLinkInterceptor talkUrl={talkUrl} />}
+      {(() => {
+        const rsvp = thread.isRsvpEnabled ? (
         <>
           <RsvpPanel
             threadId={thread.id}
@@ -347,7 +352,16 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             visible={Boolean(viewer?.isMember)}
           />
         </>
-      )}
+        ) : null;
+        // "Join the Talk room" (in the actions above) opens the call here, in
+        // place of "Are you coming?" — OfferingCall.tsx.
+        return talkUrl ? (
+          <CallSlot talkUrl={talkUrl} title={thread.title} className="ig-offer-call ig-offer-call--page">{rsvp}</CallSlot>
+        ) : (
+          rsvp
+        );
+      })()}
     </div>
+    </OfferingCallProvider>
   );
 }

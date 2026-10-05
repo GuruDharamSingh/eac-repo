@@ -182,7 +182,7 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
-function contactHref(profile: Profile): string | null {
+export function contactHref(profile: Profile): string | null {
   const email = profile.socialLinks.find((l) => l.label === "Email" && l.url.startsWith("mailto:"));
   if (email) return email.url;
   const website = profile.socialLinks.find((l) => l.label === "Website");
@@ -478,7 +478,7 @@ export async function listRegions(): Promise<{ region: string; country: string |
     return await db<{ region: string; country: string | null; count: number }[]>`
       SELECT region, MAX(country) AS country, COUNT(*)::int AS count
       FROM users
-      WHERE slug IS NOT NULL AND region IS NOT NULL AND region <> ''
+      WHERE slug IS NOT NULL AND directory_listed AND region IS NOT NULL AND region <> ''
       GROUP BY region
       ORDER BY count DESC, region ASC
     `;
@@ -495,9 +495,10 @@ export async function getDossiersByRegion(region: string, limit = 12): Promise<D
   return listDossiers({ region, limit });
 }
 
+/** Listed slugs only (users.directory_listed), matching the directory index. */
 export async function listDossierSlugs(): Promise<string[]> {
   try {
-    const rows = await db<{ slug: string }[]>`SELECT slug FROM users WHERE slug IS NOT NULL`;
+    const rows = await db<{ slug: string }[]>`SELECT slug FROM users WHERE slug IS NOT NULL AND directory_listed`;
     return rows.map((r) => r.slug);
   } catch {
     return [];

@@ -1,6 +1,7 @@
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
 import { canModerateOrg } from './moderation';
+import { PERSONAL_ORG_ID } from './thread-listing';
 
 // ============================================================================
 // Moderation for a PERSON's designed page, hosted inside an ORG's layout —
@@ -47,6 +48,20 @@ export interface PendingUserPage {
   authorName: string | null;
   authorAvatar: string | null;
   createdAt: string;
+}
+
+/**
+ * Whether a person's pages on this org go live the moment they publish, with
+ * no review and no hosting switch.
+ *
+ * True only for the personal org (`oad`, ArtDirect, 2026-09-26): its pages —
+ * a person's profile and featured page — are the person's own root page, not
+ * a design inserted into an org's layout, so neither `member_store_panels`
+ * nor the review queue applies. Every other org keeps the rules above;
+ * page-builder's `publishUserPage` is only to be called when this is true.
+ */
+export function publishesWithoutReview(orgId: string): boolean {
+  return orgId === PERSONAL_ORG_ID;
 }
 
 /** Whether this org hosts member-DESIGNED panels at all. */

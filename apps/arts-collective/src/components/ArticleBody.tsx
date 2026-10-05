@@ -89,6 +89,7 @@ export function ArticleBody({
       org={{ name: org.name, href: `/` }}
       coverImageUrl={cover}
       readingMinutes={readingMinutes(bodyHtml)}
+      threadId={thread.id}
       provenance={{
         // Both the author and every org carrying it hold a claim, and neither
         // holds a copy — the custody is the rows, not the bytes.

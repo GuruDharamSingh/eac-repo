@@ -441,7 +441,32 @@ export function defaultThreadToAnswers(
     ...(typeof t.extra?.next_co_host_user_id === "string" ? { co_host_user_id: t.extra.next_co_host_user_id } : {}),
     // Workshop presentation and sessions ride in `extra`, keyed as the fields.
     ...(t.kind === "workshop" ? workshopExtras(t.extra ?? {}) : {}),
+    // A service's booking fields likewise (services' serviceAnswersFromOffering).
+    ...(t.kind === "service" ? serviceExtras(t.extra ?? {}) : {}),
   };
+}
+
+const SERVICE_EXTRA_KEYS = [
+  "subtitle",
+  "booking_type",
+  "sliding_scale",
+  "price_sliding_min",
+  "sliding_scale_note",
+  "registration_status",
+  "session_count",
+  "session_duration_hrs",
+  "recurrence_label",
+  "location",
+  "banner_image_url",
+  "share_to_network",
+];
+
+function serviceExtras(x: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of SERVICE_EXTRA_KEYS) {
+    if (x[key] !== undefined) out[key] = x[key];
+  }
+  return out;
 }
 
 function workshopExtras(x: Record<string, unknown>): Record<string, unknown> {

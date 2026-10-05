@@ -15,7 +15,7 @@ export const SURFACE_PARAM = "surface";
 const SAFE_TARGET = /^(blog|[a-z0-9_-]{1,50}\|[a-z0-9_-]{1,50})$/i;
 
 /** `profile:<tab>` — "profile" itself is the bare form. */
-const PROFILE_TABS = new Set<string>(["details", "show", "page", "payouts"]);
+const PROFILE_TABS = new Set<string>(["details", "show", "page", "payouts", "connections"]);
 
 export function serializeDescriptor(d: SurfaceDescriptor): string | null {
   switch (d.type) {

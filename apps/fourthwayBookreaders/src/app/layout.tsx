@@ -1,3 +1,4 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import "./globals.css";
 import type { Metadata } from "next";
 import { EB_Garamond } from "next/font/google";
@@ -50,6 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main style={{ flex: 1 }}>{children}</main>
           <SiteFooter />
         </div>
+        <AnalyticsBeacon endpoint="/books/api/pulse" />
       </body>
     </html>
   );

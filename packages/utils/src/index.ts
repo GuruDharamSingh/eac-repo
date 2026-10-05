@@ -16,7 +16,7 @@ export { slugify, formatFileSize, truncate, deriveExcerpt } from './strings';
 export { RESERVED_SLUGS, isReservedSlug } from './reserved-slugs';
 
 // HTML sanitization for rich-text content
-export { sanitizeRichText, sanitizePostBody } from './sanitize';
+export { sanitizeRichText, sanitizePostBody, sanitizePageText } from './sanitize';
 
 // HTML sanitization for Silex-published org sites
 export { sanitizeSilexHtml } from './sanitize-silex';

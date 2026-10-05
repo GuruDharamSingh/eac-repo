@@ -19,6 +19,8 @@
 @import "@elkdonis/cms-ui/surface.css";
 @import "@elkdonis/cms-ui/center.css";
 @import "@elkdonis/cms-ui/profile.css";
+/* Person pages at /about/<slug> (PersonPage). */
+@import "@elkdonis/cms-ui/person-page.css";
 /* The Grand Forum at /forum, in this site's tokens. */
 @import "@elkdonis/forum-ui/forum.css";
 @import "@elkdonis/forum-ui/forum-modern.css";
@@ -666,4 +668,9 @@ h4 {
 *::before,
 *::after {
   border-radius: 0 !important;
+}
+
+/* Person pages (/about/<slug>): headings in the site serif. */
+.eac-person-page {
+  --eac-person-heading-font: var(--font-serif), Palatino, Georgia, serif;
 }

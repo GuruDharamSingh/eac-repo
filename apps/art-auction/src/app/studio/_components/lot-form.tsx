@@ -38,6 +38,7 @@ export function LotForm({
     listPrice >= 1000 ? "50" : listPrice >= 200 ? "25" : "10"
   );
   const [antiSnipe, setAntiSnipe] = React.useState("5");
+  const [eventTag, setEventTag] = React.useState("");
   const [pending, setPending] = React.useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -53,6 +54,7 @@ export function LotForm({
         reserve: reserve.trim() ? Number(reserve) : null,
         bidIncrement: increment.trim() ? Number(increment) : null,
         antiSnipeMinutes: antiSnipe.trim() ? Number(antiSnipe) : null,
+        event: eventTag.trim() || null,
       });
       if (!res.ok || !res.lotId) return toast.error(res.error ?? "Could not start the auction.");
       toast.success("The auction is up.");
@@ -129,6 +131,23 @@ export function LotForm({
             A bid in the last N minutes extends the auction by N minutes.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className={labelCls} htmlFor="eventTag">
+          Auction (optional)
+        </label>
+        <input
+          id="eventTag"
+          className={inputCls}
+          value={eventTag}
+          onChange={(e) => setEventTag(e.target.value)}
+          placeholder="fall-2026"
+          maxLength={60}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          A short name that groups lots into one auction. A page about that auction shows only the lots with this name.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

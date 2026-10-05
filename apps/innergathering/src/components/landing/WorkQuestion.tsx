@@ -16,10 +16,13 @@ export function WorkQuestion({
   question,
   responses,
   signedIn,
+  aside = { href: "/offerings", label: "See the offerings →" },
 }: {
   question: Question;
   responses: WorkQuestionResponse[];
   signedIn: boolean;
+  /** The quiet link beside Respond. */
+  aside?: { href: string; label: string };
 }) {
   const [text, setText] = useState("");
   const [name, setName] = useState("");
@@ -78,8 +81,8 @@ export function WorkQuestion({
             <span style={{ fontSize: "0.85rem", color: "var(--ig-muted, #4b5f85)" }}>Posting under your account name.</span>
           )}
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Link href="/offerings" className="cwq-forum-link" style={{ fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8f763c", textDecoration: "none" }}>
-              See the offerings →
+            <Link href={aside.href} className="cwq-forum-link" style={{ fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#7a6431", textDecoration: "none" }}>
+              {aside.label}
             </Link>
             <button type="submit" className="cta-btn cwq-submit" disabled={state === "sending" || !text.trim()} style={{ cursor: "pointer" }}>
               {state === "sending" ? "Sending…" : "Respond"}

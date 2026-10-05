@@ -1,16 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteServiceOffering, getOrgFeed, upsertServiceOffering } from "@elkdonis/services";
+import {
+  deleteServiceOffering,
+  getOrgFeed,
+  serviceInputFromAnswers,
+  upsertServiceOffering,
+  validateServiceInput,
+} from "@elkdonis/services";
 import { requireOrgEditor } from "@/lib/auth";
-import { serviceSchema, type ServiceFormInput } from "@/lib/service-schema";
 import { siteConfig } from "@/config/site";
 
 /**
- * Server actions for /hub/services. Same contract as hidden-enneagram's
- * lib/cms/actions.ts: every action re-checks authorisation, and an offering is
- * a `threads` row (kind='service') plus its workshop_pages sidecar, written by
- * upsertServiceOffering in one transaction.
+ * Server actions for /hub/services. Every action re-checks authorisation.
+ *
+ * Since 2026-09-27 the editor is the shared composer
+ * (buildContentFields('service') from @elkdonis/cms-ui/compose), so the save
+ * takes its answers and reads them with serviceInputFromAnswers — the same
+ * translation hidden-enneagram and ArtDirect use — before
+ * upsertServiceOffering writes the thread and its workshop_pages sidecar.
  */
 
 export interface ActionResult {
@@ -20,41 +28,25 @@ export interface ActionResult {
   slug?: string;
 }
 
-export async function saveServiceAction(input: ServiceFormInput, threadId?: string): Promise<ActionResult> {
+export async function saveServiceAction(
+  answers: Record<string, unknown>,
+  status: "draft" | "published",
+  threadId?: string
+): Promise<ActionResult> {
   const editor = await requireOrgEditor("/hub/services");
-  const parsed = serviceSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form" };
-  const d = parsed.data;
 
   // The feed must exist (073's invariant): migration 121 seeds 'services'.
   const feed = await getOrgFeed(siteConfig.orgId, "services");
   if (!feed) return { ok: false, error: "The services feed is missing — run migration 121" };
 
+  // Everything here is public and filed under Services; the composer offers
+  // neither another page nor another audience on this site.
+  const input = { ...serviceInputFromAnswers(answers, status), visibility: "PUBLIC" as const, section: "services" };
+  const invalid = validateServiceInput(input);
+  if (invalid) return { ok: false, error: invalid };
+
   try {
-    const { id, slug } = await upsertServiceOffering(
-      siteConfig.orgId,
-      editor.userId,
-      {
-        title: d.title,
-        subtitle: d.subtitle || null,
-        descriptionShort: d.descriptionShort || d.subtitle || null,
-        body: d.body || null,
-        bookingType: d.bookingType,
-        format: d.format ?? null,
-        price: d.price,
-        currency: d.currency.toUpperCase(),
-        priceSlidingMin: d.priceSlidingMin ?? null,
-        slidingScaleNote: d.slidingScaleNote || null,
-        sessionDurationHrs: d.sessionDurationHrs ?? null,
-        recurrenceLabel: d.recurrenceLabel || null,
-        location: d.location || null,
-        registrationStatus: d.registrationStatus,
-        status: d.status,
-        visibility: "PUBLIC",
-        section: "services",
-      },
-      threadId,
-    );
+    const { id, slug } = await upsertServiceOffering(siteConfig.orgId, editor.userId, input, threadId);
     revalidatePath("/services");
     revalidatePath(`/services/${slug}`);
     revalidatePath("/hub/services");
@@ -66,6 +58,7 @@ export async function saveServiceAction(input: ServiceFormInput, threadId?: stri
   }
 }
 
+/** Takes a service down for good (archived, not deleted; see deleteServiceOffering). */
 export async function deleteServiceAction(threadId: string): Promise<ActionResult> {
   await requireOrgEditor("/hub/services");
   try {
@@ -76,6 +69,6 @@ export async function deleteServiceAction(threadId: string): Promise<ActionResul
     return ok ? { ok: true } : { ok: false, error: "Not found" };
   } catch (err) {
     console.error("[elastrocal] deleteServiceAction", err);
-    return { ok: false, error: "The service could not be deleted" };
+    return { ok: false, error: "The service could not be removed" };
   }
 }

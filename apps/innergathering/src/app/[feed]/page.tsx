@@ -5,7 +5,6 @@ import { ThreadCard } from "@/components/thread-card";
 import { FeedBanner } from "@/components/feed-banner";
 import {
   getAttendanceCount,
-  getCycleStatus,
   getSiteSections,
   getThreadsForFeed,
   listOrgWriting,
@@ -61,10 +60,6 @@ export default async function FeedPage({ params }: FeedPageProps) {
   const enriched = await Promise.all(
     threads.map(async (thread) => ({
       thread,
-      cycleStatus:
-        thread.scheduledAt && thread.recurrencePattern && thread.recurrencePattern !== "NONE"
-          ? await getCycleStatus(thread)
-          : undefined,
       attendanceCount: thread.isRsvpEnabled ? await getAttendanceCount(thread) : undefined,
     }))
   );
@@ -124,12 +119,11 @@ export default async function FeedPage({ params }: FeedPageProps) {
           </p>
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2" aria-label={feed.name}>
-            {enriched.map(({ thread, cycleStatus, attendanceCount }) => (
+            {enriched.map(({ thread, attendanceCount }) => (
               <ThreadCard
                 feedName={feed.name}
                 key={thread.id}
                 thread={thread}
-                cycleStatus={cycleStatus}
                 attendanceCount={attendanceCount}
               />
             ))}

@@ -7,6 +7,6 @@ export const FORUM_URL = trim(process.env.NEXT_PUBLIC_FORUM_URL, "http://localho
 export const ARTDIRECT_URL = trim(process.env.ARTDIRECT_URL ?? process.env.NEXT_PUBLIC_ARTDIRECT_URL, "http://localhost:3013");
 
 export const SITE = {
-  name: "Sophia",
+  name: "Education Hub",
   tagline: "Courses from the Elkdonis Arts Collective. Free to read, taken at your own pace or together.",
 };

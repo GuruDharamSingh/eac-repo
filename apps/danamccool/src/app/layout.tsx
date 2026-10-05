@@ -1,3 +1,4 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import "@elkdonis/cms-ui/gallery.css";
 // The ROOT layout, deliberately, not the published-page route.
 //
@@ -17,6 +18,8 @@ import "@/components/hud/hud.css";
 import "@/components/studio/theme-studio.css";
 // The Gallery grid's Pictures panel (editor right column).
 import "@/components/studio/gallery-fields.css";
+// Text style and Arrange tiles — controls shared by many blocks.
+import "@/components/studio/block-fields.css";
 // Her blog (/blog) — the shared reader and shelf, the same as IFAC's.
 import "@elkdonis/cms-ui/article.css";
 import "@elkdonis/cms-ui/writing.css";
@@ -116,6 +119,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </>
         )}
+        <AnalyticsBeacon />
       </body>
     </html>
   );

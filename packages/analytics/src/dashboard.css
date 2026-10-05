@@ -1,0 +1,101 @@
+/* Shared analytics dashboard (packages/analytics/src/dashboard.tsx).
+   Colours come from the host app's --eac-control-* / --eac-card-* tokens, so it
+   follows each site's light and dark theme; the fallbacks apply only where an
+   app defines none. */
+.eac-an {
+  --an-fg: var(--eac-control-fg, var(--forum-ink, #1d1b18));
+  --an-muted: var(--eac-control-muted, var(--forum-muted, #6a655d));
+  --an-line: var(--eac-control-line, var(--forum-line, #d8d3c9));
+  --an-bg: var(--eac-card-bg, var(--eac-control-bg, var(--forum-panel, #ffffff)));
+  --an-soft: var(--eac-control-soft, var(--forum-row-hover, #f2eee6));
+  --an-accent: var(--eac-control-accent, var(--forum-accent, #8a5a1f));
+  --an-accent-2: var(--eac-control-danger, #3f6b8c);
+  --an-up: #2f7d4f;
+  --an-down: #b04a3a;
+  color: var(--an-fg);
+  font-size: 0.95rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 0 3rem;
+}
+.eac-an > *, .eac-an__card, .eac-an__kpi { min-width: 0; }
+.eac-an a { color: inherit; }
+.eac-an__head { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-content: space-between; align-items: flex-end; }
+.eac-an__title { margin: 0; font-size: 1.7rem; line-height: 1.2; }
+.eac-an__sub { margin: 0.25rem 0 0; color: var(--an-muted); font-size: 0.85rem; }
+.eac-an__live i { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--an-up); margin-right: 0.2rem; }
+
+.eac-an__ranges, .eac-an__orgs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.eac-an__ranges a, .eac-an__orgs a {
+  padding: 0.3rem 0.75rem; border: 1px solid var(--an-line); border-radius: 999px;
+  text-decoration: none; font-size: 0.85rem; background: var(--an-bg);
+}
+.eac-an__ranges a[aria-current], .eac-an__orgs a[aria-current] {
+  background: var(--an-accent); border-color: var(--an-accent); color: var(--eac-control-accent-ink, var(--forum-on-accent, #fff));
+}
+.eac-an a:focus-visible { outline: 2px solid var(--an-accent); outline-offset: 2px; }
+
+.eac-an__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; }
+.eac-an__kpi, .eac-an__card {
+  background: var(--an-bg); border: 1px solid var(--an-line); border-radius: 0.75rem; padding: 0.9rem 1rem;
+}
+.eac-an__kpi { display: grid; gap: 0.15rem; align-content: start; }
+.eac-an__kpi-label { color: var(--an-muted); font-size: 0.8rem; }
+.eac-an__kpi-value { font-size: 1.6rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.eac-an__delta { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.eac-an__delta small { color: var(--an-muted); }
+.eac-an__delta--up { color: var(--an-up); }
+.eac-an__delta--down { color: var(--an-down); }
+.eac-an__delta--flat { color: var(--an-muted); }
+
+.eac-an__card h2 { margin: 0 0 0.25rem; font-size: 1rem; }
+.eac-an__hint { margin: 0 0 0.6rem; color: var(--an-muted); font-size: 0.8rem; }
+.eac-an__chart { width: 100%; min-width: 0; }
+.eac-an__grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+.eac-an__grid--2 { grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); }
+
+.eac-an__list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
+.eac-an__list li {
+  position: relative; display: flex; justify-content: space-between; gap: 0.75rem;
+  padding: 0.3rem 0.5rem; border-radius: 0.4rem; overflow: hidden; align-items: baseline;
+}
+.eac-an__bar { position: absolute; inset: 0 auto 0 0; background: var(--an-soft); z-index: 0; }
+.eac-an__label, .eac-an__num { position: relative; z-index: 1; }
+.eac-an__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-an__label small { display: block; color: var(--an-muted); font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; }
+.eac-an__num { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.eac-an__empty, .eac-an__note, .eac-an__foot { color: var(--an-muted); font-size: 0.85rem; margin: 0.5rem 0 0; }
+.eac-an__empty { padding: 1.25rem; border: 1px dashed var(--an-line); border-radius: 0.75rem; text-align: center; }
+.eac-an__scroll { overflow-x: auto; }
+.eac-an__table { width: 100%; min-width: 34rem; border-collapse: collapse; font-size: 0.88rem; }
+.eac-an__table th { text-align: left; color: var(--an-muted); font-weight: 500; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--an-line); }
+.eac-an__table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--an-line); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 36rem) {
+  .eac-an__title { font-size: 1.4rem; }
+  .eac-an__grid, .eac-an__grid--2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Author insights (insights-view.tsx) */
+.eac-an__spark { width: 100%; height: 5rem; display: block; }
+.eac-an__rowsub { color: var(--an-muted); font-size: 0.78rem; }
+.eac-an__table small { color: var(--an-muted); }
+.eac-an__feed { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.eac-an__feed li { display: grid; gap: 0.15rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--an-line); }
+.eac-an__feed q { color: var(--an-muted); font-size: 0.85rem; quotes: none; }
+.eac-an__feed time { color: var(--an-muted); font-size: 0.78rem; }
+
+/* Progression (journey-view.tsx) */
+.eac-an__funnel { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.eac-an__funnel li { position: relative; display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 0.4rem; overflow: hidden; align-items: baseline; }
+.eac-an__funnel .eac-an__bar { background: var(--an-soft); }
+.eac-an__num small { font-weight: 400; color: var(--an-muted); margin-left: 0.4rem; }
+.eac-an__routes { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.eac-an__routes li { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--an-line); align-items: baseline; }
+.eac-an__path { display: flex; flex-wrap: wrap; gap: 0.2rem 0.4rem; align-items: baseline; min-width: 0; }
+.eac-an__path i { color: var(--an-muted); font-style: normal; margin-right: 0.4rem; }
+.eac-an__path code { font-size: 0.8rem; overflow-wrap: anywhere; }

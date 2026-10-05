@@ -91,6 +91,18 @@ const props = [
       { value: "loose", label: "Loose" },
     ],
   },
+  {
+    name: "minHeight",
+    kind: "number",
+    label: "Height",
+    description:
+      "0 is as tall as the taller column's content. More makes both columns at least this tall (not on a phone, where they stack). Also set by dragging the handle under the selected row.",
+    default: 0,
+    min: 0,
+    max: 1600,
+    step: 10,
+    unit: "px",
+  },
 ] as const;
 
 export type SplitRowProps = PropsOf<typeof props>;
@@ -102,6 +114,7 @@ export function SplitRow({
   align = "start",
   gap = "regular",
   columns = "stacked",
+  minHeight = 0,
 }: SplitRowProps) {
   return (
     <div
@@ -110,6 +123,9 @@ export function SplitRow({
       data-align={align}
       data-gap={gap}
       data-columns={columns}
+      {...(minHeight > 0
+        ? { "data-tall": "", style: { "--split-min-h": `${minHeight}px` } as React.CSSProperties }
+        : {})}
     >
       {/* No minEmptyHeight: an editor's own default (128px in Puck 0.19.3) is
           taller than anything we would sensibly pick, and overriding it
@@ -129,6 +145,7 @@ export const splitRow = defineBlock(
       "A row of two columns that stacks on a narrow screen. Holds other blocks.",
     memberSafe: true,
     styling: "tokens",
+    resize: { height: "minHeight" },
     props,
   },
   SplitRow,

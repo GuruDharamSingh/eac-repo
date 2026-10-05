@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@elkdonis/db";
-import { createThread, gatherOnto, getOrgFeed, upsertOrgFeed } from "@elkdonis/services";
+import { createThread, ensureCircleSpace, gatherOnto, getOrgFeed, upsertOrgFeed } from "@elkdonis/services";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
@@ -96,6 +96,10 @@ export async function createReadingGroup(form: FormData): Promise<void> {
         recurrence_until = ${endsOn}
     WHERE id = ${thread.id} AND org_id = ${ORG}
   `;
+
+  // The circle's folder, Talk room and members-only discussion. A failure here
+  // leaves the group usable; the group page offers "Set up the circle's space".
+  await ensureCircleSpace(ORG, thread.id).catch((err) => console.error("[fourthway] ensureCircleSpace:", err));
 
   revalidatePath("/");
   redirect("/manage?saved=group");

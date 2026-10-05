@@ -12,8 +12,20 @@ export interface HeroImage {
   caption: string | null;
 }
 
+/** The featured reading group (src/lib/featured.ts), when one is featured. */
+export interface HeroFeatured {
+  groupTitle: string;
+  href: string;
+  coverImageUrl: string | null;
+  unitName: string | null;
+  nextSitting: string | null;
+  /** The passage a host posted from where the circle stopped. */
+  excerpt: { paragraphs: string[]; where: string | null; page: number | null } | null;
+}
+
 interface HeroProps {
   book: CurrentBook | null;
+  featured?: HeroFeatured | null;
   image: HeroImage | null;
   initialPage?: number | null;
   /** Milliseconds between automatic slides; 0 disables. */
@@ -34,11 +46,32 @@ type Slide = { key: string; label: string };
  * turning a page and then having the slide swept away mid-sentence is the one
  * thing a carousel must not do here. Hovering pauses it too.
  */
-export function Hero({ book, image, initialPage, interval = 9000 }: HeroProps) {
+export function Hero({ book, featured = null, image, initialPage, interval = 9000 }: HeroProps) {
   const slides: Slide[] = [];
   const pages: BookPage[] = book?.pages ?? [];
-  if (book && pages.length > 0) slides.push({ key: "leaf", label: "The page we're on" });
-  if (book) slides.push({ key: "book", label: "The book" });
+  // A featured group replaces the site's transcribed book with the passage its
+  // host posted, and the book slide with the group's own cover.
+  const leafTitle = featured?.excerpt ? featured.groupTitle : book?.title ?? "";
+  const leafPages: BookPage[] = featured?.excerpt
+    ? [{ number: featured.excerpt.page ?? 1, paragraphs: featured.excerpt.paragraphs, chapter: featured.excerpt.where }]
+    : pages;
+  const shownBook: CurrentBook | null = featured
+    ? {
+        title: featured.unitName ?? featured.groupTitle,
+        author: featured.unitName ? featured.groupTitle : null,
+        coverUrl: featured.coverImageUrl,
+        edition: null,
+        blurb: featured.nextSitting ? `Next sitting: ${featured.nextSitting}` : null,
+        review: null,
+        reviewSource: null,
+        currentPage: featured.excerpt?.page ?? null,
+        totalPages: null,
+        pages: [],
+      }
+    : book;
+  // "The page we're on" is off for now (owner, 2026-09-26): the carousel is
+  // what we're reading, hosting, and the admin image. BookLeaf stays for later.
+  if (shownBook) slides.push({ key: "book", label: featured ? "What we're reading" : "The book" });
   slides.push({ key: "host", label: "Host a session" });
   if (image) slides.push({ key: "image", label: "From the circle" });
 
@@ -79,10 +112,10 @@ export function Hero({ book, image, initialPage, interval = 9000 }: HeroProps) {
             aria-label={`${i + 1} of ${count}: ${s.label}`}
             aria-hidden={i !== index}
           >
-            {s.key === "leaf" && book && (
-              <BookLeaf title={book.title} pages={pages} initialPage={initialPage} onInteract={hold} />
+            {s.key === "leaf" && (
+              <BookLeaf title={leafTitle} pages={leafPages} initialPage={featured?.excerpt ? null : initialPage} onInteract={hold} />
             )}
-            {s.key === "book" && book && <BookSlide book={book} />}
+            {s.key === "book" && shownBook && <BookSlide book={shownBook} href={featured?.href} />}
             {s.key === "host" && <HostSlide />}
             {s.key === "image" && image && (
               <div className="imageslide">
@@ -125,7 +158,7 @@ export function Hero({ book, image, initialPage, interval = 9000 }: HeroProps) {
   );
 }
 
-function BookSlide({ book }: { book: CurrentBook }) {
+function BookSlide({ book, href }: { book: CurrentBook; href?: string }) {
   const progress =
     book.currentPage && book.totalPages
       ? `Page ${book.currentPage} of ${book.totalPages}`
@@ -156,7 +189,7 @@ function BookSlide({ book }: { book: CurrentBook }) {
         <div className="bookslide__meta">
           {progress && <span>{progress}</span>}
           {book.edition && <span>{book.edition}</span>}
-          <Link href="/books">About this book →</Link>
+          {href ? <Link href={href}>The reading group →</Link> : <Link href="/books">About this book →</Link>}
         </div>
       </div>
     </div>

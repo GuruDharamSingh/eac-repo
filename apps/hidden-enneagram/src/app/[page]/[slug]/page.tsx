@@ -84,6 +84,7 @@ export default async function ThreadPage({ params }: PageProps) {
           title={thread.title}
           lede={thread.excerpt}
           bodyHtml={thread.description ?? ""}
+          threadId={thread.id}
           authorName={thread.authorName}
           publishedAt={published}
           kindLabel="Writing"

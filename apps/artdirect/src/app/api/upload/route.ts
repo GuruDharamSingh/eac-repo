@@ -31,8 +31,14 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const slug = String(formData.get("slug") ?? "").trim();
-    const target = formData.get("target") === "avatar" ? "avatar" : "gallery";
+    // `slug` and `target` may also come in the query string: the page
+    // designer's picture field (page-builder ImageField) posts only the file.
+    // `target=page` is a picture for a designed page — returned, not added to
+    // the gallery, like an avatar. Authorisation is unchanged either way.
+    const query = request.nextUrl.searchParams;
+    const slug = String(formData.get("slug") ?? query.get("slug") ?? "").trim();
+    const requested = formData.get("target") ?? query.get("target");
+    const target = requested === "avatar" || requested === "page" ? requested : "gallery";
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (!slug) return NextResponse.json({ error: "slug is required" }, { status: 400 });

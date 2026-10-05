@@ -20,12 +20,14 @@ const props = [
     kind: "string",
     label: "Title",
     required: true,
+    inlineEditable: true,
   },
   {
     name: "subtitle",
     kind: "string",
     label: "Subtitle",
     description: "One line under the title. Set in italics.",
+    inlineEditable: true,
   },
   {
     name: "imageUrl",
@@ -51,6 +53,18 @@ const props = [
       { value: "left", label: "Left" },
     ],
   },
+  {
+    name: "height",
+    kind: "number",
+    label: "Height",
+    description:
+      "0 lets the banner size itself to the screen. More sets its least height. Also set by dragging the handle under the selected banner.",
+    default: 0,
+    min: 0,
+    max: 1200,
+    step: 10,
+    unit: "px",
+  },
 ] as const;
 
 export type HeroBannerProps = PropsOf<typeof props>;
@@ -61,9 +75,10 @@ export function HeroBanner({
   imageUrl,
   imageAlt = "",
   align = "center",
+  height = 0,
 }: HeroBannerProps) {
   return (
-    <section className="blk blk-hero">
+    <section className="blk blk-hero" style={height > 0 ? { minHeight: `${height}px` } : undefined}>
       {imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -97,6 +112,7 @@ export const heroBanner = defineBlock(
     props,
     memberSafe: true,
     styling: "tokens",
+    resize: { height: "height" },
   },
   HeroBanner,
   () => ({

@@ -1,0 +1,75 @@
+/* The offering's Talk room, opened in place of the RSVP (OfferingCall.tsx).
+   Its own file, imported by the component, so edits to landing.css cannot
+   drop it. While the call is open on the landing card, that column takes most
+   of the width: at a third of the card it is too narrow for Talk's controls.
+   The open call is as tall as the window below the sticky header
+   (--ig-call-top), so Talk's own controls are never below the fold. */
+:root { --ig-call-top: 88px; }
+/* Landing card with the call open: the image steps aside, the body keeps the
+   left, and the call fills the rest of the card edge to edge. The card is the
+   window's height; a body taller than that scrolls inside its column. */
+.ig-offer-card:has(.ig-offer-call) {
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.75fr);
+  height: calc(100dvh - var(--ig-call-top));
+  min-height: 480px;
+}
+.ig-offer-card:has(.ig-offer-call) .ig-offer-media { display: none; }
+.ig-offer-card:has(.ig-offer-call) { scroll-margin-top: var(--ig-call-top); }
+.ig-offer-card:has(.ig-offer-call) .ig-offer-body { min-height: 0; overflow-y: auto; }
+.ig-offer-call {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  align-self: stretch;
+  min-height: 0;
+  /* Clear the sticky site header when the page scrolls the call into view. */
+  scroll-margin-top: var(--ig-call-top);
+}
+.ig-offer-card .ig-offer-call { border-left: 1px solid rgba(183, 154, 85, 0.3); }
+.ig-offer-call-bar { padding: 0.45rem 0.75rem; background: #f6efe2; }
+.ig-offer-call--page {
+  margin-top: 1.5rem; border: 1px solid rgba(183, 154, 85, 0.5); border-radius: 6px; overflow: hidden;
+  height: calc(100dvh - var(--ig-call-top)); min-height: 480px;
+}
+.ig-offer-call-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: #01124e;
+}
+.ig-offer-call-tools { display: flex; gap: 0.4rem; }
+.ig-offer-call-tools button,
+.ig-offer-call-tools a {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #01124e;
+  border-radius: 3px;
+  background: transparent;
+  color: #01124e;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ig-offer-call iframe {
+  display: block;
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+  border: 0;
+  background: #fff;
+}
+@media (max-width: 1080px) {
+  /* Stacked: the body above, then a call the height of the window. */
+  .ig-offer-card:has(.ig-offer-call) { grid-template-columns: 1fr; height: auto; min-height: 0; }
+  .ig-offer-card:has(.ig-offer-call) .ig-offer-body { overflow-y: visible; }
+  .ig-offer-card .ig-offer-call {
+    border-left: 0; border-top: 1px solid rgba(183, 154, 85, 0.3);
+    height: calc(100dvh - var(--ig-call-top)); min-height: 480px;
+  }
+}

@@ -9,7 +9,9 @@
     ".": "./src/index.ts",
     "./components": "./src/components/index.ts",
     "./server": "./src/server/index.ts",
-    "./stripe": "./src/server/stripe.ts"
+    "./stripe": "./src/server/stripe.ts",
+    "./booking": "./src/server/thread-checkout.ts",
+    "./booking.css": "./src/booking.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

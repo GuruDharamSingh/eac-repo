@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
@@ -37,7 +37,6 @@ const FIXED_LINKS = [
  */
 export function SiteHeader({ signedIn, canEdit, isMember, feeds }: HeaderProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [condensed, setCondensed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const condensedRef = useRef(false);
@@ -60,6 +59,8 @@ export function SiteHeader({ signedIn, canEdit, isMember, feeds }: HeaderProps) 
   useEffect(() => setMenuOpen(false), [pathname]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // A reading circle's page is a workspace: nav only, no shelf of forms.
+  const slim = /^\/groups\/[^/]+\/?$/.test(pathname);
   const homeHref = isMember ? "/hub" : "/center";
   const homeLabel = isMember ? "Hub" : "Center";
 
@@ -71,14 +72,8 @@ export function SiteHeader({ signedIn, canEdit, isMember, feeds }: HeaderProps) 
       .map((f) => ({ href: `/${f.slug}`, label: f.name })),
   ];
 
-  const go = (e: FormEvent<HTMLFormElement>, build: (data: FormData) => string) => {
-    e.preventDefault();
-    const href = build(new FormData(e.currentTarget));
-    if (href) router.push(href);
-  };
-
   return (
-    <header className="masthead" data-condensed={condensed}>
+    <header className="masthead" data-condensed={condensed || slim} data-slim={slim}>
       <div className="column">
         <div className="masthead__top">
           <Link href="/" className="wordmark">
@@ -120,41 +115,6 @@ export function SiteHeader({ signedIn, canEdit, isMember, feeds }: HeaderProps) 
 
         {/* The small form boxes. Each one navigates to a real page rather than
             posting anywhere — a header is a signpost, not a form handler. */}
-        <div className="masthead__shelf">
-          <form className="formbox" onSubmit={(e) => go(e, (d) => {
-            const q = String(d.get("q") ?? "").trim();
-            return q ? `/archive?q=${encodeURIComponent(q)}` : "/archive";
-          })}>
-            <label className="formbox__label" htmlFor="hdr-q">Search the archive</label>
-            <div className="formbox__row">
-              <input id="hdr-q" name="q" type="search" placeholder="a passage, a night" />
-              <button type="submit">Go</button>
-            </div>
-          </form>
-
-          <form className="formbox" onSubmit={(e) => go(e, (d) => {
-            const p = String(d.get("page") ?? "").trim();
-            return /^\d+$/.test(p) ? `/books?page=${p}` : "/books";
-          })}>
-            <label className="formbox__label" htmlFor="hdr-page">Turn to a page</label>
-            <div className="formbox__row">
-              <input id="hdr-page" name="page" type="number" min={1} placeholder="e.g. 47" />
-              <button type="submit">Open</button>
-            </div>
-            <span className="formbox__note">Opens the reading page at that leaf.</span>
-          </form>
-
-          <form className="formbox" onSubmit={(e) => go(e, (d) => {
-            const t = String(d.get("title") ?? "").trim();
-            return t ? `/suggest?title=${encodeURIComponent(t)}` : "/suggest";
-          })}>
-            <label className="formbox__label" htmlFor="hdr-suggest">Suggest a book</label>
-            <div className="formbox__row">
-              <input id="hdr-suggest" name="title" type="text" placeholder="title" />
-              <button type="submit">Send</button>
-            </div>
-          </form>
-        </div>
 
         {menuOpen && (
           <nav className="masthead__drawer" aria-label="Primary, compact">

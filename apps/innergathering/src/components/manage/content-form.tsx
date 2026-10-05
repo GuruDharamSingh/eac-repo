@@ -1,5 +1,6 @@
 "use client";
 
+import { AUDIENCES, audienceToStorage } from "@elkdonis/services/thread-audience";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -69,7 +70,8 @@ export function ContentForm({
       createDocument: form.createDocument,
       createTalkRoom: form.createTalkRoom,
       status,
-      visibility: form.visibility,
+      visibility: audienceToStorage(form.audience).visibility,
+      audience: form.audience,
     };
 
     const input: ContentFormValues =
@@ -85,6 +87,7 @@ export function ContentForm({
             videoLink: form.videoLink,
             recurrencePattern: form.recurrencePattern,
             recurrenceUntil: form.recurrenceUntil,
+            showCycleBadge: form.showCycleBadge,
             isRsvpEnabled: form.isRsvpEnabled,
             rsvpDeadline: form.rsvpDeadline,
             attendeeLimit: form.attendeeLimit,
@@ -286,11 +289,24 @@ export function ContentForm({
             </div>
 
             {form.recurrencePattern !== "NONE" && (
-              <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                Recurring gatherings need confirming each cycle. RSVPs reset each time, and the
-                page shows &ldquo;not yet confirmed&rdquo; until you confirm it from the content
-                list.
-              </p>
+              <>
+                <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                  Recurring gatherings need confirming each cycle. RSVPs reset each time, and the
+                  page can show &ldquo;not yet confirmed&rdquo; until you confirm it from the
+                  content list.
+                </p>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="showCycleBadge"
+                    checked={form.showCycleBadge}
+                    onCheckedChange={(v) => set("showCycleBadge", v)}
+                  />
+                  <Label htmlFor="showCycleBadge" className="font-normal">
+                    Show confirmation badge? (&ldquo;Confirmed&rdquo; / &ldquo;Not yet
+                    confirmed&rdquo; on the gathering&rsquo;s page)
+                  </Label>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -448,25 +464,47 @@ export function ContentForm({
 
       <Card>
         <CardContent className="space-y-5 p-6">
-          <div className="space-y-1.5">
-            <Label htmlFor="visibility">Who can see it</Label>
-            <Select
-              value={form.visibility}
-              onValueChange={(v) => set("visibility", v as ContentFormDefaults["visibility"])}
-            >
-              <SelectTrigger id="visibility">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PUBLIC">Anyone</SelectItem>
-                <SelectItem value="ORGANIZATION">Members only</SelectItem>
-                <SelectItem value="INVITE_ONLY">Invite only</SelectItem>
-              </SelectContent>
-            </Select>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Who can read this</legend>
             <p className="text-xs text-muted-foreground">
-              Only public items appear on the site&rsquo;s pages.
+              Pick the widest group that should see it. Roles are those people hold in this organisation;
+              platform admins can always read everything.
             </p>
-          </div>
+            <div className="grid gap-2" role="radiogroup" aria-label="Who can read this">
+              {AUDIENCES.map((a) => {
+                const checked = form.audience === a.value;
+                return (
+                  <label
+                    key={a.value}
+                    className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors ${
+                      checked ? "border-foreground bg-accent/40" : "border-border hover:bg-accent/20"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="audience"
+                      value={a.value}
+                      checked={checked}
+                      onChange={() => {
+                        set("audience", a.value);
+                        set("visibility", audienceToStorage(a.value).visibility);
+                      }}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-medium">{a.label}</span>
+                      <span className="block text-xs text-muted-foreground">{a.hint}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {form.audience === "everyone"
+                ? "Public items appear on the site’s pages and can be found by search engines."
+                : "Only public items appear on the site’s pages. Everything else is reached while signed in."}
+            </p>
+          </fieldset>
         </CardContent>
       </Card>
 

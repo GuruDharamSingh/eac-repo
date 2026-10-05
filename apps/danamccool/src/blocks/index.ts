@@ -32,6 +32,11 @@
 //   dm-writing-shelf her blog's latest pieces (data-driven)
 //   dm-gallery-grid  a gallery as IFAC shows an artist: square tiles, hover
 //                    titles, slideshow; drag/resize in place when signed in
+//   dm-collection-nav picture tiles leading to her collection pages; tiles
+//                    stored in the block, arranged in the "Arrange tiles" window
+//
+// Every block, shared or hers, also carries a "Text style" (font, capitals,
+// spacing, colour) at the foot of its fields — lib/puck/text-style.tsx.
 //
 // HOW A BLOCK HERE IS BUILT — so every one can be edited in Puck by someone
 // who is not a developer, and none of them needs a developer to add content:
@@ -71,9 +76,10 @@ import { artworkWall } from "./artwork-wall";
 import { circleText } from "./circle-text";
 import { writingShelf } from "./writing-shelf";
 import { galleryGrid } from "./gallery-grid";
+import { collectionNav } from "./collection-nav";
 
 export { invitation, pressQuotes, opening, careerTimeline, banner, featureGrid };
-export { starDiamond, imageSet, plate, artworkWall, circleText, writingShelf, galleryGrid };
+export { starDiamond, imageSet, plate, artworkWall, circleText, writingShelf, galleryGrid, collectionNav };
 
 export const SITE_BLOCKS = [
   starDiamond,
@@ -83,6 +89,7 @@ export const SITE_BLOCKS = [
   artworkWall,
   writingShelf,
   galleryGrid,
+  collectionNav,
   banner,
   opening,
   featureGrid,

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@elkdonis/cms-ui/editor.css";
+/* The reading layer for an article (/read/<slug>): ArticleView, with the
+   content / wide / full width grid. Plain CSS reading --read-* tokens, which
+   are mapped to this site's own below. */
+@import "@elkdonis/cms-ui/article.css";
 @import "@elkdonis/commerce/commerce.css";
 /* The page blocks a store panel is built from (/panel/[orgSlug]). Without it
    the panel editor drew every block unstyled — headings, picture walls and
@@ -33,6 +37,42 @@
   --ed-line: hsl(var(--border));
   --ed-bg-soft: hsl(var(--muted));
   --ed-accent: hsl(var(--primary));
+}
+
+/* ---------------------------------------------------------------------------
+   The page blocks' look, from this site's own tokens. blocks.css reads
+   --eac-block-*; unset, every block on a designed page (/featured, /auction,
+   /read/<slug>) fell back to white paper and a violet accent. The generic
+   Style's colour tokens (--blk-bg, --blk-bg-soft, --blk-accent...) resolve
+   through these, so a styled block follows light and dark with the rest.
+   ------------------------------------------------------------------------ */
+:root {
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-bg-soft: hsl(var(--wall));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  --eac-block-accent-ink: hsl(var(--primary));
+  --eac-block-band: hsl(var(--foreground));
+  --eac-block-band-fg: hsl(var(--background));
+  --eac-block-danger: hsl(var(--destructive));
+  --eac-block-ok: hsl(var(--live));
+  --eac-block-font-title: var(--font-fraunces), Georgia, serif;
+  --eac-block-radius: var(--radius);
+
+  /* The article's reading tokens (cms-ui article.css), in this site's ink,
+     rule and accent. Unset, they fall back to light-mode literals. */
+  --read-ink: hsl(var(--foreground));
+  --read-muted: hsl(var(--muted-foreground));
+  --read-faint: hsl(var(--ink-faint));
+  --read-rule: hsl(var(--border));
+  --read-accent: hsl(var(--primary));
+  /* The faces are set per reading voice from these (article.css lines 45-95). */
+  --eac-font-prose: Georgia, "Times New Roman", serif;
+  --eac-font-record: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --eac-font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {

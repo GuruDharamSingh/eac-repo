@@ -18,6 +18,8 @@ export { HubCalendar } from "./HubCalendar";
 export { HubPortrait } from "./HubPortrait";
 export { ActivityFeed, type ActivityItem } from "./ActivityFeed";
 export { InlineCompose } from "./InlineCompose";
+export { PublishDoors, type PublishDoorsProps } from "./PublishDoors";
+export { PageSectionSwitches } from "./PageSectionSwitches";
 export { FileBrowser, type FileBrowserSource } from "./FileBrowser";
 export { WhiteboardPanel, HubDoors } from "./HubTools";
 export { GalleryHero, type GalleryHeroImage } from "./GalleryHero";

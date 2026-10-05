@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import { defineBlock, type PropsOf } from "../registry";
+import { sized, srcSet } from "../media";
+import { editItem } from "../edit-item";
 
 // ============================================================================
 // A wall of pictures.
@@ -72,6 +74,18 @@ export const WALL_PROPS = [
     options: POSITIONS,
   },
   {
+    name: "captionShow",
+    kind: "select",
+    label: "Show captions",
+    description:
+      "Only when captions sit on the pictures. On a touch screen, which has no hover, they always show.",
+    default: "always",
+    options: [
+      { value: "always", label: "Always" },
+      { value: "hover", label: "When pointed at" },
+    ],
+  },
+  {
     name: "captionWeight",
     kind: "select",
     label: "Caption weight",
@@ -90,6 +104,7 @@ export const WALL_PROPS = [
       { value: "caption", label: "The site's caption font" },
       { value: "title", label: "Heading font" },
       { value: "body", label: "Body font" },
+      { value: "menu", label: "Menu lettering" },
     ],
   },
   {
@@ -213,6 +228,7 @@ export function PictureWall({
   gap = "regular",
   captionPlace = "below",
   captionAt = "bottom-left",
+  captionShow = "always",
   captionWeight = "regular",
   captionFont = "caption",
   captionSize = "theme",
@@ -231,6 +247,7 @@ export function PictureWall({
       data-shape={shape}
       data-gap={gap}
       data-caption={captionPlace}
+      data-caption-show={captionShow}
       data-caption-weight={captionWeight}
       data-caption-font={captionFont}
       data-caption-size={captionSize}
@@ -242,11 +259,19 @@ export function PictureWall({
         const alt = String(picture.alt ?? "");
         const caption = String(picture.caption ?? "").trim();
         const href = String(picture.href ?? "").trim();
+        // Its row in `pictures`, before empty rows were dropped: the editor
+        // opens that row when the picture is clicked.
+        const row = editItem("pictures", (pictures ?? []).indexOf(picture));
         const image = (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className="blk-wall-img"
-            src={src}
+            // A tile is a few hundred pixels wide; the master can be many MB.
+            // Our own media paths get the route's downscaled widths, anything
+            // else (a /public file, an off-site link) passes through as is.
+            src={sized(src, 1024)}
+            srcSet={srcSet(src)}
+            sizes={`(max-width: 640px) 100vw, ${Math.round(min * 1.8)}px`}
             alt={alt}
             loading="lazy"
             {...(alt ? {} : { "aria-hidden": true })}
@@ -273,7 +298,7 @@ export function PictureWall({
           // clickable as the picture. A figcaption inside an <a> is valid:
           // <a> takes flow content wherever its parent does.
           return (
-            <li className="blk-wall-cell" key={i}>
+            <li className="blk-wall-cell" key={i} {...row}>
               {href ? (
                 <a className="blk-wall-link" href={href}>
                   <figure className="blk-wall-figure blk-wall-figure--on">{inner}</figure>
@@ -286,7 +311,7 @@ export function PictureWall({
         }
 
         return (
-          <li className="blk-wall-cell" key={i}>
+          <li className="blk-wall-cell" key={i} {...row}>
             <figure className="blk-wall-figure">
               {href ? (
                 <a className="blk-wall-link" href={href}>
@@ -340,6 +365,7 @@ export const pictureWall = defineBlock(
     gap: "regular" as const,
     captionPlace: "below" as const,
     captionAt: "bottom-left" as const,
+    captionShow: "always" as const,
     captionWeight: "regular" as const,
     captionFont: "caption" as const,
     captionSize: "theme" as const,

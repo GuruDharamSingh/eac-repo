@@ -6,14 +6,18 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.net.Uri
+import android.provider.Settings
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Notification plumbing. Two channels: a quiet always-on status line, and loud drop/back alerts. */
+/** Notification plumbing. Three channels: a quiet status line, a drop alert, and a recovery beep. */
 object Notes {
     const val CH_STATUS = "status"
-    const val CH_ALERTS = "alerts"
+    const val CH_DROP = "alert_drop"
+    const val CH_BACK = "alert_back"
     const val ID_FOREGROUND = 1
     const val ID_DROP = 2
     const val ID_BACK = 3
@@ -38,14 +42,29 @@ object Notes {
                 setShowBadge(false)
             }
         )
+        nm.deleteNotificationChannel("alerts")
         nm.createNotificationChannel(
-            NotificationChannel(CH_ALERTS, "Service dropped / came back", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "One alert when service drops, one when it comes back"
+            NotificationChannel(CH_DROP, "Service dropped", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Alert when service is lost or the radio is off"
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setSound(Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio())
+            }
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CH_BACK, "Service came back", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "A beep when service returns"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 200)
+                setSound(Uri.parse("android.resource://${ctx.packageName}/${R.raw.beep_back}"), alertAudio())
             }
         )
     }
+
+    private fun alertAudio(): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
 
     private fun openApp(ctx: Context): PendingIntent = PendingIntent.getActivity(
         ctx, 0, Intent(ctx, MainActivity::class.java),
@@ -68,13 +87,13 @@ object Notes {
             .build()
     }
 
-    /** Stays in the shade until service comes back. Posted once per drop, never re-alerts. */
-    fun drop(ctx: Context, since: Long): Notification =
-        Notification.Builder(ctx, CH_ALERTS)
+    /** Stays in the shade until the signal is back above the alert level. Posted once per drop, never re-alerts. */
+    fun drop(ctx: Context, since: Long, title: String): Notification =
+        Notification.Builder(ctx, CH_DROP)
             .setSmallIcon(R.drawable.ic_stat_none)
             .setColor(0xFFE5484D.toInt())
-            .setContentTitle("No service")
-            .setContentText("Dropped at ${time(since)}")
+            .setContentTitle(title)
+            .setContentText("Since ${time(since)}")
             .setWhen(since)
             .setShowWhen(true)
             .setUsesChronometer(true)
@@ -85,7 +104,7 @@ object Notes {
             .build()
 
     fun back(ctx: Context, outFor: Long, status: Status): Notification =
-        Notification.Builder(ctx, CH_ALERTS)
+        Notification.Builder(ctx, CH_BACK)
             .setSmallIcon(R.drawable.ic_stat)
             .setColor(0xFF2FBF71.toInt())
             .setContentTitle("Service is back")

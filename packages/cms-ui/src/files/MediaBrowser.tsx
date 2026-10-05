@@ -68,6 +68,12 @@ export interface MediaBrowserProps {
   value?: string;
   /** Single mode: a picture was clicked. */
   onPick?: (item: { url: string; name: string }) => void;
+  /**
+   * What the files are. "video" draws each as a paused video frame instead
+   * of an image. Unset keeps the picture grid. The endpoint does the
+   * filtering (e.g. /api/my-files?kind=video).
+   */
+  kind?: "image" | "video";
   /** Multi mode: the chosen URLs, and a toggle. */
   picked?: string[];
   onToggle?: (item: { url: string; name: string }) => void;
@@ -81,7 +87,10 @@ function withQuery(endpoint: string, params: Record<string, string>) {
   return s ? `${endpoint}${endpoint.includes("?") ? "&" : "?"}${s}` : endpoint;
 }
 
-export function MediaBrowser({ endpoint, value, onPick, picked, onToggle, emptyText = "Nothing stored here yet." }: MediaBrowserProps) {
+const VIDEO_EXT = /\.(mp4|m4v|mov|webm|mkv)(\?|$)/i;
+
+export function MediaBrowser({ endpoint, value, onPick, picked, onToggle, kind, emptyText = "Nothing stored here yet." }: MediaBrowserProps) {
+  const noun = kind === "video" ? "video" : "picture";
   const [path, setPath] = useState("");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
@@ -201,8 +210,9 @@ export function MediaBrowser({ endpoint, value, onPick, picked, onToggle, emptyT
           {pictures.length ? (
             <>
               <p className="eac-picker-hint">
-                {pictures.length} picture{pictures.length === 1 ? "" : "s"} — click to {onToggle ? "choose" : "use"}, or drag onto a
-                picture well
+                {pictures.length} {noun}
+                {pictures.length === 1 ? "" : "s"} — click to {onToggle ? "choose" : "use"}
+                {kind === "video" ? "" : ", or drag onto a picture well"}
               </p>
               <ul className="eac-picker-grid">
                 {pictures.map((p) => {
@@ -218,8 +228,14 @@ export function MediaBrowser({ endpoint, value, onPick, picked, onToggle, emptyT
                         aria-pressed={onToggle ? on : undefined}
                         title={search ? p.path : p.name}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.thumb ?? p.url} alt="" loading="lazy" draggable={false} />
+                        {kind === "video" || VIDEO_EXT.test(p.url ?? "") ? (
+                          // #t=0.5: the browser shows that frame as the poster.
+                          <video src={`${p.url}#t=0.5`} preload="metadata" muted playsInline />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.thumb ?? p.url} alt="" loading="lazy" draggable={false} />
+                        )}
+                        {kind === "video" ? <span className="eac-browse-name">{p.name}</span> : null}
                         {onToggle && on ? <span className="eac-browse-check" aria-hidden="true">✓</span> : null}
                       </button>
                     </li>

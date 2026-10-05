@@ -1,3 +1,4 @@
+import { storageToAudience } from "@elkdonis/services/thread-audience";
 import { notFound } from "next/navigation";
 import { listOrgFeeds } from "@elkdonis/services";
 import { ContentForm } from "@/components/manage/content-form";
@@ -70,6 +71,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
       thread.visibility === "ORGANIZATION" || thread.visibility === "INVITE_ONLY"
         ? thread.visibility
         : "PUBLIC",
+    audience: storageToAudience(thread.visibility, thread.minRole),
     scheduledAt: toLocalInput(thread.scheduledAt, true),
     durationMinutes: thread.durationMinutes?.toString() ?? "",
     location: thread.location ?? "",
@@ -84,6 +86,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
       ? (thread.recurrencePattern as ContentFormDefaults["recurrencePattern"])
       : "NONE",
     recurrenceUntil: toLocalInput(thread.recurrenceUntil, false),
+    showCycleBadge: thread.showCycleBadge,
     isRsvpEnabled: thread.isRsvpEnabled,
     rsvpDeadline: toLocalInput(thread.rsvpDeadline, true),
     attendeeLimit: thread.attendeeLimit?.toString() ?? "",

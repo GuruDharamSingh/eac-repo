@@ -20,6 +20,8 @@ export interface NetworkApp {
   url: string;
   /** Where in that app the member most likely came from. */
   homePath: string;
+  /** False when that app has no /api/auth/handoff/accept route to land on. */
+  acceptsHandoff?: boolean;
 }
 
 const APPS: NetworkApp[] = [
@@ -34,6 +36,7 @@ const APPS: NetworkApp[] = [
     name: "ArtDirect",
     url: siteConfig.network.artdirectUrl,
     homePath: "/",
+    acceptsHandoff: false,
   },
   {
     id: "arts_collective",
@@ -66,6 +69,16 @@ export function resolveNetworkApp(from: string | null | undefined): NetworkApp |
 /** Absolute URL back to where the member came from. */
 export function returnUrl(app: NetworkApp): string {
   return `${app.url.replace(/\/+$/, "")}${app.homePath}`;
+}
+
+/**
+ * The way back, carrying the member's sign-in: through this app's own
+ * /api/auth/handoff, which passes a signed-out visitor straight through.
+ */
+export function returnHref(app: NetworkApp): string {
+  if (app.acceptsHandoff === false) return returnUrl(app);
+  const q = new URLSearchParams({ to: app.url.replace(/\/+$/, ""), next: app.homePath });
+  return `/api/auth/handoff?${q.toString()}`;
 }
 
 /** Cookie that remembers the referring app across the errand. */

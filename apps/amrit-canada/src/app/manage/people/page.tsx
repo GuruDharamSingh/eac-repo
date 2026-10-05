@@ -1,5 +1,6 @@
 import { db } from "@elkdonis/db";
-import { listOrgMembers } from "@elkdonis/services";
+import { listOrgArrivals, listOrgMembers } from "@elkdonis/services";
+import { ArrivalsTable } from "@elkdonis/cms-ui/network";
 import { MemberRow } from "@/components/manage/member-row";
 import { getViewer } from "@/lib/auth";
 import { formatShortDate } from "@/lib/format";
@@ -36,7 +37,7 @@ interface ContactRow {
 export default async function ManagePeoplePage() {
   const viewer = await getViewer();
 
-  const [members, profiles, contacts] = await Promise.all([
+  const [members, profiles, contacts, arrivals] = await Promise.all([
     listOrgMembers(siteConfig.orgId).catch(() => []),
     db<ProfileRow[]>`
       SELECT user_id, slug, display_name, role_title, bio, photo_url, city,
@@ -48,6 +49,7 @@ export default async function ManagePeoplePage() {
       WHERE org_id = ${siteConfig.orgId}
       ORDER BY created_at DESC LIMIT 200
     `.catch(() => [] as ContactRow[]),
+    listOrgArrivals(siteConfig.orgId).catch(() => []),
   ]);
 
   const profileByUser = new Map(profiles.map((p) => [p.user_id, p]));
@@ -138,6 +140,8 @@ export default async function ManagePeoplePage() {
           </table>
         </div>
       )}
+
+      <ArrivalsTable arrivals={arrivals} />
     </>
   );
 }

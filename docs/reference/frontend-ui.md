@@ -227,6 +227,18 @@ used as a `color:` value); the gradient is a separate `background-image`. A
 host token set on `.gf-page` needs a `:has([data-forum-mode="dark"])`
 counterpart. `forum-modern.css` is an empty stub kept so existing imports build.
 
+Match light (2026-09-26): `ForumConnectors.matchLight` puts a match and
+tealight above the Boards list in the left rail (`forum-ui/src/match-light.tsx`,
+styles `gf-match-*` at the end of `forum.css`). Rubbing the match past a speed
+threshold lights it and sets light mode; tapping the candle snuffs it and sets
+dark mode. It writes `forum_mode` client-side, flips `.gf-root[data-forum-mode]`,
+then calls `router.refresh()` so the masthead and the reader controls follow.
+It is forum-ui's only client component; without script it renders nothing and
+the reader-controls button still works. Enabled on `apps/forum` only. Verified
+on forum.arts-collective.com at desktop and phone (touch) size in headless
+Chromium, 2026-09-26. Adapted from arts-collective's landing match
+(`components/active-art-match.tsx`, unchanged).
+
 ### Component duplication
 
 Census: `docs/open/COMPONENT_CENSUS_2026-09-15.md` (454 app component files; 56
@@ -350,7 +362,7 @@ a tile or changing a face's width. Notes from the attempts are in
 ## Open items
 
 - `primitives.css:51` says ifac, artdirect and danamccool have no Tailwind;
-  `surface.css:12` and `blocks.css:6` say utility classes render unstyled in
+  `surface.css:13` and `blocks.css:6` say utility classes render unstyled in
   ifac/artdirect. All three compile Tailwind utilities (2026-09-23). Comments
   are stale; code change not made (out of scope).
 - Possible unstyled components (unverified by render): `PaymentInstructionsCard`

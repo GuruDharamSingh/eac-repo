@@ -1,3 +1,4 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import "./globals.css";
 // App-scoped, not route-scoped, and that distinction is load-bearing. The
 // editor renders blocks inside an iframe whose styles are mirrored from
@@ -12,6 +13,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
 import { siteConfig } from "@/config/site";
+import { ArrivalNotice } from "@elkdonis/cms-ui/network";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
 
@@ -70,7 +72,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <SiteFooter />
           <Toaster position="top-right" />
+          <ArrivalNotice endpoint="/api/network/arrival" />
         </HubSurfaces>
+        <AnalyticsBeacon />
       </body>
     </html>
   );

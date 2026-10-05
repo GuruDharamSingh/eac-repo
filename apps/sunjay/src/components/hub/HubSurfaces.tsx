@@ -12,6 +12,12 @@ import { createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
+import {
+  disconnectPayoutsAction,
+  loadProfilePageAction,
+  setProfileSectionAction,
+  startPayoutsAction,
+} from "@/lib/payout-actions";
 import { defineTermAction, lookupTermAction } from "@/lib/dictionary-actions";
 import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
@@ -83,6 +89,14 @@ export function HubSurfaces({
         board: true,
         forum: true,
         profile: true,
+        // "Payouts" inside the profile popup: country first, then Stripe. A
+        // person's own (lib/payout-actions.ts); the site holds no account.
+        profilePage: {
+          load: loadProfilePageAction,
+          setSection: setProfileSectionAction,
+          startPayouts: startPayoutsAction,
+          disconnectPayouts: disconnectPayoutsAction,
+        },
         centerLayout: true,
         // Living documents in the org's own Nextcloud folder, and the ideas
         // feed on this site's forum. Both were tiles marked "unavailable"

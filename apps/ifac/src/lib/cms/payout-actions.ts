@@ -32,6 +32,14 @@ const SECTION_LABELS: Record<(typeof KNOWN_SECTIONS)[number], { label: string; b
   blog: { label: "Writing", blurb: "A shelf of what you've written here." },
 };
 
+/**
+ * What the profile popup's "Where you show" tab lists: Writing and Store.
+ * "Blog feed" (elkdonisFeed) was taken out of the popup on 2026-09-24 at the
+ * developer's request. It stays in KNOWN_SECTIONS, so a member who already
+ * switched it on keeps it and the card hub's switch still saves it.
+ */
+const POPUP_SECTIONS = ["blog", "store"] as const;
+
 export async function loadProfilePageAction() {
   // Any signed-in person, not only an IFAC member: whether you can be paid is
   // a personal, network-wide fact (one Stripe account, one ledger, everywhere),
@@ -49,7 +57,7 @@ export async function loadProfilePageAction() {
   const { PAYOUT_ONBOARDING_COPY } = await import("@elkdonis/checkout/stripe");
 
   return {
-    sections: KNOWN_SECTIONS.map((key) => ({
+    sections: POPUP_SECTIONS.map((key) => ({
       key,
       label: SECTION_LABELS[key].label,
       blurb: SECTION_LABELS[key].blurb,

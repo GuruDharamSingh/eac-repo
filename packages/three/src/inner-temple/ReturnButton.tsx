@@ -1,7 +1,11 @@
 import React from 'react';
-import { Html } from '@react-three/drei';
 import { useSceneStore, type Direction } from '../store/sceneStore';
 
+/**
+ * Plain DOM beside the canvas. As drei <Html> anchored at the room origin it
+ * was hidden in every door scene: the origin is behind the camera there, and
+ * <Html> sets display:none on anything behind the camera.
+ */
 export function ReturnButton() {
   const phase = useSceneStore((s) => s.phase);
   const returnToRoom = useSceneStore((s) => s.returnToRoom);
@@ -18,38 +22,36 @@ export function ReturnButton() {
   };
 
   return (
-    <Html fullscreen>
-      <div style={{
-        position: 'absolute',
-        bottom: '2rem',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '0.5rem',
-        pointerEvents: 'all',
-      }}>
-        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.1em' }}>
-          {labels[dir]}
-        </span>
-        <button
-          onClick={returnToRoom}
-          style={{
-            background: 'rgba(0,0,0,0.6)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            color: '#fff',
-            padding: '0.5rem 1.25rem',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            letterSpacing: '0.05em',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          ← Return to Temple
-        </button>
-      </div>
-    </Html>
+    <div style={{
+      position: 'absolute',
+      bottom: 'max(2rem, calc(env(safe-area-inset-bottom) + 1rem))',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.5rem',
+      pointerEvents: 'all',
+    }}>
+      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.1em' }}>
+        {labels[dir]}
+      </span>
+      <button
+        onClick={returnToRoom}
+        style={{
+          background: 'rgba(0,0,0,0.6)',
+          border: '1px solid rgba(255,255,255,0.25)',
+          color: '#fff',
+          padding: '0.5rem 1.25rem',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '0.85rem',
+          letterSpacing: '0.05em',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        ← Return to Temple
+      </button>
+    </div>
   );
 }

@@ -7,7 +7,10 @@ import {
   type OrgProfile,
   OFF_FEED_KINDS,
 } from "@elkdonis/services";
+import { isAdmin } from "@elkdonis/auth-server";
+import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
 import { siteConfig } from "@/config/site";
+import { getViewer } from "@/lib/auth";
 import type {
   Attendee,
   Guide,
@@ -37,10 +40,11 @@ const ORG = siteConfig.orgId;
 // this site doesn't use), so the hero image rides in metadata rather than
 // costing a migration for one nullable text field.
 const THREAD_COLUMNS = db`
-  t.id, t.title, t.slug, t.kind, t.section, t.status, t.visibility,
+  t.id, t.title, t.slug, t.kind, t.section, t.status, t.visibility, t.min_role,
   t.body AS description, t.excerpt,
   t.metadata->>'coverImageUrl' AS cover_image_url,
   t.metadata->>'timeZone' AS time_zone,
+  t.metadata->>'showCycleBadge' AS show_cycle_badge,
   t.location, t.is_online, t.meeting_url, t.video_link,
   t.document_url, t.nextcloud_talk_token,
   t.scheduled_at, t.duration_minutes,
@@ -71,10 +75,12 @@ interface ThreadRow {
   section: string | null;
   status: string;
   visibility: string;
+  min_role: string | null;
   description: string | null;
   excerpt: string | null;
   cover_image_url: string | null;
   time_zone: string | null;
+  show_cycle_badge: string | null;
   location: string | null;
   is_online: boolean | null;
   meeting_url: string | null;
@@ -107,10 +113,13 @@ function mapThread(row: ThreadRow): Thread {
     feedSlug: row.section,
     status: row.status,
     visibility: row.visibility,
+    minRole: row.min_role,
     description: row.description,
     excerpt: row.excerpt,
     coverImageUrl: row.cover_image_url,
     timeZone: row.time_zone,
+    // Stored only when switched off, so every existing meeting keeps its badge.
+    showCycleBadge: row.show_cycle_badge !== "false",
     location: row.location,
     isOnline: row.is_online ?? false,
     meetingUrl: row.meeting_url,
@@ -157,7 +166,9 @@ export async function getThreadsForFeed(feedSlug: string, limit = 30): Promise<T
   try {
     const rows = await db<ThreadRow[]>`
       SELECT ${THREAD_COLUMNS} ${THREAD_JOINS}
-      WHERE ${PUBLIC_FILTER} AND t.section = ${feedSlug}
+      -- A one-off gathering leaves the list six hours after it starts;
+      -- undated posts and recurring series always stay.
+      WHERE ${PUBLIC_FILTER} AND t.section = ${feedSlug} AND ${UPCOMING_FILTER}
       ORDER BY
         t.scheduled_at ASC NULLS LAST,
         COALESCE(t.published_at, t.created_at) DESC
@@ -213,6 +224,21 @@ async function withTerms(thread: Thread | null): Promise<Thread | null> {
   }
 }
 
+/**
+ * Whether the current visitor may read a thread, by its audience (visibility +
+ * min_role, migration 188). Applied where a single thread is looked up by slug
+ * or id: until 2026-10-03 these returned any published thread to anyone, so a
+ * members-only post opened by direct URL.
+ */
+async function mayRead(thread: Thread): Promise<boolean> {
+  const viewer = await getViewer().catch(() => null);
+  const isGlobalAdmin = viewer ? await isAdmin(viewer.userId).catch(() => false) : false;
+  return canViewThread(
+    { visibility: thread.visibility, minRole: thread.minRole, authorId: thread.authorId, status: thread.status },
+    { userId: viewer?.userId ?? null, role: (viewer?.role as ThreadRole | null) ?? null, isGlobalAdmin }
+  );
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -223,7 +249,10 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
         AND t.status = 'published'
       LIMIT 1
     `;
-    return row ? await withTerms(mapThread(row)) : null;
+    if (!row) return null;
+    const thread = mapThread(row);
+    if (!(await mayRead(thread))) return null;
+    return await withTerms(thread);
   } catch (err) {
     console.error(`[innergathering] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -238,7 +267,10 @@ export async function getThreadById(id: string): Promise<Thread | null> {
       WHERE t.org_id = ${ORG} AND t.id = ${id}
       LIMIT 1
     `;
-    return row ? await withTerms(mapThread(row)) : null;
+    if (!row) return null;
+    const thread = mapThread(row);
+    if (!(await mayRead(thread))) return null;
+    return await withTerms(thread);
   } catch (err) {
     console.error(`[innergathering] getThreadById(${id}):`, err);
     return null;
@@ -264,7 +296,11 @@ export async function getAllThreadsForOrg(limit = 100): Promise<Thread[]> {
       ORDER BY COALESCE(t.scheduled_at, t.published_at, t.created_at) DESC
       LIMIT ${limit}
     `;
-    return rows.map(mapThread);
+    // The dashboard lists everything the viewer may open: an owners-only post
+    // is not shown to a guide.
+    const all = rows.map(mapThread);
+    const keep = await Promise.all(all.map((t) => mayRead(t)));
+    return all.filter((_, i) => keep[i]);
   } catch (err) {
     console.error("[innergathering] getAllThreadsForOrg:", err);
     return [];
@@ -495,6 +531,16 @@ function mapGuide(op: OrgProfile): Guide {
  */
 export async function getGuides(): Promise<Guide[]> {
   const rows = await listOrgProfiles(ORG, { onlyPublic: true });
+  return rows.map(mapGuide);
+}
+
+/**
+ * The landing page's Board: only public profiles tagged "board" (set by
+ * hand on org_profiles.tags). Joining the group makes a profile, but never
+ * puts anyone on the board. (Owner's call, 2026-09-26.)
+ */
+export async function getBoard(): Promise<Guide[]> {
+  const rows = await listOrgProfiles(ORG, { onlyPublic: true, tags: ["board"] });
   return rows.map(mapGuide);
 }
 

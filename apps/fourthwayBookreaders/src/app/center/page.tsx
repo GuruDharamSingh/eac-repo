@@ -84,6 +84,10 @@ export default async function CenterRoute() {
     homePreviewUrl: withBase("/"),
     orgProfileHref: withBase("/about"),
     composeHref: null,
+    // Shown until the person is an artist of the collective (oad member).
+    gainSpaceHref: data.orgs.some((o) => o.orgId === "oad" && o.role !== "viewer")
+      ? null
+      : xs(`${NETWORK_PROTO}://${NETWORK_HOST}/wizard`),
   };
 
   return (

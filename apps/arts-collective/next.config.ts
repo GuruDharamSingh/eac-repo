@@ -13,10 +13,15 @@ const nextConfig: NextConfig = {
     "@elkdonis/live-editor",
     "@elkdonis/cms-bindings",
     "@elkdonis/cms-ui",
+    // Studio Video page (/studio/video): templates, editor, Remotion player.
+    "@elkdonis/reels",
+    // BookingScheduler for /hub/bookings and /bookings/<token> (migration 174).
+    "@elkdonis/checkout",
     "@elkdonis/utils",
     "@elkdonis/astro",
     "@elkdonis/sky-ui",
     "@elkdonis/tokens",
+    "@elkdonis/studio",
   ],
   // Packages the server must REQUIRE at runtime rather than have bundled.
   //

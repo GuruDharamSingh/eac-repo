@@ -92,3 +92,6 @@ danascreenshots/
 
 # TypeScript incremental state
 *.tsbuildinfo
+
+# GeoLite2 database for packages/analytics (licensed; not redistributable)
+var/

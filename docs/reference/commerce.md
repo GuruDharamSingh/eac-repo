@@ -19,7 +19,7 @@ API call made).
 | `@elkdonis/commerce/server` | writes: stores (`applyForStore`, `openOrgStore`, `setPayoutIdentity`), artwork, orders, auctions, `createThreadOrder` |
 | `@elkdonis/commerce/settlement` | `resolveSettlement` (`packages/commerce/src/server/settlement.ts:77`) |
 | `@elkdonis/commerce/ledger` | `payout_ledger` reads/writes (`packages/commerce/src/server/ledger.ts`) |
-| `@elkdonis/commerce/links` | `marketplaceLinks`, `storeEntry` (`packages/commerce/src/links.ts:70`, `:139`) |
+| `@elkdonis/commerce/links` | `marketplaceLinks`, `storeEntry` (`packages/commerce/src/links.ts:77`, `:151`; lines as of the uncommitted tree, 2026-09-25) |
 | `@elkdonis/commerce/payout-rails` | which payout rail a person can use, by country (`packages/commerce/src/payout-rails.ts`) |
 | `@elkdonis/commerce/components` + `/commerce.css` | `ProductCard`, `ProductGrid`, `StoreShowcase`, `PayoutSetup`, `EarningsStatement`, older Tailwind components |
 | `@elkdonis/payments` (`/stripe`, `/etransfer`) | provider registry; `packages/payments/src/providers/stripe.ts` is the only file that talks to Stripe (`stripe@^22.6.1`) |
@@ -193,10 +193,55 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
 - Return hop: `apps/innergathering/src/app/api/checkout/return/route.ts` calls
   `syncStripeOrder` then redirects to a same-site path only (open-redirect
   guard).
-- Service bookings on hidden-enneagram still call the deprecated
-  `createServiceOrder` (eTransfer). `apps/inner-gathering` (hyphenated, being
+- ~~Service bookings on hidden-enneagram still call the deprecated
+  `createServiceOrder` (eTransfer).~~ Corrected 2026-09-27: see "Service
+  bookings" below. `apps/inner-gathering` (hyphenated, being
   retired) still has its own workshop join route.
 - Verification script: `packages/commerce/scripts/probe-paid-workshop.mts`.
+
+### Service bookings (2026-09-27)
+
+- A service is `threads.kind = 'service'` plus its `workshop_pages` row,
+  written only by `upsertServiceOffering`
+  (`packages/services/src/service-offerings.ts`) on every site, including a
+  person's own services on ArtDirect (homed in `oad`, `authorOnly` updates,
+  via `saveOffering` in `artist-offerings.ts`). Compose answers are read by
+  `serviceInputFromAnswers` and written back by `serviceAnswersFromOffering`.
+- Authoring: `buildContentFields('service')` in `@elkdonis/cms-ui/compose`
+  (booking, pricing with sliding scale and registration status); catalogue
+  entry `service`, gated by `ComposeContext.hasServices`. Hosts: ArtDirect
+  `ManageSpace`, hidden-enneagram hub popup and `/manage/content`, elastrocal
+  `/hub/services`.
+- Booking is by card only: `startThreadCheckout` in
+  `@elkdonis/checkout/booking` (`packages/checkout/src/server/thread-checkout.ts`)
+  creates the `createThreadOrder` card order and the Checkout session; each app
+  mounts `checkoutReturn` at `/api/checkout/return`. The form is
+  `ServiceBookingForm` (`@elkdonis/checkout/components`, plain CSS
+  `@elkdonis/checkout/booking.css`). `bookingAvailability` hides the form when
+  Stripe is not configured or the author has no payout email and no Stripe
+  account (resolveSettlement would refuse). Routes: ArtDirect
+  `/<slug>/services/<service>`, hidden-enneagram `/services/<slug>/book`,
+  elastrocal `/services/<slug>`.
+- Paid service orders grant nothing in `confirmOrderPaid` (no RSVP for
+  services). ~~The author arranges the time by email.~~ 2026-09-27: one-to-one
+  services are scheduled, see below; group and self-paced ones are not.
+- Scheduling (migration 174, `service_bookings`; written 2026-09-27, **not yet
+  applied**): the booking form asks for up to three start times
+  (`ProposeTimes`, ISO instants plus the buyer's zone);
+  `startServiceCheckout` validates them (`parseProposedTimes`: 1–3, at least
+  an hour ahead, within a year), creates the card order, then the
+  `service_bookings` row (`awaiting_payment`). `confirmOrderPaid` calls
+  `markServiceBookingPaid` after commit (idempotent) → `awaiting_seller`, emails
+  both. The seller answers at arts-collective `/hub/bookings`, the buyer at
+  `/bookings/<token>` (no account; `bookings` is in the middleware's
+  PASSTHROUGH_PATHS). Each side confirms one of the OTHER side's open times or
+  proposes new ones; a confirmed booking reopens the same way. Seller-only
+  cancel; no automatic refund. Calendar files: `/bookings/<token>/calendar.ics`,
+  `/hub/bookings/<id>/calendar.ics`. Code:
+  `packages/commerce/src/server/service-bookings.ts`, UI
+  `BookingScheduler` in `@elkdonis/checkout/components`.
+- Person pages have a `services` section (`PERSON_SECTIONS`, default on);
+  services are no longer listed under `posts`.
 
 ### Stripe
 
@@ -222,7 +267,11 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
   Orders: 1 paid eTransfer (2026-07-28), 1 paid Stripe and 2 cancelled Stripe
   (2026-09-21).
 
-Env reach (`docker-compose.yml`): `STRIPE_SECRET_KEY` goes to innergathering
+Env reach (`docker-compose.yml`; 2026-09-27: also artdirect, elastrocal and
+hidden-enneagram, for service bookings; 2026-10-03: sunjay, edited, container
+not yet recreated — it serves per-person onboarding on `/manage` and in the
+profile popup, `apps/sunjay/src/lib/payout-actions.ts`, returning through
+`/api/payouts/return`): `STRIPE_SECRET_KEY` goes to innergathering
 (`:982`), ifac (`:1222`, plus publishable) and art-auction (`:1330-1335`, all
 four). A new app offering card payments or payouts needs its own lines, and the
 container must be recreated, not restarted, to see new env.
@@ -263,7 +312,7 @@ container must be recreated, not restarted, to see new env.
 apps start with `-H 0.0.0.0`. Use
 `apps/innergathering/src/lib/public-origin.ts` (`x-forwarded-host` → `host` →
 `NEXT_PUBLIC_APP_URL`) for any URL handed to Stripe or another service.
-art-auction builds URLs from `siteConfig.url` (`apps/art-auction/src/app/actions.ts:86`);
+art-auction builds URLs from `siteConfig.url` (`apps/art-auction/src/app/actions.ts:87`);
 ifac and innergathering pass `process.env.NEXT_PUBLIC_APP_URL` to
 `startPayoutsFor`. innergathering's public URL is `INNERGATHERING_URL`, which
 is not the hyphenated app's `INNER_GATHERING_URL`.
@@ -367,7 +416,12 @@ is not the hyphenated app's `INNER_GATHERING_URL`.
 - No `product` threads exist; collections/curator shares (roadmap step 7) not
   started.
 - Service orders are not sold by a store; `commerce_order.store_id` stays
-  nullable. hidden-enneagram still uses `createServiceOrder`.
+  nullable. ~~hidden-enneagram still uses `createServiceOrder`.~~ (2026-09-27:
+  it books by card through `startThreadCheckout`; earlier eTransfer orders
+  still show at `/services/orders/[id]`.)
+- Service bookings have no scheduling or availability slots, and the
+  10%/5% platform fee in `docs/open/ARTIST_FUNNEL_BRIEF_2026-09-27.md` is not
+  built (2026-09-27).
 - Pre-097 `workshop_join_requests` rows have no `order_id`.
 - art-auction admin lists held funds but releases happen only on the
   arts-collective hub ledger.

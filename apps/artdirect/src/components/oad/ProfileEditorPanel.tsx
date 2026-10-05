@@ -33,10 +33,10 @@ export interface ProfileEditorPanelProps {
  *
  * The gallery itself isn't in here — GalleryPanel/ProfileGallery renders for
  * every visitor (that's how the lightbox gets to non-owners too), just with
- * editable=false when the viewer isn't the owner. See StandardProfile.
+ * editable=false when the viewer isn't the owner. See renderStandard in app/[slug]/page.tsx.
  *
  * Only rendered at all when the viewer owns this profile or is an admin —
- * see StandardProfile's isSelf gate. The server actions re-check
+ * see the isSelf gate in app/[slug]/page.tsx. The server actions re-check
  * authorization themselves regardless (see profile-editor-actions.ts).
  */
 export function ProfileEditorPanel({

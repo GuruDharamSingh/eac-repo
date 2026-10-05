@@ -12,11 +12,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/analytics": "workspace:*",
     "@elkdonis/astro": "workspace:*",
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/cms-bindings": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/checkout": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
@@ -26,6 +28,8 @@
     "@elkdonis/services": "workspace:*",
     "@elkdonis/silex-render": "workspace:*",
     "@elkdonis/sky-ui": "workspace:*",
+    "@elkdonis/reels": "workspace:*",
+    "@elkdonis/studio": "workspace:*",
     "@elkdonis/three": "workspace:*",
     "@elkdonis/tokens": "workspace:*",
     "@elkdonis/types": "workspace:*",

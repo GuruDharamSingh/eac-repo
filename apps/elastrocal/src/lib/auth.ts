@@ -32,12 +32,26 @@ export interface Viewer {
 /** Who a chart belongs to: an account, or a guest browser. */
 export type Keeper = { kind: "user"; userId: string } | { kind: "guest"; guestId: string };
 
+/**
+ * Accounts that are one person inside EAC Astro (Justin, 2026-10-04): Guru
+ * Dharam Singh and Justin Gillis review together, so in this app either login
+ * acts as the shared account. Reviews, marks, decks, synced app records and
+ * charts all resolve to it. Other EAC apps are unaffected (this mapping lives
+ * only in elastrocal's getViewer). Rows written before the merge were moved
+ * over; the backup table astro_account_merge_20261004 lists every moved row.
+ */
+const SHARED_ACCOUNT: Record<string, string> = {
+  // gurudharamsingh@gmail.com -> justin.gillisb@gmail.com
+  "1e1fcc82-8b63-4df0-90d2-59a4aa515906": "fbf699b9-c708-440a-9abd-40f8953978e5",
+};
+
 /** The current signed-in viewer, or null. Never throws or redirects. */
 export async function getViewer(): Promise<Viewer | null> {
   const session = await getServerSession();
   if (!session.user) return null;
 
-  const userId = session.user.db_user_id ?? session.user.id;
+  const signedIn = session.user.db_user_id ?? session.user.id;
+  const userId = SHARED_ACCOUNT[signedIn] ?? signedIn;
   const role = await getOrgRole(userId, siteConfig.orgId).catch(() => null);
 
   return {
@@ -81,5 +95,16 @@ export async function requireOrgMember(returnTo = "/hub"): Promise<Viewer> {
 export async function requireOrgEditor(returnTo = "/hub"): Promise<Viewer> {
   const viewer = await requireOrgMember(returnTo);
   if (!viewer.canEdit) redirect("/hub");
+  return viewer;
+}
+
+/**
+ * Gate for the review studio (/hub/studio): owners only. Grades and gold texts
+ * become training data, so the graders are the app's owners (decision,
+ * 2026-09-26; docs/open/ASTRO_STUDIO_BRIEF_2026-09-26.md).
+ */
+export async function requireStudioReviewer(returnTo = "/hub/studio"): Promise<Viewer> {
+  const viewer = await requireOrgMember(returnTo);
+  if (viewer.role !== "owner") redirect("/hub");
   return viewer;
 }

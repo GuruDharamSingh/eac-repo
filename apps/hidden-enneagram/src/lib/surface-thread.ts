@@ -1,4 +1,5 @@
 import { toSurfaceThread as sharedToSurfaceThread } from "@elkdonis/cms-ui/surface";
+import { serviceAnswersFromOffering, type ServiceOffering } from "@elkdonis/services";
 import type { Thread } from "@/lib/types";
 
 /**
@@ -14,8 +15,14 @@ import type { Thread } from "@/lib/types";
  */
 export function toSurfaceThread(
   thread: Thread,
-  extras: { feed?: { slug: string; name: string } | null; standing?: boolean } = {}
+  extras: {
+    feed?: { slug: string; name: string } | null;
+    standing?: boolean;
+    /** A service's sidecar, so the compose popup can edit its booking fields. */
+    service?: ServiceOffering | null;
+  } = {}
 ) {
+  const service = extras.service ?? null;
   return sharedToSurfaceThread(
     {
       id: thread.id,
@@ -31,9 +38,16 @@ export function toSurfaceThread(
       authorId: thread.authorId ?? null,
       authorPhoto: thread.authorPhoto,
       publishedAt: thread.publishedAt,
+      format: service?.format ?? null,
       // Threads live under their feed on this site: /{section}/{slug}.
       href: thread.feedSlug ? `/${thread.feedSlug}/${thread.slug}` : null,
     },
-    { feed: extras.feed, standing: extras.standing }
+    {
+      feed: extras.feed,
+      standing: extras.standing,
+      ...(service
+        ? { price: service.price, currency: service.currency, extra: serviceAnswersFromOffering(service) }
+        : {}),
+    }
   );
 }

@@ -170,6 +170,9 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      # Astro Studio helper AI (packages/astro-corpus); empty disables it.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
 
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
@@ -394,6 +397,12 @@ services:
       # only to arts-collective (which receives the webhook), but every app
       # that RENDERS the suite needs it too.
       EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
+      # Stripe — each owner's own Express onboarding on /manage and in the
+      # profile popup (src/lib/payout-actions.ts), and card booking of group
+      # and self-paced services (src/lib/booking-actions.ts). Orders are
+      # confirmed by art-auction's webhook and this app's /api/checkout/return
+      # hop; there is no webhook here. The org holds no account of its own.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     volumes:
       - .:/app
       - /app/apps/sunjay/.next
@@ -746,6 +755,9 @@ services:
       # so it uses the public URL for WebDAV rather than the internal AIO hostname.
       NEXTCLOUD_URL: ${NEXTCLOUD_PUBLIC_URL:-https://cloud.elkdonis-arts.org}
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      # Server-side OBS control (/studio/broadcast) through docker/obs/agent.mjs.
+      OBS_AGENT_URL: http://obs:4456
+      OBS_AGENT_SECRET: ${OBS_AGENT_SECRET:-}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
       # Optional browser-reachable Silex editor origin for /edit/{slug} launch.
@@ -808,13 +820,26 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # Stripe — card payment for service bookings (@elkdonis/checkout
+      # startThreadCheckout, 2026-09-27). Orders are confirmed by art-auction's
+      # webhook and this app's /api/checkout/return hop; no webhook here.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      # Gallery pages live on IFAC (lib/oad.ts).
+      NEXT_PUBLIC_IFAC_URL: ${IFAC_URL:-http://localhost:3008}
+      # Network SSO (src/proxy.ts, /api/auth/handoff): the person page is the
+      # root of a person's network presence, so it takes part (2026-09-26).
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       NODE_ENV: development
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
       # is a 4.1GB limit per dev server, so six of them can exhaust the
       # machine before any one of them collects. Cap it instead.
-      NODE_OPTIONS: --max-old-space-size=1024
+      # 2048 for ArtDirect since 2026-09-26: the Puck editor (/<slug>/design)
+      # compiles in this dev server, and 1024 ran out of heap once.
+      NODE_OPTIONS: --max-old-space-size=2048
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -869,6 +894,8 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      # Network sign-out mark (packages/auth-server/src/sso-state.ts) and session cache.
+      REDIS_URL: redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # The marketplace — a member's store section links there
@@ -960,6 +987,8 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      # Network sign-out mark (packages/auth-server/src/sso-state.ts) and session cache.
+      REDIS_URL: redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${INNERGATHERING_URL:-http://localhost:3015}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NODE_ENV: production
@@ -1059,6 +1088,8 @@ services:
       VIDEO_SCAN_SECONDS: ${VIDEO_SCAN_SECONDS:-60}
       VIDEO_FFMPEG_THREADS: 8
       NODE_OPTIONS: --max-old-space-size=512
+      # Decrypts user_connections tokens for YouTube uploads (services/connections.ts, migration 192).
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
     volumes:
       - .:/app
       # Scratch for downloads and encodes — recordings are gigabytes, so not
@@ -1066,6 +1097,79 @@ services:
       - video-work:/work
     working_dir: /app/packages/services
     command: node_modules/.bin/tsx scripts/video-worker.mts
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Reel renderer (Remotion). Polls reel_renders (migration 189) for the
+  # Studio's /studio/video jobs. Folder renders by hand:
+  #   docker compose run --rm reel-render --project "EAC_Network/<org>/Private/Video/Reels/<name>" [--init]
+  # Debian image with its own renderer install (docker/reel-render.Dockerfile);
+  # templates come from the bind-mounted packages/reels (restart to pick up edits).
+  # Server-side OBS Studio: one shared instance on a virtual display.
+  # Controlled from arts-collective /studio/broadcast through the agent on
+  # :4456 (eac-network only). The full OBS window is noVNC on
+  # 127.0.0.1:6080 (ssh -L 6080:127.0.0.1:6080, then /vnc.html; password
+  # OBS_VNC_PASSWORD). /dev/dri: the AMD iGPU, for VA-API encoding.
+  obs:
+    build:
+      context: docker/obs
+    image: eac-obs
+    container_name: eac-obs
+    restart: unless-stopped
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    group_add: ["107", "44"]
+    devices:
+      - /dev/dri:/dev/dri
+    cpus: 8
+    mem_limit: 6g
+    shm_size: 1g
+    environment:
+      OBS_WEBSOCKET_PASSWORD: ${OBS_WEBSOCKET_PASSWORD:?set OBS_WEBSOCKET_PASSWORD in .env}
+      OBS_AGENT_SECRET: ${OBS_AGENT_SECRET:?set OBS_AGENT_SECRET in .env}
+      OBS_VNC_PASSWORD: ${OBS_VNC_PASSWORD:-}
+      # auto = VA-API on the iGPU when present, else x264; x264 forces the CPU.
+      OBS_ENCODER: ${OBS_ENCODER:-auto}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+    volumes:
+      - ./docker/obs/agent.mjs:/opt/obs-agent/agent.mjs:ro
+      - obs-home:/home/obs
+      - obs-recordings:/recordings
+    ports:
+      - "127.0.0.1:6080:6080"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  reel-render:
+    build:
+      context: .
+      dockerfile: docker/reel-render.Dockerfile
+    image: eac-reel-render
+    container_name: eac-reel-render
+    restart: unless-stopped
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    cpus: 8
+    mem_limit: 6g
+    shm_size: 1g
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["--worker"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      REEL_WORK_DIR: /work
+      REEL_CONCURRENCY: 4
+    volumes:
+      - .:/app
+      - reel-work:/work
+    working_dir: /opt/reel
+    entrypoint: ["node", "/app/packages/reels/render/render.mjs"]
     networks:
       - eac-network
       - nextcloud-network
@@ -1155,7 +1259,14 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      # Astro Studio helper AI (packages/astro-corpus); empty disables it.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
       NEXT_PUBLIC_APP_URL: ${ELASTROCAL_URL:-http://localhost:3016}
+      # Stripe — card payment for service bookings (@elkdonis/checkout
+      # startThreadCheckout, 2026-09-27). Orders are confirmed by art-auction's
+      # webhook and this app's /api/checkout/return hop; no webhook here.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       # Served under this prefix so it can sit inside arts-collective.com/astro.
       # Local access is therefore http://localhost:3016/astro (the bare root 404s).
       NEXT_PUBLIC_BASE_PATH: ${ELASTROCAL_BASE_PATH:-/astro}
@@ -1171,6 +1282,11 @@ services:
       # them the engine falls back to the built-in Moshier model — see that
       # directory's README.
       SWISSEPH_PATH: ${SWISSEPH_PATH:-/app/packages/astro/ephe}
+      # Nextcloud for the app media uploads (Jerusalem media, /api/mobile/v1/media), as arts-collective:
+      # the public URL, since this container is not on the nextcloud-aio network.
+      NEXTCLOUD_URL: ${NEXTCLOUD_PUBLIC_URL:-https://cloud.elkdonis-arts.org}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # Signs the guest cookie (src/lib/guest.ts): charts kept without an account.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
     volumes:
@@ -1344,6 +1460,12 @@ services:
       NEXT_PUBLIC_IFAC_URL: ${IFAC_URL:-http://localhost:3008}
       NEXT_PUBLIC_AMRIT_CANADA_URL: ${AMRIT_CANADA_URL:-http://localhost:3006}
       NEXT_PUBLIC_INNERGATHERING_URL: ${INNERGATHERING_URL:-http://localhost:3015}
+      # The network's SSO hop (packages/auth-server/src/handoff.ts): the
+      # inter-app signing secret and the origins a handoff may target. Without
+      # these a member signed in on IFAC had to sign in again here (2026-09-24).
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
@@ -1390,6 +1512,10 @@ services:
       NODE_OPTIONS: --max-old-space-size=1024
       PORT: 3012
       NEXT_PUBLIC_APP_URL: ${HIDDEN_ENNEAGRAM_URL:-http://localhost:3012}
+      # Stripe — card payment for service bookings (@elkdonis/checkout
+      # startThreadCheckout, 2026-09-27). Orders are confirmed by art-auction's
+      # webhook and this app's /api/checkout/return hop; no webhook here.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # The Silex editor origin, so /edit can bounce an editor straight into
       # the page they were standing on. Redemption still goes through
@@ -1470,6 +1596,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${DANAMCCOOL_URL:-http://localhost:3018}
       DANAMCCOOL_COMING_SOON: ${DANAMCCOOL_COMING_SOON:-false}
+      # Keys the analytics visitor hash (packages/analytics). Not INTER_APP_JWT_SECRET: that also switches on
+      # the network sign-in redirect (ssoProxy), which this site does not use.
+      ANALYTICS_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env}
       NODE_ENV: production
       NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
@@ -1510,7 +1639,9 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-fourthway-bookreaders
     restart: unless-stopped
-    mem_limit: 3g
+    # Production mode since 2026-09-26, same shape as amrit-canada: guarded
+    # `next build`, then `next start`. The limit has to clear the build peak.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
@@ -1528,12 +1659,11 @@ services:
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3019
-      # 2048, not the 1024 the production-mode services use: this one runs
-      # `next dev`, and a Turbopack compile of the shared editor crosses 1GB —
-      # Next then restarts itself and drops whatever request was in flight.
-      NODE_OPTIONS: --max-old-space-size=2048
+      # Runtime heap for `next start`. It was 2048 while this ran `next dev`
+      # (a Turbopack compile of the shared editor crossed 1GB).
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -1557,7 +1687,12 @@ services:
       - /app/apps/fourthwayBookreaders/.next
     ports:
       - "3019:3019"
-    command: sh -c "cd apps/fourthwayBookreaders && pnpm docker:dev"
+    # Build only when there is no completed build (two-file sentinel, see
+    # sunjay above), then serve it. Source edits are not live until a rebuild:
+    # docs/reference/ops.md "Build and deploy a production-mode app".
+    # The build gets a larger heap than the 1024 runtime: the dev compile of
+    # the shared editor already crossed 1GB.
+    command: sh -c "cd apps/fourthwayBookreaders && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3072 NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1630,6 +1765,9 @@ volumes:
   redis_data:
   photon_data:
   video-work:
+  reel-work:
+  obs-home:
+  obs-recordings:
 
 networks:
   eac-network:

@@ -7,7 +7,7 @@
 // ============================================================================
 import { db } from '@elkdonis/db';
 import type {
-  Enrolment, LearnerOutline, LmsResponse, LmsViewer, OutlineStepView, PublishedCourse, PublishedStep,
+  CourseVisibility, Enrolment, LearnerOutline, LmsResponse, LmsViewer, RunMode, OutlineStepView, PublishedCourse, PublishedStep,
   ResponseKind, ResponseVisibility, Run, StepStatus, WriteResult,
 } from './types';
 import { getCourseById, getCourseVersion } from './content';
@@ -227,6 +227,7 @@ interface RespRow {
   id: string; step_id: string; kind: ResponseKind; body: string; visibility: ResponseVisibility; created_at: Date; updated_at: Date;
   u_id: string; u_name: string | null; u_avatar: string | null; acks: LmsResponse['acknowledgements'] | null;
   step_title?: string; step_slug?: string; course_slug?: string; course_title?: string; run_title?: string;
+  enrolment_id?: string; enrolment_status?: string; run_mode?: RunMode; course_visibility?: CourseVisibility;
 }
 const RESP_SELECT = db`
   r.id, r.step_id, r.kind, r.body, r.visibility, r.created_at, r.updated_at,
@@ -251,17 +252,27 @@ export async function listMyResponses(viewer: LmsViewer, enrolmentId: string, st
   return rows.map(mapResp);
 }
 
-export type JournalEntry = LmsResponse & { stepTitle: string; stepSlug: string; courseSlug: string; courseTitle: string };
+export type JournalEntry = LmsResponse & {
+  stepTitle: string; stepSlug: string; courseSlug: string; courseTitle: string;
+  /** For editing from the journal: the place it was written in, and what that allows. */
+  enrolmentId: string; canEdit: boolean; runMode: RunMode; courseVisibility: CourseVisibility;
+};
 /** Everything you have written, across courses. Yours alone. */
 export async function listJournal(viewer: LmsViewer, limit = 200): Promise<JournalEntry[]> {
   if (!viewer.userId) return [];
   const rows = await db<RespRow[]>`
-    SELECT ${RESP_SELECT}, s.slug AS step_slug, c.slug AS course_slug, c.title AS course_title,
+    SELECT ${RESP_SELECT}, s.slug AS step_slug, c.slug AS course_slug, c.title AS course_title, c.visibility AS course_visibility,
+           r.enrolment_id, e.status AS enrolment_status, run.mode AS run_mode,
            COALESCE((SELECT sv.title FROM lms_step_versions sv WHERE sv.id = r.step_version_id), s.slug) AS step_title
     FROM lms_responses r JOIN users u ON u.id = r.user_id JOIN lms_steps s ON s.id = r.step_id JOIN lms_courses c ON c.id = s.course_id
+    JOIN lms_enrolments e ON e.id = r.enrolment_id JOIN lms_runs run ON run.id = r.run_id
     WHERE r.user_id = ${viewer.userId} ORDER BY r.created_at DESC LIMIT ${limit}
   `;
-  return rows.map((r) => ({ ...mapResp(r), stepTitle: r.step_title!, stepSlug: r.step_slug!, courseSlug: r.course_slug!, courseTitle: r.course_title! }));
+  return rows.map((r) => ({
+    ...mapResp(r), stepTitle: r.step_title!, stepSlug: r.step_slug!, courseSlug: r.course_slug!, courseTitle: r.course_title!,
+    // saveResponse refuses a withdrawn place (loadForWrite), so the journal doesn't offer it.
+    enrolmentId: r.enrolment_id!, canEdit: r.enrolment_status !== 'withdrawn', runMode: r.run_mode!, courseVisibility: r.course_visibility!,
+  }));
 }
 
 /**
@@ -294,7 +305,7 @@ export async function listPublicResponses(stepId: string, limit = 20): Promise<L
 }
 
 // ── the guide ───────────────────────────────────────────────────────────────
-export type GuideQueueItem = LmsResponse & { stepTitle: string; stepSlug: string; runId: string; runTitle: string; courseSlug: string };
+export type GuideQueueItem = LmsResponse & { stepTitle: string; stepSlug: string; runId: string; runTitle: string; courseSlug: string; courseTitle: string };
 /**
  * What people chose to show their guide (or wider) in the runs this viewer
  * guides. `me` never appears here, for anyone, including admins. Scoped to
@@ -304,18 +315,20 @@ export async function listGuideQueue(viewer: LmsViewer, opts: { courseId?: strin
   if (!viewer.userId) return [];
   const staffOrgs = Object.entries(viewer.roles).filter(([, r]) => r === 'owner' || r === 'guide').map(([o]) => o);
   const rows = await db<Array<RespRow & { run_id: string }>>`
-    SELECT ${RESP_SELECT}, r.run_id, run.title AS run_title, s.slug AS step_slug, c.slug AS course_slug,
+    SELECT ${RESP_SELECT}, r.run_id, run.title AS run_title, s.slug AS step_slug, c.slug AS course_slug, c.title AS course_title,
            COALESCE((SELECT sv.title FROM lms_step_versions sv WHERE sv.id = r.step_version_id), s.slug) AS step_title
     FROM lms_responses r
     JOIN users u ON u.id = r.user_id JOIN lms_runs run ON run.id = r.run_id
     JOIN lms_steps s ON s.id = r.step_id JOIN lms_courses c ON c.id = s.course_id
     WHERE r.visibility <> 'me'
+      -- A guide never answers themselves: their own writing lives in their journal.
+      AND r.user_id <> ${viewer.userId}
       AND (run.org_id = ANY(${staffOrgs}) OR EXISTS (SELECT 1 FROM lms_run_staff st WHERE st.run_id = r.run_id AND st.user_id = ${viewer.userId}))
       ${opts.courseId ? db`AND c.id = ${opts.courseId}` : db``}
       ${opts.awaitingOnly ? db`AND NOT EXISTS (SELECT 1 FROM lms_acknowledgements a WHERE a.response_id = r.id)` : db``}
     ORDER BY (r.kind = 'note') DESC, r.created_at DESC LIMIT ${opts.limit ?? 100}
   `;
-  return rows.map((r) => ({ ...mapResp(r), stepTitle: r.step_title!, stepSlug: r.step_slug!, runId: r.run_id, runTitle: r.run_title!, courseSlug: r.course_slug! }));
+  return rows.map((r) => ({ ...mapResp(r), stepTitle: r.step_title!, stepSlug: r.step_slug!, runId: r.run_id, runTitle: r.run_title!, courseSlug: r.course_slug!, courseTitle: r.course_title! }));
 }
 
 export interface AcknowledgeResult { learnerId: string; learnerEmail: string | null; learnerName: string; stepTitle: string; courseSlug: string; stepSlug: string; guideName: string }

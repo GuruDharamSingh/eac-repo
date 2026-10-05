@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
-import type { NavItem } from "@/lib/navigation";
+import { groupNav, type NavItem } from "@/lib/navigation";
 
 /**
  * The nav is DATA now, passed in from the layout.
@@ -27,6 +27,9 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
   // Phones only: the nav slides out from the left. On a desktop the drawer is
   // just the rest of the sidebar and this flag changes nothing (site.css).
   const [open, setOpen] = useState(false);
+  // Submenus opened or closed by hand. Otherwise a submenu is open when it
+  // holds the current page.
+  const [toggled, setToggled] = useState<Record<number, boolean>>({});
 
   // Following a link closes it — the page changes underneath, and a drawer
   // still covering the new page reads as the link having done nothing.
@@ -61,18 +64,33 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
 
       <div className="side-drawer" id="side-drawer">
       <nav className="side-nav" aria-label="Primary">
-        {nav.map((link) => {
-          const active = !link.external && (pathname === link.href || pathname.startsWith(`${link.href}/`));
+        {groupNav(nav).map(({ item, children }, g) => {
+          if (children.length === 0) return <NavLink key={`${item.href}-${g}`} link={item} pathname={pathname} />;
+          const id = `side-nav-group-${g}`;
+          const isOpen = toggled[g] ?? [item, ...children].some((l) => isActive(l, pathname));
           return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={active ? "side-nav-link is-active" : "side-nav-link"}
-              target={link.external ? "_blank" : undefined}
-              rel={link.external ? "noreferrer" : undefined}
-            >
-              {link.label}
-            </Link>
+            <div key={`${item.href}-${g}`} className="side-nav-group" data-open={isOpen ? "true" : "false"}>
+              <div className="side-nav-group-head">
+                <NavLink link={item} pathname={pathname} />
+                <button
+                  type="button"
+                  className="side-nav-caret"
+                  aria-expanded={isOpen}
+                  aria-controls={id}
+                  aria-label={isOpen ? `Hide the ${item.label} pages` : `Show the ${item.label} pages`}
+                  onClick={() => setToggled((t) => ({ ...t, [g]: !isOpen }))}
+                >
+                  <span aria-hidden="true">▸</span>
+                </button>
+              </div>
+              {isOpen ? (
+                <div className="side-nav-sub" id={id}>
+                  {children.map((c, i) => (
+                    <NavLink key={`${c.href}-${i}`} link={c} pathname={pathname} />
+                  ))}
+                </div>
+              ) : null}
+            </div>
           );
         })}
         {canEdit && (
@@ -118,5 +136,22 @@ export function SiteHeader({ canEdit, nav }: { canEdit: boolean; nav: NavItem[] 
       </ul>
       </div>
     </aside>
+  );
+}
+
+function isActive(link: NavItem, pathname: string) {
+  return !link.external && (pathname === link.href || pathname.startsWith(`${link.href}/`));
+}
+
+function NavLink({ link, pathname }: { link: NavItem; pathname: string }) {
+  return (
+    <Link
+      href={link.href}
+      className={isActive(link, pathname) ? "side-nav-link is-active" : "side-nav-link"}
+      target={link.external ? "_blank" : undefined}
+      rel={link.external ? "noreferrer" : undefined}
+    >
+      {link.label}
+    </Link>
   );
 }

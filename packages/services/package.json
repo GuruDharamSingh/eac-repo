@@ -8,10 +8,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./agreements": "./src/agreements.ts",
+    "./thread-access": "./src/thread-access.ts",
+    "./thread-audience": "./src/thread-audience.ts",
+    "./reels": "./src/reels.ts",
+    "./obs": "./src/obs.ts",
     "./video-render": "./src/video-render.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "check:thread-access": "npx tsx scripts/check-thread-access.mts"
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",

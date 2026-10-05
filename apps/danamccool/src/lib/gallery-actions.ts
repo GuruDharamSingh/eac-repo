@@ -10,6 +10,7 @@ import {
   getUserGalleryById,
   listUserGalleries,
   reorderUserGalleries,
+  cleanGalleryLink,
   type UserGallery,
 } from '@elkdonis/services';
 import type { GalleryItem } from '@elkdonis/cms-ui/gallery';
@@ -95,6 +96,8 @@ export interface HudItem {
   subtitle?: string;
   /** Another of her galleries this picture opens (nested gallery), by id. */
   opens?: string;
+  /** Where a click on the picture goes instead of the full-size view. */
+  link?: string;
   artwork: HudArtwork | null;
   /** Where it sits on the grid, when it has been placed — for listing in that order. */
   x?: number;
@@ -198,6 +201,7 @@ export async function getGalleryForHud(
       title: i.artworkId ? (byId.get(i.artworkId)?.title ?? i.title) : i.title,
       subtitle: i.subtitle,
       ...(i.opens ? { opens: i.opens } : {}),
+      ...(i.link ? { link: i.link } : {}),
       ...(typeof i.x === 'number' ? { x: i.x } : {}),
       ...(typeof i.y === 'number' ? { y: i.y } : {}),
       artwork: i.artworkId ? (byId.get(i.artworkId) ?? null) : null,
@@ -314,8 +318,11 @@ export async function saveGalleryItemsAction(
           // A nested-gallery link is changed only by setGalleryItemOpensAction;
           // a caller that does not send it keeps it ("" clears it).
           const opens = typeof i.opens === "string" ? i.opens : old?.opens;
+          // A click-through link is changed only by updateGalleryItemTextAction.
+          const link = old?.link;
           return {
             ...(opens && opens !== galleryId ? { opens } : {}),
+            ...(link ? { link } : {}),
             ...(subtitle ? { subtitle } : {}),
             ...(fx !== undefined ? { fx } : {}),
             ...(fy !== undefined ? { fy } : {}),
@@ -448,7 +455,7 @@ export async function galleryForPageAction(pagePath: string): Promise<Result<{ i
 export async function updateGalleryItemTextAction(
   galleryId: string,
   itemId: string,
-  patch: { title?: string; subtitle?: string }
+  patch: { title?: string; subtitle?: string; link?: string }
 ): Promise<Result> {
   const found = await ownedGallery(galleryId);
   if ('error' in found) return { ok: false, error: found.error };
@@ -464,9 +471,17 @@ export async function updateGalleryItemTextAction(
       if (sub) next.subtitle = sub;
       else delete next.subtitle;
     }
+    if (patch.link !== undefined) {
+      const link = cleanGalleryLink(patch.link);
+      if (link) next.link = link;
+      else delete next.link;
+    }
     return next;
   });
   if (!hit) return { ok: false, error: 'That picture is no longer in the gallery.' };
+  if (patch.link?.trim() && !cleanGalleryLink(patch.link)) {
+    return { ok: false, error: 'Use a page on this site (starting with /) or a full web address (https://…).' };
+  }
   const result = await updateUserGallery(galleryId, { items });
   if (!result.ok) return { ok: false, error: result.error ?? 'Could not save.' };
   touch(g);

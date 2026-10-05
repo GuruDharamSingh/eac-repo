@@ -10,7 +10,7 @@ import { DOSSIER_SECTION_KEYS } from "@elkdonis/cms-bindings/dossier";
 
 /**
  * Save actions behind the inline profile editor on ArtDirect's own /[slug]
- * page (StandardProfile). Mirrors apps/ifac/src/lib/profile-editor-actions.ts
+ * page (standard layout, PersonPage). Mirrors apps/ifac/src/lib/profile-editor-actions.ts
  * — same underlying rule (canEditProfile: self, or a global admin), just
  * using ArtDirect's own getCurrentUser() instead of getServerSession
  * directly, and revalidating the one /[slug] route instead of IFAC's

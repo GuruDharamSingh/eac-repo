@@ -2,6 +2,8 @@ import { createElement, type ComponentType, type ReactNode } from "react";
 import type { Config } from "@puckeditor/core";
 import { SHARED_BLOCKS, toDefaultProps, toPuckFields } from "@elkdonis/blocks";
 import type { Block, BlockCategory, BlockDef, PropDef, PropKind } from "@elkdonis/blocks";
+import { BlockStyleWrap } from "./style/wrap";
+import { STYLE_PROP } from "./style/schema";
 
 // ============================================================================
 // Our block catalogue, expressed as a Puck config.
@@ -226,6 +228,17 @@ export interface PuckConfigOptions {
   fields?: Partial<Record<PropKind, FieldRender>>;
 
   /**
+   * Offer `richtext` props as Puck's formatted-text field, typed on the page.
+   *
+   * Editor configs only. Left off, a richtext prop is a plain textarea — and
+   * that is what a PUBLISHED config must have: Puck's renderer swaps any
+   * "richtext" field's value for its own component, whose loading fallback
+   * sets the stored HTML unsanitised. Off, the block receives the string and
+   * <RichText> (@elkdonis/blocks text.tsx) sanitises it.
+   */
+  richText?: boolean;
+
+  /**
    * Wrap every block's rendered output, for editor-only chrome.
    *
    * This is how direct manipulation reaches the canvas without the block
@@ -248,7 +261,49 @@ export interface PuckConfigOptions {
     props: PropDef[];
     wrap?: ComponentType<{ settings: Record<string, unknown>; children?: ReactNode }>;
   };
+
+  /**
+   * One extra setting on EVERY block — e.g. a site's "Text style" (font,
+   * capitals, spacing, colour) — stored in the block's own props under
+   * `name`, so it travels with the block and needs no block to know of it.
+   *
+   * `wrap` receives the stored value (undefined when never set) and the
+   * block's output, and may wrap it; it runs on the published page and in
+   * the editor alike, so it must be server-safe. `field` is the control in
+   * the fields panel — editor-only, so the published config omits it. A
+   * block that already declares a prop of this name keeps its own.
+   */
+  blockStyle?: {
+    name: string;
+    field?: (props: Record<string, unknown>) => React.ReactElement;
+    wrap: ComponentType<{ settings: unknown; children?: ReactNode }>;
+  };
+
+  /**
+   * The generic "Style" every block carries (src/style): spacing, size,
+   * background, border, radius, shadow, visibility, hover, anchor, class and a
+   * fenced CSS box. On by default for every site; `false` turns it off. The
+   * wrapper is on the published config too (a styled block must draw styled);
+   * `styleField` is the editor's control and only `buildEditorConfig` passes it.
+   */
+  style?: boolean;
+  styleField?: (props: Record<string, unknown>) => React.ReactElement;
 }
+
+/**
+ * What the on-page text editor offers: paragraphs, bold, italic, underline,
+ * strike-through, links, lists, quotes and subheadings — exactly what
+ * `sanitizePageText` (@elkdonis/utils) keeps, so nothing typed is dropped on
+ * save. Code, rules and alignment are off: alignment is the block's own
+ * setting, and the sanitiser removes inline styles.
+ */
+const RICH_TEXT_OPTIONS = {
+  code: false,
+  codeBlock: false,
+  horizontalRule: false,
+  textAlign: false,
+  heading: { levels: [2, 3, 4] },
+};
 
 export function buildPuckConfig({
   resolvers = {},
@@ -256,6 +311,10 @@ export function buildPuckConfig({
   fields: fieldRenders = {},
   decorate,
   root: siteRoot,
+  blockStyle,
+  style: styleEnabled = true,
+  styleField,
+  richText = false,
 }: PuckConfigOptions = {}): Config {
   // Typed as Puck's own map rather than Record<string, unknown>, so the
   // compiler actually checks that toPuckFields() produces field shapes Puck
@@ -289,6 +348,16 @@ export function buildPuckConfig({
     // know an editor exists: `toPuckFields` returns data, and this is the only
     // layer allowed to hold a React component from Puck.
     for (const prop of def.props) {
+      if (prop.kind === "richtext" && richText) {
+        fields[prop.name] = {
+          type: "richtext",
+          label: prop.label,
+          contentEditable: true,
+          options: RICH_TEXT_OPTIONS,
+        } as unknown as (typeof fields)[string];
+        continue;
+      }
+
       // A row's COLUMNS deserve the same controls as a top-level prop. A
       // picture wall whose image column is a plain URL box is a picture wall
       // nobody can fill: the whole point of the picker is that an author
@@ -311,6 +380,19 @@ export function buildPuckConfig({
         type: "custom",
         render: control,
       } as unknown as (typeof fields)[string];
+    }
+
+    // The site-wide per-block setting, last in the panel, after the block's own.
+    const styled = blockStyle && !def.props.some((p) => p.name === blockStyle.name) ? blockStyle : undefined;
+    if (styled?.field) {
+      fields[styled.name] = { type: "custom", render: styled.field } as unknown as (typeof fields)[string];
+    }
+
+    // The generic Style: a prop of its own name on every block that has not
+    // declared one (`divider` has a prop called `style`; this one is `blkStyle`).
+    const generic = styleEnabled && !def.props.some((p) => p.name === STYLE_PROP);
+    if (generic && styleField) {
+      fields[STYLE_PROP] = { type: "custom", label: "Style", render: styleField } as unknown as (typeof fields)[string];
     }
 
     components[def.id] = {
@@ -350,14 +432,34 @@ export function buildPuckConfig({
         // cannot be passed directly to Client Components" the moment the first
         // form block was placed. The context is of no use to such a block
         // anyway: it has no slots and nothing to draw for the editor.
-        const base = def.interactive
+        const inner = def.interactive
           ? function Interactive(props: Record<string, unknown>) {
               const { puck: _editorContext, ...rest } = props;
               return createElement(block.Component as ComponentType<never>, rest as never);
             }
           : (block.Component as ComponentType<never>);
 
-        return (decorate ? decorate(block, base) : base) as unknown as Config["components"][string]["render"];
+        // The per-block style wraps the block itself; with nothing set it
+        // renders the block alone, so an unstyled page's markup is unchanged.
+        const base = styled
+          ? function Styled(props: Record<string, unknown>) {
+              const drawn = createElement(inner as ComponentType<never>, props as never);
+              const settings = props[styled.name];
+              return settings ? createElement(styled.wrap, { settings }, drawn) : drawn;
+            }
+          : inner;
+
+        // Outermost of the block's own output, inside the editor chrome. With
+        // nothing set it renders the block alone.
+        const styledOuter = generic
+          ? function GenericStyle(props: Record<string, unknown>) {
+              const drawn = createElement(base as ComponentType<never>, props as never);
+              const editing = Boolean((props.puck as { isEditing?: boolean } | undefined)?.isEditing);
+              return createElement(BlockStyleWrap, { settings: props[STYLE_PROP], editing }, drawn);
+            }
+          : base;
+
+        return (decorate ? decorate(block, styledOuter) : styledOuter) as unknown as Config["components"][string]["render"];
       })(),
     };
 

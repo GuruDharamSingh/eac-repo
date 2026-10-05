@@ -17,7 +17,7 @@ import { forbidden, getHubViewer } from "@/lib/hub-auth";
 export const dynamic = "force-dynamic";
 
 /** Sections this app knows how to render. Anything else is refused, not stored. */
-const KNOWN_SECTIONS = ["elkdonisFeed", "store", "blog"] as const;
+const KNOWN_SECTIONS = ["elkdonisFeed", "store", "blog", "galleries"] as const;
 
 export async function PATCH(request: Request) {
   const viewer = await getHubViewer();

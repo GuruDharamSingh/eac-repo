@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { adminListUsers } from "@elkdonis/commerce/queries";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { listOrgArrivals } from "@elkdonis/services";
+import { ArrivalsTable } from "@elkdonis/cms-ui/network";
+import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Members · Admin" };
@@ -21,7 +24,10 @@ function fmtDate(d: string): string {
 }
 
 export default async function AdminUsersPage() {
-  const users = await adminListUsers({ limit: 50 });
+  const [users, arrivals] = await Promise.all([
+    adminListUsers({ limit: 50 }),
+    listOrgArrivals(siteConfig.marketplaceOrgId).catch(() => []),
+  ]);
 
   return (
     <section>
@@ -70,6 +76,7 @@ export default async function AdminUsersPage() {
           </table>
         </div>
       )}
+      <ArrivalsTable arrivals={arrivals} />
     </section>
   );
 }

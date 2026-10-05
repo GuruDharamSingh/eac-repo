@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ssoProxy } from "@elkdonis/auth-server/sso-proxy";
 import { FROM_COOKIE } from "@/config/network";
 
 /**
@@ -14,8 +15,15 @@ import { FROM_COOKIE } from "@/config/network";
  * Also republishes the request URL as a header so a server component can read
  * the query string it was rendered for; Next gives layouts no other access to
  * it.
+ *
+ * First, network SSO on arrival (packages/auth-server/src/sso-proxy.ts): a
+ * visitor signed in elsewhere on the network is signed in here before the page
+ * renders. `?from=` survives that detour: the redirect returns to this URL.
  */
-export default function proxy(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
+  const sso = await ssoProxy(req);
+  if (sso) return sso;
+
   const headers = new Headers(req.headers);
   headers.set("x-market-url", req.nextUrl.toString());
 

@@ -2,11 +2,11 @@ import {
   courseJsonLd, stepJsonLd, getPublishedCourse, getCourseBySlug, getLearnerOutline, listCatalogue, listRuns, listRunGuides,
   listMyEnrolments, listMyResponses, listCircleResponses, listPublicResponses, getThreadRefs, getRunDiscussion, touchStep,
   listJournal, listPracticeDays, listAwards, listGuideQueue, listRoster, countUnseenAcknowledgements, markAcknowledgementsSeen,
-  getCourseById, stepTypeDef, resolveRedirect,
+  stepTypeDef, resolveRedirect, listEditableCourses,
   type OutlineStepView, type ResponseVisibility, type Run,
 } from "@elkdonis/lms";
 import type { LmsConnectors } from "./connectors";
-import { ActionForm, Flash, JsonLd, ResponseCard, StepMark, StepMeta, VISIBILITY_WORDS, fmtDate, fmtWhen } from "./parts";
+import { ActionForm, CourseIndex, Flash, JournalEntryCard, JsonLd, ResponseCard, StepMark, StepMeta, VISIBILITY_WORDS, fmtDate, fmtWhen } from "./parts";
 import { StepBody } from "./steps/StepBody";
 
 export interface PageQuery { notice?: string; error?: string }
@@ -17,6 +17,32 @@ const MODE_WORDS: Record<Run["mode"], string> = {
   open: "At your own pace", drip: "At your own pace, a little at a time", cohort: "Together, with a guide", circle: "A study circle",
 };
 const seoCtx = (c: LmsConnectors) => ({ origin: c.origin, mediaUrl: c.mediaUrl });
+const guideNames = (guides: Array<{ name: string }>) => guides.map((g) => g.name.replace(/\.$/, "")).join(" and ");
+
+/** Every course this viewer can open, for the index: the public catalogue, the ones they're in, the ones they teach. */
+async function reachableCourses(viewer: Awaited<ReturnType<LmsConnectors["viewer"]>>): Promise<Array<{ slug: string; title: string }>> {
+  const [open, mine, taught] = await Promise.all([
+    listCatalogue(),
+    viewer.userId ? listMyEnrolments(viewer.userId) : Promise.resolve([]),
+    viewer.userId ? listEditableCourses(viewer).catch(() => []) : Promise.resolve([]),
+  ]);
+  const seen = new Map<string, string>();
+  for (const k of open) seen.set(k.slug, k.title);
+  for (const e of mine) if (!seen.has(e.courseSlug)) seen.set(e.courseSlug, e.courseTitle);
+  for (const k of taught) if (k.hasPublished && !seen.has(k.slug)) seen.set(k.slug, k.title);
+  return [...seen].map(([slug, title]) => ({ slug, title }));
+}
+
+/** Journal entries and guide-desk items, grouped under their course in the order they first appear. */
+function byCourse<T extends { courseSlug: string; courseTitle: string }>(items: T[]): Array<{ slug: string; title: string; items: T[] }> {
+  const groups = new Map<string, { slug: string; title: string; items: T[] }>();
+  for (const it of items) {
+    const g = groups.get(it.courseSlug) ?? { slug: it.courseSlug, title: it.courseTitle, items: [] };
+    g.items.push(it);
+    groups.set(it.courseSlug, g);
+  }
+  return [...groups.values()];
+}
 
 // ── home / catalogue ────────────────────────────────────────────────────────
 export async function CataloguePage({ c, q }: { c: LmsConnectors; q: PageQuery }): Promise<React.ReactNode> {
@@ -26,7 +52,8 @@ export async function CataloguePage({ c, q }: { c: LmsConnectors; q: PageQuery }
     <main className="so-page">
       <Flash {...q} />
       <header className="so-hero">
-        <h1>{c.site.name}</h1>
+        <span className="so-kicker">Courses</span>
+        <h1>All courses</h1>
         <p>{c.site.tagline}</p>
       </header>
       {mine.length > 0 && (
@@ -74,16 +101,27 @@ export async function CoursePage({ c, courseSlug, q }: { c: LmsConnectors; cours
   if (!o) return { kind: "not-found" };
   if (course.visibility === "private" && !o.enrolment && !o.isStaff) return { kind: "not-found" };
 
-  const [runs, guides] = await Promise.all([listRuns(course.id), listRunGuides(o.run.id)]);
+  const [runs, guides, courses] = await Promise.all([listRuns(course.id), listRunGuides(o.run.id), reachableCourses(viewer)]);
   const here = c.hrefs.course(course.slug);
   const pc = o.published;
   const finished = o.enrolment?.status === "completed";
   const next = o.continueStep;
   const otherRuns = runs.filter((r) => r.id !== o.run.id && !r.isDefault);
+  const showGuide = guides.length > 0 || otherRuns.length > 0 || o.isStaff;
+  // Staff: every group of this course (closed ones too), who is in each, and what waits on them.
+  const [staffRuns, waiting] = o.isStaff
+    ? await Promise.all([
+        listRuns(course.id, { includeClosed: true }).then((rs) => Promise.all(rs.map(async (r) => ({ run: r, roster: await listRoster(viewer, r.id) })))),
+        listGuideQueue(viewer, { courseId: course.id, awaitingOnly: true }),
+      ])
+    : [[], []];
+  const groups = staffRuns.filter((g) => g.roster);
 
   const node = (
+    <div className={showGuide ? "so-shell so-shell--guide" : "so-shell"}>
     <main className="so-page">
       <JsonLd data={courseJsonLd(seoCtx(c), pc, runs)} />
+      <a className="so-tocjump" href="#course-index">Contents</a>
       <Flash {...q} />
       <header className="so-hero">
         <span className="so-kicker">{course.orgName} · free{o.enrolment ? ` · ${MODE_WORDS[o.run.mode].toLowerCase()}` : ""}</span>
@@ -110,9 +148,9 @@ export async function CoursePage({ c, courseSlug, q }: { c: LmsConnectors; cours
 
       <section aria-labelledby="outline-h">
         <h2 id="outline-h" className="so-h2">The way through</h2>
-        {o.modules.map((m, mi) => (
+        {o.modules.map((m) => (
           <section key={m.id} id={m.id} className="so-module">
-            <h3><span className="so-module__n">{roman(mi + 1)}</span> {m.title}</h3>
+            <h3>{m.title}</h3>
             {m.summary && <p className="so-module__sum">{m.summary}</p>}
             <ol className="so-steps">
               {m.steps.map((s) => (
@@ -132,10 +170,27 @@ export async function CoursePage({ c, courseSlug, q }: { c: LmsConnectors; cours
         ))}
       </section>
 
-      {(guides.length > 0 || otherRuns.length > 0) && (
-        <section aria-labelledby="with-h" className="so-with">
-          <h2 id="with-h" className="so-h2">Who you’re with</h2>
-          {guides.length > 0 && <p>Guided by {guides.map((g) => g.name.replace(/\.$/, "")).join(" and ")}. The guide is around, reads what you choose to show them, and answers when there’s something to say. Nothing waits on them.</p>}
+      <footer className="so-foot">
+        <a href={c.hrefs.care()}>Taking care while you practise</a>
+        {o.enrolment && o.enrolment.status !== "completed" && (
+          <ActionForm c={c} action="withdraw" back={here} fields={{ enrolment: o.enrolment.id }}>
+            <button type="submit" className="so-linkbtn">Step out of this course</button>
+          </ActionForm>
+        )}
+      </footer>
+    </main>
+
+    <nav id="course-index" className="so-side so-side--index" aria-label="Course contents">
+      <CourseIndex c={c} courseSlug={course.slug} courseTitle={pc.course.title} modules={o.modules} courses={courses} />
+    </nav>
+
+    {showGuide && (
+      <aside className="so-side so-side--guide" aria-labelledby="with-h">
+        <div className="so-guide">
+          <h2 id="with-h" className="so-guide__h">Who you’re with</h2>
+          {guides.length > 0
+            ? <p>Guided by {guideNames(guides)}. The guide is around, reads what you choose to show them, and answers when there’s something to say. Nothing waits on them.</p>
+            : <p>No guide is named for this course yet.</p>}
           {otherRuns.length > 0 && (
             <ul className="so-cards">
               {otherRuns.map((r) => (
@@ -150,25 +205,43 @@ export async function CoursePage({ c, courseSlug, q }: { c: LmsConnectors; cours
               ))}
             </ul>
           )}
-        </section>
-      )}
-
-      <footer className="so-foot">
-        <a href={c.hrefs.care()}>Taking care while you practise</a>
-        {o.isStaff && <a href={`${c.hrefs.guide()}?course=${course.slug}`}>Guide desk</a>}
-        {o.enrolment && o.enrolment.status !== "completed" && (
-          <ActionForm c={c} action="withdraw" back={here} fields={{ enrolment: o.enrolment.id }}>
-            <button type="submit" className="so-linkbtn">Step out of this course</button>
-          </ActionForm>
+        </div>
+        {o.isStaff && (
+          <div className="so-guide so-guide--staff">
+            <h2 className="so-guide__h">Your groups</h2>
+            <p><a href={c.hrefs.guide(course.slug)}>{waiting.length ? `${waiting.length} ${waiting.length === 1 ? "reflection is" : "reflections are"} waiting on you →` : "Nothing is waiting on you."}</a></p>
+            {groups.map(({ run, roster }) => (
+              <details key={run.id} className="so-groupsum">
+                <summary><strong>{run.title}</strong> <span className="so-meta">· {roster!.length} {roster!.length === 1 ? "person" : "people"}{run.status === "closed" ? " · closed" : ""}</span></summary>
+                {roster!.length > 0 ? (
+                  <ul className="so-roster">
+                    {roster!.map((p) => (
+                      <li key={p.enrolmentId}>
+                        <span>{p.name}</span>
+                        <span className="so-meta">{p.status === "completed" ? "finished" : `${p.done} done`} · {p.lastSeenAt ? `here ${fmtDate(p.lastSeenAt)}` : `began ${fmtDate(p.enrolledAt)}`}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="so-meta">No one yet.</p>}
+                {course.publishedVersionId && course.publishedVersionId !== run.courseVersionId && (
+                  <ActionForm c={c} action="adopt" back={here} fields={{ run: run.id }}>
+                    <button type="submit" className="so-btn so-btn--quiet">Move this group to the latest version</button>
+                  </ActionForm>
+                )}
+                {run.discussionFeed && c.createDiscussionThread && (
+                  <ActionForm c={c} action="open-discussions" back={here} fields={{ run: run.id, course: course.slug }}>
+                    <button type="submit" className="so-btn so-btn--quiet">Open a forum conversation for each step</button>
+                  </ActionForm>
+                )}
+              </details>
+            ))}
+          </div>
         )}
-      </footer>
-    </main>
+      </aside>
+    )}
+    </div>
   );
   return { kind: "ok", node };
-}
-
-function roman(n: number): string {
-  return ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"][n - 1] ?? String(n);
 }
 
 // ── step ────────────────────────────────────────────────────────────────────
@@ -201,12 +274,13 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
 
   if (e && !closed) await touchStep(viewer, e.id, step.stepId);
 
-  const [threads, mine, circle, shared, discussion] = await Promise.all([
+  const [threads, mine, circle, shared, discussion, courses] = await Promise.all([
     step.refs.threadId ? getThreadRefs([step.refs.threadId]) : Promise.resolve({}),
     e ? listMyResponses(viewer, e.id, step.stepId) : Promise.resolve([]),
     e && community ? listCircleResponses(viewer, o.run.id, step.stepId) : Promise.resolve([]),
     course.visibility === "public" ? listPublicResponses(step.stepId) : Promise.resolve([]),
     community ? getRunDiscussion(o.run.id, step.stepId) : Promise.resolve(null),
+    reachableCourses(viewer),
   ]);
   const thread = step.refs.threadId ? (threads as Record<string, import("@elkdonis/lms").ThreadRef>)[step.refs.threadId] ?? null : null;
   if (mine.some((r) => r.acknowledgements.length) && viewer.userId) void markAcknowledgementsSeen(viewer.userId);
@@ -223,8 +297,10 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
   const visChoices: ResponseVisibility[] = ["me", "guide", ...(community ? (["circle"] as const) : []), ...(course.visibility === "public" ? (["public"] as const) : [])];
 
   const node = (
+    <div className="so-shell">
     <main className="so-page so-page--step">
       {course.visibility === "public" && !closed && <JsonLd data={stepJsonLd(seoCtx(c), o.published, step)} />}
+      <a className="so-tocjump" href="#course-index">Contents</a>
       <nav className="so-crumbs" aria-label="Breadcrumb">
         <a href={c.hrefs.course(course.slug)}>{o.published.course.title}</a>
         <span aria-hidden> › </span>
@@ -327,6 +403,7 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
                 </ActionForm>
               </details>
             )}
+
           </>
         )}
       </article>
@@ -336,17 +413,45 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
         {next ? <a rel="next" href={c.hrefs.step(course.slug, next.slug)}><span>After</span>{next.title}</a> : <a href={c.hrefs.course(course.slug)}><span>After</span>Back to the course</a>}
       </nav>
     </main>
+
+    <nav id="course-index" className="so-side so-side--index" aria-label="Course contents">
+      <CourseIndex c={c} courseSlug={course.slug} courseTitle={o.published.course.title} modules={o.modules} currentStepId={step.stepId} courses={courses} />
+    </nav>
+
+    </div>
   );
   return { kind: "ok", node };
 }
 
-// ── journal ─────────────────────────────────────────────────────────────────
-export async function JournalPage({ c, q }: { c: LmsConnectors; q: PageQuery }): Promise<PageResult> {
+// ── journal (your writing; and, for guides, what is waiting on you) ────────
+/**
+ * One page for everything written in the Education Hub. A guide's queue —
+ * what learners chose to show their guide — comes first, because it asks for
+ * something; the viewer's own writing follows. The two never mix: the queue
+ * holds other people's words, the rest only yours.
+ */
+export async function JournalPage({ c, q, courseSlug, all }: { c: LmsConnectors; q: PageQuery; courseSlug?: string; all?: boolean }): Promise<PageResult> {
   const viewer = await c.viewer();
   if (!viewer.userId) return { kind: "redirect", to: c.hrefs.signIn(c.hrefs.journal()) };
-  const [entries, days, awards] = await Promise.all([listJournal(viewer), listPracticeDays(viewer.userId), listAwards(viewer.userId)]);
+  const filterCourse = courseSlug ? await getCourseBySlug(courseSlug) : null;
+  const [entries, days, awards, queue, taught] = await Promise.all([
+    listJournal(viewer), listPracticeDays(viewer.userId), listAwards(viewer.userId),
+    listGuideQueue(viewer, { courseId: filterCourse?.id, awaitingOnly: !all }),
+    listEditableCourses(viewer).catch(() => []),
+  ]);
   void markAcknowledgementsSeen(viewer.userId);
+  const deskCourses = taught.filter((k) => k.hasPublished);
+  const guides = deskCourses.length > 0 || queue.length > 0 || Boolean(filterCourse);
+  const deskHref = (course?: string | null, withAll = all) => {
+    const qs = new URLSearchParams();
+    if (course) qs.set("course", course);
+    if (withAll) qs.set("all", "1");
+    const query = qs.toString();
+    return `${c.hrefs.journal()}${query ? `?${query}` : ""}#to-answer`;
+  };
+  const back = deskHref(filterCourse?.slug);
   const set = new Set(days);
+  const journalGroups = byCourse(entries);
   const today = new Date();
   const cells = Array.from({ length: 84 }, (_, i) => {
     const d = new Date(today.getTime() - (83 - i) * 86_400_000);
@@ -360,6 +465,40 @@ export async function JournalPage({ c, q }: { c: LmsConnectors; q: PageQuery }):
         <h1>Your journal</h1>
         <p>Everything you’ve written here, in one place. It is yours: each entry says who can read it, and removing one really removes it.</p>
       </header>
+
+      {guides && (
+        <section id="to-answer" className="so-toanswer" aria-labelledby="ta-h">
+          <h2 id="ta-h" className="so-h2">To answer{filterCourse ? ` · ${filterCourse.title}` : ""}</h2>
+          <p className="so-meta">What people chose to show you as their guide. Private reflections never appear here. Nothing holds anyone up — answer when there is something to say. <a href={deskHref(filterCourse?.slug, !all)}>{all ? "Only what’s unanswered" : "Include what’s been answered"}</a></p>
+          {deskCourses.length > 1 && (
+            <nav className="so-chips" aria-label="Your courses">
+              <a className="so-chip" href={deskHref(null)} aria-current={!filterCourse ? "true" : undefined}>All courses</a>
+              {deskCourses.map((k) => (
+                <a key={k.slug} className="so-chip" href={deskHref(k.slug)} aria-current={filterCourse?.slug === k.slug ? "true" : undefined}>{k.title}</a>
+              ))}
+            </nav>
+          )}
+          {queue.length === 0 ? <p className="so-empty">{all ? "Nothing has been shown to you yet." : "Nothing is waiting."}</p> : byCourse(queue).map((g) => (
+            <section key={g.slug} className="so-bycourse" aria-labelledby={`qh-${g.slug}`}>
+              <h3 id={`qh-${g.slug}`} className="so-bycourse__h">
+                <a href={c.hrefs.course(g.slug)}>{g.title}</a> <span className="so-meta">· {g.items.length} {g.items.length === 1 ? "entry" : "entries"}</span>
+              </h3>
+              {g.items.map((r) => (
+                <div key={r.id} className="so-entry">
+                  <a className="so-kicker" href={c.hrefs.step(r.courseSlug, r.stepSlug)}>{r.runTitle} · {r.stepTitle}</a>
+                  <ResponseCard r={r} c={c} back={back} own={false} />
+                  <ActionForm c={c} action="acknowledge" back={back} fields={{ response: r.id }} className="so-form so-form--inline">
+                    <label className="so-sr" htmlFor={`a-${r.id}`}>Your answer</label>
+                    <textarea id={`a-${r.id}`} name="body" rows={2} required placeholder={`A word back to ${r.author?.name ?? "them"}…`} />
+                    <button type="submit" className="so-btn so-btn--quiet">Answer</button>
+                  </ActionForm>
+                </div>
+              ))}
+            </section>
+          ))}
+        </section>
+      )}
+
       <section aria-labelledby="days-h">
         <h2 id="days-h" className="so-h2">Days you practised</h2>
         <div className="so-days" role="img" aria-label={`${days.length} days with practice in the last twelve weeks`}>
@@ -374,77 +513,27 @@ export async function JournalPage({ c, q }: { c: LmsConnectors; q: PageQuery }):
         </section>
       )}
       <section aria-labelledby="ent-h">
-        <h2 id="ent-h" className="so-h2">Entries</h2>
-        {entries.length === 0 ? <p className="so-empty">Nothing written yet.</p> : entries.map((r) => (
-          <div key={r.id} className="so-entry">
-            <a className="so-kicker" href={c.hrefs.step(r.courseSlug, r.stepSlug)}>{r.courseTitle} · {r.stepTitle}</a>
-            <ResponseCard r={r} c={c} back={c.hrefs.journal()} own />
-          </div>
-        ))}
+        <h2 id="ent-h" className="so-h2">{guides ? "Your writing" : "Entries"}</h2>
+        {entries.length === 0 ? <p className="so-empty">Nothing written yet.</p> : (
+          <>
+            {journalGroups.length > 1 && (
+              <nav className="so-chips" aria-label="Courses in your journal">
+                {journalGroups.map((g) => <a key={g.slug} className="so-chip" href={`#j-${g.slug}`}>{g.title} · {g.items.length}</a>)}
+              </nav>
+            )}
+            {journalGroups.map((g) => (
+              <section key={g.slug} id={`j-${g.slug}`} className="so-bycourse" aria-labelledby={`jh-${g.slug}`}>
+                <h3 id={`jh-${g.slug}`} className="so-bycourse__h">
+                  <a href={c.hrefs.course(g.slug)}>{g.title}</a> <span className="so-meta">· {g.items.length} {g.items.length === 1 ? "entry" : "entries"}</span>
+                </h3>
+                <div className="so-jentries">
+                  {g.items.map((r) => <JournalEntryCard key={r.id} r={r} c={c} back={c.hrefs.journal()} />)}
+                </div>
+              </section>
+            ))}
+          </>
+        )}
       </section>
-    </main>
-  );
-  return { kind: "ok", node };
-}
-
-// ── guide desk ──────────────────────────────────────────────────────────────
-export async function GuidePage({ c, q, courseSlug, all }: { c: LmsConnectors; q: PageQuery; courseSlug?: string; all?: boolean }): Promise<PageResult> {
-  const viewer = await c.viewer();
-  if (!viewer.userId) return { kind: "redirect", to: c.hrefs.signIn(c.hrefs.guide()) };
-  const course = courseSlug ? await getCourseBySlug(courseSlug) : null;
-  const queue = await listGuideQueue(viewer, { courseId: course?.id, awaitingOnly: !all });
-  const runs = course ? await listRuns(course.id, { includeClosed: true }) : [];
-  const rosters = await Promise.all(runs.map(async (r) => ({ run: r, roster: await listRoster(viewer, r.id) })));
-  const visible = rosters.filter((r) => r.roster);
-  if (course && visible.length === 0 && queue.length === 0) return { kind: "not-found" };
-  const back = `${c.hrefs.guide()}${course ? `?course=${course.slug}` : ""}`;
-  const latest = course ? await getCourseById(course.id) : null;
-
-  const node = (
-    <main className="so-page">
-      <Flash {...q} />
-      <header className="so-hero">
-        <span className="so-kicker">Guide desk{course ? ` · ${course.title}` : ""}</span>
-        <h1>{all ? "Everything shown to you" : "Waiting on a word from you"}</h1>
-        <p>Only what people chose to show their guide appears here. Private reflections never do. Nothing here holds anyone up — answer when there is something to say.</p>
-        <p><a href={`${back}${back.includes("?") ? "&" : "?"}${all ? "" : "all=1"}`}>{all ? "Only what’s unanswered" : "Include what’s been answered"}</a></p>
-      </header>
-      {queue.length === 0 ? <p className="so-empty">Nothing is waiting.</p> : queue.map((r) => (
-        <div key={r.id} className="so-entry">
-          <a className="so-kicker" href={c.hrefs.step(r.courseSlug, r.stepSlug)}>{r.runTitle} · {r.stepTitle}</a>
-          <ResponseCard r={r} c={c} back={back} own={false} />
-          <ActionForm c={c} action="acknowledge" back={back} fields={{ response: r.id }} className="so-form so-form--inline">
-            <label className="so-sr" htmlFor={`a-${r.id}`}>Your answer</label>
-            <textarea id={`a-${r.id}`} name="body" rows={2} required placeholder={`A word back to ${r.author?.name ?? "them"}…`} />
-            <button type="submit" className="so-btn so-btn--quiet">Answer</button>
-          </ActionForm>
-        </div>
-      ))}
-      {visible.map(({ run, roster }) => (
-        <section key={run.id} aria-label={run.title}>
-          <h2 className="so-h2">{run.title} <span className="so-meta">· {roster!.length} {roster!.length === 1 ? "person" : "people"}</span></h2>
-          <div className="so-tools">
-            {latest?.publishedVersionId && latest.publishedVersionId !== run.courseVersionId && (
-              <ActionForm c={c} action="adopt" back={back} fields={{ run: run.id }}>
-                <button type="submit" className="so-btn so-btn--quiet">Move this group to the latest version</button>
-              </ActionForm>
-            )}
-            {run.discussionFeed && c.createDiscussionThread && (
-              <ActionForm c={c} action="open-discussions" back={back} fields={{ run: run.id, course: course!.slug }}>
-                <button type="submit" className="so-btn so-btn--quiet">Open a forum conversation for each step</button>
-              </ActionForm>
-            )}
-          </div>
-          {roster!.length > 0 && (
-            <table className="so-table">
-              <thead><tr><th>Who</th><th>Began</th><th>Last here</th><th>Steps done</th></tr></thead>
-              <tbody>{roster!.map((p) => (
-                <tr key={p.enrolmentId}><td>{p.name}</td><td>{fmtDate(p.enrolledAt)}</td><td>{p.lastSeenAt ? fmtDate(p.lastSeenAt) : "—"}</td><td>{p.done}{p.status === "completed" ? " · finished" : ""}</td></tr>
-              ))}</tbody>
-            </table>
-          )}
-        </section>
-      ))}
     </main>
   );
   return { kind: "ok", node };
@@ -474,12 +563,16 @@ export function CarePage({ c }: { c: LmsConnectors }): React.ReactNode {
 }
 
 // ── small things the host's chrome needs ────────────────────────────────────
-export async function chromeState(c: LmsConnectors): Promise<{ name: string | null; signedIn: boolean; unseen: number; isGuide: boolean }> {
+export async function chromeState(c: LmsConnectors): Promise<{ name: string | null; signedIn: boolean; unseen: number; waiting: number; isGuide: boolean }> {
   const v = await c.viewer();
-  if (!v.userId) return { name: null, signedIn: false, unseen: 0, isGuide: false };
-  const unseen = await countUnseenAcknowledgements(v.userId).catch(() => 0);
+  if (!v.userId) return { name: null, signedIn: false, unseen: 0, waiting: 0, isGuide: false };
+  const [unseen, waiting] = await Promise.all([
+    countUnseenAcknowledgements(v.userId).catch(() => 0),
+    // Reflections waiting on this person as a guide (their orgs' runs, or runs they're named on).
+    listGuideQueue(v, { awaitingOnly: true, limit: 99 }).then((q) => q.length).catch(() => 0),
+  ]);
   const isGuide = Boolean(v.isGlobalAdmin) || Object.values(v.roles).some((r) => r === "owner" || r === "guide");
-  return { name: v.name, signedIn: true, unseen, isGuide };
+  return { name: v.name, signedIn: true, unseen, waiting, isGuide };
 }
 
 export type { OutlineStepView };

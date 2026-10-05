@@ -1,7 +1,9 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { siteConfig } from "@/config/site";
+import { ArrivalNotice } from "@elkdonis/cms-ui/network";
 import { SiteHeader } from "@/components/site-header";
 import { NetworkBar } from "@/components/network-bar";
 import { SiteFooter } from "@/components/site-footer";
@@ -48,6 +50,8 @@ export default function RootLayout({
         {children}
         <SiteFooter />
         <Toaster richColors position="top-right" />
+        <ArrivalNotice endpoint="/api/network/arrival" />
+        <AnalyticsBeacon />
       </body>
     </html>
   );

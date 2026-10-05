@@ -1,34 +1,15 @@
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Fraunces, Spectral } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HubSurfaces } from "@/components/hub/HubSurfaces";
+import { fontVariables } from "@/lib/fonts";
 import { siteConfig } from "@/config/site";
 import { getSiteSections } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
-
-/**
- * Fraunces for display, Spectral for reading — a soft-serif with real weight
- * over a text serif built for long passages. Deliberately not amrit-canada's
- * Cinzel/Lora: the two sites share a codebase, not a voice.
- */
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const spectral = Spectral({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-spectral",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -73,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${spectral.variable}`}
+      className={fontVariables}
     >
       {/*
         No decorative side panel. amrit-canada runs a full-height paper.js
@@ -109,6 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteFooter content={sections.footer} />
           <Toaster position="top-right" />
         </HubSurfaces>
+        <AnalyticsBeacon />
       </body>
     </html>
   );

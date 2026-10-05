@@ -20,6 +20,7 @@
     "next": "^15 || ^16"
   },
   "dependencies": {
+    "@elkdonis/analytics": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/services": "workspace:*",
     "@elkdonis/utils": "workspace:*"

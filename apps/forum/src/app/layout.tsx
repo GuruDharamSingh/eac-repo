@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter, UnifrakturCook } from "next/font/google";
 import { cookies } from "next/headers";
@@ -36,7 +37,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = mode === "dark" || mode === "light" ? mode : undefined;
   return (
     <html lang="en" suppressHydrationWarning className={`${title.variable} ${body.variable} ${display.variable}`} data-theme={theme}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <AnalyticsBeacon />
+      </body>
     </html>
   );
 }

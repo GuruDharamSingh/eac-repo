@@ -32,7 +32,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // in confers. The org scoping itself still matters: without defaultOrgs a
   // first-time Google sign-in would join the shared network defaults instead
   // and never appear in getIfacUsers().
+  //
+  // joinOrgs does the same for an EXISTING account signing in with Google
+  // here: it becomes an IFAC viewer (an existing row keeps its role).
   return handleOAuthCallback(proxied as NextRequest, {
     defaultOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
+    joinOrgs: [{ id: siteConfig.orgId, role: "viewer" }],
   });
 }

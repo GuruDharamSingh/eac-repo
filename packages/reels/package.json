@@ -1,0 +1,34 @@
+{
+  "name": "@elkdonis/reels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./templates": "./src/templates/index.ts",
+    "./editor": "./src/editor/index.ts",
+    "./editor.css": "./src/editor/video-studio.css",
+    "./broadcast": "./src/broadcast/index.ts",
+    "./broadcast.css": "./src/broadcast/broadcast.css"
+  },
+  "dependencies": {
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/studio": "workspace:*",
+    "@remotion/player": "4.0.532",
+    "@remotion/transitions": "4.0.532",
+    "remotion": "4.0.532"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "typescript": "^5"
+  }
+}

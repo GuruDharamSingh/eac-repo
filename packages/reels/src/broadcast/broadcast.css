@@ -1,0 +1,29 @@
+/* Studio Broadcast. Uses the Studio tokens and the Video page's panel
+   classes (video-studio.css); only the stage differs. */
+.bc-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 0;
+}
+.bc-stage { padding: 18px 22px 40px; overflow-y: auto; display: grid; align-content: start; gap: 10px; }
+.bc-program {
+  aspect-ratio: 16 / 9; width: 100%; max-height: 66vh; background: #000;
+  border-radius: 10px; overflow: hidden; display: grid; place-items: center; box-shadow: var(--st-shadow);
+}
+.bc-program img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bc-program .vs-faint { color: #b8b3aa; }
+.bc-scenes { display: flex; flex-wrap: wrap; gap: 8px; }
+.bc-scenes .studio-btn[aria-pressed="true"] { background: var(--st-accent); color: var(--st-accent-ink); border-color: var(--st-accent); }
+.bc-stats { font-variant-numeric: tabular-nums; }
+.bc-live { color: var(--st-danger); margin-left: 10px; font-variant-numeric: tabular-nums; }
+.bc-rec { display: grid; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--st-line); font-size: 12.5px; word-break: break-all; }
+.bc-rec:last-of-type { border-bottom: 0; }
+@media (min-width: 1101px) {
+  .studio.bc { height: 100vh; min-height: 0; overflow: hidden; }
+  .bc-body { overflow: hidden; }
+}
+@media (max-width: 1100px) {
+  .bc-body { grid-template-columns: 1fr; }
+}
+.bc-locked { margin-top: 15vh; }

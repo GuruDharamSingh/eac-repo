@@ -20,12 +20,16 @@ export interface Thread {
   feedSlug: string | null;
   status: string;
   visibility: string;
+  /** threads.min_role: lowest org role that may read it (visibility INVITE_ONLY). */
+  minRole: string | null;
   /** threads.body — rich text HTML. */
   description: string | null;
   excerpt: string | null;
   coverImageUrl: string | null;
   /** IANA zone the author entered the time in (metadata.timeZone). Null means the site's. */
   timeZone: string | null;
+  /** Show "Confirmed / Not yet confirmed" on the meeting's page (metadata.showCycleBadge). */
+  showCycleBadge: boolean;
   location: string | null;
   isOnline: boolean;
   meetingUrl: string | null;

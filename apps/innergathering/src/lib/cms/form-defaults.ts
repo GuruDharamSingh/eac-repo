@@ -7,6 +7,7 @@
  * these defaults server-side, so they live here.
  */
 
+import type { Audience } from "@elkdonis/services/thread-audience";
 import type { MaterialItem } from "@/components/manage/materials-field";
 
 export interface ContentFormDefaults {
@@ -25,6 +26,8 @@ export interface ContentFormDefaults {
   talkToken: string;
   status: "draft" | "published";
   visibility: "PUBLIC" | "ORGANIZATION" | "INVITE_ONLY";
+  /** Who may read it; decides visibility and the minimum role on save. */
+  audience: Audience;
   scheduledAt: string;
   durationMinutes: string;
   location: string;
@@ -33,6 +36,7 @@ export interface ContentFormDefaults {
   videoLink: string;
   recurrencePattern: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
   recurrenceUntil: string;
+  showCycleBadge: boolean;
   isRsvpEnabled: boolean;
   rsvpDeadline: string;
   attendeeLimit: string;
@@ -54,7 +58,9 @@ export function emptyDefaults(feedSlug: string): ContentFormDefaults {
     documentUrl: "",
     talkToken: "",
     status: "draft",
-    visibility: "PUBLIC",
+    // New items start closed to the public: a writer widens the audience on purpose.
+    visibility: "INVITE_ONLY",
+    audience: "members",
     scheduledAt: "",
     durationMinutes: "",
     location: "",
@@ -63,6 +69,7 @@ export function emptyDefaults(feedSlug: string): ContentFormDefaults {
     videoLink: "",
     recurrencePattern: "NONE",
     recurrenceUntil: "",
+    showCycleBadge: true,
     isRsvpEnabled: true,
     rsvpDeadline: "",
     attendeeLimit: "",

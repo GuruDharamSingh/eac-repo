@@ -30,7 +30,7 @@ export const defaultGalleryItems: GalleryItem[] = [
   artist("cathleen-clapper", "Cathleen Clapper", "/artists/cathleenclapper"),
   artist("dana-mccool", "Dana McCool", "/artists/danamccool"),
   artist("ej-gold", "E.J. Gold", "/artists/ejgold"),
-  artist("eric-brummel", "Eric Brummel", "/artists/ericbrummel", "Artist and dealer"),
+  artist("eric-brummel", "Eric Brummel", "/dealers/eric-brummel", "Artist and dealer"),
   artist("jaswant-bains", "Jaswant Bains", "/artists/jaswantbains"),
   artist("jim-hodgkinson", "Jim Hodgkinson", "/artists/jimhodgkinson"),
   artist("gerald-porter", "Gerald Porter", "/artists/geraldporter"),
@@ -44,7 +44,7 @@ export const defaultDealerLinks: SiteLink[] = [
   { label: "Berni Laplante", href: "/dealers/bernilaplante" },
   { label: "William Albin", href: "/dealers/billalbin" },
   { label: "Hans Maack", href: "/dealers/hansmaack" },
-  { label: "Eric Brummel", href: "/artists/ericbrummel" },
+  { label: "Eric Brummel", href: "/dealers/eric-brummel" },
   { label: "Kevin Meadows", href: "/dealers/kevinmeadows" },
   { label: "Michael McDonnell", href: "/dealers/mmcdonnell" },
 ];

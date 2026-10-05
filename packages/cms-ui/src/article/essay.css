@@ -1,0 +1,165 @@
+/*
+  essay.css — the block grid and the block styles the canvas emits.
+
+  Imported by article.css beside it, so every site that renders an
+  ArticleView carries it. Plain CSS on the --read-* tokens article.css
+  defines; an org restyles by redefining tokens, never these rules.
+
+  The grid (Comeau "Full-Bleed Layout", Mulligan "Layout Breakouts"): three
+  named tracks. Everything sits in `content` unless it carries eac-w-wide or
+  eac-w-full. An org that sets --read-wide-ext: 0 forbids the wide breakout
+  on its site (docs/open/BLOCK_CANVAS_BRIEF_2026-09-27.md §3.3).
+*/
+
+.eac-article__body {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(var(--read-gutter, 1.25rem), 1fr)
+    [wide-start] minmax(0, var(--read-wide-ext, 6rem))
+    [content-start] min(var(--read-measure, 63ch), 100% - 2 * var(--read-gutter, 1.25rem)) [content-end]
+    minmax(0, var(--read-wide-ext, 6rem)) [wide-end]
+    minmax(var(--read-gutter, 1.25rem), 1fr) [full-end];
+  row-gap: 0;
+  container: essay / inline-size;
+}
+.eac-article__body > * { grid-column: content; min-width: 0; }
+.eac-article__body > .eac-w-wide { grid-column: wide; }
+.eac-article__body > .eac-w-full { grid-column: full; }
+
+/* ── Image ─────────────────────────────────────────────────────────────── */
+
+.eac-article__body .eac-image { margin: 0.4em 0 var(--read-para-space, 1.15em); }
+.eac-article__body .eac-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  object-fit: cover;
+}
+.eac-article__body .eac-w-full.eac-image img { border-radius: 0; }
+.eac-article__body .eac-image figcaption,
+.eac-article__body .eac-card figcaption {
+  font-family: var(--read-face-record);
+  font-size: var(--read-record-size, 0.8rem);
+  line-height: 1.45;
+  color: var(--read-muted);
+  margin-top: 0.5rem;
+}
+.eac-article__body .eac-w-full.eac-image figcaption { padding: 0 var(--read-gutter, 1.25rem); }
+
+/* ── Pull quote ────────────────────────────────────────────────────────── */
+
+.eac-article__body .eac-pull {
+  margin: 0.6em 0 var(--read-para-space, 1.15em);
+  padding: 0.4em 1em;
+  border: 0;
+  text-align: center;
+  font-style: italic;
+  font-size: 1.4em;
+  line-height: 1.3;
+  color: var(--read-ink);
+}
+.eac-article__body .eac-pull p { margin: 0; }
+.eac-article__body .eac-pull cite {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: var(--read-face-record);
+  font-style: normal;
+  font-size: var(--read-record-size, 0.8rem);
+  letter-spacing: 0.04em;
+  color: var(--read-muted);
+}
+.eac-article__body .eac-w-wide.eac-pull { font-size: 1.6em; }
+
+/* ── Aside: the margin at a wide viewport, inline below ─────────────────── */
+
+.eac-article__body .eac-aside {
+  font-family: var(--read-face-record);
+  font-size: var(--read-record-size, 0.8rem);
+  line-height: 1.5;
+  color: var(--read-muted);
+  border-top: var(--read-rule-weight, 1px) solid var(--read-rule);
+  padding-top: 0.5rem;
+  margin: 0 0 var(--read-para-space, 1.15em);
+}
+.eac-article__body .eac-aside p { margin: 0; }
+@media (min-width: 1200px) {
+  .eac-article__body > .eac-aside {
+    grid-column: wide-end / full-end;
+    align-self: start;
+    max-width: 18rem;
+    margin-left: 1.5rem;
+    margin-top: calc(-1 * var(--read-para-space, 1.15em) - 1.6em);
+  }
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+
+.eac-article__body .eac-divider { border: 0; margin: 1.2em 0 2.3em; }
+.eac-article__body .eac-divider--rule { height: var(--read-rule-weight, 1px); background: var(--read-rule); }
+.eac-article__body .eac-divider--space { height: 1.5em; }
+.eac-article__body .eac-divider--ornament { height: auto; text-align: center; }
+.eac-article__body .eac-divider--ornament::before {
+  content: "· · ·";
+  letter-spacing: 0.6em;
+  color: var(--read-faint);
+  font-size: 1.1em;
+}
+
+/* ── Picture with text: side by side only when the column allows (rule 3) ── */
+
+.eac-article__body .eac-figtext {
+  display: grid;
+  grid-template-columns: var(--share, 45%) minmax(0, 1fr);
+  gap: 1.4rem;
+  align-items: start;
+  margin: 0.4em 0 var(--read-para-space, 1.15em);
+}
+.eac-article__body .eac-figtext--right { grid-template-columns: minmax(0, 1fr) var(--share, 45%); }
+.eac-article__body .eac-figtext--right img { order: 2; }
+.eac-article__body .eac-figtext img { display: block; width: 100%; height: auto; border-radius: 4px; }
+.eac-article__body .eac-figtext__text p { margin: 0 0 0.8em; font-size: 0.95em; }
+.eac-article__body .eac-figtext figcaption { grid-column: 1 / -1; margin-top: 0; }
+@container essay (max-width: 60ch) {
+  .eac-article__body .eac-figtext, .eac-article__body .eac-figtext--right { grid-template-columns: 1fr; }
+  .eac-article__body .eac-figtext--right img { order: 0; }
+}
+
+/* ── Gallery: rows share a height by aspect ratio ──────────────────────── */
+
+.eac-article__body .eac-gallery { display: flex; flex-direction: column; gap: 6px; margin: 0.4em 0 var(--read-para-space, 1.15em); }
+.eac-article__body .eac-gallery__row { display: flex; gap: 6px; }
+.eac-article__body .eac-gallery__item { margin: 0; min-width: 0; }
+.eac-article__body .eac-gallery__item img { display: block; width: 100%; height: auto; border-radius: 3px; }
+.eac-article__body .eac-gallery__item figcaption { margin-top: 0.35rem; }
+.eac-article__body .eac-w-full.eac-gallery { padding: 0 var(--read-gutter, 1.25rem); }
+@media (max-width: 700px) { .eac-article__body .eac-gallery__row { flex-wrap: wrap; } .eac-article__body .eac-gallery__item { flex: 1 1 45% !important; } }
+
+/* ── Thread card (snapshot; a site with a resolver replaces the figure) ── */
+
+.eac-article__body .eac-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.8rem;
+  margin: 0.4em 0 var(--read-para-space, 1.15em);
+  padding: 0.9rem 1rem;
+  border: var(--read-rule-weight, 1px) solid var(--read-rule);
+  border-radius: 8px;
+}
+.eac-article__body .eac-card:has(.eac-card__cover) { grid-template-columns: 96px minmax(0, 1fr); align-items: center; }
+.eac-article__body .eac-card__cover { width: 96px; height: 72px; object-fit: cover; border-radius: 4px; }
+.eac-article__body .eac-card figcaption { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; }
+.eac-article__body .eac-card__kind { text-transform: uppercase; letter-spacing: var(--read-label-tracking, 0.1em); font-size: var(--read-label-size, 0.66rem); color: var(--read-faint); }
+.eac-article__body .eac-card__title { font-family: var(--read-face-prose); font-size: 1.05em; color: var(--read-ink); font-weight: 500; }
+.eac-article__body .eac-card__title a { color: inherit; text-decoration: none; }
+.eac-article__body .eac-card__title a:hover { text-decoration: underline; }
+.eac-article__body .eac-card__price { color: var(--read-ink); font-weight: 600; }
+.eac-article__body .eac-card__price--nfs { color: var(--read-faint); font-weight: 400; }
+.eac-article__body .eac-card--compact { padding: 0.5rem 0.8rem; }
+.eac-article__body .eac-card--compact .eac-card__cover { width: 48px; height: 48px; }
+
+/* ── Narrow: everything settles into the column ────────────────────────── */
+
+@media (max-width: 700px) {
+  .eac-article__body > .eac-w-wide { grid-column: content; }
+}

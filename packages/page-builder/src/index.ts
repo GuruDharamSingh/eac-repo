@@ -39,6 +39,9 @@ export { ColorField } from "./fields/color-field";
 export type { ColorFieldProps } from "./fields/color-field";
 
 export { CanvasDrag } from "./drag/canvas-drag";
+// For a block's own control that lists items (a gallery's pictures): which
+// one was clicked on the canvas. See drag/item-focus.tsx.
+export { useFocusedItem } from "./drag/item-focus";
 
 export { templatesPlugin } from "./templates/templates-plugin";
 export type { CanvasDragProps } from "./drag/canvas-drag";
@@ -56,3 +59,18 @@ export { isValidSlug, isValidPagePath, MAX_PATH_DEPTH } from "./slug";
 // @elkdonis/db — so the RULE lives in a module that does not, and user-store
 // re-exports it rather than owning it.
 export { isValidUserPageKey } from "./user-page-key";
+
+// The generic "Style" every block carries (2026-10-03). The control is wired
+// by buildEditorConfig; these are for a host that wants to read or preset it.
+export { BlockStyleWrap } from "./style/wrap";
+export { StyleField } from "./style/field";
+export {
+  STYLE_PROP,
+  STYLE_PRESETS,
+  COLOR_TOKENS,
+  cleanStyle,
+  cleanCustomCss,
+  styleToCss,
+  contrastRatio,
+} from "./style/schema";
+export type { StyleSettings, StylePreset } from "./style/schema";

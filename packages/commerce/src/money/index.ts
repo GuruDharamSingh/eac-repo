@@ -88,8 +88,10 @@ export function nextMinimumBid(opts: {
   currentBidMinor?: number | null;
   bidIncrementMinor: number;
 }): number {
-  if (opts.currentBidMinor == null) return opts.startingBidMinor;
-  return opts.currentBidMinor + opts.bidIncrementMinor;
+  // Number(): a bigint column that reaches here as a string would otherwise
+  // concatenate ("1500" + 1000 = "15001000").
+  if (opts.currentBidMinor == null) return Number(opts.startingBidMinor);
+  return Number(opts.currentBidMinor) + Number(opts.bidIncrementMinor);
 }
 
 /** Pretty short money for badges: "$1.2k" / "$899" */

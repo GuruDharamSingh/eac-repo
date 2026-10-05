@@ -13,6 +13,8 @@
 /* The reading layer for published writing. Plain CSS with custom-property
    fallbacks, so it picks up this site's ink and rule colours. */
 @import "@elkdonis/cms-ui/article.css";
+/* The shelf for a person's published writing (/writing/<author>). */
+@import "@elkdonis/cms-ui/writing.css";
 /* The surface system — every popup on the hub (a meeting, the month, the
    gallery, quick-add) and the faces that open them. gallery.css carries the
    lightbox the gallery surface uses. Both plain CSS; tokens mapped below. */
@@ -125,15 +127,17 @@
    ========================================================================== */
 
 :root {
-  --radius: 0.625rem;
+  /* 2026-09-26 restyle: square corners and an off-white ground, replacing
+     rounded cream-and-saffron. Saffron stays as the accent. */
+  --radius: 0rem;
 
-  --background: 39 67% 95%;          /* cream    #FDF5E6 */
+  --background: 40 23% 97%;          /* off-white #F9F8F5 */
   --foreground: 203 18% 26%;         /* charcoal #36454F */
 
-  --card: 30 43% 96%;                /* linen    #FAF0E6 */
+  --card: 0 0% 100%;                 /* white */
   --card-foreground: 203 18% 26%;
 
-  --popover: 30 43% 96%;
+  --popover: 0 0% 100%;
   --popover-foreground: 203 18% 26%;
 
   --primary: 45 79% 52%;             /* saffron medium #E6B422 — buttons, rings */
@@ -145,7 +149,7 @@
   --secondary: 38 44% 88%;
   --secondary-foreground: 203 20% 24%;
 
-  --muted: 36 33% 90%;
+  --muted: 40 14% 93%;
   --muted-foreground: 203 12% 42%;
 
   --accent: 45 88% 66%;              /* saffron light #F7D858 — hovers */
@@ -158,8 +162,8 @@
   --destructive: 0 52% 36%;          /* shares the gurdwara crimson family */
   --destructive-foreground: 39 67% 95%;
 
-  --border: 34 30% 82%;
-  --input: 34 30% 82%;
+  --border: 203 8% 78%;
+  --input: 203 8% 78%;
   --ring: 45 79% 52%;
 
   /* Per-feed accents. org_feeds.accent is the source of truth and is applied
@@ -288,9 +292,7 @@ html {
 }
 
 body {
-  /* The original cream→linen wash, not a flat fill. */
-  background: linear-gradient(145deg, #fdf5e6 0%, #faf0e6 100%);
-  background-attachment: fixed;
+  background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans), Georgia, serif;
   -webkit-font-smoothing: antialiased;
@@ -309,29 +311,36 @@ body {
    rather than redrawn in utility classes.
    ========================================================================== */
 
-/* Cards: cream gradient, saffron border, warm glow, lift on hover. */
+/* Cards (2026-09-26): white, square, one firm charcoal rule. No lift; the
+   border darkens on hover instead. Replaced the saffron-glow card. */
 .card-natural {
-  background: linear-gradient(145deg, #fdf5e6 0%, #faf0e6 100%);
-  border: 2px solid #e6b422;
-  border-radius: 16px;
-  box-shadow:
-    0 8px 32px rgba(244, 196, 48, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--foreground) / 0.28);
+  border-radius: 0;
+  box-shadow: none;
+  transition: border-color 0.15s ease;
 }
 
 .card-natural:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow:
-    0 16px 48px rgba(244, 196, 48, 0.3),
-    0 0 0 3px rgba(244, 196, 48, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: hsl(var(--foreground) / 0.7);
+}
+
+/* The shared surface faces (thread rows, hub tiles) in the same voice:
+   no rounded lift, a firmer rule. */
+.eac-face {
+  border-color: hsl(var(--foreground) / 0.22);
+  box-shadow: none;
+}
+.eac-face:not(.is-disabled):hover,
+.eac-face:not(.is-disabled):focus-within {
+  transform: none;
+  box-shadow: none;
+  border-color: hsl(var(--foreground) / 0.6);
 }
 
 .dark .card-natural {
-  background: linear-gradient(145deg, hsl(203 20% 15%) 0%, hsl(203 18% 18%) 100%);
-  border-color: rgba(230, 180, 34, 0.55);
+  background: hsl(var(--card));
+  border-color: hsl(var(--foreground) / 0.3);
 }
 
 /* Charcoal chrome — header, footer, section banners. */

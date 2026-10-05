@@ -1,0 +1,21 @@
+/* ArtDirect person page overrides, loaded with PersonDrawer (on every person
+   page). Kept out of globals.css: the dev server did not recompile edits to
+   that file on 2026-09-27, and other sessions edit it.
+
+   --oad-page-bg is the person's own ground (users.theme, set from the drawer;
+   lib/space-actions.ts caps its luminance at 0.056 so the frame's light inks
+   keep >= 4.5:1). */
+body:has(.oad-person.eac-person-page--frame) {
+  background: var(--oad-page-bg, #020202);
+}
+
+/* No lines around the boxes on ArtDirect (developer, 2026-09-27). Panels take
+   the page ground, so a chosen background reaches the whole page. IFAC's
+   frame pages keep their borders: this is scoped to .oad-person. */
+.oad-person.eac-person-page--frame {
+  --eac-person-ground: var(--oad-page-bg, #020202);
+  --eac-person-panel-bg: var(--oad-page-bg, #050505);
+  --eac-person-panel-border: 0 solid transparent;
+  --eac-person-line: transparent;
+  --read-bg: var(--oad-page-bg, #050505);
+}

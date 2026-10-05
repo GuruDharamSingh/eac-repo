@@ -11,6 +11,7 @@ export {
   loadUserPage,
   loadPublishedUserPage,
   saveUserPage,
+  publishUserPage,
   listUserPages,
   type UserPage,
   type UserPageStatus,

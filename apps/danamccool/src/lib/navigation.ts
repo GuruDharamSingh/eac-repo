@@ -20,6 +20,26 @@ export interface NavItem {
   /** True for an off-site link. Derived on the way in, never trusted from the
    *  stored value, so it cannot disagree with the href it describes. */
   external?: boolean;
+  /** Listed under the nearest link above that is not itself `sub`. Stored flat
+   *  so the editor can reorder with the same up/down buttons; groupNav() turns
+   *  the run into a submenu. One level only. */
+  sub?: boolean;
+}
+
+export interface NavGroup {
+  item: NavItem;
+  children: NavItem[];
+}
+
+/** Folds each run of `sub` links under the top-level link before it. */
+export function groupNav(items: NavItem[]): NavGroup[] {
+  const groups: NavGroup[] = [];
+  for (const item of items) {
+    const parent = groups[groups.length - 1];
+    if (item.sub && parent) parent.children.push(item);
+    else groups.push({ item: { ...item, sub: undefined }, children: [] });
+  }
+  return groups;
 }
 
 /**
@@ -31,18 +51,20 @@ export interface NavItem {
  */
 export const DEFAULT_NAV: NavItem[] = [
   { label: "Current & Upcoming", href: "/current" },
-  { label: "CV", href: "/cv" },
+  // 2026-09-25: CV, exhibitions, biography and manifestos grouped under About
+  // to shorten the sidebar; Vimeo taken off the menu (the page still exists).
+  { label: "About", href: "/about" },
+  { label: "CV", href: "/cv", sub: true },
+  { label: "Past Exhibitions", href: "/exhibitions", sub: true },
+  { label: "Biography", href: "/biography", sub: true },
+  { label: "Manifestos", href: "/manifestos", sub: true },
   { label: "Elkdonis Arts", href: siteConfig.elkdonisArtsUrl, external: true },
-  { label: "Manifestos", href: "/manifestos" },
   { label: "Collections", href: "/collections" },
   // Added 2026-09-18: her listed works, each with an enquire / buy link to the
   // marketplace. Not on her old site, which had no way to buy anything.
   { label: "Artworks", href: "/artworks" },
   { label: "Mixed Media", href: "/mixed-media" },
-  { label: "Past Exhibitions", href: "/exhibitions" },
-  { label: "Vimeo", href: "/vimeo" },
   { label: "Art Archive", href: "/art-archive" },
-  { label: "Biography", href: "/biography" },
   { label: "Writing", href: "/blog" },
   { label: "Contact", href: "/contact" },
   {
@@ -78,16 +100,18 @@ export function cleanNav(raw: unknown): NavItem[] {
     const label = String((entry as NavItem).label ?? "").trim().slice(0, 60);
     const href = String((entry as NavItem).href ?? "").trim().slice(0, 200);
     if (!label || !href) continue;
+    // A sub-link needs a parent above it; the first link cannot be one.
+    const sub = (entry as NavItem).sub === true && out.length > 0 ? { sub: true } : {};
 
     if (href.startsWith("//")) continue; // protocol-relative: off-site in disguise
     if (href.startsWith("/")) {
-      out.push({ label, href });
+      out.push({ label, href, ...sub });
       continue;
     }
     try {
       const url = new URL(href);
       if (url.protocol !== "https:" && url.protocol !== "http:") continue;
-      out.push({ label, href, external: true });
+      out.push({ label, href, external: true, ...sub });
     } catch {
       // Not a path and not a URL.
     }

@@ -6,6 +6,10 @@ import { getAllThreadsForOrg, getAttendanceCount, getCycleStatus } from "@/lib/d
 import { formatShortDate, formatTime } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { Button, Badge } from "@elkdonis/primitives";
+import { getPayoutIdentity } from "@elkdonis/commerce/server";
+import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
+import { PayoutsCard } from "@/components/manage/payouts-card";
+import { getViewer } from "@/lib/auth";
 
 /**
  * The editorial dashboard.
@@ -15,13 +19,21 @@ import { Button, Badge } from "@elkdonis/primitives";
  * wrong for a site with an owner: the person running this site needs to see
  * everything on it, including what a guide posted.
  */
-export default async function ManageDashboard() {
-  const [threads, feeds, standingId] = await Promise.all([
+export default async function ManageDashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ payouts?: string }>;
+}) {
+  const [threads, feeds, standingId, viewer] = await Promise.all([
     getAllThreadsForOrg(),
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }),
     // Which row is flagged to lead the hub, so its menu offers to unflag it.
     getStandingMeetingId(siteConfig.orgId),
+    getViewer().catch(() => null),
   ]);
+  // The viewer's own payout identity — a person's, never the site's.
+  const identity = viewer ? await getPayoutIdentity(viewer.userId).catch(() => null) : null;
+  const returned = (await searchParams)?.payouts ?? null;
 
   const feedNames = new Map(feeds.map((f) => [f.slug, f.name]));
 
@@ -38,6 +50,22 @@ export default async function ManageDashboard() {
 
   return (
     <>
+      {viewer ? (
+        <div className="mb-10">
+          <PayoutsCard
+            identity={{
+              country: identity?.country ?? null,
+              payoutMethod: identity?.payoutMethod ?? null,
+              payoutEmail: identity?.payoutEmail ?? null,
+              hasAccount: Boolean(identity?.stripeAccountId),
+              onboarded: Boolean(identity?.canReceiveDestinationCharge),
+            }}
+            cardAvailable={isCardPaymentAvailable()}
+            returned={returned}
+          />
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-serif text-2xl">Content</h2>
         <Button asChild size="sm">

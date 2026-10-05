@@ -3564,3 +3564,485 @@ details.member-card,
     opacity: 0.5;
   }
 }
+
+/* ── Current offerings band (under the hero) ─────────────────────
+   The public ways in, shown in full with their RSVP. Ink on cream
+   throughout: the gold is for rules and borders, and for text only at
+   #7a6431, which holds 4.5:1 on the card. (claude, 2026-09-26) */
+.ig-offer-section {
+  padding: clamp(2.5rem, 5vw, 4rem) 1.5rem clamp(2.5rem, 5vw, 3.5rem);
+  background: linear-gradient(180deg, #f3eadc 0%, #fbf7ef 100%);
+  border-top: 1px solid rgba(183, 154, 85, 0.28);
+}
+
+.ig-offer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ig-offer-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.ig-offer-eyebrow {
+  order: 2;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #7a6431;
+}
+
+.marketing-root .ig-offer-heading {
+  margin: 0;
+  font-family: "Brothers", sans-serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  color: #01124e;
+}
+
+.ig-offer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  background: #fffdf8;
+  border: 1px solid rgba(183, 154, 85, 0.4);
+  border-radius: 6px;
+  box-shadow: 0 22px 48px -30px rgba(1, 18, 78, 0.35);
+  overflow: hidden;
+}
+
+.ig-offer-media {
+  display: block;
+  min-height: 260px;
+  background: #e9dfcc;
+}
+
+.ig-offer-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ig-offer-body {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.ig-offer-kicker {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7a6431;
+}
+
+.marketing-root .ig-offer-title {
+  margin: 0;
+  font-family: "Basteleur", Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.15;
+  color: #01124e;
+}
+
+.ig-offer-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ig-offer-title a:hover {
+  text-decoration: underline;
+  text-decoration-color: #b79a55;
+  text-underline-offset: 4px;
+}
+
+.ig-offer-blurb {
+  margin: 0;
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #22325c;
+}
+
+.ig-offer-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid rgba(183, 154, 85, 0.3);
+  border-bottom: 1px solid rgba(183, 154, 85, 0.3);
+}
+
+.ig-offer-facts dt {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7a6431;
+}
+
+.ig-offer-facts dd {
+  margin: 0.2rem 0 0;
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1rem;
+  color: #01124e;
+}
+
+.ig-offer-localtime {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  color: #4b5f85;
+}
+
+.ig-offer-badge {
+  align-self: flex-start;
+}
+
+.ig-offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.ig-offer-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 1.1rem;
+  border: 1px solid #01124e;
+  border-radius: 3px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #01124e;
+  background: transparent;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ig-offer-btn:hover {
+  background: rgba(1, 18, 78, 0.06);
+}
+
+.ig-offer-btn--primary {
+  background: #01124e;
+  color: #fbf7ef;
+}
+
+.ig-offer-btn--primary:hover {
+  background: #022278;
+}
+
+.ig-offer-link {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: #022278;
+  text-decoration: underline;
+  text-decoration-color: rgba(183, 154, 85, 0.7);
+  text-underline-offset: 4px;
+}
+
+.ig-offer-rsvp {
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  background: #f6efe2;
+  border-left: 1px solid rgba(183, 154, 85, 0.3);
+  min-width: 0;
+}
+
+/* The shared RSVP panel, restyled in place rather than forked. */
+.ig-offer-rsvp-panel h2 {
+  margin: 0;
+  font-family: "Basteleur", Georgia, serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #01124e;
+}
+
+.ig-offer-rsvp-panel label {
+  color: #01124e;
+}
+
+.ig-offer-rsvp-panel input:not([type="checkbox"]) {
+  background: #fffdf8;
+  border-color: rgba(1, 18, 78, 0.28);
+  color: #01124e;
+}
+
+.ig-offer-rsvp-panel .grid {
+  grid-template-columns: 1fr;
+}
+
+.ig-offer-rsvp-panel .text-muted-foreground {
+  color: #4b5f85;
+}
+
+.ig-offer-rsvp-panel button[type="submit"],
+.ig-offer-rsvp-panel button:not([role="checkbox"]) {
+  background: #01124e;
+  color: #fbf7ef;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+}
+
+.ig-offer-more {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ig-offer-more-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.1rem;
+  background: #fffdf8;
+  border: 1px solid rgba(183, 154, 85, 0.35);
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.ig-offer-more-title {
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1.05rem;
+  color: #01124e;
+}
+
+.ig-offer-more-meta {
+  font-size: 0.85rem;
+  color: #4b5f85;
+}
+
+.ig-offer-all {
+  margin: 1rem 0 0;
+  text-align: right;
+}
+
+.ig-offer-all a {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #022278;
+  text-decoration: none;
+}
+
+.ig-offer-all a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1080px) {
+  .ig-offer-card {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+  .ig-offer-rsvp {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid rgba(183, 154, 85, 0.3);
+  }
+  .ig-offer-rsvp-panel .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .ig-offer-card {
+    grid-template-columns: 1fr;
+  }
+  .ig-offer-media {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .ig-offer-rsvp-panel .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── The Grand Forum band (near the foot of the page) ─────────────
+   A navy heading strip, then the forum itself (its own .gf-page ground and
+   type, the same render as /forum), then the guest answer form for visitors.
+   Measured on #01124e: #f3eadc 14.7:1, #d6c38e 10.1:1, #c9d2e8 11.6:1.
+   (claude, 2026-09-26) */
+.ig-forum-section {
+  background: #01124e;
+  padding-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.ig-forum-head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 1.5rem clamp(1.75rem, 3vw, 2.5rem);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1rem 2.5rem;
+}
+
+.ig-forum-eyebrow {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #d6c38e;
+}
+
+.marketing-root .ig-forum-heading {
+  margin: 0.4rem 0 0;
+  font-family: "Brothers", sans-serif;
+  font-weight: 400;
+  font-size: clamp(2.4rem, 5vw, 3.75rem);
+  line-height: 1.02;
+  color: #f3eadc;
+}
+
+.ig-forum-lede {
+  margin: 0;
+  max-width: 34rem;
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #c9d2e8;
+}
+
+.ig-forum-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 1.3rem;
+  border-radius: 3px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ig-forum-btn--primary {
+  background: #d6c38e;
+  color: #01124e;
+}
+
+.ig-forum-btn--primary:hover {
+  background: #e3d3a6;
+}
+
+/* The embedded board keeps its own fonts and ground; the landing page's
+   Venture-everywhere font variables would otherwise reach into it. */
+.marketing-root .ig-forum-embed {
+  --font-serif: initial;
+  --font-sans: initial;
+  border-top: 3px solid #b79a55;
+}
+
+.ig-forum-guest {
+  background: #01124e;
+  padding: clamp(1.75rem, 3vw, 2.5rem) 1.5rem clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.ig-guest-answer {
+  max-width: 760px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ig-guest-answer-title {
+  margin: 0;
+  font-family: "Basteleur", Georgia, serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #f3eadc;
+}
+
+.ig-guest-answer-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #c9d2e8;
+}
+
+.ig-guest-answer-note a {
+  color: #d6c38e;
+}
+
+.ig-guest-answer textarea,
+.ig-guest-answer input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(214, 195, 142, 0.55);
+  border-radius: 4px;
+  background: #fbf7ef;
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1rem;
+  color: #01124e;
+}
+
+.ig-guest-answer-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ig-guest-answer-row input {
+  flex: 1 1 220px;
+  width: auto;
+}
+
+.ig-guest-answer button {
+  height: 46px;
+  padding: 0 1.4rem;
+  border: 0;
+  border-radius: 3px;
+  background: #d6c38e;
+  color: #01124e;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ig-guest-answer button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ig-guest-answer-thanks {
+  margin: 0;
+  color: #b9e0b0;
+}
+
+.ig-guest-answer-error {
+  margin: 0;
+  color: #ffb4a8;
+}
+
+@media (max-width: 900px) {
+  .ig-forum-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .ig-forum-btn {
+    justify-self: start;
+  }
+}

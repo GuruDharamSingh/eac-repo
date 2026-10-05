@@ -25,7 +25,8 @@ export type {
 } from "./types";
 
 export { Region } from "./slot";
-export { Paragraphs, toParagraphs } from "./text";
+export { Paragraphs, toParagraphs, RichText, isRichHtml, textToHtml, hasText, sanitizeRichValues } from "./text";
+export { EDIT_ITEM_ATTR, editItem, parseEditItem } from "./edit-item";
 export type { RegionProps, SlotRenderer, SlotValue } from "./slot";
 export { defineBlock, createCatalogue, type Catalogue, type PropsOf } from "./registry";
 export { coerceProps, propsFromAttributes, type RawProps } from "./coerce";
@@ -167,3 +168,97 @@ export const storePanelCatalogue = createCatalogue(STORE_PANEL_BLOCKS);
 
 // Starting points for a designed store section. Data only — see templates/store.ts.
 export { STORE_TEMPLATES, type PageTemplate, type TemplateNode } from "./templates/store";
+
+// ── A person's own pages on ArtDirect (2026-09-26) ─────────────────────────
+//
+// Each person has two Puck documents in user_pages (org `oad`): `profile`
+// (their root page, /<slug>) and `featured` (/<slug>/featured, one or more
+// offerings brought forward). The person-* blocks are PersonPage's parts; they
+// and the spotlight read one loaded page (`metadata.person`, see
+// ./person-context.ts), so the same resolvers serve the editor and the
+// published page. Kept apart from SHARED_BLOCKS: the person blocks need a
+// person page around them, which an org page is not.
+
+import { personHeader } from "./blocks/person-header";
+import { personCard } from "./blocks/person-card";
+import { personColumns } from "./blocks/person-columns";
+import { personPortfolio } from "./blocks/person-portfolio";
+import { personGalleries } from "./blocks/person-galleries";
+import { personWriting } from "./blocks/person-writing";
+import { personThreads } from "./blocks/person-threads";
+import { personMemberships } from "./blocks/person-memberships";
+import { personStore } from "./blocks/person-store";
+import { offeringSpotlight } from "./blocks/offering-spotlight";
+
+/** The profile page's palette: the person's parts, plus plain content blocks. */
+export const PROFILE_PAGE_BLOCKS = [
+  // Layout
+  personColumns,
+  splitRow,
+  grid,
+  divider,
+  // Headers
+  personHeader,
+  sectionHeading,
+  // Content
+  personCard,
+  prose,
+  figure,
+  textImage,
+  quote,
+  video,
+  featureCard,
+  offeringSpotlight,
+  // Listings
+  personPortfolio,
+  personGalleries,
+  personWriting,
+  personThreads,
+  personStore,
+  personMemberships,
+  pictureWall,
+  // Actions
+  linkButton,
+] as unknown as Block<never>[];
+
+export const profilePageCatalogue = createCatalogue(PROFILE_PAGE_BLOCKS);
+
+/** The featured page's palette: offerings brought forward, and room to say why. */
+export const FEATURED_PAGE_BLOCKS = [
+  // Layout
+  splitRow,
+  grid,
+  divider,
+  // Headers
+  heroBanner,
+  personHeader,
+  sectionHeading,
+  // Content
+  offeringSpotlight,
+  featureCard,
+  personCard,
+  prose,
+  figure,
+  textImage,
+  quote,
+  video,
+  // Listings
+  pictureWall,
+  // Actions
+  linkButton,
+] as unknown as Block<never>[];
+
+export const featuredPageCatalogue = createCatalogue(FEATURED_PAGE_BLOCKS);
+
+export {
+  personPageResolvers,
+  findOffering,
+  type PersonBlockContext,
+  type PersonBlockPerson,
+  type PersonBlockLink,
+  type PersonBlockWork,
+  type PersonBlockSection,
+  type OfferingRecord,
+} from "./person-context";
+
+export { PROFILE_TEMPLATE, SPOTLIGHT_TEMPLATE, FEATURED_TEMPLATES, templateDocument } from "./templates/person";

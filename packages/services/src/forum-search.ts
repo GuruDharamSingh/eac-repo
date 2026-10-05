@@ -1,4 +1,5 @@
 import { db } from '@elkdonis/db';
+import { restrictedReadSql } from './thread-access';
 import { OFF_FEED_KINDS } from './thread-kinds';
 import { viewerIdentityIds } from './forum';
 import type { ForumPerson, ForumScope, ForumViewer, Paged } from './forum';
@@ -38,6 +39,7 @@ function visible(viewer: ForumViewer) {
     t.status = 'published' AND t.kind <> ALL(${OFF_FEED_KINDS}) AND (
       t.visibility = 'PUBLIC'
       OR (t.visibility = 'ORGANIZATION' AND t.org_id = ANY(${orgs}))
+      OR ${restrictedReadSql(viewer.roles)}
       OR t.author_id = ANY(${mine}::uuid[])
     )`;
 }

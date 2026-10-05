@@ -10,4 +10,6 @@ export * from './seo';
 export { isOrgStaff, slugify as lmsSlugify, RESERVED_COURSE_SLUGS, RESERVED_STEP_SLUGS } from './util';
 export * from './authoring';
 export * from './pool';
+export * from './workshops';
+export * from './hub';
 export { unfurl, assertPublicUrl, type Unfurled } from './unfurl';

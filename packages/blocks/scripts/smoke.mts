@@ -280,6 +280,7 @@ for (const [id, props] of [
   ["quote", { text: "   " }],
   ["figure", { src: "" }],
   ["link-button", { label: "Go", href: "" }],
+  ["feature-card", { title: "", body: "" }],
 ] as const) {
   const b = sharedCatalogue.get(id)!;
   const out = renderToStaticMarkup(createElement(b.Component as never, props as never));

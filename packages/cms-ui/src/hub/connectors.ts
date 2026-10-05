@@ -1,3 +1,4 @@
+import { createConnectionsConnectors } from "../surface/ConnectionsPanel";
 import type {
   SurfaceBoard,
   SurfaceDocument,
@@ -12,6 +13,8 @@ import type {
   SurfaceProfilePageConnectors,
   SurfacePresence,
   SurfacePostTarget,
+  SurfaceListablePost,
+  SurfaceListingOrg,
 } from "../surface";
 
 // ============================================================================
@@ -70,6 +73,10 @@ export interface HubRoutes {
   presence: string;
   /** GET → `{targets}`; POST `{target,title,text}` → `{href,label}`. */
   postTo: string;
+  /** GET → `{posts, orgs}`; POST `{threadId, orgIds}` → `{ok}`. */
+  listings: string;
+  /** GET → `{connections, redirectUri}`; POST/PATCH/DELETE (services connectionsHandlers). */
+  connections: string;
 }
 
 const DEFAULT_ROUTES: HubRoutes = {
@@ -89,6 +96,8 @@ const DEFAULT_ROUTES: HubRoutes = {
   forumReadAll: "/api/forum/read-all",
   presence: "/api/center/presence",
   postTo: "/api/center/post",
+  listings: "/api/center/listings",
+  connections: "/api/center/connections",
 };
 
 /** The Deck card JSON the pipeline API returns, as far as the board reads it. */
@@ -188,10 +197,23 @@ export interface HubConnectorOptions extends HostSupplied {
    */
   presence?: boolean;
   /**
+   * "Show on" in the profile popup: which org sites list each of the
+   * person's public posts, served at `routes.listings` (GET → {posts, orgs},
+   * POST {threadId, orgIds}). Person pages, 2026-09-26.
+   */
+  listings?: boolean;
+  /**
    * "Post to…" from /center, served at `routes.postTo` (GET → targets,
    * POST {target,title,text} → {href,label}). Brief A slice 3.
    */
   postTo?: boolean;
+  /**
+   * "Connections" in the profile popup (migration 192), served at
+   * `routes.connections`. `startUrl` is the network host's consent start
+   * (services connectionStartUrl without query); `carry` wraps it in the
+   * app's handoff route so the sign-in travels.
+   */
+  connections?: { startUrl: string; carry?: (url: string) => string };
   centerLayout?: boolean;
   routes?: Partial<HubRoutes>;
 }
@@ -326,6 +348,9 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
         return { ok: true };
       },
       ...(opts.profilePage ? { page: opts.profilePage } : {}),
+      ...(opts.connections
+        ? { connections: createConnectionsConnectors({ route: r.connections, ...opts.connections }) }
+        : {}),
       ...(opts.presence
         ? {
             presence: {
@@ -343,6 +368,27 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) return { ok: false as const, error: data.error ?? "Could not save that." };
                 return { ok: true as const, pending: Boolean(data.pending) };
+              },
+            },
+          }
+        : {}),
+      ...(opts.listings
+        ? {
+            listings: {
+              async load() {
+                const res = await fetch(r.listings);
+                if (!res.ok) throw new Error(`listings ${res.status}`);
+                return (await res.json()) as { posts: SurfaceListablePost[]; orgs: SurfaceListingOrg[] };
+              },
+              async set(threadId, orgIds) {
+                const res = await fetch(r.listings, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ threadId, orgIds }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) return { ok: false, error: data.error ?? "Could not save that." };
+                return { ok: true };
               },
             },
           }

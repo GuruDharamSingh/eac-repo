@@ -23,6 +23,17 @@
   font-style: var(--dm-caption-style, normal);
 }
 
+/* "Menu lettering" captions on a picture wall take the sidebar menu's face,
+   weight, case and spacing. Set on the wall itself, not :root, so the values
+   resolve where the menu tokens are read (a derived var resolves where it is
+   declared). */
+.blk-wall {
+  --eac-block-font-nav: var(--dm-font-nav);
+  --eac-block-nav-weight: var(--dm-nav-weight);
+  --eac-block-nav-case: var(--dm-nav-case);
+  --eac-block-nav-tracking: var(--dm-nav-tracking);
+}
+
 /* A heading's subtitle — on the page ground too. */
 .blk-heading-sub {
   color: var(--dm-caption-ink, inherit);
@@ -36,4 +47,21 @@
 .blk-banner-sub {
   font-family: var(--dm-font-caption, inherit);
   font-style: var(--dm-caption-style, italic);
+}
+
+/* ---------------------------------------------------------------------------
+   A block's own "Text style" (lib/puck/text-style.tsx), set in the editor's
+   right column. The wrapper draws no box. Each part applies to every word in
+   the block and wins over the block's own rules (!important), because it is
+   a choice someone made for this block specifically. Colour skips buttons:
+   their text is set against their own fill.
+   --------------------------------------------------------------------------- */
+.dm-ts { display: contents; }
+.dm-ts[data-ts-font] *     { font-family: var(--ts-font) !important; }
+.dm-ts[data-ts-weight] *   { font-weight: var(--ts-weight) !important; }
+.dm-ts[data-ts-case] *     { text-transform: var(--ts-case) !important; }
+.dm-ts[data-ts-tracking] * { letter-spacing: var(--ts-tracking) !important; }
+.dm-ts[data-ts-italic] *   { font-style: italic !important; }
+.dm-ts[data-ts-color] :is(p, li, h1, h2, h3, h4, h5, h6, blockquote, cite, figcaption, dt, dd, span, em, strong, label, a):not(button, button *, [class*="btn"], [class*="btn"] *) {
+  color: var(--ts-color) !important;
 }

@@ -11,6 +11,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/analytics": "workspace:*",
     "@elkdonis/auth-client": "workspace:*",
     "@elkdonis/auth-server": "workspace:*",
     "@elkdonis/blocks": "workspace:*",

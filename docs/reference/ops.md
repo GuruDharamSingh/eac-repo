@@ -28,7 +28,8 @@ public DNS, and the files cited).
 - `docker-compose.prod.yml`, `docker-compose.production.yml`, `Dockerfile.prod`
   and `scripts/{build,start,stop,status,migrate}-production.sh` are not used by
   the running stack. They reference `.env.production` (absent) and services
-  such as `inner-gathering-prod` (last touched 2026-06-06).
+  such as `inner-gathering-prod` (last touched 2026-06-06; correction
+  2026-09-25: `docker-compose.production.yml` was edited again in `56f5639`).
 - `docker/nginx/` and `docker/postgres/` are not mounted by any service
   (verified by grep of `docker-compose.yml`). Production ingress is NPM (below).
 
@@ -62,21 +63,21 @@ in the container; source changed after that date is not live.
 | admin | eac-admin | 3000 | dev (override) | none, LAN only | yes | – |
 | sunjay | eac-sunjay | 3001 | prod | paratheater.arts-collective.com | yes | 09-20 |
 | blog-guru-dharam | eac-blog-guru-dharam | 3002 | dev | – | no | – |
-| forum | eac-forum | 3003 | dev | forum.arts-collective.com | yes | – |
+| forum | eac-forum | 3003 | dev | forum.arts-collective.com | no (2026-09-26: stopped at developer request) | – |
 | inner-gathering | eac-inner-gathering | 3004 | prod | meetings.elkdonis-arts.org | yes | 09-06 |
 | elkdonis-arts-collective | eac-arts-collective | 3005 | dev | eac.elkdonis-arts.org (502) | no | – |
 | amrit-canada | eac-amrit-canada | 3006 | prod | amritcanada.ca | yes | 09-16 |
-| arts-collective | eac-arts-network | 3007 | prod | arts-collective.com | yes | 09-19 |
+| arts-collective | eac-arts-network | 3007 | prod | arts-collective.com | yes | 09-26 |
 | ifac | eac-ifac | 3008 | prod | ifacgroup.com | yes | 09-21 |
 | art-auction | eac-art-auction | 3009 | prod | market.arts-collective.com | yes | 09-21 |
 | blog-tester | eac-blog-tester | 3011 | dev | – | no | – |
 | hidden-enneagram | eac-hidden-enneagram | 3012 | prod | hiddenenneagram.com | yes | 09-16 |
-| artdirect | eac-artdirect | 3013 | dev | directory.arts-collective.com | yes | – |
+| artdirect | eac-artdirect | 3013 | dev | directory.arts-collective.com | yes (2026-09-27: edge 200; earlier 09-25 502 no longer applies) | – |
 | pigeonshoot | eac-pigeonshoot | 3014 | dev | – | no | – |
 | innergathering | eac-innergathering | 3015 | prod | elkdonis-arts.org, www | yes | 09-23 |
 | elastrocal | eac-elastrocal | 3016 | dev | – (basePath `/astro`) | no | – |
 | danamccool | eac-danamccool | 3018 | prod | danamccool.com | yes | 09-21 |
-| fourthway-bookreaders | eac-fourthway-bookreaders | 3019 | dev | elkdonis-arts.org/books | yes | – |
+| fourthway-bookreaders | eac-fourthway-bookreaders | 3019 | prod | elkdonis-arts.org/books | yes | 09-26 |
 | sophia | eac-sophia | 3020 | dev | none (no proxy host) | no | – |
 | silex | eac-silex | 6805 | – | edit.arts-collective.com | yes | – |
 | supabase-auth (GoTrue v2.151.0) | eac-supabase-auth | 9999 | – | auth.elkdonis-arts.org | yes | – |
@@ -126,7 +127,7 @@ container's `.next` volume:
 | Services | Test | Lines |
 |---|---|---|
 | ifac, sunjay | `[ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ]` | `docker-compose.yml:1280`, `:425` |
-| amrit-canada, art-auction, arts-collective, danamccool, hidden-enneagram, inner-gathering, innergathering | `[ -f .next/server/pages-manifest.json ]` | `:939`, `:1358`, `:777`, `:1496`, `:1439`, `:602`, `:1029` |
+| amrit-canada, art-auction, arts-collective, danamccool, hidden-enneagram, inner-gathering, innergathering | `[ -f .next/server/pages-manifest.json ]` | `:939`, `:1364`, `:777`, `:1502`, `:1445`, `:602`, `:1029` |
 
 `next build` writes `pages-manifest.json` during compilation, before type
 checking; `BUILD_ID` is written only when the build completes. A build that
@@ -183,7 +184,7 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
   | 22 | hiddenenneagram.com | 3012 |
   | 23 | Arts-Collective.com | 3007 |
   | 24 | edit.arts-collective.com | 6805 |
-  | 25 | danamccool.com | 3018 |
+  | 25 | danamccool.com (no www — see below) | 3018 |
   | 26 | market.arts-collective.com | 3009 |
   | 27 | directory.arts-collective.com | 3013 |
   | 28 | forum.arts-collective.com | 3003 |
@@ -193,6 +194,12 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
 - There is no wildcard proxy host and no wildcard certificate. A hostname with
   no proxy host gets nginx's default 404 over HTTP and a TLS failure over HTTPS
   (verified for `sophia.arts-collective.com`, 2026-09-23).
+- `www.danamccool.com` resolves to this host but has no proxy host: HTTPS
+  fails with "unrecognized name", HTTP returns the default 404 (verified from
+  a Paris check-host.net node and locally, 2026-09-25). A browser that
+  autocompletes `www.` from her old Format site cannot reach the site; the bare
+  domain works. Fix: add `www.danamccool.com` to host 25 and reissue its
+  certificate. Open as of 2026-09-25. (claude, 2026-09-25)
 - `scripts/add-proxy-host.sh <hostname> <port> [--no-ssl] [--force-ssl-off]`
   creates a proxy host and requests its certificate in one API call
   (`certificate_id: "new"`, `dns_challenge: false`). It is idempotent: an
@@ -248,7 +255,7 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
   (`pg_dump -Fc` of `elkdonis_dev`, including GoTrue's `auth` schema). Output
   in `~/eac-backups`; each dump is checked with `pg_restore -l` before it is
   kept; 14 dailies, plus the first dump of each month for a year. Log:
-  `~/eac-backups/backup.log` (last success 2026-09-23 03:17).
+  `~/eac-backups/backup.log` (last success 2026-09-25 03:17).
 - Restore: `docker exec -i eac-postgres pg_restore -U postgres -d elkdonis_dev --clean < file.dump`.
 - The backups are on the same pool as the database; there is no off-box copy.
   Nextcloud data, `.env` and NPM data are not covered by this script.
@@ -271,6 +278,20 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
    (arts-collective: `NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2`).
    `next build` clears `.next` early, so the site can fail requests during the
    build and stays down if the build fails.
+   Address the container by name (`docker exec eac-<app> …`) when a one-off
+   `docker compose run` container exists for the service
+   (`docker ps --filter label=com.docker.compose.oneoff=True`):
+   `docker compose exec <svc>` can land in that container instead. On
+   2026-09-26 it ran an innergathering build inside the `ig-preview` dev
+   container (`NODE_ENV=development`, the `/_global-error` useContext failure
+   below) and left the live build untouched. (claude, 2026-09-26)
+   Build by container name (`docker exec eac-<container> …`) whenever a
+   `docker compose run` container of the same service exists: `docker compose
+   exec <svc>` then ran the build inside the one-off preview container
+   (`NODE_ENV=development`), which failed at `/_global-error` with
+   `reading 'useContext'` and left the live container untouched
+   (verified 2026-09-26 by the preview volume holding the failed build's
+   BUILD_ID). (claude, 2026-09-26)
 4. `docker compose restart <svc>`. The sentinel is present, so it goes straight
    to `next start`.
 5. Verify through the edge (`docs/reference/testing.md`) and check
@@ -293,7 +314,10 @@ printed nothing). If a dev container is the only option, pass
 whole build, and a failed build leaves the crash loop described above. Prefer
 the explicit build in the previous section. Alternative with the same trade-off:
 `docker compose up -d -V <svc>` renews the anonymous volume, giving an empty
-`.next`.
+`.next`. The new volume is owned by root, so the build fails with `EACCES ...
+.next/trace` and the container loops until the directory is handed to uid 3003:
+`docker stop eac-<c>`; `docker run --rm --volumes-from eac-<c> --user 0 --entrypoint sh eac-dev -c 'chown 3003:3003 /app/apps/<app>/.next'`;
+`docker start eac-<c>` (claude, 2026-09-26, fourthway-bookreaders).
 
 ### Recover a crash-looping production app
 You cannot `exec` into a restarting container. Either:

@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookOpen, CalendarDays, Clock, FileDown, Flag, MapPin, PlayCircle, Repeat, Video } from "lucide-react";
-import { getAttendanceCount, getSessionNotes, getThreadBySlug, isGoing } from "@/lib/data";
-import { GroupEditorPanel, SessionList } from "@/components/group-panels";
+import { canViewFeed, getOrgFeed } from "@elkdonis/services";
+import { db } from "@elkdonis/db";
+import { getAttendanceCount, getThreadBySlug, isGoing } from "@/lib/data";
+import { getCirclePage } from "@/lib/circle-page";
+import { CirclePage } from "@/components/circle/circle-page";
+import { siteConfig } from "@/config/site";
 import { READING_GROUP_KIND } from "@/lib/types";
 import { getViewer } from "@/lib/auth";
 import { RsvpButton } from "@/components/rsvp-button";
@@ -11,29 +15,54 @@ import { formatDay, formatDuration, formatRecurrence, formatWhen } from "@/lib/f
 
 interface Props {
   params: Promise<{ feed: string; slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { feed, slug } = await params;
   const thread = await getThreadBySlug(feed, slug);
-  return { title: thread?.title ?? "Not found", description: thread?.excerpt ?? undefined };
+  const title = thread ? (thread.kind === READING_GROUP_KIND ? `${thread.title} reading group` : thread.title) : "Not found";
+  return { title, description: thread?.excerpt ?? undefined };
 }
 
 export default async function ThreadPage({ params, searchParams }: Props) {
   const { feed, slug } = await params;
-  const { error } = await searchParams;
-  const [thread, viewer] = await Promise.all([getThreadBySlug(feed, slug), getViewer().catch(() => null)]);
+  await searchParams;
+  const viewer = await getViewer().catch(() => null);
+  // A circle's session topics are ORGANIZATION-visible: anyone with a role here reads them.
+  const thread = await getThreadBySlug(feed, slug, { orgVisible: Boolean(viewer?.isAffiliate) });
   if (!thread) notFound();
+  // A thread in a feed that gates its readers (a circle's members-only
+  // discussion) is not listed publicly; a direct link must not open it either.
+  const home = thread.feedSlug ? await getOrgFeed(siteConfig.orgId, thread.feedSlug).catch(() => null) : null;
+  if (home && !canViewFeed(home, viewer?.role ?? null)) notFound();
+
+  // A reading group's page is the circle's workspace (components/circle).
+  if (thread.kind === READING_GROUP_KIND) {
+    const [data, going, me] = await Promise.all([
+      getCirclePage(thread, viewer),
+      isGoing(thread.id, viewer?.userId ?? null),
+      viewer ? db<{ display_name: string | null }[]>`SELECT display_name FROM users WHERE id = ${viewer.userId}`.catch(() => []) : Promise.resolve([]),
+    ]);
+    return (
+      <CirclePage
+        group={thread}
+        data={data}
+        viewer={viewer}
+        going={going}
+        displayName={me[0]?.display_name ?? null}
+        talkBaseUrl={process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null}
+      />
+    );
+  }
 
   // One page for every kind; a reading group adds its book, its roster's
   // words ("join", "readers") and what its sittings have produced.
   const isGroup = thread.kind === READING_GROUP_KIND;
   const finished = Boolean(thread.endsOn && thread.endsOn.getTime() < Date.now());
-  const [attending, going, notes] = await Promise.all([
+  const [attending, going] = await Promise.all([
     getAttendanceCount(thread.id),
     isGoing(thread.id, viewer?.userId ?? null),
-    isGroup ? getSessionNotes(thread.id) : [],
   ]);
   const talkBase = process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
   const callUrl =
@@ -111,8 +140,6 @@ export default async function ThreadPage({ params, searchParams }: Props) {
         </p>
       )}
 
-      {isGroup && <SessionList notes={notes} />}
-      {isGroup && viewer?.canEdit && <GroupEditorPanel group={thread} empty={error === "empty"} />}
     </article>
   );
 }

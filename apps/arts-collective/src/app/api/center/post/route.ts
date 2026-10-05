@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createPostAnywhere, listOrgHomes, listPostTargets } from "@elkdonis/services";
+import { PERSONAL_ORG_ID, createPostAnywhere, listOrgHomes, listPostTargets } from "@elkdonis/services";
 import { getCurrentUser } from "@/lib/session";
 
 /**
  * "Post to…" from the network hub (Brief A slice 4): any org the viewer is
- * part of. Same shape as innergathering's /api/center/post, without "My blog"
- * (this app serves no member blog pages).
+ * part of, or their blog. Same shape as innergathering's /api/center/post.
+ * A blog piece is homed in PERSONAL_ORG_ID (`oad`, ArtDirect) and read on
+ * ArtDirect at /<slug>/writing/<piece> (person pages, 2026-09-26).
  *
  * GET lists the places; POST writes to ONE of them. The POST never trusts the
  * list — createPostAnywhere re-reads the viewer's roles and the forum's
@@ -13,11 +14,13 @@ import { getCurrentUser } from "@/lib/session";
  */
 export const dynamic = "force-dynamic";
 
+const ARTDIRECT_URL = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+
 export async function GET() {
   const user = await getCurrentUser();
   const viewer = user ? { userId: user.id } : null;
   if (!viewer) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
-  const targets = await listPostTargets(viewer.userId);
+  const targets = await listPostTargets(viewer.userId, { blogOrgId: PERSONAL_ORG_ID });
   return NextResponse.json({ targets });
 }
 
@@ -37,6 +40,7 @@ export async function POST(request: NextRequest) {
       target: body.target.slice(0, 120),
       title: body.title.slice(0, 200),
       text: body.text,
+      blogOrgId: PERSONAL_ORG_ID,
     });
   } catch (err) {
     console.error("[center] post:", err);
@@ -44,8 +48,25 @@ export async function POST(request: NextRequest) {
   }
   if (result.ok === false) return NextResponse.json({ error: result.error }, { status: 400 });
 
-  // No member blogs are served here, so no blog target is ever listed.
-  if (result.kind === "blog") return NextResponse.json({ error: "Bad request" }, { status: 400 });
+  if (result.kind === "blog") {
+    const { db } = await import("@elkdonis/db");
+    const [me] = await db<Array<{ slug: string | null; blog_on: boolean }>>`
+      SELECT slug, COALESCE((profile_sections->>'blog')::boolean, false) AS blog_on
+        FROM users WHERE id = ${viewer.userId}
+    `;
+    // As innergathering: no link while the writing section is off (the
+    // reader is assumed to hide it then) — say where the switch is instead.
+    return NextResponse.json({
+      ok: true,
+      label: me?.blog_on
+        ? "your blog"
+        : "your blog. It stays hidden until you turn on Your writing under Where you show",
+      href:
+        me?.slug && me.blog_on && ARTDIRECT_URL
+          ? `${ARTDIRECT_URL}/${encodeURIComponent(me.slug)}/writing/${encodeURIComponent(result.slug)}`
+          : null,
+    });
+  }
 
   const [feed] = await (await import("@elkdonis/db")).db<Array<{ org_name: string; feed_name: string; org_slug: string }>>`
     SELECT o.name AS org_name, o.slug AS org_slug, f.name AS feed_name

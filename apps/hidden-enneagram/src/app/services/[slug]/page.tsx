@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceOffering } from "@elkdonis/services";
+import { sanitizeRichText } from "@elkdonis/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -47,10 +48,14 @@ export async function generateMetadata({
 
 export default async function ServiceDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ booked?: string }>;
 }) {
   const { slug } = await params;
+  // Set by /api/checkout/return after a card payment.
+  const booked = (await searchParams).booked === "1";
   const service = await getServiceOffering(siteConfig.orgId, slug);
   if (!service) notFound();
 
@@ -126,10 +131,14 @@ export default async function ServiceDetailPage({
         )}
       </dl>
 
+      {/* The body is rich-text HTML from the composer. It was printed as
+          text, showing its tags; it is sanitised here as well as on write
+          because older rows predate write-time sanitising. */}
       {service.body && (
-        <div className="prose-services mt-10 whitespace-pre-wrap text-[17px] leading-relaxed">
-          {service.body}
-        </div>
+        <div
+          className="prose-services mt-10 text-[17px] leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichText(service.body) }}
+        />
       )}
 
       {service.slidingScaleNote && (
@@ -137,7 +146,14 @@ export default async function ServiceDetailPage({
       )}
 
       <div className="mt-10">
-        {isOpen ? (
+        {booked ? (
+          <p role="status" className="rounded-lg border border-border bg-card p-5">
+            Thank you — your booking is paid.{" "}
+            {(service.bookingType ?? "one_on_one") === "one_on_one"
+              ? "We will confirm one of your times, or suggest others; the email we sent you has a link to follow it."
+              : "We will be in touch by email."}
+          </p>
+        ) : isOpen ? (
           <Button asChild size="lg">
             <Link href={`/services/${service.slug}/book`}>Book now</Link>
           </Button>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { HubViewToggle, HUB_VIEW_COOKIE } from "@elkdonis/cms-ui/hubsite";
 import { HubSiteView } from "./site-view";
 import {
@@ -48,7 +48,6 @@ export const dynamic = "force-dynamic";
  *  face was shared; it belongs to the site, not to the component. */
 const TIME_ZONE = "America/Toronto";
 
-const MOBILE_UA = /Mobi|Android|iPhone|iPad|iPod/i;
 
 /**
  * The members' hub: a grid of faces, each the tile-sized form of the popup it
@@ -59,17 +58,14 @@ const MOBILE_UA = /Mobi|Android|iPhone|iPad|iPod/i;
 export default async function HubPage() {
   const viewer = await requireOrgMember("/hub");
 
-  // The page layout, when this person chose it with the toggle in either
-  // view — that always wins. Absent a choice, phones default to Page: the
-  // classic (Cards) branch below fires off several service calls with no
-  // .catch, and a transient failure among them has no /hub/error.tsx to
-  // land on, only the app's global-error screen (see hub crash, 2026-09-20).
-  // Page is the more defensively-coded branch, so it is the safer default
-  // until those calls are hardened — a temporary bias, not a real fix.
+  // The page layout unless this person chose Cards with the toggle. Page is
+  // the default on every device since 2026-09-26 (owner: the same hub
+  // arrangement as IFAC). It was already the phone default because the
+  // classic branch below fires several service calls with no .catch and no
+  // /hub/error.tsx to land on (hub crash, 2026-09-20).
   // Checked before any read below, so the card hub's data is not loaded twice.
   const chosenView = (await cookies()).get(HUB_VIEW_COOKIE)?.value;
-  const isMobile = MOBILE_UA.test((await headers()).get("user-agent") ?? "");
-  if (chosenView === "site" || (!chosenView && isMobile)) {
+  if (chosenView !== "classic") {
     return <HubSiteView viewer={viewer} />;
   }
 

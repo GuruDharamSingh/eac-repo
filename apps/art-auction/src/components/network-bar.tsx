@@ -1,5 +1,5 @@
 import { cookies, headers } from "next/headers";
-import { FROM_COOKIE, resolveNetworkApp, returnUrl } from "@/config/network";
+import { FROM_COOKIE, resolveNetworkApp, returnHref } from "@/config/network";
 
 /**
  * A thin strip naming the app the visitor came from, with the way back.
@@ -30,7 +30,7 @@ export async function NetworkBar() {
           and buying happen here; your profile and your organisation stay there.
         </p>
         <a
-          href={returnUrl(app)}
+          href={returnHref(app)}
           className="shrink-0 underline underline-offset-4 hover:no-underline"
         >
           ← Back to {app.name}

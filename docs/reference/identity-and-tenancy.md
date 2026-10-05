@@ -86,7 +86,8 @@ wrappers under `apps/<app>/src/app/api/auth/`:
 1. `GET /api/auth/handoff?to=<url>&next=<path>` on a host with a session signs
    an HS256 token (`INTER_APP_JWT_SECRET`) with `sub`, `email`, `iss` = this
    origin, `aud` = destination origin, `jti`, and a 60-second expiry
-   (`HANDOFF_TTL_SECONDS`, line 33; the header comment at line 16 says 90).
+   (`HANDOFF_TTL_SECONDS`, `handoff.ts:41`; the header comment at `:17` agrees
+   since its correction on 2026-09-25).
 2. `GET <dest>/api/auth/handoff/accept` verifies signature, expiry,
    `aud == here`, and `iss` in the allowed set; records the `jti` in Redis
    (`handoff:jti:<id>`, NX) to refuse replays; then uses the service key to
@@ -101,6 +102,49 @@ wrappers under `apps/<app>/src/app/api/auth/`:
   network host so the session also exists there.
 - Every service that takes part needs `INTER_APP_JWT_SECRET`
   (`docker-compose.yml:757-764`).
+
+#### Arrival check, network sign-out, arrivals (claude, 2026-09-25)
+
+Written 2026-09-25; type-checked and the proxy decisions exercised with
+simulated requests; not deployed or exercised through a browser at the time
+of writing.
+
+- `packages/auth-server/src/sso-proxy.ts` (`@elkdonis/auth-server/sso-proxy`),
+  called from each app's `src/proxy.ts`: on a top-level GET page navigation it
+  (a) signed out here → redirects once to the network host's
+  `/api/auth/handoff?to=<here>&next=<path>[&via=<referer origin>]`, which
+  hands a token back or returns plainly; (b) signed in here and not yet
+  mirrored this visit → out through this site's handoff to the network host
+  and back (`plain=1` on the last leg). Skips `/api`, `/_next`, `/login`,
+  `/signup`, `/auth`, `/logout` (`sso-proxy.ts:39`), static files, RSC/prefetch requests and crawlers.
+  Covers every way a session starts (password, Google, signup, handoff), so
+  plain links and typed addresses carry the sign-in.
+- Cookie `eac_sso` (host-only, `sso-state.ts`): `a.<epoch>` signed-out check
+  done (repeated after 10 min, or after 30 s when the Referer is another
+  site); `m.<epoch>` mirrored (browser-session cookie).
+- Handoff start: `plain=1` is a redirect only, to allowed origins only;
+  `via` is carried in the token as the arrival's source.
+- Handoff accept keeps an existing session for the same person instead of
+  minting another, and sets `eac_sso=m`. `createHandoffAcceptHandler({ orgId })`
+  also records an arrival (`network_arrivals`, migration 164) when it has a
+  source site or is the person's first on that host, and sets the readable
+  `eac_arrival` cookie (30 min).
+- Network sign-out: `handleLogout` / `handleLogoutRedirect` (GET) sign out
+  with global scope and set Redis `sso:signed-out:<authUserId>`;
+  `getServerSession` and the proxy treat any access token issued before it as
+  signed out on every site (`isSignedOutEverywhere`).
+- Arrival notice: `ArrivalNotice` (`@elkdonis/cms-ui/network`) in the root
+  layout fetches `/api/network/arrival` (`createArrivalHandler`) only when
+  `eac_arrival` is present; Follow inserts a `viewer` row (a follower)
+  with its own `INSERT … ON CONFLICT DO NOTHING` (`arrival.ts:91-97`), the same
+  statement as `followOrg` in `org-membership.ts` but not a call to it; an
+  existing role is never changed. `ArrivalsTable` on
+  the org's people page lists `listOrgArrivals` (`@elkdonis/services`).
+- Wired 2026-09-25: ifac, innergathering, amrit-canada, art-auction (proxy,
+  org-bound accept, notice, people/admin page); sunjay, fourthwayBookreaders
+  (proxy, org-bound accept); forum (proxy only). Not wired: danamccool (own
+  `middleware.ts`, no accept route), hidden-enneagram and artdirect (no
+  `NEXT_PUBLIC_NETWORK_HOST`; `ssoProxy` is a no-op without it).
 
 ### `users`: an identity, not an account
 
@@ -176,6 +220,20 @@ There are two role/tier vocabularies and one global flag:
   row (`followOrg`, `org-membership.ts:186`); the `org_followers` table
   (migration 072) has 0 rows and is no longer read or written.
 - Role counts 2026-09-23: owner 21, member 16, viewer 3, guide 2.
+- Artist of the collective = a non-viewer row in org `oad` (developer decision,
+  2026-09-27; no network-level role column). `gainSpace()`
+  (`packages/services/src/artist-space.ts`) grants it: `oad` member, roster row,
+  ArtDirect listing on first gain only, artist profile filed under the owned org
+  else `oad`, storage folder. Called by arts-collective `/wizard`,
+  `/wizard/business` and their submit routes, so neither wizard needs an owned
+  org. `users.directory_listed` defaults to false since migration 170; on
+  2026-09-27 every listed person was an `oad` member (24). (claude, 2026-09-27)
+- Storing anything in a person's own folder also gains the space:
+  `markArtistByFolder` (`packages/services/src/artist-membership.ts`) runs from
+  `createUserFolder` (every per-person upload), thread documents, and IFAC's
+  staff upload. Rule: everyone with a `users/<folder>` is an `oad` member and
+  listed. Hub band (`components/hub/GainSpaceBand.tsx`) and `/center`
+  (`CenterLinks.gainSpaceHref`) link non-artists to `/wizard`. (claude, 2026-09-27)
 - Tiers 2026-09-23: `ifac`, `inner_group` partner; `amrit_canada`,
   `hidden-enneagram` supported; the rest free.
 
@@ -372,9 +430,16 @@ Owner-role accounts per org on 2026-09-23: `inner_group` 6; `ifac`,
    restrict admin to the tailnet, then exercise once.
 10. `apps/admin/src/app/api/auth/forward-session/route.ts` redirects to an
     unchecked `return_to` after verifying a JWT.
-11. `handoff.ts` header says 90 seconds; the constant is 60.
+11. ~~`handoff.ts` header says 90 seconds; the constant is 60.~~ Header
+    corrected 2026-09-25.
 12. `artist_profiles` / `directory_profiles` still have readers; the plan is to
     drop them after those readers move to `users` + `org_profiles`.
+13. Network SSO (2026-09-25): migration 164 not applied and the apps not
+    rebuilt at the time of writing. Until 164 is applied, arrivals are not
+    recorded (the insert soft-fails) and the notice never shows. danamccool,
+    hidden-enneagram and artdirect not wired. Sessions created before a
+    sign-out stay refused for 30 days (the Redis key's TTL), which is longer
+    than a refresh-token session is kept.
 
 ## Sources
 

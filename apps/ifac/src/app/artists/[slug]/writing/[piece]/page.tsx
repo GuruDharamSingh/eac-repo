@@ -17,14 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Published only: a draft's title is not something to hand a crawler.
   const post = await getWritingPost(profile.userId, piece);
   if (!post) return {};
+  // The Studio's "Search and sharing" overrides win over the piece's own fields.
+  const seo = post.seo;
   return {
-    title: `${post.title} — ${profile.name}`,
-    description: post.lede ?? undefined,
+    title: `${seo?.title ?? post.title} — ${profile.name}`,
+    description: seo?.description ?? post.lede ?? undefined,
+    robots: seo?.noindex ? { index: false, follow: true } : undefined,
     openGraph: {
-      title: post.title,
-      description: post.lede ?? undefined,
+      title: seo?.title ?? post.title,
+      description: seo?.description ?? post.lede ?? undefined,
       type: "article",
-      images: post.coverImageUrl ? [post.coverImageUrl] : undefined,
+      images: seo?.imageUrl ? [seo.imageUrl] : post.coverImageUrl ? [post.coverImageUrl] : undefined,
     },
   };
 }
