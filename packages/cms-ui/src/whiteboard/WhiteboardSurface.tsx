@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SurfaceFrame } from "../surface";
+import { SurfaceFrame, SurfacePage } from "../surface";
 import "@excalidraw/excalidraw/index.css";
 
 // Excalidraw touches window/document at module load, so it can only exist
@@ -20,6 +20,23 @@ interface WhiteboardScene {
 }
 
 const SAVE_DEBOUNCE_MS = 1500;
+
+// A `keepalive` request survives the page unloading, but browsers refuse one
+// whose body is over 64 KiB. Under this, a save sent as the tab closes is
+// kept alive; over it (a board with pasted images), it goes as an ordinary
+// request and may not land — the debounced save will usually have run first.
+const KEEPALIVE_MAX_BYTES = 60_000;
+
+/**
+ * What changes when the drawing changes, and nothing else. Excalidraw calls
+ * onChange on every pan, zoom and selection too; comparing this skips those,
+ * which would otherwise re-send the whole scene for a scroll.
+ */
+function sceneSignature(elements: readonly any[], background: unknown, files: unknown): string {
+  const els = elements.map((e) => `${e.id}:${e.version}`).join(",");
+  const fileIds = files && typeof files === "object" ? Object.keys(files).sort().join(",") : "";
+  return `${els}|${String(background ?? "")}|${fileIds}`;
+}
 
 /**
  * The org's one shared whiteboard. Loads the saved scene, then autosaves
@@ -43,11 +60,26 @@ export function WhiteboardSurface({
   endpoint = "/api/hub/whiteboard",
   title = "Whiteboard",
   kicker = "Shared with everyone in the group",
+  variant = "popup",
+  pageHref = "/hub/whiteboard",
+  backHref = "/hub",
+  backLabel = "Back to the hub",
   onSaveError,
 }: {
   endpoint?: string;
   title?: string;
   kicker?: string;
+  /**
+   * `popup` (the default) renders inside the surface dialog. `page` renders
+   * the same board as a routed page: full height, no close button, a back
+   * link in its place. Each host app's `/hub/whiteboard` route is the page.
+   */
+  variant?: "popup" | "page";
+  /** The popup's "Open as a page" link. `null` hides it (an app with no page). */
+  pageHref?: string | null;
+  /** Where the page variant's back link goes. */
+  backHref?: string;
+  backLabel?: string;
   /**
    * Called when an autosave fails. The amrit-local version raised a `sonner`
    * toast directly; cms-ui deliberately depends on no toast library — every
@@ -59,7 +91,17 @@ export function WhiteboardSurface({
 } = {}) {
   const [initialScene, setInitialScene] = useState<WhiteboardScene | null>(null);
   const [loadError, setLoadError] = useState(false);
+  // Shown in the foot of both variants, so a refused save is visible even on
+  // the page, where the host has no toast wired in.
+  const [saveFailed, setSaveFailed] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The scene waiting out the debounce. Held in a ref rather than only in the
+  // timer's closure so that closing the popup, leaving the page or following
+  // a link can send it at once instead of dropping it with the timer.
+  const pendingScene = useRef<WhiteboardScene | null>(null);
+  const lastSignature = useRef<string | null>(null);
+  const onSaveErrorRef = useRef(onSaveError);
+  onSaveErrorRef.current = onSaveError;
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +111,14 @@ export function WhiteboardSurface({
         return res.json();
       })
       .then((data: { scene: WhiteboardScene }) => {
-        if (!cancelled) setInitialScene(data.scene);
+        if (cancelled) return;
+        const scene = data.scene ?? { elements: [] };
+        lastSignature.current = sceneSignature(
+          scene.elements ?? [],
+          scene.appState?.viewBackgroundColor,
+          scene.files
+        );
+        setInitialScene(scene);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -79,11 +128,71 @@ export function WhiteboardSurface({
     };
   }, []);
 
+  const send = useCallback(
+    (scene: WhiteboardScene, keepalive = false): Promise<void> => {
+      const body = JSON.stringify({ scene });
+      return fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: keepalive && body.length < KEEPALIVE_MAX_BYTES,
+      })
+        .then((res) => {
+          // fetch resolves on a 403 or 400; without this a refused save was
+          // indistinguishable from a good one.
+          if (!res.ok) throw new Error(`Whiteboard save failed (${res.status})`);
+          setSaveFailed(false);
+        })
+        .catch((error) => {
+          setSaveFailed(true);
+          if (onSaveErrorRef.current) onSaveErrorRef.current(error);
+          else console.error("[whiteboard] autosave failed:", error);
+        });
+    },
+    [endpoint]
+  );
+
+  /** Send the scene still waiting out the debounce, if there is one. */
+  const flush = useCallback(
+    (keepalive = false): Promise<void> => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      const scene = pendingScene.current;
+      if (!scene) return Promise.resolve();
+      pendingScene.current = null;
+      return send(scene, keepalive);
+    },
+    [send]
+  );
+
+  // Closing the popup unmounts this component, and leaving the page fires
+  // pagehide; both used to cancel the timer and lose the last 1.5 s of
+  // drawing. Both now send it. A hidden tab also flushes, since a phone may
+  // discard a backgrounded tab without ever firing pagehide.
   useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
+    const onPageHide = () => void flush(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") void flush(true);
     };
-  }, []);
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onVisibility);
+      void flush(true);
+    };
+  }, [flush]);
+
+  /** Follow a link only once the last strokes are saved. */
+  const leaveTo = useCallback(
+    async (href: string) => {
+      await flush();
+      window.location.assign(href);
+    },
+    [flush]
+  );
 
   // Excalidraw's own Export/Save dialog always portals into `document.body`
   // (its Modal component has no prop to redirect this). Our surface popup is
@@ -125,30 +234,28 @@ export function WhiteboardSurface({
     // Excalidraw's own element/appState/file types aren't worth importing for
     // storage that only ever round-trips them opaquely — see WhiteboardScene.
     (elements: any, appState: any, files: any) => {
+      const list = Array.from(elements as readonly any[]);
+      const signature = sceneSignature(list, appState.viewBackgroundColor, files);
+      if (signature === lastSignature.current) return;
+      lastSignature.current = signature;
+
+      pendingScene.current = {
+        elements: list,
+        // Only what redrawing the same board needs — not a viewer's cursor
+        // position, zoom, or collaborator list.
+        appState: { viewBackgroundColor: appState.viewBackgroundColor },
+        files,
+      };
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        const scene: WhiteboardScene = {
-          elements: Array.from(elements),
-          // Only what redrawing the same board needs — not a viewer's cursor
-          // position, zoom, or collaborator list.
-          appState: { viewBackgroundColor: appState.viewBackgroundColor },
-          files,
-        };
-        fetch(endpoint, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scene }),
-        }).catch((error) => {
-          if (onSaveError) onSaveError(error);
-          else console.error("[whiteboard] autosave failed:", error);
-        });
-      }, SAVE_DEBOUNCE_MS);
+      saveTimer.current = setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
     },
-    [endpoint, onSaveError]
+    [flush]
   );
 
-  return (
-    <SurfaceFrame kind="neutral" title={title} kicker={kicker} flush>
+  const status = saveFailed ? "Couldn\u2019t save the latest change. Your next stroke will try again." : undefined;
+
+  const board = (
+    <>
       {/* The browser's default popover styling (a border, padding, a solid
           background) would otherwise show through around Excalidraw's own
           modal — Excalidraw's stylesheet only styles `position`/`z-index`
@@ -174,24 +281,76 @@ export function WhiteboardSurface({
           background-color: transparent;
         }
       `}</style>
-      <div style={{ height: "70vh", minHeight: 420 }}>
-        {loadError ? (
-          <p className="eac-board-note">Couldn&rsquo;t load the whiteboard. Try again.</p>
-        ) : initialScene === null ? (
-          <p className="eac-board-note">Loading…</p>
-        ) : (
-          <Excalidraw
-            initialData={
-              {
-                elements: initialScene.elements,
-                appState: { ...(initialScene.appState ?? {}), collaborators: new Map() },
-                files: initialScene.files,
-              } as any
-            }
-            onChange={handleChange}
-          />
-        )}
-      </div>
+      {loadError ? (
+        <p className="eac-board-note">Couldn&rsquo;t load the whiteboard. Try again.</p>
+      ) : initialScene === null ? (
+        <p className="eac-board-note">Loading…</p>
+      ) : (
+        <Excalidraw
+          initialData={
+            {
+              elements: initialScene.elements,
+              appState: { ...(initialScene.appState ?? {}), collaborators: new Map() },
+              files: initialScene.files,
+            } as any
+          }
+          onChange={handleChange}
+        />
+      )}
+    </>
+  );
+
+  if (variant === "page") {
+    return (
+      <SurfacePage
+        kind="neutral"
+        title={title}
+        kicker={kicker}
+        className="eac-whiteboard-page"
+        status={status}
+        crumb={
+          <a
+            href={backHref}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+              event.preventDefault();
+              void leaveTo(backHref);
+            }}
+          >
+            ← {backLabel}
+          </a>
+        }
+      >
+        <style>{`
+          .eac-whiteboard-page { padding: 16px; }
+          .eac-whiteboard-page .eac-surface-panel--page .eac-surface-main { padding: 0; }
+          .eac-whiteboard-page .eac-whiteboard-canvas {
+            /* The page's own head and crumb take about 150px; the board
+               gets the rest of the screen rather than the popup's 70%. */
+            height: calc(100dvh - 170px);
+            min-height: 480px;
+          }
+        `}</style>
+        <div className="eac-whiteboard-canvas">{board}</div>
+      </SurfacePage>
+    );
+  }
+
+  return (
+    <SurfaceFrame
+      kind="neutral"
+      title={title}
+      kicker={kicker}
+      flush
+      status={status}
+      statusTone="error"
+      actions={
+        pageHref
+          ? [{ label: "Open as a page", quiet: true, onClick: () => leaveTo(pageHref) }]
+          : undefined
+      }
+    >
+      <div style={{ height: "70vh", minHeight: 420 }}>{board}</div>
     </SurfaceFrame>
   );
 }
