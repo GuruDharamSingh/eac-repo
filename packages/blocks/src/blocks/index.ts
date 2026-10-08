@@ -19,6 +19,7 @@ export { TextImage, textImage, type TextImageProps } from "./text-image";
 export { FlowColumn, flowColumn, type FlowColumnProps } from "./flow-column";
 export { Quote, quote, type QuoteProps } from "./quote";
 export { Faq, faq, type FaqProps } from "./faq";
+export { Enneagram, enneagram, type EnneagramProps } from "./enneagram";
 export { Video, video, embedUrlFor, type VideoProps } from "./video";
 export { EntryList, entryList, type EntryListProps } from "./entry-list";
 export { PictureWall, pictureWall, type PictureWallProps } from "./picture-wall";

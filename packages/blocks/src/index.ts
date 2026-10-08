@@ -58,6 +58,7 @@ import { textImage } from "./blocks/text-image";
 import { flowColumn } from "./blocks/flow-column";
 import { quote } from "./blocks/quote";
 import { faq } from "./blocks/faq";
+import { enneagram } from "./blocks/enneagram";
 import { video } from "./blocks/video";
 import { entryList } from "./blocks/entry-list";
 import { pictureWall } from "./blocks/picture-wall";
@@ -103,6 +104,7 @@ export const SHARED_BLOCKS = [
   textImage,
   quote,
   faq,
+  enneagram,
   video,
   featureCard,
   // Listings
