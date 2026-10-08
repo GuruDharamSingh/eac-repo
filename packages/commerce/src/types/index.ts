@@ -389,6 +389,38 @@ export interface Bid {
   bidderName?: string | null;
 }
 
+/**
+ * A bid as any visitor may see it. Carries no bidder id, email or maximum bid:
+ * everything passed to a client component is readable in the page payload.
+ */
+export interface PublicBid {
+  id: string;
+  amountMinor: number;
+  placedAt: string;
+  /** "Jane S." from the bidder's display name, or "Bidder"; never an email */
+  bidderLabel: string;
+}
+
+/**
+ * The fields of a lot that are safe to hand to the browser. Leaves out
+ * `winnerUserId` (the current high bidder while live), `reserveMinor`,
+ * `currentBidId`, `metadata` and the joined artwork.
+ */
+export type PublicAuctionLot = Pick<
+  AuctionLot,
+  | "id"
+  | "status"
+  | "currency"
+  | "endAt"
+  | "startingBidMinor"
+  | "currentBidMinor"
+  | "bidIncrementMinor"
+  | "bidCount"
+> & {
+  /** null when the lot has no reserve */
+  reserveMet: boolean | null;
+};
+
 export interface Cart {
   id: string;
   token: string;

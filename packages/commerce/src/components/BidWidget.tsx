@@ -1,15 +1,19 @@
 "use client";
 
 import * as React from "react";
-import type { AuctionLot, Bid } from "../types";
+import type { PublicAuctionLot, PublicBid } from "../types";
 import { formatMoney, minorToMajor, majorToMinor, nextMinimumBid } from "../money";
 import { CountdownTimer } from "./CountdownTimer";
 import { cn } from "./cn";
 
 export interface BidWidgetProps {
-  lot: AuctionLot;
-  /** Recent bids, newest first */
-  recentBids?: Bid[];
+  /**
+   * The lot, already stripped with `toPublicLot`: every prop of a client
+   * component is readable in the page payload.
+   */
+  lot: PublicAuctionLot;
+  /** Recent bids, newest first, from `listPublicBidsForLot` */
+  recentBids?: PublicBid[];
   /** Whether the viewer is signed in (controls "sign in to bid" CTA) */
   isAuthenticated: boolean;
   signInHref?: string;
@@ -20,7 +24,9 @@ export interface BidWidgetProps {
     maxAmountMinor?: number | null;
   }) => Promise<{
     ok: boolean;
-    lot?: Pick<AuctionLot, "currentBidMinor" | "bidCount" | "endAt">;
+    lot?: Pick<PublicAuctionLot, "currentBidMinor" | "bidCount" | "endAt"> & {
+      reserveMet?: boolean | null;
+    };
     reason?: string;
   }>;
   className?: string;
@@ -52,10 +58,12 @@ export function BidWidget({
     currentBidMinor: number;
     bidCount: number;
     endAt: string;
+    reserveMet: boolean | null;
   }>({
     currentBidMinor: lot.currentBidMinor ?? 0,
     bidCount: lot.bidCount,
     endAt: lot.endAt,
+    reserveMet: lot.reserveMet,
   });
 
   const minNext = nextMinimumBid({
@@ -103,6 +111,7 @@ export function BidWidget({
           currentBidMinor: r.lot?.currentBidMinor ?? amountMinor,
           bidCount: r.lot?.bidCount ?? prev.bidCount + 1,
           endAt: r.lot?.endAt ?? prev.endAt,
+          reserveMet: r.lot?.reserveMet ?? prev.reserveMet,
         }));
         setOk("Bid placed.");
         setAmountInput(minorToMajor(amountMinor + lot.bidIncrementMinor, lot.currency).toFixed(2));
@@ -133,7 +142,7 @@ export function BidWidget({
           </span>
           <span className="text-xs text-muted-foreground">
             {optimistic.bidCount} {optimistic.bidCount === 1 ? "bid" : "bids"}
-            {lot.reserveMinor != null && optimistic.currentBidMinor < lot.reserveMinor && " · reserve not met"}
+            {optimistic.reserveMet === false && " · reserve not met"}
           </span>
         </div>
       </div>
@@ -203,7 +212,7 @@ export function BidWidget({
             {recentBids.slice(0, 8).map((b) => (
               <li key={b.id} className="flex items-baseline justify-between gap-3 tabular-nums">
                 <span className="text-foreground/80">
-                  {anonymizeName(b.bidderName ?? "Bidder")}
+                  {b.bidderLabel}
                 </span>
                 <span className="font-medium">{formatMoney(b.amountMinor, lot.currency)}</span>
                 <span className="text-xs text-muted-foreground">
@@ -216,11 +225,4 @@ export function BidWidget({
       )}
     </div>
   );
-}
-
-function anonymizeName(name: string): string {
-  // Show first name + initial of last name, e.g. "Jane S."
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]!;
-  return `${parts[0]} ${(parts[parts.length - 1]?.[0] ?? "").toUpperCase()}.`;
 }

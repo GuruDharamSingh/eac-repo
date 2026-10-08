@@ -16,6 +16,8 @@ import type {
   ArtworkVariant,
   AuctionLot,
   Bid,
+  PublicAuctionLot,
+  PublicBid,
   Cart,
   CartLine,
   Order,
@@ -1107,6 +1109,54 @@ export async function listBidsForLot(lotId: string, limit = 25): Promise<Bid[]> 
     placedAt: r.placed_at as string,
     bidderName: opt(r.bidder_name),
   }));
+}
+
+/**
+ * Recent bids for the public lot page. Selects only what a visitor may see and
+ * builds the bidder label here, so no id, email or maximum bid leaves the
+ * server.
+ */
+export async function listPublicBidsForLot(lotId: string, limit = 25): Promise<PublicBid[]> {
+  const rows = (await db`
+    SELECT b.id, b.amount_minor, b.placed_at, u.display_name
+    FROM bid b
+    JOIN users u ON u.id = b.bidder_id
+    WHERE b.lot_id = ${lotId}
+    ORDER BY b.placed_at DESC
+    LIMIT ${limit}
+  `) as unknown as Row[];
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    amountMinor: num(r.amount_minor),
+    placedAt: r.placed_at as string,
+    bidderLabel: anonymizeBidderName(opt<string>(r.display_name)),
+  }));
+}
+
+function anonymizeBidderName(name: string | null | undefined): string {
+  // First name + last initial, e.g. "Jane S."; a name that looks like an
+  // email is never shown.
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0 || parts.some((p) => p.includes("@"))) return "Bidder";
+  if (parts.length === 1) return parts[0]!;
+  return `${parts[0]} ${(parts[parts.length - 1]?.[0] ?? "").toUpperCase()}.`;
+}
+
+/** Strip a lot down to the fields the bid widget needs before it goes to the browser. */
+export function toPublicLot(lot: AuctionLot): PublicAuctionLot {
+  return {
+    id: lot.id,
+    status: lot.status,
+    currency: lot.currency,
+    endAt: lot.endAt,
+    startingBidMinor: lot.startingBidMinor,
+    currentBidMinor: lot.currentBidMinor,
+    bidIncrementMinor: lot.bidIncrementMinor,
+    bidCount: lot.bidCount,
+    reserveMet:
+      lot.reserveMinor == null ? null : (lot.currentBidMinor ?? 0) >= lot.reserveMinor,
+  };
 }
 
 // ─── Cart ───────────────────────────────────────────────────────────────────

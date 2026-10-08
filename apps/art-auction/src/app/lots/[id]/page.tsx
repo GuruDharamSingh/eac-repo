@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   getLotWithArtwork,
-  listBidsForLot,
+  listPublicBidsForLot,
+  toPublicLot,
 } from "@elkdonis/commerce/queries";
 import { settleExpiredLots } from "@elkdonis/commerce/server";
 import { BidWidget } from "@elkdonis/commerce/components";
@@ -39,7 +40,7 @@ export default async function LotPage({
   if (!lot || !lot.artwork) notFound();
 
   const artwork = lot.artwork;
-  const [bids, userId] = await Promise.all([listBidsForLot(lot.id, 12), getCurrentUserId()]);
+  const [bids, userId] = await Promise.all([listPublicBidsForLot(lot.id, 12), getCurrentUserId()]);
   const isAuthenticated = Boolean(userId);
   const closed = !(lot.status === "live" || lot.status === "scheduled");
   const iWon = closed && lot.status === "sold" && userId && lot.winnerUserId === userId;
@@ -93,7 +94,7 @@ export default async function LotPage({
           )}
 
           <BidWidget
-            lot={lot}
+            lot={toPublicLot(lot)}
             recentBids={bids}
             isAuthenticated={isAuthenticated}
             signInHref={`/login?next=/lots/${lot.id}`}
