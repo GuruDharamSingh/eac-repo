@@ -270,11 +270,13 @@ const SESSION_CACHE_TTL = 60 * 10;
  *
  * Uses Redis caching to avoid hitting Supabase/DB on every request.
  */
-export async function getServerSession(): Promise<Session> {
+export async function getServerSession(options: { deviceApp?: string } = {}): Promise<Session> {
   try {
-    // A device token (the network's own apps) stands in for the cookie; an
-    // unknown or revoked one is no session at all, never a cookie fallback.
-    const device = await deviceTokenUser();
+    // A device token (the network's own apps) stands in for the cookie, but
+    // only where the caller names the app it was linked for (elastrocal's
+    // getViewer: 'jerusalem'). Anywhere else, and when unknown, revoked or
+    // expired, it is no session at all, never a cookie fallback.
+    const device = await deviceTokenUser(options.deviceApp);
     if (device !== undefined) return { user: device };
 
     const supabase = await getServerAuth();
@@ -408,5 +410,5 @@ export async function invalidateSessionCache(userId: string): Promise<void> {
 export * from './api-routes';
 export * from './handoff';
 export * from './arrival';
-export { DEVICE_TOKEN_PREFIX, createDeviceToken, listDeviceTokens, revokeDeviceToken, revokeRequestDeviceToken, type DeviceTokenRow } from './device-tokens';
+export { DEVICE_TOKEN_PREFIX, createDeviceToken, listDeviceTokens, refreshRequestDeviceToken, revokeDeviceToken, revokeRequestDeviceToken, type DeviceTokenRow } from './device-tokens';
 export { SSO_COOKIE, ARRIVAL_COOKIE, markSignedOutEverywhere } from './sso-state';
