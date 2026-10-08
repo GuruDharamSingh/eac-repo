@@ -153,16 +153,46 @@ async function personalRoot(userId: string): Promise<string | null> {
   return slug ? userStorageRoot(slug) : null;
 }
 
+const REEL_ROLES = ['owner', 'guide', 'member'];
+
 /** May this person make reels as this org? `oad` is "Just me", open to all. */
 async function canActFor(userId: string, orgId: string): Promise<boolean> {
   if (orgId === PERSONAL_ORG_ID) return true;
   const rows = await db<Array<{ ok: number }>>`
     SELECT 1 AS ok FROM user_organizations
     WHERE user_id = ${userId} AND org_id = ${orgId}
-      AND role IN ('owner', 'guide', 'member')
+      AND role = ANY(${REEL_ROLES})
     LIMIT 1
   `;
   return rows.length > 0;
+}
+
+/**
+ * The same rule as canActFor, as a fragment over alias `p` (reel_projects).
+ * Every read and write goes through it, not only creation: someone who
+ * leaves an org loses its reels with the membership.
+ */
+const stillMember = (userId: string) => db`
+  (p.org_id = ${PERSONAL_ORG_ID} OR EXISTS (
+    SELECT 1 FROM user_organizations uo
+    WHERE uo.user_id = ${userId} AND uo.org_id = p.org_id AND uo.role = ANY(${REEL_ROLES})
+  ))
+`;
+
+/**
+ * Orgs whose content is private by default (CLAUDE.md: inner_group). There is
+ * no column for this on organizations; the list is the same one analytics
+ * uses (ANALYTICS_PRIVATE_ORGS), overridable with PRIVATE_ORG_IDS. A reel made
+ * in one of these orgs stays in the org's private storage and is never
+ * published to the person's public page.
+ */
+const PRIVATE_ORG_IDS = (process.env.PRIVATE_ORG_IDS ?? process.env.ANALYTICS_PRIVATE_ORGS ?? 'inner_group')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+export function isPrivateReelOrg(orgId: string): boolean {
+  return PRIVATE_ORG_IDS.includes(orgId);
 }
 
 // ---------------------------------------------------------------------------
@@ -192,8 +222,8 @@ export async function createReelProject(
 
 export async function listReelProjects(userId: string): Promise<ReelProject[]> {
   const rows = await db<ProjectRow[]>`
-    SELECT * FROM reel_projects
-    WHERE owner_id = ${userId} AND archived_at IS NULL
+    SELECT p.* FROM reel_projects p
+    WHERE p.owner_id = ${userId} AND p.archived_at IS NULL AND ${stillMember(userId)}
     ORDER BY updated_at DESC LIMIT 200
   `;
   return rows.map(toProject);
@@ -201,7 +231,8 @@ export async function listReelProjects(userId: string): Promise<ReelProject[]> {
 
 export async function getReelProject(userId: string, id: string): Promise<ReelProject | null> {
   const rows = await db<ProjectRow[]>`
-    SELECT * FROM reel_projects WHERE id = ${id} AND owner_id = ${userId} AND archived_at IS NULL
+    SELECT p.* FROM reel_projects p
+    WHERE p.id = ${id} AND p.owner_id = ${userId} AND p.archived_at IS NULL AND ${stillMember(userId)}
   `;
   return rows[0] ? toProject(rows[0]) : null;
 }
@@ -252,7 +283,8 @@ export async function saveReelProject(
 
 export async function archiveReelProject(userId: string, id: string): Promise<boolean> {
   const rows = await db`
-    UPDATE reel_projects SET archived_at = now() WHERE id = ${id} AND owner_id = ${userId} RETURNING id
+    UPDATE reel_projects p SET archived_at = now()
+    WHERE p.id = ${id} AND p.owner_id = ${userId} AND ${stillMember(userId)} RETURNING p.id
   `;
   return rows.length > 0;
 }
@@ -354,7 +386,7 @@ export async function queueReelRender(
 export async function listReelRenders(userId: string, projectId: string): Promise<ReelRender[]> {
   const rows = await db<RenderRow[]>`
     SELECT r.* FROM reel_renders r JOIN reel_projects p ON p.id = r.project_id
-    WHERE r.project_id = ${projectId} AND p.owner_id = ${userId}
+    WHERE r.project_id = ${projectId} AND p.owner_id = ${userId} AND ${stillMember(userId)}
     ORDER BY r.created_at DESC LIMIT 10
   `;
   return rows.map(toRender);
@@ -381,7 +413,7 @@ export async function listFinishedReels(userId: string): Promise<FinishedReel[]>
   }>>`
     SELECT DISTINCT ON (r.project_id) r.project_id, p.title, r.output_path, r.thumb_path, r.duration_s, r.finished_at
     FROM reel_renders r JOIN reel_projects p ON p.id = r.project_id
-    WHERE p.owner_id = ${userId} AND r.status = 'done' AND r.output_path IS NOT NULL
+    WHERE p.owner_id = ${userId} AND ${stillMember(userId)} AND r.status = 'done' AND r.output_path IS NOT NULL
     ORDER BY r.project_id, r.finished_at DESC
   `;
   return rows
@@ -445,6 +477,9 @@ export async function publishReel(
 ): Promise<{ ok: boolean; publication?: ReelPublication; error?: string }> {
   const project = await getReelProject(userId, projectId);
   if (!project) return { ok: false, error: 'Not found' };
+  if (isPrivateReelOrg(project.orgId)) {
+    return { ok: false, error: 'This reel belongs to a private group, so it cannot be published to your public page' };
+  }
   const [render] = await db<Array<{ output_path: string; thumb_path: string | null; duration_s: number | null }>>`
     SELECT output_path, thumb_path, duration_s FROM reel_renders
     WHERE project_id = ${projectId} AND status = 'done' AND output_path IS NOT NULL
