@@ -1,0 +1,717 @@
+/* ---------------------------------------------------------------------------
+   The directory's shell, sections, cards and forms — every page that is not
+   a dossier or a person page. Colours and fonts come from tokens.css; nothing
+   below names a hex value except through a token.
+   ------------------------------------------------------------------------ */
+
+/* ── Shell ─────────────────────────────────────────────────────────────── */
+
+.ad-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ad-desk);
+  color: var(--ad-ink);
+  font-family: var(--ad-font-type);
+}
+
+.ad-main {
+  flex: 1;
+}
+
+.ad-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: var(--ad-manila);
+  color: var(--ad-paper-ink);
+  font-weight: 700;
+}
+.ad-skip:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+.ad-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.ad-header {
+  border-bottom: 1px solid var(--ad-line);
+  background: var(--ad-desk);
+}
+
+.ad-network-bar {
+  display: flex;
+  gap: 0.5rem;
+  max-width: var(--ad-page-max);
+  margin: 0 auto;
+  padding: 0.4rem var(--ad-gutter);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ad-ink-faint);
+}
+.ad-network-bar a {
+  color: var(--ad-ink-soft);
+  text-decoration: none;
+}
+.ad-network-bar a:hover,
+.ad-network-bar a:focus-visible {
+  color: var(--ad-manila);
+}
+
+.ad-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+  max-width: var(--ad-page-max);
+  margin: 0 auto;
+  padding: 0.9rem var(--ad-gutter) 1rem;
+}
+
+.ad-wordmark {
+  font-family: var(--ad-font-gothic);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--ad-ink);
+  text-decoration: none;
+}
+.ad-wordmark:hover,
+.ad-wordmark:focus-visible {
+  color: var(--ad-manila);
+}
+
+.ad-nav {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+}
+
+.ad-nav-gap {
+  flex: 1;
+}
+
+/* On a phone the nav takes its own row under the wordmark. */
+@media (max-width: 40rem) {
+  .ad-nav {
+    flex-basis: 100%;
+  }
+  .ad-nav-gap {
+    display: none;
+  }
+}
+
+.ad-nav-link {
+  display: inline-block;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ad-ink-soft);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ad-nav-link:hover,
+.ad-nav-link:focus-visible {
+  color: var(--ad-ink);
+  border-color: var(--ad-line);
+}
+.ad-nav-link[aria-current="page"] {
+  color: var(--ad-manila);
+  border-bottom-color: var(--ad-manila);
+}
+.ad-nav-link[data-variant="stamp"] {
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+  color: var(--ad-on-accent);
+}
+.ad-nav-link[data-variant="stamp"]:hover,
+.ad-nav-link[data-variant="stamp"]:focus-visible {
+  border-color: var(--ad-on-accent);
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.ad-footer {
+  margin-top: 3rem;
+  border-top: 1px solid var(--ad-line);
+  color: var(--ad-ink-faint);
+  font-size: 0.8rem;
+}
+.ad-footer-inner {
+  max-width: var(--ad-page-max);
+  margin: 0 auto;
+  padding: 1.5rem var(--ad-gutter) 2.5rem;
+}
+.ad-footer-inner p {
+  max-width: var(--ad-measure);
+  margin: 0 0 0.4rem;
+  line-height: 1.6;
+}
+.ad-footer a {
+  color: var(--ad-ink-soft);
+}
+
+/* ── Sections and their look (src/sections/look.ts) ────────────────────── */
+
+.ad-section {
+  /* The resolved block tokens, so a shared block placed in a section wears
+     the section's ground (blocks.css resolves --eac-block-* once at :root,
+     so the resolved names are the ones to set here). */
+  --blk-bg: var(--ad-ground);
+  --blk-bg-soft: var(--ad-folder-raised);
+  --blk-fg: var(--ad-ink);
+  --blk-muted: var(--ad-ink-soft);
+  --blk-faint: var(--ad-ink-faint);
+  --blk-line: var(--ad-line);
+  --blk-accent: var(--ad-manila);
+  --blk-on-accent: var(--ad-on-manila);
+  --blk-accent-ink: var(--ad-manila);
+  --blk-font-title: var(--ad-heading-font);
+  --blk-font-body: var(--ad-body-font);
+
+  background: var(--ad-ground);
+  color: var(--ad-ink);
+  font-family: var(--ad-body-font);
+  font-size: calc(1rem * var(--ad-scale));
+}
+
+.ad-section-inner {
+  max-width: var(--ad-page-max);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2.25rem) var(--ad-gutter);
+}
+
+/* Grounds. A light ground brings its own ink with it; every pair is
+   measured (paper: ink 16.1, soft 6.6, accent 7.3 — manila: ink 10.2,
+   soft 5.5, accent 5.3). */
+.ad-section[data-ground="folder"] {
+  --ad-ground: var(--ad-folder);
+  border-block: 1px solid var(--ad-line);
+}
+.ad-section[data-ground="paper"],
+.ad-section[data-ground="manila"] {
+  --ad-ink: var(--ad-paper-ink);
+  --ad-ink-soft: var(--ad-paper-ink-soft);
+  --ad-ink-faint: var(--ad-paper-ink-soft);
+  --ad-line: var(--ad-paper-rule);
+  --ad-folder: var(--ad-paper-shade);
+  --ad-folder-raised: var(--ad-paper-shade);
+  --ad-accent-ink: var(--ad-paper-accent);
+  --ad-verified: #3c5e45;
+  /* "Manila" is the highlight colour; on a light ground it turns to the
+     stamp red, so the text on it turns light. */
+  --ad-manila: var(--ad-paper-accent);
+  --ad-on-manila: var(--ad-paper);
+}
+.ad-section[data-ground="paper"] {
+  --ad-ground: var(--ad-paper);
+}
+.ad-section[data-ground="manila"] {
+  --ad-ground: #d8bd8a;
+  --ad-ink-soft: #4a4236;
+  --ad-ink-faint: #4a4236;
+  --ad-folder: #e4cc9a;
+  --ad-folder-raised: #e4cc9a;
+  --ad-accent-ink: #7a2a25;
+  --ad-manila: #7a2a25;
+}
+
+.ad-section[data-headingfont="display"] { --ad-heading-font: var(--ad-font-display); }
+.ad-section[data-headingfont="gothic"] { --ad-heading-font: var(--ad-font-gothic); }
+.ad-section[data-bodyfont="display"] { --ad-body-font: var(--ad-font-display); }
+
+.ad-section[data-scale="small"] { --ad-scale: 0.9; }
+.ad-section[data-scale="large"] { --ad-scale: 1.12; }
+
+.ad-section[data-align="center"] { text-align: center; }
+.ad-section[data-align="center"] .ad-intro,
+.ad-section[data-align="center"] .ad-filters,
+.ad-section[data-align="center"] .ad-filter-form,
+.ad-section[data-align="center"] .ad-tabs {
+  justify-content: center;
+}
+.ad-section[data-align="center"] .ad-intro {
+  flex-direction: column;
+  align-items: center;
+}
+.ad-section[data-align="center"] .ad-intro-text {
+  flex-basis: auto;
+}
+.ad-section[data-align="center"] .ad-lede {
+  margin-inline: auto;
+}
+
+/* ── Shared controls ───────────────────────────────────────────────────── */
+
+.ad-eyebrow {
+  margin: 0;
+  font-size: 0.75em;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ad-accent-ink);
+}
+
+.ad-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--ad-line-strong);
+  background: var(--ad-folder);
+  color: var(--ad-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ad-button:hover,
+.ad-button:focus-visible {
+  border-color: var(--ad-manila);
+}
+.ad-button[data-variant="stamp"] {
+  padding: 0.7rem 1.2rem;
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+  color: var(--ad-on-accent);
+}
+.ad-button[data-variant="stamp"]:hover,
+.ad-button[data-variant="stamp"]:focus-visible {
+  border-color: var(--ad-on-accent);
+}
+.ad-button[data-variant="quiet"] {
+  background: transparent;
+  border-color: var(--ad-line);
+  color: var(--ad-ink-soft);
+}
+.ad-button[data-variant="ink"] {
+  padding: 0.65rem 1.4rem;
+  background: var(--ad-paper-ink);
+  border-color: var(--ad-paper-ink);
+  color: var(--ad-paper);
+}
+.ad-button[data-block] {
+  display: block;
+  width: 100%;
+  margin-top: 1.25rem;
+}
+.ad-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.ad-link-button {
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  color: var(--ad-paper-accent);
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+:where(.ad-shell) :focus-visible {
+  outline: 2px solid var(--ad-manila);
+  outline-offset: 2px;
+}
+
+/* Inputs on a dark ground: the folder's own surface, not a white box. */
+.ad-input {
+  min-width: 220px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ad-line-strong);
+  background: var(--ad-folder-raised);
+  color: var(--ad-ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.ad-input::placeholder {
+  color: var(--ad-ink-faint);
+}
+
+/* ── Directory: intro ──────────────────────────────────────────────────── */
+
+.ad-intro {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem 2rem;
+}
+.ad-intro-text {
+  flex: 1 1 32rem;
+}
+
+.ad-title {
+  margin: 0.5rem 0 0.75rem;
+  font-family: var(--ad-heading-font);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+}
+/* The typewriter face reads as a file heading in capitals; a serif or
+   blackletter title does not. */
+.ad-section[data-headingfont="type"] .ad-title {
+  text-transform: uppercase;
+}
+.ad-section[data-headingfont="gothic"] .ad-title {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.ad-lede {
+  max-width: var(--ad-measure);
+  margin: 0;
+  color: var(--ad-ink-soft);
+  line-height: 1.65;
+}
+
+.ad-record {
+  margin: 1rem 0 0;
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ad-ink-faint);
+}
+.ad-record-count {
+  color: var(--ad-manila);
+  font-weight: 700;
+}
+.ad-record a {
+  color: var(--ad-ink-soft);
+}
+
+/* ── Directory: filters ────────────────────────────────────────────────── */
+
+.ad-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+.ad-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ad-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.ad-tab {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--ad-line);
+  color: var(--ad-ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.ad-tab:hover,
+.ad-tab:focus-visible {
+  color: var(--ad-ink);
+  border-color: var(--ad-line-strong);
+}
+.ad-tab[aria-current="page"] {
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+  color: var(--ad-on-accent);
+}
+
+/* ── Directory: listing ────────────────────────────────────────────────── */
+
+.ad-empty {
+  color: var(--ad-ink-soft);
+}
+.ad-empty a {
+  color: var(--ad-accent-ink);
+}
+
+.ad-cards {
+  --ad-card-min: 260px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--ad-card-min), 100%), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ad-cards[data-density="compact"] { --ad-card-min: 210px; }
+.ad-cards[data-density="wide"] { --ad-card-min: 340px; }
+
+/* Portrait beside the name, status line underneath across both columns. */
+.ad-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 0.85rem 0.9rem;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid var(--ad-line);
+  background: var(--ad-folder);
+  color: var(--ad-ink);
+  text-align: start;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.ad-card:hover,
+.ad-card:focus-visible {
+  border-color: var(--ad-manila);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ad-card { transition: none; }
+  .ad-card:hover, .ad-card:focus-visible { transform: none; }
+}
+
+.ad-card-portrait {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 70px;
+  border: 1px solid var(--ad-line-strong);
+  background: var(--ad-manila);
+  color: var(--ad-paper-ink);
+  font-family: var(--ad-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  object-fit: cover;
+}
+.ad-card-portrait[data-shape="square"] {
+  width: 64px;
+  height: 64px;
+}
+
+.ad-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 0.15rem;
+}
+.ad-card-name {
+  font-family: var(--ad-heading-font);
+  letter-spacing: 0.04em;
+}
+.ad-card-occupation {
+  font-size: 0.85em;
+  color: var(--ad-ink-soft);
+}
+.ad-card-place {
+  font-size: 0.78em;
+  color: var(--ad-ink-faint);
+}
+
+.ad-card-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--ad-line);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ad-ink-faint);
+}
+.ad-status {
+  color: var(--ad-accent-ink);
+}
+.ad-status[data-verified] {
+  color: var(--ad-verified);
+}
+
+/* ── Forms: a paper sheet on the desk ──────────────────────────────────── */
+
+.ad-desk {
+  padding: clamp(1.5rem, 5vw, 3rem) var(--ad-gutter);
+}
+
+.ad-sheet {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid #000;
+  background: var(--ad-paper);
+  color: var(--ad-paper-ink);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+}
+.ad-sheet[data-size="narrow"] {
+  max-width: 420px;
+}
+
+.ad-sheet-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ad-paper-accent);
+}
+.ad-sheet-title {
+  margin: 0.3rem 0 0.5rem;
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ad-sheet-lede {
+  margin-top: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-sheet-error {
+  margin-top: 1rem;
+  font-weight: 700;
+  color: var(--ad-paper-accent);
+}
+.ad-sheet-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.ad-sheet-cancel {
+  font-size: 0.85rem;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-sheet-switch {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-sheet-switch .ad-link-button {
+  font-size: inherit;
+}
+
+.ad-label {
+  display: block;
+  margin: 1rem 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ad-field-aside {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  color: var(--ad-paper-ink-soft);
+}
+
+/* Typed on the sheet: a ruled line, not a white box. */
+.ad-field {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--ad-paper-rule);
+  border-bottom: 2px solid var(--ad-paper-ink);
+  background: var(--ad-paper-shade);
+  color: var(--ad-paper-ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.ad-field:focus-visible {
+  outline: 2px solid var(--ad-paper-accent);
+  outline-offset: 1px;
+}
+textarea.ad-field { min-height: 4.5rem; resize: vertical; }
+textarea.ad-field[data-rows="2"] { min-height: 3.5rem; }
+textarea.ad-field[data-rows="3"] { min-height: 4.5rem; }
+textarea.ad-field[data-rows="5"] { min-height: 7rem; }
+
+.ad-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.ad-field-row[data-cols="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 34rem) {
+  .ad-field-row,
+  .ad-field-row[data-cols="3"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Place search (PlaceAutocomplete). */
+.ad-place {
+  position: relative;
+}
+.ad-place-list {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  margin: 2px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--ad-paper-ink);
+  background: var(--ad-paper);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+.ad-place-status {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-place-option {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  border-bottom: 1px solid var(--ad-paper-shade);
+  background: transparent;
+  color: var(--ad-paper-ink);
+  text-align: left;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.ad-place-option:hover,
+.ad-place-option:focus-visible {
+  background: var(--ad-paper-shade);
+}
+.ad-place-detail {
+  font-size: 0.75rem;
+  color: var(--ad-paper-ink-soft);
+}
+.ad-place-picked {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: #3c5e45;
+}
