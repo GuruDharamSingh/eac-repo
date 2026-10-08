@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getDossierEditFields } from "@/lib/oad";
 import { updateDossier } from "@/lib/oad-actions";
 import { DossierForm } from "@/components/oad/DossierForm";
+import { DirectoryShell } from "@/components/shell/DirectoryShell";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Amend file — ArtDirect" };
@@ -18,5 +19,9 @@ export default async function EditDossierPage({ params }: Props) {
   const fields = await getDossierEditFields(slug);
   if (!fields) notFound();
 
-  return <DossierForm action={updateDossier} mode="edit" initial={fields} />;
+  return (
+    <DirectoryShell>
+      <DossierForm action={updateDossier} mode="edit" initial={fields} />
+    </DirectoryShell>
+  );
 }

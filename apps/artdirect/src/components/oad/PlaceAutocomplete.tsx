@@ -14,24 +14,6 @@ export type PlaceValue = {
 
 type Suggestion = PlaceValue & { name: string; type: string };
 
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: "0.5rem 0.6rem",
-  border: "1px solid #1a1a1a",
-  background: "#fff",
-  fontFamily: "inherit",
-  fontSize: 14,
-  boxSizing: "border-box",
-};
-const label: React.CSSProperties = {
-  display: "block",
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-  fontWeight: 700,
-  margin: "1rem 0 0.25rem",
-};
-
 export function PlaceAutocomplete({ initial }: { initial?: Partial<PlaceValue> }) {
   const [value, setValue] = useState<PlaceValue>({
     label: initial?.label ?? "",
@@ -89,16 +71,16 @@ export function PlaceAutocomplete({ initial }: { initial?: Partial<PlaceValue> }
   }
 
   return (
-    <div style={{ position: "relative" }}>
-      <label style={label} htmlFor="place-search">
-        Location {value.city || value.region ? "" : <span style={{ fontWeight: 400, textTransform: "none", color: "#8a8070" }}>— start typing a city, neighbourhood, region, or postal code</span>}
+    <div className="ad-place">
+      <label className="ad-label" htmlFor="place-search">
+        Location {value.city || value.region ? "" : <span className="ad-field-aside">— start typing a city, neighbourhood, region, or postal code</span>}
       </label>
 
       {!manual && (
         <>
           <input
             id="place-search"
-            style={input}
+            className="ad-field"
             value={query}
             autoComplete="off"
             placeholder="e.g. Annex, Toronto, Ontario, M5R…"
@@ -106,22 +88,13 @@ export function PlaceAutocomplete({ initial }: { initial?: Partial<PlaceValue> }
             onFocus={() => suggestions.length && setOpen(true)}
           />
           {open && (suggestions.length > 0 || loading) && (
-            <ul
-              style={{
-                position: "absolute", zIndex: 5, left: 0, right: 0, margin: "2px 0 0", padding: 0, listStyle: "none",
-                background: "#fff", border: "1px solid #1a1a1a", maxHeight: 240, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,.25)",
-              }}
-            >
-              {loading && <li style={{ padding: "0.5rem 0.6rem", fontSize: 13, color: "#8a8070" }}>Searching…</li>}
+            <ul className="ad-place-list">
+              {loading && <li className="ad-place-status">Searching…</li>}
               {suggestions.map((s, i) => (
                 <li key={`${s.label}-${i}`}>
-                  <button
-                    type="button"
-                    onClick={() => pick(s)}
-                    style={{ display: "block", width: "100%", textAlign: "left", padding: "0.5rem 0.6rem", border: "none", borderBottom: "1px solid #eee", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}
-                  >
+                  <button type="button" onClick={() => pick(s)} className="ad-place-option">
                     <strong>{s.name}</strong>
-                    <span style={{ color: "#8a8070", fontSize: 12 }}>
+                    <span className="ad-place-detail">
                       {" "}· {[s.region, s.country].filter(Boolean).join(", ")} {s.type ? `· ${s.type}` : ""}
                     </span>
                   </button>
@@ -130,13 +103,13 @@ export function PlaceAutocomplete({ initial }: { initial?: Partial<PlaceValue> }
             </ul>
           )}
           {(value.city || value.region) && (
-            <p style={{ fontSize: 12, color: "#1a5c2a", margin: "0.35rem 0 0" }}>
+            <p className="ad-place-picked">
               📍 {[value.city, value.region, value.country].filter(Boolean).join(", ")}
               {value.postcode ? ` · ${value.postcode}` : ""}
               {value.lat != null ? " · mapped" : ""}
             </p>
           )}
-          <button type="button" onClick={() => setManual(true)} style={{ background: "none", border: "none", color: "#8c3b3b", fontSize: 11, cursor: "pointer", padding: "0.25rem 0", fontFamily: "inherit" }}>
+          <button type="button" onClick={() => setManual(true)} className="ad-link-button">
             Can’t find it? Enter manually →
           </button>
         </>
@@ -144,12 +117,12 @@ export function PlaceAutocomplete({ initial }: { initial?: Partial<PlaceValue> }
 
       {manual && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
-            <input style={input} placeholder="City" value={value.city} onChange={(e) => editField("city", e.currentTarget.value)} />
-            <input style={input} placeholder="Region / state" value={value.region} onChange={(e) => editField("region", e.currentTarget.value)} />
-            <input style={input} placeholder="Country" value={value.country} onChange={(e) => editField("country", e.currentTarget.value)} />
+          <div className="ad-field-row" data-cols="3">
+            <input className="ad-field" placeholder="City" value={value.city} onChange={(e) => editField("city", e.currentTarget.value)} />
+            <input className="ad-field" placeholder="Region / state" value={value.region} onChange={(e) => editField("region", e.currentTarget.value)} />
+            <input className="ad-field" placeholder="Country" value={value.country} onChange={(e) => editField("country", e.currentTarget.value)} />
           </div>
-          <button type="button" onClick={() => setManual(false)} style={{ background: "none", border: "none", color: "#8c3b3b", fontSize: 11, cursor: "pointer", padding: "0.25rem 0", fontFamily: "inherit" }}>
+          <button type="button" onClick={() => setManual(false)} className="ad-link-button">
             ← Back to place search
           </button>
         </>

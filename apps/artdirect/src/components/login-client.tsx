@@ -4,34 +4,6 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signInWithPassword, signUp } from "@elkdonis/auth-client";
 
-const card: React.CSSProperties = {
-  maxWidth: 420,
-  margin: "0 auto",
-  background: "#f7f1e3",
-  color: "#1a1a1a",
-  padding: "2rem",
-  border: "1px solid #000",
-  boxShadow: "0 24px 60px rgba(0,0,0,.45)",
-};
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: "0.55rem 0.65rem",
-  border: "1px solid #1a1a1a",
-  background: "#fff",
-  fontFamily: "inherit",
-  fontSize: 14,
-  boxSizing: "border-box",
-  marginTop: "0.35rem",
-};
-const label: React.CSSProperties = {
-  display: "block",
-  fontSize: 11,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-  fontWeight: 700,
-  marginTop: "1rem",
-};
-
 export function LoginClient() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
@@ -64,39 +36,35 @@ export function LoginClient() {
   }
 
   return (
-    <form style={card} onSubmit={onSubmit}>
-      <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "#8c3b3b", margin: 0 }}>
+    <form className="ad-sheet" data-size="narrow" onSubmit={onSubmit}>
+      <p className="ad-sheet-eyebrow">
         ArtDirect · an Elkdonis commons
       </p>
-      <h1 style={{ fontSize: "1.6rem", margin: "0.4rem 0 0.25rem", letterSpacing: 1 }}>
+      <h1 className="ad-sheet-title">
         {mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
       </h1>
-      <p style={{ fontSize: 13, color: "#4a4a40", lineHeight: 1.5, marginTop: 0 }}>
+      <p className="ad-sheet-lede">
         One account works across the whole Elkdonis network — directory, collective, and member sites.
       </p>
 
-      <label style={label} htmlFor="email">Email</label>
-      <input style={input} id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} required />
+      <label className="ad-label" htmlFor="email">Email</label>
+      <input className="ad-field" id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} required />
 
-      <label style={label} htmlFor="password">Password</label>
-      <input style={input} id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.currentTarget.value)} required minLength={6} />
+      <label className="ad-label" htmlFor="password">Password</label>
+      <input className="ad-field" id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.currentTarget.value)} required minLength={6} />
 
-      {error && <p style={{ color: "#8c3b3b", fontWeight: 700, marginTop: "0.75rem" }}>{error}</p>}
+      {error && <p className="ad-sheet-error" role="alert">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={busy}
-        style={{ marginTop: "1.25rem", width: "100%", background: "#1a1a1a", color: "#f7f1e3", border: "none", padding: "0.65rem", letterSpacing: 1, textTransform: "uppercase", fontFamily: "inherit", fontWeight: 700, cursor: "pointer" }}
-      >
+      <button type="submit" disabled={busy} className="ad-button" data-variant="ink" data-block="">
         {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}
       </button>
 
-      <p style={{ textAlign: "center", fontSize: 13, color: "#4a4a40", marginTop: "1rem" }}>
+      <p className="ad-sheet-switch">
         {mode === "signin" ? "New here? " : "Already have an account? "}
         <button
           type="button"
           onClick={() => { setError(null); setMode(mode === "signin" ? "signup" : "signin"); }}
-          style={{ background: "none", border: "none", color: "#8c3b3b", textDecoration: "underline", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}
+          className="ad-link-button"
         >
           {mode === "signin" ? "Create an account" : "Sign in"}
         </button>

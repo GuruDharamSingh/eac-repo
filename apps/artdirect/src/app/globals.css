@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=UnifrakturMaguntia&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700&family=UnifrakturMaguntia&display=swap');
 
 /* ---------------------------------------------------------------------------
    Tailwind v4 — theme + utilities only, deliberately WITHOUT preflight.
@@ -55,15 +55,19 @@
    utility is passed to a block here. --blk-* are mapped to the frame look in
    person-page.css. */
 @import "@elkdonis/blocks/blocks.css";
+/* ArtDirect's own palette and type (tokens), and the directory's shell,
+   sections and forms. See src/theme/. */
+@import "../theme/tokens.css";
+@import "../theme/directory.css";
 
 * { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
-  background: #121413;
-  color: #f7f1e3;
-  font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+  background: var(--ad-desk);
+  color: var(--ad-ink);
+  font-family: var(--ad-font-type);
 }
 
 a { color: inherit; }

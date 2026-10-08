@@ -1,0 +1,65 @@
+/* ---------------------------------------------------------------------------
+   ArtDirect's palette and type, in one place.
+
+   The directory pages used to carry their colours as hex literals in inline
+   style objects (#121413, #8c3b3b, #cbbf9d …), none of which matched the
+   dossier template they link into. These tokens take the dossier template's
+   v0.2 values (packages/silex-nextcloud-connector/src/tokens/
+   dossier-classified.css) so the directory and a file read as one place.
+
+   Every text/ground pair is measured. Ratios against the desk (#14120f) and
+   the folder (#1e1b16):
+     ink        #f4efe4   16.3 / 15.0
+     ink-soft   #b3aa98    8.1 /  7.5
+     ink-faint  #948b7a    5.6 /  5.1
+     manila     #d8bd8a   10.3 /  9.5
+     accent-ink #df8f84    7.5 /  6.9
+     verified   #8cbf95    8.9 /  8.2
+   and #f4efe4 on the stamp red #8a2f2a is 7.3.
+
+   A section's ground (see src/sections/look.ts) redeclares the same names, so
+   anything inside a section reads its colours from here without knowing
+   which ground it is on.
+   ------------------------------------------------------------------------ */
+
+:root {
+  --ad-desk: #14120f;
+  --ad-folder: #1e1b16;
+  --ad-folder-raised: #262218;
+  --ad-line: #45402f;
+  --ad-line-strong: #6a6252;
+
+  --ad-ink: #f4efe4;
+  --ad-ink-soft: #b3aa98;
+  --ad-ink-faint: #948b7a;
+
+  --ad-manila: #d8bd8a;       /* highlight: counts, current nav, focus */
+  --ad-on-manila: #14120f;
+  --ad-accent: #8a2f2a;       /* stamp red, as a fill */
+  --ad-on-accent: #f4efe4;
+  --ad-accent-ink: #df8f84;   /* stamp red, as text on a dark ground */
+  --ad-verified: #8cbf95;
+
+  /* The paper sheet forms are filed on. */
+  --ad-paper: #f4efe4;
+  --ad-paper-shade: #e9e2d2;
+  --ad-paper-ink: #161310;
+  --ad-paper-ink-soft: #5b5347;
+  --ad-paper-rule: #b9ae99;
+  --ad-paper-accent: #8a2f2a;
+
+  --ad-font-type: 'Courier Prime', 'Courier New', Courier, monospace;
+  --ad-font-display: 'Playfair Display', 'Libre Caslon Text', Georgia, serif;
+  --ad-font-gothic: 'UnifrakturMaguntia', 'Playfair Display', serif;
+
+  --ad-measure: 64ch;
+  --ad-page-max: 1080px;
+  --ad-gutter: clamp(1rem, 4vw, 1.5rem);
+
+  /* What a section's look resolves to. Defaults here; overridden per section
+     in directory.css. */
+  --ad-ground: var(--ad-desk);
+  --ad-heading-font: var(--ad-font-type);
+  --ad-body-font: var(--ad-font-type);
+  --ad-scale: 1;
+}
