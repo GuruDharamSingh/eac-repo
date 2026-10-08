@@ -307,7 +307,11 @@ export async function placeBid(input: {
   clientIp?: string | null;
   userAgent?: string | null;
 }): Promise<
-  | { ok: true; lot: Pick<AuctionLot, "currentBidMinor" | "bidCount" | "endAt">; bidId: string }
+  | {
+      ok: true;
+      lot: Pick<AuctionLot, "currentBidMinor" | "bidCount" | "endAt"> & { reserveMet: boolean | null };
+      bidId: string;
+    }
   | { ok: false; reason: string }
 > {
   return await db.begin(async (tx) => {
@@ -385,6 +389,9 @@ export async function placeBid(input: {
         currentBidMinor: num(ur.current_bid_minor),
         bidCount: num(ur.bid_count),
         endAt: ur.end_at as string,
+        // Whether the reserve is met, not its amount: this goes to the browser.
+        reserveMet:
+          lot.reserve_minor == null ? null : input.amountMinor >= num(lot.reserve_minor),
       },
       bidId: newBidId,
     };
