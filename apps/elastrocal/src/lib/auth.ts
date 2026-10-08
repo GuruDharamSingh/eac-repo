@@ -45,9 +45,12 @@ const SHARED_ACCOUNT: Record<string, string> = {
   "1e1fcc82-8b63-4df0-90d2-59a4aa515906": "fbf699b9-c708-440a-9abd-40f8953978e5",
 };
 
+/** The only app whose device tokens this site accepts (see src/proxy.ts). */
+export const DEVICE_APP = "jerusalem";
+
 /** The current signed-in viewer, or null. Never throws or redirects. */
 export async function getViewer(): Promise<Viewer | null> {
-  const session = await getServerSession();
+  const session = await getServerSession({ deviceApp: DEVICE_APP });
   if (!session.user) return null;
 
   const signedIn = session.user.db_user_id ?? session.user.id;
