@@ -136,6 +136,17 @@ function initialMeta(d: SurfaceDescriptor): LayerMeta {
       return { title: d.target ? "Organisation" : "Your profile", kind: "neutral", size: "wide" };
     case "centerLayout":
       return { title: "Arrange the center", kind: "neutral", size: "wide" };
+    case "me":
+      return { title: "Your profile", kind: "neutral", size: "wide" };
+    case "journey":
+      return {
+        title:
+          d.id === "org" ? "Set up your organisation" : d.id === "profile" ? "Your listing in the artist directory" : d.id === "site" ? "Create a collective" : "Sell your art on the market",
+        kind: d.id === "auction" ? "product" : "neutral",
+        size: "wide",
+      };
+    case "artwork":
+      return { title: "Add a work", kind: "product", size: "wide" };
     case "define":
       return { title: d.term, kind: "define", size: "compact" };
     case "material":

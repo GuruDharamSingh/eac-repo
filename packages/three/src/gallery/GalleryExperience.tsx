@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SceneStage } from '../canvas/SceneStage';
 import { GalleryScene } from './GalleryScene';
+import { ParlourScene } from './parlour/ParlourScene';
+import { PARLOUR_SEATS, type ParlourSeatId } from './parlour/layout';
+import type { ParlourAssets } from './parlour/types';
 import { Thumbstick } from './ui/Thumbstick';
 import { useMediaQuery } from './useMediaQuery';
 import { useGalleryStore } from './store';
@@ -34,10 +37,20 @@ export interface GalleryExperienceProps {
    */
   renderDetail?: (piece: GalleryPiece, close: () => void) => React.ReactNode;
 
+  /**
+   * Offer "see it in a room" on wall pieces: the painting alone in a lived-in
+   * parlour, seen from a sofa or either armchair. Off unless the app serves
+   * the furniture, since the package ships no media of its own.
+   */
+  parlour?: ParlourAssets;
+
   /** Shown instead of the room when WebGL is missing or motion is unwanted. */
   fallback?: React.ReactNode;
 
   onSelect?: (piece: GalleryPiece) => void;
+
+  /** Open walked up to this piece, once the room has been laid out. */
+  initialPieceId?: string | null;
 }
 
 const PANEL_SURFACE = '#fbf9f5';
@@ -75,9 +88,18 @@ export function GalleryExperience({
   design: designId,
   allowRoomChange = false,
   renderDetail,
+  parlour,
   fallback,
   onSelect,
+  initialPieceId = null,
 }: GalleryExperienceProps) {
+  /**
+   * The piece being looked at in the parlour, if any. The gallery's selection
+   * is left standing while the visitor is there, so coming back walks them up
+   * to the same piece with its panel open.
+   */
+  const [inParlour, setInParlour] = useState<GalleryPiece | null>(null);
+  const [seat, setSeat] = useState<ParlourSeatId>('sofa');
   // Controlled when the host passes a design, self-managed when it does not,
   // so a switcher works without the host having to hold the state.
   const [chosen, setChosen] = useState<RoomDesignId | undefined>(designId);
@@ -113,13 +135,15 @@ export function GalleryExperience({
   // Leaving a piece is Escape everywhere else on the web; the controls
   // deliberately let that key through rather than treating it as movement.
   useEffect(() => {
-    if (!selected) return;
+    if (!selected && !inParlour) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') release();
+      if (event.key !== 'Escape') return;
+      if (inParlour) setInParlour(null);
+      else release();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected, release]);
+  }, [selected, inParlour, release]);
 
   useEffect(() => {
     if (selected) onSelect?.(selected);
@@ -168,12 +192,23 @@ export function GalleryExperience({
     [tour, tourIndex, approach],
   );
 
+  // Arriving from a listing with a piece in mind: walk straight up to it.
+  const arrivedAt = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialPieceId || arrivedAt.current === initialPieceId) return;
+    const stop = tour.find((t) => t.piece.id === initialPieceId);
+    if (!stop) return;
+    arrivedAt.current = initialPieceId;
+    approach(stop.piece, stop.viewpoint);
+  }, [initialPieceId, tour, approach]);
+
   const close = useCallback(() => release(), [release]);
 
   const changeRoom = useCallback(
     (id: RoomDesignId) => {
       // A viewpoint is only meaningful in the room it was computed for.
       release();
+      setInParlour(null);
       setChosen(id);
     },
     [release],
@@ -222,6 +257,15 @@ export function GalleryExperience({
       webglFallback={fallback}
       reducedMotionFallback={fallback ?? undefined}
       overlay={
+        inParlour ? (
+          <ParlourOverlay
+            piece={inParlour}
+            seat={seat}
+            onSeat={setSeat}
+            onLeave={() => setInParlour(null)}
+            isTouch={isTouch}
+          />
+        ) : (
         <>
           {/* How to move. Top-left, where neither the thumbstick nor the
               detail sheet will ever cover it. */}
@@ -405,6 +449,25 @@ export function GalleryExperience({
                 </div>
               </div>
 
+              {parlour && selected.display !== 'plinth' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeat('sofa');
+                    setInParlour(selected);
+                  }}
+                  style={{
+                    ...pill,
+                    ...invertedPill,
+                    width: '100%',
+                    marginBottom: 16,
+                    font: '600 14px/1 system-ui, sans-serif',
+                  }}
+                >
+                  See it in a room
+                </button>
+              )}
+
               {renderDetail ? (
                 renderDetail(selected, close)
               ) : (
@@ -422,10 +485,108 @@ export function GalleryExperience({
             </div>
           )}
         </>
+        )
       }
     >
-      <GalleryScene key={design.id} pieces={pieces} design={design} onLayout={receiveLayout} />
+      {inParlour && parlour ? (
+        <ParlourScene key="parlour" piece={inParlour} assets={parlour} seat={seat} />
+      ) : (
+        <GalleryScene key={design.id} pieces={pieces} design={design} onLayout={receiveLayout} />
+      )}
     </SceneStage>
+  );
+}
+
+/** The parlour's own controls: which seat, and the way back. */
+function ParlourOverlay({
+  piece,
+  seat,
+  onSeat,
+  onLeave,
+  isTouch,
+}: {
+  piece: GalleryPiece;
+  seat: ParlourSeatId;
+  onSeat: (seat: ParlourSeatId) => void;
+  onLeave: () => void;
+  isTouch: boolean;
+}) {
+  return (
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          left: 16,
+          top: 16,
+          maxWidth: 280,
+          padding: '8px 12px',
+          borderRadius: 8,
+          background: SCRIM,
+          color: '#f4f1ec',
+          font: '500 12px/1.5 system-ui, sans-serif',
+          pointerEvents: 'none',
+        }}
+      >
+        <div style={{ font: '600 13px/1.4 system-ui, sans-serif' }}>
+          {piece.title}
+          {piece.artistName ? <span style={{ opacity: 0.72 }}> · {piece.artistName}</span> : null}
+        </div>
+        <div style={{ opacity: 0.75 }}>
+          {isTouch ? 'Drag to look around' : 'Drag to look around · Esc to go back'}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onLeave}
+        style={{ ...pill, position: 'absolute', right: 16, top: 16 }}
+      >
+        ‹ Back to the gallery
+      </button>
+
+      <div
+        role="group"
+        aria-label="Where to sit"
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: 20,
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: 6,
+          padding: 4,
+          borderRadius: 999,
+          background: SCRIM,
+          pointerEvents: 'auto',
+        }}
+      >
+        {PARLOUR_SEATS.map((s) => {
+          const active = s.id === seat;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onSeat(s.id)}
+              aria-pressed={active}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 999,
+                border: 'none',
+                background: active ? '#faf7f2' : 'transparent',
+                color: active ? '#1d1a16' : '#f4f1ec',
+                font: '600 13px/1 system-ui, sans-serif',
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

@@ -1,0 +1,18 @@
+{
+  "id": "cl-022",
+  "status": "draft",
+  "source": { "paper": "Messenger-Inquirer", "place": "Owensboro, Kentucky", "date": "2013-09-01", "era": "2010s", "language": ["en"] },
+  "summary": "Sunday daily classifieds page, low resolution: heavy serif 'Classifieds' with the paper's miNE logo, a rate strip and deadline table, narrow left columns of numbered classifications, and most of the page given to large employment display ads.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "narrow", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Heavy serif mixed-case 'Classifieds', bracket logo, TO PLACE AN AD panel with large phone number; thin rate strip and a black deadline bar beneath." },
+  "headers": [
+    { "id": "numbered-grey", "kind": "tint-bar", "example": "0151 Garage/Estate Sales", "fg": "#111111", "bg": "#cccccc", "numbering": "prefix", "align": "left", "notes": "Four-digit classification numbers." },
+    { "id": "big-label", "kind": "plain-caps", "example": "ANNOUNCEMENTS / EMPLOYMENT", "fg": "#111111", "bg": "transparent", "align": "left", "notes": "Section names in bold caps above groups of classifications." }
+  ],
+  "units": [
+    { "id": "job-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "left", "border": "thin", "example": "Century ALUMINUM Sebree / PROCESS ENGINEERS NEEDED", "notes": "Corporate logo, bold head, bullet lists of responsibilities; up to three columns wide." },
+    { "id": "photo-announcement", "kind": "display", "frequency": "occasional", "lead": "bold", "align": "center", "border": "thin", "example": "Jayleigh Gatton / Honor Graduate", "notes": "Portrait photo announcements in the left column." }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "notes": ["Image too small to read most liners; re-source a larger copy before relying on details."]
+}

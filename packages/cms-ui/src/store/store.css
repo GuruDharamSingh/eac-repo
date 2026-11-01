@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Store team and beneficiaries panels (@elkdonis/cms-ui/store)
+   ==========================================================================
+
+   Token-driven, like hub.css: colours resolve from the host's surface tokens
+   with the usual `--eac-*` fallbacks, so the same panel reads correctly on
+   IFAC's light console, the network hub and art-auction.
+   ========================================================================== */
+
+.eac-store-team,
+.eac-beneficiaries {
+  --st-line: var(--sf-line, var(--eac-border, #d9d2c5));
+  --st-ink: var(--sf-ink, var(--eac-fg, #1d1b17));
+  --st-muted: var(--sf-ink-muted, var(--eac-fg-muted, #6b6457));
+  --st-bg: var(--sf-bg, var(--eac-bg, #fffdf8));
+  --st-accent: var(--sf-accent, var(--eac-accent, #7a4a1e));
+  --st-danger: var(--eac-danger, #9b2d1f);
+  color: var(--st-ink);
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  background: var(--st-bg);
+  overflow: hidden;
+}
+
+.eac-store-team__heading,
+.eac-beneficiaries__heading {
+  margin: 0;
+  padding: 0.9rem 1rem 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--st-muted);
+}
+
+.eac-beneficiaries__intro {
+  margin: 0;
+  padding: 0 1rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--st-muted);
+}
+
+.eac-store-team__list,
+.eac-beneficiaries__list,
+.eac-beneficiaries__chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eac-store-team__row,
+.eac-beneficiaries__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--st-line);
+  font-size: 0.92rem;
+}
+
+.eac-store-team__empty,
+.eac-beneficiaries__empty {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--st-line);
+  color: var(--st-muted);
+  font-size: 0.9rem;
+}
+
+.eac-store-team__who,
+.eac-beneficiaries__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eac-store-team__name,
+.eac-beneficiaries__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eac-store-team__you {
+  font-weight: 400;
+  color: var(--st-muted);
+}
+
+.eac-store-team__email,
+.eac-beneficiaries__meta,
+.eac-beneficiaries__blurb {
+  font-size: 0.8rem;
+  color: var(--st-muted);
+}
+
+.eac-beneficiaries__meta a {
+  color: var(--st-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.eac-store-team__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.eac-store-team__role {
+  font-size: 0.74rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--st-line);
+  color: var(--st-muted);
+}
+
+.eac-store-team__remove,
+.eac-beneficiaries__remove {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--st-danger);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.eac-store-team__add,
+.eac-beneficiaries__add,
+.eac-beneficiaries__suggested,
+.eac-beneficiaries__orgs {
+  border-top: 1px solid var(--st-line);
+  padding: 0.85rem 1rem;
+}
+
+.eac-beneficiaries__suggested h3,
+.eac-beneficiaries__orgs h3,
+.eac-beneficiaries__add h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--st-muted);
+}
+
+.eac-beneficiaries__suggested .eac-beneficiaries__list,
+.eac-beneficiaries__suggested .eac-beneficiaries__row {
+  border-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.eac-store-team__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eac-store-team__input,
+.eac-store-team__select,
+.eac-beneficiaries__fields input {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--st-ink);
+  background: transparent;
+  border: 1px solid var(--st-line);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  min-width: 0;
+}
+
+.eac-store-team__input {
+  flex: 1 1 14rem;
+}
+
+.eac-beneficiaries__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.eac-store-team__button,
+.eac-beneficiaries__button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--st-accent);
+  color: var(--st-accent);
+  background: transparent;
+  cursor: pointer;
+}
+
+.eac-store-team__button:disabled,
+.eac-beneficiaries__button:disabled,
+.eac-beneficiaries__chip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.eac-beneficiaries__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.eac-beneficiaries__chip {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--st-line);
+  background: transparent;
+  color: var(--st-ink);
+  cursor: pointer;
+}
+
+.eac-store-team__error,
+.eac-beneficiaries__error {
+  flex-basis: 100%;
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--st-danger);
+}

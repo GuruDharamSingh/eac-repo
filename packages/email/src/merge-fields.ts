@@ -180,6 +180,17 @@ export const MERGE_FIELDS: Record<string, MergeField[]> = {
     f('rsvpUrl', 'Link to its page', 'https://example.org/workshops/attention'),
     f('talkJoinUrl', 'Join-the-room link', 'https://cloud.elkdonis-arts.org/call/sample'),
     f('rsvpCount', 'How many are coming', '7', num('rsvpCount')),
+    // Only IFAC's subscriber letter passes a one-click link. One layout serves
+    // every reminder purpose of a key, so a `{comingUrl}` placed in it falls
+    // back to the page link (where a signed-in reader can answer) rather than
+    // mailing the literal token to attendees and hosts. Seeded only with
+    // `purpose: 'subscriber'` (samples.ts). (claude, 2026-10-10)
+    f(
+      'comingUrl',
+      '"I\'m coming" link',
+      'https://example.org/api/series/coming?token=sample',
+      (p) => str('comingUrl')(p) ?? str('rsvpUrl')(p)
+    ),
   ],
 
   // A plainer letter than the others: it carries no kind, no summary and no
@@ -230,8 +241,35 @@ export function mergeValuesFor(
     const value = field.from(props);
     if (value !== undefined) out[field.name] = value;
   }
+  for (const [name, read] of Object.entries(MERGE_ALIASES[key] ?? {})) {
+    if (out[name] !== undefined) continue;
+    const value = read(props);
+    if (value !== undefined) out[name] = value;
+  }
   return out;
 }
+
+/**
+ * Tokens a letter fills without declaring them as fields.
+ *
+ * The newsletter kit's Gathering, Blog and Lead cards (packages/newsletter
+ * blocks.ts) write `{threadUrl}` and `{coverImageUrl}` into any layout they
+ * are dropped in. The reminder and meeting-trigger letters call the page
+ * link `rsvpUrl` and the picture `coverUrl`, so a card placed in one of them
+ * mailed the literal `{threadUrl}` (found 2026-10-10). Declaring `threadUrl`
+ * as a field would give two fields one sample value, which `check:fields`
+ * rejects (the seeder can then find only one), so these are filled at send
+ * time from the letter's own props instead.
+ */
+const MERGE_ALIASES: Record<string, Record<string, MergeField['from']>> = {
+  reminder: {
+    threadUrl: (p) => str('threadUrl')(p) ?? str('rsvpUrl')(p),
+    coverImageUrl: (p) => str('coverImageUrl')(p) ?? str('coverUrl')(p),
+  },
+  'meeting-trigger': {
+    threadUrl: (p) => str('threadUrl')(p) ?? str('rsvpUrl')(p),
+  },
+};
 
 /** `{name}` → a believable value, for the preview pane and test sends. */
 export function sampleValuesFor(key: TemplateKey | string): Record<string, string> {

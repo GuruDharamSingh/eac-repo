@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { EB_Garamond } from "next/font/google";
 import { chromeState } from "@elkdonis/lms-ui";
 import { connectors } from "@/lib/connectors";
-import { FORUM_URL, NETWORK_URL, SITE, SOPHIA_URL } from "@/lib/site";
+import { NETWORK_URL, SITE, SOPHIA_URL } from "@/lib/site";
 
 // The newsroom face of arts-collective.com; labels and controls are Arial, as there.
 const serif = EB_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
@@ -23,8 +23,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const me = await chromeState(connectors);
   const today = new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "America/Toronto" });
   return (
-    <html lang="en" className={serif.variable}>
-      <body>
+    // Browser extensions (password managers, dark-mode and grammar tools) add
+    // attributes to <html> and <body> before React hydrates; every other app
+    // on the network ignores those two, and so does this one.
+    <html lang="en" className={serif.variable} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <div className="so-root">
           <a className="so-skip" href="#main">Skip to the page</a>
           <header className="so-top">
@@ -54,7 +57,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div id="main" tabIndex={-1} style={{ display: "contents" }}>{children}</div>
           <footer className="so-bottom">
             <a href="/care">Taking care while you practise</a>
-            <a href={FORUM_URL}>The Grand Forum</a>
             <a href={NETWORK_URL}>Elkdonis Arts Collective</a>
           </footer>
         </div>

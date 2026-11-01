@@ -11,7 +11,7 @@ import {
 import { getNetworkFrontFeed, type NetworkFeedItem } from "@/lib/network";
 
 /**
- * Data for the Elkdonis hub tab (/hub/elkdonis).
+ * Data for the Elkdonis hub tab (/hub/arts-collective).
  *
  * Everything the tab shows about the collective itself lives in three forum
  * categories on the `elkdonis` org (migration 138): Announcements (only

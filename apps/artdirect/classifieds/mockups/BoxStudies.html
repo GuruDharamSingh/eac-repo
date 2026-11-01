@@ -1,0 +1,357 @@
+<title>Box Studies</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&family=Archivo+Black&family=Anton&family=League+Spartan:wght@700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Display&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ultra&family=Rye&family=Courier+Prime:wght@400;700&family=Alfa+Slab+One&family=Bowlby+One&family=Righteous&family=Pinyon+Script&family=UnifrakturMaguntia&family=Pathway+Gothic+One&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap">
+<style>
+/* Layout: three fixed 900×1300 studies, scaled to the viewport, on a dark reading field. Single-theme: paper and ink. */
+:root { --field: #26241f; --field-ink: #e6e0d2; --ink: #161412; --red: #d7261e; --blue: #1f3f99; --yellow: #ffe600; --sky: #2a9fd6; --ui: 'Courier Prime', 'Courier New', monospace; color-scheme: dark; }
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: var(--ui); padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 900px; margin: 0 auto 28px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Libre Caslon Display', Georgia, serif; font-weight: 400; font-size: 34px; margin: 0 0 6px; text-wrap: balance; }
+.intro p { margin: 6px 0; }
+.stack { display: flex; flex-direction: column; gap: 40px; align-items: center; }
+.frame { width: 100%; max-width: 900px; overflow: hidden; }
+.scaler { width: 900px; height: 1300px; transform-origin: 0 0; }
+figure { margin: 0; }
+figcaption { max-width: 900px; margin: 12px auto 0; font-size: 12.5px; line-height: 1.55; }
+figcaption b { color: #fff; }
+.page { width: 900px; height: 1300px; box-sizing: border-box; overflow: hidden; color: var(--ink); position: relative; box-shadow: 0 2px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.45); }
+.page p { margin: 0; }
+.page * { box-sizing: border-box; min-width: 0; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+/* halftone photo stand-in */
+.ph { display: block; border: 1px solid var(--ink); background-color: #ddd; background-image: radial-gradient(circle at 50% 50%, #161412 0 .8px, transparent 1.1px), linear-gradient(160deg, rgba(22,20,18,.65), rgba(22,20,18,.05) 55%, rgba(22,20,18,.5)); background-size: 3px 3px, 100% 100%; }
+</style>
+
+<div class="intro">
+  <h1>Box Studies: three sections, three densities</h1>
+  <p>Three hand-composed 900 × 1300 sections that study the boxes themselves, after another pass over the specimens: a dense wall of agate with booking codes, a staggered board of boxes in every size and a few colours, and a section where every box speaks in its own typeface on one steady grid. Copy is newly written; real details are [PLACEHOLDER]s. Each caption names the devices and the specimens they come from.</p>
+</div>
+
+<div class="stack">
+
+<!-- ================================================================ 1. DENSE -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="d" style="background: #fdfcf9; padding: 22px 26px; display: flex; flex-direction: column;">
+  <style>
+    #d .top { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 4px; }
+    #d .top .no { font-family: 'Oswald', sans-serif; font-size: 34px; line-height: 1; }
+    #d .top .t { font-family: 'Oswald', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: .3em; }
+    #d .top .d { font-family: 'Oswald', sans-serif; font-size: 11px; letter-spacing: .1em; }
+    #d .grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: 1fr auto; column-gap: 7px; margin-top: 8px; flex-grow: 1; overflow: hidden; }
+    #d .col { border-right: 1px solid #bbb; padding-right: 7px; }
+    #d .col:last-child { border-right: 0; padding-right: 0; }
+    #d .big { border: 2px solid var(--ink); padding: 8px 4px; text-align: center; margin-bottom: 6px; }
+    #d .big .a { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 26px; line-height: 1; }
+    #d .big .b { background: var(--ink); color: #fff; font-family: 'Oswald', sans-serif; font-size: 10px; letter-spacing: .14em; padding: 2px; margin-top: 4px; }
+    #d .sh { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; text-align: center; margin: 7px 0 3px; border-top: 1px solid var(--ink); padding-top: 2px; }
+    #d .l { font-family: 'Tinos', serif; font-size: 10px; line-height: 1.2; text-align: justify; margin-bottom: 5px; hyphens: auto; }
+    #d .l b { font-weight: 700; }
+    #d .l .c { font-family: 'Arimo', sans-serif; font-size: 7.4px; letter-spacing: .02em; }
+    #d .attn { border: 1.5px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: 6px; text-align: center; margin: 6px 0; font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.3; }
+    #d .attn b { display: block; font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: .1em; margin-bottom: 3px; }
+    #d .book { grid-column: 3 / 7; align-self: center; border: 2px solid var(--sky); background: linear-gradient(90deg, #fff, #e8f4fb); display: grid; grid-template-columns: 1fr 1.4fr; margin: 6px 0; min-height: 120px; }
+    #d .book .l1 { background: var(--blue); color: #fff; font-family: 'Playfair Display', serif; font-weight: 900; font-size: 24px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; line-height: 1; }
+    #d .book .l2 { padding: 8px 10px; font-family: 'Arimo', sans-serif; font-size: 9px; line-height: 1.35; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+    #d .book .l2 .h { font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 16px; color: var(--sky); line-height: 1; }
+    #d .book .l2 .k { display: flex; gap: 6px; flex-wrap: wrap; font-weight: 700; font-size: 7.5px; letter-spacing: .04em; }
+    #d .disc { border: 1.5px solid var(--ink); padding: 6px; font-family: 'Arimo', sans-serif; font-size: 8.4px; line-height: 1.3; margin-top: 6px; }
+    #d .disc b { display: block; font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: .1em; text-align: center; }
+  </style>
+  <div class="top"><span class="no">08</span><span class="t">CLASSIFIEDS</span><span class="d">THE LEDGER · [CITY] · SATURDAY [DATE]</span></div>
+  <div class="grid">
+    <div class="col">
+      <div class="big"><div class="a">COLLAB-<br>ORATORS</div><div class="b">PARTNERS WANTED</div></div>
+      <div class="sh">Printmakers</div>
+      <p class="l"><b>Suitable match for printmaker,</b> 5'7", 1991, own press, bed 18 by 30, seeks weaver of any shaft count for a joint show. Caste no bar, paper no bar. Send sample and two proofs. <span class="c">(CL21017106)</span></p>
+      <p class="l"><b>Etcher, 34,</b> acid-free habits, well settled in the old mill, invites alliance from a bookbinder who can sew a signature in under a minute. <span class="c">(CL21017113)</span></p>
+      <p class="l"><b>Riso operator</b> B.A. (Hons) Fine Art, drums for blue and fluorescent pink, seeks writer for a quarterly that will not be quarterly. Early decision. <span class="c">(CL21017121)</span></p>
+      <p class="l"><b>Woodcut artist,</b> left-handed, own gouges, seeks poet for a broadside series, four seasons, sixteen lines each. Upper caste of adjectives preferred. <span class="c">(CL21017134)</span></p>
+      <div class="sh">Potters</div>
+      <p class="l"><b>Potter, 29,</b> cone 6, electric, seeks painter who will not use the good bowls for mixing. Photo and glaze chart requested. <span class="c">(CL21017140)</span></p>
+      <p class="l"><b>Well settled ceramicist</b> with kiln of own, 1 cu. m., invites proposals from musicians for a performance in which pots are struck. Vegetarian strikes only. <span class="c">(CL21017151)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Painters</div>
+      <p class="l"><b>Oil painter,</b> 5'10", slow, north light, own easel (leans left), seeks a sitter with time. Chairs provided. No talking after the second hour. <span class="c">(CL21017160)</span></p>
+      <p class="l"><b>Muralist</b> working in Konkani and acrylic seeks a wall. Any orientation. Height not an issue, ladders are. Preference for the south side of the river. <span class="c">(CL21017171)</span></p>
+      <p class="l"><b>Watercolourist,</b> 61, retired, fair complexion of paper, seeks walking companion who can also carry the board. Early mornings. Reply with gait. <span class="c">(CL21017177)</span></p>
+      <p class="l"><b>Sign painter</b> with a steady hand and a van invites the attention of forty shopfronts along the high street. Gold leaf on request. Apply via the Guild. <span class="c">(CL21017183)</span></p>
+      <p class="l"><b>Portrait painter</b> who forgets everything but colour seeks manager to keep the calendar and the kettle. Three days. Salary negotiable in paintings. <span class="c">(CL21017190)</span></p>
+      <p class="l"><b>Abstract painter,</b> divorced from figuration, no issue, seeks collaborator with figures. Issue welcome. <span class="c">(CL21017199)</span></p>
+      <div class="sh">Sculptors</div>
+      <p class="l"><b>Stone carver</b> with lorry seeks quarry. Will exchange a bust of the quarry owner. <span class="c">(CL21017204)</span></p>
+      <p class="l"><b>Sculptor</b> of large things seeks assistant who says nothing about the size of it. Three days, lifting, sanding. <span class="c">(CL21017211)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Musicians</div>
+      <p class="l"><b>Accompanist</b> wanted for Thursday choir. Sight-reading essential, patience a bonus, tea afterwards certain. <span class="c">(CL21017219)</span></p>
+      <p class="l"><b>Three-piece</b> who keeps losing drummers invites applications from drummers. We are nicer now. Van, PA, forgiveness. <span class="c">(CL21017224)</span></p>
+      <p class="l"><b>Composer, 5'5",</b> b. 1990, echoes a speciality, seeks dancer for a work set entirely in a stairwell. Small fee, large staircase. <span class="c">(CL21017231)</span></p>
+      <p class="l"><b>Brass players</b> wanted for a parade that has lost its band. Uniform supplied, route not yet. <span class="c">(CL21017238)</span></p>
+      <p class="l"><b>Saw player</b> sought for a reading about rivers. One evening, modest fee, applause likely, bow provided. <span class="c">(CL21017242)</span></p>
+      <div class="attn"><b>ATTN: READERS</b>Readers are requested to write correct Box Numbers in their letters so as to ensure their delivery to the right advertiser. Replies are forwarded once a week. Please do not send originals, money or perishables. Registered letters addressed to Box Numbers are not accepted.<br><i>Advt. Manager</i></div>
+      <div class="sh">Writers</div>
+      <p class="l"><b>Poet, 27,</b> M.A., unpublished, seeks painter for a book of plates. Will supply sixteen poems and the title. <span class="c">(CL21017250)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Film &amp; Photo</div>
+      <p class="l"><b>Filmmaker</b> planning a short shot in one take seeks focus puller who does not sneeze. One night. <span class="c">(CL21017261)</span></p>
+      <p class="l"><b>Darkroom</b> technician, black and white only, good eyes in red light, invites alliance from a colour photographer for mutual correction. <span class="c">(CL21017266)</span></p>
+      <p class="l"><b>Photographer, 38,</b> daylight only, no filters, no flattery, seeks sitters who can stand still and subjects who cannot. <span class="c">(CL21017270)</span></p>
+      <p class="l"><b>Sound recordist</b> wishes to capture a city at 4 a.m. and seeks a city. Must be quiet. <span class="c">(CL21017279)</span></p>
+      <p class="l"><b>Projectionist,</b> retired, ten thousand films, seeks a cinema. Will bring the back row. <span class="c">(CL21017284)</span></p>
+      <div class="sh">Theatre</div>
+      <p class="l"><b>Puppeteer</b> with steady hands, experience with string, seeks a winter season. Rod accepted. <span class="c">(CL21017290)</span></p>
+      <p class="l"><b>Dresser,</b> quick hands, quicker changes, seeks a company with many changes. Hem in forty seconds. <span class="c">(CL21017297)</span></p>
+      <p class="l"><b>Fly operator,</b> strong arms, calm nerves, no fear of heights or sopranos, invites a touring opera. <span class="c">(CL21017303)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Textile</div>
+      <p class="l"><b>Weaver, 4-shaft,</b> folding, slightly haunted by previous weaver, seeks spinner. Threads already started. <span class="c">(CL21017310)</span></p>
+      <p class="l"><b>Quilter</b> with a long arm seeks a short story. Will stitch it. <span class="c">(CL21017317)</span></p>
+      <p class="l"><b>Dyer</b> working in indigo, onion skin and rust seeks gardener with a surplus of onions. <span class="c">(CL21017322)</span></p>
+      <div class="sh">Glass &amp; Metal</div>
+      <p class="l"><b>Foundry yard</b> offers bench space to anyone with their own gloves and their own patience. Pour days Thursdays. <span class="c">(CL21017330)</span></p>
+      <p class="l"><b>Stained glass</b> worker, 44, lead-free hands, seeks church, chapel or kitchen window. Will match any saint. <span class="c">(CL21017336)</span></p>
+      <p class="l"><b>Blacksmith</b> seeks a sign painter for a joint shop sign. Must be able to paint on a hot surface, briefly. <span class="c">(CL21017341)</span></p>
+      <p class="l"><b>Jeweller,</b> small things, seeks sculptor of large things for an exchange of scale. <span class="c">(CL21017350)</span></p>
+      <div class="sh">Paper</div>
+      <p class="l"><b>Bookbinder,</b> sober, seeks room with a window and a bench. Will trade repairs for rent. <span class="c">(CL21017356)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Dance</div>
+      <p class="l"><b>Folk Dance Circle</b> seeks musicians for a bridge at sunset, the lower hall having flooded. All are welcome to dance there. <span class="c">(CL21017361)</span></p>
+      <p class="l"><b>Dancer, 5'4",</b> b. 1994, seeks stairwell. Echoes essential. <span class="c">(CL21017368)</span></p>
+      <div class="sh">Teaching</div>
+      <p class="l"><b>Tutor</b> in perspective drawing, one hour weekly, seeks student who keeps drawing roads that go up. Patience supplied. <span class="c">(CL21017374)</span></p>
+      <p class="l"><b>Ceramics instructor</b> wanted, adult evening class, kiln experience required, glaze opinions welcome. <span class="c">(CL21017379)</span></p>
+      <p class="l"><b>Art teacher</b> for a school of eleven children and one goat. Rural, room and board, goat. <span class="c">(CL21017386)</span></p>
+      <p class="l"><b>Life model</b> for a class that draws slowly. Tuesdays and Fridays, robe provided, tea included. <span class="c">(CL21017391)</span></p>
+      <div class="sh">Studios</div>
+      <p class="l"><b>North-light studio,</b> third floor, deep sink, freight lift, no fumes after nine, seeks quiet printmaker who does not whistle. <span class="c">(CL21017400)</span></p>
+      <p class="l"><b>A wall,</b> forty feet long, freshly primed, facing the morning, seeks anyone with a good reason. <span class="c">(CL21017406)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Lost &amp; Found</div>
+      <p class="l"><b>Lost:</b> one afternoon in late October, last seen near the canal, golden at the edges. Sentimental value only. Reward. <span class="c">(CL21017411)</span></p>
+      <p class="l"><b>Found:</b> a sketchbook full of hands on the No. 9 tram. Owner may claim by describing the third hand. <span class="c">(CL21017418)</span></p>
+      <p class="l"><b>Lost:</b> the thread of an idea about blue. Finder please do not tug. <span class="c">(CL21017423)</span></p>
+      <p class="l"><b>Found:</b> a green scarf, hand-knitted, after the lecture on colour. Produce matching glove. <span class="c">(CL21017429)</span></p>
+      <div class="sh">Personal</div>
+      <p class="l"><b>To the painter</b> in the green coat: you were right about the corner. I have repainted it. <span class="c">(CL21017434)</span></p>
+      <p class="l"><b>Will the owner</b> of the cello case left at the Thursday reading please collect it. It has started to hum. <span class="c">(CL21017440)</span></p>
+      <p class="l"><b>Joyce.</b> Being without you has to be the most painful time of my life. Gary B. <span class="c">(CL21017447)</span></p>
+      <p class="l"><b>Michael.</b> I love you Bushel and a Peck. <span class="c">(CL21017451)</span></p>
+      <p class="l"><b>Dana,</b> for the one who holds the ladder. Always. <span class="c">(CL21017458)</span></p>
+    </div>
+    <div class="col">
+      <div class="sh" style="margin-top: 0">Wanted to Buy</div>
+      <p class="l"><b>Old wood type,</b> any size, condition, cases, furniture, quoins. Cash on the spot, no questions about the splinters. <span class="c">(CL21017463)</span></p>
+      <p class="l"><b>Postcards</b> of other people's holidays, the stranger the better. By the box. <span class="c">(CL21017469)</span></p>
+      <p class="l"><b>A good easel</b> that does not lean to the left. Will trade one that does. <span class="c">(CL21017474)</span></p>
+      <div class="sh">For Sale</div>
+      <p class="l"><b>Etching press,</b> hand-cranked, one owner, still prints straight. Buyer collects, buyer brings three friends. <span class="c">(CL21017480)</span></p>
+      <p class="l"><b>Typewriter,</b> portable, 1958, types a slightly wobbly e. Perfect for letters you mean. <span class="c">(CL21017486)</span></p>
+      <p class="l"><b>Four hundred jam jars,</b> washed, labelled by colour. Ideal for a painter or a very organised bee. <span class="c">(CL21017491)</span></p>
+      <p class="l"><b>Pigments</b> ground by hand from stones on the shore. Small jars, uncertain names, honest colours. <span class="c">(CL21017497)</span></p>
+      <div class="disc"><b>DISCLAIMER</b>The Ledger takes no responsibility for the contents of advertisements carried in this section. Readers are requested to verify the contents on their own before acting upon them. Generated entries are marked as such when opened.</div>
+    </div>
+    <div class="book">
+      <div class="l1">The<br>Ledger</div>
+      <div class="l2"><div class="h">CLASSIFIED BOOKING</div><div class="k"><span>COLLABORATORS</span>·<span>STUDIOS</span>·<span>RECRUITMENT</span>·<span>NAME CHANGE</span>·<span>NOTICES</span></div><div>Book your entry online on ArtDirect, any hour, any language. Pay by the word, the box or the echo. Every real entry gets a home spot and links back to the file that placed it.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+<figcaption><b>1. Dense: the collaborators' wall.</b> Eight columns of 8.6 px agate with bold openings and a booking code after every entry; sub-heads as plain spaced caps between hairlines; a double-ruled ATTN: READERS box; the paper's own booking ad set across four columns in the middle of the wall; a disclaimer box closing the last column. Borrowed from the Tribune matrimonials (cl-038): caste-style sub-heads, codes, the attention box, the mid-page booking band, the disclaimer; the "matrimonial" voice ("suitable match for printmaker, 5'7", own press") is the joke that carries the whole section.</figcaption>
+</figure>
+
+<!-- ================================================================ 2. STAGGERED -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="s" style="background: #fff; padding: 20px 24px; display: flex; flex-direction: column;">
+  <style>
+    #s .top { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Playfair Display', serif; font-size: 11px; border-bottom: 2px solid var(--red); padding-bottom: 3px; }
+    #s .top .n { font-weight: 900; font-size: 30px; line-height: 1; }
+    #s h1 { margin: 8px 0 0; text-align: center; font-family: 'Playfair Display', serif; font-weight: 900; font-size: 56px; line-height: 1; letter-spacing: -.01em; }
+    #s h1 span { color: var(--red); font-variant: small-caps; }
+    #s .rule { border-top: 1px solid var(--ink); margin: 6px 0 4px; }
+    #s .fine { text-align: center; font-family: 'Arimo', sans-serif; font-style: italic; font-size: 9px; line-height: 1.3; }
+    #s .board { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 7px; gap: 6px 8px; margin-top: 10px; flex-grow: 1; grid-auto-flow: dense; overflow: hidden; }
+    #s .tab { color: #fff; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 11px; text-align: center; padding: 6px 4px; line-height: 1.15; display: flex; align-items: center; justify-content: center; }
+    #s .r { background: var(--red); } #s .k { background: var(--ink); }
+    #s .bx { border: 1.5px solid var(--ink); padding: 7px 8px; font-family: 'Arimo', sans-serif; font-size: 9.6px; line-height: 1.32; text-align: center; overflow: hidden; display: flex; flex-direction: column; }
+    #s .bx .h { font-family: 'Libre Caslon Text', serif; font-weight: 700; font-size: 13px; line-height: 1.1; }
+    #s .bx .code { margin-top: auto; font-size: 7px; letter-spacing: .06em; opacity: .7; }
+    #s .y { background: var(--yellow); }
+    #s .b { background: var(--sky); color: #fff; border-color: var(--sky); }
+    #s .g { background: linear-gradient(180deg, #fff, #d9d9d9); }
+    #s .wide { font-family: 'Libre Caslon Text', serif; font-size: 11px; text-align: center; }
+    #s .wide .big { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 20px; line-height: 1; }
+    #s .town { background: var(--ink); color: #fff; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 11px; text-align: center; padding: 5px; letter-spacing: .04em; }
+    #s .liner { font-family: 'Arimo', sans-serif; font-size: 9.6px; line-height: 1.32; text-align: justify; }
+    #s .liner b { font-weight: 700; }
+    #s .side { background: var(--sky); color: #fff; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 11px; line-height: 1.4; padding: 14px 12px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+    #s .side .q { font-size: 13px; }
+    #s .side ul { margin: 0; padding: 0; list-style: none; text-align: left; }
+    #s .side li::before { content: "• "; }
+    #s .side .ph { font-size: 15px; margin-top: auto; }
+    #s .foot { grid-column: 1 / -1; grid-row: span 9; background: var(--red); color: #fff; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 10px 16px; font-family: 'Arimo', sans-serif; }
+    #s .foot .h { font-weight: 700; font-size: 22px; line-height: 1.05; }
+    #s .foot ul { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11px; font-weight: 700; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+    #s .foot li::before { content: "■ "; font-size: 8px; }
+    #s .foot .who { text-align: right; }
+    #s .foot .who .n { font-family: 'Pinyon Script', cursive; font-size: 30px; line-height: 1; }
+    #s .foot .who .t { font-weight: 700; font-size: 22px; letter-spacing: .04em; }
+    #s .foot .who .m { font-size: 10px; margin-top: 4px; }
+  </style>
+  <div class="top"><span class="n">16</span><span>The Observer · directory.arts-collective.com</span><span>Wednesday, [DATE]</span></div>
+  <h1><span>Observer</span> Classifieds</h1>
+  <div class="rule"></div>
+  <p class="fine">The Observer is not responsible for typographical errors. Error credits will not be granted. Minimal changes for multiple-week ads are [PRICE] per instance. Help-wanted deadline is 2 p.m. Monday. All classifieds are pre-paid, no billing. The Observer cannot accept legal advertising, only moral.</p>
+
+  <div class="board">
+    <!-- row of tabs, different colours and heights -->
+    <div class="tab r" style="grid-column: span 2; grid-row: span 5">EMPLOYMENT/<br>HELP WANTED</div>
+    <div class="tab r" style="grid-column: span 2; grid-row: span 5">EMPLOYMENT/<br>HELP WANTED</div>
+    <div class="tab k" style="grid-column: span 2; grid-row: span 5">STUDIOS<br>FOR RENT</div>
+    <div class="tab k" style="grid-column: span 2; grid-row: span 5">STUDIOS<br>FOR RENT</div>
+    <div class="tab k" style="grid-column: span 2; grid-row: span 5">SERVICES<br>OFFERED</div>
+    <div class="side" style="grid-column: span 2; grid-row: span 68">
+      <div class="q">What an ad on the big sites gets you …</div>
+      <ul><li>A free ad</li><li>No-shows</li><li>Headaches</li><li>People from other regions</li><li>Scammers</li></ul>
+      <div class="q">What an Observer Classified gets you …</div>
+      <ul><li>local readership</li><li>local buyers</li><li>a home spot on the plane</li><li>echoes in every direction</li><li>placement in a 134-year-old newspaper (and on ArtDirect)</li></ul>
+      <div>Truth is, nothing can compare to our Classified Section. Why take the risk?</div>
+      <div class="ph">Call us today to place your ad.<br>[PHONE]</div>
+    </div>
+
+    <!-- staggered boxes -->
+    <div class="bx" style="grid-column: span 4; grid-row: span 22"><span class="ph" style="height: 70px; margin-bottom: 6px"></span><div class="h" style="font-family: 'Pinyon Script', cursive; font-weight: 400; font-size: 26px; color: var(--red)">Now Hiring</div><div class="h">BESTMARK FRAMES</div><p>We are looking for several experienced <b>WOODWORKERS / MILLWORK BENCHMEN</b> for our riverside location. If you are interested, please check our website <b>[URL]</b> and send an updated copy of your résumé to <b>[EMAIL]</b>.</p><div class="code">31W03</div></div>
+    <div class="bx" style="grid-column: span 4; grid-row: span 36; text-align: center"><p><b>BUS DRIVER</b><br>Full time omnibus driver needed to transport sitters on local routes to the life class. Must possess a valid licence class B, passenger endorsement, and a tolerance for robes.<br>Salary [RANGE] based on experience and qualifications.<br>The following residential preferences shall apply:<br>1. Residents of the Old Mill;<br>2. Residents of the foundry yard;<br>3. Residents of the river.<br>Proof of residency is required: applicants shall provide copies of the first page (only) of the last three sketchbooks and a government-issued photo identification card.<br>Application deadline is [DATE].</p><div class="code">33W04</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6"><div class="town">BELLEVILLE</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6"><div class="town">KEARNY</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6"><div class="town">N. ARLINGTON</div></div>
+    <div class="liner" style="grid-column: span 2; grid-row: span 16"><b>BELLEVILLE</b> 2nd floor, 1 room, small sink. [PRICE] + 1.5 months security. North light included, no pets, no fumes after nine. Available January 1st. Call Mike [PHONE]. <span style="font-size: 7px">32W03</span></div>
+    <div class="liner" style="grid-column: span 2; grid-row: span 16"><b>KEARNY</b> 3rd floor. Newly whitewashed. 1 studio, freight lift, EIK. [PRICE] + 1.5 months security. Proximity to the kiln and bus lines. No pets, no smoking, no whistling. [PHONE]. <span style="font-size: 7px">33W03</span></div>
+    <div class="liner" style="grid-column: span 2; grid-row: span 16"><b>N. ARLINGTON</b> Bench for rent in a working foundry yard. No pets. No smoking except by the furnace. Available now. [PHONE]. <span style="font-size: 7px">29W06</span></div>
+    <div class="bx y" style="grid-column: span 4; grid-row: span 24"><p><b>PART TIME &amp; FULL TIME</b><br>A chance to grow with a solid company. Stable and SAFE work environment.<br>Experienced:<br><b>• CLIMBER</b><br><b>• GROUND PERSON</b><br>Mural experience &amp; transportation a must along with proof of valid driver's licence and a head for heights.<br>Call [PHONE] or [PHONE]</p><div class="code">22W12</div></div>
+    <div class="bx" style="grid-column: span 4; grid-row: span 18; padding: 0"><span class="ph" style="height: 100%; border: 0; background-color: #ccc; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 900; font-size: 44px; letter-spacing: .1em; color: #fff; text-shadow: 0 0 6px rgba(0,0,0,.5)">JOBS</span></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6"><div class="town">HARRISON</div></div>
+    <div class="liner" style="grid-column: span 2; grid-row: span 22"><b>HARRISON</b> Newly renovated 2nd floor. 2 rooms, 1 bath, kiln in basement. [PRICE] + 1.5 months security. Utilities separate. Close to schools and transportation. No pets, no fumes, no sopranos. Available now. [PHONE]. <span style="font-size: 7px">32W03</span></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 12; padding: 0"><span class="ph" style="height: 100%; border: 0"></span></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 14"><p><b>TRUCK DRIVER</b><br>40 hour week, Mon–Fri, 7 to 4. Start [RATE] hour. One very large painting, one very small sofa, Sundays early.<br>[EMAIL]</p><div class="code">31W03</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6; border: 0; padding: 0"><div class="tab r" style="height: 100%">SERVICES<br>OFFERED</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 14"><p>Care for your child at your home or my studio. Will clean brushes if needed. <b>References available.</b><br>[PHONE]</p><div class="code">31W03</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 10"><p><b>Dental Office</b> in Kearny is looking for a full time dental assistant who can also gild. 2 years' experience minimum, bilingual a must. [EMAIL]</p><div class="code">32W03</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 10"><p><b>Warehouse Workers/ Receptionist</b> NEEDED ASAP. Apply in person: the Old Mill, Unit 4. No soliciting calls, no soliloquies.</p><div class="code">31W03</div></div>
+    <div class="bx b" style="grid-column: span 2; grid-row: span 12"><p>D. Fitzgerald seamless gutters. Need FT/PT to install gutters &amp; roof repairs over the studios. Some experience necessary. Clean driver's licence. Call Dennie [PHONE]</p><div class="code" style="opacity: 1">31W03</div></div>
+    <div class="bx g" style="grid-column: span 2; grid-row: span 12"><p><b>Harrison Nails</b> 701 Frank E. Rodgers Boulevard. We are looking for nail technicians who can also do gesso. Flexible schedule. Call Lisa [PHONE]</p><div class="code">31W04</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 14"><p>Caregiver seeks position to take care of an elderly painter, 5–7 days a week, Mon–Fri 9–6. Weekends negotiable. Can mix colours. References available.<br>[PHONE]</p><div class="code">31W03</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 6; border: 0; padding: 0"><div class="tab k" style="height: 100%">ITEM FOR SALE</div></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 14; padding: 0; display: flex"><span class="ph" style="height: 60px; border: 0; border-bottom: 1px solid var(--ink)"></span><p style="padding: 5px">3 yard etching press, away from the river, runs and has control. [PRICE] or best offer. [PHONE]</p></div>
+    <div class="bx" style="grid-column: span 2; grid-row: span 10"><p><b>Need Drivers / Loader,</b> pick up passengers in van and load in helicopter. Full/part time. Retirees welcome. Location: the heliport. [PHONE]</p><div class="code">30W07</div></div>
+
+    <div class="foot">
+      <div><div class="h">NOTARY SERVICES MADE EASY AT THE OBSERVER'S RIVERSIDE OFFICE</div><ul><li>Artist statements</li><li>Provenance affidavits</li><li>Wills, with sketches</li><li>Powers of attorney</li><li>Claims on unclaimed files</li><li>Declarations of intent to paint</li></ul></div>
+      <div class="who"><div class="n">[Name]</div><div class="t">NOTARY PUBLIC</div><div class="m">Call or email for appointment · [PHONE] · [EMAIL]<br>Tues–Friday 10–2, other hours by request. An appointment is required. No walk-ins, no walk-outs.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+<figcaption><b>2. Staggered: the board.</b> A twelve-column grid of ten-pixel rows packed densely, so boxes of every width and height stagger against one another: red and black tabs in a row, a tall sidebar in sky blue, a yellow box, a blue box, a grey gradient box, halftone photo stand-ins, town-name reverse bars over liners, a tiny booking code in the corner of every box, a full-width red house ad at the foot with a script signature. Borrowed from the Observer (cl-035): the tab row, the colour boxes, the JOBS photo, the sidebar pitch against the big sites, the notary band; from cl-010/012: booking codes and grey panels; from cl-011: photo-liners.</figcaption>
+</figure>
+
+<!-- ================================================================ 3. MANY FONTS -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="f" style="background: #f7f5ef; padding: 26px 28px; display: flex; flex-direction: column;">
+  <style>
+    #f .top { display: flex; justify-content: space-between; font-family: 'Arimo', sans-serif; font-size: 10px; border-bottom: 1px solid var(--ink); padding-bottom: 3px; }
+    #f h1 { margin: 6px 0 0; text-align: center; font-family: 'Playfair Display', serif; font-weight: 400; font-size: 64px; line-height: 1; letter-spacing: .12em; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+    #f .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 12px; margin-top: 10px; flex-grow: 1; }
+    #f .num { display: flex; flex-direction: column; margin: 8px 0 4px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 2px 0; font-family: 'Roboto Condensed', sans-serif; font-weight: 700; font-size: 11px; line-height: 1.1; text-transform: uppercase; }
+    #f .num small { font-size: 8px; font-weight: 400; letter-spacing: .1em; }
+    #f .l { font-family: 'Arimo', sans-serif; font-size: 9.4px; line-height: 1.3; text-align: justify; margin-bottom: 5px; }
+    #f .l b { font-weight: 700; }
+    #f .l .c { font-size: 7px; opacity: .7; }
+    #f .bx { border: 1.5px solid var(--ink); padding: 8px; text-align: center; margin-bottom: 7px; font-size: 9.6px; line-height: 1.32; }
+    #f .legal { font-family: 'Tinos', serif; font-size: 8.4px; line-height: 1.25; text-align: justify; margin-bottom: 5px; }
+    #f .legal b { display: block; text-align: center; font-size: 9px; letter-spacing: .08em; margin: 4px 0 2px; }
+  </style>
+  <div class="top"><span>SATURDAY, [DATE]</span><span>directory.arts-collective.com</span><span>A9</span></div>
+  <h1>CLASSIFIEDS</h1>
+  <div class="grid">
+    <div class="col">
+      <div class="num"><small>015</small>FARM &amp; STUDIO</div>
+      <p class="l"><b>Backhoe, dozer, maintainer, dump truck:</b> brush clearing, roads, driveways, waterlines, pits, demolition, fence row clearing, sculpture parks. Small jobs ok. Ben Roberts, [PHONE]. <span class="c">00030498</span></p>
+      <div class="num"><small>037</small>HELP WANTED</div>
+      <!-- blackletter -->
+      <div class="bx" style="font-family: 'UnifrakturMaguntia', serif; font-size: 13px; line-height: 1.25"><div style="font-size: 24px; line-height: 1">Roofing &amp; Gilding</div>Johnson Roofing is currently hiring experienced commercial roofers and metal gilders immediately. $500 hiring bonus after 1st week. Top pay. Email résumé to [EMAIL].</div>
+      <!-- condensed bold two-colour -->
+      <div class="bx" style="background: #fff; padding: 0; border-width: 2px"><div style="background: var(--ink); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .1em; padding: 4px">NOW HIRING</div><div style="padding: 6px 8px; font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.35; text-align: left"><b>Occupational Therapist</b> – FT · <b>Activity Director</b> – PT · <b>RN</b> – FT &amp; PRN, all shifts for the charge of a kiln · <b>LVN</b> – FT &amp; PRN for the charge of a nurse and a kiln.<br><b>**FULL TIME SIGN ON BONUS** may be available with one year commitment.</b><br>Competitive compensation · paid vacation · tuition reimbursement · a view of the river.</div><div style="background: var(--ink); color: #fff; font-family: 'Arimo', sans-serif; font-size: 7.5px; padding: 3px">APPLY IN PERSON OR DOWNLOAD AN APPLICATION FROM ARTDIRECT</div></div>
+      <!-- marketing consultant: friendly rounded -->
+      <div class="bx" style="border-width: 3px; font-family: 'Righteous', sans-serif"><div style="font-size: 26px; line-height: 1; text-align: left">MARKETING<br>CONSULTANT</div><div style="text-align: right; font-family: 'Pinyon Script', cursive; font-size: 20px; color: var(--red); margin-top: -18px">We're hiring!</div><p style="font-family: 'Arimo', sans-serif; font-size: 9.4px; text-align: left; margin-top: 6px">We are looking for an energetic personality to represent the directory as a marketing consultant. Outside sales position, so you must have reliable transportation and a reliable sense of humour. Send your résumé to <b>[NAME], publisher</b>.</p></div>
+    </div>
+    <div class="col">
+      <div class="num"><small>037</small>HELP WANTED</div>
+      <!-- italic serif, DQ style -->
+      <div class="bx" style="font-family: 'Libre Caslon Text', serif; font-style: italic; font-size: 11px; line-height: 1.4; border-width: 2px"><div style="font-family: 'Alfa Slab One', serif; font-style: normal; font-size: 30px; line-height: 1; letter-spacing: .04em">DQ</div><div style="font-weight: 700; text-decoration: underline; font-size: 13px; margin: 4px 0">Now Hiring Team Members</div>FOR DAY &amp; NIGHT SHIFT.<br>TEAM MEMBERS, SHIFT LEADS, ASSISTANT MANAGERS, COOKS, ONE DRAUGHTSMAN.<br><br>FLEXIBLE SCHEDULES. WEEKEND AVAILABILITY. PAID TIME OFF. HOLIDAY PAY. CLOSED ON THE FULL MOON.<br><br><b style="font-size: 14px">APPLY TODAY:</b><br><b>[URL]</b></div>
+      <div class="num"><small>045</small>SERVICES</div>
+      <p class="l"><b>ASHLEY'S LANDSCAPING &amp; SERVICES:</b> tree trimming, leaf/yard clean-up, mowing, moving sculptures. [PHONE]. Like us on the forum! <span class="c">00030504</span></p>
+      <p class="l"><b>TREE WORKS</b> Tree service: tree trimming, removal &amp; stump grinding. Free estimates. Also carves. Call Lloyd, [PHONE]. <span class="c">00030496</span></p>
+      <!-- typewriter box -->
+      <div class="bx" style="font-family: 'Courier Prime', monospace; font-size: 9.6px; text-align: left"><b>FERGUSON ROOFING</b> Locally owned company serving all central studios. Commercial and residential. Free estimates! [PHONE]</div>
+      <!-- old-style box -->
+      <div class="bx" style="font-family: 'Old Standard TT', serif; font-size: 10px; border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px"><b style="font-size: 12px; letter-spacing: .06em">Dry Creek Trash Service</b><br>Weekly Pickup and Roll-off container rentals<br>Ofc. [PHONE] · Cell [PHONE]<br><i>drycreektrashservice.com</i></div>
+      <p class="l"><b>HUNT FENCING:</b> Farm &amp; Ranch fence, residential, corrals, automatic solar gates, custom entryways &amp; gates, welding projects, armatures. <b>John Hunt, Owner, [PHONE]</b> <span class="c">00030539</span></p>
+    </div>
+    <div class="col">
+      <div class="num"><small>045</small>SERVICES</div>
+      <p class="l"><b>R&amp;M FENCING &amp; DOZING:</b> barbed wire, custom pipe, entryways, corrals, metal buildings, residential &amp; game fencing, solar gate openers, dozer work. Free estimates. <b>Larry Riddle, [PHONE]</b> <span class="c">00030499</span></p>
+      <!-- script logo card -->
+      <div class="bx" style="font-family: 'Arimo', sans-serif; font-size: 9.6px; border-width: 2px"><div style="font-family: 'Pinyon Script', cursive; font-size: 30px; line-height: 1">Schuman's</div><div style="font-family: 'Archivo Black', sans-serif; font-size: 11px; letter-spacing: .04em">HEAT &amp; AIR Inc.</div><div style="font-weight: 700; margin-top: 3px">Residential &amp; Commercial<br>Service · Installation · Refrigeration</div>Servicing All Brands and most kilns<br><i>[NAME] – Owner</i><br><div style="font-family: 'Anton', sans-serif; font-size: 22px; margin-top: 4px">[PHONE]</div></div>
+      <p class="l"><b>CENTRAL STUDIO REMODELING AND HANDYMAN:</b> tile, sheet-rock, painting, decks, fences, flooring, windows, siding, roofing, texturing, stretching. [PHONE] <span class="c">00030500</span></p>
+      <div class="num"><small>060</small>GARAGE SALE</div>
+      <p class="l"><b>WALL HANGINGS!</b> Tues. 01/02 – Sat. 01/06. The Boys &amp; Girls Club Resale Shop, 1706 E. Main. Tuesday–Friday 8–5, Saturday 9–3. Several thousand. <span class="c">00030540</span></p>
+      <div class="num"><small>070</small>LAND &amp; LOTS</div>
+      <p class="legal"><b>PUBLISHER'S NOTICE:</b>All real estate advertising in this directory is subject to the Fair Housing Act which makes it illegal to advertise "any preference, limitation or discrimination based on race, colour, religion, sex, handicap, familial status or national origin, or an intention to make any such preference." Familial status includes children under the age of 18 living with parents, pregnant women and people securing custody of children under 18. This directory will not knowingly accept any advertising which is in violation of the law. To complain of discrimination call the toll-free number [PHONE].</p>
+      <div class="bx" style="border: 0; padding: 0"><span class="ph" style="height: 36px; width: 36px; margin: 0 auto; border-radius: 50%"></span><div style="font-family: 'Arimo', sans-serif; font-size: 7px; letter-spacing: .1em; margin-top: 2px">EQUAL STUDIO OPPORTUNITY</div></div>
+    </div>
+    <div class="col">
+      <div class="num"><small>099</small>PUBLIC NOTICES</div>
+      <p class="legal">NOTICE TO CREDITORS<br>Notice is hereby given that original Letters Testamentary for the Estate of DANIEL STEVEN MALIK, Painter, Deceased, were issued on November 29, 2023, in Cause No. 23-10896 pending in the County Court of the River, to: [NAME].<br>All persons having claims against this Estate which is currently being administered are required to present them to the undersigned within the time and in the manner prescribed by law.<br>c/o [NAME], Attorney at Law, [ADDRESS].<br>DATED the 20th day of December, 2023.<br><span style="font-size: 7px">00030533</span></p>
+      <p class="legal">NOTICE TO CREDITORS<br>Notice is hereby given that original Letters Testamentary for the Estate of ANNA ELISABETH McGUIRE, Potter, Deceased, were issued on 12-7-23, in Cause No. 23-10919, to: ROBERT JAMES McGUIRE. All persons having claims against this Estate are required to present them within the time and in the manner prescribed by law. Unclaimed pots will be planted with bulbs.<br>c/o [NAME], Attorney<br>DATED the 18th day of Dec., 2023.<br><span style="font-size: 7px">00030538</span></p>
+      <p class="legal">NOTICE OF PUBLIC SALE<br>Pursuant to Chapter 59 of the Property Code, Ideal Self Storage, located at 1611 E. Main, is having an online auction. Bidding will end on Monday, January 15, 2024 at 11 a.m. Units to be sold: JOSHUA RAMSBURGER (canvases, 40), BOBBY LUEBS (one press, disassembled), TAYLOR ELLIS (plaster, in bags).<br><span style="font-size: 7px">00030541</span></p>
+      <div class="bx" style="font-family: 'Playfair Display', serif; font-style: italic; font-size: 13px; border: 2px solid var(--ink); border-radius: 10px">Your ad should<br>be here……</div>
+    </div>
+    <div class="col">
+      <div class="num"><small>099</small>PUBLIC NOTICES</div>
+      <p class="legal">PUBLIC NOTICE<br>The Council of the Old Mill, in the Special Meeting held on November 30, 2023 did pass and approve on the third and final reading the following ordinance:<br>ORDINANCE NUMBER 2023-08: AN ORDINANCE OF THE COUNCIL OF THE OLD MILL, ANNEXING INTO THE CORPORATE LIMITS OF THE STUDIOS 135.03 ACRES OF WALL, SITUATED IN THE WILLIAM SUGGETT SURVEY, ABSTRACT NO. 912, BEING THE PORTION OF THE ABUTTING RIVER ROAD, OLD PIDCOKE ROAD, (INCLUDING THE RIGHT-OF-WAY ON EITHER SIDE THEREOF); EXTENDING THE BOUNDARY LIMITS OF THE STUDIOS SO TO INCLUDE WITHIN THE CITY'S LIMITS SAID ANNEXED PROPERTY AND ABUTTING RIGHT-OF-WAY; GRANTING TO ALL INHABITANTS AND OWNERS OF THE ANNEXED PROPERTY ALL OF THE RIGHTS AND PRIVILEGES OF OTHER PAINTERS; BINDING THE INHABITANTS AND OWNERS BY ALL THE ACTS, ORDINANCES, RESOLUTIONS AND REGULATIONS OF THE STUDIOS; ADOPTING A SERVICE PLAN FOR THE ANNEXED PROPERTY; PROVIDING A REPEALING CLAUSE; PROVIDING A SEVERABILITY CLAUSE; AND PROVIDING AN EFFECTIVE DATE.<br>Complete text of this ordinance is available for inspection at City Hall, 803 E. Main Street. [NAME], Secretary.<br><span style="font-size: 7px">00030536</span></p>
+      <!-- the big house ad, Anton -->
+      <div class="bx" style="background: var(--ink); color: #fff; border: 0; font-family: 'Anton', sans-serif; font-size: 34px; line-height: .95; text-align: left; padding: 10px; margin-top: auto">Need to Place a Classified Ad?<div style="font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 14px; margin-top: 8px; line-height: 1.2">Call [PHONE]<br>116 S. 6th Street<br>[CITY]<br>(on the square)</div><div style="font-family: 'Arimo', sans-serif; font-size: 8px; margin-top: 6px; letter-spacing: .08em">OR POST IT ON ARTDIRECT · ANY HOUR</div></div>
+    </div>
+  </div>
+</div>
+</div>
+<figcaption><b>3. Many fonts, one grid.</b> Five even columns with numbered heads (015 FARM &amp; STUDIO, 037 HELP WANTED, 099 PUBLIC NOTICES) hold still while every box speaks in its own face: blackletter, condensed gothic on black, a rounded display with a script "We're hiring!", italic Caslon with a slab DQ, typewriter, old-style serif in a double rule, a script logo card with an Anton phone number, legal notices in tiny Tinos running a whole column, a rounded "Your ad should be here……", and the paper's own Anton house ad. Borrowed from the Gatesville Messenger (cl-002): numbered heads, the legal column, the publisher's notice, the equal-opportunity mark, "Your ad should be here", "Need to Place a Classified Ad?"; from cl-023 and cl-016: each advertiser bringing their own type.</figcaption>
+</figure>
+
+</div>
+
+<script>
+(function () {
+  function fit() {
+    var w = Math.min(900, document.documentElement.clientWidth - 32);
+    var s = w / 900;
+    document.querySelectorAll('.scaler').forEach(function (el) {
+      el.style.transform = 'scale(' + s + ')';
+      el.style.marginBottom = Math.round(-1300 * (1 - s)) + 'px';
+    });
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>

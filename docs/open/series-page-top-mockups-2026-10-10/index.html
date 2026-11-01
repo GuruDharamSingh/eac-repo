@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series page top mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Index of the series-page-top mockups (2026-10-10). Ink #171615 on #fffdf8
+   17.8:1; #4f4a44 on #fffdf8 8.6:1; #6b6259 on #fffdf8 6.0:1; link #273d54
+   on #fffdf8 11.0:1. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #f8f5ef; color: #171615; font: 17px/1.55 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
+.wrap { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+h1 { font: 600 2.1rem/1.1 "Cormorant Garamond", Georgia, serif; margin: 0 0 8px; }
+h2 { font: 600 1.45rem/1.15 "Cormorant Garamond", Georgia, serif; margin: 0; }
+h3 { font-size: 1rem; margin: 0; }
+p { margin: 0; }
+.lede { color: #4f4a44; max-width: 72ch; }
+a { color: #273d54; text-underline-offset: 3px; }
+code { font-size: 0.88em; }
+.list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 26px; }
+.item { overflow-wrap: anywhere; min-width: 0; background: #fffdf8; border: 1px solid #d8d0c2; border-radius: 4px; padding: 18px 20px; display: grid; gap: 10px; }
+.item__k { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #4f4a44; }
+.item p { color: #4f4a44; }
+.item dl { margin: 4px 0 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 16px; }
+.item dt { font-weight: 700; }
+.item dd { margin: 0; color: #4f4a44; }
+.q { font-weight: 600; color: #171615; }
+.shots { font-size: 0.92rem; color: #6b6259; }
+.shots a { margin-right: 8px; white-space: nowrap; }
+.foot { margin-top: 26px; font-size: 0.95rem; color: #4f4a44; display: grid; gap: 10px; }
+.foot h2 { font-size: 1.25rem; color: #171615; margin-top: 8px; }
+.foot ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+@media (max-width: 560px) { .item dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .item dd { margin-bottom: 8px; } .item { padding: 14px; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Series page top: mockups</h1>
+  <p class="lede">Static mockups, 2026-10-10, of the top of IFAC's public weekly series page (<code>apps/ifac/src/app/series/[slug]/page.tsx</code>): header, title and description, and the this-week, sign-up and confirm area. The "Coming up" list below it is out of scope. Example series: Explorations in Art Forms by Non Professionals, Mondays 6:00 PM Pacific. Titles, hosts, links and the meeting ID and passcode are placeholders. Each file has a state switch at the top (signed out, sign-up open, signed in, coming, subscribed); the buttons in the page also move between states. No app or package code was changed.</p>
+
+  <div class="list">
+    <section class="item">
+      <p class="item__k">E · developer's concept · listed first</p>
+      <h2><a href="e-enter-the-collective.html">Enter the collective</a></h2>
+      <p>Directly under the description, a gold-bordered notice box, "Please enter the collective", with a plain form: Email, Password, "Sign up", "Continue with Google", and "Already have an account? Sign in". After sign-up, a small dialog thanks the person and has one "Continue" button. Signed in, the box is not shown; a confirm box with this week's session takes its place.</p>
+      <dl>
+        <dt>Wording</dt><dd>Box: <span class="q">Please enter the collective</span> · <span class="q">Sign up</span> · <span class="q">Continue with Google</span> · <span class="q">Sign in</span>. Dialog: <span class="q">Welcome</span>, "Thanks for joining the Elkdonis Arts Collective platform and showing interest in Explorations in Art Forms by Non Professionals by IFAC.", <span class="q">Continue</span>. Signed in: <span class="q">Let us know you're coming</span> · <span class="q">I'm coming</span> · <span class="q">Subscribe to series</span>. Coming: <span class="q">You're coming on Monday</span> · <span class="q">Join the session</span> · <span class="q">I can't make it after all</span>.</dd>
+        <dt>Trade-offs</dt><dd>The account request is the first thing after the description, and it says why. The signed-out page shows the next session as one line only, so the session itself is less prominent until sign-in. Plain fields instead of the Baroque frame: shorter, reads as part of the page, but drops the network's sign-up look. No name field (the frame asks for one). The dialog is an extra click; a toast that fades would avoid it.</dd>
+        <dt>Copy note</dt><dd>The developer's line said "Arts Collective platform"; the mockup writes "Elkdonis Arts Collective platform", per the project naming rule.</dd>
+      </dl>
+      <p class="shots">Screenshots, 1280 px: <a href="e-enter-the-collective--out-desktop.png">signed out</a><a href="e-enter-the-collective--welcome-desktop.png">just signed in</a><a href="e-enter-the-collective--in-desktop.png">signed in</a><a href="e-enter-the-collective--going-sub-desktop.png">coming + subscribed</a> · 360 px: <a href="e-enter-the-collective--out-phone.png">signed out</a><a href="e-enter-the-collective--welcome-phone.png">just signed in</a><a href="e-enter-the-collective--in-phone.png">signed in</a><a href="e-enter-the-collective--going-sub-phone.png">coming + subscribed</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">A</p>
+      <h2><a href="a-calm-card.html">Calm card</a></h2>
+      <p>The current two-column head, with a quieter "This week" card: session, date, three time zones, host; one primary button. Signed out, the button opens the Baroque frame inside the card, with the reason for the account above it. Secondary actions are two text links. The session title links to the week's page.</p>
+      <dl>
+        <dt>Wording</dt><dd><span class="q">Let us know you're coming</span> · <span class="q">I'm coming</span>, with "This needs a free IFAC account. The form opens here, on this page." when signed out. Open: <span class="q">First, a free account</span>, the developer's sentence, frame (<span class="q">Create account</span>), <span class="q">Not now</span>. Links: <span class="q">Subscribe to series</span> · <span class="q">Other weeks ↓</span>. Coming: <span class="q">You're coming on Monday</span> · <span class="q">Join the session</span> · <span class="q">Add to calendar</span> · <span class="q">I can't make it after all</span>.</dd>
+        <dt>Trade-offs</dt><dd>Smallest change from today's page. The button is the same for both states; the line under it is what tells a signed-out visitor an account comes first. The open frame makes the card tall (about 1,450 px page height at 1280 px), pushing the list down while it is open.</dd>
+      </dl>
+      <p class="shots">Screenshots, 1280 px: <a href="a-calm-card--out-desktop.png">signed out</a><a href="a-calm-card--open-desktop.png">sign-up open</a><a href="a-calm-card--in-desktop.png">signed in</a><a href="a-calm-card--going-sub-desktop.png">coming + subscribed</a> · 360 px: <a href="a-calm-card--out-phone.png">signed out</a><a href="a-calm-card--open-phone.png">sign-up open</a><a href="a-calm-card--in-phone.png">signed in</a><a href="a-calm-card--going-sub-phone.png">coming + subscribed</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">B</p>
+      <h2><a href="b-two-step-band.html">Two-step band</a></h2>
+      <p>Full-width head, then one band in the IFAC indigo frame with two numbered steps: (1) join IFAC, (2) this week's session with "I'm coming" and "Subscribe to series". Step 1 opens a drawer across the band: what the account is for on the left, the frame on the right (under step 1 on phones). Signed in, step 1 shrinks to "Signed in as …".</p>
+      <dl>
+        <dt>Wording</dt><dd>Step 1: <span class="q">Join IFAC — free</span> (heading and button), "Have an account? <span class="q">Sign in</span>", <span class="q">Hide the form</span>. Drawer: <span class="q">What the account is for</span>. Step 2: <span class="q">Let us know you're coming</span> · <span class="q">I'm coming</span> · <span class="q">Subscribe to series</span>, with "Both need step 1 first; pressing either opens it." when signed out.</dd>
+        <dt>Trade-offs</dt><dd>States the order outright and gives the network mention its own line. Two equal-weight buttons in step 2 and a numbered layout make it the most explicit and the most procedural of the five. Takes the full width, so the head loses its side card.</dd>
+      </dl>
+      <p class="shots">Screenshots, 1280 px: <a href="b-two-step-band--out-desktop.png">signed out</a><a href="b-two-step-band--open-desktop.png">sign-up open</a><a href="b-two-step-band--in-desktop.png">signed in</a><a href="b-two-step-band--going-sub-desktop.png">coming + subscribed</a> · 360 px: <a href="b-two-step-band--out-phone.png">signed out</a><a href="b-two-step-band--open-phone.png">sign-up open</a><a href="b-two-step-band--in-phone.png">signed in</a><a href="b-two-step-band--going-sub-phone.png">coming + subscribed</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">C</p>
+      <h2><a href="c-session-hero.html">Session hero</a></h2>
+      <p>Description first, full width; then this week as a wide card: cover, title, host, times, the host's note, and an action column. The action column is one path, "I'm coming", with three numbered steps saying what the account gives: (1) a free account, here on the page; (2) the join link, here and in a confirmation email; (3) a reminder the day before if wanted. The frame opens inside step 1.</p>
+      <dl>
+        <dt>Wording</dt><dd><span class="q">Let us know you're coming</span> · <span class="q">I'm coming</span> · "Here is what happens when you press it:" · steps <span class="q">Create a free IFAC account</span>, <span class="q">We note that you're coming</span>, <span class="q">A reminder, if you want one</span>. Coming: <span class="q">You're on the list for Monday</span> · <span class="q">Join the session</span> · tick box <span class="q">Email me a reminder the day before</span>. Line: "Want every session in your inbox? <span class="q">Subscribe to series</span>".</dd>
+        <dt>Trade-offs</dt><dd>Most room for the session itself (cover and write-up) and the clearest account of what signing in gives. Needs a cover image or a good empty state. The step list stays on screen in every state, so the column is busier than A's. The brief suggested "Get the join link" as this path's label; it was changed to "I'm coming" per the later wording instruction.</dd>
+      </dl>
+      <p class="shots">Screenshots, 1280 px: <a href="c-session-hero--out-desktop.png">signed out</a><a href="c-session-hero--open-desktop.png">sign-up open</a><a href="c-session-hero--in-desktop.png">signed in</a><a href="c-session-hero--going-sub-desktop.png">coming + subscribed</a> · 360 px: <a href="c-session-hero--out-phone.png">signed out</a><a href="c-session-hero--open-phone.png">sign-up open</a><a href="c-session-hero--in-phone.png">signed in</a><a href="c-session-hero--going-sub-phone.png">coming + subscribed</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">D · own idea</p>
+      <h2><a href="d-pick-your-mondays.html">Pick your Mondays</a></h2>
+      <p>The side card lists the next four Mondays as tick boxes, this week ticked. One "I'm coming" covers whatever is ticked, which replaces the separate "next week instead" link. Signed out, the frame opens in the card and names the weeks that will be noted. The 26 October row notes that Paris is 2:00 AM that week (Europe changes clocks on 25 October, North America on 1 November).</p>
+      <dl>
+        <dt>Wording</dt><dd><span class="q">Which Mondays can you make?</span> · <span class="q">I'm coming</span> · "1 Monday ticked." Open: <span class="q">Last step: a free account</span>. Coming: <span class="q">Your Mondays</span>, a <span class="q">Coming</span> tag on each ticked week, <span class="q">This week's join link</span>, <span class="q">Change my Mondays</span>. Link: <span class="q">Subscribe to series</span>.</dd>
+        <dt>Trade-offs</dt><dd>Lets a visitor commit to several weeks before the account step, and puts the coming weeks at the top. Needs confirming several weeks in one request (the current endpoint takes one week per request). Four rows make the card long on phones, and it overlaps with the "Coming up" list below.</dd>
+      </dl>
+      <p class="shots">Screenshots, 1280 px: <a href="d-pick-your-mondays--out-desktop.png">signed out</a><a href="d-pick-your-mondays--open-desktop.png">sign-up open</a><a href="d-pick-your-mondays--in-desktop.png">signed in</a><a href="d-pick-your-mondays--going-sub-desktop.png">coming + subscribed</a> · 360 px: <a href="d-pick-your-mondays--out-phone.png">signed out</a><a href="d-pick-your-mondays--open-phone.png">sign-up open</a><a href="d-pick-your-mondays--in-phone.png">signed in</a><a href="d-pick-your-mondays--going-sub-phone.png">coming + subscribed</a></p>
+    </section>
+  </div>
+
+  <div class="foot">
+    <h2>Common to all five</h2>
+    <ul>
+      <li>No button sends a signed-out visitor to another page. Each one either says first that an account is needed, or opens the sign-up in place with the reason above it.</li>
+      <li>After sign-up from "I'm coming", the person is marked as coming in the same step and sees the join link; from "Subscribe to series", they are subscribed and not marked as coming; from the header's "Join / Sign in", they are only signed in. (E: the dialog first, then the confirm box.)</li>
+      <li>Subscribe to series: an email before each session with its details, the join link and what is coming next; the person confirms per week from the email. Subscribing never marks them as coming. Only signed-in people can subscribe.</li>
+      <li>Times are shown as "6:00 PM Pacific · 9:00 PM Eastern · 3:00 AM Paris (Tue)". Each zone stays on one line; the row wraps between zones on phones.</li>
+      <li>The join link, meeting ID and passcode show once a signed-in person has said they are coming. Today's page says the link "will be posted here before the session"; the mockups show it straight away.</li>
+      <li>Alternative wording, if "I'm coming" does not suit: prompts "Coming on Monday?" or "Will you join us?"; buttons "Count me in", "I'll be there", "Save me a place". The un-confirm link could be "I can't come after all" or "Change of plans".</li>
+    </ul>
+    <h2>For the build (not done)</h2>
+    <ul>
+      <li><code>BaroqueSignup</code> has no prop for the submit label (fixed "Join the Collective") or the tab labels ("Create Account"); the mockups show "Create account" and "Sign in", which would need a prop. The frame here uses the compact IFAC phone form at every width (no sigil, rule or subtitle inside the frame) so it fits a card; the explanation sits above it.</li>
+      <li><code>apps/ifac/src/lib/series-time.ts</code> labels zones "ET", "PT", "CET" and defaults to Eastern then Pacific. The mockups need full names ("Pacific", "Eastern", "Paris"), Pacific first, Paris added to the series' <code>alsoZones</code>, and the next-day mark "(Tue)".</li>
+      <li>A per-series email subscription is assumed not to exist yet (unknown; not checked for this task): it needs storage, the pre-session email, a per-week confirm link in that email, and an unsubscribe link.</li>
+      <li>Signing up inside the page uses the same calls as <code>components/site/join-frame.tsx</code>; the "mark as coming after sign-up" step is new.</li>
+    </ul>
+    <h2>How these were checked</h2>
+    <ul>
+      <li>Rendered in headless Chromium 124 (<code>zenika/alpine-chrome</code>, driven by <code>playwright-core</code> 1.60.0) at 1280 px and 360 px, in each state: no horizontal scroll at either width (<code>scrollWidth</code> equals the viewport).</li>
+      <li>An automated pass compared every visible text colour with its nearest solid background: no pair under 4.5:1 (3:1 for large text). Text on gradients was measured by hand at the gradient's worst stop (CTA ink on the gold's darker stop 4.7:1; cover label 7.4:1). Ratios are listed in each file's CSS header.</li>
+      <li>On phones the Baroque frame's outer carving runs to the screen edges and is clipped there, as the component already does below 520 px.</li>
+      <li>Each file is self-contained: inline CSS and script, Google Fonts, and the frame image inlined as a data URI (copied from <code>packages/cms-ui/src/auth/baroque-frame.webp</code>).</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

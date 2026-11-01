@@ -18,6 +18,7 @@ import type {
   StudioResult,
   StudioUpload,
   StudioViewer,
+  StudioShareTarget,
 } from './types';
 
 // ============================================================================
@@ -91,6 +92,7 @@ function blankPiece(orgId: string): StudioPiece {
     series: null,
     byline: null,
     seo: null,
+    shares: [],
   };
 }
 
@@ -144,6 +146,27 @@ export function StudioShell({
     void actions.listIdentities().then(setIdentities);
   }, [actions]);
   const refreshSeries = React.useCallback(() => void actions.listSeries().then(setSeries), [actions]);
+  // Outside places to post to (Facebook Pages, Instagram, Threads), when the host offers them.
+  const [shareTargets, setShareTargets] = React.useState<StudioShareTarget[] | null>(null);
+  const [sharing, setSharing] = React.useState<string | null>(null);
+  const [shareNote, setShareNote] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!actions.listShareTargets) return;
+    void actions.listShareTargets().then(setShareTargets).catch(() => setShareTargets([]));
+  }, [actions]);
+  async function shareTo(target: StudioShareTarget) {
+    if (!piece?.id || !actions.sharePiece) return;
+    setSharing(target.id);
+    setShareNote(null);
+    const r = await actions.sharePiece(piece.id, target.id).catch(() => ({ ok: false as const, error: 'Could not reach the server.' }));
+    setSharing(null);
+    if (r.ok === false) {
+      setShareNote(r.error);
+      return;
+    }
+    setPiece((p) => (p ? { ...p, shares: [...(p.shares ?? []), r.value] } : p));
+    setShareNote(`Posted to ${target.label}.`);
+  }
   React.useEffect(() => {
     refreshSeries();
   }, [refreshSeries]);
@@ -970,6 +993,59 @@ export function StudioShell({
                   <input type="checkbox" checked={!piece.seo?.noindex} onChange={(e) => void setSeo('noindex', !e.target.checked)} />
                   Let search engines index this
                 </label>
+                {actions.sharePiece && (
+                  <div className="studio-field studio-shares">
+                    <span>Post to</span>
+                    {shareTargets === null ? (
+                      <p className="studio-hint">Looking up your accounts…</p>
+                    ) : shareTargets.length === 0 ? (
+                      <p className="studio-hint">
+                        No account connected yet.
+                        {links.connectionsHref && (
+                          <>
+                            {' '}
+                            <a href={links.connectionsHref}>Connect Facebook, Instagram or Threads</a>.
+                          </>
+                        )}
+                      </p>
+                    ) : (
+                      <div className="studio-shares__list">
+                        {shareTargets.map((t) => {
+                          const done = (piece.shares ?? []).filter((x) => x.targetId === t.id);
+                          const last = done[done.length - 1];
+                          return (
+                            <div key={t.id} className="studio-shares__row">
+                              <span className="studio-shares__label">{t.label}</span>
+                              {last?.url ? (
+                                <a className="studio-addr" href={last.url} target="_blank" rel="noreferrer">
+                                  posted {fmtDate(last.at)}
+                                </a>
+                              ) : last ? (
+                                <span className="studio-hint">posted {fmtDate(last.at)}</span>
+                              ) : null}
+                              <button
+                                type="button"
+                                className="studio-fbtn"
+                                disabled={Boolean(t.disabledReason) || sharing === t.id || piece.status !== 'published'}
+                                title={t.disabledReason ?? (piece.status !== 'published' ? 'Publish the piece first.' : undefined)}
+                                onClick={() => void shareTo(t)}
+                              >
+                                {sharing === t.id ? 'Posting…' : last ? 'Post again' : 'Post'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {piece.status !== 'published' && <p className="studio-hint">Publish the piece first; then it can be posted.</p>}
+                        {links.connectionsHref && (
+                          <a className="studio-hint" href={links.connectionsHref}>
+                            Manage connections
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {shareNote && <p className="studio-hint" role="status">{shareNote}</p>}
+                  </div>
+                )}
                 <div className="studio-panel__h">
                   <span>History</span>
                 </div>

@@ -52,7 +52,7 @@ export async function OfferingPage({ slug }: { slug: string }) {
   if (!org.subdomain_confirmed && !canEdit) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} />
+        <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
         <div className="mx-auto max-w-2xl px-6 py-24 text-center">
           <h1 className="font-serif text-3xl">{org.name}</h1>
           <p className="mt-4 text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export async function OfferingPage({ slug }: { slug: string }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ThemeStyle orgId={org.id} pageKey="home" />
-      <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} />
+      <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
 
       {!offering ? (
         <main className="mx-auto max-w-3xl px-6 py-20 text-center">

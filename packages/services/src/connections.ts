@@ -24,9 +24,45 @@
 
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto';
 import { db } from '@elkdonis/db';
+import { listUserMemberships } from './org-membership';
+import { listChannelsForManager, setOrgChannel, type ChannelProvider } from './org-channels';
 import { nanoid } from 'nanoid';
+import {
+  facebookAuthorizeUrl,
+  facebookExchangeCode,
+  facebookLongLivedToken,
+  facebookMe,
+  facebookPages,
+  facebookPageById,
+  facebookRevoke,
+  metaApp,
+  threadsApp,
+  threadsAuthorizeUrl,
+  threadsExchangeCode,
+  threadsLongLivedToken,
+  threadsMe,
+  threadsRefreshToken,
+  instagramApp,
+  instagramAuthorizeUrl,
+  instagramExchangeCode,
+  instagramLongLivedToken,
+  instagramRefreshToken,
+  instagramMe,
+  META_SCOPES,
+  THREADS_SCOPES,
+  INSTAGRAM_SCOPES,
+  type MetaPageTarget,
+} from './connections-meta';
 
-export type ConnectionProvider = 'youtube';
+/**
+ * youtube: the person's own Google OAuth client (migration 192).
+ * meta:    the collective's Facebook app; publishes to the person's Pages and
+ *          their linked Instagram accounts (migration 217, 2026-10-29).
+ * threads: the collective's Threads app; one profile per connection.
+ * instagram: the collective's "Instagram API with Instagram Login" app; one
+ *          professional account per connection, no Facebook Page needed.
+ */
+export type ConnectionProvider = 'youtube' | 'meta' | 'threads' | 'instagram';
 export type ConnectionStatus = 'pending' | 'connected' | 'error';
 
 /** What a form may see. No secret, no token. */
@@ -44,6 +80,18 @@ export interface UserConnection {
   connectedAt: string | null;
   lastUsedAt: string | null;
   createdAt: string;
+  /** Meta: the Pages this connection may publish to. Empty for other providers. */
+  targets: ConnectionTarget[];
+}
+
+/** A Page (and its Instagram account) as a form may see it: no token. */
+export interface ConnectionTarget {
+  id: string;
+  name: string;
+  /** The Page role allows CREATE_CONTENT. */
+  canPublish: boolean;
+  instagramUserId: string | null;
+  instagramUsername: string | null;
 }
 
 export type ConnectionResult<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
@@ -58,7 +106,13 @@ export const CONNECTION_PROVIDERS: Record<ConnectionProvider, { name: string; sc
       'https://www.googleapis.com/auth/youtube.readonly',
     ],
   },
+  meta: { name: 'Facebook & Instagram', scopes: META_SCOPES },
+  threads: { name: 'Threads', scopes: THREADS_SCOPES },
+  instagram: { name: 'Instagram', scopes: INSTAGRAM_SCOPES },
 };
+
+/** Tokens older than this are exchanged again on use (Meta and Threads tokens last ~60 days). */
+const TOKEN_REFRESH_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 const GOOGLE_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN = 'https://oauth2.googleapis.com/token';
@@ -125,12 +179,21 @@ function mapRow(r: any): UserConnection {
     connectedAt: iso(r.connected_at),
     lastUsedAt: iso(r.last_used_at),
     createdAt: iso(r.created_at)!,
+    targets: Array.isArray(r.targets)
+      ? (r.targets as MetaPageTarget[]).map((t) => ({
+          id: t.id,
+          name: t.name,
+          canPublish: (t.tasks ?? []).includes('CREATE_CONTENT'),
+          instagramUserId: t.instagramUserId ?? null,
+          instagramUsername: t.instagramUsername ?? null,
+        }))
+      : [],
   };
 }
 
 const COLUMNS = db`
   id, provider, label, client_id, status, error, account_id, account_name,
-  account_url, connected_at, last_used_at, created_at
+  account_url, connected_at, last_used_at, created_at, targets
 `;
 
 export async function listConnections(userId: string): Promise<UserConnection[]> {
@@ -170,8 +233,19 @@ export async function createConnection(
   userId: string,
   input: { provider?: unknown; label?: unknown; clientId?: unknown; clientSecret?: unknown }
 ): Promise<ConnectionResult<{ connection: UserConnection }>> {
-  const provider = input.provider ?? 'youtube';
-  if (provider !== 'youtube') return { ok: false, error: 'Only YouTube can be connected so far.' };
+  const provider = (input.provider ?? 'youtube') as ConnectionProvider;
+  if (provider === 'meta' || provider === 'threads' || provider === 'instagram') {
+    const app = provider === 'meta' ? metaApp() : provider === 'threads' ? threadsApp() : instagramApp();
+    if (!app) return { ok: false, error: `${CONNECTION_PROVIDERS[provider].name} is not configured on this server yet.` };
+    const { label } = cleanInput(input);
+    const id = nanoid(21);
+    await db`
+      INSERT INTO user_connections (id, user_id, provider, label, client_id, client_secret_enc)
+      VALUES (${id}, ${userId}, ${provider}, ${label ?? ''}, ${app.appId}, ${seal(app.appSecret)})
+    `;
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
+  if (provider !== 'youtube') return { ok: false, error: 'Unknown provider.' };
   const { label, clientId, clientSecret } = cleanInput(input);
   if (!clientId || !CLIENT_ID_RE.test(clientId)) {
     return { ok: false, error: 'The client ID should end in .apps.googleusercontent.com.' };
@@ -196,6 +270,10 @@ export async function updateConnection(
   const current = await getConnection(userId, id);
   if (!current) return { ok: false, error: 'Not found.' };
   const { label, clientId, clientSecret } = cleanInput(input);
+  if (current.provider !== 'youtube') {
+    await db`UPDATE user_connections SET label = COALESCE(${label ?? null}, label), updated_at = now() WHERE user_id = ${userId} AND id = ${id}`;
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
   if (clientId !== undefined && clientId !== current.clientId && !CLIENT_ID_RE.test(clientId)) {
     return { ok: false, error: 'The client ID should end in .apps.googleusercontent.com.' };
   }
@@ -218,11 +296,20 @@ export async function updateConnection(
 export async function deleteConnection(userId: string, id: string): Promise<boolean> {
   const rows = await db`
     DELETE FROM user_connections WHERE user_id = ${userId} AND id = ${id}
-    RETURNING refresh_token_enc
+    RETURNING refresh_token_enc, provider
   `;
   if (!rows[0]) return false;
-  // Best effort: tell Google the token is no longer wanted.
   const sealed = rows[0].refresh_token_enc as string | null;
+  if (sealed && rows[0].provider === 'meta') {
+    try {
+      await facebookRevoke(open(sealed));
+    } catch {
+      /* best effort */
+    }
+    return true;
+  }
+  if (rows[0].provider !== 'youtube') return true;
+  // Best effort: tell Google the token is no longer wanted.
   if (sealed) {
     try {
       await fetch(`${GOOGLE_REVOKE}?token=${encodeURIComponent(open(sealed))}`, { method: 'POST' });
@@ -253,6 +340,16 @@ export async function beginConnectionAuth(
     SET oauth_state = ${db.json({ nonce, returnTo, startedAt: Date.now() })}, updated_at = now()
     WHERE user_id = ${userId} AND id = ${id}
   `;
+  const state = `${id}.${nonce}`;
+  if (row.provider === 'meta') {
+    return { ok: true, url: facebookAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
+  }
+  if (row.provider === 'threads') {
+    return { ok: true, url: threadsAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
+  }
+  if (row.provider === 'instagram') {
+    return { ok: true, url: instagramAuthorizeUrl({ appId: row.client_id, redirectUri: connectionRedirectUri(), state }) };
+  }
   const q = new URLSearchParams({
     client_id: row.client_id,
     redirect_uri: connectionRedirectUri(),
@@ -308,14 +405,25 @@ export async function completeConnectionAuth(
     return { ok: false, error: 'This sign-in link was already used or replaced. Start again.', returnTo };
   }
   if (!pending.startedAt || Date.now() - pending.startedAt > STATE_TTL_MS) return fail('That took too long. Start again.');
-  if (params.error) return fail(params.error === 'access_denied' ? 'Access was not granted at Google.' : `Google said: ${params.error}`);
-  if (!params.code) return fail('Google returned no code.');
+  const who = row.provider === 'meta' ? 'Facebook' : row.provider === 'threads' ? 'Threads' : row.provider === 'instagram' ? 'Instagram' : 'Google';
+  if (params.error) return fail(params.error === 'access_denied' ? `Access was not granted at ${who}.` : `${who} said: ${params.error}`);
+  if (!params.code) return fail(`${who} returned no code.`);
 
   let clientSecret: string;
   try {
     clientSecret = open(row.client_secret_enc);
   } catch {
     return fail('The stored client secret cannot be read any more. Enter it again.');
+  }
+
+  if (row.provider === 'meta' || row.provider === 'threads' || row.provider === 'instagram') {
+    try {
+      const finish = row.provider === 'meta' ? completeMeta : row.provider === 'threads' ? completeThreads : completeInstagram;
+      await finish(userId, id, { appId: row.client_id, appSecret: clientSecret }, params.code);
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : String(err));
+    }
+    return { ok: true, connection: (await getConnection(userId, id))!, returnTo };
   }
 
   const tokenRes = await fetch(GOOGLE_TOKEN, {
@@ -391,16 +499,182 @@ async function fetchOwnChannel(
 }
 
 /**
- * A fresh access token for a connection, for server-side work (uploads).
- * Not scoped to a user: callers must already have decided the connection may
- * be used (e.g. it is a circle's bound publish target).
+ * Facebook's dialog grants Page permissions per Page: when a person ticks
+ * none, every permission is granted but /me/accounts is empty (verified
+ * 2026-10-31: debug_token showed the scopes with no granular target_ids).
  */
-export async function getConnectionAccessToken(id: string): Promise<ConnectionResult<{ accessToken: string }>> {
+const NO_PAGE_ERROR =
+  'Connected, but no Page came back from Facebook. Connect from your personal Facebook profile (not while switched into the Page), and in the dialog tick the Page and its Instagram account, or choose all current and future Pages. If the Page is yours only through a business portfolio, the app also needs business_management.';
+
+/** Facebook: code → long-lived user token, the person, their Pages (with tokens) and Instagram accounts. */
+async function completeMeta(userId: string, id: string, app: { appId: string; appSecret: string }, code: string) {
+  const short = await facebookExchangeCode({ ...app, redirectUri: connectionRedirectUri(), code });
+  const long = await facebookLongLivedToken(app, short.access_token);
+  const me = await facebookMe(long.access_token);
+  const pages = await facebookPages(long.access_token);
+  let targets: MetaPageTarget[] = pages.map((p) => ({
+    id: p.id,
+    name: p.name,
+    tokenEnc: seal(p.accessToken),
+    tasks: p.tasks,
+    instagramUserId: p.instagramUserId,
+    instagramUsername: p.instagramUsername,
+  }));
+  // Facebook listed nothing: keep Pages attached by id (addMetaPage), whose
+  // tokens stay valid until revoked, rather than wiping them (2026-11-01).
+  if (targets.length === 0) {
+    const prev = await db`SELECT targets FROM user_connections WHERE user_id = ${userId} AND id = ${id}`;
+    targets = ((prev[0]?.targets ?? []) as MetaPageTarget[]).filter((t) => t.id && t.tokenEnc);
+  }
+  await db`
+    UPDATE user_connections SET
+      refresh_token_enc = ${seal(long.access_token)},
+      scopes = ${META_SCOPES},
+      account_id = ${me.id},
+      account_name = ${me.name},
+      account_url = ${`https://www.facebook.com/${me.id}`},
+      targets = ${db.json(targets as unknown as Parameters<typeof db.json>[0])},
+      token_refreshed_at = now(),
+      status = 'connected',
+      error = ${targets.length === 0 ? NO_PAGE_ERROR : null},
+      oauth_state = NULL, connected_at = now(), updated_at = now()
+    WHERE user_id = ${userId} AND id = ${id}
+  `;
+}
+
+/** Threads: code → long-lived token and the profile. */
+async function completeThreads(userId: string, id: string, app: { appId: string; appSecret: string }, code: string) {
+  const short = await threadsExchangeCode({ ...app, redirectUri: connectionRedirectUri(), code });
+  const long = await threadsLongLivedToken(app.appSecret, short.access_token);
+  const me = await threadsMe(long.access_token);
+  await db`
+    UPDATE user_connections SET
+      refresh_token_enc = ${seal(long.access_token)},
+      scopes = ${THREADS_SCOPES},
+      account_id = ${String(me.id ?? short.user_id)},
+      account_name = ${me.username ? `@${me.username}` : me.name ?? null},
+      account_url = ${me.username ? `https://www.threads.net/@${me.username}` : null},
+      targets = '[]'::jsonb,
+      token_refreshed_at = now(),
+      status = 'connected', error = NULL,
+      oauth_state = NULL, connected_at = now(), updated_at = now()
+    WHERE user_id = ${userId} AND id = ${id}
+  `;
+}
+
+/** Instagram Login: code → long-lived token and the professional account. */
+async function completeInstagram(userId: string, id: string, app: { appId: string; appSecret: string }, code: string) {
+  const short = await instagramExchangeCode({ ...app, redirectUri: connectionRedirectUri(), code });
+  const long = await instagramLongLivedToken(app.appSecret, short.access_token);
+  const me = await instagramMe(long.access_token);
+  const igId = String(me.user_id ?? me.id ?? short.user_id);
+  await db`
+    UPDATE user_connections SET
+      refresh_token_enc = ${seal(long.access_token)},
+      scopes = ${INSTAGRAM_SCOPES},
+      account_id = ${igId},
+      account_name = ${me.username ? `@${me.username}` : me.name ?? null},
+      account_url = ${me.username ? `https://www.instagram.com/${me.username}` : null},
+      targets = '[]'::jsonb,
+      token_refreshed_at = now(),
+      status = 'connected', error = NULL,
+      oauth_state = NULL, connected_at = now(), updated_at = now()
+    WHERE user_id = ${userId} AND id = ${id}
+  `;
+}
+
+/**
+ * Meta/Threads: the stored long-lived token, exchanged for a fresh one when it
+ * is older than TOKEN_REFRESH_AFTER_MS. Not user-scoped (see getConnectionAccessToken).
+ */
+async function metaFamilyToken(id: string): Promise<ConnectionResult<{ accessToken: string; provider: ConnectionProvider; accountId: string | null }>> {
   const rows = await db`
-    SELECT client_id, client_secret_enc, refresh_token_enc FROM user_connections WHERE id = ${id}
+    SELECT provider, client_id, client_secret_enc, refresh_token_enc, token_refreshed_at, account_id
+    FROM user_connections WHERE id = ${id}
   `;
   const row = rows[0];
   if (!row?.refresh_token_enc) return { ok: false, error: 'Not connected.' };
+  let token = open(row.refresh_token_enc);
+  const age = row.token_refreshed_at ? Date.now() - new Date(row.token_refreshed_at).getTime() : Infinity;
+  if (age > TOKEN_REFRESH_AFTER_MS) {
+    try {
+      const fresh =
+        row.provider === 'meta'
+          ? await facebookLongLivedToken({ appId: row.client_id, appSecret: open(row.client_secret_enc) }, token)
+          : row.provider === 'instagram'
+            ? await instagramRefreshToken(token)
+            : await threadsRefreshToken(token);
+      token = fresh.access_token;
+      await db`UPDATE user_connections SET refresh_token_enc = ${seal(token)}, token_refreshed_at = now(), updated_at = now() WHERE id = ${id}`;
+    } catch (err) {
+      const error = `The connection no longer works (${err instanceof Error ? err.message : String(err)}). Connect again.`;
+      await db`UPDATE user_connections SET status = 'error', error = ${error}, updated_at = now() WHERE id = ${id}`;
+      return { ok: false, error };
+    }
+  }
+  await db`UPDATE user_connections SET last_used_at = now() WHERE id = ${id}`;
+  return { ok: true, accessToken: token, provider: row.provider, accountId: row.account_id ?? null };
+}
+
+/**
+ * A Facebook Page target for publishing: the Page token and the linked
+ * Instagram account. Not user-scoped; the caller decides the connection may
+ * be used (it belongs to the acting user, or is an org's bound target).
+ */
+export async function getMetaPageTarget(
+  connectionId: string,
+  pageId: string
+): Promise<ConnectionResult<{ pageId: string; accessToken: string; instagramUserId: string | null; name: string }>> {
+  const rows = await db`SELECT provider, targets FROM user_connections WHERE id = ${connectionId}`;
+  const row = rows[0];
+  if (!row || row.provider !== 'meta') return { ok: false, error: 'Not a Facebook connection.' };
+  const target = ((row.targets ?? []) as MetaPageTarget[]).find((t) => t.id === pageId);
+  if (!target) return { ok: false, error: 'That Page is not on this connection. Reconnect to refresh the list.' };
+  if (!(target.tasks ?? []).includes('CREATE_CONTENT')) return { ok: false, error: `Your role on ${target.name} does not allow posting.` };
+  let accessToken: string;
+  try {
+    accessToken = open(target.tokenEnc);
+  } catch {
+    return { ok: false, error: 'The stored Page token cannot be read any more. Connect again.' };
+  }
+  await db`UPDATE user_connections SET last_used_at = now() WHERE id = ${connectionId}`;
+  return { ok: true, pageId: target.id, accessToken, instagramUserId: target.instagramUserId ?? null, name: target.name };
+}
+
+/** An Instagram Login account for publishing: its user id and a usable token. */
+export async function getInstagramLoginTarget(connectionId: string): Promise<ConnectionResult<{ userId: string; accessToken: string }>> {
+  const t = await metaFamilyToken(connectionId);
+  if (t.ok === false) return t;
+  if (t.provider !== 'instagram' || !t.accountId) return { ok: false, error: 'Not an Instagram connection.' };
+  return { ok: true, userId: t.accountId, accessToken: t.accessToken };
+}
+
+/** A Threads profile for publishing: its user id and a usable token. */
+export async function getThreadsTarget(connectionId: string): Promise<ConnectionResult<{ userId: string; accessToken: string }>> {
+  const t = await metaFamilyToken(connectionId);
+  if (t.ok === false) return t;
+  if (t.provider !== 'threads' || !t.accountId) return { ok: false, error: 'Not a Threads connection.' };
+  return { ok: true, userId: t.accountId, accessToken: t.accessToken };
+}
+
+/**
+ * A fresh access token for a connection. With `userId` the connection must
+ * be that person's (every request-driven caller passes it, 2026-11-01);
+ * without it the caller is a system actor (the upload worker running a
+ * circle's bound publish target) and has already decided the connection may
+ * be used.
+ */
+export async function getConnectionAccessToken(id: string, userId?: string): Promise<ConnectionResult<{ accessToken: string }>> {
+  const rows = await db`
+    SELECT provider, client_id, client_secret_enc, refresh_token_enc, user_id FROM user_connections WHERE id = ${id}
+  `;
+  const row = rows[0];
+  if (!row || (userId && row.user_id !== userId)) return { ok: false, error: 'Not found.' };
+  if (!row.refresh_token_enc) return { ok: false, error: 'Not connected.' };
+  if (row.provider === 'meta' || row.provider === 'threads' || row.provider === 'instagram') {
+    const t = await metaFamilyToken(id);
+    return t.ok === false ? t : { ok: true, accessToken: t.accessToken };
+  }
   const res = await fetch(GOOGLE_TOKEN, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -423,12 +697,140 @@ export async function getConnectionAccessToken(id: string): Promise<ConnectionRe
   return { ok: true, accessToken: data.access_token };
 }
 
+/** "1234567890", a facebook.com/<slug> URL, or profile.php?id=…: the id or slug Graph accepts. */
+function parsePageRef(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const m = t.match(/[?&]id=(\d{5,})/);
+  if (m) return m[1]!;
+  try {
+    const u = new URL(t.includes('://') ? t : `https://${t}`);
+    if (/facebook\.com$/i.test(u.hostname) || /fb\.com$/i.test(u.hostname)) {
+      const seg = u.pathname.split('/').filter(Boolean)[0];
+      return seg && /^[A-Za-z0-9.\-_]+$/.test(seg) && seg !== 'profile.php' ? seg : null;
+    }
+  } catch {
+    /* not a URL */
+  }
+  return /^[A-Za-z0-9.\-_]{2,100}$/.test(t) ? t : null;
+}
+
+/**
+ * Attach a Page to a Facebook connection by id or URL (2026-11-01): for a
+ * person whose Page list comes back empty although they administer the
+ * Page. Facebook still vouches: without a role there is no Page token.
+ */
+export async function addMetaPage(userId: string, id: string, pageRef: string): Promise<ConnectionResult<{ connection: UserConnection }>> {
+  const mine = await getConnection(userId, id);
+  if (!mine) return { ok: false, error: 'Not found.' };
+  if (mine.provider !== 'meta') return { ok: false, error: 'Only a Facebook connection takes a Page.' };
+  const ref = parsePageRef(pageRef);
+  if (!ref) return { ok: false, error: 'Give the Page id (a number) or its facebook.com address.' };
+  const token = await getConnectionAccessToken(id, userId);
+  if (token.ok === false) return token;
+  let page: Awaited<ReturnType<typeof facebookPageById>>;
+  try {
+    page = await facebookPageById(token.accessToken, ref);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+  if (!page) return { ok: false, error: 'Facebook knows that Page but gives this account no role on it (no Page token came back).' };
+  const rows = await db`SELECT targets FROM user_connections WHERE id = ${id}`;
+  const existing = ((rows[0]?.targets ?? []) as MetaPageTarget[]).filter((t) => t.id !== page!.id);
+  const targets: MetaPageTarget[] = [
+    ...existing,
+    { id: page.id, name: page.name, tokenEnc: seal(page.accessToken), tasks: page.tasks, instagramUserId: page.instagramUserId, instagramUsername: page.instagramUsername },
+  ];
+  await db`
+    UPDATE user_connections SET targets = ${db.json(targets as unknown as Parameters<typeof db.json>[0])}, error = NULL, status = 'connected', updated_at = now()
+    WHERE user_id = ${userId} AND id = ${id}
+  `;
+  return { ok: true, connection: (await getConnection(userId, id))! };
+}
+
+/**
+ * Make one of this connection's accounts an org's channel, or stop (2026-11-01).
+ * The account must be on the person's own connection: a Page target, or the
+ * connection's own account for Instagram Login, Threads and YouTube.
+ */
+export async function setConnectionChannel(
+  userId: string,
+  id: string,
+  input: Record<string, unknown>
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const mine = await getConnection(userId, id);
+  if (!mine) return { ok: false, error: 'Not found.' };
+  const orgId = typeof input.orgId === 'string' ? input.orgId : '';
+  const externalId = typeof input.externalId === 'string' ? input.externalId : '';
+  const on = input.on !== false;
+  if (!orgId || !externalId) return { ok: false, error: 'Bad request.' };
+  let provider: ChannelProvider;
+  let label = '';
+  if (mine.provider === 'meta') {
+    const page = mine.targets.find((t) => t.id === externalId);
+    if (!page) return { ok: false, error: 'That Page is not on this connection.' };
+    provider = 'meta';
+    label = page.name;
+  } else {
+    if (mine.accountId !== externalId) return { ok: false, error: 'That account is not on this connection.' };
+    provider = mine.provider as ChannelProvider;
+    label = mine.accountName ?? '';
+  }
+  return setOrgChannel(userId, { orgId, provider, externalId, label, on });
+}
+
 /** Re-read the channel name with a fresh token: a "Test" button. */
 export async function checkConnection(userId: string, id: string): Promise<ConnectionResult<{ connection: UserConnection }>> {
   const mine = await getConnection(userId, id);
   if (!mine) return { ok: false, error: 'Not found.' };
-  const token = await getConnectionAccessToken(id);
+  const token = await getConnectionAccessToken(id, userId);
   if (token.ok === false) return token;
+  if (mine.provider === 'meta') {
+    try {
+      const me = await facebookMe(token.accessToken);
+      const pages = await facebookPages(token.accessToken);
+      let targets: MetaPageTarget[] = pages.map((p) => ({
+        id: p.id, name: p.name, tokenEnc: seal(p.accessToken), tasks: p.tasks,
+        instagramUserId: p.instagramUserId, instagramUsername: p.instagramUsername,
+      }));
+      // As in completeMeta: an empty list keeps the Pages attached by id.
+      if (targets.length === 0) targets = ((mine.targets.length ? (await db`SELECT targets FROM user_connections WHERE id = ${id}`)[0]?.targets : []) ?? []) as MetaPageTarget[];
+      await db`
+        UPDATE user_connections SET account_id = ${me.id}, account_name = ${me.name}, targets = ${db.json(targets as unknown as Parameters<typeof db.json>[0])},
+          status = 'connected', error = ${targets.length === 0 ? NO_PAGE_ERROR : null}, updated_at = now()
+        WHERE user_id = ${userId} AND id = ${id}
+      `;
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
+  if (mine.provider === 'instagram') {
+    try {
+      const me = await instagramMe(token.accessToken);
+      await db`
+        UPDATE user_connections SET account_id = ${String(me.user_id ?? me.id ?? mine.accountId)}, account_name = ${me.username ? `@${me.username}` : me.name ?? null},
+          account_url = ${me.username ? `https://www.instagram.com/${me.username}` : null}, status = 'connected', error = NULL, updated_at = now()
+        WHERE user_id = ${userId} AND id = ${id}
+      `;
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
+  if (mine.provider === 'threads') {
+    try {
+      const me = await threadsMe(token.accessToken);
+      await db`
+        UPDATE user_connections SET account_id = ${String(me.id)}, account_name = ${me.username ? `@${me.username}` : me.name ?? null},
+          account_url = ${me.username ? `https://www.threads.net/@${me.username}` : null}, status = 'connected', error = NULL, updated_at = now()
+        WHERE user_id = ${userId} AND id = ${id}
+      `;
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
   const { channel, error: channelError } = await fetchOwnChannel(token.accessToken);
   await db`
     UPDATE user_connections SET
@@ -449,7 +851,7 @@ export async function checkConnection(userId: string, id: string): Promise<Conne
  * `getUserId` resolves the acting user from the app's session.
  *
  *   GET                         → { connections, redirectUri }
- *   POST   {provider,label,clientId,clientSecret}  → { connection }
+ *   POST   {provider,label,clientId,clientSecret}  → { connection }   (meta/threads: provider and label only)
  *   PATCH  {id,label?,clientId?,clientSecret?} | {id, check:true} → { connection }
  *   DELETE ?id=                 → { ok }
  */
@@ -462,7 +864,14 @@ export function connectionsHandlers(getUserId: () => Promise<string | null>) {
     async GET() {
       const userId = await who();
       if (!userId) return json({ error: 'Sign in first' }, 401);
-      return json({ connections: await listConnections(userId), redirectUri: connectionRedirectUri() });
+      // The orgs this person may set channels for, and those orgs' channels (2026-11-01).
+      const [connections, memberships, channels] = await Promise.all([
+        listConnections(userId),
+        listUserMemberships(userId).catch(() => []),
+        listChannelsForManager(userId).catch(() => []),
+      ]);
+      const orgs = memberships.filter((m) => m.role === 'owner' || m.role === 'guide').map((m) => ({ orgId: m.orgId, name: m.orgName }));
+      return json({ connections, redirectUri: connectionRedirectUri(), orgs, channels });
     },
     async POST(request: Request) {
       const userId = await who();
@@ -478,7 +887,16 @@ export function connectionsHandlers(getUserId: () => Promise<string | null>) {
       if (!userId) return json({ error: 'Sign in first' }, 401);
       const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
       if (!body || typeof body.id !== 'string') return json({ error: 'Bad request' }, 400);
-      const r = body.check ? await checkConnection(userId, body.id) : await updateConnection(userId, body.id, body);
+      if (body.channel && typeof body.channel === 'object') {
+        const r = await setConnectionChannel(userId, body.id, body.channel as Record<string, unknown>);
+        if (r.ok === false) return json({ error: r.error }, 400);
+        return json({ ok: true });
+      }
+      const r = body.check
+        ? await checkConnection(userId, body.id)
+        : typeof body.addPage === 'string'
+          ? await addMetaPage(userId, body.id, body.addPage)
+          : await updateConnection(userId, body.id, body);
       if (r.ok === false) return json({ error: r.error }, 400);
       return json({ connection: r.connection });
     },

@@ -19,6 +19,9 @@ import { IdentitiesSurface } from "./surfaces/IdentitiesSurface";
 import { MaterialSurface } from "./surfaces/MaterialSurface";
 import { GatherSurface } from "./surfaces/GatherSurface";
 import { PostToSurface } from "./surfaces/PostToSurface";
+import { JourneySurface } from "./surfaces/JourneySurface";
+import { MeSurface } from "./surfaces/MeSurface";
+import { ArtworkSurface } from "./surfaces/ArtworkSurface";
 
 /** Descriptor → surface. The only place that knows every surface's name. */
 export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor }) {
@@ -59,6 +62,12 @@ export function SurfaceRouter({ descriptor }: { descriptor: SurfaceDescriptor })
       return <GatherSurface descriptor={descriptor} />;
     case "postTo":
       return <PostToSurface descriptor={descriptor} />;
+    case "journey":
+      return <JourneySurface descriptor={descriptor} />;
+    case "me":
+      return <MeSurface descriptor={descriptor} />;
+    case "artwork":
+      return <ArtworkSurface />;
     case "custom": {
       const render = connectors.custom?.[descriptor.key];
       if (render) return <>{render({ descriptor })}</>;

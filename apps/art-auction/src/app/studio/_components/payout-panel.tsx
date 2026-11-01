@@ -1,5 +1,6 @@
 "use client";
 
+import type { FormEvent } from "react";
 import Link from "next/link";
 import type { PayoutIdentity } from "@elkdonis/commerce/types";
 import type { Balance, EarningsLine } from "@elkdonis/commerce/server";
@@ -11,6 +12,18 @@ import {
   savePayoutSetupAction,
   startStripeOnboardingAction,
 } from "../actions";
+
+// A disconnect clears the account id and its onboarded stamp, and nothing
+// records the old id, so a stray click on a working account cost its owner
+// their payouts (2026-10-18). Every unlink asks first.
+const UNLINK_READY =
+  "Your Stripe account is connected and can be paid. Disconnecting unlinks it: card sales will stop paying you directly until you onboard a new account from scratch. Disconnect it?";
+const UNLINK_PENDING =
+  "Unlink your unfinished Stripe account and start a new one? Anything you entered with Stripe so far is not carried over.";
+
+function confirmUnlink(e: FormEvent<HTMLFormElement>, question: string) {
+  if (!window.confirm(question)) e.preventDefault();
+}
 
 /**
  * How a PERSON gets paid — on their own row (migration 096), so it is the
@@ -86,7 +99,11 @@ export function PayoutPanel({
                 ? "Stripe hasn't finished verifying your account yet. Sales still go through — your share is held for you and released the moment Stripe enables payouts."
                 : "Stripe setup was started but not finished. Sales still go through; your share is held for you until Stripe enables payouts."}
             </p>
-            <form action={disconnectStripeAction} className="mt-2">
+            <form
+              action={disconnectStripeAction}
+              onSubmit={(e) => confirmUnlink(e, UNLINK_PENDING)}
+              className="mt-2"
+            >
               <button
                 type="submit"
                 className="text-xs text-muted-foreground underline-offset-4 hover:underline"
@@ -98,7 +115,11 @@ export function PayoutPanel({
         )}
 
         {cardAvailable && onboarded && (
-          <form action={disconnectStripeAction} className="mt-4">
+          <form
+            action={disconnectStripeAction}
+            onSubmit={(e) => confirmUnlink(e, UNLINK_READY)}
+            className="mt-4"
+          >
             <Button type="submit" variant="outline">
               Disconnect Stripe
             </Button>

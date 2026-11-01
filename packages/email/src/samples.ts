@@ -2,7 +2,7 @@ import { renderWelcomeEmail } from './templates/welcome';
 import { renderProvisioningEmail } from './templates/provisioning';
 import { renderRsvpGuestEmail } from './templates/rsvp-guest';
 import { renderRsvpOwnerEmail } from './templates/rsvp-owner';
-import { renderReminderEmail } from './templates/reminder';
+import { renderReminderEmail, type ReminderPurpose } from './templates/reminder';
 import { renderMeetingTriggerEmail } from './templates/meeting-trigger';
 import { renderContactOwnerEmail } from './templates/contact-owner';
 import { renderNewsletterEmail } from './templates/newsletter';
@@ -134,6 +134,12 @@ export interface SampleOptions {
    * about.
    */
   chrome?: EmailChrome;
+  /**
+   * Which reminder the sample is (`ReminderPurpose`): the kicker, footer and,
+   * for `subscriber`, the "I'm coming" link (`comingUrl`). Ignored by the
+   * other letters. Unset is the attendee reminder, as before.
+   */
+  purpose?: ReminderPurpose;
 }
 
 const THREAD_TITLE = 'The Fourth Way: Attention and the Moving Centre';
@@ -165,6 +171,7 @@ export function sampleProps(
     copy,
     bodyFont,
     chrome,
+    purpose,
   } = opts;
   // `copy` rides with the brand: every letter takes it, including the three
   // that have no editable prose of their own but still render shared blocks.
@@ -247,6 +254,10 @@ export function sampleProps(
     case 'reminder':
       return {
         ...brand,
+        purpose,
+        ...(purpose === 'subscriber'
+          ? { comingUrl: 'https://example.org/api/series/coming?token=sample' }
+          : {}),
         guestName: 'Ada Whitfield',
         meetingTitle: thread.title,
         threadKind: thread.kind,

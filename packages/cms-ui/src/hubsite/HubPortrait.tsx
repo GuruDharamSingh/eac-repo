@@ -39,10 +39,18 @@ export function HubPortrait({
         <span className="eac-hs-portrait-name">{name}</span>
       </div>
       <nav className="eac-hs-portrait-doors" aria-label="Your profile">
-        {profile && (
-          <button type="button" aria-haspopup="dialog" onClick={(e) => openTab(e.currentTarget)}>
-            Profile
-          </button>
+        {/* "Profile" is the door to Center since 2026-10-18 (developer): the
+            card, payouts, where you show and what to do next are there. The
+            popup stays reachable from Center itself. Without a center the
+            button keeps opening the popup. */}
+        {centerHref ? (
+          <a href={centerHref}>Profile</a>
+        ) : (
+          profile && (
+            <button type="button" aria-haspopup="dialog" onClick={(e) => openTab(e.currentTarget)}>
+              Profile
+            </button>
+          )
         )}
         {profile?.page && (
           <button type="button" aria-haspopup="dialog" onClick={(e) => openTab(e.currentTarget, "page")}>

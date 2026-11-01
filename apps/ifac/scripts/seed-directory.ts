@@ -12,8 +12,9 @@
  * Idempotent by slug: an existing sentinel (or claimed) row for that slug is
  * updated in place rather than duplicated. Portrait/artworks paths still
  * point at the bundled /ifac/... static files — the Nextcloud media
- * migration (packages/db or apps/ifac/scripts/migrate-media-to-nextcloud.ts)
- * repoints them once the files are uploaded.
+ * migration (packages/db, or apps/ifac/scripts/migrate-media-to-nextcloud.ts,
+ * removed 2026-10-18 and kept in git history) repoints them once the files
+ * are uploaded.
  *
  * Run:
  *   DATABASE_URL=... node --experimental-strip-types apps/ifac/scripts/seed-directory.ts

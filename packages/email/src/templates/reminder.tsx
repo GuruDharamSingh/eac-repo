@@ -17,7 +17,22 @@ import { slotText, type CopyOverrides } from '../copy-slots';
 // accurate for exactly the moment it lands, and would be a lie if precomputed.
 // ============================================================================
 
+/**
+ * Why this person is getting the letter. It picks the subject, the kicker
+ * and the footer line; the body is the same. Unset means `attendee`, which is
+ * what every caller meant before this existed.
+ *
+ *   attendee       said they were coming
+ *   host           is hosting it (the rota reminder)
+ *   host-assigned  an organiser has just put them down to host it
+ *   subscriber     follows the series it belongs to; `reminderSettingsUrl`
+ *                  is then the unsubscribe link
+ */
+export type ReminderPurpose = 'attendee' | 'host' | 'host-assigned' | 'subscriber';
+
 export interface ReminderEmailProps {
+  /** See `ReminderPurpose`. */
+  purpose?: ReminderPurpose;
   guestName: string;
   meetingTitle: string;
   scheduledAt?: string;
@@ -28,6 +43,12 @@ export interface ReminderEmailProps {
   primaryColor?: string;
   /** The thread's public page, where the real RSVP UI lives. */
   rsvpUrl?: string;
+  /**
+   * A one-click "I'm coming" link for this reader (IFAC's subscriber letter,
+   * a signed link per account and week). Rendered under the card when set;
+   * also the `{comingUrl}` merge field, which falls back to `rsvpUrl`.
+   */
+  comingUrl?: string;
   /** "N people are coming so far" -- shown in the detail box when present. */
   rsvpCount?: number;
   /** Small header emblem (e.g. amrit-canada's Khanda). */
@@ -75,8 +96,21 @@ export interface ReminderEmailProps {
 
 const TZ = 'America/Toronto';
 
+/** The small line above the card, per purpose. */
+export function reminderKicker(purpose: ReminderPurpose | undefined): string {
+  switch (purpose) {
+    case 'host':
+    case 'host-assigned':
+      return 'You are hosting';
+    case 'subscriber':
+      return 'Coming up';
+    default:
+      return 'A reminder';
+  }
+}
+
 /** "in 3 hours", "in 2 days", "in 45 minutes" — or null if it has passed. */
-function relativeWhen(scheduledAt?: string): string | null {
+export function relativeWhen(scheduledAt?: string): string | null {
   if (!scheduledAt) return null;
   const at = new Date(scheduledAt).getTime();
   if (Number.isNaN(at)) return null;
@@ -109,7 +143,22 @@ function absoluteWhen(scheduledAt?: string): string | null {
   }
 }
 
+/** The footer's "why you got this" sentence and the label of its link. */
+function footerFor(purpose: ReminderPurpose | undefined): { why: string; link: string } {
+  switch (purpose) {
+    case 'host':
+      return { why: 'You are receiving this because you are hosting this session.', link: 'Change when reminders reach you, or turn them off.' };
+    case 'host-assigned':
+      return { why: 'You are receiving this because an organiser put you down to host this session.', link: 'Change when reminders reach you, or turn them off.' };
+    case 'subscriber':
+      return { why: 'You are receiving this because you subscribed to this series.', link: 'Unsubscribe from this series.' };
+    default:
+      return { why: 'You are receiving this because you said you were coming.', link: 'Change when reminders reach you, or turn them off.' };
+  }
+}
+
 function ReminderEmail({
+  purpose,
   guestName,
   meetingTitle,
   scheduledAt,
@@ -118,6 +167,7 @@ function ReminderEmail({
   talkJoinUrl,
   orgName,
   rsvpUrl,
+  comingUrl,
   rsvpCount,
   emblemUrl,
   emblemAlt,
@@ -144,11 +194,12 @@ function ReminderEmail({
   const hasOrg = hasOrgWords(bodyText, bodyHtml);
 
   const joinUrl = talkJoinUrl ?? meetingUrl;
+  const footer = footerFor(purpose);
 
   return (
     <EmailShell
       previewText={`${meetingTitle} — ${relative ?? 'starting soon'}`}
-      kicker="A reminder"
+      kicker={reminderKicker(purpose)}
       dark={dark}
       emblemUrl={emblemUrl}
       emblemAlt={emblemAlt}
@@ -160,12 +211,12 @@ function ReminderEmail({
       showNfpFooter
       footerText={
         <Text style={{ fontSize: '12px', color: palette.textMuted, lineHeight: '1.6', margin: 0 }}>
-          You are receiving this because you said you were coming.
+          {footer.why}
           {reminderSettingsUrl && (
             <>
               {' '}
               <Link href={reminderSettingsUrl} style={{ color: palette.textMuted, textDecoration: 'underline' }}>
-                Change when reminders reach you, or turn them off.
+                {footer.link}
               </Link>
             </>
           )}
@@ -220,6 +271,17 @@ function ReminderEmail({
         joinUrl={joinUrl}
         dark={dark}
       />
+
+      {comingUrl && (
+        <Text style={{ margin: '18px 0 0' }}>
+          <Link
+            href={comingUrl}
+            style={{ color: palette.accent, fontSize: '16px', fontWeight: 600, textDecoration: 'underline' }}
+          >
+            I&apos;m coming
+          </Link>
+        </Text>
+      )}
 
       {typeof rsvpCount === 'number' && rsvpCount > 0 && (
         <Prose dark={dark} muted>

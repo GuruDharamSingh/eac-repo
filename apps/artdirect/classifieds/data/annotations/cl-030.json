@@ -1,0 +1,26 @@
+{
+  "id": "cl-030",
+  "status": "draft",
+  "role": "reference",
+  "source": { "paper": "none: Dogstar bar flyer, Brixton, London (designer Jeffrey Disastronaut)", "date": "2012-02", "era": "2010s pastiche of 1950s–60s comic-book ads", "language": ["en"] },
+  "summary": "A club flyer laid out as a back-of-comic-book ad page: pink paper, black ink, a woodtype-style DOGSTAR masthead, scissor-cut dashed coupons, and pasted vintage mail-order ads (X-Ray Specs, Radio Hat, Make $100 $200 per week, Exploding Army Hand Deejays).",
+  "family": "comic-mailorder",
+  "frame": { "columns": 4, "columnWidth": "mixed", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Address line in heavy grotesque caps, DOGSTAR in huge outlined tuscan woodtype, 'in 4-D!' in the same face." },
+  "headers": [
+    { "id": "woodtype-masthead", "kind": "banner", "example": "DOGSTAR", "fg": "#111111", "bg": "transparent", "align": "center", "box": [0.03, 0.05, 0.94, 0.11], "notes": "Outlined Tuscan/circus woodtype with a drop shadow." }
+  ],
+  "units": [
+    { "id": "mailorder-ad", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "example": "X-RAY SPECS ... $1.00", "box": [0.26, 0.92, 0.12, 0.06], "notes": "Tiny boxed ads with line-art cut, a hook headline, coupon text and a price; dense small type." },
+    { "id": "scissor-coupon", "kind": "notice", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "SAT 11TH FEB ... LOVE CLICHE", "box": [0.25, 0.34, 0.18, 0.43], "notes": "Dashed border with a scissors glyph at corners; stacked heavy caps lines of mixed sizes." },
+    { "id": "typewriter-box", "kind": "boxed-liner", "frequency": "occasional", "lead": "bold-caps", "align": "left", "border": "double", "example": "HAVE YOUR PARTY HERE! THE DOGSTAR IS THE PERFECT VENUE...", "notes": "Slab head over typewriter caps body in a double-ruled box." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "woodtype", "look": "Tuscan circus woodtype, outlined", "weight": "black", "width": "normal", "case": "upper", "webFont": "Rye" },
+    { "role": "display", "classification": "grotesque", "look": "Heavy Franklin/Helvetica caps", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "typewriter", "look": "Typewriter caps", "weight": "regular", "width": "normal", "case": "upper", "webFont": "Courier Prime" },
+    { "role": "display", "classification": "slab", "look": "Cooper-like soft slab ('WE serve hot 12\" pizza!')", "weight": "bold", "width": "normal", "case": "mixed", "webFont": "Alfa Slab One" }
+  ],
+  "color": { "mode": "spot", "paper": "#f6c4c8", "ink": "#111111", "accents": [] },
+  "ornaments": ["scissors and dashed cut lines", "line-art cuts (cow butchery chart, chef, grenade)", "QR codes", "lightning bolts"],
+  "notes": ["Not a real classifieds page, but the comic-book mail-order look (X-Ray Specs, Sea-Monkeys era) is a distinct, beloved ad style worth a family of its own."]
+}

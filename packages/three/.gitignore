@@ -1,0 +1,2 @@
+# Second tsup build (banner-free server modules); see tsup.config.ts.
+dist-plain

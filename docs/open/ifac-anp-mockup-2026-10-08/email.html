@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSVP confirmation email — mockup</title>
+<style>
+  /* Email mockup. Real template would be table-based (packages/email EmailShell); this is the look.
+     Narrow-safe: 16px gutters, single column, no side padding beyond 20px inside the card. */
+  body { margin: 0; background: #1b1b1f; font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #f2efe8; }
+  .outer { max-width: 600px; margin: 0 auto; padding: 24px 12px; }
+  .card { background: #141416; border: 1px solid #44444d; border-radius: 12px; overflow: hidden; }
+  .banner img { display: block; width: 100%; height: 90px; object-fit: cover; object-position: 50% 42%; }
+  .inner { padding: 24px 20px 8px; }
+  .ey { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #e3c572; margin: 0 0 8px; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; font-size: 28px; line-height: 1.15; margin: 0 0 12px; }
+  p { margin: 0 0 14px; line-height: 1.5; font-size: 16px; color: #d6d1c7; }
+  .when { display: flex; gap: 14px; align-items: center; border: 1px solid #44444d; border-radius: 10px; padding: 14px; margin: 18px 0; }
+  .datebox { flex: none; width: 60px; border: 1px solid #c9a24a; border-radius: 8px; text-align: center; padding: 6px 0 8px; line-height: 1; }
+  .datebox .d { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #e3c572; }
+  .datebox .n { font-family: Georgia, serif; font-size: 28px; margin: 4px 0 2px; }
+  .datebox .m { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #b7b1a6; }
+  .when b { display: block; font-size: 17px; margin-bottom: 2px; }
+  .when span { color: #b7b1a6; font-size: 14px; }
+  .btn { display: block; text-align: center; background: #c9a24a; color: #141416 !important; text-decoration: none; font-weight: 700; padding: 14px 18px; border-radius: 999px; margin: 6px 0 10px; font-size: 16px; }
+  .btn.ghost { background: transparent; color: #f2efe8 !important; border: 1px solid #44444d; }
+  .link { font-family: monospace; font-size: 13px; word-break: break-all; color: #e3c572; }
+  .mat { border-top: 1px solid #2e2e35; padding-top: 16px; margin-top: 8px; }
+  .mat a { display: block; color: #e3c572; text-decoration: none; padding: 8px 0; border-bottom: 1px solid #2e2e35; font-size: 15px; }
+  .foot { padding: 16px 20px 22px; font-size: 12px; color: #7d786f; line-height: 1.5; border-top: 1px solid #2e2e35; }
+  .foot a { color: #b7b1a6; }
+</style>
+</head>
+<body>
+<div class="outer">
+  <div class="card">
+    <div class="banner"><img src="./banner.jpg" alt="IFAC"></div>
+    <div class="inner">
+      <p class="ey">You're on the list</p>
+      <h1>See you Thursday, Carla.</h1>
+      <p>Thanks for RSVPing to Art for Non-Professionals. Here's everything for this week's session.</p>
+      <div class="when">
+        <div class="datebox"><div class="d">Thu</div><div class="n">8</div><div class="m">Oct</div></div>
+        <div><b>How to stand in front of a painting</b><span>7:00–8:00 pm Eastern · with Eric Brummel</span></div>
+      </div>
+      <a class="btn" href="#">Join on Zoom</a>
+      <a class="btn ghost" href="#">Add to calendar</a>
+      <p class="link">https://zoom.us/j/000 0000 0000?pwd=xxxxxxxx</p>
+      <div class="mat">
+        <p class="ey">Before Thursday</p>
+        <a href="#">Look at the painting: Ombúes al viento →</a>
+        <a href="#">Three questions to bring (pdf) →</a>
+      </div>
+      <p style="margin-top:18px">Can't make it after all? <a href="#" style="color:#e3c572">Change your RSVP</a> or <a href="#" style="color:#e3c572">switch to next week</a>.</p>
+    </div>
+    <div class="foot">
+      International Fine Art Collectors · info@ifacgroup.com<br>
+      Elkdonis Arts Collective presents Art for Non-Professionals. You're receiving this because you RSVP'd on ifacgroup.com. <a href="#">Manage emails</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

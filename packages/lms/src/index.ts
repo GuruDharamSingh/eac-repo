@@ -12,4 +12,5 @@ export * from './authoring';
 export * from './pool';
 export * from './workshops';
 export * from './hub';
+export * from './tasks';
 export { unfurl, assertPublicUrl, type Unfurled } from './unfurl';

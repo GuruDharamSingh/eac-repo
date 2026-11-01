@@ -86,7 +86,7 @@ export default async function SiteCommunityPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SiteNav orgName={org.name} current="community" mainSiteUrl={mainSiteUrl} />
+      <SiteNav orgName={org.name} current="community" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
       <div className="mx-auto max-w-5xl px-6 pt-6">
         <p className="text-sm text-muted-foreground">
           The wider collective, seen from {org.name}.

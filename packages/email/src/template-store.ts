@@ -211,24 +211,49 @@ export async function loadOrgTemplate(
 }
 
 /**
- * The template that applies to a specific thread, if any, else the org's.
+ * The candidate keys for one send, most specific first, ending with the plain
+ * org-wide key: `scopes.map(s => key + ':' + s).concat(key)`.
  *
- * One round trip rather than two sequential lookups, and `ORDER BY length`
- * puts the thread-scoped key first because it is the longer of the two.
+ * Scopes are opaque suffixes chosen by the sender. IFAC's series letters pass
+ * `[seriesId + ':' + purpose, seriesId]` for reminders and `[seriesId]` for the
+ * confirmation (docs/open/SERIES_EMAIL_DESIGN_2026-10-10.md section 2). Thread
+ * ids are nanoids and contain no `:`, so a scope cannot collide with a key.
+ * Empty scopes are dropped.
+ */
+export function templateCandidates(
+  templateKey: TemplateKey,
+  scopes: readonly string[] = []
+): string[] {
+  return scopes
+    .filter((s) => typeof s === 'string' && s.length > 0)
+    .map((s) => `${templateKey}:${s}`)
+    .concat(templateKey);
+}
+
+/**
+ * The most specific stored template for this send, else the org-wide one.
+ *
+ * `scopes` is the sender's chain (see `templateCandidates`). A single string is
+ * read as one scope, which is the old `threadId` argument: `<key>:<threadId>`
+ * before `<key>`. One round trip; `array_position` keeps the caller's order.
+ * The returned `templateKey` says which row won, so a caller can tell a scoped
+ * row from the org-wide one.
  */
 export async function resolveOrgTemplate(
   orgId: string,
   templateKey: TemplateKey,
-  threadId?: string
+  scopes?: string | readonly string[]
 ): Promise<OrgTemplate | null> {
-  if (!threadId) return loadOrgTemplate(orgId, templateKey);
+  const list = typeof scopes === 'string' ? [scopes] : scopes ?? [];
+  const candidates = templateCandidates(templateKey, list);
+  if (candidates.length === 1) return loadOrgTemplate(orgId, templateKey);
 
   try {
     const [row] = await db<Array<{ template_key: string }>>`
       SELECT template_key FROM email_template_settings
       WHERE org_id = ${orgId}
-        AND template_key IN (${threadTemplateKey(templateKey, threadId)}, ${templateKey})
-      ORDER BY length(template_key) DESC
+        AND template_key = ANY(${candidates}::text[])
+      ORDER BY array_position(${candidates}::text[], template_key)
       LIMIT 1
     `;
     return row ? loadOrgTemplate(orgId, row.template_key) : null;

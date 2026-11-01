@@ -20,8 +20,30 @@ export {
 } from './tokens';
 export type { PageGrant, TokenInfo } from './tokens';
 
-export { postLinkToPage, postPhotoToPage, updatePagePost, deletePagePost } from './page';
+export { postLinkToPage, postPhotoToPage, postToPage, updatePagePost, deletePagePost } from './page';
 export type { PagePostResult } from './page';
 
 export { postImageToInstagram, remainingInstagramQuota } from './instagram';
 export type { InstagramPostResult } from './instagram';
+
+export { parseSignedRequest } from './signed-request';
+export type { SignedRequestPayload } from './signed-request';
+export { createDataDeletionCallback } from './data-deletion';
+export type { DeletionCallbackOptions } from './data-deletion';
+
+export {
+  THREADS_SCOPES,
+  threadsAuthorizeUrl,
+  threadsExchangeCode,
+  threadsLongLivedToken,
+  threadsRefreshToken,
+  threadsMe,
+  postToThreads,
+} from './threads';
+export type { ThreadsPostResult } from './threads';
+
+export { postImageWithInstagramLogin } from './instagram-login';
+
+// Webhooks (2026-10-31): the dashboard handshake and signed deliveries.
+export { createWebhookHandlers, verifyHubSignature } from './webhook';
+export type { WebhookEvent, WebhookOptions } from './webhook';

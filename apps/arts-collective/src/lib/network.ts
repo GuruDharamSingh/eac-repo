@@ -41,7 +41,7 @@ export async function getMemberRoster(
       SELECT
         u.id AS user_id,
         COALESCE(own_org.id, 'elkdonis') AS org_id,
-        COALESCE(own_org.slug, 'elkdonis') AS slug,
+        COALESCE(own_org.slug, 'arts-collective') AS slug,
         COALESCE(own_org.name, 'Elkdonis Arts Collective') AS name,
         u.display_name,
         COALESCE(u.city, '') AS city,

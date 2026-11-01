@@ -15,6 +15,7 @@ import {
   SCHEDULED_KINDS,
   syncOrgCalendarShares,
 } from './org-calendar';
+import { SERIES_KIND } from './thread-kinds';
 
 // ============================================================================
 // The org calendar, kept in step with Nextcloud IN BOTH DIRECTIONS.
@@ -77,6 +78,8 @@ interface ThreadRow {
   recurrence_until: Date | null;
   updated_at: Date;
   nextcloud_last_sync: Date | null;
+  /** `metadata.series` is an object: a series still stored as kind 'meeting'. */
+  series_meta?: boolean;
 }
 
 const FREQ_TO_PATTERN: Record<string, string> = { DAILY: 'DAILY', WEEKLY: 'WEEKLY', MONTHLY: 'MONTHLY' };
@@ -121,6 +124,20 @@ function isClientUid(uid: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(uid) || uid.includes('@');
 }
 
+/**
+ * Push-only rows: the hub's copy always wins and Nextcloud never writes back.
+ * A `series` (meeting-series.ts) keys its weeks' hosts, notes and topics on
+ * occurrence instants derived from `scheduled_at`, so a date pulled from
+ * Nextcloud would move the schedule without moving the weeks, and a deletion
+ * there would archive the whole series. For these rows an edit, cancellation
+ * or deletion in Nextcloud is overwritten by a push instead. A meeting that
+ * carries `metadata.series` as an object (IFAC's series before the kind flip)
+ * is treated the same. (2026-10-10)
+ */
+function isPushOnly(t: ThreadRow): boolean {
+  return t.kind === SERIES_KIND || Boolean(t.series_meta);
+}
+
 /** Whether a thread has an occurrence inside the window a sync can see. */
 function inWindow(t: ThreadRow, from: Date, to: Date): boolean {
   if (!t.scheduled_at) return false;
@@ -163,7 +180,8 @@ export async function reconcileOrgCalendar(
 
   const threads = await db<ThreadRow[]>`
     SELECT id, kind, title, status, body, location, meeting_url, scheduled_at, duration_minutes,
-           recurrence_pattern, recurrence_until, updated_at, nextcloud_last_sync
+           recurrence_pattern, recurrence_until, updated_at, nextcloud_last_sync,
+           COALESCE(jsonb_typeof(metadata->'series') = 'object', false) AS series_meta
     FROM threads
     WHERE org_id = ${orgId}
       AND kind = ANY(${SCHEDULED_KINDS as unknown as string[]})
@@ -215,6 +233,20 @@ export async function reconcileOrgCalendar(
       continue;
     }
 
+    // A push-only row: whatever changed in Nextcloud, put the hub's copy back.
+    if (isPushOnly(thread)) {
+      const lastPushAt = thread.nextcloud_last_sync ? new Date(thread.nextcloud_last_sync).getTime() : 0;
+      const changedThereSince = cancelled || (obj.lastModified?.getTime() ?? 0) > lastPushAt + SLACK_MS;
+      const changedHereSince = new Date(thread.updated_at).getTime() > lastPushAt + 1_000;
+      if (changedThereSince || changedHereSince) {
+        if (dry) {
+          report.pushed++;
+          detail.push(`push (push-only) "${thread.title}"`);
+        } else if (await pushThreadToCalendar(orgId, thread.id).catch(() => false)) report.pushed++;
+      }
+      continue;
+    }
+
     // Cancelled in Nextcloud is a deletion there.
     if (cancelled) {
       if (!dry) {
@@ -263,7 +295,8 @@ export async function reconcileOrgCalendar(
       !objectByUid.has(t.id) &&
       inWindow(t, from, to) // not visible to this read — say nothing
   );
-  const vanished = missing.filter((t) => t.nextcloud_last_sync);
+  // A push-only row that vanished is re-pushed below, never archived.
+  const vanished = missing.filter((t) => t.nextcloud_last_sync && !isPushOnly(t));
   // THE VALVE. One or two events gone is a guide deleting them in Nextcloud.
   // More than that at once is almost certainly a calendar that was reset or
   // re-created — and archiving on that reading would take an org's whole
@@ -274,7 +307,7 @@ export async function reconcileOrgCalendar(
   }
 
   for (const thread of missing) {
-    if (thread.nextcloud_last_sync && !massVanish) {
+    if (thread.nextcloud_last_sync && !massVanish && !isPushOnly(thread)) {
       // It WAS in Nextcloud and is not any more: somebody deleted it there.
       if (!dry) await archiveFromNextcloud(orgId, thread.id);
       report.archived++;

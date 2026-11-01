@@ -33,6 +33,7 @@
 
 import { db } from '@elkdonis/db';
 import { addMonths, expandOccurrences, startOfMonth } from '@elkdonis/utils';
+import { SERIES_KIND } from './thread-kinds';
 import {
   createCalendarEvent,
   deleteCalendarEvent,
@@ -67,8 +68,14 @@ export class OrgCalendarScopeError extends Error {
  * listed here so the org calendar, the standing-meeting face and the forum's
  * "upcoming" see it; without that a group would exist and never appear on a
  * calendar. cms-ui/surface/types.ts mirrors this list for the browser.
+ *
+ * `series` (2026-10-10, docs/open/SERIES_KIND_DESIGN_2026-10-10.md) is a
+ * recurring gathering whose weeks are planned one by one (meeting-series.ts).
+ * It is on the calendar, the forum's "upcoming" and the Nextcloud push like
+ * any recurring meeting, but it is never the standing meeting
+ * (`getStandingMeeting`) and the Nextcloud sync only pushes it.
  */
-export const SCHEDULED_KINDS = ['event', 'meeting', 'workshop', 'reading_group'] as const;
+export const SCHEDULED_KINDS = ['event', 'meeting', 'series', 'workshop', 'reading_group'] as const;
 
 /**
  * Recurrence patterns, mapped to RFC 5545 RRULEs.
@@ -101,6 +108,8 @@ interface SchedulableThread {
   recurrence_pattern: string | null;
   recurrence_until: string | null;
   reminder_minutes_before: number | null;
+  /** A series meeting every n weeks (`metadata.series.interval`, 2026-10-18); null otherwise. */
+  series_interval?: string | null;
 }
 
 function client(): NextcloudClient {
@@ -235,12 +244,14 @@ function toRrule(thread: SchedulableThread): string | undefined {
   // CUSTOM has a `recurrence_custom_rule` column that nothing has ever
   // written. Emitting a guess would be worse than emitting a single event.
   if (!base) return undefined;
-  if (!thread.recurrence_until) return base;
+  const n = Number(thread.series_interval);
+  const rule = thread.recurrence_pattern === 'WEEKLY' && Number.isInteger(n) && n > 1 && n <= 4 ? `${base};INTERVAL=${n}` : base;
+  if (!thread.recurrence_until) return rule;
   const until = new Date(thread.recurrence_until)
     .toISOString()
     .replace(/[-:]/g, '')
     .replace(/\.\d{3}/, '');
-  return `${base};UNTIL=${until}`;
+  return `${rule};UNTIL=${until}`;
 }
 
 /**
@@ -261,7 +272,8 @@ export async function pushThreadToCalendar(
   const [thread] = await db<SchedulableThread[]>`
     SELECT id, title, body, location, scheduled_at, duration_minutes,
            meeting_url, recurrence_pattern, recurrence_until,
-           reminder_minutes_before
+           reminder_minutes_before,
+           metadata->'series'->>'interval' AS series_interval
     FROM threads
     WHERE id = ${threadId} AND org_id = ${orgId}
   `;
@@ -519,7 +531,11 @@ export async function getStandingMeeting(
   // occurrence in range, short enough to stay one bounded query.
   const horizon = addMonths(startOfMonth(now), 3);
 
-  const events = await listOrgEventsInRange(orgId, now, horizon);
+  // A series is never the standing meeting, flagged or not: rows on its own
+  // thread are subscriptions (status 'subscribed', meeting-series.ts), and the
+  // tile's "Will you make it?" answer would overwrite one with an attendance
+  // status. Its weeks are answered on their own topics.
+  const events = (await listOrgEventsInRange(orgId, now, horizon)).filter((e) => e.kind !== SERIES_KIND);
   const upcoming = expandOccurrences(events, now, horizon);
   if (upcoming.length === 0) return null;
 
@@ -532,10 +548,30 @@ export async function getStandingMeeting(
     if (match) return { event: match.item, at: match.at, source: 'flagged' };
   }
 
-  const weekly = upcoming.find((o) => o.item.recurrencePattern === 'WEEKLY');
+  // The same rule for a series still stored as kind 'meeting' (IFAC's, until
+  // the kind flip in step 4 of the series design): the series an org presents
+  // to the public (`presented_series`) is not its standing meeting unless the
+  // flag above says so. Remove once no presented series is kind 'meeting'.
+  const presentedId = await readPresentedSeriesId(orgId);
+  const candidates = presentedId ? upcoming.filter((o) => o.item.id !== presentedId) : upcoming;
+  if (candidates.length === 0) return null;
+
+  const weekly = candidates.find((o) => o.item.recurrencePattern === 'WEEKLY');
   if (weekly) return { event: weekly.item, at: weekly.at, source: 'weekly' };
 
-  return { event: upcoming[0].item, at: upcoming[0].at, source: 'next' };
+  return { event: candidates[0].item, at: candidates[0].at, source: 'next' };
+}
+
+async function readPresentedSeriesId(orgId: string): Promise<string | null> {
+  try {
+    const [row] = await db<Array<{ value: { threadId?: string } | null }>>`
+      SELECT value FROM site_config WHERE org_id = ${orgId} AND key = 'presented_series'
+    `;
+    const id = row?.value?.threadId;
+    return typeof id === 'string' && id ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The flagged thread id, or null. */

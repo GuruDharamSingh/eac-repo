@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { OFF_FEED_KINDS } from "@elkdonis/services";
 
 /**
  * What an organisation's console needs to know before it can tell its owner
@@ -19,7 +20,18 @@ import { db } from "@elkdonis/db";
  */
 
 /** Kinds that happen at a time. Mirrors SCHEDULED_KINDS in @elkdonis/services. */
-const SCHEDULED = ["event", "meeting", "workshop"];
+const SCHEDULED = ["event", "meeting", "series", "workshop"];
+
+/** A published thread, for the "Published" list and its pin control. */
+export type ConsolePublished = {
+  id: string;
+  title: string;
+  kind: string;
+  slug: string | null;
+  visibility: string;
+  pinned: boolean;
+  publishedAt: string | null;
+};
 
 export type ConsoleDraft = {
   id: string;
@@ -74,7 +86,7 @@ export type ConsoleState = {
     /** Still on `viewer` — they have an account here but no standing. */
     waiting: ConsolePerson[];
   };
-  published: { count: number; lastAt: string | null };
+  published: { count: number; lastAt: string | null; recent: ConsolePublished[] };
 };
 
 /** A band that could not load reads as empty rather than taking the page down. */
@@ -253,7 +265,23 @@ async function loadPublished(orgId: string): Promise<ConsoleState["published"]> 
     FROM threads
     WHERE org_id = ${orgId} AND status = 'published'
   `;
-  return { count: Number(row?.count ?? 0), lastAt: row?.last_at ?? null };
+  // The most recent twenty, pinned first: enough for an owner to choose what
+  // leads the site without a second page. The pin toggle unpins the rest.
+  const recent = await db<Array<{ id: string; title: string; kind: string; slug: string | null; visibility: string; pinned: boolean; published_at: string | null }>>`
+    SELECT id, title, kind, slug, visibility, pinned, COALESCE(published_at, created_at) AS published_at
+    FROM threads
+    WHERE org_id = ${orgId} AND status = 'published' AND kind <> ALL(${OFF_FEED_KINDS})
+    ORDER BY pinned DESC, COALESCE(published_at, created_at) DESC
+    LIMIT 20
+  `;
+  return {
+    count: Number(row?.count ?? 0),
+    lastAt: row?.last_at ?? null,
+    recent: recent.map((r) => ({
+      id: r.id, title: r.title, kind: r.kind, slug: r.slug, visibility: r.visibility,
+      pinned: Boolean(r.pinned), publishedAt: r.published_at,
+    })),
+  };
 }
 
 /** Everything the console shows, in one pass. */
@@ -269,7 +297,7 @@ export async function getConsoleState(orgId: string): Promise<ConsoleState> {
       recent: [],
       waiting: [],
     }),
-    guard("published", () => loadPublished(orgId), { count: 0, lastAt: null }),
+    guard("published", () => loadPublished(orgId), { count: 0, lastAt: null, recent: [] }),
   ]);
   return { drafts, upcoming, responses, people, published };
 }

@@ -47,6 +47,21 @@ export interface ProfileCardAction {
   surface?: boolean;
   /** Which tab of the profile popup it opens on. */
   surfaceTab?: "profile" | "details" | "show" | "page" | "payouts";
+  /**
+   * Opens a Center journey dialog instead (2026-10-18: the profile popup is
+   * not used from Center any more). Falls back to `href` without a provider.
+   */
+  journey?: "auction" | "profile" | "site";
+}
+
+/** A small status pill on the front plate: "Payouts · not set up". */
+export interface ProfileCardBadge {
+  id: string;
+  label: string;
+  tone?: "ok" | "warn" | "neutral";
+  /** Opens the profile surface on this tab; falls back to `href`. */
+  surfaceTab?: "profile" | "details" | "show" | "page" | "payouts";
+  href?: string | null;
 }
 
 export function ProfileFlipCard({
@@ -59,6 +74,7 @@ export function ProfileFlipCard({
   actions = [],
   backKicker = "Your profile",
   frontAction,
+  badges = [],
 }: {
   image: string | null;
   glyph: string;
@@ -76,6 +92,11 @@ export function ProfileFlipCard({
    * button out of reach. The ✎ still turns it.
    */
   frontAction?: ProfileCardAction;
+  /**
+   * Status pills on the plate (Center, 2026-10-18): the one-glance version of
+   * the tabs — payouts state, where you show, details — each opening its tab.
+   */
+  badges?: ProfileCardBadge[];
 }) {
   const surfaces = useSurfaceOptional();
   const [flipped, setFlipped] = React.useState(false);
@@ -94,7 +115,9 @@ export function ProfileFlipCard({
   const hoverFlips = hasBack && !frontAction;
   React.useEffect(() => {
     if (!hoverFlips) return;
-    const face = root.current?.closest<HTMLElement>(".eac-face");
+    // The card is a `preview` inside a SurfaceCard on most hosts; on /center it
+    // stands bare (take two), so the card itself is the thing to listen on.
+    const face = root.current?.closest<HTMLElement>(".eac-face") ?? root.current;
     if (!face) return;
     // Which pointer, not which device. A media query ("hover: hover") reports
     // the machine's best input, so a laptop with a touchscreen says yes and
@@ -117,6 +140,18 @@ export function ProfileFlipCard({
   // A surface action falls back to its href where no provider is mounted, so
   // the card works on a site without one.
   function control(a: ProfileCardAction, body: React.ReactNode, className?: string) {
+    if (a.journey && surfaces?.connectors.journey) {
+      return (
+        <button
+          type="button"
+          className={className}
+          aria-haspopup="dialog"
+          onClick={(e) => surfaces.open({ type: "journey", id: a.journey! }, e.currentTarget)}
+        >
+          {body}
+        </button>
+      );
+    }
     if (a.surface && surfaces) {
       return (
         <button
@@ -178,6 +213,37 @@ export function ProfileFlipCard({
             <div className="eac-pcard-name">{name}</div>
             {subtitle && <div className="eac-pcard-sub">{subtitle}</div>}
             {note && <div className="eac-pcard-note">{note}</div>}
+            {badges.length > 0 && (
+              <div className="eac-face-live eac-pcard-badges">
+                {badges.map((b) =>
+                  surfaces ? (
+                    <button
+                      key={b.id}
+                      type="button"
+                      className="eac-pcard-badge"
+                      data-tone={b.tone ?? "neutral"}
+                      aria-haspopup="dialog"
+                      onClick={(e) =>
+                        surfaces.open(
+                          { type: "profile", tab: b.surfaceTab && b.surfaceTab !== "profile" ? b.surfaceTab : undefined },
+                          e.currentTarget
+                        )
+                      }
+                    >
+                      {b.label}
+                    </button>
+                  ) : b.href ? (
+                    <a key={b.id} className="eac-pcard-badge" data-tone={b.tone ?? "neutral"} href={b.href}>
+                      {b.label}
+                    </a>
+                  ) : (
+                    <span key={b.id} className="eac-pcard-badge" data-tone={b.tone ?? "neutral"}>
+                      {b.label}
+                    </span>
+                  )
+                )}
+              </div>
+            )}
             {frontAction && (
               <div className="eac-face-live eac-pcard-front-action">
                 {control(frontAction, frontAction.label, "eac-btn eac-btn--primary")}

@@ -14,7 +14,7 @@ import {
 } from "../actions";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sales · Studio" };
+export const metadata: Metadata = { title: "Sales · My art" };
 
 const ORDER_STATUS: Record<Order["status"], { label: string; tone: BadgeProps["tone"] }> = {
   draft: { label: "Draft", tone: "neutral" },

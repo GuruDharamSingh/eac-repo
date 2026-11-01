@@ -1,0 +1,518 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@elkdonis/commerce/commerce.css";
+
+@source "../../../../packages/pipeline/src";
+@source "../../../../packages/chat/src";
+
+
+/* @elkdonis/cms-ui ships source, not a bundle, so Tailwind has to be told to
+   scan it or the compose sheet renders unstyled. */
+@source "../../../../packages/cms-ui/src";
+
+/* The reading layer for published writing. Plain CSS with custom-property
+   fallbacks, so it picks up this site's ink and rule colours. */
+@import "@elkdonis/cms-ui/article.css";
+/* The shelf for a person's published writing (/writing/<author>). */
+@import "@elkdonis/cms-ui/writing.css";
+/* The surface system — every popup on the hub (a meeting, the month, the
+   gallery, quick-add) and the faces that open them. gallery.css carries the
+   lightbox the gallery surface uses. Both plain CSS; tokens mapped below. */
+@import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
+@import "@elkdonis/cms-ui/profile.css";
+/* The Grand Forum at /forum, in this site's tokens. */
+@import "@elkdonis/forum-ui/forum.css";
+@import "@elkdonis/forum-ui/forum-modern.css";
+@import "@elkdonis/cms-ui/gallery.css";
+/* MediaPicker (the composer's cover-image pane) is styled here too. */
+@import "@elkdonis/cms-ui/files-card.css";
+/* Field controls and the composer's groups — plain CSS, so the same form
+   sets correctly in every app. */
+@import "@elkdonis/cms-ui/fields.css";
+@import "@elkdonis/cms-ui/compose.css";
+/* The one rich-text editor, shared by every app. */
+@import "@elkdonis/cms-ui/editor.css";
+/* The shared controls — buttons, inputs, cards, tabs, select. Plain CSS driven
+   by --eac-control-* tokens, mapped to this site's palette below. Replaced the
+   17 shadcn copies that used to live in src/components/ui.
+
+   layer(components) is REQUIRED, not decoration. Tailwind v4 orders its layers
+   theme → base → components → utilities, and an UNLAYERED rule beats every
+   layered one no matter its specificity. Imported bare, this stylesheet would
+   overpower every utility class a caller passes in — `<Button className="text-
+   [#fdf5e6]/80">` would silently render in the default ink instead. Thirty call
+   sites in this app pass exactly that kind of override. Importing into the
+   components layer puts the library underneath utilities, which is where the
+   shadcn copies effectively sat. */
+@import "@elkdonis/primitives/primitives.css" layer(components);
+
+/* Page blocks — the section banner and the status badge on the feed pages.
+   Same layer reasoning as the primitives above. */
+@import "@elkdonis/blocks/blocks.css" layer(components);
+/* The same reading tokens as Tailwind utilities, so anything built AROUND a
+   post (a feed strip, an author note) lines up with the prose inside it. */
+@import "@elkdonis/cms-ui/reading-theme.css";
+
+/* Local faces, shared with apps/innergathering (public/fonts). */
+@font-face { font-family: "Basteleur"; src: url("/fonts/Basteleur-Moonlight.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Basteleur"; src: url("/fonts/Basteleur-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Brothers"; src: url("/fonts/BrothersTypeface-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Venture"; src: url("/fonts/Venture-nRqOR.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   The shared controls, in Elkdonis Tours & Experiences's palette.
+
+   Every token here is a hand-off: @elkdonis/primitives never reads --primary
+   itself, because this site stores it as a bare HSL triplet ("45 79% 52%")
+   that is only a valid colour once wrapped in hsl(). Doing that wrapping is
+   this file's job — it is the only place that knows the storage format.
+
+   --accent-ink is PINNED to a literal rather than left to the library default.
+   Saffron as ink on cream measures 1.76:1, so it cannot be used as link text
+   or as the focus ring; the library's default darkens it with color-mix to
+   4.54:1. But Lightning CSS compiles that default with a @supports guard whose
+   fallback is the RAW accent — so a browser without color-mix would silently
+   get 1.76:1 back, which is the exact bug the token exists to prevent.
+   #8a6d16 is that same 60% mix computed ahead of time: 4.54:1 on the cream
+   ground, 4.55:1 on the linen card, and no feature detection involved.
+   ========================================================================== */
+
+:root {
+  --eac-control-bg: hsl(var(--background));
+  --eac-control-fg: hsl(var(--foreground));
+  --eac-control-muted: hsl(var(--muted-foreground));
+  --eac-control-line: hsl(var(--border));
+  --eac-control-accent: hsl(var(--primary));
+  --eac-control-accent-on: hsl(var(--primary-foreground));
+  --eac-control-accent-ink: #dcc08a;   /* brass-light — 7.8:1 on zinc */
+  --eac-control-danger: hsl(var(--destructive));
+  --eac-control-radius: var(--radius);
+
+  --eac-card-bg: hsl(var(--card));
+  --eac-card-fg: hsl(var(--card-foreground));
+}
+
+/* ==========================================================================
+   @elkdonis/blocks, in Elkdonis Tours & Experiences's palette.
+
+   --band is a GRADIENT, not a colour: the charcoal chrome behind the header,
+   the footer and every section banner has always been one, and the block sets
+   it with `background:` which takes an image just as happily as a colour. The
+   old .bg-header-footer class stays for the header and footer themselves.
+
+   --ok is mapped to the saffron primary rather than left green. On this site
+   "it's on" has always been said in saffron; green would be a new colour
+   introduced by a refactor, which is not what a refactor is for.
+   ========================================================================== */
+
+:root {
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  --eac-block-danger: hsl(var(--destructive));
+  --eac-block-ok: hsl(var(--primary));
+
+  --eac-block-band: linear-gradient(135deg, #1f2227 0%, #2a2e35 100%);
+  --eac-block-band-fg: hsl(var(--foreground));
+
+  --eac-block-font-title: "Brothers", "Venture", Georgia, serif;
+  --eac-block-radius: var(--radius);
+}
+
+/* ==========================================================================
+   Elkdonis Tours & Experiences — "zinc and brass" (2026-10-18).
+
+   Haussmann rooftops: a slate-zinc ground, ivory type, brass for marks, rules
+   and fills, a warm vermilion for danger and the route line. One palette for
+   every mode: `.dark` repeats it, so no toggle changes the look.
+
+   Type: Basteleur (Inner Group's body face) for text, Brothers for headings,
+   Venture (small caps) for kickers and labels — all local files in
+   public/fonts, shared with apps/innergathering.
+
+   Contrast, measured (WCAG, on the zinc ground #2a2e35 unless noted):
+     ivory #f1ece2 text            11.6 : 1
+     muted #b9b2a5 text             6.5 : 1
+     brass #c9a25c as text          5.7 : 1   (large text and marks only in body copy)
+     brass-light #dcc08a (links)    7.8 : 1
+     ink #1b1e23 on brass fill      7.3 : 1   (buttons)
+     vermilion #e8805c text         4.9 : 1
+     border #727a86 on ground       3.1 : 1   (inputs, focus)
+     ivory on card #343941         10.1 : 1
+   ========================================================================== */
+
+:root {
+  --radius: 0rem;
+
+  --background: 216 12% 19%;          /* zinc #2a2e35 */
+  --foreground: 40 33% 92%;           /* ivory #f1ece2 */
+
+  --card: 216 11% 23%;                /* #343941 */
+  --card-foreground: 40 33% 92%;
+
+  --popover: 216 11% 21%;
+  --popover-foreground: 40 33% 92%;
+
+  --primary: 40 50% 57%;              /* brass #c9a25c — buttons, rings, marks */
+  --primary-foreground: 216 13% 12%;  /* ink #1b1e23 */
+
+  --secondary: 216 10% 27%;           /* #3e434c — quiet buttons, badges */
+  --secondary-foreground: 40 33% 92%;
+
+  --muted: 216 10% 25%;
+  --muted-foreground: 37 12% 69%;     /* #b9b2a5 */
+
+  --accent: 216 10% 30%;              /* hover wash */
+  --accent-foreground: 40 33% 92%;
+
+  /* Vermilion: danger, the route line, the one hot note. */
+  --terracotta: 17 75% 64%;           /* #e8805c */
+  --terracotta-deep: 17 70% 58%;
+  --brass-light: 40 55% 70%;          /* #dcc08a — link ink */
+
+  --destructive: 17 75% 64%;
+  --destructive-foreground: 216 13% 12%;
+
+  --border: 216 9% 49%;               /* #727a86 */
+  --input: 216 9% 49%;
+  --ring: 40 50% 57%;
+
+  /* Per-feed accents (org_feeds.accent is the source of truth; fallbacks). */
+  --feed-tours: 40 50% 57%;
+  --feed-journal: 17 75% 64%;
+  --feed-amrit-vela: 40 50% 57%;
+  --feed-yoga: 150 14% 55%;
+  --feed-gurdwara: 17 75% 64%;
+
+  /* The surface system in this voice. Fills carry the dark ink; the zinc
+     ground never carries brass text smaller than large. */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-radius: var(--radius);
+  --eac-font-title: "Brothers", "Venture", Georgia, serif;
+  --eac-kind-meeting: hsl(var(--primary));
+  --eac-kind-event: hsl(var(--primary));
+  --eac-kind-post: hsl(var(--terracotta));
+  --eac-kind-post-on: hsl(var(--primary-foreground));
+  --eac-kind-workshop: hsl(var(--feed-yoga));
+  --eac-kind-calendar: hsl(var(--foreground));
+  --eac-kind-calendar-on: hsl(var(--background));
+  --eac-kind-gallery: hsl(var(--brass-light));
+  --eac-kind-gallery-on: hsl(var(--primary-foreground));
+  --eac-kind-forum-on: hsl(var(--primary-foreground));
+  --eac-kind-compose: hsl(var(--foreground));
+  --eac-kind-compose-on: hsl(var(--background));
+  --eac-kind-board: hsl(var(--feed-yoga));
+  --eac-kind-board-on: hsl(var(--primary-foreground));
+}
+
+/* One palette: the dark variant is the palette. */
+.dark {
+  --background: 216 12% 19%;
+  --foreground: 40 33% 92%;
+  --card: 216 11% 23%;
+  --card-foreground: 40 33% 92%;
+  --popover: 216 11% 21%;
+  --popover-foreground: 40 33% 92%;
+  --primary: 40 50% 57%;
+  --primary-foreground: 216 13% 12%;
+  --secondary: 216 10% 27%;
+  --secondary-foreground: 40 33% 92%;
+  --muted: 216 10% 25%;
+  --muted-foreground: 37 12% 69%;
+  --accent: 216 10% 30%;
+  --accent-foreground: 40 33% 92%;
+  --destructive: 17 75% 64%;
+  --destructive-foreground: 216 13% 12%;
+  --border: 216 9% 49%;
+  --input: 216 9% 49%;
+  --ring: 40 50% 57%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Set by the feed page wrapper from org_feeds.accent. */
+  --color-feed: var(--feed, hsl(var(--primary)));
+
+  --font-serif: "Brothers", "Venture", Georgia, serif;
+  --font-sans: "Basteleur", Georgia, serif;
+  /* Kickers and labels use the mono utility; here that is Venture, letter-spaced. */
+  --font-mono: "Venture", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Basteleur", Georgia, serif;
+  font-size: 1.04rem;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Solid zinc behind everything (html), a gentle vertical gradient over it (body, not fixed:
+   iOS ignores fixed attachments and full-page captures lose it). */
+html { background: hsl(var(--background)); }
+body { background: linear-gradient(180deg, hsl(216 12% 17%) 0%, hsl(216 12% 20%) 40%, hsl(216 12% 19%) 100%); }
+
+/* The shared reading layer (cms-ui article.css) in this palette: it resolves
+   its own --read-* tokens, so they are set here, on the article root. */
+.eac-article {
+  --read-ink: hsl(var(--foreground));
+  --read-muted: hsl(var(--muted-foreground));
+  --read-faint: hsl(var(--muted-foreground) / 0.7);
+  --read-rule: hsl(var(--border));
+  --read-accent: hsl(var(--primary));
+  --read-face-prose: "Basteleur", Georgia, serif;
+  --read-face-title: "Brothers", "Venture", Georgia, serif;
+  --read-face-record: "Venture", Georgia, serif;
+  --read-size: 1.12rem;
+}
+
+/* ==========================================================================
+   Decorative layer carried over from the pre-rebuild site.
+   These are the things that made it look like itself — the saffron-bordered
+   glowing cards, the dark charcoal chrome, the pull-quotes — kept verbatim
+   rather than redrawn in utility classes.
+   ========================================================================== */
+
+/* Cards (2026-09-26): white, square, one firm charcoal rule. No lift; the
+   border darkens on hover instead. Replaced the saffron-glow card. */
+.card-natural {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--primary) / 0.35);
+  border-radius: 0;
+  box-shadow: none;
+  transition: border-color 0.15s ease;
+}
+
+.card-natural:hover {
+  border-color: hsl(var(--primary) / 0.8);
+}
+
+/* The shared surface faces (thread rows, hub tiles) in the same voice:
+   no rounded lift, a firmer rule. */
+.eac-face {
+  border-color: hsl(var(--foreground) / 0.22);
+  box-shadow: none;
+}
+.eac-face:not(.is-disabled):hover,
+.eac-face:not(.is-disabled):focus-within {
+  transform: none;
+  box-shadow: none;
+  border-color: hsl(var(--foreground) / 0.6);
+}
+
+.dark .card-natural {
+  background: hsl(var(--card));
+  border-color: hsl(var(--foreground) / 0.3);
+}
+
+/* Charcoal chrome — header, footer, section banners. */
+.bg-header-footer {
+  background: linear-gradient(135deg, #1f2227 0%, #2a2e35 100%);
+}
+
+/* A brass hairline, the site's rule. */
+.saffron-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+  border: none;
+  margin: 2rem 0;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #dcc08a, #c9a25c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+blockquote.amrit-quote {
+  border-left: 3px solid hsl(var(--primary));
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.1) 0%, transparent 100%);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  border-radius: 0 16px 16px 0;
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: hsl(var(--foreground));
+  box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Portal tiles on the home page. The glow colour comes from the feed's own
+   accent (--feed), so a new section gets the treatment without new CSS. */
+.portal-tile {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.portal-tile:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px var(--feed-glow, hsl(var(--primary) / 0.25));
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Brothers", "Venture", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+/* Venture is a small face: letter-space it when it serves as a label. */
+.font-mono { letter-spacing: 0.16em; }
+
+/* ==========================================================================
+   Rich text — both the editor pane and the published output.
+
+   The editor markup asks for Tailwind's `prose` classes, but
+   @tailwindcss/typography isn't installed, so those were no-ops: pressing
+   "Heading 2" changed the HTML and nothing on screen, which reads as a broken
+   editor. Styling both surfaces with the same rules keeps what an author sees
+   while typing honest about what visitors get.
+   ========================================================================== */
+.tiptap-content :where(h2) {
+  font-family: "Brothers", "Venture", Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 1.2rem 0 0.5rem;
+}
+.tiptap-content :where(h3) {
+  font-family: "Brothers", "Venture", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+}
+.tiptap-content :where(p) {
+  margin: 0.5rem 0;
+  line-height: 1.65;
+}
+.tiptap-content :where(ul, ol) {
+  margin: 0.5rem 0 0.5rem 1.35rem;
+  list-style: revert;
+}
+.tiptap-content :where(li) {
+  margin-bottom: 0.25rem;
+}
+.tiptap-content :where(li p) {
+  margin: 0;
+}
+.tiptap-content :where(a) {
+  color: hsl(var(--brass-light));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 0.9rem;
+  margin: 0.8rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+.tiptap-content :where(strong) {
+  font-weight: 700;
+}
+
+/* The placeholder only renders when the document is genuinely empty. */
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Published output. */
+.prose-amrit :where(p) {
+  margin-bottom: 0.85rem;
+  line-height: 1.7;
+}
+.prose-amrit :where(h2, h3) {
+  margin: 1.6rem 0 0.6rem;
+  font-weight: 600;
+  font-family: "Brothers", "Venture", Georgia, serif;
+}
+.prose-amrit :where(ul, ol) {
+  margin: 0 0 0.85rem 1.25rem;
+  list-style: revert;
+}
+.prose-amrit :where(li) {
+  margin-bottom: 0.3rem;
+}
+.prose-amrit :where(a) {
+  color: hsl(var(--brass-light));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-amrit :where(blockquote) {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1.2rem 0;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+/* A guide's marketplace store, embedded on their about page. Themed onto the
+   site's shadcn tokens so the card reads as part of the page; the accent is
+   `primary`, not the saffron `accent`, which is a hover wash and far too pale
+   to carry white text or a focus ring. */
+.eac-commerce {
+  --pc-ink: hsl(var(--foreground));
+  --pc-ink-soft: hsl(var(--muted-foreground));
+  --pc-ink-faint: hsl(var(--muted-foreground));
+  --pc-line: hsl(var(--border));
+  --pc-mat: hsl(var(--muted));
+  --pc-surface: transparent;
+  --pc-accent: hsl(var(--primary));
+  --pc-on-accent: hsl(var(--primary-foreground));
+  --pc-radius: var(--radius);
+}

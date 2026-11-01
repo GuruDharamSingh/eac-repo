@@ -74,7 +74,7 @@ export function SignupCard() {
       <hr className="saffron-divider !my-4 max-w-[8rem]" />
       <p className="text-sm leading-relaxed text-muted-foreground">
         {isSignup
-          ? "Create an account to RSVP for gatherings and follow what's on. One account works across the whole Elkdonis network."
+          ? "Create an account to RSVP for gatherings and follow what's on. One account works across the whole Arts Collective network."
           : "Sign in to RSVP for gatherings and pick up where you left off."}
       </p>
 

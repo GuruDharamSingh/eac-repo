@@ -11,6 +11,26 @@ import { db } from "@elkdonis/db";
 type Row = Record<string, unknown>;
 
 /**
+ * The series desk: whoever may edit an auction series (an editor on its team,
+ * an owner of the auction org, a network admin) may act for the store of the
+ * org that presents it, in that marketplace. The desk lists work there on the
+ * artists' behalf (series workspace "Add a lot"). `s` is the store alias.
+ */
+export function seriesDeskClause(q: typeof db, actorUserId: string) {
+  return q`EXISTS (
+    SELECT 1 FROM auction_series ser
+    WHERE ser.presenter_org_id = s.owner_org_id AND ser.org_id = s.org_id
+      AND (
+        EXISTS (SELECT 1 FROM auction_series_member m
+                WHERE m.series_id = ser.id AND m.user_id = ${actorUserId} AND m.role = 'editor')
+        OR EXISTS (SELECT 1 FROM user_organizations uo
+                   WHERE uo.org_id = ser.org_id AND uo.user_id = ${actorUserId} AND uo.role = 'owner')
+        OR EXISTS (SELECT 1 FROM users u WHERE u.id = ${actorUserId} AND u.is_admin = true)
+      )
+  )`;
+}
+
+/**
  * Whether this person may write to this artwork, resolved through the store
  * that sells it rather than through `artist_user_id`.
  *
@@ -29,7 +49,7 @@ export async function requireArtworkAccess(
     JOIN store s ON s.id = a.store_id
     LEFT JOIN store_member sm ON sm.store_id = s.id AND sm.user_id = ${actorUserId}
     WHERE a.id = ${artworkId}
-      AND (s.owner_user_id = ${actorUserId} OR sm.user_id IS NOT NULL)
+      AND (s.owner_user_id = ${actorUserId} OR sm.user_id IS NOT NULL OR ${seriesDeskClause(tx, actorUserId)})
     LIMIT 1
   `) as unknown as Row[];
   if (!rows[0]) throw new Error("Artwork not found.");
@@ -83,4 +103,33 @@ export async function isOrderCustomer(
     SELECT 1 FROM commerce_order WHERE id = ${orderId} AND customer_id = ${userId} LIMIT 1
   `) as unknown as Row[];
   return Boolean(row);
+}
+
+/**
+ * The series desk's access to an artist's own listing: the actor may edit the
+ * series, and the piece is a person's listing in the series' marketplace
+ * (never an org store's, which has its own team). Used by createLot with
+ * `onBehalfOfSeriesId`.
+ */
+export async function requireArtworkForSeriesDesk(
+  tx: typeof db,
+  artworkId: string,
+  actorUserId: string,
+  seriesId: string
+): Promise<{ orgId: string; storeId: string; status: string }> {
+  const rows = (await tx`
+    SELECT a.org_id, a.store_id, a.status
+    FROM artwork a
+    JOIN store s ON s.id = a.store_id
+    JOIN auction_series ser ON ser.id = ${seriesId} AND ser.org_id = a.org_id
+    WHERE a.id = ${artworkId} AND s.owner_user_id IS NOT NULL
+      AND (
+        EXISTS (SELECT 1 FROM auction_series_member m WHERE m.series_id = ser.id AND m.user_id = ${actorUserId} AND m.role = 'editor')
+        OR EXISTS (SELECT 1 FROM user_organizations uo WHERE uo.org_id = ser.org_id AND uo.user_id = ${actorUserId} AND uo.role = 'owner')
+        OR EXISTS (SELECT 1 FROM users u WHERE u.id = ${actorUserId} AND u.is_admin = true)
+      )
+    LIMIT 1
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("Artwork not found, or not an artist's own listing in this marketplace.");
+  return { orgId: rows[0].org_id as string, storeId: rows[0].store_id as string, status: rows[0].status as string };
 }

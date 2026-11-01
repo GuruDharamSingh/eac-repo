@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · Cards and calendar</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+/* B: compact intro beside a short statement; series as portrait cards in a
+   row (two or three across); then a month calendar where each session is a
+   chip in its series' colour. On phones the calendar becomes the date list. */
+.top { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 36px; padding: 48px 0 0; align-items: end; }
+.top h1 { font-size: clamp(2.4rem, 4.4vw, 3.4rem); }
+.top .lede { font-size: 1.05rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 22px; margin-top: 30px; }
+.pcard { display: grid; grid-template-rows: auto 1fr; border: 1px solid var(--line2); border-top: 4px solid var(--acc); border-radius: 12px; overflow: hidden; background: var(--bg2); }
+.pcard .cover { aspect-ratio: 16 / 10; }
+.pcard__body { padding: 20px 20px 18px; display: grid; gap: 12px; align-content: start; }
+.pcard__body h2 { font-size: 1.9rem; }
+.pcard__foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.cal { border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; background: var(--bg2); }
+.cal__head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line2); }
+.cal__head h3 { font-size: 1.6rem; }
+.cal__nav { display: flex; gap: 8px; }
+.cal__dow, .cal__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal__dow span { padding: 8px 10px; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); font-weight: 700; border-bottom: 1px solid var(--line); }
+.cal__days > div { min-height: 108px; padding: 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; align-content: start; gap: 6px; }
+.cal__days > div:nth-child(7n) { border-right: 0; }
+.cal__n { font-size: 0.86rem; color: var(--faint); }
+.cal__days .is-today .cal__n { color: var(--ink); font-weight: 700; }
+.cal__days .is-out .cal__n { opacity: 0.4; }
+.ev { display: grid; gap: 1px; padding: 6px 8px; border-radius: 6px; border-left: 3px solid var(--acc); background: var(--bg3); font-size: 0.8rem; line-height: 1.25; }
+.ev b { font-weight: 600; color: var(--ink); }
+.ev span { color: var(--muted); }
+.ev.is-tba b { color: var(--muted); font-style: italic; font-weight: 400; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 0.9rem; }
+.legend span { display: inline-flex; gap: 8px; align-items: center; }
+.phone-only { display: none; }
+@media (max-width: 760px) {
+  .top { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .cal { display: none; }
+  .phone-only { display: grid; }
+}
+</style>
+</head>
+<body>
+<div class="mockbar"><b>Mockup B · Cards and calendar</b> <span>/series · 2026-10-18 · static, no app code</span> <a href="index.html">all mockups</a></div>
+<header class="hdr"><div class="wrap"><a class="hdr__logo" href="#">IFAC</a><nav><a href="#">Home</a><a class="on" href="#">Series</a><a href="#">About</a><a href="#">Publications</a><a href="#">Forum</a><a class="join" href="#">Join / Sign in</a></nav></div></header>
+
+<main class="wrap">
+  <section class="top">
+    <div><p class="eyebrow">IFAC series</p><h1>What IFAC is offering this season</h1></div>
+    <p class="lede">Online series on art, hosted by IFAC's artists and dealers. Free, no background needed. Pick a series, or browse every session on the calendar below.</p>
+  </section>
+
+  <section class="grid" aria-label="Series">
+    <article class="pcard s1">
+      <a class="cover" href="d-series-page.html"><img src="img/painter.jpg" alt=""><span class="cover__tag">Running · Mondays</span></a>
+      <div class="pcard__body">
+        <h2><a href="d-series-page.html">Explorations in Art Forms by Non Professionals</a></h2>
+        <p class="muted">A weekly online hour for people who love art and might be hesitant to engage creating. Each week a different host.</p>
+        <div class="facts"><span>Mondays · 6 pm Pacific</span><span>Online · free</span></div>
+        <a class="nextline" href="#"><span class="nextline__date"><small>Mon</small><b>19</b><small>Oct</small></span><span><span class="nextline__k">Next</span><br><span class="nextline__t">Putting Art as Tai Chi into Practice</span></span><span></span></a>
+        <div class="pcard__foot"><a class="btn btn--s btn--p" href="d-series-page.html">Open the series</a><a class="btn btn--s" href="#">Subscribe</a></div>
+      </div>
+    </article>
+    <article class="pcard s2">
+      <a class="cover cover--blank" href="#"><img src="img/ifac-lettering.png" alt=""><span class="cover__tag">Starts 5 Nov</span></a>
+      <div class="pcard__body">
+        <h2><a href="#">Looking Closely</a></h2>
+        <p class="muted">One painting, one hour: a host brings a single work and the group looks at it slowly together.</p>
+        <div class="facts"><span>Every other Thursday · 5 pm Pacific</span><span>Online · free</span></div>
+        <a class="nextline" href="#"><span class="nextline__date"><small>Thu</small><b>5</b><small>Nov</small></span><span><span class="nextline__k">First session</span><br><span class="nextline__t">To be announced</span></span><span></span></a>
+        <div class="pcard__foot"><a class="btn btn--s btn--p" href="#">Open the series</a><a class="btn btn--s" href="#">Subscribe</a></div>
+      </div>
+    </article>
+  </section>
+  <p class="note" style="margin-top:14px"><b>Second series is a placeholder.</b> With a third series the grid takes three across on wide screens; one series fills the row.</p>
+
+  <section class="sec">
+    <div class="sec__head">
+      <div><p class="eyebrow">Calendar</p><h2>Every session</h2></div>
+      <div class="legend"><span><i class="dot s1"></i>Explorations in Art Forms</span><span><i class="dot s2"></i>Looking Closely</span></div>
+    </div>
+    <div class="cal">
+      <div class="cal__head"><h3>October – November 2026</h3><div class="cal__nav"><a class="btn btn--s" href="#">‹</a><a class="btn btn--s" href="#">›</a></div></div>
+      <div class="cal__dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="cal__days">
+        <div class="is-today"><span class="cal__n">18 Oct</span></div>
+        <div><span class="cal__n">19</span><a class="ev s1" href="#"><b>Putting Art as Tai Chi into Practice</b><span>6 pm · Kevin Meadows</span></a></div>
+        <div><span class="cal__n">20</span></div><div><span class="cal__n">21</span></div><div><span class="cal__n">22</span></div><div><span class="cal__n">23</span></div><div><span class="cal__n">24</span></div>
+        <div><span class="cal__n">25</span></div>
+        <div><span class="cal__n">26</span><a class="ev s1" href="#"><b>Collage workshop</b><span>6 pm · Jason Ford</span></a></div>
+        <div><span class="cal__n">27</span></div><div><span class="cal__n">28</span></div><div><span class="cal__n">29</span></div><div><span class="cal__n">30</span></div><div><span class="cal__n">31</span></div>
+        <div><span class="cal__n">1 Nov</span></div>
+        <div><span class="cal__n">2</span><a class="ev s1 is-tba" href="#"><b>To be announced</b><span>6 pm</span></a></div>
+        <div><span class="cal__n">3</span></div><div><span class="cal__n">4</span></div>
+        <div><span class="cal__n">5</span><a class="ev s2 is-tba" href="#"><b>Session 1 · to be announced</b><span>5 pm</span></a></div>
+        <div><span class="cal__n">6</span></div><div><span class="cal__n">7</span></div>
+      </div>
+    </div>
+    <div class="rows phone-only">
+      <article class="row s1"><div class="datebox"><small>Mon</small><b>19</b><small>Oct</small></div><div><span class="sname"><span class="dot"></span>Explorations</span><p class="row__t">Putting Art as Tai Chi into Practice</p></div></article>
+      <article class="row s1"><div class="datebox"><small>Mon</small><b>26</b><small>Oct</small></div><div><span class="sname"><span class="dot"></span>Explorations</span><p class="row__t">Collage workshop</p></div></article>
+      <article class="row s2 is-tba"><div class="datebox"><small>Thu</small><b>5</b><small>Nov</small></div><div><span class="sname"><span class="dot"></span>Looking Closely</span><p class="row__t">To be announced</p></div></article>
+    </div>
+    <p class="note" style="margin-top:14px"><b>Calendar on wide screens, list on phones.</b> Pressing a session opens its own page, where "I'm coming" lives; the calendar itself carries no buttons.</p>
+  </section>
+</main>
+<footer class="foot"><div class="wrap">Home · Series · About · Publications · Forum</div></footer>
+</body>
+</html>

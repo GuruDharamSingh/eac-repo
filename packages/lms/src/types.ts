@@ -72,9 +72,31 @@ export interface StepRefs {
   /** Links on the open web, shown as cards under the step. Captured title/description travel with them. */
   links?: StepLink[];
 }
+/**
+ * A `task` step: what the learner is asked to set up on the network. The id
+ * is the host's vocabulary (`profile`, `store`, `org`, …); the LMS only
+ * carries it. `org` tasks act on the organisation the learner owns.
+ */
+export interface StepTask {
+  id: string;
+  scope?: 'person' | 'org';
+}
+/** What the host reports about a task for one viewer. */
+export interface TaskStatus {
+  done: boolean;
+  /** Begun but not finished (a store applied for, a Stripe account not yet verified). */
+  partial?: boolean;
+  /** One line for the learner: what is there now, or what is missing. */
+  detail?: string | null;
+  /** Where the finished thing lives, once it exists. */
+  href?: string | null;
+}
+
 export interface StepSettings {
   /** Rough time to give it, in minutes. */
   minutes?: number;
+  /** For `task` steps only. */
+  task?: StepTask;
   /** The thing to do. Practice/reflection steps show it as its own block. */
   practice?: string;
   /** A gentler or different way in, always offered for a hard practice. */

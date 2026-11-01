@@ -5,11 +5,9 @@ import { useState } from "react";
 /**
  * RSVP for a member.
  *
- * Writes to `thread_rsvps` through /api/hub/rsvp, NOT to the app's existing
- * /api/rsvp — that one takes an email from a stranger and writes
- * `guest_submissions`, which has no user_id at all. Two genuinely different
- * things wearing one name: a member saying "I'll be there" and the public
- * expressing interest. The guest route stays for the public site.
+ * Writes to `thread_rsvps` through /api/hub/rsvp. IFAC has no guest RSVP:
+ * the email-only `/api/rsvp` route was removed on 2026-10-10 (every RSVP is
+ * signed in, developer decision).
  */
 export function RsvpPanel({
   threadId,

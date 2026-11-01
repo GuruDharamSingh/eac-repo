@@ -1,0 +1,24 @@
+{
+  "id": "cl-026",
+  "status": "draft",
+  "source": { "paper": "The Enterprise-Progress", "place": "Mansfield, Louisiana", "date": "2002-10-03", "era": "2000s", "language": ["en"] },
+  "summary": "Small-town weekly page 18: CLASSIFIEDS in large flared small caps, black reverse category bars, sans liners with bold caps leads, and a crowd of boxed local-business display ads stacked along the edges with clip art, heavy borders and reverse blocks.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "mixed", "masthead": "Running head, then CLASSIFIEDS in big engraved-style small caps with an oversized C; black deadline box at right." },
+  "headers": [
+    { "id": "reverse-serif-bar", "kind": "reverse-bar", "example": "Garage Sales", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.25, 0.25, 0.12, 0.016], "notes": "White bold serif title case on black, centred." }
+  ],
+  "units": [
+    { "id": "sans-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "Garage Sale. Sat., Oct. 5, 7 a.m.-1 p.m. 204 Diamond Rd...", "notes": "Small sans body, bold caps lead, phone at end." },
+    { "id": "local-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "ROOFING AND ADDITIONS / DANNY C. MAY / 872-5930", "notes": "Edge columns are solid stacks of business-card displays: reverse heads, clip art (trucks, houses), big phone numbers." },
+    { "id": "listing-display", "kind": "display", "frequency": "occasional", "lead": "bold", "align": "left", "border": "thin", "example": "Jon Clemons Real Estate / New Listing - 130 Wine Oak Dr...", "notes": "Realtor block with a run of underlined 'New Listing' entries." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "transitional", "look": "Engraved-style flared small caps (Copperplate / Friz Quadrata-like)", "weight": "regular", "width": "extended", "case": "upper", "webFont": "Cinzel" },
+    { "role": "header", "classification": "news-serif", "look": "Bold serif title case reversed", "weight": "bold", "width": "normal", "case": "title", "webFont": "Tinos" },
+    { "role": "body", "classification": "grotesque", "look": "Helvetica/Arial small", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "ornaments": ["clip art", "logo badges", "underlined listing runs"],
+  "notes": ["Business-card stacks along both edges framing the liners in the middle are a strong, reusable page shape."]
+}

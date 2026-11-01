@@ -16,3 +16,4 @@
 
 export { WhiteboardFace } from "./WhiteboardFace";
 export { WhiteboardSurface } from "./WhiteboardSurface";
+export type { WhiteboardCloudSave } from "./WhiteboardCanvas";

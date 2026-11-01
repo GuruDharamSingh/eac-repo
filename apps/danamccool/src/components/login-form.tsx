@@ -27,7 +27,7 @@ export function LoginForm() {
         key={initialMode}
         initialMode={initialMode}
         title={siteConfig.orgName}
-        subtitle="Sign in to manage this site. One account works across the whole Elkdonis network."
+        subtitle="Sign in to manage this site. One account works across the whole Arts Collective network."
         googleRedirectTo={next ?? "/"}
         onSuccess={(result) => {
           const finalPath = next ?? "/";

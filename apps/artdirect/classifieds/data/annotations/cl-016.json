@@ -1,0 +1,25 @@
+{
+  "id": "cl-016",
+  "status": "draft",
+  "source": { "paper": "unknown Irish magazine or paper, page 20", "place": "Dublin / Shannon, Ireland", "era": "late 1960s–early 1970s (pre-decimal 1/11 lunch price)", "language": ["en"] },
+  "summary": "An all-display 'situations vacant' page: a black rounded banner with chunky lowercase geometric sans, then a few big boxed recruitment ads, each mixing a condensed gothic headline, a script or italic accent, bullet lists of perks and a dashed coupon.",
+  "family": "recruitment-display",
+  "frame": { "columns": 2, "columnWidth": "wide", "gutter": "open", "columnRules": "thin", "flow": "modular", "masthead": "Black banner with rounded ends, white heavy lowercase geometric sans, asterisks dotting the i's." },
+  "headers": [
+    { "id": "lowercase-banner", "kind": "banner", "example": "situations vacant", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.01, 0.01, 0.97, 0.085], "notes": "Very 1970s: all lowercase, tight-set, ultra-bold rounded geometric sans." }
+  ],
+  "units": [
+    { "id": "perk-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "example": "GIRLS / WE HAVE VACANCIES FOR GIRLS 14—18 YEARS / ● GOOD WAGES ● FIVE-DAY WEEK", "box": [0.53, 0.5, 0.45, 0.28], "notes": "Huge one-word headline, centred employer name in condensed bold caps, bullet list (● or ★) of perks." },
+    { "id": "script-accent", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "Wanted / LIVING DOLL / 15–20 years of age", "box": [0.53, 0.11, 0.45, 0.37], "notes": "Italic script 'Wanted' over a tall condensed gothic headline." },
+    { "id": "coupon", "kind": "notice", "frequency": "occasional", "lead": "caps", "align": "left", "border": "thin", "example": "To: The Personnel Officer... NAME ........ AGE ......", "box": [0.02, 0.78, 0.46, 0.2], "notes": "Dashed border, dotted fill-in lines." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "geometric", "look": "Heavy rounded geometric lowercase (Avant Garde Bold / Cooper-ish)", "weight": "black", "width": "normal", "case": "sentence", "webFont": "Righteous" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Tall condensed gothic (Franklin Gothic Condensed / Compacta)", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Oswald" },
+    { "role": "display", "classification": "script", "look": "Italic copperplate-ish script accent", "weight": "regular", "width": "normal", "case": "title", "webFont": "Pinyon Script" },
+    { "role": "body", "classification": "grotesque", "look": "Helvetica / Folio bold caps for lists", "weight": "bold", "width": "normal", "case": "upper", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "mono", "paper": "#f6f4ef", "ink": "#111111", "accents": [] },
+  "ornaments": ["★ and ● bullets", "dashed coupon", "corporate logos (EI)", "dotted fill-in lines"],
+  "notes": ["Era signal is the copy as much as the type (\"vacancies for girls\", \"music while you work\"). Keep the layout; the generator should not reuse the discriminatory phrasing."]
+}

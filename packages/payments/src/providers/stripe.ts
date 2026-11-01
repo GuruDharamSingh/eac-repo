@@ -141,6 +141,24 @@ export interface StripeProvider extends PaymentProvider {
 
   createCheckoutSession(input: CreateCheckoutSessionInput): Promise<StripeCheckoutSession>;
   retrieveCheckoutSession(sessionId: string): Promise<StripeCheckoutSessionStatus>;
+  /**
+   * A hosted session that saves a card (and collects a phone number) without
+   * charging it: bidder registration (ORG_STORE_BRIEF R6).
+   */
+  createSetupSession(input: {
+    customerEmail: string;
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, string>;
+  }): Promise<StripeCheckoutSession>;
+  retrieveSetupSession(sessionId: string): Promise<{
+    id: string;
+    status: string | null;
+    customerId: string | null;
+    paymentMethodId: string | null;
+    phone: string | null;
+    metadata: Record<string, string>;
+  }>;
   /** Verify and parse a webhook body. Throws when the signature is bad. */
   parseWebhook(rawBody: string, signature: string): Stripe.Event;
 
@@ -228,6 +246,39 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
     };
   }
 
+  async function createSetupSession(input: {
+    customerEmail: string;
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, string>;
+  }): Promise<StripeCheckoutSession> {
+    const session = await client.checkout.sessions.create({
+      mode: "setup",
+      customer_creation: "always",
+      customer_email: input.customerEmail,
+      phone_number_collection: { enabled: true },
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      metadata: input.metadata ?? {},
+    });
+    if (!session.url) throw new Error("Stripe did not return a setup URL.");
+    return { id: session.id, url: session.url, expiresAt: toIso(session.expires_at) };
+  }
+
+  async function retrieveSetupSession(sessionId: string) {
+    const s = await client.checkout.sessions.retrieve(sessionId, { expand: ["setup_intent"] });
+    const si = s.setup_intent;
+    const pm = typeof si === "object" && si ? si.payment_method : null;
+    return {
+      id: s.id,
+      status: s.status ?? null,
+      customerId: typeof s.customer === "string" ? s.customer : s.customer?.id ?? null,
+      paymentMethodId: typeof pm === "string" ? pm : pm?.id ?? null,
+      phone: s.customer_details?.phone ?? null,
+      metadata: (s.metadata ?? {}) as Record<string, string>,
+    };
+  }
+
   function parseWebhook(rawBody: string, signature: string): Stripe.Event {
     // Both endpoints post to the same route, so the only way to tell whose
     // event this is, is to try each secret. Order is cheapest-first: platform
@@ -297,6 +348,8 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
 
     createCheckoutSession,
     retrieveCheckoutSession,
+    createSetupSession,
+    retrieveSetupSession,
     parseWebhook,
     createExpressAccount,
     createAccountOnboardingLink,

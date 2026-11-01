@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start the virtual display, audio, window manager, VNC, OBS and the agent.
+# Start the headless compositor, audio, VNC, OBS and the agent.
 # OBS's config is seeded on every start (profile, websocket password from
 # the environment); its scene collection persists in $HOME (volume).
 set -u
@@ -86,21 +86,40 @@ cat > "$CFG/plugin_config/obs-websocket/config.json" <<JSON
 {"alerts_enabled":false,"auth_required":true,"first_load":false,"server_enabled":true,"server_password":"${OBS_WEBSOCKET_PASSWORD:?set OBS_WEBSOCKET_PASSWORD}","server_port":4455}
 JSON
 
-Xvfb :99 -screen 0 ${W}x${H}x24 -nolisten tcp &
-sleep 1
+# Display: a headless sway (wlroots) compositor rendering on the iGPU's render
+# node, with OBS as a native Wayland client. Under Xvfb OBS got llvmpipe
+# (software GL, ~0.8-3.3 cores); here it composites on the Radeon 610M
+# (~0.03-0.16 cores, 2026-10-28). Needs no monitor and never touches the
+# card's KMS outputs (the host console keeps HDMI). wayvnc replaces x11vnc for
+# the noVNC view; it has no password (wayvnc auth needs TLS or RSA keys).
+export XDG_RUNTIME_DIR=/tmp/xdg-$(id -u)
+mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+export WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128
+
 pulseaudio --daemonize=yes --exit-idle-time=-1 --disallow-exit 2>/dev/null
 pactl load-module module-null-sink sink_name=eac sink_properties=device.description=EAC >/dev/null 2>&1 || true
-# No wallpaper setter is installed; without this fluxbox opens a dialog about it.
-mkdir -p "$HOME/.fluxbox" && echo 'background: none' > "$HOME/.fluxbox/overlay"
-fluxbox >/dev/null 2>&1 &
-( sleep 3; pkill -f 'xmessage.*fbsetbg' ) &
-x11vnc -display :99 -forever -shared -rfbport 5900 -localhost ${OBS_VNC_PASSWORD:+-passwd "$OBS_VNC_PASSWORD"} -quiet >/dev/null 2>&1 &
-websockify --web /usr/share/novnc 6080 localhost:5900 >/dev/null 2>&1 &
 
+SESSION=$HOME/.obs-session
+cat > "$SESSION" <<'SH'
+#!/bin/bash
+# Started by sway, so WAYLAND_DISPLAY is set.
+wayvnc 127.0.0.1 5900 >/dev/null 2>&1 &
+websockify --web /usr/share/novnc 6080 localhost:5900 >/dev/null 2>&1 &
 # The agent reconnects to OBS on its own; OBS is restarted if it exits.
 node /opt/obs-agent/agent.mjs &
 while true; do
-  obs --profile EAC --collection EAC --disable-shutdown-check --disable-missing-files-check 2>&1 | grep -vE 'Xlib|QStandardPaths' 
+  obs --profile EAC --collection EAC --disable-shutdown-check --disable-missing-files-check 2>&1 | grep -vE 'QStandardPaths'
   echo "[obs-start] obs exited; restarting in 5 s"
   sleep 5
 done
+SH
+chmod 755 "$SESSION"
+
+mkdir -p "$HOME/.config/sway"
+cat > "$HOME/.config/sway/config" <<CONF
+output HEADLESS-1 resolution ${W}x${H} position 0 0
+xwayland disable
+default_border none
+exec $SESSION
+CONF
+sway -c "$HOME/.config/sway/config" 2>&1 | grep -vE '^\S+ \[(DEBUG|INFO)\]'

@@ -47,7 +47,7 @@ export async function GET(
       recurrence_until: Date | null; is_rsvp_enabled: boolean;
       attendee_limit: number | null; rsvp_deadline: Date | null;
       document_url: string | null; video_link: string | null;
-      rsvp_count: number; viewer_attending: boolean;
+      rsvp_count: number; viewer_attending: boolean; pinned: boolean;
     }>
   >`
     SELECT t.id, t.title, t.slug, t.kind, t.status, t.visibility, t.excerpt,
@@ -57,6 +57,7 @@ export async function GET(
            t.format, t.meeting_url, t.nextcloud_talk_token AS talk_token,
            t.recurrence_pattern, t.recurrence_until, t.is_rsvp_enabled,
            t.attendee_limit, t.rsvp_deadline, t.document_url, t.video_link,
+           t.pinned,
            (SELECT COUNT(*)::int FROM thread_rsvps r
              WHERE r.thread_id = t.id AND r.status = 'yes') AS rsvp_count,
            EXISTS (SELECT 1 FROM thread_rsvps r
@@ -101,7 +102,8 @@ export async function GET(
         documentUrl: row.document_url,
         videoLink: row.video_link,
       },
-      { rsvpCount: row.rsvp_count, viewerAttending: row.viewer_attending }
+      // `pinned` rides in `extra` for the console's "Lead the site" action.
+      { rsvpCount: row.rsvp_count, viewerAttending: row.viewer_attending, extra: { pinned: Boolean(row.pinned) } }
     )
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ArtPieceComposer } from "@elkdonis/cms-ui/compose";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import {
@@ -19,10 +20,13 @@ import { siteConfig } from "@/config/site";
 // ============================================================================
 
 export function ArtPieceComposerCard() {
+  const [orgStoreName, setOrgStoreName] = React.useState<string | null>(null);
   return (
     <ArtPieceComposer
+      orgStoreName={orgStoreName}
       checkStore={async () => {
         const r = await canListArtPieceAction();
+        setOrgStoreName(r.orgStoreName ?? null);
         return { ok: r.ok, reason: r.reason };
       }}
       onSave={createArtPieceAction}

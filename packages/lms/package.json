@@ -16,7 +16,8 @@
     "check-types": "tsc --noEmit",
     "seed:path": "tsx scripts/seed-elkdonis-path.mts",
     "seed:test": "tsx scripts/seed-test-course.mts",
-    "test:unlock": "tsx scripts/test-unlock.mts"
+    "test:unlock": "tsx scripts/test-unlock.mts",
+    "test:visibility": "tsx scripts/test-visibility.mts"
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",

@@ -110,7 +110,7 @@ export default async function WorkshopWorkspacePage({
       className="min-h-screen text-foreground"
       style={{ background: workshop.backgroundColor ?? undefined }}
     >
-      <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} />
+      <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
 
       {bannerUrl && (
         <div className="relative h-[280px] w-full overflow-hidden">

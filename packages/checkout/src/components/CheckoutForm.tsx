@@ -10,11 +10,31 @@ export interface CheckoutFormValues {
   shippingAddress: Address;
   notes?: string;
   paymentMethod: "etransfer" | "stripe";
+  /** Where the commission goes: payee ids with percentages summing to 100. */
+  support?: Array<{ payeeId: string; percent: number }>;
+}
+
+/** One choice in the "where the commission goes" block. */
+export interface SupportOption {
+  id: string;
+  label: string;
+  description?: string | null;
+  /** The split this choice means. One payee at 100%, or several. */
+  split: Array<{ payeeId: string; percent: number }>;
 }
 
 export interface CheckoutFormProps {
   initialValues?: Partial<CheckoutFormValues>;
   paymentMethods?: Array<{ id: "etransfer" | "stripe"; label: string; description: string; disabled?: boolean }>;
+  /**
+   * Choices for the commission's destination (ORG_STORE_BRIEF R3). Omitted
+   * or empty hides the block and the marketplace keeps the commission.
+   */
+  supportOptions?: SupportOption[];
+  /** The index in `supportOptions` selected by default. */
+  defaultSupportIndex?: number;
+  /** Lines whose proceeds a listing directs to a beneficiary; shown as a notice. */
+  beneficiaryNotices?: Array<{ title: string; beneficiaryName: string; scope: "all_proceeds" | "commission" }>;
   /** Caller wires this to a server action. Should return on success. */
   onSubmit: (values: CheckoutFormValues) => Promise<void>;
   submitLabel?: string;
@@ -37,6 +57,9 @@ const DEFAULT_METHODS: NonNullable<CheckoutFormProps["paymentMethods"]> = [
 export function CheckoutForm({
   initialValues,
   paymentMethods = DEFAULT_METHODS,
+  supportOptions = [],
+  defaultSupportIndex = 0,
+  beneficiaryNotices = [],
   onSubmit,
   submitLabel = "Place order",
   className,
@@ -45,6 +68,9 @@ export function CheckoutForm({
   const [err, setErr] = React.useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = React.useState<CheckoutFormValues["paymentMethod"]>(
     initialValues?.paymentMethod ?? "etransfer"
+  );
+  const [supportIdx, setSupportIdx] = React.useState(
+    Math.min(Math.max(0, defaultSupportIndex), Math.max(0, supportOptions.length - 1))
   );
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -55,6 +81,7 @@ export function CheckoutForm({
       customerName: String(data.get("customerName") ?? ""),
       customerEmail: String(data.get("customerEmail") ?? ""),
       paymentMethod,
+      support: supportOptions[supportIdx]?.split,
       notes: (data.get("notes") as string) || undefined,
       shippingAddress: {
         recipientName: String(data.get("recipientName") ?? "") || null,
@@ -226,6 +253,61 @@ export function CheckoutForm({
           ))}
         </div>
       </section>
+
+      {beneficiaryNotices.length > 0 && (
+        <section className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4 text-sm">
+          <h2 className="mb-2 font-serif text-xl">Where this money goes</h2>
+          <ul className="flex flex-col gap-1">
+            {beneficiaryNotices.map((n, i) => (
+              <li key={i}>
+                <span className="font-medium">{n.title}</span>
+                {n.scope === "all_proceeds"
+                  ? ` — all proceeds (less card fees) go to ${n.beneficiaryName}.`
+                  : ` — the commission on this piece goes to ${n.beneficiaryName}.`}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[hsl(var(--muted-foreground))]">
+            The collective collects the payment, records the amount for the beneficiary and pays it
+            over; you will receive a statement of proceeds by email. This is not a tax receipt.
+          </p>
+        </section>
+      )}
+
+      {supportOptions.length > 0 && (
+        <section>
+          <h2 className="mb-1 font-serif text-xl">Support</h2>
+          <p className="mb-3 text-sm text-[hsl(var(--muted-foreground))]">
+            A small commission on each sale keeps the collective running. Choose where it goes.
+          </p>
+          <div className="flex flex-col gap-2">
+            {supportOptions.map((o, i) => (
+              <label
+                key={o.id}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-md border border-[hsl(var(--border))] p-4 transition-colors",
+                  supportIdx === i ? "ring-2 ring-[hsl(var(--ring))]" : "hover:bg-[hsl(var(--muted))]/30"
+                )}
+              >
+                <input
+                  type="radio"
+                  name="support"
+                  value={o.id}
+                  checked={supportIdx === i}
+                  onChange={() => setSupportIdx(i)}
+                  className="mt-1"
+                />
+                <div className="flex flex-col">
+                  <span className="font-medium">{o.label}</span>
+                  {o.description && (
+                    <span className="text-sm text-[hsl(var(--muted-foreground))]">{o.description}</span>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 font-serif text-xl">Notes (optional)</h2>

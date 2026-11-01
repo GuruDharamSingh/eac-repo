@@ -1,0 +1,154 @@
+/*
+ * Landing hero (Intro 10, 2026-10-28): a black band inside the light page, the
+ * whole band sliding between the series and the featured artists.
+ * Contrast: #ffffff on #000 21:1; #c4cad6 on #000 12.3:1; #aab3c7 on #000
+ * 9.6:1; #ffffff on #8c1f3a 10:1; #f3e9ec on #6a1830 (strip's brightest) 9.6:1.
+ */
+.hh { position: relative; overflow: hidden; background: #000000; color: #eef2f9; border-bottom: 1px solid #e0dbd6; }
+.hh-track { display: flex; transition: transform 650ms cubic-bezier(0.22, 0.61, 0.36, 1); will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .hh-track { transition: none; } }
+.hh-slide { position: relative; flex-shrink: 0; box-sizing: border-box; }
+.hh-body {
+  max-width: 80rem; margin: 0 auto; padding: 48px 24px 40px; box-sizing: border-box;
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 48px; align-items: center;
+}
+.hh-kicker { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #aab3c7; }
+.hh-title { margin: 14px 0 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: clamp(40px, 5vw, 72px); line-height: 1; letter-spacing: -0.02em; color: #ffffff; text-wrap: balance; }
+.hh-title.is-name { margin: 0; font-size: clamp(36px, 4.4vw, 64px); }
+.hh-artist { margin-top: 14px; display: flex; align-items: center; gap: 18px; }
+.hh-avatar { width: 84px; height: 84px; flex-shrink: 0; border-radius: 50%; object-fit: cover; background: #1a1d26; box-shadow: 0 0 0 1px rgba(185, 195, 214, 0.35); display: flex; align-items: center; justify-content: center; font-family: var(--font-fraunces), Georgia, serif; font-size: 26px; color: #aab3c7; }
+.hh-lede { margin: 16px 0 0; max-width: 32em; font-size: 18px; color: #c4cad6; }
+.hh-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
+.hh-btn { display: inline-block; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none; }
+.hh-btn.is-accent { background: #8c1f3a; border: 1px solid #a82a4a; color: #ffffff; }
+.hh-btn.is-accent:hover { background: #a82a4a; }
+.hh-btn.is-ghost { border: 1px solid #b9c3d6; color: #eef2f9; }
+.hh-btn.is-ghost:hover { border-color: #ffffff; }
+
+/* The image column: arrows sit the same distance from both edges of the image. */
+.hh-figure { position: relative; display: flex; align-items: center; justify-content: center; padding: 0 64px; min-height: 380px; }
+.hh-image { display: block; height: 380px; min-width: 240px; max-width: 100%; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85); background: #1a1d26; }
+.hh-image img { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+.hh-image.is-portrait { aspect-ratio: 4 / 5; }
+.hh-image.is-empty { display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box; border: 1px dashed rgba(185, 195, 214, 0.45); color: #aab3c7; font-size: 14px; text-decoration: none; }
+.hh-arrow {
+  position: absolute; top: 50%; margin-top: -22px; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid #b9c3d6; background: rgba(0, 0, 0, 0.8); color: #eef2f9; display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.hh-arrow:hover { background: #000000; border-color: #ffffff; }
+.hh-arrow:focus-visible { outline: 2px solid #eef2f9; outline-offset: 3px; }
+/* The image is centred in its column with 64px of padding each side; the arrows sit 8px in from each edge, so the gap to the image is the same on both sides. */
+.hh-arrow.is-prev { left: 8px; }
+.hh-arrow.is-next { right: 8px; }
+
+.hh-strip { border-top: 1px solid rgba(185, 195, 214, 0.4); color: #f3e9ec; }
+.hh-strip.is-series { background: linear-gradient(90deg, #3d0d1b, #6a1830 50%, #3d0d1b); }
+.hh-strip.is-artist { background: linear-gradient(90deg, #1a1d26, #2a2f3d 50%, #1a1d26); }
+.hh-strip-in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 32px; max-width: 80rem; margin: 0 auto; padding: 12px 24px; font-size: 14px; box-sizing: border-box; }
+.hh-count { font-family: var(--font-fraunces), Georgia, serif; font-weight: 500; font-size: 19px; color: #ffffff; font-variant-numeric: tabular-nums; }
+.hh-dots { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); display: flex; gap: 8px; }
+.hh-dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(185, 195, 214, 0.35); }
+.hh-dots span.is-on { background: #eef2f9; }
+
+@media (max-width: 900px) {
+  .hh-body { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 36px 16px 32px; }
+  .hh-figure { padding: 0 56px; min-height: 0; }
+  .hh-image { height: 300px; }
+  .hh-dots { bottom: 54px; }
+}
+
+/* ── The welcome letter above the hero (Welcome 4) ─────────────────────────
+   Same black ground and inks as the hero; the rule is the series burgundy. */
+.hw { position: relative; background: #000000; color: #eef2f9; border-bottom: 1px solid rgba(185, 195, 214, 0.28); }
+.hw-in { position: relative; max-width: 80rem; margin: 0 auto; padding: 44px 24px 40px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
+.hw-heading { margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: clamp(44px, 4.4vw, 64px); line-height: 1; letter-spacing: -0.02em; color: #ffffff; }
+.hw-rule { width: 56px; height: 3px; background: #8c1f3a; margin-top: 18px; }
+.hw-subline { margin: 18px 0 0; font-size: 13px; color: #aab3c7; letter-spacing: 0.04em; }
+.hw-body { margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: clamp(19px, 1.7vw, 24px); line-height: 1.35; color: #ffffff; text-wrap: pretty; }
+.hw-link { margin: 16px 0 0; font-size: 16px; color: #c4cad6; }
+.hw-link a { color: #eef2f9; text-underline-offset: 4px; }
+.hw-link a:hover { color: #ffffff; }
+.hw-edit { position: absolute; right: 24px; top: 14px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #b9c3d6; background: rgba(0, 0, 0, 0.8); color: #eef2f9; font-size: 12px; font-weight: 500; cursor: pointer; }
+.hw-edit:hover { border-color: #ffffff; }
+.hw-dialog { width: min(640px, calc(100vw - 32px)); padding: 0; border: 1px solid #b9c3d6; border-radius: 14px; background: #0b0d12; color: #eef2f9; }
+.hw-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.hw-form { display: grid; gap: 14px; padding: 24px; }
+.hw-form h2 { margin: 0 0 4px; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: 24px; color: #ffffff; }
+.hw-form label { display: grid; gap: 6px; font-size: 13px; color: #c4cad6; }
+.hw-form input, .hw-form textarea { width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 8px; border: 1px solid #6f7a92; background: #000000; color: #eef2f9; font: inherit; font-size: 15px; }
+.hw-form textarea { font-family: var(--font-fraunces), Georgia, serif; font-size: 17px; line-height: 1.4; resize: vertical; }
+.hw-form input:focus-visible, .hw-form textarea:focus-visible { outline: 2px solid #eef2f9; outline-offset: 2px; }
+.hw-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hw-form-error { margin: 0; font-size: 13px; color: #f3b8c6; }
+.hw-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.hw-btn { height: 38px; padding: 0 18px; border-radius: 10px; border: 1px solid #b9c3d6; background: transparent; color: #eef2f9; font-size: 14px; font-weight: 500; cursor: pointer; }
+.hw-btn.is-accent { background: #8c1f3a; border-color: #a82a4a; color: #ffffff; }
+.hw-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* ── The loft under the hero ───────────────────────────────────────────────
+   Frosted over until asked for. The section begins white (2026-10-29): it is
+   where the page turns from the black top to the market's paper. Inks on
+   #fff: #1d1a16 16.4:1, #5c554d 6.5:1. The still's frames are decoration
+   (aria-hidden); the button is the only control for visitors, "Edit the loft"
+   for owners. */
+.hl { position: relative; background: #ffffff; color: #1d1a16; border-bottom: 1px solid #e0dbd6; }
+.hl-head { max-width: 80rem; margin: 0 auto; padding: 36px 24px 20px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; }
+.hl-kicker { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #5c554d; }
+.hl-title { margin: 8px 0 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: clamp(26px, 2.6vw, 36px); line-height: 1.1; letter-spacing: -0.01em; color: #1d1a16; }
+.hl-lede { margin: 0; max-width: 36em; font-size: 15px; color: #5c554d; }
+.hl-edit { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #8a8378; background: #ffffff; color: #1d1a16; font-size: 12px; font-weight: 500; cursor: pointer; }
+.hl-edit:hover { border-color: #1d1a16; }
+.hl-still { position: relative; max-width: 80rem; margin: 0 auto 40px; height: min(60vh, 560px); overflow: hidden; border-radius: 14px; background: #ffffff; border: 1px solid #e0dbd6; }
+/* The wall behind the frost: a plaster gradient with a floor line. */
+.hl-wall { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: clamp(28px, 5vw, 80px); padding: 0 48px; background: linear-gradient(180deg, #ffffff 0 80%, #e6e2db 80% 80.4%, #f3f0eb 80.4%); }
+.hl-frame { display: flex; align-items: center; justify-content: center; height: 54%; aspect-ratio: 4 / 5; box-sizing: border-box; overflow: hidden; background: #1f1c19; padding: 10px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22); }
+.hl-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hl-frame.is-free { background: #f3f0eb; border: 3px dashed #8a8378; font-family: var(--font-fraunces), Georgia, serif; font-size: 18px; color: #1d1a16; text-align: center; padding: 20px; }
+.hl-frost { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(14px) saturate(0.8); -webkit-backdrop-filter: blur(14px) saturate(0.8); }
+.hl-open { height: 52px; padding: 0 28px; border-radius: 12px; border: 1px solid #a82a4a; background: #8c1f3a; color: #ffffff; font-size: 16px; font-weight: 500; cursor: pointer; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25); }
+.hl-open:hover { background: #a82a4a; }
+.hl-open:focus-visible { outline: 2px solid #1d1a16; outline-offset: 3px; }
+.hl-frost-note { margin: 0; font-size: 12px; color: #1d1a16; }
+.hl-stage { position: relative; max-width: 80rem; margin: 0 auto 40px; border-radius: 14px; overflow: hidden; background: #ffffff; border: 1px solid #e0dbd6; }
+.hl-close { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(24, 21, 18, 0.88); color: #ffffff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hl-loading, .hl-fallback { display: flex; align-items: center; justify-content: center; height: min(72vh, 680px); color: #5c554d; font-size: 14px; }
+
+/* The owners' loft editor: two spot cards with a live preview of the frame. */
+.hl-dialog { width: min(960px, calc(100vw - 32px)); }
+.hl-dialog-lede { margin: -4px 0 4px; font-size: 14px; line-height: 1.45; color: #c4cad6; }
+.hl-spots { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.hl-spot { display: grid; gap: 10px; margin: 0; padding: 14px; border: 1px solid #3a4152; border-radius: 10px; }
+.hl-spot legend { padding: 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #c4cad6; }
+.hl-spot-preview { display: flex; align-items: center; justify-content: center; height: 220px; border-radius: 8px; background: linear-gradient(180deg, #ffffff 0 80%, #e6e2db 80% 80.4%, #f3f0eb 80.4%); }
+.hl-spot-preview .hl-frame { height: 72%; }
+.hl-spot-preview .hl-frame.is-free { font-size: 13px; padding: 10px; }
+.hl-spot select { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #6f7a92; background: #000000; color: #eef2f9; font: inherit; font-size: 14px; }
+.hl-spot input[type="range"] { width: 100%; accent-color: #a82a4a; }
+.hl-spot-reset { justify-self: start; height: 32px; font-size: 13px; }
+/* The picker and detail panels sit on the hall's light panel (#fbf9f5, ink #1d1a16). */
+.hl-picker-title, .hl-detail h2 { margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: 22px; line-height: 1.2; }
+.hl-picker-lede { margin: 6px 0 14px; font-size: 13px; color: #5c554d; }
+.hl-picker-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hl-picker-grid button { display: block; width: 100%; padding: 0; border: 1px solid rgba(29, 26, 22, 0.18); border-radius: 8px; overflow: hidden; background: #ffffff; color: #1d1a16; text-align: left; cursor: pointer; }
+.hl-picker-grid button:hover { border-color: #1d1a16; }
+.hl-picker-grid img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #e9e4da; }
+.hl-picker-grid span { display: block; padding: 6px 8px; font-size: 12px; line-height: 1.3; }
+.hl-detail { display: flex; flex-direction: column; gap: 10px; }
+.hl-detail img { width: 100%; border-radius: 6px; background: #e9e4da; object-fit: contain; }
+.hl-detail-artist { margin: 0; font-size: 14px; color: #5c554d; }
+.hl-detail-link { font-size: 14px; color: #1d1a16; text-underline-offset: 4px; }
+.hl-btn { align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(29, 26, 22, 0.3); background: transparent; color: #1d1a16; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+@media (max-width: 900px) {
+  .hw-in { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 36px 16px 32px; }
+  .hw-edit { position: static; justify-self: start; }
+  .hw-form-row { grid-template-columns: 1fr; }
+  .hl-head { padding: 28px 16px 16px; }
+  .hl-still, .hl-stage { margin: 0 16px 32px; border-radius: 10px; }
+  .hl-still { height: 360px; }
+  .hl-wall { gap: 16px; padding: 0 16px; }
+  .hl-frame { height: 46%; }
+  .hl-frame.is-free { font-size: 14px; padding: 10px; }
+  .hl-spots { grid-template-columns: 1fr; }
+}

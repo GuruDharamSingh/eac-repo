@@ -1,0 +1,28 @@
+{
+  "id": "cl-010",
+  "status": "draft",
+  "source": { "paper": "Melbourne Observer", "place": "Melbourne, Australia", "date": "2007-01-31", "era": "2000s", "language": ["en"] },
+  "summary": "Free-ads tabloid page: a heavy serif 'Classifieds' logo, a grey rounded panel shouting TOTALLY FREE ADS with a starburst, a grey sidebar of how-to-place tabs with clip art, then condensed-sans liners under black FOR SALE bars, and a mail-in coupon grid.",
+  "family": "modern-condensed-sans",
+  "frame": { "columns": 7, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "masthead": "Small 'Observer' over a huge ultra-bold serif 'Classifieds'; grey strip with URL, phone and deadline in condensed sans.", "footer": "Coupon: ruled grid of boxes for writing your ad, with 'Details below not for publication'." },
+  "headers": [
+    { "id": "reverse-bar", "kind": "reverse-bar", "example": "FOR SALE", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.38, 0.275, 0.125, 0.014], "notes": "Bold condensed caps; repeated at the top of every column." },
+    { "id": "script-tab", "kind": "reverse-bar", "example": "By Phone", "fg": "#ffffff", "bg": "#111111", "align": "left", "box": [0.005, 0.322, 0.16, 0.022], "notes": "Rounded black tab with white checkbox and italic brush-script text, paired with line-art clip art (phone, fax, envelope, clock)." },
+    { "id": "free-panel", "kind": "banner", "example": "TOTALLY FREE ADS", "fg": "#555555", "bg": "#eeeeee", "align": "center", "box": [0.005, 0.12, 0.83, 0.15], "notes": "Extended black grotesque in mid grey with a hard drop shadow, in a rounded grey panel; starburst FREE badge breaks the corner." }
+  ],
+  "units": [
+    { "id": "ruled-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "BARBECUE. 'Beefeater', 2 burner. Never been used. Was $559. $420. Hampton. 9598 6277.", "box": [0.255, 0.38, 0.125, 0.04], "notes": "Item name in bold condensed caps with a full stop, condensed body, price, suburb, phone. A hairline and a tiny booking code (XZDE★) separate each ad." },
+    { "id": "category-list", "kind": "notice", "frequency": "occasional", "lead": "none", "align": "left", "border": "thin", "example": "Categories appear in alphabetical order and include: ● Business Opportunities ● Church Notices...", "notes": "Boxed bullet list explaining the order of classifications." },
+    { "id": "house-ad", "kind": "house-ad", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "ADVERTISE FREE", "box": [0.505, 0.535, 0.49, 0.46], "notes": "Dashed border, huge extended black caps, cartoon man running with a newspaper (only colour on the page)." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "slab", "look": "Ultra-bold soft serif (Cheltenham Ultra / Clarendon Black)", "weight": "black", "width": "normal", "case": "title", "webFont": "Alfa Slab One" },
+    { "role": "display", "classification": "grotesque", "look": "Extended heavy grotesque (Helvetica Extended Black)", "weight": "black", "width": "extended", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "header", "classification": "condensed-grotesque", "look": "Helvetica Condensed Bold caps", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "condensed-grotesque", "look": "Helvetica Condensed / Franklin Gothic Condensed body", "weight": "regular", "width": "condensed", "case": "sentence", "webFont": "Roboto Condensed" },
+    { "role": "header", "classification": "script", "look": "Italic brush script for how-to tabs", "weight": "bold", "width": "normal", "case": "title", "webFont": "Kaushan Script" }
+  ],
+  "color": { "mode": "spot", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#eeeeee", "use": "panels and sidebar" }, { "hex": "#e1251b", "use": "cartoon tie" }, { "hex": "#3cb043", "use": "cartoon trousers" } ] },
+  "ornaments": ["starburst", "line-art clip art", "hairlines with booking codes", "coupon grid", "dashed border"],
+  "notes": ["The hairline-plus-code separator between liners is a distinctive rhythm worth a token."]
+}

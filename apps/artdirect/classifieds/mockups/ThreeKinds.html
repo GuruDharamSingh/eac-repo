@@ -1,0 +1,429 @@
+<title>Three Kinds of Section</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;500;700&family=Anton&family=Archivo+Black&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,900;1,400&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&family=Alfa+Slab+One&family=UnifrakturMaguntia&family=Courier+Prime:wght@400;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=Bowlby+One&family=Pinyon+Script&display=swap">
+<style>
+:root { --field: #26241f; --field-ink: #e6e0d2; --ink: #161412; --ui: 'Courier Prime', monospace; color-scheme: dark; }
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: var(--ui); padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 900px; margin: 0 auto 28px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 34px; margin: 0 0 6px; text-wrap: balance; }
+.stack { display: flex; flex-direction: column; gap: 40px; align-items: center; }
+.frame { width: 100%; max-width: 900px; overflow: hidden; }
+.scaler { width: 900px; height: 1300px; transform-origin: 0 0; }
+figure { margin: 0; }
+figcaption { max-width: 900px; margin: 12px auto 0; font-size: 12.5px; line-height: 1.55; }
+figcaption b { color: #fff; }
+.page { width: 900px; height: 1300px; box-sizing: border-box; overflow: hidden; color: var(--ink); position: relative; box-shadow: 0 2px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.45); }
+.page p { margin: 0; }
+.page * { box-sizing: border-box; min-width: 0; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+.ph { display: block; border: 1px solid var(--ink); background-color: #d8d4cc; background-image: radial-gradient(circle at 50% 50%, #161412 0 .8px, transparent 1.1px), linear-gradient(160deg, rgba(22,20,18,.6), rgba(22,20,18,.05) 50%, rgba(22,20,18,.45)); background-size: 3px 3px, 100% 100%; }
+</style>
+
+<div class="intro">
+  <h1>Three kinds of section</h1>
+  <p>One quirky page built out of a dense ad-wall that draws a block out of itself; one medium, readable page of ruled liners with rounded-tab heads and a business-card edge; one social board of small colour boxes with oval and arrow heads. Each is composed from a close reading of five to seven specimens, named in the caption, with original copy for the river town. Filled to the foot.</p>
+</div>
+
+<div class="stack">
+
+<!-- ============================================================ 1. QUIRKY: THE BLOCK -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="q" style="background: #ecebe6; padding: 14px 16px; display: flex; flex-direction: column;">
+  <style>
+    #q .top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--ink); padding-bottom: 2px; }
+    #q .top .n { font-family: 'Archivo Black', sans-serif; font-size: 40px; line-height: 1; }
+    #q .top .t { font-family: 'Oswald', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .32em; }
+    #q .top .t b { background: var(--ink); color: #fff; padding: 0 6px; margin: 0 1px; font-weight: 400; }
+    #q .top .d { font-family: 'Arimo', sans-serif; font-size: 9px; }
+    #q .wall { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); column-gap: 6px; margin-top: 6px; flex-grow: 1; overflow: hidden; }
+    #q .l { font-family: 'Tinos', serif; font-size: 10.6px; line-height: 1.2; text-align: justify; margin-bottom: 5px; hyphens: auto; }
+    #q .l b { font-weight: 700; }
+    #q .l .c { font-family: 'Arimo', sans-serif; font-size: 8px; letter-spacing: .02em; }
+    #q .num { display: inline-block; background: var(--ink); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; padding: 2px 9px 0; margin: 7px 0 3px; line-height: 1.15; }
+    #q .num small { display: block; font-family: 'Arimo', sans-serif; font-size: 7px; font-weight: 700; letter-spacing: .1em; line-height: 1; margin-bottom: 1px; }
+    #q .tick { color: #c4262e; font-weight: 700; }
+    #q .pick { border: 2px solid #c4262e; background: #fde7ee; padding: 4px; margin: 4px 0; text-align: center; position: relative; }
+    #q .pick .h { background: #c4262e; color: #fff; font-family: 'Archivo Black', sans-serif; font-size: 10px; letter-spacing: .04em; padding: 2px; margin: -4px -4px 4px; }
+    #q .pick .b { font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 13px; line-height: 1.15; }
+    #q .pick p { font-family: 'Arimo', sans-serif; font-size: 9.6px; line-height: 1.25; margin-top: 2px; }
+    #q .pick .ph2 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 14px; color: #c4262e; }
+    #q .pick .code { position: absolute; right: 1px; top: 14px; writing-mode: vertical-rl; font-family: 'Arimo', sans-serif; font-size: 5.6px; opacity: .7; }
+    #q .yel { border-color: #d9a400; background: #fff3b0; }
+    #q .yel .h { background: #d9a400; color: var(--ink); }
+    #q .grn { border-color: #2f7d4f; background: #e3f2e6; }
+    #q .grn .h { background: #2f7d4f; }
+    #q .arrow { background: #ffd21f; font-family: 'Arimo', sans-serif; font-weight: 700; font-style: italic; font-size: 10px; text-align: center; padding: 2px; margin: 4px 0 2px; }
+    #q .arrow::before { content: "➡ "; } #q .arrow::after { content: " ⬅"; }
+    /* the block: three faces drawn with the same ads, skewed */
+    #q .block { position: absolute; left: 212px; top: 300px; width: 470px; height: 420px; pointer-events: none; }
+    #q .face { position: absolute; background: #ecebe6; overflow: hidden; outline: 2px solid var(--ink); }
+    #q .face .l { font-size: 8px; line-height: 1.15; margin-bottom: 3px; }
+    #q .face .num { font-size: 12px; padding: 1px 6px 0; margin: 3px 0 2px; }
+    #q .face .num small { font-size: 5.5px; }
+    #q .face .in { display: grid; column-gap: 6px; padding: 4px; }
+    #q .ftop { left: 70px; top: 0; width: 330px; height: 110px; transform: skewX(-32deg); }
+    #q .ftop .in { grid-template-columns: repeat(3, 1fr); transform: skewX(32deg) translateX(-60px); width: 430px; }
+    #q .fleft { left: 0; top: 110px; width: 70px; height: 290px; transform: skewY(-28deg); transform-origin: right top; background: #d5d3cc; }
+    #q .fleft .in { grid-template-columns: 1fr; transform: skewY(28deg); transform-origin: right top; }
+    #q .ffront { left: 70px; top: 110px; width: 330px; height: 290px; }
+    #q .ffront .in { grid-template-columns: repeat(3, 1fr); }
+    #q .fright { left: 400px; top: 0; width: 70px; height: 400px; transform: skewY(28deg); transform-origin: left top; background: #c9c7bf; }
+    #q .fright .in { grid-template-columns: 1fr; transform: skewY(-28deg); transform-origin: left top; }
+    #q .big { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: grid; place-items: center; }
+    #q .big span { background: var(--ink); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 44px; padding: 4px 16px 0; line-height: 1; letter-spacing: .04em; box-shadow: 8px 8px 0 #c4262e; }
+    #q .big small { display: block; font-family: 'Arimo', sans-serif; font-size: 8px; letter-spacing: .3em; font-weight: 700; }
+    #q .foot { border-top: 2px solid var(--ink); margin-top: 4px; padding-top: 3px; display: flex; justify-content: space-between; font-family: 'Arimo', sans-serif; font-size: 8px; }
+  </style>
+  <div class="top"><span class="n">3</span><span class="t">CLA<b>SS</b>IFIEDS</span><span class="d">THE RIVERSIDE · THURSDAY · 1,131 ADS ON THIS PAGE, OF WHICH 400 ARE REAL</span></div>
+  <div class="wall">
+    <div class="col">
+      <span class="num"><small>ROOMS</small>101</span>
+      <p class="l"><b>Attic, Bridge St,</b> sloping both sides, dormer to river, horse-trough sink. Quiet after five. [PRICE]. <span class="c">(RV10131)</span></p>
+      <p class="l"><b>Back room, Tannery Lane,</b> stone flags, wide door, cold and famous for it. Suits stoic. <span class="c">(RV10140)</span></p>
+      <p class="l"><span class="tick">✔</span> <b>Over the bakery,</b> two rooms, warm from four, smell of bread no charge, no turpentine. <span class="c">(RV10149)</span></p>
+      <p class="l"><b>Boathouse,</b> dry since the sluice, swallows from April, power by the kettle. <span class="c">(RV10153)</span></p>
+      <p class="l"><b>Vestry,</b> arched window, hymn cupboard for pigments, bell rope removed. <span class="c">(RV10161)</span></p>
+      <div class="pick"><div class="h">PICK OF THE DAY ⬇</div><div class="b">THE GASWORKS VIEW</div><p>Fourth floor, no lift, painted by three tenants before you. Strong legs, long light.</p><div class="ph2">[PHONE]</div><span class="code">RV10166</span></div>
+      <p class="l"><b>Corner of weaving shed,</b> 12×14, looms all day, you stop hearing them by Wed. <span class="c">(RV10170)</span></p>
+      <p class="l"><b>Shed, plot 41,</b> stove pipe, must grow something, previous tenant made etchings and marrows. <span class="c">(RV10178)</span></p>
+      <span class="num"><small>WALLS</small>104</span>
+      <p class="l"><b>Co-op gable end,</b> 60 ft south, primed grey in optimism, paint to [AMOUNT]. <span class="c">(RV10401)</span></p>
+      <p class="l"><b>Underpass wall,</b> painted nine times, tenth priming on request, finish within the week. <span class="c">(RV10409)</span></p>
+      <p class="l"><b>Brewery hoarding,</b> 200 ft plywood, for as long as the demolition takes. Name in corner. <span class="c">(RV10415)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>BENCHES</small>109</span>
+      <p class="l"><b>Foundry bench,</b> under cover, next to furnace, loud as the end of the world Thursdays. <span class="c">(RV10901)</span></p>
+      <p class="l"><b>Kiln Tuesdays,</b> cone 6, you bring pots and a share of the bill. Bulbs for the unclaimed. <span class="c">(RV10907)</span></p>
+      <p class="l"><span class="tick">✔</span> <b>Etching press Thursdays,</b> 18×30, plates yours, blankets ours, no acid without asking. <span class="c">(RV10912)</span></p>
+      <p class="l"><b>Smithy corner,</b> Saturdays, the smith supervises and will not stop talking. <span class="c">(RV10918)</span></p>
+      <p class="l"><b>Darkroom,</b> b&amp;w only, a red light that has seen things, leave the fixer as found. <span class="c">(RV10924)</span></p>
+      <p class="l"><b>Loom, 4 shaft,</b> threads started by last weaver who may come back for them. <span class="c">(RV10930)</span></p>
+      <div class="arrow">PRESS TIME THURSDAYS</div>
+      <p class="l"><b>Potter's wheel &amp; shelf,</b> Canal Wharf mornings, clay at cost, tea by rota. Ask Ines. <span class="c">(RV10936)</span></p>
+      <span class="num"><small>WANTED</small>119</span>
+      <p class="l"><b>Painter of very large things</b> seeks very large room, ground floor, wide door. Pays in rent or paintings. <span class="c">(RV11901)</span></p>
+      <p class="l"><b>Quiet writer, quiet room,</b> window, table, no bells. Vestries, lofts, lighthouses considered. <span class="c">(RV11908)</span></p>
+      <p class="l"><b>Three musicians</b> seek a room that cannot hear them. Cellar, bunker, vault. Evenings. <span class="c">(RV11913)</span></p>
+      <p class="l"><b>Old wood type</b> any size, cases, quoins, cash on the spot, no questions about splinters. <span class="c">(RV11920)</span></p>
+      <p class="l"><b>A good easel</b> that does not lean left. Will trade one that does. <span class="c">(RV11926)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>FOR SALE</small>120</span>
+      <p class="l"><b>Press, hand-cranked,</b> bed 18×30, one owner, prints straight, buyer brings three friends. <span class="c">(RV12001)</span></p>
+      <p class="l"><b>Riso, 2-colour,</b> blue and fluorescent pink, paper not included, enthusiasm is. <span class="c">(RV12007)</span></p>
+      <p class="l"><b>Typewriter 1958,</b> wobbly e, for letters you mean. <span class="c">(RV12012)</span></p>
+      <p class="l"><b>400 jam jars,</b> washed, by colour, for a painter or a very organised bee. <span class="c">(RV12018)</span></p>
+      <p class="l"><b>Pigments from shore stones,</b> small jars, uncertain names, honest colours. <span class="c">(RV12024)</span></p>
+      <p class="l"><b>Gold leaf</b> by the book, and a burnisher that belonged to a saint. <span class="c">(RV12030)</span></p>
+      <div class="pick yel"><div class="h">HOT PROPERTY</div><div class="b">THE CHAPEL, HILL ST</div><p>Entire, deconsecrated, one tall window, pews optional. Suits a painter of large calm things.</p><div class="ph2" style="color: var(--ink)">[PHONE]</div><span class="code">RV12033</span></div>
+      <p class="l"><b>Cello,</b> strings good, case bad, bow missing, sounds better than it looks. <span class="c">(RV12036)</span></p>
+      <p class="l"><b>Upright piano wanted</b> for a school of eleven children and one goat. <span class="c">(RV12041)</span></p>
+      <p class="l"><b>Winter coat</b> for a summer painting, both slightly worn, both warm. Swap. <span class="c">(RV12047)</span></p>
+      <p class="l"><b>Van &amp; driver,</b> one very large painting, one very small sofa, Sunday early. <span class="c">(RV12052)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>HELP</small>121</span>
+      <p class="l"><b>Sign writers, two,</b> steady on a ladder in wind, forty fascias before the fair. <span class="c">(RV12101)</span></p>
+      <p class="l"><b>Lock-keeper's assistant,</b> read the levels at dusk, tolerate painters, cottage provided. <span class="c">(RV12108)</span></p>
+      <p class="l"><b>Projectionist,</b> night person, thread film in the dark, live above the box. <span class="c">(RV12113)</span></p>
+      <p class="l"><span class="tick">✔</span> <b>Photographer Tuesdays,</b> every room on page 6C, fair to the space, fairer to the reader. <span class="c">(RV12119)</span></p>
+      <p class="l"><b>Smith's apprentice,</b> listen while learning, boots provided, patience not. <span class="c">(RV12124)</span></p>
+      <p class="l"><b>Clerk of walls,</b> keep the register, say no to the developer weekly. <span class="c">(RV12130)</span></p>
+      <p class="l"><b>Choir leader</b> for a choir formed because nobody could hear the looms. <span class="c">(RV12136)</span></p>
+      <p class="l"><b>Bakery hand,</b> four till opening, bread included, readings Saturdays. <span class="c">(RV12142)</span></p>
+      <p class="l"><b>Models, readers, invigilators, ushers:</b> add your name at the office. <span class="c">(RV12148)</span></p>
+      <span class="num"><small>LESSONS</small>140</span>
+      <p class="l"><b>Perspective,</b> one hour weekly, student keeps drawing roads that go up. <span class="c">(RV14001)</span></p>
+      <p class="l"><b>Lettering in six evenings,</b> brushes supplied, steadiness not. <span class="c">(RV14008)</span></p>
+      <p class="l"><b>Colour by mail,</b> twelve lessons each in a different colour, the thirteenth a surprise. <span class="c">(RV14013)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>SERVICES</small>154</span>
+      <p class="l"><b>Frames made</b> to measure from reclaimed oak, gilding, glazing, delivery within the river. <span class="c">(RV15401)</span></p>
+      <p class="l"><b>Portfolios photographed</b> in daylight only, no filters, no flattery. <span class="c">(RV15407)</span></p>
+      <p class="l"><b>Grants written</b> by someone turned down more times than you. <span class="c">(RV15412)</span></p>
+      <p class="l"><b>Translations,</b> any language into any other, poems a speciality, jokes at own risk. <span class="c">(RV15418)</span></p>
+      <p class="l"><b>Woodworm in your type cases?</b> Treatment, ten years guaranteed, press-safe. <span class="c">(RV15424)</span></p>
+      <div class="pick grn"><div class="h">HEALTH OF THE DAY</div><div class="b">THE TIRED HAND</div><p>Cured by one spoonful of Allen's Iron Tonic before the first mark. Testimonials from forty painters, nine sober.</p><div class="ph2" style="color: #2f7d4f">SOLD BY EVERY DRUGGIST</div><span class="code">RV15430</span></div>
+      <p class="l"><b>Moth in the costume store,</b> discreet, same day. <span class="c">(RV15436)</span></p>
+      <p class="l"><b>Lettering,</b> shopfronts, vans, tombstones, gold leaf a speciality. <span class="c">(RV15442)</span></p>
+      <span class="num"><small>LOST</small>330</span>
+      <p class="l"><b>Lost:</b> one afternoon, late October, near the canal, golden at the edges. Reward. <span class="c">(RV33001)</span></p>
+      <p class="l"><b>Found:</b> a sketchbook of hands on the No. 9 tram. Describe the third hand. <span class="c">(RV33008)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>PERSONAL</small>344</span>
+      <p class="l"><b>To the painter in the green coat:</b> you were right about the corner. Repainted. <span class="c">(RV34401)</span></p>
+      <p class="l"><b>Will the owner</b> of the cello case left at the reading collect it. It has started to hum. <span class="c">(RV34407)</span></p>
+      <p class="l"><b>Joyce,</b> being without you is the most painful time of my life. Gary B. <span class="c">(RV34413)</span></p>
+      <p class="l"><b>Dana,</b> for the one who holds the ladder. Always. <span class="c">(RV34420)</span></p>
+      <p class="l"><b>Michael,</b> I love you bushel and a peck. <span class="c">(RV34426)</span></p>
+      <p class="l"><b>To whoever left the blue</b> on my palette: it worked. <span class="c">(RV34431)</span></p>
+      <div class="arrow">REPLIES FORWARDED FRIDAYS</div>
+      <span class="num"><small>NOTICES</small>366</span>
+      <p class="l"><b>Exhibition postponed</b> one week while the paint dries. Private view Friday after. <span class="c">(RV36601)</span></p>
+      <p class="l"><b>Studio closed</b> from first frost until kiln repaired. Collect fired work Saturdays. <span class="c">(RV36607)</span></p>
+      <p class="l"><b>Change of name:</b> formerly [OLD NAME], henceforth [NEW NAME]. Future work may surprise us both. <span class="c">(RV36612)</span></p>
+      <p class="l"><b>Meeting:</b> Printmakers' Guild, the 12th, 6 p.m. The press, the roof, the press on the roof. <span class="c">(RV36618)</span></p>
+      <p class="l"><b>A marriage,</b> quietly, Saturday, a weaver of this parish and a printer of the next. <span class="c">(RV36624)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>LISTINGS</small>395</span>
+      <p class="l"><b>Rialto:</b> The Lock-Keeper's Daughter (PG) 1:15, 3:30, 5:45, 8:00. Nine Hands (15) 2, 4:30, 7, 9:30. <span class="c">(RV39501)</span></p>
+      <p class="l"><b>Camelot 3:</b> Tannery Lane (U) 1:45, 4:15. The Gasworks (15) 7:30, 9:45. Marrows (PG) 2:30, 5. <span class="c">(RV39507)</span></p>
+      <p class="l"><b>Bridge:</b> A Season of Marrows (U) 7 only. Proof (G) 9 only. Bargain matinee Sat. <span class="c">(RV39512)</span></p>
+      <p class="l"><b>Allotment 41:</b> Bread at Four at dusk, bring a chair, weather permitting. Free. <span class="c">(RV39518)</span></p>
+      <p class="l"><b>Guild Room:</b> The Press on the Roof, a debate in three acts, the 12th, 6. <span class="c">(RV39524)</span></p>
+      <p class="l"><b>Old Mill Stair:</b> Echo, every night at 8 until someone falls. <span class="c">(RV39530)</span></p>
+      <p class="l"><b>The Lock:</b> By Lamp, levels read aloud nightly, charged by the kettle. <span class="c">(RV39536)</span></p>
+      <span class="num"><small>MAIL ORDER</small>400</span>
+      <p class="l"><b>X-ray sketchbook,</b> pages so thin you trace your heroes, guaranteed to contain paper. $1. <span class="c">(RV40001)</span></p>
+      <p class="l"><b>Instant muse,</b> hatch in a glass of water, a hundred possibilities, most good. 50¢. <span class="c">(RV40007)</span></p>
+      <p class="l"><b>Self-stretching canvas,</b> tight as a drum by morning, no staples, no swearing. from $3.95. <span class="c">(RV40012)</span></p>
+      <p class="l"><b>Terrors of the blank page</b> exposed at last. Send stamp. <span class="c">(RV40018)</span></p>
+    </div>
+    <div class="col">
+      <span class="num"><small>ON FILE</small>470</span>
+      <p class="l"><b>[NAME], printmaker,</b> above the shop, file open, anyone who knows the work may add to it. <span class="c">(RV47001)</span></p>
+      <p class="l"><b>[NAME], potter,</b> Canal Wharf, claimed and verified, vouched by three. <span class="c">(RV47007)</span></p>
+      <p class="l"><span class="tick">✔</span> <b>[NAME], weaver,</b> the shed, teaches Tuesdays, sells Saturdays. <span class="c">(RV47012)</span></p>
+      <p class="l"><b>[NAME], composer,</b> the projection box, odd hours, hum. <span class="c">(RV47018)</span></p>
+      <p class="l"><b>[NAME], sign painter,</b> steady hand, own ladder, gold leaf on request. <span class="c">(RV47024)</span></p>
+      <p class="l"><b>[NAME], bookbinder,</b> half a long room, hums. <span class="c">(RV47030)</span></p>
+      <p class="l"><b>[NAME], smith,</b> will not stop talking, small iron things. <span class="c">(RV47036)</span></p>
+      <p class="l"><b>[NAME], lock-keeper,</b> reads levels, charges by the kettle, file claimed by the river. <span class="c">(RV47042)</span></p>
+      <div class="pick"><div class="h">BOOK AN AD</div><div class="b">ANY HOUR · ANY LANGUAGE</div><p>Pay by the word, the box or the echo. Ticked ads are premium. Numbers are classes. The block is a block.</p><div class="ph2">[PHONE]</div><span class="code">RV00000</span></div>
+      <p class="l"><b>[NAME], baker,</b> warm from four, readings Saturdays, objects to turpentine. <span class="c">(RV47048)</span></p>
+      <p class="l"><b>[NAME], the saddler,</b> keeps the keys and the coupons. <span class="c">(RV47054)</span></p>
+    </div>
+    <!-- the block -->
+    <div class="block">
+      <div class="face ftop"><div class="in">
+        <div><span class="num"><small>TOP</small>119</span><p class="l"><b>Painter of very large things</b> seeks a very large room with a very wide door.</p><p class="l"><b>Quiet writer</b> seeks window, table, no bells.</p></div>
+        <div><span class="num"><small>TOP</small>120</span><p class="l"><b>Press, hand-cranked,</b> prints straight; buyer brings three friends.</p><p class="l"><b>Riso,</b> blue and pink, enthusiasm included.</p></div>
+        <div><span class="num"><small>TOP</small>121</span><p class="l"><b>Sign writers,</b> steady on a ladder in wind.</p><p class="l"><b>Projectionist,</b> lives above the box.</p></div>
+      </div></div>
+      <div class="face fleft"><div class="in">
+        <span class="num"><small>SIDE</small>101</span><p class="l"><b>Attic,</b> dormer to river.</p><p class="l"><b>Back room,</b> cold, famous for it.</p><p class="l"><b>Over the bakery,</b> warm from four.</p><p class="l"><b>Boathouse,</b> swallows April.</p><p class="l"><b>Vestry,</b> bell rope removed.</p><p class="l"><b>Shed, plot 41,</b> stove pipe.</p>
+      </div></div>
+      <div class="face ffront"><div class="in">
+        <div><span class="num"><small>FRONT</small>109</span><p class="l"><b>Foundry bench,</b> next to the furnace, loud Thursdays.</p><p class="l"><b>Kiln Tuesdays,</b> cone 6, bulbs for the unclaimed.</p><p class="l"><b>Etching press,</b> blankets ours.</p><p class="l"><b>Smithy corner,</b> he will not stop talking.</p><p class="l"><b>Darkroom,</b> a red light that has seen things.</p></div>
+        <div><div class="big"><span><small>THIS IS CLASS</small>400<small>MAIL ORDER</small></span></div></div>
+        <div><span class="num"><small>FRONT</small>154</span><p class="l"><b>Frames made</b> to measure from reclaimed oak.</p><p class="l"><b>Portfolios photographed</b> in daylight only.</p><p class="l"><b>Grants written</b> by someone turned down more times than you.</p><p class="l"><b>Woodworm</b> in your type cases? Ten years guaranteed.</p><p class="l"><b>Moth</b> in the costume store, discreet.</p></div>
+      </div></div>
+      <div class="face fright"><div class="in">
+        <span class="num"><small>SIDE</small>395</span><p class="l"><b>Rialto</b> 1:15, 3:30, 5:45, 8.</p><p class="l"><b>Camelot 3</b> 1:45, 4:15.</p><p class="l"><b>Bridge</b> 7 only.</p><p class="l"><b>Allotment 41</b> at dusk.</p><p class="l"><b>Guild Room</b> the 12th, 6.</p><p class="l"><b>Old Mill Stair</b> 8 nightly.</p><p class="l"><b>The Lock</b> by lamp.</p><p class="l"><b>Boat House</b> Thursdays.</p>
+      </div></div>
+    </div>
+  </div>
+  <div class="foot"><span>✔ premium · numbers are classes · codes in brackets are for booking · the block is Class 400 seen from above</span><span>CONTINUED IN EVERY DIRECTION</span></div>
+</div>
+</div>
+<figcaption><b>1. Quirky: the block.</b> An eight-column wall of 7.6 px agate with reversed class-number tabs, out of which a three-faced block is drawn in the page's own ads (skewed faces of the same liners, the front face carrying CLASS 400 with a red offset shadow), after the optical-illusion page cl-007. Pink, yellow and green "Pick of the Day / Hot Property / Health of the Day" boxes with coloured heads, red check marks on premium liners and booking codes rotated up the box edge, after Lokmat cl-033; yellow arrow banners after the Daily News cl-014; the "3 / CLASSIFIEDS" head with reversed letters after the Lokmat masthead; the "1,131 ads, 400 real" line and the by-class listing after cl-010/012. Copy original.</figcaption>
+</figure>
+
+<!-- ============================================================ 2. MEDIUM: CASS CITY -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="m" style="background: #fdfcfa; padding: 18px 22px; display: flex; flex-direction: column;">
+  <style>
+    #m .top { display: flex; justify-content: space-between; font-family: 'Arimo', sans-serif; font-size: 9px; letter-spacing: .06em; }
+    #m h1 { margin: 2px 0 0; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 92px; line-height: .92; letter-spacing: .04em; text-align: center; border-bottom: 2px solid var(--ink); }
+    #m .grid { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr 1.25fr; column-gap: 12px; margin-top: 8px; flex-grow: 1; }
+    #m .rh { border: 1px solid var(--ink); border-radius: 10px; font-family: 'Libre Caslon Text', serif; font-weight: 700; font-size: 10.5px; text-align: center; padding: 2px 4px; margin: 6px 0 5px; }
+    #m .l { font-family: 'Source Serif 4', Georgia, serif; font-size: 10.2px; line-height: 1.3; text-align: justify; margin-bottom: 6px; hyphens: auto; }
+    #m .l b { font-weight: 700; }
+    #m .l .rc { float: right; font-size: 8.4px; letter-spacing: .02em; padding-left: 6px; }
+    #m .box { border: 1.5px solid var(--ink); padding: 6px 7px; text-align: center; margin-bottom: 7px; font-family: 'Arimo', sans-serif; font-size: 9.6px; line-height: 1.35; }
+    #m .box .h { font-family: 'Libre Caslon Text', serif; font-weight: 700; font-size: 13px; line-height: 1.1; }
+    #m .box .ph { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 15px; margin-top: 2px; }
+    #m .rbox { border-radius: 12px; }
+    #m .card { border: 2px solid var(--ink); padding: 7px 8px; text-align: center; margin-bottom: 8px; font-family: 'Arimo', sans-serif; font-size: 9.4px; line-height: 1.35; }
+    #m .card .n { font-family: 'Playfair Display', serif; font-weight: 900; font-style: italic; font-size: 20px; line-height: 1; }
+    #m .card .k { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .06em; margin-top: 2px; }
+    #m .card .ph { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; }
+    #m .card ul { list-style: none; padding: 0; margin: 3px 0; }
+    #m .card li::before { content: "• "; }
+    #m .card .rev { background: var(--ink); color: #fff; margin: -7px -8px 5px; padding: 4px; font-family: 'Alfa Slab One', serif; font-size: 11px; letter-spacing: .04em; }
+    #m .price { font-family: 'Archivo Black', sans-serif; font-size: 26px; line-height: 1; }
+    #m .newad { background: #d9d9d9; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: .14em; text-align: center; padding: 1px; margin: 4px 0 3px; }
+    #m .stars { text-align: center; font-size: 8px; letter-spacing: .3em; margin: -2px 0 2px; }
+    #m .dash { border: 1.5px dashed var(--ink); padding: 5px 7px; margin-bottom: 7px; text-align: center; font-family: 'Arimo', sans-serif; font-size: 9.6px; line-height: 1.35; }
+    #m .dash .h { font-family: 'Archivo Black', sans-serif; font-size: 12px; letter-spacing: .06em; }
+    #m .legal { grid-column: 1 / 5; margin-top: 4px; border-top: 3px solid var(--ink); padding-top: 4px; }
+    #m .legal .lh { font-family: 'UnifrakturMaguntia', serif; font-size: 34px; line-height: 1; margin-bottom: 4px; }
+    #m .legal .cols { column-count: 4; column-gap: 12px; font-family: 'Source Serif 4', serif; font-size: 7.8px; line-height: 1.25; text-align: justify; }
+    #m .legal p { margin-bottom: 5px; }
+    #m .legal p b { display: block; text-align: center; letter-spacing: .08em; }
+  </style>
+  <div class="top"><span>PAGE FOURTEEN</span><span>THE RIVERSIDE CHRONICLE · WEDNESDAY, [DATE]</span><span>BRIDGE STREET, [TOWN]</span></div>
+  <h1>CLASSIFIEDS</h1>
+  <div class="grid">
+    <div class="col">
+      <p class="l" style="font-size: 9px">Transit (non-business) rates: 10 words or less, [PRICE] each insertion; additional words 10¢ each. Three weeks for the price of 2 cash rate. Save money by enclosing cash with mail orders. Rates for display want ads on application.</p>
+      <div class="rh">General Merchandise</div>
+      <p class="l"><b>PRESS, hand-cranked,</b> bed 18 by 30, one owner, still prints straight. Buyer collects, buyer brings three friends. [PHONE]. <span class="rc">8-12-8-tf</span></p>
+      <p class="l"><b>FOR SALE</b> - 400 jam jars, washed, labelled by colour. Ideal for a painter or a very organised bee. [PRICE]. [PHONE]. <span class="rc">2-5-11-tf</span></p>
+      <p class="l"><b>RISOGRAPH,</b> two-colour, drums for blue and fluorescent pink, paper not included, enthusiasm is. [PHONE] after six. <span class="rc">2-7-27-3</span></p>
+      <p class="l"><b>FOR SALE</b> - Typewriter, portable, 1958, types a slightly wobbly e. Perfect for letters you mean. [PRICE]. <span class="rc">14-7-20-3</span></p>
+      <div class="box"><div class="h">OLD WOOD TYPE<br>WANTED</div>Any size, any condition, cases, furniture and quoins. Cash on the spot, no questions about the splinters.<div class="ph">[PHONE]</div></div>
+      <div class="rh">Instruments</div>
+      <p class="l"><b>CELLO,</b> strings good, case bad, bow missing. Sounds better than it looks. [PRICE]. <span class="rc">14-8-3-3</span></p>
+      <p class="l"><b>UPRIGHT PIANO</b> wanted, any make, for a school of eleven children and one goat. Will tune it ourselves. <span class="rc">14-8-3-1</span></p>
+      <div class="card"><div class="rev">GERBILS FOR SALE</div>Two young gerbils, sisters, keep each other company and the studio cat honest. Free to a good home with a wheel.<div class="ph">[PHONE]</div></div>
+      <div class="rh">Rides &amp; Removals</div>
+      <p class="l"><b>VAN &amp; DRIVER</b> for a move across town of one very large painting and one very small sofa. Sunday, early. <span class="rc">8-12-8-3</span></p>
+    </div>
+    <div class="col">
+      <div class="rh">Rooms For Rent</div>
+      <p class="l"><b>ATTIC</b> - over the saddler's, Bridge Street, sloping both sides, dormer facing the river, a sink that was a horse trough. Quiet after five. [PRICE] monthly, first and last. [PHONE]. <span class="rc">3-8-3-3</span></p>
+      <p class="l"><b>BACK ROOM</b> - Tannery Lane, ground floor, stone flags, door wide enough for a canvas on its side, cold in winter and famous for it. Shared yard, own key. Ask for Mrs Pell. <span class="rc">4-12-10-tf</span></p>
+      <div class="newad">NEW AD</div>
+      <p class="l"><b>TWO ROOMS</b> above the bakery, warm from four in the morning, smell of bread at no charge, north window in the larger. Not for oil painters: the baker objects to turpentine. <span class="rc">14-8-3-3</span></p>
+      <div class="stars">★ ★ ★ ★ ★</div>
+      <p class="l"><b>BOATHOUSE</b> - lower river, dry since the new sluice, boards on trestles, swallows in the roof from April. Electricity from the lock-keeper, who charges by the kettle. [PRICE] a season. <span class="rc">4-6-4-tf</span></p>
+      <p class="l"><b>VESTRY</b> - former chapel, Hill Street, one tall arched window, the hymn cupboard for your pigments. Bell rope removed at the landlord's insistence. <span class="rc">14-7-27-3</span></p>
+      <div class="dash"><div class="h">BY OWNER</div>Half of a long room, Canal Wharf. The other half is a bookbinder who hums. Shared bench, shared kettle, separate doors.<div style="font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px">[PHONE] evenings</div></div>
+      <p class="l"><b>SHED</b> - allotment 41, the one with the stove pipe. Sold with the plot; you must grow something. The previous tenant made etchings and marrows. <span class="rc">14-8-3-1</span></p>
+      <p class="l"><b>ROOM</b> above the Rialto projection box, warm, humming, free admission to anything below if you don't mind the floor. See the manager. <span class="rc">4-7-21-tf</span></p>
+    </div>
+    <div class="col">
+      <div class="rh">Help Wanted</div>
+      <p class="l"><b>SIGN WRITERS,</b> two, steady on a ladder in the wind, forty fascias along Bridge Street before the spring fair. Gold leaf on request, breakfast at the bakery. Apply to the saddler, Mondays 9 to noon. <span class="rc">11-8-3-3</span></p>
+      <p class="l"><b>LOCK-KEEPER'S ASSISTANT,</b> live in, to open the sluice, read the levels aloud at dusk and tolerate a boathouse full of painters. Rowing an advantage. The River Board. <span class="rc">11-7-27-3</span></p>
+      <p class="l"><b>PROJECTIONIST,</b> night person, to thread a film in the dark and live above the box without complaint. Free admission to everything. The Rialto, ask for the manager after 2. <span class="rc">11-8-3-tf</span></p>
+      <div class="box rbox"><div class="h">NOW HIRING</div>Bakery hand, four till opening. Bread included, readings Saturdays, no turpentine.<div class="ph">[PHONE]</div></div>
+      <p class="l"><b>CLERK OF WALLS,</b> part time, to keep the council's register of walls, hoardings and windows available for painting and to say no to the developer at least once a week. Apply by the 12th. <span class="rc">11-8-3-1</span></p>
+      <p class="l"><b>CHOIR LEADER</b> for a choir that formed because nobody could hear the looms. Twelve voices, one alto newly gained. Tea certain. Box S-214. <span class="rc">11-7-20-3</span></p>
+      <div class="rh">Work Wanted</div>
+      <p class="l"><b>PAINTER</b> of very large things seeks a very large room, ground floor, wide door. Will pay in rent or in paintings, landlord's choice. Box R-150. <span class="rc">12-8-3-3</span></p>
+      <p class="l"><b>YOUNG POET</b> will write the verse for your card, shop window or tombstone. Box R-240. <span class="rc">12-7-13-3</span></p>
+    </div>
+    <div class="col">
+      <div class="rh">Services</div>
+      <p class="l"><b>FRAMES MADE</b> to measure from reclaimed oak. Gilding, glazing, honest prices. Pick-up and delivery within the river. [PHONE]. <span class="rc">8-12-8-tf</span></p>
+      <p class="l"><b>PORTFOLIOS PHOTOGRAPHED</b> in daylight only. No filters, no flattery. Box R-160. <span class="rc">8-7-27-3</span></p>
+      <div class="card"><div class="n">Keys &amp; Co.</div><div class="k">SPACES FOR MAKERS</div><ul><li>Rooms, lofts, sheds</li><li>Walls &amp; windows</li><li>One kiln, currently cold</li></ul><div class="ph">[PHONE]</div><div style="font-size: 8.4px">Bridge Street · Discreet, Patient, Fond of Dust</div></div>
+      <p class="l"><b>GRANTS WRITTEN</b> by someone who has been turned down more times than you. Box R-162. <span class="rc">8-8-3-3</span></p>
+      <p class="l"><b>WOODWORM</b> in your type cases? Treatment, ten years guarantee, press-safe. [PHONE]. <span class="rc">8-8-3-1</span></p>
+      <div class="card"><div class="price">$369<span style="font-size: 12px">/mo.</span></div><div class="k">THE GASWORKS VIEW</div>Fourth floor studio, no lift, strong legs, long light. Painted by three tenants before you.<div class="ph">[PHONE]</div></div>
+      <div class="rh">Lost &amp; Found</div>
+      <p class="l"><b>LOST</b> - one afternoon in late October, last seen near the canal, golden at the edges. Sentimental value only. Reward. <span class="rc">5-8-3-1</span></p>
+      <p class="l"><b>FOUND</b> - a sketchbook full of hands, on the No. 9 tram. Owner may claim by describing the third hand. <span class="rc">5-8-3-1</span></p>
+    </div>
+    <div class="col">
+      <div class="rh">Notices</div>
+      <p class="l"><b>THE PRINTMAKERS' GUILD</b> meets the 12th at 6 p.m. in the Guild Room. Agenda: the press, the roof, and the question of the press on the roof. <span class="rc">6-8-3-1</span></p>
+      <p class="l"><b>EXHIBITION POSTPONED</b> one week while the paint dries. The private view will now be held the following Friday at 7 p.m. The Canal Street Gallery. <span class="rc">6-8-3-1</span></p>
+      <div class="box"><div class="h">FOR RENT</div>2-bedroom downstairs apartment, all utilities except electric, stove, refrigerator, AC. Next to the grocery and the kiln. Ideal for older person.<div class="ph">[PHONE]</div></div>
+      <div class="rh">Wanted To Buy</div>
+      <p class="l"><b>WANTED</b> - postcards of other people's holidays, the stranger the better. Will pay by the box. [PHONE]. <span class="rc">6-8-3-3</span></p>
+      <p class="l"><b>WANTED</b> - a good easel that does not lean to the left. Will trade one that does. <span class="rc">6-7-27-3</span></p>
+      <div class="card"><div class="rev">CARD OF THANKS</div>Many thanks to everyone who came to the reading on Thursday, to the stranger who held the umbrella over the microphone, and to the café for not minding the poems.<div class="k" style="font-family: 'Libre Caslon Text', serif; font-style: italic; font-weight: 400; text-transform: none; letter-spacing: 0">With gratitude, the Thursday Poets</div></div>
+      <p class="l"><b>SWAP</b> - a winter coat for a summer painting. Both slightly worn, both warm. <span class="rc">6-8-3-1</span></p>
+    </div>
+    <div class="col">
+      <div class="card"><div class="n">Pro Temp</div><div class="k">HEATING &amp; COOLING</div><ul><li>Kilns &amp; furnaces</li><li>Gas &amp; oil</li><li>Studio stoves</li><li>Sales &amp; service</li></ul><div class="k">24 HOUR EMERGENCY SERVICE</div><div class="ph">[PHONE]</div></div>
+      <div class="card"><div class="rev">REVIVE</div><div class="k">CANVAS &amp; UPHOLSTERY CLEANING</div>Don't drain, don't stain, don't strain.<div class="ph">[PHONE]</div></div>
+      <div class="card"><div class="n" style="font-style: normal">Jon's Small Press Repair</div><ul><li>All makes &amp; models</li><li>Pick-up and delivery</li><li>Hours: Monday–Friday 8–5</li></ul><div class="k">REASONABLE RATES</div><div class="ph">[PHONE]</div></div>
+      <div class="card"><div class="rev">BROASTED FISH &amp; FRIES</div>Dinner 4:30 to 6:30 p.m.<br>Masonic Lodge, Bridge Street<br>Corner of the chapel and the smithy<br><b>First Friday of the month</b><br>Tickets at door · Adults [PRICE]<br>Kid's menu 12 &amp; under · Take-outs available</div>
+      <div class="card"><div class="n" style="font-size: 16px">Joe's<br>Heating &amp; Air</div>A reliable serviceman for all your heating and air conditioning needs. Fast, friendly, honest &amp; dependable service.<div class="ph">[PHONE]</div></div>
+      <div class="card" style="border-radius: 12px"><div class="k">LOST 30 LBS. IN 6 WEEKS!</div>Lift paintings. Climb ladders. Carry sofas. Ask Keys &amp; Co. for details.<div class="ph">[PHONE]</div></div>
+    </div>
+    <div class="legal">
+      <div class="lh">Legal Notices</div>
+      <div class="cols">
+        <p><b>MORTGAGE SALE</b> Default has been made in the conditions of a certain mortgage made by the Riverside Press, a printer of this parish, to the River Board, dated the 12th of a month nobody wrote down, in the amount of [AMOUNT], and the press having been found on the roof contrary to the terms of the said mortgage, notice is hereby given that the press will be sold at public sale on the steps of the Guild Room on the first Monday at ten in the forenoon, the roof not included.</p>
+        <p><b>NOTICE TO CREDITORS</b> The estate of [NAME], potter, deceased, is being administered. All persons having claims against the estate are required to present them in the manner prescribed by law. Unclaimed pots will be planted with bulbs and given to the street in the spring. c/o [NAME], attorney, Bridge Street. Dated the 20th.</p>
+        <p><b>PUBLIC NOTICE</b> The Clerk of Walls gives notice that the wall in the station underpass will be primed for the tenth time on Monday and that any work left upon it after the Sunday train will be considered the property of the paint. Objections in writing to the Clerk's office.</p>
+        <p><b>ORDINANCE</b> The Council, in special meeting, passed on third and final reading an ordinance annexing into the limits of the studios forty feet of freshly primed wall facing the morning, granting to all inhabitants and painters of the annexed wall the rights and privileges of other painters, and providing a severability clause for the parts that peel.</p>
+        <p><b>NOTICE OF PUBLIC SALE</b> Pursuant to the lease, the contents of unit 4, the Old Mill, will be sold at online auction ending Monday at 11 a.m.: forty canvases (one very large), one press (disassembled), plaster (in bags), one kettle. The lock-keeper reserves the right to bid.</p>
+        <p><b>CHANGE OF NAME</b> I, the painter formerly known on the platform as [OLD NAME], shall henceforth work and exhibit as [NEW NAME]. All previous work remains mine; all future work may surprise us both. Dated this day.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<figcaption><b>2. Medium, readable: the Chronicle.</b> After the Cass City Chronicle (cl-013): an Anton CLASSIFIEDS across the top, six columns, classification heads in rounded tabs ("Rooms For Rent", "Help Wanted"), 10 px serif liners with a bold caps lead and an issue-run code floated right (8-12-8-tf), a rates paragraph first, a column of business cards on the right edge (Pro Temp, Revive, Jon's Small Press Repair, the Masonic fish fry, a $369/mo. box) after cl-013 and the Enterprise-Progress cl-026, a blackletter "Legal Notices" head over four columns of 7.8 px probate and ordinances, the grey "NEW AD" tab, the star rule and the dashed "BY OWNER" box after the template cl-020. Copy original.</figcaption>
+</figure>
+
+<!-- ============================================================ 3. SOCIAL BOARD -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="s" style="background: #fffdf7; padding: 16px 18px; display: flex; flex-direction: column;">
+  <style>
+    #s .top { display: flex; align-items: baseline; gap: 10px; font-family: 'Playfair Display', serif; font-style: italic; font-size: 44px; line-height: 1; }
+    #s .top .dn { font-family: 'Archivo Black', sans-serif; font-style: normal; font-size: 16px; line-height: .95; color: #1f3f99; }
+    #s .top .r { margin-left: auto; font-family: 'Arimo', sans-serif; font-style: normal; font-size: 9px; text-align: right; }
+    #s .band { background: #2a9d8f; color: #fff; font-family: 'Archivo Black', sans-serif; font-size: 15px; letter-spacing: .14em; text-align: center; padding: 3px; margin: 6px 0 8px; border: 1px solid var(--ink); }
+    #s .band.y { background: #ffd21f; color: var(--ink); } #s .band.r { background: #c4262e; } #s .band.b { background: #1f3f99; }
+    #s .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; grid-auto-rows: min-content; flex-grow: 1; }
+    #s .bx { border: 2px solid var(--ink); padding: 7px 8px; text-align: center; font-family: 'Arimo', sans-serif; font-size: 10.4px; line-height: 1.35; display: flex; flex-direction: column; gap: 3px; background: #fff; }
+    #s .bx .h { font-family: 'Libre Caslon Text', serif; font-weight: 700; font-size: 15px; line-height: 1.1; }
+    #s .bx .c { font-family: 'Libre Caslon Text', serif; font-style: italic; font-size: 10px; }
+    #s .bx .ph { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; }
+    #s .oval .h { background: #c87533; color: #fff; border-radius: 50%; padding: 5px 14px; display: inline-block; margin: 0 auto 2px; font-family: 'Alfa Slab One', serif; font-weight: 400; }
+    #s .arrow .h { background: #ffd21f; font-style: italic; font-family: 'Arimo', sans-serif; font-size: 12px; padding: 2px; }
+    #s .arrow .h::before { content: "➡ "; } #s .arrow .h::after { content: " ⬅"; }
+    #s .outl .h { color: #c87533; -webkit-text-stroke: .6px var(--ink); font-family: 'Alfa Slab One', serif; font-weight: 400; font-size: 17px; }
+    #s .outl { border-color: #c87533; }
+    #s .revtab .h { background: var(--ink); color: #fff; padding: 3px; font-family: 'Libre Caslon Text', serif; }
+    #s .revtab::before { content: ""; display: block; width: 40%; height: 26px; margin: 0 auto 2px; background: repeating-linear-gradient(45deg, transparent 0 3px, rgba(0,0,0,.25) 3px 4px); border: 1px solid var(--ink); border-bottom: 0; }
+    #s .blue { border: 2px solid #1f3f99; border-radius: 10px; }
+    #s .blue .h { color: #1f3f99; font-family: 'Archivo Black', sans-serif; font-weight: 400; font-size: 13px; letter-spacing: .02em; }
+    #s .blue .c { color: #1f3f99; }
+    #s .pink { background: #fde7ee; border-color: #c4262e; } #s .pink .h { color: #c4262e; }
+    #s .yel { background: #fff3b0; border-color: #d9a400; }
+    #s .grn { background: #e3f2e6; border-color: #2f7d4f; } #s .grn .h { color: #2f7d4f; }
+    #s .tick::before { content: "✔ "; color: #c4262e; font-weight: 700; font-size: 14px; }
+    #s .pin::before { content: "📌"; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 14px; }
+    #s .bx { position: relative; }
+    #s .wide { grid-column: span 2; }
+    #s .side { grid-row: span 3; background: #1f3f99; color: #fff; border: 0; justify-content: flex-start; gap: 8px; font-weight: 700; }
+    #s .side .q { font-size: 12px; }
+    #s .side ul { margin: 0; padding: 0; list-style: none; text-align: left; font-weight: 400; }
+    #s .side li::before { content: "• "; }
+    #s .side .ph { font-size: 15px; margin-top: auto; }
+    #s .foot { grid-column: 1 / -1; background: #c4262e; color: #fff; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-family: 'Arimo', sans-serif; font-size: 10px; }
+    #s .foot .big { font-family: 'Archivo Black', sans-serif; font-size: 18px; }
+    #s .foot .sig { font-family: 'Pinyon Script', cursive; font-size: 24px; }
+  </style>
+  <div class="top"><span class="dn">THE<br>RIVERSIDE</span><span>Community Board</span><span class="r">Notices from the board outside the Co-op, copied on Wednesdays<br>Pins: red = this week · blue = ongoing · yellow = wanted</span></div>
+  <div class="band">MEETINGS · CLUBS · RIDES · SWAPS · LOST &amp; FOUND · THANKS</div>
+  <div class="grid">
+    <div class="bx oval"><div class="h">Meeting</div><div class="c">Printmakers' Guild</div>The 12th at 6 p.m., the Guild Room. Agenda: the press, the roof, the question of the press on the roof. Tea after, biscuits by rota.<div class="ph">Secretary, [PHONE]</div></div>
+    <div class="bx arrow pin"><div class="h">RIDE WANTED</div>To the harvest fair, Saturday early, three of us and a pie. Will share petrol and the pie.<div class="ph">[PHONE]</div></div>
+    <div class="bx revtab"><div class="h">Kiln Night</div>Tuesdays, cone 6, the Old Mill second floor. Bring pots and a share of the bill. Glaze opinions tolerated. Unclaimed work planted with bulbs in spring.<div class="ph">Ines, [PHONE]</div></div>
+    <div class="bx side"><div class="q">What a notice on the Co-op board gets you …</div><ul><li>Rain</li><li>Drawing pins</li><li>People from the next town</li><li>A week, if that</li></ul><div class="q">What a notice on this page gets you …</div><ul><li>Read in every kitchen</li><li>Copied to ArtDirect</li><li>Echoed along the river</li><li>Pinned in a 134-year-old paper</li></ul><div>Truth is, nothing compares to the board. Why risk the rain?</div><div class="ph">Pin it with us · [PHONE]</div></div>
+    <div class="bx outl"><div class="h">LOST DOG</div>Answers to Pigment, brown with a white sock, last seen following the smith home. Fond of bread, afraid of the kiln.<div class="ph">[PHONE] any hour</div></div>
+    <div class="bx pink tick"><div class="h">A MARRIAGE</div><div class="c">quietly, Saturday</div>A weaver of this parish and a printer of the next. They will live above the shop and argue about kerning. No gifts; thread or type welcome.</div>
+    <div class="bx blue"><div class="h">FOLK DANCE CIRCLE</div><div class="c">every second Thursday</div>Lower hall when dry, the bridge at sunset when not. All welcome, shoes optional, musicians fed.<div class="ph">[NAME], [PHONE]</div></div>
+    <div class="bx yel"><div class="h">WANTED: A DRUMMER</div>For a three-piece who keeps losing them. We are nicer now. Thursdays at the Boat House, thick walls, nobody can hear you.<div class="ph">Box S-9</div></div>
+    <div class="bx wide grn"><div class="h">CARD OF THANKS</div>Many thanks to everyone who came to the reading on Thursday, to the stranger who held the umbrella over the microphone, to the café for not minding the poems, and to the saw player, who was not booked but stayed.<div class="c">With gratitude, the Thursday Poets</div></div>
+    <div class="bx arrow"><div class="h">SWAP</div>A winter coat for a summer painting. Both slightly worn, both warm. Also twelve tubes of a blue I no longer believe in for anything in yellow.<div class="ph">[PHONE]</div></div>
+    <div class="bx oval pin"><div class="h">Birthday</div><div class="c">the Rialto projector</div>Forty years of films and never once complained about the endings. Cake in the foyer Friday, bring a reel.</div>
+    <div class="bx revtab"><div class="h">Allotment 41</div>Committee meets in the hut, first Sunday, to discuss the stove pipe, the marrows and whether etchings count as a crop. Plot holders only.</div>
+    <div class="bx blue"><div class="h">WEAVING SHED CHOIR</div><div class="c">Sundays at three</div>Formed because nobody could hear the looms. Twelve voices, one alto gained, no drummer (see above). Leader wanted, tea certain.</div>
+    <div class="bx pink tick"><div class="h">FOUND</div>A green scarf, hand-knitted, on a chair after the lecture on colour. Collect from the office on production of a matching glove.</div>
+    <div class="bx outl"><div class="h">OPEN STUDIOS</div><div class="c">Saturday, ten till late</div>The whole Old Mill, every door open. Letterpress ground floor, kiln second, choir in the shed if the looms stop.<div class="ph">free</div></div>
+    <div class="bx yel"><div class="h">WANTED: READERS</div>Quiet voices for an audio library of river stories. One evening a week, the Library Hall, biscuits.<div class="ph">[NAME], [PHONE]</div></div>
+    <div class="bx wide"><div class="h">STUDIO CLOSED</div><div class="c">from the first frost until the kiln is repaired</div>Members may collect fired work on Saturdays between ten and one. Unclaimed pots will be planted with bulbs and given to the street, which has asked for tulips. <b>Studio manager [PHONE] · Kiln enquiries [PHONE]</b></div>
+    <div class="bx oval"><div class="h">Lecture</div><div class="c">on colour, the sequel</div>The lecturer returns to explain the corner. Tuesday 7, the Library Hall. Umbrellas provided for the microphone.</div>
+    <div class="bx revtab"><div class="h">Bread at Four</div>Readings above the bakery, Saturdays at four in the morning, warm, bread included. No turpentine, no sopranos.</div>
+    <div class="bx arrow pin"><div class="h">RIDE OFFERED</div>To town Mondays and Thursdays, one seat, one easel, leaves the lock at eight. The lock-keeper drives and reads the levels aloud.<div class="ph">[PHONE]</div></div>
+    <div class="bx grn"><div class="h">THANK YOU</div>To whoever left the blue on my palette: it worked. And to whoever took the green: I needed that too.</div>
+    <div class="bx blue"><div class="h">LIFE CLASS</div><div class="c">Tuesdays and Fridays</div>Draws slowly. Models wanted as well as students; both paid in coffee and company. Robe provided.<div class="ph">[PHONE]</div></div>
+    <div class="foot"><span class="big">PIN YOUR NOTICE</span><span>Bring it to the office on Bridge Street by Tuesday noon, or post it on ArtDirect under Notices. No charge for private notices. Clubs pay in biscuits.</span><span class="sig">the Board</span></div>
+  </div>
+</div>
+</div>
+<figcaption><b>3. The social board.</b> A community noticeboard in small boxes of every head style, after the Daily News colour page cl-014: oval orange heads ("Meeting", "Birthday"), yellow arrow banners ("RIDE WANTED"), outlined orange slab heads, reversed tabs with a clip-art stand-in above, rounded blue-rule boxes with a blue sub-head; the teal EMPLOYMENT band becomes the board's band; Lokmat's pink/yellow/green fills with a red check (cl-033); the Observer's blue "what the board gets you" sidebar and the red house band at the foot (cl-035); the pin convention (red / blue / yellow) is the board's own. Copy original.</figcaption>
+</figure>
+
+</div>
+<script>
+(function () { function fit() { var w = Math.min(900, document.documentElement.clientWidth - 32), s = w / 900; document.querySelectorAll('.scaler').forEach(function (el) { el.style.transform = 'scale(' + s + ')'; el.style.marginBottom = Math.round(-1300 * (1 - s)) + 'px'; }); } window.addEventListener('resize', fit); fit(); })();
+</script>

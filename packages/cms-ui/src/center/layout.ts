@@ -10,6 +10,8 @@ export type CenterSectionId =
   | "buttons"
   | "orgs"
   | "promo"
+  | "you"
+  | "journeys"
   | "site"
   | "org"
   | "pinned"
@@ -33,8 +35,8 @@ export interface CenterLayout {
 
 export const DEFAULT_CENTER_LAYOUT: CenterLayout = {
   columns: {
-    left: ["profile", "buttons", "orgs", "promo"],
-    right: ["site", "org", "pinned", "feed", "featured", "network"],
+    left: ["profile", "buttons", "site", "orgs", "promo"],
+    right: ["journeys", "org", "pinned", "feed", "featured", "network"],
   },
   hidden: [],
   options: { feed: { limit: 12 }, network: { limit: 12 }, pinned: { limit: 6 }, site: { ratio: "5:3" } },

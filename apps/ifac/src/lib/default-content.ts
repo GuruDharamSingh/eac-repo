@@ -97,7 +97,7 @@ export const defaultSiteContent: IfacSiteContent = {
   },
   signup: {
     title: "Create an account or sign in",
-    body: "One account works across the whole Elkdonis network. Artists and dealers can claim their profile; collectors get exhibition announcements and private previews.",
+    body: "One account works across the whole Arts Collective network. Artists and dealers can claim their profile; collectors get exhibition announcements and private previews.",
   },
   rsvp: {
     title: "RSVP for IFAC events",

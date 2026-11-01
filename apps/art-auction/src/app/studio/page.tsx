@@ -4,9 +4,12 @@ import {
   listLotsForStore,
   listOrdersForStore,
   listPresentedArtworks,
+  listArtworksForPerson,
+  listBidsForUser,
 } from "@elkdonis/commerce/queries";
 import { getUnreadCount } from "@elkdonis/messaging/queries";
-import { requireStudioStore, getCurrentUser } from "@/lib/marketplace-auth";
+import { resolveStudioStore, getCurrentUser } from "@/lib/marketplace-auth";
+import { CreditedElsewhere, MyBids } from "./_components/my-art-sections";
 import { siteConfig } from "@/config/site";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,17 +77,51 @@ export default async function StudioOverviewPage({
   // to happen before it renders, not after.
   if (sp.store) await selectStoreAction(sp.store);
 
-  const { userId, store } = await requireStudioStore();
-  const isOwn = store.ownerKind === "user";
-  const canManageSales = isOwn || store.myRole === "owner" || store.myRole === "manager";
+  const resolved = await resolveStudioStore();
+  const userId = resolved.userId!;
+  const store = resolved.store?.status === "active" ? resolved.store : (resolved.stores.find((s) => s.status === "active") ?? null);
   const net = siteConfig.network;
 
-  const [user, artworks, lots, orders, unread, presented] = await Promise.all([
+  // Pieces credited to this person in stores other than the one shown, and
+  // the lots they have bid on (migration 209; plan Phase F).
+  const [creditedAll, myBids, user, unread] = await Promise.all([
+    listArtworksForPerson(userId, { status: ["available", "reserved", "sold"] }),
+    listBidsForUser(userId, 20),
     getCurrentUser(),
+    getUnreadCount(userId),
+  ]);
+  // Includes pieces a series desk listed with this person as the maker in an
+  // org's store (series workspace, 2026-10-28).
+  const credited = creditedAll.filter(
+    (a) => (a.creditedArtistUserId === userId || a.artistUserId === userId) && a.storeId !== store?.id
+  );
+
+  if (!store) {
+    return (
+      <>
+        <div className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Credited pieces" value={credited.length} />
+          <Stat label="Lots bid on" value={myBids.length} />
+          <Stat label="New messages" value={unread} href="/messages" />
+        </div>
+        <section className="mb-12 rounded-lg border border-dashed border-border p-8 text-sm text-muted-foreground">
+          You have no store yet. Open one to list your own work; pieces other stores credit to you
+          and your bids are below.{" "}
+          <Link href="/studio/apply" className="underline underline-offset-4">Open a store →</Link>
+        </section>
+        <CreditedElsewhere artworks={credited} />
+        <MyBids bids={myBids} />
+      </>
+    );
+  }
+
+  const isOwn = store.ownerKind === "user";
+  const canManageSales = isOwn || store.myRole === "owner" || store.myRole === "manager";
+
+  const [artworks, lots, orders, presented] = await Promise.all([
     listStoreArtworks(store.id),
     listLotsForStore(store.id),
     listOrdersForStore(store.id, { limit: 50 }),
-    getUnreadCount(userId),
     listPresentedArtworks(store.id),
   ]);
 
@@ -220,6 +257,9 @@ export default async function StudioOverviewPage({
           )}
         </section>
       )}
+
+      <CreditedElsewhere artworks={credited} />
+      <MyBids bids={myBids} />
 
       {/* NETWORK — the other two centralising sites */}
       <section className="mb-4">

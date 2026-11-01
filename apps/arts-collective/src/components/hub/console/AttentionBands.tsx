@@ -28,6 +28,7 @@ export const CONSOLE_SURFACES = {
   schedule: "console-schedule",
   responses: "console-responses",
   people: "console-people",
+  published: "console-published",
   settings: "console-settings",
 } as const;
 
@@ -118,7 +119,18 @@ export function AttentionBands({
           What needs you
         </h2>
         <p className="text-xs text-muted-foreground">
-          {state.published.count} published
+          <button
+            type="button"
+            className="underline underline-offset-4 hover:text-foreground"
+            onClick={(e) =>
+              surface.open(
+                { type: "custom", key: CONSOLE_SURFACES.published, title: "Published", size: "wide" },
+                e.currentTarget
+              )
+            }
+          >
+            {state.published.count} published
+          </button>
           {quiet !== null && quiet > 42 && (
             <>
               {" · "}

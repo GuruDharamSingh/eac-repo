@@ -1,0 +1,19 @@
+{
+  "id": "cl-005",
+  "status": "draft",
+  "source": { "paper": "Hood County News", "place": "Granbury, Texas", "date": "2026-01-31", "era": "2020s", "language": ["en"] },
+  "summary": "Hood County template again (see cl-004), here with a QR code in the header, a big phone number in place of the rate box tail, a yellow full-width deadline bar, and two full columns of legal notices.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "modular" },
+  "headers": [
+    { "id": "number-block-bar", "kind": "tint-bar", "example": "025 Real Estate For Sale", "fg": "#1a1a1a", "bg": "#d9d9d9", "numbering": "prefix", "align": "split", "notes": "Number in its own darker block at left of the grey bar." },
+    { "id": "deadline-bar", "kind": "banner", "example": "CLASSIFIED AD DEADLINE: NOON, MONDAY", "fg": "#111111", "bg": "#ffe600", "align": "center", "box": [0.044, 0.205, 0.6, 0.022], "notes": "Yellow bar with heavy condensed caps, full width of the index panel." }
+  ],
+  "units": [
+    { "id": "photo-display", "kind": "display", "frequency": "common", "lead": "bold", "align": "left", "border": "none", "example": "OFFICE/WAREHOUSE – Approx 4,500 square feet...", "notes": "Colour photo of the property, bold caps lead, phone line in bold at foot." },
+    { "id": "legal-notice", "kind": "notice", "frequency": "dominant", "lead": "caps", "align": "justify", "border": "none", "example": "CAUSE NO. CV22600009 PLANTATION STORAGE...", "notes": "Includes a bilingual English/Spanish citation set entirely in caps." }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#1a1a1a", "accents": [ { "hex": "#c8102e", "use": "“News” in masthead" }, { "hex": "#ffe600", "use": "deadline bar" } ] },
+  "ornaments": ["QR code", "card-brand logos"],
+  "notes": ["The source file name says 011326 but the page is dated Saturday, January 31, 2026."]
+}

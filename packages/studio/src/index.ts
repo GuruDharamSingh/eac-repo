@@ -12,6 +12,8 @@ export type {
   StudioKindId,
   StudioLinks,
   StudioListing,
+  StudioShare,
+  StudioShareTarget,
   StudioOrg,
   StudioPatch,
   StudioPiece,

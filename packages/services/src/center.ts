@@ -1,6 +1,6 @@
 import { db } from '@elkdonis/db';
 import { OFF_FEED_KINDS } from './thread-kinds';
-import { getProfile } from './profiles';
+import { getProfile, isSlugHeldByRedirect, noteUserSlugChange } from './profiles';
 import { listUserMemberships, type OrgRole } from './org-membership';
 import { getOrgIdentity } from './org-domains';
 
@@ -17,7 +17,9 @@ import { getOrgIdentity } from './org-domains';
 // reads ORGANIZATION-visibility threads (6); the network slider is a trail
 // (threads this org carries via thread_orgs) before it is a feed
 // (share_to_network), and never a score; the promotion slot is a placed item
-// read from site_config, with a network fallback under the `elkdonis` org (13).
+// read from site_config, with a network default under the `elkdonis` org (13)
+// and no further fallback: an org with nothing placed shows no slot
+// (2026-10-08; the earlier "next scheduled event" fallback was removed).
 // ============================================================================
 
 export interface CenterThread {
@@ -76,6 +78,8 @@ export interface CenterOrg {
   nextEvent: CenterThread | null;
   /** Published, scheduled in the next 30 days. */
   upcomingCount: number;
+  /** Who owns the org (user_organizations role = owner), for the org card. */
+  owners: Array<{ userId: string; displayName: string; slug: string | null; avatarUrl: string | null }>;
 }
 
 export interface CenterOrgLink {
@@ -88,16 +92,23 @@ export interface CenterOrgLink {
   rsvpCount: number;
 }
 
-export type CenterPromoKind = 'thread' | 'artist' | 'store';
+/**
+ * What a promotion points at. `link` is a hand-written placement (title,
+ * body, optional href and image) from the org's /manage area; the other
+ * three resolve a reference to a row.
+ */
+export type CenterPromoKind = 'thread' | 'artist' | 'store' | 'link';
 
 export interface CenterPromo {
   kind: CenterPromoKind;
-  /** Where the placement came from: this org, the network, or the fallback rule. */
-  source: 'org' | 'network' | 'fallback';
+  /** Where the placement came from: this org or the network default. */
+  source: 'org' | 'network';
   title: string;
   blurb: string | null;
   imageUrl: string | null;
   until: string | null;
+  /** Set for kind 'link' — where the card goes, when it goes anywhere. */
+  href: string | null;
   /** Set for kind 'thread'. */
   thread: CenterThread | null;
   /** Set for kind 'artist' — a users.slug. */
@@ -247,18 +258,6 @@ async function loadNextEvent(orgId: string, userId: string): Promise<CenterThrea
   return rows[0] ? mapThread(rows[0]) : null;
 }
 
-async function loadNextScheduled(orgId: string, userId: string): Promise<CenterThread | null> {
-  const rows = await db<ThreadRow[]>`
-    SELECT ${threadSelect(userId)}
-    FROM threads t JOIN organizations o ON o.id = t.org_id LEFT JOIN users a ON a.id = t.author_id
-    WHERE t.org_id = ${orgId} AND t.status = 'published' AND t.visibility = 'PUBLIC'
-      AND t.scheduled_at > NOW()
-    ORDER BY t.scheduled_at ASC
-    LIMIT 1
-  `;
-  return rows[0] ? mapThread(rows[0]) : null;
-}
-
 async function loadThreadById(id: string, userId: string): Promise<CenterThread | null> {
   const rows = await db<ThreadRow[]>`
     SELECT ${threadSelect(userId)}
@@ -275,7 +274,7 @@ async function loadOrg(orgId: string, userId: string, viewerRole: OrgRole | null
   `;
   if (!org) return null;
 
-  const [identity, [{ count: followerCount }], [{ count: upcomingCount }], nextEvent] = await Promise.all([
+  const [identity, [{ count: followerCount }], [{ count: upcomingCount }], nextEvent, owners] = await Promise.all([
     getOrgIdentity(org.slug).catch(() => null),
     db<Array<{ count: number }>>`
       SELECT COUNT(*)::int AS count FROM user_organizations WHERE org_id = ${orgId} AND role = 'viewer'
@@ -286,6 +285,12 @@ async function loadOrg(orgId: string, userId: string, viewerRole: OrgRole | null
         AND scheduled_at BETWEEN NOW() AND NOW() + INTERVAL '30 days'
     `,
     loadNextEvent(orgId, userId).catch(() => null),
+    db<Array<{ user_id: string; display_name: string | null; email: string; slug: string | null; avatar_url: string | null }>>`
+      SELECT u.id AS user_id, u.display_name, u.email, u.slug, u.avatar_url
+      FROM user_organizations uo JOIN users u ON u.id = uo.user_id
+      WHERE uo.org_id = ${orgId} AND uo.role = 'owner'
+      ORDER BY uo.joined_at ASC LIMIT 6
+    `.catch(() => []),
   ]);
 
   const place = [identity?.city, identity?.region, identity?.country].filter(Boolean).join(', ') || null;
@@ -303,6 +308,12 @@ async function loadOrg(orgId: string, userId: string, viewerRole: OrgRole | null
     profileUserId: org.profile_user_id,
     nextEvent,
     upcomingCount,
+    owners: owners.map((o) => ({
+      userId: o.user_id,
+      displayName: o.display_name?.trim() || o.email.split('@')[0],
+      slug: o.slug,
+      avatarUrl: o.avatar_url,
+    })),
   };
 }
 
@@ -358,8 +369,15 @@ async function loadOrgs(orgId: string, userId: string): Promise<CenterOrgLink[]>
 
 export interface CenterPromoConfig {
   kind: CenterPromoKind;
-  ref: string;
+  /** thread id, users.slug or store org_id — required for every kind but `link`. */
+  ref?: string;
+  /** `link` only: the card's title. */
+  title?: string;
   blurb?: string;
+  /** `link` only: where the card goes. Optional — a notice need not go anywhere. */
+  href?: string;
+  /** `link` only: an image over the card. */
+  image_url?: string;
   until?: string;
   placed_by?: string;
 }
@@ -367,11 +385,46 @@ export interface CenterPromoConfig {
 function isPromoConfig(v: unknown): v is CenterPromoConfig {
   if (!v || typeof v !== 'object') return false;
   const o = v as Record<string, unknown>;
+  if (o.kind === 'link') return typeof o.title === 'string' && o.title.trim().length > 0;
   return (
     (o.kind === 'thread' || o.kind === 'artist' || o.kind === 'store') &&
     typeof o.ref === 'string' &&
     o.ref.length > 0
   );
+}
+
+/**
+ * The org's own placement as stored (site_config key `center_promo`), for an
+ * editor to fill a form from. Null when nothing valid is placed; the network
+ * default is not consulted here.
+ */
+export async function getCenterPromo(orgId: string): Promise<CenterPromoConfig | null> {
+  const [row] = await db<Array<{ value: unknown }>>`
+    SELECT value FROM site_config WHERE org_id = ${orgId} AND key = 'center_promo'
+  `;
+  return row && isPromoConfig(row.value) ? row.value : null;
+}
+
+/**
+ * Place (or, with null, clear) an org's promotion. Caller authorises — this
+ * writes the row it is given. Throws on a shape the reader would not accept,
+ * so a form cannot store something the page then ignores.
+ */
+export async function setCenterPromo(orgId: string, promo: CenterPromoConfig | null): Promise<void> {
+  if (promo === null) {
+    await db`DELETE FROM site_config WHERE org_id = ${orgId} AND key = 'center_promo'`;
+    return;
+  }
+  if (!isPromoConfig(promo)) throw new Error('center_promo: invalid placement');
+  // Drop empty strings so the reader sees "absent", not "".
+  const cleaned = Object.fromEntries(
+    Object.entries(promo).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ) as unknown as CenterPromoConfig;
+  await db`
+    INSERT INTO site_config (org_id, key, value, updated_at)
+    VALUES (${orgId}, 'center_promo', ${db.json(cleaned as any)}, NOW())
+    ON CONFLICT (org_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+  `;
 }
 
 async function readPromoConfig(orgId: string): Promise<{ cfg: CenterPromoConfig; source: 'org' | 'network' } | null> {
@@ -390,76 +443,76 @@ async function readPromoConfig(orgId: string): Promise<{ cfg: CenterPromoConfig;
 
 /**
  * Resolve a placement to something renderable. An unknown ref is not an
- * error: it falls through to the next source, and finally to the org's own
- * next scheduled event, so the slot is never empty for an active org.
+ * error: it falls through to the network default, and then to nothing — the
+ * page draws no slot when no placement exists (frontend-ui.md: sections
+ * return null when empty).
  */
 async function loadPromo(orgId: string, userId: string): Promise<CenterPromo | null> {
   const placed = await readPromoConfig(orgId).catch(() => null);
-  if (placed) {
-    const { cfg, source } = placed;
-    const base = { source, blurb: cfg.blurb ?? null, until: cfg.until ?? null };
-    if (cfg.kind === 'thread') {
-      const thread = await loadThreadById(cfg.ref, userId).catch(() => null);
-      if (thread) {
-        return {
-          ...base,
-          kind: 'thread',
-          title: thread.title,
-          imageUrl: thread.coverImageUrl,
-          thread,
-          artistSlug: null,
-          storeOrgId: null,
-        };
-      }
-    } else if (cfg.kind === 'artist') {
-      const [u] = await db<Array<{ slug: string; display_name: string | null; headline: string | null; avatar_url: string | null }>>`
-        SELECT slug, display_name, headline, avatar_url FROM users
-        WHERE slug = ${cfg.ref} AND entity_type = 'person' LIMIT 1
-      `.catch(() => []);
-      if (u) {
-        return {
-          ...base,
-          kind: 'artist',
-          title: u.display_name ?? u.slug,
-          blurb: base.blurb ?? u.headline,
-          imageUrl: u.avatar_url,
-          thread: null,
-          artistSlug: u.slug,
-          storeOrgId: null,
-        };
-      }
-    } else if (cfg.kind === 'store') {
-      const [s] = await db<Array<{ org_id: string; display_name: string | null; headline: string | null; photo_url: string | null }>>`
-        SELECT org_id, display_name, headline, photo_url FROM store WHERE org_id = ${cfg.ref} LIMIT 1
-      `.catch(() => []);
-      if (s) {
-        return {
-          ...base,
-          kind: 'store',
-          title: s.display_name ?? 'The store',
-          blurb: base.blurb ?? s.headline,
-          imageUrl: s.photo_url,
-          thread: null,
-          artistSlug: null,
-          storeOrgId: s.org_id,
-        };
-      }
+  if (!placed) return null;
+  const { cfg, source } = placed;
+  const base = { source, blurb: cfg.blurb ?? null, until: cfg.until ?? null, href: null as string | null };
+  if (cfg.kind === 'link') {
+    return {
+      ...base,
+      kind: 'link',
+      title: cfg.title ?? '',
+      imageUrl: cfg.image_url ?? null,
+      href: cfg.href ?? null,
+      thread: null,
+      artistSlug: null,
+      storeOrgId: null,
+    };
+  }
+  const ref = cfg.ref ?? '';
+  if (cfg.kind === 'thread') {
+    const thread = await loadThreadById(ref, userId).catch(() => null);
+    if (thread) {
+      return {
+        ...base,
+        kind: 'thread',
+        title: thread.title,
+        imageUrl: thread.coverImageUrl,
+        thread,
+        artistSlug: null,
+        storeOrgId: null,
+      };
+    }
+  } else if (cfg.kind === 'artist') {
+    const [u] = await db<Array<{ slug: string; display_name: string | null; headline: string | null; avatar_url: string | null }>>`
+      SELECT slug, display_name, headline, avatar_url FROM users
+      WHERE slug = ${ref} AND entity_type = 'person' LIMIT 1
+    `.catch(() => []);
+    if (u) {
+      return {
+        ...base,
+        kind: 'artist',
+        title: u.display_name ?? u.slug,
+        blurb: base.blurb ?? u.headline,
+        imageUrl: u.avatar_url,
+        thread: null,
+        artistSlug: u.slug,
+        storeOrgId: null,
+      };
+    }
+  } else if (cfg.kind === 'store') {
+    const [s] = await db<Array<{ org_id: string; display_name: string | null; headline: string | null; photo_url: string | null }>>`
+      SELECT org_id, display_name, headline, photo_url FROM store WHERE org_id = ${ref} LIMIT 1
+    `.catch(() => []);
+    if (s) {
+      return {
+        ...base,
+        kind: 'store',
+        title: s.display_name ?? 'The store',
+        blurb: base.blurb ?? s.headline,
+        imageUrl: s.photo_url,
+        thread: null,
+        artistSlug: null,
+        storeOrgId: s.org_id,
+      };
     }
   }
-
-  const next = await loadNextScheduled(orgId, userId).catch(() => null);
-  if (!next) return null;
-  return {
-    kind: 'thread',
-    source: 'fallback',
-    title: next.title,
-    blurb: next.excerpt,
-    imageUrl: next.coverImageUrl,
-    until: next.scheduledAt,
-    thread: next,
-    artistSlug: null,
-    storeOrgId: null,
-  };
+  return null;
 }
 
 // ── The page read ──────────────────────────────────────────────────────────
@@ -608,13 +661,29 @@ export async function saveProfileDetails(
       SELECT id FROM users WHERE slug = ${normalized} AND id <> ${userId} LIMIT 1
     `;
     if (clash) return { ok: false, error: 'slug_taken' };
+    // Another person's old slug still redirects to them (user_slug_redirects).
+    if (await isSlugHeldByRedirect(normalized, userId)) return { ok: false, error: 'slug_taken' };
     sets.slug = normalized;
     slug = normalized;
   }
 
   if (Object.keys(sets).length > 0) {
     try {
-      await db`UPDATE users SET ${db(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+      if ('slug' in sets) {
+        // The previous slug keeps redirecting here; taking back an old one
+        // clears its redirect row.
+        await db.begin(async (tx) => {
+          const [before] = await tx<Array<{ slug: string | null }>>`
+            SELECT slug FROM users WHERE id = ${userId} FOR UPDATE
+          `;
+          await tx`UPDATE users SET ${tx(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+          if (before) {
+            await noteUserSlugChange(userId, before.slug, sets.slug as string, tx as unknown as typeof db);
+          }
+        });
+      } else {
+        await db`UPDATE users SET ${db(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+      }
     } catch (err) {
       // The unique index is the real guard; the SELECT above only gives the
       // common case a friendly answer.

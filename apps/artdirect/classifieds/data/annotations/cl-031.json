@@ -1,0 +1,23 @@
+{
+  "id": "cl-031",
+  "status": "draft",
+  "source": { "paper": "Hindustan Times, HT Classifieds on Sunday (Gurgaon property)", "place": "Gurgaon / Delhi NCR, India", "era": "2010s", "language": ["en"] },
+  "summary": "A Sunday real-estate classifieds page that is almost all colour display: htclassifieds logo in heavy lowercase, a yellow ON SUNDAY tab, then a tight mosaic of developer ads and small boxed property listings with red, yellow and blue reverse heads and plot numbers set huge in grids.",
+  "family": "indian-color-display",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "modular", "masthead": "Small 'hindustantimes' over a huge heavy lowercase 'htclassifieds' (black + orange), yellow ON SUNDAY block, thin booking-phone strip." },
+  "headers": [
+    { "id": "reverse-label", "kind": "reverse-bar", "example": "DLF - SUSHANT LOK", "fg": "#ffffff", "bg": "#d7261e", "align": "center", "notes": "Locality names as reverse bars in red, blue or black." }
+  ],
+  "units": [
+    { "id": "plot-grid", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "27 | 28 | 42 | 43 | 57", "notes": "Available plot numbers in big bold cells: a numeric grid as the ad." },
+    { "id": "tiny-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#ffe600", "example": "PLOT FOR SALE / Sector-28 Gurgaon", "notes": "Yellow, red or blue fills, condensed heavy heads, phone in reverse at the foot." },
+    { "id": "developer-display", "kind": "house-ad", "frequency": "common", "lead": "bold", "align": "left", "border": "none", "example": "RAHEJA 2/3 BHK Available / Price ₹3075/- sq. ft.", "notes": "Full-colour developer ads across 3–4 columns." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "grotesque", "look": "Heavy lowercase grotesque", "weight": "black", "width": "normal", "case": "sentence", "webFont": "Archivo Black" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Impact-like condensed heads", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Anton" },
+    { "role": "body", "classification": "condensed-grotesque", "look": "Condensed sans agate", "weight": "regular", "width": "condensed", "case": "sentence", "webFont": "Roboto Condensed" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#f58220", "use": "logo" }, { "hex": "#ffe600", "use": "ON SUNDAY tab, box fills" }, { "hex": "#d7261e", "use": "reverse heads" }, { "hex": "#1f5fa8", "use": "reverse heads" } ] },
+  "notes": ["Image is small; most liners are unreadable. The plot-number grid is a distinctive unit."]
+}

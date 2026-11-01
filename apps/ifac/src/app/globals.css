@@ -23,6 +23,7 @@
    Both are plain CSS over custom properties, so they are themed by the
    :root block near the end of this file and add no runtime dependency. */
 @import "@elkdonis/cms-ui/surface.css";
+@import "@elkdonis/cms-ui/center.css";
 @import "@elkdonis/forum-ui/forum.css";
 @import "@elkdonis/forum-ui/forum-modern.css";
 /* The forum's own page theme, scoped to the board. It redefines the --sf-*
@@ -2368,73 +2369,6 @@ a.team-card:hover .team-photo {
   .brand-copy { display: none; }
 }
 
-/* ==========================================================================
-   Home page auth panel — create account / sign in.
-   Reuses .form-shell, .field and .button so it reads as part of the page
-   rather than a bolted-on auth widget; only the tabs and the button row are
-   new here.
-   ========================================================================== */
-
-.auth-panel-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.auth-panel-tab {
-  flex: 1 1 0;
-  padding: 8px 10px;
-  border: 1px solid var(--frame-soft);
-  background: #020202;
-  color: #7a5fa0;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color 140ms ease, border-color 140ms ease;
-}
-.auth-panel-tab:hover { color: #20d7ff; }
-.auth-panel-tab.is-active {
-  color: #20d7ff;
-  border-color: #20d7ff;
-}
-.auth-panel-tab:focus-visible {
-  outline: 2px solid #20d7ff;
-  outline-offset: 2px;
-}
-
-.auth-panel-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-/* Google is the secondary path, so it reads quieter than the primary submit
-   without becoming hard to find. */
-.button--ghost {
-  background: #020202;
-  color: #20d7ff;
-}
-.button--ghost:hover {
-  background: #06131a;
-}
-
-.auth-panel-note {
-  margin: 0 0 12px;
-  line-height: 1.6;
-}
-.auth-panel-note strong { color: #20d7ff; }
-
-/* .button is an <a> in the signed-in state, which has no default alignment. */
-.auth-panel a.button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    The surface layer and the forum, in IFAC's voice.
 
@@ -3722,8 +3656,19 @@ a.team-card:hover .team-photo {
 }
 
 .ifac-room-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
+}
+
+/* "Open in Studio" (2026-10-10): primitives' outline button on the card's
+   --pr-* set (.ifac-hub-scope) — ink 17.78:1, edge 3.41:1. */
+.ifac-room-studio {
+  flex: none;
 }
 
 .ifac-room-title {

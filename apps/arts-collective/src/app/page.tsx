@@ -71,7 +71,7 @@ export default async function LandingPage() {
             Create a Collective
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            Elkdonis seeks to provide the online tools and server to help
+            Arts Collective seeks to provide the online tools and server to help
             community leaders emerge. We keep track of the efforts of our
             members, and of their members, because simply showing up is half
             the battle when it comes to keeping communities going.
@@ -82,7 +82,7 @@ export default async function LandingPage() {
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href={user ? "/hub/network" : "/login?mode=signup"}>
-                Participate in Elkdonis
+                Participate in Arts Collective
               </Link>
             </Button>
             {!user && (

@@ -1,0 +1,340 @@
+<title>Field Structures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=Pathway+Gothic+One&family=Roboto+Condensed:wght@400;700&family=Archivo+Black&family=Anton&family=Arimo:ital,wght@0,400;0,700;1,400&family=Tinos:ital,wght@0,400;0,700;1,400&family=Alfa+Slab+One&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Display&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ultra&family=Rye&family=Courier+Prime:wght@400;700&family=Oswald:wght@500;700&family=Bowlby+One&display=swap">
+<style>
+/* Layout: two generated fields of the continuous section (3400 × 2200 world px each), shown scaled to the
+   viewport or at 1:1 inside a scrolling frame. Single-theme by choice: paper and ink. */
+:root {
+  --field: #26241f; --field-ink: #e6e0d2;
+  --paper: #f3efe4; --ink: #171512;
+  --pink: #f9cfdc; --red: #c4262e; --vermilion: #e8502b; --yellow: #ffd21f; --blue: #1f3f99; --comic: #f6c4c8; --sepia: #efe4cc;
+  --ui: 'Courier Prime', 'Courier New', monospace;
+  color-scheme: dark;
+}
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: var(--ui); padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 980px; margin: 0 auto 22px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Libre Caslon Display', Georgia, serif; font-weight: 400; font-size: 34px; margin: 0 0 6px; text-wrap: balance; }
+.intro p { margin: 6px 0; }
+.ctl { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 10px 0 0; font-size: 12px; }
+.ctl label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.ctl button { font: inherit; color: inherit; background: none; border: 1px solid rgba(230,224,210,.4); padding: 3px 10px; cursor: pointer; }
+.ctl button:focus-visible, .ctl input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+figure { margin: 0 0 44px; }
+.frame { width: 100%; overflow: hidden; position: relative; }
+.frame.close { overflow: auto; max-height: 85vh; }
+.world { position: relative; width: 3400px; height: 2200px; background: var(--paper); color: var(--ink); transform-origin: 0 0; overflow: hidden; box-shadow: 0 2px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.45); }
+.frame.close .world { transform: none !important; margin-bottom: 0 !important; }
+figcaption { max-width: 980px; margin: 12px auto 0; font-size: 12.5px; line-height: 1.55; }
+figcaption b { color: #fff; }
+/* page ghost lines: where a 900-wide page would have ended, for scale only */
+.pageline { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(23,21,18,.18); pointer-events: none; z-index: 3; }
+.pageline span { position: absolute; top: 6px; left: 4px; font: 10px var(--ui); letter-spacing: .1em; opacity: .5; }
+/* ---- boxes ---- */
+.u { position: absolute; box-sizing: border-box; overflow: hidden; }
+.u p { margin: 0; }
+.u * { box-sizing: border-box; min-width: 0; }
+.seg { position: absolute; }
+.rules { position: absolute; inset: 0; pointer-events: none; }
+/* themes */
+.t-agate { font-family: 'Source Serif 4', Georgia, serif; font-size: 10.5px; line-height: 1.22; }
+.t-weekly { font-family: 'Arimo', Arial, sans-serif; font-size: 11px; line-height: 1.3; }
+.t-mosaic { font-family: 'Arimo', Arial, sans-serif; font-size: 11px; line-height: 1.3; }
+.t-comic { font-family: 'Courier Prime', monospace; font-size: 10.5px; line-height: 1.3; }
+.t-wood { font-family: 'Old Standard TT', Georgia, serif; font-size: 11px; line-height: 1.3; }
+.t-ledger { font-family: 'Old Standard TT', Georgia, serif; font-size: 12px; line-height: 1.32; }
+.t-dense { font-family: 'Tinos', serif; font-size: 9.8px; line-height: 1.18; }
+.liner { text-align: justify; hyphens: auto; padding: 3px 2px 4px 8px; text-indent: -6px; border-bottom: 1px solid rgba(23,21,18,.35); }
+.liner b { text-transform: uppercase; letter-spacing: .02em; }
+.t-agate .liner b { font-weight: 400; }
+.t-weekly .liner, .t-mosaic .liner { text-align: center; text-indent: 0; padding: 4px 4px; }
+.t-weekly .liner b { display: block; font-family: 'Roboto Condensed', sans-serif; font-size: 1.15em; }
+.tint { background: var(--pink); }
+.tint b { color: var(--red); font-weight: 700; }
+.head { display: flex; justify-content: center; align-items: baseline; gap: 8px; font-weight: 700; text-transform: uppercase; padding: 4px 0 2px; font-family: 'Roboto Condensed', sans-serif; font-size: 1.3em; line-height: 1.1; text-align: center; }
+.t-agate .head { justify-content: space-between; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); font-family: 'League Spartan', sans-serif; text-transform: none; }
+.t-weekly .head { background: #141414; color: #fff; justify-content: flex-start; padding: 3px 6px; font-size: 1.5em; }
+.t-mosaic .head { padding: 0; gap: 0; }
+.t-mosaic .head span { flex: 1 1 0; color: #fff; background: var(--red); padding: 2px; text-align: center; font-family: 'Archivo Black', sans-serif; font-size: .75em; }
+.t-mosaic .head span + span { background: var(--blue); }
+.t-comic .head { background: #1b1714; color: var(--comic); font-family: 'Archivo Black', sans-serif; padding: 3px; }
+.t-wood .head, .t-ledger .head { font-family: inherit; font-variant: small-caps; text-transform: lowercase; font-weight: 400; letter-spacing: .16em; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.t-ledger .head { font-variant: normal; text-transform: none; font-style: italic; font-weight: 700; font-family: 'Libre Caslon Text', serif; letter-spacing: 0; }
+.t-dense .head { background: var(--vermilion); color: #fff; justify-content: flex-start; padding: 2px 5px; font-size: 1.1em; }
+.boxed { border: 1.5px solid var(--ink); padding: 6px; text-align: center; }
+.boxed b { display: block; font-family: 'League Spartan', sans-serif; font-weight: 800; font-size: 1.2em; }
+.t-mosaic .boxed { border-width: 3px; }
+.t-comic .boxed { background: #f6e9bd; border-color: #1b1714; }
+.disp { border: 1.5px solid var(--ink); padding: 9px 8px 8px; text-align: center; }
+.disp .h { font-family: 'Pathway Gothic One', sans-serif; font-size: 2.8em; line-height: .95; text-transform: uppercase; margin-bottom: 5px; }
+.t-weekly .disp .h, .t-mosaic .disp .h { font-family: 'Anton', Impact, sans-serif; }
+.t-comic .disp .h { font-family: 'Archivo Black', sans-serif; font-size: 1.9em; }
+.t-wood .disp .h, .t-ledger .disp .h { font-family: 'Ultra', serif; font-size: 2.3em; }
+.t-dense .disp .h { font-family: 'Anton', sans-serif; }
+.disp .f { margin-top: 6px; border-top: 1px solid currentColor; padding-top: 3px; font-family: 'Roboto Condensed', sans-serif; font-weight: 700; font-size: .95em; letter-spacing: .08em; text-transform: uppercase; }
+.rev { background: var(--ink); color: var(--paper); }
+.rev .f { border-color: var(--paper); }
+.t-mosaic .disp.c1 { border-color: var(--red); } .t-mosaic .disp.c2 { border-color: var(--blue); background: #f6e7a6; } .t-mosaic .disp.c3 { border-color: #0e8a8a; }
+.t-comic .disp { background: #f6e9bd; border-color: #1b1714; }
+.t-comic .disp .h { text-shadow: 2px 2px 0 #b42a22; }
+.price { display: block; text-align: right; font-family: 'Alfa Slab One', serif; font-size: 1.6em; color: #b42a22; }
+.notice { border: 1.5px solid var(--ink); background: #fff; padding: 8px 10px; }
+.notice .h { font-family: 'Anton', Impact, sans-serif; font-size: 2em; line-height: 1; text-align: center; text-transform: uppercase; margin-bottom: 5px; }
+.notice p { text-align: justify; }
+.notice .s { text-align: center; font-weight: 700; margin-top: 5px; }
+.stack { text-align: center; padding: 8px 4px; border-bottom: 1px solid var(--ink); }
+.stack .a { font-family: 'Ultra', serif; font-size: 2.2em; line-height: 1; }
+.stack .b { font-style: italic; font-size: 1.1em; margin-top: 3px; }
+.stack .c { font-variant: small-caps; letter-spacing: .14em; margin-top: 3px; }
+.stack .d { text-align: right; font-size: .8em; letter-spacing: .06em; }
+.poster { border: 3px double var(--ink); padding: 10px 8px; text-align: center; }
+.poster .w { font-family: 'Roboto Condensed', sans-serif; letter-spacing: .18em; text-transform: uppercase; font-size: .9em; }
+.poster .h { font-family: 'Anton', Impact, sans-serif; font-size: 3.2em; line-height: .92; text-transform: uppercase; margin: 4px 0; }
+.poster .v { font-family: 'Roboto Condensed', sans-serif; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-top: 5px; }
+.filler { font-size: .8em; letter-spacing: .08em; opacity: .7; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 2px 1px; }
+/* ---- structures ---- */
+.s { position: absolute; z-index: 2; }
+.ribbon { transform-origin: 0 50%; height: 120px; display: flex; flex-direction: column; justify-content: center; }
+.ribbon .hearts { font-size: 26px; letter-spacing: 14px; line-height: 1; white-space: nowrap; overflow: hidden; color: var(--ink); text-align: center; }
+.ribbon .band { background: var(--paper); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); font-family: 'Roboto Condensed', sans-serif; font-size: 22px; letter-spacing: .18em; white-space: nowrap; overflow: hidden; padding: 4px 0; text-align: center; }
+.ribbon .band em { font-style: normal; font-family: 'Bowlby One', sans-serif; font-size: 44px; letter-spacing: .04em; vertical-align: -6px; background: repeating-radial-gradient(circle, var(--ink) 0 .6px, transparent .6px 2.2px); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.strip { background: var(--comic); border-top: 3px solid #1b1714; border-bottom: 3px solid #1b1714; display: flex; gap: 14px; padding: 14px 16px; align-items: stretch; overflow: hidden; }
+.strip .cut { position: absolute; left: 0; right: 0; top: 2px; border-top: 2px dashed #1b1714; }
+.strip .cut::before { content: "✂"; position: absolute; left: 24px; top: -12px; background: var(--comic); padding: 0 4px; font-size: 18px; line-height: 1; }
+.coupon { flex: 0 0 300px; border: 2px dashed #1b1714; padding: 10px 12px; font-family: 'Courier Prime', monospace; font-size: 10.5px; line-height: 1.3; display: flex; flex-direction: column; background: #f6e9bd; color: #1b1714; }
+.coupon .h { font-family: 'Archivo Black', sans-serif; font-size: 18px; line-height: 1; text-transform: uppercase; text-align: center; }
+.coupon .h em { font-style: normal; color: #b42a22; display: block; }
+.coupon .line { margin-top: auto; border-bottom: 1px dotted #1b1714; height: 16px; font-size: 9px; letter-spacing: .1em; }
+.coupon .line + .line { margin-top: 6px; }
+.coupon.rev { background: #1b1714; color: #f6e9bd; border-style: solid; }
+.coupon.rev .h em { color: var(--comic); }
+.circle { border-radius: 50%; border: 4px double var(--ink); background: var(--paper); display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+.circle svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.circle .inner { width: 62%; font-family: 'Old Standard TT', serif; }
+.circle .inner .a { font-family: 'Ultra', serif; font-size: 64px; line-height: .95; }
+.circle .inner .b { font-style: italic; font-size: 18px; margin-top: 8px; }
+.circle .inner .c { font-size: 12px; line-height: 1.4; margin-top: 10px; text-align: justify; }
+.circle .inner .d { font-variant: small-caps; letter-spacing: .2em; margin-top: 8px; font-size: 14px; border-top: 1px solid var(--ink); padding-top: 6px; }
+.stair { background: var(--ink); color: var(--paper); font-family: 'Roboto Condensed', sans-serif; display: flex; flex-direction: column; justify-content: center; padding: 10px 16px; line-height: 1; }
+.stair small { font-size: 14px; letter-spacing: .12em; font-weight: 700; }
+.stair span { font-size: 54px; font-weight: 700; letter-spacing: .01em; margin-top: 4px; }
+.stair i { font-style: normal; font-family: 'League Spartan', sans-serif; font-size: 11px; letter-spacing: .1em; margin-top: 8px; opacity: .8; }
+.river svg { position: absolute; left: 0; top: 0; }
+.bigword { font-family: 'Ultra', serif; font-size: 820px; line-height: .8; letter-spacing: -.01em; color: transparent; -webkit-text-stroke: 5px var(--ink); white-space: nowrap; pointer-events: none; text-shadow: 0 0 0 transparent; }
+.bigword b { color: transparent; -webkit-text-stroke: 5px var(--red); font-weight: 400; }
+.table { background: #fff; border-top: 6px solid var(--blue); border-bottom: 6px solid var(--blue); display: flex; overflow: hidden; }
+.table .card { flex: 0 0 340px; border-right: 2px solid var(--blue); padding: 12px 14px; font-family: 'Arimo', sans-serif; font-size: 11px; line-height: 1.35; display: flex; flex-direction: column; gap: 4px; }
+.table .card .h { font-family: 'Anton', Impact, sans-serif; font-size: 30px; line-height: 1; color: var(--blue); }
+.table .card .k { font-family: 'Archivo Black', sans-serif; font-size: 11px; color: var(--red); letter-spacing: .06em; }
+.table .card .m { font-family: 'Tinos', serif; font-style: italic; font-size: 12px; }
+.table .card .ph { margin-top: auto; font-family: 'Anton', sans-serif; font-size: 22px; }
+.table .card:nth-child(3n) { background: #f6e7a6; }
+.table .card:nth-child(4n) { background: var(--blue); color: #fff; }
+.table .card:nth-child(4n) .h, .table .card:nth-child(4n) .k { color: #fff; }
+</style>
+
+<div class="intro">
+  <h1>Field Structures: patterns bigger than a page</h1>
+  <p>Two generated stretches of the continuous section, each about three and a half page-widths wide and two tall (dashed lines mark where pages would have ended). Under them the usual texture: zones of broken columns, each zone in a theme, boxes varying one from the next. Over them, structures that only make sense at the scale of the field: a Love Lines ribbon that runs diagonally for pages, a row of coupons a thousand pixels long, a circular ad with its copy running round the rim, a staircase of tabs, a river of blank paper, a word three pages wide. The ads pack around them.</p>
+  <div class="ctl">
+    <label><input type="checkbox" id="closeA"> View field A at 1:1 (scrolls)</label>
+    <label><input type="checkbox" id="closeB"> View field B at 1:1 (scrolls)</label>
+    <button type="button" id="reseed">Reseed the texture</button>
+  </div>
+</div>
+
+<figure>
+  <div class="frame" id="frameA"><div class="world" id="fieldA"></div></div>
+  <figcaption><b>Field A: the ribbon, the strip and the eye.</b> A VALENTINE · LOVE LINES ribbon with a row of hearts above it crosses the whole field at a shallow diagonal; a comic-book coupon strip runs the full width at one height, each coupon a different offer, one reversed; a circular display three columns across carries its small print on a circle. Column zones: six agate columns, three weekly, eight dense, a colour mosaic, a woodtype band.</figcaption>
+</figure>
+
+<figure>
+  <div class="frame" id="frameB"><div class="world" id="fieldB"></div></div>
+  <figcaption><b>Field B: the staircase, the river, the long table and the word.</b> Reversed two-tier tabs step down across the field like a flight of stairs (each a real classification, numbered); a river of blank paper meanders across the whole width with its own running line; a row of venue cards (the long table) runs the width under the river; and WANTED, outlined, three pages wide, sits over everything with the ads continuing underneath.</figcaption>
+</figure>
+
+<script>
+(function () {
+  var W = 3400, H = 2200, PAGE = 900;
+  function Rng(seed) { this.s = seed >>> 0; }
+  Rng.prototype.next = function () { this.s = (this.s + 0x6d2b79f5) >>> 0; var t = this.s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  Rng.prototype.int = function (a, b) { return a + Math.floor(this.next() * (b - a + 1)); };
+  Rng.prototype.pick = function (l) { return l[Math.floor(this.next() * l.length)]; };
+  Rng.prototype.chance = function (p) { return this.next() < p; };
+
+  var CL = [["NORTH-LIGHT STUDIO,", "third floor, deep sink, freight lift, no fumes after nine. Share with a quiet printmaker who does not whistle."],["BENCH SPACE", "in a working foundry yard. Bring your own gloves and your own patience. Pour days are Thursdays."],["A WALL", "forty feet long, freshly primed, facing the morning. Available to anyone with a good reason."],["OLD WOOD TYPE,", "any size, any condition, cases, furniture and quoins. Cash on the spot, no questions about the splinters."],["A GOOD EASEL", "that does not lean to the left. Will trade one that does."],["COMPOSER", "sought for a dance that happens entirely in a stairwell. Must be comfortable with echoes."],["WRITERS!", "Captions, poems, plays and catalogue notes wanted for a travelling show. Submit two pages and a stamped envelope."],["PUPPETEER", "with steady hands for a winter season. Experience with string preferred, with rod accepted."],["FRAMES MADE", "to measure from reclaimed oak. Gilding, glazing, honest prices. Pick-up and delivery within the river."],["PORTFOLIOS PHOTOGRAPHED", "in daylight only. No filters, no flattery."],["GRANTS WRITTEN", "by someone who has been turned down more times than you."],["LOST:", "one afternoon in late October, last seen near the canal, golden at the edges. Reward."],["FOUND:", "a sketchbook full of hands, on the No. 9 tram. Owner may claim by describing the third hand."],["SCENE PAINTER,", "must know a sky from a ceiling. Night work, overtime in tech week. Apply at stage door after 4."],["FLY OPERATOR", "wanted for touring opera. Strong arms, calm nerves, no fear of heights or sopranos."],["DRESSER,", "quick hands, quicker changes. Must sew a hem in under forty seconds."],["ACCOMPANIST", "for Thursday choir. Sight-reading a must, patience a bonus."],["DRUMMER", "for a three-piece who keeps losing drummers. We are nicer now."],["ASSISTANT", "to a sculptor. Lifting, sanding, saying nothing about the size of it."],["CERAMICS", "instructor, adult evening class. Kiln experience required, glaze opinions welcome."],["TUTOR", "in perspective drawing, one hour weekly. Student keeps drawing roads that go up."],["INVIGILATOR,", "weekends. Must sit with one painting for eight hours and still like it."],["ART HANDLER,", "white gloves supplied, steady nerves not. Driving licence required."],["YOUNG POET", "will write the verse for your card, shop window or tombstone."],["EVENINGS:", "usher at the old cinema. Free films, sticky floors, good company."],["MORNINGS:", "walk the theatre cat. One cat, many opinions."],["KILN TIME", "Tuesday nights, cone 6, share the firing and the cost. Bring your own pots and a sense of proportion."],["PRESS FOR SALE,", "hand-cranked, bed 18 by 30, one owner, still prints straight. Buyer brings three friends."],["UPRIGHT PIANO", "wanted, any make, for a school of eleven children and one goat. Will tune it ourselves."],["VAN & DRIVER", "for a move across town of one very large painting and one very small sofa. Sunday, early."],["LIFE MODEL", "for a class that draws slowly. Tuesdays and Fridays. Paid hourly, robe provided, tea included."],["DARKROOM", "technician, black and white only. Good eyes in red light."],["TO LET,", "to a sober bookbinder, a room with a window and a bench. Will trade repairs for rent."],["WILL TRADE", "twelve tubes of a blue I no longer believe in for anything in yellow."],["CELLO,", "strings good, case bad, bow missing. Sounds better than it looks."],["LOOM,", "four-shaft, folding, slightly haunted by its previous weaver. Threads already started."],["PIGMENTS,", "ground by hand from stones found on the shore. Small jars, uncertain names, honest colours."],["GOLD LEAF", "for sale by the book, loose leaf or transfer. Also a burnisher that once belonged to a saint."],["A ROOM,", "quiet, warm, with a view of other people's washing. Ideal for someone who writes in the mornings."],["RISOGRAPH,", "two-colour, drums for blue and fluorescent pink, paper not included, enthusiasm is."],["TYPEWRITER,", "portable, 1958, types a slightly wobbly e. Perfect for letters you mean."],["SWAP", "a winter coat for a summer painting. Both slightly worn, both warm."],["WANTED:", "a quiet person to turn pages at the Sunday recital. Must not sneeze."],["FOR SALE:", "four hundred jam jars, washed, labelled by colour. Ideal for a painter or a very organised bee."]];
+  var FOOT = ["Box A-{n}.", "Box C-{n}.", "Dept. {l}, the Ledger.", "[PHONE].", "Call [PHONE] after six.", "Apply in person.", "ArtDirect file no. {n}.", "Reply c/o this page.", "No agents."];
+  var HEADS = ["Studios & Space to Let", "Wanted to Buy", "For Sale", "Instruction", "Services", "Collaborators Wanted", "Lost & Found", "Help Wanted", "Work Wanted", "Materials", "Instruments", "Frames & Glass", "Print & Press", "Models Wanted", "Business Chances", "Personal", "Rides & Removals", "Swap", "Public Notices", "Card of Thanks", "Open Studios", "Now Showing"];
+  var DISP = [["THE NIGHT PRESS", "Letterpress · risograph · binding. Proofs while you wait. Open after dark, closed on the full moon.", "[PHONE] · [ADDRESS]"],["ATTENTION SIGN PAINTERS", "A steady hand wanted to letter forty shopfronts before the spring fair. Gold leaf a plus. Ladders provided.", "The High Street Guild"],["MODELS WANTED", "Life class, Tuesdays and Fridays. Paid hourly. Robe provided, tea included.", "[PHONE]"],["CALL FOR WORK", "Open submission for the winter salon. Any medium, any size that fits through a door.", "Submit on ArtDirect · entry free"],["KILN REPAIRED", "The ceramics studio reopens on the first thaw. Unclaimed pots have been planted with bulbs.", "The Committee"],["OPEN STUDIOS", "The whole building, every door open. Saturday ten till late.", "The Old Mill"],["FRAMES MADE", "To measure from reclaimed oak. Gilding, glazing, honest prices.", "Pick-up within the river"],["PAPER RIVERS", "An installation of folded maps. Doors at seven, short talk at eight, music after.", "Riverside Collective"],["GROW YOUR OWN AUDIENCE", "Just add water and one honest painting. Results in six to eight years.", "25¢"],["X-RAY SKETCHBOOK", "See right through your own bad habits. Guaranteed to contain paper.", "$1.00"],["THE HOWE STRETCHING MACHINE", "The grandest production of inventive genius. Leave it overnight and it pulls itself tight as a drum.", "E. R. Bryant, General Agent"],["ALLEN'S IRON TONIC", "For the tired hand and the timid line. Sold by every druggist.", "Noyes Bros. & Cutler"]];
+  var NOTICES = [["EXHIBITION POSTPONED", "We regret to inform friends and visitors that the opening planned for this Friday is postponed by one week while the paint dries.", "The Canal Street Gallery"],["A MARRIAGE", "The marriage took place quietly on Saturday between a weaver of this parish and a printer of the next. The couple will argue about kerning.", "[NAME] & [NAME]"],["IN MEMORIAM", "For the old projector at the Rialto, who showed ten thousand films and never once complained about the endings.", "The back row"],["CHANGE OF NAME", "I, the painter formerly known as [OLD NAME], shall henceforth work and exhibit as [NEW NAME]. All future work may surprise us both.", "ArtDirect file no. [ID]"],["MEETING NOTICE", "The annual meeting of the Printmakers' Guild: the press, the roof, and the question of the press on the roof.", "The Secretary"],["CARD OF THANKS", "Many thanks to everyone who came to the reading, to the stranger who held the umbrella over the microphone, and to the café.", "The Thursday Poets"]];
+  var POSTERS = [["TONIGHT 7 PM", "SALT & SMOKE", "The Rialto"],["ONE NIGHT ONLY", "ECHO / STAIRWELL", "The Guild Room"],["OPENS THURSDAY", "SMALL WEATHERS", "Canal Street Gallery"],["ALL WEEK", "DRAWING FROM LIFE", "The Old Mill"],["LAST 3 DAYS", "THE BLUE ROOM", "Unit 4"],["SATURDAY 10 AM", "FOLDED MAPS", "The Bridge"]];
+  var STACKS = [["SEWING MACHINES", "The Grandest Production of Inventive Genius.", "agents wanted", "dec10 3m"],["CHEAP FREIGHT LINE", "Paintings forwarded from any studio to any wall.", "w. j. mclane", "m16 6m"],["BRANDIES", "Wines, Gins, and Spirits of Turpentine.", "three doors above the studios", "ap15 ly"],["CARRIAGES", "The only genuine Studebaker Easel.", "campbell & brother", "m18 1m"]];
+  var THEMES = ["agate", "weekly", "mosaic", "comic", "wood", "ledger", "dense"];
+  var fill = function (r, s) { return s.replace(/\{n\}/g, function () { return r.int(100, 999); }).replace(/\{l\}/g, function () { return String.fromCharCode(65 + r.int(0, 25)); }); };
+
+  /* --- zones: bands of segments, each with its own column count and theme --- */
+  function zones(r) {
+    var out = [], y = 0;
+    while (y < H) {
+      var bh = Math.min(H - y, r.int(620, 900));
+      var x = 0;
+      while (x < W) {
+        var sw = Math.min(W - x, r.int(700, 1500));
+        if (W - (x + sw) < 400) sw = W - x;
+        var theme = r.pick(THEMES);
+        var cols = { agate: r.int(5, 7), weekly: r.int(4, 6), mosaic: 3, comic: 4, wood: r.int(3, 4), ledger: 3, dense: 8 }[theme];
+        out.push({ x: x, y: y, w: sw, h: bh, cols: cols, theme: theme, gap: theme === "dense" ? 7 : theme === "ledger" ? 22 : 12 });
+        x += sw;
+      }
+      y += bh;
+    }
+    return out;
+  }
+
+  /* --- height estimate --- */
+  function est(kind, text, w, theme) {
+    var fs = { agate: 10.5, weekly: 11, mosaic: 11, comic: 10.5, wood: 11, ledger: 12, dense: 9.8 }[theme];
+    var glyph = theme === "comic" ? .6 : .52;
+    var cpl = Math.max(8, (w - (kind === "liner" ? 10 : 20)) / (fs * glyph));
+    var lines = Math.ceil(text.length / cpl);
+    var lh = fs * 1.25;
+    var px = { head: fs * 2.6 + 8, liner: lines * lh + 8, boxed: lines * lh + 18, disp: lines * lh + fs * 5 + 28, notice: lines * lh * 1.1 + fs * 4 + 28, stack: fs * 10 + lines * lh + 16, poster: fs * 9 + 60 }[kind];
+    return Math.ceil(px * 1.16 + 6);
+  }
+
+  /* --- units --- */
+  function unitHtml(kind, r, theme, k) {
+    var c, f;
+    switch (kind) {
+      case "head": return ['<div class="u head">' + (theme === "mosaic" ? '<span>' + r.pick(["EMPLEO", "SERVICIOS", "AVISOS", "ANUNCIOS"]) + '</span><span>' + r.pick(HEADS) + '</span>' : (theme === "agate" ? '<span>' + r.pick(HEADS) + '</span><span>' + r.int(1, 99) + '</span>' : r.pick(HEADS))) + '</div>', r.pick(HEADS)];
+      case "liner": c = r.pick(CL); f = fill(r, r.pick(FOOT)); return ['<div class="u liner' + (r.chance(.15) ? " tint" : "") + '"><b>' + c[0] + '</b> ' + c[1] + ' <i>' + f + '</i></div>', c[0] + c[1] + f];
+      case "boxed": c = r.pick(CL); f = fill(r, r.pick(FOOT)); return ['<div class="u boxed"><b>' + c[0].replace(/[,:]$/, "") + '</b>' + c[1] + ' ' + f + '</div>', c[0] + c[1] + f];
+      case "disp": c = r.pick(DISP); return ['<div class="u disp' + (r.chance(.12) ? " rev" : "") + (theme === "mosaic" ? " c" + r.int(1, 3) : "") + '"><div class="h">' + c[0] + '</div><p>' + c[1] + '</p>' + (theme === "comic" && /[$¢]/.test(c[2]) ? '<span class="price">' + c[2] + '</span>' : '<div class="f">' + c[2] + '</div>') + '</div>', c[0] + c[1] + c[2]];
+      case "notice": c = r.pick(NOTICES); return ['<div class="u notice"><div class="h">' + c[0] + '</div><p>' + c[1] + '</p><div class="s">' + c[2] + '</div></div>', c[0] + c[1] + c[2]];
+      case "stack": c = r.pick(STACKS); return ['<div class="u stack"><div class="a">' + c[0] + '</div><div class="b">' + c[1] + '</div><div class="c">' + c[2] + '</div><div class="d">' + c[3] + '</div></div>', c[0] + c[1] + c[2]];
+      case "poster": c = r.pick(POSTERS); return ['<div class="u poster"><div class="w">' + c[0] + '</div><div class="h">' + c[1] + '</div><div class="v">' + c[2] + '</div></div>', c[0] + c[1] + c[2]];
+    }
+  }
+  var MIX = { agate: ["liner", "liner", "liner", "liner", "boxed", "disp"], weekly: ["boxed", "boxed", "liner", "disp", "notice", "poster"], mosaic: ["disp", "disp", "disp", "boxed", "poster"], comic: ["disp", "disp", "boxed", "liner"], wood: ["stack", "stack", "stack", "liner", "disp"], ledger: ["liner", "liner", "liner", "liner", "disp"], dense: ["liner", "liner", "liner", "liner", "liner", "disp"] };
+
+  /* --- packing around structures ---
+     Each structure gives, for a column span [x0,x1], the y-interval it blocks, or null. */
+  function pack(root, r, structs) {
+    var html = [];
+    zones(r).forEach(function (z) {
+      var colW = (z.w - (z.cols - 1) * z.gap) / z.cols;
+      var heights = []; for (var i = 0; i < z.cols; i++) heights.push(z.y);
+      var seg = ['<div class="seg t-' + z.theme + '" style="left:' + z.x + 'px;top:' + z.y + 'px;width:' + z.w + 'px;height:' + z.h + 'px">'];
+      if (z.theme !== "weekly" && z.theme !== "mosaic") seg.push('<div class="rules" style="background:repeating-linear-gradient(to right, transparent 0, transparent ' + (colW + z.gap / 2 - .5) + 'px, rgba(23,21,18,.8) ' + (colW + z.gap / 2 - .5) + 'px, rgba(23,21,18,.8) ' + (colW + z.gap / 2 + .5) + 'px, transparent ' + (colW + z.gap / 2 + .5) + 'px, transparent ' + (colW + z.gap) + 'px)"></div>');
+      var guard = 0, run = 0, runType = null;
+      function free(k, span, y, h) {
+        var x0 = z.x + k * (colW + z.gap), x1 = x0 + span * colW + (span - 1) * z.gap;
+        var moved = true, loops = 0;
+        while (moved && loops++ < 12) {
+          moved = false;
+          for (var s = 0; s < structs.length; s++) {
+            var iv = structs[s](x0, x1);
+            if (iv && y < iv[1] + 6 && y + h > iv[0] - 6) { y = iv[1] + 6; moved = true; }
+          }
+        }
+        return y;
+      }
+      while (guard++ < 400) {
+        var k = 0; for (var c = 1; c < z.cols; c++) if (heights[c] < heights[k]) k = c;
+        if (heights[k] >= z.y + z.h) break;
+        var kind = run > 0 ? runType : "head";
+        if (run <= 0) { run = r.int(2, 6); runType = r.pick(MIX[z.theme]); } else run--;
+        var span = 1;
+        if ((kind === "disp" || kind === "poster" || kind === "notice") && z.cols >= 4 && k < z.cols - 1 && r.chance(.3)) span = 2;
+        var w = span * colW + (span - 1) * z.gap;
+        var u = unitHtml(kind, r, z.theme, k);
+        var h = est(kind, u[1], w, z.theme);
+        var y = Math.max.apply(null, heights.slice(k, k + span));
+        // level the columns under a wide unit with a filler
+        for (var c2 = k; c2 < k + span; c2++) if (heights[c2] < y - 2) { seg.push('<div class="u filler" style="left:' + (c2 * (colW + z.gap)) + 'px;top:' + (heights[c2] - z.y) + 'px;width:' + colW + 'px;height:' + (y - heights[c2]) + 'px">' + r.pick(["xzde★", "m18 1m", "· · ·", "——"]) + '</div>'); }
+        var y2 = free(k, span, y, h);
+        if (y2 > y) { // a structure blocked it: filler up to the structure
+          for (var c3 = k; c3 < k + span; c3++) seg.push('<div class="u filler" style="left:' + (c3 * (colW + z.gap)) + 'px;top:' + (y - z.y) + 'px;width:' + colW + 'px;height:' + (y2 - y) + 'px"></div>');
+          y = y2;
+        }
+        if (y >= z.y + z.h) { for (var c4 = k; c4 < k + span; c4++) heights[c4] = z.y + z.h; continue; }
+        if (y + h > z.y + z.h) h = z.y + z.h - y;
+        seg.push(u[0].replace('class="u ', 'style="left:' + (k * (colW + z.gap)) + 'px;top:' + (y - z.y) + 'px;width:' + w + 'px;height:' + h + 'px" class="u '));
+        for (var c5 = k; c5 < k + span; c5++) heights[c5] = y + h;
+      }
+      seg.push('</div>');
+      html.push(seg.join(""));
+    });
+    for (var p = PAGE; p < W; p += PAGE) html.push('<div class="pageline" style="left:' + p + 'px"><span>page ' + (p / PAGE + 1) + '</span></div>');
+    return html.join("");
+  }
+
+  /* --- field A --- */
+  function fieldA(root, seed) {
+    var r = new Rng(seed);
+    var ang = -9 * Math.PI / 180, ry0 = 760, rt = 150; // ribbon: y = ry0 + tan(ang) * x
+    var ribbon = function (x0, x1) { var a = ry0 + Math.tan(ang) * x0, b = ry0 + Math.tan(ang) * x1; return [Math.min(a, b) - rt / 2, Math.max(a, b) + rt / 2]; };
+    var sy = 1560, sh = 250;
+    var strip = function () { return [sy, sy + sh]; };
+    var cx = 2560, cy = 520, cr = 400;
+    var circle = function (x0, x1) { var dx = Math.max(0, Math.max(x0 - cx, cx - x1)); if (dx >= cr) return null; var dy = Math.sqrt(cr * cr - dx * dx); return [cy - dy, cy + dy]; };
+    var html = pack(root, r, [ribbon, strip, circle]);
+    var len = Math.sqrt(W * W + (W * Math.tan(ang)) * (W * Math.tan(ang))) + 200;
+    var band = []; for (var i = 0; i < 9; i++) band.push("LOVE LINES · LOVE LINES · <em>VALENTINE</em> · LOVE LINES · ");
+    var hearts = ""; for (var j = 0; j < 90; j++) hearts += "♥";
+    html += '<div class="s ribbon" style="left:-100px;top:' + (ry0 + Math.tan(ang) * -100) + 'px;width:' + len + 'px;transform:rotate(' + (ang * 180 / Math.PI) + 'deg)"><div class="hearts">' + hearts + '</div><div class="band">' + band.join("") + '</div></div>';
+    var cps = [["YES! SEND ME THE", "FREE CATALOG", "of a thousand and one things every studio needs and several it does not."],["I WAS A", "97-SKETCH WEAKLING", "until I found Dynamic Drawing. Fifteen minutes a day in your own kitchen."],["GROW YOUR OWN", "AUDIENCE", "Just add water and one honest painting. Results in six to eight years."],["X-RAY", "SKETCHBOOK", "See right through your own bad habits. Guaranteed to contain paper."],["LEARN COLOR", "BY MAIL", "Twelve lessons, each printed in a different colour. Lesson thirteen is a surprise."],["TERRORS OF THE", "BLANK PAGE", "exposed at last! What the masters never told you about the first mark."],["BE A", "CARTOONIST!", "Draw funny people for fun and profit. Includes one pencil and the secret of noses."],["THE SELF-STRETCHING", "CANVAS", "Leave it overnight and it pulls itself tight as a drum. No staples, no swearing."],["INSTANT", "MUSE", "Tiny living ideas. Hatch them in a glass of water and watch them swim."],["STAMMERING", "PEN?", "Blots, skips, false starts cured at home. Pamphlet in plain wrapper."],["PEN PALS", "WANTED", "Painter in a lighthouse seeks letters from anyone, anywhere. Will reply by lamp."]];
+    var sh2 = '<div class="s strip" style="left:0;top:' + sy + 'px;width:' + W + 'px;height:' + sh + 'px"><div class="cut"></div>';
+    cps.forEach(function (c, i) { sh2 += '<div class="coupon' + (i === 4 ? " rev" : "") + '"><div class="h">' + c[0] + '<em>' + c[1] + '</em></div><p>' + c[2] + '</p><div class="line">NAME</div><div class="line">ADDRESS · DEPT. ' + String.fromCharCode(65 + i) + '-' + (12 + i) + '</div></div>'; });
+    html += sh2 + '</div>';
+    var ringText = "REPLIES TO BOX NUMBERS ARE FORWARDED ONCE A WEEK · PLEASE DO NOT SEND ORIGINALS, MONEY OR PERISHABLES · THE DIRECTORY TAKES NO RESPONSIBILITY FOR WHAT THE REPLY SAYS · WHEN ANSWERING, PLEASE MENTION THE LEDGER · ";
+    html += '<div class="s circle" style="left:' + (cx - cr) + 'px;top:' + (cy - cr) + 'px;width:' + (2 * cr) + 'px;height:' + (2 * cr) + 'px">' +
+      '<svg viewBox="0 0 800 800"><defs><path id="ring" d="M400,400 m-340,0 a340,340 0 1,1 680,0 a340,340 0 1,1 -680,0"/><path id="ring2" d="M400,400 m-300,0 a300,300 0 1,1 600,0 a300,300 0 1,1 -600,0"/></defs><text font-family="Old Standard TT, serif" font-size="21" letter-spacing="3" fill="#171512"><textPath href="#ring">' + ringText + ringText + '</textPath></text><circle cx="400" cy="400" r="285" fill="none" stroke="#171512" stroke-width="2"/><circle cx="400" cy="400" r="279" fill="none" stroke="#171512" stroke-width="1"/></svg>' +
+      '<div class="inner"><div class="a">THE EYE</div><div class="b">of the Directory sees every file.</div><div class="c">Every dossier, organisation, event and unclaimed file on the network becomes an advertisement here, set once in its chosen look at its home spot and echoed elsewhere in whatever the page is wearing. Click any ad to learn whether it is real; follow a real one home.</div><div class="d">artdirect · the classified plane</div></div></div>';
+    root.innerHTML = html;
+  }
+
+  /* --- field B --- */
+  function fieldB(root, seed) {
+    var r = new Rng(seed);
+    var steps = []; for (var i = 0; i < 8; i++) steps.push({ x: 120 + i * 410, y: 90 + i * 170, w: 300, h: 150 });
+    var stair = function (x0, x1) { var lo = Infinity, hi = -Infinity; steps.forEach(function (s) { if (x1 > s.x && x0 < s.x + s.w) { lo = Math.min(lo, s.y); hi = Math.max(hi, s.y + s.h); } }); return lo < Infinity ? [lo, hi] : null; };
+    var ry = 1240, ra = 110, rl = 1300, rw = 150;
+    var riverY = function (x) { return ry + ra * Math.sin(x / rl * Math.PI * 2); };
+    var river = function (x0, x1) { var lo = Infinity, hi = -Infinity; for (var x = x0; x <= x1; x += 25) { var y = riverY(x); lo = Math.min(lo, y - rw / 2); hi = Math.max(hi, y + rw / 2); } return [lo, hi]; };
+    var ty = 1700, th = 230;
+    var table = function () { return [ty, ty + th]; };
+    var html = pack(root, r, [stair, river, table]);
+    var words = [["HELP WANTED", "STAGE", "001"], ["HELP WANTED", "MUSIC", "002"], ["HELP WANTED", "GALLERY", "003"], ["WORK", "WANTED", "004"], ["FOR", "SALE", "005"], ["TO", "LET", "006"], ["LOST &", "FOUND", "007"], ["IN", "MEMORIAM", "008"]];
+    steps.forEach(function (s, i) { html += '<div class="s stair" style="left:' + s.x + 'px;top:' + s.y + 'px;width:' + s.w + 'px;height:' + s.h + 'px"><small>' + words[i][0] + '</small><span>' + words[i][1] + '</span><i>CLASS ' + words[i][2] + ' · CONTINUES DOWN THE STAIR →</i></div>'; });
+    var d1 = "", d2 = "", dm = "";
+    for (var x = 0; x <= W; x += 40) { var y = riverY(x); d1 += (x ? "L" : "M") + x + "," + (y - rw / 2).toFixed(1) + " "; d2 += (x ? "L" : "M") + x + "," + (y + rw / 2).toFixed(1) + " "; dm += (x ? "L" : "M") + x + "," + y.toFixed(1) + " "; }
+    var rt = "CONTINUED IN EVERY DIRECTION · MORE ADS FOLLOW THE RIVER · ";
+    html += '<div class="s river" style="left:0;top:0;width:' + W + 'px;height:' + H + 'px;pointer-events:none"><svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '"><defs><path id="mid" d="' + dm + '"/></defs><path d="' + d1 + '" fill="none" stroke="#171512" stroke-width="3"/><path d="' + d1 + '" fill="none" stroke="#171512" stroke-width="1" transform="translate(0,6)"/><path d="' + d2 + '" fill="none" stroke="#171512" stroke-width="3"/><path d="' + d2 + '" fill="none" stroke="#171512" stroke-width="1" transform="translate(0,-6)"/><text font-family="Roboto Condensed, sans-serif" font-size="30" letter-spacing="8" fill="#171512" dy="10"><textPath href="#mid">' + rt + rt + rt + rt + rt + '</textPath></text></svg></div>';
+    var venues = [["THE RIALTO", "Cinema · back row reserved", "Ten thousand films and counting. Tuesday double bills. Sticky floors.", "[PHONE]"],["THE LONG TABLE", "Restaurant · 7 till late", "One table, forty chairs, whoever turns up. Soup for painters, bread for poets.", "[PHONE]"],["CANAL STREET GALLERY", "Gallery · Thu–Sun", "Small Weathers, until the frost. Private views on Fridays, umbrellas provided.", "[PHONE]"],["THE OLD MILL", "Studios · open Saturday", "Every door open. Letterpress on the ground floor, kiln on the second.", "[PHONE]"],["THE NIGHT PRESS", "Print shop · after dark", "Letterpress, risograph, binding. Closed on the full moon.", "[PHONE]"],["CAFÉ LITCHFIELD", "Stop for dinner, 20 minutes", "The timetable allows twenty minutes. The pie takes nineteen.", "[PHONE]"],["THE BOAT HOUSE", "Music · Thursdays", "A three-piece who keeps losing drummers. Bring one.", "[PHONE]"],["UNIT 4", "Dance · stairwell", "Echo / Stairwell, one night only, every night.", "[PHONE]"],["THE GUILD ROOM", "Meetings · the 12th", "The press, the roof, and the question of the press on the roof.", "[PHONE]"],["THE BRIDGE", "Outdoors · sunset", "Where the musicians play when the lower hall floods.", "no phone"]];
+    var tb = '<div class="s table" style="left:0;top:' + ty + 'px;width:' + W + 'px;height:' + th + 'px">';
+    venues.forEach(function (v) { tb += '<div class="card"><div class="k">' + v[1] + '</div><div class="h">' + v[0] + '</div><div class="m">' + v[2] + '</div><div class="ph">' + v[3] + '</div></div>'; });
+    html += tb + '</div>';
+    html += '<div class="s bigword" style="left:40px;top:640px">W<b>A</b>NTED</div>';
+    root.innerHTML = html;
+  }
+
+  var seed = 7;
+  function build() { fieldA(document.getElementById("fieldA"), seed); fieldB(document.getElementById("fieldB"), seed + 100); fit(); }
+  function fit() {
+    var avail = document.documentElement.clientWidth - 32;
+    ["A", "B"].forEach(function (k) {
+      var frame = document.getElementById("frame" + k), world = document.getElementById("field" + k);
+      if (frame.classList.contains("close")) return;
+      var s = Math.min(1, avail / W);
+      world.style.transform = "scale(" + s + ")";
+      world.style.marginBottom = Math.round(-H * (1 - s)) + "px";
+    });
+  }
+  document.getElementById("closeA").addEventListener("change", function (e) { document.getElementById("frameA").classList.toggle("close", e.target.checked); fit(); });
+  document.getElementById("closeB").addEventListener("change", function (e) { document.getElementById("frameB").classList.toggle("close", e.target.checked); fit(); });
+  document.getElementById("reseed").addEventListener("click", function () { seed = (seed * 31 + 17) % 1000; build(); });
+  window.addEventListener("resize", fit);
+  build();
+})();
+</script>

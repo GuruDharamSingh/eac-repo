@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { AuctionLot, Bid } from "../types";
-import { formatMoney, minorToMajor, majorToMinor, nextMinimumBid } from "../money";
+import { formatMoney, minorToMajor, majorToMinor, nextMinimumBid, lotLadder } from "../money";
 import { CountdownTimer } from "./CountdownTimer";
 import { cn } from "./cn";
 
@@ -22,7 +22,24 @@ export interface BidWidgetProps {
     ok: boolean;
     lot?: Pick<AuctionLot, "currentBidMinor" | "bidCount" | "endAt">;
     reason?: string;
+    /** A standing maximum beat this bid (migration 209 bidding). */
+    outbid?: boolean;
+    message?: string;
+    needsRegistration?: boolean;
   }>;
+  /** Buy the piece at the lot's buy-now price (shown until the first bid). */
+  onBuyNow?: (lotId: string) => Promise<{ ok: boolean; reason?: string }>;
+  /** Registration (phone + card on file) is required and this viewer has none. */
+  needsRegistration?: boolean;
+  /** Starts the registration flow (redirects). */
+  onRegister?: () => Promise<void>;
+  /** The viewer's standing maximum, when they lead. */
+  yourMaxMinor?: number | null;
+  /** The viewer leads this lot. */
+  youLead?: boolean;
+  /** Estimate range, minor units. */
+  estimateLowMinor?: number | null;
+  estimateHighMinor?: number | null;
   className?: string;
 }
 
@@ -46,6 +63,13 @@ export function BidWidget({
   isAuthenticated,
   signInHref = "/login",
   onPlaceBid,
+  onBuyNow,
+  needsRegistration = false,
+  onRegister,
+  yourMaxMinor = null,
+  youLead = false,
+  estimateLowMinor = null,
+  estimateHighMinor = null,
   className,
 }: BidWidgetProps) {
   const [optimistic, setOptimistic] = React.useState<{
@@ -58,11 +82,15 @@ export function BidWidget({
     endAt: lot.endAt,
   });
 
+  const ladder = lotLadder(lot.metadata);
   const minNext = nextMinimumBid({
     startingBidMinor: lot.startingBidMinor,
     currentBidMinor: optimistic.currentBidMinor || lot.currentBidMinor,
     bidIncrementMinor: lot.bidIncrementMinor,
+    ladder,
   });
+  const [buying, setBuying] = React.useState(false);
+  const canBuyNow = Boolean(onBuyNow && lot.buyNowMinor && optimistic.bidCount === 0);
 
   const [amountInput, setAmountInput] = React.useState<string>(
     minorToMajor(minNext, lot.currency).toFixed(2)
@@ -99,13 +127,17 @@ export function BidWidget({
     try {
       const r = await onPlaceBid({ lotId: lot.id, amountMinor, maxAmountMinor });
       if (r.ok) {
+        const newCurrent = r.lot?.currentBidMinor ?? amountMinor;
         setOptimistic((prev) => ({
-          currentBidMinor: r.lot?.currentBidMinor ?? amountMinor,
+          currentBidMinor: newCurrent,
           bidCount: r.lot?.bidCount ?? prev.bidCount + 1,
           endAt: r.lot?.endAt ?? prev.endAt,
         }));
-        setOk("Bid placed.");
-        setAmountInput(minorToMajor(amountMinor + lot.bidIncrementMinor, lot.currency).toFixed(2));
+        if (r.outbid) setErr(r.message ?? "A standing maximum beat your bid.");
+        else setOk(r.message ?? "Bid placed.");
+        const next = nextMinimumBid({ startingBidMinor: lot.startingBidMinor, currentBidMinor: newCurrent, bidIncrementMinor: lot.bidIncrementMinor, ladder });
+        setAmountInput(minorToMajor(next, lot.currency).toFixed(2));
+        setMaxInput("");
       } else {
         setErr(r.reason ?? "Bid could not be placed.");
       }
@@ -133,10 +165,25 @@ export function BidWidget({
           </span>
           <span className="text-xs text-muted-foreground">
             {optimistic.bidCount} {optimistic.bidCount === 1 ? "bid" : "bids"}
-            {lot.reserveMinor != null && optimistic.currentBidMinor < lot.reserveMinor && " · reserve not met"}
+            {lot.reserveMinor != null &&
+              (optimistic.currentBidMinor < lot.reserveMinor ? " · reserve not met" : " · reserve met")}
           </span>
+          {(estimateLowMinor != null || estimateHighMinor != null) && (
+            <span className="text-xs text-muted-foreground">
+              Estimate {estimateLowMinor != null ? formatMoney(estimateLowMinor, lot.currency) : "—"}
+              {" – "}
+              {estimateHighMinor != null ? formatMoney(estimateHighMinor, lot.currency) : "—"}
+            </span>
+          )}
         </div>
       </div>
+
+      {!lotEnded && isAuthenticated && (youLead || yourMaxMinor != null) && (
+        <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm">
+          {youLead ? "You lead this lot." : "You have a standing bid."}
+          {yourMaxMinor != null && <> Your maximum: <strong>{formatMoney(yourMaxMinor, lot.currency)}</strong>.</>}
+        </p>
+      )}
 
       {/* Bid form / sign-in gate / ended state */}
       {lotEnded ? (
@@ -150,6 +197,31 @@ export function BidWidget({
         >
           Sign in to bid
         </a>
+      ) : needsRegistration ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Bidding needs a phone number and a card on file. The card is not charged; it is held
+            against unpaid wins.
+          </p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={async () => {
+              if (!onRegister) return;
+              setPending(true);
+              try {
+                await onRegister();
+              } catch (e: unknown) {
+                setErr(e instanceof Error ? e.message : "Could not start registration.");
+                setPending(false);
+              }
+            }}
+            className="inline-flex h-12 items-center justify-center rounded-md bg-[hsl(var(--primary))] px-6 text-base font-medium text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 disabled:opacity-50"
+          >
+            {pending ? "Opening…" : "Register to bid"}
+          </button>
+          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+        </div>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1.5">
@@ -190,6 +262,27 @@ export function BidWidget({
           </button>
           {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
           {ok && <p className="text-sm text-[hsl(var(--primary))]">{ok}</p>}
+          {canBuyNow && (
+            <button
+              type="button"
+              disabled={pending || buying}
+              onClick={async () => {
+                if (!onBuyNow || !lot.buyNowMinor) return;
+                if (!window.confirm(`Buy this piece now for ${formatMoney(lot.buyNowMinor, lot.currency)}?`)) return;
+                setBuying(true);
+                setErr(null);
+                try {
+                  const r = await onBuyNow(lot.id);
+                  if (!r.ok) setErr(r.reason ?? "Buy-now failed.");
+                } finally {
+                  setBuying(false);
+                }
+              }}
+              className="inline-flex h-11 items-center justify-center rounded-md border border-[hsl(var(--border))] px-6 text-sm font-medium hover:bg-[hsl(var(--muted))]/40 disabled:opacity-50"
+            >
+              {buying ? "…" : `Buy now for ${formatMoney(lot.buyNowMinor!, lot.currency)}`}
+            </button>
+          )}
         </form>
       )}
 

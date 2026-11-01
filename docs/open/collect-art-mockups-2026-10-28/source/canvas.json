@@ -1,0 +1,184 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "About.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "title": "About page",
+      "w": 1440,
+      "x": 2840,
+      "y": 0
+    },
+    "Intro0.dc.html": {
+      "h": 760,
+      "title": "Intro: current site (for comparison)",
+      "w": 1440,
+      "x": 0,
+      "y": 7100
+    },
+    "IntroA.dc.html": {
+      "h": 760,
+      "title": "Intro A: title card with credits",
+      "w": 1440,
+      "x": 1520,
+      "y": 7100
+    },
+    "IntroB.dc.html": {
+      "h": 760,
+      "title": "Intro B: split with featured work",
+      "w": 1440,
+      "x": 3040,
+      "y": 7100
+    },
+    "IntroC.dc.html": {
+      "h": 760,
+      "title": "Intro C: nested (platform › host › auction)",
+      "w": 1440,
+      "x": 4560,
+      "y": 7100
+    },
+    "IntroD.dc.html": {
+      "h": 483,
+      "title": "Intro D: dark band on the light site",
+      "w": 1440,
+      "x": 6080,
+      "y": 7100
+    },
+    "LotA.dc.html": {
+      "expand": "fill",
+      "h": 1700,
+      "title": "Lot detail A: two columns",
+      "w": 1440,
+      "x": 0,
+      "y": 2020
+    },
+    "LotB.dc.html": {
+      "expand": "fill",
+      "h": 1700,
+      "title": "Lot detail B: gallery stage",
+      "w": 1440,
+      "x": 1520,
+      "y": 2020
+    },
+    "LotC.dc.html": {
+      "expand": "fill",
+      "h": 1400,
+      "is_interactive": true,
+      "title": "Lot detail C: art first",
+      "w": 1440,
+      "x": 3040,
+      "y": 2020
+    },
+    "LotD.dc.html": {
+      "expand": "fill",
+      "h": 1600,
+      "is_interactive": true,
+      "title": "Lot detail D: desktop, image left",
+      "w": 1440,
+      "x": 4560,
+      "y": 2020
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1900,
+      "title": "Landing page",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Main2.dc.html": {
+      "expand": "fill",
+      "h": 2100,
+      "title": "Landing B: series first",
+      "w": 1440,
+      "x": 0,
+      "y": 3840
+    },
+    "Main3.dc.html": {
+      "expand": "fill",
+      "h": 2100,
+      "title": "Landing C: featured lot stage",
+      "w": 1440,
+      "x": 1520,
+      "y": 3840
+    },
+    "Main4.dc.html": {
+      "expand": "fill",
+      "h": 2400,
+      "title": "Landing D: final direction",
+      "w": 1440,
+      "x": 4681,
+      "y": 3840
+    },
+    "Series.dc.html": {
+      "expand": "fill",
+      "h": 3000,
+      "title": "Series page",
+      "w": 1440,
+      "x": 3040,
+      "y": 3840
+    },
+    "SeriesA.dc.html": {
+      "h": 560,
+      "title": "Series highlight A: timeline",
+      "w": 1240,
+      "x": 1520,
+      "y": 0
+    },
+    "SeriesB.dc.html": {
+      "h": 560,
+      "title": "Series highlight B: series journal",
+      "w": 1240,
+      "x": 1520,
+      "y": 680
+    },
+    "SeriesC.dc.html": {
+      "h": 560,
+      "title": "Series highlight C: standings",
+      "w": 1240,
+      "x": 1520,
+      "y": 1360
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-24T18:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "intro": {
+      "kind": "title1",
+      "maxW": 7520,
+      "text": "Top of the landing page: introducing the site, the series and the platform",
+      "w": 240,
+      "x": 0,
+      "y": 6860
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "SeriesA.dc.html",
+    "SeriesB.dc.html",
+    "SeriesC.dc.html",
+    "LotA.dc.html",
+    "LotB.dc.html",
+    "About.dc.html",
+    "Main2.dc.html",
+    "Main3.dc.html",
+    "LotC.dc.html",
+    "LotD.dc.html",
+    "Series.dc.html",
+    "Main4.dc.html",
+    "Intro0.dc.html",
+    "IntroA.dc.html",
+    "IntroB.dc.html",
+    "IntroC.dc.html",
+    "IntroD.dc.html"
+  ],
+  "pages": [],
+  "title": "IFAC Auction Landing"
+}

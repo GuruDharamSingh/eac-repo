@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D · One series page</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+/* D: /series/<slug> led by the series (its general card), not by this week.
+   The week appears once, as the first row of the list, and opens its own
+   page; nothing is shown twice. */
+.crumb { padding: 18px 0 0; font-size: 0.95rem; }
+.crumb a { color: var(--gold-text); font-weight: 600; }
+.head { padding: 18px 0 0; display: grid; gap: 14px; }
+.head h1 { font-size: clamp(2.4rem, 4.6vw, 3.8rem); max-width: 22ch; }
+.media { aspect-ratio: 16 / 9; max-width: 980px; border: 1px solid var(--line2); border-radius: 6px; }
+.gen { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; margin-top: 26px; border: 2px solid var(--frame); background: var(--bg2); }
+.gen__about { padding: 26px 28px; display: grid; gap: 14px; align-content: start; }
+.gen__about .rich p + p { margin-top: 0.8em; }
+.gen__act { padding: 26px 24px; border-left: 1px solid var(--line2); display: grid; gap: 16px; align-content: start; background: var(--bg); }
+.gen__act h3 { font-size: 1.6rem; }
+.btn--w { width: 100%; }
+.mini-auth { border-top: 1px solid var(--line2); padding-top: 16px; display: grid; gap: 10px; }
+.mini-auth h4 { margin: 0; font: 500 1.5rem/1.1 var(--serif); }
+.mini-auth h4 span { color: var(--blue); }
+.field { display: grid; gap: 4px; font-size: 0.92rem; font-weight: 600; }
+.field i { display: block; height: 42px; border: 1px solid #8c867d; border-radius: 8px; background: #060607; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 999px; background: #fff; color: #3c4043; font-weight: 600; font-size: 0.95rem; }
+.pills { display: flex; gap: 10px; flex-wrap: wrap; }
+.nextband { margin-top: 30px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 18px 22px; border: 1px solid var(--a1); border-radius: 12px; background: linear-gradient(90deg, rgba(201,162,74,0.10), rgba(201,162,74,0) 60%); }
+.nextband .nextline__date { min-width: 64px; }
+.nextband .nextline__t { font-size: 1.7rem; }
+.thumb { width: 150px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; position: relative; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.rows .row { grid-template-columns: 64px 120px minmax(0, 1fr) auto; }
+.rows .row .thumb { width: 120px; }
+.past { margin-top: 18px; }
+@media (max-width: 860px) {
+  .gen { grid-template-columns: minmax(0, 1fr); }
+  .gen__act { border-left: 0; border-top: 1px solid var(--line2); }
+  .nextband { grid-template-columns: auto minmax(0, 1fr); }
+  .nextband > :last-child { grid-column: 1 / -1; }
+  .rows .row { grid-template-columns: 54px minmax(0, 1fr); }
+  .rows .row .thumb { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="mockbar"><b>Mockup D · One series page, reworked</b> <span>/series/art-for-non-professionals · signed out · static</span> <a href="index.html">all mockups</a></div>
+<header class="hdr"><div class="wrap"><a class="hdr__logo" href="#">IFAC</a><nav><a href="#">Home</a><a class="on" href="#">Series</a><a href="#">About</a><a href="#">Publications</a><a href="#">Forum</a><a class="join" href="#">Join / Sign in</a></nav></div></header>
+
+<main class="wrap s1">
+  <p class="crumb"><a href="a-programme.html">‹ All series</a></p>
+  <section class="head">
+    <span class="sname"><span class="dot"></span>Weekly series · running since 12 Oct</span>
+    <h1>Explorations in Art Forms by Non Professionals</h1>
+    <div class="cover media"><img src="img/painter.jpg" alt=""><span class="cover__play">▶ series video, playing muted · sound</span></div>
+  </section>
+
+  <section class="gen" aria-label="About the series">
+    <div class="gen__about">
+      <p class="eyebrow">About the series</p>
+      <div class="rich muted">
+        <p>A weekly online hour for people who love art and might be hesitant to engage creating, or are looking for new forms.</p>
+        <p>One hour, one work, one host. Every week an IFAC artist or dealer opens a single piece or practice and talks about how they see it. No background needed. Questions welcome.</p>
+      </div>
+      <div class="facts"><span>Mondays</span><span>6 pm Pacific · 9 pm Eastern · 3 am Paris (Tue)</span><span>Online · free</span></div>
+      <div class="hosts"><span class="hosts__faces"><img src="img/kevin.jpg" alt=""><img src="img/eric.jpg" alt=""><i>J</i></span>Hosted by Kevin Meadows, Eric Brummel, Jason Ford and others</div>
+    </div>
+    <aside class="gen__act">
+      <h3>Follow the series</h3>
+      <p class="muted" style="font-size:0.95rem">An email a couple of days before each session, with the join link.</p>
+      <a class="btn btn--p btn--w" href="#">Subscribe to the series</a>
+      <div class="pills"><a class="btn btn--s" href="#">Talk about the series</a><a class="btn btn--s" href="#">Share</a></div>
+      <div class="mini-auth">
+        <h4><span>Sign In/Up</span> to the Arts Collective Platform</h4>
+        <div class="pair"><label class="field">Email<i></i></label><label class="field">Password<i></i></label></div>
+        <a class="btn btn--p btn--s" href="#">Enter</a>
+        <span class="g">Continue with Google</span>
+      </div>
+    </aside>
+  </section>
+  <p class="note" style="margin-top:12px"><b>The general card.</b> Cover, About, schedule, hosts and Subscribe belong to the series. Signed in, the sign-in block is replaced by "Subscribed ✓" or nothing. "I'm coming" is per session, so it lives on the next-session band and the session pages, not here.</p>
+
+  <section aria-label="Next session">
+    <a class="nextband" href="#">
+      <span class="nextline__date"><small>Mon</small><b>19</b><small>Oct</small></span>
+      <span><span class="nextline__k">Next session · tomorrow · Session 2</span><br><span class="nextline__t">Putting Art as Tai Chi into Practice</span><br><span class="nextline__h">A relaxed, hands-on painting workshop · with Kevin Meadows · 6 pm Pacific</span></span>
+      <span style="display:flex;gap:10px;flex-wrap:wrap"><span class="btn btn--p">I'm coming</span><span class="btn">Read more →</span></span>
+    </a>
+  </section>
+
+  <section class="sec">
+    <div class="sec__head"><div><p class="eyebrow">Sessions</p><h2>Coming up</h2></div><a class="btn btn--s" href="#">Add the series to my calendar</a></div>
+    <div class="rows">
+      <article class="row s1"><div class="datebox"><small>Mon</small><b>26</b><small>Oct</small></div><div class="thumb"><img src="img/collage.jpg" alt=""></div><div><span class="sname"><span class="dot"></span>Session 3</span><p class="row__t">Collage workshop</p><p class="row__meta">Jason Ford aka sunjye · 6 pm Pacific</p></div><div class="row__side"><a class="btn btn--s btn--p" href="#">I'm coming</a></div></article>
+      <article class="row s1 is-tba"><div class="datebox"><small>Mon</small><b>2</b><small>Nov</small></div><div class="thumb cover"></div><div><span class="sname"><span class="dot"></span>Session 4</span><p class="row__t">To be announced</p><p class="row__meta">Host to be announced</p></div><div class="row__side"></div></article>
+    </div>
+    <p class="past"><a class="faint" href="#">Earlier sessions (1) ›</a></p>
+    <p class="note" style="margin-top:12px"><b>Rows do not expand.</b> Each row is a link to the session's own page (write-up, materials, conversation). That removes the repeat of this week's write-up that the page has now.</p>
+  </section>
+
+  <section class="sec">
+    <div class="sec__head"><div><p class="eyebrow">Who's hosting</p><h2>The rota</h2></div></div>
+    <p class="muted">Unchanged from today.</p>
+  </section>
+</main>
+<footer class="foot"><div class="wrap">Home · Series · About · Publications · Forum</div></footer>
+</body>
+</html>

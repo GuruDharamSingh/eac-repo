@@ -12,9 +12,11 @@ type Props = {
   threadId: string;
   pinned: boolean;
   className?: string;
+  /** After a successful toggle, with the new state: a host re-reads its list. */
+  onToggled?: (pinned: boolean) => void;
 };
 
-export function PinToggle({ threadId, pinned, className }: Props) {
+export function PinToggle({ threadId, pinned, className, onToggled }: Props) {
   const [isPending, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(pinned);
 
@@ -31,7 +33,8 @@ export function PinToggle({ threadId, pinned, className }: Props) {
         return;
       }
       setOptimistic(result.pinned);
-      toast.success(result.pinned ? "Pinned to top" : "Unpinned");
+      toast.success(result.pinned ? "This now leads the site" : "No longer leading the site");
+      onToggled?.(result.pinned);
     });
   }
 

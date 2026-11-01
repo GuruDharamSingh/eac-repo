@@ -716,6 +716,15 @@ services:
       # because Inbound Parse allows one endpoint per MX host and the hub is
       # the one app that already serves every organisation.
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      META_APP_ID: ${META_APP_ID}
+      META_APP_SECRET: ${META_APP_SECRET}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
+      META_LOGIN_CONFIG_ID: ${META_LOGIN_CONFIG_ID:-}
+      THREADS_APP_ID: ${THREADS_APP_ID}
+      THREADS_APP_SECRET: ${THREADS_APP_SECRET}
+      INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID}
+      INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET}
+      META_WEBHOOK_VERIFY_TOKEN: ${META_WEBHOOK_VERIFY_TOKEN:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
@@ -824,6 +833,11 @@ services:
       # startThreadCheckout, 2026-09-27). Orders are confirmed by art-auction's
       # webhook and this app's /api/checkout/return hop; no webhook here.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      # Metis news desk — every box on /classifieds/news is one of the day's
+      # stories (2026-10-28). The token opens /v1/news/headlines and nothing
+      # else in Metis. Without them that page has no news.
+      METIS_URL: ${METIS_URL:-}
+      METIS_NEWS_TOKEN: ${METIS_NEWS_TOKEN:-}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
@@ -833,13 +847,12 @@ services:
       # root of a person's network presence, so it takes part (2026-09-26).
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
-      NODE_ENV: development
-      # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
-      # is a 4.1GB limit per dev server, so six of them can exhaust the
-      # machine before any one of them collects. Cap it instead.
-      # 2048 for ArtDirect since 2026-09-26: the Puck editor (/<slug>/design)
-      # compiles in this dev server, and 1024 ran out of heap once.
-      NODE_OPTIONS: --max-old-space-size=2048
+      # Production mode since 2026-10-19: `next dev` served the public
+      # directory host and held about 4 GB. Same shape as ifac below.
+      NODE_ENV: production
+      # V8 sizes its heap from HOST RAM when unset. 1024 matches the other
+      # production apps; the 2048 was for compiling the Puck editor in dev.
+      NODE_OPTIONS: --max-old-space-size=1024
       # Supabase Auth
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
@@ -863,7 +876,9 @@ services:
       - /app/apps/artdirect/.next
     ports:
       - "3013:3013"
-    command: sh -c "cd apps/artdirect && pnpm dev"
+    # Build only when there is no complete build, then `next start`. Guard
+    # and reasons: ifac's command below and docs/reference/ops.md.
+    command: sh -c "cd apps/artdirect && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1039,6 +1054,15 @@ services:
       # pointed at the same cards.
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      META_APP_ID: ${META_APP_ID}
+      META_APP_SECRET: ${META_APP_SECRET}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
+      META_LOGIN_CONFIG_ID: ${META_LOGIN_CONFIG_ID:-}
+      THREADS_APP_ID: ${THREADS_APP_ID}
+      THREADS_APP_SECRET: ${THREADS_APP_SECRET}
+      INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID}
+      INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET}
+      META_WEBHOOK_VERIFY_TOKEN: ${META_WEBHOOK_VERIFY_TOKEN:-}
       EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
       EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
       # The host every org's inbound reply address sits on. Read server-side by
@@ -1101,16 +1125,45 @@ services:
       - eac-network
       - nextcloud-network
 
+  # The auction clock (2026-10-18): opens, closes and settles auction lots on
+  # time and releases unpaid auction orders. Same monorepo image as the apps;
+  # one small loop in packages/commerce/scripts/auction-clock.mts.
+  auction-clock:
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-auction-clock
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-https://market.arts-collective.com}
+      AUCTION_CLOCK_SECONDS: ${AUCTION_CLOCK_SECONDS:-30}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      NODE_OPTIONS: --max-old-space-size=256
+    volumes:
+      - .:/app
+    working_dir: /app/packages/services
+    command: node_modules/.bin/tsx ../commerce/scripts/auction-clock.mts
+    networks:
+      - eac-network
+
   # Reel renderer (Remotion). Polls reel_renders (migration 189) for the
   # Studio's /studio/video jobs. Folder renders by hand:
   #   docker compose run --rm reel-render --project "EAC_Network/<org>/Private/Video/Reels/<name>" [--init]
   # Debian image with its own renderer install (docker/reel-render.Dockerfile);
   # templates come from the bind-mounted packages/reels (restart to pick up edits).
-  # Server-side OBS Studio: one shared instance on a virtual display.
+  # Server-side OBS Studio: one shared instance on a headless display.
   # Controlled from arts-collective /studio/broadcast through the agent on
   # :4456 (eac-network only). The full OBS window is noVNC on
-  # 127.0.0.1:6080 (ssh -L 6080:127.0.0.1:6080, then /vnc.html; password
-  # OBS_VNC_PASSWORD). /dev/dri: the AMD iGPU, for VA-API encoding.
+  # 127.0.0.1:6080 (ssh -L 6080:127.0.0.1:6080, then /vnc.html; no password
+  # since 2026-10-28, OBS_VNC_PASSWORD is unused). /dev/dri: the AMD iGPU,
+  # for rendering (headless sway) and VA-API encoding.
   obs:
     build:
       context: docker/obs
@@ -1693,6 +1746,74 @@ services:
     # The build gets a larger heap than the 1024 runtime: the dev compile of
     # the shared editor already crossed 1GB.
     command: sh -c "cd apps/fourthwayBookreaders && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3072 NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    networks:
+      - eac-network
+      - nextcloud-network
+
+  # Port 3021: Elkdonis Tours & Experiences (apps/elktours, org `elktours`),
+  # a tour company in Paris selling dated departures by card (migration 208).
+  # Dev mode while the site is being built and has no domain; switch to the
+  # production shape above (sentinel + `pnpm docker:start`) when it launches.
+  elktours:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-elktours
+    restart: unless-stopped
+    mem_limit: 4g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      REDIS_URL: redis://redis:6379
+      NEXT_PUBLIC_APP_URL: ${ELKTOURS_URL:-http://localhost:3021}
+      NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      NODE_ENV: development
+      PORT: 3021
+      NODE_OPTIONS: --max-old-space-size=2048
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      ELKTOURS_OWNER_EMAIL: ${ELKTOURS_OWNER_EMAIL:-danamccoolart@gmail.com}
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      EMAIL_INBOUND_DOMAIN: ${EMAIL_INBOUND_DOMAIN:-}
+      # Card bookings and the guide's Stripe Express onboarding
+      # (packages/checkout). The webhook stays on art-auction; this app only
+      # creates sessions and reconciles on the return hop.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # Optional. Unset, each stop links out to Google Street View; set, the
+      # stop embeds the panorama (Maps Embed API, no charge).
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      # Geocoder for the stop editor (same as ArtDirect).
+      PHOTON_URL: ${PHOTON_URL:-https://photon.komoot.io}
+    volumes:
+      - .:/app
+      - /app/apps/elktours/.next
+    ports:
+      - "3021:3021"
+    command: sh -c "cd apps/elktours && pnpm docker:dev"
     networks:
       - eac-network
       - nextcloud-network

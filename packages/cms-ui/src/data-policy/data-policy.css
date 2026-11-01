@@ -1,0 +1,66 @@
+/* Data policy and deletion pages (packages/cms-ui/src/data-policy). Plain
+   semantic HTML; the host's page frame sets the faces through the variables
+   below, with the host's body text as the fallback. */
+.eac-policy {
+  --policy-fg: var(--eac-fg, inherit);
+  --policy-muted: var(--eac-fg-muted, color-mix(in srgb, currentColor 72%, transparent));
+  --policy-accent: var(--eac-accent, currentColor);
+  --policy-line: var(--eac-line, color-mix(in srgb, currentColor 22%, transparent));
+  max-width: 66ch;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--policy-fg);
+}
+.eac-policy section { margin-top: 2rem; }
+.eac-policy h2 {
+  margin: 0 0 0.5rem;
+  font-family: var(--policy-heading-face, inherit);
+  font-size: 1.3rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.eac-policy p { margin: 0 0 0.9em; }
+.eac-policy ul { margin: 0 0 0.9em; padding-left: 1.2em; }
+.eac-policy li { margin: 0 0 0.6em; }
+.eac-policy li strong { font-weight: 600; }
+.eac-policy a { color: var(--policy-accent); text-decoration: underline; text-underline-offset: 3px; }
+.eac-policy code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05em;
+  letter-spacing: 0.06em;
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--policy-line);
+  border-radius: 4px;
+}
+.eac-policy dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; margin: 1rem 0; }
+.eac-policy dt { color: var(--policy-muted); }
+.eac-policy dd { margin: 0; }
+.eac-policy-code { color: var(--policy-muted); }
+
+.eac-policy-form { display: grid; gap: 1rem; max-width: 36rem; margin-top: 1.5rem; }
+.eac-policy-form label { display: grid; gap: 0.35rem; }
+.eac-policy-form label span { font-size: 0.9rem; color: var(--policy-muted); }
+.eac-policy-form input,
+.eac-policy-form textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--policy-line);
+  border-radius: 4px;
+  background: var(--eac-bg-raised, transparent);
+  color: inherit;
+  font: inherit;
+}
+.eac-policy-form textarea { resize: vertical; }
+.eac-policy-form button {
+  justify-self: start;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--policy-accent);
+  border-radius: 4px;
+  background: var(--policy-accent);
+  color: var(--eac-bg, #fff);
+  font: inherit;
+  cursor: pointer;
+}
+.eac-policy-form button[disabled] { opacity: 0.6; cursor: default; }
+.eac-policy-error { color: #8b2e2e; margin: 0; }
+.eac-policy-form-done { padding: 1rem 1.2rem; border: 1px solid var(--policy-line); border-radius: 6px; }

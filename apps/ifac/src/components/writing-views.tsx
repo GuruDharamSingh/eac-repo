@@ -10,6 +10,7 @@ import { ArticleView } from "@elkdonis/cms-ui/article";
 import { WritingShelf, WritingDesk, StartPiece } from "@elkdonis/cms-ui/writing";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getDirectoryProfile } from "@/lib/directory";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { defaultSiteContent } from "@/lib/default-content";
 import { siteConfig } from "@/config/site";
@@ -40,8 +41,10 @@ import {
  * has not put on IFAC is not readable under an IFAC address.
  */
 
-async function context(kind: "artist" | "dealer", slug: string) {
+/** `rest` is the path after /<kind>/<slug>, kept when an old slug redirects. */
+async function context(kind: "artist" | "dealer", slug: string, rest: string) {
   const profile = await getDirectoryProfile(slug);
+  if (!profile) await redirectRenamedProfile(slug, (current) => `/${kind}s/${current}${rest}`);
   if (!profile || profile.kind !== kind || !profile.userId) notFound();
 
   const session = await getServerSession();
@@ -66,7 +69,7 @@ export async function WritingShelfPage({
   kind: "artist" | "dealer";
   slug: string;
 }) {
-  const ctx = await context(kind, slug);
+  const ctx = await context(kind, slug, "/writing");
   const items = await listWriting(ctx.userId, {
     orgId: siteConfig.orgId,
     includeDrafts: ctx.editable,
@@ -124,7 +127,7 @@ export async function WritingPieceView({
   pieceSlug: string;
   startEditing: boolean;
 }) {
-  const ctx = await context(kind, slug);
+  const ctx = await context(kind, slug, `/writing/${encodeURIComponent(pieceSlug)}`);
   const post = await getWritingPost(ctx.userId, pieceSlug, {
     includeDrafts: ctx.editable,
   });

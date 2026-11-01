@@ -80,7 +80,7 @@ export const GOALS_OPTION_LABELS: Record<
   string
 > = {
   host_offerings: "Host my offerings on the web portal",
-  connect_membership: "Connect with Elkdonis membership and expand",
+  connect_membership: "Connect with Arts Collective membership and expand",
   seek_service: "Be in contact with inspired, service-oriented people",
   financial_success: "Grow as an artist and earn a living",
   cross_promotion: "Cross-promote within artistic groups and subgroups",

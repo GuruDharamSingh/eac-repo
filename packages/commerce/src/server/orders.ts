@@ -18,12 +18,18 @@
  */
 
 import { db } from "@elkdonis/db";
-import { splitCommission } from "../money";
 import { buildEtransferInstructions, generateOrderNumber } from "../etransfer";
 import type { Order } from "../types";
 import { jsonb, mapOrder, num, type Row } from "./map-order";
-import { HOST_PAYOUT_EMAIL, resolveSettlement, type LineSettlement } from "./settlement";
+import { HOST_PAYOUT_EMAIL, resolveSettlement, estimateProcessorFeeMinor, type LineSettlement } from "./settlement";
 import { writeEntry } from "./ledger";
+
+/**
+ * The buyer's choice of where the commission goes (ORG_STORE_BRIEF R3): one or
+ * more payees with percentages summing to 100. Empty means the marketplace
+ * org (`market`) keeps it.
+ */
+export type SupportSplit = Array<{ payeeId: string; percent: number }>;
 
 /** The two ways a buyer can pay. `manual` exists for admin-recorded sales. */
 export type OrderRail = "etransfer" | "stripe";
@@ -58,6 +64,9 @@ export interface SellableItem {
   qty: number;
   currency: string;
   imageUrl?: string | null;
+  /** The listing's beneficiary (artwork_variant, migration 209). */
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: "all_proceeds" | "commission" | null;
 }
 
 export interface OrderCustomer {
@@ -80,6 +89,8 @@ export interface CreateOrderInput extends OrderCustomer {
   payUrl?: string | null;
   /** The cart to convert, when there is one. Reservations are keyed by it. */
   cartId?: string | null;
+  /** Where the commission goes, chosen by the buyer at checkout. */
+  support?: SupportSplit | null;
 }
 
 const ITEM_SELECT = db`
@@ -88,7 +99,8 @@ const ITEM_SELECT = db`
   a.org_id AS art_org_id, a.status AS art_status,
   st.id AS store_id, st.status AS store_status,
   COALESCE(st.owner_org_id, st.org_id) AS counterparty_org_id,
-  pm.url AS primary_image_url
+  pm.url AS primary_image_url,
+  av.beneficiary_payee_id, av.beneficiary_scope
 `;
 
 /** The presenting store's counterparty, when a cart line came through one. */
@@ -118,6 +130,8 @@ function rowToItem(r: Row, unitMinor: number, qty: number): SellableItem {
     qty,
     currency: r.currency as string,
     imageUrl: (r.primary_image_url as string | null) ?? null,
+    beneficiaryPayeeId: (r.beneficiary_payee_id as string | null) ?? null,
+    beneficiaryScope: (r.beneficiary_scope as "all_proceeds" | "commission" | null) ?? null,
   };
 }
 
@@ -187,20 +201,20 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   // Who is actually paid, by the shared settlement rules.
   const settlements = new Map<string, LineSettlement>();
   for (const it of items) {
-    const key = `${it.makerUserId ?? "-"}:${it.counterpartyOrgId}`;
-    if (settlements.has(key)) continue;
     settlements.set(
-      key,
+      it.variantId,
       await resolveSettlement({
         makerUserId: it.makerUserId,
         orgId: it.counterpartyOrgId,
         amountMinor: it.unitMinor * it.qty,
+        storeId: it.storeId,
+        beneficiaryPayeeId: it.beneficiaryPayeeId ?? null,
+        beneficiaryScope: it.beneficiaryScope ?? null,
       })
     );
   }
-  const headline = settlements.get(
-    `${items[0]!.makerUserId ?? "-"}:${items[0]!.counterpartyOrgId}`
-  )!;
+  const headline = settlements.get(items[0]!.variantId)!;
+  const support = normaliseSupport(input.support);
 
   const rail = input.paymentMethod;
   if (rail === "etransfer" && !headline.payoutEmail) {
@@ -210,16 +224,16 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   }
 
   const lineSplits = items.map((it) => {
-    const total = it.unitMinor * it.qty;
-    const r = settlements.get(`${it.makerUserId ?? "-"}:${it.counterpartyOrgId}`)!;
-    // Split at this line's own total so rounding lands per line.
-    const split = splitCommission(total, r.orgSharePercent);
+    const r = settlements.get(it.variantId)!;
     return {
       item: it,
       orgSharePercent: r.orgSharePercent,
       agreementId: r.agreementId,
-      makerShareMinor: split.artistShareMinor,
-      orgShareMinor: split.galleryShareMinor,
+      makerShareMinor: r.makerShareMinor,
+      orgShareMinor: r.orgShareMinor,
+      payeeOrgId: r.payeeOrgId,
+      beneficiaryPayeeId: r.beneficiaryPayeeId,
+      beneficiaryShareMinor: r.beneficiaryShareMinor,
     };
   });
 
@@ -251,7 +265,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         number, store_id, customer_id, customer_email, customer_name, status,
         payment_method, payment_reference, payment_instructions,
         payment_due_at, subtotal_minor, total_minor, currency,
-        shipping_address, billing_address, notes, metadata, payment_metadata
+        shipping_address, billing_address, notes, metadata, support, beneficiary_payee_id,
+        payment_metadata
       ) VALUES (
         ${orderNumber}, ${storeId}, ${input.customerId ?? null}, ${input.customerEmail},
         ${input.customerName ?? null}, ${status},
@@ -262,6 +277,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         ${input.billingAddress ? jsonb(input.billingAddress) : null},
         ${input.notes ?? null},
         ${jsonb(input.metadata ?? {})},
+        ${jsonb({ split: support })},
+        ${lineSplits.find((sp) => sp.beneficiaryPayeeId)?.beneficiaryPayeeId ?? null},
         -- Where the buyer was told to pay, and who they were told they pay,
         -- so a confirmation screen reads it off the order rather than a
         -- constant. payUrl is where a card order gets paid.
@@ -287,14 +304,16 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
           order_id, artwork_variant_id, artwork_id, artist_user_id, org_id,
           description, quantity, unit_price_minor,
           artist_share_minor, gallery_share_minor, currency,
-          agreement_id, org_share_percent, payee_org_id, presented_store_id
+          agreement_id, org_share_percent, payee_org_id, presented_store_id,
+          beneficiary_payee_id, beneficiary_share_minor
         ) VALUES (
           ${orderId}, ${it.variantId}, ${it.artworkId},
           ${it.makerUserId}, ${it.artOrgId},
           ${it.title}, ${it.qty}, ${it.unitMinor},
           ${sp.makerShareMinor}, ${sp.orgShareMinor}, ${it.currency},
           ${sp.agreementId}, ${sp.orgSharePercent},
-          ${sp.orgShareMinor > 0 ? it.counterpartyOrgId : null}, ${it.presentedStoreId ?? it.storeId}
+          ${sp.payeeOrgId}, ${it.presentedStoreId ?? it.storeId},
+          ${sp.beneficiaryPayeeId}, ${sp.beneficiaryShareMinor}
         )
       `;
 
@@ -369,6 +388,33 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   return mapOrder(order);
 }
 
+/**
+ * The ledger party for a payee row: an org payee books to the org (so the
+ * org's existing balance and release flow apply); a charity books to the
+ * payee itself.
+ */
+async function payeeParty(
+  tx: typeof db,
+  payeeId: string
+): Promise<{ kind: "org"; orgId: string } | { kind: "payee"; payeeId: string } | null> {
+  const [p] = (await tx`SELECT kind, org_id FROM payee WHERE id = ${payeeId} LIMIT 1`) as unknown as Row[];
+  if (!p) return null;
+  if (p.kind === "org" && p.org_id) return { kind: "org", orgId: p.org_id as string };
+  return { kind: "payee", payeeId };
+}
+
+/** Clamp a support split to known shape: positive integer percents summing to 100, or empty. */
+function normaliseSupport(split: SupportSplit | null | undefined): SupportSplit {
+  if (!Array.isArray(split) || split.length === 0) return [];
+  const clean = split
+    .filter((s) => s && typeof s.payeeId === "string" && Number.isFinite(Number(s.percent)))
+    .map((s) => ({ payeeId: s.payeeId, percent: Math.round(Number(s.percent)) }))
+    .filter((s) => s.percent > 0);
+  const sum = clean.reduce((a, s) => a + s.percent, 0);
+  if (sum !== 100) return [];
+  return clean;
+}
+
 /** Convert the current cart into an order on the chosen rail. */
 export async function createOrderFromCart(
   input: OrderCustomer & {
@@ -376,6 +422,7 @@ export async function createOrderFromCart(
     paymentMethod: OrderRail;
     etransferDueHours?: number;
     payUrl?: string | null;
+    support?: SupportSplit | null;
   }
 ): Promise<Order> {
   const { cartId, items } = await loadCartItems(input.cartToken);
@@ -565,6 +612,9 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     const lineRows = (await tx`
       SELECT * FROM commerce_order_line WHERE order_id = ${input.orderId}
     `) as unknown as Row[];
+    const support = normaliseSupport(
+      ((order.support as { split?: SupportSplit } | null)?.split ?? null) as SupportSplit | null
+    );
 
     for (const l of lineRows) {
       // Inventory and reservations only exist for artwork lines; a service or
@@ -584,9 +634,24 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
       const currency = l.currency as string;
       const lineId = l.id as string;
       const makerUserId = (l.artist_user_id as string | null) ?? null;
-      const makerShare = num(l.artist_share_minor);
+      const grossMakerShare = num(l.artist_share_minor);
       const orgShare = num(l.gallery_share_minor);
       const payeeOrgId = (l.payee_org_id as string | null) ?? null;
+      const beneficiaryPayeeId = (l.beneficiary_payee_id as string | null) ?? null;
+      const beneficiaryShare = num(l.beneficiary_share_minor);
+
+      // The card fee is the maker's (R3). On a destination charge Stripe
+      // already took it from their side; on a platform charge or any other
+      // rail the collective bears it at source, so the maker's accrual is
+      // reduced by the estimate and the amount is recorded on the line.
+      const processorFee =
+        rail === "stripe" && grossMakerShare > 0
+          ? Math.min(grossMakerShare, estimateProcessorFeeMinor(num(l.unit_price_minor) * num(l.quantity)))
+          : 0;
+      if (processorFee > 0) {
+        await tx`UPDATE commerce_order_line SET processor_fee_minor = ${processorFee} WHERE id = ${lineId}`;
+      }
+      const makerShare = destination ? grossMakerShare : grossMakerShare - processorFee;
 
       if (makerUserId && makerShare > 0) {
         const party = { kind: "user" as const, userId: makerUserId };
@@ -675,26 +740,76 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
         }
       }
 
-      // The org's share. It has no connected account and receives no transfer
-      // — this accrual IS the earmark inside the host account.
-      if (payeeOrgId && orgShare > 0) {
-        await writeEntry(
-          {
+      // The commission. It has no connected account and receives no transfer
+      // — these accruals ARE the earmark inside the host account. Where it
+      // goes is the buyer's support choice when the line has no org of its
+      // own (a split over payees); an org-owned line keeps its org.
+      if (orgShare > 0) {
+        const targets: Array<{ party: Parameters<typeof writeEntry>[0]["party"]; amount: number; note: string }> = [];
+        if (makerUserId && support.length > 0) {
+          let allotted = 0;
+          for (let i = 0; i < support.length; i++) {
+            const s = support[i]!;
+            const amount =
+              i === support.length - 1 ? orgShare - allotted : Math.round((orgShare * s.percent) / 100);
+            allotted += amount;
+            const party = await payeeParty(tx as unknown as typeof db, s.payeeId);
+            if (party && amount > 0) targets.push({ party, amount, note: `Commission, ${s.percent}% by the buyer's choice` });
+          }
+        } else if (payeeOrgId) {
+          targets.push({
             party: { kind: "org", orgId: payeeOrgId },
-            entryType: "accrual",
-            amountMinor: orgShare,
-            currency,
-            orderId: input.orderId,
-            orderLineId: lineId,
-            agreementId: (l.agreement_id as string | null) ?? null,
-            holdReason: "dispute_window",
-            note: makerUserId
-              ? "Org share under an accepted agreement"
-              : "Org-owned work, no maker",
-            createdBy: input.confirmedByUserId,
-          },
-          tx as unknown as typeof db
-        );
+            amount: orgShare,
+            note: makerUserId ? "Commission" : "Org-owned work, no maker",
+          });
+        }
+        for (const t of targets) {
+          await writeEntry(
+            {
+              party: t.party,
+              entryType: "accrual",
+              amountMinor: t.amount,
+              currency,
+              orderId: input.orderId,
+              orderLineId: lineId,
+              agreementId: (l.agreement_id as string | null) ?? null,
+              holdReason: "dispute_window",
+              note: t.note,
+              createdBy: input.confirmedByUserId,
+            },
+            tx as unknown as typeof db
+          );
+        }
+      }
+
+      // A listing beneficiary (a charity, or an org by its payee row). Held
+      // for the dispute window like any org money; held until approved when
+      // the payee is one a buyer suggested (R2).
+      if (beneficiaryPayeeId && beneficiaryShare > 0) {
+        const [py] = (await tx`SELECT status FROM payee WHERE id = ${beneficiaryPayeeId}`) as unknown as Row[];
+        const party = await payeeParty(tx as unknown as typeof db, beneficiaryPayeeId);
+        if (party) {
+          const fee = rail === "stripe" && grossMakerShare === 0
+            ? Math.min(beneficiaryShare, estimateProcessorFeeMinor(num(l.unit_price_minor) * num(l.quantity)))
+            : 0;
+          if (fee > 0) {
+            await tx`UPDATE commerce_order_line SET processor_fee_minor = ${fee} WHERE id = ${lineId}`;
+          }
+          await writeEntry(
+            {
+              party,
+              entryType: "accrual",
+              amountMinor: beneficiaryShare - fee,
+              currency,
+              orderId: input.orderId,
+              orderLineId: lineId,
+              holdReason: py?.status === "active" ? "dispute_window" : "pending_beneficiary",
+              note: "Proceeds directed to a beneficiary by the listing",
+              createdBy: input.confirmedByUserId,
+            },
+            tx as unknown as typeof db
+          );
+        }
       }
     }
 
@@ -730,6 +845,13 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     void notifySellerOfCardSale(result.order, result.lineRows);
   }
 
+  // A listing that directs money to a beneficiary: the buyer gets a proceeds
+  // statement (not a tax receipt; ORG_STORE_BRIEF R2) saying what is held
+  // for whom. A second note goes out when the payout is recorded.
+  if (result.lineRows.some((l) => num(l.beneficiary_share_minor) > 0)) {
+    void sendProceedsStatement(result.order, result.lineRows);
+  }
+
   // A booked one-to-one service has a time to agree (migration 174): open
   // the buyer's proposed times to the seller. Idempotent, and a no-op for
   // any order without a service_bookings row.
@@ -737,9 +859,45 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
     void import("./service-bookings")
       .then(({ markServiceBookingPaid }) => markServiceBookingPaid(input.orderId))
       .catch((err) => console.error("[commerce] markServiceBookingPaid:", err));
+    // A tour departure booked with a party size (migration 208): the seats
+    // are held from the moment the order exists and confirmed here. Same
+    // shape: idempotent, no-op without a tour_bookings row.
+    void import("./tours")
+      .then(({ markTourBookingPaid }) => markTourBookingPaid(input.orderId))
+      .catch((err) => console.error("[commerce] markTourBookingPaid:", err));
   }
 
   return mapOrder(result.order);
+}
+
+async function sendProceedsStatement(order: Row, lines: Row[]): Promise<void> {
+  try {
+    const ids = [...new Set(lines.map((l) => l.beneficiary_payee_id as string | null).filter(Boolean))] as string[];
+    if (ids.length === 0) return;
+    const payees = (await db`SELECT id, name, website, status FROM payee WHERE id = ANY(${ids})`) as unknown as Row[];
+    const byId = new Map(payees.map((p) => [p.id as string, p]));
+    const items = lines
+      .filter((l) => num(l.beneficiary_share_minor) > 0)
+      .map((l) => {
+        const p = byId.get(l.beneficiary_payee_id as string);
+        return {
+          description: l.description as string,
+          amountMinor: num(l.beneficiary_share_minor) - num(l.processor_fee_minor),
+          currency: l.currency as string,
+          beneficiaryName: (p?.name as string) ?? "the beneficiary",
+          beneficiaryWebsite: (p?.website as string | null) ?? null,
+          pending: p?.status !== "active",
+        };
+      });
+    const { sendProceedsStatementEmail } = await import("@elkdonis/email");
+    await sendProceedsStatementEmail(order.customer_email as string, {
+      orderNumber: order.number as string,
+      customerName: (order.customer_name as string | null) ?? null,
+      items,
+    });
+  } catch (err) {
+    console.error("[commerce] proceeds statement failed:", err);
+  }
 }
 
 async function notifySellerOfCardSale(order: Row, lines: Row[]): Promise<void> {

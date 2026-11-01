@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IFAC Series 1 Art Auction landing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500&amp;family=Jost:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#000000}
+a{color:#b9c3d6;text-decoration:none}
+a:hover{color:#eef2f9}
+button{font-family:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid #eef2f9;outline-offset:3px}
+</style>
+</helmet>
+
+<!-- Landing page: dark black-to-blue field, centred title block, lot carousel, collections grid. No curtains in this round. -->
+<div style="min-height: 1900px; box-sizing: border-box; background: #000000; color: #e9edf6; font-family: 'Jost', 'Segoe UI', system-ui, sans-serif; font-size: 16px; line-height: 1.55; display: flex; flex-direction: column">
+
+<!-- Title block: a short welcome box, then a thin page-wide series banner -->
+<header style="padding: 20px 0 0">
+<nav style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 30px; max-width: 1176px; margin: 0 auto; padding: 0 32px">
+<a href="#top" style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; letter-spacing: 0.01em; color: #eef2f9">Collect-Art</a>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 28px; font-size: 12.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase">
+<a href="#lot" style="padding: 10px 2px">Auction</a>
+<a href="#collections" style="padding: 10px 2px">Collections</a>
+<a href="#artists" style="padding: 10px 2px">Artists</a>
+<a href="About.dc.html" style="padding: 10px 2px">About</a>
+<a href="#signin" style="padding: 10px 2px">Sign in</a>
+</div>
+</nav>
+<div style="box-sizing: border-box; width: 1032px; max-width: 1176px; margin: 24px auto 0; padding: 30px 40px; border: 1px solid rgba(185, 195, 214, 0.35); background: rgba(255, 255, 255, 0.045); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4); text-align: center">
+<h1 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; color: #eef2f9; display: flex; flex-direction: row; align-items: center; gap: 8px; font-size: 28px; width: 1120px; height: 151px; text-align: center"><span style="font-size: 60px; line-height: 1; font-style: italic">Welcome&nbsp;<span style="color: rgb(185, 195, 214); font-size: 24px; text-wrap-mode: initial">to the first International Fine Arts Collectors' Auction Series.<br>&nbsp;Hosted on the Arts-Collective Platform</span></span></h1>
+</div>
+<div style="margin-top: 22px; padding: 12px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 36px; background: linear-gradient(90deg, #3d0d1b, #6a1830 50%, #3d0d1b); border-top: 1px solid rgba(185, 195, 214, 0.4); border-bottom: 1px solid rgba(185, 195, 214, 0.4); font-size: 14px; font-weight: 500; letter-spacing: 0.08em; line-height: 1.4; color: #f3e9ec"><span>&nbsp;Auction Series 1 running until November 21st</span>
+<span style="display: flex; align-items: baseline; gap: 10px">Live Auction in <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: #ffffff">{{liveTimer}}</span></span>
+</div>
+</header>
+
+<main style="width: 100%; max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 8px 32px 72px">
+
+<!-- Lot carousel -->
+<section id="lot">
+<div style="display: flex; align-items: center; gap: 18px; margin-bottom: 26px">
+<h2 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1; letter-spacing: 0.22em; text-transform: uppercase; color: #b9c3d6">Now open for bidding</h2>
+<div style="flex-grow: 1; height: 1px; background: linear-gradient(90deg, rgba(185,195,214,0.3), rgba(0,0,0,0))"></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 44px; padding: 30px; background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(185, 195, 214, 0.22); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45)">
+
+<!-- Art, arrows, pager -->
+<div style="flex: 1 1 340px; min-width: 0">
+<div style="position: relative">
+<button type="button" onClick="{{prev}}" aria-label="Previous lot" style="position: absolute; left: -24px; top: 50%; margin-top: -22px; z-index: 2; width: 44px; height: 44px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background: rgba(2, 4, 13, 0.8); color: #eef2f9; border: 1px solid #b9c3d6">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</button>
+<div style="padding: 10px; background: linear-gradient(135deg, #eef2f9, #5c6680 45%, #b9c3d6 70%, #8a94ab); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6)">
+<div style="aspect-ratio: 4 / 5; width: 100%; max-height: 520px; overflow: hidden; background: #0b0f1e" role="img" aria-label="{{hero.alt}}">
+<sc-if value="{{hero.isHorizon}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><circle cx="268" cy="176" r="66" fill="{{hero.c1}}"></circle><rect y="250" width="400" height="250" fill="{{hero.c2}}"></rect><path d="M0 300Q100 258 200 300T400 288V500H0Z" fill="{{hero.c3}}"></path><path d="M0 385Q120 338 240 388T400 372V500H0Z" fill="{{hero.c4}}"></path></svg></sc-if>
+<sc-if value="{{hero.isRings}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><circle cx="200" cy="250" r="175" fill="{{hero.c1}}"></circle><circle cx="200" cy="250" r="132" fill="{{hero.c2}}"></circle><circle cx="200" cy="250" r="92" fill="{{hero.c3}}"></circle><circle cx="200" cy="250" r="56" fill="{{hero.c4}}"></circle><circle cx="200" cy="250" r="24" fill="{{hero.c1}}"></circle></svg></sc-if>
+<sc-if value="{{hero.isFields}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><path d="M0 0H260L90 500H0Z" fill="{{hero.c2}}"></path><path d="M260 0H400V320L90 500Z" fill="{{hero.c3}}" opacity="0.9"></path><path d="M400 320V500H90Z" fill="{{hero.c4}}"></path><circle cx="300" cy="130" r="38" fill="{{hero.c1}}"></circle></svg></sc-if>
+<sc-if value="{{hero.isArches}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><path d="M40 480V230a50 50 0 0 1 100 0V480Z" fill="{{hero.c2}}"></path><path d="M150 480V170a50 50 0 0 1 100 0V480Z" fill="{{hero.c3}}"></path><path d="M260 480V280a50 50 0 0 1 100 0V480Z" fill="{{hero.c4}}"></path><circle cx="320" cy="90" r="34" fill="{{hero.c1}}"></circle></svg></sc-if>
+<sc-if value="{{hero.isStripes}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><rect x="0" width="34" height="500" fill="{{hero.c2}}" opacity="0.85"></rect><rect x="50" width="18" height="500" fill="{{hero.c3}}" opacity="0.85"></rect><rect x="100" width="34" height="500" fill="{{hero.c4}}" opacity="0.85"></rect><rect x="150" width="18" height="500" fill="{{hero.c4}}" opacity="0.85"></rect><rect x="200" width="34" height="500" fill="{{hero.c2}}" opacity="0.85"></rect><rect x="250" width="18" height="500" fill="{{hero.c3}}" opacity="0.85"></rect><rect x="300" width="34" height="500" fill="{{hero.c4}}" opacity="0.85"></rect><rect x="350" width="18" height="500" fill="{{hero.c4}}" opacity="0.85"></rect><circle cx="200" cy="210" r="86" fill="{{hero.c1}}"></circle><circle cx="228" cy="196" r="78" fill="{{hero.c0}}" opacity="0.92"></circle></svg></sc-if>
+<sc-if value="{{hero.isMosaic}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{hero.c0}}"></rect><g opacity="0.9"><rect x="6" y="6" width="88" height="88" fill="{{hero.c1}}"></rect><rect x="106" y="6" width="88" height="88" fill="{{hero.c3}}"></rect><rect x="206" y="6" width="88" height="88" fill="{{hero.c1}}"></rect><rect x="306" y="6" width="88" height="88" fill="{{hero.c3}}"></rect></g><g opacity="0.65"><rect x="6" y="106" width="88" height="88" fill="{{hero.c4}}"></rect><rect x="106" y="106" width="88" height="88" fill="{{hero.c2}}"></rect><rect x="206" y="106" width="88" height="88" fill="{{hero.c4}}"></rect><rect x="306" y="106" width="88" height="88" fill="{{hero.c2}}"></rect></g><g opacity="0.9"><rect x="6" y="206" width="88" height="88" fill="{{hero.c3}}"></rect><rect x="106" y="206" width="88" height="88" fill="{{hero.c1}}"></rect><rect x="206" y="206" width="88" height="88" fill="{{hero.c3}}"></rect><rect x="306" y="206" width="88" height="88" fill="{{hero.c1}}"></rect></g><g opacity="0.65"><rect x="6" y="306" width="88" height="88" fill="{{hero.c2}}"></rect><rect x="106" y="306" width="88" height="88" fill="{{hero.c4}}"></rect><rect x="206" y="306" width="88" height="88" fill="{{hero.c2}}"></rect><rect x="306" y="306" width="88" height="88" fill="{{hero.c4}}"></rect></g><g opacity="0.9"><rect x="6" y="406" width="88" height="88" fill="{{hero.c1}}"></rect><rect x="106" y="406" width="88" height="88" fill="{{hero.c3}}"></rect><rect x="206" y="406" width="88" height="88" fill="{{hero.c1}}"></rect><rect x="306" y="406" width="88" height="88" fill="{{hero.c3}}"></rect></g></svg></sc-if>
+</div>
+</div>
+<button type="button" onClick="{{next}}" aria-label="Next lot" style="position: absolute; right: -24px; top: 50%; margin-top: -22px; z-index: 2; width: 44px; height: 44px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background: rgba(2, 4, 13, 0.8); color: #eef2f9; border: 1px solid #b9c3d6">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</button>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; font-size: 12px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #aab3c7">
+<span>{{hero.count}}</span>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="6">
+<button type="button" onClick="{{d.pick}}" aria-label="{{d.label}}" style="width: 25px; height: 25px; padding: 0; background: transparent; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center">
+<span style="width: 9px; height: 9px; border-radius: 50%; border: 1px solid #b9c3d6; background: {{d.fill}}"></span>
+</button>
+</sc-for>
+</div>
+</div>
+</div>
+
+<!-- Blurb above, bid and time below -->
+<div style="flex: 1.2 1 380px; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 28px">
+<div style="border-top: 1px solid rgba(185, 195, 214, 0.22); padding-top: 22px; display: flex; flex-direction: column; gap: 18px; height: 173px; width: 572px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px 44px">
+<div>
+<span style="display: block; margin-bottom: 8px; font-size: 11px; font-weight: 500; line-height: 1; letter-spacing: 0.18em; text-transform: uppercase; color: #aab3c7">Current bid</span>
+<span style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1; color: #eef2f9; font-variant-numeric: tabular-nums">{{hero.bid}}</span>
+<span style="margin-left: 8px; font-size: 13.5px; color: #aab3c7">{{hero.bids}}</span>
+</div>
+<div>
+<span style="display: block; margin-bottom: 8px; font-size: 11px; font-weight: 500; line-height: 1; letter-spacing: 0.18em; text-transform: uppercase; color: #aab3c7">{{hero.clockLabel}}</span>
+<span style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; color: {{hero.clockColor}}">{{hero.clock}}</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px">
+<button type="button" onClick="{{bid}}" style="min-height: 48px; padding: 14px 30px; background: #8c1f3a; color: #ffffff; border: 1px solid #a82a4a; font-size: 13.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer">{{hero.bidLabel}}</button>
+<button type="button" style="min-height: 48px; padding: 14px 26px; background: transparent; color: #eef2f9; border: 1px solid #b9c3d6; font-size: 13.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer">View lot</button>
+<span role="status" style="font-size: 13px; color: #aab3c7">{{note}}</span>
+</div>
+</div><div style="height: 346px">
+<p style="margin: 0 0 14px; font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: #aab3c7">{{hero.no}}</p>
+<h3 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 44px; line-height: 1.08; color: #eef2f9; text-wrap: balance">{{hero.title}}</h3>
+<p style="margin: 8px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 500; font-size: 20px; line-height: 1.3; color: #b9c3d6">{{hero.byline}}</p>
+<p style="margin: 14px 0 0; font-size: 13.5px; line-height: 1.5; color: #aab3c7">{{hero.specs}}</p>
+<p style="margin: 18px 0 0; max-width: 56ch; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; line-height: 1.55; color: #e9edf6">{{hero.blurb}}</p>
+</div>
+
+
+</div>
+</div>
+</section>
+
+<!-- Collections -->
+<section id="collections" style="margin-top: 80px">
+<div style="display: flex; align-items: center; gap: 18px; margin-bottom: 26px">
+<h2 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 15px; line-height: 1; letter-spacing: 0.22em; text-transform: uppercase; color: #b9c3d6">Art collections on the market</h2>
+<div style="flex-grow: 1; height: 1px; background: linear-gradient(90deg, rgba(185,195,214,0.3), rgba(0,0,0,0))"></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 26px 22px">
+<sc-for list="{{collections}}" as="col" hint-placeholder-count="8">
+<a href="#collections" style="display: block; color: inherit">
+<div style="aspect-ratio: 4 / 3; overflow: hidden; border: 1px solid rgba(185, 195, 214, 0.22); background: #0b0f1e">
+<sc-if value="{{col.isHorizon}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><circle cx="268" cy="176" r="66" fill="{{col.c1}}"></circle><rect y="250" width="400" height="250" fill="{{col.c2}}"></rect><path d="M0 300Q100 258 200 300T400 288V500H0Z" fill="{{col.c3}}"></path><path d="M0 385Q120 338 240 388T400 372V500H0Z" fill="{{col.c4}}"></path></svg></sc-if>
+<sc-if value="{{col.isRings}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><circle cx="200" cy="250" r="175" fill="{{col.c1}}"></circle><circle cx="200" cy="250" r="132" fill="{{col.c2}}"></circle><circle cx="200" cy="250" r="92" fill="{{col.c3}}"></circle><circle cx="200" cy="250" r="56" fill="{{col.c4}}"></circle><circle cx="200" cy="250" r="24" fill="{{col.c1}}"></circle></svg></sc-if>
+<sc-if value="{{col.isFields}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><path d="M0 0H260L90 500H0Z" fill="{{col.c2}}"></path><path d="M260 0H400V320L90 500Z" fill="{{col.c3}}" opacity="0.9"></path><path d="M400 320V500H90Z" fill="{{col.c4}}"></path><circle cx="300" cy="130" r="38" fill="{{col.c1}}"></circle></svg></sc-if>
+<sc-if value="{{col.isArches}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><path d="M40 480V230a50 50 0 0 1 100 0V480Z" fill="{{col.c2}}"></path><path d="M150 480V170a50 50 0 0 1 100 0V480Z" fill="{{col.c3}}"></path><path d="M260 480V280a50 50 0 0 1 100 0V480Z" fill="{{col.c4}}"></path><circle cx="320" cy="90" r="34" fill="{{col.c1}}"></circle></svg></sc-if>
+<sc-if value="{{col.isStripes}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><rect x="0" width="34" height="500" fill="{{col.c2}}" opacity="0.85"></rect><rect x="50" width="18" height="500" fill="{{col.c3}}" opacity="0.85"></rect><rect x="100" width="34" height="500" fill="{{col.c4}}" opacity="0.85"></rect><rect x="150" width="18" height="500" fill="{{col.c4}}" opacity="0.85"></rect><rect x="200" width="34" height="500" fill="{{col.c2}}" opacity="0.85"></rect><rect x="250" width="18" height="500" fill="{{col.c3}}" opacity="0.85"></rect><rect x="300" width="34" height="500" fill="{{col.c4}}" opacity="0.85"></rect><rect x="350" width="18" height="500" fill="{{col.c4}}" opacity="0.85"></rect><circle cx="200" cy="210" r="86" fill="{{col.c1}}"></circle><circle cx="228" cy="196" r="78" fill="{{col.c0}}" opacity="0.92"></circle></svg></sc-if>
+<sc-if value="{{col.isMosaic}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" style="width: 100%; height: 100%; display: block" aria-hidden="true"><rect width="400" height="500" fill="{{col.c0}}"></rect><g opacity="0.9"><rect x="6" y="6" width="88" height="88" fill="{{col.c1}}"></rect><rect x="106" y="6" width="88" height="88" fill="{{col.c3}}"></rect><rect x="206" y="6" width="88" height="88" fill="{{col.c1}}"></rect><rect x="306" y="6" width="88" height="88" fill="{{col.c3}}"></rect></g><g opacity="0.65"><rect x="6" y="106" width="88" height="88" fill="{{col.c4}}"></rect><rect x="106" y="106" width="88" height="88" fill="{{col.c2}}"></rect><rect x="206" y="106" width="88" height="88" fill="{{col.c4}}"></rect><rect x="306" y="106" width="88" height="88" fill="{{col.c2}}"></rect></g><g opacity="0.9"><rect x="6" y="206" width="88" height="88" fill="{{col.c3}}"></rect><rect x="106" y="206" width="88" height="88" fill="{{col.c1}}"></rect><rect x="206" y="206" width="88" height="88" fill="{{col.c3}}"></rect><rect x="306" y="206" width="88" height="88" fill="{{col.c1}}"></rect></g><g opacity="0.65"><rect x="6" y="306" width="88" height="88" fill="{{col.c2}}"></rect><rect x="106" y="306" width="88" height="88" fill="{{col.c4}}"></rect><rect x="206" y="306" width="88" height="88" fill="{{col.c2}}"></rect><rect x="306" y="306" width="88" height="88" fill="{{col.c4}}"></rect></g><g opacity="0.9"><rect x="6" y="406" width="88" height="88" fill="{{col.c1}}"></rect><rect x="106" y="406" width="88" height="88" fill="{{col.c3}}"></rect><rect x="206" y="406" width="88" height="88" fill="{{col.c1}}"></rect><rect x="306" y="406" width="88" height="88" fill="{{col.c3}}"></rect></g></svg></sc-if>
+</div>
+<h3 style="margin: 12px 0 2px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 1.15; color: #eef2f9">{{col.name}}</h3>
+<p style="margin: 0; font-size: 13px; line-height: 1.4; letter-spacing: 0.04em; color: #aab3c7">{{col.count}}</p>
+</a>
+</sc-for>
+</div>
+</section>
+</main>
+
+<footer style="margin-top: auto; padding: 26px 32px 34px; border-top: 1px solid rgba(185, 195, 214, 0.22); text-align: center; font-size: 13px; line-height: 1.7; color: #aab3c7">
+<a href="#about" style="text-decoration: underline">About the auction</a> · Presented by International Fine Arts Collectors · Hosted by Elkdonis Arts Collective<br>
+Mock-up: works, bids and collection names are sample content.
+</footer>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this._t0 = Date.now();
+    this._timer = setInterval(() => this.forceUpdate(), 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this._timer);
+  }
+  renderVals() {
+    const PAL = [
+      ['#1c2a52', '#f2b45a', '#10172f', '#27385f', '#3a5283'],
+      ['#efe3cf', '#b2402f', '#24344f', '#c58a52', '#6f8f86'],
+      ['#0f2a2e', '#e8d9a8', '#1c4a4a', '#2f7a72', '#91b8a1'],
+      ['#2a1230', '#e58c8a', '#521f4a', '#8e3a6c', '#d9a1b8'],
+      ['#e9e1d3', '#26324d', '#b9503a', '#d9b66a', '#4e6a5a'],
+      ['#14213d', '#fca311', '#e5e5e5', '#2b4570', '#7d93b8']
+    ];
+    const D = 86400000, H = 3600000, M = 60000;
+    const LOTS = [
+      { kind: 'horizon', pal: 0, title: 'Evening Water', specs: 'Oil on canvas · 36 × 48 in · 2025', blurb: 'Last light on open water, painted from a series of dusk studies. The horizon is held low so the sky does the work.', bid: 1250, bids: 7, ends: 2 * D + 14 * H + 22 * M, step: 50 },
+      { kind: 'rings', pal: 1, title: 'Concentric Study No. 4', specs: 'Acrylic on panel · 30 × 30 in · 2024', blurb: 'One of a numbered group exploring repeated circles and the way adjacent colours push each other forward and back.', bid: 880, bids: 4, ends: 1 * D + 3 * H + 5 * M, step: 25 },
+      { kind: 'fields', pal: 2, title: 'Slope', specs: 'Mixed media on paper · 22 × 30 in · 2025', blurb: 'Three planes of colour cut on the diagonal, with a small sun left where the planes meet.', bid: 2100, bids: 11, ends: 38 * M + 14000, step: 100 },
+      { kind: 'arches', pal: 3, title: 'Three Doorways', specs: 'Gouache on board · 24 × 30 in · 2023', blurb: 'Arched openings in a row, each a different height. Painted flat, with no shadow, so they read as shapes first.', bid: 640, bids: 3, ends: 4 * D + 9 * H + 41 * M, step: 20 },
+      { kind: 'stripes', pal: 4, title: 'Moon Over the Field', specs: 'Oil on linen · 40 × 50 in · 2025', blurb: 'Vertical bands of ploughed field under a rising moon, built up in thin glazes over three months.', bid: 3400, bids: 15, ends: 5 * D + 1 * H + 9 * M, step: 100 },
+      { kind: 'mosaic', pal: 5, title: 'Ledger', specs: 'Archival pigment print · edition of 20 · 2024', blurb: 'A grid of colour samples taken from a year of studio notes, printed at the size of the original sheet.', bid: 420, bids: 2, ends: 2 * D + 20 * H + 55 * M, step: 20 }
+    ];
+    const COLS = [
+      ['Landscape & Place', 'horizon', 0, 14], ['Portraits', 'arches', 3, 9], ['Works on Paper', 'fields', 2, 18], ['Sculpture', 'rings', 1, 6],
+      ['Editioned Prints', 'mosaic', 5, 22], ['Abstraction', 'stripes', 4, 16], ['Photography', 'horizon', 2, 12], ['Ceramics', 'rings', 3, 8]
+    ];
+    const art = (kind, p) => {
+      const c = PAL[p];
+      return {
+        isHorizon: kind === 'horizon', isRings: kind === 'rings', isFields: kind === 'fields',
+        isArches: kind === 'arches', isStripes: kind === 'stripes', isMosaic: kind === 'mosaic',
+        c0: c[0], c1: c[1], c2: c[2], c3: c[3], c4: c[4]
+      };
+    };
+    const money = (n) => '$' + n.toLocaleString('en-US');
+    const pad = (n) => (n < 10 ? '0' : '') + n;
+    const clock = (ms) => {
+      if (ms <= 0) return 'Closed';
+      const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+      return d > 0 ? d + 'd ' + pad(h) + 'h ' + pad(m) + 'm' : pad(h) + ':' + pad(m) + ':' + pad(s % 60);
+    };
+
+    // Live auction closes the series on 21 November (time of day assumed 18:00 local).
+    const liveMs = new Date(2026, 10, 21, 18, 0, 0).getTime() - Date.now();
+
+    const n = LOTS.length;
+    const cur = ((this.state && this.state.cur) || 0);
+    const l = LOTS[cur];
+    const left = l.ends - (Date.now() - (this._t0 || Date.now()));
+    const go = (i) => this.setState({ cur: (i + n) % n, note: '' });
+
+    return {
+      liveTimer: liveMs <= 0 ? 'now' : (() => { const t = Math.floor(liveMs / 1000); return Math.floor(t / 86400) + 'd ' + pad(Math.floor((t % 86400) / 3600)) + 'h ' + pad(Math.floor((t % 3600) / 60)) + 'm ' + pad(t % 60) + 's'; })(),
+      prev: () => go(cur - 1),
+      next: () => go(cur + 1),
+      bid: () => this.setState({ note: 'Mock-up only. No bid was placed.' }),
+      note: (this.state && this.state.note) || '',
+      hero: Object.assign(art(l.kind, l.pal), {
+        alt: l.title + ', sample artwork',
+        no: 'Lot ' + (cur + 1),
+        count: 'Lot ' + (cur + 1) + ' of ' + n,
+        title: l.title,
+        byline: 'by Artist Name',
+        specs: l.specs,
+        blurb: l.blurb,
+        bid: money(l.bid),
+        bids: l.bids + ' bids',
+        bidLabel: 'Bid ' + money(l.bid + l.step),
+        clock: clock(left),
+        clockLabel: left > 0 && left < H ? 'Closing soon' : 'Time remaining',
+        clockColor: left > 0 && left < H ? '#e0a24a' : '#eef2f9'
+      }),
+      dots: LOTS.map((x, i) => ({ label: 'Show lot ' + (i + 1), fill: i === cur ? '#eef2f9' : 'transparent', pick: () => go(i) })),
+      collections: COLS.map((c) => Object.assign(art(c[1], c[2]), { name: c[0], count: c[3] + ' works' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

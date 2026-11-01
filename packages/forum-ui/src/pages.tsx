@@ -96,7 +96,7 @@ export async function IndexPage(props: PageProps) {
           : board ? `${plural(board.feeds.reduce((n, f) => n + f.topicCount, 0), "topic")} · ${plural(board.feeds.reduce((n, f) => n + f.postCount, 0), "post")}` : undefined}
         aside={<SortTabs current={sort} href={hrefs.root()} />}
       />
-      <TopicList paged={paged} hrefs={hrefs} showOrg={network} empty="Nothing posted yet — the New topic box on the right is where it starts." />
+      <TopicList paged={paged} hrefs={hrefs} showOrg={network} empty="Nothing posted yet — New topic, at the top of the menu, is where it starts." />
       <Pagination paged={paged} href={withSort(hrefs.root(), sort)} />
       {viewer.userId && connectors.actionBase && (
         <div className="gf-index-foot">

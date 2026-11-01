@@ -11,10 +11,9 @@ import { forbidden, getHubViewer } from "@/lib/hub-auth";
 /**
  * A member's RSVP, on `thread_rsvps`.
  *
- * Distinct from /api/rsvp, which writes `guest_submissions` keyed by email
- * with no user_id, no eligibility check and no capacity check. That route is
- * for the public site, where the person RSVPing has no account. It cannot
- * answer "am I coming?" for a signed-in member, which is what this is for.
+ * Every IFAC RSVP is signed in (developer decision, 2026-10-10): the guest
+ * route `/api/rsvp` and its form were removed. Series weeks use
+ * `/api/series/rsvp`; this route serves hub threads.
  *
  * Eligibility comes from the shared, kind-agnostic `checkRsvpEligibility` —
  * `thread_rsvps` has no `kind` column and `is_rsvp_enabled` / `attendee_limit`

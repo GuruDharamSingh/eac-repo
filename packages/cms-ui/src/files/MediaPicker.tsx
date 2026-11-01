@@ -51,6 +51,12 @@ export interface MediaPickerProps {
   label?: string;
   hint?: string;
   accept?: string;
+  /**
+   * `"none"` leaves out the small thumbnail of the current file, for a
+   * caller that shows its own preview (CoverFramer, a video player).
+   * Default `"thumb"`.
+   */
+  preview?: "thumb" | "none";
 }
 
 /** "upload", or the key of one of the libraries. */
@@ -66,6 +72,7 @@ export function MediaPicker({
   label = "Image",
   hint,
   accept = "image/*",
+  preview = "thumb",
 }: MediaPickerProps) {
   // One shape internally, whichever prop the caller used.
   const sources = useMemo(
@@ -88,7 +95,9 @@ export function MediaPicker({
 
   async function upload(file: File | undefined) {
     if (!file) return;
-    if (accept.startsWith("image/") && !file.type.startsWith("image/")) {
+    // Images only when every accepted type is an image ("image/*,video/*" takes both).
+    const imagesOnly = accept.split(",").every((a) => a.trim().startsWith("image/"));
+    if (imagesOnly && !file.type.startsWith("image/")) {
       setError("That doesn't look like an image.");
       return;
     }
@@ -169,7 +178,7 @@ export function MediaPicker({
         )}
       </div>
 
-      {value && (
+      {value && preview === "thumb" && (
         <div className="eac-picker-current">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="" />

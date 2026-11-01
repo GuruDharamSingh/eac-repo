@@ -1,265 +1,248 @@
 import { getServerSession } from "@elkdonis/auth-server";
-import { listOrgWriting } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import { fetchChannelVideos, youtubeIdFromEmbed } from "@/lib/video-feed";
-import { VideoShelf, type ShelfVideo } from "@/components/video-shelf";
-import "./home-shelves.css";
 import { getSiteContent } from "@/lib/data";
+import { listSeriesForPage, type MeetingSeries, type SeriesSession } from "@elkdonis/services";
+import { nextPublicSession } from "@/lib/series";
+import { dateParts, seriesZones, timeInZones, weekdayPlural } from "@/lib/series-time";
+import { PublicBanner, PublicFooter, PublicHeader, PublicShell } from "@/components/site/chrome";
+import { EventStage, type StageSlide } from "@/components/site/event-stage";
+import { JoinFrame } from "@/components/site/join-frame";
+import { ArtGallery, type GalleryArt } from "@/components/site/art-gallery";
 import { listDirectory } from "@/lib/directory";
-import { fetchBlogPosts } from "@/lib/blog-feed";
-import { socialIcon } from "@/lib/social-icons";
-import { AuthPanel } from "@/components/auth-panel";
-import { BlogCardGrid } from "@/components/blog-card";
-import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import type { GalleryItem, SiteLink } from "@/lib/types";
 
+/**
+ * The IFAC landing page (reshaped 2026-10-08, revised the same evening):
+ * three things:
+ *   1. the event stage: whole events, one at a time, rotating, at a fixed
+ *      height (a cover image is cropped to it)
+ *   2. IFAC: who we are, swept across the page, in a bordered block
+ *   3. the network's Baroque sign-up frame on its own, dark, centred
+ *      (2026-10-10: no block or heading; a platform account, not an IFAC one)
+ *   4. under it, a sliding strip of the artists' and dealers' artworks,
+ *      shuffled per request (2026-10-11; galleryArt below)
+ * Artists and dealers are on /about; the blog, writing and videos on
+ * /publications.
+ */
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [content, directoryArtists, directoryDealers, channelVideos, writing] = await Promise.all([
-    getSiteContent(),
-    listDirectory("artist"),
-    listDirectory("dealer"),
-    // Both fail soft to [] — see video-feed.ts and listOrgWriting.
-    fetchChannelVideos(12),
-    listOrgWriting(siteConfig.orgId, { limit: 4 }),
-  ]);
+  const [content, entries, session, art] = await Promise.all([getSiteContent(), landingSeries(), getServerSession(), galleryArt()]);
+  const signedIn = Boolean(session.user);
+  // Every listed series that has not ended, featured first (2026-10-18;
+  // /hub/series sets the order). The first one names the sign-up frame.
+  const series = entries[0]?.series ?? null;
+  const seriesHref = series ? "/series" : null;
 
-  // The channel's uploads, or — if YouTube could not be read — the two
-  // hand-picked embeds this section always carried.
-  const videos: ShelfVideo[] =
-    channelVideos.length > 0
-      ? channelVideos.map((v) => ({ id: v.id, title: v.title }))
-      : content.videos.embeds.flatMap((e) => {
-          const id = youtubeIdFromEmbed(e.src);
-          return id ? [{ id, title: e.title }] : [];
-        });
-
-  // Only to decide whether the panel offers a form or a way through to the
-  // hub — nothing on this page is gated on it.
-  const session = await getServerSession();
-
-  // Needs content.blog.href, so it cannot join the Promise.all above.
-  // Returns [] on any failure, which is what selects the iframe fallback.
-  const blogPosts = await fetchBlogPosts(content.blog.href, 6);
-
-  // Special non-roster campaign tiles (e.g. "Vote For Andre") still come from
-  // the editable gallery section.
-  const campaignItems = content.gallery.items.filter((item) => item.id === "andre-pace-vote");
-
-  return (
-    <div className="site-shell">
-      <SiteHeader
-        banner={{ imageUrl: content.hero.imageUrl, alt: "IFAC home page banner" }}
-      />
-      <main className="ifac-directory">
-        <section id="about" className="ifac-panel intro-panel">
-          <p>
-            <span className="intro-lead">International Fine Art Collectors</span> is an
-            online gallery and artist community representing independent fine artists
-            and art dealers from around the world. IFAC{" "}
-            <a href="/showcase">showcases</a> original works across painting, mixed
-            media, sculpture and other mediums,{" "}
-            <em>connecting collectors with both emerging and established artists</em>.
-          </p>
-        </section>
-
-        <section id="artists" className="ifac-panel">
-          <h2>{content.gallery.title}</h2>
-          <div className="directory-links artist-links">
-            {directoryArtists.map((artist) => (
-              <DirectoryLink
-                key={artist.slug}
-                link={{ label: artist.name, href: `/artists/${artist.slug}` }}
-                avatar={artist.portrait}
-              />
-            ))}
-            {campaignItems.map((item) => <ArtistLink key={item.id} item={item} />)}
-          </div>
-        </section>
-
-        <section id="dealers" className="ifac-panel">
-          <h2>{content.dealers.title}</h2>
-          <div className="directory-links">
-            {directoryDealers.map((dealer) => (
-              <DirectoryLink
-                key={dealer.slug}
-                link={{ label: dealer.name, href: `/dealers/${dealer.slug}` }}
-                avatar={dealer.portrait}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section id="blog" className="ifac-panel media-panel">
-          <h2><a href={content.blog.href} target="_blank" rel="noreferrer">{content.blog.title}</a></h2>
-          {blogPosts.length > 0 ? (
-            <>
-              <BlogCardGrid posts={blogPosts} />
-              <p className="blog-feed-more">
-                <a href={content.blog.href} target="_blank" rel="noreferrer">
-                  Read the full blog →
-                </a>
-              </p>
-            </>
-          ) : (
-            <div className="embed-frame blog-frame">
-              <iframe src={content.blog.embedUrl} title="IFAC Blog" loading="lazy" />
-            </div>
-          )}
-        </section>
-
-        {/* Writing by IFAC's own members, under the Blogger shelf: the same
-            card, pointed at the piece's page on this site. Empty, it says how
-            a member starts one rather than disappearing — the shelf is new,
-            and a missing section would not tell anyone it exists. */}
-        <section id="writing" className="ifac-panel media-panel">
-          <h2>Members&rsquo; writing</h2>
-          {writing.length > 0 ? (
-            <BlogCardGrid
-              posts={writing.map((piece) => ({
-                id: piece.id,
-                title: piece.title,
-                url: piece.author.slug
-                  ? `/${piece.author.isDealer ? "dealers" : "artists"}/${piece.author.slug}/writing/${piece.slug}`
-                  : "/showcase",
-                publishedAt: piece.publishedAt ?? piece.updatedAt,
-                author: piece.author.name,
-                excerpt: piece.lede ?? "",
-                imageUrl: piece.coverImageUrl,
-                external: false,
-              }))}
-            />
-          ) : (
-            <p className="home-shelf-empty">
-              Nothing here yet. Members can start a piece from the Writing
-              section of their own IFAC page, and it appears on this shelf.
-            </p>
-          )}
-        </section>
-
-        {/* A player and a strip of smaller thumbnails that scrolls sideways
-            (owner, 2026-09-23). Videos also left the header menu. */}
-        {videos.length > 0 && (
-          <section id="videos" className="ifac-panel media-panel">
-            <h2><a href={content.videos.playlistUrl} target="_blank" rel="noreferrer">{content.videos.title}</a></h2>
-            <VideoShelf videos={videos} />
-            <a className="more-videos" href={content.videos.playlistUrl} target="_blank" rel="noreferrer">
-              More IFAC videos &rarr;
-            </a>
-          </section>
-        )}
-
-        <section id="social" className="ifac-panel">
-          <h2>{content.social.title}</h2>
-          {/* The socialshort.png strip that used to sit here was a picture of
-              these same platforms; with a real icon per link it was saying the
-              same thing twice, and it was not clickable. */}
-          <div className="social-row">
-            <span className="social-row-label">Social:</span>
-            <ul className="social-row-links">
-              {content.social.links.map((link) => {
-                const icon = socialIcon(link.href);
-                return (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      target={link.href.startsWith("http") ? "_blank" : undefined}
-                      rel={link.href.startsWith("http") ? "noreferrer" : undefined}
-                      /* Icon-only, so the label has to survive as the
-                         accessible name — otherwise every one of these reads
-                         as "link" to a screen reader, and the tooltip gives
-                         sighted users the same text on hover. */
-                      aria-label={link.label}
-                      title={link.label}
-                    >
-                      {icon ? (
-                        <span
-                          className="social-icon"
-                          style={{ ["--social-icon" as string]: `url(/social/${icon}.svg)` }}
-                          aria-hidden
-                        />
-                      ) : (
-                        /* An unrecognised host has no mark to show, so fall
-                           back to the label rather than an empty hit area. */
-                        <span className="social-row-fallback">{link.label}</span>
-                      )}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-
-        <section id="signup" className="ifac-panel live-panel">
-          <h2>{content.signup.title}</h2>
-          <p>{content.signup.body}</p>
-          <AuthPanel signedInEmail={session.user?.email ?? null} />
-        </section>
-      </main>
-
-      <SiteFooter content={content.footer} />
-    </div>
-  );
-}
-
-function ArtistLink({ item }: { item: GalleryItem }) {
-  const href = item.linkUrl || "/gallery";
-  if (item.id === "andre-pace-vote") {
-    return (
-      <a className="image-link" href={href} target="_blank" rel="noreferrer" aria-label="Vote For Andre">
-        <img src={item.imageUrl} alt={item.title} />
-      </a>
-    );
+  const slides: StageSlide[] = [];
+  /** One slide for a series: its next published week, else the series itself. */
+  const slideFor = (s: MeetingSeries, week: SeriesSession | null, label: string): StageSlide => {
+    const { zone, zones } = seriesZones(s);
+    const pres = s.presentation ?? {};
+    const [head, em] = splitTitle(s.title);
+    const href = `/series/${s.slug}`;
+    if (!week) {
+      return {
+        kind: "Series",
+        eyebrow: entries.length > 1 ? "Series" : "Current series",
+        title: head,
+        titleEm: em,
+        lede: pres.lede ?? s.excerpt ?? null,
+        facts: s.scheduledAt
+          ? [
+              { icon: "calendar", text: weekdayPlural(s.scheduledAt, zone) },
+              { icon: "clock", text: timeInZones(s.scheduledAt, zones) },
+            ]
+          : [],
+        actions: [{ label: "About the series", href, primary: true }],
+        imageUrl: s.coverImageUrl ?? null,
+        imageFrame: s.cover?.kind === "image" ? s.cover.frame ?? null : null,
+      };
+    }
+    const d = dateParts(week.at, zone);
+    return {
+      kind: "Weekly series",
+      eyebrow: entries.length > 1 ? "Series" : "Current series",
+      title: head,
+      titleEm: em,
+      lede: pres.lede ?? s.excerpt ?? null,
+      facts: [
+        { icon: "calendar", text: `${label} · ${d.long}` },
+        { icon: "clock", text: timeInZones(week.at, zones) },
+        { icon: "video", text: s.format === "in_person" ? s.location ?? "In person" : "Online" },
+      ],
+      // One call to action (2026-10-10): the series page, from its top.
+      actions: [{ label: "See all sessions", href, primary: true }],
+      imageUrl: week.coverStillUrl ?? s.coverImageUrl ?? null,
+      imageFrame: week.coverStillUrl ? week.coverFrame : s.cover?.kind === "image" ? s.cover.frame ?? null : null,
+      tag: `${label} · ${d.weekday} ${d.day} ${d.month}`,
+      caption: {
+        title: week.title ?? "To be announced",
+        sub: `Session ${week.number}${week.host?.displayName ? ` · hosted by ${week.host.displayName}` : ""}`,
+      },
+    };
+  };
+  entries.forEach((e, i) => {
+    const next = nextPublicSession(e.series);
+    slides.push(slideFor(e.series, next, next ? (next.isNext ? "This week" : "Next session") : ""));
+    // The auction keeps second place after the lead series.
+    if (i === 0) slides.push(AUCTION_SLIDE);
+  });
+  if (entries.length === 0) slides.push(AUCTION_SLIDE);
+  // With a single series, its following week takes a slide too (as before 2026-10-18).
+  if (entries.length === 1) {
+    const s = entries[0].series;
+    const next = nextPublicSession(s);
+    const after = s.sessions.filter((w) => !w.isPast && w.isPublished && w !== next)[0] ?? null;
+    if (after) slides.push(slideFor(s, after, "Coming up"));
+  }
+  if (!series) {
+    slides.unshift({
+      kind: "IFAC",
+      title: siteConfig.orgName,
+      lede: siteConfig.tagline,
+      facts: [],
+      actions: [{ label: "Meet the artists and dealers", href: "/about", primary: true }],
+      imageUrl: content.hero.imageUrl,
+    });
   }
 
-  return <DirectoryLink link={{ label: item.title, href }} />;
+  return (
+    <PublicShell>
+      <PublicHeader active="home" seriesHref={seriesHref} seriesLabel={series?.title ?? null} />
+      <PublicBanner imageUrl={content.hero.imageUrl} />
+
+      {/* The current series first, then who we are (developer, 2026-10-13;
+          was the other way round from 2026-10-10). */}
+      <div className="ifs-wrap ifs-stage-wrap">
+        <EventStage slides={slides} />
+      </div>
+
+      <div className="ifs-wrap">
+        {/* Left: heading and prose. Right (developer, 2026-10-10, round 4):
+            the cities (wide only), the two buttons on one line, then "Read
+            more". The social icons are not here: they sit in the footer and,
+            on phones, in the header's menu sheet (chrome.tsx). */}
+        {/* The large heading, no seal box; the first sentence starts after
+            the org name, which the heading already says (developer, 2026-10-11). */}
+        <section className="ifs-block ifs-block--split ifs-about" aria-labelledby="about-h">
+          <div>
+            <div className="ifs-block__head">
+              <h2 className="ifs-block__h" id="about-h">{siteConfig.orgName}</h2>
+            </div>
+            <div className="ifs-prose">
+              <p className="ifs-about__lead">{aboutLead(content.about.body)}</p>
+              <p>We are unabashedly enthusiastic about our selections, and we don&apos;t take ourselves too seriously, just our mission.</p>
+            </div>
+          </div>
+          <div className="ifs-block__aside ifs-about__aside">
+            <div className="ifs-cities">New York · Paris · Vancouver · San Francisco · Buenos Aires</div>
+            <div className="ifs-about__buttons">
+              <a className="ifs-btn ifs-btn--blue" href="/about">Meet the artists and dealers</a>
+              <a className="ifs-btn ifs-btn--blue" href="/publications">Writing and videos</a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="ifs-wrap">
+        {/* The sign-up frame on its own (2026-10-10): no block, seal or
+            heading; the frame carries its own title. The account is a
+            network (platform) account, not an IFAC one. */}
+        <section className="ifs-joinzone" id="join" aria-label="Join the Arts Collective platform">
+          {signedIn ? (
+            <div className="ifs-join__signed">
+              <p className="ifs-eyebrow">You&apos;re signed in</p>
+              <h2 className="ifs-join__signed-h">Welcome back.</h2>
+              <p className="ifs-muted">Your hub has the calendar, the series planner and your profile.</p>
+              <a className="ifs-btn ifs-btn--primary" href="/hub">Go to your hub</a>
+            </div>
+          ) : (
+            <JoinFrame seriesTitle={series?.title ?? null} next={seriesHref ?? "/hub"} />
+          )}
+        </section>
+      </div>
+
+      {/* Art from the artist and dealer pages, shuffled per request
+          (developer, 2026-10-11). Nothing renders without artworks. */}
+      {art.length > 0 && (
+        <div className="ifs-wrap">
+          <ArtGallery items={art} />
+        </div>
+      )}
+
+      <PublicFooter seriesHref={seriesHref} seriesLabel={series?.title ?? null} />
+    </PublicShell>
+  );
 }
 
+const AUCTION_SLIDE: StageSlide = {
+  kind: "Auction",
+  title: "IFAC Art Auction",
+  lede: "Work by IFAC artists goes under the hammer on the network's marketplace. Silent bidding opens before each live sale.",
+  facts: [{ icon: "globe", text: "market.arts-collective.com" }],
+  actions: [{ label: "Visit the market", href: siteConfig.marketplaceUrl, primary: true, external: true }],
+  imageUrl: null,
+  tag: "Seasonal",
+  caption: { title: "The Collective Market", sub: "market.arts-collective.com" },
+};
 
-function DirectoryLink({
-  link,
-  avatar,
-  icon,
-}: {
-  link: SiteLink;
-  /** Portrait for a person. Omitted by the social and campaign links, which
-   *  are not people — they keep rendering as a plain label. */
-  avatar?: string | null;
-  /** Name of a mark in /public/social. Drawn as a CSS mask rather than an
-   *  <img> so it takes the link's own colour — Simple Icons bakes in brand
-   *  colours, and X's is pure black, which is invisible on this panel. */
-  icon?: string | null;
-}) {
-  const external = link.href.startsWith("http");
-  return (
-    <a
-      href={link.href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noreferrer" : undefined}
-    >
-      {icon && (
-        <span
-          className="social-icon"
-          style={{ ["--social-icon" as string]: `url(/social/${icon}.svg)` }}
-          aria-hidden
-        />
-      )}
-      {avatar !== undefined && (
-        avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="directory-avatar" src={avatar} alt="" loading="lazy" />
-        ) : (
-          // Every current IFAC profile has a portrait, but a new one may not,
-          // and a missing image would collapse the row and misalign the name
-          // against its neighbours. The initial keeps the grid regular.
-          <span className="directory-avatar directory-avatar--empty" aria-hidden>
-            {link.label.trim().charAt(0).toUpperCase()}
-          </span>
-        )
-      )}
-      <span className="directory-name">{link.label}</span>
-    </a>
-  );
+/** The series the landing shows: listed, not ended, in the Series page's order. */
+async function landingSeries() {
+  const entries = await listSeriesForPage(siteConfig.orgId, { count: 8 }).catch(() => []);
+  return entries.filter((e) => e.inLanding && !e.ended);
+}
+
+/** "Art for Non-Professionals" → ["Art for", "Non-Professionals"] (italic tail). A plain
+ * hyphen: Cormorant Garamond draws U+2011 as a cross-like glyph (2026-10-10). */
+function splitTitle(title: string): [string, string | null] {
+  const words = title.split(" ");
+  if (words.length < 2) return [title, null];
+  const n = words.length >= 5 ? 2 : 1;
+  return [words.slice(0, -n).join(" "), words.slice(-n).join(" ")];
+}
+
+const GALLERY_MAX = 24;
+/** Thumbnail width asked of /api/media (snapped to the 128/256/512/1024
+ * ladder in @elkdonis/services media-thumbnail.ts): 512 covers a 300px card
+ * at 1.7x. A 7 MB master came back as 35 KB webp (2026-10-11). */
+const GALLERY_W = 512;
+const NOT_IMAGE = /\.(mp4|m4v|mov|webm|ogg|mp3|wav|m4a|pdf)$/i;
+
+/**
+ * The artworks shown on the public artist and dealer pages (the same
+ * `listDirectory` rows /artists/<slug> and /dealers/<slug> render), shuffled
+ * per request (the page is force-dynamic) and capped. Paths under a Private/
+ * folder are skipped: anonymous visitors would get a broken image. A failed
+ * read hides the strip rather than the landing.
+ */
+async function galleryArt(): Promise<GalleryArt[]> {
+  const [artists, dealers] = await Promise.all([
+    listDirectory("artist").catch((err) => { console.error("[ifac] gallery artists:", err); return []; }),
+    listDirectory("dealer").catch((err) => { console.error("[ifac] gallery dealers:", err); return []; }),
+  ]);
+  const seen = new Set<string>();
+  const all: GalleryArt[] = [];
+  for (const p of [...artists, ...dealers]) {
+    if (!p.slug) continue;
+    const href = `/${p.kind === "dealer" ? "dealers" : "artists"}/${p.slug}`;
+    for (const w of p.artworks) {
+      const url = w.filename;
+      if (!url || seen.has(url) || /(^|\/)Private\//.test(url) || NOT_IMAGE.test(url.split("?")[0]!)) continue;
+      seen.add(url);
+      const sized = url.startsWith("/api/media/") && !url.includes("?") ? `${url}?w=${GALLERY_W}` : url;
+      all.push({ src: sized, title: w.title.trim(), artist: p.name, href });
+    }
+  }
+  // Fisher-Yates.
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j]!, all[i]!];
+  }
+  return all.slice(0, GALLERY_MAX);
+}
+
+/** "International Fine Art Collectors is an online gallery…" → "An online gallery…". */
+function aboutLead(body: string): string {
+  const rest = body.replace(/^International Fine Art Collectors\s*(is\s+)?/i, "");
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
 }

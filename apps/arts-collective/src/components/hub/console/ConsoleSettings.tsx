@@ -32,6 +32,13 @@ export interface ConsoleSettingsProps {
   homeUrl: string;
   layoutMode: "default" | "silex";
   hasPublishedSilex: boolean;
+  /** The page editor for this org's landing page (/hub/sites/<slug>/design). */
+  designHref: string;
+  /** A designed landing page is published (`site_config` `puck:home`). */
+  hasDesignedPage: boolean;
+  /** What the subdomain root shows today, for the sentence under the address. */
+  leading: { mode: "silex" | "designed" | "pinned" | "latest" | "default"; title?: string | null };
+  onRemoveDesign: (orgSlug: string) => Promise<{ ok: boolean; error?: string }>;
 
   identity: React.ComponentProps<typeof OrgIdentityPanel>["initial"];
   onSaveIdentity: React.ComponentProps<typeof OrgIdentityPanel>["onSave"];
@@ -176,6 +183,7 @@ export function ConsoleSettings({
               </a>
             ))}
           </p>
+          <LandingPageControls props={props} />
           <div className="mt-4">
             <SilexSurfaceControls
               slug={props.orgSlug}
@@ -186,5 +194,67 @@ export function ConsoleSettings({
         </SurfaceSection>
       )}
     </SurfaceFrame>
+  );
+}
+
+/**
+ * The landing page: what leads the site today, the page editor, and the way
+ * back to the default page. Sits beside the Silex controls because both
+ * answer "what is at /": Silex for a whole site, the page editor for the
+ * landing page alone (decision A of the onboarding brief, 2026-10-29).
+ */
+function LandingPageControls({ props }: { props: ConsoleSettingsProps }) {
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const { leading } = props;
+  const reading =
+    leading.mode === "silex"
+      ? "your published Silex page"
+      : leading.mode === "designed"
+        ? "the landing page you designed"
+        : leading.mode === "pinned"
+          ? `the pinned item${leading.title ? `, “${leading.title}”` : ""}`
+          : leading.mode === "latest"
+            ? `the newest published item${leading.title ? `, “${leading.title}”` : ""} (pin one to choose)`
+            : "the default page built from your identity (nothing is published yet)";
+
+  async function remove() {
+    if (!window.confirm("Remove the designed landing page? The site goes back to the offering or the default page. The design is not kept.")) return;
+    setBusy(true);
+    setError(null);
+    const r = await props.onRemoveDesign(props.orgSlug);
+    setBusy(false);
+    if (!r.ok) setError(r.error ?? "Could not remove it.");
+    else window.location.reload();
+  }
+
+  return (
+    <div className="mt-5 border-t border-border pt-4" data-landing-controls>
+      <h3 className="text-sm font-medium">Landing page</h3>
+      <p className="mt-1 text-sm text-muted-foreground">Your site opens on {reading}.</p>
+      <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <a
+          href={props.designHref}
+          className="inline-flex min-h-9 items-center rounded-md border border-border bg-background px-3 font-medium hover:bg-accent"
+        >
+          {props.hasDesignedPage ? "Edit the landing page" : "Design the landing page"}
+        </a>
+        {props.hasDesignedPage && (
+          <button
+            type="button"
+            onClick={remove}
+            disabled={busy}
+            className="text-muted-foreground underline underline-offset-4 hover:text-foreground disabled:opacity-50"
+          >
+            {busy ? "Removing…" : "Use the default page instead"}
+          </button>
+        )}
+      </p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Without a designed page the site leads with the pinned item, else the newest published one; pin from the
+        “published” list on the console or from the item itself.
+      </p>
+      {error && <p className="mt-2 text-sm text-destructive" role="alert">{error}</p>}
+    </div>
   );
 }

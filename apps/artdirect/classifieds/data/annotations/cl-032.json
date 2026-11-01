@@ -1,0 +1,14 @@
+{
+  "id": "cl-032",
+  "status": "draft",
+  "role": "adjacent",
+  "source": { "paper": "The Indianapolis News", "place": "Indianapolis, Indiana", "date": "1971-08-27", "era": "1970s", "language": ["en"] },
+  "summary": "Not classifieds: a Friday entertainment page. A narrow 'In Indianapolis Today' listing column and a mosaic of cinema display ads (The Hellstrom Chronicle, Billy Jack, Carnal Knowledge, Doc) plus a state-fair ad.",
+  "frame": { "columns": 5, "columnWidth": "mixed", "gutter": "tight", "columnRules": "thin", "flow": "modular" },
+  "units": [
+    { "id": "theatre-listing", "kind": "listing-table", "frequency": "common", "lead": "bold-caps", "align": "left", "border": "none", "example": "CINEMA — 'The Hellstrom Chronicle'...", "notes": "Theatre name in bold caps, film in quotes." },
+    { "id": "film-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "Held Over 2nd Big Week! / THE HELLSTROM CHRONICLE", "notes": "Black reverse panels, photo halftones, theatre logo bars and 'Bargain matinee' tags." }
+  ],
+  "color": { "mode": "mono", "paper": "#f1ede4", "ink": "#111111", "accents": [] },
+  "notes": ["Same adjacent section type as cl-028 (entertainment directory). Useful for 1970s display lettering (psychedelic NOW at the FAIR) more than for classifieds."]
+}

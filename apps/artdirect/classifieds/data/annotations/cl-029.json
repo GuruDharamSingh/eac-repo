@@ -1,0 +1,23 @@
+{
+  "id": "cl-029",
+  "status": "draft",
+  "source": { "paper": "Daily Thanthi", "place": "Tamil Nadu, India", "era": "2010s", "language": ["ta", "en"] },
+  "summary": "Tamil classifieds half-page beside news. A pale rainbow-gradient title bar, small white category labels, and a dense mosaic of little boxed displays: bold Latin WANTED heads, ► bullet job lists, yellow and red spot fills, big phone numbers. A booking-service banner is pasted across the middle of the image.",
+  "family": "indian-color-display",
+  "frame": { "columns": 4, "columnWidth": "medium", "gutter": "tight", "columnRules": "thin", "flow": "modular", "masthead": "Rainbow gradient bar (yellow to green to blue) with the Tamil section name in a white rounded panel." },
+  "headers": [
+    { "id": "tamil-label", "kind": "plain-caps", "example": "ஆட்கள் தேவை (Wanted: staff)", "fg": "#111111", "bg": "#ffffff", "align": "center", "notes": "Small bold Tamil label in a ruled cell at the top of each group." }
+  ],
+  "units": [
+    { "id": "wanted-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "left", "border": "thin", "example": "WANTED / ► TYPIST (Female) ► SWEEPER (Female) / 8778995471", "notes": "Heavy Latin WANTED in black or reverse, ► bullet list, phone set very large at foot." },
+    { "id": "spot-fill-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#ffe24a", "example": "S Kumar GOLD Benefit Fund", "notes": "Yellow or red fills, Tamil and English mixed in one box." },
+    { "id": "tamil-liner", "kind": "liner-bold-lead", "frequency": "common", "lead": "bold", "align": "justify", "border": "none", "notes": "Run-in Tamil liners in the narrow columns." }
+  ],
+  "type": [
+    { "role": "display", "classification": "grotesque", "look": "Arial Black / Helvetica Black caps", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "indic", "look": "Tamil newspaper face, bold for heads", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Noto Sans Tamil" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#ffe24a", "use": "box fills" }, { "hex": "#d7261e", "use": "fills and heads" }, { "hex": "#1f6fb5", "use": "heads, phone numbers" } ] },
+  "ornaments": ["► bullets", "portrait photos in ads"],
+  "notes": ["Middle third is covered by an Ads2Publish overlay; re-source a clean copy if possible."]
+}

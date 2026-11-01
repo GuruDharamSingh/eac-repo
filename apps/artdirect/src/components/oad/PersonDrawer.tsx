@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { setPageBackgroundAction, setSectionOrderAction } from "@/lib/space-actions";
 import { openNewPieceAction } from "@/lib/writing-actions";
 import styles from "./PersonDrawer.module.css";
-import "./person-frame.css";
 
 // ============================================================================
 // The left drawer on an ArtDirect person page (developer, 2026-09-27).
@@ -13,7 +12,7 @@ import "./person-frame.css";
 // For everyone: portrait, name, bio, and a way to reach the person (their
 // Email link as mailto, else their Website; there is no direct messaging on
 // the platform yet). For the person themselves: write a post / the writing
-// desk, Studio and the Elkdonis hub on arts-collective.com, the order of
+// desk, Studio and the Arts Collective hub on arts-collective.com, the order of
 // their page's sections, and the page background.
 // ============================================================================
 
@@ -117,8 +116,8 @@ export function PersonDrawer(props: Props) {
               <a className={styles.link} href={`${networkUrl}/studio`}>
                 Studio
               </a>
-              <a className={styles.link} href={`${networkUrl}/hub/elkdonis`}>
-                Elkdonis hub
+              <a className={styles.link} href={`${networkUrl}/hub/arts-collective`}>
+                Arts Collective hub
               </a>
             </nav>
             <SectionOrder initial={props.sections} />

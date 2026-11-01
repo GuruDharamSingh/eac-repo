@@ -25,6 +25,16 @@
       "types": "./dist/gallery/index.d.ts",
       "import": "./dist/gallery/index.mjs",
       "require": "./dist/gallery/index.js"
+    },
+    "./hallway": {
+      "types": "./dist/hallway/index.d.ts",
+      "import": "./dist/hallway/index.mjs",
+      "require": "./dist/hallway/index.js"
+    },
+    "./hallway/model": {
+      "types": "./dist-plain/hallway/model.d.ts",
+      "import": "./dist-plain/hallway/model.mjs",
+      "require": "./dist-plain/hallway/model.js"
     }
   },
   "scripts": {
@@ -33,7 +43,8 @@
     "check-types": "tsc --noEmit"
   },
   "files": [
-    "dist/**"
+    "dist/**",
+    "dist-plain/**"
   ],
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

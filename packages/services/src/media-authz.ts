@@ -154,8 +154,17 @@ async function isOrgAffiliate(userId: string, orgId: string): Promise<boolean> {
                 AND role <> 'viewer'
             )
          OR EXISTS (
-              SELECT 1 FROM org_profiles
-              WHERE user_id = ${userId} AND org_id = ${orgId}
+              SELECT 1 FROM org_profiles op
+              WHERE op.user_id = ${userId} AND op.org_id = ${orgId}
+                -- Signup writes an org_profiles row next to the viewer
+                -- membership, so without this the viewer exclusion above was
+                -- a no-op. A profile with no membership row at all (IFAC's
+                -- artists) still counts.
+                AND NOT EXISTS (
+                  SELECT 1 FROM user_organizations uo
+                  WHERE uo.user_id = op.user_id AND uo.org_id = op.org_id
+                    AND uo.role = 'viewer'
+                )
             )
     `;
     return rows.length > 0;
@@ -178,7 +187,13 @@ async function sharesOrg(viewerId: string, ownerId: string): Promise<boolean> {
         SELECT org_id FROM user_organizations
         WHERE user_id = ${viewerId} AND role <> 'viewer'
         UNION
-        SELECT org_id FROM org_profiles      WHERE user_id = ${viewerId}
+        SELECT op.org_id FROM org_profiles op
+        WHERE op.user_id = ${viewerId}
+          AND NOT EXISTS (
+            SELECT 1 FROM user_organizations uo
+            WHERE uo.user_id = op.user_id AND uo.org_id = op.org_id
+              AND uo.role = 'viewer'
+          )
       ),
       owner_orgs AS (
         SELECT org_id FROM user_organizations WHERE user_id = ${ownerId}

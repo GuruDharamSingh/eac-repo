@@ -1,6 +1,6 @@
 import { getWhiteboard, saveWhiteboard, type WhiteboardScene } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
-import { getHubViewer } from "@/lib/hub-auth";
+import { getApiMember } from "@/lib/auth";
 
 /**
  * The group's shared whiteboard: one Excalidraw scene, org-wide.
@@ -13,6 +13,11 @@ import { getHubViewer } from "@/lib/hub-auth";
  * The scene lives in `site_config` under key `whiteboard`, read and written by
  * the shared service. The route exists per app because the permission gate is
  * the security boundary and is worth reading in the app it protects.
+ *
+ * `getApiMember` (lib/auth) rather than `getHubViewer` (lib/hub-auth): both
+ * admit owner/guide/member, but this is the route-handler form of the
+ * `requireOrgMember` gate that /hub/whiteboard (the page) uses, so the page
+ * and its API read the same definition of "member".
  */
 export const dynamic = "force-dynamic";
 
@@ -21,12 +26,12 @@ function forbidden() {
 }
 
 export async function GET() {
-  if (!(await getHubViewer())) return forbidden();
+  if (!(await getApiMember())) return forbidden();
   return Response.json({ scene: await getWhiteboard(siteConfig.orgId) });
 }
 
 export async function PUT(request: Request) {
-  if (!(await getHubViewer())) return forbidden();
+  if (!(await getApiMember())) return forbidden();
 
   let payload: { scene?: WhiteboardScene };
   try {

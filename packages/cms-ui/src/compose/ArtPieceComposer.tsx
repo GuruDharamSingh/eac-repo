@@ -43,6 +43,8 @@ export interface ArtPieceInput {
   price: string;
   certificateOfAuthenticity: boolean;
   provenanceNotes: string;
+  /** List in the organisation's own store rather than the person's. */
+  listAsOrg?: boolean;
 }
 
 export interface ArtPieceStoreGate {
@@ -75,6 +77,12 @@ export interface ArtPieceComposerProps {
   marketplaceUrl?: string;
   /** True when `onSave` publishes the piece rather than keeping a draft. */
   publishes?: boolean;
+  /**
+   * When the viewer may list for the organisation's store too (migration
+   * 209; an owner, admin or store-team member), its name. Draws a switch
+   * between "my store" and "<org>'s store"; the save gets `listAsOrg`.
+   */
+  orgStoreName?: string | null;
 }
 
 const KINDS = [
@@ -89,7 +97,9 @@ export function ArtPieceComposer({
   media,
   marketplaceUrl,
   publishes = false,
+  orgStoreName = null,
 }: ArtPieceComposerProps) {
+  const [listAsOrg, setListAsOrg] = React.useState(false);
   const surfaces = useSurface();
   const [gate, setGate] = React.useState<ArtPieceStoreGate | null>(null);
 
@@ -138,6 +148,7 @@ export function ArtPieceComposer({
         price,
         certificateOfAuthenticity: coa,
         provenanceNotes: provenance,
+        listAsOrg: orgStoreName ? listAsOrg : false,
       });
       if (!result.ok) {
         setProblem(("error" in result && result.error) || "Could not save it.");
@@ -301,6 +312,12 @@ export function ArtPieceComposer({
         </div>
 
         <div className="eac-field">
+          {orgStoreName && (
+            <label className="eac-field eac-field--check">
+              <input type="checkbox" checked={listAsOrg} onChange={(e) => setListAsOrg(e.target.checked)} />
+              <span>List in {orgStoreName}&rsquo;s store, not mine. The organisation keeps the proceeds; you are not named as the maker (credit it on the marketplace).</span>
+            </label>
+          )}
           <label className="eac-gate-choice">
             <input type="checkbox" checked={coa} onChange={(e) => setCoa(e.target.checked)} />
             <span>

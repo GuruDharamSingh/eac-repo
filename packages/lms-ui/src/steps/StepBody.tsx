@@ -1,5 +1,5 @@
 import type { OutlineStepView, StepMedia, ThreadRef } from "@elkdonis/lms";
-import { stepTypeDef } from "@elkdonis/lms";
+import { stepTask, stepTypeDef } from "@elkdonis/lms";
 import type { LmsConnectors } from "../connectors";
 import { fmtWhen } from "../parts";
 
@@ -8,13 +8,19 @@ import { fmtWhen } from "../parts";
  * the step version's own title/body/settings/refs, so a type nobody has
  * registered still shows its media, its body and its practice.
  */
-export function StepBody({ step, c, thread }: { step: OutlineStepView; c: LmsConnectors; thread: ThreadRef | null }) {
+export async function StepBody({ step, c, thread, enrolled = false, here = "", orgId = null }: {
+  step: OutlineStepView; c: LmsConnectors; thread: ThreadRef | null;
+  /** For task steps: whether a finished task is recorded, and where "come back" returns to. */
+  enrolled?: boolean; here?: string; orgId?: string | null;
+}) {
   const def = stepTypeDef(step.type);
   const media = step.refs.media ?? [];
+  const task = stepTask(step);
   return (
     <>
       {media.map((m, i) => <Media key={i} m={m} c={c} />)}
       {step.bodyHtml && <div className="so-prose" dangerouslySetInnerHTML={{ __html: step.bodyHtml }} />}
+      {task && <TaskBox task={task} step={step} c={c} enrolled={enrolled} here={here} orgId={orgId} />}
       {def.needsThread && <ThreadCard thread={thread} c={c} kind={step.type} />}
       {(step.refs.links ?? []).length > 0 && (
         <ul className="so-links" aria-label="Further reading">
@@ -42,6 +48,26 @@ export function StepBody({ step, c, thread }: { step: OutlineStepView; c: LmsCon
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * The box a task step draws under its text. The page has already asked the
+ * host whether the task is done (settleTaskStep, before the outline was read),
+ * so a second status read here is answered from the host's per-request cache.
+ */
+async function TaskBox({ task, step, c, enrolled, here, orgId }: { task: NonNullable<ReturnType<typeof stepTask>>; step: OutlineStepView; c: LmsConnectors; enrolled: boolean; here: string; orgId: string | null }) {
+  if (!c.tasks) {
+    return <p className="so-callout">This step is done on the network itself; this site cannot do it from here.</p>;
+  }
+  const viewer = await c.viewer();
+  const done = step.status === "completed" || step.status === "waived";
+  const status = done ? { done: true } : await c.tasks.status(task, viewer, { orgId }).catch(() => ({ done: false }));
+  const Box = c.tasks.render;
+  return (
+    <section className="so-task" aria-label="What to do">
+      <Box task={task} status={status} signedIn={Boolean(viewer.userId)} enrolled={enrolled} here={here} signInHref={c.hrefs.signIn(here)} orgId={orgId} />
+    </section>
   );
 }
 

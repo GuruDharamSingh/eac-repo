@@ -37,6 +37,7 @@ import {
   getCurrentUser,
   getCurrentUserId,
   requireStudioStore,
+  signInPath,
   STUDIO_STORE_COOKIE,
 } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
@@ -100,7 +101,14 @@ export type ApplyArtistInput = {
   headline?: string;
   city?: string;
   photoUrl?: string;
+  /** The store's own note (store.bio_html). */
   bioHtml?: string;
+  /**
+   * Plain-text network bio (users.bio). The profile fields above and this one
+   * are sent only when the person opened "Edit profile"; undefined leaves the
+   * profile untouched.
+   */
+  profileBio?: string;
   payoutEmail?: string;
   defaultCurrency?: Currency;
   links?: ArtistLinkInput[];
@@ -126,6 +134,7 @@ export async function applyArtistAction(input: ApplyArtistInput): Promise<Result
       city: input.city?.trim() || null,
       photoUrl: input.photoUrl?.trim() || null,
       bioHtml: input.bioHtml ?? null,
+      profileBio: input.profileBio ?? null,
       payoutEmail: input.payoutEmail.trim(),
       defaultCurrency: input.defaultCurrency,
       links: input.links,
@@ -153,10 +162,12 @@ export async function updateProfileAction(input: ApplyArtistInput): Promise<Resu
       await updateStore(
         store.id,
         {
+          // Undefined means "not edited here": leave the profile as it is.
           displayName: input.displayName?.trim() || undefined,
-          headline: input.headline?.trim() ?? null,
-          city: input.city?.trim() ?? null,
-          photoUrl: input.photoUrl?.trim() ?? null,
+          headline: input.headline === undefined ? undefined : input.headline.trim() || null,
+          city: input.city === undefined ? undefined : input.city.trim() || null,
+          photoUrl: input.photoUrl === undefined ? undefined : input.photoUrl.trim() || null,
+          profileBio: input.profileBio,
           bioHtml: input.bioHtml ?? null,
           defaultCurrency: input.defaultCurrency,
           links: input.links,
@@ -205,7 +216,70 @@ export type ArtworkFormInput = {
    * proceeds earmarked to the org.
    */
   creditMe?: boolean;
+  /**
+   * Credit an artist without paying them (migration 209): the store keeps
+   * the proceeds. Used for donated work in an org store.
+   */
+  creditedArtistUserId?: string | null;
+  /** Auction estimate, major units. */
+  estimateLow?: number | null;
+  estimateHigh?: number | null;
+  /** "Donated by X to Y". Blank means no donation recorded. */
+  donation?: {
+    fromUserId?: string | null;
+    fromText?: string | null;
+    toOrgId?: string | null;
+    occurredOn?: string | null;
+    note?: string | null;
+  } | null;
+  /** Where this listing's money goes, from the org's beneficiary list. */
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: "all_proceeds" | "commission" | null;
 };
+
+function provenanceFrom(input: ArtworkFormInput) {
+  const d = input.donation;
+  if (!d || (!d.fromUserId && !d.fromText?.trim() && !d.toOrgId)) return [];
+  return [
+    {
+      kind: "donated" as const,
+      fromUserId: d.fromUserId ?? null,
+      fromText: d.fromText?.trim() || null,
+      toOrgId: d.toOrgId ?? null,
+      occurredOn: d.occurredOn || null,
+      note: d.note?.trim() || null,
+    },
+  ];
+}
+
+function toMinorOrNull(v: number | null | undefined): number | null {
+  return v != null && Number.isFinite(v) && v > 0 ? Math.round(v * 100) : null;
+}
+
+/**
+ * People a lister may credit: a name or email search across the network,
+ * org members first. Used by the artwork form's credit picker.
+ */
+export async function searchPeopleAction(
+  q: string
+): Promise<Array<{ id: string; name: string; email: string | null; slug: string | null }>> {
+  const { store } = await requireStudioStore();
+  const term = q.trim();
+  if (term.length < 2) return [];
+  const like = "%" + term + "%";
+  const rows = (await db`
+    SELECT u.id, COALESCE(u.display_name, u.email) AS name, u.email, u.slug,
+      (uo.user_id IS NOT NULL) AS in_org
+    FROM users u
+    LEFT JOIN user_organizations uo
+      ON uo.user_id = u.id AND uo.org_id = ${store.ownerOrgId ?? ""} AND uo.role <> 'viewer'
+    WHERE COALESCE(u.entity_type, 'person') = 'person'
+      AND (u.display_name ILIKE ${like} OR u.email ILIKE ${like})
+    ORDER BY in_org DESC, u.display_name ASC NULLS LAST
+    LIMIT 8
+  `) as unknown as Array<{ id: string; name: string; email: string | null; slug: string | null }>;
+  return rows.map((r) => ({ id: r.id, name: r.name, email: r.email, slug: r.slug }));
+}
 
 function toMinor(price: number): number {
   return Math.max(0, Math.round(Number(price) * 100));
@@ -225,7 +299,14 @@ export async function createArtworkAction(
   try {
     const { id } = await createArtwork({
       storeId: store.id,
+      actorUserId: userId,
       artistUserId: makerUserId,
+      creditedArtistUserId: input.creditedArtistUserId ?? null,
+      estimateLowMinor: toMinorOrNull(input.estimateLow),
+      estimateHighMinor: toMinorOrNull(input.estimateHigh),
+      provenance: provenanceFrom(input),
+      beneficiaryPayeeId: input.beneficiaryPayeeId ?? null,
+      beneficiaryScope: input.beneficiaryScope ?? null,
       title: input.title.trim(),
       descriptionHtml: input.descriptionHtml ?? null,
       kind: input.kind,
@@ -272,6 +353,12 @@ export async function updateArtworkAction(
       priceMinor: toMinor(input.price),
       currency: input.currency,
       inventoryQty: input.inventoryQty ?? undefined,
+      creditedArtistUserId: input.creditedArtistUserId ?? null,
+      estimateLowMinor: toMinorOrNull(input.estimateLow),
+      estimateHighMinor: toMinorOrNull(input.estimateHigh),
+      provenance: provenanceFrom(input),
+      beneficiaryPayeeId: input.beneficiaryPayeeId ?? null,
+      beneficiaryScope: input.beneficiaryScope ?? null,
     });
     await setArtworkMedia(artworkId, userId, input.images);
     revalidatePath("/studio", "layout");
@@ -325,6 +412,10 @@ export type CreateLotFormInput = {
    * Empty means no tag.
    */
   event?: string | null;
+  /** Major units. Shown until the first bid. */
+  buyNow?: number | null;
+  /** `ladder` copies the marketplace ladder onto the lot; `flat` uses `bidIncrement`. */
+  incrementMode?: "ladder" | "flat";
 };
 
 export async function createLotAction(
@@ -341,6 +432,8 @@ export async function createLotAction(
       reserveMinor: input.reserve != null && input.reserve > 0 ? toMinor(input.reserve) : null,
       bidIncrementMinor: input.bidIncrement != null && input.bidIncrement > 0 ? toMinor(input.bidIncrement) : undefined,
       antiSnipeMinutes: input.antiSnipeMinutes ?? undefined,
+      buyNowMinor: input.buyNow != null && input.buyNow > 0 ? toMinor(input.buyNow) : null,
+      incrementMode: input.incrementMode ?? "ladder",
     });
     // createLot has already checked this person may act for the store; the tag
     // is only a label on the row it made.
@@ -484,7 +577,7 @@ export async function unpresentArtworkAction(storeId: string, artworkId: string)
 
 export async function setPayoutEmailAction(formData: FormData): Promise<void> {
   const userId = await getCurrentUserId();
-  if (!userId) redirect("/login?next=/studio");
+  if (!userId) redirect(await signInPath());
   const email = String(formData.get("payoutEmail") ?? "").trim();
   await setPayoutIdentity(userId, { payoutEmail: email || null });
   revalidatePath("/studio", "layout");
@@ -505,7 +598,7 @@ export async function savePayoutSetupAction(input: {
   payoutEmail: string | null;
 }): Promise<void> {
   const userId = await getCurrentUserId();
-  if (!userId) redirect("/login?next=/studio");
+  if (!userId) redirect(await signInPath());
 
   const country = normaliseCountry(input.country);
   if (input.rail === "etransfer") {
@@ -527,7 +620,7 @@ export async function savePayoutSetupAction(input: {
 export async function startStripeOnboardingAction(): Promise<void> {
   if (!isCardPaymentAvailable()) throw new Error("Card payouts are not enabled on this site yet.");
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/studio");
+  if (!user) redirect(await signInPath());
   const base = siteConfig.url.replace(/\/$/, "");
   const { url } = await startStripeOnboarding({
     userId: user.id,
@@ -540,7 +633,7 @@ export async function startStripeOnboardingAction(): Promise<void> {
 
 export async function disconnectStripeAction(): Promise<void> {
   const userId = await getCurrentUserId();
-  if (!userId) redirect("/login?next=/studio");
+  if (!userId) redirect(await signInPath());
   await disconnectStripeAccount(userId);
   revalidatePath("/studio", "layout");
   redirect("/studio/payouts");

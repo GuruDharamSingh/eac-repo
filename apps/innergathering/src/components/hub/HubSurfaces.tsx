@@ -25,12 +25,28 @@ import {
   disconnectPayoutsAction,
 } from "@/lib/cms/blog-actions";
 import { ArtPieceGate, BlogGate } from "@/components/hub/publish-gates";
+import { loadJourneyAction, publishStoreAction, checkSiteAction, createSiteAction } from "@/lib/cms/journey-actions";
+import { checkStoreAction, saveArtworkDraftAction, publishArtworksAction } from "@/lib/cms/artwork-actions";
+import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction } from "@/lib/cms/own-service-actions";
+import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction } from "@/lib/cms/org-people-actions";
+import { marketplaceLinks } from "@elkdonis/commerce/links";
 // The shared canvas. Its own subpath because @excalidraw/excalidraw is an
 // optional peer of cms-ui — a drawing engine must not ride along with the hub.
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
+import { WHITEBOARD_CLOUD_SAVE } from "@/lib/whiteboard";
 import { siteConfig } from "@/config/site";
 
 const TIME_ZONE = "America/Toronto";
+/** The network hub, for links out of the journeys. Carries the sign-in through this site's SSO hop. */
+const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
+const NETWORK_ORIGIN = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${NETWORK_HOST}`;
+const NETWORK_HUB = (path: string) => `/api/auth/handoff?to=${encodeURIComponent(NETWORK_ORIGIN + path)}`;
+
+/** The network marketplace (art-auction), for the auction journey's links. */
+const MARKET = marketplaceLinks(process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009", {
+  from: "inner_group",
+  handoff: true,
+});
 
 /** What this group promises about who reads the answers. */
 const QUESTIONNAIRE_PRIVACY = {
@@ -85,6 +101,13 @@ export function HubSurfaces({
 
         board: true,
         profile: true,
+        // The Connections tab of "View profile" (2026-10-31): the list is served
+        // here (api/center/connections); consent starts on the network host and
+        // comes back to this site's address.
+        connections: {
+          startUrl: `${NETWORK_ORIGIN}/api/connections/start`,
+          carry: (url) => `/api/auth/handoff?to=${encodeURIComponent(url)}`,
+        },
         // The "What your page carries" panel inside the profile popup: the
         // same switches the Blog tile offers, plus the way to be paid. The
         // tile is the door for somebody who came to write; this is the door
@@ -94,6 +117,45 @@ export function HubSurfaces({
           setSection: setProfileSectionAction,
           startPayouts: startPayoutsAction,
           disconnectPayouts: disconnectPayoutsAction,
+        },
+        // The auction journey (Center, 2026-10-18): where this person stands
+        // on "sell your work in the Art Auction" and its one-click step. Art
+        // is composed on the marketplace, never here (apps rule).
+        journey: {
+          load: loadJourneyAction,
+          publishStore: publishStoreAction,
+          links: {
+            addWork: MARKET.newListing,
+            store: (handle) => MARKET.store(handle),
+            auctionSite: MARKET.home,
+            about: `${MARKET.home.replace(/\/$/, "")}/about`,
+            orgSite: "/",
+            startOrg: NETWORK_HUB("/hub/organization?new=1"),
+          },
+          site: {
+            check: checkSiteAction,
+            create: createSiteAction,
+            networkHost: NETWORK_HOST,
+            manageHref: (slug) => NETWORK_HUB(`/hub/organization?org=${encodeURIComponent(slug)}`),
+          },
+        },
+        // Cataloguing work from Center, several pieces per sitting, and the
+        // org's people for its owners and guides (take two, 2026-10-18).
+        artwork: {
+          checkStore: checkStoreAction,
+          saveDraft: saveArtworkDraftAction,
+          publish: publishArtworksAction,
+        },
+        services: {
+          list: listOwnServicesAction,
+          save: saveOwnServiceAction,
+          setStatus: setOwnServiceStatusAction,
+        },
+        orgPeople: {
+          list: listOrgPeopleAction,
+          setRole: setOrgPersonRoleAction,
+          setListed: setOrgPersonListedAction,
+          manageHref: "/manage/people",
         },
         // "Where you show" in the same popup, at /api/center/presence.
         presence: true,
@@ -231,7 +293,7 @@ export function HubSurfaces({
 
           // The shared canvas, at full width: a drawing surface with a
           // toolbar down one side has nothing to give back at tile-and-a-half.
-          whiteboard: () => <WhiteboardSurface />,
+          whiteboard: () => <WhiteboardSurface cloudSave={WHITEBOARD_CLOUD_SAVE} />,
 
           // The compose catalogue offers a kind that writes `threads` through
           // `saveThread`; a kind that writes anything ELSE appears only when

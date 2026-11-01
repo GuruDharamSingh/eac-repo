@@ -29,8 +29,8 @@ export interface ForumRouteContext {
  * decorative and unchecked. `/unread` on a thread redirects to the page and
  * anchor of the first reply the viewer hasn't seen.
  *
- * Every page is wrapped in the shell (shell.tsx): the rail of places on the
- * left, the page, and the column of boxes on the right.
+ * Every page is wrapped in the shell (shell.tsx): one rail on the left
+ * (places, you, posting, what's around) and the page's sheet beside it.
  */
 export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.ReactElement> {
   const { connectors, segments, searchParams } = ctx;
@@ -101,16 +101,13 @@ export async function renderForumRoute(ctx: ForumRouteContext): Promise<React.Re
     <div className="gf-root" data-forum-theme={theme} data-forum-mode={mode} data-forum-size={size} data-forum-layout={layout}>
       <div className="gf-shell">
         {shell.side}
-        <div className="gf-body">
-          {connectors.actionBase && (
-            <ReaderControls size={size} layout={layout} mode={mode} actionBase={connectors.actionBase} back={path} />
-          )}
-          {el}
-        </div>
+        <div className="gf-body">{el}</div>
       </div>
-      {/* The phone's way into the two rails: links, so they work with no script. */}
+      {connectors.actionBase && (
+        <ReaderControls size={size} layout={layout} mode={mode} actionBase={connectors.actionBase} back={path} />
+      )}
+      {/* The phone's way into the rail: a link, so it works with no script. */}
       <a className="gf-menu-btn" href="#menu" aria-label="Open the menu">☰ <span>Browse</span></a>
-      <a className="gf-boxes-btn" href="#boxes" aria-label="Open the side column">▤ <span>Post · You · Wiki</span></a>
     </div>
   );
 }

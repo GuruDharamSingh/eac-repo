@@ -1,51 +1,48 @@
 import type { Metadata } from "next";
-import { getAuctionHosts, avatarSrc, type AuctionHost } from "@/lib/auction-hosts";
+import { getMarketplaceSettings } from "@elkdonis/commerce/server";
+import { getCurrentUserId } from "@/lib/marketplace-auth";
+import { loadAbout, canEditAbout, type AboutContent } from "@/lib/about-content";
+import { siteConfig } from "@/config/site";
+import { cormorant, jost } from "../series/[slug]/series-fonts";
+import { SrsNav } from "../series/[slug]/series-template";
+import { AboutEditor, AboutBody } from "./about-editor";
+import "../series/[slug]/series-template.css";
+import "../series/[slug]/manage/workspace.css";
+import "./about.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "About the auction" };
+export const metadata: Metadata = {
+  title: "About",
+  description: "What Collect Art is, who presents the auction, and who stands behind the platform.",
+};
 
-function Entry({ org, children }: { org: AuctionHost; children?: React.ReactNode }) {
-  return (
-    <section id={org.slug} aria-labelledby={`${org.slug}-name`} className="scroll-mt-24 border-t border-border py-10">
-      <div className="flex items-center gap-5">
-        <span className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-wall ring-1 ring-border">
-          {org.avatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarSrc(org.avatarUrl, 256)} alt="" className="h-full w-full object-cover" />
-          )}
-        </span>
-        <div>
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.13em] text-ink-faint">
-            {org.role}
-          </p>
-          <h2 id={`${org.slug}-name`} className="font-serif text-2xl tracking-tight">
-            {org.name}
-          </h2>
-        </div>
-      </div>
-      {org.bio && <p className="mt-5 max-w-2xl leading-relaxed text-muted-foreground">{org.bio}</p>}
-      {children}
-      <p className="mt-4 text-sm">
-        <a href={org.url} className="underline underline-offset-4">
-          Visit {org.name} →
-        </a>
-      </p>
-    </section>
-  );
-}
+// The About page (2026-10-28), after the "About A: names as headers" board
+// (https://claude.ai/artifact/4BRndE7RCsQHX7joYW4MjV): each section is a
+// header with a burgundy rule, Collect Art's own words beside an optional
+// media piece. The content lives in site_config (lib/about-content.ts) and
+// the site's owners edit it in place (about-editor.tsx).
 
 export default async function AboutPage() {
-  const { presenter, host } = await getAuctionHosts();
+  const [{ content, saved }, settings, userId] = await Promise.all([loadAbout(), getMarketplaceSettings(siteConfig.marketplaceOrgId), getCurrentUserId()]);
+  const editor = await canEditAbout(userId);
+  const commission = settings.defaultCommissionRate;
+  const shown: AboutContent = { ...content, sections: editor ? content.sections : content.sections.filter((s) => s.html || s.media) };
+  const footer = (
+    <footer className="srs-foot">
+      {siteConfig.name} is part of <a href={siteConfig.network.artsCollectiveUrl}>Arts Collective</a>, operated on behalf of the Elkdonis Arts Collective, a not-for-profit.
+    </footer>
+  );
   return (
-    <main className="mx-auto max-w-4xl px-6 py-14">
-      <h1 className="font-serif text-4xl tracking-tight md:text-5xl">About the auction</h1>
-      <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-        {presenter.name} runs the auction. {host.name} hosts it.
-      </p>
-      <div className="mt-10">
-        <Entry org={presenter} />
-        <Entry org={host} />
-      </div>
-    </main>
+    <div className={`srs abt ${cormorant.variable} ${jost.variable}`}>
+      {editor ? (
+        <AboutEditor content={content} saved={saved} commission={commission} signedIn={Boolean(userId)} footer={footer} />
+      ) : (
+        <>
+          <SrsNav signedIn={Boolean(userId)} current="about" />
+          <AboutBody content={shown} commission={commission} />
+          {footer}
+        </>
+      )}
+    </div>
   );
 }

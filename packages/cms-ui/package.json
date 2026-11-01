@@ -45,7 +45,11 @@
     "./hubsite.css": "./src/hubsite/hubsite.css",
     "./nextcloud-access": "./src/nextcloud-access/index.ts",
     "./nextcloud-access.css": "./src/nextcloud-access/nextcloud-access.css",
-    "./email-theme.css": "./src/email/email-theme.css"
+    "./store": "./src/store/index.ts",
+    "./store.css": "./src/store/store.css",
+    "./email-theme.css": "./src/email/email-theme.css",
+    "./data-policy": "./src/data-policy/index.ts",
+    "./data-policy.css": "./src/data-policy/data-policy.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

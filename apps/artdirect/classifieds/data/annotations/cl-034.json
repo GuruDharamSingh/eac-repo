@@ -1,0 +1,17 @@
+{
+  "id": "cl-034",
+  "status": "draft",
+  "source": { "paper": "The Buyer's Guide", "place": "Cody, Wyoming", "date": "2016-09-30", "era": "2010s", "language": ["en"] },
+  "summary": "Thumbnail of a free shopper's classifieds page: local display ads across the top, five columns of liners under grey bars, and a mail-in classified ad form taking the bottom third.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 5, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "mixed", "footer": "Classified ad form: paper logo, a ruled grid for one word per box, checkboxes for Standard / Bold / Headline / Photo Ad, deadline note." },
+  "headers": [
+    { "id": "grey-bar", "kind": "tint-bar", "example": "MISCELLANEOUS", "fg": "#111111", "bg": "#cccccc", "align": "left" }
+  ],
+  "units": [
+    { "id": "liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none" },
+    { "id": "ad-form", "kind": "notice", "frequency": "occasional", "lead": "bold", "align": "left", "border": "thin", "box": [0.0, 0.66, 1.0, 0.34], "notes": "Word-per-box grid with price tiers marked along the rows." }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "notes": ["Only 340 px wide; layout readable, text not. The ad-form grid is the useful part (compare the coupon in cl-010)."]
+}

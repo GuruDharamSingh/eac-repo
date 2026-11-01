@@ -57,7 +57,7 @@ export interface LoadPersonBlockContextOptions {
 }
 
 /** Thread kinds a spotlight can promote besides writing: things a visitor can attend or book. */
-const OFFERING_THREAD_KINDS = ["event", "meeting", "workshop", "reading_group", "service", "offering", "class", "course"];
+const OFFERING_THREAD_KINDS = ["event", "meeting", "series", "workshop", "reading_group", "service", "offering", "class", "course"];
 
 const BOOKED_KINDS = new Set(["workshop", "service", "offering", "class", "course"]);
 

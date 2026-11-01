@@ -1,0 +1,26 @@
+{
+  "id": "cl-015",
+  "status": "draft",
+  "source": { "paper": "Eenadu", "place": "Hyderabad, India", "date": "2018-10-30", "era": "2010s", "language": ["te", "en"] },
+  "summary": "A loud full-colour classifieds page: orange banner with huge outlined slab caps, categories announced by a blue clip-art tile over a red-on-yellow label, eight narrow justified columns in Telugu and English, pink-tinted premium liners.",
+  "family": "indian-color-display",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "masthead": "Thin blue running head (page no., paper, date) above an orange banner backed with category names in small caps.", "footer": "Bottom-right block of display ads: booking rates and a birthday greeting." },
+  "headers": [
+    { "id": "banner", "kind": "banner", "example": "EENADU CLASSIFIEDS", "fg": "#ffffff", "bg": "#f07f1d", "align": "center", "box": [0.02, 0.03, 0.96, 0.065], "notes": "Extended black slab caps with white outline over orange, circular logo badge at left." },
+    { "id": "icon-tile", "kind": "icon-label", "example": "AGRIBUSINESS (tile) / POULTRY (label)", "fg": "#d7261e", "bg": "#ffd21f", "icon": true, "align": "center", "box": [0.02, 0.1, 0.12, 0.062], "notes": "Blue duotone clip-art tile with its group name in blue outlined caps, then a yellow bar with the specific category in red heavy caps." }
+  ],
+  "units": [
+    { "id": "bilingual-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "example": "Om Swasthik White Ants & Woodborers Treatment...", "notes": "Advertiser name or first words in bold; Telugu and English mixed in one column; phone numbers with a ✆ glyph." },
+    { "id": "pink-liner", "kind": "liner-tint", "frequency": "common", "lead": "bold", "align": "justify", "border": "none", "fill": "#f9cfdc", "example": "PRE- Owned Cars for Sale. BMW320D, AUDI A6...", "box": [0.02, 0.29, 0.12, 0.075], "notes": "The paid upgrade: same liner on a pink fill, lead word in red." },
+    { "id": "spot-display", "kind": "display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "ADIBATLA / YBR Infra / 50 ACRES", "box": [0.62, 0.355, 0.12, 0.115], "notes": "Red/yellow/black, phone number set huge at the foot." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "slab", "look": "Extended black slab caps with white outline", "weight": "black", "width": "extended", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "header", "classification": "grotesque", "look": "Heavy sans caps, red", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "news-serif", "look": "Times-like serif for English, Telugu serif alongside; very justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Tinos" },
+    { "role": "body", "classification": "indic", "look": "Telugu newspaper text face", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Noto Serif Telugu" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#f07f1d", "use": "banner" }, { "hex": "#ffd21f", "use": "category label bar" }, { "hex": "#d7261e", "use": "category text, premium lead words" }, { "hex": "#f9cfdc", "use": "premium liner fill" }, { "hex": "#1c75bc", "use": "icon tiles, running head" } ] },
+  "ornaments": ["clip-art icons per category", "✆ phone glyph", "CMYK registration dots in margin"],
+  "notes": ["Columns are so narrow that justified English gets wide word gaps; worth reproducing deliberately."]
+}

@@ -1,0 +1,126 @@
+<title>cl-017 Hastings Tribune</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:wght@700&family=Archivo+Black&family=Pinyon+Script&family=Playfair+Display:ital@1&display=swap">
+<style>
+/* Reference reproduction of cl-017 (Hastings Tribune "Classified Ads", 2019; 1487×1395 → 1000 wide).
+   Giant Times masthead with a drop shadow over a faded wind-turbine photo, run-day/deadline table, seven columns,
+   two-tier black tabs, forced-justified Helvetica liners, logo displays, the Tribune's own fillers and the LOOK AWAY! house ad. */
+:root { --field: #26241f; --field-ink: #e6e0d2; color-scheme: dark; }
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: 'Courier Prime', monospace; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 1000px; margin: 0 auto 20px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 28px; margin: 0 0 6px; }
+.frame { max-width: 1000px; margin: 0 auto; overflow: hidden; }
+.scaler { width: 1000px; transform-origin: 0 0; }
+.spec { --cl-ink: #141414; --cl-paper: #fff; width: 1000px; height: 938px; background: var(--cl-paper); color: var(--cl-ink); padding: 0 8px 8px; box-sizing: border-box; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.45); display: flex; flex-direction: column; }
+.spec * { box-sizing: border-box; min-width: 0; }
+.mast { position: relative; text-align: center; padding: 4px 0 6px; border-bottom: 4px solid var(--cl-ink); overflow: hidden; }
+.mast::before { content: ""; position: absolute; inset: 0; background: conic-gradient(from 200deg at 55% 30%, transparent 0 60deg, rgba(0,0,0,.08) 60deg 75deg, transparent 75deg 180deg, rgba(0,0,0,.08) 180deg 195deg, transparent 195deg 300deg, rgba(0,0,0,.08) 300deg 315deg, transparent 315deg); }
+.mast .t { position: relative; font-family: 'Tinos', 'Times New Roman', serif; font-weight: 700; font-size: 118px; line-height: .9; letter-spacing: -.01em; text-shadow: 3px 3px 0 #bbb; }
+.mast p { position: relative; margin: 0; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 10.5px; }
+.mast .ph { font-size: 15px; letter-spacing: .04em; margin-top: 2px; }
+.mast .dl { font-style: italic; font-size: 12px; margin-top: 2px; }
+.mast table { position: relative; z-index: 1; color: var(--cl-ink); margin: 2px auto 0; border-collapse: collapse; font-family: 'Arimo', sans-serif; font-size: 9.6px; }
+.mast td { padding: 0 14px 0 0; text-align: left; }
+.mast th { padding: 0 14px 0 0; text-align: left; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); column-gap: 8px; margin-top: 6px; flex-grow: 1; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+.tab { background: var(--cl-ink); color: #fff; padding: 3px 6px 4px; margin: 0 0 4px; font-family: 'Roboto Condensed', sans-serif; font-weight: 700; line-height: 1; }
+.tab small { display: block; font-size: 9px; letter-spacing: .02em; }
+.tab span { display: block; font-size: 19px; letter-spacing: -.01em; }
+.l { font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.25; text-align: justify; text-align-last: left; margin-bottom: 5px; }
+.l b { font-weight: 700; }
+.lf { text-align-last: justify; letter-spacing: .02em; }
+.c { text-align: center; font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.25; margin-bottom: 5px; }
+.c b { display: block; font-weight: 700; }
+.logo { border: 1px solid var(--cl-ink); padding: 6px 5px; margin-bottom: 5px; text-align: center; font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.25; }
+.logo .sc { font-family: 'Pinyon Script', cursive; font-size: 24px; line-height: 1; }
+.logo .sc small { display: block; font-family: 'Arimo', sans-serif; font-size: 8px; letter-spacing: .14em; }
+.logo .cb { font-family: 'Tinos', serif; font-size: 15px; letter-spacing: .14em; border-top: 1px solid var(--cl-ink); margin-top: 2px; padding-top: 2px; }
+.logo .cb::before { content: ""; display: block; width: 30px; height: 20px; margin: 0 auto 2px; background: radial-gradient(ellipse at 50% 100%, var(--cl-ink) 0 30%, transparent 32%), linear-gradient(var(--cl-ink), var(--cl-ink)) 50% 100% / 2px 14px no-repeat; }
+.logo h4 { margin: 3px 0 2px; font-size: 9.5px; }
+.logo p { margin: 0 0 4px; text-align: justify; }
+.box { border: 2px solid var(--cl-ink); padding: 5px; margin-bottom: 5px; font-family: 'Arimo', sans-serif; font-size: 8.6px; text-align: center; }
+.box .n { font-family: 'Archivo Black', sans-serif; font-size: 12px; letter-spacing: .02em; }
+.box.rev { background: var(--cl-ink); color: #fff; }
+.filler { border-top: 1px solid var(--cl-ink); border-bottom: 1px solid var(--cl-ink); padding: 4px 0; margin: 4px 0 5px; font-family: 'Arimo', sans-serif; font-size: 8.6px; text-align: center; line-height: 1.3; }
+.look { border: 2px solid var(--cl-ink); padding: 6px; text-align: center; margin-top: auto; }
+.look .e { font-family: 'Archivo Black', sans-serif; font-size: 24px; line-height: .95; }
+.look .e b { display: inline-block; width: 16px; height: 16px; border: 3px solid var(--cl-ink); border-radius: 50%; vertical-align: -2px; position: relative; }
+.look .e b::after { content: ""; position: absolute; left: 3px; top: 3px; width: 5px; height: 5px; background: var(--cl-ink); border-radius: 50%; }
+.look p { margin: 3px 0; font-family: 'Arimo', sans-serif; font-size: 8.6px; line-height: 1.25; }
+.look .ital { font-style: italic; font-weight: 700; }
+.look .big { font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 11px; }
+.look .trib { font-family: 'Tinos', serif; font-weight: 700; font-size: 26px; line-height: 1; }
+.look .trib small { display: block; font-family: 'Pinyon Script', cursive; font-weight: 400; font-size: 14px; }
+.note { max-width: 1000px; margin: 14px auto 0; font-size: 12.5px; line-height: 1.55; }
+.note b { color: #fff; }
+</style>
+<div class="intro"><h1>cl-017 · Hastings Tribune · Classified Ads</h1><p>Reference reproduction. The masthead is the page: a Times bold "Classified Ads" with a drop shadow over a faded photo, the booking line, two phone numbers and a web address, and a six-cell run-day/deadline table with dot leaders. Below, seven columns of two-tier black tabs (CARD OF / THANKS, CRAFT / SHOWS), forced-justified Helvetica liners whose letter-spacing stretches, employer logo displays with script and serif marks, the paper's own fillers plugging column ends, and the LOOK AWAY! house ad with a pair of eyes.</p></div>
+<div class="frame"><div class="scaler"><div class="spec">
+  <div class="mast">
+    <div class="t">Classified Ads</div>
+    <p>Place your ad 8:00 a.m. to 5:00 p.m. Monday through Friday with one of our advertising consultants or on our website anytime.</p>
+    <p class="ph">[PHONE] &nbsp; &nbsp; [PHONE] &nbsp; &nbsp; www.riversidechronicle.[TLD]</p>
+    <p class="dl">Deadlines for Classified Line Ads - We Accept cash, check or money order</p>
+    <table><tr><th>RUN DAY</th><th>DEADLINE</th><th>RUN DAY</th><th>DEADLINE</th><th>RUN DAY</th><th>DEADLINE</th></tr>
+    <tr><td>Monday . . . . . . .</td><td>3:00 p.m. Friday</td><td>Wednesday .</td><td>12:00 p.m. Tuesday</td><td>Friday. . . . . . .</td><td>12:00 p.m. Thursday</td></tr>
+    <tr><td>Tuesday . . . .</td><td>12:00 p.m. Monday</td><td>Thursday. .</td><td>12:00 p.m. Wednesday</td><td>Saturday. . . . . . .</td><td>.12:00 p.m. Friday</td></tr></table>
+  </div>
+  <div class="grid">
+    <div class="col">
+      <div class="tab"><small>CARD OF</small><span>THANKS</span></div>
+      <p class="l lf">Many thanks to all for the birthday cards and open house party for my 90th birthday. You made my birthday very special. Sincere thanks, the Rialto projector.</p>
+      <div class="tab"><small>CRAFT</small><span>SHOWS</span></div>
+      <p class="c"><b>Fabulous Fall &amp; Craft Vendor Show</b>(along side the Harvest Fair)<br>Saturday, Oct. 19<br>10 a.m. – 4 p.m.<br>The Old Mill –<br>West side<br>1115 Canal Wharf</p>
+      <div class="tab"><span>STUDIOS</span></div>
+      <p class="c"><b>Keys &amp; Co. Spaces</b>Check our new website<br>www.keysandco.[TLD]</p>
+      <div class="box"><div class="n">KEYS &amp; CO.<br>SPACE KORNER</div>Rooms &amp; Benches, Inc.<br>www.keysandco.[TLD]</div>
+      <p class="l"><b>ATTIC, BRIDGE ST,</b> Dormer, Sink, Quiet after five, [PRICE].</p>
+      <p class="c"><b>Riverside Rooms</b>2 rooms above bakery: warm from four, north window, smell of bread, no turpentine, [PRICE]<br>Boathouse, lower river: dry since the sluice, swallows, power by the kettle, [PRICE]<br><br>[PHONE]<br>www.riversiderooms.[TLD]</p>
+      <div class="box"><div class="n">LOCK KEEPER</div>[PHONE] · [PHONE]</div>
+    </div>
+    <div class="col">
+      <div class="tab"><span>STUDIOS</span></div>
+      <div class="box rev"><div class="n">JERRY'S SHEDS</div>www.jerrysheds.[TLD]<br>[PHONE]</div>
+      <div class="tab"><small>HEALTH</small><span>CARE</span></div>
+      <p class="l lf"><b>MED-AIDE</b> 7 a.m. - 3 p.m. Monday through Friday, also part time Every other weekend Saturday and Sunday 7 a.m. - 3 p.m. for the ceramics studio infirmary, cone 6 burns a speciality. [PHONE].</p>
+      <p class="l lf"><b>THE OLD MILL</b> Looking for loyal, dedicated Kiln Aides and Potters. While passing cones is one of the KA's responsibilities, it is not the only one. This person must be willing to help in all areas, including loading, unloading and other tasks. Full and part time positions are available on Tuesday and Night shifts. If you are a dependable worker with a big heart, who takes pride in a job well done, we want to meet you.<br>Apply in person<br>3507 Canal Wharf.</p>
+      <div class="filler">Picture it sold, with the help of our classified section.</div>
+      <div class="tab"><small>TECHNICAL &amp;</small><span>TRADE</span></div>
+      <p class="c"><b>Love a daily challenge that puts your mechanical know how to good use?</b></p>
+      <p class="l lf">Does a $750 sign on bonus, $23/hour, 401K, 15 days PTO and full medical benefits from day 1 sound good? Come join us at the Foundry Yard, proud producers of small iron things.<br>For more details and to apply, visit:<br><b>www.foundryyard.[TLD]/careers</b></p>
+    </div>
+    <div class="col">
+      <div class="tab"><span>AGRICULTURE</span></div>
+      <p class="l lf"><b>Truck driver &amp; Grain cart operator</b> needed for Harvest Fair. Experience preferred but not required. Leave a message at [PHONE].</p>
+      <div class="filler">CHRONICLE CLASSIFIED<br>The place to look for help wanted ads. Open 8:00 to 7:00 Mon.-Fri. and 8:00 to 12:00 Sat. Call and place your ad, [PHONE].</div>
+      <div class="tab"><span>TRUCKING</span></div>
+      <p class="l lf"><b>LOCAL TRUCK</b> driver needed for grain and wet distillers hauling, and one very large painting. CDL and safe driving record required. 50+ hours/week. Keys &amp; Co., 8 a.m. to 4 p.m. [PHONE]</p>
+      <div class="logo"><div class="sc">The Heritage<small>AT COLLEGE VIEW</small></div><h4>HAIR STYLIST</h4><p>The Heritage at College View, an assisted living community, has a great opportunity for a stylist. We are looking for a reliable individual that enjoys working with our residents, and who has experience with roller sets, perms, color, and waxing. Chosen stylist also has an opportunity to expand their business and provide pedicures and manicures. If you have a current Cosmetology license in good standing, and would like to manage your own business, with very reasonable rent, please contact Stephanie at [PHONE] or send us your resume at 1100 N 6th Avenue.</p></div>
+    </div>
+    <div class="col">
+      <div class="tab"><span>GENERAL</span></div>
+      <div class="logo"><div class="cb">RIVERSIDE</div><h4>Museum Collections Intern</h4><p>Temporary intern opportunity to gain practical hands on experience with preventative conservation and storage of two and three dimensional artifacts. Assist with moving collections; create and update appropriate records using a computer; and assist in other tasks related to moving the collection to its new location. This person will lift, move, clean, photograph, re-house, and document location of artifacts in storage.</p><p>Requirements: Resume and transcript from current field of study required. Ability to organize and use keyboard for data entry. Ability to lift 50 pounds.</p><p>Hours: Monday thru Friday, day hours. Pay range $9- $12 per hour.</p><p style="text-align:center">Full job description and application available at<br><b>www.riverside.[TLD]/MusCollectIntern</b><br>and<br>Human Resources<br>1228 N. Denver Ave,<br>Riverside<br><br>Deadline to apply:<br>Position open until filled.<br><br>EOE/M/F/D/V<br>Drug &amp; Alcohol-Free Workplace<br>E-verify Participant</p></div>
+      <div class="box"><div class="n">Save up to 30%!</div>BY PREPAYING YOUR CLASSIFIED ADS.<br><b>[PHONE]</b></div>
+    </div>
+    <div class="col">
+      <div class="tab"><span>GENERAL</span></div>
+      <div class="logo"><div class="cb">RIVERSIDE</div><h4>Part time Museum Education Assistant</h4><p>Regular part time opportunity to work as part of a team to develop and present dynamic and engaging programs for all ages related to natural and cultural history.</p><p>Requirements: City of Riverside application and resume, associate's degree in education, science, history, anthropology, museum studies or related field. Some education experience, formal or informal, preferred.</p><p>Hours: 25 hours per week. Pay range $11.563 - $16.023 / hr.</p><p style="text-align:center">Full job description and application available at<br><b>www.riverside.[TLD]/PTMusEdAssist</b><br><br>Human Resources<br>1228 N. Denver Ave,<br>Riverside<br><br>Deadline to apply:<br>October 17<br>5:00 p.m.<br><br>EOE/M/F/D/V<br>Drug &amp; Alcohol-Free Workplace<br>E-verify Participant</p></div>
+      <p class="c"><b>Your Community.<br>Your Newspaper.</b>Subscribe today, and stay in the local loop. Shopping Circulars &amp; Coupons, Movies and Entertainment, Local Sports Coverage and much, much more. Call [PHONE] to start your subscription today, or visit us online at riversidechronicle.[TLD]</p>
+    </div>
+    <div class="col">
+      <div class="tab"><span>GENERAL</span></div>
+      <div class="logo"><div class="sc">The Heritage<small>AT COLLEGE VIEW</small></div><h4>DIETARY AIDE<br>position(s) available</h4><p>Part-time and PRN positions available for someone who is compassionate, respectful, fun and trustworthy to serve our residents! Part-time 24 hours a week, M,Th,Fri. and working every other weekend 1-7 p.m. or an every other weekend only position 7 a.m.-1:00 p.m. or 1:00 p.m.-7:00p.m.</p><p style="text-align:center">Please apply on line at<br><b>www.heritage-communities.[TLD]</b><br>or in person at<br>1100 N 6th Avenue.<br>Serious inquiries only.</p></div>
+      <div class="logo"><div class="sc">The Heritage<small>AT COLLEGE VIEW</small></div><h4>DIETARY AIDE/COOK<br>position available</h4><p>Part-time 26 hours a week, working as an evening cook every other weekend and every Monday 1-7 p.m. and as an aide on Tuesday and Wednesday from 1-7 p.m. We are looking for someone who is compassionate, respectful, trustworthy and fun to serve our residents!</p><p style="text-align:center">Please apply on line at<br><b>www.heritage-communities.[TLD]</b><br>or in person at<br>1100 N 6th Avenue.<br>Serious inquiries only.</p></div>
+      <p class="l lf">Sell your unwanted item(s) in the Riverside Chronicle Classifieds for quick results. Call [PHONE].</p>
+    </div>
+    <div class="col">
+      <div class="tab"><span>GENERAL</span></div>
+      <div class="logo"><div style="font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .02em; border: 1px solid var(--cl-ink); border-radius: 50%; width: 30px; height: 30px; line-height: 28px; margin: 0 auto 2px">AC</div><div style="font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 10px">ADAMS CENTRAL<br>PUBLIC SCHOOLS</div><p style="margin-top: 6px">Adams Central Public Schools is accepting applications for the following position for the 2019-2020 school year:</p><h4>Custodian 2nd shift</h4><p style="text-align:center">More information is available at:<br><b>www.adamscentral.[TLD]</b><br>Interested individuals should contact the district office for an application and/or submit a letter of application to:<br><br>Office of the Superintendent<br>Adams Central Public Schools,<br>1090 S. Adams Central Avenue<br>Riverside<br>[PHONE]<br>EOE<br><br>Closing date:<br>Open until filled</p></div>
+      <div class="look"><div class="e">L<b></b><b></b>K<br>AWAY!</div><p class="big">From this ad for a few seconds, and then look at it again...</p><p class="big">Still here, isn't it?</p><p class="ital">The spoken word is like air...<br>but the written word is always there</p><p class="big">Remember that!</p><p class="big">Advertise in the</p><div class="trib">Chronicle<small>Riverside</small></div><p>To advertise call<br><b>[PHONE]</b></p></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="note"><b>Devices recorded:</b> giant Times bold masthead with a 3 px grey drop shadow over a faded photo; booking line, phones and web address in bold Helvetica; run-day/deadline table with dot leaders; two-tier black tabs (small kicker over a large condensed word) and one-tier tabs; forced-justified Helvetica liners (<code>text-align-last: justify</code>) and centred liners with a bold first line; employer logo displays (script "Heritage", serif "RIVERSIDE" with a tree mark, a circled "AC"), each with a bold title, justified body and centred contact block; reverse "JERRY'S" card; "Save up to 30%!" and "Picture it sold" fillers between rules; the LOOK AWAY! house ad with drawn eyes and a script sub-line. <b>Fonts:</b> Tinos 700 (Times), Arimo (Helvetica), Roboto Condensed 700 (the tabs), Archivo Black, Pinyon Script. <b>Generator ids:</b> section <code>weekly</code>; templates <code>forced-justify-liner</code>, <code>centred-head-liner</code>, <code>logo-display</code>, <code>job-display</code>, <code>house-spartan</code>; head <code>two-tier</code>; palette <code>mono</code>.</div>
+<script>(function(){function f(){var w=Math.min(1000,document.documentElement.clientWidth-32),s=w/1000;document.querySelectorAll('.scaler').forEach(function(e){e.style.transform='scale('+s+')';e.style.marginBottom=Math.round(-938*(1-s))+'px';});}window.addEventListener('resize',f);f();})();</script>

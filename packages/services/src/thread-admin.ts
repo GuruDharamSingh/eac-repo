@@ -5,6 +5,7 @@ import { getViewerRoles, type ForumViewer, viewerIdentityIds } from './forum';
 import { getIdentityIds } from './identities';
 import { removeThreadFromCalendar, setStandingMeeting } from './org-calendar';
 import { pushModerationToNextcloud } from './nc-forum';
+import { SERIES_KIND } from './thread-kinds';
 
 // ============================================================================
 // Two things a person may do to a thread from wherever it shows — its popup,
@@ -86,6 +87,9 @@ export async function featureMeeting(orgId: string, threadId: string, on: boolea
     SELECT kind, status FROM threads WHERE id = ${threadId} AND org_id = ${orgId}
   `;
   if (!t) return { ok: false, error: 'No such thread.' };
+  // A series' own RSVP rows are subscriptions; the standing tile's answer
+  // would overwrite them (getStandingMeeting excludes series too).
+  if (on && t.kind === SERIES_KIND) return { ok: false, error: 'A series cannot be the weekly meeting; its weeks are planned in the series planner.' };
   if (on && t.kind !== 'meeting' && t.kind !== 'event') return { ok: false, error: 'Only a meeting or event can be the weekly meeting.' };
   if (on && t.status !== 'published') return { ok: false, error: 'Publish it first.' };
   await setStandingMeeting(orgId, on ? threadId : null);

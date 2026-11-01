@@ -95,6 +95,57 @@ export async function postPhotoToPage(
 }
 
 /**
+ * Post text with any number of photos (2026-10-31, the Studio's Post kind).
+ * No photo: a plain feed post (with `link` when given). One photo: /photos
+ * with the text as caption. Several: each photo uploaded unpublished, then
+ * one feed post carrying them as `attached_media`, which is how Facebook
+ * makes a multi-photo post. Every image URL must be public.
+ */
+export async function postToPage(
+  target: PageTarget,
+  input: { message: string; link?: string | null; imageUrls?: string[] },
+  appSecret?: string
+): Promise<PagePostResult> {
+  const images = input.imageUrls ?? [];
+  if (images.length === 0) {
+    const result = await graph<{ id: string }>({
+      path: `${target.pageId}/feed`,
+      accessToken: target.accessToken,
+      method: 'POST',
+      params: { message: input.message, ...(input.link ? { link: input.link } : {}) },
+      appSecret,
+    });
+    return { postId: result.id, url: permalink(result.id) };
+  }
+  if (images.length === 1) {
+    return postPhotoToPage(target, { imageUrl: images[0]!, caption: input.message }, appSecret);
+  }
+  const ids: string[] = [];
+  for (const url of images.slice(0, 10)) {
+    const photo = await graph<{ id: string }>({
+      path: `${target.pageId}/photos`,
+      accessToken: target.accessToken,
+      method: 'POST',
+      params: { url, published: false },
+      appSecret,
+    });
+    ids.push(photo.id);
+  }
+  const params: Record<string, string | number | boolean | undefined> = { message: input.message };
+  ids.forEach((id, i) => {
+    params[`attached_media[${i}]`] = JSON.stringify({ media_fbid: id });
+  });
+  const result = await graph<{ id: string }>({
+    path: `${target.pageId}/feed`,
+    accessToken: target.accessToken,
+    method: 'POST',
+    params,
+    appSecret,
+  });
+  return { postId: result.id, url: permalink(result.id) };
+}
+
+/**
  * Edit a published post's message.
  *
  * Only the message. Facebook does not allow changing a post's link or photo

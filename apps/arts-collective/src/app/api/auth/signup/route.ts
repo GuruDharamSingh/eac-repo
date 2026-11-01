@@ -10,10 +10,12 @@ import { type NextRequest } from "next/server";
 // "Type '{ params: Promise<{}>; }' has no properties in common with type
 // 'SignupOrgOptions'".
 //
-// No options passed: unchanged behaviour (the shared network defaults), since
-// arts-collective's own org model — one org per member, created through the
-// wizard — doesn't map onto a single defaultOrgs list the way a single-org
-// site's does.
+// No default org (developer decision, 2026-10-29): a fresh sign-up on the
+// network holds no membership at all. Before this it joined the core member
+// group as a viewer, which labelled every new person a follower of that group
+// and hid the "start an organisation" cards. The getting-started course's
+// first tasks give them their own space (org `oad`) and, if they want one,
+// an organisation.
 export async function POST(request: NextRequest) {
-  return handleSignup(request);
+  return handleSignup(request, { defaultOrgs: [] });
 }

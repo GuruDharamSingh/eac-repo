@@ -78,7 +78,7 @@ export default async function AccountPage({
             )}
           </div>
           <p className="text-muted-foreground">
-            This account works across every site in the Elkdonis network. Your role is set
+            This account works across every site in the Arts Collective network. Your role is set
             separately on each one.
           </p>
           <div className="flex gap-2 pt-2">

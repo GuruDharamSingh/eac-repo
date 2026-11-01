@@ -1,0 +1,26 @@
+{
+  "id": "cl-033",
+  "status": "draft",
+  "source": { "paper": "Lokmat (Nagpur edition)", "place": "Nagpur, India", "era": "2019–2020 (ad mentions 17/12/19)", "language": ["mr", "en"] },
+  "summary": "Full-colour Marathi/English classifieds: spaced light CLASSIFIEDS caps with jigsaw-piece letters, a red booking banner, a top row of named feature boxes (Property of the Day, Pick of the Day, Top Vacancies, Health of the Day, Business Corner), a HOT PROPERTY panel of yellow listing boxes, then narrow liners with tick and paperclip markers.",
+  "family": "indian-color-display",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "mixed", "masthead": "Paper logo over CLA**SS**IFIEDS in wide-spaced light sans with two letters as red/blue jigsaw pieces; a full-width red banner with Marathi booking line, hand-cursor icon and URL pill." },
+  "headers": [
+    { "id": "feature-box-head", "kind": "icon-label", "example": "Pick of the Day", "fg": "#111111", "bg": "#ffffff", "icon": true, "align": "center", "box": [0.21, 0.105, 0.18, 0.025], "notes": "Each feature box has a named header with a small icon (tick, heart-pulse, briefcase) and a red or blue outline." },
+    { "id": "hot-property", "kind": "icon-label", "example": "HOT PROPERTY", "fg": "#111111", "bg": "#ffffff", "icon": true, "align": "left", "box": [0.01, 0.265, 0.18, 0.025], "notes": "Map-pin icon in a red circle, heavy caps; locality sub-labels as red bars with pin glyphs." },
+    { "id": "teal-label", "kind": "tint-bar", "example": "प्लॉट विक्री (Plots for sale)", "fg": "#ffffff", "bg": "#5f9ea0", "align": "center", "notes": "Muted teal label bars for Marathi classifications, some with small line icons." }
+  ],
+  "units": [
+    { "id": "yellow-listing", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#fff3a0", "example": "FLAT FOR SALE AT GREENFIELD-2 / 2 BHK @ RS. 22 LACS Onwards", "notes": "Pale yellow fill, red heavy head, blue body caps, phone numbers in red bold, booking code turned sideways at the edge." },
+    { "id": "tick-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "example": "✓ Require Service Engineer for Medical Equipment...", "notes": "Red tick or paperclip glyph to flag a premium liner; booking code in parentheses." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold", "align": "justify", "border": "thin" }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "geometric", "look": "Light wide-spaced geometric caps", "weight": "light", "width": "extended", "case": "upper", "webFont": "Josefin Sans" },
+    { "role": "display", "classification": "grotesque", "look": "Heavy Arial Black-like caps in red and blue", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "indic", "look": "Devanagari text face with Latin sans for English ads", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Noto Sans Devanagari" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#e42320", "use": "banner, heads, phone numbers" }, { "hex": "#fff3a0", "use": "listing fills" }, { "hex": "#1f4fa0", "use": "body caps, heads" }, { "hex": "#5f9ea0", "use": "category labels" } ] },
+  "ornaments": ["✓ tick markers", "paperclip glyphs", "map-pin icons", "sideways booking codes"],
+  "notes": ["Named daily feature boxes (Pick of the Day etc.) are a strong generator hook for a page's top row."]
+}

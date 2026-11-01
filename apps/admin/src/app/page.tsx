@@ -105,7 +105,7 @@ export default async function OverviewPage() {
         <div>
           <Title order={2}>Overview</Title>
           <Text size="sm" c="dimmed">
-            Everything happening across the Elkdonis network, in one place.
+            Everything happening across the Arts Collective network, in one place.
           </Text>
         </div>
 

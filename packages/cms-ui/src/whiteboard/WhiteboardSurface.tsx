@@ -3,13 +3,15 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SurfaceFrame } from "../surface";
+import type { WhiteboardCloudSave } from "./WhiteboardCanvas";
 import "@excalidraw/excalidraw/index.css";
 
 // Excalidraw touches window/document at module load, so it can only exist
 // client-side — the same reason the abandoned inner-gathering version used a
 // useEffect + dynamic import(). next/dynamic with ssr:false is the pattern
-// Excalidraw's own docs recommend for the App Router.
-const Excalidraw = dynamic(() => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw), {
+// Excalidraw's own docs recommend for the App Router. WhiteboardCanvas holds
+// every import from the package (the canvas, its menu, the exporters).
+const WhiteboardCanvas = dynamic(() => import("./WhiteboardCanvas").then((mod) => mod.WhiteboardCanvas), {
   ssr: false,
 });
 
@@ -44,10 +46,27 @@ export function WhiteboardSurface({
   title = "Whiteboard",
   kicker = "Shared with everyone in the group",
   onSaveError,
+  height,
+  fullPage = false,
+  cloudSave = null,
 }: {
   endpoint?: string;
   title?: string;
   kicker?: string;
+  /**
+   * Height of the canvas, as a CSS length. Unset, the stylesheet's default
+   * applies (70vh, floor 420px) — the right size inside the popup.
+   */
+  height?: string;
+  /**
+   * Render as the body of a dedicated page rather than inside the popup's
+   * SurfaceFrame: no frame chrome (the page supplies its own heading row),
+   * no card padding or border, and the canvas fills the viewport minus
+   * `--eac-whiteboard-chrome` (7rem unless the host sets it — the page's
+   * heading row plus whatever site header sits above it). `height` wins
+   * when both are given.
+   */
+  fullPage?: boolean;
   /**
    * Called when an autosave fails. The amrit-local version raised a `sonner`
    * toast directly; cms-ui deliberately depends on no toast library — every
@@ -56,6 +75,12 @@ export function WhiteboardSurface({
    * a dropped save is not worth destroying what the person just drew.
    */
   onSaveError?: (error: unknown) => void;
+  /**
+   * Offer the organisation's Nextcloud folder beside "this computer" when
+   * saving the scene or exporting an image. Omitted, the menu is
+   * Excalidraw's stock one.
+   */
+  cloudSave?: WhiteboardCloudSave | null;
 } = {}) {
   const [initialScene, setInitialScene] = useState<WhiteboardScene | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -147,13 +172,31 @@ export function WhiteboardSurface({
     [endpoint, onSaveError]
   );
 
-  return (
-    <SurfaceFrame kind="neutral" title={title} kicker={kicker} flush>
-      {/* The browser's default popover styling (a border, padding, a solid
-          background) would otherwise show through around Excalidraw's own
-          modal — Excalidraw's stylesheet only styles `position`/`z-index`
-          on this class, having never expected `[popover]` to be involved. */}
-      <style>{`
+  const canvas = (
+    <div className="eac-whiteboard-canvas" style={height ? { height } : undefined}>
+      {loadError ? (
+        <p className="eac-board-note">Couldn&rsquo;t load the whiteboard. Try again.</p>
+      ) : initialScene === null ? (
+        <p className="eac-board-note">Loading…</p>
+      ) : (
+        <WhiteboardCanvas
+          initialData={{
+            elements: initialScene.elements,
+            appState: { ...(initialScene.appState ?? {}), collaborators: new Map() },
+            files: initialScene.files,
+          }}
+          onChange={handleChange}
+          cloudSave={cloudSave}
+        />
+      )}
+    </div>
+  );
+
+  // The popover reset below is needed on the page too: the modal is still
+  // promoted into the top layer by the effect above, and the browser's
+  // default [popover] box would otherwise frame it.
+  const popoverReset = (
+    <style>{`
         .excalidraw-modal-container[popover] {
           /* Excalidraw's own rule on this class is position:absolute, and an
              author class beats the UA's [popover] position:fixed — so the
@@ -174,24 +217,27 @@ export function WhiteboardSurface({
           background-color: transparent;
         }
       `}</style>
-      <div style={{ height: "70vh", minHeight: 420 }}>
-        {loadError ? (
-          <p className="eac-board-note">Couldn&rsquo;t load the whiteboard. Try again.</p>
-        ) : initialScene === null ? (
-          <p className="eac-board-note">Loading…</p>
-        ) : (
-          <Excalidraw
-            initialData={
-              {
-                elements: initialScene.elements,
-                appState: { ...(initialScene.appState ?? {}), collaborators: new Map() },
-                files: initialScene.files,
-              } as any
-            }
-            onChange={handleChange}
-          />
-        )}
+  );
+
+  if (fullPage) {
+    // No SurfaceFrame: its header carries a Close control wired to the
+    // surface context, which on a page has nothing to close.
+    return (
+      <div className="eac-whiteboard-page">
+        {popoverReset}
+        {canvas}
       </div>
+    );
+  }
+
+  return (
+    <SurfaceFrame kind="neutral" title={title} kicker={kicker} flush>
+      {/* The browser's default popover styling (a border, padding, a solid
+          background) would otherwise show through around Excalidraw's own
+          modal — Excalidraw's stylesheet only styles `position`/`z-index`
+          on this class, having never expected `[popover]` to be involved. */}
+      {popoverReset}
+      {canvas}
     </SurfaceFrame>
   );
 }

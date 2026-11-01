@@ -26,13 +26,28 @@ export function ProfileFace({
   summary,
   /** An org's identity rather than the viewer's own. */
   target,
+  centerHref,
 }: {
   summary: HubProfileSummary | null;
   target?: { kind: "org"; orgId: string };
+  /**
+   * Since 2026-10-18 (developer): the person's card on every org hub is the
+   * door to their Center — payouts, where they show, what to do next — not a
+   * popup. Given, the face and its Details door navigate there; Edit still
+   * opens the fields in place. Omitted (or an org `target`) keeps the popup.
+   */
+  centerHref?: string | null;
 }) {
   const surfaces = useSurface();
-  const open = (mode: "details" | "edit", origin: HTMLElement | null = null) =>
+  const toCenter = !target && centerHref ? centerHref : null;
+  const open = (mode: "details" | "edit", origin: HTMLElement | null = null) => {
+    if (toCenter) {
+      // Center first, whichever door (2026-10-18): Edit opens its profile journey.
+      window.location.assign(mode === "edit" ? `${toCenter}?journey=profile` : toCenter);
+      return;
+    }
     surfaces.open({ type: "profile", target, mode }, origin);
+  };
 
   const alerts = summary?.alerts;
   const waiting = [
@@ -57,7 +72,8 @@ export function ProfileFace({
           ? "The organisation's name, image and description."
           : "Your bio, portrait and links across the collective.")
       }
-      ariaLabel="Open your profile"
+      ariaLabel={toCenter ? "Open your Center" : "Open your profile"}
+      cue={toCenter ? "→" : undefined}
       onClick={(origin) => open("details", origin)}
       preview={
         <div className="eac-face-live eac-profile-face">
@@ -94,13 +110,19 @@ export function ProfileFace({
           </span>
 
           <span className="eac-profile-face-doors">
-            <button
-              type="button"
-              className="eac-preview-action"
-              onClick={(e) => open("details", faceOf(e.currentTarget))}
-            >
-              Details
-            </button>
+            {toCenter ? (
+              <a className="eac-preview-action" href={toCenter}>
+                Center
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="eac-preview-action"
+                onClick={(e) => open("details", faceOf(e.currentTarget))}
+              >
+                Details
+              </button>
+            )}
             {summary?.canEdit !== false && (
               <button
                 type="button"

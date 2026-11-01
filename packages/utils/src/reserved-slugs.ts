@@ -29,6 +29,7 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "shop",
   // arts-collective top-level routes
   "hub",
+  "learn",
   "sites",
   "artists",
   "directory",

@@ -13,16 +13,24 @@ import { useSurface } from "@elkdonis/cms-ui/surface";
  * that kind, so there is still one composer per kind on this site:
  *   Writing  → the writing room page (/hub/compose?kind=post), or the
  *              members' submission form for someone who cannot publish
- *   Meeting  → the compose popup, meeting form (guides and owners only —
- *              the catalogue's own `canPublishDated` gate)
- *   Artwork  → the art piece form (`compose:art-piece`)
- *   More     → the whole catalogue: event, workshop, poll, questionnaire, blog
+ *   Meeting  → the compose page, meeting form (/hub/compose?kind=meeting;
+ *              guides and owners only — the catalogue's own `canPublishDated`
+ *              gate)
+ *   Artwork  → the art piece form (`compose:art-piece`), still a popup: the
+ *              compose page has no art piece form
+ *   More     → the compose page's chooser (/hub/compose): event, poll,
+ *              questionnaire
+ *
+ * Meeting and More open pages since 2026-10-10 (owner: pages by default,
+ * popups kept). Their popup paths are kept; DOORS_OPEN switches back.
  *
  * Substack and social media are shown as "Coming" and do nothing. Neither
  * exists yet: there is no Substack integration in the repo, and social posting
  * waits on the Meta work in packages/meta. They are drawn so the set reads as
  * the owner described it, and dashed so nobody mistakes them for working doors.
  */
+const DOORS_OPEN: "page" | "popup" = "page";
+
 type Door = {
   id: string;
   label: string;
@@ -67,7 +75,9 @@ export function PublishBanner({
       label: "Meeting",
       note: "A gathering people can join",
       icon: <CalendarDays />,
-      onOpen: (el) => open({ type: "compose", kind: "meeting", tier: "full" }, el),
+      ...(DOORS_OPEN === "page"
+        ? { href: "/hub/compose?kind=meeting" }
+        : { onOpen: (el: HTMLElement) => open({ type: "compose", kind: "meeting", tier: "full" }, el) }),
     });
   }
   if (hasArtwork) {
@@ -89,7 +99,9 @@ export function PublishBanner({
       label: "Everything else",
       note: "Event, workshop, poll",
       icon: <LayoutGrid />,
-      onOpen: (el) => open({ type: "compose" }, el),
+      ...(DOORS_OPEN === "page"
+        ? { href: "/hub/compose" }
+        : { onOpen: (el: HTMLElement) => open({ type: "compose" }, el) }),
     });
   }
 

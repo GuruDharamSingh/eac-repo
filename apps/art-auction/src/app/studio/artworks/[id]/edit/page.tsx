@@ -4,9 +4,10 @@ import type { Metadata } from "next";
 import { getArtworkForEdit } from "@elkdonis/commerce/queries";
 import { requireStudioStore } from "@/lib/marketplace-auth";
 import { ArtworkForm } from "../../../_components/artwork-form";
+import { listingContext } from "../../../listing-context";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Edit artwork · Studio" };
+export const metadata: Metadata = { title: "Edit artwork · My art" };
 
 export default async function EditArtworkPage({
   params,
@@ -14,23 +15,45 @@ export default async function EditArtworkPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { userId } = await requireStudioStore();
+  const { userId, store } = await requireStudioStore();
   const artwork = await getArtworkForEdit(id, userId);
   if (!artwork) notFound();
 
   const defaultVariant = artwork.variants?.[0];
+  const ctx = await listingContext(store);
+  const donation = (artwork.provenance ?? []).find((p) => p.kind === "donated") ?? null;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="mb-8 flex items-center justify-between">
         <h1 className="font-serif text-4xl tracking-tight">Edit artwork</h1>
         <Link href="/studio" className="text-sm underline underline-offset-4">
-          Back to studio
+          Back to My art
         </Link>
       </header>
       <ArtworkForm
+        allowMakerChoice={store.ownerKind === "org"}
+        beneficiaries={ctx.beneficiaries}
+        orgOptions={ctx.orgOptions}
         initial={{
           id: artwork.id,
+          creditedArtistUserId: artwork.creditedArtistUserId ?? null,
+          creditedArtistName: artwork.creditedArtistName ?? null,
+          creditStatus: artwork.creditStatus,
+          estimateLow: artwork.estimateLowMinor != null ? artwork.estimateLowMinor / 100 : null,
+          estimateHigh: artwork.estimateHighMinor != null ? artwork.estimateHighMinor / 100 : null,
+          donation: donation
+            ? {
+                fromUserId: donation.fromUserId ?? null,
+                fromName: donation.fromName ?? null,
+                fromText: donation.fromText ?? null,
+                toOrgId: donation.toOrgId ?? null,
+                occurredOn: donation.occurredOn ?? null,
+                note: donation.note ?? null,
+              }
+            : null,
+          beneficiaryPayeeId: defaultVariant?.beneficiaryPayeeId ?? null,
+          beneficiaryScope: defaultVariant?.beneficiaryScope ?? null,
           title: artwork.title,
           descriptionHtml: artwork.descriptionHtml ?? "",
           kind: artwork.kind,

@@ -31,5 +31,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return handleOAuthCallback(proxied as NextRequest);
+  // No default org, as in the signup route next door (2026-10-29).
+  return handleOAuthCallback(proxied as NextRequest, { defaultOrgs: [] });
 }

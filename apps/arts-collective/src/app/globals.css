@@ -23,6 +23,10 @@
 /* The same reading tokens as Tailwind utilities, so anything built AROUND a
    post (a feed strip, an author note) lines up with the prose inside it. */
 @import "@elkdonis/cms-ui/reading-theme.css";
+/* The page blocks (Puck org landing pages, 2026-10-30). Global on purpose:
+   Puck's canvas iframe only mirrors stylesheets present in the parent
+   document, so a route-scoped import would leave the editor unstyled. */
+@import "@elkdonis/blocks/blocks.css" layer(components);
 
 /* Shared authoring UI (wizard, field controls) — styled with hsl(var(--token)). */
 @source "../../../../packages/cms-ui/src";

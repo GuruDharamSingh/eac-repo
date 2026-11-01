@@ -1,0 +1,26 @@
+{
+  "id": "cl-035",
+  "status": "draft",
+  "source": { "paper": "The Observer", "place": "Kearny, New Jersey", "date": "2022-12-21", "era": "2020s", "language": ["en"] },
+  "summary": "Clean modern weekly page: a red-and-black serif wordmark, colour-coded header tabs (red for jobs, black for apartments, black town sub-tabs), a mix of centred boxed ads in assorted fonts and justified town-led liners, stock photos as fillers, and a blue house-ad column taking a swipe at Craigslist.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Running head with page number, red rule, then 'Observer' in red flared small caps and 'Classifieds' in black; small italic disclaimer paragraph below.", "footer": "Full-width notary services display with photo background and red title bar." },
+  "headers": [
+    { "id": "colour-tab", "kind": "tint-bar", "example": "EMPLOYMENT/ HELP WANTED", "fg": "#ffffff", "bg": "#d7262e", "align": "center", "box": [0.045, 0.163, 0.105, 0.032], "notes": "Two-line caps in a red box; APARTMENTS FOR RENT uses the same box in black; SERVICES OFFERED red again." },
+    { "id": "town-tab", "kind": "reverse-bar", "example": "BELLEVILLE", "fg": "#ffffff", "bg": "#1a1a1a", "align": "center", "box": [0.505, 0.205, 0.108, 0.027], "notes": "Town names as black sub-tabs inside the rentals." }
+  ],
+  "units": [
+    { "id": "town-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "KEARNY 3rd floor. Newly renovated. 1 bedroom... 33W03", "notes": "Town name in bold caps leads; run code (33W03) at end; separated by short grey rules." },
+    { "id": "centred-box", "kind": "boxed-liner", "frequency": "common", "lead": "none", "align": "center", "border": "thin", "example": "TRUCK DRIVER / 40 hour week / Monday - Friday...", "notes": "Every box picks its own font (Arial, Georgia, condensed sans), all centred." },
+    { "id": "fill-box", "kind": "boxed-liner", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#fbe94a", "example": "PART TIME & FULL TIME / A chance to grow...", "notes": "Yellow and bright cyan fills as paid upgrades." },
+    { "id": "stock-photo", "kind": "house-ad", "frequency": "common", "lead": "none", "align": "center", "border": "none", "example": "JOBS / FOR RENT sign photos", "notes": "Stock photos used to fill space in a section." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "transitional", "look": "Flared small-caps serif (Optima/Albertus-like wordmark)", "weight": "bold", "width": "normal", "case": "title", "webFont": "Cinzel" },
+    { "role": "header", "classification": "grotesque", "look": "Bold sans caps (Open Sans Bold-like)", "weight": "bold", "width": "normal", "case": "upper", "webFont": "Open Sans" },
+    { "role": "body", "classification": "grotesque", "look": "Open Sans / Myriad-like, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Open Sans" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#1a1a1a", "accents": [ { "hex": "#d7262e", "use": "job tabs, wordmark, rules" }, { "hex": "#1a6fc4", "use": "house-ad column" }, { "hex": "#fbe94a", "use": "fill box" }, { "hex": "#1aa3e0", "use": "fill box" } ] },
+  "ornaments": ["stock photos", "run codes", "short grey separator rules"],
+  "notes": ["Colour-coding header tabs by section (red jobs, black housing) is a simple, reusable token."]
+}

@@ -9,7 +9,13 @@ export type CompletionMode =
   /** The learner says so ("I've read this", "I did the practice"). */
   | 'manual'
   /** Saving a response completes it. */
-  | 'response';
+  | 'response'
+  /**
+   * Read from the platform itself: the step is done when the thing it asks
+   * for exists (a profile, a store, an organisation). Nothing to press; the
+   * host's `tasks` connector says whether it is done (packages/lms/src/tasks.ts).
+   */
+  | 'derived';
 
 export interface StepTypeDef {
   type: string;
@@ -32,6 +38,7 @@ const DEFS: StepTypeDef[] = [
   { type: 'session', label: 'Gathering', describe: 'A live meeting, event or workshop that already exists on the network.', completion: 'manual', doneLabel: 'I was there', invitesReflection: true, needsThread: true },
   { type: 'thread', label: 'Conversation', describe: 'A forum thread to read and take part in.', completion: 'manual', doneLabel: "I've joined the conversation", invitesReflection: false, needsThread: true },
   { type: 'resource', label: 'Resource', describe: 'A file, a link, a reference. Usually optional.', completion: 'manual', doneLabel: 'Seen', invitesReflection: false, needsThread: false },
+  { type: 'task', label: 'Something to set up', describe: 'A thing to do on the network itself — your profile, a page, a store, an organisation. It ticks itself when it is done.', completion: 'derived', doneLabel: 'Done', invitesReflection: false, needsThread: false },
 ];
 
 const REGISTRY = new Map(DEFS.map((d) => [d.type, d]));

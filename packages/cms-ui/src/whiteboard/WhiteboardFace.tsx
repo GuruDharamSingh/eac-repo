@@ -17,10 +17,17 @@ export function WhiteboardFace({
   title = "Whiteboard",
   blurb = "A shared canvas — sketch something out together.",
   surfaceTitle = "Whiteboard",
+  pageHref = "/hub/whiteboard",
 }: {
   title?: string;
   blurb?: string;
   surfaceTitle?: string;
+  /**
+   * The dedicated page (`fullPage` WhiteboardSurface) the card also links
+   * to, beside the popup: a URL to send round or leave open on a second
+   * screen. `null` drops the link for a host without the page.
+   */
+  pageHref?: string | null;
 } = {}) {
   return (
     <SurfaceCard
@@ -35,6 +42,15 @@ export function WhiteboardFace({
         kind: "neutral",
         size: "full",
       }}
+      preview={
+        pageHref ? (
+          // The one live control on the face; the card itself still opens
+          // the popup. Not `tools`, which would drop the glyph and the cue.
+          <a className="eac-face-live eac-preview-action" href={pageHref}>
+            Open as a page
+          </a>
+        ) : undefined
+      }
     />
   );
 }

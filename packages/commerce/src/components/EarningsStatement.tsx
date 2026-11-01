@@ -30,6 +30,10 @@ export interface EarningsStatementLine {
   description: string | null;
   payoutMethod: string | null;
   payoutReference: string | null;
+  /** The sale behind an accrual: price, commission and card fee (migration 209). Optional. */
+  grossMinor?: number | null;
+  commissionMinor?: number | null;
+  processorFeeMinor?: number | null;
 }
 
 export interface EarningsStatementProps {
@@ -108,6 +112,11 @@ export function EarningsStatement({
                     {when(l.createdAt)}
                     {l.orderNumber ? ` · order ${l.orderNumber}` : ""}
                     {isPayout && l.payoutReference ? ` · ref ${l.payoutReference}` : ""}
+                    {!isPayout && l.grossMinor != null && l.grossMinor > 0
+                      ? ` · price ${formatMoney(l.grossMinor, currency)}` +
+                        (l.commissionMinor ? ` − commission ${formatMoney(l.commissionMinor, currency)}` : "") +
+                        (l.processorFeeMinor ? ` − card fee ${formatMoney(l.processorFeeMinor, currency)}` : "")
+                      : ""}
                   </span>
                   {l.held && (
                     <span className="eac-earn-flag">

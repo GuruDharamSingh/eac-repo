@@ -22,7 +22,10 @@ export async function GET(
   return serveMedia({
     filePath: path.join("/"),
     viewerId: session.user?.db_user_id ?? session.user?.id ?? null,
-    allowedPrefixes: ["EAC_Network/artdirect/", "EAC_Network/users/"],
+    // `oad` is the collective's own org ("Just me" in the Studio): pictures a
+    // person puts in a piece from the Studio land under EAC_Network/oad/, and
+    // the piece reads here. serveMedia still gates anything under Private/.
+    allowedPrefixes: ["EAC_Network/artdirect/", "EAC_Network/users/", "EAC_Network/oad/"],
     range: request.headers.get("range"),
   });
 }

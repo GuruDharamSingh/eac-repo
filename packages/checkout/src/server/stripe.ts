@@ -64,8 +64,13 @@ async function resolveDestination(orderId: string): Promise<{
 }> {
   const lines = await getOrderLines(orderId);
   const makers = new Set(lines.map((l) => l.artistUserId ?? null));
-  const orgCut = lines.reduce((s, l) => s + (l.galleryShareMinor ?? 0), 0);
-  if (makers.size !== 1) return { destinationAccountId: null, applicationFeeMinor: 0 };
+  // Everything that is not the maker's stays on the platform: the
+  // commission and any beneficiary share (migration 209). A listing that
+  // gives all proceeds away has a maker share of 0 and takes no destination.
+  const gross = lines.reduce((s, l) => s + l.unitPriceMinor * l.quantity, 0);
+  const makerShare = lines.reduce((s, l) => s + (l.artistShareMinor ?? 0), 0);
+  const orgCut = gross - makerShare;
+  if (makers.size !== 1 || makerShare <= 0) return { destinationAccountId: null, applicationFeeMinor: 0 };
   const makerId = [...makers][0];
   if (!makerId) return { destinationAccountId: null, applicationFeeMinor: 0 };
 
@@ -377,7 +382,7 @@ export const PAYOUT_ONBOARDING_COPY: { title: string; paragraphs: string[] } = {
   paragraphs: [
     "As a not-for-profit, EAC directs a variety of projects — Art Dealing, Education, Business, and Agency. We hire or contract artists or groups to fulfill the directives of these projects. If you wish to get more involved with the direction of projects, go to arts-collective.com/hub/elkdonis to see where we align.",
     "Know Your Customer rules mean Stripe will request your banking information and perhaps ID verification. We hope you consider these institutional hurdles as part of the formalization of you as your own company. Stripe allows us to pay the international network of Elkdonis instantly, and provides refund security for artist and client.",
-    "You can also continue without a Stripe account, and post your offerings until the day someone wishes to make a transaction with you. You can also choose to be paid by Elkdonis through PayPal, though this comes with higher fees. Stripe has a fairly standard rate for card payments of 2.5% + 30¢ per transaction.",
+    "You can also continue without a Stripe account, and post your offerings until the day someone wishes to make a transaction with you. You can also choose to be paid by Elkdonis through PayPal, though this comes with higher fees. Stripe has a fairly standard rate for card payments of 2.9% + 30¢ per transaction.",
     "Elkdonis and Mutual Aid provide this institutional gateway for the collective and well-being of everyone's interconnected nature.",
   ],
 };;
@@ -500,6 +505,13 @@ export async function disconnectPayoutsFor(
 
 /** Disconnect a person's Stripe account; they fall back to manual settlement. */
 export async function disconnectStripeAccount(userId: string): Promise<void> {
+  // Nothing else records the id being cleared. Logging it is how a working
+  // account unlinked by mistake gets found again (2026-10-18: one was, and
+  // only Stripe's own account list could identify it).
+  const before = await getPayoutIdentity(userId);
+  console.info(
+    `[checkout] disconnectStripeAccount user=${userId} account=${before?.stripeAccountId ?? "none"} onboarded=${before?.stripeOnboardedAt ?? "no"}`
+  );
   await setPayoutIdentity(userId, { stripeAccountId: null, payoutMethod: "etransfer" });
 }
 
@@ -531,4 +543,51 @@ export async function refundStripeOrder(input: {
     reason: input.reason,
     refundReference: r.refundReference ?? null,
   });
+}
+
+
+// ─── Bidder registration (card on file, ORG_STORE_BRIEF R6) ──────────────────
+
+/**
+ * Send a would-be bidder to a hosted Stripe page that saves a card and asks
+ * for a phone number. Nothing is charged. The return page calls
+ * `completeBidderRegistration`.
+ */
+export async function startBidderRegistration(input: {
+  userId: string;
+  email: string;
+  orgId?: string;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<{ url: string; sessionId: string }> {
+  const stripe = requireStripe();
+  const session = await stripe.createSetupSession({
+    customerEmail: input.email,
+    successUrl: input.successUrl,
+    cancelUrl: input.cancelUrl,
+    metadata: { kind: "bidder_registration", userId: input.userId, orgId: input.orgId ?? "market" },
+  });
+  return { url: session.url, sessionId: session.id };
+}
+
+/** Read the setup session back and record the registration. Idempotent. */
+export async function completeBidderRegistration(input: {
+  sessionId: string;
+  userId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const stripe = requireStripe();
+  const s = await stripe.retrieveSetupSession(input.sessionId);
+  if (s.metadata.kind !== "bidder_registration" || s.metadata.userId !== input.userId) {
+    return { ok: false, error: "That registration does not belong to this account." };
+  }
+  if (!s.paymentMethodId) return { ok: false, error: "No card was saved." };
+  const { registerBidder } = await import("@elkdonis/commerce/server");
+  await registerBidder({
+    userId: input.userId,
+    orgId: s.metadata.orgId || "market",
+    phone: s.phone,
+    stripeCustomerId: s.customerId,
+    stripePaymentMethodId: s.paymentMethodId,
+  });
+  return { ok: true };
 }

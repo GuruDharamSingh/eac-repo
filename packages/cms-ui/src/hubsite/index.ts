@@ -26,3 +26,17 @@ export { GalleryHero, type GalleryHeroImage } from "./GalleryHero";
 export { HubViewToggle } from "./HubViewToggle";
 export { HUB_VIEW_COOKIE, type HubView } from "./view-cookie";
 export { FileIcon, familyOf, familyName, type FileFamily } from "./file-types";
+
+// Cards that open pages, with breadcrumbs (owner, 2026-10-08), and the
+// Nextcloud frames those pages use.
+export {
+  HubCrumbs,
+  HubPageFrame,
+  HubCardGrid,
+  HubLinkCard,
+  type HubCrumb,
+  type HubPageFrameProps,
+  type HubLinkCardProps,
+} from "./HubPages";
+export { NextcloudFrame, type NextcloudFrameProps } from "./NextcloudFrame";
+export { DocumentsWorkspace, type DocumentsWorkspaceProps, type WorkspaceDocument } from "./DocumentsWorkspace";

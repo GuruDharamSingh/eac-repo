@@ -1,0 +1,122 @@
+/*
+  hub-crumb-bar.css — the breadcrumb header of IFAC's hub subpages
+  (HubCrumbBar.tsx, 2026-10-10). The crumbs themselves are cms-ui
+  hubsite.css `.eac-hp-crumbs`; this file lays out the row and the small
+  site menu at its start.
+
+  Colours are the hub's light --sf-* / --pr-* set from `.ifac-hub-scope`
+  (globals.css), measured there on the #fffdf8 card: ink 17.78:1, muted
+  8.62:1; --pr-line #968870 is 3.41:1 as a control edge; the oxide focus
+  ring is 6.61:1. Hover ground --sf-bg-soft (#f8f5ef) with ink: 16.61:1.
+*/
+
+.ifac-crumbbar {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 24px 0;
+}
+
+/* Aligned with the compose panel: 900px + the .hub-wide gutters, and the
+   writing room's 1240px when the room is open (globals.css). */
+.hub-compose-page .ifac-crumbbar {
+  max-width: 948px;
+}
+.hub-compose-page:has(.ifac-room) .ifac-crumbbar {
+  max-width: 1288px;
+}
+
+.ifac-crumbbar__menu {
+  position: relative;
+}
+
+.ifac-crumbbar__menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 10px;
+  border: 1px solid var(--pr-line, #968870);
+  border-radius: var(--sf-radius, 2px);
+  background: var(--sf-bg, #fffdf8);
+  color: var(--sf-fg, #171615);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  list-style: none;
+  cursor: pointer;
+}
+.ifac-crumbbar__menu > summary::-webkit-details-marker {
+  display: none;
+}
+.ifac-crumbbar__menu > summary:hover,
+.ifac-crumbbar__menu[open] > summary {
+  background: var(--sf-bg-soft, #f8f5ef);
+}
+.ifac-crumbbar__menu > summary:focus-visible {
+  outline: 2px solid var(--pr-focus, #9a3f2f);
+  outline-offset: 2px;
+}
+
+.ifac-crumbbar__chev {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  transition: transform 120ms ease;
+}
+.ifac-crumbbar__menu[open] .ifac-crumbbar__chev {
+  transform: rotate(180deg);
+}
+
+.ifac-crumbbar__sheet {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--sf-line, #d8d0c2);
+  border-radius: var(--sf-radius, 2px);
+  background: var(--sf-bg, #fffdf8);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.3);
+}
+
+/* Direct children only: DirectoryNavModal renders its popup inside this
+   nav, and its cards carry their own dark styling. */
+.ifac-crumbbar__sheet > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--sf-radius, 2px);
+  color: var(--sf-fg, #171615);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.ifac-crumbbar__sheet > a:hover {
+  background: var(--sf-bg-soft, #f8f5ef);
+}
+.ifac-crumbbar__sheet > a:focus-visible {
+  outline: 2px solid var(--pr-focus, #9a3f2f);
+  outline-offset: -2px;
+}
+.ifac-crumbbar__sheet > a > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--sf-muted, #4f4a44);
+}
+
+@media (max-width: 640px) {
+  .ifac-crumbbar {
+    padding: 14px 16px 0;
+  }
+}

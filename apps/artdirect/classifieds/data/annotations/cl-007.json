@@ -1,0 +1,17 @@
+{
+  "id": "cl-007",
+  "status": "draft",
+  "role": "reference",
+  "source": { "paper": "unknown Spanish-language daily (Guatemala City zones: Santa Barbara, Chinautla appear)", "place": "Latin America, likely Guatemala", "era": "2010s", "language": ["es"] },
+  "summary": "A creative ad that bends a real classifieds page into a 3D room. Underneath it is a dense Spanish-language classifieds page whose classifications are marked by black rounded number tabs.",
+  "frame": { "columns": 9, "columnWidth": "narrow", "gutter": "tight", "columnRules": "hairline", "flow": "vertical", "masthead": "Big section number (3) in a black square with VIVIENDA, and a classification index down the left edge." },
+  "headers": [
+    { "id": "number-tab", "kind": "reverse-bar", "example": "154 / [category name]", "fg": "#ffffff", "bg": "#1a1a1a", "numbering": "prefix", "align": "center", "box": [0.32, 0.07, 0.08, 0.05], "notes": "Large white numerals in a black rounded tab, category name in tiny caps beneath. Very scannable." }
+  ],
+  "units": [
+    { "id": "dense-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "notes": "Agate liners, bold caps place-name or item lead." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#1a1a1a", "accents": [] },
+  "notes": ["Treat as reference: the 3D fold is an ad concept, but the number-tab header is a strong, distinct device worth its own header kind.", "If more Latin American pages turn up, this may anchor a 'numbered-tab' family."]
+}

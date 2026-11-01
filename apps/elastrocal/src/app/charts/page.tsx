@@ -60,7 +60,7 @@ function SignInNudge({ hasCharts }: { hasCharts: boolean }) {
           Sign in
         </Link>{" "}
         to keep them across devices and never lose them to a cleared cookie — one account works across the whole
-        Elkdonis network.
+        Arts Collective network.
       </p>
     </div>
   );

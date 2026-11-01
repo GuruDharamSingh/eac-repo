@@ -2,12 +2,14 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireStudioStore } from "@/lib/marketplace-auth";
 import { ArtworkForm } from "../../_components/artwork-form";
+import { listingContext } from "../../listing-context";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "New artwork · Studio" };
+export const metadata: Metadata = { title: "New artwork · My art" };
 
 export default async function NewArtworkPage() {
   const { store } = await requireStudioStore();
+  const ctx = await listingContext(store);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -19,10 +21,14 @@ export default async function NewArtworkPage() {
           </p>
         </div>
         <Link href="/studio" className="text-sm underline underline-offset-4">
-          Back to studio
+          Back to My art
         </Link>
       </header>
-      <ArtworkForm allowMakerChoice={store.ownerKind === "org"} />
+      <ArtworkForm
+        allowMakerChoice={store.ownerKind === "org"}
+        beneficiaries={ctx.beneficiaries}
+        orgOptions={ctx.orgOptions}
+      />
     </main>
   );
 }

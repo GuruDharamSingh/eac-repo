@@ -26,6 +26,21 @@ dependency. App-level facts are in [apps.md](apps.md). Last verified: 2026-09-23
   `email` 16, `auth-server` 2, `types` 1, `reading-wizard` 1; others 0. This is
   a directory-mtime comparison, so treat it as a prompt to rebuild, not proof.
 
+### Dependency graph
+
+- `node scripts/workspace-graph/build.mjs [out.html]` writes a self-contained
+  HTML page (default `$TMPDIR/eac-workspace-graph.html`) of app → package and
+  package → package edges from `package.json` declarations plus an import scan
+  of the working tree. It lists transitive reach per package, declarations with
+  no import, imports with no declaration, and cycles. Runs on the host with
+  Node built-ins only; app ports and hosts are a table in `build.mjs` that
+  mirrors the `CLAUDE.md` Apps table. (claude, 2026-10-16)
+- 2026-10-16 run: 19 apps, 44 packages, 342 edges, 0 cycles; 43 declarations
+  with no import found; `silex-render` imports `cms-ui` and `types` imports
+  `config` without declaring them; `meta`, `reading-wizard` and
+  `silex-nextcloud-connector` have no dependents (expected for the connector,
+  which is bind-mounted into the Silex container).
+
 ### Catalogue
 
 Status: active (used by a live app), legacy (only Mantine or retired

@@ -404,8 +404,9 @@ export function ThreadPageView(p: ThreadPageViewProps) {
       {lineBase && <DrawLineForm actionBase={lineBase} threadId={thread.id} back={p.back.split("#")[0]} compact />}
     </section>
   );
-  // The facts rail and the org card go to the page's column, above the
-  // shell's boxes, so the thread itself runs the full width of the main pane.
+  // The facts, the map and the org card sit in a strip between the post and
+  // its replies (2026-10-28; they were a right column), so the post runs the
+  // sheet's full width and the facts stay next to what they describe.
   const rail = !parts.rail && !fromOrg && !constellation ? null : (
     <>
       {parts.rail && <section className="gf-rail-block gf-box gf-box--facts">{parts.rail}</section>}
@@ -468,6 +469,8 @@ export function ThreadPageView(p: ThreadPageViewProps) {
         </div>
       </SurfacePage>
 
+      {rail && <aside className="gf-context gf-context--thread" aria-label="About this topic">{rail}</aside>}
+
       <section className="gf-stream" aria-label="Replies">
         <header className="gf-stream-head">
           <h2 className="gf-stream-title">{plural(thread.replyCount, "reply", "replies")}</h2>
@@ -492,7 +495,7 @@ export function ThreadPageView(p: ThreadPageViewProps) {
   );
 
   // The marker lets the analytics beacon (@elkdonis/analytics) credit this view to the thread.
-  return <Layout boxes={p.boxes} rail={rail} main={<><span hidden data-eac-thread={thread.id} />{main}</>} />;
+  return <Layout main={<><span hidden data-eac-thread={thread.id} />{main}</>} />;
 }
 
 export { Avatar, PersonName, Time };

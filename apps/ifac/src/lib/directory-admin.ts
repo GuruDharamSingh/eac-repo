@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@elkdonis/db";
 import {
   ensureUniqueUserSlug,
+  noteUserSlugChange,
   adminAssignProfile,
   getOrgRole,
   requestNextcloudSync,
@@ -173,6 +174,8 @@ export async function updateProfile(id: string, input: DirectoryInput): Promise<
       updated_at = NOW()
     WHERE id = ${id}
   `;
+  // A renamed slug keeps redirecting to this person (user_slug_redirects).
+  await noteUserSlugChange(id, existing.slug, slug || null);
   const result = await db`
     UPDATE org_profiles SET
       role_title = ${input.role || null},

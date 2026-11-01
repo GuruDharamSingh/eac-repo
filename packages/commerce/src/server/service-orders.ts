@@ -35,6 +35,7 @@ export const PURCHASABLE_THREAD_KINDS = [
   "workshop",
   "event",
   "product",
+  "tour",
 ] as const;
 export type PurchasableThreadKind = (typeof PURCHASABLE_THREAD_KINDS)[number];
 
@@ -55,6 +56,13 @@ export interface CreateThreadOrderInput {
    * set); must fall within [floor, list price]. Omit to pay list price.
    */
   amountMinor?: number;
+  /**
+   * How many of the thing — a tour's party size. The price (list or sliding)
+   * is per unit; the order total is price × quantity and the split is taken
+   * on the total. Defaults to 1. Capacity is the caller's concern
+   * (tours.ts checks the departure before the order exists).
+   */
+  quantity?: number;
   /**
    * Which rail. A card order is created unpaid and is paid by handing its id
    * to `startStripeCheckout`; nothing here talks to Stripe.
@@ -110,6 +118,11 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
     amountMinor = Math.round(input.amountMinor);
   }
 
+  const quantity = Math.max(1, Math.floor(input.quantity ?? 1));
+  if (quantity > 50) throw new Error("That is more places than one booking can hold.");
+  const unitMinor = amountMinor;
+  const totalMinor = unitMinor * quantity;
+
   const currency = ((svc.currency as string | null) ?? "CAD") as Currency;
   const title = svc.title as string;
   const authorId = (svc.author_id as string | null) ?? null;
@@ -121,8 +134,9 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
   const settlement = await resolveSettlement({
     makerUserId: authorId,
     orgId: input.orgId,
-    amountMinor,
+    amountMinor: totalMinor,
   });
+  amountMinor = totalMinor;
 
   // An eTransfer has to name someone to send money to; a card payment does
   // not — it lands in the host account and the ledger records who it is owed
@@ -192,7 +206,7 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
         agreement_id, org_share_percent, payee_org_id
       ) VALUES (
         ${orderRow.id as string}, ${input.threadId}, ${authorId}, ${input.orgId},
-        ${title}, 1, ${amountMinor},
+        ${title}, ${quantity}, ${unitMinor},
         ${settlement.makerShareMinor}, ${settlement.orgShareMinor}, ${currency},
         ${settlement.agreementId}, ${settlement.orgSharePercent}, ${settlement.payeeOrgId}
       )
@@ -206,8 +220,8 @@ export async function createThreadOrder(input: CreateThreadOrderInput): Promise<
   const emailItems = [
     {
       description: title,
-      quantity: 1,
-      unitPriceMinor: amountMinor,
+      quantity,
+      unitPriceMinor: unitMinor,
       artistShareMinor: settlement.makerShareMinor,
       galleryShareMinor: settlement.orgShareMinor,
       currency,

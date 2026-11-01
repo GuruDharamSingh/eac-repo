@@ -536,3 +536,211 @@ a.eac-kind:focus-visible {
 .eac-cloud a.eac-btn {
   text-decoration: none;
 }
+
+/* ── Series planner tabs and the Manage tab's "Email list" (hub/SeriesPlannerSurface) ──
+   Added 2026-10-10. Token pairs only; no new colours. Measured in the two
+   IFAC hub skins (the only host that mounts the planner):
+     basic, on #fffdf8 (--sf-bg): text --sf-fg #171615 17.78:1, headers,
+       counts labels and inactive tabs --sf-muted #4f4a44 8.62:1,
+       active-tab bar --sf-kind (meeting, #273d54) 10.98:1, input border
+       #968870 3.41:1 (pinned in apps/ifac hub-readable.css section 9).
+     salon, on #15120e: text #ece6dc 15.04:1, muted #a89e8f 7.07:1,
+       active-tab bar #8fb0d6 8.31:1, input border #6e6153 3.11:1.
+   Row rules use --sf-line (decorative, below 3:1 by design). */
+.eac-series-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--sf-line, #d8d0c2);
+}
+.eac-series-tabs__tab {
+  margin: 0 0 -1px;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--sf-muted, #4f4a44);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.eac-series-tabs__tab:hover { color: var(--sf-fg, #171615); }
+.eac-series-tabs__tab.is-active {
+  color: var(--sf-fg, #171615);
+  font-weight: 600;
+  border-bottom-color: var(--sf-kind, var(--sf-accent, #273d54));
+}
+.eac-series-tabs__tab:focus-visible {
+  outline: 2px solid var(--sf-kind, var(--sf-accent, #273d54));
+  outline-offset: 2px;
+}
+
+.eac-series-people {
+  /* The planner's field tokens, as on .eac-series__form (surface.css). */
+  --fld-fg: var(--eac-field-fg, var(--sf-fg, var(--ink, #16181d)));
+  --fld-muted: var(--eac-field-muted, var(--sf-muted, var(--ink-soft, #5e667a)));
+  --fld-line: var(--eac-field-line, var(--sf-rule, var(--sf-line, var(--line, #b9c0c9))));
+  --fld-bg: var(--eac-field-bg, var(--sf-bg, var(--paper, #fff)));
+  --fld-accent: var(--eac-field-accent, var(--sf-kind, var(--sf-accent, #5b45a8)));
+  --fld-radius: var(--eac-field-radius, var(--sf-radius-sm, 3px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-people .eac-rota-intro { margin: 0; }
+.eac-series-people .eac-rota__record-actions { justify-content: flex-start; margin: 0; flex-wrap: wrap; }
+.eac-series-people__counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.eac-series-people__counts > div {
+  padding: 10px 12px;
+  border: 1px solid var(--sf-line, #d8d0c2);
+  border-radius: 8px;
+  background: var(--sf-bg, #fffdf8);
+}
+.eac-series-people__counts dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted, #4f4a44);
+}
+.eac-series-people__counts dd {
+  margin: 2px 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-people__find { max-width: 360px; }
+.eac-series-people__find > label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sf-muted, #4f4a44);
+}
+.eac-series-people__wrap { overflow-x: auto; }
+.eac-series-people__wrap:focus-visible { outline: 2px solid var(--sf-kind, var(--sf-accent, #273d54)); outline-offset: 2px; }
+/* Scrolls sideways inside its wrap on a phone instead of crushing the addresses. */
+.eac-series-people__table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.eac-series-people__caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 6px;
+  font-size: 0.86rem;
+  color: var(--sf-muted, #4f4a44);
+}
+.eac-series-people__table thead th {
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--sf-line, #d8d0c2);
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sf-muted, #4f4a44);
+  white-space: nowrap;
+}
+.eac-series-people__table tbody th,
+.eac-series-people__table td {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid var(--sf-line, #d8d0c2);
+  text-align: left;
+  vertical-align: top;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-people__table tbody th {
+  /* Hosts style th as a small-caps header; a row header here is a name. */
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.eac-series-people__table .is-num { text-align: right; font-variant-numeric: tabular-nums; }
+.eac-series-people__email { overflow-wrap: anywhere; }
+.eac-series-people__off { color: var(--sf-muted, #4f4a44); }
+
+/* ── Series planner "Manage" tab (hub/SeriesPlannerSurface, 2026-10-10) ──
+   Email list | Sessions | Overall. Same token pairs as the block above, no
+   new colours; re-measured 2026-10-10 (WCAG relative luminance):
+     basic, on #fffdf8: text --sf-fg #171615 17.78:1, notes, sub-lines,
+       sub-tabs and "None" --sf-muted #4f4a44 8.62:1, active sub-tab bar and
+       focus ring --sf-kind #273d54 10.98:1.
+     salon, on #15120e: text #ece6dc 15.04:1, muted #a89e8f 7.07:1,
+       active sub-tab bar and focus ring #8fb0d6 8.31:1.
+   The prose link is underlined in --sf-fg (IFAC sets a { color: inherit }). */
+.eac-series-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-manage__links { justify-content: flex-start; margin: 0; flex-wrap: wrap; }
+.eac-series-tabs--sub { margin: 0; gap: 2px; }
+.eac-series-tabs--sub .eac-series-tabs__tab { padding: 6px 12px; font-size: 0.88rem; }
+.eac-series-manage__note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--sf-muted, #4f4a44);
+}
+.eac-series-manage__sub {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--sf-muted, #4f4a44);
+}
+.eac-series-manage__table { min-width: 44rem; }
+.eac-series-manage__table tfoot th,
+.eac-series-manage__table tfoot td {
+  padding: 8px 10px 8px 0;
+  text-align: left;
+  font-weight: 600;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-manage__table tfoot th {
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.eac-series-manage__table tfoot .is-num { text-align: right; }
+.eac-series-manage__letters {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.eac-series-people__counts dd.eac-series-manage__date { font-size: 1.1rem; }
+.eac-series-manage__h {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sf-fg, #171615);
+}
+.eac-series-manage__mailings {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+}
+.eac-series-manage__mailing-title { font-weight: 600; }
+.eac-series-manage__link {
+  color: var(--sf-fg, #171615);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.eac-series-manage__link:focus-visible {
+  outline: 2px solid var(--sf-kind, var(--sf-accent, #273d54));
+  outline-offset: 2px;
+}

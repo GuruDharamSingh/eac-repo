@@ -7,6 +7,7 @@ import { ArrivalNotice } from "@elkdonis/cms-ui/network";
 import { SiteHeader } from "@/components/site-header";
 import { NetworkBar } from "@/components/network-bar";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -45,10 +46,14 @@ export default function RootLayout({
         className={`${fraunces.variable} ${inter.variable} antialiased`}
         suppressHydrationWarning
       >
-        <NetworkBar />
-        <SiteHeader />
+        <SiteChrome>
+          <NetworkBar />
+          <SiteHeader />
+        </SiteChrome>
         {children}
-        <SiteFooter />
+        <SiteChrome>
+          <SiteFooter />
+        </SiteChrome>
         <Toaster richColors position="top-right" />
         <ArrivalNotice endpoint="/api/network/arrival" />
         <AnalyticsBeacon />

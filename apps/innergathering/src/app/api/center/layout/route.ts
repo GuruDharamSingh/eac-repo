@@ -28,6 +28,8 @@ const SECTION_LABELS: Record<string, string> = {
   buttons: "Your buttons",
   orgs: "Where you are",
   promo: "Promoted slot",
+  you: "Your account: payouts, where you show, details",
+  journeys: "What to do next",
   site: "The site, scaled",
   org: "The org's card",
   pinned: "Pinned",

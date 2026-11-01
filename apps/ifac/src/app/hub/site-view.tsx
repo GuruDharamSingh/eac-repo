@@ -36,6 +36,9 @@ import {
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { getProfileSummary } from "@/lib/hub-data";
+import { getPresentedSeries } from "@/lib/series";
+import { SeriesFace } from "@elkdonis/cms-ui/hub";
+import { SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
 import { readProfileSections } from "@/lib/profile-sections";
 import { getPipelineBoard, listPipelineAssignees } from "@/lib/pipeline";
 import { siteConfig } from "@/config/site";
@@ -44,6 +47,7 @@ import { PublishBanner } from "@/components/hub/site/PublishBanner";
 import { PageSectionSwitches } from "@/components/hub/site/PageSectionSwitches";
 import { ResearchPanel } from "@/components/hub/site/ResearchPanel";
 import { PipelinePanel } from "@/components/hub/site/PipelinePanel";
+import { HUB_VIEWS } from "./views";
 
 const TIME_ZONE = "America/Toronto";
 const IMAGE = /\.(jpe?g|png|gif|webp|avif)$/i;
@@ -84,7 +88,7 @@ const NEXTCLOUD_SSO = TALK_BASE ? `${TALK_BASE}/apps/sociallogin/custom_oauth2/e
  */
 export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
   const calendarFrom = startOfMonth(new Date());
-  const [profile, standing, events, activity, library, chatRoom, memberships, homes, board, sections] =
+  const [profile, standing, events, activity, library, chatRoom, memberships, homes, board, sections, series] =
     await Promise.all([
       getProfileSummary(viewer.userId),
       getStandingMeeting(siteConfig.orgId).catch(() => null),
@@ -103,6 +107,7 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
       listOrgHomes().catch(() => []),
       getPipelineBoard().catch(() => null),
       readProfileSections(viewer.userId),
+      getPresentedSeries({ count: 6 }),
     ]);
 
   const name = profile?.displayName?.trim() || viewer.email.split("@")[0];
@@ -206,6 +211,34 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
     <div className="eac-hs ifac-hs">
       <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
 
+      {/* The series IFAC presents to the public: its coming weeks, and the
+          planner where each week's host writes it up (2026-10-08). */}
+      {series && (
+        <section className="ifac-hs-series" aria-label="Series">
+          <SurfaceCardGrid>
+            <SeriesFace
+              series={{
+                id: series.id,
+                slug: series.slug,
+                title: series.title,
+                href: `/series/${series.slug}`,
+                weeks: series.sessions.map((s) => ({
+                  at: s.at,
+                  number: s.number,
+                  title: s.title,
+                  hostName: s.host?.displayName ?? null,
+                  rsvpCount: s.rsvpCount,
+                  isNext: s.isNext,
+                })),
+              }}
+              canPlan={viewer.canEdit}
+              timeZone={series.timeZone ?? TIME_ZONE}
+              plannerHref={`/hub/series/${series.id}`}
+            />
+          </SurfaceCardGrid>
+        </section>
+      )}
+
       {/* The way into the group's cloud (developer, 2026-09-24). */}
       {NEXTCLOUD_SSO && (
         <section className="ifac-hs-cloud" aria-label="Nextcloud">
@@ -232,10 +265,10 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
             note={null}
             links={[]}
             backKicker="Your profile"
-            frontAction={{ id: "see", label: "See profile", surface: true, surfaceTab: "profile" }}
+            frontAction={{ id: "see", label: "See profile", href: "/center" }}
             actions={[
-              { id: "profile", label: "Edit your profile", note: "Name, picture, the line under it", surface: true, surfaceTab: "profile" },
-              { id: "show", label: "What shows on your page", note: "Sections and galleries", surface: true, surfaceTab: "show" },
+              { id: "profile", label: "Edit your profile", note: "Name, picture, the line under it", journey: "profile", href: "/center?journey=profile" },
+              { id: "center", label: "Your Center", note: "Selling, your listing, your collective", href: "/center" },
               ...(profileHref
                 ? [{ id: "page", label: "Your public page", note: `ifacgroup.com${profileHref}`, href: profileHref }]
                 : []),
@@ -333,7 +366,7 @@ export async function HubSiteView({ viewer }: { viewer: HubViewer }) {
       {/* The way back to the cards. At the foot on purpose: the top of this
           page belongs to the meeting, not to a control. */}
       <div className="ifac-hs-foot">
-        <HubViewToggle current="site" />
+        <HubViewToggle current="site" views={HUB_VIEWS} />
       </div>
     </div>
   );

@@ -13,6 +13,15 @@ import { FeaturedWork } from "@/components/featured-work";
 import { ArtistRow } from "@/components/artist-row";
 import { AuctionSplash } from "@/components/auction-splash";
 import { getAuctionHosts } from "@/lib/auction-hosts";
+import { getFeaturedSeries } from "@elkdonis/commerce/queries";
+import { SeriesCard } from "@/components/series-card";
+import { HomeHero } from "@/components/home-hero";
+import { HomeWelcome } from "@/components/home-welcome";
+import { HomeLoft } from "@/components/home-loft";
+import { canEditHome, loadHeroSlides } from "@/lib/home-hero";
+import { loadHomeLoft, loadWelcome } from "@/lib/home-sections";
+import { getCurrentUserId } from "@/lib/marketplace-auth";
+import "@/components/home-hero.css";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
@@ -76,12 +85,21 @@ export default async function HomePage({
   // the editorial furniture gets out of the way and the page becomes results.
   const browsing = !kind && !buyable && !sp.q && sort === "newest";
 
-  const [artworks, liveLots, stores, hosts] = await Promise.all([
+  const [artworks, liveLots, stores, hosts, series, heroSlides, welcome, loft, editor] = await Promise.all([
     listArtworks({ limit: 48, q: sp.q || undefined, kind, sort, pricedOnly: buyable }),
     browsing ? listLiveAuctionArtworks({ limit: 4 }) : Promise.resolve([]),
     browsing ? listStores({ limit: 12 }) : Promise.resolve([]),
     browsing ? getAuctionHosts() : Promise.resolve(null),
+    browsing ? getFeaturedSeries().catch(() => null) : Promise.resolve(null),
+    browsing ? loadHeroSlides().catch(() => []) : Promise.resolve([]),
+    browsing ? loadWelcome() : Promise.resolve(null),
+    browsing ? loadHomeLoft().catch(() => null) : Promise.resolve(null),
+    browsing ? getCurrentUserId().then(canEditHome).catch(() => false) : Promise.resolve(false),
   ]);
+  // The rotating hero (Intro 10) leads the page when there is a published
+  // series or a featured artist to show; the splash and series card are the
+  // fallback until then.
+  const hero = heroSlides.length > 0;
 
   // A running auction leads over anything else — it is the only thing here on
   // a clock. Otherwise the newest piece with a picture opens the page; one
@@ -92,12 +110,24 @@ export default async function HomePage({
   const hang = featured ? artworks.filter((a) => a.id !== featured.id) : artworks;
   const artists = stores.filter((s) => s.ownerKind === "user" && s.displayName);
 
-  // The splash carries the page's h1 while browsing.
-  const Heading = hosts ? "h2" : "h1";
+  // The hero (or the splash) carries the page's h1 while browsing.
+  const Heading = hero || hosts ? "h2" : "h1";
 
   return (
     <main>
-      {hosts && <AuctionSplash presenter={hosts.presenter} host={hosts.host} />}
+      {/* The page's top, in order: the welcome letter, the rotating hero, the
+          loft. Everything from the featured work down is the market as it was. */}
+      {welcome && <HomeWelcome content={welcome} canEdit={editor} />}
+      {hero ? <HomeHero slides={heroSlides} /> : hosts && <AuctionSplash presenter={hosts.presenter} host={hosts.host} />}
+      {loft && loft.pool.length > 0 && <HomeLoft loft={loft} />}
+
+      {series && !hero && (
+        <div className="border-b border-border">
+          <div className="mx-auto max-w-7xl px-6 py-10">
+            <SeriesCard series={series} />
+          </div>
+        </div>
+      )}
 
       {featured && (
         <div className="border-b border-border bg-wall">
@@ -124,8 +154,7 @@ export default async function HomePage({
           </Heading>
           <p className="mt-3 max-w-3xl text-muted-foreground">
             Paintings, sculpture and editioned prints from across the Elkdonis
-            Arts Collective. Buy outright or bid in a timed auction — the money
-            goes to the artist, not to a middleman.
+            Arts Collective. Buy outright or bid in a timed auction.
           </p>
         </section>
 

@@ -1,0 +1,16 @@
+{
+  "id": "cl-006",
+  "status": "draft",
+  "role": "reference",
+  "source": { "paper": "none: newspaper-collage wallpaper / decor print", "era": "modern print imitating 1880s–1940s", "language": ["en", "fr", "de", "sv", "nl"] },
+  "summary": "Not a classifieds page. A sepia collage of mastheads and headlines (Le Monde, Variety, Deutsche Zeitung, Gotlands Tidning, Herald Tribune). Useful only as a reference sheet for masthead and headline faces.",
+  "type": [
+    { "role": "masthead", "classification": "blackletter", "look": "Fraktur / Old English mastheads (Deutsche Zeitung, De Telegraaf, Times)", "weight": "bold", "width": "normal", "case": "title", "webFont": "UnifrakturMaguntia" },
+    { "role": "masthead", "classification": "woodtype", "look": "Wide Latin / Clarendon woodtype (LE MONDE, Gotlands Tidning)", "weight": "black", "width": "extended", "case": "upper", "webFont": "Ultra" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Heavy condensed gothic headlines (HEADLINE, EXTRA, WALL ST. LAYS AN EGG)", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Anton" },
+    { "role": "display", "classification": "geometric", "look": "Art deco thin caps (THE ATLANTIC SUN)", "weight": "light", "width": "normal", "case": "upper", "webFont": "Poiret One" }
+  ],
+  "color": { "mode": "mono", "paper": "#f3e6cf", "ink": "#2b1d10", "accents": [] },
+  "ornaments": ["stars", "compass rose", "airplane silhouette", "rubber stamps", "rotated vertical mastheads"],
+  "notes": ["Exclude from the style families. The sepia toning and rotated mastheads could inform the microfiche 'film' look, not the ad pages themselves."]
+}

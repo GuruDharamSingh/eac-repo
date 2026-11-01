@@ -5,7 +5,8 @@ import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { getHubViewer } from "@/lib/hub-auth";
-import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { SiteFooter } from "@/components/site-chrome";
+import { HubCrumbBar } from "@/components/hub/HubCrumbBar";
 import { RsvpPanel } from "@/components/hub/RsvpPanel";
 
 /**
@@ -100,9 +101,9 @@ export default async function MeetingPage({
   return (
     <div className="site-shell">
       <ThemeStyle orgId={siteConfig.orgId} pageKey="hub" userId={viewer.userId} />
-      <SiteHeader />
-
       <main className="hub">
+        <HubCrumbBar items={[{ label: "Hub", href: "/hub" }, { label: thread.title }]} />
+
         <div className="hub-welcome">
           <div>
             <p className="kicker">{siteConfig.shortName}</p>

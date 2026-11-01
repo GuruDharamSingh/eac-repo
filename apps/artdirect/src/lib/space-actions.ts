@@ -35,15 +35,16 @@ function luminance(hex: string): number {
 }
 
 /**
- * Upper bound for the page ground. The frame look's text colours are fixed
- * light values (person-page.css `.eac-person-page--frame`): the muted ink
- * #bca7cf has luminance 0.428, so 4.5:1 needs a ground of luminance
- * <= (0.428 + 0.05) / 4.5 - 0.05 = 0.056. At that bound the body ink #e8e3e4
- * is 7.7:1 and the orange headings #ff8c00 4.2:1 (large text, 3:1 needed).
- * Measured 2026-09-27. Light grounds need a dark ink set, which the frame
- * look does not have yet.
+ * Upper bound for the page ground. The page's inks are fixed light values in
+ * dark mode (app/artdirect.css `.eac-person-page--oad`): the muted ink
+ * #a9a293 has luminance 0.364, so 4.5:1 needs a ground of luminance
+ * <= 0.042; the gold links #c79a42 (luminance 0.357) need <= 0.040, which is
+ * the bound. At it the body ink #f7f1e3 is 10.3:1, the muted ink 4.6:1 and
+ * gold 4.5:1. Measured 2026-10-08 (was 0.056
+ * for the frame look's #bca7cf). The chosen ground is honoured in dark mode
+ * only; light mode keeps the paper and its dark inks.
  */
-const MAX_GROUND_LUMINANCE = 0.056;
+const MAX_GROUND_LUMINANCE = 0.040;
 
 /**
  * Set (or clear with null) the page background of the signed-in person's own

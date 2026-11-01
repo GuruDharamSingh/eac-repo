@@ -16,7 +16,8 @@ const MAX_IMAGE_MB = 25;
 
 /**
  * Multi-image artwork upload. Auth-gated: only signed-in marketplace artists
- * (people who already have a store) may upload.
+ * (people who already have a store), store team members and series desk
+ * editors may upload.
  *
  * Fixed 2026-09-21: this used to hand-roll its own WebDAV PUT into
  * `marketplace/<owner_user_id>/Images/…`, a tree `/api/media` never
@@ -38,8 +39,14 @@ export async function POST(request: NextRequest) {
     // Only people who already have a store may upload here.
     let hasStore = false;
     try {
+      // A store owner, a seat on an org store's team, or a series desk
+      // editor (who lists work for artists from the series workspace).
       const rows = (await db`
-        SELECT 1 AS present FROM store WHERE owner_user_id = ${userId} LIMIT 1
+        SELECT 1 AS present FROM store WHERE owner_user_id = ${userId}
+        UNION ALL SELECT 1 FROM store_member WHERE user_id = ${userId}
+        UNION ALL SELECT 1 FROM auction_series_member WHERE user_id = ${userId} AND role = 'editor'
+        UNION ALL SELECT 1 FROM users WHERE id = ${userId} AND is_admin = true
+        LIMIT 1
       `) as unknown as Array<{ present: number }>;
       hasStore = rows.length > 0;
     } catch {

@@ -2,9 +2,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { db } from "@elkdonis/db";
 import { sendEmail } from "@elkdonis/email";
 import {
+  ORG_AUDIENCE,
   isValidNewsletterSlug,
   newsletterKey,
+  newsletterKeyPrefix,
   type Newsletter,
+  type NewsletterAudience,
   type NewsletterSummary,
   type SendResult,
 } from "./index";
@@ -34,15 +37,23 @@ interface StoredNewsletter {
   sentCount?: number;
 }
 
+/*
+ * Every store function takes the audience, which picks the key: org issues
+ * are `newsletter:<slug>`, a series' mailings `series-mail:<threadId>:<slug>`
+ * (`newsletterKey`). Omitted means the org's list, so callers written before
+ * 2026-10-10 behave as before and never see a series' mailings.
+ */
+
 export async function loadNewsletter(
   orgId: string,
-  slug: string
+  slug: string,
+  audience: NewsletterAudience = ORG_AUDIENCE
 ): Promise<Newsletter | null> {
   if (!isValidNewsletterSlug(slug)) return null;
   try {
     const [row] = await db<Array<{ value: StoredNewsletter; updated_at: string }>>`
       SELECT value, updated_at FROM site_config
-      WHERE org_id = ${orgId} AND key = ${newsletterKey(slug)}
+      WHERE org_id = ${orgId} AND key = ${newsletterKey(slug, audience)}
       LIMIT 1
     `;
     if (!row) return null;
@@ -55,6 +66,7 @@ export async function loadNewsletter(
       updatedAt: row.updated_at,
       sentAt: v.sentAt ?? null,
       sentCount: typeof v.sentCount === "number" ? v.sentCount : 0,
+      audience,
     };
   } catch (err) {
     console.error(`[newsletter] loadNewsletter(${orgId}/${slug}):`, err);
@@ -62,24 +74,32 @@ export async function loadNewsletter(
   }
 }
 
-export async function listNewsletters(orgId: string): Promise<NewsletterSummary[]> {
+export async function listNewsletters(
+  orgId: string,
+  audience: NewsletterAudience = ORG_AUDIENCE
+): Promise<NewsletterSummary[]> {
+  const prefix = newsletterKeyPrefix(audience);
   try {
+    // starts_with, not LIKE: a nanoid may contain `_`, a LIKE wildcard.
     const rows = await db<Array<{ key: string; value: StoredNewsletter; updated_at: string }>>`
       SELECT key, value, updated_at FROM site_config
-      WHERE org_id = ${orgId} AND key LIKE 'newsletter:%'
+      WHERE org_id = ${orgId} AND starts_with(key, ${prefix})
       ORDER BY updated_at DESC
     `;
-    return rows.map((row) => {
-      const v = row.value ?? {};
-      const slug = row.key.slice("newsletter:".length);
-      return {
-        slug,
-        title: typeof v.title === "string" ? v.title : slug,
-        updatedAt: row.updated_at,
-        sentAt: v.sentAt ?? null,
-        sentCount: typeof v.sentCount === "number" ? v.sentCount : 0,
-      };
-    });
+    return rows
+      .map((row) => {
+        const v = row.value ?? {};
+        const slug = row.key.slice(prefix.length);
+        return {
+          slug,
+          title: typeof v.title === "string" ? v.title : slug,
+          updatedAt: row.updated_at,
+          sentAt: v.sentAt ?? null,
+          sentCount: typeof v.sentCount === "number" ? v.sentCount : 0,
+          audience,
+        };
+      })
+      .filter((letter) => isValidNewsletterSlug(letter.slug));
   } catch (err) {
     console.error(`[newsletter] listNewsletters(${orgId}):`, err);
     return [];
@@ -89,14 +109,25 @@ export async function listNewsletters(orgId: string): Promise<NewsletterSummary[
 export async function saveNewsletter(
   orgId: string,
   slug: string,
-  input: { title: string; project: unknown; html: string }
+  input: {
+    title: string;
+    project: unknown;
+    html: string;
+    /**
+     * Who the issue goes to; picks the storage key. Omitted = the org's list.
+     * The caller checks a series id is one of its org's series before passing
+     * it; the send path checks the thread's org again.
+     */
+    audience?: NewsletterAudience;
+  }
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isValidNewsletterSlug(slug)) return { ok: false, error: "Invalid name" };
+  const audience = input.audience ?? ORG_AUDIENCE;
   const title = (input.title ?? "").trim().slice(0, 200) || slug;
 
   // Merge rather than replace: sentAt/sentCount are written by the send path
   // and must survive an edit made afterwards.
-  const existing = await loadNewsletter(orgId, slug);
+  const existing = await loadNewsletter(orgId, slug, audience);
   const payload = {
     title,
     project: input.project ?? null,
@@ -113,7 +144,7 @@ export async function saveNewsletter(
   try {
     await db`
       INSERT INTO site_config (org_id, key, value)
-      VALUES (${orgId}, ${newsletterKey(slug)}, ${db.json(payload as never)})
+      VALUES (${orgId}, ${newsletterKey(slug, audience)}, ${db.json(payload as never)})
       ON CONFLICT (org_id, key) DO UPDATE
         SET value = ${db.json(payload as never)}, updated_at = NOW()
     `;
@@ -124,11 +155,15 @@ export async function saveNewsletter(
   }
 }
 
-export async function deleteNewsletter(orgId: string, slug: string): Promise<boolean> {
+export async function deleteNewsletter(
+  orgId: string,
+  slug: string,
+  audience: NewsletterAudience = ORG_AUDIENCE
+): Promise<boolean> {
   if (!isValidNewsletterSlug(slug)) return false;
   try {
     await db`
-      DELETE FROM site_config WHERE org_id = ${orgId} AND key = ${newsletterKey(slug)}
+      DELETE FROM site_config WHERE org_id = ${orgId} AND key = ${newsletterKey(slug, audience)}
     `;
     return true;
   } catch (err) {
@@ -145,14 +180,43 @@ export interface Recipient {
 }
 
 /**
- * Who a send goes to: the org's contacts, minus anyone who unsubscribed.
+ * Who a send goes to.
+ *
+ * - org (default): the org's contacts, minus anyone who unsubscribed.
+ * - series: accounts with a 'subscribed' row in thread_rsvps on the series
+ *   thread (which must belong to orgId), minus anyone whose org contact is
+ *   'unsubscribed'. A yes to a single week does not count (developer,
+ *   2026-10-10); every RSVP and subscription belongs to a signed-in account,
+ *   so the address is the account's users.email.
  *
  * 'unsubscribed' is filtered HERE, in the one function every send path calls,
  * rather than at each call site — an unsubscribe that depends on remembering
  * to filter is not an unsubscribe.
  */
-export async function listRecipients(orgId: string): Promise<Recipient[]> {
+export async function listRecipients(
+  orgId: string,
+  audience: NewsletterAudience = ORG_AUDIENCE
+): Promise<Recipient[]> {
   try {
+    if (audience.kind === "series") {
+      return await db<Recipient[]>`
+        SELECT DISTINCT ON (lower(u.email)) u.email, NULLIF(trim(u.display_name), '') AS name
+        FROM thread_rsvps r
+        JOIN threads t ON t.id = r.thread_id
+        JOIN users u ON u.id = r.user_id
+        WHERE r.thread_id = ${audience.threadId}
+          AND t.org_id = ${orgId}
+          AND r.status = 'subscribed'
+          AND u.email IS NOT NULL AND u.email <> ''
+          AND NOT EXISTS (
+            SELECT 1 FROM contacts c
+            WHERE c.org_id = ${orgId}
+              AND lower(c.email) = lower(u.email)
+              AND c.status = 'unsubscribed'
+          )
+        ORDER BY lower(u.email), r.created_at
+      `;
+    }
     return await db<Recipient[]>`
       SELECT DISTINCT ON (lower(email)) email, name
       FROM contacts
@@ -162,8 +226,31 @@ export async function listRecipients(orgId: string): Promise<Recipient[]> {
       ORDER BY lower(email), created_at DESC
     `;
   } catch (err) {
-    console.error(`[newsletter] listRecipients(${orgId}):`, err);
+    console.error(`[newsletter] listRecipients(${orgId}, ${audience.kind}):`, err);
     return [];
+  }
+}
+
+/**
+ * The series thread an audience names, when it belongs to orgId; null
+ * otherwise. Not an authorisation check: a host still decides which of its
+ * threads count as series.
+ */
+export async function loadAudienceThread(
+  orgId: string,
+  audience: NewsletterAudience
+): Promise<{ id: string; title: string } | null> {
+  if (audience.kind !== "series") return null;
+  try {
+    const [row] = await db<Array<{ id: string; title: string }>>`
+      SELECT id, title FROM threads
+      WHERE id = ${audience.threadId} AND org_id = ${orgId}
+      LIMIT 1
+    `;
+    return row ?? null;
+  } catch (err) {
+    console.error(`[newsletter] loadAudienceThread(${orgId}):`, err);
+    return null;
   }
 }
 
@@ -222,6 +309,16 @@ export async function unsubscribeContact(
 
 // ── Sending ─────────────────────────────────────────────────────────────────
 
+/** Builds the unsubscribe link for one address. */
+export type UnsubscribeUrl = (email: string) => string;
+
+/** The org-wide link: `<baseUrl>/unsubscribe?e=&t=` (the host serves that page). */
+export function orgUnsubscribeUrl(orgId: string, baseUrl: string): UnsubscribeUrl {
+  return (email) =>
+    `${baseUrl.replace(/\/+$/, "")}/unsubscribe` +
+    `?e=${encodeURIComponent(email)}&t=${unsubscribeToken(orgId, email)}`;
+}
+
 /**
  * The legally required footer, appended per recipient.
  *
@@ -229,19 +326,19 @@ export async function unsubscribeContact(
  * link that depends on someone remembering to add it is exactly the one that
  * goes missing. The token is per recipient, so the link identifies who is
  * asking without them having to type anything.
+ *
+ * `url` comes from the caller's `unsubscribeUrl` when it passed one (a series
+ * mailing links to the host's series unsubscribe), else `orgUnsubscribeUrl`.
  */
 function withUnsubscribe(
   html: string,
-  opts: { orgId: string; orgName: string; email: string; baseUrl: string }
+  opts: { reason: string; url: string; label: string }
 ): string {
-  const url =
-    `${opts.baseUrl.replace(/\/+$/, "")}/unsubscribe` +
-    `?e=${encodeURIComponent(opts.email)}&t=${unsubscribeToken(opts.orgId, opts.email)}`;
   const footer =
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px">` +
     `<tr><td align="center" style="padding:16px;font:12px/1.5 Arial,sans-serif;color:#6b7280">` +
-    `You are receiving this because you signed up with ${escapeHtml(opts.orgName)}.<br>` +
-    `<a href="${url}" style="color:#6b7280;text-decoration:underline">Unsubscribe</a>` +
+    `${escapeHtml(opts.reason)}<br>` +
+    `<a href="${escapeHtml(opts.url)}" style="color:#6b7280;text-decoration:underline">${escapeHtml(opts.label)}</a>` +
     `</td></tr></table>`;
 
   // Before </body> when there is one, appended otherwise — the editor's export
@@ -257,6 +354,80 @@ function escapeHtml(value: string): string {
   );
 }
 
+interface IssueOptions {
+  orgId: string;
+  orgName: string;
+  slug: string;
+  baseUrl: string;
+  /** Which issue (and so which list); default the org's newsletter. */
+  audience?: NewsletterAudience;
+  /** The unsubscribe link per address; default `orgUnsubscribeUrl(orgId, baseUrl)`. */
+  unsubscribeUrl?: UnsubscribeUrl;
+}
+
+type PreparedIssue =
+  | {
+      ok: true;
+      letter: Newsletter;
+      audience: NewsletterAudience;
+      /** The series thread, for a series audience; recorded on the ledger. */
+      threadId: string | null;
+      html: string;
+      missing: { id: string; label: string | null }[];
+      forRecipient: (email: string) => string;
+    }
+  | { ok: false; error: string };
+
+/** Load an issue, fill its thread cards and fix its footer: everything but the sending. */
+async function prepareIssue(opts: IssueOptions): Promise<PreparedIssue> {
+  const audience = opts.audience ?? ORG_AUDIENCE;
+  const letter = await loadNewsletter(opts.orgId, opts.slug, audience);
+  if (!letter) return { ok: false, error: "Not found" };
+  if (!letter.html.trim()) return { ok: false, error: "Nothing to send — the letter is empty" };
+
+  let reason = `You are receiving this because you signed up with ${opts.orgName}.`;
+  let label = "Unsubscribe";
+  let threadId: string | null = null;
+  if (audience.kind === "series") {
+    // The org check is repeated here, not left to the caller: a series id in
+    // a storage key is only as trustworthy as whoever wrote the key.
+    const thread = await loadAudienceThread(opts.orgId, audience);
+    if (!thread) return { ok: false, error: "The series this mailing is for no longer exists" };
+    threadId = thread.id;
+    reason = `You are receiving this because you subscribed to ${thread.title} with ${opts.orgName}.`;
+    label = "Unsubscribe from this series";
+  }
+
+  // Cards stay pointed at their thread and are filled HERE, so a letter
+  // composed on Monday and sent on Friday carries Friday's time.
+  const ids = referencedThreadIds(letter.html);
+  const cards = await loadCardsFor(opts.orgId, ids, opts.baseUrl);
+  const resolved = resolveThreadCards(letter.html, cards);
+  const urlFor = opts.unsubscribeUrl ?? orgUnsubscribeUrl(opts.orgId, opts.baseUrl);
+
+  return {
+    ok: true,
+    letter,
+    audience,
+    threadId,
+    html: resolved.html,
+    missing: resolved.missing,
+    forRecipient: (email) => withUnsubscribe(resolved.html, { reason, label, url: urlFor(email) }),
+  };
+}
+
+/**
+ * One recipient's copy of an issue, exactly as `sendNewsletter` would mail it,
+ * without sending or writing anything. For previews and render-only checks.
+ */
+export async function renderNewsletterFor(
+  opts: IssueOptions & { email: string }
+): Promise<{ ok: true; subject: string; html: string; threadId: string | null } | { ok: false; error: string }> {
+  const issue = await prepareIssue(opts);
+  if (issue.ok === false) return issue;
+  return { ok: true, subject: issue.letter.title, html: issue.forRecipient(opts.email), threadId: issue.threadId };
+}
+
 /**
  * Send one newsletter.
  *
@@ -266,11 +437,7 @@ function escapeHtml(value: string): string {
  * and skipped rather than aborting the run — the alternative is a half-sent
  * newsletter with no record of where it stopped.
  */
-export async function sendNewsletter(opts: {
-  orgId: string;
-  orgName: string;
-  slug: string;
-  baseUrl: string;
+export async function sendNewsletter(opts: IssueOptions & {
   /** Given, this is a test send to exactly these addresses and records nothing. */
   testTo?: string[];
   /**
@@ -305,27 +472,18 @@ export async function sendNewsletter(opts: {
     };
   }
 
-  const letter = await loadNewsletter(opts.orgId, opts.slug);
-  if (!letter) return { ok: false, sent: 0, failed: 0, error: "Not found" };
-  if (!letter.html.trim()) {
-    return { ok: false, sent: 0, failed: 0, error: "Nothing to send — the letter is empty" };
-  }
-
-  // Cards stay pointed at their thread and are filled HERE, so a letter
-  // composed on Monday and sent on Friday carries Friday's time.
-  const ids = referencedThreadIds(letter.html);
-  const cards = await loadCardsFor(opts.orgId, ids, opts.baseUrl);
-  const resolved = resolveThreadCards(letter.html, cards);
+  const issue = await prepareIssue(opts);
+  if (issue.ok === false) return { ok: false, sent: 0, failed: 0, error: issue.error };
 
   const isTest = Array.isArray(opts.testTo) && opts.testTo.length > 0;
 
   // A test send goes out regardless — seeing the broken card in your own inbox
   // is the point of a test. A real send stops and says what is wrong.
   if (!isTest && !opts.force) {
-    const placeholders = unresolvedPlaceholders(resolved.html);
-    if (resolved.missing.length > 0 || placeholders.length > 0) {
+    const placeholders = unresolvedPlaceholders(issue.html);
+    if (issue.missing.length > 0 || placeholders.length > 0) {
       const lines = [
-        ...resolved.missing.map(
+        ...issue.missing.map(
           (m) => `a card points at a thread that is no longer published${m.label ? ` — ${m.label}` : ""}`
         ),
         ...placeholders,
@@ -335,13 +493,13 @@ export async function sendNewsletter(opts: {
         sent: 0,
         failed: 0,
         error: `Not sent — ${lines.join("; ")}.`,
-        problems: { brokenLinks: resolved.missing, placeholders },
+        problems: { brokenLinks: issue.missing, placeholders },
       };
     }
   }
   const recipients: Recipient[] = isTest
     ? opts.testTo!.map((email) => ({ email, name: null }))
-    : await listRecipients(opts.orgId);
+    : await listRecipients(opts.orgId, issue.audience);
 
   if (recipients.length === 0) {
     return { ok: false, sent: 0, failed: 0, error: "No recipients" };
@@ -353,18 +511,16 @@ export async function sendNewsletter(opts: {
     try {
       await sendEmail({
         to: recipient.email,
-        subject: letter.title,
-        html: withUnsubscribe(resolved.html, {
-          orgId: opts.orgId,
-          orgName: opts.orgName,
-          email: recipient.email,
-          baseUrl: opts.baseUrl,
-        }),
+        subject: issue.letter.title,
+        html: issue.forRecipient(recipient.email),
         // The org's own identity: From name, reply-to, and — once one exists —
         // its ASM group, which is what makes SendGrid emit the one-click
         // List-Unsubscribe header alongside the footer link below.
         orgId: opts.orgId,
         kind: 'newsletter',
+        // A series mailing is recorded against the series thread in the
+        // email_sends ledger; an org newsletter has no thread.
+        ...(issue.threadId ? { threadId: issue.threadId } : {}),
         customArgs: { newsletter: opts.slug },
       });
       sent += 1;
@@ -384,7 +540,7 @@ export async function sendNewsletter(opts: {
               'sentAt', to_jsonb(NOW()::text),
               'sentCount', to_jsonb(${sent}::int)
             )
-        WHERE org_id = ${opts.orgId} AND key = ${newsletterKey(opts.slug)}
+        WHERE org_id = ${opts.orgId} AND key = ${newsletterKey(opts.slug, issue.audience)}
       `;
     } catch (err) {
       console.error("[newsletter] could not record the send:", err);

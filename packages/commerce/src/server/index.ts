@@ -10,6 +10,7 @@ import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
 import { sanitizeRichText } from "@elkdonis/utils";
 import type {
+  ProvenanceInput,
   Cart,
   CartLine,
   AuctionLot,
@@ -26,7 +27,7 @@ import type {
   Currency,
 } from "../types";
 import { releaseOnPayoutAccountReady } from "./ledger";
-import { requireArtworkAccess } from "./access";
+import { requireArtworkAccess, seriesDeskClause } from "./access";
 import { jsonb } from "./map-order";
 
 type Row = Record<string, unknown>;
@@ -57,6 +58,46 @@ export {
 } from "./service-bookings";
 export type { ServiceBooking, BuyerServiceBooking, ServiceBookingStatus, CreateServiceBookingInput } from "./service-bookings";
 
+// Tours: stops, departures, bookings with a party size (migration 208).
+export {
+  HOLD_MINUTES as TOUR_HOLD_MINUTES,
+  MAX_PARTY_SIZE,
+  listTourStops,
+  saveTourStops,
+  setTourStopStill,
+  listStopsNeedingStill,
+  listTourDepartures,
+  listOrgDepartures,
+  getDeparture,
+  createDeparture,
+  updateDeparture,
+  cancelDeparture,
+  parsePartySize,
+  checkDepartureAvailability,
+  createTourBooking,
+  markTourBookingPaid,
+  getTourBookingByToken,
+  getTourBookingTokenForOrder,
+  listBuyerTourBookings,
+  listDepartureBookings,
+  listOrgTourBookings,
+  cancelTourBooking,
+  tourBookingIcs,
+  buyerBookingUrl as buyerTourBookingUrl,
+  formatParis as formatTourTime,
+} from "./tours";
+export type {
+  TourStop,
+  TourStopInput,
+  TourDeparture,
+  DepartureStatus,
+  DepartureInput,
+  TourBooking,
+  BuyerTourBooking,
+  TourBookingStatus,
+  CreateTourBookingInput,
+} from "./tours";
+
 // Artwork orders — create on either rail, confirm, cancel, expire, fulfil.
 export {
   createOrder,
@@ -84,14 +125,56 @@ export type {
 } from "./orders";
 
 // Auction lots — create, withdraw, settle.
-export { createLot, cancelLot, settleExpiredLots } from "./auctions";
+export { createLot, cancelLot, settleExpiredLots, marketplaceLadder } from "./auctions";
 export type { CreateLotInput, SettleResult } from "./auctions";
+// Bidding — ladder, proxy bids, soft close, buy-now, registration (2026-10-18).
+export { placeBid, buyNowLot, registerBidder } from "./bidding";
+export type { PlaceBidResult } from "./bidding";
+// Auction series (migration 190 + 209): create, edit, lots, team.
+export {
+  canEditSeries, canCreateSeries, createSeries, updateSeries, setSeriesStatus, setWeekFocus,
+  addLotToSeries, removeLotFromSeries, renumberSeriesLots, setSeriesMember, removeSeriesMember,
+  canParticipateInSeries, attachPublication, detachPublication,
+  setSeriesMemberById, searchSeriesPeople, seriesStore, addSeriesLot, getSeriesOverview,
+  listWeekBoards, saveWeek, addWeekItem, removeWeekItem, approveWeekItem, setWeekFeatured,
+  searchRepostable, submitOwnPiece, listSeriesActivity,
+} from "./series";
+export type {
+  SeriesInput, SeriesPerson, AddSeriesLotInput, SeriesOverview,
+  WeekBoard, WeekItem, WeekItemThread, AddWeekItemInput,
+} from "./series";
+// The auction clock: scheduling, opening, settling, releasing on time.
+export { tickAuctionClock, applySeriesSchedule, openScheduledLots } from "./auction-clock";
+export type { ClockTick } from "./auction-clock";
 
 // Authority.
 export { requireArtworkAccess, canActForOrder, isOrderCustomer } from "./access";
+export { canManageStoreTeam, addStoreMemberByEmail } from "./store-team";
+
+// Marketplace settings (migration 209).
+export { getMarketplaceSettings, updateMarketplaceSettings } from "./settings";
+export type { MarketplaceSettings, IncrementStep } from "./settings";
+export { resolveCommissionPercent, estimateProcessorFeeMinor } from "./settlement";
+export type { SupportSplit } from "./orders";
+
+// Payees and per-org beneficiary lists (migration 209).
+export {
+  listOrgBeneficiaries,
+  listActivePayees,
+  listSuggestedPayees,
+  addCharityPayee,
+  addOrgBeneficiary,
+  removeOrgBeneficiary,
+  suggestPayee,
+  approvePayee,
+  sendPaidProceedsStatements,
+} from "./payees";
 
 // Presentation — a front showing pieces another store sells (migration 112).
 export { presentArtwork, unpresentArtwork, isPresentedBy } from "./presentation";
+// Journeys — where a person stands on the auction errand, and its one-click step.
+export { loadAuctionJourney, publishStoreForAuction, AUCTION_COMMISSION_PERCENT } from "./journeys";
+export type { AuctionJourney } from "./journeys";
 export {
   writeEntry,
   getBalance,
@@ -315,103 +398,6 @@ export async function createReservation(input: {
   return { id: rows[0]!.id as string, expiresAt: rows[0]!.expires_at as string };
 }
 
-/**
- * Place a bid on an auction lot. Validates: lot is live, amount >= next min,
- * bidder is signed in. Updates lot.current_bid + bid_count atomically.
- * Anti-snipe: if bid arrives in the last `anti_snipe_minutes`, extend end_at.
- */
-export async function placeBid(input: {
-  lotId: string;
-  bidderId: string;
-  amountMinor: number;
-  maxAmountMinor?: number | null;
-  clientIp?: string | null;
-  userAgent?: string | null;
-}): Promise<
-  | { ok: true; lot: Pick<AuctionLot, "currentBidMinor" | "bidCount" | "endAt">; bidId: string }
-  | { ok: false; reason: string }
-> {
-  return await db.begin(async (tx) => {
-    const lotRows = (await tx`
-      SELECT * FROM auction_lot WHERE id = ${input.lotId} FOR UPDATE
-    `) as unknown as Row[];
-    if (!lotRows[0]) return { ok: false as const, reason: "Lot not found." };
-    const lot = lotRows[0];
-
-    if (lot.status !== "live" && lot.status !== "scheduled") {
-      return { ok: false as const, reason: "This auction is closed." };
-    }
-    const now = Date.now();
-    if (new Date(lot.start_at as string).getTime() > now) {
-      return { ok: false as const, reason: "Auction has not started yet." };
-    }
-    if (new Date(lot.end_at as string).getTime() <= now) {
-      return { ok: false as const, reason: "Auction has ended." };
-    }
-
-    const currentBid = num(lot.current_bid_minor);
-    const startingBid = num(lot.starting_bid_minor);
-    const increment = num(lot.bid_increment_minor);
-    const minAcceptable = currentBid > 0 ? currentBid + increment : startingBid;
-
-    if (input.amountMinor < minAcceptable) {
-      return { ok: false as const, reason: `Bid must be at least ${minAcceptable / 100}.` };
-    }
-
-    const bidRows = (await tx`
-      INSERT INTO bid (lot_id, bidder_id, amount_minor, max_amount_minor, is_max_bid, status, client_ip, user_agent)
-      VALUES (
-        ${input.lotId}, ${input.bidderId}, ${input.amountMinor},
-        ${input.maxAmountMinor ?? null},
-        ${input.maxAmountMinor != null && input.maxAmountMinor > input.amountMinor},
-        'winning',
-        ${input.clientIp ?? null}::inet,
-        ${input.userAgent ?? null}
-      )
-      RETURNING id
-    `) as unknown as Row[];
-    const newBidId = bidRows[0]!.id as string;
-
-    // Mark prior winning bids as outbid
-    await tx`
-      UPDATE bid SET status = 'outbid'
-      WHERE lot_id = ${input.lotId} AND id <> ${newBidId} AND status = 'winning'
-    `;
-
-    // Anti-snipe: extend end_at if bid arrived within anti_snipe_minutes
-    const antiSnipeMs = num(lot.anti_snipe_minutes) * 60_000;
-    const minutesUntilEnd = new Date(lot.end_at as string).getTime() - now;
-    let newEndAt = lot.end_at as string;
-    if (antiSnipeMs > 0 && minutesUntilEnd < antiSnipeMs) {
-      const extended = new Date(now + antiSnipeMs).toISOString();
-      newEndAt = extended;
-    }
-
-    const updatedRows = (await tx`
-      UPDATE auction_lot
-      SET current_bid_minor = ${input.amountMinor},
-          current_bid_id = ${newBidId},
-          bid_count = bid_count + 1,
-          end_at = ${newEndAt},
-          status = 'live',
-          winner_user_id = ${input.bidderId}
-      WHERE id = ${input.lotId}
-      RETURNING current_bid_minor, bid_count, end_at
-    `) as unknown as Row[];
-    const ur = updatedRows[0]!;
-
-    return {
-      ok: true as const,
-      lot: {
-        currentBidMinor: num(ur.current_bid_minor),
-        bidCount: num(ur.bid_count),
-        endAt: ur.end_at as string,
-      },
-      bidId: newBidId,
-    };
-  });
-}
-
 // ─── Mappers (keep in sync with queries/index.ts) ─────────────────────────
 
 function mapCart(r: Row): Cart {
@@ -549,7 +535,7 @@ export async function canActForStore(
       LEFT JOIN store_member sm
         ON sm.store_id = s.id AND sm.user_id = ${userId}
       WHERE s.id = ${storeId}
-        AND (s.owner_user_id = ${userId} OR sm.user_id IS NOT NULL)
+        AND (s.owner_user_id = ${userId} OR sm.user_id IS NOT NULL OR ${seriesDeskClause(db, userId)})
       LIMIT 1
     `;
     return Boolean(row);
@@ -557,6 +543,16 @@ export async function canActForStore(
     console.error(`[commerce] canActForStore(${userId}, ${storeId}):`, err);
     return false;
   }
+}
+
+/**
+ * `users.bio` is read as plain text by several apps (ArtDirect, IFAC), so the
+ * marketplace writes it as plain text: tags dropped, trimmed, empty → null.
+ */
+function plainProfileBio(bio: string | null | undefined): string | null {
+  if (bio == null) return null;
+  const text = bio.replace(/<[^>]*>/g, "").trim();
+  return text || null;
 }
 
 /**
@@ -592,6 +588,7 @@ export async function applyForStore(
       headline     = COALESCE(NULLIF(${input.headline ?? null}, ''), headline),
       city         = COALESCE(NULLIF(${input.city ?? null}, ''), city),
       avatar_url   = COALESCE(NULLIF(${input.photoUrl ?? null}, ''), avatar_url),
+      bio          = COALESCE(NULLIF(${plainProfileBio(input.profileBio)}, ''), bio),
       -- Payout identity is the person's, not the front's (migration 096) —
       -- an artist selling through three orgs is paid once, in one place.
       payout_email  = COALESCE(NULLIF(${input.payoutEmail ?? null}, ''), payout_email),
@@ -660,15 +657,18 @@ export async function openOrgStore(
     };
   }
 
+  // Owner or guide (shown as "Admin") may open it — decided 2026-10-18
+  // (ORG_STORE_BRIEF D2). Members may not: opening a store is a commercial
+  // commitment the org's leadership makes.
   const [actorRow] = await db`
     SELECT 1 FROM user_organizations
     WHERE user_id = ${input.actorUserId}
       AND org_id = ${input.ownerOrgId}
-      AND role = 'owner'
+      AND role IN ('owner', 'guide')
     LIMIT 1
   `;
   if (!actorRow) {
-    return { ok: false, error: "Only an owner of this organisation can open its store." };
+    return { ok: false, error: "Only an owner or admin of this organisation can open its store." };
   }
 
   const bioHtml = input.bioHtml ? sanitizeRichText(input.bioHtml) : null;
@@ -680,12 +680,13 @@ export async function openOrgStore(
     const rows = (await tx`
       INSERT INTO store (
         owner_org_id, org_id, payout_email, payout_method, default_currency,
-        status, bio_html, links, applied_at, reviewed_at, reviewed_by
+        status, bio_html, links, applied_at, reviewed_at, reviewed_by, commission_rate
       ) VALUES (
         ${input.ownerOrgId}, ${orgId},
         ${input.payoutEmail ?? null}, ${input.payoutMethod ?? "etransfer"},
         ${input.defaultCurrency ?? "CAD"}, 'active', ${bioHtml},
-        ${jsonb(serializeLinks(input.links))}, NOW(), NOW(), ${input.actorUserId}
+        ${jsonb(serializeLinks(input.links))}, NOW(), NOW(), ${input.actorUserId},
+        0
       )
       ON CONFLICT (org_id, owner_org_id) WHERE owner_org_id IS NOT NULL
       DO UPDATE SET
@@ -698,6 +699,19 @@ export async function openOrgStore(
     `) as unknown as Row[];
     const id = rows[0]!.id as string;
 
+    // Seat the org's leadership on the roll at opening: owners as store
+    // owners, guides as managers. The roll stays hand-kept afterwards
+    // (ORG_STORE_BRIEF D2); people who join the org later are added from the
+    // Store team panel, not automatically.
+    await tx`
+      INSERT INTO store_member (store_id, user_id, role, added_by)
+      SELECT ${id}, uo.user_id,
+             CASE WHEN uo.role = 'owner' THEN 'owner' ELSE 'manager' END,
+             ${input.actorUserId}
+      FROM user_organizations uo
+      WHERE uo.org_id = ${input.ownerOrgId} AND uo.role IN ('owner', 'guide')
+      ON CONFLICT (store_id, user_id) DO UPDATE SET role = EXCLUDED.role
+    `;
     await tx`
       INSERT INTO store_member (store_id, user_id, role, added_by)
       VALUES (${id}, ${input.actorUserId}, 'owner', ${input.actorUserId})
@@ -875,7 +889,8 @@ export async function updateStore(
         display_name = COALESCE(NULLIF(${input.displayName ?? null}, ''), display_name),
         headline   = ${input.headline !== undefined ? input.headline : db`headline`},
         city       = ${input.city !== undefined ? input.city : db`city`},
-        avatar_url = ${input.photoUrl !== undefined ? (input.photoUrl || null) : db`avatar_url`}
+        avatar_url = ${input.photoUrl !== undefined ? (input.photoUrl || null) : db`avatar_url`},
+        bio        = ${input.profileBio !== undefined ? plainProfileBio(input.profileBio) : db`bio`}
       WHERE id = ${ownerUserId}
     `;
   }
@@ -1022,21 +1037,31 @@ export async function createArtwork(
       tx as unknown as typeof db,
       { storeId: input.storeId, artistUserId: input.artistUserId }
     );
+    // The function used to trust whatever store id it was handed; a caller
+    // that names the actor gets the check here, where the store is known.
+    if (input.actorUserId && !(await canActForStore(input.actorUserId, storeId))) {
+      throw new Error("You cannot list work in this store.");
+    }
     const currency = (input.currency ?? defaultCurrency) as Currency;
     const slug = await uniqueSlug(tx as unknown as typeof db, orgId, input.title);
+    const estimate = normaliseEstimate(input.estimateLowMinor, input.estimateHighMinor);
 
     const artRows = (await tx`
       INSERT INTO artwork (
-        org_id, store_id, artist_user_id, slug, title, description_html, year_created,
+        org_id, store_id, artist_user_id, credited_artist_user_id, slug, title,
+        description_html, year_created,
         medium, style, subject, height_cm, width_cm, depth_cm, weight_kg,
-        kind, certificate_of_authenticity, provenance_notes, status
+        kind, certificate_of_authenticity, provenance_notes, status,
+        estimate_low_minor, estimate_high_minor
       ) VALUES (
-        ${orgId}, ${storeId}, ${input.artistUserId ?? null}, ${slug}, ${input.title},
+        ${orgId}, ${storeId}, ${input.artistUserId ?? null},
+        ${input.creditedArtistUserId ?? null}, ${slug}, ${input.title},
         ${descriptionHtml}, ${input.yearCreated ?? null}, ${input.medium ?? null},
         ${input.style ?? null}, ${input.subject ?? null}, ${input.heightCm ?? null},
         ${input.widthCm ?? null}, ${input.depthCm ?? null}, ${input.weightKg ?? null},
         ${input.kind ?? "original"}, ${input.certificateOfAuthenticity ?? false},
-        ${input.provenanceNotes ?? null}, 'draft'
+        ${input.provenanceNotes ?? null}, 'draft',
+        ${estimate.low}, ${estimate.high}
       )
       RETURNING id
     `) as unknown as Row[];
@@ -1045,12 +1070,19 @@ export async function createArtwork(
     // Single default variant.
     await tx`
       INSERT INTO artwork_variant (
-        artwork_id, org_id, label, price_minor, currency, inventory_qty, position
+        artwork_id, org_id, label, price_minor, currency, inventory_qty, position,
+        beneficiary_payee_id, beneficiary_scope
       ) VALUES (
         ${artworkId}, ${orgId}, 'Default', ${Math.max(0, Math.round(input.priceMinor))},
-        ${currency}, ${input.inventoryQty ?? 1}, 0
+        ${currency}, ${input.inventoryQty ?? 1}, 0,
+        ${input.beneficiaryPayeeId ?? null},
+        ${input.beneficiaryPayeeId ? (input.beneficiaryScope ?? "all_proceeds") : null}
       )
     `;
+
+    await writeProvenance(
+      tx as unknown as typeof db, artworkId, orgId, input.provenance, input.actorUserId ?? null
+    );
 
     await writeArtworkMedia(
       tx as unknown as typeof db,
@@ -1076,8 +1108,10 @@ export async function updateArtwork(
         : null
       : undefined;
 
+  const estimate = normaliseEstimate(input.estimateLowMinor, input.estimateHighMinor);
+
   await db.begin(async (tx) => {
-    await requireArtworkAccess(tx as unknown as typeof db, artworkId, artistUserId);
+    const { orgId } = await requireArtworkAccess(tx as unknown as typeof db, artworkId, artistUserId);
 
     await tx`
       UPDATE artwork SET
@@ -1093,16 +1127,32 @@ export async function updateArtwork(
         depth_cm = ${input.depthCm !== undefined ? input.depthCm : db`depth_cm`},
         weight_kg = ${input.weightKg !== undefined ? input.weightKg : db`weight_kg`},
         certificate_of_authenticity = COALESCE(${input.certificateOfAuthenticity ?? null}, certificate_of_authenticity),
-        provenance_notes = ${input.provenanceNotes !== undefined ? input.provenanceNotes : db`provenance_notes`}
+        provenance_notes = ${input.provenanceNotes !== undefined ? input.provenanceNotes : db`provenance_notes`},
+        credited_artist_user_id = ${input.creditedArtistUserId !== undefined ? input.creditedArtistUserId : db`credited_artist_user_id`},
+        credit_status = CASE
+          WHEN ${input.creditedArtistUserId !== undefined ? 1 : 0} = 1
+           AND credited_artist_user_id IS DISTINCT FROM ${input.creditedArtistUserId ?? null}
+          THEN 'credited' ELSE credit_status END,
+        estimate_low_minor = ${input.estimateLowMinor !== undefined ? estimate.low : db`estimate_low_minor`},
+        estimate_high_minor = ${input.estimateHighMinor !== undefined ? estimate.high : db`estimate_high_minor`}
       WHERE id = ${artworkId}
     `;
 
-    if (input.priceMinor !== undefined || input.inventoryQty !== undefined || input.currency !== undefined) {
+    const touchesVariant =
+      input.priceMinor !== undefined || input.inventoryQty !== undefined ||
+      input.currency !== undefined || input.beneficiaryPayeeId !== undefined;
+    if (touchesVariant) {
       await tx`
         UPDATE artwork_variant SET
           price_minor = COALESCE(${input.priceMinor !== undefined ? Math.max(0, Math.round(input.priceMinor)) : null}, price_minor),
           inventory_qty = COALESCE(${input.inventoryQty ?? null}, inventory_qty),
-          currency = COALESCE(${input.currency ?? null}, currency)
+          currency = COALESCE(${input.currency ?? null}, currency),
+          beneficiary_payee_id = ${input.beneficiaryPayeeId !== undefined ? input.beneficiaryPayeeId : db`beneficiary_payee_id`},
+          beneficiary_scope = ${
+            input.beneficiaryPayeeId !== undefined
+              ? (input.beneficiaryPayeeId ? (input.beneficiaryScope ?? "all_proceeds") : null)
+              : db`beneficiary_scope`
+          }
         WHERE artwork_id = ${artworkId}
           AND id = (
             SELECT id FROM artwork_variant WHERE artwork_id = ${artworkId}
@@ -1110,7 +1160,62 @@ export async function updateArtwork(
           )
       `;
     }
+
+    if (input.provenance !== undefined) {
+      await tx`DELETE FROM artwork_provenance WHERE artwork_id = ${artworkId}`;
+      await writeProvenance(tx as unknown as typeof db, artworkId, orgId, input.provenance, artistUserId);
+    }
   });
+}
+
+function normaliseEstimate(
+  low?: number | null,
+  high?: number | null
+): { low: number | null; high: number | null } {
+  const l = low != null && low > 0 ? Math.round(low) : null;
+  const h = high != null && high > 0 ? Math.round(high) : null;
+  if (l != null && h != null && l > h) return { low: h, high: l };
+  return { low: l, high: h };
+}
+
+/** Internal: record provenance events ("donated by X to Y") for a piece. */
+async function writeProvenance(
+  tx: typeof db,
+  artworkId: string,
+  orgId: string,
+  events: ProvenanceInput[] | undefined,
+  createdBy: string | null
+): Promise<void> {
+  for (const ev of events ?? []) {
+    if (!ev || !ev.kind) continue;
+    const fromText = ev.fromText?.trim() || null;
+    if (!ev.fromUserId && !fromText && !ev.toOrgId) continue;
+    await tx`
+      INSERT INTO artwork_provenance (
+        artwork_id, org_id, kind, from_user_id, from_text, to_org_id, occurred_on, note, created_by
+      ) VALUES (
+        ${artworkId}, ${orgId}, ${ev.kind}, ${ev.fromUserId ?? null}, ${fromText},
+        ${ev.toOrgId ?? null}, ${ev.occurredOn || null}, ${ev.note?.trim() || null}, ${createdBy}
+      )
+    `;
+  }
+}
+
+/**
+ * The credited person refuses the credit (ORG_STORE_BRIEF D4): the name comes
+ * off the piece, the listing stays. Only the credited person may do it.
+ */
+export async function rejectArtworkCredit(
+  artworkId: string,
+  userId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const rows = (await db`
+    UPDATE artwork SET credit_status = 'rejected'
+    WHERE id = ${artworkId} AND credited_artist_user_id = ${userId}
+    RETURNING id
+  `) as unknown as Row[];
+  if (!rows[0]) return { ok: false, error: "You are not credited on this piece." };
+  return { ok: true };
 }
 
 /**
@@ -1207,3 +1312,21 @@ export async function archiveArtwork(
   `) as unknown as Row[];
   if (!rows[0]) throw new Error("Artwork not found or cannot be archived.");
 }
+
+// Series workspace: orders, fulfilment, money, artists, visitors (2026-10-28).
+export {
+  listSeriesOrders, seriesOrderStage, setSeriesOrderHandover, setSeriesOrderReceived,
+  canConfirmSeriesPayment, isNetworkAdmin, getSeriesMoney, listSeriesArtists, getSeriesVisitors,
+} from "./series-orders";
+export type { SeriesOrderRow, HandoverMethod, HandoverInfo, SeriesMoney, SeriesArtist, SeriesVisitors } from "./series-orders";
+
+// Series page social side and the desk's sources (migration 212, 2026-10-28).
+export {
+  ensureSeriesThread, syncSeriesThread, setSeriesFollow, seriesFollowState, listSeriesFollowers,
+  listSeriesDiscussion, postSeriesReply,
+  listSeriesOrgs, searchOrgs, runsOrg, listOrgOwners, addSeriesOrg, setSeriesOrgConversation, decideSeriesOrg,
+  removeSeriesOrg, listSeriesInvitationsFor,
+  listSeriesLibraries, listSeriesLibraryItems, listArtistListings, addListingToSeries, listCollectiveArtists,
+  emailSeriesOrgInvitation,
+} from "./series-social";
+export type { SeriesReply, SeriesOrg, SeriesLibrary, ArtistListing } from "./series-social";

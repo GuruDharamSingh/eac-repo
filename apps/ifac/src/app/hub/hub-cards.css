@@ -1,0 +1,164 @@
+/*
+  hub-cards.css — IFAC hub layout additions of 2026-10-10:
+    · the row of four under the main cards, on the classic hub
+      (`.ifac-four-grid`, a SurfaceCardGrid) and on Cards 2 (`.ifac-four`,
+      around cms-ui's HubCardGrid);
+    · the Cards 2 view (cards-view.tsx) and the pages its cards open
+      (components/hub/HubPageShell.tsx; /hub/profile).
+
+  Colours are the hub's light --sf-* set from `.ifac-hub-scope`
+  (globals.css), measured there: ink #171615 on the #fffdf8 card 17.78:1 and
+  on #f8f5ef paper 16.61:1; muted #4f4a44 8.62:1 on the card; oxide accent
+  6.61:1; --sf-line is decorative, the card edges that carry meaning use
+  --sf-rule / --pr-line (3.41:1).
+*/
+
+/* ── The row of four ─────────────────────────────────────────────────────
+   Four across at the hub's 1180px measure, two and two below 1040px, one
+   column below 600px. Explicit tracks rather than auto-fill, so the four
+   never resolve to three and an orphan. */
+.hub-band-grid.ifac-four-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 18px;
+}
+@media (max-width: 1039px) {
+  .hub-band-grid.ifac-four-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 599px) {
+  .hub-band-grid.ifac-four-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ifac-four > .eac-hp-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 1039px) {
+  .ifac-four > .eac-hp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 599px) {
+  .ifac-four > .eac-hp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A link in a band's sentence. The site sets `a { color: inherit;
+   text-decoration: none }` (globals.css), so prose links need their own
+   mark: ink with an underline, 16.61:1 on paper. */
+.ifac-band-link {
+  color: var(--sf-fg, #171615);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+.ifac-band-link:hover {
+  color: var(--sf-accent, #9a3f2f);
+}
+.ifac-band-link:focus-visible {
+  outline: 2px solid var(--pr-focus, #9a3f2f);
+  outline-offset: 2px;
+}
+
+/* ── Cards 2 ─────────────────────────────────────────────────────────────
+   The welcome row is cms-ui hub.css `.hub-welcome`; the grid below it is
+   hubsite.css `.eac-hs`, whose top padding would double the gap. */
+.ifac-c2 {
+  padding-top: 16px;
+}
+
+/* ── Hub pages (HubPageShell) ─────────────────────────────────────────── */
+.ifac-hp {
+  min-height: 60vh;
+}
+.ifac-hp .eac-hp-crumbs a:focus-visible {
+  outline: 2px solid var(--pr-focus, #9a3f2f);
+  outline-offset: 2px;
+}
+
+/* /hub/profile: who you are, then your page's sections. */
+.ifac-me__id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ifac-me__id h2 {
+  margin: 0;
+}
+.ifac-me__id p {
+  margin: 2px 0 0;
+}
+.ifac-me__avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--sf-line, #d8d0c2);
+}
+.ifac-me__avatar.is-empty {
+  display: grid;
+  place-items: center;
+  background: var(--sf-bg-soft, #f8f5ef);
+  color: var(--sf-fg, #171615);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.ifac-me__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--sf-line, #d8d0c2);
+  border-radius: var(--sf-radius, 2px);
+  background: var(--sf-bg, #fffdf8);
+}
+.ifac-me__facts dt {
+  color: var(--sf-muted, #4f4a44);
+}
+.ifac-me__facts dd {
+  margin: 0;
+  color: var(--sf-fg, #171615);
+  font-weight: 600;
+}
+.ifac-me__note {
+  margin: 0;
+  color: var(--sf-muted, #4f4a44);
+}
+
+/* ── The arranged cards layout (2026-10-18): three across, then four, then two ── */
+.hub-band-grid.ifac-three-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1039px) { .hub-band-grid.ifac-three-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px) { .hub-band-grid.ifac-three-grid { grid-template-columns: minmax(0, 1fr); } }
+.hub-band > .hub-band-grid + .hub-band-grid { margin-top: 18px; }
+
+/* ── Cards 2, arranged (2026-10-18): rows of 3, 4 and 2 ───────────────────── */
+.ifac-c2 .eac-hp-grid.ifac-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ifac-c2 .eac-hp-grid.ifac-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 14px; }
+.ifac-c2 .eac-hp-grid.ifac-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.ifac-three > .eac-hp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1039px) {
+  .ifac-c2 .eac-hp-grid.ifac-row-3, .ifac-c2 .eac-hp-grid.ifac-row-4, .ifac-three > .eac-hp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 599px) {
+  .ifac-c2 .eac-hp-grid.ifac-row-3, .ifac-c2 .eac-hp-grid.ifac-row-4, .ifac-c2 .eac-hp-grid.ifac-row-2, .ifac-three > .eac-hp-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Cards 2, plain (2026-10-18): no glyph, no arrow, the words in the middle ─ */
+.ifac-c2 .eac-hp-card-top { display: none; }
+.ifac-c2 .eac-hp-card { align-items: center; justify-content: center; text-align: center; min-height: 168px; }
+.ifac-c2 .eac-hp-card-title { margin-top: 0; }
+.ifac-c2 .eac-hp-card-meta { align-self: stretch; }
+/* Publish is the wide one: twice the others in row 1 (it was the lead card). */
+.ifac-c2 .eac-hp-grid.ifac-row-3 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 1039px) {
+  .ifac-c2 .eac-hp-grid.ifac-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ifac-c2 .eac-hp-grid.ifac-row-3 > li:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 599px) {
+  .ifac-c2 .eac-hp-grid.ifac-row-3 { grid-template-columns: minmax(0, 1fr); }
+}

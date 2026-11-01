@@ -16,6 +16,7 @@ import {
 } from "@elkdonis/email";
 import type { EmailSuiteData } from "@elkdonis/cms-ui/email";
 import { siteConfig } from "@/config/site";
+import { loadSeriesList } from "@/lib/series-letters-store";
 
 // ============================================================================
 // IFAC's email, server side.
@@ -72,6 +73,13 @@ export async function loadEmailSuite(): Promise<EmailSuiteData> {
     ]);
 
   const overrideFor = new Map(overrides.map((o) => [o.templateKey, o]));
+  // IFAC's series, each with the number of letters it has its own version of
+  // (scoped rows `<key>:<seriesId>[:<purpose>]`, counted from `overrides`).
+  // A failure here leaves the list out rather than the suite.
+  const series = await loadSeriesList(overrides).catch((err) => {
+    console.error("[email] series list:", err);
+    return undefined;
+  });
 
   return {
     orgId,
@@ -138,6 +146,7 @@ export async function loadEmailSuite(): Promise<EmailSuiteData> {
       };
     }),
     stats,
+    series,
     suiteHref: routes.suite,
     templateHref: routes.template,
     templateLayoutHref: routes.templateLayout,

@@ -248,7 +248,7 @@ ${cells.map(col).join('\n')}
 export type ThreadCardShape = 'gathering' | 'writing';
 
 /** Kinds that happen at a time and a place. Everything else was written. */
-const GATHERING_KINDS = new Set(['meeting', 'workshop', 'event', 'service']);
+const GATHERING_KINDS = new Set(['meeting', 'series', 'workshop', 'event', 'service']);
 
 export function shapeForKind(kind?: string | null): ThreadCardShape {
   return kind && GATHERING_KINDS.has(kind) ? 'gathering' : 'writing';

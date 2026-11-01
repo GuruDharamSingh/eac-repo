@@ -104,7 +104,7 @@ export default async function HubPage() {
       <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Hub</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Signed in as {viewer.email}
-        {viewer.role ? ` · ${viewer.role}` : ""}. Everything you can manage here lives on the wider Elkdonis network.
+        {viewer.role ? ` · ${viewer.role}` : ""}. Everything you can manage here lives on the wider Arts Collective network.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,0 +1,59 @@
+/* arts-collective.com/pureland: plain CSS (imported by page.tsx), prefixed pl-, inside SiteShell. */
+.pl-gate,
+.pl-landing,
+.pl-manage {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 0;
+  text-align: center;
+}
+.pl-manage { text-align: left; border-top: 1px solid rgba(127, 127, 127, 0.25); }
+.pl-title {
+  font-family: "Noto Serif", Georgia, serif;
+  font-size: clamp(28px, 5vw, 40px);
+  letter-spacing: 0.04em;
+  margin: 12px 0 18px;
+}
+.pl-lede { font-size: 17px; opacity: 0.85; margin: 0 0 20px; }
+.pl-hero { margin: 0; }
+.pl-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(13, 14, 36, 0.35);
+}
+.pl-button {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid #b08a3e;
+  background: #d4b061;
+  color: #1c1d4a;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pl-button:hover { background: #e2c47c; }
+.pl-button[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.pl-play { font-size: 18px; padding: 14px 34px; }
+.pl-save { margin: 28px auto 0; max-width: 520px; }
+.pl-switch { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: 16px; }
+.pl-switch input { width: 18px; height: 18px; accent-color: #b08a3e; }
+.pl-note { font-size: 13px; opacity: 0.7; margin: 8px 0; }
+.pl-error { font-size: 14px; color: #b3261e; margin: 8px 0; }
+.pl-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.pl-add input { flex: 1 1 220px; }
+.pl-add input,
+.pl-add select,
+.pl-table select { padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(127, 127, 127, 0.4); background: transparent; color: inherit; font: inherit; }
+.pl-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.pl-table th,
+.pl-table td { padding: 10px 6px; border-bottom: 1px solid rgba(127, 127, 127, 0.2); text-align: left; vertical-align: top; }
+.pl-link { background: none; border: 0; color: #b3261e; cursor: pointer; font: inherit; padding: 0; }
+@media (max-width: 600px) {
+  .pl-gate, .pl-landing, .pl-manage { padding: 20px 0; }
+  .pl-table th:nth-child(2), .pl-table td:nth-child(2) { width: 46%; }
+}

@@ -47,6 +47,7 @@ export function KindTilesFace({
   kind = "compose",
   tiles,
   cardSurface,
+  cardHref,
   ariaLabel,
 }: {
   title: string;
@@ -56,6 +57,12 @@ export function KindTilesFace({
   tiles: KindTile[];
   /** What clicking the card itself opens. */
   cardSurface?: SurfaceDescriptor;
+  /**
+   * A page the card itself opens, when there is no `cardSurface`. Without
+   * either, only the tiles are clickable (IFAC, 2026-10-10: the card body
+   * did nothing).
+   */
+  cardHref?: string;
   ariaLabel?: string;
 }) {
   const surfaces = useSurface();
@@ -68,6 +75,7 @@ export function KindTilesFace({
       title={title}
       blurb={blurb}
       ariaLabel={ariaLabel ?? title}
+      href={cardSurface ? undefined : cardHref}
       onClick={
         cardSurface ? (origin) => surfaces.open(cardSurface, origin) : undefined
       }

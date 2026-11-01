@@ -277,6 +277,25 @@ A recurring gathering is one `threads` row; its occurrences are computed by
 times shift an hour across DST; changing that changes the keys and needs a data
 migration.
 
+### Meeting series (201)
+
+A series is a recurring meeting thread presented week by week, each week with
+its own host (`meeting_hosts`), title, write-up, cover and materials
+(`meeting_occurrence_notes.title/summary/cover_image_url/materials`, added by
+201) and its own RSVP list. `thread_rsvps` is keyed by thread, so the first
+RSVP to a week creates a `series_session` thread (`OFF_FEED_KINDS`; not in
+`SCHEDULED_KINDS`, so the calendar shows the series once) linked from
+`meeting_occurrence_notes.topic_thread_id` and stamped
+`metadata.seriesSession = {seriesId, occurrenceAt, number}`; guests land in
+`guest_submissions` against the same topic. Series copy sits in
+`threads.metadata.series` (`eyebrow`, `byline`, `lede`, `alsoZones`); the zone
+in `metadata.timeZone`. Service: `packages/services/src/meeting-series.ts`
+(`getMeetingSeries`, `saveSeriesSession`, `ensureSeriesSessionTopic`,
+`rsvpSeriesSession`, `getPresentedSeriesId`/`setPresentedSeries` on
+`site_config` key `presented_series`). UI: cms-ui `hub/SeriesFace` and
+`hub/SeriesPlannerSurface` (custom surface key `meeting-series`), host route
+`/api/hub/series`. First use: IFAC, 2026-10-08.
+
 ### Member writing
 
 A person's blog is `kind = 'writing'`, `author_id` = the person, `section` NULL,
@@ -391,6 +410,8 @@ rows written before the write-path fix are served as stored. See Open items.
 - Sanitise rich text before storing or rendering it: the shared renderers do not.
 - Never reuse a migration number or edit an applied migration: the runner refuses both.
 - Use a sentinel user for anonymous authorship: `users.auth_user_id` must equal `id`.
+- Record a person's old slug when it changes: call `noteUserSlugChange` (`packages/services/src/profiles.ts`) from any new slug writer, because `user_slug_redirects` (migration 204, applied 2026-10-11) is what turns an old profile address into a 308; `updateProfile`, `saveProfileDetails`, `mergeProfile` and IFAC directory-admin already do. `ensureUniqueUserSlug` treats another user's old slug as taken. (claude, 2026-10-11)
+- Carry `org_profiles` in a merge with `ON CONFLICT DO UPDATE`, not `DO NOTHING`: every sign-up already has a blank row for its org, so `DO NOTHING` dropped the placeholder's tags, role and order (Kevin Meadows, 2026-10-10). (claude, 2026-10-11)
 
 ## Open items
 

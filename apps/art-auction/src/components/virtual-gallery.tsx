@@ -2,7 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { GalleryExperience, type GalleryPiece } from "@elkdonis/three/gallery";
+import {
+  GalleryExperience,
+  type GalleryPiece,
+  type ParlourAssets,
+} from "@elkdonis/three/gallery";
+import { HallwayExperience, autoHang, type HallwayPiece } from "@elkdonis/three/hallway";
+import { ART_FRAME_STYLES } from "@/lib/frame-styles";
+import { venueFor } from "@/lib/venues";
 import { PriceBlock, BuyNowButton } from "@elkdonis/commerce/components";
 import { formatMoney } from "@elkdonis/commerce/money";
 import type { Artwork } from "@elkdonis/commerce/types";
@@ -54,11 +61,45 @@ function formatDimensions(cms: number[]): string {
   return `${cm} cm · ${imperial}`;
 }
 
+/**
+ * Furniture for the "see it in a room" parlour, served from this app's public
+ * folder. Sofa, armchair and vase are CC0 models from Poly Haven; the coffee
+ * table is the collective's own. See public/room/CREDITS.txt.
+ */
+const PARLOUR_ASSETS: ParlourAssets = {
+  sofaUrl: "/room/sofa_01.glb",
+  armchairUrl: "/room/armchair_01.glb",
+  coffeeTableUrl: "/room/coffee_table.obj",
+  vaseUrl: "/room/antique_ceramic_vase_01.glb",
+};
+
 function galleryImage(url: string): string {
   return url.includes("?") ? `${url}&w=1024` : `${url}?w=1024`;
 }
 
-export function VirtualGallery({ artworks }: { artworks: Artwork[] }) {
+/**
+ * The spaces the gallery can be seen in. The hall and pavilion hang every
+ * piece and stand sculpture on plinths; the loft and the morning room are the
+ * installation spaces, hung automatically here with the wall work only.
+ */
+const SPACES = [
+  { id: "hall", name: "The hall", kind: "gallery" },
+  { id: "pavilion", name: "The pavilion", kind: "gallery" },
+  { id: "loft", name: "The loft", kind: "venue" },
+  { id: "morning-room", name: "The morning room", kind: "venue" },
+] as const;
+type SpaceId = (typeof SPACES)[number]["id"];
+
+export function VirtualGallery({
+  artworks,
+  initialPieceId = null,
+}: {
+  artworks: Artwork[];
+  /** Open walked up to this piece. */
+  initialPieceId?: string | null;
+}) {
+  const [spaceId, setSpaceId] = React.useState<SpaceId>("hall");
+  const space = SPACES.find((s) => s.id === spaceId)!;
   const byId = React.useMemo(
     () => new Map(artworks.map((a) => [a.id, a])),
     [artworks]
@@ -90,14 +131,84 @@ export function VirtualGallery({ artworks }: { artworks: Artwork[] }) {
     [byId]
   );
 
+  const venue = React.useMemo(() => (space.kind === "venue" ? venueFor(space.id) : null), [space]);
+  const wallPieces = React.useMemo<HallwayPiece[]>(
+    () =>
+      pieces
+        .filter((p) => p.display !== "plinth")
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          imageUrl: p.imageUrl,
+          artistName: p.artistName,
+          heightCm: p.heightCm,
+          widthCm: p.widthCm,
+        })),
+    [pieces]
+  );
+  // The piece asked for goes first, so a full room never leaves it out.
+  const hung = React.useMemo(() => {
+    if (!venue) return [];
+    const first = wallPieces.filter((p) => p.id === initialPieceId);
+    const rest = wallPieces.filter((p) => p.id !== initialPieceId);
+    return autoHang(venue, [...first, ...rest]);
+  }, [venue, wallPieces, initialPieceId]);
+
   return (
-    <GalleryExperience
-      pieces={pieces}
-      height="min(78vh, 760px)"
-      allowRoomChange
-      renderDetail={renderDetail}
-      fallback={<GalleryFallback />}
-    />
+    <div>
+      <div
+        role="group"
+        aria-label="Space"
+        className="flex flex-wrap gap-1 border-b border-border bg-background/80 p-2"
+      >
+        {SPACES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            aria-pressed={s.id === spaceId}
+            onClick={() => setSpaceId(s.id)}
+            className={`h-8 rounded-full px-3 text-sm font-medium ${
+              s.id === spaceId ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {s.name}
+          </button>
+        ))}
+        {venue && (
+          <span className="ml-auto self-center px-2 text-xs text-muted-foreground">
+            {hung.length} of {wallPieces.length} works hung
+          </span>
+        )}
+      </div>
+      {venue ? (
+        <HallwayExperience
+          key={venue.id}
+          venue={venue}
+          pieces={wallPieces}
+          placements={hung}
+          frames={ART_FRAME_STYLES}
+          initialView="wall"
+          focusPieceId={initialPieceId}
+          height="min(78vh, 760px)"
+          renderDetail={(piece) => {
+            const artwork = byId.get(piece.id);
+            return artwork ? <GalleryDetail artwork={artwork} /> : null;
+          }}
+          fallback={<GalleryFallback />}
+        />
+      ) : (
+        <GalleryExperience
+          key={space.id}
+          pieces={pieces}
+          design={space.id as "hall" | "pavilion"}
+          height="min(78vh, 760px)"
+          parlour={PARLOUR_ASSETS}
+          renderDetail={renderDetail}
+          initialPieceId={initialPieceId}
+          fallback={<GalleryFallback />}
+        />
+      )}
+    </div>
   );
 }
 

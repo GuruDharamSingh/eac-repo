@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Week page in-place editor (/series/[slug]/[n]), 2026-10-10.
+
+   Layout: the session editor of mockup variant A
+   (docs/open/series-mockups-2026-10-10/02-series-timeline.html, "Session 2"):
+   a head (session, date, Previous/Next), two shaded wells (host, co-host,
+   title, write-up | cover image, materials), a foot with Save on the right.
+   The wells sit side by side when the editor is at least 760px wide and
+   stack below that (container query, so it holds wherever it is placed).
+
+   Controls are the /hub/compose ones: cms-ui fields.css (.eac-field,
+   .eac-input, .eac-field-row), compose.css (.eac-resource*, the problem
+   line) and files-card.css (.eac-picker, the MediaPicker). All three are
+   loaded globally by globals.css. This file sets the editor's own frame
+   (head, wells, foot), re-tokenises those controls for the dark public page
+   (.ifs, site.css), and sizes type to the page's 18px scale.
+
+   Tokens go on the wrapper as output tokens (--sf-*, read by compose.css),
+   as the field hooks (--eac-field-*, read first by fields.css; --fld-* exist
+   only inside an .eac-field, and every input here sits in one), and on
+   .eac-picker itself, which defines its --eac-picker-* from the light :root.
+
+   Contrast, measured (WCAG relative luminance) on the article ground
+   #09090b / the wells #121214 / the field and row ground #060607:
+     text (labels, values, input text) #ece7e1  16.19 / 15.22 / 16.48
+     muted (hints, date, tabs)        #b3ada3    8.93 /  8.40 /  9.09
+     placeholder #b3ada3 at the 0.8 opacity fields.css applies
+       (#908c84 on #060607)                                       6.05
+     kind label and Remove #e3c572 on a row #060607              12.05
+     danger #f0a08a                    9.57 on #09090b, 9.00 on #121214
+     input, row and drop-zone border #6e6b77
+                                       3.82 / 3.59 / 3.89  (3:1 applies)
+     focus ring, active tab, drop hover gold #c9a24a
+                                       8.29 / 7.80 / 8.44
+     Save: #0b0b0d on gold #c9a24a 8.19
+   Decorative hairlines (#3a3a42: head and foot rules) carry no meaning and
+   are not held to 3:1.
+   ========================================================================== */
+
+.ifs .ifs-week__compose {
+  /* compose.css chrome (--cmp-* derive from these) */
+  --sf-fg: var(--ifs-ink, #ece7e1);
+  --sf-muted: var(--ifs-muted, #b3ada3);
+  --sf-faint: var(--ifs-faint, #857f76);
+  --sf-bg: #060607;
+  --sf-bg-soft: #121214;
+  --sf-line: var(--ifs-line-strong, #3a3a42);
+  --sf-rule: #6e6b77;
+  --sf-accent: var(--ifs-gold, #c9a24a);
+  --sf-kind: var(--ifs-gold, #c9a24a);
+  --sf-on-kind: var(--ifs-gold-on, #0b0b0d);
+  --sf-danger: #f0a08a;
+  --eac-font-record: var(--ifs-sans);
+
+  /* fields.css hooks (read before --sf-*) */
+  --eac-field-fg: var(--ifs-ink, #ece7e1);
+  --eac-field-muted: var(--ifs-muted, #b3ada3);
+  --eac-field-line: #6e6b77;
+  --eac-field-bg: #060607;
+  --eac-field-bg-soft: #121214;
+  --eac-field-accent: var(--ifs-gold, #c9a24a);
+  --eac-field-on-accent: var(--ifs-gold-on, #0b0b0d);
+  --eac-field-danger: #f0a08a;
+  --eac-field-radius: 4px;
+
+  /* .eac-resource (compose.css) reads these two */
+  --eac-line: #6e6b77;
+  --eac-well: #060607;
+
+  container-type: inline-size;
+  display: grid;
+  color: var(--ifs-ink, #ece7e1);
+}
+
+/* While editing, the article takes the grid's full width (the mockup's
+   editor spans the page) and the sidebar blocks sit in a row beneath it.
+   The date row above the editor is dropped: the editor's head carries it. */
+.ifs .ifs-week__grid:has(.ifs-week__compose) { grid-template-columns: minmax(0, 1fr); }
+.ifs .ifs-week__grid:has(.ifs-week__compose) > .ifs-week__side { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; }
+.ifs .ifs-week__main:has(.ifs-week__compose) > .ifs-week__when { display: none; }
+
+/* ── head ── */
+.ifs .ifs-week__compose-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 0 0 14px; border-bottom: 1px solid var(--ifs-line-strong, #3a3a42); }
+.ifs .ifs-week__compose-head h2 { font-family: var(--ifs-serif); font-size: 1.8rem; font-weight: 600; line-height: 1.1; }
+.ifs .ifs-week__compose-head p { color: var(--ifs-muted, #b3ada3); font-size: 1rem; }
+.ifs .ifs-week__compose-step { margin-left: auto; display: flex; gap: 8px; }
+
+/* ── body: two wells ── */
+.ifs .ifs-week__compose-body { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; padding: 18px 0; align-items: start; }
+@container (max-width: 760px) {
+  .ifs .ifs-week__compose-body { grid-template-columns: minmax(0, 1fr); }
+  .ifs .ifs-week__compose-step { margin-left: 0; flex-basis: 100%; }
+}
+/* minmax(0, 1fr) tracks: an auto track grows to the min-content of a
+   nowrap material name and pushes the rows past the well's edge. */
+.ifs .ifs-week__compose-well,
+.ifs .ifs-week__compose-well .eac-field,
+.ifs .ifs-week__compose .eac-resources-list,
+.ifs .ifs-week__compose .eac-resource { grid-template-columns: minmax(0, 1fr); }
+.ifs .ifs-week__compose-well { display: grid; gap: 16px; align-content: start; padding: 16px; border-radius: 4px; background: #121214; min-width: 0; }
+
+/* ── type at the page's scale (the site sets 18px body for older members;
+      compose's 0.78-0.86rem labels read small beside it) ── */
+.ifs .ifs-week__compose .eac-field-label,
+.ifs .ifs-week__compose .eac-picker-label { font-size: 1rem; font-weight: 600; }
+.ifs .ifs-week__compose .eac-input { font-size: 1.05rem; padding: 11px 12px; min-height: 48px; }
+.ifs .ifs-week__compose .eac-field-hint,
+.ifs .ifs-week__compose .eac-picker-hint { font-size: 0.92rem; }
+.ifs .ifs-week__compose [data-field="week-summary"] .eac-input--textarea { min-height: 11em; line-height: 1.55; }
+.ifs .ifs-week__compose-value { min-height: 48px; display: flex; align-items: center; font-size: 1.05rem; }
+.ifs .ifs-week__compose-roles { display: grid; gap: 4px; }
+.ifs .ifs-week__compose-roles .ifs-week__compose-value { min-height: 0; padding: 6px 0 2px; }
+
+/* ── the MediaPicker, re-tokenised (its tokens are set on .eac-picker) ── */
+.ifs .ifs-week__compose .eac-picker {
+  --eac-picker-fg: var(--ifs-ink, #ece7e1);
+  --eac-picker-muted: var(--ifs-muted, #b3ada3);
+  --eac-picker-line: #6e6b77;
+  --eac-picker-accent: var(--ifs-gold, #c9a24a);
+}
+.ifs .ifs-week__compose .eac-picker-drop { background: #060607; border-width: 1.5px; border-radius: 4px; padding: 20px 16px; font-size: 1rem; color: var(--ifs-ink, #ece7e1); }
+.ifs .ifs-week__compose .eac-picker-drop:hover { color: var(--ifs-gold-text, #e3c572); }
+.ifs .ifs-week__compose .eac-picker-tabs button { font-size: 0.9rem; padding: 4px 12px; }
+.ifs .ifs-week__compose .eac-picker-clear { font-size: 0.92rem; }
+.ifs .ifs-week__compose .eac-picker-clear:hover,
+.ifs .ifs-week__compose .eac-picker-error { color: #f0a08a; }
+.ifs .ifs-week__compose .eac-picker-error { font-size: 0.92rem; }
+.ifs .ifs-week__compose .eac-picker-current img { width: 120px; height: 80px; }
+.ifs .ifs-week__compose .eac-browse-bar input[type="search"],
+.ifs .ifs-week__compose .eac-browse-folders button { background: #060607; }
+.ifs .ifs-week__compose .eac-browse-check { color: var(--ifs-gold-on, #0b0b0d); }
+
+/* ── materials: kind, name, Remove; the add-link row; Upload a file ── */
+.ifs .ifs-week__compose .eac-resources-list { gap: 6px; }
+.ifs .ifs-week__compose .eac-resource { padding: 8px 10px; border-radius: 4px; }
+.ifs .ifs-week__compose-kind { flex: none; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--ifs-gold-text, #e3c572); }
+.ifs .ifs-week__compose-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.98rem; }
+.ifs .ifs-week__compose-remove { flex: none; margin-left: auto; padding: 4px 0; border: 0; background: none; color: var(--ifs-gold-text, #e3c572); font-weight: 600; font-size: 0.92rem; text-decoration: underline; text-underline-offset: 3px; }
+.ifs .ifs-week__compose-remove:focus-visible,
+.ifs .ifs-week__compose-cancel:focus-visible { outline: 2px solid var(--ifs-gold, #c9a24a); outline-offset: 2px; }
+.ifs .ifs-week__compose-addlink { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.ifs .ifs-week__compose-upload { width: 100%; }
+
+/* ── foot ── */
+.ifs .ifs-week__compose .eac-compose-problem { margin: 0 0 12px; font-size: 0.95rem; }
+.ifs .ifs-week__compose-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: 14px; border-top: 1px solid var(--ifs-line-strong, #3a3a42); }
+.ifs .ifs-week__compose-foot .ifs-btn--primary { margin-left: auto; }
+.ifs .ifs-week__compose-cancel { padding: 4px 0; border: 0; background: none; color: var(--ifs-muted, #b3ada3); font-size: 0.95rem; text-decoration: underline; text-underline-offset: 3px; }
+.ifs .ifs-week__compose-cancel:hover { color: var(--ifs-ink, #ece7e1); }
+
+/* Cover framing overlay and the rich write-up (2026-10-13): white on the
+   framer's black gradient; the editor reads the --sf-* tokens set above. */
+.ifs .ifs-week__compose .ifs-week__compose-overlay { display: grid; gap: 2px; font-size: 0.9rem; line-height: 1.3; }
+.ifs .ifs-week__compose .ifs-week__compose-overlay b { font-family: var(--ifs-serif); font-size: 1.25rem; font-weight: 500; }
+.ifs .ifs-week__compose .eac-coverframe { margin: 6px 0 10px; }
+.ifs .ifs-week__compose .eac-ed { background: #060607; }
+/* The cover sits in the narrower right-hand well: preview above the tools. */
+.ifs .ifs-week__compose .eac-coverframe { grid-template-columns: minmax(0, 1fr); }

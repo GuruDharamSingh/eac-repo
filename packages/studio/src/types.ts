@@ -24,7 +24,8 @@ export type StudioKindId =
   | 'workshop'
   | 'service'
   | 'question'
-  | 'video';
+  | 'video'
+  | 'post';
 
 export interface StudioKind {
   id: StudioKindId;
@@ -75,6 +76,27 @@ export interface StudioPiece extends StudioPieceSummary {
   /** Published as: a pen name or an org identity; null = the author's own name. */
   byline: { userId: string; name: string } | null;
   seo: { title: string | null; description: string | null; imageUrl: string | null; noindex: boolean } | null;
+  /** Where this piece has been posted outside the network (Facebook, Instagram, Threads). */
+  shares?: StudioShare[];
+}
+
+/** One outside place a piece can be posted to: a Page, its Instagram account, or a Threads profile. */
+export interface StudioShareTarget {
+  /** `<connectionId>:<kind>[:<pageId>]`, opaque to the shell. */
+  id: string;
+  kind: 'page' | 'instagram' | 'threads';
+  /** "Elkdonis Arts (Facebook Page)", "@elkdonis (Instagram)". */
+  label: string;
+  /** Instagram needs a cover image; a target that cannot be used says why. */
+  disabledReason?: string | null;
+}
+
+export interface StudioShare {
+  targetId: string;
+  kind: StudioShareTarget['kind'];
+  label: string;
+  url: string | null;
+  at: string;
 }
 
 export interface StudioIdentity {
@@ -135,6 +157,10 @@ export interface StudioActions {
   listSeries(): Promise<Array<{ name: string; count: number }>>;
   /** The canvas's card picker: the writer's own things of one kind, by title. */
   searchThreads(kind: string, q: string): Promise<Array<Omit<ThreadCardAttrs, 'view'>>>;
+  /** Outside places the person has connected (profile → Connections). Hosts without sharing omit both. */
+  listShareTargets?(): Promise<StudioShareTarget[]>;
+  /** Post a published piece to one target now. */
+  sharePiece?(id: string, targetId: string): Promise<StudioResult<StudioShare>>;
 }
 
 export interface StudioUpload {
@@ -160,4 +186,6 @@ export interface StudioLinks {
    * offered when the acting org is not the directory.
    */
   library?: { mine?: string; org?: string };
+  /** Where to connect Facebook, Instagram or Threads (the profile's Connections tab). */
+  connectionsHref?: string;
 }

@@ -104,6 +104,20 @@ direct `saveOrgEmailIdentity` call after the domain's DNS is done.
      footer stay the network's.
   A per-thread key `<key>:<threadId>` (`threadTemplateKey`, `template-store.ts:58`)
   beats the org-wide key.
+- Override chain (claude, 2026-10-10): a sender may pass `templateScope: string[]`
+  (`OverridableProps`, `index.ts:289`; `OrgSendContext`, `index.ts:436`).
+  `resolveOrgTemplate(orgId, key, scopes)` (`template-store.ts:242`) tries
+  `templateCandidates` (`template-store.ts:223`) =
+  `scopes.map(s => key + ':' + s).concat(key)` in that order (`array_position`).
+  Absent `templateScope` means `[threadId]`, the per-thread behaviour above;
+  `threadId` still goes to the ledger. (claude, 2026-10-10)
+- Precedence, `applyStoredWords` (`index.ts:374`) (claude, 2026-10-10): from a
+  scoped row (its key differs from the plain key) the stored `bodyText`/`bodyHtml`
+  pair and stored `copy` slots beat the caller's; from the org-wide row the
+  caller's words win, as before. `summary`, `meetingUrl`, `comingUrl` and other
+  props stay the caller's; `links`/`media` are caller-first in both cases.
+  `renderWithOrgOverrides` (`index.ts:417`) renders a letter through this path
+  without sending (reads only).
 - The org name leads the masthead only when `fromIsOrgDomain` is true
   (`index.ts:314`). Banner, frame and body face apply regardless.
 - `<OrgWords>` (`components/org-words.tsx`) renders an org's rich text through
@@ -247,7 +261,7 @@ identity to the stored message's sender.
 
 | Trigger | Where | Template |
 |---|---|---|
-| RSVP confirmation to guest | `api/rsvp` and `api/threads/[id]/rsvp` in amrit-canada, sunjay, innergathering; `api/rsvp` in ifac | rsvp-guest |
+| RSVP confirmation to guest | `api/rsvp` and `api/threads/[id]/rsvp` in amrit-canada, sunjay, innergathering; ifac `api/series/rsvp` and `api/series/coming` (signed-in only; ifac `api/rsvp` removed 2026-10-10) | rsvp-guest |
 | New RSVP to owner/author | same routes | rsvp-owner |
 | Minimum attendees reached, to author | `api/threads/[id]/rsvp` in amrit-canada and sunjay (`min_attendees`) | rsvp-owner with a message |
 | Attendee reminder before a gathering | `lib/reminders.ts` `runReminderTick`, 5-minute interval in `instrumentation.ts`, amrit-canada and sunjay; deduped by `thread_reminder_sends` (069, `kind` added in 136) | reminder |
@@ -256,6 +270,41 @@ identity to the stored message's sender.
 | Welcome on signup | `packages/auth-server/src/api-routes.ts:334`, `:581` | welcome |
 | Contact form | ifac `api/signup`, innergathering `api/contact`, `packages/silex-render/src/contact.ts` | contact-owner |
 | Orders | `packages/commerce/src/server/orders.ts`, `service-orders.ts` | order-invoice, order-notification |
+
+### IFAC series letters (claude, 2026-10-10)
+
+All in `apps/ifac/src/lib/reminders.ts` (`runReminderTick`, 5-minute interval
+from `instrumentation.ts`) and `apps/ifac/src/lib/series-mail.ts`; ticks claim
+`thread_reminder_sends` before sending.
+
+| Letter | Key / purpose | Ledger kind | `templateScope` |
+|---|---|---|---|
+| Confirmation (`series-mail.ts` `mailAnswer`) | `rsvp-guest` | — | `[seriesId]` |
+| Host notice | `rsvp-owner` | — | none (`[topicId]`) |
+| Attendee, day before / soon | `reminder` / `attendee` | `attendees-day` / `attendees` on the week topic | `[seriesId:attendee, seriesId]` |
+| Subscriber (`reminderDays` ahead, default 2) | `reminder` / `subscriber` | `subscribers` on the series | `[seriesId:subscriber, seriesId]` |
+| Host and co-host, within the hour | `reminder` / `host` | `listHostRemindersDue` / `claimHostReminder` | `[seriesId:host, seriesId]` when a series |
+| Host assigned | `reminder` / `host-assigned` | — | `[seriesId:host-assigned, seriesId]` |
+
+The when line, the week's summary line, the rota note and the meeting ID /
+passcode go in `summary` (the event card, one line joined with ` · `), not
+`bodyText`, so a series' stored words keep them. The subscriber letter passes
+`comingUrl` (signed per account and week), rendered as "I'm coming" under the
+card (`templates/reminder.tsx:275`) and declared as the `{comingUrl}` merge
+field, which falls back to `rsvpUrl` when a letter has none
+(`merge-fields.ts:189`). Samples and seeds take `purpose`
+(`samples.ts:142`, `seed.ts:148`). ~~No route or UI writes a scoped key yet~~
+(correction 2026-10-10, claude): `/manage/email/series/[id]` and
+`/hub/email/<key>?series=&purpose=` edit a series' letters; the routes
+`api/hub/email/[key]` (PUT/DELETE), `preview/[key]` and `[key]/test` take
+`?series=<id>&purpose=<p>`, check the series is an IFAC series
+(`lib/series-letters-store.ts` `findIfacSeries`, same rule as `reminders.ts`
+`seriesIds`) and the purpose (`reminder`: attendee, subscriber, host,
+host-assigned; `rsvp-guest`: none). The letter list is `SERIES_LETTERS`
+(`lib/series-letters.ts`). The send path resolves one row, not a merge, so the
+first save to a scoped key copies the inherited row's words (body, copy slots,
+links, media; not the layout) into it (`saveSeriesLetter`). "Back to the IFAC
+letter" deletes only the scoped row. Not yet deployed (ifac not rebuilt).
 
 Not implemented: automatic RSVP-cancellation mail, RSVP-deadline reminders,
 organiser digests (`docs/archive/RSVP_EMAIL_TRIGGERS.md`); `sendProvisioningEmail`
@@ -340,8 +389,8 @@ For a new sending domain:
 ## Open items
 
 - Test-send routes omit `bodyFont` and `chrome` in the `renderSample` branch:
-  `apps/{ifac,innergathering}/src/app/api/hub/email/[key]/test/route.ts:64`.
-  They also pass `orgAccent: identity.accentColor` where previews use
+  `apps/innergathering/src/app/api/hub/email/[key]/test/route.ts:64`
+  (ifac fixed 2026-10-10, claude). Both also pass `orgAccent: identity.accentColor` where previews use
   `palette.accent ?? accentColor`.
 - Delivery tracking: set up the signed Event Webhook to
   `https://arts-collective.com/api/email/events` and put its key in
@@ -355,7 +404,12 @@ For a new sending domain:
 - Per-thread email (trigger, reminder settings) is still app-local in
   amrit-canada and sunjay; not a tab in the shared suite.
 - Reminder ticks run per container on an in-process interval; there is no shared
-  scheduler, and ifac has no reminders.
+  scheduler. ~~ifac has no reminders~~ Correction (claude, 2026-10-10): ifac
+  sends attendee, subscriber and host reminders; see "IFAC series letters".
+- `packages/email/scripts/test-layers.mts` and `test-suite.mts` write to the
+  production database; since 2026-10-10 they refuse to run without
+  `--org probe-<name>` (`scripts/probe-org.mts`). Before that they wrote to org
+  `ifac`. (claude, 2026-10-10)
 - DNS/identity gaps: DMARC missing on hiddenenneagram.com and danamccool.com,
   no domain has a `rua`; danamccool.com is not in `EMAIL_AUTHENTICATED_DOMAINS`
   and has no MX; danamccool and hidden-enneagram have no stored `fromEmail`.

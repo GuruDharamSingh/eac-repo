@@ -1,0 +1,22 @@
+{
+  "id": "cl-036",
+  "status": "draft",
+  "source": { "paper": "Sakal (Pune city edition)", "place": "Pune, India", "date": "2023-08-26", "era": "2020s", "language": ["mr", "en"] },
+  "summary": "Marathi small-ads half page under news: a 'Sakal TODAY' strip with a gradient logo, Marathi category labels in pale blue outlined tags, ten narrow columns of Devanagari liners, and small boxed displays with yellow and red fills. A booking-service banner covers part of the image.",
+  "family": "indian-color-display",
+  "frame": { "columns": 10, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "masthead": "Strip with the Marathi 'small ads' label, the paper's logo and a pink-to-purple gradient TODAY, plus booking phone numbers." },
+  "headers": [
+    { "id": "blue-tag", "kind": "tint-bar", "example": "जागा (बांधलेली) विकत घेणे (Property wanted)", "fg": "#111111", "bg": "#d6ecfa", "align": "center", "notes": "Pale blue fill with a thin dark outline; two-line Marathi labels. Lighter than Lokmat's or Eenadu's heads." }
+  ],
+  "units": [
+    { "id": "devanagari-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "notes": "Bold first words, Devanagari numerals for phones in some ads, Latin in others." },
+    { "id": "fill-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#fff2a8", "example": "NPAV PC, Laptop Tablet, Mobile सुरक्षा", "notes": "Yellow/red/green fills, English and Marathi mixed, rotated text in one box." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold", "align": "justify", "border": "thin", "notes": "Thin-ruled box around a single liner (paid upgrade)." }
+  ],
+  "type": [
+    { "role": "body", "classification": "indic", "look": "Devanagari newspaper text face", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Noto Serif Devanagari" },
+    { "role": "header", "classification": "indic", "look": "Bold Devanagari labels", "weight": "bold", "width": "normal", "case": "sentence", "webFont": "Noto Sans Devanagari" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#d6ecfa", "use": "category tags" }, { "hex": "#fff2a8", "use": "display fills" }, { "hex": "#e0207a", "use": "TODAY gradient" } ] },
+  "notes": ["Ads2Publish overlay hides a band of the page.", "Calmest of the Indian colour pages; close to Lokmat Goa (cl-021) in structure."]
+}

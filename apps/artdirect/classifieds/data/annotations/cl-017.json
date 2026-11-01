@@ -1,0 +1,24 @@
+{
+  "id": "cl-017",
+  "status": "draft",
+  "source": { "paper": "Hastings Tribune", "place": "Hastings, Nebraska", "date": "2019-10 (job deadline October 17, 2019)", "era": "2010s", "language": ["en"] },
+  "summary": "Daily-paper classifieds page: a huge bold Times 'Classified Ads' over a faded logo watermark, a run-day/deadline table, then seven columns opened by two-tier black header tabs (small kicker over a big condensed word), sans liners, and boxed employer displays with logos.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 7, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "mixed", "masthead": "Bold Times-style 'Classified Ads' over a pale grey watermark logo; phone/URL line and a three-column RUN DAY / DEADLINE table with dot leaders." },
+  "headers": [
+    { "id": "two-tier-tab", "kind": "reverse-bar", "example": "CARD OF / THANKS", "fg": "#ffffff", "bg": "#111111", "align": "left", "box": [0.0, 0.255, 0.135, 0.04], "notes": "Black tab: small caps kicker on top, the main word in large condensed bold caps below. Single-word heads (GENERAL) use only the big line." }
+  ],
+  "units": [
+    { "id": "sans-liner", "kind": "liner-bold-lead", "frequency": "common", "lead": "bold-caps", "align": "justify", "border": "none", "example": "LOCAL TRUCK driver needed for grain and wet distillers hauling...", "notes": "Helvetica body forced-justified so letter spacing stretches visibly; bold caps lead." },
+    { "id": "logo-display", "kind": "display", "frequency": "dominant", "lead": "bold", "align": "center", "border": "thin", "example": "HASTINGS Nebraska / Museum Collections Intern", "notes": "Employer logo on top, bold title, then justified body and centred contact block." },
+    { "id": "house-filler", "kind": "house-ad", "frequency": "common", "lead": "bold", "align": "center", "border": "thin", "example": "LOOK AWAY! ... Advertise in the Tribune", "notes": "Paper's own filler ads plug column ends." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "news-serif", "look": "Times Bold, very large, mixed case", "weight": "bold", "width": "normal", "case": "title", "webFont": "Tinos" },
+    { "role": "header", "classification": "condensed-grotesque", "look": "Helvetica Condensed Bold caps, white on black", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "grotesque", "look": "Helvetica, justified with letter-spacing", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#d9d9d9", "use": "masthead watermark" } ] },
+  "ornaments": ["watermark logo behind masthead", "dot-leader deadline table", "car-dealer logo stack"],
+  "notes": ["The same page is stored again as cl-019 (different file, same content).", "The two-tier header tab is distinctive: kicker plus big word."]
+}

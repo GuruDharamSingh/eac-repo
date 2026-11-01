@@ -358,7 +358,9 @@ export async function startPayoutsAction(
     userId: viewer.userId,
     email: viewer.email,
     origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3015",
-    returnPath: "/account",
+    // Back to Center, where Payouts is the first tab (2026-10-18); the
+    // center page re-reads Stripe when it sees ?payouts=done.
+    returnPath: "/center?payouts=done",
     country,
   });
 }

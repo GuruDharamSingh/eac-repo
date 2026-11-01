@@ -66,13 +66,13 @@ export function LoginClient() {
   return (
     <form style={card} onSubmit={onSubmit}>
       <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "#8c3b3b", margin: 0 }}>
-        ArtDirect · an Elkdonis commons
+        ArtDirect · an Arts Collective commons
       </p>
       <h1 style={{ fontSize: "1.6rem", margin: "0.4rem 0 0.25rem", letterSpacing: 1 }}>
         {mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
       </h1>
       <p style={{ fontSize: 13, color: "#4a4a40", lineHeight: 1.5, marginTop: 0 }}>
-        One account works across the whole Elkdonis network — directory, collective, and member sites.
+        One account works across the whole Arts Collective network — directory, collective, and member sites.
       </p>
 
       <label style={label} htmlFor="email">Email</label>

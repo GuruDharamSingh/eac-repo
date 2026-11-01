@@ -1,0 +1,8 @@
+Furniture for the gallery's "see it in a room" parlour.
+
+sofa_01.glb, armchair_01.glb, antique_ceramic_vase_01.glb
+  Poly Haven (polyhaven.com): Sofa 01, Arm Chair 01, Antique Ceramic Vase 01.
+  CC0 licence. 1k textures, packed to GLB with gltf-transform.
+
+coffee_table.obj
+  Supplied by Justin (3ds Max export, 2018). Centimetres; material set in code.

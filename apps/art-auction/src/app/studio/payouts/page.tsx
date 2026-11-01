@@ -15,7 +15,7 @@ import { PayoutPanel } from "../_components/payout-panel";
 import { TeamPanel } from "../_components/team-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Payouts · Studio" };
+export const metadata: Metadata = { title: "Payouts · My art" };
 
 export default async function StudioPayoutsPage({
   searchParams,

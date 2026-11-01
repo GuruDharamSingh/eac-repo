@@ -4,12 +4,14 @@ import type { Metadata } from "next";
 import {
   getLotWithArtwork,
   listBidsForLot,
+  getBidderMaxForLot,
+  isRegisteredBidder,
 } from "@elkdonis/commerce/queries";
 import { settleExpiredLots } from "@elkdonis/commerce/server";
 import { BidWidget } from "@elkdonis/commerce/components";
 import { ArtworkGallery } from "@/components/artwork-gallery";
 import { Button } from "@/components/ui/button";
-import { placeBidAction } from "@/app/actions";
+import { placeBidAction, buyNowAction, registerToBidAction } from "@/app/actions";
 import { getCurrentUserId } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
 
@@ -41,6 +43,14 @@ export default async function LotPage({
   const artwork = lot.artwork;
   const [bids, userId] = await Promise.all([listBidsForLot(lot.id, 12), getCurrentUserId()]);
   const isAuthenticated = Boolean(userId);
+  const requireCard = (process.env.AUCTION_REQUIRE_CARD ?? "true") !== "false";
+  const [registered, yourMax] = userId
+    ? await Promise.all([
+        requireCard ? isRegisteredBidder(userId, lot.orgId) : Promise.resolve(true),
+        getBidderMaxForLot(lot.id, userId),
+      ])
+    : [false, null];
+  const youLead = Boolean(userId && lot.winnerUserId === userId && (lot.status === "live" || lot.status === "scheduled"));
   const closed = !(lot.status === "live" || lot.status === "scheduled");
   const iWon = closed && lot.status === "sold" && userId && lot.winnerUserId === userId;
   const winnerOrderId = (lot.metadata?.orderId as string | undefined) ?? null;
@@ -98,6 +108,13 @@ export default async function LotPage({
             isAuthenticated={isAuthenticated}
             signInHref={`/login?next=/lots/${lot.id}`}
             onPlaceBid={placeBidAction}
+            onBuyNow={buyNowAction}
+            needsRegistration={isAuthenticated && !registered}
+            onRegister={registerToBidAction.bind(null, lot.id)}
+            yourMaxMinor={youLead ? yourMax : null}
+            youLead={youLead}
+            estimateLowMinor={artwork.estimateLowMinor ?? null}
+            estimateHighMinor={artwork.estimateHighMinor ?? null}
           />
 
           {closed ? (

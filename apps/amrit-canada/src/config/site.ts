@@ -40,6 +40,8 @@ export const siteConfig = {
    * piece written there is the author's own and shows only on their shelf.
    */
   writingRoomEmails: ["justin.gillisb@gmail.com", "gurudharamsingh@gmail.com"],
+  /** The org's zone for dates on /center and the hub. No site_config key holds it (2026-10-08). */
+  timeZone: "America/Toronto",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

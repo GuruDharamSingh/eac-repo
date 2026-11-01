@@ -10,7 +10,12 @@
     "./client": "./src/client.ts",
     "./tokens": "./src/tokens.ts",
     "./page": "./src/page.ts",
-    "./instagram": "./src/instagram.ts"
+    "./instagram": "./src/instagram.ts",
+    "./signed-request": "./src/signed-request.ts",
+    "./data-deletion": "./src/data-deletion.ts",
+    "./webhook": "./src/webhook.ts",
+    "./threads": "./src/threads.ts",
+    "./instagram-login": "./src/instagram-login.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

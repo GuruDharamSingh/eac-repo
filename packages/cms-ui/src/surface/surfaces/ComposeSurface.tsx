@@ -404,13 +404,20 @@ export function defaultThreadToAnswers(
   t: SurfaceThread,
   fmt: { timeZone?: string } = {}
 ): Record<string, unknown> {
+  // One zone for every wall-clock field and for the zone field itself. The
+  // form's dates are read back in `time_zone` when saved, so showing them in
+  // a different zone than the one the field names moved the instant on an
+  // unchanged save (2026-10-10). The thread's own zone wins when the host
+  // sends it; otherwise the host's display zone.
+  const zone = (t.extra?.time_zone as string | undefined) || fmt.timeZone || undefined;
+  const at = { ...fmt, timeZone: zone };
   return {
     title: t.title,
     excerpt: t.excerpt ?? "",
     body: t.bodyHtml ?? "",
     cover_image_url: t.coverImageUrl ?? "",
-    scheduled_at: t.scheduledAt ? toDatetimeLocal(new Date(t.scheduledAt), fmt) : "",
-    time_zone: (t.extra?.time_zone as string | undefined) ?? fmt.timeZone ?? "",
+    scheduled_at: t.scheduledAt ? toDatetimeLocal(new Date(t.scheduledAt), at) : "",
+    time_zone: zone ?? "",
     duration_minutes: t.durationMinutes ?? undefined,
     format: t.format ?? "in_person",
     location: t.location ?? "",
@@ -422,8 +429,8 @@ export function defaultThreadToAnswers(
     price: t.price ?? undefined,
     currency: t.currency ?? "USD",
     recurrence_pattern: t.recurrencePattern ?? "NONE",
-    recurrence_until: t.recurrenceUntil ? toDatetimeLocal(new Date(t.recurrenceUntil), fmt).slice(0, 10) : "",
-    rsvp_deadline: t.rsvpDeadline ? toDatetimeLocal(new Date(t.rsvpDeadline), fmt) : "",
+    recurrence_until: t.recurrenceUntil ? toDatetimeLocal(new Date(t.recurrenceUntil), at).slice(0, 10) : "",
+    rsvp_deadline: t.rsvpDeadline ? toDatetimeLocal(new Date(t.rsvpDeadline), at) : "",
     min_attendees: (t.extra?.min_attendees as number | null | undefined) ?? undefined,
     notify_on_min_attendees: Boolean(t.extra?.notify_on_min_attendees),
     video_link: t.videoLink ?? "",
@@ -443,6 +450,25 @@ export function defaultThreadToAnswers(
     ...(t.kind === "workshop" ? workshopExtras(t.extra ?? {}) : {}),
     // A service's booking fields likewise (services' serviceAnswersFromOffering).
     ...(t.kind === "service" ? serviceExtras(t.extra ?? {}) : {}),
+    ...(t.kind === "series" ? seriesExtras(t) : {}),
+  };
+}
+
+/**
+ * An existing series (2026-10-10). Its schedule, joining instructions,
+ * display zones and letter are the planner's, and the thread route does not
+ * send them, so the form switches those fields off (`series_editing`, see
+ * content-fields' buildSeriesFields) rather than showing them empty. `join_url`
+ * is null, not "", so the "Or make a Talk room" switch (shown when the link is
+ * "") stays hidden too. The description is the lede when the host sends it,
+ * else the excerpt, which IFAC writes from the lede.
+ */
+function seriesExtras(t: SurfaceThread): Record<string, unknown> {
+  const x = t.extra ?? {};
+  return {
+    series_editing: true,
+    join_url: null,
+    lede: typeof x.lede === "string" ? x.lede : (t.excerpt ?? ""),
   };
 }
 

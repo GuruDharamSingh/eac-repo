@@ -98,7 +98,7 @@ export default async function SiteProfilePage({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ThemeStyle orgId={org.id} pageKey="profile" />
-      <SiteNav orgName={org.name} current="profile" mainSiteUrl={mainSiteUrl} />
+      <SiteNav orgName={org.name} current="profile" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
 
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="flex flex-wrap items-start justify-between gap-6 border-b border-border pb-8">

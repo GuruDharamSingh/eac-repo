@@ -1,9 +1,9 @@
 export const siteConfig = {
-  name: "Art-Auction",
-  shortName: "Art-Auction",
+  name: "Collect Art",
+  shortName: "Collect Art",
   tagline: "Original artwork from independent artists. Bid, buy, collect.",
   description:
-    "Art-Auction is the Elkdonis Arts Collective marketplace for original paintings, prints, and sculpture. Buy outright or bid in timed auctions; pay by card or Interac eTransfer, and the artist is paid directly.",
+    "Collect Art is the marketplace of the Arts Collective platform, operated on behalf of the Elkdonis Arts Collective, a not-for-profit. Original paintings, prints and sculpture: buy outright or bid in timed auctions; pay by card or Interac eTransfer.",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3009",
   /**
    * The organisation whose marketplace this site is. A person's store and an

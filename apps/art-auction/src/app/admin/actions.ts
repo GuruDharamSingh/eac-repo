@@ -100,3 +100,93 @@ export async function adminReactivateStore(storeId: string): Promise<void> {
   touch();
   revalidatePath("/");
 }
+
+// ─── Money (ledger, settings, beneficiaries) ─────────────────────────────────
+// All of these are network-admin only (`requireAdmin`): releasing held money
+// and recording payouts are the two things an org must not do for itself.
+
+export async function adminRecordPayout(input: {
+  partyKind: "user" | "org" | "payee";
+  partyId: string;
+  amountMajor: number;
+  method: string;
+  reference?: string;
+  note?: string;
+}): Promise<Result> {
+  try {
+    const adminId = await requireAdmin();
+    const { recordPayout } = await import("@elkdonis/commerce/server");
+    const party =
+      input.partyKind === "user"
+        ? { kind: "user" as const, userId: input.partyId }
+        : input.partyKind === "org"
+          ? { kind: "org" as const, orgId: input.partyId }
+          : { kind: "payee" as const, payeeId: input.partyId };
+    const r = await recordPayout({
+      party,
+      amountMinor: Math.round(Number(input.amountMajor) * 100),
+      method: input.method.trim() || "etransfer",
+      reference: input.reference?.trim() || null,
+      note: input.note?.trim() || null,
+      actorUserId: adminId,
+    });
+    if (r.ok) {
+      revalidatePath("/admin/money");
+      // A beneficiary paid over gets its follow-up statement (R2).
+      if (input.partyKind === "payee") {
+        const { sendPaidProceedsStatements } = await import("@elkdonis/commerce/server");
+        void sendPaidProceedsStatements(input.partyId);
+      }
+    }
+    return r;
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function adminReleaseHold(entryId: string, note?: string): Promise<Result> {
+  try {
+    const adminId = await requireAdmin();
+    const { releaseHold } = await import("@elkdonis/commerce/server");
+    const r = await releaseHold({ entryId, releasedBy: adminId, note: note?.trim() || undefined });
+    if (r.ok) revalidatePath("/admin/money");
+    return r;
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function adminSaveMarketplaceSettings(input: {
+  defaultCommissionRate: number;
+  softCloseMinutes: number;
+  paymentWindowHours: number;
+  applyToStores: boolean;
+}): Promise<Result> {
+  try {
+    const adminId = await requireAdmin();
+    const { updateMarketplaceSettings } = await import("@elkdonis/commerce/server");
+    const r = await updateMarketplaceSettings({
+      actorUserId: adminId,
+      defaultCommissionRate: Number(input.defaultCommissionRate),
+      softCloseMinutes: Math.max(0, Math.round(Number(input.softCloseMinutes))),
+      paymentWindowHours: Math.max(1, Math.round(Number(input.paymentWindowHours))),
+      applyToStores: Boolean(input.applyToStores),
+    });
+    if (r.ok) revalidatePath("/admin/money");
+    return r;
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function adminApprovePayee(payeeId: string): Promise<Result> {
+  try {
+    const adminId = await requireAdmin();
+    const { approvePayee } = await import("@elkdonis/commerce/server");
+    const r = await approvePayee(payeeId, adminId);
+    if (r.ok) revalidatePath("/admin/money");
+    return r;
+  } catch (err) {
+    return fail(err);
+  }
+}

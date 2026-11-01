@@ -1,0 +1,404 @@
+<title>EAC Workspace Graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: header + controls, then a left-to-right layered graph (apps → packages → leaf packages) beside a detail panel; findings below. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --fg: #16202b;
+  --muted: #5a6877;
+  --line: #cbd3dd;
+  --edge: #8a98a8;
+  --dep: #1d63c4;
+  --dep-soft: #e3edfb;
+  --rdep: #b8510f;
+  --rdep-soft: #fbeadf;
+  --warn: #b42318;
+  --ok: #2f7d4f;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151c25; --fg: #e3e9f0; --muted: #94a3b3; --line: #2b3746; --edge: #5b6b7d;
+    --dep: #6ea8ff; --dep-soft: #172a45; --rdep: #f0975c; --rdep-soft: #3a2415; --warn: #ff7b72; --ok: #6cc893;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c25; --fg: #e3e9f0; --muted: #94a3b3; --line: #2b3746; --edge: #5b6b7d;
+  --dep: #6ea8ff; --dep-soft: #172a45; --rdep: #f0975c; --rdep-soft: #3a2415; --warn: #ff7b72; --ok: #6cc893;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45; }
+.wrap { padding-inline: 20px; padding-block: 20px 40px; max-width: 1600px; margin: 0 auto; display: grid; gap: 16px; }
+code, .mono { font-family: var(--font-code); font-size: 0.92em; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-family: var(--font-code); font-weight: 500; color: var(--muted); font-size: 15px; margin-left: 8px; }
+.stats { color: var(--muted); font-variant-numeric: tabular-nums; margin: 0; }
+.stats b { color: var(--fg); font-weight: 600; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.search { position: relative; flex: 0 1 260px; min-width: 0; }
+.search input { width: 100%; font: inherit; font-family: var(--font-code); font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--surface); }
+label.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.lg-dep { border-color: var(--dep) !important; }
+.lg-rdep { border-color: var(--rdep) !important; }
+.lg-unused { border-color: var(--edge) !important; border-top-style: dashed !important; }
+.lg-undecl { border-color: var(--warn) !important; }
+button:focus-visible, input:focus-visible, .node:focus-visible, .chip:focus-visible { outline: 2px solid var(--dep); outline-offset: 2px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 78vh; min-width: 0; }
+svg { display: block; }
+.colhead { font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); }
+
+.edge { fill: none; stroke: var(--edge); stroke-width: 1; opacity: 0.28; transition: opacity .12s; }
+.edge.k-unused { stroke-dasharray: 3 3; }
+.edge.k-undecl { stroke: var(--warn); opacity: 0.7; }
+.edge.e-dep { stroke: var(--dep); opacity: 0.95; stroke-width: 1.6; }
+.edge.e-rdep { stroke: var(--rdep); opacity: 0.95; stroke-width: 1.6; }
+.edge.e-dim { opacity: 0.05; }
+
+.node { cursor: pointer; }
+.node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.node text { font-family: var(--font-code); font-size: 12px; fill: var(--fg); }
+.node text.n { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.node .dot { stroke: none; }
+.node .dot.on { fill: var(--ok); }
+.node .dot.off { fill: none; stroke: var(--muted); stroke-width: 1.2; }
+.node:hover rect { stroke: var(--fg); }
+.node.is-sel rect { fill: var(--fg); stroke: var(--fg); }
+.node.is-sel text { fill: var(--surface); }
+.node.is-dep rect { fill: var(--dep-soft); stroke: var(--dep); }
+.node.is-rdep rect { fill: var(--rdep-soft); stroke: var(--rdep); }
+.node.is-dim { opacity: 0.32; }
+.node.is-match rect { stroke: var(--fg); stroke-width: 2; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.panel h2 { font-family: var(--font-code); font-size: 16px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.panel .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.impact { border-left: 3px solid var(--rdep); padding: 6px 10px; background: var(--rdep-soft); border-radius: 0 6px 6px 0; font-size: 13px; }
+.impact.dep { border-color: var(--dep); background: var(--dep-soft); }
+.sec h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--font-code); font-size: 12px; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+.chip:hover { border-color: var(--fg); }
+.chip.dep { border-color: var(--dep); }
+.chip.rdep { border-color: var(--rdep); }
+.chip.unused { border-style: dashed; color: var(--muted); }
+.chip.undecl { border-color: var(--warn); color: var(--warn); }
+.chip small { color: var(--muted); margin-left: 4px; }
+.empty { color: var(--muted); font-size: 13px; margin: 0; }
+
+.findings { display: grid; align-items: start; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.finding h3 { font-size: 14px; font-weight: 600; margin: 0; display: flex; justify-content: space-between; gap: 8px; }
+.finding h3 .count { font-family: var(--font-code); color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.finding p { margin: 0; color: var(--muted); font-size: 13px; max-width: 65ch; }
+.finding .rows { display: grid; gap: 4px; font-size: 13px; }
+.finding .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
+.finding .row > span { font-family: var(--font-code); font-size: 12px; min-width: 9ch; }
+footer { color: var(--muted); font-size: 12px; max-width: 90ch; display: grid; gap: 4px; }
+footer p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .edge { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>EAC Workspace Graph <span>apps/* · packages/*</span></h1>
+    <p class="stats" id="stats"></p>
+  </header>
+
+  <div class="controls">
+    <div class="search"><input id="q" type="search" placeholder="Find a package or app" aria-label="Find a package or app" autocomplete="off"></div>
+    <div class="seg" role="group" aria-label="Highlight depth">
+      <button id="m-direct" type="button" aria-pressed="false">Direct</button>
+      <button id="m-trans" type="button" aria-pressed="true">Transitive</button>
+    </div>
+    <label class="chk" id="f-stopped-label"><input id="f-stopped" type="checkbox" checked> Apps not running</label>
+    <label class="chk"><input id="f-unused" type="checkbox" checked> Unused declarations</label>
+    <div class="legend">
+      <span><i class="lg-dep"></i>depends on</span>
+      <span><i class="lg-rdep"></i>used by</span>
+      <span><i class="lg-unused"></i>declared, no import found</span>
+      <span><i class="lg-undecl"></i>imported, not declared</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="canvas" id="canvas"><svg id="svg" role="img" aria-label="Workspace dependency graph"></svg></div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="findings" id="findings" aria-label="Checks"></section>
+
+  <footer>
+    <p id="scan-note"></p>
+    <p>Edges come from <code>dependencies</code>, <code>devDependencies</code> and <code>peerDependencies</code> in each <code>package.json</code>, plus a scan of import, require and CSS <code>@import</code> statements in <code>.ts .tsx .js .jsx .mjs .cjs .css</code> files (excluding <code>node_modules</code> and build output). A package referenced only from <code>next.config</code> <code>transpilePackages</code>, a tsconfig path or a string shows as "no import found".</p>
+    <p>Not workspaces: <code>apps/signal-watch</code> (Android project) and <code>packages/silex</code> (no <code>package.json</code>). <span id="run-note"></span></p>
+  </footer>
+</div>
+
+<script>
+const DATA = "__DATA__";
+const NS = 'http://www.w3.org/2000/svg';
+const short = id => id.replace(/^@elkdonis\//, '');
+const byId = new Map(DATA.nodes.map(n => [n.id, n]));
+const fmt = n => n.toLocaleString('en-US');
+
+const state = { sel: '@elkdonis/services', hover: null, mode: 'trans', showStopped: true, showUnused: true, query: '' };
+
+// ---- graph helpers (always over the full data, so the panel lists are complete) ----
+const outAll = new Map(), inAll = new Map();
+for (const n of DATA.nodes) { outAll.set(n.id, []); inAll.set(n.id, []); }
+for (const e of DATA.edges) { outAll.get(e.source).push(e); inAll.get(e.target).push(e); }
+function closure(id, adj, key) {
+  const seen = new Set(), stack = [id];
+  while (stack.length) for (const e of adj.get(stack.pop()) || []) { const m = e[key]; if (!seen.has(m)) { seen.add(m); stack.push(m); } }
+  seen.delete(id); return seen;
+}
+const isApp = id => byId.get(id)?.kind === 'app';
+
+// ---- layout ----
+const ROW = 24, NODE_H = 18, COL_GAP = 52, TOP = 34, LEFT = 14, CH = 7.25;
+let layout = null;
+function computeLayout() {
+  const nodes = DATA.nodes.filter(n => n.kind === 'package' || state.showStopped || n.running || !DATA.runningKnown);
+  const ids = new Set(nodes.map(n => n.id));
+  const edges = DATA.edges.filter(e => ids.has(e.source) && ids.has(e.target) && (state.showUnused || e.files > 0));
+  const out = new Map(nodes.map(n => [n.id, []])), inn = new Map(nodes.map(n => [n.id, []]));
+  for (const e of edges) { out.get(e.source).push(e.target); inn.get(e.target).push(e.source); }
+  // Depth = longest path down to a leaf package. The graph has no cycles (checked at scan time).
+  const depth = new Map();
+  const d = id => { if (depth.has(id)) return depth.get(id); depth.set(id, 0); let m = 0; for (const t of out.get(id)) if (!isApp(t)) m = Math.max(m, d(t) + 1); depth.set(id, m); return m; };
+  const pk = nodes.filter(n => n.kind === 'package');
+  pk.forEach(n => d(n.id));
+  const maxD = Math.max(0, ...pk.map(n => depth.get(n.id)));
+  const col = new Map();
+  for (const n of nodes) col.set(n.id, n.kind === 'app' ? 0 : 1 + maxD - depth.get(n.id));
+  const ncol = maxD + 2;
+  const cols = Array.from({ length: ncol }, () => []);
+  for (const n of [...nodes].sort((a, b) => short(a.id).localeCompare(short(b.id)))) cols[col.get(n.id)].push(n.id);
+  const tallest = Math.max(...cols.map(c => c.length));
+  const y = new Map();
+  const place = () => cols.forEach(c => { const off = (tallest - c.length) * ROW / 2; c.forEach((id, i) => y.set(id, TOP + off + i * ROW)); });
+  place();
+  const bary = (id, nb) => { const v = nb.get(id).map(m => y.get(m)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : y.get(id); };
+  for (let it = 0; it < 12; it++) {
+    const fwd = it % 2 === 0;
+    const order = fwd ? cols.map((_, i) => i).slice(1) : cols.map((_, i) => i).reverse().slice(1);
+    for (const c of order) { const k = new Map(cols[c].map(id => [id, bary(id, fwd ? inn : out)])); cols[c].sort((a, b) => k.get(a) - k.get(b)); place(); }
+  }
+  const widths = cols.map(c => Math.max(90, ...c.map(id => {
+    const n = byId.get(id); return (short(id).length + 4) * CH + (n.kind === 'app' ? 14 : 0) + 14;
+  })));
+  const xs = []; let x = LEFT; widths.forEach(w => { xs.push(x); x += w + COL_GAP; });
+  layout = { nodes, edges, cols, col, y, xs, widths, W: x - COL_GAP + LEFT, H: TOP + tallest * ROW + 8, inn, out };
+}
+
+// ---- render ----
+const svg = document.getElementById('svg');
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+let nodeEls = new Map(), edgeEls = [];
+function draw() {
+  computeLayout();
+  const L = layout;
+  svg.replaceChildren();
+  svg.setAttribute('width', L.W); svg.setAttribute('height', L.H); svg.setAttribute('viewBox', `0 0 ${L.W} ${L.H}`);
+  L.cols.forEach((c, i) => {
+    if (!c.length) return;
+    const t = el('text', { x: L.xs[i], y: 18, class: 'colhead' }, svg);
+    t.textContent = i === 0 ? 'Apps' : i === L.cols.length - 1 ? 'Leaf packages' : `Layer ${L.cols.length - 1 - i}`;
+  });
+  const gE = el('g', {}, svg), gN = el('g', {}, svg);
+  edgeEls = L.edges.map(e => {
+    const c1 = L.col.get(e.source), c2 = L.col.get(e.target);
+    const x1 = L.xs[c1] + L.widths[c1], y1 = L.y.get(e.source) + NODE_H / 2;
+    const x2 = L.xs[c2], y2 = L.y.get(e.target) + NODE_H / 2;
+    const k = Math.max(30, (x2 - x1) * 0.45);
+    const p = el('path', { d: `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`, class: 'edge' + (!e.field ? ' k-undecl' : e.files === 0 ? ' k-unused' : '') }, gE);
+    return { e, p };
+  });
+  nodeEls = new Map();
+  for (const n of L.nodes) {
+    const c = L.col.get(n.id), x = L.xs[c], yy = L.y.get(n.id), w = L.widths[c];
+    const g = el('g', { class: 'node', tabindex: 0, role: 'button', 'aria-label': short(n.id) }, gN);
+    el('rect', { x, y: yy, width: w, height: NODE_H, rx: 3 }, g);
+    let tx = x + 7;
+    if (n.kind === 'app') { el('circle', { cx: x + 9, cy: yy + NODE_H / 2, r: 3.2, class: 'dot ' + (n.running ? 'on' : 'off') }, g); tx = x + 18; }
+    const t = el('text', { x: tx, y: yy + 13 }, g); t.textContent = short(n.id);
+    const cnt = n.kind === 'app' ? (n.port ? ':' + n.port : '') : String(inAll.get(n.id).length);
+    if (cnt) { const t2 = el('text', { x: x + w - 6, y: yy + 13, 'text-anchor': 'end', class: 'n' }, g); t2.textContent = cnt; }
+    const tt = el('title', {}, g);
+    tt.textContent = n.kind === 'app' ? `${n.dir}${n.host ? ' · ' + n.host : ''}` : `${n.id} · used by ${inAll.get(n.id).length}`;
+    g.addEventListener('click', () => select(n.id));
+    g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(n.id); } });
+    g.addEventListener('mouseenter', () => { state.hover = n.id; paint(); });
+    g.addEventListener('mouseleave', () => { state.hover = null; paint(); });
+    nodeEls.set(n.id, g);
+  }
+  paint();
+}
+
+function sets(id) {
+  if (state.mode === 'trans') return { deps: closure(id, outAll, 'target'), rdeps: closure(id, inAll, 'source') };
+  return { deps: new Set(outAll.get(id).map(e => e.target)), rdeps: new Set(inAll.get(id).map(e => e.source)) };
+}
+function paint() {
+  const focus = state.hover || state.sel;
+  const q = state.query.trim().toLowerCase();
+  const S = focus ? sets(focus) : null;
+  for (const [id, g] of nodeEls) {
+    const cls = ['node'];
+    if (S) {
+      if (id === focus) cls.push('is-sel');
+      else if (S.deps.has(id)) cls.push('is-dep');
+      else if (S.rdeps.has(id)) cls.push('is-rdep');
+      else cls.push('is-dim');
+    }
+    if (q && short(id).toLowerCase().includes(q)) cls.push('is-match');
+    g.setAttribute('class', cls.join(' '));
+  }
+  for (const { e, p } of edgeEls) {
+    const base = 'edge' + (!e.field ? ' k-undecl' : e.files === 0 ? ' k-unused' : '');
+    let x = '';
+    if (S) {
+      const direct = state.mode === 'direct';
+      const isDep = direct ? e.source === focus : ((e.source === focus || S.deps.has(e.source)) && S.deps.has(e.target));
+      const isR = direct ? e.target === focus : ((e.target === focus || S.rdeps.has(e.target)) && S.rdeps.has(e.source));
+      x = isDep ? ' e-dep' : isR ? ' e-rdep' : ' e-dim';
+    }
+    p.setAttribute('class', base + x);
+  }
+  // Raise highlighted edges above the faint ones.
+  for (const { p } of edgeEls) if (/e-(dep|rdep)/.test(p.getAttribute('class'))) p.parentNode.appendChild(p);
+}
+
+// ---- panel ----
+const panel = document.getElementById('panel');
+function chip(id, extra = '', note = '') {
+  return `<button type="button" class="chip ${extra}" data-id="${id}">${short(id)}${note ? `<small>${note}</small>` : ''}</button>`;
+}
+function edgeChip(e, other, dir) {
+  const k = !e.field ? 'undecl' : e.files === 0 ? 'unused' : dir;
+  const note = !e.field ? 'not declared' : e.files === 0 ? 'no import' : `${e.files}f${e.field === 'devDependencies' ? ' dev' : ''}`;
+  return chip(other, k, note);
+}
+function renderPanel() {
+  const n = byId.get(state.sel);
+  if (!n) { panel.innerHTML = '<p class="empty">Select a node to see what it depends on and what depends on it.</p>'; return; }
+  const out = [...outAll.get(n.id)].sort((a, b) => short(a.target).localeCompare(short(b.target)));
+  const inn = [...inAll.get(n.id)].sort((a, b) => short(a.source).localeCompare(short(b.source)));
+  const depsT = closure(n.id, outAll, 'target'), rdepsT = closure(n.id, inAll, 'source');
+  const appsT = [...rdepsT].filter(isApp).sort();
+  const pkgsT = [...rdepsT].filter(id => !isApp(id)).sort();
+  let impact;
+  if (n.kind === 'app') {
+    impact = `<div class="impact dep">Pulls in <b>${out.length}</b> workspace packages directly, <b>${depsT.size}</b> including transitive ones.</div>`;
+  } else {
+    const running = appsT.filter(id => byId.get(id).running).length;
+    impact = `<div class="impact">A change here reaches <b>${appsT.length}</b> app${appsT.length === 1 ? '' : 's'}${DATA.runningKnown ? ` (${running} running)` : ''} through <b>${pkgsT.length}</b> intermediate package${pkgsT.length === 1 ? '' : 's'}.</div>`;
+  }
+  const rows = [
+    ['Directory', `<code>${n.dir}</code>`],
+    n.kind === 'app' ? ['Status', (!DATA.runningKnown ? 'unknown' : n.running ? 'container running' : 'not running') + (n.note ? ` (${n.note})` : '')] : null,
+    n.port ? ['Port', n.port] : null,
+    n.host ? ['Host', n.host] : null,
+    ['Source files', fmt(n.files)],
+    ['Lines', fmt(n.lines)],
+    ['External deps', n.external],
+    n.kind === 'package' ? ['Exports', n.exportsSource ? 'TypeScript source' : 'built output / other'] : null,
+  ].filter(Boolean);
+  panel.innerHTML = `
+    <div><h2>${short(n.id)}</h2><div class="sub">${n.kind === 'app' ? 'App' : n.id}${n.description ? ' · ' + n.description : ''}</div></div>
+    ${impact}
+    <dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+    <div class="sec"><h3>Depends on · ${out.length}</h3>${out.length ? `<div class="chips">${out.map(e => edgeChip(e, e.target, 'dep')).join('')}</div>` : '<p class="empty">No workspace dependencies.</p>'}</div>
+    <div class="sec"><h3>Used by · ${inn.length}</h3>${inn.length ? `<div class="chips">${inn.map(e => edgeChip(e, e.source, 'rdep')).join('')}</div>` : '<p class="empty">Nothing in the workspace depends on this.</p>'}</div>
+    ${n.kind === 'package' && appsT.length ? `<div class="sec"><h3>Apps reached · ${appsT.length}</h3><div class="chips">${appsT.map(id => chip(id, byId.get(id).running ? 'rdep' : 'unused')).join('')}</div></div>` : ''}
+    <p class="empty">Chip numbers are files that import the package.</p>`;
+}
+document.addEventListener('click', ev => { const c = ev.target.closest('.chip'); if (c) select(c.dataset.id); });
+
+function select(id) {
+  state.sel = id;
+  // If the selected app is hidden by the filter, show it.
+  if (byId.get(id).kind === 'app' && !byId.get(id).running && !state.showStopped) { state.showStopped = true; document.getElementById('f-stopped').checked = true; draw(); }
+  paint(); renderPanel();
+  try { history.replaceState(null, '', '#' + short(id)); } catch {}
+  centerOn(id, true);
+}
+// Scroll the canvas so a node is in view, centred horizontally when it was off-screen.
+function centerOn(id, smooth) {
+  const g = nodeEls.get(id), cv = document.getElementById('canvas');
+  if (!g) return;
+  const r = g.getBBox(), to = {};
+  if (r.x < cv.scrollLeft || r.x + r.width > cv.scrollLeft + cv.clientWidth) to.left = Math.max(0, r.x + r.width / 2 - cv.clientWidth / 2);
+  if (r.y < cv.scrollTop || r.y + r.height > cv.scrollTop + cv.clientHeight) to.top = Math.max(0, r.y - 80);
+  if ('left' in to || 'top' in to) cv.scrollTo({ ...to, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+// ---- findings ----
+function renderFindings() {
+  const unused = DATA.edges.filter(e => e.field && e.files === 0);
+  const undecl = DATA.edges.filter(e => !e.field);
+  const orphans = DATA.nodes.filter(n => n.kind === 'package' && !inAll.get(n.id).length);
+  const bySrc = new Map();
+  for (const e of unused) { if (!bySrc.has(e.source)) bySrc.set(e.source, []); bySrc.get(e.source).push(e.target); }
+  const top = [...DATA.nodes].filter(n => n.kind === 'package').sort((a, b) => closure(b.id, inAll, 'source').size - closure(a.id, inAll, 'source').size).slice(0, 6);
+  const f = document.getElementById('findings');
+  f.innerHTML = `
+    <div class="finding"><h3>Widest reach <span class="count">top 6</span></h3>
+      <p>Packages with the most dependents, counting transitive ones. A broken type in one of these fails every app above it.</p>
+      <div class="rows">${top.map(n => { const t = closure(n.id, inAll, 'source'); return `<div class="row">${chip(n.id)}<span>${t.size} dependents</span><span>${[...t].filter(isApp).length} apps</span></div>`; }).join('')}</div></div>
+    <div class="finding"><h3>Declared, no import found <span class="count">${unused.length}</span></h3>
+      <p>Listed in <code>package.json</code> but not imported anywhere in that workspace's source. Candidates for removal after checking <code>next.config</code>.</p>
+      <div class="rows">${[...bySrc].sort((a, b) => short(a[0]).localeCompare(short(b[0]))).map(([s, ts]) => `<div class="row">${chip(s)}<span style="min-width:0">→</span>${ts.sort().map(t => chip(t, 'unused')).join('')}</div>`).join('')}</div></div>
+    <div class="finding"><h3>Imported, not declared <span class="count">${undecl.length}</span></h3>
+      <p>Resolves only through hoisting; pnpm can break this on a clean install.</p>
+      <div class="rows">${undecl.map(e => `<div class="row">${chip(e.source)}<span style="min-width:0">→</span>${chip(e.target, 'undecl', e.files + 'f')}</div>`).join('') || '<p class="empty">None.</p>'}</div>
+      <h3 style="margin-top:8px">No dependents <span class="count">${orphans.length}</span></h3>
+      <p>Packages no app or package lists or imports.</p>
+      <div class="chips">${orphans.map(n => chip(n.id, 'unused')).join('')}</div>
+      <h3 style="margin-top:8px">Cycles <span class="count">${DATA.cycles.length}</span></h3>
+      ${DATA.cycles.length ? `<p>Circular workspace dependencies; the layered layout places these packages arbitrarily.</p><div class="rows">${DATA.cycles.map(c => `<div class="row">${c.map(id => chip(id, 'undecl')).join('<span style="min-width:0">→</span>')}</div>`).join('')}</div>` : '<p>No circular workspace dependencies.</p>'}</div>`;
+}
+
+// ---- controls ----
+const mD = document.getElementById('m-direct'), mT = document.getElementById('m-trans');
+function setMode(m) { state.mode = m; mD.setAttribute('aria-pressed', m === 'direct'); mT.setAttribute('aria-pressed', m === 'trans'); paint(); }
+mD.onclick = () => setMode('direct'); mT.onclick = () => setMode('trans');
+document.getElementById('f-stopped').onchange = ev => { state.showStopped = ev.target.checked; if (!state.showStopped && byId.get(state.sel)?.kind === 'app' && !byId.get(state.sel).running) state.sel = '@elkdonis/services'; draw(); renderPanel(); };
+document.getElementById('f-unused').onchange = ev => { state.showUnused = ev.target.checked; draw(); };
+const q = document.getElementById('q');
+q.oninput = () => { state.query = q.value; paint(); };
+q.onkeydown = ev => { if (ev.key === 'Enter') { const v = q.value.trim().toLowerCase(); const hit = DATA.nodes.map(n => n.id).filter(id => short(id).toLowerCase().includes(v)).sort((a, b) => short(a).length - short(b).length)[0]; if (hit) select(hit); } };
+
+// ---- boot ----
+const apps = DATA.nodes.filter(n => n.kind === 'app');
+document.getElementById('stats').innerHTML =
+  `<b>${apps.length}</b> apps${DATA.runningKnown ? ` (${apps.filter(a => a.running).length} running)` : ''} · <b>${DATA.nodes.length - apps.length}</b> packages · <b>${DATA.edges.length}</b> edges`;
+document.getElementById('f-stopped-label').hidden = !DATA.runningKnown;
+document.getElementById('run-note').textContent = DATA.runningKnown
+  ? 'Running state is from docker ps at scan time (a container publishing the app\'s port).'
+  : 'Running state is unknown: docker ps was not available when the page was generated.';
+document.getElementById('scan-note').textContent = `Scanned ${DATA.generated.slice(0, 10)} from the working tree of branch ${DATA.branch}, including uncommitted changes.`;
+const fromHash = (() => { try { const h = decodeURIComponent(location.hash.slice(1)); return DATA.nodes.find(n => short(n.id) === h)?.id; } catch { return null; } })();
+if (fromHash) state.sel = fromHash;
+draw(); renderPanel(); renderFindings(); centerOn(state.sel, false);
+</script>

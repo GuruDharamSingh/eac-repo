@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { HubViewToggle, HUB_VIEW_COOKIE } from "@elkdonis/cms-ui/hubsite";
 import { HubSiteView } from "./site-view";
+import { HubCardsView } from "./cards-view";
+import { HUB_VIEWS } from "./views";
 import {
   getOrgChatIdentity,
   getOrgChatRoom,
@@ -65,6 +67,10 @@ export default async function HubPage() {
   // /hub/error.tsx to land on (hub crash, 2026-09-20).
   // Checked before any read below, so the card hub's data is not loaded twice.
   const chosenView = (await cookies()).get(HUB_VIEW_COOKIE)?.value;
+  // "Cards 2": cards that open pages (owner, 2026-10-08) — cards-view.tsx.
+  if (chosenView === "cards2") {
+    return <HubCardsView viewer={viewer} />;
+  }
   if (chosenView !== "classic") {
     return <HubSiteView viewer={viewer} />;
   }
@@ -169,7 +175,7 @@ export default async function HubPage() {
             Here is what the group has on, and what you can add to it.
           </p>
         </div>
-        <HubViewToggle current="classic" />
+        <HubViewToggle current="classic" views={HUB_VIEWS} />
       </div>
 
       {/*
@@ -325,6 +331,7 @@ export default async function HubPage() {
               ArtDirect: click your own name on your own org's hub and you were
               on a different site with no way back but the browser's button. */}
           <ProfileFace
+            centerHref="/center"
             summary={{
               displayName: profile?.displayName?.trim() || viewer.email,
               avatarUrl: profile?.avatarUrl ?? null,

@@ -14,8 +14,11 @@ import {
   threadTemplateKey,
   bodyOf,
 } from '../src/index';
+import { probeOrg } from './probe-org.mts';
 
-const ORG = 'ifac';
+// Writes and deletes `email_template_settings` rows: only for a sentinel org.
+//   tsx scripts/test-layers.mts --org probe-email
+const ORG = probeOrg();
 const THREAD = 'th_layertest';
 let failures = 0;
 
@@ -67,7 +70,7 @@ async function main(): Promise<void> {
   await saveOrgTemplate(ORG, threadTemplateKey('welcome', THREAD), {
     bodyText: 'Only for this one thread.',
   });
-  const forThread = await resolveOrgTemplate(ORG, 'welcome', THREAD);
+  const forThread = await resolveOrgTemplate(ORG, 'welcome', [THREAD]);
   check('thread key wins over the org key',
     forThread?.bodyText === 'Only for this one thread.',
     `got: ${forThread?.templateKey}`);

@@ -17,6 +17,9 @@ const KINDS: Record<SurfaceKind, KindMeta> = {
   post: { label: "Writing", glyph: "◉", size: "standard" },
   event: { label: "Event", glyph: "◆", size: "wide" },
   meeting: { label: "Meeting", glyph: "◎", size: "wide" },
+  // A planned meeting series: the meeting's glyph and, in surface.css, its
+  // accent (`[data-kind="series"]` reads the meeting tokens).
+  series: { label: "Series", glyph: "◎", size: "wide" },
   workshop: { label: "Workshop", glyph: "◈", size: "wide" },
   service: { label: "Service", glyph: "◇", size: "wide" },
   product: { label: "Product", glyph: "▣", size: "wide" },

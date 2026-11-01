@@ -215,6 +215,25 @@ only when the host can fill it (`ProfileSurface.tsx:330-340`).
 `POST /api/center/quotes` on amrit-canada, innergathering, sunjay) are stored
 but not read by any page.
 
+2026-10-08 (claude, source only; no host rebuilt): `CenterPage` prints its own
+header (`heading` prop: eyebrow/title/intro, null hides it; `.eac-center-head`)
+and the hosts no longer do. Every section returns null when empty; the feed
+keeps its compose bar for staff or a host with `composeHref`. The promotion
+slot is drawn only from `site_config` `center_promo` (own org, then network
+default) — the "next scheduled event" fallback and the dashed placeholder are
+gone; a `link` kind (title, blurb, href, image_url) is written by
+`setCenterPromo` (`packages/services/src/center.ts`) from innergathering
+`/manage/center` (owners/guides). The site iframe is live: `.eac-face-live`
+frame that scrolls, `.eac-center-home-scale` footprint, iframe at 1/scale
+width, sandbox with scripts/forms/popups, an "Open site" link, background
+`--eac-center-site-bg` → `--sf-bg` → `Canvas`. Single-org hosts build links
+with `buildOrgSiteCenterLinks` (`center/host-links.ts`); orgs without a
+verified domain link to `<network>/hub/organization?org=<slug>` rather than a
+`<slug>.arts-collective.com` subdomain (no column records subdomain TLS;
+`subdomain_confirmed` is the intake gate). arts-collective `sites/[slug]/center`
+mounts `SiteCenterHost` (SurfaceProvider) and `SiteNav` shows Center when
+signed in. `ProfileCardBody` was removed (no importers).
+
 ### forum-ui theming
 
 `packages/forum-ui` is plain CSS and must stay so: `apps/forum` has no

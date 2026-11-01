@@ -360,3 +360,33 @@ html:has(.ifac-hub-scope) {
   --read-accent: var(--oxide, #9a3f2f);
   color: var(--read-ink);
 }
+
+/* ── 9. The Series planner's fields (/hub/series/[id] and its popup) ──── */
+/* Reported 2026-10-10 as beige on beige: the page-size panel inherited the
+   dark chrome's #e8e3e4 (1.25:1 on the #fffdf8 card) and the inputs had no
+   --fld-* tokens. cms-ui now supplies both (surface.css); this pins the
+   fields to the controls' measured colours for each skin. The field ground
+   is the card itself (--sf-bg), so one border ratio covers both sides.
+     basic, on #fffdf8: text #171615 17.78:1, placeholder #4f4a44 at the
+       0.8 opacity fields.css applies (#726e68) 4.98:1, border #968870
+       3.41:1 (was --sf-rule #b4a992, 2.29:1), focus ring oxide 6.61:1,
+       labels #4f4a44 8.62:1.
+     salon, on #15120e: text #ece6dc 15.04:1, placeholder #a89e8f at 0.8
+       4.93:1, border #6e6153 3.11:1, focus ring gilt #d0a651 8.23:1,
+       labels #a89e8f 7.07:1. */
+.ifac-hub-scope .eac-series__form {
+  --eac-field-fg: var(--pr-fg);
+  --eac-field-muted: var(--pr-muted);
+  --eac-field-line: var(--pr-line);
+  --eac-field-bg: var(--sf-bg);
+  --eac-field-accent: var(--pr-focus);
+}
+/* The planner's Manage tab filter (cms-ui hub.css), same pins and
+   ratios as above (2026-10-10). */
+.ifac-hub-scope .eac-series-people {
+  --eac-field-fg: var(--pr-fg);
+  --eac-field-muted: var(--pr-muted);
+  --eac-field-line: var(--pr-line);
+  --eac-field-bg: var(--sf-bg);
+  --eac-field-accent: var(--pr-focus);
+}

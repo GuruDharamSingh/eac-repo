@@ -1,0 +1,23 @@
+{
+  "id": "cl-020",
+  "status": "draft",
+  "role": "reference",
+  "source": { "paper": "none: watermarked stock template", "era": "2010s template", "language": ["en"] },
+  "summary": "A stock classifieds template: bold Times CLASSIFIEDS between rules, black reverse section bars in serif caps (BUSINESS, REAL ESTATE, CAREERS, SERVICES), and short Arial liners with centred bold caps heads. Decorated with dashed boxes, star rows, a grey NEW AD pill and grey shaded boxes.",
+  "frame": { "columns": 4, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "vertical", "masthead": "Heavy Times caps with a thin rule above and a double rule below." },
+  "headers": [
+    { "id": "reverse-serif", "kind": "reverse-bar", "example": "REAL ESTATE", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.3, 0.42, 0.2, 0.025], "notes": "White serif caps on black." }
+  ],
+  "units": [
+    { "id": "centred-head-liner", "kind": "liner", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "MORTGAGE SOLUTIONS! / We provide complete Property Management...", "notes": "Bold caps head on its own centred line, then Arial body; some ads letter-spaced to fill." },
+    { "id": "dashed-box", "kind": "boxed-liner", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "BY OWNER", "notes": "Dashed border; star rows (★ ★ ★) and ★ CALL NOW ★ dividers." },
+    { "id": "grey-box", "kind": "boxed-liner", "frequency": "occasional", "lead": "bold-caps", "align": "left", "border": "thin", "fill": "#d9d9d9", "example": "COMMERCIAL LOANS" }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "news-serif", "look": "Times Bold caps", "weight": "bold", "width": "normal", "case": "upper", "webFont": "Tinos" },
+    { "role": "body", "classification": "grotesque", "look": "Arial", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#d9d9d9", "use": "shaded boxes, NEW AD pill" } ] },
+  "ornaments": ["star rows", "dashed borders", "rounded pill label"],
+  "notes": ["Template, not a real paper: shows the generic 'newspaper classifieds' cliché. Useful as the baseline a real family should beat."]
+}

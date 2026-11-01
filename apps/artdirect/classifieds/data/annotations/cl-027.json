@@ -1,0 +1,24 @@
+{
+  "id": "cl-027",
+  "status": "draft",
+  "source": { "paper": "O Heraldo", "place": "Goa, India", "date": "2018-05-19", "era": "2010s", "language": ["en"] },
+  "summary": "A dense Goan classifieds page: eight justified columns under vermilion category bars with white condensed caps, punctuated by tall boxed displays in heavy condensed type (Portuguese passports, flats for sale, marine jobs).",
+  "family": "indian-dense-liner",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "footer": "CLASS CONTD ON PG 6 in a blue bar; CMYK colour strip along the bottom edge." },
+  "headers": [
+    { "id": "vermilion-bar", "kind": "tint-bar", "example": "ACC AVAILABLE", "fg": "#ffffff", "bg": "#e8502b", "align": "center", "box": [0.035, 0.005, 0.115, 0.009], "notes": "Bright red-orange bar, white condensed bold caps, a thin rule under it. Same bar used for every classification (PERSONAL, PEST CONTROL, SITUATIONS VACANT)." }
+  ],
+  "units": [
+    { "id": "dense-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "example": "Rental Margao Studio 7,000/- 1BHK 9,000/- 2BHK 11,000/-...", "notes": "Tight justified Times-like text, lead words in bold, phone numbers at the end; no codes." },
+    { "id": "condensed-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "PORTUGUESE NATIONALITY / Gomindes & Co.", "box": [0.155, 0.235, 0.115, 0.12], "notes": "Heavy condensed caps head (Impact-like), reverse blocks for key lines, script for company names, big phone numbers." },
+    { "id": "reverse-display", "kind": "reverse-display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "FLATS FOR SALE @ KAREKAR RESIDENCY", "box": [0.63, 0.06, 0.115, 0.2], "notes": "Black or tinted blocks with white condensed caps and italic body inside." }
+  ],
+  "type": [
+    { "role": "header", "classification": "condensed-grotesque", "look": "Condensed bold caps (Franklin Gothic Condensed)", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Oswald" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Impact / Compacta-like heavy condensed", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Anton" },
+    { "role": "body", "classification": "news-serif", "look": "Times-like, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Tinos" }
+  ],
+  "color": { "mode": "spot", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#e8502b", "use": "category bars" }, { "hex": "#1f6fb5", "use": "continuation bar" } ] },
+  "ornaments": ["CMYK colour strip", "script logotypes inside displays"],
+  "notes": ["Groups with The Tribune (cl-038): same dense justified liner texture, here with spot-colour bars instead of plain caps."]
+}

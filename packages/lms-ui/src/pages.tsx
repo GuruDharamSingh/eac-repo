@@ -1,5 +1,5 @@
 import {
-  courseJsonLd, stepJsonLd, getPublishedCourse, getCourseBySlug, getLearnerOutline, listCatalogue, listRuns, listRunGuides,
+  courseJsonLd, stepJsonLd, getPublishedCourse, getCourseBySlug, getLearnerOutline, hasRunGuides, listCatalogue, listRuns, listRunGuides,
   listMyEnrolments, listMyResponses, listCircleResponses, listPublicResponses, getThreadRefs, getRunDiscussion, touchStep,
   listJournal, listPracticeDays, listAwards, listGuideQueue, listRoster, countUnseenAcknowledgements, markAcknowledgementsSeen,
   stepTypeDef, resolveRedirect, listEditableCourses,
@@ -274,13 +274,15 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
 
   if (e && !closed) await touchStep(viewer, e.id, step.stepId);
 
-  const [threads, mine, circle, shared, discussion, courses] = await Promise.all([
+  const [threads, mine, circle, shared, discussion, courses, guided] = await Promise.all([
     step.refs.threadId ? getThreadRefs([step.refs.threadId]) : Promise.resolve({}),
     e ? listMyResponses(viewer, e.id, step.stepId) : Promise.resolve([]),
     e && community ? listCircleResponses(viewer, o.run.id, step.stepId) : Promise.resolve([]),
     course.visibility === "public" ? listPublicResponses(step.stepId) : Promise.resolve([]),
     community ? getRunDiscussion(o.run.id, step.stepId) : Promise.resolve(null),
     reachableCourses(viewer),
+    // "My guide" is only offered when someone is named on this run to read it.
+    e ? hasRunGuides(o.run.id) : Promise.resolve(false),
   ]);
   const thread = step.refs.threadId ? (threads as Record<string, import("@elkdonis/lms").ThreadRef>)[step.refs.threadId] ?? null : null;
   if (mine.some((r) => r.acknowledgements.length) && viewer.userId) void markAcknowledgementsSeen(viewer.userId);
@@ -293,8 +295,8 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
   const othersCircle = circle.filter((r) => r.author?.id !== viewer.userId);
   const othersPublic = shared.filter((r) => r.author?.id !== viewer.userId && !othersCircle.some((x) => x.id === r.id));
   const showReflection = def.invitesReflection || Boolean(step.settings.prompt);
-  const defaultVis: ResponseVisibility = o.run.defaultVisibility;
-  const visChoices: ResponseVisibility[] = ["me", "guide", ...(community ? (["circle"] as const) : []), ...(course.visibility === "public" ? (["public"] as const) : [])];
+  const visChoices: ResponseVisibility[] = ["me", ...(guided ? (["guide"] as const) : []), ...(community ? (["circle"] as const) : []), ...(course.visibility === "public" ? (["public"] as const) : [])];
+  const defaultVis: ResponseVisibility = visChoices.includes(o.run.defaultVisibility) ? o.run.defaultVisibility : "me";
 
   const node = (
     <div className="so-shell">
@@ -320,7 +322,7 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
         ) : (
           <>
             {ahead && <p className="so-callout">You’re a little ahead of yourself — {step.access.reason?.replace(/^Opens/, "this follows").replace(/\.$/, "")}. Read on if you like; your place is kept where you left it.</p>}
-            <StepBody step={step} c={c} thread={thread} />
+            <StepBody step={step} c={c} thread={thread} enrolled={Boolean(e)} here={here} orgId={c.tasks?.orgFor ? await c.tasks.orgFor(viewer, null) : null} />
 
             {showReflection && (
               <section id="reflection" className="so-reflect" aria-labelledby="reflect-h">
@@ -391,7 +393,7 @@ export async function StepPage({ c, courseSlug, stepSlug, q }: { c: LmsConnector
               </section>
             )}
 
-            {e && (
+            {e && guided && (
               <details id="guide" className="so-note" open={notes.length > 0 || undefined}>
                 <summary>A private word to your guide</summary>
                 <p className="so-meta">If something in this was difficult, confusing or stirred something up, say so here. Only your guide reads it. <a href={c.hrefs.care()}>Taking care while you practise</a>.</p>

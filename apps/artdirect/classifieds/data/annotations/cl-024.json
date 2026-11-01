@@ -1,0 +1,22 @@
+{
+  "id": "cl-024",
+  "status": "draft",
+  "source": { "paper": "unknown US magazine, Advertising Section p. 105 (pulp or popular-science monthly)", "place": "USA", "era": "1920s (Liberty Bonds, photoplays, vaudeville)", "language": ["en"] },
+  "summary": "A magazine classified section: CLASSIFIED ADVERTISING in heavy condensed old-style caps over a double rule, three columns of justified serif liners divided by hairlines, and centred bold italic category heads between rules. Calm, regular, and very readable.",
+  "family": "pulp-magazine-classified",
+  "frame": { "columns": 3, "columnWidth": "medium", "gutter": "normal", "columnRules": "thin", "flow": "vertical", "masthead": "Small caps running head 'ADVERTISING SECTION' with folio, then the title in heavy condensed serif caps, double rule beneath." },
+  "headers": [
+    { "id": "italic-head", "kind": "rule-label", "example": "Agents and Help Wanted", "fg": "#111111", "bg": "transparent", "align": "center", "box": [0.03, 0.098, 0.3, 0.016], "notes": "Bold italic old-style title case, centred, a rule above and below." }
+  ],
+  "units": [
+    { "id": "caps-lead-liner", "kind": "liner", "frequency": "dominant", "lead": "caps", "align": "justify", "border": "hairline", "example": "DETECTIVES EARN BIG MONEY. Travel. Excellent opportunity. Experience unnecessary...", "box": [0.03, 0.155, 0.3, 0.035], "notes": "Opening words in caps (often a complete sentence), body in a sturdy old-style; each ad ends with company, Dept. code and city, and a hairline below." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "oldstyle", "look": "Cheltenham Bold Condensed caps", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Libre Caslon Display" },
+    { "role": "header", "classification": "oldstyle", "look": "Cheltenham Bold Italic", "weight": "bold", "width": "normal", "case": "title", "webFont": "Libre Caslon Text" },
+    { "role": "body", "classification": "oldstyle", "look": "Century / Cheltenham text, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Old Standard TT" }
+  ],
+  "color": { "mode": "mono", "paper": "#f7f4ec", "ink": "#151515", "accents": [] },
+  "ornaments": ["double rules", "hairline separators", "Dept. codes for tracking replies"],
+  "notes": ["The copy is a goldmine for a generator: get-rich schemes, patent lawyers, song-poem contests, stammering cures.", "Dept. codes (Dept. C-106) are the period equivalent of booking codes."]
+}

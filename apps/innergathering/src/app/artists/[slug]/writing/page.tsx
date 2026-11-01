@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getProfileBySlug, listWriting } from "@elkdonis/services";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { WritingShelf, StartPiece } from "@elkdonis/cms-ui/writing";
 import { hasProfileSection, isMember } from "@/lib/members";
 import { startPieceAction } from "@/lib/writing-actions";
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MemberWritingPage({ params }: Props) {
   const { slug } = await params;
   const profile = await getProfileBySlug(slug);
+  if (!profile) await redirectRenamedProfile(slug, (current) => `/artists/${current}/writing`);
   if (!profile || !(await isMember(profile.userId))) notFound();
   // The section is the person's own decision; with it off, the shelf is not
   // theirs to show — even at a URL somebody kept.

@@ -23,9 +23,21 @@ export function isValidNewsletterSlug(slug: string): boolean {
   return SLUG_RE.test(slug);
 }
 
-/** `site_config.key` for one newsletter, mirroring the `puck:<slug>` precedent. */
-export function newsletterKey(slug: string): string {
-  return `newsletter:${slug}`;
+/**
+ * The `site_config.key` prefix for an audience's issues.
+ *
+ * Org issues are `newsletter:<slug>`, mirroring the `puck:<slug>` precedent.
+ * A series' mailings are `series-mail:<threadId>:<slug>` (developer,
+ * 2026-10-10): a series mailing is a different thing from the org newsletter
+ * and never appears in the org's list, which reads `newsletter:` only.
+ */
+export function newsletterKeyPrefix(audience: NewsletterAudience = ORG_AUDIENCE): string {
+  return audience.kind === "series" ? `series-mail:${audience.threadId}:` : "newsletter:";
+}
+
+/** `site_config.key` for one issue; the audience defaults to the org's list. */
+export function newsletterKey(slug: string, audience: NewsletterAudience = ORG_AUDIENCE): string {
+  return `${newsletterKeyPrefix(audience)}${slug}`;
 }
 
 export interface Newsletter {
@@ -50,9 +62,28 @@ export interface Newsletter {
   sentAt: string | null;
   /** How many addresses the last real send went to. */
   sentCount: number;
+  /** Who a real send goes to; follows from the storage key (`newsletterKey`). */
+  audience: NewsletterAudience;
 }
 
 export type NewsletterSummary = Omit<Newsletter, "project" | "html">;
+
+/**
+ * Who a newsletter is addressed to (docs/open/SERIES_EMAIL_DESIGN_2026-10-10.md
+ * §2, "Series newsletter").
+ *
+ * - `org`: the org's `contacts`, minus `unsubscribed` (the original behaviour).
+ * - `series`: the people subscribed to one series thread
+ *   (`thread_rsvps.status = 'subscribed'` on `threadId`), minus anyone whose
+ *   org contact is `unsubscribed`. People who only said yes to a single week
+ *   are not included (developer, 2026-10-10).
+ *
+ * The audience is part of the storage key, so every store function takes it
+ * (default: org) and an issue cannot move between audiences.
+ */
+export type NewsletterAudience = { kind: "org" } | { kind: "series"; threadId: string };
+
+export const ORG_AUDIENCE: NewsletterAudience = { kind: "org" };
 
 export interface SendResult {
   ok: boolean;

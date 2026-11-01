@@ -11,7 +11,7 @@ import { db } from "@elkdonis/db";
  * to anything.
  *
  * Renders nothing at all when the org has no posts, rather than an empty
- * heading — a member who opted in shouldn't get a bare "Latest from Elkdonis"
+ * heading — a member who opted in shouldn't get a bare "Latest from Arts Collective"
  * with nothing under it.
  */
 const NETWORK_ORG = "elkdonis";
@@ -46,7 +46,7 @@ export async function ElkdonisFeed({ limit = 4 }: { limit?: number }) {
 
   return (
     <section className="profile-feed" aria-labelledby="elkdonis-feed-head">
-      <h2 id="elkdonis-feed-head">Latest from Elkdonis</h2>
+      <h2 id="elkdonis-feed-head">Latest from Arts Collective</h2>
       <ul>
         {posts.map((post) => (
           <li key={post.id}>

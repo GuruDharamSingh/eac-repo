@@ -348,8 +348,9 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
 
 ### Server OBS (broadcast) — 2026-10-03
 - Compose service `obs` (container `eac-obs`, image `eac-obs`, `docker/obs/Dockerfile`):
-  Ubuntu 24.04, OBS 32.2.0 from the OBS PPA, Xvfb :99 at 1920x1080, fluxbox,
-  x11vnc + noVNC on `127.0.0.1:6080` (password `OBS_VNC_PASSWORD`), PulseAudio
+  Ubuntu 24.04, OBS 32.2.0 from the OBS PPA, headless sway at 1920x1080
+  rendering on the iGPU (since 2026-10-28; was Xvfb + fluxbox), wayvnc + noVNC
+  on `127.0.0.1:6080` (no password; `OBS_VNC_PASSWORD` is unused), PulseAudio
   null sink. `/dev/dri` passed in (groups 107 render, 44 video). 8 CPUs, 6 GB.
   Volumes `obs-home` (OBS config, scene collection), `obs-recordings`.
 - `docker/obs/start.sh` seeds the config on every start: profile `EAC`
@@ -397,6 +398,25 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   Recording shares the stream encoder (`RecEncoder=none`), so it adds no
   encode cost. Compositing and the browser source are software GL (llvmpipe):
   the virtual display has no DRI3, so the iGPU encodes but does not render.
+- GPU display (2026-10-28): Xvfb replaced by a headless sway compositor
+  (`WLR_BACKENDS=headless`, `WLR_RENDERER=gles2` on `/dev/dri/renderD128`); OBS
+  runs as a Wayland client and logs `AMD Radeon 610M (radeonsi)` instead of
+  llvmpipe. No monitor needed, no KMS output taken (the host console keeps
+  HDMI). Xwayland is off (OBS does not use it); X11 screen/window capture
+  sources do not work under Wayland. Measured the same way as above (docker
+  stats, 4-sample means, 1080p30, VA-API; animated CSS test page; recording,
+  not streaming), old and new image run back to back on eris:
+  | State | Xvfb | GPU display |
+  |---|---|---|
+  | Holding scene, idle | 0.79 core | 0.03 |
+  | Animated page on air | 1.50 | 0.07 |
+  | Animated page, recording | 2.02 | 0.12 |
+  | Motion clip on air | 2.63 | 0.10 |
+  | Motion clip, recording | 3.26 | 0.16 |
+  30 fps and 0 skipped frames in both; ~490 MB RAM. Recording checked: H.264
+  1920x1080 30 fps, frames show the page moving. The browser source renders
+  with `BrowserHWAccel=false` (true not tried). `ffmpeg_vaapi_tex` (zero-copy)
+  is now offered but the profile still uses `ffmpeg_vaapi`.
 - Not verified: streaming to a real YouTube/other ingest; audio from the browser
   source in a recording; noVNC through an SSH tunnel; long sessions (only ~50 s
   runs); multiple simultaneous outputs beyond one stream + one recording.
@@ -472,6 +492,12 @@ video pipelines, and how apps serve and accept media. Last verified: 2026-09-23.
   circle page (session links: Talk room, session document) and innergathering's
   landing offering card ("Join the room" opens the call in the RSVP column,
   `apps/innergathering/src/components/landing/OfferingCall.tsx`).
+  Also innergathering's `/hub/chat`, `/hub/documents`, `/hub/files` (2026-10-08,
+  `NextcloudFrame` in `cms-ui/hubsite`). Signed-out `/apps/files/files` answers
+  401 with `frame-ancestors 'none'` (header read, 2026-10-08), so a Files frame
+  shows "refused" rather than a login page until the person signs in at top
+  level; whether a signed-in Files page carries the `eac_embed` origin is
+  **unknown**. (claude, 2026-10-08)
 - Host timer `nextcloud-talk-fix.timer` (enabled; last ran 2026-06-05) runs a
   script outside the repo that fixes the Talk TURN relay IP and iptables rules.
 

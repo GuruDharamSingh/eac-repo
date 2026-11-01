@@ -7,7 +7,10 @@
  * accept. Cleans up everything it writes.
  *
  *   docker exec -w /app/packages/email eac-arts-network \
- *     ./node_modules/.bin/tsx scripts/test-suite.mts
+ *     ./node_modules/.bin/tsx scripts/test-suite.mts --org probe-email
+ *
+ * Refuses to run without `--org probe-<name>` (probe-org.mts): it writes
+ * inbox, contact, ledger and identity rows for that org.
  */
 import { db } from '@elkdonis/db';
 import {
@@ -18,8 +21,9 @@ import {
   recordSend, ingestEvents, recentActivity, deliveryStats,
   getOrgEmailIdentity, saveOrgEmailIdentity, clearEmailIdentityCache,
 } from '../src/index';
+import { probeOrg } from './probe-org.mts';
 
-const ORG = 'ifac';
+const ORG = probeOrg();
 let pass = 0, fail = 0;
 const written = { inbox: [] as string[], contacts: [] as string[], sends: [] as string[], events: [] as string[] };
 
@@ -58,23 +62,23 @@ ok('out of office → auto',
 console.log('\n── inbox ──');
 const id1 = await recordInbound({
   orgId: ORG, fromEmail: 'probe-suite@example.com', fromName: 'Probe',
-  toEmail: 'ifac@inbound.elkdonis-arts.org', subject: 'Test enquiry',
+  toEmail: inboundAddressFor(ORG), subject: 'Test enquiry',
   bodyText: 'hello', classification: 'enquiry',
   attachments: [{ name: 'a.pdf', type: 'application/pdf', size: 12 }],
-  envelope: { to: ['ifac@inbound.elkdonis-arts.org'] },
+  envelope: { to: [inboundAddressFor(ORG)] },
   messageId: '<probe-suite-1@example.com>',
 });
 ok('recorded', Boolean(id1));
 if (id1) written.inbox.push(id1);
 
 const dupe = await recordInbound({
-  orgId: ORG, fromEmail: 'probe-suite@example.com', toEmail: 'ifac@inbound.elkdonis-arts.org',
+  orgId: ORG, fromEmail: 'probe-suite@example.com', toEmail: inboundAddressFor(ORG),
   subject: 'Test enquiry', classification: 'enquiry', messageId: '<probe-suite-1@example.com>',
 });
 ok('duplicate Message-ID deduped (partial-index ON CONFLICT)', dupe === null, `got ${dupe}`);
 
 const noId = await recordInbound({
-  orgId: ORG, fromEmail: 'probe-suite2@example.com', toEmail: 'ifac@inbound.elkdonis-arts.org',
+  orgId: ORG, fromEmail: 'probe-suite2@example.com', toEmail: inboundAddressFor(ORG),
   subject: 'No message id', classification: 'enquiry', messageId: null,
 });
 ok('a message with no Message-ID is still stored', Boolean(noId));

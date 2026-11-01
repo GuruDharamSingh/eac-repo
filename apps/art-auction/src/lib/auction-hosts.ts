@@ -3,7 +3,7 @@ import { siteConfig } from "@/config/site";
 
 /**
  * The two organisations the auction is presented under: IFAC runs it,
- * Elkdonis Arts Collective hosts it. Their names, pictures and bios are the
+ * Arts Collective (the platform) hosts it. Their names, pictures and bios are the
  * network profile rows (`users`, one per organisation, slug = org id), so
  * editing the profile changes the auction page too.
  */
@@ -22,7 +22,7 @@ type Row = { slug: string; display_name: string | null; avatar_url: string | nul
 
 const FALLBACK_NAME = {
   ifac: "International Fine Art Collectors",
-  elkdonis: "Elkdonis Arts Collective",
+  elkdonis: "Arts Collective",
 } as const;
 
 const NETWORK = {
@@ -34,14 +34,17 @@ export async function getAuctionHosts(): Promise<{ presenter: AuctionHost; host:
   let rows: Row[] = [];
   try {
     rows = await db<Row[]>`
-      SELECT slug, display_name, avatar_url, bio
-      FROM users
-      WHERE slug IN ('ifac', 'elkdonis')
+      SELECT COALESCE(o.id, u.slug) AS slug, u.display_name, u.avatar_url, u.bio
+      FROM organizations o
+      JOIN users u ON u.id = o.profile_user_id
+      WHERE o.id IN ('ifac', 'elkdonis')
     `;
   } catch (err) {
     // The page must still render its heading if the profile lookup fails.
     console.error("[auction-hosts] profile lookup failed:", err);
   }
+  // The host is the Arts Collective platform = org `elkdonis` (renamed
+  // 2026-10-28), stewarded by the not-for-profit `inner_group`.
   const by = (slug: "ifac" | "elkdonis"): AuctionHost => {
     const r = rows.find((x) => x.slug === slug);
     return {

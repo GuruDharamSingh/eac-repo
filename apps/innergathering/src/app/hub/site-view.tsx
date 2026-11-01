@@ -37,6 +37,7 @@ import {
 } from "@elkdonis/cms-ui/hubsite";
 import { siteConfig } from "@/config/site";
 import type { Viewer } from "@/lib/auth";
+import { HUB_VIEWS } from "./views";
 
 const TIME_ZONE = "America/Toronto";
 const IMAGE = /\.(jpe?g|png|gif|webp|avif)$/i;
@@ -178,7 +179,7 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
               Welcome back, {name.split(/[\s@]/)[0]}.
             </h1>
           </div>
-          <HubViewToggle current="site" />
+          <HubViewToggle current="site" views={HUB_VIEWS} />
         </div>
 
         <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />

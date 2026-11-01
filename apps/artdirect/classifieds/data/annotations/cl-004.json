@@ -1,0 +1,27 @@
+{
+  "id": "cl-004",
+  "status": "draft",
+  "source": { "paper": "Hood County News", "place": "Granbury, Texas", "date": "2026-01-24", "era": "2020s", "language": ["en"] },
+  "summary": "Modern community-weekly classifieds page: masthead plus rate card, a numbered classification index, a black call-to-action bar, then six columns of grey-barred sections mixing boxed liners, photo display ads and a legal-notices column.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Serif paper name in black and red, CLASSIFIEDS in heavy serif caps; rate card and yellow deadline box to the right.", "footer": "House ads for the paper fill the last row." },
+  "headers": [
+    { "id": "grey-numbered-bar", "kind": "tint-bar", "example": "024 Real Estate For Rent", "fg": "#1a1a1a", "bg": "#d9d9d9", "numbering": "prefix", "align": "left", "box": [0.04, 0.217, 0.16, 0.011], "notes": "Bold condensed sans; the number is set apart by a white rule." },
+    { "id": "cta-pill", "kind": "banner", "example": "PLACE YOUR AD ONLINE AT HCNEWS.COM ...", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.04, 0.188, 0.94, 0.016], "notes": "Rounded black bar, condensed caps, full width." },
+    { "id": "class-index", "kind": "plain-caps", "example": "001 Asphalt & Cement ... 033 Legal Public Notices", "fg": "#1a1a1a", "bg": "#e6e6e6", "numbering": "prefix", "align": "left", "box": [0.04, 0.12, 0.6, 0.06], "notes": "Five-column index of numbered classifications in a grey panel." }
+  ],
+  "units": [
+    { "id": "centred-liner", "kind": "liner", "frequency": "dominant", "lead": "none", "align": "center", "border": "none", "example": "JUAREZ CONCRETE / Slabs, Driveways, Patios...", "notes": "Short service ads centred, separated by space rather than rules." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold", "align": "center", "border": "thin", "example": "4-person hot tub. FREE if you move it.", "box": [0.04, 0.267, 0.16, 0.03] },
+    { "id": "photo-display", "kind": "display", "frequency": "common", "lead": "bold", "align": "left", "border": "none", "example": "Discover Gardens of De Cordova!", "box": [0.5, 0.218, 0.32, 0.2], "notes": "Full-colour photo on top, serif headline, bullet list, phone in bold." },
+    { "id": "legal-notice", "kind": "notice", "frequency": "common", "lead": "caps", "align": "justify", "border": "none", "example": "REQUEST FOR QUALIFICATIONS - RFQ2026-03 ...", "box": [0.82, 0.215, 0.16, 0.75], "notes": "One long justified column, small sans, no breaks for display." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "transitional", "look": "Heavy high-contrast serif caps", "weight": "black", "width": "normal", "case": "upper", "webFont": "Libre Caslon Text" },
+    { "role": "header", "classification": "condensed-grotesque", "look": "Franklin Gothic Condensed-like bold", "weight": "bold", "width": "condensed", "case": "title", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "grotesque", "look": "Plain Helvetica/Arial-like sans", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#1a1a1a", "accents": [ { "hex": "#ffe600", "use": "deadline box" }, { "hex": "#c8102e", "use": "“News” in masthead" }, { "hex": "#d9d9d9", "use": "section header bars" } ] },
+  "ornaments": ["clip-art logos (Taco Casa, DQ)", "card-brand logos in rate box"],
+  "notes": ["cl-003 and cl-005 are the same paper on other dates; check whether the layout is a fixed template."]
+}

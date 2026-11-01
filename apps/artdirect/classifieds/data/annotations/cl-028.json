@@ -1,0 +1,15 @@
+{
+  "id": "cl-028",
+  "status": "draft",
+  "role": "adjacent",
+  "source": { "paper": "The Arizona Republic", "place": "Phoenix, Arizona", "date": "1981-04-21", "era": "1980s", "language": ["en"] },
+  "summary": "Not classifieds: the daily movie-listings page ('Valley cinemafare'). A column of agate showtimes by theatre at left, then a jigsaw of theatre and film display ads using each film's poster lettering (Excalibur, The Howling, Star Wars, Caveman).",
+  "frame": { "columns": 6, "columnWidth": "mixed", "gutter": "tight", "columnRules": "thin", "flow": "modular", "masthead": "Small boxed sans heading 'Valley cinemafare' at top left; running head with date, paper and ALL EDITIONS." },
+  "units": [
+    { "id": "showtime-agate", "kind": "listing-table", "frequency": "common", "lead": "bold", "align": "left", "border": "none", "example": "Christown: Going Ape (PG) 1:30, 3:20...", "notes": "Theatre name bold, films and times in run-in agate." },
+    { "id": "theatre-grid", "kind": "listing-table", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "AMC THEATRES grid of screens and films", "notes": "Boxed grid, one cell per screen, film title in condensed caps." },
+    { "id": "poster-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "example": "It's Back! STAR WARS Last 3 Days", "notes": "Film logotypes, photos and drawn art reduced to column size." }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "notes": ["An adjacent section type (entertainment directory). Worth keeping if the site ever adds a 'what's on' page; outside the classifieds families."]
+}

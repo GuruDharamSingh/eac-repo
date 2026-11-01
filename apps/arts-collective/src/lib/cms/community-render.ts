@@ -492,7 +492,7 @@ export function buildPortalHtml(opts: BuildOpts): string {
         <span class="ep-ok">&#10003; Network member</span>
       </div>`
     : `<div class="ep-join">
-        <p class="ep-join__t">Join the Elkdonis Collective</p>
+        <p class="ep-join__t">Join Arts Collective</p>
         <p class="ep-join__s">One account. Every collective site.</p>
         <div class="ep-join__r">
           <a href="${signupUrl}" class="ep-join__b ep-join__b--p">Create account</a>
@@ -878,7 +878,7 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
         <span class="ep-ok">&#10003; Network member</span>
       </div>`
     : `<div class="ep-join">
-        <p class="ep-join__t">Join the Elkdonis Collective</p>
+        <p class="ep-join__t">Join Arts Collective</p>
         <p class="ep-join__s">One account. Every collective site.</p>
         <div class="ep-join__r">
           <a href="${signupUrl}" class="ep-join__b ep-join__b--p">Create account</a>
@@ -945,7 +945,7 @@ export function buildNewsroomHtml(opts: NewsroomOpts): string {
   <a href="/artists">Directory</a>
   <a href="#events">Events</a>
   <a href="#feed">Network feed</a>
-  <a href="/hub">Elkdonis</a>
+  <a href="/hub">Arts Collective</a>
 </nav>
 
 <!-- 3-col body -->

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { postToElkdonis, type PostState } from "@/app/hub/(tabs)/elkdonis/actions";
+import { postToElkdonis, type PostState } from "@/app/hub/(tabs)/arts-collective/actions";
 
 const INITIAL: PostState = { ok: false, message: null };
 

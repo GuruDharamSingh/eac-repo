@@ -1,0 +1,26 @@
+{
+  "id": "cl-013",
+  "status": "draft",
+  "source": { "paper": "Cass City Chronicle", "place": "Cass City, Michigan", "date": "2011-08-03", "era": "2010s", "language": ["en"] },
+  "summary": "Small-town weekly page: CLASSIFIEDS in giant heavy serif caps with a drop shadow, centred serif classification heads between rules, justified serif liners each closed by a run code, a Legal Notices block in the same shadowed display serif, and a full-colour college ad across the foot.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "medium", "gutter": "normal", "columnRules": "thin", "flow": "vertical", "masthead": "Running head (page, paper, date, town), then full-width heavy Didone/Bodoni Poster caps with a hard offset shadow.", "footer": "Full-width process-colour display ad (Baker College)." },
+  "headers": [
+    { "id": "serif-head", "kind": "rule-label", "example": "Real Estate For Sale", "fg": "#111111", "bg": "transparent", "align": "center", "box": [0.17, 0.115, 0.16, 0.012], "notes": "Bold serif title case, centred, hairlines above and below." },
+    { "id": "section-display", "kind": "banner", "example": "Legal Notices", "fg": "#111111", "bg": "transparent", "align": "left", "box": [0.0, 0.43, 0.65, 0.03], "notes": "Same shadowed poster serif as the masthead, at a smaller size, opening a new section mid-page." },
+    { "id": "reverse-label", "kind": "reverse-bar", "example": "FOR RENT", "fg": "#ffffff", "bg": "#111111", "align": "center", "notes": "Occasional reversed head in heavy serif caps." }
+  ],
+  "units": [
+    { "id": "serif-liner", "kind": "liner", "frequency": "dominant", "lead": "caps", "align": "justify", "border": "none", "example": "GARAGE SALE - Aug. 4-6, 9-5 p.m. ... 14-8-3", "notes": "Caps lead with a hyphen, run code (issue-week-count) flush right on the last line." },
+    { "id": "boxed-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "ReVIVE Carpet & Upholstery Cleaning", "notes": "Local business logos and big phone numbers; one $369/mo. display in heavy condensed." },
+    { "id": "legal-notice", "kind": "notice", "frequency": "common", "lead": "caps", "align": "justify", "border": "none", "example": "MORTGAGE SALE - Default has been made...", "notes": "Mortgage sale notices in small justified serif, three columns." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "modern", "look": "Bodoni Poster / heavy Didone caps with hard drop shadow", "weight": "black", "width": "normal", "case": "upper", "webFont": "Abril Fatface" },
+    { "role": "header", "classification": "news-serif", "look": "Bold Century/Times-like serif", "weight": "bold", "width": "normal", "case": "title", "webFont": "Tinos" },
+    { "role": "body", "classification": "news-serif", "look": "Times-like serif, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Tinos" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#e4002b", "use": "foot display ad" }, { "hex": "#0057b8", "use": "foot display ad" } ] },
+  "ornaments": ["drop-shadow display type", "run codes", "CMYK colour bar at top"],
+  "notes": ["Serif variant of the community weekly; differs from Hood County's sans-and-bars look mainly in type."]
+}

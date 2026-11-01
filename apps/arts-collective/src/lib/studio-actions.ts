@@ -102,9 +102,14 @@ export async function loadStudioPiece(
 ): Promise<{ post: StudioPiece; listing: StudioListing } | null> {
   const auth = await authorizePost(id);
   if (!auth.ok) return null;
-  const [orgs, selected] = await Promise.all([listListableOrgs(auth.viewer), listThreadListings(id)]);
+  const [orgs, selected, shareRows] = await Promise.all([
+    listListableOrgs(auth.viewer),
+    listThreadListings(id),
+    db<{ shares: unknown }[]>`SELECT metadata->'shares' AS shares FROM threads WHERE id = ${id}`,
+  ]);
+  const shares = Array.isArray(shareRows[0]?.shares) ? (shareRows[0]!.shares as StudioPiece["shares"]) : [];
   return {
-    post: toPiece(auth.post),
+    post: { ...toPiece(auth.post), shares },
     listing: {
       orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name })),
       selected,
@@ -224,6 +229,8 @@ export async function searchStudioThreads(kind: string, q: string): Promise<Arra
       };
     });
   }
+  // A meeting series is offered, and drawn, as a meeting card.
+  const kinds = kind === "meeting" ? ["meeting", "series"] : [kind];
   const rows = await db<
     Array<{ id: string; org_id: string; kind: string; slug: string; title: string; scheduled_at: Date | null; location: string | null; cover: string | null; published_at: Date | null; author_slug: string | null }>
   >`
@@ -231,7 +238,7 @@ export async function searchStudioThreads(kind: string, q: string): Promise<Arra
            t.metadata->>'coverImageUrl' AS cover, t.published_at, u.slug AS author_slug
     FROM threads t JOIN users u ON u.id = t.author_id
     WHERE t.author_id = ${viewer}::uuid AND t.status = 'published'
-      AND t.kind = ${kind} AND t.kind <> ALL(${OFF_CARD_KINDS})
+      AND t.kind = ANY(${kinds}) AND t.kind <> ALL(${OFF_CARD_KINDS})
       AND (${q.trim() === ""} OR t.title ILIKE ${needle})
     ORDER BY COALESCE(t.scheduled_at, t.published_at) DESC
     LIMIT 12
@@ -246,6 +253,6 @@ export async function searchStudioThreads(kind: string, q: string): Promise<Arra
       r.kind === "writing" && r.author_slug && ARTDIRECT_URL
         ? `${ARTDIRECT_URL}/${r.author_slug}/writing/${r.slug}`
         : `${getOrgHomeUrl({ slug: r.org_id })}/${r.slug}`;
-    return { threadId: r.id, kind: r.kind, title: r.title, meta, href, coverImageUrl: r.cover, price: null, forSale: false };
+    return { threadId: r.id, kind: r.kind === "series" ? "meeting" : r.kind, title: r.title, meta, href, coverImageUrl: r.cover, price: null, forSale: false };
   });
 }

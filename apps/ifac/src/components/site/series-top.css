@@ -1,0 +1,406 @@
+/* ==========================================================================
+   Series page top (2026-10-10): the developer's sketch, card after mockup C
+   (docs/open/series-page-top-mockups-2026-10-10/c-session-hero.html), the
+   sign-in after mockup E. Used by components/site/series-top.tsx and the
+   header block in app/series/[slug]/page.tsx. Sits inside `.ifs`, so the
+   site.css tokens apply (revision 4 grounds: --ifs-bg #050506,
+   --ifs-bg-2 #0b0b0d).
+
+   Measured pairs (WCAG ratio; node, sRGB relative luminance, 2026-10-10):
+   - ink #ece7e1 on #0b0b0d 16.0:1, on #050506 16.6:1, on #120f07 15.6:1
+   - muted #b3ada3 on #0b0b0d 8.8:1, on #050506 9.1:1
+   - gold text #e3c572 on #0b0b0d 11.7:1, on #050506 12.1:1, on #120f07 11.4:1
+   - #0b0b0d on gold fill #c9a24a 8.2:1 (primary buttons, site.css)
+   - error #f0a08a on #050506 9.8:1; ok mark #8fd6a5 on #0b0b0d 11.6:1
+   - Google button text #3c4043 on #ffffff 10.5:1
+   - toast #0b0b0d on #ece7e1 16.0:1
+   - input border #8c867d on #050506 5.7:1 (3:1 applies); pill border
+     #8c867d on #050506 5.7:1; focus ring #e3c572 on #050506 12.1:1
+   - card frame #5c62e6 on #050506 4.2:1 (non-text, 3:1 applies)
+   - "Sign In/Up" #20d7ff (--ifs-blue-text, site.css) on #050506 11.86:1,
+     on the called ground #120f07 11.14:1 (round 3, 2026-10-10)
+   Phones: nothing here is wider than its column; at 360px Email and
+   Password stay side by side (each about 140px), Username and Enter share
+   a row, the zone list wraps, and the three pills keep one row (round 3).
+   ========================================================================== */
+
+.ifs {
+  --ist-edge: #8c867d;
+  --ist-called: #120f07;
+  --ist-err: #f0a08a;
+  --ist-ok: #8fd6a5;
+}
+
+/* ── header block ───────────────────────────────────────────────────────── */
+.ifs-event-head.ist-head { border-bottom: 0; padding-bottom: 30px; }
+.ifs-event-head.ist-head .ifs-wrap { display: block; }
+.ifs-event-head.ist-head h1 { max-width: none; }
+.ifs-event-head.ist-head .ifs-hero__lede { max-width: 62ch; }
+.ist-head .ifs-facts .ist-times,
+.ist-head .ifs-facts .ist-times span { display: inline; }
+.ist-time { white-space: nowrap; }
+.ist-time + .ist-time::before { content: "\00a0· "; color: var(--ifs-faint); white-space: normal; }
+.ist-daymark { color: var(--ifs-muted); font-size: 0.9em; }
+/* "Learn more" sits inline at the end of the fact row and wraps with it. */
+.ist-head .ifs-facts { align-items: center; }
+.ifs .ist-head .ist-learn { margin: 0; }
+/* A hyphenated title word stays on one line; the hyphen is U+002D (page.tsx unbreakable()). */
+.ist-head h1 .nb { white-space: nowrap; }
+
+/* ── the card ───────────────────────────────────────────────────────────── */
+.ist-section { padding: 0; }
+.ist-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 330px) minmax(0, 1fr) minmax(0, 440px);
+  border: 2px solid var(--ifs-frame);
+  background: var(--ifs-bg-2);
+}
+
+.ist-cover {
+  position: relative;
+  min-height: 420px;
+  background: radial-gradient(70% 70% at 50% 40%, #2a1540, #0b0b0d);
+  border-right: 1px solid var(--ifs-line-strong);
+  overflow: hidden;
+}
+.ist-cover__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ist-cover__blank { position: absolute; inset: 0; display: grid; place-items: center; }
+.ist-cover__blank img { width: 70%; max-width: 260px; height: auto; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6)); }
+.ist-cover__tag {
+  position: absolute; top: 14px; left: 14px;
+  padding: 4px 10px;
+  background: rgba(5, 5, 6, 0.88);
+  border: 1px solid var(--ifs-gold);
+  border-radius: 999px;
+  color: var(--ifs-gold-text);
+  font-size: 0.74rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+}
+
+.ist-info { padding: 30px 30px 32px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ist-kicker { display: flex; align-items: center; gap: 10px; }
+.ist-kicker::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--ifs-gold); flex: none; }
+.ist-title { font-size: clamp(1.9rem, 2.8vw, 2.6rem); line-height: 1.08; text-wrap: balance; }
+.ist-title a { color: var(--ifs-ink); }
+.ist-title a:hover, .ist-title a:focus-visible { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+.ist-host { display: flex; align-items: center; gap: 10px; color: var(--ifs-muted); font-size: 1rem; }
+.ist-host b { color: var(--ifs-ink); font-weight: 600; }
+.ist-host img, .ist-host i {
+  width: 32px; height: 32px; flex: none; border-radius: 50%; object-fit: cover;
+  border: 1px solid var(--ifs-line-strong); background: var(--ifs-bg-3);
+  display: inline-grid; place-items: center; font-style: normal; font-size: 0.85rem; color: var(--ifs-ink);
+}
+.ist-date { font-weight: 600; font-size: 1.05rem; color: var(--ifs-ink); }
+.ist-summary { color: var(--ifs-muted); white-space: pre-line; line-height: 1.6; }
+.ist-empty { color: var(--ifs-muted); font-size: 1.1rem; }
+
+/* ── the action panel ───────────────────────────────────────────────────── */
+.ist-act {
+  container-type: inline-size;
+  min-width: 0;
+  padding: 28px 24px 26px;
+  display: grid; gap: 20px; align-content: start;
+  background: var(--ifs-bg);
+  border-left: 1px solid var(--ifs-line-strong);
+}
+.ist-act__block { display: grid; gap: 14px; }
+.ist-act__h { font-size: 1.65rem; }
+.ifs .ist-btn-wide { width: 100%; }
+.ist-small { font-size: 0.95rem; }
+.ist-muted { color: var(--ifs-muted); }
+.ist-err { color: var(--ist-err); font-size: 0.95rem; }
+.ist-done { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.1rem; }
+.ist-done svg { width: 22px; height: 22px; stroke: var(--ist-ok); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ist-joinbox { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--ifs-line-strong); border-radius: 10px; background: var(--ifs-bg-2); }
+.ist-joinbox .ifs-btn { width: 100%; }
+.ist-links { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.98rem; }
+.ifs .ist-textlink {
+  color: var(--ifs-gold-text); font-weight: 600;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+}
+.ifs .ist-textlink:hover { text-decoration-thickness: 2px; }
+.ifs .ist-textlink:disabled { opacity: 0.6; cursor: default; }
+
+/* the combined sign-in / sign-up form (redone 2026-10-10 evening):
+   heading; Email | Password; Username (optional) | Enter; OR; Google; logo. */
+.ist-auth {
+  display: grid; gap: 16px; max-width: 520px;
+  padding-top: 22px; border-top: 1px solid var(--ifs-line-strong);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+.ist-auth.is-first { padding-top: 0; border-top: 0; }
+.ist-auth.is-called {
+  background: var(--ist-called);
+  border-top-color: transparent;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--ifs-gold), 0 0 0 10px var(--ist-called);
+  padding: 18px 16px;
+  margin-top: 6px;
+}
+.ifs .ist-auth__h { font-size: clamp(1.75rem, 1.35rem + 1.2vw, 2.1rem); line-height: 1.1; text-wrap: balance; }
+/* Round 3 (developer, 2026-10-10): what to do, in the electric blue; the
+   sentence that used to appear under the heading when the form was called
+   is gone. */
+.ist-auth__lead { color: var(--ifs-blue-text, #20d7ff); }
+.ist-auth__top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.ist-auth__check { color: var(--ifs-ink); font-size: 1rem; }
+.ist-auth__pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.ist-auth__userrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.ist-field { display: grid; gap: 6px; min-width: 0; }
+.ist-field label { font-size: 1.05rem; font-weight: 600; color: var(--ifs-ink); }
+.ist-optional { font-weight: 400; color: var(--ifs-muted); }
+.ist-field input {
+  width: 100%; height: 52px;
+  border: 1.5px solid var(--ist-edge); border-radius: 8px;
+  background: var(--ifs-bg); color: var(--ifs-ink);
+  padding: 0 14px; font: inherit; font-size: 1.12rem;
+}
+.ist-field input:focus { outline: 2px solid var(--ifs-gold-text); outline-offset: 1px; border-color: var(--ifs-gold); }
+.ifs .ist-enter { min-height: 52px; padding: 0 28px; font-size: 1.08rem; }
+.ist-or {
+  display: flex; align-items: center; gap: 14px;
+  color: var(--ifs-muted); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.18em;
+}
+.ist-or::before, .ist-or::after { content: ""; flex: 1; height: 1px; background: var(--ifs-line-strong); }
+.ist-google {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; min-height: 52px; padding: 0 18px;
+  border-radius: 999px; border: 1px solid #dadce0;
+  background: #fff; color: #3c4043;
+  font-weight: 600; font-size: 1.05rem;
+}
+.ist-google svg { width: 20px; height: 20px; flex: none; }
+.ist-google:focus-visible, .ist-pill:focus-visible, .ist-act .ifs-btn:focus-visible, .ist-dialog .ifs-btn:focus-visible, .ist-learn:focus-visible {
+  outline: 2px solid var(--ifs-gold-text); outline-offset: 3px;
+}
+/* EAC logo: light blue on black (350x392), 64px tall at the top right of
+   the form beside the heading (round 3: moved from under Google at every
+   width; one place, and the panel is a row shorter). */
+.ist-auth__logo { display: block; width: auto; height: 64px; margin: 2px 0 0; }
+
+/* narrow panel: Email and Password stay side by side on a 360px phone (panel
+   about 290px, each field about 140px) and stack only below that */
+@container (max-width: 250px) {
+  .ist-auth__pair { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 330px) {
+  .ifs .ist-enter { padding: 0 20px; }
+  .ist-field input { padding: 0 12px; font-size: 1.06rem; }
+}
+
+/* ── the pills on the divider ───────────────────────────────────────────── */
+.ist-divider { display: flex; align-items: center; gap: 16px; margin-top: 44px; }
+.ist-divider::before, .ist-divider::after { content: ""; flex: 1 1 16px; min-width: 12px; height: 1px; background: var(--ifs-line-strong); }
+.ist-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.ist-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 46px; padding: 0 22px;
+  border-radius: 999px; border: 1.5px solid var(--ist-edge);
+  background: var(--ifs-bg); color: var(--ifs-ink);
+  font-weight: 600; font-size: 1rem; white-space: nowrap; cursor: pointer;
+}
+.ist-pill:hover { border-color: var(--ifs-gold); color: var(--ifs-gold-text); }
+.ist-pill.is-on { border-color: var(--ifs-gold); color: var(--ifs-gold-text); }
+.ist-pill:disabled { opacity: 0.6; cursor: default; }
+.ifs .ist-pill-note { text-align: center; color: var(--ifs-muted); font-size: 0.95rem; margin-top: 12px; min-height: 0; overflow-wrap: anywhere; }
+.ifs .ist-pill-note:empty { margin-top: 0; }
+
+/* confirmation toast (Share, Subscribe): fixed at the foot of the viewport */
+.ifs .ist-toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 60;
+  transform: translate(-50%, 12px);
+  max-width: calc(100vw - 32px);
+  padding: 12px 20px; border-radius: 999px;
+  background: #ece7e1; color: #0b0b0d;
+  font-weight: 600; font-size: 1rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.ifs .ist-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+.ifs .ist-toast:empty { padding: 0; }
+
+/* ── dialogs (native <dialog>, opened with showModal) ───────────────────── */
+.ist-dialog {
+  width: min(460px, calc(100vw - 32px));
+  border: 2px solid var(--ifs-gold); border-radius: 12px;
+  background: #0b0b0d; color: #ece7e1;
+  padding: 26px 24px 22px;
+  font-family: var(--ifs-sans); font-size: 1.02rem; line-height: 1.55;
+}
+.ist-dialog::backdrop { background: rgba(0, 0, 0, 0.72); }
+.ifs .ist-dialog h2 { font-family: var(--ifs-serif); font-weight: 500; font-size: 1.7rem; line-height: 1.1; margin: 0 0 12px; }
+.ifs .ist-dialog p { margin: 0 0 10px; }
+.ist-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.ist-dialog--welcome { text-align: center; }
+.ist-dialog--welcome .ist-dialog__actions { justify-content: center; }
+.ist-dialog__mark { width: 36px; height: 36px; margin: 0 auto 8px; display: block; stroke: var(--ist-ok); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the rota, alone in its panel now that the join box is in the card */
+.ifs-panel.ist-rota { grid-template-columns: minmax(0, 1fr); }
+
+/* ── widths ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .ist-hero { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+  .ist-cover { min-height: 320px; }
+  .ist-act { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--ifs-line-strong); }
+}
+@media (max-width: 700px) {
+  .ist-hero { grid-template-columns: minmax(0, 1fr); }
+  .ist-cover { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid var(--ifs-line-strong); }
+  .ist-info, .ist-act { padding: 20px 16px 22px; }
+  .ist-title { font-size: 1.85rem; }
+  .ist-act__h { font-size: 1.45rem; }
+  .ist-divider { margin-top: 32px; gap: 10px; }
+  .ist-pills { gap: 10px; }
+  .ist-pill { min-height: 44px; padding: 0 16px; font-size: 0.95rem; }
+  .ifs-event-head.ist-head { padding-bottom: 24px; }
+  /* small enough to share the "Online" line at 360px rather than sit alone */
+  .ist-head .ifs-facts { column-gap: 18px; }
+  .ifs .ist-head .ist-learn { padding: 0 14px; min-height: 36px; font-size: 0.86rem; }
+}
+
+/* ── round 3 (developer, 2026-10-10) ────────────────────────────────────── */
+/* Phones: a smaller logo beside the heading. */
+@media (max-width: 700px) {
+  .ist-auth__top { gap: 10px; }
+  .ist-auth__logo { height: 48px; }
+}
+/* The three pills keep one row down to 360px: smaller padding and type as
+   the screen narrows; below 520px the divider lines give way. No wrapping,
+   no sideways scroll. */
+@media (max-width: 700px) {
+  .ist-pills { flex-wrap: nowrap; gap: 8px; }
+  .ist-pill { min-height: 42px; padding: 0 12px; font-size: 0.9rem; }
+}
+@media (max-width: 520px) {
+  .ist-divider { gap: 0; }
+  .ist-divider::before, .ist-divider::after { display: none; }
+  .ist-pills { width: 100%; gap: 6px; justify-content: space-between; }
+  .ist-pill { flex: 0 1 auto; min-width: 0; padding: 0 9px; font-size: clamp(0.72rem, 3.45vw, 0.9rem); letter-spacing: 0; }
+}
+
+/* ── cover under the title, the card's framed cover, About (2026-10-13) ── */
+.ist-head .ist-media {
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  margin-top: 22px;
+  border: 1px solid var(--ifs-line-strong);
+  border-radius: var(--ifs-radius);
+}
+.ist-cover .ist-cover__media { position: absolute; inset: 0; }
+.ist-subtitle { margin-top: -4px; }
+.ist-about { padding: 56px 0 8px; }
+.ist-about__body { max-width: 68ch; font-size: 1.08rem; }
+@media (max-width: 700px) {
+  .ist-head .ist-media { margin-top: 16px; }
+  .ist-about { padding-top: 40px; }
+}
+
+/* The sign-in form in the week page's side column (2026-10-13): the column
+   is the container its narrow-width rules read. */
+.ifs-week__rsvp { container-type: inline-size; }
+.ifs-week__rsvp .ist-auth { max-width: none; }
+
+/* ── the series' general card and the next-session band (2026-10-18,
+   mockup D). Larger type than the 2026-10-10 card, for older readers.
+   Pairs: ink #ece7e1 / muted #b3ada3 on #0b0b0d (16.0 / 8.8:1) and on
+   #050506 (16.6 / 9.1:1); gold text on the band's tinted ground (#16130b at
+   its brightest) 10.9:1. ── */
+.ist-gen {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  border: 2px solid var(--ifs-frame);
+  background: var(--ifs-bg-2);
+  margin-top: 28px;
+}
+.ist-gen__about { padding: 30px 32px 32px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.ist-gen__about .ifs-rich { font-size: 1.12rem; color: var(--ifs-ink); }
+.ist-gen__about .ifs-facts { font-size: 1.02rem; }
+.ist-gen .ist-gen__act { border-left: 1px solid var(--ifs-line-strong); }
+.ist-btn-on { border-color: var(--ist-ok); color: var(--ist-ok); }
+.ist-pills--panel { justify-content: flex-start; flex-wrap: wrap; }
+.ist-hosts { display: flex; align-items: center; gap: 12px; color: var(--ifs-muted); font-size: 1rem; }
+.ist-hosts__faces { display: flex; }
+.ist-hosts__faces img, .ist-hosts__faces i { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ifs-bg-2); object-fit: cover; margin-left: -10px; background: var(--ifs-bg-3); font-style: normal; display: grid; place-items: center; font-size: 0.9rem; color: var(--ifs-muted); }
+.ist-hosts__faces > :first-child { margin-left: 0; }
+
+.ist-next {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px 28px;
+  align-items: center;
+  padding: 22px 26px;
+  border: 1px solid var(--ifs-gold);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(201, 162, 74, 0.1), rgba(201, 162, 74, 0) 60%), var(--ifs-bg);
+}
+.ist-next--empty { grid-template-columns: minmax(0, 1fr); border-color: var(--ifs-line-strong); background: var(--ifs-bg-2); }
+.ist-next__info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; min-width: 0; }
+.ist-next__date { text-align: center; line-height: 1.05; border: 1px solid var(--ifs-gold); border-radius: 8px; padding: 8px 12px; min-width: 70px; }
+.ist-next__date b { display: block; font: 600 1.9rem var(--ifs-serif); }
+.ist-next__date small { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ifs-muted); }
+.ist-next__k { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); font-weight: 700; }
+.ist-next__t { font: 500 clamp(1.6rem, 2.4vw, 2.1rem)/1.12 var(--ifs-serif); }
+.ist-next__t a { color: var(--ifs-ink); }
+.ist-next__t a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+.ist-next__sub { font-family: var(--ifs-serif); font-style: italic; font-size: 1.15rem; color: var(--ifs-muted); }
+.ist-next__meta { color: var(--ifs-muted); font-size: 1rem; }
+.ist-next__act { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; justify-content: flex-end; }
+.ist-next__act .ist-links { flex-basis: 100%; justify-content: flex-end; }
+.ist-next__join, .ist-next__err { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .ist-gen { grid-template-columns: minmax(0, 1fr); }
+  .ist-gen .ist-gen__act { border-left: 0; border-top: 1px solid var(--ifs-line-strong); }
+  .ist-next { grid-template-columns: minmax(0, 1fr); padding: 18px 16px; }
+  .ist-next__act, .ist-next__act .ist-links { justify-content: flex-start; }
+}
+@media (max-width: 700px) {
+  .ist-gen__about { padding: 20px 16px 22px; }
+  .ist-next__info { gap: 14px; }
+}
+
+/* ── session rows on a series page: links, no expanding (2026-10-18) ── */
+.ifs-srows { display: grid; gap: 12px; }
+.ifs-srow {
+  display: grid; grid-template-columns: 72px 150px minmax(0, 1fr) auto; gap: 20px; align-items: center;
+  padding: 16px 20px; border: 1px solid var(--ifs-line-strong); border-left: 4px solid var(--acc, var(--ifs-gold));
+  border-radius: 10px; background: var(--ifs-bg-2);
+}
+.ifs-srow__thumb { width: 150px; aspect-ratio: 16 / 9; border-radius: 8px; }
+.ifs-srow__thumb.is-empty { background: radial-gradient(70% 70% at 50% 40%, #2a1540, #0b0b0d); }
+.ifs-srow__k { font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--acc-text, var(--ifs-gold-text)); display: inline-flex; align-items: center; gap: 8px; }
+.ifs-srow__k i { width: 10px; height: 10px; border-radius: 50%; background: var(--acc, var(--ifs-gold)); }
+.ifs-srow__t { font: 500 1.55rem/1.15 var(--ifs-serif); }
+.ifs-srow__t a { color: var(--ifs-ink); }
+.ifs-srow__t a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.ifs-srow__sub { font-family: var(--ifs-serif); font-style: italic; color: var(--ifs-muted); font-size: 1.1rem; }
+.ifs-srow__meta { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 4px; color: var(--ifs-muted); font-size: 0.98rem; }
+.ifs-srow__meta img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+.ifs-srow__side { display: flex; gap: 8px; align-items: center; }
+.ifs-srow.is-past { opacity: 0.8; }
+.ifs-earlier { margin-top: 18px; }
+.ifs-earlier summary { cursor: pointer; color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-earlier .ifs-srows { margin-top: 12px; }
+@media (max-width: 760px) {
+  .ifs-srow { grid-template-columns: 58px minmax(0, 1fr); padding: 14px; gap: 14px; }
+  .ifs-srow__thumb { display: none; }
+  .ifs-srow__side { grid-column: 1 / -1; }
+}
+.ist-crumb { margin-bottom: 14px; font-size: 1rem; }
+.ist-head .ifs-eyebrow { color: var(--acc-text, var(--ifs-gold-text)); }
+.ist-crumb { margin-bottom: 14px; font-size: 1rem; }
+.ist-head .ifs-eyebrow { color: var(--acc-text, var(--ifs-gold-text)); }
+
+/* Phones (2026-10-18): the thumbnail's link left a grid cell behind when the
+   thumbnail was hidden; the times line in the general card would not shrink. */
+.ist-gen, .ist-gen > * { min-width: 0; }
+.ist-gen__about .ifs-facts > span { flex-wrap: wrap; min-width: 0; }
+.ist-gen__about .ist-times { display: inline; }
+.ist-hosts { flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .ifs-srow__thumb-link, .ifs-srow > .ifs-srow__thumb { display: none; }
+}

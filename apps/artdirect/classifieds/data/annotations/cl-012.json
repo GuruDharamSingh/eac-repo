@@ -1,0 +1,25 @@
+{
+  "id": "cl-012",
+  "status": "draft",
+  "source": { "paper": "none: Adobe InDesign classifieds template with lorem ipsum", "era": "2010s template", "language": ["la"] },
+  "summary": "A clean modern template: black masthead band with huge condensed white caps, black section bars with ☒ dingbats, a classification index with dot leaders, and uniform condensed-sans liners that open with a number and a bold caps keyword.",
+  "family": "modern-condensed-sans",
+  "frame": { "columns": 6, "columnWidth": "narrow", "gutter": "tight", "columnRules": "hairline", "flow": "vertical", "masthead": "Black band: condensed white caps title left, bold tagline and a white URL/phone pill right." },
+  "headers": [
+    { "id": "section-bar", "kind": "reverse-bar", "example": "☒ ACILIS DOLOR ☒", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.2, 0.125, 0.77, 0.018], "notes": "Spans several columns; dingbats either side." },
+    { "id": "sub-bar", "kind": "rule-label", "example": "Nullam", "fg": "#111111", "bg": "transparent", "align": "center", "box": [0.045, 0.265, 0.15, 0.012], "notes": "Bold condensed title case between a heavy rule above and hairline below." },
+    { "id": "index", "kind": "plain-caps", "example": "DOLORTIE CORE ......... 1", "fg": "#111111", "bg": "#e6e6e6", "numbering": "suffix", "align": "split", "box": [0.045, 0.145, 0.15, 0.085], "notes": "Grey box index with dot leaders to page numbers." }
+  ],
+  "units": [
+    { "id": "numbered-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "000 MAGNISIM – Dolortie cor ad ea core... (555)555-5555", "notes": "Class number + bold caps keyword + en dash, condensed sans body, phone at end. Uniform length, generous space between ads." },
+    { "id": "grey-display", "kind": "display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "none", "fill": "#e6e6e6", "example": "*** GIAMCOMMY ***", "box": [0.045, 0.78, 0.29, 0.2], "notes": "Grey panel, asterisks around head, big phone number." },
+    { "id": "dotted-display", "kind": "display", "frequency": "occasional", "lead": "bold", "align": "center", "border": "none", "example": "Dui erostie! (palette clip art)", "notes": "Bordered top and bottom by rows of heavy dots." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "condensed-grotesque", "look": "Myriad/Univers Condensed Bold, very large caps", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "condensed-grotesque", "look": "Myriad Condensed", "weight": "regular", "width": "condensed", "case": "sentence", "webFont": "Roboto Condensed" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#e6e6e6", "use": "index box, display panel" } ] },
+  "ornaments": ["☒ dingbats", "dot leaders", "rows of dots", "asterisks"],
+  "notes": ["A designer's idealised modern classifieds; cleanest baseline for the generator."]
+}

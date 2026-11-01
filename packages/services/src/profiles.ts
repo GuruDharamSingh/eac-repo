@@ -207,6 +207,11 @@ function asPortfolio(value: unknown): PortfolioItem[] {
         y: num(r.y),
         w: num(r.w),
         h: num(r.h),
+        // Kept since 2026-10-18: the link to the artwork row (migration 146)
+        // was dropped on every read, so a gallery picture never knew it was a
+        // listed piece.
+        artworkId: typeof r.artworkId === 'string' ? r.artworkId : undefined,
+        subtitle: typeof r.subtitle === 'string' ? r.subtitle : undefined,
       };
     })
     .filter((w): w is PortfolioItem => w !== null);
@@ -315,6 +320,111 @@ export async function getProfileBySlug(slug: string): Promise<Profile | null> {
     console.error(`[profiles] getProfileBySlug(${slug}):`, err);
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Old slugs: user_slug_redirects (migration 204, 2026-10-11).
+//
+// When a person's slug changes, the old one keeps answering: a profile route
+// that finds no user for a slug asks resolveUserSlugRedirect and answers 308
+// to the same path under the current slug.
+// - One row per old slug (primary key), pointing at the user who held it.
+// - ensureUniqueUserSlug treats another user's old slug as taken, so an old
+//   address is never handed to a different person.
+// - A user who takes a slug back deletes its row (noteUserSlugChange), so a
+//   slug never redirects to itself.
+// - Rows go with the user (ON DELETE CASCADE); mergeProfile repoints the
+//   placeholder's rows at the surviving account before deleting it.
+// Until migration 204 is applied every function here is a no-op, because the
+// apps may be rebuilt from this source before the table exists.
+// ---------------------------------------------------------------------------
+
+let slugRedirectTableSeen = false;
+
+async function hasSlugRedirectTable(q: typeof db): Promise<boolean> {
+  if (slugRedirectTableSeen) return true;
+  const [row] = await q<{ ok: boolean }[]>`SELECT to_regclass('public.user_slug_redirects') IS NOT NULL AS ok`;
+  slugRedirectTableSeen = Boolean(row?.ok);
+  return slugRedirectTableSeen;
+}
+
+/**
+ * Point `oldSlug` at `userId`. Skipped when nobody should be redirected: the
+ * user still holds that slug, someone else holds it now, or the user does not
+ * exist. An existing row for the slug is taken over (upsert). Pass `tx` to
+ * run inside the caller's transaction (cast it: `tx as unknown as typeof db`).
+ */
+export async function recordSlugRedirect(
+  oldSlug: string | null | undefined,
+  userId: string,
+  tx?: typeof db
+): Promise<void> {
+  if (!oldSlug) return;
+  const q = tx ?? db;
+  if (!(await hasSlugRedirectTable(q))) return;
+  await q`
+    INSERT INTO user_slug_redirects (old_slug, user_id)
+    SELECT ${oldSlug}::varchar, ${userId}::uuid
+    WHERE EXISTS (SELECT 1 FROM users WHERE id = ${userId}::uuid)
+      AND NOT EXISTS (SELECT 1 FROM users WHERE slug = ${oldSlug}::varchar)
+    ON CONFLICT (old_slug) DO UPDATE SET user_id = EXCLUDED.user_id, created_at = now()
+  `;
+}
+
+/** Drop the redirect row for `slug`, if any: a user now holds it. */
+export async function clearSlugRedirect(slug: string | null | undefined, tx?: typeof db): Promise<void> {
+  if (!slug) return;
+  const q = tx ?? db;
+  if (!(await hasSlugRedirectTable(q))) return;
+  await q`DELETE FROM user_slug_redirects WHERE old_slug = ${slug}`;
+}
+
+/**
+ * Bookkeeping after `users.slug` changed from `oldSlug` to `newSlug`: the new
+ * slug stops redirecting (taking an old slug back removes its row), and the
+ * old one redirects to this user. Call it with the same `tx` as the UPDATE.
+ */
+export async function noteUserSlugChange(
+  userId: string,
+  oldSlug: string | null | undefined,
+  newSlug: string | null | undefined,
+  tx?: typeof db
+): Promise<void> {
+  if (newSlug) await clearSlugRedirect(newSlug, tx);
+  if (oldSlug && oldSlug !== newSlug) await recordSlugRedirect(oldSlug, userId, tx);
+}
+
+/**
+ * The current slug of the person who used to be at `slug`, or null. Null
+ * whenever a user holds `slug` today, so a caller may ask on any 404 path
+ * without risk of redirecting a live address.
+ */
+export async function resolveUserSlugRedirect(slug: string): Promise<string | null> {
+  if (!slug) return null;
+  try {
+    if (!(await hasSlugRedirectTable(db))) return null;
+    const [row] = await db<{ slug: string }[]>`
+      SELECT u.slug
+      FROM user_slug_redirects r JOIN users u ON u.id = r.user_id
+      WHERE r.old_slug = ${slug}
+        AND u.slug IS NOT NULL AND u.slug <> r.old_slug
+        AND NOT EXISTS (SELECT 1 FROM users h WHERE h.slug = r.old_slug)
+      LIMIT 1
+    `;
+    return row?.slug ?? null;
+  } catch (err) {
+    console.error(`[profiles] resolveUserSlugRedirect(${slug}):`, err);
+    return null;
+  }
+}
+
+/** True when `slug` is an old slug of a user other than `excludeUserId`. */
+export async function isSlugHeldByRedirect(slug: string, excludeUserId?: string): Promise<boolean> {
+  if (!(await hasSlugRedirectTable(db))) return false;
+  const rows = excludeUserId
+    ? await db<{ user_id: string }[]>`SELECT user_id FROM user_slug_redirects WHERE old_slug = ${slug} AND user_id <> ${excludeUserId} LIMIT 1`
+    : await db<{ user_id: string }[]>`SELECT user_id FROM user_slug_redirects WHERE old_slug = ${slug} LIMIT 1`;
+  return Boolean(rows[0]);
 }
 
 /** One org's roster. Mirrors amrit-canada's getGuides / ifac's listDirectory. */
@@ -506,6 +616,9 @@ export async function canPublishOrgProfile(viewerId: string, orgId: string, targ
  * A reserved word (a route or a network subdomain — see RESERVED_SLUGS) is
  * treated as already taken, so "hub" becomes "hub-2" rather than shadowing
  * the /hub route on ArtDirect's root catch-all.
+ *
+ * Another user's old slug (user_slug_redirects) is taken too: it still
+ * redirects to them. The user's own old slugs are free to take back.
  */
 export async function ensureUniqueUserSlug(base: string, excludeUserId?: string): Promise<string> {
   const root = slugify(base) || 'member';
@@ -522,7 +635,7 @@ export async function ensureUniqueUserSlug(base: string, excludeUserId?: string)
       ? await db<Array<{ id: string }>>`SELECT id FROM users WHERE slug = ${candidate} AND id <> ${excludeUserId} LIMIT 1`
       : await db<Array<{ id: string }>>`SELECT id FROM users WHERE slug = ${candidate} LIMIT 1`;
 
-    if (!rows[0]) return candidate;
+    if (!rows[0] && !(await isSlugHeldByRedirect(candidate, excludeUserId))) return candidate;
     n += 1;
     candidate = `${root}-${n}`;
   }
@@ -585,7 +698,18 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
   }
 
   if (Object.keys(sets).length === 0) return;
-  await db`UPDATE users SET ${db(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+  if (!('slug' in sets)) {
+    await db`UPDATE users SET ${db(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+    return;
+  }
+  // A slug change leaves the old slug redirecting here (user_slug_redirects).
+  await db.begin(async (tx) => {
+    const [before] = await tx<{ slug: string | null }[]>`SELECT slug FROM users WHERE id = ${userId} FOR UPDATE`;
+    await tx`UPDATE users SET ${tx(sets)}, updated_at = NOW() WHERE id = ${userId}`;
+    if (before) {
+      await noteUserSlugChange(userId, before.slug, sets.slug as string | null, tx as unknown as typeof db);
+    }
+  });
 }
 
 export interface CreateUnclaimedProfileInput {
@@ -695,12 +819,22 @@ export async function requestClaim(sentinelUserId: string, claimantUserId: strin
  *
  * Identity fields fill in only where the target's are still empty, so a
  * claim can never overwrite something the real person already wrote
- * themself. org_profiles publishing moves over per-org (skipped where the
- * target already has a row for that org — their own edits win). Threads,
- * media, and other identity pointers are repointed before the sentinel row
- * is deleted, so nothing is left dangling; day-to-day engagement rows
- * (reactions, RSVPs, poll votes, etc.) are left to cascade-delete, since a
- * sentinel — never having had a session — cannot genuinely hold any.
+ * themself. org_profiles rows merge per org, field by field (see the
+ * org_profiles step below): the target's non-empty values win and the
+ * sentinel's fill the rest. Threads, media, and other identity pointers are
+ * repointed before the sentinel row is deleted, so nothing is left dangling;
+ * day-to-day engagement rows (reactions, RSVPs, poll votes, etc.) are left to
+ * cascade-delete, since a sentinel — never having had a session — cannot
+ * genuinely hold any.
+ *
+ * 2026-10-11 correction (claude): until this date the org_profiles carry was
+ * ON CONFLICT DO NOTHING. Every sign-up already holds a blank org_profiles row
+ * for the org it signed up on (auth-server joinOrgs / handleSignup), so the
+ * conflict always fired for that org and the placeholder's tags, role_title,
+ * sort_order and overrides were deleted with it. The target's sign-up slug
+ * also always won (COALESCE(target.slug, ...)), so the placeholder's public
+ * URL and its storage folder were dropped. Found on IFAC's Kevin Meadows
+ * merge of 2026-10-10.
  */
 
 /**
@@ -770,10 +904,20 @@ async function storeOwnershipClashes(sentinelUserId: string, targetUserId: strin
   }
 }
 
-export async function mergeProfile(sentinelUserId: string, targetUserId: string): Promise<{ ok: boolean; error?: string }> {
+/** A refusal raised inside the merge transaction; rolls it back and is reported as-is. */
+class MergeRefusal extends Error {}
+
+export interface MergeProfileResult {
+  ok: boolean;
+  error?: string;
+  /** The surviving account's slug after the merge. */
+  slug?: string | null;
+}
+
+export async function mergeProfile(sentinelUserId: string, targetUserId: string): Promise<MergeProfileResult> {
   if (sentinelUserId === targetUserId) return { ok: false, error: 'Cannot merge a profile into itself.' };
 
-  const [sentinel] = await db<{ id: string; slug: string | null }[]>`SELECT id, slug FROM users WHERE id = ${sentinelUserId} LIMIT 1`;
+  const [sentinel] = await db<{ id: string }[]>`SELECT id FROM users WHERE id = ${sentinelUserId} LIMIT 1`;
   const [target] = await db<{ id: string }[]>`SELECT id FROM users WHERE id = ${targetUserId} LIMIT 1`;
   if (!sentinel) return { ok: false, error: 'Profile not found.' };
   if (!target) return { ok: false, error: 'Target account not found.' };
@@ -799,109 +943,226 @@ export async function mergeProfile(sentinelUserId: string, targetUserId: string)
     };
   }
 
-  // Free the sentinel's slug first — slug is globally unique, so if the
-  // target is about to claim it below, the sentinel can't be still holding
-  // it at the same instant. Captured above, before it's cleared here.
-  await db`UPDATE users SET slug = NULL WHERE id = ${sentinelUserId}`;
+  // One transaction: before 2026-10-11 each statement committed on its own,
+  // so a failure part-way (e.g. the store carry) left the sentinel without
+  // its slug and with some rows already moved.
+  try {
+    const slug = await db.begin(async (tx) => {
+      // Re-read both rows inside the transaction, locked, so two concurrent
+      // merges of the same sentinel cannot both proceed.
+      const [s] = await tx<{ slug: string | null; storage_folder: string | null; directory_listed: boolean }[]>`
+        SELECT slug, storage_folder, directory_listed FROM users WHERE id = ${sentinelUserId} FOR UPDATE
+      `;
+      const [t] = await tx<{ slug: string | null; storage_folder: string | null }[]>`
+        SELECT slug, storage_folder FROM users WHERE id = ${targetUserId} FOR UPDATE
+      `;
+      if (!s) throw new MergeRefusal('Profile not found.');
+      if (!t) throw new MergeRefusal('Target account not found.');
 
-  await db`
-    UPDATE users u SET
-      slug          = COALESCE(u.slug, ${sentinel.slug}),
-      bio           = COALESCE(u.bio, s.bio),
-      avatar_url    = COALESCE(u.avatar_url, s.avatar_url),
-      pronouns      = COALESCE(u.pronouns, s.pronouns),
-      city          = COALESCE(u.city, s.city),
-      region        = COALESCE(u.region, s.region),
-      country       = COALESCE(u.country, s.country),
-      social_links  = CASE WHEN u.social_links = '[]'::jsonb THEN s.social_links ELSE u.social_links END,
-      portfolio_url = COALESCE(u.portfolio_url, s.portfolio_url),
-      portfolio     = CASE WHEN u.portfolio = '[]'::jsonb THEN s.portfolio ELSE u.portfolio END,
-      oad_dossier   = CASE WHEN u.oad_dossier = '{}'::jsonb THEN s.oad_dossier ELSE u.oad_dossier END,
-      verified      = u.verified OR s.verified,
-      updated_at    = NOW()
-    FROM users s
-    WHERE u.id = ${targetUserId} AND s.id = ${sentinelUserId}
-  `;
+      // Which public address survives: slug and storage folder.
+      //
+      // The sentinel's address wins when it was published (listed on an org
+      // or in the directory) and the target's has nothing addressed by it
+      // yet: no published thread, upload, artwork or store, no directory
+      // listing, and no stored URL inside its storage folder. That is the
+      // usual claim, a sign-up whose slug and folder were auto-assigned
+      // minutes or days before the organiser matched it. Otherwise the
+      // target keeps its own address. Either way the slug that loses
+      // redirects to the survivor (user_slug_redirects, 2026-10-11).
+      const [presence] = await tx<{ sentinel_public: boolean; target_established: boolean }[]>`
+        SELECT
+          (${s.directory_listed}::boolean
+            OR EXISTS (SELECT 1 FROM org_profiles WHERE user_id = ${sentinelUserId} AND is_public)
+          ) AS sentinel_public,
+          (EXISTS (SELECT 1 FROM users WHERE id = ${targetUserId} AND directory_listed)
+            OR EXISTS (SELECT 1 FROM threads WHERE author_id = ${targetUserId}
+                         AND status = 'published' AND kind <> 'document')
+            OR EXISTS (SELECT 1 FROM media WHERE uploaded_by = ${targetUserId})
+            OR EXISTS (SELECT 1 FROM artwork WHERE artist_user_id = ${targetUserId})
+            OR EXISTS (SELECT 1 FROM store WHERE owner_user_id = ${targetUserId})
+            OR (${t.storage_folder}::text IS NOT NULL AND (
+                 EXISTS (SELECT 1 FROM users WHERE id = ${targetUserId}
+                           AND strpos(concat_ws(' ', avatar_url, portfolio::text, oad_dossier::text, profile_sections::text),
+                                      '/users/' || ${t.storage_folder}::text || '/') > 0)
+              OR EXISTS (SELECT 1 FROM org_profiles WHERE user_id = ${targetUserId}
+                           AND strpos(concat_ws(' ', photo_override, sections::text),
+                                      '/users/' || ${t.storage_folder}::text || '/') > 0)
+            ))
+          ) AS target_established
+      `;
+      const adoptSentinelAddress = Boolean(s.slug) && presence.sentinel_public && !presence.target_established;
 
-  await db`
-    INSERT INTO org_profiles (org_id, user_id, role_title, sort_order, is_public, tags)
-    SELECT org_id, ${targetUserId}, role_title, sort_order, is_public, tags
-    FROM org_profiles WHERE user_id = ${sentinelUserId}
-    ON CONFLICT (org_id, user_id) DO NOTHING
-  `;
-  await db`
-    INSERT INTO org_intake (org_id, user_id, answers)
-    SELECT org_id, ${targetUserId}, answers FROM org_intake WHERE user_id = ${sentinelUserId}
-    ON CONFLICT (org_id, user_id) DO NOTHING
-  `;
-  // Memberships and roles, kept at the STRONGER of the two.
-  //
-  // Without this the sentinel's `user_organizations` rows were destroyed rather
-  // than moved: the DELETE below cascades (user_organizations_user_id_fkey is
-  // ON DELETE CASCADE), so anyone who claimed a profile silently lost every org
-  // role that profile held. An org whose only owner was an unclaimed sentinel
-  // became unadministrable the moment that person signed up.
-  await db`
-    INSERT INTO user_organizations (user_id, org_id, role)
-    SELECT ${targetUserId}, org_id, role
-    FROM user_organizations WHERE user_id = ${sentinelUserId}
-    ON CONFLICT (user_id, org_id) DO UPDATE
-      SET role = CASE
-        WHEN 'owner'  IN (user_organizations.role, EXCLUDED.role) THEN 'owner'
-        WHEN 'guide'  IN (user_organizations.role, EXCLUDED.role) THEN 'guide'
-        WHEN 'member' IN (user_organizations.role, EXCLUDED.role) THEN 'member'
-        ELSE 'viewer'
-      END
-  `;
-  await db`DELETE FROM user_organizations WHERE user_id = ${sentinelUserId}`;
-  await db`DELETE FROM org_profiles WHERE user_id = ${sentinelUserId}`;
-  await db`DELETE FROM org_intake WHERE user_id = ${sentinelUserId}`;
+      // Free the sentinel's slug and folder first: both are unique, and the
+      // target may be about to take them. The storage-folder trigger leaves a
+      // row with a NULL slug alone.
+      await tx`UPDATE users SET slug = NULL, storage_folder = NULL WHERE id = ${sentinelUserId}`;
 
-  await db`UPDATE threads SET author_id = ${targetUserId} WHERE author_id = ${sentinelUserId}`;
-  await db`UPDATE media SET uploaded_by = ${targetUserId} WHERE uploaded_by = ${sentinelUserId}`;
+      if (adoptSentinelAddress) {
+        // Keep the target's own folder if the sentinel never had one.
+        await tx`
+          UPDATE users SET
+            slug           = ${s.slug},
+            storage_folder = COALESCE(${s.storage_folder}::text, storage_folder)
+          WHERE id = ${targetUserId}
+        `;
+      } else {
+        await tx`UPDATE users SET slug = COALESCE(slug, ${s.slug}::text) WHERE id = ${targetUserId}`;
+      }
 
-  // A person's storefront and the work in it follow them into their real
-  // account — the same principle as threads and media above, and the reason
-  // the identity fields are COALESCEd rather than overwritten: what the
-  // person made is theirs.
-  //
-  // Not optional: `store.owner_user_id` is ON DELETE CASCADE, so leaving it
-  // pointed at the sentinel means the DELETE below takes the store and every
-  // artwork in it. In practice it aborted instead — `artwork.artist_user_id`
-  // is NO ACTION, so the delete raised a bare foreign-key violation and the
-  // guide who clicked "this is so-and-so" saw a Postgres error with no
-  // explanation (found 2026-09-20 on IFAC, whose owner Eric Brummel is an
-  // unclaimed sentinel holding a store of six works).
-  await db`UPDATE store SET owner_user_id = ${targetUserId} WHERE owner_user_id = ${sentinelUserId}`.catch(
-    (err: unknown) => {
-      console.error(`[profiles] mergeProfile store carry (${sentinelUserId}):`, err);
-      throw err;
-    }
-  );
-  await db`UPDATE artwork SET artist_user_id = ${targetUserId} WHERE artist_user_id = ${sentinelUserId}`.catch(
-    (err: unknown) => {
-      console.error(`[profiles] mergeProfile artwork carry (${sentinelUserId}):`, err);
-      throw err;
-    }
-  );
-  // Standing in someone ELSE's store — an org's storefront they help run —
-  // moves too. It was on the refusal list above, which meant a roster entry
-  // that had been made an owner of its org's store could never be claimed at
-  // all: the merge refused, naming a table nobody could act on. The primary
-  // key is (store_id, user_id), so a target who already stands in that store
-  // keeps the standing they have.
-  await db`
-    INSERT INTO store_member (store_id, user_id, role, added_by)
-    SELECT store_id, ${targetUserId}, role, added_by
-    FROM store_member WHERE user_id = ${sentinelUserId}
-    ON CONFLICT (store_id, user_id) DO NOTHING
-  `;
-  await db`DELETE FROM store_member WHERE user_id = ${sentinelUserId}`;
-  await db`UPDATE users SET claimed_by = ${targetUserId} WHERE claimed_by = ${sentinelUserId}`;
-  await db`UPDATE users SET created_by = ${targetUserId} WHERE created_by = ${sentinelUserId}`;
+      // Old addresses follow the person. The sentinel's own redirect rows
+      // move to the target (the DELETE below would cascade them away); the
+      // target's previous slug, if it changed, and the sentinel's slug, if
+      // it lost, redirect to the survivor; the surviving slug's row, if it
+      // had one, is cleared.
+      {
+        const q = tx as unknown as typeof db;
+        if (await hasSlugRedirectTable(q)) {
+          await tx`UPDATE user_slug_redirects SET user_id = ${targetUserId} WHERE user_id = ${sentinelUserId}`;
+        }
+        const [survivor] = await tx<{ slug: string | null }[]>`SELECT slug FROM users WHERE id = ${targetUserId}`;
+        await noteUserSlugChange(targetUserId, t.slug, survivor?.slug ?? null, q);
+        if (s.slug && s.slug !== survivor?.slug) await recordSlugRedirect(s.slug, targetUserId, q);
+      }
 
-  await db`DELETE FROM users WHERE id = ${sentinelUserId}`;
-  return { ok: true };
+      await tx`
+        UPDATE users u SET
+          bio              = COALESCE(u.bio, s.bio),
+          avatar_url       = COALESCE(u.avatar_url, s.avatar_url),
+          headline         = COALESCE(u.headline, s.headline),
+          pronouns         = COALESCE(u.pronouns, s.pronouns),
+          city             = COALESCE(u.city, s.city),
+          region           = COALESCE(u.region, s.region),
+          country          = COALESCE(u.country, s.country),
+          postal_code      = COALESCE(u.postal_code, s.postal_code),
+          lat              = CASE WHEN u.lat IS NULL AND u.lng IS NULL THEN s.lat ELSE u.lat END,
+          lng              = CASE WHEN u.lat IS NULL AND u.lng IS NULL THEN s.lng ELSE u.lng END,
+          social_links     = CASE WHEN u.social_links = '[]'::jsonb THEN s.social_links ELSE u.social_links END,
+          portfolio_url    = COALESCE(u.portfolio_url, s.portfolio_url),
+          portfolio        = CASE WHEN u.portfolio = '[]'::jsonb THEN s.portfolio ELSE u.portfolio END,
+          oad_dossier      = CASE WHEN u.oad_dossier = '{}'::jsonb THEN s.oad_dossier ELSE u.oad_dossier END,
+          profile_sections = CASE
+                               WHEN jsonb_typeof(u.profile_sections) = 'object' AND jsonb_typeof(s.profile_sections) = 'object'
+                               THEN s.profile_sections || u.profile_sections
+                               ELSE u.profile_sections
+                             END,
+          verified         = u.verified OR s.verified,
+          updated_at       = NOW()
+        FROM users s
+        WHERE u.id = ${targetUserId} AND s.id = ${sentinelUserId}
+      `;
+
+      // org_profiles: one row per org, merged field by field into the
+      // target's row for the same org. Every sign-up already holds a blank
+      // row for its sign-up org, so this is the normal case, not an edge
+      // case. The target's non-empty values win; the sentinel's fill the
+      // rest. Tags are unioned (an org's labels for the same person); sort
+      // order 0 is the column default and counts as unset; is_public is kept
+      // if either row was public, unless the person hid themself
+      // (self_hidden). Re-running it changes nothing.
+      await tx`
+        INSERT INTO org_profiles AS t (
+          org_id, user_id, role_title, bio_override, photo_override,
+          sort_order, is_public, tags, sections
+        )
+        SELECT org_id, ${targetUserId}, role_title, bio_override, photo_override,
+               sort_order, is_public, tags, sections
+        FROM org_profiles WHERE user_id = ${sentinelUserId}
+        ON CONFLICT (org_id, user_id) DO UPDATE SET
+          role_title     = COALESCE(NULLIF(t.role_title, ''), EXCLUDED.role_title),
+          bio_override   = COALESCE(NULLIF(t.bio_override, ''), EXCLUDED.bio_override),
+          photo_override = COALESCE(NULLIF(t.photo_override, ''), EXCLUDED.photo_override),
+          sort_order     = CASE WHEN t.sort_order = 0 THEN EXCLUDED.sort_order ELSE t.sort_order END,
+          is_public      = CASE WHEN t.self_hidden THEN t.is_public ELSE t.is_public OR EXCLUDED.is_public END,
+          tags           = t.tags || ARRAY(
+                             SELECT x FROM unnest(EXCLUDED.tags) AS x
+                             WHERE NOT (x = ANY (t.tags))
+                           ),
+          sections       = CASE
+                             WHEN jsonb_typeof(t.sections) = 'object' AND jsonb_typeof(EXCLUDED.sections) = 'object'
+                             THEN EXCLUDED.sections || t.sections
+                             ELSE t.sections
+                           END
+      `;
+      await tx`
+        INSERT INTO org_intake AS t (org_id, user_id, answers)
+        SELECT org_id, ${targetUserId}, answers FROM org_intake WHERE user_id = ${sentinelUserId}
+        ON CONFLICT (org_id, user_id) DO UPDATE SET
+          answers = CASE
+                      WHEN jsonb_typeof(t.answers) = 'object' AND jsonb_typeof(EXCLUDED.answers) = 'object'
+                      THEN EXCLUDED.answers || t.answers
+                      ELSE t.answers
+                    END
+      `;
+      // Memberships and roles, kept at the STRONGER of the two.
+      //
+      // Without this the sentinel's `user_organizations` rows were destroyed rather
+      // than moved: the DELETE below cascades (user_organizations_user_id_fkey is
+      // ON DELETE CASCADE), so anyone who claimed a profile silently lost every org
+      // role that profile held. An org whose only owner was an unclaimed sentinel
+      // became unadministrable the moment that person signed up.
+      //
+      // Runs after the org_profiles merge: trg_user_org_show_members inserts or
+      // publishes an org_profiles row when a role becomes member or above.
+      await tx`
+        INSERT INTO user_organizations (user_id, org_id, role)
+        SELECT ${targetUserId}, org_id, role
+        FROM user_organizations WHERE user_id = ${sentinelUserId}
+        ON CONFLICT (user_id, org_id) DO UPDATE
+          SET role = CASE
+            WHEN 'owner'  IN (user_organizations.role, EXCLUDED.role) THEN 'owner'
+            WHEN 'guide'  IN (user_organizations.role, EXCLUDED.role) THEN 'guide'
+            WHEN 'member' IN (user_organizations.role, EXCLUDED.role) THEN 'member'
+            ELSE 'viewer'
+          END
+      `;
+      await tx`DELETE FROM user_organizations WHERE user_id = ${sentinelUserId}`;
+      await tx`DELETE FROM org_profiles WHERE user_id = ${sentinelUserId}`;
+      await tx`DELETE FROM org_intake WHERE user_id = ${sentinelUserId}`;
+
+      await tx`UPDATE threads SET author_id = ${targetUserId} WHERE author_id = ${sentinelUserId}`;
+      await tx`UPDATE media SET uploaded_by = ${targetUserId} WHERE uploaded_by = ${sentinelUserId}`;
+
+      // A person's storefront and the work in it follow them into their real
+      // account — the same principle as threads and media above, and the reason
+      // the identity fields are COALESCEd rather than overwritten: what the
+      // person made is theirs.
+      //
+      // Not optional: `store.owner_user_id` is ON DELETE CASCADE, so leaving it
+      // pointed at the sentinel means the DELETE below takes the store and every
+      // artwork in it. In practice it aborted instead — `artwork.artist_user_id`
+      // is NO ACTION, so the delete raised a bare foreign-key violation and the
+      // guide who clicked "this is so-and-so" saw a Postgres error with no
+      // explanation (found 2026-09-20 on IFAC, whose owner Eric Brummel is an
+      // unclaimed sentinel holding a store of six works).
+      await tx`UPDATE store SET owner_user_id = ${targetUserId} WHERE owner_user_id = ${sentinelUserId}`;
+      await tx`UPDATE artwork SET artist_user_id = ${targetUserId} WHERE artist_user_id = ${sentinelUserId}`;
+      // Standing in someone ELSE's store — an org's storefront they help run —
+      // moves too. It was on the refusal list above, which meant a roster entry
+      // that had been made an owner of its org's store could never be claimed at
+      // all: the merge refused, naming a table nobody could act on. The primary
+      // key is (store_id, user_id), so a target who already stands in that store
+      // keeps the standing they have.
+      await tx`
+        INSERT INTO store_member (store_id, user_id, role, added_by)
+        SELECT store_id, ${targetUserId}, role, added_by
+        FROM store_member WHERE user_id = ${sentinelUserId}
+        ON CONFLICT (store_id, user_id) DO NOTHING
+      `;
+      await tx`DELETE FROM store_member WHERE user_id = ${sentinelUserId}`;
+      await tx`UPDATE users SET claimed_by = ${targetUserId} WHERE claimed_by = ${sentinelUserId}`;
+      await tx`UPDATE users SET created_by = ${targetUserId} WHERE created_by = ${sentinelUserId}`;
+
+      await tx`DELETE FROM users WHERE id = ${sentinelUserId}`;
+
+      const [after] = await tx<{ slug: string | null }[]>`SELECT slug FROM users WHERE id = ${targetUserId}`;
+      return after?.slug ?? null;
+    });
+    return { ok: true, slug };
+  } catch (err) {
+    if (err instanceof MergeRefusal) return { ok: false, error: err.message };
+    console.error(`[profiles] mergeProfile (${sentinelUserId} -> ${targetUserId}):`, err);
+    return { ok: false, error: 'The merge failed and nothing was changed.' };
+  }
 }
 
 /** A steward (global admin) approves a pending claim — merges the sentinel into the claimant's account. */

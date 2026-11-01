@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E · Editing the card and the page</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+/* E: the hub side, in the planner's light palette (surface.css):
+   ink #16181d on #fffdf8 17.6:1; muted #5e667a 5.9:1; line #b9c0c9 (3:1 for
+   input borders 1.9:1 is decoration only; inputs use #6e7480 4.6:1). */
+body { background: #f4f1ea; color: #16181d; }
+.hub { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 60px; display: grid; gap: 26px; }
+.panel { background: #fffdf8; border: 1px solid #d6d0c4; border-radius: 10px; }
+.panel__head { padding: 16px 20px; border-bottom: 1px solid #e3ddd1; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.panel__head h2 { font: 600 1.55rem/1.1 var(--sans); }
+.panel__head small { color: #5e667a; }
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0; }
+.form { padding: 18px 20px 22px; display: grid; gap: 14px; border-right: 1px solid #e3ddd1; align-content: start; }
+.prev { padding: 18px 20px 22px; background: #050506; color: var(--ink); display: grid; gap: 14px; align-content: start; border-radius: 0 0 10px 0; }
+.prev__k { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #b3ada3; font-weight: 700; }
+.f { display: grid; gap: 5px; }
+.f > span:first-child { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5e667a; font-weight: 600; }
+.f em { font-style: normal; text-transform: none; letter-spacing: 0; }
+.in { min-height: 40px; border: 1px solid #6e7480; border-radius: 4px; background: #fff; padding: 8px 10px; font-size: 0.95rem; color: #16181d; }
+.in.ta { min-height: 92px; }
+.in.ed { min-height: 120px; padding-top: 38px; position: relative; }
+.in.ed::before { content: "B  I  U  ·  H2 H3  ·  •  1.  “”  ·  ↗"; position: absolute; top: 0; left: 0; right: 0; height: 30px; border-bottom: 1px solid #d6d0c4; background: #f2f3f1; font-size: 0.8rem; padding: 6px 10px; color: #3d4250; }
+.hint { font-size: 0.84rem; color: #5e667a; line-height: 1.4; }
+.sect { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #5e667a; padding-top: 12px; border-top: 1px solid #e3ddd1; }
+.swatches { display: flex; gap: 8px; }
+.swatches i { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #6e7480; }
+.swatches i.on { box-shadow: 0 0 0 2px #16181d; }
+.radios { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 0.93rem; }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+.toggle b { width: 38px; height: 22px; border-radius: 999px; background: #3b6b48; position: relative; }
+.toggle b::after { content: ""; position: absolute; right: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.toggle b.off { background: #9aa0aa; }
+.toggle b.off::after { right: auto; left: 3px; }
+.save { justify-self: start; background: #5b45a8; color: #fff; border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 0.92rem; }
+.list { display: grid; gap: 8px; }
+.li { display: grid; grid-template-columns: 22px 54px minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid #d6d0c4; border-radius: 8px; padding: 8px 10px; background: #fff; }
+.li .grip { color: #9aa0aa; }
+.li .th { width: 54px; aspect-ratio: 16/9; border-radius: 4px; background: #222 center/cover; }
+.li small { color: #5e667a; display: block; }
+.badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+.mini { border: 1px solid var(--line2); border-top: 4px solid var(--acc); border-radius: 12px; overflow: hidden; background: var(--bg2); }
+.mini .cover { aspect-ratio: 16 / 9; }
+.mini__b { padding: 14px 16px 16px; display: grid; gap: 8px; }
+.mini__b h3 { font-size: 1.6rem; }
+.slide { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--frame); }
+.slide > div:first-child { padding: 14px; display: grid; gap: 6px; align-content: center; }
+.slide h3 { font-size: 1.35rem; }
+.slide .cover { min-height: 140px; }
+.mockbar { background: #1d1a33; }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); } .form { border-right: 0; } .prev { border-radius: 0 0 10px 10px; } }
+</style>
+</head>
+<body>
+<div class="mockbar"><b>Mockup E · Editing</b> <span>hub planner and a new "Series page" setting · static</span> <a href="index.html">all mockups</a></div>
+<main class="hub">
+
+  <section class="panel">
+    <div class="panel__head"><h2>Series settings · Card</h2><small>Series planner → Series settings, a new section beside "Cover and card" (built 2026-10-13)</small></div>
+    <div class="split">
+      <div class="form">
+        <label class="f"><span>Series name</span><div class="in">Explorations in Art Forms by Non Professionals</div></label>
+        <label class="f"><span>Short description <em>(the card and under the title)</em></span><div class="in ta">A weekly online hour for people who love art and might be hesitant to engage creating or are looking for new forms. Each week a different IFAC artist or dealer hosts.</div><span class="hint">About 160 characters show on the card; the rest shows on the series page.</span></label>
+        <div class="f"><span>About the series <em>(series page only)</em></span><div class="in ed">One hour, one work, one host. Every week an IFAC artist or dealer opens a single piece…</div></div>
+        <div class="f"><span>Cover</span><div class="hint">Picture, video file or YouTube/Vimeo link, framed in the box (exists since 2026-10-13).</div></div>
+        <p class="sect">How the card reads</p>
+        <div class="f"><span>Rhythm line</span><div class="radios"><label>◉ From the schedule: “Weekly · Mondays”</label><label>○ My own words</label></div></div>
+        <div class="f"><span>Status chip</span><div class="radios"><label>◉ Automatic: “Starts 5 Nov” → “Running” → “Ended”</label><label>○ Hide</label></div></div>
+        <div class="f"><span>Colour <em>(dot, edge, calendar chip)</em></span><div class="swatches"><i class="on" style="background:#c9a24a"></i><i style="background:#3fb8a6"></i><i style="background:#c46b86"></i><i style="background:#5c62e6"></i><i style="background:#8a8fa0"></i></div></div>
+        <p class="sect">Where it shows</p>
+        <div class="toggle"><b></b>Listed on the Series page</div>
+        <div class="toggle"><b></b>In the landing page slides</div>
+        <div class="toggle"><b class="off"></b>Featured (first on the Series page and the landing)</div>
+        <span class="save">Save series settings</span>
+      </div>
+      <div class="prev s1">
+        <p class="prev__k">Preview · Series page card</p>
+        <article class="mini s1">
+          <div class="cover"><img src="img/painter.jpg" alt=""><span class="cover__tag">Running</span></div>
+          <div class="mini__b"><span class="sname"><span class="dot"></span>Weekly · Mondays</span><h3>Explorations in Art Forms by Non Professionals</h3><p class="muted" style="font-size:0.92rem">A weekly online hour for people who love art and might be hesitant to engage creating or are looking for new forms…</p><div class="facts" style="font-size:0.88rem"><span>6 pm Pacific</span><span>Online · free</span></div></div>
+        </article>
+        <p class="prev__k">Preview · landing slide</p>
+        <div class="slide s1"><div><span class="sname"><span class="dot"></span>Current series</span><h3>Explorations in Art Forms by Non Professionals</h3><p class="muted" style="font-size:0.85rem">Next: Mon 19 Oct · Putting Art as Tai Chi into Practice</p></div><div class="cover"><img src="img/painter.jpg" alt=""></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__head"><h2>Series page</h2><small>New: one setting for the organisation, in the hub (Series card ▸ "Series page") · organisers only</small></div>
+    <div class="split">
+      <div class="form">
+        <label class="f"><span>Eyebrow</span><div class="in">IFAC series</div></label>
+        <label class="f"><span>Heading</span><div class="in">Series on art, from IFAC</div></label>
+        <div class="f"><span>Introduction</span><div class="in ed">IFAC runs online series for people who love art. Each series has its own theme and its own hosts…</div><span class="hint">IFAC's thinking about its series: what it offers, who it is for, what is coming. Rich text.</span></div>
+        <p class="sect">Series on the page</p>
+        <div class="list">
+          <div class="li"><span class="grip">⋮⋮</span><span class="th" style="background-image:url(img/painter.jpg)"></span><span><b>Explorations in Art Forms…</b><small>Mondays · running · 2 sessions published</small></span><span class="badge" style="color:#8a6a1c">Featured</span></div>
+          <div class="li"><span class="grip">⋮⋮</span><span class="th" style="background:#0f3a36"></span><span><b>Looking Closely</b><small>Thursdays · starts 5 Nov · draft card</small></span><span class="badge" style="color:#2b7a6e">Listed</span></div>
+          <div class="li" style="opacity:0.6"><span class="grip">⋮⋮</span><span class="th"></span><span><b>Weekly Meeting</b><small>older meeting thread · not a series card</small></span><span class="badge" style="color:#5e667a">Hidden</span></div>
+        </div>
+        <span class="hint">Drag to order. Ended series move to “Earlier series” at the foot of the page by themselves.</span>
+        <span class="save">Save the Series page</span>
+      </div>
+      <div class="prev">
+        <p class="prev__k">Preview · top of /series</p>
+        <p class="eyebrow">IFAC series</p>
+        <h2 style="font-size:2.2rem">Series on art, from IFAC</h2>
+        <p class="muted" style="font-size:0.98rem">IFAC runs online series for people who love art. Each series has its own theme and its own hosts…</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="mini s1"><div class="cover"><img src="img/painter.jpg" alt=""></div><div class="mini__b"><h3 style="font-size:1.15rem">Explorations…</h3></div></div>
+          <div class="mini s2"><div class="cover cover--blank"><img src="img/ifac-lettering.png" alt=""></div><div class="mini__b"><h3 style="font-size:1.15rem">Looking Closely</h3></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__head"><h2>New series in /hub/compose</h2><small>“One meeting | Series” exists; this adds a card step</small></div>
+    <div style="padding:16px 20px 20px;display:grid;gap:10px">
+      <p class="hint" style="font-size:0.95rem">Steps: <b>1. Name and schedule</b> (exists) → <b>2. Card</b>: short description, cover, colour, with the same live preview as above → <b>3. How people join</b> (exists) → <b>4. Publish</b>: “List on the Series page” on by default, “Feature it” off. The first sessions stay drafts until a host and title are added in the planner, as now.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

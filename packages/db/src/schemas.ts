@@ -342,9 +342,9 @@ async function seedOrganizations() {
   const orgs = [
     {
       id: 'elkdonis',
-      name: 'Elkdonis Arts Collective',
-      slug: 'elkdonis',
-      description: 'Central admin hub for the collective'
+      name: 'Arts Collective',
+      slug: 'arts-collective',
+      description: 'The Arts Collective platform (arts-collective.com), operated on behalf of the Elkdonis Arts Collective'
     },
     {
       id: 'inner_group',

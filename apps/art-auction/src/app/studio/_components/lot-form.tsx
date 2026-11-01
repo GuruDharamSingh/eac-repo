@@ -39,6 +39,8 @@ export function LotForm({
   );
   const [antiSnipe, setAntiSnipe] = React.useState("5");
   const [eventTag, setEventTag] = React.useState("");
+  const [buyNow, setBuyNow] = React.useState("");
+  const [incrementMode, setIncrementMode] = React.useState<"ladder" | "flat">("ladder");
   const [pending, setPending] = React.useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -55,6 +57,8 @@ export function LotForm({
         bidIncrement: increment.trim() ? Number(increment) : null,
         antiSnipeMinutes: antiSnipe.trim() ? Number(antiSnipe) : null,
         event: eventTag.trim() || null,
+        buyNow: buyNow.trim() ? Number(buyNow) : null,
+        incrementMode,
       });
       if (!res.ok || !res.lotId) return toast.error(res.error ?? "Could not start the auction.");
       toast.success("The auction is up.");
@@ -101,18 +105,52 @@ export function LotForm({
           </p>
         </div>
         <div>
-          <label className={labelCls} htmlFor="increment">
-            Bid increment ({currency})
+          <label className={labelCls} htmlFor="incrementMode">
+            Bid increment
+          </label>
+          <select
+            id="incrementMode"
+            className={inputCls}
+            value={incrementMode}
+            onChange={(e) => setIncrementMode(e.target.value as "ladder" | "flat")}
+          >
+            <option value="ladder">Ladder (marketplace default)</option>
+            <option value="flat">Flat amount</option>
+          </select>
+          {incrementMode === "ladder" ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Under $100 → $5 · $100–499 → $10 · $500–999 → $25 · $1,000–4,999 → $100 · $5,000+ → $250.
+            </p>
+          ) : (
+            <input
+              id="increment"
+              type="number"
+              min="1"
+              step="1"
+              className={`${inputCls} mt-2`}
+              value={increment}
+              onChange={(e) => setIncrement(e.target.value)}
+              placeholder={`Increment (${currency})`}
+            />
+          )}
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="buyNow">
+            Buy-now price ({currency}, optional)
           </label>
           <input
-            id="increment"
+            id="buyNow"
             type="number"
-            min="1"
+            min="0"
             step="1"
             className={inputCls}
-            value={increment}
-            onChange={(e) => setIncrement(e.target.value)}
+            value={buyNow}
+            onChange={(e) => setBuyNow(e.target.value)}
+            placeholder="Shown until the first bid"
           />
+          <p className="mt-1 text-xs text-muted-foreground">
+            A buyer may take the piece at this price before anyone bids; it disappears with the first bid.
+          </p>
         </div>
         <div>
           <label className={labelCls} htmlFor="antiSnipe">

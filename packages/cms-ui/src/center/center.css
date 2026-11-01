@@ -17,6 +17,38 @@
   gap: 16px;
   align-items: start;
 }
+
+/* ── The page's own header (CenterPageProps.heading) ───────────────────── */
+/* Spans both columns; the hosts used to print their own, in four hands. */
+.eac-center-head {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.eac-center-head-eyebrow {
+  margin: 0;
+  font-family: var(--sf-font-record);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-center-head-title {
+  margin: 0;
+  font-family: var(--sf-font-title);
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 400;
+  color: var(--sf-fg);
+}
+.eac-center-head-intro {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--sf-muted);
+}
 .eac-center-you,
 .eac-center-org {
   display: grid;
@@ -38,61 +70,6 @@
   display: grid;
   gap: 8px;
   margin-top: 4px;
-}
-.eac-center-panel.is-empty {
-  opacity: 0.7;
-  border-style: dashed;
-}
-
-.eac-center-empty {
-  margin: 0;
-  padding-top: 8px;
-  border-top: 1px dashed var(--sf-line);
-  font-size: 0.82rem;
-  font-style: italic;
-  color: var(--sf-muted);
-}
-
-/* ── The person's card ──────────────────────────────────────────────────── */
-.eac-center-person {
-  min-height: 0;
-}
-/* One portrait block for both cards: the image at 3:4 in a fixed-width
-   column, the words beside it. The org's card and the person's card share
-   this, which is what keeps their proportions the same. */
-.eac-center-portrait {
-  display: grid;
-  grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  margin: 2px 0 6px;
-}
-.eac-center-portrait-text {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-.eac-center-portrait-img,
-.eac-center-portrait-empty {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: var(--sf-radius-sm);
-  border: 1px solid var(--sf-line);
-  background: var(--sf-bg-soft);
-}
-.eac-center-portrait-empty {
-  display: grid;
-  place-items: center;
-  font-size: 2.4rem;
-  color: var(--sf-faint);
-}
-.eac-center-shown-as {
-  font-family: var(--sf-font-record);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-  color: var(--sf-muted);
 }
 
 /* ── The button row ─────────────────────────────────────────────────────── */
@@ -131,10 +108,6 @@
 .eac-center-btn[disabled] {
   opacity: 0.6;
   cursor: progress;
-}
-.eac-center-btn-count {
-  font-style: normal;
-  color: var(--sf-accent);
 }
 .eac-center-follow {
   display: inline-flex;
@@ -217,38 +190,58 @@
   margin-bottom: 6px;
 }
 
-/* ── The site, scaled ───────────────────────────────────────────────────── */
-/* The frame renders the home page at three times the card's width and
-   scales it down by the same factor, so it always fits whatever the column
-   is; the ratio is a little squarer than a full page on purpose. */
+/* ── The site, live and scaled ──────────────────────────────────────────── */
+/* The org's home page in an iframe at a third of its size. The frame is a
+   scrolling viewport (.eac-face-live, so it takes the pointer: wheel, links,
+   forms all reach the page). Inside it a scale box holds the footprint the
+   scaled page occupies — a transform does not change layout size, so without
+   it the viewport would scroll over the untransformed 3× box. The iframe is
+   laid out at 1/scale of the frame's width, so the page sees a full desktop
+   width, and at a fixed page height; what runs past that scrolls inside the
+   iframe itself.
+     --eac-center-site-scale   the factor (0.3333)
+     --eac-center-site-page    the page height the iframe is given (2400px)
+     --eac-center-site-bg      the ground behind a page before it paints;
+                               falls back to the surface ground, then to the
+                               UA's Canvas colour, which follows color-scheme */
 .eac-center-home {
   min-height: 0;
   padding-bottom: 14px;
 }
-/* Live and scrollable: the frame takes the pointer (it is .eac-face-live),
-   so a wheel inside it scrolls the org's page; the face's cue and the rest
-   of the card still open the site. The page is rendered at three times the
-   frame's width and scaled by a third, so it always fits the column. */
+.eac-center-home-bar {
+  margin: 4px 0 0;
+}
+.eac-center-home-open {
+  font-size: 0.64rem;
+}
 .eac-center-home-frame {
+  --eac-center-site-scale: 0.3333;
   position: relative;
   width: 100%;
   aspect-ratio: var(--eac-center-site-ratio, 5 / 3);
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   border: 1px solid var(--sf-line);
   border-radius: var(--sf-radius-sm);
-  background: var(--sf-bg-soft);
-  pointer-events: none;
+  background: var(--eac-center-site-bg, var(--sf-bg, Canvas));
   margin-top: 6px;
 }
-.eac-center-home-frame iframe {
+.eac-center-home-scale {
+  position: relative;
+  width: 100%;
+  height: calc(var(--eac-center-site-page, 2400px) * var(--eac-center-site-scale));
+}
+.eac-center-home-scale > iframe {
   position: absolute;
-  inset: 0 auto auto 0;
-  width: 300%;
-  height: 300%;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--eac-center-site-scale));
+  height: var(--eac-center-site-page, 2400px);
   border: 0;
-  transform: scale(0.3333);
+  transform: scale(var(--eac-center-site-scale));
   transform-origin: 0 0;
-  background: #fff;
+  background: inherit;
 }
 
 /* ── Pinned strip ───────────────────────────────────────────────────────── */
@@ -269,11 +262,6 @@
 }
 
 /* ── The org's card ─────────────────────────────────────────────────────── */
-.eac-center-orgcard-headline {
-  margin: 0;
-  font-size: 0.92rem;
-  color: var(--sf-muted);
-}
 .eac-center-orgcard-facts {
   margin: 0;
   display: flex;
@@ -289,6 +277,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  padding-top: 2px;
 }
 .eac-center-chip {
   display: inline-block;
@@ -337,7 +326,8 @@
 }
 .eac-center-row[data-kind="post"] .eac-center-row-k { color: var(--sf-kind-post); }
 .eac-center-row[data-kind="event"] .eac-center-row-k { color: var(--sf-kind-event); }
-.eac-center-row[data-kind="meeting"] .eac-center-row-k { color: var(--sf-kind-meeting); }
+.eac-center-row[data-kind="meeting"] .eac-center-row-k,
+.eac-center-row[data-kind="series"] .eac-center-row-k { color: var(--sf-kind-meeting); }
 .eac-center-row[data-kind="workshop"] .eac-center-row-k { color: var(--sf-kind-workshop); }
 .eac-center-row-t {
   font-family: var(--sf-font-title);
@@ -392,9 +382,6 @@
   .eac-center {
     grid-template-columns: 1fr;
   }
-  .eac-center-portrait {
-    grid-template-columns: minmax(100px, 140px) minmax(0, 1fr);
-  }
   .eac-center-row {
     grid-template-columns: 62px minmax(0, 1fr);
   }
@@ -411,7 +398,7 @@
   }
 }
 
-/* ── The profile cards (person and org share ProfileCardBody) ───────────── */
+/* ── The profile cards (the person's ProfileFlipCard, the org's card) ──── */
 .eac-center-person,
 .eac-center-orgcard {
   min-height: 0;
@@ -427,12 +414,6 @@
   padding: 2px 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--sf-bg) 82%, transparent);
-}
-.eac-center-orgcard {
-  padding-top: 44px;
-}
-.eac-center-orgcard-relation {
-  padding-top: 2px;
 }
 
 /* ── Post cards in the feed ────────────────────────────────────────────── */
@@ -940,3 +921,308 @@
     transition: none !important;
   }
 }
+
+/* ── The center's own look (2026-10-18) ─────────────────────────────────────
+   After the mock-up, by the developer's call: paper and ink with a teal
+   accent, 14px cards, one sans throughout. Redefined on the OUTPUT tokens so
+   every face on the page follows, whatever the host's theme says. */
+.eac-center {
+  --sf-bg: #ffffff;
+  --sf-bg-soft: #f6f4ef;
+  --sf-fg: #1b1a17;
+  --sf-muted: #5e5b53;
+  --sf-faint: #8a857a;
+  --sf-line: #e2ded4;
+  --sf-rule: #cfc9bc;
+  --sf-accent: #1f5f5b;
+  --sf-on-accent: #ffffff;
+  --eac-surface-on-accent: #ffffff;
+  --sf-radius: 14px;
+  --sf-radius-sm: 10px;
+  --sf-font-title: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-record: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--sf-font-body);
+  color: var(--sf-fg);
+  gap: 24px;
+}
+.eac-center-head-eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; font-weight: 600; }
+.eac-center-head-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.01em; }
+.eac-center-head-intro { font-size: 0.95rem; }
+.eac-center-you, .eac-center-org { gap: 16px; }
+.eac-center .eac-face { border-radius: var(--sf-radius); }
+.eac-center .eac-center-btn { font-size: 0.82rem; letter-spacing: 0; text-transform: none; font-weight: 500; padding: 9px 14px; border-radius: 10px; border-color: #cfc9bc; }
+.eac-center .eac-center-btn--primary { border-color: var(--sf-accent); font-weight: 600; }
+
+/* The person's card: the portrait fills it, the plate is a dark gradient
+   over the foot with light type and the status pills (mock-up B). */
+.eac-center-person .eac-pcard-plate {
+  padding: 18px 20px 20px;
+  border-top: 0;
+  background: linear-gradient(180deg, rgba(27, 26, 23, 0) 0%, rgba(27, 26, 23, 0.85) 40%);
+  backdrop-filter: none;
+  color: #f6f4ef;
+}
+.eac-center-person .eac-pcard-name { font-size: 1.4rem; font-weight: 700; color: #f6f4ef; }
+.eac-center-person .eac-pcard-sub { font-size: 0.88rem; color: #d8d3c7; }
+.eac-center-person .eac-pcard-note { font-size: 0.8rem; letter-spacing: 0; color: #b5afa2; }
+.eac-center-person .eac-pcard-glow { background: linear-gradient(160deg, #3e3b35 0%, #26241f 60%, #1b1a17 100%); }
+.eac-center-person .eac-pcard-turn { right: 14px; top: 14px; bottom: auto; width: 44px; height: 44px; border-color: rgba(255, 255, 255, 0.25); background: rgba(27, 26, 23, 0.55); color: #f6f4ef; }
+.eac-pcard-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.eac-pcard-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 0.75rem;
+  color: #f6f4ef;
+  text-decoration: none;
+  cursor: pointer;
+}
+.eac-pcard-badge[data-tone="warn"] { border-color: #b8722c; background: rgba(184, 114, 44, 0.25); }
+.eac-pcard-badge[data-tone="ok"] { border-color: #2e7d6f; background: rgba(46, 125, 111, 0.25); }
+.eac-pcard-badge:hover, .eac-pcard-badge:focus-visible { border-color: #f6f4ef; outline: none; }
+
+/* ── The hub's auction card (mock-up D): teal frame, a 3-segment bar ─────── */
+.eac-auction-face { --sf-kind: #1f5f5b; --sf-accent: #1f5f5b; border: 2px solid #1f5f5b; border-radius: 12px; }
+.eac-auction-face > .eac-face-kicker { color: #1f5f5b; font-weight: 700; }
+.eac-auction-face-progress { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.82rem; color: #5e5b53; }
+.eac-auction-face-bar { display: inline-flex; gap: 4px; }
+.eac-auction-face-bar span { width: 22px; height: 6px; border-radius: 3px; background: #e2ded4; }
+.eac-auction-face-bar span[data-done] { background: #2e7d6f; }
+.eac-auction-face-go { margin-left: auto; font-weight: 600; color: #1f5f5b; }
+
+
+/* ── Take two (2026-10-18): no glyphs, no face chrome on the card, doors ─── */
+.eac-center .eac-face > .eac-face-glyph { display: none; }
+.eac-center .eac-center-panel { padding-top: 18px; }
+.eac-center-head { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.eac-center-head-text { display: grid; gap: 6px; }
+.eac-center-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 16px;
+  border: 1px solid #cfc9bc; border-radius: 10px; background: #ffffff;
+  color: var(--sf-fg); font-size: 0.9rem; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+.eac-center-back:hover { border-color: var(--sf-accent); }
+/* The bare card: the flip card's own frame, no SurfaceCard around it. */
+.eac-center-person { position: relative; padding: 0; border-radius: 14px; overflow: hidden; background: #1b1a17; box-shadow: 0 12px 32px rgba(27, 26, 23, 0.14); }
+.eac-center-person .eac-pcard { margin: 0; width: 100%; max-height: none; aspect-ratio: 3 / 4; }
+.eac-center-person .eac-pcard-face { border-radius: 14px; }
+.eac-center-doors { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.eac-center-door {
+  display: grid; gap: 2px; padding: 12px 14px;
+  border: 1px solid var(--sf-line); border-radius: 10px; background: #ffffff;
+  color: var(--sf-fg); text-decoration: none; font-size: 0.84rem; font-weight: 600;
+}
+.eac-center-door small { font-weight: 400; color: var(--sf-muted); font-size: 0.78rem; }
+.eac-center-door:hover { border-color: var(--sf-accent); }
+
+/* ── The journeys section: tabs, a dark rail, the steps ──────────────────── */
+.eac-jt { background: #ffffff; border: 1px solid var(--sf-line); border-radius: 14px; overflow: hidden; display: grid; }
+.eac-jt-tabs { display: flex; gap: 4px; padding: 6px 20px 0; border-bottom: 1px solid var(--sf-line); }
+.eac-jt-tab { padding: 12px 14px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; font-size: 0.9rem; font-weight: 500; color: var(--sf-muted); cursor: pointer; }
+.eac-jt-tab:hover, .eac-jt-tab:focus-visible { color: var(--sf-fg); outline: none; }
+.eac-jt-tab[aria-current] { color: var(--sf-fg); font-weight: 700; border-bottom-color: var(--sf-accent); }
+.eac-jt-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
+.eac-jt-body--bare { grid-template-columns: minmax(0, 1fr); }
+.eac-jt-rail { background: #1b1a17; color: #f6f4ef; padding: 22px 20px; display: flex; flex-direction: column; gap: 18px; min-height: 100%; }
+.eac-jt-rail-head { display: grid; gap: 2px; }
+.eac-jt-rail-kicker { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: #c9c3b6; }
+.eac-jt-rail-title { font-size: 1.15rem; font-weight: 700; line-height: 1.2; }
+.eac-jt-rail-copy { margin: 0; font-size: 0.82rem; line-height: 1.5; color: #c9c3b6; }
+.eac-jt-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 0.88rem; }
+.eac-jt-steps li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; }
+.eac-jt-n { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #5e5b53; font-size: 0.75rem; font-weight: 700; color: #f6f4ef; }
+.eac-jt-steps li[data-state="done"] .eac-jt-n { background: #2e7d6f; border-color: #2e7d6f; color: #fff; }
+.eac-jt-steps li[data-state="next"] .eac-jt-n { border-color: #9dd1c6; }
+.eac-jt-step-text { display: grid; gap: 1px; }
+.eac-jt-step-text em { font-style: normal; font-size: 0.76rem; color: #c9c3b6; }
+.eac-jt-steps li[data-state="done"] .eac-jt-step-text em { color: #9dd1c6; }
+.eac-jt-rail-foot { margin-top: auto; border-top: 1px solid #3e3b35; padding-top: 12px; display: grid; gap: 6px; font-size: 0.78rem; line-height: 1.5; color: #c9c3b6; }
+.eac-jt-rail-foot a { color: #9dd1c6; text-decoration: none; }
+.eac-jt-rail-foot a:hover { text-decoration: underline; }
+.eac-jt-fees summary { cursor: pointer; color: #9dd1c6; }
+.eac-jt-fees p { margin: 6px 0 0; }
+.eac-jt-main { padding: 20px 24px 24px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.eac-jt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.eac-jt-tiles > div { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--sf-line); border-radius: 10px; }
+.eac-jt-tiles span { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sf-muted); }
+.eac-jt-tiles strong { font-size: 1.3rem; font-weight: 700; }
+.eac-jt-step { display: grid; gap: 6px; padding-bottom: 16px; border-bottom: 1px solid var(--sf-line); }
+.eac-jt-step:last-of-type { border-bottom: 0; padding-bottom: 0; }
+.eac-jt-step[data-state="next"] { padding: 14px 16px; border: 1px solid #9dd1c6; border-radius: 12px; background: var(--sf-bg-soft); }
+.eac-jt-step h3 { margin: 0; font-size: 1.08rem; font-weight: 700; }
+.eac-jt-step p { margin: 0; font-size: 0.88rem; line-height: 1.45; color: var(--sf-muted); }
+.eac-jt-step-tag { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--sf-muted); }
+.eac-jt-step[data-state="done"] .eac-jt-step-tag { color: #2e7d6f; }
+.eac-jt-step[data-state="next"] .eac-jt-step-tag { color: var(--sf-accent); }
+.eac-jt-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 4px; }
+.eac-jt-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 1px solid #cfc9bc; border-radius: 9px; background: transparent; font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--sf-fg); text-decoration: none; cursor: pointer; }
+.eac-jt-btn:disabled { opacity: 0.55; cursor: default; }
+.eac-jt-btn--primary { background: var(--sf-accent); border-color: var(--sf-accent); color: #fff; }
+.eac-jt-btn--primary:hover:not(:disabled) { background: #174b48; }
+.eac-jt-btn--dark { border-color: #1b1a17; }
+.eac-jt-link { padding: 0; border: 0; background: none; font: inherit; font-size: 0.88rem; color: var(--sf-accent); text-decoration: none; cursor: pointer; }
+.eac-jt-link:hover { text-decoration: underline; }
+.eac-jt-muted { margin: 0; font-size: 0.84rem; line-height: 1.45; color: var(--sf-muted); }
+.eac-jt-notice { margin: 0; font-size: 0.86rem; color: var(--sf-muted); }
+.eac-jt-notice[data-tone="error"] { color: #b4452c; }
+.eac-jt-subtabs { display: flex; gap: 16px; border-bottom: 1px solid var(--sf-line); font-size: 0.86rem; }
+.eac-jt-subtab { padding: 6px 0; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; color: var(--sf-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.eac-jt-subtab[aria-selected="true"] { color: var(--sf-fg); font-weight: 700; border-bottom-color: var(--sf-accent); }
+.eac-jt-badge { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px; background: #b8722c; color: #fff; font-size: 0.7rem; font-weight: 700; text-align: center; line-height: 18px; }
+.eac-jt-form { display: grid; gap: 12px; }
+.eac-jt-form-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 16px; align-items: start; }
+.eac-jt-image { display: grid; gap: 6px; justify-items: center; }
+.eac-jt-image img { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; }
+.eac-jt-image-blank { display: grid; place-items: center; width: 120px; height: 120px; border-radius: 12px; border: 1px dashed #b8722c; background: #fbf7ee; font-size: 0.76rem; color: var(--sf-muted); text-align: center; }
+.eac-jt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.eac-jt-field { display: grid; gap: 4px; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sf-muted); font-weight: 600; }
+.eac-jt-field--wide { grid-column: 1 / -1; }
+.eac-jt-field--inline { min-width: 12rem; }
+.eac-jt-fields > *, .eac-jt-form-grid > * { min-width: 0; }
+.eac-jt-field input, .eac-jt-field select, .eac-jt-field textarea, .eac-jt-linkrow input {
+  width: 100%; min-width: 0; box-sizing: border-box;
+  min-height: 40px; border: 1px solid #cfc9bc; border-radius: 9px; padding: 0 10px; background: #fff;
+  font: inherit; font-size: 0.92rem; letter-spacing: 0; text-transform: none; color: var(--sf-fg);
+}
+.eac-jt-field textarea { min-height: 84px; padding: 8px 10px; resize: vertical; }
+.eac-jt-field--inline select { min-height: 44px; }
+.eac-jt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.eac-jt-links { display: grid; gap: 8px; }
+.eac-jt-linkrow { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.eac-jt-people { display: grid; gap: 10px; }
+.eac-jt-people table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.eac-jt-people th { text-align: left; padding: 4px 8px 6px 0; font-weight: 600; color: var(--sf-muted); border-bottom: 1px solid var(--sf-line); }
+.eac-jt-people td { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--sf-line); vertical-align: middle; }
+.eac-jt-people tr[data-new] td { background: #fbf7ee; }
+.eac-jt-people select { min-height: 32px; border: 1px solid #cfc9bc; border-radius: 8px; font: inherit; font-size: 0.84rem; background: #fff; }
+.eac-jt-people small { color: var(--sf-muted); }
+.eac-jt-person { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; }
+.eac-jt-person img, .eac-jt-person-blank { width: 32px; height: 32px; border-radius: 999px; object-fit: cover; background: #e2ded4; display: block; }
+.eac-jt-person > span { display: grid; }
+.eac-jt-new { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: rgba(184, 114, 44, 0.15); color: #8a5120; font-style: normal; font-size: 0.7rem; font-weight: 600; }
+.eac-jt-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; }
+@media (max-width: 760px) {
+  .eac-center-head { grid-template-columns: 1fr; }
+  .eac-jt-body { grid-template-columns: 1fr; }
+  .eac-jt-form-grid, .eac-jt-fields, .eac-jt-tiles { grid-template-columns: 1fr; }
+  .eac-center-doors { grid-template-columns: 1fr; }
+}
+
+/* The whole window, on paper: hosts wrap /center in this when they drop their site chrome. */
+.eac-center-page { min-height: 100vh; background: #f6f4ef; color: #1b1a17; }
+
+/* ── Take three (2026-10-18): a narrower left column, the journeys as a row ── */
+@media (min-width: 1100px) {
+  /* 330px (300 → 330, +10% on the diagonal); the right column takes the rest. */
+  .eac-center { grid-template-columns: 330px minmax(0, 1fr); }
+}
+.eac-center-orgcard-owners { font-size: 0.82rem; color: var(--sf-muted); }
+.eac-center-orgcard-owners span { font-family: var(--sf-font-record); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.eac-center-orgcard-owners a { color: var(--sf-fg); text-decoration: underline; text-underline-offset: 2px; pointer-events: auto; }
+/* The site preview lives in the narrow left column now: compact heading. */
+.eac-center-you .eac-center-home { padding-top: 14px; }
+.eac-center-you .eac-center-home .eac-face-title { font-size: 1.05rem; }
+.eac-center-you .eac-center-home-bar { margin: 6px 0; }
+/* Latest, scoped org / network. */
+.eac-center-scope { display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 10px; border: 1px solid var(--sf-line); border-radius: 999px; background: var(--sf-bg-soft); }
+.eac-center-scope button { padding: 6px 14px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 0.82rem; color: var(--sf-muted); cursor: pointer; }
+.eac-center-scope button[aria-selected="true"] { background: #1b1a17; color: #fff; font-weight: 600; }
+
+/* The journeys: a blue field, a heading, gradient cards in a row that scrolls sideways.
+   Atmospheric by design (developer, 2026-10-18): almost no text, big titles in Brothers,
+   cards ~50% taller than the first pass. */
+@font-face {
+  font-family: "Brothers";
+  src: url("/fonts/BrothersTypeface-Regular.otf") format("opentype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Moonlight.woff2") format("woff2"), url("/fonts/Basteleur-Moonlight.woff") format("woff");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Basteleur";
+  src: url("/fonts/Basteleur-Bold.woff2") format("woff2"), url("/fonts/Basteleur-Bold.woff") format("woff");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+/* The bar over the journeys: View profile, Studio (2026-10-31). */
+.eac-center-me { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+
+.eac-jr {
+  display: grid; gap: 14px; min-width: 0;
+  padding: 16px 24px 22px; border-radius: 18px; color: #eef3ff;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(98, 140, 255, 0.35) 0%, rgba(98, 140, 255, 0) 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(120, 70, 220, 0.28) 0%, rgba(120, 70, 220, 0) 60%),
+    #0b1f5c;
+  box-shadow: 0 12px 32px rgba(11, 31, 92, 0.25);
+}
+.eac-jr-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.eac-jr-head-text { display: grid; gap: 2px; }
+.eac-jr-head { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+/* "Journeys" is the one word set in Brothers; the line beside it, the cards and the rest are Basteleur. */
+.eac-jr-title { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; font-weight: 400; line-height: 1.1; color: #ffffff; }
+.eac-jr-word { font-family: "Brothers", "Venture", system-ui, sans-serif; font-size: clamp(1.9rem, 3vw, 2.6rem); letter-spacing: 0.03em; }
+.eac-jr-line { font-family: "Basteleur", "Cormorant Garamond", Georgia, serif; font-weight: 700; font-size: clamp(1.05rem, 1.6vw, 1.35rem); letter-spacing: 0.01em; color: #cfdcff; }
+.eac-jr-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(222px, 1fr); gap: 16px;
+  overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent;
+}
+.eac-jr-row > * { scroll-snap-align: start; min-width: 0; }
+.eac-jr-card {
+  position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px;
+  width: 100%; min-height: 360px; padding: 24px 20px 64px; overflow: hidden;
+  border: 0; border-radius: 16px; color: #ffffff; font-family: "Basteleur", "Cormorant Garamond", Georgia, serif; text-align: center; text-decoration: none; cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+/* A scrim keeps the white title on the card's deepest tone whatever the gradient does above it. */
+.eac-jr-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 50%, rgba(8, 10, 40, 0.38) 0%, rgba(8, 10, 40, 0.12) 70%, rgba(8, 10, 40, 0) 100%); pointer-events: none; }
+.eac-jr-card::after { content: ""; position: absolute; width: 70%; aspect-ratio: 1; right: -22%; top: -18%; border-radius: 50%; background: rgba(255, 255, 255, 0.16); filter: blur(30px); pointer-events: none; }
+.eac-jr-card > * { position: relative; z-index: 1; }
+.eac-jr-card:hover, .eac-jr-card:focus-visible { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.36); outline: none; }
+.eac-jr-card:focus-visible { box-shadow: 0 0 0 3px #ffffff, 0 16px 32px rgba(0, 0, 0, 0.36); }
+.eac-jr-card[data-tone="orange"] { background: linear-gradient(160deg, #ffa43c 0%, #f0602f 48%, #b3262f 100%); }
+.eac-jr-card[data-tone="purple"] { background: linear-gradient(160deg, #a581ff 0%, #6a45dd 50%, #34278f 100%); }
+.eac-jr-card[data-tone="blue"]   { background: linear-gradient(160deg, #54c0ff 0%, #2f78e8 50%, #1c3fae 100%); }
+.eac-jr-card[data-tone="teal"]   { background: linear-gradient(160deg, #46e0be 0%, #1f9e9c 50%, #135a7d 100%); }
+.eac-jr-card-title { font-family: "Basteleur", "Cormorant Garamond", Georgia, serif; font-weight: 700; font-size: clamp(1.55rem, 2.2vw, 2.1rem); line-height: 1.12; letter-spacing: 0.005em; text-wrap: balance; }
+.eac-jr-site { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.95; }
+.eac-jr-hint { margin-top: 6px; max-width: 24ch; font-size: 0.82rem; line-height: 1.4; font-weight: 400; opacity: 0.9; }
+.eac-jr-foot { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.eac-jr-bar { display: inline-flex; gap: 4px; }
+.eac-jr-bar span { width: 24px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.35); }
+.eac-jr-bar span[data-done] { background: #ffffff; }
+.eac-jr-go { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); font-size: 1.1rem; }
+
+.eac-jt-address { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--sf-muted); }
+.eac-jt-address-hint { margin: -4px 0 0; font-size: 0.9rem; color: var(--sf-muted); }
+.eac-jt-address-hint[data-ok] { color: #2e7d6f; }
+.eac-jt-address-hint strong { color: var(--sf-fg); }
+
+.eac-jr-arrows { display: inline-flex; gap: 6px; }
+.eac-jr-arrows button { width: 44px; height: 44px; border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; background: rgba(255,255,255,0.1); color: #fff; font: inherit; font-size: 1.1rem; cursor: pointer; }
+.eac-jr-arrows button:hover { background: rgba(255,255,255,0.22); border-color: #fff; }
+@media (max-width: 760px) { .eac-jr-arrows { display: none; } }
+
+.eac-pcard-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-center-empty { margin: 8px 0 0; font-size: 0.92rem; line-height: 1.5; color: var(--sf-muted); }
+
+.eac-jt-offer { display: grid; gap: 18px; }
+.eac-jt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.eac-jt-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--sf-line); border-radius: 10px; background: #fff; }
+.eac-jt-list li > span:first-child { display: grid; min-width: 0; }
+.eac-jt-list small { color: var(--sf-muted); }
+.eac-jt-list-actions { display: inline-flex; gap: 14px; }
+.eac-jt-check--big { font-size: 1rem; gap: 10px; }
+.eac-jt-check--big input { width: 20px; height: 20px; }
+
+.eac-jt-dev { margin: 0 0 4px; padding: 10px 14px; border: 1px solid #b8722c; border-radius: 10px; background: #fbf3e4; color: #5b3b12; font-size: 0.95rem; line-height: 1.45; }
+.eac-jt-dev strong { font-weight: 700; }
+.eac-orgmanage .eac-jt-body { min-height: 0; }

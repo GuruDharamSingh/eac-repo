@@ -534,11 +534,19 @@ export interface HostDuty {
   displayName: string;
   note: string | null;
   talkToken: string | null;
+  /** The rota role this duty is for (`host` unless `role` was passed). */
+  role: string;
+}
+
+/** The `thread_reminder_sends.kind` a role's reminder is logged under. */
+function hostReminderKind(role: string): string {
+  return role === HOST_ROLE ? 'host' : role.slice(0, 24);
 }
 
 /**
  * Hosts due a reminder: an assignment whose occurrence falls inside the
- * window, for which no `host` reminder has been logged.
+ * window, for which no `host` reminder has been logged. Pass `role` (e.g.
+ * `co-host`) for another role; its ledger kind is the role name.
  *
  * Deliberately NOT joined against `threads.scheduled_at` — see the precision
  * note at the top of this file. `meeting_hosts.occurrence_at` is already the
@@ -549,8 +557,11 @@ export async function listHostRemindersDue(options: {
   orgId?: string;
   withinMinutes?: number;
   limit?: number;
+  role?: string;
 }): Promise<HostDuty[]> {
   const within = options.withinMinutes ?? 60;
+  const role = options.role ?? HOST_ROLE;
+  const kind = hostReminderKind(role);
   const rows = await db<
     Array<{
       thread_id: string;
@@ -569,7 +580,7 @@ export async function listHostRemindersDue(options: {
     FROM meeting_hosts h
     JOIN threads t ON t.id = h.thread_id
     JOIN users u ON u.id = h.user_id
-    WHERE h.role = ${HOST_ROLE}
+    WHERE h.role = ${role}
       AND h.user_id IS NOT NULL
       AND u.email IS NOT NULL
       AND t.status = 'published'
@@ -580,7 +591,7 @@ export async function listHostRemindersDue(options: {
         SELECT 1 FROM thread_reminder_sends s
         WHERE s.thread_id = h.thread_id
           AND s.occurrence_at = h.occurrence_at
-          AND s.kind = 'host'
+          AND s.kind = ${kind}
       )
     ORDER BY h.occurrence_at
     LIMIT ${options.limit ?? 20}
@@ -595,20 +606,23 @@ export async function listHostRemindersDue(options: {
     displayName: r.display_name?.trim() || r.email,
     note: r.note,
     talkToken: r.nextcloud_talk_token,
+    role,
   }));
 }
 
 /**
  * Claim a host reminder. Returns false when another tick already has it —
- * overlapping ticks are normal, two letters are not.
+ * overlapping ticks are normal, two letters are not. `role` as in
+ * `listHostRemindersDue`.
  */
 export async function claimHostReminder(
   threadId: string,
-  occurrenceAt: string | Date
+  occurrenceAt: string | Date,
+  role: string = HOST_ROLE
 ): Promise<boolean> {
   const claimed = await db`
     INSERT INTO thread_reminder_sends (thread_id, occurrence_at, kind, recipients)
-    VALUES (${threadId}, ${new Date(occurrenceAt).toISOString()}::timestamptz, 'host', 1)
+    VALUES (${threadId}, ${new Date(occurrenceAt).toISOString()}::timestamptz, ${hostReminderKind(role)}, 1)
     ON CONFLICT DO NOTHING
     RETURNING thread_id
   `;

@@ -13,6 +13,7 @@ import {
   upsertOrgProfile,
   ensureUniqueUserSlug,
   setStandingMeeting,
+  setCenterPromo,
   type OrgRole,
 } from "@elkdonis/services";
 import { audienceToStorage, canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
@@ -463,6 +464,53 @@ export async function saveSectionAction(
     return { ok: true };
   } catch (err) {
     console.error("[innergathering] saveSectionAction:", err);
+    return { ok: false, error: "Could not save." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// /center promotion slot (site_config key `center_promo`)
+
+export interface CenterPromoInput {
+  title: string;
+  body: string;
+  href: string;
+  imageUrl: string;
+}
+
+/**
+ * Place a hand-written promotion on /center, or clear it (null). Owners and
+ * guides only, via requireOrgEditor — the acting user comes from the session,
+ * never from the form.
+ */
+export async function saveCenterPromoAction(input: CenterPromoInput | null): Promise<ActionResult> {
+  const editor = await requireOrgEditor();
+  try {
+    if (input === null) {
+      await setCenterPromo(ORG, null);
+    } else {
+      const title = input.title.trim();
+      if (!title) return { ok: false, error: "A title is needed." };
+      const href = input.href.trim();
+      const imageUrl = input.imageUrl.trim();
+      // Only http(s) links and same-site paths: the card prints the href as-is.
+      const linkOk = (v: string) => v === "" || /^https?:\/\//i.test(v) || (v.startsWith("/") && !v.startsWith("//"));
+      if (!linkOk(href)) return { ok: false, error: "The link must start with https:// or /." };
+      if (!linkOk(imageUrl)) return { ok: false, error: "The image must be a URL or a path." };
+      await setCenterPromo(ORG, {
+        kind: "link",
+        title,
+        blurb: input.body.trim() || undefined,
+        href: href || undefined,
+        image_url: imageUrl || undefined,
+        placed_by: editor.userId,
+      });
+    }
+    revalidatePath("/center");
+    revalidatePath("/manage/center");
+    return { ok: true };
+  } catch (err) {
+    console.error("[innergathering] saveCenterPromoAction:", err);
     return { ok: false, error: "Could not save." };
   }
 }

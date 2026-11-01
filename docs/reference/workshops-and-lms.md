@@ -180,6 +180,12 @@ importing a book (pdf/epub/audio/link) into reading units. No app or package dep
 - Data: courses `elkdonis-path` (`unlisted`, published) and `sophia-test-course` (`private`), both org
   `elkdonis`; runs `open` ×2, `first-circle` (cohort, draft, bound to a workshop thread), `a-little-at-a-time`
   (drip), `test-circle` (cohort, bound). `lms_enrolments` has 0 rows. Flagship step texts are placeholders.
+  2026-10-29: course `enneagram-foundations` (org `hidden-enneagram`, `unlisted`, published v1, 27 steps,
+  open run; guide/staff aeon.g963@gmail.com) seeded from the Hidden Enneagram corpus by
+  `packages/lms/scripts/seed-hidden-enneagram.mts` (idempotent); linked from the ÆON landing page draft at
+  `~/aeon-enneagram/`. (claude, 2026-10-29)
+  2026-10-29 correction to "Deployment" below: `eac-sophia` is running and an NPM proxy host serves
+  `https://sophia.elkdonis-arts.org` (edge curl 200); `SOPHIA_URL` now points there. (claude, 2026-10-29)
 - Course media upload: `apps/sophia/src/lib/connectors.ts:51` writes via `uploadOrgFile` to
   `EAC_Network/<org>/Media/<folder>`, which `parseMediaPath` classifies as an org path (public unless a
   `Private` segment). There is no `course` target in `media-authz.ts`.
@@ -190,6 +196,30 @@ importing a book (pdf/epub/audio/link) into reading units. No app or package dep
   arts-collective's hub shows "Open the Elkdonis Path" only when `sophiaLive()` gets an answer
   (`apps/arts-collective/src/lib/elkdonis-hub.ts:62`, used at `hub/(tabs)/elkdonis/page.tsx:112`), so the
   button is hidden today.
+
+#### Task steps and the network-host mount (claude, 2026-10-30)
+
+- Step type `task`, completion mode `derived` (`packages/lms/src/step-types.ts`): the step completes when the
+  host reports the thing exists, never by a button. `settings.task = { id, scope: 'person' | 'org' }`
+  (`types.ts` `StepTask`); `packages/lms/src/tasks.ts` `settleTaskStep` asks the host and records the
+  completion through `completeStep` before the step renders. The studio's step save keeps settings keys
+  it does not edit (`lms-ui/src/actions.ts` `keepSettings`), so `task` survives an edit of the text.
+- Host seam: `LmsConnectors.tasks` (`lms-ui/src/connectors.ts`): `status(task, viewer, {orgId})`,
+  optional `orgFor(viewer, requested)`, and `render`, a client component drawn by `StepBody` inside
+  `section.so-task`. Without it a task step reads as text and never completes (Sophia today).
+- Task ids and their derivations are in `packages/services/src/onboarding-tasks.ts`
+  (`getOnboardingTaskStatus`; 16 ids: profile, gain-space, listing, studio, show-on, cloud, service,
+  store, artwork, payouts, org, org-details, org-offering, org-people, org-email, org-site).
+- `renderLmsRoute` / `lmsRouteMetadata` (`lms-ui/src/route.tsx`) mount the learner pages on another host
+  (`lms/ORG_SITES.md` item 2). arts-collective serves them at `/learn` with `/api/lms/[action]`
+  (`apps/arts-collective/src/lib/lms/connectors.tsx`, `components/learn/`); `autoEnrol` enrols a
+  signed-in visitor in the `getting-started` course on first open.
+- Course `getting-started` (org `elkdonis`, public, seeded by `packages/lms/scripts/seed-getting-started.mts`)
+  is the onboarding course; its canonical home is arts-collective, but Sophia's catalogue lists it too with
+  no `rel=canonical` yet. Brief and verification: `docs/open/ONBOARDING_COURSE_BRIEF_2026-10-29.md`.
+- Corrections: `eac-sophia` has been running since at least 2026-10-28 (the "stopped" note above is stale);
+  `SOPHIA_URL` in `.env` is `https://sophia.elkdonis-arts.org`, not `sophia.arts-collective.com`, and
+  neither host has a proxy host.
 
 ### LMS research and design review (`/mnt/pool1/home/guru/eac/lms/`)
 

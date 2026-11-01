@@ -14,8 +14,13 @@ import {
   updateArtworkAction,
   publishArtworkAction,
   archiveArtworkAction,
+  searchPeopleAction,
   type ArtworkFormInput,
 } from "../actions";
+
+export type BeneficiaryOption = { id: string; name: string; kind: "org" | "charity"; blurb?: string | null };
+export type OrgOption = { id: string; name: string };
+type Person = { id: string; name: string; email: string | null; slug: string | null };
 
 export type ArtworkFormInitial = {
   id?: string;
@@ -36,6 +41,21 @@ export type ArtworkFormInitial = {
   inventoryQty?: number;
   status?: string;
   images?: UploadedImage[];
+  creditedArtistUserId?: string | null;
+  creditedArtistName?: string | null;
+  creditStatus?: "credited" | "rejected";
+  estimateLow?: number | null;
+  estimateHigh?: number | null;
+  donation?: {
+    fromUserId?: string | null;
+    fromName?: string | null;
+    fromText?: string | null;
+    toOrgId?: string | null;
+    occurredOn?: string | null;
+    note?: string | null;
+  } | null;
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: "all_proceeds" | "commission" | null;
 };
 
 const inputCls =
@@ -97,14 +117,63 @@ function fromCm(cm: number | null | undefined, unit: UnitKey): string {
 export function ArtworkForm({
   initial,
   allowMakerChoice = false,
+  beneficiaries = [],
+  orgOptions = [],
 }: {
   initial?: ArtworkFormInitial;
   /** Org stores: let the person choose whether they are the credited maker. */
   allowMakerChoice?: boolean;
+  /** The store's org's beneficiary list (migration 209). Empty hides the block. */
+  beneficiaries?: BeneficiaryOption[];
+  /** Orgs a donation can be recorded "to"; the store's own org first. */
+  orgOptions?: OrgOption[];
 }) {
   const router = useRouter();
   const isEdit = Boolean(initial?.id);
   const [creditMe, setCreditMe] = React.useState(true);
+
+  // Credit (not payment): a person searched by name or email.
+  const [credited, setCredited] = React.useState<Person | null>(
+    initial?.creditedArtistUserId
+      ? { id: initial.creditedArtistUserId, name: initial.creditedArtistName ?? "Credited artist", email: null, slug: null }
+      : null
+  );
+  const [creditQuery, setCreditQuery] = React.useState("");
+  const [creditHits, setCreditHits] = React.useState<Person[]>([]);
+  React.useEffect(() => {
+    if (creditQuery.trim().length < 2) {
+      setCreditHits([]);
+      return;
+    }
+    let live = true;
+    const t = setTimeout(() => {
+      searchPeopleAction(creditQuery).then((r) => live && setCreditHits(r)).catch(() => live && setCreditHits([]));
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [creditQuery]);
+
+  const [estimateLow, setEstimateLow] = React.useState(
+    initial?.estimateLow != null ? String(initial.estimateLow) : ""
+  );
+  const [estimateHigh, setEstimateHigh] = React.useState(
+    initial?.estimateHigh != null ? String(initial.estimateHigh) : ""
+  );
+
+  // Donation: "donated by X to Y". Off unless the piece was donated.
+  const [donated, setDonated] = React.useState(Boolean(initial?.donation));
+  const [donorText, setDonorText] = React.useState(initial?.donation?.fromText ?? initial?.donation?.fromName ?? "");
+  const [donorUserId, setDonorUserId] = React.useState<string | null>(initial?.donation?.fromUserId ?? null);
+  const [donatedTo, setDonatedTo] = React.useState(initial?.donation?.toOrgId ?? orgOptions[0]?.id ?? "");
+  const [donatedOn, setDonatedOn] = React.useState(initial?.donation?.occurredOn ?? "");
+  const [donationNote, setDonationNote] = React.useState(initial?.donation?.note ?? "");
+
+  const [beneficiaryId, setBeneficiaryId] = React.useState(initial?.beneficiaryPayeeId ?? "");
+  const [beneficiaryScope, setBeneficiaryScope] = React.useState<"all_proceeds" | "commission">(
+    initial?.beneficiaryScope ?? "all_proceeds"
+  );
 
   const [title, setTitle] = React.useState(initial?.title ?? "");
   const [descriptionHtml, setDescriptionHtml] = React.useState(
@@ -180,6 +249,20 @@ export function ArtworkForm({
         alt: img.alt ?? null,
       })),
       creditMe: allowMakerChoice ? creditMe : undefined,
+      creditedArtistUserId: credited?.id ?? null,
+      estimateLow: numOrNull(estimateLow),
+      estimateHigh: numOrNull(estimateHigh),
+      donation: donated
+        ? {
+            fromUserId: donorUserId,
+            fromText: donorUserId ? null : donorText.trim() || null,
+            toOrgId: donatedTo || null,
+            occurredOn: donatedOn || null,
+            note: donationNote.trim() || null,
+          }
+        : null,
+      beneficiaryPayeeId: beneficiaryId || null,
+      beneficiaryScope: beneficiaryId ? beneficiaryScope : null,
     };
   }
 
@@ -370,6 +453,156 @@ export function ArtworkForm({
               </span>
             </span>
           </label>
+        </section>
+      )}
+
+      {(allowMakerChoice || credited) && (
+        <section className="space-y-3 rounded-lg border border-border p-4">
+          <h2 className="font-serif text-xl">Credited artist</h2>
+          <p className="text-sm text-muted-foreground">
+            Names the artist on the listing without paying them: the store keeps the
+            proceeds. For donated work, or work the organisation holds. They can refuse the
+            credit from their ArtDirect page.
+          </p>
+          {credited ? (
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm">
+              <span>
+                <span className="font-medium">{credited.name}</span>
+                {credited.email && <span className="ml-2 text-muted-foreground">{credited.email}</span>}
+                {initial?.creditStatus === "rejected" && (
+                  <span className="ml-2 text-xs text-destructive">declined the credit</span>
+                )}
+              </span>
+              <button type="button" className="text-xs underline underline-offset-4" onClick={() => setCredited(null)}>
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                className={inputCls}
+                placeholder="Search by name or email…"
+                value={creditQuery}
+                onChange={(e) => setCreditQuery(e.target.value)}
+              />
+              {creditHits.length > 0 && (
+                <ul className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow">
+                  {creditHits.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
+                        onClick={() => {
+                          setCredited(p);
+                          setCreditQuery("");
+                          setCreditHits([]);
+                        }}
+                      >
+                        <span>{p.name}</span>
+                        {p.email && <span className="text-xs text-muted-foreground">{p.email}</span>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="space-y-3 rounded-lg border border-border p-4">
+        <label className="flex items-start gap-3 text-sm">
+          <input type="checkbox" className="mt-1" checked={donated} onChange={(e) => setDonated(e.target.checked)} />
+          <span>
+            <span className="font-medium">This piece was donated.</span>{" "}
+            <span className="text-muted-foreground">Record who gave it and to whom; it shows on the listing.</span>
+          </span>
+        </label>
+        {donated && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Donated by</label>
+              <input
+                className={inputCls}
+                placeholder="Name (or pick the credited artist below)"
+                value={donorText}
+                onChange={(e) => {
+                  setDonorText(e.target.value);
+                  setDonorUserId(null);
+                }}
+              />
+              {credited && donorUserId !== credited.id && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs underline underline-offset-4"
+                  onClick={() => {
+                    setDonorUserId(credited.id);
+                    setDonorText(credited.name);
+                  }}
+                >
+                  Donated by {credited.name}
+                </button>
+              )}
+            </div>
+            <div>
+              <label className={labelCls}>Donated to</label>
+              <select className={inputCls} value={donatedTo} onChange={(e) => setDonatedTo(e.target.value)}>
+                <option value="">—</option>
+                {orgOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Date</label>
+              <input type="date" className={inputCls} value={donatedOn} onChange={(e) => setDonatedOn(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Note</label>
+              <input className={inputCls} value={donationNote} onChange={(e) => setDonationNote(e.target.value)} />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {beneficiaries.length > 0 && (
+        <section className="space-y-3 rounded-lg border border-border p-4">
+          <h2 className="font-serif text-xl">Where the money goes</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Beneficiary</label>
+              <select className={inputCls} value={beneficiaryId} onChange={(e) => setBeneficiaryId(e.target.value)}>
+                <option value="">Ordinary sale (store and commission as usual)</option>
+                {beneficiaries.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                    {b.kind === "charity" ? " (charity)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {beneficiaryId && (
+              <div>
+                <label className={labelCls}>How much</label>
+                <select
+                  className={inputCls}
+                  value={beneficiaryScope}
+                  onChange={(e) => setBeneficiaryScope(e.target.value as "all_proceeds" | "commission")}
+                >
+                  <option value="all_proceeds">All proceeds (less card fees)</option>
+                  <option value="commission">The commission only</option>
+                </select>
+              </div>
+            )}
+          </div>
+          {beneficiaryId && beneficiaryScope === "all_proceeds" && (
+            <p className="text-xs text-muted-foreground">
+              Nothing is paid to the maker or kept as commission; the whole price less processing fees is
+              recorded for the beneficiary and paid out by the organisation.
+            </p>
+          )}
         </section>
       )}
 
@@ -604,6 +837,34 @@ export function ArtworkForm({
           />
           Includes a certificate of authenticity
         </label>
+
+        <div className="sm:col-span-2">
+          <label className={labelCls}>
+            Auction estimate{" "}
+            <span className="font-normal text-muted-foreground">(optional; shown as a range on a lot)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              step="any"
+              className={inputCls}
+              placeholder="Low"
+              value={estimateLow}
+              onChange={(e) => setEstimateLow(e.target.value)}
+            />
+            <span className="text-muted-foreground">–</span>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              className={inputCls}
+              placeholder="High"
+              value={estimateHigh}
+              onChange={(e) => setEstimateHigh(e.target.value)}
+            />
+          </div>
+        </div>
       </section>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">

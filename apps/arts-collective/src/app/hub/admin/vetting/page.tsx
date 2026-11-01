@@ -29,7 +29,7 @@ export default async function VettingPage() {
       <div className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10">
         <header>
           <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-            Elkdonis
+            Arts Collective
           </p>
           <h1 className="mt-2 font-serif text-3xl">Vetting queue</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">

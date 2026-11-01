@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series planner, extended</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mockup 03, variant B (2026-10-10): the existing series planner
+   (cms-ui SeriesPlannerSurface, mounted by apps/ifac SeriesPlannerPage) with
+   a collapsible series-settings card above the weeks and an "Add a week" row.
+   Same structure and class roles as surface.css .eac-series*, light hub
+   tokens, with the input change from 01: white fields on a tinted well.
+   Measured: ink #171615 on #fffdf8 17.8:1; ink-soft #4f4a44 on #f3eee4 7.58:1;
+   faint #6b6259 on #fffdf8 5.87:1; blue #273d54 on #fffdf8 10.98:1;
+   oxide #9a3f2f on #fffdf8 6.61:1; field edge #7d705a on #ffffff 4.84:1;
+   white on oxide 6.72:1. */
+:root {
+  --ink: #171615; --ink-soft: #4f4a44; --faint: #6b6259;
+  --paper: #f8f5ef; --card: #fffdf8; --well: #f3eee4; --field: #ffffff;
+  --line: #d8d0c2; --field-line: #7d705a; --oxide: #9a3f2f; --blue: #273d54; --blue-soft: #e6ebf1;
+  --bar: #24282b; --bar-ink: #ece7e1; --bar-muted: #b3ada3;
+  --serif: "Cormorant Garamond", Georgia, serif; --sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { font-size: 112.5%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+a { color: inherit; }
+.bar { background: var(--bar); color: var(--bar-ink); border-bottom: 3px solid #9c40d8; }
+.bar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.seal { display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid #c79a42; border-radius: 50%; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; color: #e3c572; flex: none; }
+.bar__name { font-family: var(--serif); font-size: 1.2rem; }
+.bar__right { margin-left: auto; color: var(--bar-muted); font-size: 0.9rem; }
+.wrap { width: min(900px, calc(100% - 32px)); margin-inline: auto; }
+
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 22px 0 14px; font-size: 1rem; color: var(--ink-soft); }
+.crumbs a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--field-line); }
+.crumbs [aria-current] { color: var(--ink); font-weight: 700; }
+.crumbs .sep { color: var(--faint); }
+.crumbs__out { margin-left: auto; font-weight: 600; }
+
+/* the surface frame, as page content */
+.frame { background: var(--card); border: 1px solid var(--line); border-radius: 2px; margin-bottom: 26px; }
+.frame__head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.frame__k { margin: 0; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--blue); }
+.frame__t { margin: 0; font-family: var(--serif); font-size: 1.6rem; font-weight: 600; line-height: 1.15; }
+.frame__x { margin-left: auto; flex: none; width: 40px; height: 40px; border: 1.5px solid var(--field-line); background: var(--field); border-radius: 2px; font-size: 1.2rem; cursor: pointer; color: var(--ink); }
+.frame__body { padding: 16px 18px 20px; display: grid; gap: 14px; }
+.intro { margin: 0; color: var(--ink-soft); }
+.intro b { color: var(--oxide); }
+
+.field { display: grid; gap: 5px; min-width: 0; }
+.field > span { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--ink-soft); }
+.input { width: 100%; min-height: 46px; border: 1.5px solid var(--field-line); border-radius: 2px; background: var(--field); color: var(--ink); padding: 9px 12px; font: inherit; font-size: 1rem; }
+textarea.input { min-height: 110px; resize: vertical; }
+.input::placeholder { color: var(--faint); }
+.input:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+.well { background: var(--well); border-radius: 2px; padding: 14px; display: grid; gap: 14px; }
+.btn { min-height: 44px; padding: 0 16px; border-radius: 2px; border: 1.5px solid var(--field-line); background: var(--field); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.btn--primary { background: var(--oxide); border-color: var(--oxide); color: #fff; }
+.quiet { background: none; border: 0; padding: 0; font: inherit; font-size: 0.9rem; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.drop { border: 1.5px dashed var(--field-line); border-radius: 2px; background: var(--field); padding: 14px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
+.drop b { color: var(--ink); }
+.acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; }
+
+/* new: the series settings card */
+.settings { border: 1.5px solid var(--blue); border-radius: 2px; background: var(--card); }
+.settings > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 12px 14px; }
+.settings > summary::-webkit-details-marker { display: none; }
+.settings > summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.settings__h { font-weight: 700; color: var(--blue); }
+.settings__sum { grid-column: 1; color: var(--ink-soft); font-size: 0.95rem; }
+.settings__chev { grid-row: 1 / span 2; grid-column: 2; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: var(--blue); }
+.settings__chev::after { content: "▾"; }
+.settings[open] .settings__chev::after { content: "▴"; }
+.settings[open] .settings__chev .o { display: none; }
+.settings:not([open]) .settings__chev .c { display: none; }
+.settings__body { border-top: 1px solid var(--line); padding: 14px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; }
+.thumb { aspect-ratio: 4 / 3; background: linear-gradient(140deg, #2b2f3a, #3b2f4a 55%, #2b2f3a); color: #f3eee4; display: grid; place-items: center; text-align: center; font-size: 0.88rem; padding: 10px; }
+.thumb b { display: block; font-family: var(--serif); font-size: 1.3rem; font-weight: 500; }
+.settings__side { display: grid; gap: 8px; align-content: start; }
+.settings__fields { display: grid; gap: 14px; min-width: 0; }
+.sub { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--ink-soft); }
+
+/* the weeks: .eac-series, unchanged in structure */
+.weeks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.wk { border: 1px solid var(--field-line); border-radius: 2px; background: var(--card); }
+.wk.is-open { border: 2px solid var(--blue); }
+.wk__head { width: 100%; display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.wk__head:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
+.wk__when { display: grid; gap: 1px; font-size: 0.95rem; }
+.wk__when strong { font-weight: 700; }
+.wk__tag { font-style: normal; font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); font-weight: 700; }
+.wk__n { font-size: 0.85rem; color: var(--ink-soft); }
+.wk__sum { display: grid; gap: 1px; min-width: 0; }
+.wk__title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk__title.is-empty { font-weight: 400; font-style: italic; color: var(--ink-soft); }
+.wk__host { font-size: 0.92rem; color: var(--ink-soft); }
+.wk__host.is-empty { color: var(--oxide); font-weight: 600; }
+.wk__chev { color: var(--ink-soft); }
+.wk__form { border-top: 1px solid var(--line); padding: 14px; display: grid; gap: 14px; }
+.mats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mats li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--field-line); background: var(--field); font-size: 0.92rem; min-width: 0; }
+.mats .k { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--blue); flex: none; }
+.mats .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mats .quiet { margin-left: auto; flex: none; }
+.addlink { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 8px; }
+.addwk { width: 100%; min-height: 52px; border: 1.5px dashed var(--field-line); background: var(--paper); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; border-radius: 2px; }
+.addwk span { color: var(--ink-soft); font-weight: 400; }
+
+.note { margin: 0 0 40px; border: 1.5px dashed var(--faint); border-radius: 4px; padding: 14px 16px; font-size: 0.92rem; color: var(--ink-soft); }
+.note b { color: var(--ink); }
+.note ul { margin: 6px 0 0; padding-left: 20px; }
+
+@media (max-width: 720px) {
+  .crumbs__out { margin-left: 0; flex-basis: 100%; }
+  .settings__body { grid-template-columns: 1fr; }
+  .wk__head { grid-template-columns: minmax(0, 1fr) auto; }
+  .wk__when { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; gap: 10px; align-items: baseline; }
+  .wk__chev { grid-row: 2; grid-column: 2; }
+  .addlink { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .frame__head, .frame__body { padding-left: 12px; padding-right: 12px; }
+  .well, .wk__form, .settings__body { padding: 10px; }
+  .frame__t { font-size: 1.35rem; }
+  .wk__when { grid-auto-flow: row; }
+  .acts .btn { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap"><span class="seal">IFAC</span><span class="bar__name">Members' hub</span><span class="bar__right">Signed in</span></div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="#">Hub</a><span class="sep" aria-hidden="true">›</span>
+    <a href="#">Series</a><span class="sep" aria-hidden="true">›</span>
+    <span aria-current="page">Explorations in Art Forms by Non Professionals</span>
+    <a class="crumbs__out" href="04-series-page.html">See it on the site →</a>
+  </nav>
+
+  <article class="frame" aria-labelledby="ft">
+    <header class="frame__head">
+      <div><p class="frame__k">Series planner</p><h1 class="frame__t" id="ft">Explorations in Art Forms by Non Professionals</h1></div>
+      <button class="frame__x" type="button" aria-label="Back to the hub">×</button>
+    </header>
+
+    <div class="frame__body">
+      <!-- new in this variant -->
+      <details class="settings" open>
+        <summary>
+          <span class="settings__h">Series settings</span>
+          <span class="settings__sum">Mondays, 6:00 PM Pacific · 12 Oct to 2 Nov 2026 · join link set</span>
+          <span class="settings__chev"><span class="o">Edit</span><span class="c">Close</span></span>
+        </summary>
+        <div class="settings__body">
+          <div class="settings__side">
+            <div class="thumb"><div><b>Cover image</b>Series cover</div></div>
+            <button class="btn" type="button">Change cover</button>
+          </div>
+          <div class="settings__fields">
+            <label class="field"><span>Series title</span><input class="input" value="Explorations in Art Forms by Non Professionals"></label>
+            <label class="field"><span>Description</span><textarea class="input" rows="3">Placeholder description: a weekly online session in which members who are not professional artists try an art form together.</textarea></label>
+            <div class="row">
+              <label class="field"><span>Repeats</span><select class="input"><option>Every week</option></select></label>
+              <label class="field"><span>On</span><select class="input"><option>Monday</option></select></label>
+              <label class="field"><span>At</span><input class="input" value="6:00 PM"></label>
+              <label class="field"><span>Time zone</span><select class="input"><option>Pacific</option></select></label>
+            </div>
+            <div class="row">
+              <label class="field"><span>First session</span><input class="input" value="Mon 12 Oct 2026"></label>
+              <label class="field"><span>Last session</span><input class="input" value="Mon 2 Nov 2026"></label>
+            </div>
+            <div class="well">
+              <p class="sub">Meeting link, the same every week</p>
+              <label class="field"><span>Join URL</span><input class="input" placeholder="https://zoom.example/j/0000000000"></label>
+              <div class="row">
+                <label class="field"><span>Meeting ID</span><input class="input" placeholder="000 0000 0000"></label>
+                <label class="field"><span>Passcode</span><input class="input" placeholder="PASSCODE"></label>
+              </div>
+            </div>
+            <div class="acts"><button class="btn btn--primary" type="button">Save series settings</button></div>
+          </div>
+        </div>
+      </details>
+
+      <p class="intro">Each week has a host, a title, a short write-up and the materials to look at before. <b>2 coming weeks have nobody yet.</b></p>
+
+      <ol class="weeks">
+        <li class="wk is-open">
+          <button class="wk__head" type="button" aria-expanded="true">
+            <span class="wk__when"><strong>Mon 12 Oct, 6:00 PM</strong><em class="wk__tag">This week</em><span class="wk__n">Session 1</span></span>
+            <span class="wk__sum"><span class="wk__title">Session title</span><span class="wk__host">Host name · with Co-host name · 3 going</span></span>
+            <span class="wk__chev" aria-hidden="true">▴</span>
+          </button>
+          <div class="wk__form">
+            <div class="well">
+              <div class="row">
+                <label class="field"><span>Host</span><select class="input"><option>Host name</option><option value="">Nobody yet</option></select></label>
+                <label class="field"><span>Co-host</span><select class="input"><option>Co-host name</option><option value="">Nobody yet</option></select></label>
+              </div>
+              <label class="field"><span>Title</span><input class="input" value="Session title" placeholder="What this week is called"></label>
+              <label class="field"><span>Write-up</span><textarea class="input" rows="4" placeholder="What you'll do, what to bring, what to look at before…">Placeholder write-up: what the group will try, what to have to hand, and what to look at beforehand.</textarea></label>
+              <div class="field"><span>Cover image</span><div class="drop"><b>Drop an image</b>, or choose from the library</div></div>
+              <div class="field"><span>Materials</span>
+                <ul class="mats">
+                  <li><span class="k">Document</span><span class="n">Reading for this session (placeholder).pdf</span><button class="quiet" type="button">Remove</button></li>
+                </ul>
+              </div>
+              <div class="addlink"><input class="input" placeholder="Name"><input class="input" placeholder="https://… (a page, a recording, a document)"><button class="btn" type="button">Add link</button></div>
+            </div>
+            <div class="acts"><button class="btn btn--primary" type="button">Save this week</button></div>
+          </div>
+        </li>
+        <li class="wk">
+          <button class="wk__head" type="button" aria-expanded="false">
+            <span class="wk__when"><strong>Mon 19 Oct, 6:00 PM</strong><span class="wk__n">Session 2</span></span>
+            <span class="wk__sum"><span class="wk__title">Session title</span><span class="wk__host">Host name</span></span>
+            <span class="wk__chev" aria-hidden="true">▾</span>
+          </button>
+        </li>
+        <li class="wk">
+          <button class="wk__head" type="button" aria-expanded="false">
+            <span class="wk__when"><strong>Mon 26 Oct, 6:00 PM</strong><span class="wk__n">Session 3</span></span>
+            <span class="wk__sum"><span class="wk__title is-empty">Untitled week</span><span class="wk__host is-empty">Nobody hosting yet</span></span>
+            <span class="wk__chev" aria-hidden="true">▾</span>
+          </button>
+        </li>
+        <li class="wk">
+          <button class="wk__head" type="button" aria-expanded="false">
+            <span class="wk__when"><strong>Mon 2 Nov, 6:00 PM</strong><span class="wk__n">Session 4</span></span>
+            <span class="wk__sum"><span class="wk__title is-empty">Untitled week</span><span class="wk__host is-empty">Nobody hosting yet</span></span>
+            <span class="wk__chev" aria-hidden="true">▾</span>
+          </button>
+        </li>
+        <li><button class="addwk" type="button">+ Add a week <span>(Mon 9 Nov)</span></button></li>
+      </ol>
+    </div>
+  </article>
+
+  <aside class="note">
+    <b>Mockup note (variant B).</b>
+    <ul>
+      <li>Everything below "Series settings" is the current planner, restyled only for field contrast (white fields, darker edge, tinted well).</li>
+      <li>The settings card is open on a new series and closed once the series is published; its summary line stays readable when closed.</li>
+      <li>The week list is already a vertical list, so phones need no separate layout.</li>
+    </ul>
+  </aside>
+</main>
+</body>
+</html>

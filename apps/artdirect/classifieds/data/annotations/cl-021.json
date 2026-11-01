@@ -1,0 +1,23 @@
+{
+  "id": "cl-021",
+  "status": "draft",
+  "source": { "paper": "Lokmat (Goa edition)", "place": "Goa, India", "date": "2018-05-16", "era": "2010s", "language": ["mr", "en"] },
+  "summary": "Black-and-white Marathi classifieds strip: a black band of white line icons beside giant grey CLASSIFIEDS letters, categories marked by an icon box over a reverse label, ten narrow columns, and an agency directory in agate as the footer.",
+  "family": "indian-color-display",
+  "frame": { "columns": 10, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "masthead": "Black band with round white line icons and the Marathi section name; CLASSIFIEDS in huge grey caps bleeding off the right.", "footer": "Full-width run-in list of booking agencies by town, town names in bold italic." },
+  "headers": [
+    { "id": "icon-reverse", "kind": "icon-label", "example": "नोकरीविषयक", "fg": "#ffffff", "bg": "#111111", "icon": true, "align": "center", "box": [0.01, 0.165, 0.09, 0.07], "notes": "Bordered box with a small line icon and the category, then the same word reversed out of a black bar." }
+  ],
+  "units": [
+    { "id": "marathi-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "example": "शासनमान्य संस्थेतून ... संपर्क: 7507354404 (DI-172965)", "notes": "Bold lead, booking code in parentheses at the end." },
+    { "id": "boxed-wanted", "kind": "display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "WANTED experienced CAR DRIVER", "box": [0.205, 0.49, 0.095, 0.23], "notes": "WANTED in reverse, large serif caps, phone in a black bar." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold", "align": "justify", "border": "thin" }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "grotesque", "look": "Huge heavy grotesque caps in mid grey", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "indic", "look": "Devanagari newspaper face with a Times-like Latin for English ads", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Noto Sans Devanagari" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#9a9a9a", "use": "masthead letters" } ] },
+  "ornaments": ["white line icons", "booking codes (DI-185617)", "agency directory footer"],
+  "notes": ["Same family as Eenadu (cl-015) but monochrome; a family can have a colour and a mono variant."]
+}

@@ -4,6 +4,7 @@ import { canEditProfile, getProfileBySlug, listWriting } from "@elkdonis/service
 import { StartPiece, WritingShelf } from "@elkdonis/cms-ui/writing";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { isOadSteward } from "@/lib/oad";
 import { startPieceAction } from "@/lib/writing-actions";
 
@@ -32,7 +33,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WritingShelfPage({ params }: Props) {
   const { slug } = await params;
   const profile = await getProfileBySlug(slug);
-  if (!profile) notFound();
+  if (!profile) {
+    await redirectRenamedProfile(slug, (current) => `/${current}/writing`);
+    notFound();
+  }
 
   const user = await getCurrentUser();
   const viewerId = user?.id ?? null;

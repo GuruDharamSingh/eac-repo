@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lot detail: desktop, image left</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#000000}
+a{color:#b9c3d6;text-decoration:none}a:hover{color:#eef2f9}
+a:focus-visible,button:focus-visible{outline:2px solid #eef2f9;outline-offset:2px}
+</style>
+</helmet>
+<!-- Lot detail D, the desktop form of C: the work on the left; to its right the burgundy bid box, then Virtual view and other angles; the next-lot arrow on the far right. Below: description and details in two columns, then the artist, then More from Series 1 collapsed. -->
+<div style="min-height: 1600px; background: #000000; color: #e9edf6; font-family: 'Jost', 'Segoe UI', system-ui, sans-serif; font-size: 16px; line-height: 1.55">
+
+<nav style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 30px; max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 20px 32px">
+<a href="Main.dc.html" style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; color: #eef2f9">Collect-Art</a>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 28px; font-size: 12.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase">
+<a href="Main.dc.html" style="padding: 10px 2px">Auction</a>
+<a href="Main.dc.html" style="padding: 10px 2px">Collections</a>
+<a href="Main.dc.html" style="padding: 10px 2px">Artists</a>
+<a href="About.dc.html" style="padding: 10px 2px">About</a>
+<a href="#signin" style="padding: 10px 2px">Sign in</a>
+</div>
+</nav>
+
+<!-- Stage: image left, bid box right, next arrow at the far right -->
+<section style="background: radial-gradient(ellipse 30% 70% at 28% 50%, rgba(185, 195, 214, 0.1), rgba(0, 0, 0, 0) 70%), #050507; border-top: 1px solid rgba(185, 195, 214, 0.15); border-bottom: 1px solid rgba(185, 195, 214, 0.15)">
+<div style="max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 48px 32px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 48px">
+
+<!-- The work -->
+<div style="flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="padding: 12px; background: linear-gradient(135deg, #eef2f9, #5c6680 45%, #b9c3d6 70%, #8a94ab); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8)">
+<div role="img" aria-label="Moon Over the Field, sample artwork" style="width: 520px; max-width: 80vw; aspect-ratio: 4 / 5; background: radial-gradient(circle at 50% 40%, #26324d 0 17%, rgba(0,0,0,0) 17.5%), repeating-linear-gradient(90deg, #b9503a 0 8%, #e9e1d3 8% 12%, #d9b66a 12% 17%, #e9e1d3 17% 25%)"></div>
+</div>
+<p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: #aab3c7">Lot 5 of 24 · Series 1</p>
+</div>
+
+<!-- Bid box, then views -->
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+<div style="background: linear-gradient(150deg, #6a1830, #3d0d1b 80%); border: 1px solid rgba(185, 195, 214, 0.4); padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div>
+<h1 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 40px; line-height: 1.05; color: #ffffff">Moon Over the Field</h1>
+<p style="margin: 6px 0 0; font-size: 14px; color: #f3e9ec">Artist Name · Oil on linen · 40 × 50 in · 2025</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 18px; border-top: 1px solid rgba(243, 233, 236, 0.25)">
+<div><span style="display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #e7c9d1">Current bid</span><span style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1.1; color: #ffffff">$3,400</span> <span style="font-size: 13px; color: #e7c9d1">15 bids</span></div>
+<div><span style="display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #e7c9d1">Silent bidding ends</span><span style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1.1; color: #ffffff; font-variant-numeric: tabular-nums">5d 01h 09m</span></div>
+</div>
+<div style="display: flex; gap: 10px">
+<button type="button" style="flex-grow: 1; height: 52px; padding: 0 24px; background: #000000; border: 1px solid #eef2f9; color: #ffffff; font-size: 13.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer">Bid $3,500</button>
+<button type="button" onClick="{{toggleBids}}" aria-expanded="{{bidsExpanded}}" aria-controls="latest-bids" style="height: 52px; padding: 0 18px; background: transparent; border: 1px solid rgba(243, 233, 236, 0.6); color: #f3e9ec; font-size: 13.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 8px">Latest
+<sc-if value="{{showBids}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"></path></svg></sc-if>
+<sc-if value="{{hideBids}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"></path></svg></sc-if>
+</button>
+</div>
+<sc-if value="{{showBids}}" hint-placeholder-val="{{ false }}">
+<ol id="latest-bids" style="margin: 0; padding: 0; list-style: none; font-size: 14px; font-variant-numeric: tabular-nums; color: #f3e9ec">
+<li style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(243, 233, 236, 0.2)"><span>Bidder 14 · Oct 24, 21:12</span><span style="font-weight: 600; color: #ffffff">$3,400</span></li>
+<li style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(243, 233, 236, 0.2)"><span>Bidder 3 · Oct 24, 18:40</span><span>$3,300</span></li>
+<li style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(243, 233, 236, 0.2)"><span>Bidder 14 · Oct 23, 09:05</span><span>$3,100</span></li>
+<li style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(243, 233, 236, 0.2)"><span>Bidder 8 · Oct 22, 16:22</span><span>$3,000</span></li>
+</ol>
+</sc-if>
+</div>
+
+<!-- Virtual view and other angles -->
+<div style="display: flex; flex-direction: column; gap: 12px">
+<button type="button" style="align-self: flex-start; height: 48px; padding: 0 22px; background: transparent; border: 1px solid #b9c3d6; color: #eef2f9; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 10px">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"></path><path d="M3 7l9 4 9-4"></path><path d="M12 11v10"></path></svg>
+Virtual view</button>
+<div style="display: flex; gap: 10px">
+<button type="button" aria-label="Whole work" style="width: 84px; height: 84px; padding: 0; border: 2px solid #eef2f9; cursor: pointer; background: radial-gradient(circle at 50% 40%, #26324d 0 17%, rgba(0,0,0,0) 17.5%), repeating-linear-gradient(90deg, #b9503a 0 8%, #e9e1d3 8% 12%, #d9b66a 12% 17%, #e9e1d3 17% 25%)"></button>
+<button type="button" aria-label="Detail of the surface" style="width: 84px; height: 84px; padding: 0; border: 1px solid rgba(185, 195, 214, 0.3); cursor: pointer; background: repeating-linear-gradient(90deg, #b9503a 0 22%, #e9e1d3 22% 34%, #d9b66a 34% 48%, #e9e1d3 48% 70%)"></button>
+<button type="button" aria-label="Side view, showing the edge" style="width: 84px; height: 84px; padding: 0; border: 1px solid rgba(185, 195, 214, 0.3); cursor: pointer; background: linear-gradient(90deg, #1a1d26 0 30%, #b9503a 30% 42%, #d9b66a 42% 60%, #1a1d26 60%)"></button>
+<button type="button" aria-label="Framed, on a wall" style="width: 84px; height: 84px; padding: 0; border: 1px solid rgba(185, 195, 214, 0.3); cursor: pointer; background: linear-gradient(#2a2622, #2a2622) center / 46% 56% no-repeat, #d8d2c8"></button>
+</div>
+</div>
+</div>
+
+<!-- Next lot -->
+<a href="LotD.dc.html" aria-label="Next lot: Ledger" style="align-self: center; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #eef2f9; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase">
+<span style="width: 56px; height: 56px; border-radius: 50%; border: 1px solid #b9c3d6; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></span>
+Next lot</a>
+</div>
+</section>
+
+<!-- Description and details, two columns -->
+<main style="max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 56px 32px 40px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px">
+<div style="min-width: 0">
+<h2 style="margin: 0 0 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; color: #eef2f9; padding-bottom: 8px; border-bottom: 1px solid #8c1f3a">Description</h2>
+<p style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; line-height: 1.6">Vertical bands of ploughed field under a rising moon, built up in thin glazes over three months.</p>
+<p style="margin: 14px 0 0; font-size: 15px; color: #d6dbe6">[A second paragraph from the artist: what led to the work, where it was made.]</p>
+</div>
+<div style="min-width: 0">
+<h2 style="margin: 0 0 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; color: #eef2f9; padding-bottom: 8px; border-bottom: 1px solid #8c1f3a">Details</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 16px; font-size: 14.5px">
+<dt style="color: #aab3c7">Medium</dt><dd style="margin: 0">Oil on linen</dd>
+<dt style="color: #aab3c7">Size</dt><dd style="margin: 0">40 × 50 in</dd>
+<dt style="color: #aab3c7">Year</dt><dd style="margin: 0">2025</dd>
+<dt style="color: #aab3c7">Framing</dt><dd style="margin: 0">[FRAMING]</dd>
+<dt style="color: #aab3c7">Shipping</dt><dd style="margin: 0">[SHIPPING TERMS]</dd>
+<dt style="color: #aab3c7">Proceeds</dt><dd style="margin: 0">[ARTIST SHARE / BENEFICIARY]</dd>
+</dl>
+</div>
+</div>
+
+<!-- The artist -->
+<div style="display: flex; gap: 28px; align-items: flex-start; padding-top: 32px; border-top: 1px solid rgba(185, 195, 214, 0.2)">
+<span role="img" aria-label="Artist portrait placeholder" style="width: 191px; height: 248px; flex-shrink: 0; background: #1a1d26; border: 1px solid rgba(185, 195, 214, 0.3); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 32px; color: #aab3c7">A</span>
+<div style="min-width: 0; max-width: 62ch">
+<h2 style="margin: 0 0 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; color: #eef2f9">Artist Name</h2>
+<p style="margin: 0; font-size: 15px; color: #d6dbe6">[ARTIST BIO, two or three sentences.] <a href="#artist" style="color: #eef2f9; border-bottom: 1px solid #8c1f3a">See their page</a></p>
+</div>
+</div>
+</main>
+
+<!-- More from the series, collapsed -->
+<section style="max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 8px 32px 80px">
+<button type="button" onClick="{{toggleMore}}" aria-expanded="{{moreExpanded}}" aria-controls="more-series" style="width: 100%; min-height: 56px; padding: 0 4px; background: transparent; border: 0; border-top: 1px solid rgba(185, 195, 214, 0.25); border-bottom: 1px solid rgba(185, 195, 214, 0.25); color: #eef2f9; display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase">
+<span>More from Series 1 <span style="font-weight: 400; letter-spacing: 0.06em; text-transform: none; color: #aab3c7">· 23 other lots</span></span>
+<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"></path></svg></sc-if>
+<sc-if value="{{hideMore}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"></path></svg></sc-if>
+</button>
+<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
+<div id="more-series" style="padding-top: 28px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 22px">
+<a href="LotD.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 67% 35%, #f2b45a 0 12%, rgba(0,0,0,0) 12.5%), linear-gradient(180deg, #1c2a52 0 50%, #10172f 50% 62%, #27385f 62% 78%, #3a5283 78%)"></span><span style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$1,250</span><span style="color: #aab3c7">2d 14h</span></span></a>
+<a href="LotD.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 50% 50%, #b2402f 0 8%, #6f8f86 8% 20%, #c58a52 20% 32%, #24344f 32% 44%, #b2402f 44% 58%, #efe3cf 58%)"></span><span style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$880</span><span style="color: #aab3c7">1d 03h</span></span></a>
+<a href="LotD.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 75% 26%, #e8d9a8 0 9%, rgba(0,0,0,0) 9.5%), linear-gradient(118deg, #1c4a4a 0 45%, #2f7a72 45% 72%, #91b8a1 72%)"></span><span style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$2,100</span><span style="color: #e0a24a; font-weight: 600">38m</span></span></a>
+<a href="LotD.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 80% 18%, #e58c8a 0 8%, rgba(0,0,0,0) 8.5%), linear-gradient(90deg, #2a1230 0 10%, #521f4a 10% 35%, #2a1230 35% 37%, #8e3a6c 37% 62%, #2a1230 62% 65%, #d9a1b8 65% 90%, #2a1230 90%)"></span><span style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$640</span><span style="color: #aab3c7">4d 09h</span></span></a>
+</div>
+</sc-if>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const bids = !!s.bids;
+    const more = !!s.more;
+    return {
+      showBids: bids,
+      hideBids: !bids,
+      bidsExpanded: bids ? 'true' : 'false',
+      toggleBids: () => this.setState({ bids: !bids }),
+      showMore: more,
+      hideMore: !more,
+      moreExpanded: more ? 'true' : 'false',
+      toggleMore: () => this.setState({ more: !more })
+    };
+  }
+}
+</script>
+</body>
+</html>

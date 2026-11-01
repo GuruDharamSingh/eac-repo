@@ -746,6 +746,45 @@
   margin: 0.15rem 0 0;
 }
 
+/* What a save changes, for a letter edited for one scope (an IFAC series).
+   Body ink on the soft ground with an accent rule, not accent text. */
+.eac-letters-headtext .eac-letters-scope {
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.6rem;
+  border-left: 3px solid var(--sf-accent, currentColor);
+  background: var(--sf-bg-soft, rgba(0, 0, 0, 0.04));
+  color: var(--sf-fg, inherit);
+  font-size: 0.85rem;
+}
+
+/* ── scopes with letters of their own (IFAC's series) ────────────────────── */
+
+.eac-letters-series {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--sf-line, rgba(0, 0, 0, 0.12));
+}
+.eac-letters-series ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+.eac-letters-series li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+/* Stated here, at two classes: IFAC sets `a { color: inherit; text-decoration:
+   none }` and its /manage console colours every link cyan (`.manage-console a`),
+   which on this white panel would be about 1.7:1. */
+.eac-letters .eac-letters-series a {
+  color: var(--sf-fg, inherit);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Two lines inside the button: what it does, and what will happen. It opens
    a different tool on a different page, which is worth saying on the control
    rather than in a sentence somewhere near it. */

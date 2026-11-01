@@ -1,0 +1,25 @@
+{
+  "id": "cl-039",
+  "status": "draft",
+  "source": { "paper": "The State / State-Record (inferred from “c-o State-Record” box numbers)", "place": "Columbia, South Carolina", "era": "early 1960s", "language": ["en"] },
+  "summary": "Help-wanted pages from a mid-century daily, photocopied hard. Justified agate liners with an all-caps first word, numbered classification heads, and display ads in light condensed sans that ignore the column grid.",
+  "family": "us-midcentury-want-ads",
+  "frame": { "columns": 6, "columnWidth": "narrow", "gutter": "tight", "columnRules": "thin", "flow": "mixed" },
+  "headers": [
+    { "id": "numbered-head", "kind": "rule-label", "example": "Male Help Wanted 9", "fg": "#111111", "bg": "transparent", "numbering": "suffix", "align": "split", "box": [0.32, 0.06, 0.17, 0.03], "notes": "Heavy grotesque in mixed case; the class number sits flush right. Rules above and below." }
+  ],
+  "units": [
+    { "id": "caps-lead-liner", "kind": "liner", "frequency": "dominant", "lead": "caps", "align": "justify", "border": "none", "example": "IMMEDIATE opening for Man ages 25-45 to do general office...", "box": [0.32, 0.21, 0.17, 0.1], "notes": "First word in caps, then running text; hanging indent on following lines. Ends with a phone number or a blind box (Box B-244 c-o State-Record)." },
+    { "id": "agency-list", "kind": "listing-table", "frequency": "common", "lead": "none", "align": "left", "border": "none", "example": "FEMALE HELP / 5—Clerk Typist—$175 Mo.", "box": [0.15, 0.46, 0.17, 0.36], "notes": "Employment agency ad: quantity—job—wage lines under light condensed caps sub-heads." },
+    { "id": "condensed-display", "kind": "display", "frequency": "common", "lead": "caps", "align": "center", "border": "thin", "example": "ATTENTION SCHOOL TEACHERS ... OWEN STEEL CO. Inc.", "box": [0.49, 0.11, 0.17, 0.25], "notes": "Light condensed sans display, generous size, ruled box." },
+    { "id": "wide-display", "kind": "display", "frequency": "occasional", "lead": "caps", "align": "center", "border": "thin", "example": "REGISTERED NURSES / STAFF DUTY positions available", "box": [0.49, 0.57, 0.34, 0.35], "notes": "Two columns wide; mixes condensed sans with a bold slab sub-line." }
+  ],
+  "type": [
+    { "role": "header", "classification": "grotesque", "look": "Heavy geometric/grotesque, like Spartan Heavy or Metro Black", "weight": "black", "width": "normal", "case": "title", "webFont": "League Spartan" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Light tall condensed sans, like Tempo or Bernhard Gothic Light", "weight": "light", "width": "condensed", "case": "upper", "webFont": "Pathway Gothic One" },
+    { "role": "body", "classification": "news-serif", "look": "Agate news serif (Excelsior/Ionic family), justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Source Serif 4" }
+  ],
+  "color": { "mode": "mono", "paper": "#f4f1ea", "ink": "#111111", "accents": [] },
+  "ornaments": ["em-dash price lists", "blind box numbers", "phone exchanges (AL 2-4313)"],
+  "notes": ["Heavy photocopy noise; the degraded look itself could be a microfiche filter.", "Two identical heads side by side (Female Help Wanted 10) show that heads repeat at column tops."]
+}

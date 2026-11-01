@@ -1,0 +1,659 @@
+/* ==========================================================================
+   IFAC public site (2026-10-08): landing, series, about, publications.
+
+   Scoped under `.ifs` with `ifs-` class names so nothing here meets the
+   older rules in globals.css (which still serve the hub, forum, manage and
+   person pages). The root sets its own ground, type and link colour, so
+   the `body` / `a` resets at globals.css:205-213 do not show through.
+
+   Tokens (contrast against --ifs-bg #0b0b0d): ink #ece7e1 16.5:1,
+   muted #b3ada3 9.0:1, faint #857f76 5.0:1, gold text #e3c572 10.9:1;
+   gold fill #c9a24a under #0b0b0d ink 8.4:1; indigo frame #5c62e6 on
+   #0b0b0d 3.9:1 (a border, 3:1 applies). The Baroque frame's dark variant
+   is at the end of this file.
+   ========================================================================== */
+
+.ifs {
+  --ifs-bg: #0b0b0d;
+  --ifs-bg-2: #121214;
+  --ifs-bg-3: #1a1a1e;
+  --ifs-line: #26262c;
+  --ifs-line-strong: #3a3a42;
+  --ifs-ink: #ece7e1;
+  --ifs-muted: #b3ada3;
+  --ifs-faint: #857f76;
+  /* Gold for marks and calls to action; indigo frames separate the sections. */
+  --ifs-gold: #c9a24a;
+  --ifs-gold-text: #e3c572;
+  --ifs-gold-on: #0b0b0d;
+  --ifs-frame: #5c62e6;
+  --ifs-frame-soft: #2b2f6e;
+  --ifs-serif: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+  --ifs-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --ifs-max: 1180px;
+  --ifs-radius: 6px;
+
+  min-height: 100vh;
+  background: var(--ifs-bg);
+  color: var(--ifs-ink);
+  font-family: var(--ifs-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.ifs *, .ifs *::before, .ifs *::after { box-sizing: border-box; }
+.ifs a { color: inherit; text-decoration: none; }
+.ifs img { display: block; max-width: 100%; }
+.ifs h1, .ifs h2, .ifs h3 { font-family: var(--ifs-serif); font-weight: 500; line-height: 1.08; margin: 0; letter-spacing: -0.005em; }
+.ifs p { margin: 0; }
+.ifs :where(button, input, textarea, select) { font: inherit; }
+.ifs button { cursor: pointer; }
+.ifs-wrap { width: min(var(--ifs-max), calc(100% - 32px)); margin-inline: auto; }
+.ifs-eyebrow { font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-muted { color: var(--ifs-muted); }
+.ifs-faint { color: var(--ifs-faint); }
+.ifs-link { color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-link:hover { text-decoration: underline; }
+.ifs-prose a { color: var(--ifs-gold-text); text-decoration: underline; text-underline-offset: 2px; }
+
+/* buttons */
+.ifs-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--ifs-line-strong); background: transparent; color: var(--ifs-ink); font-weight: 600; font-size: 0.98rem; letter-spacing: 0.01em; white-space: nowrap; }
+.ifs-btn:hover { border-color: var(--ifs-gold); color: var(--ifs-gold-text); }
+.ifs-btn--primary { background: var(--ifs-gold); border-color: var(--ifs-gold); color: var(--ifs-gold-on); }
+.ifs-btn--primary:hover { background: #d8b45c; color: var(--ifs-gold-on); }
+/* A link styled as a primary button: `.ifs a { color: inherit }` (0,1,1) outranked the
+   dark ink above and left pale text on gold (about 2:1). #0b0b0d on #c9a24a is 8.2:1. (2026-10-13) */
+.ifs a.ifs-btn--primary, .ifs a.ifs-btn--primary:hover { color: var(--ifs-gold-on); }
+.ifs-btn--small { min-height: 38px; padding: 0 16px; font-size: 0.88rem; }
+.ifs-btn:disabled { opacity: 0.6; cursor: default; }
+.ifs-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* header */
+.ifs-header { position: sticky; top: 0; z-index: 10; background: rgba(20, 20, 22, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ifs-line); }
+.ifs-header .ifs-wrap { display: flex; align-items: center; gap: 28px; min-height: 64px; }
+.ifs-brand { display: flex; align-items: center; gap: 12px; font-family: var(--ifs-serif); font-size: 1.25rem; letter-spacing: 0.02em; }
+.ifs-seal { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--ifs-gold); border-radius: 50%; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; color: var(--ifs-gold-text); font-family: var(--ifs-sans); flex: none; }
+.ifs-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.ifs-nav a { padding: 10px 14px; border-radius: 8px; color: var(--ifs-muted); font-weight: 600; font-size: 0.95rem; }
+.ifs-nav a:hover, .ifs-nav a[aria-current] { color: var(--ifs-ink); background: var(--ifs-bg-3); }
+.ifs-nav a.ifs-nav__cta { color: var(--ifs-gold-on); background: var(--ifs-gold); margin-left: 8px; }
+.ifs-nav__menu { display: none; }
+.ifs-nav__menu summary { list-style: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; cursor: pointer; }
+.ifs-nav__menu summary::-webkit-details-marker { display: none; }
+.ifs-nav__menu summary svg { width: 20px; height: 20px; stroke: var(--ifs-ink); fill: none; stroke-width: 1.8; }
+.ifs-nav__sheet { position: absolute; left: 0; right: 0; top: 100%; background: var(--ifs-bg-2); border-bottom: 1px solid var(--ifs-line); display: grid; padding: 8px 16px 16px; }
+.ifs-nav__sheet a { padding: 12px 10px; border-bottom: 1px solid var(--ifs-line); font-weight: 600; }
+.ifs-nav__sheet a:last-child { border-bottom: 0; }
+
+/* thin banner: the logo image letterboxed, with a blurred copy of itself
+   filling the sides instead of black bars */
+.ifs-banner { position: relative; overflow: hidden; background: #000; border-bottom: 2px solid var(--ifs-frame); height: clamp(120px, 15vw, 200px); }
+.ifs-banner__blur { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(26px) brightness(0.45) saturate(1.2); transform: scale(1.1); }
+.ifs-banner__logo { position: relative; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+/* whole banner graphic (1366x501): the box follows the image, which stops at its own width; the blurred copy fills either side */
+.ifs-banner--full { height: auto; }
+.ifs-banner--full .ifs-banner__logo { display: block; width: 100%; max-width: 1366px; height: auto; margin: 0 auto; }
+
+/* hero stage: one whole event at a time, rotating */
+.ifs-stage-wrap { padding: 22px 0 0; }
+.ifs-stage { position: relative; border: 2px solid var(--ifs-frame); background: linear-gradient(135deg, #121016 0%, #0e0e11 60%); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); min-height: 440px; }
+.ifs-stage__body { padding: 36px 36px 30px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.ifs-stage__kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ifs-gold-text); font-weight: 700; }
+.ifs-stage__kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--ifs-gold); }
+.ifs-stage__presents { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-muted); margin-bottom: 10px; }
+.ifs-stage h1, .ifs-stage h2.ifs-stage__title { font-size: clamp(2.4rem, 4.6vw, 3.8rem); max-width: 16ch; color: var(--ifs-ink); }
+.ifs-stage__title em { font-style: italic; color: var(--ifs-gold-text); }
+.ifs-stage__by { font-family: var(--ifs-serif); font-size: 1.3rem; color: var(--ifs-muted); margin-top: 8px; }
+.ifs-stage__lede { font-size: 1.05rem; color: var(--ifs-muted); max-width: 54ch; margin-top: 16px; }
+.ifs-stage .ifs-facts { margin-top: 20px; }
+.ifs-stage__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.ifs-stage__media { position: relative; border-left: 2px solid var(--ifs-frame); background: #000; min-height: 320px; display: flex; flex-direction: column; overflow: hidden; }
+.ifs-stage__img { flex: 1; width: 100%; min-height: 240px; object-fit: cover; }
+.ifs-stage__blank { flex: 1; min-height: 240px; display: grid; place-items: center; background: radial-gradient(60% 60% at 50% 40%, #2a1540, #0b0b0d); color: var(--ifs-gold); font-family: var(--ifs-sans); font-weight: 700; font-size: 2.6rem; letter-spacing: 0.1em; }
+.ifs-stage__caption { padding: 14px 18px 16px; background: #0e0e11; border-top: 2px solid var(--ifs-frame); display: grid; gap: 3px; }
+.ifs-stage__caption .t { font-family: var(--ifs-serif); font-size: 1.35rem; line-height: 1.2; }
+.ifs-stage__caption .s { color: var(--ifs-muted); font-size: 0.9rem; }
+.ifs-stage__tag { position: absolute; top: 12px; left: 12px; padding: 5px 10px; background: rgba(11, 11, 13, 0.85); border: 1px solid var(--ifs-frame); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-stage__nav { display: flex; align-items: center; gap: 10px; margin-top: 26px; }
+.ifs-stage__nav button { width: 36px; height: 36px; border: 1px solid var(--ifs-line-strong); background: none; color: var(--ifs-muted); border-radius: 50%; display: grid; place-items: center; }
+.ifs-stage__nav button:hover { border-color: var(--ifs-gold); color: var(--ifs-gold-text); }
+.ifs-stage__nav button svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+.ifs-stage__dots { display: flex; gap: 6px; margin-left: 6px; }
+.ifs-stage__dots button { width: 26px; height: 16px; border: 0; border-radius: 0; background: none; padding: 0; }
+.ifs-stage__dots button::before { content: ""; display: block; height: 3px; background: var(--ifs-line-strong); }
+.ifs-stage__dots button[aria-current]::before { background: var(--ifs-gold); }
+.ifs-stage__count { margin-left: auto; font-size: 0.8rem; color: var(--ifs-faint); letter-spacing: 0.1em; text-transform: uppercase; }
+.ifs-stage.is-fading .ifs-stage__body > *, .ifs-stage.is-fading .ifs-stage__media > * { opacity: 0; }
+.ifs-stage__body > *, .ifs-stage__media > * { transition: opacity 0.45s ease; }
+
+/* sections */
+.ifs-section { padding: 64px 0; border-bottom: 1px solid var(--ifs-line); }
+.ifs-section__head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.ifs-section__head h2 { font-size: 2.1rem; }
+
+/* split: about + sign-up */
+.ifs-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; }
+.ifs-split h2 { font-size: 2.3rem; margin-bottom: 18px; }
+.ifs-split .ifs-prose { color: var(--ifs-muted); display: grid; gap: 14px; font-size: 1.05rem; max-width: 56ch; }
+.ifs-split .ifs-prose strong { color: var(--ifs-ink); font-weight: 600; }
+.ifs-split__links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.ifs-cities { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--ifs-serif); font-size: 1.1rem; color: var(--ifs-gold-text); }
+.ifs-join { display: grid; justify-items: center; }
+.ifs-join .eac-bq { --eac-bq-display: var(--ifs-serif); }
+.ifs-join__signed { text-align: center; display: grid; gap: 12px; justify-items: center; padding: 40px 20px; border: 1px solid var(--ifs-line-strong); border-radius: 14px; background: var(--ifs-bg-2); }
+
+/* publications */
+.ifs-pubs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.ifs-pub { border: 1px solid var(--ifs-line); border-radius: var(--ifs-radius); overflow: hidden; background: var(--ifs-bg-2); display: grid; grid-template-rows: auto 1fr; }
+.ifs-pub:hover { border-color: var(--ifs-line-strong); }
+.ifs-pub__img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--ifs-bg-3); }
+.ifs-pub__blank { aspect-ratio: 16 / 10; background: var(--ifs-bg-3); display: grid; place-items: center; font-family: var(--ifs-serif); color: var(--ifs-faint); font-size: 1.6rem; }
+.ifs-pub__body { padding: 16px 18px 20px; display: grid; gap: 6px; align-content: start; }
+.ifs-pub__k { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-faint); }
+.ifs-pub__t { font-family: var(--ifs-serif); font-size: 1.3rem; line-height: 1.2; }
+.ifs-pub__s { color: var(--ifs-muted); font-size: 0.95rem; }
+.ifs-videos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+.ifs-video { position: relative; display: block; border-radius: 8px; overflow: hidden; border: 1px solid var(--ifs-line); background: var(--ifs-bg-2); }
+.ifs-video img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; opacity: 0.9; }
+.ifs-video__play { position: absolute; inset: 0 0 38px; display: grid; place-items: center; }
+.ifs-video__play i { width: 44px; height: 44px; border-radius: 50%; background: rgba(20, 20, 22, 0.75); border: 1px solid var(--ifs-gold); display: grid; place-items: center; }
+.ifs-video__play i::after { content: ""; border-left: 12px solid var(--ifs-gold-text); border-top: 7px solid transparent; border-bottom: 7px solid transparent; margin-left: 3px; }
+.ifs-video__l { padding: 10px 12px; font-size: 0.9rem; color: var(--ifs-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifs-pubs--page { margin-top: 32px; }
+.ifs-pubs--page + .ifs-section__head { margin-top: 56px; }
+
+/* footer */
+.ifs-footer { padding: 40px 0 48px; color: var(--ifs-muted); font-size: 0.92rem; }
+.ifs-footer .ifs-wrap { display: grid; gap: 18px; }
+.ifs-footer__row { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ifs-footer__host { color: var(--ifs-faint); }
+
+/* ===== series page ===== */
+.ifs-event-head { padding: 56px 0 40px; border-bottom: 1px solid var(--ifs-line); }
+.ifs-event-head .ifs-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.ifs-event-head h1 { font-size: clamp(2.6rem, 5vw, 4rem); max-width: 14ch; margin-top: 10px; }
+.ifs-event-head .ifs-hero__lede { max-width: 58ch; margin-top: 18px; }
+.ifs-rsvp-card { border: 1px solid var(--ifs-line-strong); border-radius: 14px; background: var(--ifs-bg-2); padding: 22px; display: grid; gap: 14px; position: sticky; top: 84px; }
+.ifs-rsvp-card__when { display: flex; gap: 14px; align-items: center; }
+.ifs-datebox { flex: none; width: 64px; border: 1px solid var(--ifs-gold); border-radius: 8px; text-align: center; padding: 6px 0 8px; line-height: 1; }
+.ifs-datebox__d { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-datebox__n { font-family: var(--ifs-serif); font-size: 1.9rem; margin: 4px 0 2px; }
+.ifs-datebox__m { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ifs-muted); }
+.ifs-rsvp-card__t { font-family: var(--ifs-serif); font-size: 1.3rem; }
+.ifs-rsvp-card__count { display: flex; align-items: center; gap: 10px; color: var(--ifs-muted); font-size: 0.92rem; }
+.ifs-avatars { display: flex; }
+.ifs-avatars img, .ifs-avatars i { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--ifs-bg-2); object-fit: cover; margin-left: -8px; background: var(--ifs-bg-3); display: inline-grid; place-items: center; font-style: normal; font-size: 0.7rem; color: var(--ifs-muted); }
+.ifs-avatars img:first-child, .ifs-avatars i:first-child { margin-left: 0; }
+.ifs-rsvp-card__note { font-size: 0.88rem; color: var(--ifs-faint); }
+.ifs-rsvp-card__gate { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px dashed var(--ifs-line-strong); border-radius: 10px; font-size: 0.92rem; color: var(--ifs-muted); }
+.ifs-rsvp-card__gate svg { width: 18px; height: 18px; stroke: var(--ifs-gold-text); fill: none; stroke-width: 1.7; flex: none; }
+.ifs-rsvp-form { display: grid; gap: 8px; }
+.ifs-rsvp-form input { height: 44px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; background: var(--ifs-bg); color: var(--ifs-ink); padding: 0 12px; }
+.ifs-rsvp-form input::placeholder { color: var(--ifs-faint); }
+.ifs-rsvp-form__err { color: #f0a08a; font-size: 0.9rem; }
+.ifs-rsvp-form__ok { color: var(--ifs-gold-text); font-size: 0.95rem; }
+
+.ifs-sessions { padding: 48px 0 32px; }
+.ifs-sessions .ifs-section__head { align-items: center; }
+.ifs-list { display: grid; gap: 10px; }
+.ifs-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 22px; align-items: start; padding: 18px 20px; border: 1px solid var(--ifs-line); border-radius: 12px; background: var(--ifs-bg-2); transition: border-color 0.15s, background 0.15s; }
+.ifs-row:hover { border-color: var(--ifs-line-strong); background: var(--ifs-bg-3); }
+.ifs-row.is-open { border-color: var(--ifs-gold); background: var(--ifs-bg-2); }
+.ifs-row.is-past { opacity: 0.7; }
+.ifs-row .ifs-datebox { width: 72px; }
+.ifs-row__main { display: grid; gap: 4px; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: 0; cursor: pointer; }
+.ifs-row__k { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-row__t { font-family: var(--ifs-serif); font-size: 1.5rem; line-height: 1.15; }
+.ifs-row__t.is-empty { color: var(--ifs-muted); font-style: italic; }
+.ifs-row__h { color: var(--ifs-muted); font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+.ifs-row__h img, .ifs-row__h i { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: var(--ifs-bg-3); display: inline-block; }
+.ifs-row__side { display: grid; gap: 8px; justify-items: end; }
+.ifs-row__chev { width: 22px; height: 22px; stroke: var(--ifs-muted); fill: none; stroke-width: 1.8; background: none; border: 0; padding: 0; cursor: pointer; }
+.ifs-row__detail { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 32px; padding-top: 18px; margin-top: 10px; border-top: 1px solid var(--ifs-line); }
+.ifs-row__detail .ifs-prose { color: var(--ifs-muted); white-space: pre-line; line-height: 1.6; }
+.ifs-row__detail h4 { margin: 0 0 8px; font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-faint); }
+.ifs-row__cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin-bottom: 14px; }
+.ifs-materials { display: grid; gap: 8px; }
+.ifs-materials a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--ifs-line); border-radius: 8px; background: var(--ifs-bg); font-size: 0.92rem; min-width: 0; }
+.ifs-materials a:hover { border-color: var(--ifs-gold); }
+.ifs-materials a span.n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifs-materials a svg { width: 17px; height: 17px; stroke: var(--ifs-gold-text); fill: none; stroke-width: 1.7; flex: none; }
+.ifs-materials a .x { margin-left: auto; color: var(--ifs-faint); font-size: 0.8rem; flex: none; }
+.ifs-row__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.ifs-sessions__note { margin-top: 14px; font-size: 0.9rem; }
+
+.ifs-thisweek { padding: 24px 0 64px; }
+.ifs-panel { border: 1px solid var(--ifs-line-strong); border-radius: 14px; background: linear-gradient(180deg, var(--ifs-bg-2), var(--ifs-bg)); padding: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+.ifs-panel h3 { font-size: 1.8rem; margin: 6px 0 12px; }
+.ifs-join-box { display: grid; gap: 12px; }
+.ifs-join-box__url { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--ifs-line); border-radius: 10px; background: var(--ifs-bg); font-family: ui-monospace, monospace; font-size: 0.86rem; color: var(--ifs-muted); overflow: hidden; }
+.ifs-join-box__url a { color: var(--ifs-gold-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifs-join-box__url svg { width: 16px; height: 16px; stroke: var(--ifs-gold-text); fill: none; stroke-width: 1.7; flex: none; }
+.ifs-join-box__blur { filter: blur(5px); user-select: none; }
+.ifs-join-box__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ifs-hosts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.ifs-host { text-align: center; display: grid; gap: 6px; justify-items: center; font-size: 0.88rem; color: var(--ifs-muted); }
+.ifs-host img, .ifs-host i { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--ifs-line-strong); background: var(--ifs-bg-3); display: grid; place-items: center; font-style: normal; font-family: var(--ifs-serif); font-size: 1.4rem; }
+.ifs-host b { color: var(--ifs-ink); font-weight: 600; }
+.ifs-host__w { font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ifs-faint); }
+.ifs-host.is-empty b { color: var(--ifs-faint); font-weight: 400; font-style: italic; }
+
+/* ===== about page ===== */
+.ifs-page-h1 { margin: 26px 0 6px; font-family: var(--ifs-sans); font-weight: 700; font-size: clamp(1.8rem, 3.6vw, 2.6rem); text-transform: uppercase; letter-spacing: 0.02em; color: var(--ifs-gold); }
+.ifs-statement { display: grid; gap: 12px; font-size: 1.08rem; line-height: 1.6; color: var(--ifs-ink); }
+.ifs-sig { color: var(--ifs-gold-text); font-family: var(--ifs-serif); font-size: 1.1rem; }
+.ifs-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 22px 0; }
+.ifs-team__card { border: 2px solid var(--ifs-frame); background: #0e0e11; padding: 20px 14px 16px; display: grid; justify-items: center; gap: 8px; text-align: center; }
+a.ifs-team__card:hover { background: #16111c; }
+.ifs-team__card img, .ifs-team__card i { width: 107px; height: 107px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ifs-frame-soft); background: #0a0a0a; display: grid; place-items: center; font-family: var(--ifs-serif); font-size: 1.8rem; color: var(--ifs-faint); font-style: normal; }
+.ifs-team__name { font-weight: 600; font-size: 1.05rem; }
+.ifs-team__role { color: var(--ifs-muted); font-size: 0.9rem; }
+.ifs-roster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 14px; }
+.ifs-roster a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 1px solid var(--ifs-frame-soft); background: #0a0a0a; color: var(--ifs-ink); min-width: 0; }
+.ifs-roster a:hover { border-color: var(--ifs-frame); color: var(--ifs-gold-text); }
+.ifs-roster img, .ifs-roster i { width: 30px; height: 30px; flex: none; border-radius: 50%; object-fit: cover; border: 1px solid var(--ifs-frame-soft); background: #0a0a0a; display: inline-grid; place-items: center; font-size: 0.75rem; color: var(--ifs-faint); font-style: normal; filter: saturate(0.85); }
+.ifs-roster a:hover img { filter: none; }
+.ifs-roster span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Join IFAC: the Baroque frame on a dark ground */
+.ifs-join { display: grid; justify-items: center; }
+.ifs-join .eac-bq { --eac-bq-parchment: #16121b; --eac-bq-parchment-deep: #0f0c13; --eac-bq-ink: #efe9df; --eac-bq-ink-soft: #b8afa4; --eac-bq-display: var(--ifs-serif); }
+.ifs-join .eac-bq-frame::before { background: radial-gradient(120% 90% at 50% 0%, #1d1823 0%, #16121b 55%, #0f0c13 100%); }
+.ifs-join .eac-bq-input { background: #0d0b10; color: var(--eac-bq-ink); border-color: rgba(233, 205, 134, 0.35); }
+.ifs-join .eac-bq-input::placeholder { color: #7d7468; }
+.ifs-join .eac-bq-toggle-btn { color: var(--eac-bq-ink-soft); border-color: rgba(233, 205, 134, 0.35); }
+.ifs-join .eac-bq-toggle-btn[aria-pressed="true"], .ifs-join .eac-bq-toggle-btn.is-active { color: #241b2f; }
+.ifs-join__signed { text-align: center; display: grid; gap: 12px; justify-items: center; padding: 40px 20px; border: 2px solid var(--ifs-frame); background: #0e0e11; }
+
+/* ===== responsive ===== */
+@media (max-width: 960px) {
+  .ifs-split, .ifs-event-head .ifs-wrap, .ifs-panel, .ifs-stage, .ifs-block--split { grid-template-columns: 1fr; }
+  .ifs-stage__media { border-left: 0; border-top: 2px solid var(--ifs-frame); order: -1; }
+  .ifs-team { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ifs-roster { grid-template-columns: 1fr 1fr; }
+  .ifs-pubs { grid-template-columns: 1fr 1fr; }
+  .ifs-people { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ifs-videos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ifs-rsvp-card { position: static; }
+  .ifs-hosts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ifs { font-size: 16px; }
+  .ifs-header .ifs-wrap { min-height: 56px; gap: 12px; }
+  .ifs-brand__name { display: none; }
+  .ifs-nav a:not(.ifs-nav__cta) { display: none; }
+  .ifs-nav__menu { display: block; }
+  .ifs-nav__sheet a { display: block; }
+  .ifs-banner { height: clamp(90px, 24vw, 120px); }
+  .ifs-banner--full { height: auto; }
+  .ifs-stage__body { padding: 22px 18px 22px; }
+  .ifs-stage h1, .ifs-stage h2.ifs-stage__title { font-size: 2.3rem; }
+  .ifs-stage__actions .ifs-btn { flex: 1 1 100%; }
+  .ifs-block { padding: 16px 14px 18px; }
+  .ifs-team { grid-template-columns: 1fr 1fr; }
+  .ifs-team__card img, .ifs-team__card i { width: 80px; height: 80px; }
+  .ifs-roster { grid-template-columns: 1fr; }
+  .ifs-section { padding: 44px 0; }
+  .ifs-split { gap: 40px; }
+  .ifs-pubs { grid-template-columns: 1fr; }
+  .ifs-videos { grid-template-columns: 1fr 1fr; }
+  .ifs-people { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ifs-person img, .ifs-person i { width: 72px; height: 72px; }
+  .ifs-event-head { padding: 36px 0 28px; }
+  .ifs-row { grid-template-columns: 64px minmax(0, 1fr); gap: 14px; padding: 14px; }
+  .ifs-row .ifs-datebox { width: 60px; }
+  .ifs-row__side { grid-column: 1 / -1; justify-items: start; grid-auto-flow: column; align-items: center; }
+  .ifs-row__detail { grid-column: 1 / -1; grid-template-columns: 1fr; gap: 20px; }
+  .ifs-row__t { font-size: 1.3rem; }
+  .ifs-hosts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ifs-panel { padding: 20px; }
+}
+
+/* lede used by the series head */
+.ifs-hero__lede { font-size: 1.12rem; color: var(--ifs-muted); max-width: 52ch; margin-top: 20px; }
+
+/* facts row (series head and the stage) */
+.ifs-facts { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 26px; font-size: 0.95rem; color: var(--ifs-ink); }
+.ifs-facts span { display: inline-flex; align-items: center; gap: 8px; }
+.ifs-facts svg { width: 17px; height: 17px; stroke: var(--ifs-gold-text); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* bordered blocks: the old site's clear separation of sections */
+.ifs-block { border: 2px solid var(--ifs-frame); background: #0e0e11; padding: 22px 24px 26px; margin: 22px 0; }
+.ifs-block__head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.ifs-block__h { margin: 0; font-family: var(--ifs-sans); font-weight: 700; font-size: clamp(1.3rem, 2.6vw, 1.9rem); line-height: 1.15; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ifs-gold); }
+.ifs-block__seal { display: inline-grid; place-items: center; width: 58px; height: 36px; border: 2px solid var(--ifs-frame); background: #050505; color: var(--ifs-gold); font-family: var(--ifs-sans); font-weight: 700; font-size: 0.95rem; letter-spacing: 0.06em; flex: none; }
+.ifs-block--split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 36px; align-items: start; }
+.ifs-block .ifs-prose { color: var(--ifs-ink); display: grid; gap: 12px; font-size: 1.05rem; line-height: 1.6; }
+.ifs-block .ifs-prose strong { color: var(--ifs-gold-text); }
+.ifs-block__aside { display: grid; gap: 16px; align-content: start; }
+.ifs-block__aside .ifs-cities { margin-top: 0; }
+.ifs-block__aside .ifs-btn { justify-self: start; }
+@media (max-width: 960px) { .ifs-block--split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .ifs-block { padding: 16px 14px 18px; } }
+
+/* block headings in the sans the old site used; outranks the element rule above */
+.ifs .ifs-block__h, .ifs .ifs-page-h1 { font-family: var(--ifs-sans); }
+/* dark frame: a solid gilt tab so the active choice reads */
+.ifs-join .eac-bq-toggle-btn.is-active { color: #241b2f; background: linear-gradient(180deg, #e9cd86, #c9a24a); border-color: #e9cd86; }
+
+
+/* ── Revision 3 (2026-10-08, night): larger, quieter, indigo ─────────────── */
+.ifs-btn { min-height: 52px; padding: 0 24px; font-size: 1.05rem; }
+.ifs-btn--small { min-height: 42px; padding: 0 18px; font-size: 0.95rem; }
+.ifs-nav a { font-size: 1.02rem; padding: 11px 15px; }
+.ifs-facts { font-size: 1.05rem; gap: 10px 22px; }
+.ifs-facts svg { width: 19px; height: 19px; }
+.ifs-stage__lede { font-size: 1.12rem; }
+.ifs-stage h1, .ifs-stage h2.ifs-stage__title { max-width: 18ch; }
+.ifs-stage__title .nb { white-space: nowrap; }
+.ifs-event-head h1 { max-width: none; }
+.ifs-event-head h1 .nb { white-space: nowrap; }
+.ifs-block__h, .ifs-page-h1 { color: var(--ifs-gold-text); }
+.ifs-block__seal { color: var(--ifs-gold-text); }
+.ifs-stage__kicker { display: none; }
+.ifs-stage__week { display: none; }
+.ifs-rsvp-card { font-size: 1.02rem; }
+.ifs-row__t { font-size: 1.6rem; }
+
+/* header lettering (apps/ifac/public/ifac-lettering.*), replacing the seal */
+.ifs-brand__img { height: 34px; width: auto; display: block; }
+.ifs-brand__img--only { height: 40px; }
+
+/* phones: the stage becomes one picture with the text on a translucent,
+   blurred card over it, so nothing stacks under a large image */
+@media (max-width: 640px) {
+  .ifs { font-size: 17px; }
+  .ifs-stage { display: block; position: relative; min-height: 0; overflow: hidden; }
+  .ifs-stage__media { position: absolute; inset: 0; border: 0; order: 0; min-height: 0; z-index: 0; }
+  .ifs-stage__img, .ifs-stage__blank { height: 100%; min-height: 0; }
+  .ifs-stage__caption, .ifs-stage__tag { display: none; }
+  .ifs-stage__body { position: relative; z-index: 1; margin: 18px 14px; padding: 22px 18px 20px; background: rgba(11, 11, 13, 0.74); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.12); }
+  .ifs-stage h1, .ifs-stage h2.ifs-stage__title { font-size: 2.4rem; }
+  .ifs-stage__lede { display: none; }
+  .ifs-stage__week { display: block; margin-top: 12px; font-family: var(--ifs-serif); font-size: 1.3rem; color: var(--ifs-ink); }
+  .ifs-stage__week small { display: block; font-family: var(--ifs-sans); font-size: 0.95rem; color: var(--ifs-muted); margin-top: 2px; }
+  .ifs-stage__nav { margin-top: 18px; }
+}
+
+/* ── Revision 4 (2026-10-08, late night) ─────────────────────────────────── */
+/* blacker ground */
+.ifs { --ifs-bg: #050506; --ifs-bg-2: #0b0b0d; --ifs-bg-3: #121214; --ifs-line: #1f1f24; }
+.ifs-block, .ifs-stage__caption, .ifs-team__card { background: #09090b; }
+.ifs-stage { background: linear-gradient(135deg, #0c0a12 0%, #09090b 60%); }
+
+/* header lettering: the gold letters, sized to the bar */
+.ifs-brand__img { height: 30px; width: auto; }
+@media (max-width: 640px) { .ifs-brand__img { height: 26px; } }
+
+/* banner: the full lettering over the blurred collage */
+.ifs-banner__lettering { position: absolute; inset: 0; margin: auto; height: 72%; width: auto; max-width: 92%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7)); }
+.ifs-banner__blur--deep { filter: blur(22px) brightness(0.32) saturate(1.1); }
+
+/* phones: the sign-up frame hugs the form */
+@media (max-width: 640px) {
+  /* The carved frame has a fixed ratio (opening 505x771), so it hugs the form
+     only when the form is about 1.5x taller than wide: narrow the opening and
+     drop the ornament text; min-height stays the component's ratio. */
+  .ifs-join .eac-bq { --eac-bq-w: min(17.5rem, calc(100vw - 4rem)); }
+  .ifs-join .eac-bq-sigil, .ifs-join .eac-bq-rule, .ifs-join .eac-bq-subtitle, .ifs-join .eac-bq-eyebrow { display: none; }
+  .ifs-join .eac-bq-frame { padding: 10px 8px; margin: calc(var(--eac-bq-w) * 0.22) auto calc(var(--eac-bq-w) * 0.2); }
+  .ifs-join .eac-bq-title { font-size: 1.4rem; margin-bottom: 6px; }
+  .ifs-join .eac-bq-row { margin-bottom: 7px; }
+  .ifs-join .eac-bq-toggle { margin-bottom: 8px; }
+  .ifs-join .eac-bq-input { padding: 7px 10px; }
+  .ifs-join .eac-bq-or { margin: 6px 0 4px; }
+}
+
+/* about: one roster look for artists, dealers and the team; a little larger */
+.ifs-roster { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ifs-roster a, .ifs-roster div { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--ifs-frame-soft); background: #060607; color: var(--ifs-ink); min-width: 0; font-size: 1.05rem; }
+.ifs-roster a:hover { border-color: var(--ifs-frame); color: var(--ifs-gold-text); }
+.ifs-roster img, .ifs-roster i { width: 56px; height: 56px; font-size: 1.1rem; }
+.ifs-roster .ifs-roster__txt { display: grid; gap: 2px; min-width: 0; }
+.ifs-roster .ifs-roster__role { font-size: 0.88rem; color: var(--ifs-muted); white-space: normal; }
+@media (max-width: 960px) { .ifs-roster { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .ifs-roster { grid-template-columns: 1fr; } }
+
+/* the stage's picture panel when a week has no cover: the lettering */
+.ifs-stage__blank img { width: 60%; max-width: 360px; height: auto; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6)); }
+
+/* ── Week page (/series/[slug]/[n]) ─────────────────────────────────────── */
+.ifs-week { padding-bottom: 20px; }
+.ifs-week__crumb { margin: 22px 0 6px; color: var(--ifs-muted); font-size: 1rem; }
+.ifs-week__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 22px; align-items: start; }
+.ifs-week__grid > .ifs-block { margin: 0; }
+.ifs-week__side { display: grid; gap: 22px; }
+.ifs-week__when { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
+.ifs-week__time { color: var(--ifs-muted); font-size: 1.02rem; margin-top: 4px; }
+.ifs-week__title { font-size: clamp(2rem, 4vw, 3rem); margin: 0 0 16px; }
+.ifs-week__cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; margin: 0 0 18px; }
+.ifs-week__prose { white-space: pre-line; line-height: 1.65; font-size: 1.08rem; color: var(--ifs-ink); }
+.ifs-week__h2 { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-faint); font-family: var(--ifs-sans); font-weight: 700; margin: 26px 0 10px; }
+.ifs-week__edit-bar { display: flex; justify-content: flex-end; margin: -6px 0 10px; }
+/* The in-place week editor (components/site/week-editor.tsx) uses the
+   compose field styling; its tokens are in components/site/week-editor.css. */
+.ifs-comments__form textarea { width: 100%; border: 1px solid var(--ifs-line-strong); background: #060607; color: var(--ifs-ink); padding: 10px 12px; font: inherit; }
+.ifs-week__rsvp { display: grid; gap: 14px; }
+.ifs-week__host-row { display: flex; align-items: center; gap: 14px; margin: 4px 0 10px; }
+.ifs-week__host-row img, .ifs-week__host-row i { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 1px solid var(--ifs-frame-soft); background: var(--ifs-bg-3); display: grid; place-items: center; font-family: var(--ifs-serif); font-size: 1.6rem; font-style: normal; flex: none; }
+.ifs-week__host-row b { display: block; font-size: 1.15rem; }
+.ifs-week__host-row span { display: block; font-size: 0.95rem; }
+.ifs-week__bio { color: var(--ifs-muted); line-height: 1.55; margin: 0 0 10px; }
+.ifs-week__nav { display: grid; gap: 12px; }
+.ifs-week__nav a { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--ifs-line-strong); }
+.ifs-week__nav a:hover { border-color: var(--ifs-gold); }
+.ifs-week__nav b { font-family: var(--ifs-serif); font-size: 1.2rem; font-weight: 500; }
+.ifs-comments { margin-top: 22px; }
+.ifs-comments__list { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 14px; }
+.ifs-comments__list li { padding: 14px 16px; border: 1px solid var(--ifs-line); background: #060607; }
+.ifs-comments__who { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.95rem; }
+.ifs-comments__who img, .ifs-comments__who i { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--ifs-bg-3); display: inline-grid; place-items: center; font-style: normal; }
+.ifs-comments__body { line-height: 1.6; }
+.ifs-comments__body p { margin: 0 0 8px; }
+.ifs-comments__form { display: grid; gap: 10px; }
+.ifs-comments__label { font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ifs-faint); }
+.ifs-comments__actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ifs-row__detail-link { margin-left: auto; }
+@media (max-width: 960px) { .ifs-week__grid { grid-template-columns: 1fr; } }
+
+.ifs-week__side > .ifs-block { margin: 0; }
+
+/* Anchor targets (2026-10-10). The landing's "RSVP for <day>" links to
+   /series/<slug>#week-<n>; the browser put the card's top at y=0, under the
+   sticky .ifs-header (64px + 1px border; 56px + 1px at <=640px), so the
+   card's date and title were hidden. Land below the bar with ~18px of air.
+   session-list.tsx scrolls again after opening the week, through the same
+   margin. */
+.ifs [id] { scroll-margin-top: 84px; }
+@media (max-width: 640px) { .ifs [id] { scroll-margin-top: 74px; } }
+
+/* Meeting ID, passcode and other ways to join: shown only beside the join
+   link, behind the same RSVP gate. Ink #ece7e1 and muted #b3ada3 on the
+   panel grounds as measured at the top of this file. */
+.ifs-join-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 0.95rem; }
+.ifs-join-details dt { color: var(--ifs-muted); }
+.ifs-join-details dd { margin: 0; color: var(--ifs-ink); font-family: ui-monospace, Menlo, monospace; overflow-wrap: anywhere; }
+.ifs-join-details dd.is-text { font-family: inherit; white-space: pre-line; }
+
+/* ── Landing fixes (2026-10-10) ──────────────────────────────────────────── */
+/* Stage: one height for every slide at every width. event-stage.tsx renders
+   every slide's text into one grid cell and shows only the current one, so
+   the tallest text sets the height; the picture is cropped to the media box
+   and adds no height (a 250x333 week cover had made the stage 764px tall at
+   1280px, 1528px at 800px). */
+.ifs-stage__slides { display: grid; }
+.ifs-stage__slide { grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.ifs-stage__slide:not([data-active]) { visibility: hidden; }
+.ifs .ifs-stage__eyebrow { margin: 0 0 10px; }
+.ifs-stage__media { overflow: hidden; }
+.ifs-stage__img, .ifs-stage__blank { flex: 1 1 0; height: 0; min-height: 0; }
+.ifs-stage__img { object-fit: cover; object-position: center; }
+.ifs-stage__blank img { max-height: 70%; width: auto; max-width: 60%; }
+
+/* Sign-up: the Baroque frame on its own, centred and larger; no block, seal
+   or heading. zoom scales the frame and its type together (--eac-bq-w alone
+   widens the opening and leaves the type at its old size); phones keep the
+   unzoomed frame tuned above (<=640px). Zoomed, the carved frame is about
+   630px wide; below 760px it overflowed the page (scrollWidth 659 at a
+   641px viewport), so the zoom starts at 760px. */
+.ifs-joinzone { margin: 44px 0 60px; display: grid; justify-items: center; }
+.ifs-joinzone .ifs-join { width: 100%; }
+@media (min-width: 760px) { .ifs-joinzone .eac-bq { zoom: 1.25; } }
+/* Signed in: the same place, text only, no frame or border. */
+.ifs-joinzone .ifs-join__signed { border: 0; background: none; padding: 12px 0; max-width: 44ch; margin-inline: auto; }
+.ifs .ifs-join__signed-h { font-size: 2rem; }
+
+/* Phones: the "Who we are" block's series button (nowrap, the series title)
+   widened its 1fr column past the block (content 351px in a 345px page at
+   360px). Let the column shrink and the button wrap. */
+@media (max-width: 960px) { .ifs-block--split { grid-template-columns: minmax(0, 1fr); } }
+.ifs-block__aside .ifs-btn { max-width: 100%; white-space: normal; text-align: center; line-height: 1.25; }
+/* The package bleeds the frame to the screen edges with width: 100vw, which
+   counts a classic scrollbar (8px of sideways scroll at 360px in desktop
+   Chrome). Bleed by the .ifs-wrap gutter (16px a side) instead. */
+@media (max-width: 520px) { .ifs-join .eac-bq { width: calc(100% + 32px); margin-inline: -16px; } }
+
+/* Sign-up fields larger and plainer (developer, 2026-10-10): sentence-case
+   labels at body size instead of 0.68rem spaced capitals, taller inputs.
+   Label #b8afa4 on #16121b measures 8.54:1; input text #efe9df on #0d0b10 16.22:1. */
+.ifs-joinzone .eac-bq-label { font-size: 0.98rem; letter-spacing: 0.01em; text-transform: none; margin-bottom: 6px; }
+.ifs-joinzone .eac-bq-input { font-size: 1.12rem; padding: 11px 12px; }
+.ifs-joinzone .eac-bq-row { margin-bottom: 14px; }
+.ifs-joinzone .eac-bq-title { line-height: 1.15; }
+@media (max-width: 640px) {
+  .ifs-joinzone .eac-bq-label { font-size: 0.92rem; margin-bottom: 4px; }
+  .ifs-joinzone .eac-bq-input { font-size: 1rem; padding: 9px 10px; }
+  .ifs-joinzone .eac-bq-row { margin-bottom: 9px; }
+}
+
+/* The IFAC block, above the current series and kept squat (developer,
+   2026-10-10): "Read more" and the social/email icons share one row under
+   the prose; the two buttons and the icons are IFAC's blue.
+   Round 3 (2026-10-10): the electric blue of the old header's Hub button
+   (components/site-nav.css:60) replaces #9fb9dd. #20d7ff measures 11.22:1 on
+   #0e0e11, 11.58:1 on the block ground #09090b, 11.86:1 on the page and
+   footer ground #050506, 11.14:1 on the called sign-in ground #120f07
+   (WCAG relative luminance, node). Hover ink #ece7e1 as at the top. */
+.ifs { --ifs-blue-text: #20d7ff; }
+.ifs-about { padding: 18px 22px 18px; margin: 18px 0 0; gap: 28px; }
+.ifs-about .ifs-block__head { margin-bottom: 8px; }
+.ifs-about .ifs-prose p { margin: 0 0 8px; }
+.ifs-about .ifs-block__aside { gap: 12px; }
+.ifs .ifs-btn--blue { color: var(--ifs-blue-text); }
+.ifs .ifs-btn--blue:hover, .ifs .ifs-btn--blue:focus-visible { color: var(--ifs-blue-text); border-color: var(--ifs-blue-text); }
+.ifs .ifs-about__more { color: var(--ifs-blue-text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.ifs-social { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.ifs .ifs-social a { display: inline-grid; place-items: center; width: 36px; height: 36px; color: var(--ifs-blue-text); border-radius: 4px; }
+.ifs .ifs-social a:hover, .ifs .ifs-social a:focus-visible { color: var(--ifs-ink); outline: none; }
+.ifs-social a:focus-visible { box-shadow: 0 0 0 2px var(--ifs-blue-text); }
+.ifs-social svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── IFAC block, round 4 (developer, 2026-10-10) ───────────────────────────
+   Right column: cities (hidden when stacked), the two buttons on one line,
+   then "Read more". The buttons share the line and their labels wrap inside
+   them on narrow screens rather than stacking the buttons. */
+.ifs-about .ifs-about__aside { display: grid; gap: 12px; align-content: start; }
+.ifs-about__buttons { display: flex; gap: 10px; min-width: 0; }
+.ifs .ifs-about__buttons .ifs-btn { flex: 0 1 auto; min-width: 0; min-height: 46px; padding: 6px 16px; font-size: 0.95rem; white-space: nowrap; text-align: center; line-height: 1.2; }
+.ifs .ifs-about__aside .ifs-about__more { justify-self: start; }
+@media (max-width: 960px) {
+  .ifs-about { gap: 14px; }
+  .ifs-about__aside .ifs-cities { display: none; }
+}
+@media (max-width: 640px) {
+  .ifs-about { padding: 16px 14px 16px; }
+  .ifs .ifs-about__buttons .ifs-btn { flex: 1 1 0; white-space: normal; padding: 6px 10px; font-size: 0.9rem; }
+}
+
+/* Footer: the icon row on its own line under the nav links, in the same
+   blue (#20d7ff on #050506 11.86:1). The 36px hit boxes are pulled left so
+   the first glyph lines up with "Home". */
+.ifs-footer .ifs-social--footer { margin: -10px 0 0 -7px; }
+
+/* Phone menu (fix, 2026-10-10): `.ifs-nav a:not(.ifs-nav__cta) { display: none }`
+   (0,2,1) also hid the sheet's links, so the menu opened empty. Same
+   specificity, later in the file, wins. The sheet also carries the social
+   icons on phones (they left the IFAC block). */
+@media (max-width: 960px) {
+  .ifs-nav .ifs-nav__sheet a { display: block; }
+  .ifs-nav .ifs-nav__sheet .ifs-social { display: flex; padding: 10px 4px 0; }
+  .ifs-nav .ifs-nav__sheet .ifs-social a { display: inline-grid; padding: 0; border-bottom: 0; }
+}
+
+/* First line of the IFAC block's opening paragraph indented; "Read more"
+   removed (developer, 2026-10-11). */
+.ifs .ifs-about .ifs-about__lead { text-indent: 2em; }
+
+/* ── Art strip under the sign-up (2026-10-11) ───────────────────────────────
+   components/site/art-gallery.tsx: a native horizontal scroller with
+   scroll-snap (swipe and trackpad for free); the clock scrolls it one card
+   at a time. Pictures are cropped to a fixed height (280px, 200px on
+   phones); captions sit on the page ground, not over the picture.
+   Contrast on the page ground #050506 (WCAG relative luminance, node):
+   title ink #ece7e1 16.57:1, artist muted #b3ada3 9.14:1, eyebrow gold
+   #e3c572 12.12:1, button glyphs and focus ring blue #20d7ff 11.86:1. */
+.ifs-art { margin: 0 0 64px; }
+.ifs-art__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.ifs-art__controls { display: flex; gap: 8px; }
+.ifs .ifs-art__btn { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--ifs-line-strong); border-radius: 50%; background: none; color: var(--ifs-blue-text); padding: 0; }
+.ifs .ifs-art__btn:hover { border-color: var(--ifs-blue-text); }
+.ifs .ifs-art__btn:focus-visible { outline: 2px solid var(--ifs-blue-text); outline-offset: 2px; }
+.ifs-art__btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ifs-art__btn[aria-pressed="true"] svg { fill: currentColor; }
+/* The scroller clips its children, so it carries 6px of padding (pulled
+   back out with a negative margin) for the link's focus ring to show in;
+   scroll-padding keeps the snap on the card edge. */
+.ifs-art__track { list-style: none; margin: -6px; padding: 6px; scroll-padding-inline: 6px; display: flex; gap: 16px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; position: relative; }
+.ifs-art__track::-webkit-scrollbar { display: none; }
+.ifs-art__card { flex: 0 0 300px; scroll-snap-align: start; min-width: 0; }
+.ifs .ifs-art__link { display: block; border-radius: var(--ifs-radius); outline: none; }
+.ifs .ifs-art__link:focus-visible { box-shadow: 0 0 0 2px var(--ifs-bg), 0 0 0 4px var(--ifs-blue-text); }
+.ifs .ifs-art__img { width: 100%; height: 280px; object-fit: cover; border-radius: var(--ifs-radius); background: var(--ifs-bg-3); }
+.ifs-art__link:hover .ifs-art__img { filter: brightness(1.08); }
+.ifs-art__cap { display: grid; gap: 2px; padding: 10px 2px 0; }
+.ifs-art__title { font-family: var(--ifs-serif); font-size: 1.15rem; line-height: 1.2; color: var(--ifs-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ifs-art__by { font-size: 0.9rem; color: var(--ifs-muted); }
+.ifs-art__link:hover .ifs-art__title { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 640px) {
+  .ifs-art { margin-bottom: 48px; }
+  .ifs-art__card { flex-basis: 220px; }
+  .ifs .ifs-art__img { height: 200px; }
+  .ifs-art__track { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ifs-art__track { scroll-behavior: auto; }
+}
+
+/* ── Covers, subtitles and rich write-ups (2026-10-13) ──────────────────────
+   .ifs-cover clips a framed cover (components/site/cover-media.tsx); the
+   picture or video fills it. .ifs-rich lays out a sanitised write-up on the
+   dark page: ink #ece7e1 on #0b0b0d is 16.4:1, muted #b3ada3 9.4:1, gold
+   text #e3c572 11.6:1. */
+.ifs-cover { position: relative; overflow: hidden; background: #000; }
+.ifs-cover > img, .ifs-cover > video, .ifs-cover > iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; border: 0;
+}
+.ifs-cover > video { object-fit: cover; }
+.ifs-row__cover.ifs-cover, .ifs-week__cover.ifs-cover { aspect-ratio: 16 / 9; }
+.ifs-week__cover.ifs-cover { border-radius: var(--ifs-radius); }
+.ifs-subtitle { font-family: var(--ifs-serif); font-style: italic; font-size: 1.3rem; line-height: 1.3; color: var(--ifs-muted); }
+.ifs-week__title + .ifs-subtitle { margin: -4px 0 20px; }
+.ifs-row__sub { display: block; margin-top: 2px; font-family: var(--ifs-serif); font-style: italic; font-size: 1.05rem; line-height: 1.3; color: var(--ifs-muted); }
+.ifs-rich { line-height: 1.65; color: var(--ifs-ink); }
+/* .ifs p and .ifs h2 set margin: 0 at (0,1,1); these rules outrank them. */
+.ifs .ifs-rich > * + * { margin-top: 0.85em; }
+.ifs .ifs-rich :is(h1, h2, h3, h4) { margin-top: 1.3em; color: var(--ifs-ink); }
+.ifs-rich h1, .ifs-rich h2 { font-size: 1.6rem; }
+.ifs-rich h3 { font-size: 1.3rem; }
+.ifs-rich h4 { font-size: 1.1rem; font-family: var(--ifs-sans); font-weight: 700; }
+.ifs .ifs-rich > :first-child { margin-top: 0; }
+.ifs-rich ul, .ifs-rich ol { padding-left: 1.4em; }
+.ifs-rich li + li { margin-top: 0.3em; }
+.ifs .ifs-rich li > p { margin: 0; }
+.ifs-rich strong, .ifs-rich b { color: var(--ifs-ink); font-weight: 700; }
+.ifs-rich blockquote { margin-left: 0; padding: 4px 0 4px 16px; border-left: 3px solid var(--ifs-gold); color: var(--ifs-muted); font-style: italic; }
+.ifs-rich hr { border: 0; border-top: 1px solid var(--ifs-line-strong); margin: 1.4em 0; }
+.ifs-rich a { color: var(--ifs-gold-text); text-decoration: underline; text-underline-offset: 2px; }
+.ifs-rich img { max-width: 100%; height: auto; border-radius: var(--ifs-radius); }
+.ifs-row__detail .ifs-rich { color: var(--ifs-muted); }
+.ifs-week__prose.ifs-rich { white-space: normal; }

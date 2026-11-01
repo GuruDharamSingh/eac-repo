@@ -478,3 +478,13 @@ a.so-chip { text-decoration: none; padding: 6px 12px; border-color: var(--so-acc
 @media (prefers-reduced-motion: no-preference) {
   .so-root { scroll-behavior: smooth; }
 }
+
+/* ── task steps: "do it on the platform" (2026-10-29) ───────────────────────
+   The box under a task step's text. The host draws its inside (status line,
+   the button that opens its own surface); this only frames it. */
+.so-task { margin: 8px 0 0; padding: 16px 18px; border: 1px solid var(--so-field); background: var(--so-sheet); }
+.so-task__state { display: flex; align-items: baseline; gap: 10px; margin: 0 0 10px; font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; color: var(--so-ink-3); }
+.so-task__state--done { color: var(--so-ok); }
+.so-task__state--partial { color: var(--so-gold); }
+.so-task__detail { margin: 0 0 12px; font-family: var(--so-read); font-size: 1.0625rem; line-height: 1.5; color: var(--so-ink-2); }
+.so-task__act { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }

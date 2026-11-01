@@ -3,22 +3,26 @@ import Link from "next/link";
 /**
  * The three pages every org subdomain has, whatever its tier: the offering it
  * is promoting now, who the org is, and the wider scene around it. Rendered on
- * each so the set is always visible — the site is small on purpose.
+ * each so the set is always visible — the site is small on purpose. A signed-in
+ * viewer also gets Center, their own home on the site.
  */
 export function SiteNav({
   orgName,
   current,
   mainSiteUrl,
+  signedIn = false,
 }: {
   orgName: string;
-  /** "center" highlights no tab: it is the signed-in home, not a public page. */
   current: "offering" | "profile" | "community" | "center";
   mainSiteUrl?: string | null;
+  /** Adds the Center tab; /center redirects a signed-out visitor to login. */
+  signedIn?: boolean;
 }) {
   const tabs = [
     { key: "offering", href: "/offering", label: "Offering" },
     { key: "profile", href: "/profile", label: "Profile" },
     { key: "community", href: "/community", label: "Community" },
+    ...(signedIn ? [{ key: "center", href: "/center", label: "Center" } as const] : []),
   ] as const;
 
   return (

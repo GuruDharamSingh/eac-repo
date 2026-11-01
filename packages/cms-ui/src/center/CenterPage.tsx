@@ -7,7 +7,10 @@ import { ArrangeButton } from "./ArrangeButton";
 import { OrgStrip, type OrgStripItem } from "./OrgStrip";
 import { CenterDesk, type CenterDeskItem } from "./CenterDesk";
 import { ProfileFlipCard, type ProfileCardAction } from "./ProfileFlipCard";
-import type { CenterData, CenterLinks, CenterOrgLink, CenterThread } from "./types";
+import { JourneyRow, MeBar, type JourneyTabId } from "./JourneyTabs";
+import { FeedSwitch } from "./FeedSwitch";
+import { OrgManage } from "./OrgManage";
+import type { CenterData, CenterJourney, CenterLinks, CenterOrgLink, CenterThread } from "./types";
 import { DEFAULT_CENTER_LAYOUT, type CenterLayout, type CenterSectionId } from "./layout";
 
 // ============================================================================
@@ -15,9 +18,13 @@ import { DEFAULT_CENTER_LAYOUT, type CenterLayout, type CenterSectionId } from "
 //
 // Two columns. The person on the left: their card, a few buttons, where else
 // they are, and the promotion slot. The org on the right: the site itself
-// (scaled, scrollable), the org's card, what it has pinned, then the feed as
-// post cards with a compose bar above, a featured thread, and a slider of
-// what the network is carrying.
+// (a live iframe, scaled down and scrollable), the org's card, what it has
+// pinned, then the feed as post cards with a compose bar above, a featured
+// thread, and a slider of what the network is carrying.
+//
+// A section with nothing to show returns null (frontend-ui.md: no apology
+// rows). The one exception is the feed, which keeps its compose bar for a
+// viewer who can post.
 //
 // A SERVER component, like ProfileView: nothing here holds state. The live
 // leaves (a feed row that opens a surface, the follow button, the compose
@@ -31,22 +38,49 @@ import { DEFAULT_CENTER_LAYOUT, type CenterLayout, type CenterSectionId } from "
 // tokens so an org's theme carries through. center.css holds the layout.
 // ============================================================================
 
+/** The page's own header. Each field falls back to a default; null hides the header. */
+export interface CenterHeading {
+  /** Small label above the title; defaults to the org's name. */
+  eyebrow?: string | null;
+  /** Defaults to "Center". */
+  title?: string;
+  /** One sentence under the title; defaults to the standard line. */
+  intro?: string | null;
+}
+
 export interface CenterPageProps {
   data: CenterData;
   links: CenterLinks;
   signedIn: boolean;
+  /** Eyebrow, title and intro above the columns. Omit for the defaults; null for none. */
+  heading?: CenterHeading | null;
   /** The org's definition over the network default; DEFAULT_CENTER_LAYOUT when absent. */
   layout?: CenterLayout;
   /** IANA zone for dates; defaults to the viewer's browser via Intl. */
   timeZone?: string;
   locale?: string;
+  /**
+   * Where the person stands on the auction errand (commerce's
+   * `loadAuctionJourney`). Feeds the `you` panel's Payouts tab, the journey
+   * cards and the pills on the card's plate. A host without commerce omits
+   * it; those sections then draw only what the connectors can answer.
+   */
+  journey?: CenterJourney | null;
+  /** "← Back to IFAC": the page has no site nav of its own (2026-10-18). */
+  back?: { href: string; label: string } | null;
+  /** Which journey tab opens first (`?journey=`). */
+  journeyTab?: JourneyTabId | null;
+  /** The org's full manage console, for the organisation journey's rail. */
+  manageHref?: string | null;
 }
 
 /** What the move handle calls each section. */
 const SECTION_LABEL: Record<CenterSectionId, string> = {
   profile: "your card",
   buttons: "your settings",
-  orgs: "where you are",
+  you: "your account",
+  journeys: "what to do next",
+  orgs: "go to another site",
   promo: "the promotion",
   site: "the site",
   org: "the organisation card",
@@ -123,78 +157,19 @@ function Panel({
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="eac-center-empty">{children}</p>;
-}
-
-/**
- * The profile card, as the owner's example draws it: the image fills the
- * card, a details bar sits at the foot, and on hover the image lifts to
- * reveal the person's links. Shared by the person and the org so their
- * proportions are one thing. It renders inside a SurfaceCard's preview, so
- * the card's own hit area opens the surface (or navigates).
- *
- * Exported because other sites present a person the same way outside
- * /center — elastrocal introduces its astrologer on its home page — and two
- * drawings of the same card would drift apart.
- */
-export function ProfileCardBody({
-  image,
-  glyph,
-  name,
-  subtitle,
-  note,
+export function CenterPage({
+  data,
   links,
-}: {
-  image: string | null;
-  glyph: string;
-  name: string;
-  subtitle: string | null;
-  note: string | null;
-  links: Array<{ label: string | null; url: string }>;
-}) {
-  return (
-    <div className="eac-center-pcard relative -mx-[18px] -mt-[44px] mb-1 aspect-[3/4] max-h-[420px] w-[calc(100%+36px)] overflow-hidden rounded-t-[var(--sf-radius)] bg-[color:var(--sf-bg-soft)]">
-      <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-20">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" className="h-full w-full object-cover transition-opacity duration-500 group-hover:opacity-60" />
-        ) : (
-          <span className="grid h-full w-full place-items-center text-6xl text-[color:var(--sf-faint)]" aria-hidden>
-            {glyph}
-          </span>
-        )}
-      </div>
-      {links.length > 0 && (
-        <ul className="eac-face-live absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 flex-wrap justify-center gap-2 px-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          {links.slice(0, 5).map((l) => (
-            <li key={l.url}>
-              <a
-                href={l.url}
-                target="_blank"
-                rel="noopener"
-                className="inline-block rounded-full border border-[color:var(--sf-line)] bg-[color:var(--sf-bg)] px-3 py-1 font-[family-name:var(--sf-font-record)] text-[0.66rem] uppercase tracking-[0.1em] text-[color:var(--sf-fg)] no-underline hover:border-[color:var(--sf-accent)]"
-              >
-                {l.label ?? l.url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="absolute inset-x-0 bottom-0 z-10 bg-[color:var(--sf-bg)]/92 px-4 py-3 backdrop-blur">
-        <div className="font-[family-name:var(--sf-font-title)] text-[1.25rem] leading-tight">{name}</div>
-        {subtitle && <div className="mt-0.5 text-[0.82rem] text-[color:var(--sf-muted)]">{subtitle}</div>}
-        {note && (
-          <div className="mt-1 font-[family-name:var(--sf-font-record)] text-[0.62rem] tracking-[0.04em] text-[color:var(--sf-muted)]">
-            {note}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function CenterPage({ data, links, signedIn, timeZone, locale, layout = DEFAULT_CENTER_LAYOUT }: CenterPageProps) {
+  signedIn,
+  heading,
+  timeZone,
+  locale,
+  layout = DEFAULT_CENTER_LAYOUT,
+  journey = null,
+  back = null,
+  journeyTab = null,
+  manageHref = null,
+}: CenterPageProps) {
   const { person, org, orgs, feed, featured, network, promo } = data;
   const pinned = data.pinned.slice(0, layout.options.pinned?.limit ?? 6);
   const rest = feed.filter((t) => !t.pinned);
@@ -210,6 +185,7 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
   // card with no back and no turn control at all.
   const profileActions: ProfileCardAction[] = [
     {
+      // The profile journey, not the old popup (2026-10-18).
       id: "edit",
       label: "Edit your profile",
       note: person?.orgProfile
@@ -220,15 +196,7 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
             .filter(Boolean)
             .join(" · ")
         : `${orgName} doesn’t list you yet`,
-      surface: true,
-      href: links.editProfileHref,
-    },
-    {
-      id: "details",
-      label: "Your details",
-      note: "location, links, account",
-      surface: true,
-      surfaceTab: "details",
+      journey: "profile" as const,
       href: links.editProfileHref,
     },
     ...(links.profileHref
@@ -261,6 +229,8 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
       ? links.artistHref(promo.artistSlug)
       : promo?.kind === "store"
       ? links.marketplaceUrl ?? undefined
+      : promo?.kind === "link"
+      ? promo.href ?? undefined
       : undefined;
   const promoSurface =
     promo?.kind === "thread" && promo.thread && promo.thread.orgId === org?.orgId
@@ -292,34 +262,20 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
   const sections: Record<CenterSectionId, React.ReactNode> = {
     profile: (
       <>
-        {/* The person's card: the network-wide identity. The portrait fills
-            the front; the card turns over to what you can do to the profile.
-            A face nobody can see is inert, so the turn is state inside
-            ProfileFlipCard rather than :hover in the stylesheet. */}
-        <SurfaceCard
-          kind="neutral"
-          glyph="◯"
-          kicker="You"
-          title={person?.displayName ?? "Your profile"}
-          surface={{ type: "profile" }}
-          href={links.editProfileHref}
-          className="eac-center-person"
-          preview={
-            <ProfileFlipCard
-              image={portrait}
-              glyph="◯"
-              name={person?.displayName ?? "You"}
-              /* Only what is true. The prompts that used to fill these — "add
-                 a line about yourself", "how this org shows you" — were
-                 printed over the portrait, which is the one thing the card is
-                 for. They belong on the back, where the editing is. */
-              subtitle={person?.headline ?? null}
-              note={person?.city ?? null}
-              links={person?.socialLinks ?? []}
-              actions={profileActions}
-            />
-          }
-        />
+        {/* The person's card, bare (take two, 2026-10-18): no face chrome
+            around it, the portrait fills it, the plate carries the pills. The
+            back still turns over to the same doors. */}
+        <div className="eac-center-person">
+          <ProfileFlipCard
+            image={portrait}
+            glyph="◯"
+            name={person?.displayName ?? "You"}
+            subtitle={person?.headline ?? null}
+            note={person?.city ?? null}
+            links={person?.socialLinks ?? []}
+            actions={profileActions}
+          />
+        </div>
         {links.gainSpaceHref && (
           <div className="eac-center-gain">
             <p>
@@ -334,23 +290,39 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
       </>
     ),
     buttons: (
-      <>
-        <nav className="eac-center-btns" aria-label="Your settings">
-          {buttons.map((b) => (
-            <a key={b.label} className="eac-center-btn" href={b.href}>
-              {b.label}
+      /* Four plain doors under the card, each going somewhere real. */
+      <nav className="eac-center-doors" aria-label="Your places">
+        {[
+          links.profileHref ? { label: "Your public page", note: "on ArtDirect, signed in", href: links.profileHref } : null,
+          links.filesHref ? { label: "Your files", note: "storage that follows you", href: links.filesHref } : null,
+          links.studioHref ? { label: "Studio", note: "everything you have made", href: links.studioHref } : null,
+          { label: "Account", note: "email, password, sign out", href: links.accountHref },
+          ...(links.forumHref ? [{ label: "Forum", note: "every board, in full", href: links.forumHref }] : []),
+        ]
+          .filter((d): d is { label: string; note: string; href: string } => Boolean(d))
+          .map((d) => (
+            <a key={d.label} className="eac-center-door" href={d.href}>
+              <span>{d.label}</span>
+              <small>{d.note}</small>
             </a>
           ))}
-        </nav>
+      </nav>
+    ),
+    /* `you` was the inline Payouts tab of the first pass; its content now
+       lives in the Selling art journey. Kept as an id so stored layouts that
+       list it still validate; it draws nothing. */
+    you: null,
+    journeys: (
+      <>
+        {/* The person's own doors first (2026-10-31); the journeys sit below. */}
+        <MeBar studioHref={links.studioHref ?? null} />
+        <JourneyRow journey={journey} initialTab={journeyTab} />
       </>
     ),
-    orgs: (
-      <>
-        <Panel kicker="Your engagements" title="Where you are" glyph="⌂">
-          {orgs.length === 0 ? (
-            <Empty>You don&rsquo;t follow anything yet.</Empty>
-          ) : (
-            <OrgStrip
+    orgs:
+      orgs.length === 0 ? null : (
+        <Panel kicker="Across the collective" title="Go to another site" glyph="⌂">
+          <OrgStrip
               orgs={orgs.map<OrgStripItem>((o) => {
                 const staff = o.role === "owner" || o.role === "guide" || o.role === "member";
                 const href = links.orgHref(o);
@@ -369,18 +341,16 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                     .join(" · "),
                 };
               })}
-            />
-          )}
+          />
         </Panel>
-      </>
-    ),
-    promo: (
-      <>
-        {/* The promotion slot (decision 13). Kicker always reads "Promoted"
-            so it is never mistaken for the feed. */}
-        {promo ? (
+      ),
+    promo:
+      /* The promotion slot (decision 13). Kicker always reads "Promoted" so
+         it is never mistaken for the feed. Drawn only when something is
+         placed (site_config `center_promo`); there is no placeholder. */
+      promo && (
           <SurfaceCard
-            kind={promo.kind === "thread" ? promo.thread?.kind ?? "post" : "product"}
+            kind={promo.kind === "thread" ? promo.thread?.kind ?? "post" : promo.kind === "link" ? "neutral" : "product"}
             kicker="Promoted"
             title={promo.title}
             blurb={promo.blurb ?? undefined}
@@ -396,40 +366,44 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
               ) : undefined
             }
           />
-        ) : (
-          <Panel kicker="Promoted" title="Nothing placed yet" className="eac-center-promo is-empty">
-            <Empty>A store, an artist or an event from the collective will appear here.</Empty>
-          </Panel>
-        )}
-      </>
-    ),
+      ),
     site: (
       <>
-        {/* The site itself, scaled and scrollable: the org's home page is
-            its profile by default. The face's cue is the door to it. */}
+        {/* The site itself, live: the org's home page in an iframe, laid out
+            at full width and scaled down to the column. The frame takes the
+            pointer (.eac-face-live) so it scrolls and its links work; the
+            face has no stretched hit area of its own, so a visible link
+            opens the site in a tab. */}
         {links.homePreviewUrl && (
           <article className="eac-face eac-center-home" data-kind="neutral">
-            {links.homeUrl && (
-              <a className="eac-face-hit" href={links.homeUrl} aria-label={`Visit ${orgName}`} />
-            )}
             <span className="eac-face-glyph" aria-hidden>⌂</span>
-            <span className="eac-face-cue" aria-hidden>→</span>
             <span className="eac-face-kicker">The site</span>
             <span className="eac-face-title">{orgName} at home</span>
-            <div className="eac-center-home-frame" aria-hidden>
-              <iframe
-                src={links.homePreviewUrl}
-                title={`${orgName} home page`}
-                loading="lazy"
-                tabIndex={-1}
-                sandbox="allow-same-origin"
-              />
+            {links.homeUrl && (
+              <p className="eac-face-live eac-center-home-bar">
+                <a className="eac-center-btn eac-center-home-open" href={links.homeUrl} target="_blank" rel="noopener">
+                  Open site →
+                </a>
+              </p>
+            )}
+            <div className="eac-face-live eac-center-home-frame">
+              <div className="eac-center-home-scale">
+                <iframe
+                  src={links.homePreviewUrl}
+                  title={`${orgName} home page`}
+                  loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                />
+              </div>
             </div>
           </article>
         )}
       </>
     ),
-    org: (
+    org:
+      canEditOrg && org ? (
+        /* Owners and guides get the org's Details and People here, in place of the card. */
+        <OrgManage orgId={org.orgId}>
       <>
         {/* The org's card, compact: a small square image, the name and facts,
             the relation, the next thing. Its flip side is the profile surface
@@ -463,6 +437,23 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                   </p>
                 )}
                 {orgFacts && <p className="eac-center-orgcard-facts m-0">{orgFacts}</p>}
+                {org?.owners && org.owners.length > 0 && (
+                  <p className="eac-center-orgcard-owners m-0">
+                    <span>{org.owners.length === 1 ? "Owner" : "Owners"}</span>{" "}
+                    {org.owners.map((o, i) => (
+                      <React.Fragment key={o.userId}>
+                        {i > 0 && ", "}
+                        {o.slug ? (
+                          <a className="eac-face-live" href={links.artistHref(o.slug)}>
+                            {o.displayName}
+                          </a>
+                        ) : (
+                          o.displayName
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </p>
+                )}
                 <div className="eac-face-live eac-center-orgcard-relation">
                   {role && <span className="eac-center-chip">{ROLE_LABEL[role]}</span>}
                   {canEditOrg && org && <ArrangeButton orgId={org.orgId} />}
@@ -476,8 +467,8 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                     />
                   )}
                 </div>
-                <div className="eac-face-live">
-                  {next ? (
+                {next && (
+                  <div className="eac-face-live">
                     <div className="eac-center-rows">
                       <CenterThreadRow
                         thread={next}
@@ -489,30 +480,106 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                         }
                       />
                     </div>
-                  ) : (
-                    <Empty>
-                      {role
-                        ? `You haven’t reserved a place at anything here yet.`
-                        : `Follow ${orgName} to get their updates here.`}
-                    </Empty>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           }
         />
       </>
-    ),
-    pinned: (
+        </OrgManage>
+      ) : (
       <>
-        {/* What the org has pinned for its followers (decision 5), as faces. */}
+        {/* The org's card, compact: a small square image, the name and facts,
+            the relation, the next thing. Its flip side is the profile surface
+            over the org's own identity row — where owners and guides set the
+            display image (the ✎ cue). */}
+        <SurfaceCard
+          kind="neutral"
+          glyph="◆"
+          kicker={TIER_LABEL[org?.tier ?? "free"] ?? "Organisation"}
+          title={orgName}
+          surface={org ? { type: "profile", target: { kind: "org", orgId: org.orgId } } : undefined}
+          href={links.orgProfileHref ?? undefined}
+          cue={canEditOrg ? "✎" : undefined}
+          className="eac-center-orgcard"
+          preview={
+            <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 items-start">
+              <span className="block h-16 w-16 overflow-hidden rounded-[var(--sf-radius-sm)] border border-[color:var(--sf-line)] bg-[color:var(--sf-bg-soft)]">
+                {org?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={org.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="grid h-full w-full place-items-center text-2xl text-[color:var(--sf-faint)]" aria-hidden>
+                    ◆
+                  </span>
+                )}
+              </span>
+              <div className="min-w-0 grid gap-1.5">
+                {(org?.headline || canEditOrg) && (
+                  <p className="m-0 text-[0.9rem] text-[color:var(--sf-muted)]">
+                    {org?.headline ?? "Add a headline and a display image"}
+                  </p>
+                )}
+                {orgFacts && <p className="eac-center-orgcard-facts m-0">{orgFacts}</p>}
+                {org?.owners && org.owners.length > 0 && (
+                  <p className="eac-center-orgcard-owners m-0">
+                    <span>{org.owners.length === 1 ? "Owner" : "Owners"}</span>{" "}
+                    {org.owners.map((o, i) => (
+                      <React.Fragment key={o.userId}>
+                        {i > 0 && ", "}
+                        {o.slug ? (
+                          <a className="eac-face-live" href={links.artistHref(o.slug)}>
+                            {o.displayName}
+                          </a>
+                        ) : (
+                          o.displayName
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </p>
+                )}
+                <div className="eac-face-live eac-center-orgcard-relation">
+                  {role && <span className="eac-center-chip">{ROLE_LABEL[role]}</span>}
+                  {canEditOrg && org && <ArrangeButton orgId={org.orgId} />}
+                  {!isStaff && links.followEndpoint && (
+                    <FollowButton
+                      endpoint={links.followEndpoint}
+                      following={role === "viewer"}
+                      signedIn={signedIn}
+                      loginHref={links.loginHref}
+                      orgName={orgName}
+                    />
+                  )}
+                </div>
+                {next && (
+                  <div className="eac-face-live">
+                    <div className="eac-center-rows">
+                      <CenterThreadRow
+                        thread={next}
+                        href={links.threadHref(next)}
+                        meta={
+                          next.viewerAttending
+                            ? `${fmtWhen(next.scheduledAt, timeZone, locale) ?? ""} · going`
+                            : fmtWhen(next.scheduledAt, timeZone, locale)
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          }
+        />
+      </>
+      ),
+    pinned:
+      /* What the org has pinned for its followers (decision 5), as faces. */
+      pinned.length === 0 ? null : (
         <div className="eac-center-pinned">
           <p className="eac-center-strip-head">
             <span className="eac-face-kicker">Pinned by {orgName}</span>
           </p>
-          {pinned.length === 0 ? (
-            <Empty>{orgName} hasn&rsquo;t pinned anything for followers yet.</Empty>
-          ) : (
             <div className="eac-center-pinned-grid">
               {pinned.map((t) => (
                 <SurfaceCard
@@ -543,24 +610,25 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                 />
               ))}
             </div>
-          )}
         </div>
-      </>
-    ),
-    feed: (
-      <>
-        {/* The feed: a compose bar, then the org's threads as post cards
-            with their authors — the people of the org beside their words. */}
-        <Panel kind="post" kicker={`From ${orgName}`} title="Latest" wide className="eac-center-feed">
+      ),
+    feed:
+      /* The feed: a compose bar, then the org's threads as post cards with
+         their authors. An empty feed is drawn only when the viewer can post
+         (staff, or a host with somewhere to write), so the bar stays. */
+      rest.length === 0 && !isStaff && !links.composeHref ? null : (
+        <Panel kind="post" kicker="Latest" title="What is new" wide className="eac-center-feed">
+          <FeedSwitch
+            orgName={orgName}
+            org={
+              <>
           <CenterComposeBar
             avatarUrl={portrait}
             name={person?.displayName?.split(" ")[0] ?? "you"}
             href={links.composeHref}
             canCompose={isStaff}
           />
-          {rest.length === 0 ? (
-            <Empty>{orgName} hasn&rsquo;t published anything yet.</Empty>
-          ) : (
+          {rest.length > 0 && (
             <div className="eac-center-posts">
               {rest.map((t) => (
                 <CenterThreadRow
@@ -573,9 +641,28 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
               ))}
             </div>
           )}
+              </>
+            }
+            network={
+              network.length > 0 ? (
+            <div className="eac-center-posts">
+              {network.map((t) => (
+                <CenterThreadRow
+                  key={t.id}
+                  thread={t}
+                  href={links.networkThreadHref(t)}
+                  meta={[t.orgName, rowMeta(t, timeZone, locale)].filter(Boolean).join(" · ")}
+                  post
+                />
+              ))}
+            </div>
+              ) : (
+                <p className="eac-center-empty">Nothing is shared across the network yet. What other organisations publish for everyone appears here.</p>
+              )
+            }
+          />
         </Panel>
-      </>
-    ),
+      ),
     featured: (
       <>
         {featured && (
@@ -609,8 +696,8 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
         )}
       </>
     ),
-    network: (
-      <>
+    network:
+      network.length === 0 ? null : (
         <div className="eac-center-network">
           <p className="eac-center-network-head">
             <span className="eac-face-kicker">Across the network</span>
@@ -618,9 +705,6 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
               what other organisations are carrying · yours first
             </span>
           </p>
-          {network.length === 0 ? (
-            <Empty>Nothing has been shared to the network yet.</Empty>
-          ) : (
             <div className="eac-center-slider" role="list">
               {network.map((t) => (
                 <div role="listitem" key={t.id} className="eac-center-slide">
@@ -636,12 +720,33 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
                 </div>
               ))}
             </div>
+        </div>
+      ),
+  };
+  // Hidden by the org, or with nothing to draw: either way the section is
+  // not in the flow, so neither column (nor the desk) keeps a gap for it.
+  const visible = (ids: CenterSectionId[]) =>
+    ids.filter((id) => !layout.hidden.includes(id) && sections[id] != null);
+
+  const head =
+    heading === null ? null : (
+      <header className="eac-center-head">
+        <div className="eac-center-head-text">
+          {(heading?.eyebrow ?? orgName) && <p className="eac-center-head-eyebrow">{heading?.eyebrow ?? orgName}</p>}
+          <h1 className="eac-center-head-title">{heading?.title ?? "Center"}</h1>
+          {(heading?.intro === undefined || heading.intro) && (
+            <p className="eac-center-head-intro">
+              {heading?.intro ?? "You on the collective: selling your work, your organisation, your profile."}
+            </p>
           )}
         </div>
-      </>
-    ),
-  };
-  const visible = (ids: CenterSectionId[]) => ids.filter((id) => !layout.hidden.includes(id));
+        {back && (
+          <a className="eac-center-back" href={back.href}>
+            ← Back to {back.label}
+          </a>
+        )}
+      </header>
+    );
   const ratio = layout.options.site?.ratio === "4:3" ? "4 / 3" : "5 / 3";
   const frame = { ["--eac-center-site-ratio" as string]: ratio } as React.CSSProperties;
 
@@ -654,6 +759,7 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
     );
     return (
       <div className="eac-center eac-center--desk" data-voice={layout.voice} style={frame}>
+        {head}
         <CenterDesk
           items={deskItems}
           /* Per org and per person: two people who share a browser keep
@@ -666,6 +772,7 @@ export function CenterPage({ data, links, signedIn, timeZone, locale, layout = D
 
   return (
     <div className="eac-center" data-voice={layout.voice} style={frame}>
+      {head}
       <aside className="eac-center-you" aria-label="You">
         {visible(layout.columns.left).map((id) => (
           <React.Fragment key={id}>{sections[id]}</React.Fragment>

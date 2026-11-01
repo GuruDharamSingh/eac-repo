@@ -3,6 +3,7 @@ import { getServerSession } from "@elkdonis/auth-server";
 import { canEditProfile, getUserGallery, renderThemeCss } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getDirectoryProfile } from "@/lib/directory";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { GalleryEditor } from "@/components/gallery-editor";
 import { defaultSiteContent } from "@/lib/default-content";
@@ -31,6 +32,9 @@ export async function GalleryPageView({
   startEditing: boolean;
 }) {
   const profile = await getDirectoryProfile(slug);
+  if (!profile) {
+    await redirectRenamedProfile(slug, (current) => `/${kind}s/${current}/galleries/${encodeURIComponent(gallerySlug)}`);
+  }
   if (!profile || profile.kind !== kind || !profile.userId) notFound();
 
   const session = await getServerSession();

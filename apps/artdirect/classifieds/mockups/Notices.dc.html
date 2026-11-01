@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Notices grid</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Arimo:ital,wght@0,400;0,700;1,400&amp;family=Archivo+Black&amp;family=Alfa+Slab+One&amp;family=Libre+Caslon+Text:ital@0;1&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1f3f99}a:hover{color:#142a66}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.nb{border:1.5px solid #111;padding:10px 12px;background:#fff}
+.nh{margin:0 0 6px;font-family:'Anton',Impact,sans-serif;font-weight:400;font-size:25px;line-height:1;text-align:center;letter-spacing:0.01em}
+.nt{margin:0;font-family:'Arimo',Arial,sans-serif;font-size:12px;line-height:1.38;text-align:justify}
+.ns{margin:8px 0 0;text-align:center;font-family:'Arimo',Arial,sans-serif;font-size:11.5px;line-height:1.35}
+.ns b{display:block;font-size:13px}
+.rev{background:#111;color:#fff;margin:-10px -12px 8px;padding:6px 12px}
+</style>
+</helmet>
+<div style="width: 900px; height: 1300px; box-sizing: border-box; padding: 36px 40px; background: #fbfaf7; color: #111; display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Arimo', Arial, sans-serif; font-size: 11px; border-bottom: 2px solid #111; padding-bottom: 4px">
+<span>[DATE]</span>
+<span>ARTDIRECT · NOTICES</span>
+<span>PAGE 9</span>
+</div>
+<div style="display: flex; align-items: center; gap: 18px; margin-top: 12px">
+<h1 style="margin: 0; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 84px; line-height: 0.9; letter-spacing: 0.01em">NOTICES</h1>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px">
+<div style="background: #e8502b; color: #fff; padding: 4px 10px; font-family: 'Anton', Impact, sans-serif; font-size: 17px; letter-spacing: 0.06em">ANNOUNCEMENTS · CANCELLATIONS · THANKS · IN MEMORIAM</div>
+<div style="font-family: 'Arimo', Arial, sans-serif; font-style: italic; font-size: 12px">Notices are set as received. ArtDirect does not verify claims made in them. To place one, post on the platform under Notices.</div>
+</div>
+</div>
+<div style="margin-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 14px; flex-grow: 1">
+<div class="col">
+<div class="nb">
+<h2 class="nh">EXHIBITION POSTPONED</h2>
+<p class="nt">We regret to inform friends and visitors that the opening of <i>Small Weathers</i>, planned for this Friday, is postponed by one week while the paint dries. The private view will now be held the following Friday at 7 p.m. as per schedule otherwise.</p>
+<p class="ns"><b>The Canal Street Gallery</b>[ADDRESS] · [PHONE]</p>
+</div>
+<div class="nb" style="padding-top: 10px">
+<div class="rev" style="text-align: center">
+<div style="font-family: 'Anton', Impact, sans-serif; font-size: 52px; line-height: 0.95">STUDIO</div>
+<div style="font-family: 'Arimo', Arial, sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.4em">CLOSED</div>
+</div>
+<p class="nt">The ceramics studio on the second floor will be closed from the first frost until the kiln is repaired. Members may collect fired work on Saturdays between ten and one. Unclaimed pots will be planted with bulbs and given to the street.</p>
+<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 3px; font-family: 'Arimo', Arial, sans-serif; font-size: 11.5px">
+<div style="display: flex; justify-content: space-between"><span>Studio manager</span><span style="background: #111; color: #fff; padding: 0 6px; font-weight: 700">[PHONE]</span></div>
+<div style="display: flex; justify-content: space-between"><span>Kiln enquiries</span><span style="background: #111; color: #fff; padding: 0 6px; font-weight: 700">[PHONE]</span></div>
+</div>
+</div>
+<div class="nb">
+<h2 class="nh" style="font-family: 'Alfa Slab One', Georgia, serif; font-size: 21px">Card of Thanks</h2>
+<p class="nt">Many thanks to everyone who came to the reading on Thursday, to the stranger who held the umbrella over the microphone, and to the café for not minding the poems. You made a wet night very warm.</p>
+<p class="ns" style="font-family: 'Libre Caslon Text', Georgia, serif; font-style: italic; font-size: 13px">With gratitude, the Thursday Poets</p>
+</div>
+</div>
+<div class="col">
+<div class="nb">
+<h2 class="nh">OPENING TONIGHT</h2>
+<p class="nt">You are warmly invited to the first night of <i>Paper Rivers</i>, an installation of folded maps by the members of the Riverside Collective. Doors at seven, short talk at eight, music after.</p>
+<p class="ns"><b>Riverside Collective</b>Unit 4, The Old Mill · free entry</p>
+</div>
+<div style="border: 3px solid #1f3f99; background: #f6e7a6; padding: 0 0 10px; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+<div style="background: #d7261e; color: #fff; text-align: center; padding: 4px; font-family: 'Archivo Black', sans-serif; font-size: 12px; letter-spacing: 0.06em">AVISO</div>
+<div style="background: #1f3f99; color: #fff; text-align: center; padding: 4px; font-family: 'Archivo Black', sans-serif; font-size: 12px; letter-spacing: 0.06em">NOTICE</div>
+</div>
+<div style="padding: 10px 12px 0; text-align: center">
+<div style="font-family: 'Anton', Impact, sans-serif; font-size: 34px; line-height: 1; color: #d7261e">¡TALLER GRATIS!</div>
+<div style="font-family: 'Archivo Black', sans-serif; font-size: 17px; line-height: 1.1; color: #1f3f99; margin-top: 2px">FREE MURAL WORKSHOP</div>
+<p style="margin: 8px 0 0; font-family: 'Arimo', Arial, sans-serif; font-weight: 700; font-size: 12.5px; line-height: 1.4">Sábados 10 a.m. · Saturdays 10 a.m.<br>Pinturas incluidas · Paint included<br>Todas las edades · All ages</p>
+<div style="margin-top: 8px; font-family: 'Anton', Impact, sans-serif; font-size: 26px; letter-spacing: 0.02em">[PHONE]</div>
+</div>
+</div>
+<div class="nb">
+<h2 class="nh">INVITATION CANCELLED</h2>
+<p class="nt">Due to the flooding of the lower hall, the midsummer dance of the Folk Dance Circle stands cancelled. The musicians will instead play on the bridge at sunset, as per schedule, and all are welcome to dance there.</p>
+<p class="ns"><b>Folk Dance Circle</b>Secretary: [NAME] · [PHONE]</p>
+</div>
+</div>
+<div class="col">
+<div class="nb" style="border-width: 3px">
+<h2 class="nh" style="font-size: 22px">IN MEMORIAM</h2>
+<p class="nt" style="text-align: center; font-family: 'Libre Caslon Text', Georgia, serif; font-size: 13px; line-height: 1.45">For the old projector at the Rialto, who showed ten thousand films and never once complained about the endings. Switched off for the last time this spring.</p>
+<p class="ns" style="font-family: 'Libre Caslon Text', Georgia, serif; font-style: italic">Remembered by everyone in the back row</p>
+</div>
+<div class="nb">
+<h2 class="nh">CHANGE OF NAME</h2>
+<p class="nt">I, the painter formerly known on the platform as [OLD NAME], shall henceforth work and exhibit as [NEW NAME]. All previous work remains mine; all future work may surprise us both.</p>
+<p class="ns"><b>[NEW NAME]</b>ArtDirect file no. [ID]</p>
+</div>
+<div class="nb" style="background: #111; color: #fff; text-align: center">
+<div style="font-family: 'Anton', Impact, sans-serif; font-size: 30px; line-height: 1">CALL FOR WORK</div>
+<p class="nt" style="margin-top: 6px; text-align: center; color: #fff">Open submission for the winter salon. Any medium, any size that fits through a door. Deadline the first Monday of December.</p>
+<div style="margin-top: 8px; background: #fff; color: #111; padding: 3px; font-family: 'Arimo', Arial, sans-serif; font-weight: 700; font-size: 12px">SUBMIT ON ARTDIRECT · ENTRY FREE</div>
+</div>
+<div class="nb">
+<h2 class="nh">MEETING NOTICE</h2>
+<p class="nt">The annual meeting of the Printmakers' Guild will be held at the library on the 12th at 6 p.m. Agenda: the press, the roof, and the question of the press on the roof.</p>
+</div>
+</div>
+</div>
+<div style="margin-top: 12px; background: #1f3f99; color: #fff; padding: 5px 10px; text-align: center; font-family: 'Anton', Impact, sans-serif; font-size: 15px; letter-spacing: 0.08em">NOTICES CONTINUED ON PAGE 11</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":1300}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

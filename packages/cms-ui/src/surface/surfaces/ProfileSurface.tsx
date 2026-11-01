@@ -59,7 +59,7 @@ const HINT = "mt-1 block text-[0.8rem] leading-snug text-[color:var(--sf-muted)]
 // country, just the ones this network has actually paid into so far. cms-ui
 // keeps its own copy rather than importing @elkdonis/commerce's — see the
 // SurfacePresence note above for why this file takes no such dependency.
-const PAYOUT_COUNTRIES: Array<{ code: string; name: string }> = [
+export const PAYOUT_COUNTRIES: Array<{ code: string; name: string }> = [
   { code: "CA", name: "Canada" },
   { code: "US", name: "United States" },
   { code: "GB", name: "United Kingdom" },
@@ -1233,6 +1233,14 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
             className="eac-btn eac-btn--quiet ml-2"
             disabled={busyKey === "payouts-disconnect"}
             onClick={async () => {
+              // One click used to unlink a fully onboarded account with no
+              // record of its id; the next "Connect" then built an empty one
+              // (2026-10-18). Ask first, louder when the account works.
+              const question =
+                p.state === "ready"
+                  ? "Your Stripe account is connected and can be paid. Starting over unlinks it: sales will stop paying you directly until you finish onboarding a new account from scratch. Only do this if Stripe set the account up in the wrong country. Unlink it?"
+                  : "Unlink your unfinished Stripe account and start a new one? Anything you entered with Stripe so far is not carried over.";
+              if (!window.confirm(question)) return;
               setBusyKey("payouts-disconnect");
               const result = await pageConnectors
                 .disconnectPayouts!()
@@ -1332,8 +1340,9 @@ export function ProfileSurface({ descriptor }: { descriptor: Descriptor }) {
         returnTo={typeof window === "undefined" ? undefined : window.location.origin + urlWithSurface(serializeDescriptor({ type: "profile", tab: "connections" }))}
         intro={
           <p className={HINT}>
-            Your own accounts on outside services. A YouTube connection lets recordings of your groups go to your
-            channel. You create the Google Cloud client yourself, so uploads count against your project.
+            Your own accounts on outside services. Connect Facebook &amp; Instagram or Threads to post your pieces
+            there from the Studio. A YouTube connection lets recordings of your groups go to your channel; for that
+            one you create the Google Cloud client yourself, so uploads count against your project.
           </p>
         }
       />

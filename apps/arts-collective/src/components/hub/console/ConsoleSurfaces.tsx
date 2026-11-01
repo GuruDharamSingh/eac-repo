@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { SurfaceFrame, SurfaceSection } from "@elkdonis/cms-ui/surface";
 import { publishDraftAction } from "@/lib/cms/draft-actions";
+import { PinToggle } from "@/components/cms/pin-toggle";
 import type { ConsoleState, ConsolePerson } from "@/lib/org-console";
 
 /**
@@ -316,6 +317,90 @@ export function PeopleSurface({
           <Empty>Nobody belongs to this organisation yet.</Empty>
         ) : (
           listed.map((p) => <PersonRow key={p.userId} p={p} />)
+        )}
+      </SurfaceSection>
+    </SurfaceFrame>
+  );
+}
+
+// ─── Published ───────────────────────────────────────────────────────────────
+
+/**
+ * What the org has published, pinned first, with the pin control on each row.
+ *
+ * The pin is what decides what leads the site: the pinned thread is the
+ * offering (`getOfferingThread`), and `togglePinAction` unpins the rest, so
+ * there is never more than one. Until this surface existed the toggle had no
+ * home on arts-collective and no org had pinned anything (2026-10-30).
+ */
+export function PublishedSurface({
+  state,
+  orgHomeUrl,
+  canEdit,
+  hasDesignedPage,
+}: {
+  state: ConsoleState;
+  orgHomeUrl: string;
+  canEdit: boolean;
+  /** A designed landing page leads the site instead of the pinned item. */
+  hasDesignedPage: boolean;
+}) {
+  const router = useRouter();
+  const { count, recent } = state.published;
+  const lead = recent.find((t) => t.pinned && t.visibility === "PUBLIC") ?? recent.find((t) => t.visibility === "PUBLIC") ?? null;
+
+  return (
+    <SurfaceFrame
+      kind="post"
+      title="Published"
+      kicker={`${count} ${count === 1 ? "item" : "items"}`}
+      actions={[{ label: "Open the site ↗", href: orgHomeUrl, external: true }]}
+    >
+      <SurfaceSection>
+        {hasDesignedPage ? (
+          <p className="mb-3 text-xs text-muted-foreground">
+            Your designed landing page leads the site; the pinned item is what its offering card shows.
+          </p>
+        ) : lead ? (
+          <p className="mb-3 text-xs text-muted-foreground">
+            Leading the site: <span className="text-foreground">{lead.title}</span>
+            {lead.pinned ? " (pinned)" : " (newest; pin something to choose)"}.
+          </p>
+        ) : (
+          <p className="mb-3 text-xs text-muted-foreground">Nothing public leads the site yet; the default page shows.</p>
+        )}
+        {recent.length === 0 ? (
+          <Empty>Nothing published yet. Make something above and publish it.</Empty>
+        ) : (
+          <div>
+            {recent.map((t) => (
+              <Row key={t.id}>
+                <span className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block text-xs uppercase tracking-wider text-muted-foreground">
+                      {t.kind} · {fmtDate(t.publishedAt)}
+                      {t.visibility !== "PUBLIC" && " · members only"}
+                      {t.pinned && <span className="text-primary"> · leads the site</span>}
+                    </span>
+                    <a
+                      href={t.slug ? `${orgHomeUrl}/${t.slug}` : orgHomeUrl}
+                      target="_blank"
+                      rel="noopener"
+                      className="font-serif text-base leading-snug text-foreground hover:underline underline-offset-4"
+                    >
+                      {t.title || "Untitled"}
+                    </a>
+                  </span>
+                  {canEdit && t.visibility === "PUBLIC" && (
+                    <PinToggle threadId={t.id} pinned={t.pinned} onToggled={() => router.refresh()} />
+                  )}
+                </span>
+              </Row>
+            ))}
+            {count > recent.length && (
+              <p className="pt-3 text-xs text-muted-foreground">Showing the {recent.length} most recent of {count}.</p>
+            )}
+          </div>
         )}
       </SurfaceSection>
     </SurfaceFrame>

@@ -80,7 +80,10 @@ export interface Store {
   commissionRate: number;
   defaultCurrency: Currency;
   status: StoreStatus;
+  /** The store's own note. For a person's store it sits above {@link profileBio}. */
   bioHtml?: string | null;
+  /** The owner's network bio (`users.bio`): plain text or HTML, depending on which app wrote it. */
+  profileBio?: string | null;
   joinedAt: string;
   updatedAt: string;
 
@@ -136,6 +139,8 @@ export interface ArtistApplicationInput {
   city?: string | null;
   photoUrl?: string | null;
   bioHtml?: string | null;
+  /** Plain text for `users.bio`. Empty never erases an existing bio. */
+  profileBio?: string | null;
   payoutEmail: string;
   payoutMethod?: PayoutMethod;
   defaultCurrency?: Currency;
@@ -169,6 +174,8 @@ export interface ArtistProfileUpdateInput {
   city?: string | null;
   photoUrl?: string | null;
   bioHtml?: string | null;
+  /** Plain text for `users.bio`. Undefined leaves it alone. */
+  profileBio?: string | null;
   payoutEmail?: string;
   payoutMethod?: PayoutMethod;
   defaultCurrency?: Currency;
@@ -225,6 +232,20 @@ export interface CreateArtworkInput {
   storeId?: string;
   /** Who made it. Resolves the store when `storeId` is omitted. */
   artistUserId?: string | null;
+  /**
+   * Who is writing. When given, the write is refused unless they may act for
+   * the store (`canActForStore`). Callers that resolved the store themselves
+   * from the signed-in person may omit it; new callers should pass it.
+   */
+  actorUserId?: string;
+  /** Credited artist, not paid (see {@link Artwork.creditedArtistUserId}). */
+  creditedArtistUserId?: string | null;
+  estimateLowMinor?: number | null;
+  estimateHighMinor?: number | null;
+  /** Provenance events to record, e.g. the donation. */
+  provenance?: ProvenanceInput[];
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: BeneficiaryScope | null;
   title: string;
   descriptionHtml?: string | null;
   kind?: ArtworkKind;
@@ -264,6 +285,13 @@ export interface UpdateArtworkInput {
   priceMinor?: number;
   currency?: Currency;
   inventoryQty?: number;
+  creditedArtistUserId?: string | null;
+  estimateLowMinor?: number | null;
+  estimateHighMinor?: number | null;
+  /** When provided, replaces the piece's provenance events. */
+  provenance?: ProvenanceInput[];
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: BeneficiaryScope | null;
 }
 
 export interface Artwork {
@@ -312,7 +340,74 @@ export interface Artwork {
    * 112): the presenting store's id. Undefined on the piece's own store.
    */
   presentedByStoreId?: string | null;
+
+  /**
+   * Named as the artist without being paid (migration 209). Distinct from
+   * `artistUserId`, who is the maker AND the payee. An org store listing a
+   * donated piece credits its artist here; the store keeps the proceeds.
+   */
+  creditedArtistUserId?: string | null;
+  /** `rejected` once the credited person refused the credit. */
+  creditStatus?: "credited" | "rejected";
+  creditedArtistName?: string | null;
+  creditedArtistSlug?: string | null;
+  /** Auction estimate, minor units. */
+  estimateLowMinor?: number | null;
+  estimateHighMinor?: number | null;
+  /** Provenance events, newest last. Populated by edit/detail queries. */
+  provenance?: ArtworkProvenance[];
 }
+
+/** One event in a piece's history: donated by X to Y, consigned, acquired… */
+export interface ArtworkProvenance {
+  id: string;
+  artworkId: string;
+  kind: ProvenanceKind;
+  fromUserId?: string | null;
+  fromText?: string | null;
+  fromName?: string | null;
+  toOrgId?: string | null;
+  toOrgName?: string | null;
+  occurredOn?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+export type ProvenanceKind = "donated" | "consigned" | "acquired" | "commissioned";
+
+/** Input for one provenance event on the artwork form. */
+export interface ProvenanceInput {
+  kind: ProvenanceKind;
+  fromUserId?: string | null;
+  fromText?: string | null;
+  toOrgId?: string | null;
+  occurredOn?: string | null;
+  note?: string | null;
+}
+
+/**
+ * Where a listing's money can be directed (migration 209): an org on the
+ * network, or an outside charity. `receipting` says who can issue the
+ * donor's receipt — nobody (pass-through), an intermediary such as PayPal
+ * Giving Fund, or the payee itself.
+ */
+export interface Payee {
+  id: string;
+  kind: "org" | "charity";
+  orgId?: string | null;
+  name: string;
+  registrationNo?: string | null;
+  website?: string | null;
+  blurb?: string | null;
+  receipting: "none" | "intermediary" | "self";
+  status: "active" | "suggested" | "retired";
+  suggestedBy?: string | null;
+  managedByOrgId?: string | null;
+  createdAt: string;
+}
+
+/** On a listing: all the price (less fees) or only the store's commission. */
+export type BeneficiaryScope = "all_proceeds" | "commission";
 
 export interface ArtworkVariant {
   id: string;
@@ -327,6 +422,8 @@ export interface ArtworkVariant {
   inventoryQty: number;
   position: number;
   createdAt: string;
+  beneficiaryPayeeId?: string | null;
+  beneficiaryScope?: BeneficiaryScope | null;
 }
 
 export interface ArtworkMedia {
@@ -372,6 +469,9 @@ export interface AuctionLot {
   updatedAt: string;
   /** Joined: the artwork being auctioned */
   artwork?: Artwork;
+  /** The auction series this lot belongs to, and its number in it (migration 209). */
+  seriesId?: string | null;
+  lotNumber?: number | null;
 }
 
 export type BidStatus = "active" | "outbid" | "winning" | "retracted";

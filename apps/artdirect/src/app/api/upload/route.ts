@@ -2,14 +2,18 @@ import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { uploadFile, getProxyFileUrl, getProfileBySlug, canEditProfile, updateProfile, uploadFilename } from "@elkdonis/services";
-import { getAdminClient, ensurePersonMediaFolder } from "@elkdonis/nextcloud";
+import { db } from "@elkdonis/db";
+import { getAdminClient, ensureUserFolder } from "@elkdonis/nextcloud";
 import { getCurrentUser } from "@/lib/session";
 
 const MAX_SIZE_MB = 25;
 
 /**
- * Uploads one image into a person's ArtDirect media folder
- * (EAC_Network/artdirect/Media/Images/<slug>/...).
+ * Uploads one image into the person's own folder
+ * (EAC_Network/users/<storage_folder>/Media/Images/...). Every app on the
+ * network serves the users/ tree; the old EAC_Network/artdirect/ location is
+ * served by ArtDirect only, so an avatar stored there showed as a broken
+ * image on IFAC and the other sites.
  *
  * Mirrors apps/ifac/src/app/api/upload/route.ts, simplified: ArtDirect isn't
  * org-scoped, so there's no org-roster lookup and no `media` table row (that
@@ -56,14 +60,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File size must be less than ${MAX_SIZE_MB}MB` }, { status: 400 });
     }
 
-    await ensurePersonMediaFolder(getAdminClient(), slug);
+    // users.storage_folder survives a slug rename (migration 169).
+    const [owner] = await db<{ storage_folder: string | null }[]>`
+      SELECT storage_folder FROM users WHERE id = ${profile.userId}
+    `;
+    const memberFolder = await ensureUserFolder(getAdminClient(), owner?.storage_folder ?? slug);
 
     // Named after the work when the surface sends a title, else after the
     // uploaded file. This address outlives the upload — it is what a stored
     // page, a gallery item and every <img src> carries. See uploadFilename.
     const title = String(formData.get("title") ?? "").trim().slice(0, 200);
     const filename = uploadFilename(file.name, title || null);
-    const relativePath = `EAC_Network/artdirect/Media/Images/${slug}/${filename}`;
+    const relativePath = `${memberFolder}/Media/Images/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
 

@@ -4,6 +4,7 @@ import { loadPublishedUserPage } from "@elkdonis/page-builder/server";
 import { canEditProfile, getFeaturedOffering, getProfileBySlug, type Offering, type Profile } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { isOadSteward } from "@/lib/oad";
 import { PERSON_PAGE_ORG, documentTitle, knownTypesFor, liveKey, loadPersonContext } from "@/lib/person-pages";
 import { PersonDoc, resolvePersonDoc } from "@/components/design/PersonDoc";
@@ -48,7 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FeaturedPage({ params }: Props) {
   const { slug } = await params;
   const [identity, user] = await Promise.all([getProfileBySlug(slug), getCurrentUser()]);
-  if (!identity) notFound();
+  if (!identity) {
+    await redirectRenamedProfile(slug, (current) => `/${current}/featured`);
+    notFound();
+  }
   const viewerId = user?.id ?? null;
   const steward = user ? await isOadSteward(user.id) : false;
   if (hiddenFrom(identity, viewerId, steward)) notFound();
@@ -60,7 +64,7 @@ export default async function FeaturedPage({ params }: Props) {
     return (
       <>
         <ThemeStyle userId={identity.userId} precedence="user" />
-        <div className="eac-person-page eac-person-page--frame oad-person" data-person-page="" data-person-doc="featured">
+        <div className="eac-person-page eac-person-page--oad oad-person" data-person-page="" data-person-doc="featured">
           <nav className="eac-person-intro oad-person-bar" aria-label="Page">
             <a className="eac-person-back" href={`/${home}`}>
               ← {identity.displayName}
@@ -84,7 +88,7 @@ export default async function FeaturedPage({ params }: Props) {
   return (
     <>
       <ThemeStyle userId={identity.userId} precedence="user" />
-      <div className="eac-person-page eac-person-page--frame oad-person" data-person-page="" data-person-doc="featured">
+      <div className="eac-person-page eac-person-page--oad oad-person" data-person-page="" data-person-doc="featured">
         <nav className="eac-person-intro oad-person-bar" aria-label="Page">
           <a className="eac-person-back" href={`/${key}`}>
             ← {identity.displayName}
@@ -118,9 +122,17 @@ export default async function FeaturedPage({ params }: Props) {
 
 const KIND_WORD: Record<string, string> = { meeting: "Meeting", service: "Service" };
 
+/**
+ * Wall-clock zone for a meeting stored without one. Offerings carry their own
+ * `timeZone` (saveOffering fills it from the same default, DEFAULT_TIME_ZONE in
+ * @elkdonis/services artist-offerings.ts, which is not exported); neither
+ * users nor organizations store a timezone (checked `\d users`, 2026-10-08).
+ */
+const FALLBACK_TIME_ZONE = "America/Toronto";
+
 function whenText(o: Offering): string | null {
   if (!o.scheduledAt) return null;
-  const tz = o.timeZone || "America/Toronto";
+  const tz = o.timeZone || FALLBACK_TIME_ZONE;
   const when = new Intl.DateTimeFormat("en-CA", {
     weekday: "long",
     month: "long",
@@ -157,7 +169,7 @@ function FeaturedOffering({ offering: o, home }: { offering: Offering; home: str
       <article className="eac-person-section eac-person-panel">
         {o.coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={o.coverImageUrl} alt="" style={{ width: "100%", height: "auto", borderRadius: "0.375rem" }} />
+          <img className="oad-offering-cover" src={o.coverImageUrl} alt="" />
         ) : null}
         <p className="eac-person-meta">{facts.join(" · ")}</p>
         <h1 className="eac-person-name">{o.title}</h1>

@@ -1,0 +1,164 @@
+import { db } from '@elkdonis/db';
+import { getOrgRole, setOrgRole, type OrgRole } from './org-membership';
+import { requestNextcloudSync } from './org-nextcloud-access';
+
+// ============================================================================
+// An organisation's people, for its owners and guides: who is in it, with
+// what access, whether the public site lists them, and who has just arrived.
+//
+// One shared read and two shared writes (2026-10-18). IFAC's /manage/people
+// (`apps/ifac/src/lib/manage.ts`) and innergathering's /manage/people each
+// had their own copy of this; the Center's "Your organisation" journey needs
+// it on every org site, so the rules live here once:
+//
+//   - access and listing are independent and shown side by side
+//   - an actor may not change their own access, nor an owner's (central
+//     admin does that), and may grant viewer | member | guide only
+//   - listing an untagged roster row tags it `artist`, because public rosters
+//     list only artist/dealer rows and an untagged public row shows nowhere
+//   - a role change asks for a Nextcloud sync: member and guide carry cloud
+//     access, viewer does not
+// ============================================================================
+
+export const ASSIGNABLE_ORG_ROLES: OrgRole[] = ['viewer', 'member', 'guide'];
+
+export interface OrgPerson {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: OrgRole;
+  joinedAt: string;
+  /** The org's roster row, when there is one. */
+  listing: { isPublic: boolean; slug: string | null; kind: 'artist' | 'dealer' } | null;
+  /** Their most recent arrival on this org's site through the network, if recorded. */
+  arrivedAt: string | null;
+  /** Where that arrival came from, when known. */
+  arrivedFrom: string | null;
+  /** A follower who signed up in the last fortnight: the row that wants a decision. */
+  isNew: boolean;
+}
+
+export interface OrgPeopleResult {
+  ok: boolean;
+  error?: string;
+}
+
+interface Row {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: OrgRole;
+  joined_at: Date;
+  slug: string | null;
+  tags: string[] | null;
+  is_public: boolean | null;
+  arrived_at: Date | null;
+  arrived_from: string | null;
+}
+
+const NEW_DAYS = 14;
+
+/** Everyone in the org: owners first, then guides, members, viewers; newest viewers first. */
+export async function listOrgPeople(orgId: string): Promise<OrgPerson[]> {
+  const rows = await db<Row[]>`
+    SELECT
+      uo.user_id, uo.role, uo.joined_at,
+      u.email, u.display_name, u.avatar_url, u.slug,
+      op.tags, op.is_public,
+      a.arrived_at, COALESCE(fo.name, a.from_host) AS arrived_from
+    FROM user_organizations uo
+    JOIN users u ON u.id = uo.user_id
+    LEFT JOIN org_profiles op ON op.user_id = uo.user_id AND op.org_id = uo.org_id
+    LEFT JOIN LATERAL (
+      SELECT arrived_at, from_host, from_org_id FROM network_arrivals
+      WHERE org_id = uo.org_id AND user_id = uo.user_id
+      ORDER BY arrived_at DESC LIMIT 1
+    ) a ON TRUE
+    LEFT JOIN organizations fo ON fo.id = a.from_org_id
+    WHERE uo.org_id = ${orgId}
+    ORDER BY
+      CASE uo.role WHEN 'owner' THEN 0 WHEN 'guide' THEN 1 WHEN 'member' THEN 2 ELSE 3 END,
+      CASE WHEN uo.role = 'viewer' THEN uo.joined_at END DESC NULLS LAST,
+      u.display_name NULLS LAST, u.email
+  `;
+  const cutoff = Date.now() - NEW_DAYS * 86_400_000;
+  return rows.map((r) => ({
+    userId: r.user_id,
+    email: r.email,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
+    role: r.role,
+    joinedAt: new Date(r.joined_at).toISOString(),
+    listing:
+      r.is_public === null
+        ? null
+        : { isPublic: r.is_public, slug: r.slug, kind: r.tags?.includes('dealer') ? 'dealer' : 'artist' },
+    arrivedAt: r.arrived_at ? new Date(r.arrived_at).toISOString() : null,
+    arrivedFrom: r.arrived_from,
+    isNew: r.role === 'viewer' && new Date(r.joined_at).getTime() > cutoff,
+  }));
+}
+
+/** May this person change the org's people at all? Owners and guides. */
+export async function canManageOrgPeople(actorUserId: string, orgId: string): Promise<boolean> {
+  const role = await getOrgRole(actorUserId, orgId);
+  return role === 'owner' || role === 'guide';
+}
+
+async function guard(orgId: string, targetUserId: string, actorUserId: string): Promise<OrgPeopleResult> {
+  if (!targetUserId) return { ok: false, error: 'A person is required.' };
+  if (!(await canManageOrgPeople(actorUserId, orgId))) return { ok: false, error: 'Only owners and guides can change this.' };
+  if (targetUserId === actorUserId) return { ok: false, error: "You can't change your own access here." };
+  const role = await getOrgRole(targetUserId, orgId);
+  if (role === null) return { ok: false, error: "That person isn't in this organisation." };
+  if (role === 'owner') return { ok: false, error: "An owner's access is changed in central admin, not here." };
+  return { ok: true };
+}
+
+/** Access within the org: viewer | member | guide. Never owner, never is_admin. */
+export async function setOrgPersonRole(
+  orgId: string,
+  targetUserId: string,
+  actorUserId: string,
+  role: string
+): Promise<OrgPeopleResult> {
+  if (!ASSIGNABLE_ORG_ROLES.includes(role as OrgRole)) return { ok: false, error: 'Pick viewer, member or guide.' };
+  const allowed = await guard(orgId, targetUserId, actorUserId);
+  if (!allowed.ok) return allowed;
+  await setOrgRole(targetUserId, orgId, role as OrgRole);
+  // Member and guide carry Nextcloud access; a demotion takes it away. The
+  // reconciler (scripts/sync-nextcloud-access.sh) does the work; this only asks.
+  await requestNextcloudSync(orgId, actorUserId, 'role-change').catch((err) =>
+    console.error('[org-people] requestNextcloudSync:', err)
+  );
+  return { ok: true };
+}
+
+/** Show or hide them on the org's public site. Their account and content survive. */
+export async function setOrgPersonListed(
+  orgId: string,
+  targetUserId: string,
+  actorUserId: string,
+  isPublic: boolean
+): Promise<OrgPeopleResult> {
+  // Hiding yourself is legitimate; changing anyone else goes through the guard.
+  if (targetUserId !== actorUserId) {
+    const allowed = await guard(orgId, targetUserId, actorUserId);
+    if (!allowed.ok) return allowed;
+  }
+  if (isPublic) {
+    await db`
+      UPDATE org_profiles SET tags = array_append(COALESCE(tags, '{}'), 'artist'), updated_at = NOW()
+      WHERE org_id = ${orgId} AND user_id = ${targetUserId}
+        AND NOT (COALESCE(tags, '{}') && ARRAY['artist', 'dealer']::text[])
+    `;
+  }
+  const rows = await db<Array<{ user_id: string }>>`
+    UPDATE org_profiles SET is_public = ${isPublic}, updated_at = NOW()
+    WHERE org_id = ${orgId} AND user_id = ${targetUserId}
+    RETURNING user_id
+  `;
+  return rows.length > 0 ? { ok: true } : { ok: false, error: 'That person has no profile on this site to list.' };
+}

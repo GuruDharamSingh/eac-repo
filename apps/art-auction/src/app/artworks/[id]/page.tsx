@@ -14,6 +14,7 @@ import { PriceBlock, BuyNowButton } from "@elkdonis/commerce/components";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { sanitizeRichText } from "@elkdonis/utils";
 import { ArtworkGallery } from "@/components/artwork-gallery";
+import { VirtualExhibit } from "@/components/virtual-exhibit";
 import { FavoriteButton } from "@/components/favorite-button";
 import { MessageArtistButton } from "@/components/message-artist-button";
 import { addArtworkToCart } from "@/app/actions";
@@ -102,10 +103,22 @@ export default async function ArtworkDetailPage({
       </nav>
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-        <ArtworkGallery
-          images={(artwork.media ?? []).map((m) => ({ url: m.url, alt: m.alt }))}
-          title={artwork.title}
-        />
+        <div className="flex flex-col gap-3">
+          <ArtworkGallery
+            images={(artwork.media ?? []).map((m) => ({ url: m.url, alt: m.alt }))}
+            title={artwork.title}
+          />
+          {(artwork.primaryImageUrl ?? artwork.media?.[0]?.url) && (
+            <VirtualExhibit
+              artworkId={artwork.id}
+              title={artwork.title}
+              imageUrl={(artwork.primaryImageUrl ?? artwork.media?.[0]?.url)!}
+              artistName={artwork.artistName}
+              heightCm={artwork.heightCm}
+              widthCm={artwork.widthCm}
+            />
+          )}
+        </div>
 
         <div className="flex flex-col gap-6">
           <div>

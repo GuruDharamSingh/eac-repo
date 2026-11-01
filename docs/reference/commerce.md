@@ -243,6 +243,18 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
 - Person pages have a `services` section (`PERSON_SECTIONS`, default on);
   services are no longer listed under `posts`.
 
+### Tour bookings (2026-10-18, migration 208)
+
+- A `tour` thread (apps/elktours) is bought per departure with a party size:
+  `createThreadOrder({ quantity })` prices unit × quantity and splits on the
+  total; `startTourCheckout` (`@elkdonis/checkout/booking`) checks seats,
+  creates the order, then `createTourBooking` re-checks under a row lock on
+  `tour_departures`. Unpaid bookings hold seats for 75 minutes.
+  `confirmOrderPaid` calls `markTourBookingPaid` after commit (idempotent),
+  like service bookings. Buyer page on the selling site: `/bookings/<token>`.
+  Code: `packages/commerce/src/server/tours.ts`; probe:
+  `scripts/probe-tour-booking.mts`. Brief: `docs/open/ELKTOURS_BRIEF_2026-10-18.md`.
+
 ### Stripe
 
 - Hosted Checkout only; card data never touches an app.

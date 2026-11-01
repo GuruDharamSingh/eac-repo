@@ -32,7 +32,7 @@ export function LoginForm() {
         key={initialMode}
         initialMode={initialMode}
         title="Amrit Canada"
-        subtitle="Sign in to RSVP for sadhana and gatherings. One account works across the whole Elkdonis network."
+        subtitle="Sign in to RSVP for sadhana and gatherings. One account works across the whole Arts Collective network."
         googleRedirectTo={next ?? "/"}
         onSuccess={(result) => {
           // A new account lands on its center (CENTER_PAGE_BRIEF, decision 8);

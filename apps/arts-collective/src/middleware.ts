@@ -36,6 +36,8 @@ const PASSTHROUGH_PATHS = new Set([
   "directory",
   // A buyer's private booking link (/bookings/<token>, migration 174).
   "bookings",
+  // Sophia's learner pages on the network host (2026-10-29).
+  "learn",
 ]);
 
 function extractSubdomain(hostHeader: string | null): string | null {

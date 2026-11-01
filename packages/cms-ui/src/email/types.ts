@@ -127,6 +127,39 @@ export interface EmailTemplateSummary {
    *   layout  — the org laid the whole thing out in the editor
    */
   override: "default" | "words" | "layout";
+  /**
+   * The picker's state line, when the host words it differently from the
+   * `override` defaults ("Network default", "Your words", "Your layout").
+   * IFAC's per-series letters say "Uses the IFAC letter" / "Customised for
+   * this series".
+   */
+  stateLabel?: string;
+  /**
+   * One line above the editor saying what a save changes, for a letter edited
+   * for one scope (a series) rather than for the whole organisation.
+   */
+  scopeNote?: string;
+  /** Why a non-editable letter is read-only. Replaces the default sentence. */
+  lockedNote?: string;
+  /**
+   * Label of a button that deletes this letter's scoped override through
+   * `connectors.resetTemplate` ("Back to the IFAC letter"). Omit and no button
+   * is drawn.
+   */
+  resetLabel?: string;
+}
+
+/**
+ * One scope that has letters of its own, listed under the Letters tab
+ * (IFAC: a meeting series and its per-series letters).
+ */
+export interface EmailLetterScope {
+  id: string;
+  title: string;
+  /** The page that edits this scope's letters. */
+  href: string;
+  /** How many of its letters differ from the organisation's. */
+  customised: number;
 }
 
 /** How the org's mail is addressed and coloured. */
@@ -194,6 +227,11 @@ export interface EmailSuiteData {
   /** Per-letter editor routes. `{key}` is substituted. */
   templateHref?: string;
   templateLayoutHref?: string;
+  /**
+   * Scopes with letters of their own (IFAC's series), drawn as a "Series"
+   * list in the Letters tab. Omit and nothing is drawn.
+   */
+  series?: EmailLetterScope[];
 }
 
 /**
@@ -308,6 +346,12 @@ export interface EmailConnectors {
 
   /** Send one letter to the signed-in editor, to see it in a real inbox. */
   testTemplate?: (key: string) => Promise<{ ok: boolean; error?: string }>;
+
+  /**
+   * Delete this letter's scoped override so the organisation's letter applies
+   * again. Drawn only for a letter that carries `resetLabel`.
+   */
+  resetTemplate?: (key: string) => Promise<{ ok: boolean; error?: string }>;
 
   /**
    * Rewrite ONE block of one letter. Omit and the copy columns read only.

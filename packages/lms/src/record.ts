@@ -11,7 +11,7 @@ import type {
   ResponseKind, ResponseVisibility, Run, StepStatus, WriteResult,
 } from './types';
 import { getCourseById, getCourseVersion } from './content';
-import { ensureDefaultRun, getActiveEnrolment, getRun, isRunStaff } from './delivery';
+import { ensureDefaultRun, getActiveEnrolment, getRun, hasRunGuides, isRunGuide, isRunStaff } from './delivery';
 import { evaluateAccess } from './unlock';
 import { stepTypeDef } from './step-types';
 import { newId } from './util';
@@ -185,6 +185,8 @@ export async function saveResponse(viewer: LmsViewer, input: SaveResponseInput):
   let visibility: ResponseVisibility = kind === 'note' ? 'guide' : VIS.includes(input.visibility as ResponseVisibility) ? input.visibility! : l.run.defaultVisibility;
   // "Public" means the open web; only a public course has anywhere to show it.
   if (visibility === 'public' && l.course.visibility !== 'public') visibility = l.run.defaultVisibility;
+  // "My guide" means the people named on this run. With no one named, there is no one to show it to.
+  if (visibility === 'guide' && !(await hasRunGuides(l.run.id))) return { ok: false, error: 'No guide has been named for this group yet, so there is no one to show this to. Keep it for yourself for now.' };
 
   let courseCompleted = false;
   const id = input.responseId ?? newId();
@@ -277,15 +279,15 @@ export async function listJournal(viewer: LmsViewer, limit = 200): Promise<Journ
 
 /**
  * What the circle shared on a step: responses at `circle` or `public`, seen
- * only by people IN the same run (and its staff). This is the community
- * classroom's shared-reflection panel.
+ * only by people IN the same run (and the guides named on it). This is the
+ * community classroom's shared-reflection panel.
  */
 export async function listCircleResponses(viewer: LmsViewer, runId: string, stepId: string): Promise<LmsResponse[]> {
   if (!viewer.userId) return [];
   const run = await getRun(runId);
   if (!run) return [];
   const [mine] = await db`SELECT 1 FROM lms_enrolments WHERE run_id = ${runId} AND user_id = ${viewer.userId} AND status <> 'withdrawn'`;
-  if (!mine && !(await isRunStaff(viewer, run))) return [];
+  if (!mine && !(await isRunGuide(viewer, runId))) return [];
   const rows = await db<RespRow[]>`
     SELECT ${RESP_SELECT} FROM lms_responses r JOIN users u ON u.id = r.user_id
     WHERE r.run_id = ${runId} AND r.step_id = ${stepId} AND r.visibility IN ('circle', 'public') AND r.kind <> 'note'
@@ -307,13 +309,14 @@ export async function listPublicResponses(stepId: string, limit = 20): Promise<L
 // ── the guide ───────────────────────────────────────────────────────────────
 export type GuideQueueItem = LmsResponse & { stepTitle: string; stepSlug: string; runId: string; runTitle: string; courseSlug: string; courseTitle: string };
 /**
- * What people chose to show their guide (or wider) in the runs this viewer
- * guides. `me` never appears here, for anyone, including admins. Scoped to
- * runs — deliberately NOT the network-wide shape of listPendingReviews().
+ * What people chose to show their guide (or wider) in the runs this viewer is
+ * NAMED on (lms_run_staff). An org role or global admin gives no view here:
+ * "my guide" means the guides of the group, and no one else. `me` never
+ * appears, for anyone. Scoped to runs — deliberately NOT the network-wide
+ * shape of listPendingReviews().
  */
 export async function listGuideQueue(viewer: LmsViewer, opts: { courseId?: string; awaitingOnly?: boolean; limit?: number } = {}): Promise<GuideQueueItem[]> {
   if (!viewer.userId) return [];
-  const staffOrgs = Object.entries(viewer.roles).filter(([, r]) => r === 'owner' || r === 'guide').map(([o]) => o);
   const rows = await db<Array<RespRow & { run_id: string }>>`
     SELECT ${RESP_SELECT}, r.run_id, run.title AS run_title, s.slug AS step_slug, c.slug AS course_slug, c.title AS course_title,
            COALESCE((SELECT sv.title FROM lms_step_versions sv WHERE sv.id = r.step_version_id), s.slug) AS step_title
@@ -323,7 +326,7 @@ export async function listGuideQueue(viewer: LmsViewer, opts: { courseId?: strin
     WHERE r.visibility <> 'me'
       -- A guide never answers themselves: their own writing lives in their journal.
       AND r.user_id <> ${viewer.userId}
-      AND (run.org_id = ANY(${staffOrgs}) OR EXISTS (SELECT 1 FROM lms_run_staff st WHERE st.run_id = r.run_id AND st.user_id = ${viewer.userId}))
+      AND EXISTS (SELECT 1 FROM lms_run_staff st WHERE st.run_id = r.run_id AND st.user_id = ${viewer.userId})
       ${opts.courseId ? db`AND c.id = ${opts.courseId}` : db``}
       ${opts.awaitingOnly ? db`AND NOT EXISTS (SELECT 1 FROM lms_acknowledgements a WHERE a.response_id = r.id)` : db``}
     ORDER BY (r.kind = 'note') DESC, r.created_at DESC LIMIT ${opts.limit ?? 100}
@@ -339,8 +342,7 @@ export async function acknowledge(viewer: LmsViewer, responseId: string, input: 
   const [r] = await db<Array<{ run_id: string; visibility: string; org_id: string; step_id: string; enrolment_id: string; user_id: string }>>`
     SELECT run_id, visibility, org_id, step_id, enrolment_id, user_id FROM lms_responses WHERE id = ${responseId}
   `;
-  const run = r ? await getRun(r.run_id) : null;
-  if (!r || !run || r.visibility === 'me' || !(await isRunStaff(viewer, run))) return { ok: false, error: 'That isn’t yours to answer.' };
+  if (!r || r.visibility === 'me' || !(await isRunGuide(viewer, r.run_id))) return { ok: false, error: 'That isn’t yours to answer.' };
   await db.begin(async (tx) => {
     await tx`INSERT INTO lms_acknowledgements (id, response_id, guide_id, body, audio_url) VALUES (${newId()}, ${responseId}, ${viewer.userId}, ${body}, ${input.audioUrl ?? null})`;
     await tx`INSERT INTO lms_events (org_id, actor_id, verb, object_type, object_id, enrolment_id) VALUES (${r.org_id}, ${viewer.userId}, 'acknowledged', 'response', ${responseId}, ${r.enrolment_id})`;

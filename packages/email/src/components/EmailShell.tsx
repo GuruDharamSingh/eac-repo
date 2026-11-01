@@ -318,10 +318,19 @@ export function EmailShell({
     <Html lang="en">
       <Head>
         <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} />
+        {/* Phones: the card's side padding was 40px + 20px each side, which
+            left ~250px of text on a 375px screen. Narrower defaults below,
+            and this for clients that honour embedded styles. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              '@media only screen and (max-width: 620px) { [data-eac-container] { padding: 0 8px !important; margin: 16px auto !important; } [data-eac-body] { padding: 24px 18px !important; } [data-eac-footer] { padding: 0 18px 22px !important; } }',
+          }}
+        />
       </Head>
       <Preview>{previewText}</Preview>
       <Body style={{ backgroundColor: palette.bodyBg, fontFamily: bodyStack, margin: 0, padding: 0 }}>
-        <Container style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
+        <Container data-eac-container="1" style={{ maxWidth: '600px', margin: '40px auto', padding: '0 12px' }}>
           <Section
             style={{
               border: rule,
@@ -458,7 +467,7 @@ export function EmailShell({
             */}
             <Section
               data-eac-body="1"
-              style={{ padding: '38px 40px', fontFamily: bodyStack }}
+              style={{ padding: '32px 28px', fontFamily: bodyStack }}
             >
               {children}
             </Section>
@@ -466,7 +475,7 @@ export function EmailShell({
             {(footerText || showNfpFooter) && (
               <Section
                 data-eac-footer="1"
-                style={{ padding: '0 40px 30px', fontFamily: bodyStack }}
+                style={{ padding: '0 28px 28px', fontFamily: bodyStack }}
               >
                 <Hr style={{ border: 'none', borderTop: `1px solid ${palette.boxBorder}`, margin: '0 0 20px' }} />
                 {footerText}

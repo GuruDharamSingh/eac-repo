@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSVP System Map</title>
+<style>
+:root{
+  --bg:#f7f6f2; --ink:#1d1f23; --muted:#5b616b; --line:#c9ccd2; --card:#ffffff;
+  --shared:#e3edfb; --shared-line:#3f6fb5; --shared-ink:#1f3f6e;
+  --local:#fbf1e1; --local-line:#b7812d; --local-ink:#6a4710;
+  --core:#e4f3ea; --core-line:#2f7d52; --core-ink:#174a2f;
+  --fx:#f1ebf8; --fx-line:#7a54a8; --fx-ink:#45296a;
+  --dup:#c2410c; --dead:#8a8f98; --risk:#b91c1c; --prog:#7c3aed;
+  --arrow:#6b7280;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --ink:#e7e9ee; --muted:#a3a9b4; --line:#3a3f48; --card:#1d2026;
+    --shared:#1b2a40; --shared-line:#6d9be0; --shared-ink:#bcd3f5;
+    --local:#33281a; --local-line:#d3a256; --local-ink:#f0d6a8;
+    --core:#17322a; --core-line:#5cc08a; --core-ink:#bfeacf;
+    --fx:#2a2238; --fx-line:#a98bd6; --fx-ink:#dccdf3;
+    --dup:#fb923c; --dead:#8d939d; --risk:#f87171; --prog:#a78bfa; --arrow:#9aa1ad;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --ink:#e7e9ee; --muted:#a3a9b4; --line:#3a3f48; --card:#1d2026;
+  --shared:#1b2a40; --shared-line:#6d9be0; --shared-ink:#bcd3f5;
+  --local:#33281a; --local-line:#d3a256; --local-ink:#f0d6a8;
+  --core:#17322a; --core-line:#5cc08a; --core-ink:#bfeacf;
+  --fx:#2a2238; --fx-line:#a98bd6; --fx-ink:#dccdf3;
+  --dup:#fb923c; --dead:#8d939d; --risk:#f87171; --prog:#a78bfa; --arrow:#9aa1ad;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1260px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:17px;margin:28px 0 10px}
+h3{font-size:13px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+p{margin:0 0 8px}
+code,.p{font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.p{color:var(--muted);display:block;overflow-wrap:anywhere}
+.sub{color:var(--muted);margin-bottom:12px}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 0 4px;font-size:12.5px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:16px;height:12px;border-radius:3px;border:1.5px solid}
+.sw.shared{background:var(--shared);border-color:var(--shared-line)}
+.sw.local{background:var(--local);border-color:var(--local-line)}
+.sw.core{background:var(--core);border-color:var(--core-line)}
+.sw.fx{background:var(--fx);border-color:var(--fx-line)}
+.sw.prog{background:transparent;border:1.5px dashed var(--prog)}
+.sw.dead{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 5px);border-color:var(--dead)}
+
+/* tags */
+.t{display:inline-block;font-size:10.5px;font-weight:600;line-height:1;padding:3px 5px;border-radius:4px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.t.dup{color:#fff;background:var(--dup)}
+.t.dead{color:#fff;background:var(--dead)}
+.t.risk{color:#fff;background:var(--risk)}
+.t.prog{color:var(--prog);border:1px dashed var(--prog)}
+.t.shape{color:var(--ink);border:1px solid var(--line);background:var(--card);font-family:ui-monospace,Menlo,monospace}
+
+/* flow strip */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 6px}
+.flow .n{padding:6px 10px;border-radius:6px;border:1.5px solid;font-weight:600;font-size:13px}
+.flow .a{color:var(--arrow);font-size:13px}
+.n.ui{background:var(--shared);border-color:var(--shared-line);color:var(--shared-ink)}
+.n.ep{background:var(--local);border-color:var(--local-line);color:var(--local-ink)}
+.n.sv{background:var(--shared);border-color:var(--shared-line);color:var(--shared-ink)}
+.n.st{background:var(--core);border-color:var(--core-line);color:var(--core-ink)}
+.n.fx{background:var(--fx);border-color:var(--fx-line);color:var(--fx-ink)}
+
+/* main diagram */
+.diagram{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1.15fr) 34px minmax(0,1fr);gap:0;align-items:stretch;margin-top:8px}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.colhead{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:2px 2px 0}
+.gutter{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:40px;color:var(--arrow)}
+.gutter svg{width:34px;height:60px;overflow:visible}
+.gutter .lbl{font-size:10.5px;writing-mode:vertical-rl;transform:rotate(180deg);color:var(--muted)}
+.box{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.box.shared{background:var(--shared);border-color:var(--shared-line)}
+.box.local{background:var(--local);border-color:var(--local-line)}
+.box.core{background:var(--core);border-color:var(--core-line)}
+.box.fx{background:var(--fx);border-color:var(--fx-line)}
+.box.prog{border-style:dashed;border-color:var(--prog)}
+.box.dead{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--line) 45%,transparent) 6px 8px)}
+.box h4{margin:0 0 4px;font-size:13.5px}
+.box ul{margin:0;padding:0;list-style:none}
+.box li{padding:3px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.box li:first-child{border-top:0}
+.box li.prog{border-left:2px dashed var(--prog);padding-left:6px}
+.box li.dead{opacity:.7}
+.box .note{font-size:12px;color:var(--muted)}
+.box.shared h4{color:var(--shared-ink)} .box.local h4{color:var(--local-ink)} .box.core h4{color:var(--core-ink)} .box.fx h4{color:var(--fx-ink)}
+
+/* storage core */
+.coregrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tbl{border:1.5px solid var(--core-line);border-radius:6px;padding:5px 7px;background:var(--card)}
+.tbl b{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.tbl .c{font-size:11.5px;color:var(--muted)}
+.tbl.main{grid-column:1/-1;border-width:2.5px}
+.tbl.main b{font-size:14px}
+.cols{font:11.5px/1.4 ui-monospace,Menlo,monospace;color:var(--core-ink);margin:3px 0}
+.counts{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}
+.counts td{padding:1px 4px 1px 0;border-top:1px solid color-mix(in srgb,var(--core-line) 30%,transparent)}
+.counts td.r{text-align:right;font-variant-numeric:tabular-nums}
+
+/* side effects band */
+.downarrow{display:flex;justify-content:center;color:var(--arrow);margin:6px 0}
+.fxgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table.sem{border-collapse:collapse;width:100%;font-size:13px;min-width:860px}
+table.sem th,table.sem td{text-align:left;vertical-align:top;padding:7px 9px;border-top:1px solid var(--line)}
+table.sem th{background:color-mix(in srgb,var(--line) 35%,var(--card));border-top:0;font-size:12px}
+ol.risks{padding-left:22px;margin:0}
+ol.risks li{margin:0 0 7px}
+.foot{margin-top:28px;font-size:12px;color:var(--muted)}
+
+/* phone: stack, arrows point down */
+@media (max-width:900px){
+  .diagram{grid-template-columns:minmax(0,1fr)}
+  .gutter{flex-direction:row;gap:12px;padding:4px 0}
+  .gutter svg{transform:rotate(90deg);height:34px;width:34px}
+  #g2 svg{transform:rotate(-90deg)}
+  .gutter .lbl{writing-mode:horizontal-tb;transform:none}
+  .fxgrid{grid-template-columns:minmax(0,1fr)}
+  .coregrid{grid-template-columns:minmax(0,1fr)}
+  /* stacking order: UI, entry points, core, (side effects follow) */
+  #col-ui{order:1} #g2{order:2} #col-ep{order:3} #g1{order:4} #col-core{order:5}
+}
+</style>
+</head>
+<body>
+<main>
+<h1>RSVP and attendance map</h1>
+<p class="sub">EAC monorepo, 2026-10-10 (about 19:00 EDT). Source: code read on the shared tree plus read-only <code>\d</code>/<code>SELECT</code> on <code>elkdonis_dev</code>. Text version with every citation: <code>README.md</code> in this folder. Paths are relative to the repo root; <code>:n</code> is a line number.</p>
+
+<div class="legend" aria-label="Legend">
+  <span><i class="sw shared"></i>shared package</span>
+  <span><i class="sw local"></i>app-local</span>
+  <span><i class="sw core"></i>storage</span>
+  <span><i class="sw fx"></i>side effect</span>
+  <span><i class="sw prog"></i>in progress (being edited 2026-10-10)</span>
+  <span><i class="sw dead"></i>legacy / dead</span>
+  <span><span class="t dup">dup</span> duplicated or inconsistent path</span>
+  <span><span class="t risk">risk</span> defect worth fixing</span>
+  <span><span class="t shape">A</span>–<span class="t shape">E</span> write shape linking UI to route</span>
+</div>
+
+<div class="flow" aria-label="Overall flow">
+  <span class="n ui">UI surfaces</span><span class="a">— POST A–E →</span>
+  <span class="n ep">App routes &amp; actions</span><span class="a">— call →</span>
+  <span class="n sv">Services (packages)</span><span class="a">— write →</span>
+  <span class="n st">thread_rsvps + related</span><span class="a">— read by →</span>
+  <span class="n sv">counts, center, calendar</span><span class="a">→</span>
+  <span class="n ui">UI</span>
+  <span class="a">· routes also fire →</span><span class="n fx">emails, reminders, gates</span>
+</div>
+<p class="note" style="font-size:12.5px;color:var(--muted)">Write shapes: <span class="t shape">A</span> <code>POST|DELETE /api/threads/[id]/rsvp</code> · <span class="t shape">B</span> <code>POST /api/hub/rsvp</code> · <span class="t shape">C</span> <code>POST /api/hub/meeting/attendance</code> (flavour) · <span class="t shape">D</span> <code>POST /api/series/rsvp</code> · <span class="t shape">E</span> guest <code>POST /api/rsvp</code> · <span class="t shape">$</span> payment → <code>confirmOrderPaid</code></p>
+
+<h2>Diagram</h2>
+<div class="diagram">
+
+  <!-- ENTRY POINTS -->
+  <section class="col" id="col-ep" aria-label="Entry points by app">
+    <div class="colhead">Entry points, by app</div>
+
+    <div class="box local prog">
+      <h4>ifac</h4>
+      <ul>
+        <li><span class="t shape">B</span> <code>api/hub/rsvp</code> <span class="p">route.ts:26 · hub member · set/delete</span></li>
+        <li><span class="t shape">C</span> <code>api/hub/meeting/attendance</code> <span class="t dup">dup</span><span class="p">:30 · flavour + promise</span></li>
+        <li class="prog"><span class="t shape">D</span> <code>api/series/rsvp</code> <span class="t prog">in progress</span><span class="p">:19 · any signed-in user, no org role · guests 401 · mails on every yes</span></li>
+        <li><span class="t shape">E</span> <code>api/rsvp</code> <span class="t dup">dup</span><span class="p">:6 · guest · no eligibility checks · caller RsvpForm has no importer</span></li>
+        <li><code>api/hub/meeting/record</code> <span class="p">:55 · attended register · any member</span></li>
+        <li class="prog"><code>api/hub/series</code>, <code>api/series/comment</code> <span class="t prog">in progress</span><span class="p">week notes / hosts; comment creates the week topic</span></li>
+      </ul>
+    </div>
+
+    <div class="box local">
+      <h4>innergathering</h4>
+      <ul>
+        <li><span class="t shape">A</span> <code>api/threads/[id]/rsvp</code> <span class="t dup">dup</span><span class="p">:114 / :273 · free → set yes; priced → Stripe <span class="t shape">$</span></span></li>
+        <li><span class="t shape">E</span> <code>api/rsvp</code> <span class="t dup">dup</span><span class="p">:19 · guest · refuses priced (:74)</span></li>
+        <li><span class="t shape">C</span> attendance <span class="t dup">dup</span> · record · <code>checkout/return</code> · <code>trigger-email</code></li>
+      </ul>
+    </div>
+
+    <div class="box local">
+      <h4>sunjay · amrit-canada</h4>
+      <ul>
+        <li><span class="t shape">A</span> <code>api/threads/[id]/rsvp</code> <span class="t dup">dup</span><span class="p">sunjay :107 · amrit :103 · no price check</span></li>
+        <li><span class="t shape">E</span> <code>api/rsvp</code> <span class="t dup">dup</span><span class="p">:19 · identical in both · no price check</span></li>
+        <li><span class="t shape">C′</span> sunjay <code>api/center/attendance</code> <span class="t dup">dup</span><span class="p">:31 · drops promiseNext</span></li>
+        <li><code>trigger-email</code> (manual blast, editor)</li>
+      </ul>
+    </div>
+
+    <div class="box local">
+      <h4>arts-collective</h4>
+      <ul><li><span class="t shape">A</span> <code>api/threads/[id]/rsvp</code><span class="p">:85 / :126 · any org's PUBLIC thread · paid workshop → 402 · NC materials grant</span></li></ul>
+    </div>
+
+    <div class="box local">
+      <h4>fourthwayBookreaders</h4>
+      <ul>
+        <li><span class="t shape">A</span> <code>api/threads/[id]/rsvp</code><span class="p">:28 · reading_group yes → grants <code>viewer</code> role (:45)</span></li>
+        <li>action <code>rsvpSession</code><span class="p">lib/circle-actions.ts:401 · per sitting · no-op when ineligible</span></li>
+      </ul>
+    </div>
+
+    <div class="box local">
+      <h4>art-auction (payments for all apps)</h4>
+      <ul><li><span class="t shape">$</span> <code>api/stripe/webhook</code> :12 · admin confirm :28 · studio confirm :387<span class="p">→ confirmOrderPaid; the only webhook in the repo</span></li></ul>
+    </div>
+
+    <div class="box local">
+      <h4>admin · sophia</h4>
+      <ul>
+        <li>admin <code>GET api/rsvp</code><span class="p">read only · hard-coded org amrit_canada</span></li>
+        <li>sophia <code>api/lms/[action]</code><span class="p">enrol / withdraw · studio-sync-rsvps · not deployed</span></li>
+      </ul>
+    </div>
+
+    <div class="box local dead">
+      <h4>inner-gathering <span class="t dead">legacy</span> <span class="t risk">risk</span></h4>
+      <ul>
+        <li><span class="t shape">A</span> <code>api/threads/[id]/rsvp</code><span class="p">:73 · no org scope · no price check</span></li>
+        <li><code>api/workshops/[id]/join</code><span class="p">:28 · raw INSERT yes / maybe · join request stays pending</span></li>
+        <li><code>PATCH api/meetings/[id]/attendees</code> <span class="t risk">authz hole</span><span class="p">:66 · any signed-in user sets any user's status on any thread</span></li>
+        <li><code>trigger-email</code><span class="p">reconfirm link 404s</span></li>
+      </ul>
+      <p class="note">Container is running (retiring).</p>
+    </div>
+
+    <div class="box">
+      <h4>No RSVP writes</h4>
+      <p class="note">forum, artdirect, danamccool, hidden-enneagram, elastrocal, pigeonshoot, blog-*. Service checkouts (artdirect, sunjay, elastrocal, hidden-enneagram) book services, not RSVPs.</p>
+    </div>
+  </section>
+
+  <div class="gutter" id="g1" aria-hidden="true">
+    <svg viewBox="0 0 34 60"><path d="M2 30 H28" stroke="currentColor" stroke-width="2" fill="none"/><path d="M22 23 L30 30 L22 37" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+    <span class="lbl">call services</span>
+    <svg viewBox="0 0 34 60"><path d="M2 30 H28" stroke="currentColor" stroke-width="2" fill="none"/><path d="M22 23 L30 30 L22 37" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+  </div>
+
+  <!-- CORE: services around storage -->
+  <section class="col" id="col-core" aria-label="Services and storage">
+    <div class="colhead">Services (writers) around storage</div>
+
+    <div class="box shared">
+      <h4>thread-rsvp.ts: kind-agnostic primitives</h4>
+      <ul>
+        <li><code>checkRsvpEligibility</code> :29 <span class="p">enabled · deadline · yes-count vs limit (counts stale cycle rows)</span></li>
+        <li><code>setRsvpStatus</code> :80 · <code>deleteRsvp</code> :94 <span class="t dup">dup</span><span class="p">status only; leaves old flavour</span></li>
+      </ul>
+    </div>
+    <div class="box shared">
+      <h4>Other writers</h4>
+      <ul>
+        <li><code>setMeetingAttendance</code> / <code>clear…</code> <span class="t dup">dup</span><span class="p">standing-meeting.ts:118 / :142 · second upsert on the same key</span></li>
+        <li><code>confirmOrderPaid</code> <span class="t dup">dup</span><span class="p">commerce/orders.ts:543 (insert :711) · yes for workshop/event lines · no capacity check</span></li>
+        <li class="prog"><code>rsvpSeriesSession</code> · <code>ensureSeriesSessionTopic</code> <span class="t prog">in progress</span><span class="p">meeting-series.ts:791 / :739 · creates week topic even for "no"</span></li>
+        <li class="prog"><code>setSeriesSubscription</code> · <code>unsubscribeSeriesByEmail</code> <span class="t prog">0 callers</span><span class="p">:949 / :986 · yes on series parent = subscribed</span></li>
+        <li><code>ensureCircleSessionTopic</code><span class="p">reading-circle.ts:738 · per-sitting post topic</span></li>
+        <li><code>saveOccurrenceRecord</code> · <code>assignMeetingRole</code> · <code>claimHostReminder</code><span class="p">meeting-rota.ts:384 / :234 / :605</span></li>
+      </ul>
+    </div>
+
+    <div class="box core">
+      <h4>Storage</h4>
+      <div class="coregrid">
+        <div class="tbl main">
+          <b>thread_rsvps</b> <span class="c">PK (thread_id, user_id) · 28 rows · 17 threads · 8 users</span>
+          <div class="cols">status yes|no|maybe|waitlist · flavour · promise_next · created_at · updated_at</div>
+          <table class="counts" aria-label="thread_rsvps rows by org and kind">
+            <tr><td>inner_group · meeting · yes</td><td class="r">15</td></tr>
+            <tr><td>fourth_way · reading_group · yes</td><td class="r">5</td></tr>
+            <tr><td>ifac · meeting · maybe (next_time, promise)</td><td class="r">3</td></tr>
+            <tr><td>ifac · series_session · yes</td><td class="r">3</td></tr>
+            <tr><td>inner_group · workshop · yes</td><td class="r">1</td></tr>
+            <tr><td>amrit_canada · meeting · yes</td><td class="r">1</td></tr>
+          </table>
+          <div class="c">No <code>no</code>/<code>waitlist</code> rows. No guest rows (user_id NOT NULL). 0 subscriptions yet.</div>
+        </div>
+        <div class="tbl"><b>threads</b><div class="c">is_rsvp_enabled · attendee_limit · rsvp_deadline · min_attendees · recurrence_* · metadata.meetingLight</div></div>
+        <div class="tbl"><b>guest_submissions</b><div class="c">kind rsvp: 10 · name/email/phone · linked_user_id never set</div></div>
+        <div class="tbl"><b>contacts</b><div class="c">source rsvp 6 · ifac_rsvp 1</div></div>
+        <div class="tbl"><b>thread_reminder_sends</b><div class="c">PK (thread, occurrence, kind) · 15 rows · ifac 4 with 0 recipients</div></div>
+        <div class="tbl"><b>meeting_occurrence_notes</b><div class="c">7 rows · attended jsonb: 0 used · topic_thread_id → week: 3</div></div>
+        <div class="tbl"><b>meeting_hosts</b><div class="c">9 rows · host / co-host per occurrence</div></div>
+        <div class="tbl" style="opacity:.8"><b>workshop_join_requests</b> <span class="t dead">legacy</span><div class="c">3 pending · nothing sets paid</div></div>
+        <div class="tbl"><b>commerce_order(_line)</b><div class="c">thread_id on line → seat via confirmOrderPaid</div></div>
+      </div>
+    </div>
+
+    <div class="box shared">
+      <h4>Readers (counts, gates)</h4>
+      <ul>
+        <li><code>center.ts</code> :194 / :241 / :333 · <code>org-calendar.ts</code> :438 · <code>forum.ts</code> :664 / :842 <span class="t dup">no cycle filter</span></li>
+        <li><code>viewer-alerts.ts</code> :53<span class="p">skips recurring threads</span></li>
+        <li><code>email/address-book.ts</code> :93<span class="p">any status (incl. no) = mailable guest</span></li>
+        <li><code>isEnrolledInWorkshop</code><span class="p">workshop-offerings.ts:784 · yes OR paid join request</span></li>
+        <li><code>isWithinCurrentCycle</code><span class="p">utils/recurrence.ts:74 · used only in 4 route GETs</span></li>
+        <li><code>resolveMeetingLight</code><span class="p">standing-meeting.ts:210 · yes+maybe vs min_attendees, all-time</span></li>
+        <li class="dead"><code>syncWorkshopEnrolments</code> <span class="t dead">sophia only</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="gutter" id="g2" aria-hidden="true">
+    <svg viewBox="0 0 34 60"><path d="M32 30 H6" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 23 L4 30 L12 37" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+    <span class="lbl">post to routes A–E</span>
+    <svg viewBox="0 0 34 60"><path d="M32 30 H6" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 23 L4 30 L12 37" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+  </div>
+
+  <!-- UI -->
+  <section class="col" id="col-ui" aria-label="UI surfaces">
+    <div class="colhead">UI surfaces</div>
+
+    <div class="box shared">
+      <h4>cms-ui (shared)</h4>
+      <ul>
+        <li><code>ThreadSurface</code> <span class="t shape">A</span>/<span class="t shape">B</span><span class="p">surface/surfaces/ThreadSurface.tsx:27 · "I'm coming" · join link ungated · sign-in text has no link</span></li>
+        <li><code>StandingMeetingFace</code> <span class="t shape">C</span> <span class="t dup">flavours differ</span><span class="p">hub/StandingMeetingFace.tsx:134 · default answers this_week / temporary are rejected by the server (400)</span></li>
+        <li><code>MeetingBanner</code> <span class="t shape">C</span> <span class="t dup">dup</span><span class="p">hubsite/MeetingBanner.tsx:76 · second answer menu · join ungated</span></li>
+        <li class="prog"><code>SeriesFace</code> · <code>SeriesPlannerSurface</code><span class="p">rsvpCount typed, not shown · planner "N going"</span></li>
+        <li><code>PlanAheadSurface</code> record<span class="p">attendance checkboxes → meeting/record</span></li>
+        <li><code>CenterPage</code> · <code>OrgStrip</code><span class="p">read: "N RSVPs", "going"</span></li>
+        <li><code>content-fields.ts</code> :282<span class="p">authoring: take RSVPs, limit, deadline, minimum</span></li>
+      </ul>
+    </div>
+    <div class="box shared">
+      <h4>blocks · silex-render · hooks</h4>
+      <ul>
+        <li>blocks <code>thread-feed</code> "N coming"; person page "RSVP"/"Book" labels</li>
+        <li>silex embeds<span class="p">links to signup / login, no next</span></li>
+        <li class="dead"><code>useThreadRsvp</code>, <code>useRealtimeAttendees</code> <span class="t dead">inner-gathering only</span></li>
+      </ul>
+    </div>
+
+    <div class="box local">
+      <h4>App components</h4>
+      <ul>
+        <li><code>rsvp-panel.tsx</code> ×3 <span class="t shape">A</span>+<span class="t shape">E</span> <span class="t dup">dup</span><span class="p">amrit ≡ sunjay; innergathering fork adds paid / sliding scale</span></li>
+        <li><code>attendee-list.tsx</code> ×3 · manage <code>attendees/page.tsx</code> ×3 <span class="t dup">dup</span></li>
+        <li>arts-collective <code>RsvpPanel</code>, <code>JoinWorkshopButton</code> <span class="t shape">A</span></li>
+        <li>ifac hub <code>RsvpPanel</code> <span class="t shape">B</span><span class="p">hub/meetings/[slug]</span></li>
+        <li class="prog">ifac <code>SeriesRsvp</code>, <code>SessionList</code>, <code>/series/[slug]</code>, <code>/[n]</code> <span class="t shape">D</span> <span class="t prog">in progress</span><span class="p">the only RSVP-gated join link</span></li>
+        <li class="dead">ifac <code>RsvpForm</code> <span class="t shape">E</span> <span class="t dead">orphan</span></li>
+        <li>fourthway <code>RsvpButton</code> <span class="t shape">A</span>, circle <code>SessionPanel</code> (action)</li>
+        <li>sunjay Puck event blocks <span class="t shape">A</span>+<span class="t shape">E</span><span class="p">room gated on membership</span></li>
+        <li>admin <code>/rsvp</code> (guests, amrit only)</li>
+        <li class="dead">inner-gathering meeting-card, attendee-modal, join-workshop-modal <span class="t dead">legacy</span></li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<div class="downarrow" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M17 2 V28" stroke="currentColor" stroke-width="2"/><path d="M10 22 L17 30 L24 22" stroke="currentColor" stroke-width="2" fill="none"/></svg></div>
+<div class="colhead" style="text-align:center">Side effects fired by routes and ticks</div>
+<section class="fxgrid" aria-label="Side effects">
+  <div class="box fx">
+    <h4>Emails</h4>
+    <ul>
+      <li><code>sendRsvpConfirmation</code> / <code>sendRsvpNotification</code><span class="p">email/index.ts:420 / :439 · sent by app routes only</span></li>
+      <li>Member routes mail only if <code>previous ≠ yes</code> <span class="t risk">risk</span><span class="p">a row from an earlier cycle suppresses new-cycle mail</span></li>
+      <li class="prog">Series RSVP mails on every yes, join details included</li>
+      <li>No cancellation mail, no waitlist promotion</li>
+      <li><code>sendMeetingTriggerEmail</code><span class="p">ignores the org's saved template</span></li>
+    </ul>
+  </div>
+  <div class="box fx">
+    <h4>Reminders (5-min ticks)</h4>
+    <ul>
+      <li>sunjay ≡ amrit <span class="t dup">dup</span><span class="p">yes + guests · first occurrence only</span></li>
+      <li class="prog">ifac <code>lib/reminders.ts</code> <span class="t prog">in progress</span><span class="p">week topics only · day + soon letters · subscriber letter not sent yet</span></li>
+      <li>innergathering: hosts only (shared <code>meeting-rota.ts:548</code>)</li>
+      <li class="dead">inner-gathering tick <span class="t risk">network-wide</span><span class="p">lib/reminders.ts:28 · every org but amrit · overrides sunjay's "off" · no ledger</span></li>
+    </ul>
+  </div>
+  <div class="box fx">
+    <h4>Join-link gates</h4>
+    <ul>
+      <li class="prog">RSVP-gated: IFAC series pages only<span class="p">series/[slug]/page.tsx:78</span></li>
+      <li>Enrolment-gated: workshops (<code>isEnrolledInWorkshop</code>)</li>
+      <li>Membership-gated: sunjay Puck events, fourthway circle</li>
+      <li>Ungated: ThreadSurface, MeetingBanner, [feed]/[slug] pages, forum, mails</li>
+    </ul>
+  </div>
+  <div class="box fx">
+    <h4>Cycle expiry and light</h4>
+    <ul>
+      <li><code>isWithinCurrentCycle</code> only in GET of route <span class="t shape">A</span> (4 apps) <span class="t dup">inconsistent</span></li>
+      <li>Rows never rewritten; stale yes counts toward capacity, light, center, calendar, reminders</li>
+      <li>Light = yes + maybe ≥ <code>min_attendees</code>, all-time</li>
+    </ul>
+  </div>
+  <div class="box fx">
+    <h4>Calendar files</h4>
+    <ul>
+      <li class="prog">ifac <code>/series/[slug]/calendar.ics</code><span class="p">public · UTC · no join link</span></li>
+      <li>cms-ui <code>buildIcs</code> (puts meetingUrl in URL) · sunjay copy <span class="t dup">dup</span></li>
+    </ul>
+  </div>
+  <div class="box fx">
+    <h4>Roles, shares, notifications</h4>
+    <ul>
+      <li>fourthway: reading_group yes → <code>viewer</code> role</li>
+      <li>Workshops: Nextcloud materials share / unshare</li>
+      <li>Guest routes upsert <code>contacts</code></li>
+      <li class="dead">In-app <code>notifications</code>: inner-gathering only</li>
+      <li class="dead">audit <code>meeting_rsvp</code> / <code>meeting_attended</code> declared, never logged</li>
+    </ul>
+  </div>
+</section>
+
+<h2>What an RSVP means, per kind</h2>
+<div class="tablewrap">
+<table class="sem">
+  <thead><tr><th>Kind / case</th><th>Where the row goes</th><th>Meaning of yes</th><th>Expiry</th><th>Gates</th><th>Rows (2026-10-10)</th></tr></thead>
+  <tbody>
+    <tr><td><b>Standing meeting</b> (recurring meeting parent)</td><td>thread_rsvps on the meeting, often with flavour / promise_next (route <span class="t shape">C</span> or <span class="t shape">A</span>)</td><td>Coming to the next occurrence. maybe = soft yes; next_time + promise = the one after</td><td>Cycle: reported as current only if <code>updated_at</code> is after the last occurrence's end, in 4 route GETs only. Row is kept</td><td>None on the join link. Light counts yes+maybe</td><td>inner_group 15 yes; ifac 3 maybe</td></tr>
+    <tr><td><b>One-off meeting / event</b></td><td>thread_rsvps; guests in guest_submissions</td><td>Coming</td><td>None</td><td>None</td><td>amrit 1; guests 10</td></tr>
+    <tr><td><b>Series week</b> <span class="t prog">in progress</span></td><td>thread_rsvps on the week's <code>series_session</code> topic, made on first RSVP or comment</td><td>Coming to that week</td><td>Past weeks refuse RSVPs</td><td>Join link and details shown only to yes</td><td>ifac 3 yes on 3 topics (week 1 has a second, archived topic)</td></tr>
+    <tr><td><b>Series parent</b> <span class="t prog">being added</span></td><td>thread_rsvps yes on the series thread itself</td><td>Subscribed: mail N days before each published week (default 2)</td><td>Until unsubscribed (by email, any status)</td><td>None. Generic readers will count subscribers as attendees</td><td>0; functions have no callers yet</td></tr>
+    <tr><td><b>Reading circle</b> (reading_group)</td><td>thread_rsvps on the group thread</td><td>Joined the group; grants org role <code>viewer</code></td><td>None; leaving keeps the role</td><td>Sessions, call, recordings need an org role</td><td>fourth_way 5</td></tr>
+    <tr><td><b>Circle sitting</b></td><td>thread_rsvps on the per-sitting post topic</td><td>Coming to that sitting</td><td>None</td><td>Membership only</td><td>0</td></tr>
+    <tr><td><b>Workshop</b></td><td>thread_rsvps yes (free, or <span class="t shape">$</span> via confirmOrderPaid); legacy workshop_join_requests</td><td>Enrolment: materials, Talk room, roster</td><td>None; refunds do not remove the seat</td><td><code>isEnrolledInWorkshop</code> gates the page and files</td><td>inner_group 1 yes; 3 pending requests</td></tr>
+    <tr><td><b>Service</b></td><td>commerce_order + service_bookings; no RSVP</td><td>Booking</td><td>-</td><td>-</td><td>0 bookings</td></tr>
+    <tr><td><b>Guest</b> (signed out)</td><td>guest_submissions kind rsvp + contacts</td><td>Intent only; not counted toward capacity; never linked to an account</td><td>None</td><td>None</td><td>10</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Inconsistencies and risks (most consequential first)</h2>
+<ol class="risks">
+  <li><span class="t risk">risk</span> <b>Authorization hole in a running legacy app.</b> <code>apps/inner-gathering/.../meetings/[id]/attendees/route.ts:66–99</code> lets any signed-in user set any user's status on any thread. Verified in code; live probe not run.</li>
+  <li><span class="t risk">risk</span> <b>The legacy reminder tick is network-wide.</b> <code>apps/inner-gathering/src/lib/reminders.ts:28</code> mails yes rows in every org except amrit, overrides sunjay's "off", and will reach series subscribers.</li>
+  <li><span class="t dup">dup</span> <b>Three flavour→status maps.</b> In <code>RSVP_FLAVOURS</code>, cms-ui <code>DEFAULT_FLAVOURS</code> and the innergathering relabel, the same answer means different statuses. The IFAC hub face offers answers that the server rejects.</li>
+  <li><span class="t prog">in progress</span> <b>Two meanings of yes.</b> A series subscription and attendance share <code>thread_rsvps</code>. center, calendar, forum, alerts and the address book will count subscribers as attendees.</li>
+  <li><span class="t dup">inconsistent</span> <b>Cycle expiry is applied in 4 route GETs only.</b> Stale yes rows fill capacity, light, counts and reminders. Answering again in a new cycle sends no confirmation.</li>
+  <li><span class="t dup">dup</span> <b>Five writers of one row</b> (setRsvpStatus, setMeetingAttendance, confirmOrderPaid, series subscription, legacy raw INSERTs). Six copies of route A with four behaviours; guest route E in four apps.</li>
+  <li><b>Capacity and waitlist are partial.</b> Guest routes, confirmOrderPaid and createThreadOrder skip the limit. Nothing writes or promotes from <code>waitlist</code>.</li>
+  <li><b>Paid seats.</b> The price check exists only in innergathering and arts-collective. A DELETE cancels a paid seat without touching the order.</li>
+  <li><span class="t prog">in progress</span> <b>Series week topics</b> have no unique key (week 1 has two threads). The first RSVPer becomes the author. A "no" creates a topic.</li>
+  <li><b>Sign-in loses the intent.</b> Most RSVP prompts go to bare <code>/login</code>, and none carries an RSVP intent.</li>
+</ol>
+
+<p class="foot">Labels: storage counts are verified by query on <code>elkdonis_dev</code> (2026-10-10). Code facts are verified by reading source at the cited lines. "In progress" files were untracked and changing during the survey (<code>meeting-series.ts</code> grew from 798 to 1247 lines between 18:57 and 18:59). Full list, citations and open items: <code>README.md</code>.</p>
+</main>
+</body>
+</html>

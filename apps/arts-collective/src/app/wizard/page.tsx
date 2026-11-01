@@ -41,7 +41,7 @@ export default async function WizardPage({
     <div className="py-4">
       <div className="mb-2 px-6">
         <Link
-          href="/hub/elkdonis"
+          href="/hub/arts-collective"
           className="text-xs text-muted-foreground underline-offset-4 hover:underline"
         >
           ← Hub

@@ -7,7 +7,7 @@ import { requireStudioStore } from "@/lib/marketplace-auth";
 import { LotForm } from "../../../_components/lot-form";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Put up for auction · Studio" };
+export const metadata: Metadata = { title: "Put up for auction · My art" };
 
 export default async function AuctionArtworkPage({
   params,
@@ -36,7 +36,7 @@ export default async function AuctionArtworkPage({
           </p>
         </div>
         <Link href="/studio" className="text-sm underline underline-offset-4">
-          Back to studio
+          Back to My art
         </Link>
       </header>
 

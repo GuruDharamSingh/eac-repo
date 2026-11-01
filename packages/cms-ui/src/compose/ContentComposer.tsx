@@ -122,11 +122,11 @@ export function ContentComposer({
   return (
     <div className={`eac-compose${className ? ` ${className}` : ""}`}>
       {groups.map((group) => {
-        const body = (
-          <div className="eac-group-fields">
-            {renderFields(group, answers, patch, slots, fieldErrors, tier)}
-          </div>
-        );
+        const fields = renderFields(group, answers, patch, slots, fieldErrors, tier);
+        // Every field hidden by its `dependsOn` (an existing series' joining
+        // group, say): no heading over nothing.
+        if (fields.length === 0) return null;
+        const body = <div className="eac-group-fields">{fields}</div>;
 
         if (!group.optional) {
           return (

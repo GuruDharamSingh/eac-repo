@@ -135,7 +135,7 @@ export function ProfileEditorPanel({
                 <>
                   {" "}·{" "}
                   <a href={`${market}/studio`} className="text-gold underline underline-offset-4">
-                    studio
+                    My art
                   </a>
                 </>
               )}

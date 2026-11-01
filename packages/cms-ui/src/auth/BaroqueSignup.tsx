@@ -50,6 +50,12 @@ export interface BaroqueSignupProps {
   enableGoogle?: boolean;
   /** Where GoTrue returns the browser after Google auth. Defaults to origin. */
   googleRedirectTo?: string;
+  /** Show the ornamental sigil above the heading. Default true. */
+  showSigil?: boolean;
+  /** Submit label per mode. Defaults "Join the Collective" / "Sign In". */
+  submitLabel?: { signup?: string; signin?: string };
+  /** Text of the success panel after sign-up. Defaults to the network's welcome line. */
+  signupSuccessText?: ReactNode;
 }
 
 /** Ornamental sigil — decorative only, hidden from assistive tech. */
@@ -73,6 +79,9 @@ export function BaroqueSignup({
   allowModeToggle = true,
   enableGoogle = true,
   googleRedirectTo,
+  showSigil = true,
+  submitLabel,
+  signupSuccessText,
 }: BaroqueSignupProps) {
   const [done, setDone] = useState<AuthMode | null>(null);
   const f = useAuthForm({
@@ -93,7 +102,7 @@ export function BaroqueSignup({
     return (
       <div className="eac-bq">
         <div className="eac-bq-frame">
-          <Sigil />
+          {showSigil && <Sigil />}
           <p className="eac-bq-eyebrow">{done === "signup" ? "Welcome" : "Signed in"}</p>
           <h2 className="eac-bq-title">
             {done === "signup" ? "You are among us." : "Welcome back."}
@@ -101,7 +110,7 @@ export function BaroqueSignup({
           <hr className="eac-bq-rule" />
           <p className="eac-bq-success">
             {done === "signup"
-              ? "Check your email — a welcome message is on its way. Your account is live; the inner gathering awaits."
+              ? signupSuccessText ?? "Check your email — a welcome message is on its way. Your account is live; the inner gathering awaits."
               : "You are signed in."}
           </p>
         </div>
@@ -112,7 +121,7 @@ export function BaroqueSignup({
   return (
     <div className="eac-bq">
       <div className="eac-bq-frame">
-        <Sigil />
+        {showSigil && <Sigil />}
         <h2 className="eac-bq-title">
           {title ?? (isSignup ? "Join the Collective" : "Welcome Back")}
         </h2>
@@ -217,8 +226,8 @@ export function BaroqueSignup({
                 ? "Creating account…"
                 : "Signing in…"
               : isSignup
-                ? "Join the Collective"
-                : "Sign In"}
+                ? submitLabel?.signup ?? "Join the Collective"
+                : submitLabel?.signin ?? "Sign In"}
           </button>
         </form>
 

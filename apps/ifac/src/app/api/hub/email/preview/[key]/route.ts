@@ -9,6 +9,7 @@ import {
 } from "@elkdonis/email";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { renderSeriesLetter, seriesScopeFrom } from "@/lib/series-letters-store";
 
 /**
  * One letter, rendered as this org would actually send it.
@@ -17,9 +18,13 @@ import { siteConfig } from "@/config/site";
  * payload: the face and the other four tabs never need them, and eight React
  * Email renders on every hub load would be paid by everyone to serve the one
  * person who opened Letters.
+ *
+ * `?series=<id>&purpose=<p>` renders one series' letter through the send
+ * path's override chain (`renderWithOrgOverrides` with that series' scope),
+ * so the preview shows the series' own words, or IFAC's when it has none.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ key: string }> }
 ) {
   const editor = await getApiEditor();
@@ -30,6 +35,19 @@ export async function GET(
   // segment and `renderSample` selects a component by it.
   if (!isTemplateKey(key) || !templateMeta(key)) {
     return NextResponse.json({ error: "No such letter" }, { status: 404 });
+  }
+
+  const target = await seriesScopeFrom(new URL(req.url).searchParams, key);
+  if (target.kind === "error") {
+    return NextResponse.json({ error: target.error }, { status: target.status });
+  }
+  if (target.kind === "series") {
+    try {
+      return NextResponse.json({ html: await renderSeriesLetter(target.scope) });
+    } catch (err) {
+      console.error(`[email] preview ${target.scope.scopedKey}:`, err);
+      return NextResponse.json({ error: "Could not render that letter" }, { status: 500 });
+    }
   }
 
   const [identity, override] = await Promise.all([

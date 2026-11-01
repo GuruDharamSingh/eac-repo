@@ -30,13 +30,14 @@ no container on 2026-09-23 (`docker compose ps`).
 | art-auction | 3009 | art-auction | prod | `market` | market.arts-collective.com | live |
 | blog-tester | 3011 | blog-tester | dev | `elkdonis` | none | not running |
 | hidden-enneagram | 3012 | hidden-enneagram | prod | `hidden-enneagram` | hiddenenneagram.com | live |
-| artdirect | 3013 | artdirect | dev | network (no fixed org) | directory.arts-collective.com | live |
+| artdirect | 3013 | artdirect | prod (2026-10-19) | network (no fixed org) | directory.arts-collective.com | live |
 | pigeonshoot | 3014 | pigeonshoot | dev | `pigeonshoot` | none | not running |
 | innergathering | 3015 | innergathering | prod | `inner_group` | elkdonis-arts.org | live |
 | elastrocal | 3016 | elastrocal | dev | `elastrocal` | arts-collective.com/astro | live (started 2026-09-26) |
 | danamccool | 3018 | danamccool | prod | `danamccool` | danamccool.com | live |
 | fourthwayBookreaders | 3019 | fourthway-bookreaders | prod | `fourth_way_book_readers` | elkdonis-arts.org/books | live |
 | sophia | 3020 | sophia | dev | no fixed org | none (URL var set) | not running |
+| elktours | 3021 | elktours | dev | `elktours` | none (`ELKTOURS_URL` = LAN ip) | running (2026-10-18) |
 | signal-watch | — | — | — | — | — | not a web app |
 
 Proxy mapping verified 2026-09-23 by reading `/data/nginx/proxy_host/*.conf`
@@ -109,6 +110,19 @@ containers on this host. Launch procedure and edge details:
 - UI: plain CSS from forum-ui (no Tailwind), steel/silver design; light/dark
   via `forum_mode` cookie, also set by the match light in the left rail
   (`matchLight: true`, 2026-09-26). Tiptap wiki editor island.
+- Layout (2026-10-28, `packages/forum-ui`, every host): one left rail and one
+  sheet; the right column of boxes is gone. The rail carries the viewer and
+  "＋ New topic" (a `<details>` with the quick-post form) at the top, the
+  places, New category under Categories, and an "Around the forum" fold
+  (Happening, Who's here). A page's own context (`Layout`'s `rail`) renders
+  under the content as `.gf-context`; a thread's facts/map/org card sit
+  between the post and the replies. Reading options (text size, List/Cards,
+  background) are the fixed "Aa" button bottom-right (`ReaderControls`).
+  `--sf-font-record` is the body face inside `.gf-root` (was a monospace);
+  labels are sentence case, never under `--gf-fs-min` (13px standard); post
+  bodies 17px / 1.65, 70ch. Verified in a dev preview signed out and in
+  (throwaway account, removed), Standard/Largest, List/Cards, 1440 and 400px.
+  (claude, 2026-10-28)
 - Entry: `src/app/(site)`, `src/app/embed/[[...segments]]` (iframe mode,
   `frame-ancestors` from `FORUM_EMBED_ANCESTORS`), `src/lib/connectors.ts`,
   `src/lib/viewer.ts`.
@@ -152,6 +166,24 @@ containers on this host. Launch procedure and edge details:
   forwards `/astro` to elastrocal.
 - UI: Tailwind + shadcn + cms-ui, `@elkdonis/sky-ui`, `@elkdonis/three`,
   `@elkdonis/silex-render`, `@elkdonis/tokens`.
+- `/learn` (2026-10-30, deployed): Sophia's learner pages on the network host
+  (`src/app/learn/[[...segments]]`, `src/lib/lms/connectors.tsx`), with the
+  Center journeys and the profile popup opening inside task steps
+  (`components/learn/LearnHost.tsx`). Sign-ups get no default org and land on
+  `/learn/getting-started`. The hub tab's course section is `components/hub/CourseCard.tsx` (deployed 2026-10-30). `docs/open/ONBOARDING_COURSE_BRIEF_2026-10-29.md`.
+- Org landing pages (2026-10-30, deployed the same day): the subdomain root
+  (`src/app/sites/[slug]/page.tsx`) is, in order, the Silex page, a landing
+  page designed in Puck (`site_config` `puck:home`, editor
+  `/hub/sites/<slug>/design` for owners and guides), the pinned or newest
+  published public thread (`OfferingPage`), else a page built from the org
+  identity (`components/sites/OrgDefaultPage.tsx`; the "Nothing published
+  yet" empty state is gone). Pinning now has a UI: the "N published" list on
+  the console (`PublishedSurface`), a "Lead the site with this" action on the
+  thread popup, and a bar above a thread on the site for editors
+  (`components/sites/ThreadEditorBar.tsx`). Settings → Site & address shows
+  what leads and links the editor. Org creation (`SetupForm`) asks for a name
+  and an address. `docs/reference/authoring.md` "Puck" has the mechanics;
+  this reverses the 2026-09-26 "Puck only on ArtDirect" decision.
 - Entry: `src/middleware.ts` (host → `/sites/<slug>` rewrite),
   `src/lib/org-console.ts`, `src/lib/org-forum.ts`, `src/lib/cms/draft-actions.ts`,
   `src/app/hub/(tabs)/*`.
@@ -244,12 +276,33 @@ containers on this host. Launch procedure and edge details:
   `src/app/api/media/upload` (org media) vs `src/app/api/upload` (artist portfolio).
 - Traps: see `.claude/rules/apps/ifac.md`. Owners exist since 2026-09-18
   (2 `owner` rows); the email allowlist is gone (`src/lib/auth.ts:10`).
+- Public site (2026-10-08): `/`, `/series/[slug]`, `/about`, `/publications`
+  render under `.ifs` (`src/app/site.css`, chrome in `src/components/site/`),
+  separate from the older `site-chrome.tsx` that the hub, forum, manage and
+  person pages keep. The landing hero shows the series named by `site_config`
+  key `presented_series` (fallback: the standing meeting); `src/lib/series.ts`.
+  Series data: `docs/reference/data-model.md` "Meeting series". RSVP per week:
+  `src/app/api/series/rsvp` (members and guests; mails through
+  `sendRsvpConfirmation`); planner: `src/app/api/hub/series`; calendar file:
+  `/series/[slug]/calendar.ics?at=`; one week as a page with comments and
+  in-place editing: `/series/[slug]/[n]`; reminders: `src/instrumentation.ts`. Sample weeks were seeded with
+  `scripts/seed-anp-series.ts` (placeholder titles, hosts and copy).
 
 ### art-auction (3009)
 - Purpose: The Collective Market — marketplace, studio, orders, lots, 3D
   `/gallery`. Store reference implementation; see [commerce.md](commerce.md).
 - org_id: `marketplaceOrgId: "market"` (`src/config/site.ts:13`). Domain `ART_AUCTION_URL`.
 - UI: Tailwind + shadcn + cms-ui, `@elkdonis/studio-ui`, page-builder, three.
+- 2026-10-19 (claude): `/studio` is labelled "My art" (path kept) with tabs
+  `/studio/series` and `/studio/presence`; a signed-in person with no store
+  gets the overview, series and profile tabs. Auction series: `/admin/series`
+  (manage, Help tab), `/series/[slug]`, `/series/[slug]/live` (presenter,
+  polls `/api/series/[slug]/live`). Bidder registration return hop
+  `/api/bidders/return`. Admin → Money holds marketplace settings, the owed
+  queue and beneficiary approvals. Compose service `auction-clock`
+  (`eac-auction-clock`) opens, settles and releases lots every 30 s; the
+  pages' lazy `settleExpiredLots` calls remain. Decisions and status:
+  `docs/open/ORG_STORE_BRIEF_2026-10-15.md`, `docs/open/ART_AUCTION_PLAN_2026-10-18.md`.
 
 ### blog-tester (3011)
 - Sandbox for the Mantine blog packages, `orgId: 'elkdonis'`. Not running.
@@ -288,6 +341,29 @@ containers on this host. Launch procedure and edge details:
   `src/config/site.ts:20`), `/about`, `/[feed]`, `/hub`, `/forum`, `/artists`,
   `src/lib/oidc.ts` + `src/app/api/oidc/*` (Nextcloud "Sign in with Elkdonis"
   provider — see [nextcloud.md](nextcloud.md)).
+- Name: "Elkdonis Arts Collective" since 2026-10-08 in `siteConfig.orgName`,
+  `organizations.name` for `inner_group` and `site_config` `email:identity.fromName`
+  (was "InnerGathering"). The `elkdonis` row carries the same name, so org pickers
+  list two identical names. (claude, 2026-10-08)
+- Hub layouts (`hub_view` cookie): `classic` (cards with popups), `site` (page,
+  the default) and `cards2` (`src/app/hub/cards-view.tsx`, 2026-10-08): link cards
+  to pages with breadcrumbs — `/hub/publish` (Writing → network Studio via handoff
+  with `?org=inner_group`; Event or meeting → `/hub/compose?kind=meeting|event`,
+  editors), `/hub/chat` (Talk room framed), `/hub/documents` (list + framed Text
+  share), `/hub/files` (FileBrowser for all, Nextcloud Files framed for linked
+  accounts), `/hub/organization` (Nextcloud sign-in, payouts via
+  `?surface=profile:payouts`, manage links). Shared parts in `cms-ui/hubsite`:
+  `HubPageFrame`, `HubCrumbs`, `HubLinkCard`, `NextcloudFrame`, `DocumentsWorkspace`.
+  Built and deployed 2026-10-08 (backup `~/eac-backups/next/innergathering-20261008-2011.tgz`);
+  verified signed in as a test member through the edge in headless Chrome: Talk
+  room and Text share both render inside the frames on elkdonis-arts.org.
+- Whiteboard "Save to…" and "Export image…" ask where first (2026-10-10):
+  Nextcloud (`POST /api/hub/whiteboard/export` → `EAC_Network/inner_group/Private/Whiteboards/`,
+  `.excalidraw`, `.png` or `.svg`, any member, 25 MB cap) or "This computer…"
+  (Excalidraw's own dialog). cms-ui `WhiteboardSurface` prop `cloudSave`; hosts
+  that omit it (ifac, amrit-canada) keep the stock menu. Ctrl+Shift+E still opens
+  the stock image dialog directly. Verified in `ig-preview` signed in: both saves
+  wrote the file (WebDAV GET), test files deleted. (claude, 2026-10-10)
 - Traps: `elkdonis` and `inner_group` are two org rows; landing copy lives under
   the first, content under the second. `/feed` 308s to `/general`
   (`next.config.ts:92`), and `inner_group/general` is `is_public = false`, so the
@@ -433,6 +509,20 @@ containers on this host. Launch procedure and edge details:
   `SOPHIA_URL` is set but no proxy host exists. See
   [workshops-and-lms.md](workshops-and-lms.md).
 
+### elktours (3021)
+- Purpose: Elkdonis Tours & Experiences — Dana McCool's Paris tour company.
+  Tours are `threads.kind = 'tour'` with stops, dated departures and
+  party-size card bookings (migration 208; `packages/commerce/src/server/tours.ts`).
+  Copied from amrit-canada 2026-10-18; template stack.
+- Entry: `src/lib/tours.ts` (reads), `src/lib/tour-actions.ts` (server actions,
+  booking → `startTourCheckout`), `src/components/tours/*` (MapLibre GL map on
+  OpenFreeMap tiles, Street View panorama via the Maps JavaScript API, booking form), `/manage/tours`, `/bookings/[token]`.
+- Traps: client components import `lib/tour-format.ts`, not `lib/tours.ts`
+  (database). The map panel mounts only ≥900px (fitting bounds in a hidden box fails).
+  `tour_stops.guide_notes` (210) is private: strip it before any public render. `proxy.ts` skips the https upgrade while `NEXT_PUBLIC_APP_URL` is
+  http. Street View needs `GOOGLE_MAPS_API_KEY` with the Maps JavaScript API enabled
+  (set 2026-10-18); otherwise a key-less link. State and open items: `docs/open/ELKTOURS_BRIEF_2026-10-18.md`.
+
 ### signal-watch
 - An Android app kept in the repo, outside the web platform. Not in Compose.
 
@@ -458,9 +548,9 @@ containers on this host. Launch procedure and edge details:
 - innergathering `/feed` → `/general` redirect lands on a 404; retarget in
   `apps/innergathering/next.config.ts:92` and rebuild.
 - `HIDDEN_ENNEAGRAM_URL` and `FOURTHWAY_BOOKREADERS_URL` unset in `.env`.
-- artdirect signup route still bare-exports `handleSignup`.
+- ~~artdirect signup route still bare-exports `handleSignup`.~~ Wrapped 2026-10-19; the bare export failed the production build.
 - admin's `@elkdonis/openclaw-bridge` import has no built `dist/`.
-- forum and artdirect serve `next dev` on public hosts.
+- forum serves `next dev` on a public host. (artdirect switched to production mode 2026-10-19.)
 - Whether `meetings.elkdonis-arts.org` still resolves: **unknown**; decide when
   to stop `inner-gathering`.
 - elastrocal's `/astro` location exists in NPM host 23; whether nginx was

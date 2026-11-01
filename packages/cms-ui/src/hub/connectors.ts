@@ -13,6 +13,10 @@ import type {
   SurfaceProfilePageConnectors,
   SurfacePresence,
   SurfacePostTarget,
+  SurfaceJourneyConnectors,
+  SurfaceArtworkConnectors,
+  SurfaceOrgPeopleConnectors,
+  SurfaceServiceConnectors,
   SurfaceListablePost,
   SurfaceListingOrg,
 } from "../surface";
@@ -157,6 +161,18 @@ export interface HubConnectorOptions extends HostSupplied {
   /** The group's living documents in the org's Nextcloud folder. */
   documents?: boolean;
   /**
+   * Journeys: the auction errand's state and one-click step, served by the
+   * host's own server actions (they need commerce). Omit and the journey
+   * cards on /center and the surface stay hidden.
+   */
+  journey?: SurfaceJourneyConnectors;
+  /** Cataloguing work from here (Center's "Add a work"). */
+  artwork?: SurfaceArtworkConnectors;
+  /** The org's people, for the Center's "Your organisation" journey. */
+  orgPeople?: SurfaceOrgPeopleConnectors;
+  /** The person's own services, for the ArtDirect journey's Offer tab. */
+  services?: SurfaceServiceConnectors;
+  /**
    * What a thread HOLDS — migration 131. Wired against `${routes.thread}/:id/
    * gather`, which is uniform across the template apps, so a host that serves
    * that route needs nothing here but `true`.
@@ -281,6 +297,10 @@ export function createHubConnectors(opts: HubConnectorOptions): SurfaceConnector
     composeSlots: opts.composeSlots,
     threadToAnswers: opts.threadToAnswers,
     dictionary: opts.dictionary,
+    journey: opts.journey,
+    artwork: opts.artwork,
+    orgPeople: opts.orgPeople,
+    services: opts.services,
     custom: opts.custom,
     onMutated: opts.onMutated,
   };

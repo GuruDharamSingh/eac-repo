@@ -1,0 +1,24 @@
+{
+  "id": "cl-037",
+  "status": "draft",
+  "source": { "paper": "Saint Paul Daily Pioneer", "place": "Saint Paul, Minnesota", "date": "1871-06-06", "era": "1870s", "language": ["en"] },
+  "summary": "Advertising page from a Victorian broadsheet: railroad timetables, sewing machines, liquor and patent medicine. No liners at all; every ad is a centred stack of mixed display faces, many with an engraved cut.",
+  "family": "victorian-woodtype",
+  "frame": { "columns": 4, "columnWidth": "mixed", "gutter": "tight", "columnRules": "thin", "flow": "vertical", "masthead": "Running head across the top: paper name, weekday, date in caps." },
+  "headers": [
+    { "id": "smallcap-label", "kind": "rule-label", "example": "SEWING MACHINES.", "fg": "#231d14", "bg": "transparent", "align": "center", "box": [0.135, 0.085, 0.175, 0.014], "notes": "Small caps with a full stop, centred between hairlines. Acts as a category label but sits above a single advertiser." }
+  ],
+  "units": [
+    { "id": "stacked-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "none", "example": "THE HOWE SEWING MACHINE / The Grandest Production of Inventive Genius", "box": [0.135, 0.11, 0.175, 0.275], "notes": "Each line a different face and size: woodtype name, italic tagline, spaced caps. Medallion engraving at top." },
+    { "id": "timetable", "kind": "listing-table", "frequency": "common", "lead": "bold-caps", "align": "left", "border": "none", "example": "1871. SUMMER TIME TABLE. 1871. / Leave St. Paul ... 7.30 a.m.", "box": [0.31, 0.18, 0.355, 0.28], "notes": "Locomotive cut above a two-column table with dot leaders. Spans the widest column." },
+    { "id": "reverse-cut", "kind": "reverse-display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "ALLEN’S IRON TONIC BITTERS", "box": [0.14, 0.78, 0.165, 0.05], "notes": "White shaded letters out of a black engraved block, an early reverse-out." }
+  ],
+  "type": [
+    { "role": "display", "classification": "woodtype", "look": "Heavy fat-face and Clarendon woodtype, some outlined or shaded", "weight": "black", "width": "normal", "case": "upper", "webFont": "Ultra" },
+    { "role": "lead", "classification": "slab", "look": "Bold Clarendon caps for advertiser names", "weight": "bold", "width": "normal", "case": "upper", "webFont": "Rye" },
+    { "role": "body", "classification": "modern", "look": "Small Scotch Roman / modern serif, tightly set", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Old Standard TT" }
+  ],
+  "color": { "mode": "mono", "paper": "#efe4cc", "ink": "#231d14", "accents": [] },
+  "ornaments": ["engraved locomotives", "medallion portrait", "carriage cut", "dot leaders", "insertion codes at ad foot (dec10 3m)"],
+  "notes": ["Column widths vary to fit each ad, not a fixed grid.", "The small insertion codes at the bottom right of ads (m18 1m) would add realism to a generator."]
+}

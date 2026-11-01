@@ -1,4 +1,6 @@
+import "@elkdonis/cms-ui/hubsite.css";
 import type { Metadata } from "next";
+import { HubCrumbs } from "@elkdonis/cms-ui/hubsite";
 import { listOrgFeeds } from "@elkdonis/services";
 import { requireOrgMember } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
@@ -29,12 +31,28 @@ export default async function ComposePage({
   // something into a members-only section.
   const feeds = await listOrgFeeds(siteConfig.orgId, { includePrivate: true }).catch(() => []);
 
+  // Event and meeting are one door on the Publish page (owner, 2026-10-08);
+  // the switch here picks which form. Full navigations, so the workspace
+  // starts fresh on the other kind.
+  const gathering = kind === "event" || kind === "meeting";
+  const crumbLabel = gathering ? "Event or meeting" : "Make something";
+
   return (
     <main className="hub hub-compose-page">
+      {/* In a .hub-band so it sits on the content column. */}
+      <div className="hub-band" style={{ marginTop: 24, marginBottom: -24 }}>
+        <HubCrumbs
+          items={[
+            { label: "Hub", href: "/hub" },
+            { label: "Publish", href: "/hub/publish" },
+            { label: crumbLabel },
+          ]}
+        />
+      </div>
       <div className="hub-welcome">
         <div>
           <p className="hub-kicker">{siteConfig.orgName}</p>
-          <h1>Make something</h1>
+          <h1>{crumbLabel}</h1>
           <p className="hub-welcome-sub">
             Pick what it is, and the form follows. Everything here belongs to the
             group and shows on the site.
@@ -42,8 +60,22 @@ export default async function ComposePage({
         </div>
       </div>
 
+      {gathering && (
+        <div className="hub-band" style={{ marginTop: 20 }}>
+          <div className="eac-hs-seg" role="group" aria-label="Kind of gathering">
+            <a href="/hub/compose?kind=meeting" className={kind === "meeting" ? "is-on" : undefined} aria-current={kind === "meeting" ? "page" : undefined}>
+              Meeting
+            </a>
+            <a href="/hub/compose?kind=event" className={kind === "event" ? "is-on" : undefined} aria-current={kind === "event" ? "page" : undefined}>
+              Event
+            </a>
+          </div>
+        </div>
+      )}
+
       <section className="hub-band">
         <ComposeWorkspace
+          key={kind ?? "picker"}
           initialKind={kind}
           context={{
             orgSlug: siteConfig.orgId,

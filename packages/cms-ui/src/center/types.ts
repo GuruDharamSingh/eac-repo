@@ -57,6 +57,8 @@ export interface CenterOrg {
   profileUserId: string | null;
   nextEvent: CenterThread | null;
   upcomingCount: number;
+  /** Who owns the org, for the org card. Optional so older hosts still type-check. */
+  owners?: Array<{ userId: string; displayName: string; slug: string | null; avatarUrl: string | null }>;
 }
 
 export interface CenterOrgLink {
@@ -69,15 +71,37 @@ export interface CenterOrgLink {
 }
 
 export interface CenterPromo {
-  kind: "thread" | "artist" | "store";
-  source: "org" | "network" | "fallback";
+  /** `link` is a hand-written placement from the org's manage area. */
+  kind: "thread" | "artist" | "store" | "link";
+  source: "org" | "network";
   title: string;
   blurb: string | null;
   imageUrl: string | null;
   until: string | null;
+  /** `link` only: where the card goes; null for a notice that goes nowhere. */
+  href: string | null;
   thread: CenterThread | null;
   artistSlug: string | null;
   storeOrgId: string | null;
+}
+
+/**
+ * Where the person stands on the auction errand, and whether they can be
+ * paid. Structural twin of @elkdonis/commerce's `AuctionJourney` (and of the
+ * surface system's SurfaceAuctionJourney); a host that has commerce passes
+ * `loadAuctionJourney(userId)` straight through, one that does not passes
+ * nothing and the `you` and `journeys` sections draw what they can.
+ */
+export interface CenterJourney {
+  store: {
+    state: "none" | "pending" | "active" | "paused" | "rejected";
+    id: string | null;
+    handle: string | null;
+    commissionPercent: number | null;
+  };
+  artworks: { published: number; sold: number; drafts: number };
+  payouts: { state: "none" | "pending" | "ready"; country: string | null; available: boolean };
+  canClaimStore: boolean;
 }
 
 export interface CenterData {
@@ -114,6 +138,8 @@ export interface CenterLinks {
   /** ArtDirect (or equivalent) page for a person slug. */
   artistHref(slug: string): string;
   marketplaceUrl: string | null;
+  /** A person's store on the marketplace, by its handle (their slug). Absent hides the link. */
+  storeHref?: (handle: string) => string | null;
   /** POST follows, DELETE unfollows. Null hides the follow control. */
   followEndpoint: string | null;
   loginHref: string;

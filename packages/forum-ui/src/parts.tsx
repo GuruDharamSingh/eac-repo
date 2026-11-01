@@ -100,25 +100,19 @@ export function kindLabel(kind: string): string {
 // ── chrome ──────────────────────────────────────────────────────────────────
 
 /**
- * A page's main column and its right column. `rail` is the page's own boxes
- * (thread facts, a board's latest); `boxes` is the shell's set, built once
- * per request by loadShell and handed to every page — so a page ADDS to the
- * column above them and never replaces it.
+ * A page's sheet. There is no right column (2026-10-28): the shell's boxes
+ * moved into the left rail (shell.tsx), and `rail` — the page's own context
+ * (a board's latest, a wiki page's facts) — sits under the page's content as
+ * a row of small boxes, so the content runs the sheet's full width.
+ * `boxes` is still accepted so callers need not change; it is ignored.
  */
-export function Layout({ main, rail, boxes }: { main: React.ReactNode; rail?: React.ReactNode; boxes?: React.ReactNode }) {
-  // `id="boxes"` + the close link are the phone's way in and out: under
-  // 1100px the column is a :target drawer, same mechanism as the left rail.
-  const side = rail || boxes ? (
-    <aside className="gf-rail" id="boxes">
-      <a className="gf-rail-close" href="#" aria-label="Close">×</a>
-      {rail}
-      {boxes}
-    </aside>
-  ) : null;
+export function Layout({ main, rail }: { main: React.ReactNode; rail?: React.ReactNode; boxes?: React.ReactNode }) {
   return (
-    <div className={`gf-layout${side ? " has-rail" : ""}`}>
-      <div className="gf-main">{main}</div>
-      {side}
+    <div className="gf-layout">
+      <div className="gf-main">
+        {main}
+        {rail && <aside className="gf-context" aria-label="Around this page">{rail}</aside>}
+      </div>
     </div>
   );
 }
@@ -518,11 +512,12 @@ export function Agenda({ rows, hrefs, showOrg }: { rows: ForumHappeningRow[]; hr
 // ── theme toggle + new-topic link ─────────────────────────────────────────
 
 /**
- * The reader's controls: text size, layout, light/dark (2026-09-25). One
- * form, one submit button per choice, so it works with no script and each
- * button posts only its own name/value. Rendered above every page rather
- * than in the footer, where a reader who needs larger type would have to
- * scroll the small type to find it.
+ * The reader's controls: text size, layout, light/dark. One "Aa" button
+ * fixed at the bottom-right of the window opens them (2026-10-28; they were
+ * a full row above every page from 2026-09-25). A <details>, so it opens
+ * with no script; one form, one submit button per choice, so each button
+ * posts only its own name/value. Fixed rather than in the page so a reader
+ * who needs larger type finds it at once, on every page and on a phone.
  */
 export function ReaderControls({ size, layout, mode, actionBase, back }: {
   size: ForumTextSize; layout: ForumLayout; mode: "light" | "dark" | "auto"; actionBase: string; back: string;
@@ -532,30 +527,42 @@ export function ReaderControls({ size, layout, mode, actionBase, back }: {
   const sizes: Array<[ForumTextSize, string]> = [["standard", "Standard"], ["large", "Large"], ["largest", "Largest"]];
   const layouts: Array<[ForumLayout, string]> = [["board", "List"], ["cards", "Cards"]];
   return (
-    <form method="post" action={`${base}/set-theme`} className="gf-reader" aria-label="Reading options">
-      <input type="hidden" name="back" value={back} />
-      <span className="gf-reader-group" role="group" aria-labelledby="gf-reader-size">
-        <span id="gf-reader-size" className="gf-reader-label">Text size</span>
-        {sizes.map(([v, label]) => (
-          <button key={v} type="submit" name="size" value={v} className={`gf-tool gf-reader-size gf-reader-size--${v}${size === v ? " is-on" : ""}`} aria-pressed={size === v}>
-            {label}
-          </button>
-        ))}
-      </span>
-      <span className="gf-reader-group" role="group" aria-labelledby="gf-reader-layout">
-        <span id="gf-reader-layout" className="gf-reader-label">Layout</span>
-        {layouts.map(([v, label]) => (
-          <button key={v} type="submit" name="layout" value={v} className={`gf-tool${layout === v ? " is-on" : ""}`} aria-pressed={layout === v}>
-            {label}
-          </button>
-        ))}
-      </span>
-      <span className="gf-reader-group">
-        <button type="submit" name="mode" value={nextMode} className="gf-tool" title={`Switch to ${nextMode} background`}>
-          {mode === "dark" ? "☀ Light background" : "◑ Dark background"}
-        </button>
-      </span>
-    </form>
+    <details className="gf-reader">
+      <summary className="gf-reader-btn" aria-label="Reading options: text size, layout, background">
+        <span aria-hidden>Aa</span>
+      </summary>
+      <form method="post" action={`${base}/set-theme`} className="gf-reader-menu" aria-label="Reading options">
+        <input type="hidden" name="back" value={back} />
+        <div className="gf-reader-group" role="group" aria-labelledby="gf-reader-size">
+          <span id="gf-reader-size" className="gf-reader-label">Text size</span>
+          <div className="gf-reader-choices">
+            {sizes.map(([v, label]) => (
+              <button key={v} type="submit" name="size" value={v} className={`gf-tool gf-reader-size gf-reader-size--${v}${size === v ? " is-on" : ""}`} aria-pressed={size === v}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="gf-reader-group" role="group" aria-labelledby="gf-reader-layout">
+          <span id="gf-reader-layout" className="gf-reader-label">Layout</span>
+          <div className="gf-reader-choices">
+            {layouts.map(([v, label]) => (
+              <button key={v} type="submit" name="layout" value={v} className={`gf-tool${layout === v ? " is-on" : ""}`} aria-pressed={layout === v}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="gf-reader-group">
+          <span className="gf-reader-label">Background</span>
+          <div className="gf-reader-choices">
+            <button type="submit" name="mode" value={nextMode} className="gf-tool">
+              {mode === "dark" ? "☀ Switch to light" : "◑ Switch to dark"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </details>
   );
 }
 

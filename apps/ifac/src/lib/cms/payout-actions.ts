@@ -128,10 +128,9 @@ export async function startPayoutsAction(
     userId: viewer.userId,
     email: viewer.email,
     origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3008",
-    // Back into the popup they left, on the tab they left it on. The
-    // serialised form is `profile:<tab>` (see cms-ui surface/url.ts); the hub
-    // page re-reads Stripe when it sees ?payouts=done.
-    returnPath: "/hub?surface=profile:payouts",
+    // Back to Center, where Payouts is the first tab (2026-10-18); the
+    // center page re-reads Stripe when it sees ?payouts=done.
+    returnPath: "/center?payouts=done",
     country,
   });
 }

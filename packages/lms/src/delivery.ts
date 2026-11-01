@@ -53,11 +53,26 @@ export async function ensureDefaultRun(course: Course): Promise<Run | null> {
   const [have] = await db<RunRow[]>`SELECT * FROM lms_runs WHERE course_id = ${course.id} AND is_default`;
   if (have) return mapRun(have);
   const id = newId();
-  await db`
-    INSERT INTO lms_runs (id, course_id, org_id, slug, title, mode, course_version_id, is_default)
-    VALUES (${id}, ${course.id}, ${course.orgId}, 'open', 'At your own pace', 'open', ${course.publishedVersionId}, TRUE)
-    ON CONFLICT DO NOTHING
-  `;
+  await db.begin(async (tx) => {
+    const made = await tx`
+      INSERT INTO lms_runs (id, course_id, org_id, slug, title, mode, course_version_id, is_default)
+      VALUES (${id}, ${course.id}, ${course.orgId}, 'open', 'At your own pace', 'open', ${course.publishedVersionId}, TRUE)
+      ON CONFLICT DO NOTHING RETURNING id
+    `;
+    if (!made.length) return;
+    // "My guide" needs a reader (see isRunGuide): the person who started the
+    // course guides its open run, or whoever published it if they are gone.
+    await tx`
+      INSERT INTO lms_run_staff (run_id, user_id, role)
+      SELECT ${id}, g, 'guide' FROM (
+        SELECT COALESCE(
+          (SELECT created_by FROM lms_courses WHERE id = ${course.id}),
+          (SELECT published_by FROM lms_course_versions WHERE id = ${course.publishedVersionId})
+        ) AS g
+      ) x WHERE g IS NOT NULL
+      ON CONFLICT DO NOTHING
+    `;
+  });
   const [r] = await db<RunRow[]>`SELECT * FROM lms_runs WHERE course_id = ${course.id} AND is_default`;
   return r ? mapRun(r) : null;
 }
@@ -117,6 +132,22 @@ export async function isRunStaff(viewer: LmsViewer, run: Pick<Run, 'id' | 'orgId
   if (!viewer.userId) return false;
   if (isOrgStaff(viewer, run.orgId)) return true;
   const [row] = await db`SELECT 1 FROM lms_run_staff WHERE run_id = ${run.id} AND user_id = ${viewer.userId}`;
+  return Boolean(row);
+}
+/**
+ * Named on THIS run's staff (guide or mentor). The only people who read what a
+ * learner chose to show "my guide" or "my circle", and the only ones who
+ * answer. The org's owners and guides, and global admins, manage runs
+ * (isRunStaff) but never read reflections through their role alone.
+ */
+export async function isRunGuide(viewer: LmsViewer, runId: string): Promise<boolean> {
+  if (!viewer.userId) return false;
+  const [row] = await db`SELECT 1 FROM lms_run_staff WHERE run_id = ${runId} AND user_id = ${viewer.userId}`;
+  return Boolean(row);
+}
+/** Whether anyone is named on the run at all — if not, "my guide" has no reader. */
+export async function hasRunGuides(runId: string): Promise<boolean> {
+  const [row] = await db`SELECT 1 FROM lms_run_staff WHERE run_id = ${runId} LIMIT 1`;
   return Boolean(row);
 }
 export async function listRunGuides(runId: string): Promise<Array<{ id: string; name: string; avatarUrl: string | null; slug: string | null; email: string | null }>> {

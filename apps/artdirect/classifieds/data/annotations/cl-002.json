@@ -1,0 +1,25 @@
+{
+  "id": "cl-002",
+  "status": "draft",
+  "source": { "paper": "The Gatesville Messenger", "place": "Gatesville, Texas", "date": "2023-12-30", "era": "2020s", "language": ["en"] },
+  "summary": "Six-column community-weekly page under a huge light Didone CLASSIFIEDS. Numbered headers sit on a heavy underline, liners are justified serif, two columns of legal notices run full height, and big boxed help-wanted displays fill the left.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "mixed", "masthead": "Running head (date, URL, page A9) above enormous thin Didone caps.", "footer": "Black reverse 'Need to Place a Classified Ad?' block and a 'Your ad should be here' filler box." },
+  "headers": [
+    { "id": "numbered-underline", "kind": "rule-label", "example": "037 / HELP WANTED", "fg": "#111111", "bg": "transparent", "numbering": "prefix", "align": "left", "box": [0.005, 0.157, 0.155, 0.012], "notes": "Tiny classification number on its own line above bold condensed caps, with a heavy rule underneath. Repeated at the top of every column." }
+  ],
+  "units": [
+    { "id": "serif-liner", "kind": "liner", "frequency": "common", "lead": "caps", "align": "justify", "border": "none", "example": "ASHLEY'S LANDSCAPING & SERVICES: Tree Trimming...", "notes": "Justified serif, caps lead ending in a colon, tiny insertion number at the end (00030494)." },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold-caps", "align": "justify", "border": "thin", "example": "R&M FENCING & DOZING: barbed wire...", "notes": "Same liner set inside a thin box: the paid border upgrade." },
+    { "id": "help-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "left", "border": "thin", "example": "NOW HIRING Coryell Health", "box": [0.005, 0.2, 0.33, 0.15], "notes": "Reverse NOW HIRING tab, two-column bullet list of positions, contact strip at foot." },
+    { "id": "legal-notice", "kind": "notice", "frequency": "dominant", "lead": "caps", "align": "justify", "border": "none", "example": "NOTICE TO CREDITORS / Notice is hereby given that original Letters Testamentary...", "box": [0.66, 0.16, 0.335, 0.83], "notes": "Two full-height serif columns of probate notices and an ordinance in all caps." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "modern", "look": "Light high-contrast Didone caps, very large", "weight": "light", "width": "normal", "case": "upper", "webFont": "Bodoni Moda" },
+    { "role": "header", "classification": "condensed-grotesque", "look": "Bold condensed sans caps", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Oswald" },
+    { "role": "body", "classification": "news-serif", "look": "Times/Century-like serif, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Tinos" }
+  ],
+  "color": { "mode": "spot", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#d22630", "use": "We're Hiring! badge and DQ logo" }, { "hex": "#1f6fb5", "use": "Coryell Health logo" } ] },
+  "ornaments": ["insertion numbers at liner ends", "Equal Housing logo", "clock-tower photo in house ad"],
+  "notes": ["Header style (number above, rule below) is a clear alternative to Hood County's bars."]
+}

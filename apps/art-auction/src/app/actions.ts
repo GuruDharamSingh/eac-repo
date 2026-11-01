@@ -120,6 +120,7 @@ export async function placeOrder(values: CheckoutFormValues): Promise<void> {
     notes: values.notes ?? null,
     etransferDueHours: siteConfig.etransferDueHours,
     payUrl: orderUrl(""),
+    support: values.support ?? null,
   });
 
   await clearCartToken();
@@ -194,4 +195,35 @@ export async function placeBidAction(input: {
   await trackServerEvent(result.ok ? "bid_placed" : "bid_rejected", { lotId: input.lotId }, analyticsOptions);
   revalidatePath(`/lots/${input.lotId}`);
   return result;
+}
+
+/** Take a lot at its buy-now price (before the first bid). Redirects to the order. */
+export async function buyNowAction(lotId: string): Promise<{ ok: boolean; reason?: string }> {
+  const userId = await currentUserId();
+  if (!userId) return { ok: false, reason: "Please sign in to buy." };
+  const { buyNowLot } = await import("@elkdonis/commerce/server");
+  const r = await buyNowLot({ lotId, buyerId: userId, payUrlBase: siteConfig.url });
+  if (!r.ok) return r;
+  await trackServerEvent("buy_now", { lotId, orderId: r.orderId }, analyticsOptions);
+  revalidatePath(`/lots/${lotId}`);
+  revalidatePath("/lots");
+  redirect(`/orders/${r.orderId}`);
+}
+
+/** Start bidder registration: a hosted Stripe page that saves a card and a phone. */
+export async function registerToBidAction(lotId: string): Promise<void> {
+  const userId = await currentUserId();
+  if (!userId) redirect(`/login?next=/lots/${lotId}`);
+  const session = await getServerSession();
+  const email = session.user?.email;
+  if (!email) redirect(`/login?next=/lots/${lotId}`);
+  const { startBidderRegistration } = await import("@elkdonis/checkout/stripe");
+  const base = siteConfig.url.replace(/\/$/, "");
+  const { url } = await startBidderRegistration({
+    userId,
+    email,
+    successUrl: `${base}/api/bidders/return?session_id={CHECKOUT_SESSION_ID}&lot=${lotId}`,
+    cancelUrl: `${base}/lots/${lotId}?registration=cancelled`,
+  });
+  redirect(url);
 }

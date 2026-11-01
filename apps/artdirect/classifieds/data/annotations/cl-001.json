@@ -1,0 +1,26 @@
+{
+  "id": "cl-001",
+  "status": "draft",
+  "source": { "paper": "Osceola News-Gazette", "place": "Kissimmee, Florida", "date": "2024-01-22", "era": "2020s", "language": ["en"] },
+  "summary": "Landscape tabloid classifieds page built almost entirely of boxed, centred display ads under royal-blue header bars, with a deep red masthead block and a boxed column of statewide network liners on the right.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 4, "columnWidth": "wide", "gutter": "open", "columnRules": "none", "flow": "modular", "masthead": "Deep red block with huge white Didone caps CLASSIFIEDS; contact panel to the right in navy condensed sans (CONTACT / EMAIL / PHONE on hairlines).", "footer": "Network badge (Advertising Networks of Florida) and a rounded 'Week of' date box." },
+  "headers": [
+    { "id": "blue-bar", "kind": "tint-bar", "example": "Apartments for Rent", "fg": "#ffffff", "bg": "#1f3f99", "align": "center", "box": [0.012, 0.42, 0.315, 0.04], "notes": "Solid royal blue, white condensed sans in title case, centred. Fixed height regardless of column width." },
+    { "id": "network-subhead", "kind": "plain-caps", "example": "Home Improvement/Service", "fg": "#111111", "bg": "transparent", "align": "left", "notes": "Inside the network box: bold sans title-case subheads, no bar." }
+  ],
+  "units": [
+    { "id": "centred-boxed-display", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "example": "STUDIO APARTMENT / $250 weekly / Country Setting", "box": [0.178, 0.485, 0.148, 0.14], "notes": "Each line its own size; condensed sans for headings, regular sans for detail; phone in bold." },
+    { "id": "tint-display", "kind": "display", "frequency": "common", "lead": "bold", "align": "center", "border": "thin", "fill": "#fdf59a", "example": "Need a RIDE? Call us at Welcome Taxi...", "box": [0.507, 0.262, 0.15, 0.43], "notes": "Pale yellow fill; a pale green variant appears for WANTED!; asterisk bullets and Clarendon-style WANTED." },
+    { "id": "network-liner", "kind": "liner-bold-lead", "frequency": "common", "lead": "bold-caps", "align": "left", "border": "heavy", "example": "PROTECT YOUR HOME from pests safely and affordably...", "box": [0.678, 0.195, 0.31, 0.79], "notes": "Syndicated statewide liners in a heavy-ruled two-column box; bold caps hook, ragged right, bold phone." },
+    { "id": "house-ad", "kind": "house-ad", "frequency": "occasional", "lead": "bold", "align": "center", "border": "none", "example": "Don't Forget To Renew", "box": [0.35, 0.72, 0.31, 0.27], "notes": "Full-colour stock-photo ad, yellow condensed display type." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "modern", "look": "Didone caps (Bodoni/Didot-like), white out of red", "weight": "regular", "width": "normal", "case": "upper", "webFont": "Libre Bodoni" },
+    { "role": "header", "classification": "condensed-grotesque", "look": "Condensed sans, title case", "weight": "bold", "width": "condensed", "case": "title", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "grotesque", "look": "Helvetica-like, often centred", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#a6192e", "use": "masthead block" }, { "hex": "#1f3f99", "use": "header bars, contact text" }, { "hex": "#fdf59a", "use": "tinted display ad" }, { "hex": "#d6efc7", "use": "tinted display ad" } ] },
+  "ornaments": ["Equal Housing and accessibility logos", "clip-art plumber", "dollar-sign and RV clip art", "play-button bullet"],
+  "notes": ["Very few true liners; the page is a mosaic of small boxed displays. A good template for a 'local display' family variant."]
+}

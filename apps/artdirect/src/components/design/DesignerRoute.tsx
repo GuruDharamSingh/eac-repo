@@ -5,6 +5,7 @@ import { loadUserPage } from "@elkdonis/page-builder/server";
 import { canEditProfile, getProfileBySlug } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { resolveLayout } from "@/lib/profile-layouts";
 import { PERSON_PAGE_ORG, draftKey, knownTypesFor, liveKey, loadPersonContext, type PersonPageKind } from "@/lib/person-pages";
 import { PersonPageDesigner } from "./PersonPageDesigner";
@@ -21,7 +22,10 @@ export async function DesignerRoute({ slug, kind }: { slug: string; kind: Person
   const user = await getCurrentUser();
   if (!user) notFound();
   const identity = await getProfileBySlug(slug);
-  if (!identity) notFound();
+  if (!identity) {
+    await redirectRenamedProfile(slug, (current) => (kind === "featured" ? `/${current}/featured/design` : `/${current}/design`));
+    notFound();
+  }
   if (!(await canEditProfile(user.id, identity.userId))) notFound();
 
   const known = knownTypesFor(kind);

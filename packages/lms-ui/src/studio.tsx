@@ -254,6 +254,7 @@ function RunEditor({ c, run, back, guides, courseSlug }: { c: LmsConnectors; run
           <ActionForm c={c} action="open-discussions" back={back} fields={{ run: run.id, course: courseSlug }}><button type="submit" className="so-btn so-btn--quiet">Open a forum conversation for each step</button></ActionForm>
         )}
       </div>
+      <p className="so-meta">Only the guides named here read what people choose to show “my guide” or “my circle”, and only they answer — not the organization’s other staff.{guides.length ? "" : " No one is named yet, so no one can be shown a reflection."}</p>
       <ActionForm c={c} action="studio-add-guide" back={back} fields={{ run: run.id }} className="so-form so-form--row">
         <label className="so-sr" htmlFor={`g-${run.id}`}>Guide’s email</label>
         <input id={`g-${run.id}`} type="email" name="email" required placeholder="Add a guide by email…" />

@@ -13,10 +13,12 @@ import { renderRsvpGuestEmail, type RsvpGuestEmailProps } from './templates/rsvp
 import { renderRsvpOwnerEmail, type EmailLinkItem, type EmailMediaItem, type RsvpOwnerEmailProps } from './templates/rsvp-owner';
 import { renderContactOwnerEmail, type ContactOwnerEmailProps } from './templates/contact-owner';
 import { renderOrderInvoiceEmail, type OrderInvoiceEmailProps } from './templates/order-invoice';
+import { renderProceedsStatementEmail, type ProceedsStatementEmailProps } from './templates/proceeds-statement';
+import { renderOutbidEmail, type OutbidEmailProps } from './templates/outbid';
 import { renderOrderNotificationEmail, type OrderNotificationEmailProps } from './templates/order-notification';
 import { renderWelcomeEmail, type WelcomeEmailProps, type WelcomeLinkItem, type WelcomeMediaItem } from './templates/welcome';
 import { renderNewsletterEmail, type NewsletterEmailProps, type NewsletterLinkItem, type NewsletterMediaItem } from './templates/newsletter';
-import { renderReminderEmail, type ReminderEmailProps } from './templates/reminder';
+import { renderReminderEmail, relativeWhen, reminderKicker, type ReminderEmailProps, type ReminderPurpose } from './templates/reminder';
 import { renderMeetingTriggerEmail, type MeetingTriggerEmailProps, type MeetingTriggerType } from './templates/meeting-trigger';
 import { renderProvisioningEmail, type ProvisioningEmailProps } from './templates/provisioning';
 import { renderOwnerNotificationEmail, type OwnerNotificationEmailProps, type OwnerNotificationKind } from './templates/rsvp-owner';
@@ -108,6 +110,7 @@ import {
   saveOrgTemplate,
   clearOrgTemplate,
   resolveOrgTemplate,
+  templateCandidates,
   threadTemplateKey,
   isTemplateKey,
   TEMPLATE_KEYS,
@@ -153,6 +156,7 @@ export type {
   NewsletterLinkItem,
   NewsletterMediaItem,
   ReminderEmailProps,
+  ReminderPurpose,
   MeetingTriggerEmailProps,
   MeetingTriggerType,
   ProvisioningEmailProps,
@@ -243,6 +247,7 @@ export {
   saveOrgTemplate,
   clearOrgTemplate,
   resolveOrgTemplate,
+  templateCandidates,
   threadTemplateKey,
   isTemplateKey,
   TEMPLATE_KEYS,
@@ -274,9 +279,16 @@ export {
 // ended up with two different per-thread settings schemes.
 // ----------------------------------------------------------------------------
 
-interface OverridableProps {
+export interface OverridableProps {
   orgId?: string;
   threadId?: string;
+  /**
+   * Which stored overrides to try before the org-wide key, most specific
+   * first: `<key>:<scope>` for each, then `<key>`. Absent means `[threadId]`
+   * (the per-thread keys inner_group already has). `threadId` still goes to
+   * the ledger either way. See `templateCandidates` in template-store.ts.
+   */
+  templateScope?: string[];
   bodyText?: string;
   bodyHtml?: string;
   /** This org's words for the letter's own blocks. See copy-slots.ts. */
@@ -300,7 +312,11 @@ async function renderWithOverrides<P extends OverridableProps>(
 
   const [identity, template] = await Promise.all([
     getOrgEmailIdentity(data.orgId).catch(() => null),
-    resolveOrgTemplate(data.orgId, key, data.threadId).catch(() => null),
+    resolveOrgTemplate(
+      data.orgId,
+      key,
+      data.templateScope ?? (data.threadId ? [data.threadId] : [])
+    ).catch(() => null),
   ]);
 
   // Whose name goes at the top. An org leads the header only once it actually
@@ -340,11 +356,45 @@ async function renderWithOverrides<P extends OverridableProps>(
     });
   }
 
+  return fallback({ ...applyStoredWords(key, data, template), ...branding });
+}
+
+/**
+ * Layer 2: the stored words merged with the caller's props. Pure, so the
+ * precedence can be checked without a database.
+ *
+ * - A SCOPED row (`<key>:<scope>`, e.g. one series' letter; its `templateKey`
+ *   differs from `key`): somebody wrote these words for exactly this send, so
+ *   they beat the sender's default words: stored `bodyText`/`bodyHtml` (as a
+ *   pair) over the caller's, stored copy slots over the caller's.
+ * - The org-wide row: the caller wins, as before (a per-send message beats a
+ *   stored one).
+ *
+ * Facts stay the caller's either way: `summary`, `meetingUrl`, `comingUrl`
+ * and every other prop pass through, and `links`/`media` are caller-first.
+ */
+export function applyStoredWords<P extends OverridableProps>(
+  key: TemplateKey,
+  data: P,
+  template: OrgTemplate | null
+): P {
+  if (template && template.templateKey !== key) {
+    const storedWords = template.bodyText !== undefined || template.bodyHtml !== undefined;
+    return {
+      ...data,
+      bodyText: storedWords ? template.bodyText : data.bodyText,
+      // The rich version travels with the plain one it was written alongside.
+      bodyHtml: storedWords ? template.bodyHtml : data.bodyHtml,
+      copy: { ...(data.copy ?? {}), ...(template.copy ?? {}) },
+      links: data.links ?? template.links,
+      media: data.media ?? template.media,
+    };
+  }
+
   // Layer 2 — the org's words, but only where the caller has not already
   // passed something more specific (a per-send message beats a stored one).
-  return fallback({
+  return {
     ...data,
-    ...branding,
     bodyText: data.bodyText ?? template?.bodyText,
     // Taken together with bodyText, not instead of it: a caller that passes a
     // per-send plain message must not have the org's STORED rich version
@@ -357,8 +407,16 @@ async function renderWithOverrides<P extends OverridableProps>(
     copy: { ...(template?.copy ?? {}), ...(data.copy ?? {}) },
     links: data.links ?? template?.links,
     media: data.media ?? template?.media,
-  });
+  };
 }
+
+/**
+ * One letter rendered as its send helper would render it (identity, the
+ * override chain from `templateScope`/`threadId`, the precedence above),
+ * without sending. For previews and render-only checks: it reads
+ * `email_template_settings` and `site_config` and writes nothing.
+ */
+export const renderWithOrgOverrides = renderWithOverrides;
 
 
 // ----------------------------------------------------------------------------
@@ -376,6 +434,41 @@ async function renderWithOverrides<P extends OverridableProps>(
 export interface OrgSendContext {
   orgId?: string;
   threadId?: string;
+  /** Override chain for this send; see `OverridableProps.templateScope`. */
+  templateScope?: string[];
+}
+
+/**
+ * The reminder's subject, fitted to when it lands and why. It used to be
+ * "Starting soon" on every letter, including the one sent a day ahead.
+ * Days are counted in the zone the letters state times in (reminder.tsx).
+ */
+export function reminderSubject(
+  data: Pick<ReminderEmailProps, 'meetingTitle' | 'scheduledAt' | 'purpose'>,
+  now: Date = new Date()
+): string {
+  const title = data.meetingTitle;
+  if (data.purpose === 'host-assigned') return `You are hosting — ${title}`;
+  const at = data.scheduledAt ? new Date(data.scheduledAt) : null;
+  const valid = at && !Number.isNaN(at.getTime());
+  const minutes = valid ? (at.getTime() - now.getTime()) / 60_000 : null;
+  let when: string;
+  if (minutes === null || minutes <= 180) {
+    when = 'Starting soon';
+  } else {
+    const zone = 'America/Toronto';
+    const day = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: zone });
+    const days = Math.round((Date.parse(day(at!)) - Date.parse(day(now))) / 86_400_000);
+    when =
+      days <= 0
+        ? 'Later today'
+        : days === 1
+          ? 'Tomorrow'
+          : days < 7
+            ? `On ${at!.toLocaleDateString('en-US', { timeZone: zone, weekday: 'long' })}`
+            : `On ${at!.toLocaleDateString('en-US', { timeZone: zone, weekday: 'long', month: 'long', day: 'numeric' })}`;
+  }
+  return data.purpose === 'host' ? `${when} — you are hosting ${title}` : `${when} — ${title}`;
 }
 
 export async function sendReminderEmail(
@@ -383,12 +476,12 @@ export async function sendReminderEmail(
   data: ReminderEmailProps & OrgSendContext
 ): Promise<SendEmailResult> {
   const html = await renderWithOverrides('reminder', data, renderReminderEmail, {
-    previewText: `${data.meetingTitle} — starting soon`,
-    kicker: 'A reminder',
+    previewText: `${data.meetingTitle} — ${relativeWhen(data.scheduledAt) ?? 'starting soon'}`,
+    kicker: reminderKicker(data.purpose),
   });
   return sendEmail({
     to,
-    subject: `Starting soon — ${data.meetingTitle}`,
+    subject: reminderSubject(data),
     html,
     orgId: data.orgId,
     kind: 'reminder',
@@ -487,6 +580,29 @@ export async function sendOrderInvoice(
   });
 }
 
+/** A bidder whose maximum has been passed on a lot. */
+export async function sendOutbidEmail(to: string, data: OutbidEmailProps): Promise<void> {
+  const html = await renderOutbidEmail(data);
+  await sendEmail({ to, subject: `Outbid on ${data.title}`, html, kind: 'order', fromName: 'Art-Auction' });
+}
+
+/** Buyer's statement of proceeds for a purchase that directs money to a beneficiary. */
+export async function sendProceedsStatementEmail(
+  to: string,
+  data: ProceedsStatementEmailProps
+): Promise<void> {
+  const html = await renderProceedsStatementEmail(data);
+  await sendEmail({
+    to,
+    subject: data.paidOn
+      ? `Proceeds paid over — Order ${data.orderNumber}`
+      : `Statement of proceeds — Order ${data.orderNumber}`,
+    html,
+    kind: 'order',
+    fromName: 'Art-Auction',
+  });
+}
+
 export async function sendOrderNotification(
   to: string,
   data: OrderNotificationEmailProps
@@ -527,21 +643,6 @@ export async function sendWelcomeEmail(
     html,
     orgId: data.orgId,
     kind: 'welcome',
-  });
-}
-
-export async function sendNewsletterEmail(
-  to: string,
-  data: NewsletterEmailProps & OrgSendContext
-): Promise<SendEmailResult> {
-  const html = await renderNewsletterEmail(data);
-  return sendEmail({
-    to,
-    subject: data.title ?? 'A Letter From The Collective',
-    html,
-    orgId: data.orgId,
-    kind: 'newsletter',
-    ...(data.orgId ? {} : { fromName: data.orgName ?? 'Elkdonis Arts Collective' }),
   });
 }
 

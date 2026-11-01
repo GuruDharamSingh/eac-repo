@@ -101,6 +101,8 @@
 [data-kind="post"] { --sf-kind: var(--sf-kind-post); --sf-on-kind: var(--eac-kind-post-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="event"] { --sf-kind: var(--sf-kind-event); --sf-on-kind: var(--eac-kind-event-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="meeting"] { --sf-kind: var(--sf-kind-meeting); --sf-on-kind: var(--eac-kind-meeting-on, var(--eac-surface-on-accent, #fff)); }
+/* A meeting series wears the meeting accent (same tokens, so same ratios). */
+[data-kind="series"] { --sf-kind: var(--sf-kind-meeting); --sf-on-kind: var(--eac-kind-meeting-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="workshop"] { --sf-kind: var(--sf-kind-workshop); --sf-on-kind: var(--eac-kind-workshop-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="service"] { --sf-kind: var(--sf-kind-service); --sf-on-kind: var(--eac-kind-service-on, var(--eac-surface-on-accent, #fff)); }
 [data-kind="product"] { --sf-kind: var(--sf-kind-product); --sf-on-kind: var(--eac-kind-product-on, var(--eac-surface-on-accent, #fff)); }
@@ -1330,6 +1332,11 @@ a.eac-term:focus-visible { outline: 2px solid var(--sf-kind); outline-offset: 2p
 .eac-surface-page-crumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .eac-surface-panel--page { max-height: none; box-shadow: none; }
+/* The popup gets its ink from `dialog.eac-surface`; at page size there is no
+   dialog, so the panel names the ink for its own --sf-bg. Without this the
+   panel inherited the host page's ink: IFAC's dark-chrome #e8e3e4 on the
+   #fffdf8 card, 1.25:1 (series planner, 2026-10-10). */
+.eac-surface-panel--page { color: var(--sf-fg); }
 .eac-surface-panel--page .eac-surface-body { overflow: visible; }
 .eac-surface-panel--page .eac-surface-title { white-space: normal; font-size: clamp(1.5rem, 3.2vw, 2.1rem); }
 .eac-surface-panel--page .eac-surface-head { padding: 18px 22px; align-items: start; }
@@ -1890,6 +1897,144 @@ dialog.eac-surface[data-morph][open] {
   padding: 18px 20px;
   font-size: 0.88rem;
   color: var(--sf-muted);
+}
+
+/* The canvas box. Inside the popup it takes most of the viewport and no
+   less than 420px; a `height` prop sets an inline height that beats this. */
+.eac-whiteboard-canvas {
+  position: relative;
+  height: 70vh;
+  min-height: 420px;
+}
+
+/* "Save to…" / "Export image…" chooser over the canvas (WhiteboardCanvas,
+   2026-10-10): Nextcloud or this computer. Inks are --sf-fg / --sf-muted on
+   --sf-bg; the filled option is --sf-accent with --sf-on-accent. */
+.eac-wb-chooser {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--sf-scrim);
+}
+.eac-wb-panel {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 440px);
+  padding: 18px 20px 20px;
+  color: var(--sf-fg);
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius);
+  box-shadow: var(--sf-shadow);
+  font-family: var(--sf-font-body);
+}
+.eac-wb-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.eac-wb-panel-head h2 { margin: 0; font-family: var(--sf-font-title); font-size: 1.2rem; font-weight: 600; }
+.eac-wb-close {
+  width: 32px; height: 32px; border: 0; border-radius: var(--sf-radius-sm);
+  background: none; color: var(--sf-fg); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.eac-wb-close:hover { background: var(--sf-bg-soft); }
+.eac-wb-field { display: grid; gap: 4px; font-size: 0.9rem; color: var(--sf-muted); }
+.eac-wb-field input {
+  min-height: 38px; padding: 6px 10px; font: inherit; font-size: 1rem; color: var(--sf-fg);
+  background: var(--sf-bg); border: 1px solid var(--sf-muted); border-radius: var(--sf-radius-sm);
+}
+.eac-wb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.eac-wb-seg { display: inline-flex; padding: 2px; border: 1px solid var(--sf-muted); border-radius: 999px; }
+.eac-wb-seg button {
+  padding: 4px 14px; border: 0; border-radius: 999px; font: inherit; font-size: 0.85rem;
+  background: none; color: var(--sf-fg); cursor: pointer;
+}
+.eac-wb-seg button[aria-pressed="true"] { background: var(--sf-fg); color: var(--sf-bg); }
+.eac-wb-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.eac-wb-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.eac-wb-option {
+  display: grid; gap: 2px; padding: 12px 14px; text-align: left; font: inherit; cursor: pointer;
+  color: var(--sf-fg); background: var(--sf-bg); border: 1px solid var(--sf-muted); border-radius: var(--sf-radius);
+}
+.eac-wb-option span { font-size: 0.85rem; color: var(--sf-muted); }
+.eac-wb-option:hover { border-color: var(--sf-fg); }
+.eac-wb-option--primary { color: var(--sf-on-accent); background: var(--sf-accent); border-color: var(--sf-accent); }
+.eac-wb-option--primary span { color: var(--sf-on-accent); opacity: 0.85; }
+.eac-wb-option:disabled { opacity: 0.6; cursor: progress; }
+.eac-wb-option:focus-visible, .eac-wb-close:focus-visible, .eac-wb-seg button:focus-visible {
+  outline: 3px solid var(--sf-fg); outline-offset: 2px;
+}
+.eac-wb-result { margin: 0; font-size: 0.9rem; color: var(--sf-fg); }
+.eac-wb-result.is-error { color: var(--sf-danger); }
+
+/* The Nextcloud card inside Excalidraw's own "Save to…" dialog. */
+.eac-wb-card { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 8px; }
+.eac-wb-card h3 { margin: 0; font-size: 1rem; }
+.eac-wb-card p { margin: 0; font-size: 0.85rem; }
+.eac-wb-btn {
+  padding: 8px 14px; font: inherit; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--sf-accent); background: var(--sf-bg); color: var(--sf-fg);
+}
+.eac-wb-btn--primary { background: var(--sf-accent); color: var(--sf-on-accent); }
+
+/* The dedicated page (`fullPage`). No card: the board sits straight on the
+   page ground, and the canvas fills the viewport less the chrome above it —
+   the page's own heading row plus any site header. A host sets
+   `--eac-whiteboard-chrome` on `.eac-whiteboard-page` to match its header. */
+.eac-whiteboard-page {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+}
+.eac-whiteboard-page .eac-whiteboard-canvas {
+  height: calc(100dvh - var(--eac-whiteboard-chrome, 7rem));
+  min-height: 420px;
+}
+
+/* The page's heading row: the org as a kicker, the title, and the way back
+   to the hub. Kept to one short band so the canvas gets the viewport. Inks
+   are --sf-fg / --sf-muted over --sf-bg, the pair surface.css measures. */
+.eac-whiteboard-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--sf-line);
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+}
+.eac-whiteboard-page-kicker {
+  margin: 0 0 2px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+}
+.eac-whiteboard-page-title {
+  margin: 0;
+  font-family: var(--sf-font-title);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.eac-whiteboard-page-back {
+  flex: none;
+  padding: 4px 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+.eac-whiteboard-page-back:hover,
+.eac-whiteboard-page-back:focus-visible {
+  border-color: var(--sf-accent);
+  outline: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -3314,3 +3459,443 @@ button.eac-forum-feed-name {
   background: var(--sf-bg-soft);
   user-select: all;
 }
+
+/* ── Series planner and face (hub/SeriesPlannerSurface, hub/SeriesFace) ──── */
+.eac-series { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.eac-series__week { border: 1px solid var(--sf-line); border-radius: 10px; background: var(--sf-bg); }
+.eac-series__week.is-open { border-color: var(--sf-kind); }
+.eac-series__week.is-past { opacity: 0.75; }
+.eac-series__head {
+  display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  width: 100%; padding: 12px 14px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.eac-series__when { display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; }
+.eac-series__when strong { font-weight: 600; }
+.eac-series__tag { font-style: normal; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sf-kind); }
+.eac-series__n { font-size: 0.78rem; color: var(--sf-muted); }
+.eac-series__sum { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eac-series__title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-series__title.is-empty, .eac-series__host.is-empty { color: var(--sf-muted); font-style: italic; }
+.eac-series__host { font-size: 0.88rem; color: var(--sf-muted); }
+.eac-series__chev { color: var(--sf-muted); }
+.eac-series__form { padding: 4px 14px 16px; border-top: 1px solid var(--sf-line); display: flex; flex-direction: column; gap: 12px; }
+.eac-series__roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding-top: 12px; }
+.eac-series__role, .eac-series__field { display: flex; flex-direction: column; gap: 5px; }
+.eac-series__role > span, .eac-series__field > span { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sf-muted); }
+.eac-series__role-val { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 32px; }
+.eac-series__role-val em { color: var(--sf-muted); }
+.eac-series__addlink { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 8px; align-items: center; }
+.eac-series__materials { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.eac-series__materials li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; border: 1px solid var(--sf-line); border-radius: 8px; font-size: 0.9rem; }
+.eac-series__materials a { color: inherit; text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-series__mkind { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sf-kind); margin-right: 4px; }
+.eac-series__read p { margin: 8px 0; color: var(--sf-fg); line-height: 1.55; white-space: pre-line; }
+/* The planner's fields sit in .eac-series__field, not .eac-field, so
+   fields.css's --fld-* tokens were undefined here: the inputs lost their
+   border, ground, ink, placeholder colour and focus ring (2026-10-10).
+   Same chains as .eac-field; a host pins --eac-field-* to its measured
+   control colours (IFAC: app/hub/hub-readable.css section 8). */
+.eac-series__form,
+.eac-series__new {
+  --fld-fg: var(--eac-field-fg, var(--sf-fg, var(--ink, #16181d)));
+  --fld-muted: var(--eac-field-muted, var(--sf-muted, var(--ink-soft, #5e667a)));
+  --fld-line: var(--eac-field-line, var(--sf-rule, var(--sf-line, var(--line, #b9c0c9))));
+  --fld-bg: var(--eac-field-bg, var(--sf-bg, var(--paper, #fff)));
+  --fld-accent: var(--eac-field-accent, var(--sf-kind, var(--sf-accent, #5b45a8)));
+  --fld-radius: var(--eac-field-radius, var(--sf-radius-sm, 3px));
+}
+.eac-series__settings { margin-bottom: 14px; }
+.eac-series__hint { margin: -6px 0 0; font-size: 0.86rem; line-height: 1.45; color: var(--sf-muted); }
+.eac-series__field > .eac-series__hint { margin: 0; }
+.eac-series__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+/* Series settings sections, zone and join choices, the schedule's move
+   warning, the Draft tag (2026-10-10). Existing pairs only: --sf-fg and
+   --sf-muted on --sf-bg, as the rows above; no new colours. */
+.eac-series__section { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--sf-line); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--sf-muted); }
+.eac-series__checks { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.eac-series__checks label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; color: var(--sf-fg); }
+.eac-series__warn { border: 1px solid var(--sf-kind); border-radius: 8px; padding: 10px 12px; background: var(--sf-bg); color: var(--sf-fg); font-size: 0.9rem; line-height: 1.5; }
+.eac-series__warn ul { margin: 6px 0 8px; padding-left: 18px; }
+.eac-series__tag.is-draft { color: var(--sf-muted); }
+@media (max-width: 640px) {
+  .eac-series__head { grid-template-columns: minmax(0, 1fr) auto; }
+  .eac-series__when { grid-column: 1 / -1; flex-direction: row; gap: 10px; align-items: baseline; }
+  .eac-series__addlink { grid-template-columns: 1fr; }
+}
+/* Covers, subtitles and rich write-ups in the planner (2026-10-13). The
+   row's head gains a framed thumbnail in front; the overlay on a cover
+   preview is white on a black gradient (CoverFramer, files-card.css). Text
+   pairs are the existing --sf-fg / --sf-muted on --sf-bg. */
+.eac-series__head { grid-template-columns: 64px 150px minmax(0, 1fr) auto; }
+.eac-series__thumb {
+  position: relative; display: block; width: 64px; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: 6px; border: 1px solid var(--sf-line); background: var(--sf-bg-soft, #111);
+}
+.eac-series__thumb.is-empty { border-style: dashed; background: transparent; }
+.eac-series__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.eac-series__thumb-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.8rem; color: var(--sf-muted); }
+.eac-series__subtitle { font-size: 0.88rem; color: var(--sf-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-series__read .eac-series__subtitle { white-space: normal; font-style: italic; }
+.eac-series__optional { font-style: normal; text-transform: none; letter-spacing: 0; }
+.eac-series__overlay { display: grid; gap: 2px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.eac-series__overlay b { font-size: 1.05rem; line-height: 1.25; }
+.eac-series__overlay span { font-size: 0.82rem; line-height: 1.35; }
+.eac-series__rich { color: var(--sf-fg); line-height: 1.55; }
+.eac-series__rich > :first-child { margin-top: 0; }
+.eac-series__rich h2, .eac-series__rich h3 { margin: 14px 0 6px; font-size: 1.02rem; }
+.eac-series__rich ul, .eac-series__rich ol { margin: 6px 0; padding-left: 22px; }
+.eac-series__rich a { color: inherit; text-decoration: underline; }
+.eac-series__cover { gap: 10px; }
+.eac-series__addlink--one { grid-template-columns: minmax(0, 1fr) auto; }
+/* Series colour swatches and the stacked "Where it shows" checks (2026-10-18).
+   The ring is --sf-fg on --sf-bg (the planner's own text pair). */
+.eac-series__swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.eac-series__swatch { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--sf-bg, #fff); box-shadow: 0 0 0 1px var(--sf-rule, var(--sf-line)); cursor: pointer; padding: 0; }
+.eac-series__swatch.is-on { box-shadow: 0 0 0 3px var(--sf-fg); }
+.eac-series__checks--col { flex-direction: column; gap: 8px; }
+/* Series settings with a live preview beside them (2026-10-18, mockup E).
+   The preview is drawn on a dark ground like the public sites, with its
+   own literal colours so every host shows the same thing: ink #ece7e1 on
+   #0b0b0d 16.0:1, muted #b3ada3 8.8:1; the accent text comes from the
+   series' colour (>= 9:1 on #0b0b0d, SERIES_ACCENTS). */
+.eac-series__cardsplit { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.eac-series__cardfields { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.eac-series__cardprev { position: sticky; top: 12px; min-width: 0; }
+.eac-cardprev {
+  display: grid; gap: 10px; padding: 16px; border-radius: 10px;
+  background: #050506; color: #ece7e1;
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+.eac-cardprev__k { margin: 4px 0 0; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: #b3ada3; }
+.eac-cardprev__card { display: grid; border: 1px solid #3a3a42; border-top: 4px solid var(--cp-acc); border-radius: 10px; overflow: hidden; background: #0b0b0d; }
+.eac-cardprev__card.is-unlisted, .eac-cardprev__slide.is-unlisted { opacity: 0.45; }
+.eac-cardprev__media { position: relative; display: block; aspect-ratio: 16 / 10; }
+.eac-cardprev__cover { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(80% 80% at 50% 35%, #2a1540, #070709); display: block; }
+.eac-cardprev__cover img, .eac-cardprev__cover video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.eac-cardprev__blank { position: absolute; inset: 0; display: grid; place-items: center; color: #b3ada3; font-size: 0.86rem; }
+.eac-cardprev__tag {
+  position: absolute; top: 10px; left: 10px; padding: 3px 9px; border-radius: 999px;
+  background: rgba(5, 5, 6, 0.88); border: 1px solid var(--cp-acc); color: var(--cp-acc-text);
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.eac-cardprev__body { display: grid; gap: 7px; padding: 14px 16px 16px; }
+.eac-cardprev__rhythm { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cp-acc-text, #e3c572); }
+.eac-cardprev__rhythm i { width: 9px; height: 9px; border-radius: 50%; background: var(--cp-acc, #c9a24a); }
+.eac-cardprev__t { font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; line-height: 1.1; color: #ece7e1; }
+.eac-cardprev__t--slide { font-size: 1.3rem; }
+.eac-cardprev__lede { font-size: 0.9rem; line-height: 1.45; color: #b3ada3; }
+.eac-cardprev__time { font-size: 0.84rem; color: #b3ada3; }
+.eac-cardprev__next { font-size: 0.86rem; color: #ece7e1; padding: 8px 10px; border: 1px solid #3a3a42; border-radius: 8px; }
+.eac-cardprev__next b { color: var(--cp-acc-text); margin-right: 4px; }
+.eac-cardprev__note { margin: 0; font-size: 0.82rem; color: #f0a08a; }
+.eac-cardprev__slide { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #5c62e6; background: #0b0b0d; min-height: 130px; }
+.eac-cardprev__slidebody { display: grid; gap: 5px; align-content: center; padding: 12px; }
+.eac-cardprev__slide > .eac-cardprev__cover { position: relative; }
+/* Session preview rows (2026-10-18): same dark ground and pairs as above. */
+.eac-cardprev__row, .eac-cardprev__band { display: grid; grid-template-columns: auto 96px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid #3a3a42; border-left: 4px solid var(--cp-acc, #c9a24a); border-radius: 10px; background: #0b0b0d; }
+.eac-cardprev__band { grid-template-columns: auto minmax(0, 1fr); border: 1px solid var(--cp-acc, #c9a24a); background: linear-gradient(90deg, rgba(201, 162, 74, 0.1), rgba(201, 162, 74, 0) 60%), #050506; }
+.eac-cardprev__date { text-align: center; line-height: 1.05; border: 1px solid var(--cp-acc, #c9a24a); border-radius: 6px; padding: 5px 8px; min-width: 46px; }
+.eac-cardprev__date b { display: block; font: 600 1.3rem "Cormorant Garamond", Georgia, serif; color: #ece7e1; }
+.eac-cardprev__date small { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: #b3ada3; }
+.eac-cardprev__thumb { position: relative; display: block; width: 96px; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: radial-gradient(70% 70% at 50% 40%, #2a1540, #0b0b0d); }
+.eac-cardprev__thumb img, .eac-cardprev__thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.eac-cardprev__rowbody { display: grid; gap: 3px; min-width: 0; }
+.eac-cardprev__t--row { font-size: 1.2rem; }
+.eac-cardprev__sub { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 0.98rem; color: #b3ada3; }
+.eac-cardprev__btn { justify-self: start; margin-top: 4px; padding: 5px 12px; border-radius: 999px; background: #c9a24a; color: #0b0b0d; font-size: 0.82rem; font-weight: 600; }
+.eac-series__prevbar { display: flex; justify-content: flex-end; padding-top: 10px; }
+.eac-series__cardsplit.is-solo { grid-template-columns: minmax(0, 1fr); }
+/* Switches (mockup E): the track is #3b6b48 on, #8d93a0 off, knob white;
+   track against the planner ground >= 3:1 in both states; the label is
+   --sf-fg on --sf-bg. */
+.eac-series__switches { display: grid; gap: 10px; }
+.eac-switch { display: grid; gap: 2px; }
+.eac-switch__btn { display: inline-flex; align-items: center; gap: 12px; padding: 4px 0; border: 0; background: none; color: var(--sf-fg); font: inherit; font-size: 0.97rem; cursor: pointer; text-align: left; }
+.eac-switch__track { position: relative; flex: none; width: 42px; height: 24px; border-radius: 999px; background: #8d93a0; transition: background-color 0.15s ease; }
+.eac-switch__knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); transition: transform 0.15s ease; }
+.eac-switch__btn.is-on .eac-switch__track { background: #3b6b48; }
+.eac-switch__btn.is-on .eac-switch__knob { transform: translateX(18px); }
+.eac-switch__btn:focus-visible .eac-switch__track { outline: 3px solid var(--sf-kind, #5b45a8); outline-offset: 2px; }
+.eac-switch__hint { margin-left: 54px; font-size: 0.84rem; color: var(--sf-muted); }
+@media (prefers-reduced-motion: reduce) { .eac-switch__track, .eac-switch__knob { transition: none; } }
+.eac-spage__split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.eac-spage__prev { position: sticky; top: 12px; }
+.eac-spage__prevgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.eac-spage__prevgrid .eac-cardprev__t { font-size: 1.05rem; }
+.eac-spage__prevgrid .eac-cardprev__body { padding: 8px 10px 10px; }
+.eac-cardprev__h { font-family: "Cormorant Garamond", Georgia, serif; font-size: 2rem; line-height: 1.08; color: #ece7e1; }
+.eac-cardprev__eyebrow { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; color: #e3c572; }
+.eac-cardprev__intro { font-size: 0.92rem; line-height: 1.5; color: #b3ada3; }
+.eac-cardprev__intro p { margin: 0 0 6px; }
+@media (max-width: 900px) {
+  .eac-series__cardsplit, .eac-spage__split { grid-template-columns: minmax(0, 1fr); }
+  .eac-series__cardprev, .eac-spage__prev { position: static; }
+}
+/* The Series page editor (hub/SeriesPageEditor, 2026-10-18). */
+.eac-spage__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.eac-spage__item { display: grid; grid-template-columns: 12px 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--sf-line); border-radius: 10px; background: var(--sf-bg); }
+.eac-spage__item.is-hidden { opacity: 0.7; }
+.eac-spage__dot { width: 12px; height: 12px; border-radius: 50%; }
+.eac-spage__name { display: grid; gap: 2px; min-width: 0; }
+.eac-spage__name a { color: var(--sf-fg); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.eac-spage__name small { color: var(--sf-muted); font-size: 0.86rem; }
+.eac-spage__tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.eac-spage__feat { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--sf-fg); margin-right: 6px; }
+@media (max-width: 640px) {
+  .eac-spage__item { grid-template-columns: 12px 64px minmax(0, 1fr); }
+  .eac-spage__tools { grid-column: 1 / -1; justify-content: flex-start; }
+}
+.eac-series__card-preview {
+  position: relative; width: 100%; max-width: 640px; aspect-ratio: 16 / 9; overflow: hidden;
+  border: 1px solid var(--sf-line); border-radius: 6px; background: #111;
+}
+.eac-series__card-preview video, .eac-series__card-preview iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover;
+}
+.eac-series__card-preview > p { padding: 12px; color: #fff; }
+@media (max-width: 640px) {
+  .eac-series__head { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .eac-series__thumb { grid-row: 1 / 3; align-self: start; }
+  .eac-series__when { grid-column: 2 / -1; }
+  .eac-series__sum { grid-column: 2; }
+}
+/* The face: four coming weeks at a glance. */
+.eac-series-face { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.86rem; }
+.eac-series-face li { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 3px 0; border-bottom: 1px solid var(--sf-line); }
+.eac-series-face li:last-child { border-bottom: 0; }
+.eac-series-face li.is-next .eac-series-face__date { color: var(--sf-kind); font-weight: 600; }
+.eac-series-face__date { color: var(--sf-muted); font-variant-numeric: tabular-nums; }
+.eac-series-face__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eac-series-face__title em { color: var(--sf-muted); }
+.eac-series-face__host { color: var(--sf-muted); white-space: nowrap; }
+.eac-series-face__host.is-empty { color: var(--sf-danger, #b4452c); }
+
+/* ── The journey surface: the auction errand as three steps (2026-10-18) ──
+   Its own look, after the mock-up (developer's call, 2026-10-18): paper and
+   ink with a teal accent, a dark rail on the LEFT that says where you stand,
+   the steps on the right with the next one boxed. The panel redefines the
+   --sf-* output tokens for itself, so it reads the same on every host. */
+.eac-surface-panel:has(.eac-journey-rail) {
+  --sf-bg: #f6f4ef;
+  --sf-bg-soft: #ffffff;
+  --sf-fg: #1b1a17;
+  --sf-muted: #5e5b53;
+  --sf-faint: #8a857a;
+  --sf-line: #e2ded4;
+  --sf-rule: #cfc9bc;
+  --sf-accent: #1f5f5b;
+  --sf-kind: #1f5f5b;
+  --sf-on-accent: #ffffff;
+  --sf-radius: 16px;
+  --sf-radius-sm: 9px;
+  --sf-font-title: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-record: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border: 0;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-head { border-bottom: 1px solid var(--sf-line); padding: 16px 20px 14px 24px; }
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--sf-accent); }
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-title { font-size: 1.3rem; font-weight: 700; }
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-body.has-rail { grid-template-columns: 300px minmax(0, 1fr); }
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-rail {
+  order: -1;
+  border-left: 0;
+  padding: 28px 24px;
+  background: #1b1a17;
+  color: #f6f4ef;
+}
+.eac-surface-panel:has(.eac-journey-rail) .eac-surface-main { padding: 28px 32px; background: var(--sf-bg); }
+@media (max-width: 760px) {
+  .eac-surface-panel:has(.eac-journey-rail) .eac-surface-body.has-rail { grid-template-columns: minmax(0, 1fr); }
+  .eac-surface-panel:has(.eac-journey-rail) .eac-surface-main { padding: 20px; }
+}
+
+.eac-journey { display: grid; gap: 22px; }
+.eac-journey-step { display: grid; gap: 8px; padding-bottom: 22px; border-bottom: 1px solid var(--sf-line); }
+.eac-journey-step:last-child { border-bottom: 0; padding-bottom: 0; }
+.eac-journey-step[data-state="next"] { padding: 16px; margin: 0 -16px; border: 1px solid #9dd1c6; border-radius: 12px; background: #ffffff; }
+.eac-journey-step h3 { margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.2; color: var(--sf-fg); }
+.eac-journey-step p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--sf-muted); }
+.eac-journey-step-tag { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--sf-muted); }
+.eac-journey-step[data-state="done"] .eac-journey-step-tag { color: #2e7d6f; }
+.eac-journey-step[data-state="next"] .eac-journey-step-tag { color: var(--sf-accent); }
+.eac-journey-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 4px; }
+.eac-journey .eac-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 18px;
+  border: 1px solid #cfc9bc; border-radius: 9px; background: transparent;
+  font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--sf-fg); text-decoration: none;
+}
+.eac-journey .eac-btn--primary { background: var(--sf-accent); border-color: var(--sf-accent); color: #ffffff; }
+.eac-journey .eac-btn--primary:hover { background: #174b48; border-color: #174b48; }
+.eac-journey .eac-btn--quiet { border-color: transparent; color: var(--sf-accent); font-weight: 500; padding: 0 12px; }
+.eac-journey .eac-btn--quiet:hover { background: transparent; color: #174b48; text-decoration: underline; }
+.eac-journey-country { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 600; color: var(--sf-fg); }
+.eac-journey-country select { min-height: 44px; min-width: 12.5rem; border: 1px solid #cfc9bc; border-radius: 9px; background: #ffffff; padding: 0 10px; font: inherit; font-size: 0.9rem; }
+.eac-journey-fees { margin-top: 6px; font-size: 0.9rem; line-height: 1.5; color: var(--sf-muted); }
+.eac-journey-fees summary { cursor: pointer; color: var(--sf-accent); font-weight: 600; }
+.eac-journey-fees ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.eac-journey-fees strong { color: var(--sf-fg); }
+
+/* The rail: dark, the three steps and the dates. */
+.eac-journey-rail { display: grid; gap: 22px; align-content: start; min-height: 100%; }
+.eac-journey-rail-head { display: grid; gap: 4px; }
+.eac-journey-rail-kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: #c9c3b6; }
+.eac-journey-rail-title { font-size: 1.3rem; font-weight: 700; line-height: 1.15; color: #f6f4ef; }
+.eac-journey-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.eac-journey-rail-step { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; align-items: start; }
+.eac-journey-n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; border: 2px solid #5e5b53; font-size: 0.8rem; font-weight: 700; color: #f6f4ef; }
+.eac-journey-rail-step[data-state="done"] .eac-journey-n { background: #2e7d6f; border-color: #2e7d6f; color: #ffffff; }
+.eac-journey-rail-step[data-state="next"] .eac-journey-n { border-color: #9dd1c6; }
+.eac-journey-rail-text { display: grid; gap: 2px; }
+.eac-journey-rail-label { font-size: 0.95rem; font-weight: 600; line-height: 1.3; color: #f6f4ef; }
+.eac-journey-rail-note { font-size: 0.78rem; color: #c9c3b6; }
+.eac-journey-rail-step[data-state="done"] .eac-journey-rail-note { color: #9dd1c6; }
+.eac-journey-dates { margin: 0; padding-top: 16px; border-top: 1px solid #3e3b35; display: grid; gap: 8px; font-size: 0.84rem; line-height: 1.45; color: #c9c3b6; }
+.eac-journey-dates div { display: flex; justify-content: space-between; gap: 10px; }
+.eac-journey-dates dt { font-weight: 600; color: #f6f4ef; }
+.eac-journey-dates dd { margin: 0; text-align: right; }
+.eac-journey-about { margin-top: auto; font-size: 0.86rem; color: #9dd1c6; text-decoration: none; }
+.eac-journey-about:hover { text-decoration: underline; }
+
+/* ── The artwork surface: a queue on the left, the short form on the right ── */
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) {
+  --sf-bg: #f6f4ef; --sf-bg-soft: #ffffff; --sf-fg: #1b1a17; --sf-muted: #5e5b53; --sf-line: #e2ded4; --sf-rule: #cfc9bc;
+  --sf-accent: #1f5f5b; --sf-kind: #1f5f5b; --sf-on-accent: #ffffff; --sf-radius: 16px; --sf-radius-sm: 9px;
+  --sf-font-title: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-record: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border: 0; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-head { border-bottom: 1px solid var(--sf-line); padding: 16px 20px 14px 24px; }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--sf-accent); }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-title { font-size: 1.3rem; font-weight: 700; }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-body.has-rail { grid-template-columns: 280px minmax(0, 1fr); }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-rail { order: -1; border-left: 0; padding: 24px 20px; background: #1b1a17; color: #f6f4ef; }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-main { padding: 24px 28px; background: var(--sf-bg); }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-foot { border-top: 1px solid var(--sf-line); }
+.eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-btn { min-height: 44px; border-radius: 9px; font-weight: 600; }
+@media (max-width: 760px) { .eac-surface-panel:has(.eac-artwork-rail, .eac-artwork-gate) .eac-surface-body.has-rail { grid-template-columns: minmax(0, 1fr); } }
+.eac-artwork-rail { display: grid; gap: 14px; align-content: start; }
+.eac-artwork-rail-head { display: grid; gap: 2px; }
+.eac-artwork-rail-kicker { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: #c9c3b6; }
+.eac-artwork-rail-title { font-size: 1.15rem; font-weight: 700; }
+.eac-artwork-queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.eac-artwork-queue-item { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; padding: 6px; border: 1px solid #3e3b35; border-radius: 10px; background: transparent; color: #f6f4ef; font: inherit; text-align: left; cursor: pointer; }
+.eac-artwork-queue-item[data-current] { border-color: #9dd1c6; background: #26241f; }
+.eac-artwork-queue-item img, .eac-artwork-queue-blank { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #3e3b35; display: block; }
+.eac-artwork-queue-text { display: grid; min-width: 0; }
+.eac-artwork-queue-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 600; }
+.eac-artwork-queue-text em { font-style: normal; font-size: 0.74rem; color: #c9c3b6; }
+.eac-artwork-queue-item[data-state="published"] em { color: #9dd1c6; }
+.eac-artwork-add { min-height: 44px; border: 1px dashed #5e5b53; border-radius: 10px; background: transparent; color: #f6f4ef; font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.eac-artwork-add:hover:not(:disabled) { border-color: #9dd1c6; }
+.eac-artwork-rail-note { margin: 0; font-size: 0.78rem; line-height: 1.5; color: #c9c3b6; }
+.eac-artwork-form { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.eac-artwork-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.eac-artwork-field { display: grid; gap: 4px; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sf-muted); font-weight: 600; }
+.eac-artwork-field--wide { grid-column: 1 / -1; }
+.eac-artwork-form > *, .eac-artwork-fields > * { min-width: 0; }
+.eac-artwork-field input, .eac-artwork-field select, .eac-artwork-field textarea { width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; border: 1px solid #cfc9bc; border-radius: 9px; padding: 0 12px; background: #fff; font: inherit; font-size: 0.95rem; letter-spacing: 0; text-transform: none; color: var(--sf-fg); }
+.eac-artwork-field textarea { min-height: 84px; padding: 10px 12px; resize: vertical; }
+.eac-artwork-gate { display: grid; gap: 12px; max-width: 48ch; }
+.eac-artwork-gate .eac-btn { justify-self: start; min-height: 44px; padding: 0 18px; border-radius: 9px; font-weight: 600; }
+.eac-artwork-gate .eac-btn--primary { background: var(--sf-accent); border-color: var(--sf-accent); color: #fff; }
+.eac-artwork-gate p { margin: 0; line-height: 1.5; }
+.eac-artwork-notice { margin: 0; font-size: 0.86rem; color: var(--sf-muted); }
+.eac-artwork-notice[data-tone="error"] { color: #b4452c; }
+@media (max-width: 760px) { .eac-artwork-form, .eac-artwork-fields { grid-template-columns: 1fr; } }
+
+/* ── The journey dialogs (take three): the panels' own rail + steps, larger type ── */
+.eac-surface-panel:has(.eac-journey-dialog) {
+  --sf-bg: #f6f4ef; --sf-bg-soft: #ffffff; --sf-fg: #1b1a17; --sf-muted: #5e5b53; --sf-line: #e2ded4; --sf-rule: #cfc9bc;
+  --sf-accent: #1f5f5b; --sf-kind: #1f5f5b; --sf-on-accent: #ffffff; --sf-radius: 16px; --sf-radius-sm: 9px;
+  --sf-font-title: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sf-font-record: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border: 0; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  font-size: 1.06rem;
+}
+/* 30% wider than the first journey dialog (1040 → 1352px), set on the dialog so it stays centred. */
+dialog.eac-surface:has(.eac-journey-dialog) { width: min(1352px, calc(100vw - 32px)); }
+/* The header gives its height back to the steps: one slim line, no glyph, a small kicker. */
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-head { border-bottom: 1px solid var(--sf-line); padding: 8px 12px 8px 22px; gap: 10px; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-glyph { display: none; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-head { grid-template-columns: minmax(0, 1fr) auto; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-headings { display: flex; align-items: baseline; gap: 12px; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-kicker { font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--sf-accent); white-space: nowrap; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.eac-surface-panel:has(.eac-journey-dialog) .eac-surface-iconbtn { width: 30px; height: 30px; }
+.eac-journey-dialog { min-height: 560px; font-size: 1.04rem; }
+.eac-journey-dialog .eac-jt-body { grid-template-columns: 340px minmax(0, 1fr); min-height: 560px; }
+/* The profile control panel (`me`, 2026-10-31): no rail, so one column and a narrower dialog than the journeys. */
+.eac-journey-dialog .eac-jt-body--bare { grid-template-columns: minmax(0, 1fr); }
+dialog.eac-surface:has(.eac-me-dialog) { width: min(960px, calc(100vw - 32px)); }
+.eac-me-dialog { min-height: 480px; }
+.eac-me-dialog .eac-jt-body { min-height: 480px; }
+.eac-journey-dialog .eac-jt-rail { padding: 28px 24px; }
+.eac-journey-dialog .eac-jt-rail-title { font-size: 1.35rem; }
+.eac-journey-dialog .eac-jt-steps { font-size: 1rem; gap: 14px; }
+.eac-journey-dialog .eac-jt-main { padding: 28px 32px 32px; gap: 20px; }
+.eac-journey-dialog .eac-jt-step h3 { font-size: 1.3rem; }
+.eac-journey-dialog .eac-jt-step p, .eac-journey-dialog .eac-jt-muted { font-size: 1rem; line-height: 1.5; }
+.eac-journey-dialog .eac-jt-btn { font-size: 1rem; min-height: 48px; }
+.eac-journey-dialog .eac-jt-field { font-size: 0.76rem; }
+.eac-journey-dialog .eac-jt-field input, .eac-journey-dialog .eac-jt-field select, .eac-journey-dialog .eac-jt-field textarea { font-size: 1rem; min-height: 46px; }
+.eac-journey-dialog .eac-jt-people table { font-size: 0.96rem; }
+@media (max-width: 760px) { .eac-journey-dialog .eac-jt-body { grid-template-columns: 1fr; } }
+
+/* ── The series planner, take two (2026-10-18) ──────────────────────────────
+   The series' own row is a banner, not a week: dark where the weeks are light
+   (--sf-fg as the ground, --sf-bg as the ink, so it follows any host's
+   palette and keeps its contrast), a larger cover, the name large, a "The
+   series" kicker and a settings button. A "Sessions" label then says the
+   rows below are its weeks. "+ New series" is the last tab. */
+.eac-series__settings { border-radius: 14px; overflow: hidden; border: 1px solid var(--sf-fg); margin-bottom: 22px; background: var(--sf-bg); }
+.eac-series__settings.is-open { border-color: var(--sf-fg); }
+.eac-series__banner {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 18px; align-items: center;
+  padding: 16px 18px; background: var(--sf-fg); color: var(--sf-bg);
+}
+.eac-series__banner:focus-visible { outline: 3px solid var(--sf-kind, var(--sf-accent)); outline-offset: -3px; }
+.eac-series__banner .eac-series__thumb { width: 112px; border-color: color-mix(in srgb, var(--sf-bg) 40%, transparent); background: color-mix(in srgb, var(--sf-bg) 14%, transparent); }
+.eac-series__banner .eac-series__thumb.is-empty { border-style: dashed; }
+.eac-series__banner .eac-series__sum { gap: 4px; }
+.eac-series__kicker { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: color-mix(in srgb, var(--sf-bg) 78%, transparent); }
+.eac-series__banner .eac-series__title { font-size: 1.45rem; font-weight: 700; line-height: 1.15; white-space: normal; }
+.eac-series__banner .eac-series__host { font-size: 0.92rem; color: color-mix(in srgb, var(--sf-bg) 82%, transparent); }
+.eac-series__banner .eac-series__host.is-empty { color: color-mix(in srgb, var(--sf-bg) 82%, transparent); }
+.eac-series__settings-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--sf-bg) 60%, transparent); border-radius: 999px;
+  font-size: 0.9rem; font-weight: 600; color: var(--sf-bg);
+}
+.eac-series__banner:hover .eac-series__settings-btn { background: color-mix(in srgb, var(--sf-bg) 16%, transparent); }
+.eac-series__settings.is-open > .eac-series__form { background: var(--sf-bg); border-top: 0; padding: 18px 18px 20px; }
+.eac-series__sessions-label {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; padding: 0 2px 8px;
+  border-bottom: 2px solid var(--sf-fg); font-size: 1.05rem; font-weight: 700; color: var(--sf-fg);
+}
+.eac-series__sessions-label span { font-size: 0.82rem; font-weight: 500; color: var(--sf-muted); }
+@media (max-width: 640px) {
+  .eac-series__banner { grid-template-columns: 72px minmax(0, 1fr); }
+  .eac-series__banner .eac-series__thumb { width: 72px; }
+  .eac-series__settings-btn { grid-column: 1 / -1; justify-self: start; }
+}
+/* "+ New series" sits at the right of the tabs, in the accent. */
+.eac-series-tabs .eac-series-tabs__tab.eac-series-tabs__tab--new { color: var(--sf-kind, var(--sf-accent)); font-weight: 700; }
+.eac-series__new { display: flex; flex-direction: column; gap: 14px; max-width: 46rem; padding-top: 4px; }
+.eac-series__new-actions { display: flex; gap: 10px; }
+.eac-series__new-done { margin: 0; font-size: 1.05rem; }
+.eac-series__warn[role="alert"] { border: 1px solid var(--sf-kind); border-radius: 8px; padding: 10px 12px; margin: 0; }
+.eac-series__banner--new { cursor: default; }
+
+/* Connections: the Pages a Facebook connection may publish to (2026-10-29). */
+.eac-conn__channel { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 0.8rem; color: var(--sf-muted); }
+.eac-conn__channel select { padding: 3px 6px; border: 1px solid var(--sf-line); border-radius: 6px; background: var(--sf-bg); color: var(--sf-fg); font: inherit; font-size: 0.8rem; }
+.eac-conn__addpage { display: flex; gap: 8px; margin: 6px 0 2px; }
+.eac-conn__addpage input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--sf-line); border-radius: var(--sf-radius-sm, 6px); background: var(--sf-bg); color: var(--sf-fg); font: inherit; font-size: 0.9rem; }
+.eac-conn__targets { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; font-size: 0.9em; opacity: 0.85; }
+.eac-conn__targets li::before { content: "· "; }

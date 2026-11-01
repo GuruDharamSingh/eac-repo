@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { EmailConnectors } from "@elkdonis/cms-ui/email";
+import { seriesLetterById } from "@/lib/series-letters";
 
 /**
  * The email suite's connectors, over this site's routes.
@@ -20,12 +21,38 @@ import type { EmailConnectors } from "@elkdonis/cms-ui/email";
  * re-runs its loader and the panel redraws from the database rather than from
  * optimistic local state: an inbox that disagrees with the server about what
  * is unread is worse than one that takes a moment.
+ *
+ * `seriesId` mounts the connectors for one series' letters
+ * (`/manage/email/series/[id]`): the suite's letter keys are then the ids of
+ * `SERIES_LETTERS` (`reminder:subscriber`), and each call goes to the plain
+ * template key with `?series=<id>&purpose=<p>`. The host notice has no
+ * per-series version and previews as IFAC's.
  */
-export function useEmailConnectors(): EmailConnectors {
+export function useEmailConnectors(options: { seriesId?: string } = {}): EmailConnectors {
   const router = useRouter();
+  const { seriesId } = options;
 
   return React.useMemo<EmailConnectors>(() => {
     const base = "/api/hub/email";
+
+    /**
+     * The route segment and query for one letter key: `reminder` +
+     * `?series=…&purpose=attendee` for `reminder:attendee` on a series page,
+     * the key itself otherwise.
+     */
+    function letterPath(key: string): { key: string; query: string } {
+      if (!seriesId) return { key, query: "" };
+      const letter = seriesLetterById(key);
+      if (!letter) return { key, query: "" };
+      if (!letter.editable) return { key: letter.key, query: "" };
+      const q = new URLSearchParams({ series: seriesId });
+      if (letter.purpose) q.set("purpose", letter.purpose);
+      return { key: letter.key, query: `?${q.toString()}` };
+    }
+    const at = (key: string, suffix = "") => {
+      const p = letterPath(key);
+      return `/${encodeURIComponent(p.key)}${suffix}${p.query}`;
+    };
 
     /** One fetch shape, so an error reads the same wherever it came from. */
     async function send(
@@ -90,7 +117,7 @@ export function useEmailConnectors(): EmailConnectors {
       // /hub/email/<key> page posted to. The suite reuses them rather than
       // adding a third way to save the same field.
       saveTemplate: (key, bodyText, bodyHtml) =>
-        send(`/${encodeURIComponent(key)}`, {
+        send(at(key), {
           method: "PUT",
           // Both layers in one write: the rich markup the editor produced and
           // the plain text derived from it. The route stores them together so
@@ -103,7 +130,7 @@ export function useEmailConnectors(): EmailConnectors {
       // different keys in the body — the store merges per block, so saving one
       // never disturbs another.
       saveCopy: (key, slotId, text, html) =>
-        send(`/${encodeURIComponent(key)}`, {
+        send(at(key), {
           method: "PUT",
           body: JSON.stringify({
             copySlot: slotId,
@@ -112,14 +139,22 @@ export function useEmailConnectors(): EmailConnectors {
           }),
         }),
 
-      testTemplate: (key) =>
-        send(`/${encodeURIComponent(key)}/test`, { method: "POST" }),
+      testTemplate: (key) => send(at(key, "/test"), { method: "POST" }),
+
+      // A series page only: delete that series' row, so IFAC's letter applies
+      // to it again. The route never deletes the org-wide row on this path.
+      ...(seriesId
+        ? {
+            resetTemplate: (key: string) => send(at(key), { method: "DELETE" }),
+          }
+        : {}),
 
       // Not routed through `send`: this one wants the HTML or an explanation,
       // not an { ok } envelope.
       previewTemplate: async (key) => {
         try {
-          const res = await fetch(`${base}/preview/${encodeURIComponent(key)}`, {
+          const p = letterPath(key);
+          const res = await fetch(`${base}/preview/${encodeURIComponent(p.key)}${p.query}`, {
             cache: "no-store",
           });
           const body = (await res.json().catch(() => ({}))) as {
@@ -135,5 +170,5 @@ export function useEmailConnectors(): EmailConnectors {
         }
       },
     };
-  }, [router]);
+  }, [router, seriesId]);
 }

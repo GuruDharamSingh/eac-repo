@@ -25,6 +25,7 @@
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/meta": "workspace:*",
     "@elkdonis/forum-ui": "workspace:*",
     "@elkdonis/newsletter": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",

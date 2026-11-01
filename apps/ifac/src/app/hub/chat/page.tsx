@@ -10,7 +10,8 @@ import {
 import { requireOrgMember } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
-import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { SiteFooter } from "@/components/site-chrome";
+import { HubCrumbBar } from "@/components/hub/HubCrumbBar";
 
 export const metadata: Metadata = { title: "IFAC General Chat" };
 export const dynamic = "force-dynamic";
@@ -41,9 +42,9 @@ export default async function HubChatPage() {
 
   return (
     <div className="site-shell">
-      <SiteHeader />
-
       <main className="hub">
+        <HubCrumbBar items={[{ label: "Hub", href: "/hub" }, { label: "General Chat" }]} />
+
         <div className="hub-welcome">
           <div>
             <p className="kicker">{siteConfig.shortName}</p>

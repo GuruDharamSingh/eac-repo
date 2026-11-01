@@ -12,6 +12,7 @@ import { BOOKING_UNAVAILABLE, bookingAvailability } from "@elkdonis/checkout/boo
 import { ServiceBookingForm } from "@elkdonis/checkout/components";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { isOadSteward } from "@/lib/oad";
 import { bookServiceAction } from "@/lib/booking-actions";
 import "@elkdonis/checkout/booking.css";
@@ -84,7 +85,10 @@ function facts(s: ServiceOffering): string[] {
 export default async function ServicePage({ params, searchParams }: Props) {
   const [{ slug, service: serviceSlug }, query, user] = await Promise.all([params, searchParams, getCurrentUser()]);
   const found = await load(slug, serviceSlug);
-  if (!found) notFound();
+  if (!found) {
+    await redirectRenamedProfile(slug, (current) => `/${current}/services/${encodeURIComponent(serviceSlug)}`);
+    notFound();
+  }
   const { identity, service } = found;
   const viewerId = user?.id ?? null;
   const steward = user ? await isOadSteward(user.id) : false;
@@ -102,7 +106,7 @@ export default async function ServicePage({ params, searchParams }: Props) {
   return (
     <>
       <ThemeStyle userId={identity.userId} precedence="user" />
-      <div className="eac-person-page eac-person-page--frame oad-person" data-person-page="" data-person-doc="service">
+      <div className="eac-person-page eac-person-page--oad oad-person" data-person-page="" data-person-doc="service">
         <nav className="eac-person-intro oad-person-bar" aria-label="Page">
           <a className="eac-person-back" href={`/${home}`}>
             ← {identity.displayName}
@@ -112,7 +116,7 @@ export default async function ServicePage({ params, searchParams }: Props) {
           <article className="eac-person-section eac-person-panel">
             {service.coverImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={service.coverImageUrl} alt="" style={{ width: "100%", height: "auto", borderRadius: "0.375rem" }} />
+              <img className="oad-offering-cover" src={service.coverImageUrl} alt="" />
             ) : null}
             <p className="eac-person-meta">{["Service", ...facts(service)].join(" · ")}</p>
             <h1 className="eac-person-name">{service.title}</h1>

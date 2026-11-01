@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import "@elkdonis/cms-ui/hubsite.css";
+import { HubCrumbs } from "@elkdonis/cms-ui/hubsite";
 import { listOrgEventsInRange } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { requireOrgMember } from "@/lib/auth";
@@ -41,12 +42,7 @@ export default async function HubCalendarPage({
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
-      <Link
-        href="/hub"
-        className="text-sm text-muted-foreground hover:text-foreground"
-      >
-        &larr; Hub
-      </Link>
+      <HubCrumbs items={[{ label: "Hub", href: "/hub" }, { label: "Calendar" }]} />
       <h1 className="mt-2 font-serif text-3xl">Calendar</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Everything {siteConfig.orgName} has scheduled. Gatherings also reach the

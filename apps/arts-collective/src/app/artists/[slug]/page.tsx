@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProfileBySlug } from "@elkdonis/services";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { ProfileView } from "@elkdonis/cms-ui/profile";
 import { SiteShell } from "@/components/site-shell";
 
@@ -43,6 +44,7 @@ export default async function ArtistProfilePage({ params }: Props) {
   // Unlisted people still have a slug and a folder — they simply aren't in
   // the public directory. Rendering them here would route around that, so a
   // profile is only public on this site if its owner has chosen to be listed.
+  if (!profile) await redirectRenamedProfile(slug, (current) => `/artists/${current}`);
   if (!profile || !profile.directoryListed) notFound();
 
   const works = profile.portfolio.filter((w) => w.url);

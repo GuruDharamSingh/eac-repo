@@ -31,7 +31,7 @@ export function LoginForm() {
         key={initialMode}
         initialMode={initialMode}
         title="Pigeonshoot"
-        subtitle="You don't need an account to post a pigeon — sign in only if you want your cards tied to a name you keep. One account works across the whole Elkdonis network."
+        subtitle="You don't need an account to post a pigeon — sign in only if you want your cards tied to a name you keep. One account works across the whole Arts Collective network."
         googleRedirectTo={next ?? "/"}
         onSuccess={() => {
           window.location.href = next ?? "/";

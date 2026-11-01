@@ -78,7 +78,8 @@ export function LoginForm() {
             window.location.href = back;
             return;
           }
-          window.location.href = mode === "signup" ? "/hub/elkdonis" : "/hub";
+          // A new account lands on the getting-started course (2026-10-29).
+          window.location.href = mode === "signup" ? "/learn/getting-started" : "/hub";
         }}
       />
     </div>

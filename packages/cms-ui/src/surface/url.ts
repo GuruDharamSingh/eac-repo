@@ -1,4 +1,4 @@
-import type { SurfaceDescriptor, SurfaceProfileTab } from "./types";
+import type { SurfaceDescriptor, SurfaceProfileTab, SurfaceMeTab } from "./types";
 
 // ============================================================================
 // A surface in the address bar.
@@ -16,6 +16,9 @@ const SAFE_TARGET = /^(blog|[a-z0-9_-]{1,50}\|[a-z0-9_-]{1,50})$/i;
 
 /** `profile:<tab>` — "profile" itself is the bare form. */
 const PROFILE_TABS = new Set<string>(["details", "show", "page", "payouts", "connections"]);
+const JOURNEY_IDS = new Set<string>(["auction", "org", "profile", "site"]);
+const ME_TABS = new Set<string>(["details", "offer", "show", "links", "connections"]);
+const SAFE_ORG = /^[A-Za-z0-9_-]{1,50}$/;
 
 export function serializeDescriptor(d: SurfaceDescriptor): string | null {
   switch (d.type) {
@@ -75,6 +78,12 @@ export function serializeDescriptor(d: SurfaceDescriptor): string | null {
     case "postTo":
       // The destination may be in the address; what was typed never is.
       return d.target && SAFE_TARGET.test(d.target) ? `postTo:${encodeURIComponent(d.target)}` : "postTo";
+    case "journey":
+      return d.orgId && SAFE_ORG.test(d.orgId) ? `journey:${d.id}:${d.orgId}` : `journey:${d.id}`;
+    case "me":
+      return d.tab ? `me:${d.tab}` : "me";
+    case "artwork":
+      return "artwork";
     case "custom":
       return null;
   }
@@ -133,6 +142,15 @@ export function parseDescriptor(value: string | null | undefined): SurfaceDescri
       return { type: "profile", mode: a === "edit" ? "edit" : undefined };
     case "centerLayout":
       return a && SAFE.test(a) ? { type: "centerLayout", orgId: a } : null;
+    case "journey":
+      // "selling" is the hub's older name for the auction journey.
+      if (a === "selling") return { type: "journey", id: "auction" };
+      if (!a || !JOURNEY_IDS.has(a)) return null;
+      return { type: "journey", id: a as "auction" | "org" | "profile" | "site", orgId: b && SAFE_ORG.test(b) ? b : undefined };
+    case "artwork":
+      return { type: "artwork" };
+    case "me":
+      return { type: "me", tab: a && ME_TABS.has(a) ? (a as SurfaceMeTab) : undefined };
     case "postTo": {
       let target: string | undefined;
       try {

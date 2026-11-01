@@ -22,7 +22,7 @@ export function LoginForm() {
         key={initialMode}
         initialMode={initialMode}
         title="Elastrocal"
-        subtitle="You don't need an account to calculate a chart — only to keep one across devices. One account works across the whole Elkdonis network."
+        subtitle="You don't need an account to calculate a chart — only to keep one across devices. One account works across the whole Arts Collective network."
         googleRedirectTo={withBase(next ?? "/charts")}
         onSuccess={() => {
           window.location.href = withBase(next ?? "/charts");

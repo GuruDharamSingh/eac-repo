@@ -1,0 +1,26 @@
+{
+  "id": "cl-014",
+  "status": "draft",
+  "role": "reference",
+  "source": { "paper": "none: ESL textbook illustration ('Daily News', 555 phone numbers)", "era": "1990s–2000s textbook", "language": ["en"] },
+  "summary": "A mock employment section from a textbook. Six boxed ads, each with a different headline treatment: plain bold serif, reverse tab under clip art, outlined slab in orange, orange oval, outlined condensed head, yellow arrow banner. A compact sampler of 'every ad its own style'.",
+  "frame": { "columns": 3, "columnWidth": "wide", "gutter": "open", "columnRules": "none", "flow": "modular", "masthead": "DAILY NEWS stacked in blue heavy sans beside a calligraphic italic 'Classified Ads'." },
+  "headers": [
+    { "id": "teal-bar", "kind": "tint-bar", "example": "EMPLOYMENT", "fg": "#f5e9c8", "bg": "#2a8a8a", "align": "center", "box": [0.05, 0.155, 0.92, 0.055], "notes": "Teal bar, extended heavy caps in cream with a dark outline." }
+  ],
+  "units": [
+    { "id": "oval-head", "kind": "display", "frequency": "common", "lead": "bold", "align": "center", "border": "thin", "example": "Cashier / PT, $9/hr...", "notes": "Head reversed out of an orange-brown oval; body in large roman serif." },
+    { "id": "arrow-banner", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "none", "example": "➜ ESL TEACHER ⬅", "notes": "Italic bold caps in a yellow banner flanked by arrows." },
+    { "id": "outlined-slab", "kind": "display", "frequency": "common", "lead": "bold", "align": "center", "border": "thin", "example": "Legal Assistant", "notes": "Orange slab-serif head with dark outline, orange box rule." },
+    { "id": "reverse-tab", "kind": "reverse-display", "frequency": "common", "lead": "bold", "align": "center", "border": "none", "example": "Full-Time Cook", "notes": "Clip-art pot above a black tab with white serif title." },
+    { "id": "rounded-box", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "DRIVER / Alexander's Furniture Warehouse", "notes": "Rounded blue rule, heavy extended caps head, blue serif sub-head." }
+  ],
+  "type": [
+    { "role": "masthead", "classification": "script", "look": "Calligraphic italic", "weight": "regular", "width": "normal", "case": "title", "webFont": "Playball" },
+    { "role": "display", "classification": "slab", "look": "Rockwell/Clarendon-like outlined slab", "weight": "bold", "width": "normal", "case": "title", "webFont": "Alfa Slab One" },
+    { "role": "display", "classification": "grotesque", "look": "Extended heavy sans (Eurostile/Helvetica Extended)", "weight": "black", "width": "extended", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "body", "classification": "transitional", "look": "Century Schoolbook-like body, large", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Libre Caslon Text" }
+  ],
+  "color": { "mode": "process", "paper": "#fbf8ef", "ink": "#1a1a1a", "accents": [ { "hex": "#2a8a8a", "use": "section bar" }, { "hex": "#c8742c", "use": "oval and slab heads" }, { "hex": "#f2c230", "use": "arrow banner" }, { "hex": "#1f5fa8", "use": "masthead, driver ad" } ] },
+  "notes": ["Not a real paper; keep as a sampler of display-head treatments (oval, arrow banner, outlined slab, reverse tab) to mix into any family's display ads."]
+}

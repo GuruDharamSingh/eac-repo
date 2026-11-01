@@ -100,6 +100,13 @@ export async function setPublishTarget(
       next.connectionId = mine.id;
     }
   }
+  // Only the owner of the bound channel decides how it publishes (2026-11-01):
+  // before this, any editor of the thread could switch someone else's channel
+  // to public or to auto-upload, which the data policy says never happens.
+  if ((input.privacy !== undefined || input.mode !== undefined) && next.connectionId) {
+    const owner = await getConnection(userId, next.connectionId);
+    if (!owner) return { ok: false, error: 'Only the person whose channel this is can change how it publishes.' };
+  }
   if (input.privacy !== undefined) {
     if (!PRIVACY.includes(input.privacy as PublishPrivacy)) return { ok: false, error: 'Unknown privacy.' };
     next.privacy = input.privacy as PublishPrivacy;

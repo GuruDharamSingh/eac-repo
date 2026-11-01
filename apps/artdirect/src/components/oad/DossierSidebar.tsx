@@ -364,7 +364,7 @@ function Group(props: {
           {group.managedElsewhere.hrefKey === "marketplace" && (
             <>
               {" "}
-              <a href={`${props.marketplaceUrl}/studio`}>Open the studio →</a>
+              <a href={`${props.marketplaceUrl}/studio`}>Open My art →</a>
             </>
           )}
           {group.managedElsewhere.hrefKey === "network" && (

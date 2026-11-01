@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     "@elkdonis/live-editor",
     "@elkdonis/cms-bindings",
     "@elkdonis/cms-ui",
+    // Puck org landing pages (/hub/sites/<slug>/design, 2026-10-30).
+    "@elkdonis/blocks",
+    "@elkdonis/page-builder",
+    // Sophia's learner pages at /learn (2026-10-29).
+    "@elkdonis/lms",
+    "@elkdonis/lms-ui",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
     "@elkdonis/reels",
     // BookingScheduler for /hub/bookings and /bookings/<token> (migration 174).
@@ -45,6 +51,11 @@ const nextConfig: NextConfig = {
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : undefined,
   },
   output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // The network org's hub tab moved when the org was renamed to Arts
+  // Collective (2026-10-28); old links and bookmarks still land.
+  async redirects() {
+    return [{ source: "/hub/elkdonis", destination: "/hub/arts-collective", permanent: true }];
+  },
   // Dev-only: explicitly trust localhost subdomains and the LAN IP so
   // /_next/* static assets serve without the cross-origin warning.
   allowedDevOrigins: [

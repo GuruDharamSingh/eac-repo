@@ -1,0 +1,62 @@
+<title>cl-014 Daily News</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Alfa+Slab+One&family=Archivo+Black&family=Playfair+Display:ital@1&display=swap">
+<style>
+/* Reference reproduction of specimen cl-014 (Daily News "Classified Ads", EMPLOYMENT, colour, c. 2000s).
+   One box per device the page shows, at the page's own proportions (759×513 source → 900 wide).
+   Tokens are the site's --cl-* vocabulary so the generator can quote these rules. */
+:root { --field: #26241f; --field-ink: #e6e0d2; color-scheme: dark; }
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: 'Courier Prime', monospace; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 900px; margin: 0 auto 20px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 28px; margin: 0 0 6px; }
+.frame { max-width: 900px; margin: 0 auto; overflow: hidden; }
+.scaler { width: 900px; transform-origin: 0 0; }
+.spec { --cl-ink: #161412; --cl-paper: #f3efe4; --cl-teal: #2a9d8f; --cl-orange: #c87533; --cl-yellow: #ffd21f; --cl-blue: #1f3f99;
+  width: 900px; background: var(--cl-paper); color: var(--cl-ink); padding: 14px 18px 18px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0,0,0,.45); }
+.spec * { box-sizing: border-box; min-width: 0; }
+.mast { display: flex; align-items: baseline; gap: 12px; }
+.mast .dn { font-family: 'Archivo Black', sans-serif; font-size: 20px; line-height: .9; color: var(--cl-blue); letter-spacing: -.01em; }
+.mast .t { font-family: 'Playfair Display', serif; font-style: italic; font-size: 64px; line-height: .9; }
+.band { margin-top: 8px; background: var(--cl-teal); color: #fff; font-family: 'Archivo Black', sans-serif; font-size: 22px; letter-spacing: .16em; text-align: center; padding: 4px; border: 1.5px solid var(--cl-ink); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; margin-top: 10px; }
+.bx { border: 2px solid var(--cl-ink); padding: 10px 12px 12px; text-align: center; font-family: 'Arimo', sans-serif; font-size: 16.5px; line-height: 1.3; display: flex; flex-direction: column; gap: 4px; background: #fff; position: relative; }
+.bx .h { font-family: 'Libre Caslon Text', serif; font-weight: 700; font-size: 24px; line-height: 1.1; }
+.bx .c { font-family: 'Arimo', sans-serif; font-style: italic; font-size: 15px; }
+/* device 1: plain Caslon head, no box (top-left) */
+.plain { border: 0; background: transparent; }
+/* device 2: clip-art pot above a black tab with a white serif title */
+.revtab::before { content: ""; display: block; width: 56%; height: 34px; margin: -4px auto 0; background: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0,0,0,.28) 4px 5px); border: 1.5px solid var(--cl-ink); border-bottom: 0; border-radius: 2px 2px 0 0; }
+.revtab .h { background: var(--cl-ink); color: #fff; padding: 4px 8px; }
+/* device 3: outlined orange slab head, orange box rule */
+.outl { border-color: var(--cl-orange); }
+.outl .h { font-family: 'Alfa Slab One', serif; font-weight: 400; color: var(--cl-orange); -webkit-text-stroke: .8px var(--cl-ink); font-size: 28px; }
+/* device 4: head reversed out of an orange oval; body in a larger roman serif */
+.oval .h { font-family: 'Alfa Slab One', serif; font-weight: 400; background: var(--cl-orange); color: #fff; border-radius: 50%; padding: 8px 26px; display: inline-block; margin: 0 auto 4px; font-size: 22px; }
+.oval { font-family: 'Libre Caslon Text', serif; font-size: 19px; }
+/* device 5: rounded blue rule, heavy extended caps head, blue serif sub-head */
+.blue { border: 2.5px solid var(--cl-blue); border-radius: 12px; }
+.blue .h { font-family: 'Archivo Black', sans-serif; font-weight: 400; color: var(--cl-blue); font-size: 24px; letter-spacing: .02em; }
+.blue .c { font-family: 'Libre Caslon Text', serif; font-weight: 700; font-style: normal; color: var(--cl-blue); font-size: 16px; }
+/* device 6: italic bold caps in a yellow banner flanked by arrows, then a heavy Arimo head */
+.arrow .h { background: var(--cl-yellow); font-family: 'Arimo', sans-serif; font-weight: 700; font-style: italic; font-size: 17px; padding: 3px; letter-spacing: .02em; }
+.arrow .h::before { content: "➡ "; } .arrow .h::after { content: " ⬅"; }
+.arrow .h2 { font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.05; }
+.note { max-width: 900px; margin: 14px auto 0; font-size: 12.5px; line-height: 1.55; }
+.note b { color: #fff; }
+</style>
+<div class="intro"><h1>cl-014 · Daily News · Employment</h1><p>Reference reproduction. Six boxes, six head devices, one teal band; the Caslon/Arimo pairing and the orange, yellow and blue accents are the page's own. Copy rewritten for the river town; layout, proportions and devices kept.</p></div>
+<div class="frame"><div class="scaler"><div class="spec">
+  <div class="mast"><span class="dn">THE<br>RIVERSIDE</span><span class="t">Classified Ads</span></div>
+  <div class="band">EMPLOYMENT</div>
+  <div class="grid">
+    <div class="bx plain"><div class="h">Studio Manager</div>FT, 2 yrs exp, free room, speak colour and English, paint and minor maintenance. Available immediately.<div class="c">Call Keys &amp; Co.,<br>[PHONE].</div></div>
+    <div class="bx revtab"><div class="h">Full-Time Cook</div>No experience needed, training available, Martha's Kitchen at the Old Mill, good hours, apply in person, 3456 Canal Wharf, 8am–5pm</div>
+    <div class="bx outl"><div class="h">Legal<br>Assistant</div>45 wpm, filing, speak English, FT, great opportunity, Smith and Peterson Law Office, Bridge Street.<br>Call [PHONE].</div>
+    <div class="bx oval"><div class="h">Cashier</div>PT, [RATE]/hr,<br>no exp nec,<br>the Rialto cinema.<br>Call for appt,<br>[PHONE].</div>
+    <div class="bx blue"><div class="h">DRIVER</div><div class="c">Keys &amp; Co. Removals</div>Make deliveries of one very large painting and one very small sofa, driver's licence, driving experience necessary, FT, [RATE]/hr, Monday–Friday, 6am–2:30pm. Call Alexander, [PHONE].</div>
+    <div class="bx arrow"><div class="h">ESL TEACHER</div><div class="h2">Riverside<br>Education Centre</div>BA req, 1 yr teaching exp, PT positions only, résumé req, benefits.<br>Call Nancy, [PHONE].</div>
+  </div>
+</div></div></div>
+<div class="note"><b>Devices recorded:</b> teal band head; plain Caslon head; clip-art cut over a black tab; outlined orange slab; orange oval reverse; rounded blue rule with blue extended caps and a blue serif sub-head; yellow arrow banner over heavy Arimo. <b>Fonts:</b> Libre Caslon Text (for the original's Times-like serif), Arimo (Arial), Alfa Slab One (Clarendon-like), Archivo Black (Arial Black), Playfair Display italic (masthead). <b>Generator ids:</b> templates <code>oval-head-display</code>, <code>arrow-banner-display</code>, <code>outlined-slab-display</code>, <code>reverse-tab-cut</code>, <code>rounded-blue-box</code>; palette <code>mosaic</code>; head <code>tab-colour</code>.</div>
+<script>(function(){function f(){var w=Math.min(900,document.documentElement.clientWidth-32),s=w/900;document.querySelectorAll('.scaler').forEach(function(e){e.style.transform='scale('+s+')';e.style.marginBottom=Math.round(-e.firstElementChild.offsetHeight*(1-s))+'px';});}window.addEventListener('resize',f);f();})();</script>

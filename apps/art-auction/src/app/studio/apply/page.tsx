@@ -2,18 +2,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
+  getSellerProfile,
   listStoresForUser,
   listOrgsUserCanOpenStoreFor,
 } from "@elkdonis/commerce/queries";
 import { canClaimStore } from "@elkdonis/commerce/server";
 import { getCurrentStore, getCurrentUserId } from "@/lib/marketplace-auth";
+import { toNetworkProfile } from "@/lib/profile-bio";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { ArtistProfileForm } from "../_components/artist-profile-form";
 import { OpenOrgStoreButton } from "../_components/open-org-store-button";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sell · Studio" };
+export const metadata: Metadata = { title: "Sell · My art" };
 
 /**
  * The one page for "how do I sell here". Three doors, shown as they apply:
@@ -30,11 +32,15 @@ export default async function StudioApplyPage() {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login?next=/studio/apply");
 
-  const [own, stores, openable, member] = await Promise.all([
+  // The profile is read from `users` directly: a first-time applicant has no
+  // store row yet, and their name, photo and bio usually exist already from
+  // another network site.
+  const [own, stores, openable, member, me] = await Promise.all([
     getCurrentStore(),
     listStoresForUser(userId),
     listOrgsUserCanOpenStoreFor(userId, siteConfig.marketplaceOrgId),
     canClaimStore(userId),
+    getSellerProfile(userId),
   ]);
 
   if (own?.status === "active") redirect("/studio");
@@ -138,9 +144,10 @@ export default async function StudioApplyPage() {
             {own?.status === "rejected" ? "Reapply for your own store" : "Your own store"}
           </h2>
           <p className="mb-6 text-sm text-muted-foreground">
-            Tell collectors about yourself. Your name, photo and headline are
-            shared with your ArtDirect profile. An eTransfer address is needed
-            to apply; card payouts can be connected once you are approved.
+            Your store is presented under the profile you already have in the
+            network. Check it, add a store note if you like, and give an
+            eTransfer address; card payouts can be connected once you are
+            approved.
           </p>
           {own?.status === "rejected" && own.rejectionReason && (
             <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
@@ -149,13 +156,10 @@ export default async function StudioApplyPage() {
           )}
           <ArtistProfileForm
             mode="apply"
+            profile={toNetworkProfile(me, siteConfig.network.artdirectUrl)}
             initial={{
-              displayName: own?.displayName,
-              headline: own?.headline,
-              city: own?.city,
-              photoUrl: own?.photoUrl,
               bioHtml: own?.bioHtml,
-              payoutEmail: own?.payoutEmail,
+              payoutEmail: own?.payoutEmail ?? me?.payoutEmail,
               links: own?.links,
             }}
           />

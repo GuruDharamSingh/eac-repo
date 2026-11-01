@@ -481,6 +481,7 @@ export type PublicThread = {
   scheduled_at: string | null;
   location: string | null;
   metadata: Record<string, unknown> | null;
+  pinned: boolean;
   author_name: string | null;
   author_slug: string | null;
 };
@@ -505,7 +506,7 @@ export async function getPublicThread(
     const rows = await db<PublicThread[]>`
       SELECT
         t.id, t.slug, t.kind, t.title, t.body, t.body_format, t.excerpt,
-        t.published_at, t.scheduled_at, t.location, t.metadata,
+        t.published_at, t.scheduled_at, t.location, t.metadata, t.pinned,
         u.display_name AS author_name,
         u.slug         AS author_slug
       FROM threads t

@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { getServerSession } from "@elkdonis/auth-server";
 import { readCartToken } from "@elkdonis/checkout/server";
 import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
-import { getCartByToken } from "@elkdonis/commerce/queries";
-import { CartSummary, CheckoutForm } from "@elkdonis/checkout/components";
+import { getCartByToken, listCartBeneficiaries } from "@elkdonis/commerce/queries";
+import { listActivePayees } from "@elkdonis/commerce/server";
+import { CartSummary, CheckoutForm, type SupportOption } from "@elkdonis/checkout/components";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { placeOrder } from "@/app/actions";
 
@@ -22,6 +23,35 @@ export default async function CheckoutPage() {
   const currency = cart.currency;
   const lines = cart.lines ?? [];
   const cardAvailable = isCardPaymentAvailable();
+
+  // Where the commission goes (ORG_STORE_BRIEF R3): the marketplace by
+  // default, or one of the network orgs with a payee row, or a split. A
+  // listing with its own beneficiary shows a notice instead, and the choice
+  // is hidden when every line already directs its proceeds.
+  const [payees, notices] = await Promise.all([
+    listActivePayees().catch(() => []),
+    token ? listCartBeneficiaries(token).catch(() => []) : Promise.resolve([]),
+  ]);
+  const orgPayees = payees.filter((p) => p.kind === "org");
+  const marketPayee = orgPayees.find((p) => p.orgId === "market");
+  const others = orgPayees.filter((p) => p.orgId !== "market");
+  const allDirected = lines.length > 0 && notices.filter((n) => n.scope === "all_proceeds").length >= lines.length;
+  const supportOptions: SupportOption[] = allDirected
+    ? []
+    : [
+        ...(marketPayee
+          ? [{ id: marketPayee.id, label: marketPayee.name, description: marketPayee.blurb ?? "The marketplace itself: hosting, payment handling and the auction desk.", split: [{ payeeId: marketPayee.id, percent: 100 }] }]
+          : []),
+        ...others.map((p) => ({ id: p.id, label: p.name, description: p.blurb ?? null, split: [{ payeeId: p.id, percent: 100 }] })),
+        ...(others.length === 2
+          ? [{
+              id: "split",
+              label: `Split between ${others[0]!.name} and ${others[1]!.name}`,
+              description: "Half each.",
+              split: [{ payeeId: others[0]!.id, percent: 50 }, { payeeId: others[1]!.id, percent: 50 }],
+            }]
+          : []),
+      ];
 
   // Card first when it is on: it is the path that needs no one to confirm
   // anything by hand. eTransfer is always offered — it needs no configuration
@@ -57,6 +87,8 @@ export default async function CheckoutPage() {
             paymentMethod: cardAvailable ? "stripe" : "etransfer",
           }}
           paymentMethods={paymentMethods}
+          supportOptions={supportOptions}
+          beneficiaryNotices={notices}
           onSubmit={placeOrder}
           submitLabel={cardAvailable ? "Continue to payment" : "Place order"}
         />

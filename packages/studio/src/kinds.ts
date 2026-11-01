@@ -9,6 +9,8 @@ export const STUDIO_KINDS: StudioKind[] = [
   { id: 'writing', label: 'Writing', noun: 'piece', ready: true },
   // Registered by the host as an extension (frame.tsx); href is the fallback for hosts that do not.
   { id: 'video', label: 'Video', noun: 'reel', ready: true, href: '/studio?kind=video' },
+  // Posts for Facebook, Instagram and Threads (2026-10-31); an extension like Video.
+  { id: 'post', label: 'Posts', noun: 'post', ready: true, href: '/studio?kind=post' },
   { id: 'artwork', label: 'Artwork', noun: 'work', ready: false },
   { id: 'event', label: 'Events', noun: 'event', ready: false },
   { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: false },

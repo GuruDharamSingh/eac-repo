@@ -26,8 +26,17 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   if (!(await getApiMember())) return forbidden();
-  const body = (await request.json().catch(() => ({}))) as { scene?: WhiteboardScene };
-  if (!body.scene) return Response.json({ error: "scene required" }, { status: 400 });
-  await saveWhiteboard(siteConfig.orgId, body.scene);
+
+  let payload: { scene?: WhiteboardScene };
+  try {
+    payload = await request.json();
+  } catch {
+    return Response.json({ error: "Expected JSON" }, { status: 400 });
+  }
+  if (!payload.scene || !Array.isArray(payload.scene.elements)) {
+    return Response.json({ error: "scene.elements is required" }, { status: 400 });
+  }
+
+  await saveWhiteboard(siteConfig.orgId, payload.scene);
   return Response.json({ ok: true });
 }

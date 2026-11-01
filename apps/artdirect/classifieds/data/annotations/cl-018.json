@@ -1,0 +1,20 @@
+{
+  "id": "cl-018",
+  "status": "draft",
+  "source": { "paper": "Hastings Tribune", "place": "Hastings, Nebraska", "date": "2019-09 (craft show Sunday, Sept. 22nd, 2019)", "era": "2010s", "language": ["en"] },
+  "summary": "Hastings Tribune template (see cl-017) on a fuller day: garage sales sorted by direction (NORTHWEST, NORTHEAST, SOUTHEAST), and a lower 'At Your Service' business directory with its own lighter header style.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 7, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "mixed" },
+  "headers": [
+    { "id": "two-tier-tab", "kind": "reverse-bar", "example": "GARAGE SALES / NORTHWEST", "fg": "#ffffff", "bg": "#111111", "align": "left", "box": [0.0, 0.265, 0.135, 0.03] },
+    { "id": "directory-head", "kind": "rule-label", "example": "CLOCK REPAIR", "fg": "#111111", "bg": "transparent", "align": "left", "box": [0.43, 0.665, 0.14, 0.015], "notes": "Condensed bold caps on a heavy underline, no reverse: the service directory's quieter head." },
+    { "id": "directory-banner", "kind": "banner", "example": "At Your Service", "fg": "#111111", "bg": "#ffffff", "align": "center", "box": [0.43, 0.555, 0.445, 0.1], "notes": "Huge condensed bold headline with a clip-art handyman, rate panel reversed at right (Up to 16 Words for 1 month ONLY $49.00)." }
+  ],
+  "units": [
+    { "id": "address-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "2319 W. 10TH: Friday, 12-6, Saturday, 9-2. Downsizing...", "notes": "Garage-sale liners lead with the street address in bold caps and a colon." },
+    { "id": "directory-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "A2 GUTTER & SIDING / THE LOCAL STORM DAMAGE SPECIALIST", "notes": "Logo plus centred bullet list of services." },
+    { "id": "collage-house-ad", "kind": "house-ad", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "BOUGHT. SOLD. SAVED. THE CLASSIFIEDS DELIVER!", "notes": "Tall strip of photo collage behind stencil-like caps." }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "notes": ["Directional sub-classifications (NORTHWEST etc.) are a nice generator detail for garage sales."]
+}

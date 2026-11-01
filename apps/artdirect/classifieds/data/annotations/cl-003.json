@@ -1,0 +1,20 @@
+{
+  "id": "cl-003",
+  "status": "draft",
+  "source": { "paper": "Hood County News", "place": "Granbury, Texas", "date": "2025-03-29", "era": "2020s", "language": ["en"] },
+  "summary": "Same template as cl-004 a year earlier: index panel, rate card, deadline block, six columns of numbered sections. Differences are listed in notes.",
+  "family": "us-community-weekly",
+  "frame": { "columns": 6, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Serif paper name over CLASSIFIEDS in heavy serif caps." },
+  "headers": [
+    { "id": "numbered-bar", "kind": "tint-bar", "example": "013 Garage & Estate Sales", "fg": "#1a1a1a", "bg": "#d9d9d9", "numbering": "prefix", "align": "split", "box": [0.044, 0.3, 0.155, 0.011], "notes": "Number at left, name pushed right, in bold condensed sans." },
+    { "id": "panel-head", "kind": "reverse-bar", "example": "AD CLASSIFICATIONS", "fg": "#ffffff", "bg": "#1a1a1a", "align": "center", "box": [0.044, 0.13, 0.4, 0.014], "notes": "Black bar heading the grey index and rate panels." }
+  ],
+  "units": [
+    { "id": "centred-liner", "kind": "liner", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "none", "example": "SNODGRASS PAINTING AND REMODELING, INC / One Stop Shop" },
+    { "id": "boxed-liner", "kind": "boxed-liner", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "ELECTRICAL CONTRACTOR TECL#22551 50+ years" },
+    { "id": "clipart-display", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "JASON'S LAWN SERVICES", "notes": "Black-and-white clip art (mower, handyman) over centred copy." },
+    { "id": "reverse-panel", "kind": "house-ad", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "none", "example": "Find Contractors, Service Technicians...", "notes": "Black panel, white serif list, CLASSIFIEDS in heavy serif at foot." }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#1a1a1a", "accents": [ { "hex": "#d9d9d9", "use": "panels and header bars" } ] },
+  "notes": ["Unlike cl-004 (2026) this issue is fully black and white: no red in the masthead, no yellow deadline box. The deadline sits in plain heavy sans caps beside the index.", "Garage-sale column is a run of left-aligned bold-caps-lead liners, unlike the centred service ads.", "Confirms Hood County uses one fixed template; one draft family covers 003/004/005."]
+}

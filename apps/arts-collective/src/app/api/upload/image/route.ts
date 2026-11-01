@@ -28,12 +28,16 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
-  const orgSlug = formData.get("orgSlug") as string | null;
+  // From the form, or from the query string for a caller that cannot add
+  // form fields (the page editor's picker posts only the file; its endpoint
+  // carries `?orgSlug=&context=`, 2026-10-30).
+  const query = request.nextUrl.searchParams;
+  const orgSlug = (formData.get("orgSlug") as string | null) || query.get("orgSlug");
   // "workshops" preserves the exact path this route has always written to
   // for its original caller (workshop cover uploads); a new caller passes
   // its own context (e.g. "directory" for associated-organization logos)
   // rather than forking a second upload route for the same Nextcloud logic.
-  const context = (formData.get("context") as string | null) || "workshops";
+  const context = (formData.get("context") as string | null) || query.get("context") || "workshops";
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });

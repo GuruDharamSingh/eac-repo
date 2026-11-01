@@ -11,15 +11,22 @@
 // Brief: CENTER_PAGE_BRIEF_2026-09-09.md.
 // ============================================================================
 
-export { CenterPage, ProfileCardBody } from "./CenterPage";
+export { CenterPage } from "./CenterPage";
 export { ProfileFlipCard } from "./ProfileFlipCard";
-export type { ProfileCardAction } from "./ProfileFlipCard";
-export type { CenterPageProps } from "./CenterPage";
+export type { ProfileCardAction, ProfileCardBadge } from "./ProfileFlipCard";
+export { JourneyRow } from "./JourneyTabs";
+export { OrgManage } from "./OrgManage";
+export type { JourneyTabId, JourneyOrgFacts } from "./JourneyTabs";
+export type { CenterPageProps, CenterHeading } from "./CenterPage";
+// The common CenterLinks of a single-org site; hosts pass what only they know.
+export { buildOrgSiteCenterLinks, orgDoorUrl } from "./host-links";
+export type { OrgSiteCenterLinksInput, OrgSiteHome } from "./host-links";
 export { CenterThreadRow } from "./CenterThreadRow";
 export { FollowButton } from "./FollowButton";
 export { ArrangeButton } from "./ArrangeButton";
 export { CenterDesk } from "./CenterDesk";
 export type { CenterDeskItem } from "./CenterDesk";
+export { FeedSwitch } from "./FeedSwitch";
 export { OrgStrip } from "./OrgStrip";
 export type { OrgStripItem } from "./OrgStrip";
 // The network hub's mirror of /center (Brief A slice 4).
@@ -35,6 +42,7 @@ export type {
   CenterOrg,
   CenterOrgLink,
   CenterPromo,
+  CenterJourney,
   CenterLinks,
   CenterRole,
 } from "./types";

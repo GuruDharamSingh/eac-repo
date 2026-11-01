@@ -53,3 +53,6 @@ export type {
   WallSlot,
   WallSurface,
 } from './types';
+export { ParlourScene, type ParlourSceneProps } from './parlour/ParlourScene';
+export { PARLOUR, PARLOUR_SEATS, type ParlourSeat, type ParlourSeatId } from './parlour/layout';
+export type { ParlourAssets } from './parlour/types';

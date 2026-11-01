@@ -4,6 +4,11 @@ import { listPages } from "@/lib/puck/store";
 import { TEMPLATE_SLUGS } from "@/lib/puck/reserved";
 import { requirePagesEditor } from "@/lib/puck/auth";
 import { NewPageForm } from "@/components/pages/new-page-form";
+import { listStores } from "@elkdonis/commerce/queries";
+import { loadHeroSettings } from "@/lib/home-hero";
+import { loadHomeLoft, loadLoftSettings } from "@/lib/home-sections";
+import { HeroForm } from "./hero-form";
+import { LoftForm } from "./loft-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pages" };
@@ -15,12 +20,43 @@ export const metadata: Metadata = { title: "Pages" };
  */
 export default async function AdminPagesPage() {
   await requirePagesEditor("/admin/pages");
+  const [stores, hero, loft, loftSettings] = await Promise.all([
+    listStores({ limit: 60 }).catch(() => []),
+    loadHeroSettings(),
+    loadHomeLoft().catch(() => ({ hung: [], pool: [] })),
+    loadLoftSettings(),
+  ]);
+  const loftWorks = loft.pool.map((w) => ({ id: w.id, label: w.artistName ? `${w.title} — ${w.artistName}` : w.title }));
+  const heroArtists = stores.filter((st) => st.ownerKind === "user" && st.displayName).map((st) => ({ id: st.id, name: st.displayName! }));
   const pages = await listPages();
   const stored = new Map(pages.map((p) => [p.slug, p.updatedAt]));
   const others = pages.filter((p) => !TEMPLATE_SLUGS.has(p.slug));
 
   return (
     <div className="space-y-6">
+      <section className="rounded-lg border border-border p-6">
+        <h2 className="font-serif text-2xl">Home page hero</h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          The band at the top of the home page rotates between the current auction series and featured artists. Choose
+          which artists appear and in what order; each shows with their newest pictured work.
+        </p>
+        <div className="mt-4">
+          <HeroForm artists={heroArtists} initial={hero.featuredStoreIds} />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border p-6">
+        <h2 className="font-serif text-2xl">Home page loft</h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          The virtual scene under the hero hangs two works from the market and leaves a third spot free for visitors to
+          fill. Choose the two here; their frame proportion and crop, and the welcome letter above the hero, are edited on
+          the home page itself.
+        </p>
+        <div className="mt-4">
+          <LoftForm works={loftWorks} initial={loftSettings.spots} />
+        </div>
+      </section>
+
       <section className="rounded-lg border border-border p-6">
         <h2 className="font-serif text-2xl">Designed pages</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">

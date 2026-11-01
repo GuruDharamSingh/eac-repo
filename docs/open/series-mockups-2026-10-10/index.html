@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Index of the series mockups (2026-10-10). Ink #171615 on #fffdf8 17.8:1;
+   #4f4a44 on #fffdf8 8.6:1; link #273d54 on #fffdf8 11.0:1. */
+:root { --ink: #171615; --soft: #4f4a44; --faint: #6b6259; --paper: #f8f5ef; --card: #fffdf8; --line: #d8d0c2; --blue: #273d54; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
+.wrap { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+h1 { font: 600 2.1rem/1.1 "Cormorant Garamond", Georgia, serif; margin: 0 0 8px; }
+h2 { font: 600 1.45rem/1.15 "Cormorant Garamond", Georgia, serif; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--soft); max-width: 70ch; }
+a { color: var(--blue); text-underline-offset: 3px; }
+.list { display: grid; gap: 14px; margin-top: 26px; }
+.item { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; display: grid; gap: 10px; }
+.item__k { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--soft); }
+.item p { color: var(--soft); }
+.item dl { margin: 4px 0 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 16px; }
+.item dt { font-weight: 700; color: var(--ink); }
+.item dd { margin: 0; color: var(--soft); }
+.shots { font-size: 0.92rem; color: var(--faint); }
+.shots a { margin-right: 10px; }
+.foot { margin-top: 26px; font-size: 0.92rem; color: var(--soft); display: grid; gap: 8px; }
+.foot h2 { font-size: 1.2rem; }
+.foot ul { margin: 0; padding-left: 20px; }
+@media (max-width: 560px) { .item dl { grid-template-columns: 1fr; gap: 2px; } .item dd { margin-bottom: 8px; } .item { padding: 14px; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Series composer and series page: mockups</h1>
+  <p class="lede">Static mockups, 2026-10-10, for composing a recurring meeting ("series") in the IFAC hub and for the public series page. Example series: Explorations in Art Forms by Non Professionals, IFAC, Mondays 6:00 PM Pacific. Names, titles, links and passcodes are placeholders. No app or package code was changed.</p>
+
+  <div class="list">
+    <section class="item">
+      <p class="item__k">01 · hub</p>
+      <h2><a href="01-compose-toggle.html">Compose page: One meeting or Series</a></h2>
+      <p>Breadcrumb header (Hub › Compose › Meeting) in place of the title block. The Meeting/Event switch becomes "One meeting | Series" under a "Recurring series?" prompt, with two lines on what a series is. The one-meeting form below uses white fields on a tinted well. Choosing Series in the file swaps the form for a pointer to 02 or 03.</p>
+      <p class="shots">Screenshots: <a href="01-compose-toggle-desktop.png">desktop</a><a href="01-compose-toggle-phone.png">phone</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">02 · hub · variant A</p>
+      <h2><a href="02-series-timeline.html">Series composer: series card and session timeline</a></h2>
+      <p>A wide series card (cover, preview of the promotional card, title, description, cadence, first and last session, join URL, meeting ID, passcode), then a row of session squares joined by a line, with an "Add session" square. The chosen square opens its editor below the row: host, co-host, title, write-up, cover image, materials. The squares work in the file.</p>
+      <dl>
+        <dt>Effort</dt><dd>Higher. New layout component (squares, connector, editor placement, previous/next) plus the series-card form. The week editor's fields can reuse the planner's week form.</dd>
+        <dt>Planner mapping</dt><dd>Same per-week fields as <code>SeriesPlannerSurface</code>; the list becomes a row. Weeks are computed from the recurrence today (<code>meeting-series.ts</code>), so "Add session" would extend the last-session date rather than insert a free-standing session.</dd>
+        <dt>Phones</dt><dd>Under 720 px the row turns into a vertical timeline and the editor opens in place under the chosen session. Needs a separate layout and testing at two breakpoints.</dd>
+        <dt>Open</dt><dd>More than five or six sessions: scroll the row sideways inside the timeline, or show a window around the next session.</dd>
+      </dl>
+      <p class="shots">Screenshots: <a href="02-series-timeline-desktop.png">desktop</a><a href="02-series-timeline-phone.png">phone</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">03 · hub · variant B</p>
+      <h2><a href="03-series-planner-extended.html">Series planner, extended</a></h2>
+      <p>The existing planner with a collapsible "Series settings" card above the weeks (summary line when closed; cover, title, description, cadence, dates and meeting link when open), the vertical list of weeks unchanged in structure, one week open, and an "Add a week" row.</p>
+      <dl>
+        <dt>Effort</dt><dd>Lower. One new card inside <code>SeriesPlannerSurface</code>, an "Add a week" control, and the field contrast change.</dd>
+        <dt>Planner mapping</dt><dd>Direct: the weeks are the current <code>WeekForm</code> rows; breadcrumb and page mount stay as in <code>SeriesPlannerPage.tsx</code>.</dd>
+        <dt>Phones</dt><dd>Already a vertical list; only the week header and the add-link row restack.</dd>
+        <dt>Trade-off</dt><dd>Less visual sense of the series as a sequence; the settings card adds length above the weeks while open.</dd>
+      </dl>
+      <p class="shots">Screenshots: <a href="03-series-planner-extended-desktop.png">desktop</a><a href="03-series-planner-extended-phone.png">phone</a></p>
+    </section>
+
+    <section class="item">
+      <p class="item__k">04 · public site</p>
+      <h2><a href="04-series-page.html">Series page with the weekly email band</a></h2>
+      <p>Dark <code>.ifs</code> series head with the next-session card, the "Coming up" list with session 2 open (write-up, cover, materials), and beside it a "Keep up to date with this series" band: email and optional name, one email the day before each session with host, title and Zoom link, and a sample of the email. Rows carry <code>scroll-margin-top</code> so a jump to <code>#week-2</code> leaves the card fully below the sticky header.</p>
+      <dl>
+        <dt>Phones</dt><dd>Under 1000 px the band comes before the list; the header shortens to 56 px and the scroll margin follows it.</dd>
+        <dt>Open</dt><dd>A per-series email subscription is not an existing feature as far as these mockups checked (unknown); it needs storage, a sender, and an unsubscribe link.</dd>
+      </dl>
+      <p class="shots">Screenshots: <a href="04-series-page-desktop.png">desktop</a><a href="04-series-page-phone.png">phone</a> · after a jump to #week-2: <a href="04-series-page-anchor-desktop.png">desktop</a><a href="04-series-page-anchor-phone.png">phone</a></p>
+    </section>
+  </div>
+
+  <div class="foot">
+    <h2>Common to all four</h2>
+    <ul>
+      <li>Hub palette from <code>apps/ifac/src/app/globals.css</code> (<code>.ifac-hub-scope</code>); public palette from <code>apps/ifac/src/app/site.css</code> (revision 4).</li>
+      <li>Field contrast: white fields, 1.5 px <code>#7d705a</code> edge (4.8:1 against the field), on a <code>#f3eee4</code> well; placeholders <code>#6b6259</code> (6.0:1). Text pairs are listed in each file's CSS header.</li>
+      <li>Checked at 1280 px and 360 px in headless Chrome 124: no horizontal scroll; an automated pass found no text pair under 4.5:1 (solid grounds only; text over the cover gradients was checked by hand).</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

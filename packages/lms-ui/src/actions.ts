@@ -44,6 +44,11 @@ export function textToHtml(text: string): string {
     return `<p>${lines.map(esc).join("<br>")}</p>`;
   }).join("\n");
 }
+const FORM_SETTINGS = new Set(["minutes", "practice", "alternative", "prompt"]);
+/** The settings the studio form does not own, kept across a save. */
+function keepSettings(s: Record<string, unknown> | undefined): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(s ?? {}).filter(([k]) => !FORM_SETTINGS.has(k)));
+}
 /** Accepts a thread id, or any forum URL containing /t/<id>/. */
 const threadIdFrom = (raw: string) => raw.match(/\/t\/([^/?#]+)/)?.[1] ?? raw;
 const dateOrNull = (raw: string) => { if (!raw) return null; const d = new Date(raw); return Number.isNaN(d.getTime()) ? null : d; };
@@ -190,7 +195,9 @@ export async function handleLmsAction({ request, action, connectors }: { request
       const r = await upsertStepDraft(viewer, str(fd, "course"), {
         stepId: str(fd, "step"), title: str(fd, "title"), slug: str(fd, "slug") || undefined, type: str(fd, "type") || undefined,
         summary: str(fd, "summary") || null, bodyHtml: textToHtml(str(fd, "body")),
-        settings: { ...(minutes > 0 ? { minutes } : {}), ...(str(fd, "practice") ? { practice: str(fd, "practice") } : {}), ...(str(fd, "alternative") ? { alternative: str(fd, "alternative") } : {}), ...(str(fd, "prompt") ? { prompt: str(fd, "prompt") } : {}) },
+        // Keys this form does not edit (a task step's `task`, anything a
+        // seed wrote) ride through: upsertStepDraft replaces settings whole.
+        settings: { ...keepSettings(before?.settings), ...(minutes > 0 ? { minutes } : {}), ...(str(fd, "practice") ? { practice: str(fd, "practice") } : {}), ...(str(fd, "alternative") ? { alternative: str(fd, "alternative") } : {}), ...(str(fd, "prompt") ? { prompt: str(fd, "prompt") } : {}) },
         refs: { ...(threadId ? { threadId } : {}), ...(media.length ? { media } : {}), ...(links.length ? { links } : {}) },
       });
       return r.ok === false ? fail(r.error) : done(back, "Saved to the working copy. Readers see it when you publish.");

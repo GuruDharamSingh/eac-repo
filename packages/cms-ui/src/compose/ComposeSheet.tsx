@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { ComposeOption } from "./catalogue";
+import { pickerOptions, type ComposeOption } from "./catalogue";
 // The file, not the barrel: surface/index.ts re-exports the surfaces, two of
 // which import from this folder. Reaching for the component directly keeps
 // that from becoming a cycle.
@@ -168,13 +168,15 @@ export function ComposePicker({
   options: ComposeOption[];
   onSelect: (option: ComposeOption) => void;
 }) {
-  if (options.length === 0) {
+  // One card per door: "Series" is chosen on the Meeting form's switch.
+  const cards = pickerOptions(options);
+  if (cards.length === 0) {
     return <p className="eac-pick-empty">There is nothing to compose here yet.</p>;
   }
 
   return (
     <div className="eac-pick">
-      {options.map((option) => (
+      {cards.map((option) => (
         <SurfaceCard
           key={option.id}
           small

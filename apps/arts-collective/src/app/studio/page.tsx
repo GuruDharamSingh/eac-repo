@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProfile, listListableOrgs, listWriting } from "@elkdonis/services";
+import { getProfile, listListableOrgs, listSocialPosts, listWriting } from "@elkdonis/services";
 import { isAdmin } from "@elkdonis/auth-server";
 import { listReelProjects } from "@elkdonis/services/reels";
 import type { ReelEdit, ReelTemplateId } from "@elkdonis/reels";
@@ -17,6 +17,8 @@ import "@elkdonis/reels/editor.css";
 const STUDIO_FONTS =
   "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap";
 import { requireUser } from "@/lib/session";
+import { listShareTargets, sharePiece } from "@/lib/share-actions";
+import { archiveSocialPostAction, createSocialPostAction, listSocialPostsAction, publishSocialPost, saveSocialPostAction } from "@/lib/post-actions";
 import {
   listStudioIdentities,
   listStudioPieces,
@@ -65,6 +67,7 @@ export default async function StudioPage({ searchParams }: Props) {
   const user = await requireUser("/login?next=/studio");
   const { org, id, kind } = await searchParams;
   const isVideo = kind === "video";
+  const isPost = kind === "post";
 
   const [profile, orgs, reels, admin] = await Promise.all([
     getProfile(user.id),
@@ -73,11 +76,15 @@ export default async function StudioPage({ searchParams }: Props) {
     isAdmin(user.id),
   ]);
   const initialOrgId = org && orgs.some((o) => o.orgId === org) ? org : PERSONAL_ORG_ID;
-  const pieces = await listWriting(user.id, {
-    orgId: initialOrgId === PERSONAL_ORG_ID ? undefined : initialOrgId,
-    includeDrafts: true,
-    limit: 200,
-  });
+  const [pieces, socialPosts] = await Promise.all([
+    listWriting(user.id, {
+      orgId: initialOrgId === PERSONAL_ORG_ID ? undefined : initialOrgId,
+      includeDrafts: true,
+      limit: 200,
+    }),
+    // Tolerates a missing table (migration 219 not applied): the Studio still opens.
+    listSocialPosts(user.id, initialOrgId).catch(() => []),
+  ]);
 
   const slug = profile?.slug ?? null;
 
@@ -95,7 +102,7 @@ export default async function StudioPage({ searchParams }: Props) {
         orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name, slug: o.slug })),
         initialPieces: pieces,
         initialOrgId,
-        initialPieceId: isVideo ? null : (id ?? null),
+        initialPieceId: isVideo || isPost ? null : (id ?? null),
         initialKind: kind ?? null,
         actions: {
           listPieces: listStudioPieces,
@@ -107,6 +114,8 @@ export default async function StudioPage({ searchParams }: Props) {
           listIdentities: listStudioIdentities,
           listSeries: listStudioSeries,
           searchThreads: searchStudioThreads,
+          listShareTargets,
+          sharePiece,
         },
         // /api/upload/image needs an orgSlug the viewer belongs to; the shell
         // adds the acting org's. For "Just me" that is `oad`, which every
@@ -117,6 +126,7 @@ export default async function StudioPage({ searchParams }: Props) {
           pieceBase: slug && ARTDIRECT_URL ? `${ARTDIRECT_URL}/${slug}/writing` : null,
           // The person's own Nextcloud pictures, and the acting org's library.
           library: { mine: "/api/my-files?path=Media/Images&kind=image", org: "/api/media/library?org=:org" },
+          connectionsHref: "/hub/network?surface=me:connections",
         },
       }}
       video={{
@@ -151,6 +161,23 @@ export default async function StudioPage({ searchParams }: Props) {
           broadcastHref: admin ? "/studio/broadcast" : undefined,
           pageBase: slug && ARTDIRECT_URL ? `${ARTDIRECT_URL}/${slug}/writing` : null,
         },
+      }}
+      post={{
+        initialPosts: socialPosts.map((p) => ({
+          id: p.id, orgId: p.orgId, title: p.title, body: p.body, link: p.link, images: p.images,
+          variants: p.variants, shares: p.shares, createdAt: p.createdAt, updatedAt: p.updatedAt,
+        })),
+        initialPostId: isPost ? (id ?? null) : null,
+        actions: {
+          listPosts: listSocialPostsAction,
+          createPost: createSocialPostAction,
+          savePost: saveSocialPostAction,
+          archivePost: archiveSocialPostAction,
+          listShareTargets,
+          publishPost: publishSocialPost,
+        },
+        uploadEndpoint: "/api/upload/image",
+        links: { connectionsHref: "/hub/network?surface=me:connections" },
       }}
     />
     </>

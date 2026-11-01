@@ -1,0 +1,491 @@
+/* ==========================================================================
+   ArtDirect identity (2026-10-08). Imported from app/layout.tsx after
+   globals.css, so its rules win ties with the older sheet.
+
+   One look for the whole site: the person-page STRUCTURE from cms-ui
+   (person-page.css) carried on ArtDirect's own palette — paper / ink / line
+   / gold, Courier Prime body, UnifrakturMaguntia display — instead of IFAC's
+   orange-on-black frame. The variant class `eac-person-page--oad` maps the
+   `--eac-person-*` hooks; the site header, the directory index and the
+   featured page use the same tokens.
+
+   Kept apart from globals.css: the dev server stopped recompiling that file
+   on 2026-09-27 (docs/reference/apps.md, artdirect), and other sessions edit it.
+
+   Tokens fall back through --paper/--ink/--line/--gold (set per person by
+   ThemeStyle from users.theme) and then a literal.
+
+   Contrast (WCAG, measured 2026-10-08):
+     dark  ink #f7f1e3 on paper #121413 16.4:1, on panel #1a1c1b 15.2:1;
+           soft #a9a293 7.3:1 / 6.8:1; gold #c79a42 7.2:1 / 6.6:1;
+           paper on gold fill 7.2:1; status red #e08a8a 7.2:1 / 6.7:1;
+           status green #7fb07f 7.4:1 / 6.9:1.
+     light ink #1c1a17 on paper #f5f0e6 15.3:1, on panel #fbf8f1 16.4:1;
+           soft #5d5748 6.3:1 / 6.8:1; gold #7d5a1c 5.5:1 / 5.9:1;
+           paper on gold fill 5.5:1; status red #8c3b3b 6.6:1; green #2f6b2f 5.7:1.
+     --oad-line is 1.5:1 on either paper: decorative rules only. Input
+     borders use --oad-ink-soft (>= 6.3:1).
+   ========================================================================== */
+
+:root {
+  --oad-paper: var(--paper, #121413);
+  --oad-panel: #1a1c1b;
+  --oad-ink: var(--ink, #f7f1e3);
+  --oad-ink-soft: var(--ink-soft, #a9a293);
+  --oad-line: var(--line, #35322c);
+  --oad-gold: var(--gold, #c79a42);
+  --oad-on-gold: #121413;
+  --oad-status-no: #e08a8a;
+  --oad-status-yes: #7fb07f;
+  --oad-font-body: 'Courier Prime', 'Courier New', Courier, monospace;
+  --oad-font-display: 'UnifrakturMaguntia', 'Courier Prime', serif;
+  --oad-width: 1000px;
+  color-scheme: dark;
+}
+
+/* Light mode by system preference. A person's --oad-page-bg (users.theme, a
+   dark colour by construction: lib/space-actions.ts caps its luminance) is
+   honoured only in dark mode, where the light inks still read on it. The
+   per-person --paper/--ink chain is bypassed here on purpose: those values
+   are chosen against the dark ground. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --oad-paper: #f5f0e6;
+    --oad-panel: #fbf8f1;
+    --oad-ink: #1c1a17;
+    --oad-ink-soft: #5d5748;
+    --oad-line: #cfc6b3;
+    --oad-gold: #7d5a1c;
+    --oad-on-gold: #f5f0e6;
+    --oad-status-no: #8c3b3b;
+    --oad-status-yes: #2f6b2f;
+    color-scheme: light;
+  }
+}
+
+html,
+body {
+  background: var(--oad-paper);
+  color: var(--oad-ink);
+  font-family: var(--oad-font-body);
+}
+
+/* --------------------------------------------------------------------------
+   Site header (app/layout.tsx, components/site/SiteHeader.tsx)
+   -------------------------------------------------------------------------- */
+.oad-site-header {
+  border-bottom: 1px solid var(--oad-line);
+}
+
+.oad-site-header-inner {
+  width: min(var(--oad-width), calc(100% - 32px));
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 14px 0;
+}
+
+.oad-wordmark {
+  font-family: var(--oad-font-display);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--oad-ink);
+  text-decoration: none;
+}
+.oad-wordmark:hover {
+  color: var(--oad-gold);
+}
+
+.oad-site-nav {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.oad-site-nav a,
+.oad-site-nav button {
+  color: var(--oad-ink-soft);
+  text-decoration: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.oad-site-nav a:hover,
+.oad-site-nav button:hover,
+.oad-site-nav a[aria-current="page"] {
+  color: var(--oad-ink);
+}
+.oad-site-nav a[aria-current="page"] {
+  border-bottom: 1px solid var(--oad-gold);
+}
+.oad-site-nav .oad-site-nav-accent {
+  color: var(--oad-gold);
+}
+.oad-site-nav .oad-site-nav-accent:hover {
+  color: var(--oad-ink);
+}
+
+/* --------------------------------------------------------------------------
+   Shared controls: chips (links and buttons), text input
+   -------------------------------------------------------------------------- */
+.oad-chip {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--oad-ink-soft);
+  background: transparent;
+  color: var(--oad-ink);
+  font: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+.oad-chip:hover {
+  border-color: var(--oad-gold);
+  color: var(--oad-gold);
+}
+.oad-chip--on {
+  border-color: var(--oad-gold);
+  background: var(--oad-gold);
+  color: var(--oad-on-gold);
+  font-weight: 700;
+}
+.oad-chip--on:hover {
+  color: var(--oad-on-gold);
+  border-color: var(--oad-ink);
+}
+.oad-chip--lead {
+  padding: 0.65rem 1.15rem;
+  white-space: nowrap;
+}
+
+.oad-input {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--oad-ink-soft);
+  background: var(--oad-panel);
+  color: var(--oad-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+.oad-input::placeholder {
+  color: var(--oad-ink-soft);
+}
+.oad-input:focus-visible {
+  outline: 2px solid var(--oad-gold);
+  outline-offset: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   Directory index (app/page.tsx)
+   -------------------------------------------------------------------------- */
+.oad-index {
+  width: min(var(--oad-width), calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 64px;
+}
+
+.oad-index-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.oad-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--oad-gold);
+}
+.oad-kicker a {
+  color: inherit;
+  text-decoration: none;
+}
+.oad-kicker a:hover {
+  color: var(--oad-ink);
+}
+
+.oad-index-title {
+  margin: 8px 0 6px;
+  font-family: var(--oad-font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+  color: var(--oad-ink);
+}
+
+.oad-index-lede {
+  max-width: 640px;
+  margin: 0;
+  color: var(--oad-ink-soft);
+  line-height: 1.6;
+}
+
+.oad-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.oad-facets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.oad-empty {
+  margin-top: 32px;
+  color: var(--oad-ink-soft);
+}
+.oad-empty a {
+  color: var(--oad-gold);
+}
+
+.oad-grid {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* A person or organisation card (components/site/OadCard.tsx). */
+.oad-card {
+  display: block;
+  padding: 16px;
+  border: 1px solid var(--oad-line);
+  background: var(--oad-panel);
+  color: var(--oad-ink);
+  text-decoration: none;
+  transition: border-color 140ms;
+}
+.oad-card:hover {
+  border-color: var(--oad-gold);
+}
+
+.oad-card-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.oad-card-portrait,
+.oad-card-initials {
+  flex-shrink: 0;
+  width: 56px;
+  height: 70px;
+  border: 1px solid var(--oad-line);
+  object-fit: cover;
+}
+.oad-card-portrait--org,
+.oad-card-initials--org {
+  width: 64px;
+  height: 64px;
+}
+
+/* No portrait: the display name's initials on the gold ground. */
+.oad-card-initials {
+  display: grid;
+  place-items: center;
+  background: var(--oad-gold);
+  color: var(--oad-on-gold);
+  font-family: var(--oad-font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.oad-card-text {
+  min-width: 0;
+}
+
+.oad-card-name {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.oad-card-role {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--oad-ink-soft);
+}
+
+.oad-card-place {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--oad-ink-soft);
+}
+
+.oad-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--oad-ink-soft);
+}
+
+.oad-card-status {
+  color: var(--oad-status-no);
+}
+.oad-card-status--verified {
+  color: var(--oad-status-yes);
+}
+
+/* --------------------------------------------------------------------------
+   Person page: the `--oad` variant of cms-ui PersonPage (person-page.css).
+   The structure is the shared one; only the hooks are set here.
+   -------------------------------------------------------------------------- */
+.eac-person-page--oad {
+  --eac-person-ground: var(--oad-paper);
+  --eac-person-fg: var(--oad-ink);
+  --eac-person-muted: var(--oad-ink-soft);
+  --eac-person-line: var(--oad-line);
+  --eac-person-heading: var(--oad-ink);
+  --eac-person-heading-font: var(--oad-font-display);
+  --eac-person-heading-case: none;
+  --eac-person-link: var(--oad-gold);
+  --eac-person-link-hover: var(--oad-ink);
+  --eac-person-panel-bg: var(--oad-panel);
+  --eac-person-panel-border: 1px solid var(--oad-line);
+  --eac-person-width: var(--oad-width);
+
+  /* The reading layer (writing shelf) on the panel. */
+  --read-ink: var(--oad-ink);
+  --read-muted: var(--oad-ink-soft);
+  --read-faint: var(--oad-ink-soft);
+  --read-rule: var(--oad-line);
+  --read-accent: var(--oad-gold);
+  --read-bg: var(--oad-panel);
+
+  /* Page blocks (@elkdonis/blocks) on a designed page. */
+  --blk-bg: var(--oad-paper);
+  --blk-bg-soft: var(--oad-panel);
+  --blk-fg: var(--oad-ink);
+  --blk-muted: var(--oad-ink-soft);
+  --blk-faint: var(--oad-ink-soft);
+  --blk-line: var(--oad-line);
+  --blk-accent: var(--oad-gold);
+  --blk-on-accent: var(--oad-on-gold);
+  --blk-accent-ink: var(--oad-gold);
+  --blk-band: var(--oad-panel);
+  --blk-band-fg: var(--oad-ink);
+  --blk-field-bg: var(--oad-panel);
+  --blk-field-fg: var(--oad-ink);
+  --blk-field-line: var(--oad-ink-soft);
+  --blk-radius: 0px;
+  --blk-radius-sm: 0px;
+  --blk-font-title: var(--oad-font-display);
+
+  /* The marketplace card (StoreShowcase). */
+  --pc-ink: var(--oad-ink);
+  --pc-ink-soft: var(--oad-ink-soft);
+  --pc-ink-faint: var(--oad-ink-soft);
+  --pc-line: var(--oad-line);
+  --pc-mat: var(--oad-panel);
+  --pc-surface: transparent;
+  --pc-accent: var(--oad-gold);
+  --pc-on-accent: var(--oad-on-gold);
+  --pc-radius: 0;
+
+  min-height: 100vh;
+  background: var(--eac-person-ground);
+  color: var(--eac-person-fg);
+  font-family: var(--oad-font-body);
+}
+
+/* The person's own ground (users.theme --oad-page-bg, dark by construction)
+   replaces the paper under their page in dark mode; the body takes it too so
+   the colour reaches the edges. */
+@media not (prefers-color-scheme: light) {
+  .eac-person-page--oad {
+    --eac-person-ground: var(--oad-page-bg, var(--oad-paper));
+  }
+  body:has(.eac-person-page--oad) {
+    background: var(--oad-page-bg, var(--oad-paper));
+  }
+}
+
+.eac-person-page--oad a:where(:not(.blk, .blk *)) {
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.eac-person-page--oad .eac-person-name {
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: 0.01em;
+}
+
+.eac-person-page--oad .eac-person-section-title,
+.eac-person-page--oad .eac-shelf__heading {
+  color: var(--eac-person-heading);
+  font-family: var(--oad-font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.eac-person-page--oad .eac-person-portrait {
+  border: 1px solid var(--eac-person-line);
+}
+
+.eac-person-page--oad .eac-person-bio p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.eac-person-page--oad .eac-person-card {
+  border-color: var(--eac-person-line);
+  background: var(--eac-person-panel-bg);
+  transition: border-color 140ms;
+}
+.eac-person-page--oad .eac-person-card:hover {
+  border-color: var(--eac-person-link);
+}
+.eac-person-page--oad .eac-person-card-title {
+  color: var(--eac-person-link);
+}
+.eac-person-page--oad .eac-person-card-cover--blank {
+  background: var(--oad-line);
+}
+
+/* The writing shelf as a panel. */
+.eac-person-page--oad .eac-writing-section {
+  border: var(--eac-person-panel-border);
+  border-radius: 0;
+  background: var(--eac-person-panel-bg);
+}
+
+/* --------------------------------------------------------------------------
+   Featured offering and service pages
+   -------------------------------------------------------------------------- */
+.oad-offering-cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 14px;
+  border: 1px solid var(--oad-line);
+}

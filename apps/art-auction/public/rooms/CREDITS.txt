@@ -1,0 +1,17 @@
+Rooms an installation can be hung in.
+
+big_room.glb — the loft
+  "Big Room" by Francesco Coldesina
+  https://sketchfab.com/3d-models/big-room-0b5da073be88481091dbef7e55f1d180
+  Licence: CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Changes: optimised for the web with gltf-transform (simplified, meshopt,
+  WebP textures); the posters on the gable wall removed so that wall can
+  be hung.
+
+morning_room.glb — the morning room
+  "The Morning Room" by The Hallwyl Museum (Hallwylska museet)
+  https://sketchfab.com/3d-models/the-morning-room-338cfb58457f41078fc8af7730b52482
+  Licence: CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Changes: optimised for the web with gltf-transform (simplified, meshopt,
+  WebP texture). In the app, work shown in the room covers the portraits
+  inside the room's frames; the scan itself is unchanged.

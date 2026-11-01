@@ -7,7 +7,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { LotActions } from "../_components/lot-actions";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Auctions · Studio" };
+export const metadata: Metadata = { title: "Auctions · My art" };
 
 const lotStatusTone: Record<string, BadgeProps["tone"]> = {
   scheduled: "pending",

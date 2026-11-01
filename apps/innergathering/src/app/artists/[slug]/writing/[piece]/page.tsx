@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getProfileBySlug, getWritingPost } from "@elkdonis/services";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { ArticleView } from "@elkdonis/cms-ui/article";
 import { hasProfileSection, isMember } from "@/lib/members";
 
@@ -36,6 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MemberWritingPiecePage({ params }: Props) {
   const { slug, piece } = await params;
   const profile = await getProfileBySlug(slug);
+  if (!profile) {
+    await redirectRenamedProfile(slug, (current) => `/artists/${current}/writing/${encodeURIComponent(piece)}`);
+  }
   if (!profile || !(await isMember(profile.userId))) notFound();
   if (!(await hasProfileSection(profile.userId, "blog"))) notFound();
 

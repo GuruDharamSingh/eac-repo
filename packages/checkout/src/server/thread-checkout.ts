@@ -16,10 +16,14 @@
  */
 
 import {
+  checkDepartureAvailability,
   createServiceBooking,
   createThreadOrder,
+  createTourBooking,
   getPayoutIdentity,
+  parsePartySize,
   parseProposedTimes,
+  MAX_PARTY_SIZE,
   type PurchasableThreadKind,
 } from "@elkdonis/commerce/server";
 import { isCardPaymentAvailable, startStripeCheckout, syncStripeOrder } from "./stripe";
@@ -78,6 +82,8 @@ export interface StartThreadCheckoutInput {
   notes?: string | null;
   /** A sliding-scale amount, minor units; omit for the list price. */
   amountMinor?: number;
+  /** How many places (a tour's party size); the price is per place. Default 1. */
+  quantity?: number;
   /**
    * The app's public base: origin plus any basePath (elastrocal's `/astro`).
    * Every path below is relative to it.
@@ -106,6 +112,7 @@ export async function startThreadCheckout(
     customerId: input.customerId ?? null,
     notes: input.notes ?? null,
     amountMinor: input.amountMinor,
+    quantity: input.quantity,
     paymentMethod: "stripe",
   });
   const route = input.returnRoute ?? "/api/checkout/return";
@@ -143,6 +150,32 @@ export async function startServiceCheckout(
       message: input.notes ?? null,
     });
   }
+  return started;
+}
+
+/**
+ * Book places on a tour departure by card (migration 208). Seats are checked
+ * before the order exists and again, locked, when the booking row is made.
+ * Throws an Error whose message is for the buyer.
+ */
+export async function startTourCheckout(
+  input: Omit<StartThreadCheckoutInput, "quantity" | "kinds"> & {
+    departureId: string;
+    partySize: unknown;
+  }
+): Promise<{ orderId: string; url: string }> {
+  const partySize = parsePartySize(input.partySize);
+  if (!partySize) throw new Error(`Party size must be between 1 and ${MAX_PARTY_SIZE}.`);
+  const availability = await checkDepartureAvailability(input.departureId, partySize);
+  if (availability.ok === false) throw new Error(availability.error);
+  const { departureId, partySize: _p, ...rest } = input;
+  const started = await startThreadCheckout({ ...rest, kinds: ["tour"], quantity: partySize, itemNoun: rest.itemNoun ?? "place" });
+  await createTourBooking({
+    orderId: started.orderId,
+    departureId,
+    partySize,
+    note: input.notes ?? null,
+  });
   return started;
 }
 

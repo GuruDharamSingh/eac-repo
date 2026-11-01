@@ -61,7 +61,7 @@ export default async function AccountPage() {
             <span>Here you are: {viewer.role ? ROLE_LABEL[viewer.role] ?? viewer.role : "a visitor"}</span>
           </p>
           <p className="card__body" style={{ color: "var(--ink-muted)", fontSize: "0.9rem" }}>
-            This account works across every site in the Elkdonis network. Your
+            This account works across every site in the Arts Collective network. Your
             role is set separately on each one.
           </p>
           <div className="card__actions">

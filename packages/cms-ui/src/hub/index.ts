@@ -47,3 +47,27 @@ export { KindTilesFace, type KindTile } from "./KindTilesFace";
 // The member's way into Nextcloud — links out (Nextcloud can't be framed
 // cross-site). Host registers `custom: { cloud: CloudSurface }`.
 export { CloudFace, CloudSurface, type HubCloud } from "./CloudFace";
+
+// A meeting series: the weeks of a recurring gathering, each with its own
+// host, title, write-up, materials and RSVP topic (migration 201).
+export { SeriesFace } from "./SeriesFace";
+export type { HubSeries, HubSeriesWeek } from "./SeriesFace";
+export { SeriesPlannerSurface } from "./SeriesPlannerSurface";
+export type {
+  SeriesPlannerData,
+  SeriesPlannerWeek,
+  SeriesPlannerPerson,
+  SeriesPlannerMaterial,
+  SeriesPlannerSettings,
+  SeriesPlannerPeople,
+  SeriesPlannerPersonRow,
+  SeriesPlannerEmailStats,
+  SeriesPlannerEmailLine,
+  SeriesPlannerEmailTracking,
+  SeriesPlannerLetterKind,
+  SeriesPlannerSessionStats,
+} from "./SeriesPlannerSurface";
+
+// The organisation's public Series page: intro, order, featured series (2026-10-18).
+export { SeriesPageEditor } from "./SeriesPageEditor";
+export type { SeriesPageEditorSeries } from "./SeriesPageEditor";

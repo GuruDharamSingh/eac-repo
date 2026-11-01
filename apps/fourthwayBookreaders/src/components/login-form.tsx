@@ -28,7 +28,7 @@ export function LoginForm() {
         key={initialMode}
         initialMode={initialMode}
         title={siteConfig.orgName}
-        subtitle="Sign in to RSVP for a reading and follow the circle. One account works across the whole Elkdonis network."
+        subtitle="Sign in to RSVP for a reading and follow the circle. One account works across the whole Arts Collective network."
         googleRedirectTo={withBase(next ?? "/")}
         onSuccess={(result) => {
           // A new account lands on its center; a returning sign-in goes back

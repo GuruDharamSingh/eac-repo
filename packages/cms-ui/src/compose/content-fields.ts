@@ -1,4 +1,6 @@
+import * as React from "react";
 import type { WizardFieldSpec } from "../wizard/fields";
+import { DEFAULT_SERIES_DISPLAY_ZONES, SERIES_ZONE_CHOICES } from "./series-card";
 
 // ============================================================================
 // What a piece of content HAS, declared once.
@@ -37,7 +39,7 @@ import type { WizardFieldSpec } from "../wizard/fields";
  * groups — which is the argument for settling on one name rather than
  * translating between them forever.
  */
-export type ContentKind = "post" | "event" | "meeting" | "workshop" | "service" | "product";
+export type ContentKind = "post" | "event" | "meeting" | "series" | "workshop" | "service" | "product";
 
 /**
  * A field, plus whether it belongs to the QUICK tier.
@@ -113,8 +115,12 @@ const FORMAT: ContentFieldSpec = {
   ],
 };
 
-/** Kinds that happen at a time, and therefore carry schedule and attendance. */
-const SCHEDULED: ContentKind[] = ["event", "meeting", "workshop"];
+/**
+ * Kinds that happen at a time, and therefore carry schedule and attendance.
+ * `series` is scheduled (its first session is `scheduled_at`) but has its own
+ * field list: see `buildSeriesFields`.
+ */
+const SCHEDULED: ContentKind[] = ["event", "meeting", "series", "workshop"];
 /** Kinds that carry a price. Which are *purchasable* is commerce's call. */
 const PRICED: ContentKind[] = ["workshop", "service", "product"];
 
@@ -123,6 +129,7 @@ export function buildContentFields(
   ctx: ContentFieldContext = {},
   options: { tier?: ContentTier } = {}
 ): ContentFieldGroup[] {
+  if (kind === "series") return tiered(buildSeriesFields(ctx), options.tier);
   const groups: ContentFieldGroup[] = [];
   const isScheduled = SCHEDULED.includes(kind);
 
@@ -580,14 +587,185 @@ export function buildContentFields(
       placeholder: "also show this on the collective's front page",
     });
   }
-  groups.push({ id: "placement", label: "Where it goes", fields: placement });
+  groups.push(placementGroup(ctx));
 
-  if (options.tier === "quick") {
-    return groups
-      .map((g) => ({ ...g, optional: false, fields: g.fields.filter((f) => f.quick) }))
-      .filter((g) => g.fields.length > 0);
+  return tiered(groups, options.tier);
+}
+
+function tiered(groups: ContentFieldGroup[], tier: ContentTier | undefined): ContentFieldGroup[] {
+  if (tier !== "quick") return groups;
+  return groups
+    .map((g) => ({ ...g, optional: false, fields: g.fields.filter((f) => f.quick) }))
+    .filter((g) => g.fields.length > 0);
+}
+
+function placementGroup(ctx: ContentFieldContext): ContentFieldGroup {
+  const placement: ContentFieldSpec[] = [];
+  if (ctx.feeds?.length) {
+    placement.push({
+      name: "feed_slug",
+      label: "Publish to",
+      input: "select",
+      required: true,
+      quick: true,
+      inline: true,
+      options: ctx.feeds.map((f) => ({ value: f.slug, label: f.name })),
+    });
   }
+  placement.push(VISIBILITY);
+  if (ctx.canShareToNetwork) {
+    placement.push({
+      name: "share_to_network",
+      label: "Share to the network",
+      input: "toggle",
+      placeholder: "also show this on the collective's front page",
+    });
+  }
+  return { id: "placement", label: "Where it goes", fields: placement };
+}
 
+/**
+ * A meeting series (2026-10-10, docs/open/SERIES_KIND_DESIGN_2026-10-10.md §5).
+ *
+ * The series card: what is the same every week. Title, description (the
+ * lede the series page prints under its title), cover, when it meets, how
+ * to join, the zones its times are printed in and the subscriber letter.
+ * No host fields: hosts are set per week in the planner. The repeat is
+ * always weekly, so there is no "Repeats" field.
+ *
+ * `series_editing` is set by `defaultThreadToAnswers` for an existing series.
+ * The schedule, joining and letter groups then give way to a note: weeks are
+ * keyed by their dates, so the schedule changes only in the planner, and the
+ * join details are not loaded into this form, so it must not show them empty.
+ */
+const NEW_SERIES_ONLY = { field: "series_editing", equals: false } as const;
+
+function buildSeriesFields(ctx: ContentFieldContext): ContentFieldGroup[] {
+  const groups: ContentFieldGroup[] = [];
+
+  groups.push({
+    id: "series-identity",
+    label: null,
+    fields: [
+      { name: "title", label: "Series title", input: "text", required: true, quick: true, placeholder: "What the series is called" },
+      {
+        name: "lede",
+        label: "Description",
+        input: "textarea",
+        placeholder: "What the series is about and who it is for.",
+        hint: "Shown under the title on the series page and in listings.",
+      },
+    ],
+  });
+
+  groups.push({
+    id: "series-schedule",
+    label: "When it meets",
+    fields: [
+      {
+        name: "scheduled_at",
+        label: "First session",
+        input: "datetime",
+        required: true,
+        quick: true,
+        hint: "The series meets every week on this day, at this time.",
+        dependsOn: NEW_SERIES_ONLY,
+      },
+      { name: "time_zone", label: "Time zone", input: "timezone", required: true, quick: true, inline: true, dependsOn: NEW_SERIES_ONLY },
+      {
+        name: "recurrence_until",
+        label: "Last session",
+        input: "date",
+        inline: true,
+        hint: "Leave empty for a series with no end date.",
+        dependsOn: NEW_SERIES_ONLY,
+      },
+      { name: "duration_minutes", label: "How long", input: "duration", dependsOn: NEW_SERIES_ONLY },
+      {
+        name: "series_planner_note",
+        label: "Schedule, joining and the reminder letter",
+        input: "custom",
+        render: () =>
+          React.createElement(
+            "p",
+            { className: "eac-field-hint" },
+            "These are changed in the series planner, where moving the schedule also moves the weeks already planned."
+          ),
+        dependsOn: { field: "series_editing", equals: true },
+      },
+    ],
+  });
+
+  const joining: ContentFieldSpec[] = [
+    {
+      name: "join_url",
+      label: "Join link",
+      input: "url",
+      placeholder: "https:// — the same link every week",
+      hint: "Sent in the weekly email and shown to people who have signed up. Not shown on the public page.",
+      dependsOn: NEW_SERIES_ONLY,
+    },
+    { name: "join_meeting_id", label: "Meeting ID", input: "text", inline: true, placeholder: "000 0000 0000", dependsOn: { field: "join_url" } },
+    { name: "join_passcode", label: "Passcode", input: "text", inline: true, dependsOn: { field: "join_url" } },
+    {
+      name: "join_other",
+      label: "Other ways to join",
+      input: "textarea",
+      placeholder: "Dial-in numbers, one per line",
+      dependsOn: { field: "join_url" },
+    },
+  ];
+  if (ctx.canCreateTalkRoom) {
+    joining.push({
+      name: "create_talk_room",
+      label: "Or make a Talk room",
+      input: "toggle",
+      placeholder: "a public room, joinable by link, no account needed",
+      dependsOn: { field: "join_url", equals: "" },
+    });
+  }
+  groups.push({ id: "series-joining", label: "Joining", fields: joining });
+
+  groups.push({
+    id: "series-display",
+    label: "Times and reminders",
+    fields: [
+      {
+        name: "also_zones",
+        label: "Print times in",
+        input: "multichoice",
+        options: SERIES_ZONE_CHOICES,
+        hint: "Each session's time is shown in these zones on the series page and in the emails.",
+        dependsOn: NEW_SERIES_ONLY,
+      },
+      {
+        name: "reminder_days",
+        label: "Remind subscribers",
+        input: "number",
+        min: 0,
+        max: 14,
+        inline: true,
+        hint: "Days before each published session; 0 sends no reminder.",
+        dependsOn: NEW_SERIES_ONLY,
+      },
+    ],
+  });
+
+  groups.push({
+    id: "media",
+    label: "Cover image",
+    fields: [
+      {
+        name: "cover_image_url",
+        label: "Cover image",
+        input: "custom",
+        slot: "media",
+        hint: "Shown at the top of the series page and on the home page. A week without its own cover uses this one.",
+      },
+    ],
+  });
+
+  groups.push(placementGroup(ctx));
   return groups;
 }
 
@@ -638,6 +816,24 @@ export function emptyContentAnswers(
           registration_status: "open",
         }
       : {}),
+    // A series: first session in `scheduled_at`, its zone required, weekly
+    // always. The display zones default to the ones IFAC's series pages print
+    // (Pacific, Eastern, Paris; `metadata.series.alsoZones`), and subscribers
+    // are reminded two days ahead (services' DEFAULT_SUBSCRIBER_REMINDER_DAYS).
+    ...(kind === "series"
+      ? {
+          lede: "",
+          format: "online",
+          recurrence_pattern: "WEEKLY",
+          also_zones: [...DEFAULT_SERIES_DISPLAY_ZONES],
+          join_url: "",
+          join_meeting_id: "",
+          join_passcode: "",
+          join_other: "",
+          reminder_days: 2,
+          series_editing: false,
+        }
+      : {}),
     ...(kind === "workshop"
       ? {
           subtitle: "",
@@ -655,6 +851,73 @@ export function emptyContentAnswers(
     create_document: false,
     create_talk_room: false,
   };
+}
+
+function filled(v: unknown): boolean {
+  if (v === undefined || v === null || v === "" || v === false) return false;
+  return !(Array.isArray(v) && v.length === 0);
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) || Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b);
+  return a === b;
+}
+
+function plainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|li|h\d)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Answers for `to`, carrying over what was typed under `from`.
+ *
+ * Starts from `to`'s defaults and keeps every answer that is filled in and
+ * differs from `from`'s default (title, cover, first date, a chosen zone),
+ * so switching "One meeting | Series" loses nothing typed and still gives
+ * the new kind its own defaults for what was left alone. The description
+ * moves between a meeting's rich `body` and a series' plain `lede`.
+ */
+export function switchContentKind(
+  answers: Record<string, unknown>,
+  from: ContentKind,
+  to: ContentKind,
+  ctx: ContentFieldContext = {}
+): Record<string, unknown> {
+  if (from === to) return answers;
+  const fromDefaults = emptyContentAnswers(from, ctx);
+  const next = emptyContentAnswers(to, ctx);
+  for (const [key, value] of Object.entries(answers)) {
+    if (key === "kind" || !filled(value) || sameValue(value, fromDefaults[key])) continue;
+    next[key] = value;
+  }
+  // Each kind keeps its own repeat: a series is always weekly, a meeting
+  // starts as "does not repeat".
+  next.recurrence_pattern = emptyContentAnswers(to, ctx).recurrence_pattern;
+  if (to === "series" && !filled(next.lede) && typeof answers.body === "string" && filled(answers.body)) {
+    next.lede = plainText(answers.body).slice(0, 1000);
+  }
+  if (from === "series" && to !== "series" && !filled(next.body) && typeof answers.lede === "string" && filled(answers.lede)) {
+    next.body = answers.lede
+      .split(/\n{2,}/)
+      .map((para) => `<p>${escapeHtml(para.trim()).replace(/\n/g, "<br>")}</p>`)
+      .join("");
+  }
+  next.kind = to;
+  return next;
 }
 
 /**

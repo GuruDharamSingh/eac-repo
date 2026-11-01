@@ -1,0 +1,111 @@
+<title>cl-024 Magazine Back Page</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@700&family=Playfair+Display:ital@1&display=swap">
+<style>
+/* Reference reproduction of cl-024 (a 1920s American magazine's classified page, p. 105; 1167×1616 → 900 wide).
+   Running head in spaced small caps with folio, heavy condensed title, three justified columns divided by hairlines,
+   bold italic category heads centred between rules, caps opening words, every ad ending in a company and a Dept. */
+:root { --field: #26241f; --field-ink: #e6e0d2; color-scheme: dark; }
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: 'Courier Prime', monospace; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 900px; margin: 0 auto 20px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 28px; margin: 0 0 6px; }
+.frame { max-width: 900px; margin: 0 auto; overflow: hidden; }
+.scaler { width: 900px; transform-origin: 0 0; }
+.spec { --cl-ink: #151515; --cl-paper: #f7f4ec; width: 900px; height: 1246px; background: var(--cl-paper); color: var(--cl-ink); padding: 14px 40px 20px; box-sizing: border-box; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.45); display: flex; flex-direction: column; }
+.spec * { box-sizing: border-box; min-width: 0; }
+.run { display: flex; justify-content: center; position: relative; font-family: 'Libre Caslon Text', serif; font-variant: small-caps; font-size: 13px; letter-spacing: .12em; }
+.run .f { position: absolute; right: 0; top: 0; font-variant: normal; font-size: 14px; letter-spacing: 0; }
+.title { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 62px; line-height: 1; letter-spacing: .06em; text-align: center; transform: scaleY(1.15); transform-origin: center; margin: 10px 0 14px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; flex-grow: 1; overflow: hidden; }
+.col { border-right: 1px solid var(--cl-ink); padding-right: 20px; margin-right: -10px; }
+.col:last-child { border-right: 0; padding-right: 0; margin-right: 0; }
+.h { margin: 6px 0 5px; padding: 3px 0; border-top: 1px solid var(--cl-ink); border-bottom: 1px solid var(--cl-ink); text-align: center; font-family: 'Libre Caslon Text', serif; font-style: italic; font-weight: 700; font-size: 11.5px; }
+.h:first-child { margin-top: 0; }
+.l { margin: 0 0 6px; font-family: 'Old Standard TT', serif; font-size: 9.2px; line-height: 1.25; text-align: justify; text-indent: 8px; hyphens: auto; }
+.l b { font-weight: 400; text-transform: uppercase; letter-spacing: .03em; }
+.l .d { letter-spacing: .02em; }
+.note { max-width: 900px; margin: 14px auto 0; font-size: 12.5px; line-height: 1.55; }
+.note b { color: #fff; }
+</style>
+<div class="intro"><h1>cl-024 · a 1920s magazine · Classified Advertising, p. 105</h1><p>Reference reproduction. The whole page is one typographic system: a small-caps running head with the folio, a heavy condensed "CLASSIFIED ADVERTISING", three columns of justified old-style agate divided by hairlines, bold italic category heads centred between rules, an indented first line with the opening words in spaced caps, and every ad closing on a company, a Dept. number and a city. No display, no box, no rule between ads.</p></div>
+<div class="frame"><div class="scaler"><div class="spec">
+  <div class="run">Advertising Section<span class="f">105</span></div>
+  <div class="title">CLASSIFIED ADVERTISING</div>
+  <div class="grid">
+    <div class="col">
+      <div class="h">Agents and Help Wanted</div>
+      <p class="l"><b>Men</b>—Age 17 to 55. Experience unnecessary. Travel; make secret investigations of walls, reports. Salaries; expenses. Riverside Wall Agency, 114, Bridge St.</p>
+      <p class="l"><b>Sign writers earn big money.</b> Travel. Excellent opportunity. Experience unnecessary. Particulars free. Write, Bridge Street Lettering System, 1968 Canal Wharf.</p>
+      <p class="l"><b>We start you in business,</b> furnishing everything; men and women $30 to $100 weekly operating our "Specialty Frame Factories" anywhere. Booklet free. W. Keys, Drawer 29, the Lock.</p>
+      <p class="l"><b>Agents,</b> $60 to $200 a week. Free Samples. Gold Sign Letters for Store and Office Windows. Any one can do it. Big demand. Liberal offer to general agents. Metallic Letter Co., 431T Bridge St.</p>
+      <p class="l"><b>Be a lock-keeper's inspector!</b> $110 to $250 monthly, expenses paid after 3 months' spare-time study. Splendid opportunities. Position guaranteed or money refunded. Write for Free Booklet CN-28. River Training Inst., the Lock.</p>
+      <p class="l"><b>Gov't kiln clerks</b> start $133 month; expenses paid. Specimen examination questions free. Old Mill Institute, B-3, Canal Wharf.</p>
+      <p class="l"><b>Be a projectionist.</b> Excellent opportunity, good pay, travel. Write C. T. Rialto, 436 Picture House Bldg.</p>
+      <p class="l"><b>Big money and fast sales.</b> Every owner buys gold initials for his easel. You charge $1.50, make $1.35. Ten orders daily easy. Write for particulars and free samples. Riverside Monogram Co., Dept. 170, Tannery Lane.</p>
+      <p class="l"><b>Smock manufacturer</b> wants agents; sell advertised brand painters' smocks direct to wearer. No capital or experience required. Free samples. Mill Row Mills, 505 Canal Wharf.</p>
+      <p class="l"><b>Sell us your spare time.</b> You can earn Fifteen to Fifty Dollars weekly writing showcards at home. No canvassing. Pleasant, profitable profession, easily, quickly learned by our simple graphic block system. Artistic ability unnecessary. We instruct and supply work. Wilson Methods, Dept. 22, 64 Hill Street.</p>
+      <p class="l"><b>$125 to $2,000</b> will establish you in a frame business. Free information. Dept. 113, Paul Keys, 149 Bridge St.</p>
+      <p class="l"><b>Your chance</b> to make big money silvering mirrors for studios, metal plating easels. Outfit furnished. Write for particulars. Riverside Laboratories, Dept. 191, 309 Fifth Ave.</p>
+      <p class="l"><b>Agents</b>—90c. an hour to advertise and distribute samples to painters. Write quick for territory and particulars. Riverside Products Co., 7914 Mill Bldg.</p>
+      <p class="l"><b>Agents</b>—Signs of all kinds for studios and galleries. Big money-making line. Atracto Sign Works, AC, Smithy Yard.</p>
+      <p class="l"><b>You are wanted.</b> Commence $135 month. Government Kiln Clerks. Steady. Common education sufficient. Write immediately for list positions open. Old Mill Institute, Dept. K2, Canal Wharf.</p>
+      <div class="h">Help Wanted—Female</div>
+      <p class="l"><b>$6—$18 a dozen</b> decorating pillow tops at home, experience unnecessary; particulars for stamp. Tapestry Paint Co., 110, Tannery Lane.</p>
+      <div class="h">Dogs</div>
+      <p class="l"><b>Dog owner's textbook free;</b> expert advice on proper care, training and feeding of a dog named Pigment who follows the smith home. Free with 3 months' trial subscription to the Riverside's popular dog and hunting magazine. Send 25c. today (coin or stamps). Sportsman's Digest, 609 Mill Bldg.</p>
+    </div>
+    <div class="col">
+      <div class="h">Easels</div>
+      <p class="l"><b>Easel</b> Mechanics, Owners, Studio-men, Repairmen, send for free copy Riverside's Popular Easel Magazine. Contains helpful instructive information on overhauling, leaning, left-hand correction, pegs, etc. Easel Digest, 530 Mill Bldg., Canal Wharf.</p>
+      <div class="h">Model Pictures</div>
+      <p class="l"><b>"Zee beautiful life-class pictures,"</b> 10 wonderful poses $1.00; 18 Specials $2.00. Bairart Co., 125, Tannery Lane.</p>
+      <div class="h">Miscellaneous</div>
+      <p class="l"><b>Your personal problems solved!</b> Vital things to know! Success Code and Your Personality Revealed for 10c. Give birthdate. Thomson-Heywood, Dept. 300, Chronicle Bldg., Bridge St.</p>
+      <div class="h">Patents and Lawyers</div>
+      <p class="l"><b>Inventors</b> desiring to secure patents should write for our guidebook "How To Get Your Patent." Send sketch or description for our opinion of its patentable nature. Randolph &amp; Co., Dept. 412, the Lock.</p>
+      <p class="l"><b>Patents.</b> Highest references. Rates reasonable. Best results. Promptness assured. Booklet free. Watson E. Coleman, Patent Lawyer, 624 Bridge Street.</p>
+      <p class="l"><b>Patents.</b> Write for Record of Invention Blank and free guide book. Send model or sketch and description for free opinion of its patentable nature. Highest references. Prompt Attention. Reasonable Terms. Victor J. Evans &amp; Co. 767 Ninth, the Lock.</p>
+      <p class="l"><b>Patents:</b> Trademark, Copyright. Instructive pamphlet free. Correspondence solicited. Results procured. Charges reasonable. Metzger, Dept. C, the Lock.</p>
+      <p class="l"><b>Inventions wanted.</b> Cash or royalty for ideas. Adam Fisher Mfg. Co., 223, Tannery Lane. (The self-stretching canvas was one of ours.)</p>
+      <p class="l"><b>Patents secured.</b> Submit sketch or model of your invention for examination. Write for Record of Invention blank and valuable book. Free. J. L. Jackson &amp; Co., 305 Ouray Building, the Lock.</p>
+      <div class="h">Wanted to Buy</div>
+      <p class="l"><b>Cash</b> for Old Gold Leaf, Platinum, Silver, Diamonds, Liberty Bonds, War, Thrift, Unused Postage Stamps, False Teeth, Magneto Points, Old Wood Type, any valuables. Mail in today. Cash sent, return mail. Goods returned in ten days if you're not satisfied. Riverside Smelting Co., 302 Hippodrome Bldg., Canal Wharf.</p>
+      <div class="h">Business Chances</div>
+      <p class="l"><b>"Investing for profit"</b> is worth $10 a copy to any man who intends to invest any money, however small, who has money invested unprofitably, or who can save $5 or more per month, but who hasn't learned the art of investing for profit. It demonstrates the Real earning power of money, the knowledge financiers hide from the masses; it reveals the enormous profits they make and shows how to make the same profits. It explains How stupendous fortunes are made and Why they are made; how $1,000 grows to $22,000. To introduce our magazine write us now, and we'll send it Six Months Free. Address Investing for Profit, 20 West Jackson Blvd., Dept. C 106, Canal Wharf.</p>
+      <div class="h">Personal</div>
+      <p class="l"><b>Your horoscope</b> covering full year 50c. Includes an extensive reading, valuable daily guide, large pictorial chart, and special forecasts for each month. Scientific, complete. Try it! Money back if dissatisfied. Give birthdate. Address C. Daniels, Flatbush Station, Box 32, the Lock.</p>
+      <div class="h">Invalid Furniture</div>
+      <p class="l"><b>Rolling chairs,</b> Carrying Chairs, Bed Trays, Back Rests, et cetera. Catalog "N" illustrates—describes. Sargent Co., 138 East 35th St., Canal Wharf.</p>
+    </div>
+    <div class="col">
+      <div class="h">Short Stories and Photoplays</div>
+      <p class="l"><b>Free</b> to writers—a wonderful little book of money-making hints, suggestions, ideas; the A B C of successful Story and Movie writing. Absolutely Free. Just address Authors' Press, Dept. 89, the Lock.</p>
+      <p class="l"><b>Write</b> News Items and Short Stories for pay in spare time. Copyright Book and plans free. Press Reporting Syndicate (406), Bridge St.</p>
+      <p class="l"><b>Write photoplays:</b> $25—$300 paid any one for suitable ideas. Experience unnecessary; complete outline Free. Producers League, 439 Rialto Bldg.</p>
+      <p class="l"><b>Writers!</b> Stories, Poems, Plays, etc., are wanted for publication. Literary Bureau, 175, Hill Street.</p>
+      <p class="l"><b>Photoplays for Riverside producers;</b> also stories for publication. To Beginners, Plot Chart and details free. Harvard Company, 560, the Lock.</p>
+      <p class="l"><b>Authors:</b> Free book on Photoplay writing and marketing. Successful Photoplays, Box 43, the Lock.</p>
+      <p class="l"><b>Big money in writing</b> photoplays, stories, poems, songs. Send today for free copy Writer's Bulletin, full of helpful advice how to write, where to sell. Edward's, Publisher, 605 Mill Building, Canal Wharf.</p>
+      <p class="l"><b>Want to be a writer?</b> A successful author's personal, unique help-service will save your time, money and effort. Send manuscript for estimated fee or write fully. No obligation. Author, Box 186-M, Bridge Street Station.</p>
+      <div class="h">Songs, Poems, Etc.</div>
+      <p class="l"><b>Songwriters!</b> Learn of the public's demand for songs suitable for dancing and the opportunities greatly changed conditions offer new writers, obtainable only in our "Songwriters' Manual &amp; Guide" sent free. Submit your ideas for songs at once for free criticism and advice. We revise poems, compose music, secure copyright and facilitate free publication or outright sale of songs. Knickerbocker Studios, 304 Gaiety Bldg., Bridge St.</p>
+      <p class="l"><b>Wonderful proposition</b> for song poem or melody writers. Ray Hibbeler, D-102, 4040 Dickens Ave., Canal Wharf.</p>
+      <p class="l"><b>Write the words for a song.</b> We compose music. Our Chief of Staff wrote many big song-hits. Submit your song-poem to us at once. Riverside Melody Corp., 402 Fitzgerald Bldg., Bridge St.</p>
+      <p class="l"><b>$500.00 prize contest.</b> If you write the best third verse for our song "Empty Arms" you will receive $500. Send your name and we shall send you free the contest rules and words of this song. World Corp., 245 W. 47th St., Dept. 673C, Bridge St.</p>
+      <p class="l"><b>Song writers</b> send me one of your poems today on any subject. I will compose the music. Frank Radner, 6048 Prairie Ave., Dept. 626, Canal Wharf.</p>
+      <div class="h">Stammering</div>
+      <p class="l"><b>St-stu-t-t-tering</b> And Stammering Cured at Home. Instructive booklet free. Walter McDonnell, 80 Potomac Bank Building, the Lock.</p>
+      <div class="h">Vaudeville</div>
+      <p class="l"><b>Get on the stage.</b> I tell you how! Send stamp for instructive Stage Book and particulars. K. La Delle, Box 557, the Rialto.</p>
+      <div class="h">Books</div>
+      <p class="l"><b>Learn</b> to letter signs by hand in six evenings. Brushes supplied, steadiness not. Write for free booklet. Sign Craft School, Dept. 7, Bridge St.</p>
+      <div class="h">Easels and Presses</div>
+      <p class="l"><b>Press,</b> hand-cranked, bed 18 by 30, one owner, still prints straight. Buyer collects. Write Box A-112, the Ledger.</p>
+      <p class="l"><b>A good easel</b> that does not lean to the left wanted; will trade one that does. Box A-133, the Ledger.</p>
+      <p class="l"><b>Fourth annual</b> "Scarlet and Gold" by Riverside Mounted Police Veterans' Association. Full Historical records; true heroic romance, fully illustrated. $1.00. Whole four editions $3.00. 1129 Howe Street, the Lock. Order Now.</p>
+    </div>
+  </div>
+</div></div></div>
+<div class="note"><b>Devices recorded:</b> spaced small-caps running head with folio; heavy condensed title (vertically stretched); three columns divided by hairlines; bold italic category heads centred between two hairlines; justified old-style agate with an 8 px first-line indent, the opening word(s) in spaced caps; ads end with a company, a Dept. and a city; no rules between ads. <b>Fonts:</b> Old Standard TT (the body's Scotch Roman / Century-style agate), Libre Caslon Text italic 700 (heads), Oswald 700 scaled (the condensed title, a Gothic No. 545-like face). <b>Generator ids:</b> section <code>ledger</code>; templates <code>dept-liner</code>, <code>liner-oldstyle</code>; head <code>italic-rule</code>; palette <code>mono</code>.</div>
+<script>(function(){function f(){var w=Math.min(900,document.documentElement.clientWidth-32),s=w/900;document.querySelectorAll('.scaler').forEach(function(e){e.style.transform='scale('+s+')';e.style.marginBottom=Math.round(-1246*(1-s))+'px';});}window.addEventListener('resize',f);f();})();</script>

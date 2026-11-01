@@ -61,7 +61,7 @@ const SECTION_DEFAULTS: Record<PersonSection, boolean> = {
 };
 
 /** Thread kinds the `events` section carries; `posts` carries the other feed kinds. */
-export const EVENT_KINDS = ['event', 'meeting', 'workshop', 'reading_group'];
+export const EVENT_KINDS = ['event', 'meeting', 'series', 'workshop', 'reading_group'];
 
 /**
  * Thread kinds the `services` section carries: offerings a visitor books and

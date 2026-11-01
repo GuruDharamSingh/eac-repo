@@ -37,7 +37,25 @@
  *
  *     AND t.kind <> ALL(${OFF_FEED_KINDS})
  */
-export const OFF_FEED_KINDS: string[] = ['wiki_page', 'writing', 'document'];
+export const OFF_FEED_KINDS: string[] = ['wiki_page', 'writing', 'document', 'series_session', 'tour'];
+
+/**
+ * A guided tour with stops and dated departures (migration 208). Listed only
+ * by the tour pages of the org that sells it; bought through
+ * @elkdonis/commerce `createThreadOrder` with a party size.
+ */
+export const TOUR_KIND = 'tour';
+
+/** One week of a meeting series: RSVP + attendance only. See meeting-series.ts. */
+export const SERIES_SESSION_KIND = 'series_session';
+
+/**
+ * A planned meeting series (meeting-series.ts). Deliberately not in
+ * OFF_FEED_KINDS: the series itself belongs in feeds, the forum and search;
+ * only its weeks (`series_session`) stay off them. It is in SCHEDULED_KINDS
+ * (org-calendar.ts). docs/open/SERIES_KIND_DESIGN_2026-10-10.md.
+ */
+export const SERIES_KIND = 'series';
 
 /** The kind behind a person's own blog. See writing.ts. */
 export const WRITING_KIND = 'writing';

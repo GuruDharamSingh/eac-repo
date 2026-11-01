@@ -23,7 +23,7 @@ export default async function HubProfilePage() {
       </Link>
       <h1 className="mt-4 text-3xl font-semibold md:text-4xl">My profile</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Your name, headline and bio are shared across the whole Elkdonis network; the role and the public switch
+        Your name, headline and bio are shared across the whole Arts Collective network; the role and the public switch
         apply to {siteConfig.orgName} only.
         {profile?.slug && (
           <>

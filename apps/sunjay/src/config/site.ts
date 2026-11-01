@@ -43,6 +43,8 @@ export const siteConfig = {
   marketplaceUrl: process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009",
   /** The collective this site belongs to — rendered in the social links row. */
   collectiveUrl: "https://elkdonis-arts.org",
+  /** The org's zone for dates on /center and the hub. No site_config key holds it (2026-10-08). */
+  timeZone: "America/Toronto",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

@@ -13,6 +13,7 @@ import { db } from "@elkdonis/db";
 import type {
   Artwork,
   ArtworkMedia,
+  ArtworkProvenance,
   ArtworkVariant,
   AuctionLot,
   Bid,
@@ -68,8 +69,60 @@ function mapArtwork(r: Row): Artwork {
     artistSlug: opt(r.artist_slug),
     primaryImageUrl: opt(r.primary_image_url),
     primaryImageAlt: opt(r.primary_image_alt),
+    creditedArtistUserId: opt(r.credited_artist_user_id),
+    creditStatus: (r.credit_status as Artwork["creditStatus"]) ?? "credited",
+    creditedArtistName: opt(r.credited_artist_name),
+    creditedArtistSlug: opt(r.credited_artist_slug),
+    estimateLowMinor: optNum(r.estimate_low_minor),
+    estimateHighMinor: optNum(r.estimate_high_minor),
   };
 }
+
+function localDay(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function mapProvenance(r: Row): ArtworkProvenance {
+  return {
+    id: r.id as string,
+    artworkId: r.artwork_id as string,
+    kind: r.kind as ArtworkProvenance["kind"],
+    fromUserId: opt(r.from_user_id),
+    fromText: opt(r.from_text),
+    fromName: opt(r.from_name),
+    toOrgId: opt(r.to_org_id),
+    toOrgName: opt(r.to_org_name),
+    // postgres.js hands a `date` column back as a Date at local midnight;
+    // String() would give "Thu Oct 01". Keep the calendar day as typed.
+    occurredOn:
+      r.occurred_on == null
+        ? null
+        : r.occurred_on instanceof Date
+          ? localDay(r.occurred_on)
+          : String(r.occurred_on).slice(0, 10),
+    note: opt(r.note),
+    createdAt: String(r.created_at),
+  };
+}
+
+/**
+ * The SELECT list and joins that resolve a piece's shown artist: the maker
+ * when there is one, else the credited artist (unless they rejected the
+ * credit), else the org that sells it. `a`, `s` and `o` must be in scope.
+ */
+const ARTIST_SELECT = db`
+  COALESCE(u.display_name, u.email, cu.display_name, a.metadata->>'artistName', o.name) AS artist_name,
+  COALESCE(u.slug, u.id::text, cu.slug, o.slug, s.id::text) AS artist_slug,
+  cu.display_name AS credited_artist_name,
+  cu.slug AS credited_artist_slug
+`;
+const ARTIST_JOIN = db`
+  LEFT JOIN users u ON u.id = a.artist_user_id
+  LEFT JOIN users cu ON cu.id = a.credited_artist_user_id AND a.credit_status = 'credited'
+`;
 
 function mapVariant(r: Row): ArtworkVariant {
   return {
@@ -85,6 +138,8 @@ function mapVariant(r: Row): ArtworkVariant {
     inventoryQty: num(r.inventory_qty),
     position: num(r.position),
     createdAt: r.created_at as string,
+    beneficiaryPayeeId: opt(r.beneficiary_payee_id),
+    beneficiaryScope: opt(r.beneficiary_scope),
   };
 }
 
@@ -124,7 +179,29 @@ function mapLot(r: Row): AuctionLot {
     metadata: (r.metadata as Record<string, unknown>) ?? {},
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    seriesId: opt(r.series_id),
+    lotNumber: optNum(r.lot_number),
   };
+}
+
+/** The signed-in bidder's standing maximum on a lot, for "your maximum". */
+export async function getBidderMaxForLot(lotId: string, userId: string): Promise<number | null> {
+  const [row] = (await db`
+    SELECT COALESCE(max_amount_minor, amount_minor) AS mx
+    FROM bid WHERE lot_id = ${lotId} AND bidder_id = ${userId} AND status = 'winning'
+    ORDER BY placed_at DESC LIMIT 1
+  `) as unknown as Row[];
+  return row ? Number(row.mx) : null;
+}
+
+/** Whether this person has registered to bid (phone and a card on file) in this marketplace. */
+export async function isRegisteredBidder(userId: string, orgId = "market"): Promise<boolean> {
+  const [row] = (await db`
+    SELECT 1 FROM bidder_registration
+    WHERE user_id = ${userId} AND org_id = ${orgId} AND stripe_payment_method_id IS NOT NULL
+    LIMIT 1
+  `) as unknown as Row[];
+  return Boolean(row);
 }
 
 /**
@@ -141,7 +218,7 @@ function mapLot(r: Row): AuctionLot {
  * sa.owner_org_id) in scope.
  */
 const ARTWORK_CREDIT_SELECT = db`
-  COALESCE(u.display_name, u.email, oa.name) AS artist_name,
+  COALESCE(u.display_name, u.email, a.metadata->>'artistName', oa.name) AS artist_name,
   COALESCE(u.slug, u.id::text, oa.slug, sa.id::text) AS artist_slug
 `;
 
@@ -161,6 +238,12 @@ export interface ListArtworksOptions {
   storeId?: string;
   /** The maker. Null for unattributed work sold by an org store. */
   artistUserId?: string;
+  /**
+   * A person's work in the wide sense: pieces they made (artistUserId) or are
+   * credited on in any store (credited_artist_user_id, not rejected). What
+   * "My art" and a person page show.
+   */
+  personUserId?: string;
   orgId?: string;
   kind?: Artwork["kind"];
   q?: string;
@@ -201,14 +284,13 @@ export async function listArtworks(
   const rows = (await db`
     SELECT
       a.*,
-      COALESCE(u.display_name, u.email, o.name) AS artist_name,
-      COALESCE(u.slug, u.id::text, o.slug, s.id::text) AS artist_slug,
+      ${ARTIST_SELECT},
       pm.url AS primary_image_url,
       pm.alt AS primary_image_alt
     FROM artwork a
     JOIN store s ON s.id = a.store_id AND s.status = 'active'
     LEFT JOIN organizations o ON o.id = s.owner_org_id
-    LEFT JOIN users u ON u.id = a.artist_user_id
+    ${ARTIST_JOIN}
     LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
     LEFT JOIN LATERAL (
       SELECT price_minor FROM artwork_variant av
@@ -218,6 +300,7 @@ export async function listArtworks(
     WHERE a.status = ANY(${statusList})
       ${opts.storeId ? db`AND a.store_id = ${opts.storeId}` : db``}
       ${opts.artistUserId ? db`AND a.artist_user_id = ${opts.artistUserId}` : db``}
+      ${opts.personUserId ? db`AND (a.artist_user_id = ${opts.personUserId} OR (a.credited_artist_user_id = ${opts.personUserId} AND a.credit_status = 'credited'))` : db``}
       ${opts.orgId ? db`AND a.org_id = ${opts.orgId}` : db``}
       ${opts.kind ? db`AND a.kind = ${opts.kind}` : db``}
       ${opts.pricedOnly ? db`AND pv.price_minor IS NOT NULL` : db``}
@@ -244,7 +327,7 @@ export async function listStoreFrontArtworks(
   const rows = (await db`
     SELECT
       a.*,
-      COALESCE(u.display_name, u.email, o.name) AS artist_name,
+      COALESCE(u.display_name, u.email, a.metadata->>'artistName', o.name) AS artist_name,
       COALESCE(u.slug, u.id::text, o.slug, s.id::text) AS artist_slug,
       pm.url AS primary_image_url,
       pm.alt AS primary_image_alt,
@@ -273,7 +356,7 @@ export async function listStoreFrontArtworks(
 export async function listPresentedArtworks(storeId: string): Promise<Artwork[]> {
   const rows = (await db`
     SELECT a.*, pm.url AS primary_image_url, pm.alt AS primary_image_alt,
-      COALESCE(u.display_name, u.email, o.name) AS artist_name,
+      COALESCE(u.display_name, u.email, a.metadata->>'artistName', o.name) AS artist_name,
       COALESCE(u.slug, u.id::text, o.slug, s.id::text) AS artist_slug,
       sp.store_id AS presented_by_store_id
     FROM store_presentation sp
@@ -354,7 +437,72 @@ async function hydrateArtwork(artwork: Artwork): Promise<Artwork> {
   artwork.variants = variants.map(mapVariant);
   artwork.media = media.map(mapMedia);
   artwork.lot = lotRow[0] ? mapLot(lotRow[0]) : null;
+  artwork.provenance = await listProvenance(artwork.id);
   return artwork;
+}
+
+/**
+ * The lines of a cart whose listing directs money to a beneficiary
+ * (artwork_variant, migration 209), for the checkout notice.
+ */
+export async function listCartBeneficiaries(
+  cartToken: string
+): Promise<Array<{ title: string; beneficiaryName: string; scope: "all_proceeds" | "commission" }>> {
+  const rows = (await db`
+    SELECT a.title, p.name AS beneficiary_name, av.beneficiary_scope
+    FROM cart c
+    JOIN cart_line cl ON cl.cart_id = c.id
+    JOIN artwork_variant av ON av.id = cl.artwork_variant_id
+    JOIN artwork a ON a.id = av.artwork_id
+    JOIN payee p ON p.id = av.beneficiary_payee_id
+    WHERE c.token = ${cartToken} AND av.beneficiary_payee_id IS NOT NULL
+  `) as unknown as Row[];
+  return rows.map((r) => ({
+    title: r.title as string,
+    beneficiaryName: r.beneficiary_name as string,
+    scope: (r.beneficiary_scope as "all_proceeds" | "commission") ?? "all_proceeds",
+  }));
+}
+
+/** A piece's provenance events, oldest first, with names resolved. */
+export async function listProvenance(artworkId: string): Promise<ArtworkProvenance[]> {
+  const rows = (await db`
+    SELECT p.*, fu.display_name AS from_name, o.name AS to_org_name
+    FROM artwork_provenance p
+    LEFT JOIN users fu ON fu.id = p.from_user_id
+    LEFT JOIN organizations o ON o.id = p.to_org_id
+    WHERE p.artwork_id = ${artworkId}
+    ORDER BY p.occurred_on ASC NULLS LAST, p.created_at ASC
+  `) as unknown as Row[];
+  return rows.map(mapProvenance);
+}
+
+/**
+ * Everything a person is on, across every store: pieces they made and pieces
+ * they are credited on, any status but archived. For "My art" and the credit
+ * controls on a person page; includes drafts, so callers decide what to show.
+ */
+export async function listArtworksForPerson(
+  userId: string,
+  opts: { limit?: number; status?: Artwork["status"][] } = {}
+): Promise<Artwork[]> {
+  const statusList = opts.status ?? ["draft", "available", "reserved", "sold"];
+  const rows = (await db`
+    SELECT a.*, ${ARTIST_SELECT},
+      pm.url AS primary_image_url, pm.alt AS primary_image_alt,
+      s.display_name AS store_display_name, s.owner_org_id AS store_owner_org_id
+    FROM artwork a
+    JOIN store s ON s.id = a.store_id
+    LEFT JOIN organizations o ON o.id = s.owner_org_id
+    ${ARTIST_JOIN}
+    LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
+    WHERE a.status = ANY(${statusList})
+      AND (a.artist_user_id = ${userId}
+           OR (a.credited_artist_user_id = ${userId} AND a.credit_status = 'credited'))
+    ORDER BY a.created_at DESC
+    LIMIT ${Math.min(opts.limit ?? 100, 200)}
+  `) as unknown as Row[];
+  return attachPricing(rows.map(mapArtwork));
 }
 
 export async function getArtworkBySlug(
@@ -492,6 +640,7 @@ function mapStore(r: Row): Store {
     defaultCurrency: r.default_currency as Store["defaultCurrency"],
     status: r.status as Store["status"],
     bioHtml: opt(r.bio_html),
+    profileBio: opt<string>(r.owner_bio) ?? null,
     joinedAt: r.joined_at as string,
     updatedAt: r.updated_at as string,
 
@@ -546,6 +695,8 @@ const STORE_OWNER_SELECT = db`
   u.headline AS fallback_headline,
   u.city AS fallback_city,
   u.avatar_url AS fallback_photo_url,
+  -- The person's network bio. The store's bio_html is its own note on top.
+  u.bio AS owner_bio,
   -- Falls back to something the *owner's* own route can still resolve: the
   -- artist page looks a person up by user id, so dropping to the store id
   -- here would 404 every seller who has not set a slug. organizations.slug is
@@ -609,6 +760,42 @@ export async function getStoreForUser(
 
   if (!rows[0]) return null;
   return mapStore(rows[0]);
+}
+
+/** The network profile a person brings to the marketplace (their `users` row). */
+export type SellerProfile = {
+  displayName: string | null;
+  headline: string | null;
+  city: string | null;
+  photoUrl: string | null;
+  /** Plain text or HTML, depending on which app wrote it. */
+  bio: string | null;
+  payoutEmail: string | null;
+  slug: string | null;
+};
+
+/**
+ * What a first-time applicant already has on their profile, so the store form
+ * can show it rather than ask again. Someone who signed in through another
+ * network site usually has a name, photo and bio already (IFAC writes the bio).
+ */
+export async function getSellerProfile(userId: string): Promise<SellerProfile | null> {
+  const [r] = (await db`
+    SELECT display_name, headline, city, avatar_url, bio, payout_email, slug
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `) as unknown as Row[];
+  if (!r) return null;
+  return {
+    displayName: opt<string>(r.display_name) ?? null,
+    headline: opt<string>(r.headline) ?? null,
+    city: opt<string>(r.city) ?? null,
+    photoUrl: opt<string>(r.avatar_url) ?? null,
+    bio: opt<string>(r.bio) ?? null,
+    payoutEmail: opt<string>(r.payout_email) ?? null,
+    slug: opt<string>(r.slug) ?? null,
+  };
 }
 
 /**
@@ -872,8 +1059,11 @@ export async function getArtworkForEdit(
   // Access is through the store that sells it — its owner or its member roll
   // — not through `artist_user_id`, which an org store's work may not have.
   const rows = (await db`
-    SELECT a.* FROM artwork a
+    SELECT a.*, ${ARTIST_SELECT}
+    FROM artwork a
     JOIN store s ON s.id = a.store_id
+    LEFT JOIN organizations o ON o.id = s.owner_org_id
+    ${ARTIST_JOIN}
     LEFT JOIN store_member sm ON sm.store_id = s.id AND sm.user_id = ${actorUserId}
     WHERE a.id = ${artworkId}
       AND (s.owner_user_id = ${actorUserId} OR sm.user_id IS NOT NULL)
@@ -910,7 +1100,7 @@ export async function listLiveLots(opts: { limit?: number } = {}): Promise<Aucti
       a.kind AS art_kind, a.status AS art_status,
       pm.url AS primary_image_url,
       pm.alt AS primary_image_alt,
-      COALESCE(u.display_name, u.email, o.name) AS artist_name
+      COALESCE(u.display_name, u.email, a.metadata->>'artistName', o.name) AS artist_name
     FROM auction_lot al
     JOIN artwork_variant av ON av.id = al.artwork_variant_id
     JOIN artwork a ON a.id = av.artwork_id
@@ -1580,3 +1770,6 @@ export async function adminListUsers(
     inCollective: Boolean(r.in_collective),
   }));
 }
+
+// Auction series reads (migration 190 + 209).
+export * from "./series";

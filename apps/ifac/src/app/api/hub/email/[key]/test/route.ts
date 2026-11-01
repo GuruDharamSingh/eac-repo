@@ -11,6 +11,7 @@ import {
 } from "@elkdonis/email";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { renderSeriesLetter, seriesScopeFrom } from "@/lib/series-letters-store";
 
 /**
  * Send this template to the person editing it, and to nobody else.
@@ -23,6 +24,9 @@ import { siteConfig } from "@/config/site";
  * The recipient is ALWAYS the signed-in editor's own address, taken from the
  * session rather than the request body. A test-send route that mails an
  * arbitrary address is an open relay wearing a friendly name.
+ *
+ * `?series=<id>&purpose=<p>` sends that series' letter (rendered as the
+ * series preview renders it), still only to the signed-in owner or guide.
  */
 export async function POST(
   request: NextRequest,
@@ -38,6 +42,11 @@ export async function POST(
     return NextResponse.json({ error: "Your account has no email address" }, { status: 400 });
   }
 
+  const target = await seriesScopeFrom(request.nextUrl.searchParams, key);
+  if (target.kind === "error") {
+    return NextResponse.json({ error: target.error }, { status: target.status });
+  }
+
   const meta = templateMeta(key);
   const [identity, stored] = await Promise.all([
     getOrgEmailIdentity(siteConfig.orgId),
@@ -45,7 +54,9 @@ export async function POST(
   ]);
 
   // Prefer what the editor just saved, exactly as the send path would.
-  const html = stored?.html
+  const html = target.kind === "series"
+    ? await renderSeriesLetter(target.scope)
+    : stored?.html
     ? await renderAdvancedEmail({
         previewText: `Test — ${meta?.title ?? key}`,
         kicker: meta?.title,
@@ -71,12 +82,18 @@ export async function POST(
         // this the preview renders the network's defaults and quietly disagrees
         // with what will actually send.
         copy: stored?.copy,
+        // The face and the masthead/frame, as in the layout branch above.
+        bodyFont: identity.palette?.bodyFont,
+        chrome: emailChromeFor(identity),
       });
 
   try {
     const result = await sendEmail({
       to: editor.email,
-      subject: `[test] ${meta?.title ?? key} — ${identity.fromName}`,
+      subject:
+        target.kind === "series"
+          ? `[test] ${target.scope.letter.title} (${target.series.title}) — ${identity.fromName}`
+          : `[test] ${meta?.title ?? key} — ${identity.fromName}`,
       html,
       orgId: siteConfig.orgId,
       kind: "notification",

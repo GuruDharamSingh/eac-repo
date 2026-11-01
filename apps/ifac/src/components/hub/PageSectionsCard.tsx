@@ -283,7 +283,7 @@ export function PageSectionsSurface({
             }}
           />
           <span>
-            <strong>Elkdonis blog feed</strong>
+            <strong>Arts Collective blog feed</strong>
             <span className="hub-muted">
               Show the network&rsquo;s latest posts at the bottom of your page.
             </span>

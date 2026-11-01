@@ -24,6 +24,6 @@ export async function GET(request: NextRequest) {
     );
   }
   const r = await completeConnectionAuth(user.id, { state, code: q.get("code"), error: q.get("error") });
-  const back = safeReturn(r.returnTo) ?? `${origin}/hub?surface=profile:connections`;
+  const back = safeReturn(r.returnTo) ?? `${origin}/hub/network?surface=me:connections`;
   return NextResponse.redirect(withOutcome(back, connectionIdFromState(state), r.ok === false ? r.error : null));
 }

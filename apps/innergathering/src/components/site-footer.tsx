@@ -95,8 +95,9 @@ export function SiteFooter() {
           <hr className="gold-rule" style={{ "--rule-width": "80px", margin: 0 } as React.CSSProperties} />
 
           <p className="text-xs text-[#fffdf8]/60" style={{ fontFamily: '"Venture", Georgia, serif', letterSpacing: "0.12em" }}>
-            © {new Date().getFullYear()} {siteConfig.orgName} · Elkdonis Arts Collective · Toronto · Los Angeles · Paris ·{" "}
-            <Link href="/login" className="underline underline-offset-2 hover:text-[#d6c38e]">Member sign in</Link>
+            © {new Date().getFullYear()} {siteConfig.orgName} · Toronto · Los Angeles · Paris ·{" "}
+            <Link href="/login" className="underline underline-offset-2 hover:text-[#d6c38e]">Member sign in</Link>{" "}·{" "}
+            <Link href="/data" className="underline underline-offset-2 hover:text-[#d6c38e]">Your data</Link>
           </p>
         </div>
       </footer>

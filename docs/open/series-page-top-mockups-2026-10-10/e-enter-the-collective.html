@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series top E: enter the collective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Shared by the four variants (2026-10-10). Tokens are the .ifs revision 4
+   set from apps/ifac/src/app/site.css. Measured text pairs (WCAG ratio):
+   ink #ece7e1 on #050506 16.6:1, on #0b0b0d 16.0:1, on #121214 15.2:1;
+   muted #b3ada3 on #0b0b0d 8.8:1; faint #8c867d on #050506 5.7:1,
+   on #0b0b0d 5.5:1, on #121214 5.2:1; gold text #e3c572 on #0b0b0d 11.7:1,
+   on #121214 11.1:1; #050506 on gold fill #c9a24a 8.5:1;
+   ok-green #8fd6a5 on #0b0b0d 11.6:1.
+   Baroque frame (dark variant from site.css): ink #efe9df on #1d1823 14.4:1,
+   on input #0d0b10 16.2:1; ink-soft #b8afa4 on #1d1823 8.0:1; CTA ink
+   #2a2010 on the gradient's darker stop #b08432 4.7:1 (10.3:1 at #e9cd86);
+   active toggle #241b2f on #c9a24a 6.9:1.
+   faint is #8c867d here, not site.css #857f76 (4.72:1 on #121214). */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: #050506; }
+.ifs {
+  --ifs-bg: #050506; --ifs-bg-2: #0b0b0d; --ifs-bg-3: #121214;
+  --ifs-line: #1f1f24; --ifs-line-strong: #3a3a42;
+  --ifs-ink: #ece7e1; --ifs-muted: #b3ada3; --ifs-faint: #8c867d;
+  --ifs-gold: #c9a24a; --ifs-gold-text: #e3c572; --ifs-gold-on: #050506;
+  --ifs-frame: #5c62e6; --ifs-frame-soft: #2b2f6e; --ifs-ok: #8fd6a5;
+  --ifs-serif: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+  --ifs-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --ifs-header-h: 64px;
+  display: flow-root; min-height: 100vh; background: var(--ifs-bg); color: var(--ifs-ink);
+  font-family: var(--ifs-sans); font-size: 18px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+:where(.ifs) a { color: inherit; text-decoration: none; }
+:where(.ifs) :is(h1, h2, h3) { font-family: var(--ifs-serif); font-weight: 500; line-height: 1.1; margin: 0; }
+:where(.ifs) p { margin: 0; }
+:where(.ifs) :is(ul, ol) { margin: 0; padding: 0; }
+:where(.ifs) button { font: inherit; cursor: pointer; }
+.ifs-wrap { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+.ifs-eyebrow { font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-muted { color: var(--ifs-muted); }
+.ifs-faint { color: var(--ifs-faint); }
+.ifs-small { font-size: 0.92rem; }
+:where(.ifs) svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* text links: gold, underlined so they read as links without hover */
+.ifs-link { color: var(--ifs-gold-text); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; background: none; border: 0; padding: 0; font-size: inherit; }
+.ifs-link:hover { text-decoration-thickness: 2px; }
+.ifs-links { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.95rem; }
+
+/* buttons */
+.ifs-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px; border: 1px solid var(--ifs-line-strong); background: transparent; color: var(--ifs-ink); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
+.ifs-btn:hover { border-color: var(--ifs-gold); color: var(--ifs-gold-text); }
+.ifs .ifs-btn--primary { background: var(--ifs-gold); border-color: var(--ifs-gold); color: var(--ifs-gold-on); }
+.ifs .ifs-btn--primary:hover { background: #d8b45c; color: var(--ifs-gold-on); }
+.ifs-btn--small { min-height: 42px; padding: 0 18px; font-size: 0.95rem; }
+.ifs-btn--block { width: 100%; }
+.ifs-btn:focus-visible, .ifs-link:focus-visible, .ifs-mock button:focus-visible { outline: 2px solid var(--ifs-gold-text); outline-offset: 3px; }
+
+/* header */
+.ifs-header { position: sticky; top: 0; z-index: 10; background: rgba(20, 20, 22, 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ifs-line); }
+.ifs-header .ifs-wrap { display: flex; align-items: center; gap: 20px; height: var(--ifs-header-h); }
+.ifs-brand { display: flex; align-items: center; gap: 12px; font-family: var(--ifs-serif); font-size: 1.25rem; min-width: 0; }
+.ifs-seal { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--ifs-gold); border-radius: 50%; font: 700 0.74rem var(--ifs-sans); letter-spacing: 0.08em; color: var(--ifs-gold-text); flex: none; }
+.ifs-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.ifs-nav a { padding: 10px 14px; border-radius: 8px; color: var(--ifs-muted); font-weight: 600; font-size: 1rem; }
+.ifs-nav a[aria-current] { color: var(--ifs-ink); background: var(--ifs-bg-3); }
+.ifs-nav a.cta { color: var(--ifs-gold-on); background: var(--ifs-gold); margin-left: 8px; }
+.ifs-nav .me { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ifs-bg-3); border: 1px solid var(--ifs-line-strong); color: var(--ifs-ink); font-weight: 700; font-size: 0.9rem; margin-left: 6px; }
+.ifs-menu { display: none; width: 44px; height: 44px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; background: none; color: var(--ifs-ink); place-items: center; flex: none; }
+
+/* series head */
+.ifs-event-head { padding: 48px 0 44px; border-bottom: 1px solid var(--ifs-line); }
+.ifs-event-head h1 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); margin-top: 10px; text-wrap: balance; }
+.ifs-lede { font-size: 1.1rem; color: var(--ifs-muted); max-width: 58ch; margin-top: 16px !important; }
+.ifs-facts { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 22px; font-size: 1.02rem; }
+.ifs-facts > span { display: inline-flex; align-items: flex-start; gap: 8px; }
+.ifs-facts svg { color: var(--ifs-gold-text); margin-top: 4px; }
+
+/* three time zones: each zone stays on one line; the row wraps between them */
+.ifs-times { display: inline; }
+.ifs-times > span { white-space: nowrap; }
+.ifs-times > span + span::before { content: "\00a0· "; color: var(--ifs-faint); white-space: normal; }
+
+/* date box */
+.ifs-datebox { flex: none; width: 64px; border: 1px solid var(--ifs-gold); border-radius: 8px; text-align: center; padding: 6px 0 8px; line-height: 1; }
+.ifs-datebox__d { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-datebox__n { font-family: var(--ifs-serif); font-size: 1.9rem; margin: 4px 0 2px; }
+.ifs-datebox__m { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ifs-muted); }
+
+/* the session line: date box + title + host */
+.ifs-when { display: flex; gap: 14px; align-items: center; }
+.ifs-when__t { font-family: var(--ifs-serif); font-size: 1.45rem; line-height: 1.15; display: block; }
+.ifs-when__t a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ifs-when__h { color: var(--ifs-muted); font-size: 0.98rem; }
+.ifs-timeline { color: var(--ifs-ink); font-size: 0.98rem; }
+.ifs-timeline b { font-weight: 600; }
+
+/* confirmed / done marks */
+.ifs-done { display: flex; align-items: center; gap: 10px; color: var(--ifs-ink); font-weight: 600; }
+.ifs-done svg { color: var(--ifs-ok); width: 22px; height: 22px; stroke-width: 2.2; }
+.ifs-tick { color: var(--ifs-ok); }
+
+/* join block, shown once a signed-in person has said they are coming */
+.ifs-joinbox { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--ifs-line-strong); border-radius: 10px; background: var(--ifs-bg); }
+.ifs-joinbox dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 14px; margin: 0; font-size: 0.92rem; }
+.ifs-joinbox dt { color: var(--ifs-muted); }
+.ifs-joinbox dd { margin: 0; font-family: ui-monospace, Menlo, monospace; overflow-wrap: anywhere; }
+
+/* the subscription line */
+.ifs-subline { display: flex; align-items: flex-start; gap: 10px; font-size: 0.95rem; color: var(--ifs-muted); }
+.ifs-subline svg { color: var(--ifs-gold-text); margin-top: 3px; }
+.ifs-subline b { color: var(--ifs-ink); font-weight: 600; }
+
+/* ---- mockup state switch (not part of the design) ---- */
+.ifs-mock { background: #16161a; border-bottom: 1px dashed #6c6660; font-size: 0.86rem; color: var(--ifs-muted); }
+.ifs-mock .ifs-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; }
+.ifs-mock b { color: var(--ifs-ink); font-weight: 600; margin-right: 4px; }
+.ifs-mock button { border: 1px solid var(--ifs-line-strong); background: none; color: var(--ifs-ink); border-radius: 6px; padding: 4px 10px; font-size: 0.86rem; }
+.ifs-mock button[aria-pressed="true"] { background: var(--ifs-ink); color: #050506; border-color: var(--ifs-ink); }
+.ifs-mock a { color: var(--ifs-gold-text); text-decoration: underline; margin-left: auto; }
+
+.mock-note { margin: 32px auto 48px; border: 1.5px dashed #6c6660; border-radius: 8px; padding: 14px 16px; font-size: 0.92rem; color: var(--ifs-muted); }
+.mock-note b { color: var(--ifs-ink); }
+.mock-note ul { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.mock-note code { color: var(--ifs-gold-text); font-size: 0.85rem; }
+
+/* ---- state visibility: data-when lists the states an element shows in ---- */
+.ifs[data-state="out"] [data-when]:not([data-when~="out"]),
+.ifs[data-state="open"] [data-when]:not([data-when~="open"]),
+.ifs[data-state="in"] [data-when]:not([data-when~="in"]),
+.ifs[data-state="going"] [data-when]:not([data-when~="going"]),
+.ifs[data-state="welcome"] [data-when]:not([data-when~="welcome"]) { display: none !important; }
+/* the "just signed in" state exists only in variant E; E has no separate "sign-up open" state */
+.ifs-mock [data-set="welcome"], .ifs[data-variant="e"] .ifs-mock [data-set="open"] { display: none; }
+.ifs[data-variant="e"] .ifs-mock [data-set="welcome"] { display: inline-block; }
+.ifs[data-sub="1"] [data-sub-when="0"], .ifs:not([data-sub="1"]) [data-sub-when="1"] { display: none !important; }
+.ifs[data-ctx="coming"] [data-ctx-when]:not([data-ctx-when~="coming"]),
+.ifs[data-ctx="subscribe"] [data-ctx-when]:not([data-ctx-when~="subscribe"]),
+.ifs[data-ctx="join"] [data-ctx-when]:not([data-ctx-when~="join"]) { display: none !important; }
+
+@media (max-width: 1000px) {
+  .ifs-nav a:not(.cta):not([aria-current]) { display: none; }
+}
+@media (max-width: 640px) {
+  .ifs { font-size: 17px; --ifs-header-h: 56px; }
+  .ifs-header .ifs-wrap { gap: 10px; }
+  .ifs-brand__name, .ifs-nav a[aria-current] { display: none; }
+  .ifs-menu { display: inline-grid; }
+  .ifs-nav a.cta { padding: 8px 12px; margin-left: 0; }
+  .ifs-event-head { padding: 28px 0 28px; }
+  .ifs-event-head h1 { font-size: 2.2rem; }
+  .ifs-facts { gap: 8px 18px; font-size: 0.98rem; }
+}
+
+/* Variant E (2026-10-10, the developer's concept): directly under the series
+   description, a bordered notice box asking the visitor to enter the
+   collective, with a plain sign-up form. Signed in, the box is replaced by
+   the confirm box. After signing up, a small dialog thanks the person.
+   Pairs: field text #ece7e1 on #050506 16.6:1; field edge #8c867d on #050506
+   5.7:1 (3:1 applies); notice ground #0f0d08, ink 15.8:1, muted #b3ada3
+   8.7:1; Google button text #3c4043 on #fff 10.5:1; dialog ground #0b0b0d. */
+.e-head { padding-bottom: 48px; }
+.e-intro { max-width: 760px; }
+.e-next { margin-top: 18px !important; color: var(--ifs-muted); font-size: 1rem; }
+.e-next b { color: var(--ifs-ink); font-weight: 600; }
+
+/* the notice box */
+.e-box { margin-top: 28px; max-width: 640px; border: 2px solid var(--ifs-gold); border-radius: 10px; background: #0f0d08; padding: 22px 24px 24px; display: grid; gap: 14px; }
+.e-box__head { display: flex; align-items: center; gap: 12px; }
+.e-box__head svg { width: 26px; height: 26px; color: var(--ifs-gold-text); }
+.e-box h2 { font-size: 1.75rem; }
+.e-box__p { color: var(--ifs-muted); font-size: 1rem; }
+.e-form { display: grid; gap: 12px; }
+.e-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.e-field { display: grid; gap: 6px; }
+.e-field label { font-weight: 600; font-size: 0.98rem; color: var(--ifs-ink); }
+.e-field input { height: 50px; width: 100%; border: 1.5px solid var(--ifs-faint); border-radius: 8px; background: var(--ifs-bg); color: var(--ifs-ink); padding: 0 14px; font: inherit; font-size: 1.02rem; }
+.e-field input:focus { outline: 2px solid var(--ifs-gold-text); outline-offset: 1px; border-color: var(--ifs-gold); }
+.e-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.e-google { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1px solid #dadce0; background: #fff; color: #3c4043; font-family: Roboto, "Google Sans", var(--ifs-sans); font-weight: 600; font-size: 1rem; }
+.e-google svg { stroke: none; }
+.e-or { color: var(--ifs-muted); font-size: 0.95rem; }
+.e-switch { font-size: 0.95rem; color: var(--ifs-muted); }
+
+/* the confirm box (signed in) */
+.e-confirm { margin-top: 28px; max-width: 640px; border: 2px solid var(--ifs-frame); border-radius: 10px; background: var(--ifs-bg-2); padding: 22px 24px 24px; display: grid; gap: 14px; }
+.e-confirm h2 { font-size: 1.75rem; }
+.e-stack { display: grid; gap: 12px; }
+.e-stack > .ifs-btn { justify-self: start; }
+
+/* the welcome dialog */
+.e-scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.72); display: grid; place-items: center; padding: 16px; }
+.e-dialog { width: min(440px, 100%); border: 2px solid var(--ifs-gold); border-radius: 12px; background: var(--ifs-bg-2); padding: 26px 24px 22px; display: grid; gap: 14px; text-align: center; }
+.e-dialog svg.mark { width: 34px; height: 34px; color: var(--ifs-ok); justify-self: center; stroke-width: 2; }
+.e-dialog h2 { font-size: 1.7rem; }
+.e-dialog p { color: var(--ifs-ink); }
+.e-dialog .ifs-btn { justify-self: center; min-width: 180px; }
+
+@media (max-width: 640px) {
+  .e-box, .e-confirm { padding: 18px 16px 20px; }
+  .e-box h2, .e-confirm h2 { font-size: 1.5rem; }
+  .e-fields { grid-template-columns: minmax(0, 1fr); }
+  .e-actions > .ifs-btn, .e-actions > .e-google { width: 100%; }
+  .e-or { width: 100%; text-align: center; }
+  .e-stack > .ifs-btn { justify-self: stretch; }
+}
+</style>
+</head>
+<body>
+<div class="ifs" data-variant="e" data-finish="welcome" data-state="out" data-ctx="join" data-sub="0">
+  <div class="ifs-mock" role="region" aria-label="Mockup state switch">
+    <div class="ifs-wrap">
+      <b>Mockup E · enter the collective</b>
+      <button type="button" data-set="out" aria-pressed="false">Signed out</button>
+      <button type="button" data-set="open" aria-pressed="false">Sign-up open</button>
+      <button type="button" data-set="welcome" aria-pressed="false">Just signed in</button>
+      <button type="button" data-set="in" aria-pressed="false">Signed in</button>
+      <button type="button" data-set="going" aria-pressed="false">Coming</button>
+      <button type="button" data-set-sub aria-pressed="false">+ Subscribed</button>
+      <a href="index.html">All variants</a>
+    </div>
+  </div>
+
+  <header class="ifs-header">
+    <div class="ifs-wrap">
+      <a class="ifs-brand" href="#"><span class="ifs-seal">IFAC</span><span class="ifs-brand__name">International Fine Art Collectors</span></a>
+      <nav class="ifs-nav" aria-label="Site">
+        <a href="#">Home</a><a href="#" aria-current="page">Series</a><a href="#">About</a><a href="#">Publications</a><a href="#">Forum</a>
+        <a href="#" class="cta" data-when="out open" data-go="open:join">Join / Sign in</a>
+        <a href="#" class="cta" data-when="in going welcome">Hub</a>
+        <a href="#" class="me" data-when="in going welcome" aria-label="Your account" title="Your name">Y</a>
+      </nav>
+      <button class="ifs-menu" type="button" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </header>
+
+  <section class="ifs-event-head e-head">
+    <div class="ifs-wrap">
+      <div class="e-intro">
+        <p class="ifs-eyebrow">Weekly series · IFAC</p>
+        <h1>Explorations in Art Forms by Non Professionals</h1>
+        <p class="ifs-lede">Placeholder description: a weekly online session in which people who are not professional artists try an art form together. Each week has its own host and topic, and nobody needs experience to take part.</p>
+        <div class="ifs-facts">
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Mondays</span>
+          <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="ifs-times"><span>6:00 PM Pacific</span><span>9:00 PM Eastern</span><span>3:00 AM Paris (Tue)</span></span></span>
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>Online · free</span>
+        </div>
+        <p class="e-next" data-when="out open">Next session: <b>Monday, October 12</b> · Session title, with Host name</p>
+      </div>
+
+      <!-- Signed out: the notice box with the sign-up -->
+      <section class="e-box" aria-labelledby="e-box-h" data-when="out open" data-panel>
+        <div class="e-box__head">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+          <h2 id="e-box-h" data-e-signup>Please enter the collective</h2>
+          <h2 data-e-signin hidden>Welcome back</h2>
+        </div>
+        <p class="e-box__p" data-e-signup>The sessions are free. We ask everyone who comes to create an account on the Elkdonis Arts Collective platform, which IFAC is part of. It supports the platform, and lets us send a confirmation or reminder for the sessions you choose.</p>
+        <p class="e-box__p" data-e-signin hidden>Sign in with the account you use on IFAC or any Elkdonis Arts Collective site.</p>
+        <form class="e-form" data-frame-form novalidate>
+          <div class="e-fields">
+            <div class="e-field"><label for="e-email">Email</label><input id="e-email" type="email" autocomplete="email"></div>
+            <div class="e-field"><label for="e-pw">Password</label><input id="e-pw" type="password" autocomplete="new-password"></div>
+          </div>
+          <div class="e-actions">
+            <button type="submit" class="ifs-btn ifs-btn--primary"><span data-e-signup>Sign up</span><span data-e-signin hidden>Sign in</span></button>
+            <span class="e-or">or</span>
+            <button type="button" class="e-google" data-frame-google>
+              <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+              Continue with Google
+            </button>
+          </div>
+          <p class="e-switch" data-e-signup>Already have an account? <button type="button" class="ifs-link" data-e-mode="signin">Sign in</button></p>
+          <p class="e-switch" data-e-signin hidden>New here? <button type="button" class="ifs-link" data-e-mode="signup">Sign up</button></p>
+        </form>
+      </section>
+
+      <!-- Signed in: the confirm box in the same place -->
+      <section class="e-confirm" aria-labelledby="e-confirm-h" data-when="in going welcome">
+        <p class="ifs-eyebrow">This week · Session 1</p>
+        <div class="ifs-when">
+          <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">12</div><div class="ifs-datebox__m">Oct</div></div>
+          <div><a class="ifs-when__t" href="#">Session title</a><span class="ifs-when__h">with Host name</span></div>
+        </div>
+        <p class="ifs-timeline"><b>Monday, October 12</b><br><span class="ifs-times"><span>6:00 PM Pacific</span><span>9:00 PM Eastern</span><span>3:00 AM Paris (Tue)</span></span></p>
+
+        <div class="e-stack" data-when="in welcome">
+          <h2 id="e-confirm-h">Let us know you're coming</h2>
+          <button type="button" class="ifs-btn ifs-btn--primary" data-go="coming">I'm coming</button>
+          <p class="ifs-small ifs-muted">We'll email you a confirmation with the join link.</p>
+        </div>
+        <div class="e-stack" data-when="going">
+          <p class="ifs-done"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>You're coming on Monday</p>
+          <div class="ifs-joinbox">
+            <a class="ifs-btn ifs-btn--primary ifs-btn--block" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>Join the session</a>
+            <dl><dt>Meeting ID</dt><dd>000 0000 0000</dd><dt>Passcode</dt><dd>PASSCODE</dd></dl>
+          </div>
+          <div class="ifs-links"><a class="ifs-link" href="#">Add to calendar</a><button type="button" class="ifs-link" data-go="not-coming">I can't make it after all</button></div>
+        </div>
+
+        <div data-sub-when="0">
+          <div class="ifs-links"><button type="button" class="ifs-link" data-go="subscribe">Subscribe to series</button><a class="ifs-link" href="#">Other weeks ↓</a></div>
+          <p class="ifs-small ifs-faint" style="margin-top:6px">An email before each session with its details and the join link. It doesn't mark you as coming; you can confirm from each email.</p>
+        </div>
+        <p class="ifs-subline" data-sub-when="1"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span><b>Subscribed to the series.</b> You'll get an email before each session. <button type="button" class="ifs-link" data-go="unsubscribe">Stop these emails</button></span></p>
+      </section>
+    </div>
+  </section>
+
+  <div class="ifs-wrap">
+    <aside class="mock-note">
+      <b>Variant E: enter the collective (developer's concept).</b>
+      <ul>
+        <li>Signed out, the notice box sits directly under the description: Email, Password, "Sign up", "Continue with Google", and a "Sign in" switch. No name field; the name can be asked for later in the account.</li>
+        <li>After sign-up, a small dialog thanks the person, with one "Continue" button. Behind it, the box has already turned into the confirm box.</li>
+        <li>Signed in, the box does not appear; the confirm box takes its place with "I'm coming" and "Subscribe to series".</li>
+        <li>The form is plain, not the Baroque frame, so it reads as part of the page rather than a separate panel.</li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- Just signed in -->
+  <div class="e-scrim" data-when="welcome">
+    <div class="e-dialog" role="dialog" aria-modal="true" aria-labelledby="e-dialog-h">
+      <svg class="mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
+      <h2 id="e-dialog-h">Welcome</h2>
+      <p>Thanks for joining the Elkdonis Arts Collective platform and showing interest in Explorations in Art Forms by Non Professionals by IFAC.</p>
+      <button type="button" class="ifs-btn ifs-btn--primary" data-go="continue">Continue</button>
+    </div>
+  </div>
+</div>
+<script>
+/* Mockup behaviour only: the state switch, and the buttons moving between
+   states. In the app the states come from the session and the attendance rows. */
+(function () {
+  var root = document.querySelector(".ifs");
+  function apply(state, opts) {
+    opts = opts || {};
+    root.dataset.state = state;
+    if (opts.ctx) root.dataset.ctx = opts.ctx;
+    if (opts.sub !== undefined) root.dataset.sub = opts.sub ? "1" : "0";
+    if (state === "out" || state === "open") root.dataset.sub = "0"; // a subscription needs an account
+    document.querySelectorAll("[data-set]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.set === state)); });
+    var sb = document.querySelector("[data-set-sub]");
+    if (sb) sb.setAttribute("aria-pressed", String(root.dataset.sub === "1"));
+    var h = "#" + state + (state === "open" ? "-" + root.dataset.ctx : "") + (root.dataset.sub === "1" ? "+sub" : "");
+    if (location.hash !== h) history.replaceState(null, "", h);
+    document.dispatchEvent(new CustomEvent("mockstate"));
+  }
+  function fromHash() {
+    var m = /^#(out|open|in|going|welcome)(?:-(coming|subscribe|join))?(\+sub)?$/.exec(location.hash);
+    if (m) apply(m[1], { ctx: m[2] || "coming", sub: !!m[3] });
+    else apply(root.dataset.state || "out", { ctx: root.dataset.ctx || "coming" });
+  }
+  function signedIn() { return root.dataset.state === "in" || root.dataset.state === "going" || root.dataset.state === "welcome"; }
+  function reveal() {
+    var p = document.querySelector("[data-panel]");
+    if (p && p.scrollIntoView) setTimeout(function () { p.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30);
+  }
+  function finish() {
+    if (root.dataset.finish === "welcome") { apply("welcome"); var c = document.querySelector("[data-go='continue']"); if (c) c.focus(); return; }
+    var ctx = root.dataset.ctx;
+    if (ctx === "coming") apply("going");
+    else if (ctx === "subscribe") apply("in", { sub: true });
+    else apply("in");
+  }
+  function setMode(mode) {
+    var bq = document.querySelector(".eac-bq");
+    if (!bq) return;
+    bq.dataset.mode = mode;
+    document.querySelectorAll("[data-mode-btn]").forEach(function (b) {
+      var on = b.dataset.modeBtn === mode;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", String(on));
+    });
+    document.querySelectorAll("[data-signup-only]").forEach(function (el) { el.hidden = mode !== "signup"; });
+    document.querySelectorAll("[data-cta-signup]").forEach(function (el) { el.hidden = mode !== "signup"; });
+    document.querySelectorAll("[data-cta-signin]").forEach(function (el) { el.hidden = mode === "signup"; });
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-set],[data-set-sub],[data-go],[data-mode-btn],[data-frame-google]");
+    if (!t) return;
+    e.preventDefault();
+    if (t.dataset.set) return apply(t.dataset.set, t.dataset.set === "open" ? { ctx: "coming" } : {});
+    if (t.hasAttribute("data-set-sub")) return apply(root.dataset.state, { sub: root.dataset.sub !== "1" });
+    if (t.hasAttribute("data-frame-google")) return finish();
+    if (t.dataset.modeBtn) return setMode(t.dataset.modeBtn);
+    var go = t.dataset.go;
+    if (go.indexOf("open:") === 0) { apply("open", { ctx: go.slice(5) }); return reveal(); }
+    if (go === "close") return apply("out");
+    if (go === "continue") return apply("in");
+    if (go === "coming") { if (signedIn()) return apply("going"); apply("open", { ctx: "coming" }); return reveal(); }
+    if (go === "subscribe") { if (signedIn()) return apply(root.dataset.state, { sub: true }); apply("open", { ctx: "subscribe" }); return reveal(); }
+    if (go === "unsubscribe") return apply(root.dataset.state, { sub: false });
+    if (go === "not-coming") return apply("in");
+    if (go === "signout") return apply("out", { sub: false });
+  });
+  document.addEventListener("submit", function (e) {
+    if (e.target.matches("[data-frame-form]")) { e.preventDefault(); finish(); }
+  });
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+  window.mockApply = apply;
+})();
+/* E only: the sign-up / sign-in switch inside the notice box. */
+document.addEventListener("click", function (e) {
+  var t = e.target.closest("[data-e-mode]");
+  if (!t) return;
+  var signin = t.dataset.eMode === "signin";
+  document.querySelectorAll("[data-e-signup]").forEach(function (el) { el.hidden = signin; });
+  document.querySelectorAll("[data-e-signin]").forEach(function (el) { el.hidden = !signin; });
+  document.getElementById("e-pw").setAttribute("autocomplete", signin ? "current-password" : "new-password");
+});
+</script>
+</body>
+</html>

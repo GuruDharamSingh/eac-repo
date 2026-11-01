@@ -159,6 +159,7 @@ export default async function HubPage() {
                 button. It is one `users` row and the profile surface already
                 reads and writes it. */}
             <ProfileFace
+            centerHref="/center"
               summary={{
                 displayName: profile?.displayName?.trim() || viewer.email,
                 avatarUrl: profile?.avatarUrl ?? null,

@@ -10,7 +10,14 @@ import { useSurface } from "../surface";
 // the host lacks is not drawn.
 // ============================================================================
 
-export function WhiteboardPanel({ blurb = "Sketch a plan, a diagram, an idea — together." }: { blurb?: string }) {
+export function WhiteboardPanel({
+  blurb = "Sketch a plan, a diagram, an idea — together.",
+  pageHref = "/hub/whiteboard",
+}: {
+  blurb?: string;
+  /** The dedicated page beside the popup; `null` drops the link. */
+  pageHref?: string | null;
+}) {
   const { connectors, open } = useSurface();
   if (!connectors.custom?.whiteboard) return null;
   return (
@@ -34,6 +41,11 @@ export function WhiteboardPanel({ blurb = "Sketch a plan, a diagram, an idea —
         <span className="eac-hs-board-cta">Open the whiteboard</span>
         <span className="eac-hs-muted">{blurb}</span>
       </button>
+      {pageHref ? (
+        <a className="eac-hs-link eac-hs-board-page" href={pageHref}>
+          Open as a page
+        </a>
+      ) : null}
     </section>
   );
 }

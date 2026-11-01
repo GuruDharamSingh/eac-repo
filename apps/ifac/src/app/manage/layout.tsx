@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireIfacManager } from "@/lib/manage-auth";
 import { ManageTabs } from "@/components/manage/manage-tabs";
+import { SiteHeader } from "@/components/site-chrome";
 
 export const metadata: Metadata = {
   title: "Manage IFAC",
@@ -24,17 +25,24 @@ export default async function ManageLayout({ children }: { children: React.React
   // forgets to check still cannot render.
   const viewer = await requireIfacManager();
 
+  // The site's header above the console's own tabs (developer, 2026-10-10):
+  // /manage had no way back to the site or the hub but the browser's button.
+  // The same SiteHeader the hub uses; its nav carries Home, About, the
+  // directory, Forum and Hub.
   return (
-    <div className="admin-shell manage-console">
-      <div className="page-heading">
-        <p className="kicker">IFAC admin</p>
-        <h1>Manage</h1>
-        <p className="body-copy">Signed in as {viewer.email}</p>
+    <div className="site-shell">
+      <SiteHeader />
+      <div className="admin-shell manage-console">
+        <div className="page-heading">
+          <p className="kicker">IFAC admin</p>
+          <h1>Manage</h1>
+          <p className="body-copy">Signed in as {viewer.email}</p>
+        </div>
+
+        <ManageTabs />
+
+        {children}
       </div>
-
-      <ManageTabs />
-
-      {children}
     </div>
   );
 }

@@ -1,0 +1,8 @@
+{
+  "id": "cl-019",
+  "status": "draft",
+  "source": { "paper": "Hastings Tribune", "place": "Hastings, Nebraska", "date": "2019-10", "era": "2010s", "language": ["en"] },
+  "summary": "Same page as cl-017 (the PDF render); stored as a separate JPEG with different compression, so the hash check didn't catch it.",
+  "family": "us-community-weekly",
+  "notes": ["Content duplicate of cl-017. Keep for the image, but don't count it twice when weighting families."]
+}

@@ -325,6 +325,12 @@ export type { OrgRole, OrgMembership, OrgMember, OrgFollower } from './org-membe
 
 // Signed-in arrivals through the network SSO handoff (migration 164).
 export { listOrgArrivals } from './network-arrivals';
+// An org's people for its owners and guides: roles, listing, arrivals (Center, 2026-10-18).
+export { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople, ASSIGNABLE_ORG_ROLES } from './org-people';
+export type { OrgPerson, OrgPeopleResult } from './org-people';
+// Start an organisation (moved from arts-collective's /api/org/create, 2026-10-18).
+export { createOrganizationForUser, checkSubdomain, normalizeSubdomain, isValidSubdomain, ORG_TIERS } from './org-create';
+export type { CreateOrgInput, CreateOrgResult, OrgTier } from './org-create';
 export type { OrgArrival } from './network-arrivals';
 
 // Authorization for /api/media/* reads. The single Nextcloud service account
@@ -425,6 +431,10 @@ export { ensureUniqueThreadSlug } from './thread-slug';
 export {
   getProfile,
   getProfileBySlug,
+  resolveUserSlugRedirect,
+  recordSlugRedirect,
+  clearSlugRedirect,
+  noteUserSlugChange,
   listOrgProfiles,
   getOrgProfileBySlug,
   listProfileOrgs,
@@ -693,6 +703,9 @@ export type { PublishedArtifact } from './thread-publish';
 // /center — the follower's home on an org's site. One read, every section
 // fail-soft. See center.ts and CENTER_PAGE_BRIEF_2026-09-09.md.
 export { loadCenter } from './center';
+// The promotion slot's placement (site_config key `center_promo`): read raw
+// for an editor's form, write or clear it. Caller authorises.
+export { getCenterPromo, setCenterPromo } from './center';
 export type {
   CenterData,
   CenterThread,
@@ -847,7 +860,8 @@ export type { ViewerAlerts } from './viewer-alerts';
 
 // Which kinds an org surface may harvest. Read thread-kinds.ts before adding
 // a `kind` — a new one is enrolled in every feed and the forum by default.
-export { OFF_FEED_KINDS, WRITING_KIND } from './thread-kinds';
+export { OFF_FEED_KINDS, WRITING_KIND, SERIES_SESSION_KIND } from './thread-kinds';
+export { SERIES_KIND } from './thread-kinds';
 
 // A person's own writing — the blog behind a profile page. Threads, so it
 // shares the editor and the reading layer; off every org feed, so it stays
@@ -905,6 +919,98 @@ export type {
   OccurrenceRecord,
   HostDuty,
 } from './meeting-rota';
+
+// Meeting series: a recurring gathering whose weeks each have a host, title,
+// summary, materials and their own RSVP topic (migration 201).
+export {
+  getMeetingSeries,
+  listMeetingSeries,
+  getPresentedSeriesId,
+  saveSeriesSession,
+  saveSeriesSettings,
+  seriesJoinUrl,
+  ensureSeriesSessionTopic,
+  // 2026-10-10: series_sessions sidecar (migration 203).
+  ensureSeriesSession,
+  getMeetingSeriesWeek,
+  cancelSeriesSession,
+  restoreSeriesSession,
+  moveSeriesSession,
+  seriesLocalToInstant,
+  rsvpSeriesSession,
+  getSeriesRsvps,
+  listSeriesSessionAttendees,
+  // 2026-10-10: zoned clock, drafts, host gate, subscriptions, Talk, schedule.
+  seriesOccurrencesFrom,
+  seriesOccurrencesBefore,
+  seriesOccurrenceNumber,
+  isSeriesOccurrence,
+  validTimeZone,
+  DEFAULT_SUBSCRIBER_REMINDER_DAYS,
+  SeriesError,
+  assignSeriesRole,
+  clearSeriesRole,
+  publishSeriesSession,
+  setSeriesSubscription,
+  isSubscribedToSeries,
+  listSeriesSubscribers,
+  unsubscribeSeriesByEmail,
+  ensureSeriesTalkRoom,
+  saveSeriesSchedule,
+  SUBSCRIBED_STATUS,
+  // 2026-10-13: week subtitle, rich write-up and cover framing (migration 205); series cover media.
+  coverFrameOf,
+  seriesCoverOf,
+  intervalWeeksOf,
+} from './meeting-series';
+export type {
+  CoverFrame,
+  SeriesCoverMedia,
+  MeetingSeries,
+  SeriesSession,
+  SeriesPresentation,
+  SeriesJoinDetails,
+  SaveSeriesSettingsInput,
+  SaveSeriesSessionInput,
+  SeriesRsvpResult,
+  SeriesAttendee,
+  SeriesClock,
+  SeriesSchedule,
+  SeriesScheduleInput,
+  SeriesScheduleResult,
+  SeriesWeekMove,
+  SeriesSessionRef,
+  SeriesSubscriber,
+} from './meeting-series';
+
+// An org's public Series page: intro copy, order, featured series, and every
+// series with its colour and state (2026-10-18). See series-page.ts.
+export {
+  SERIES_ACCENTS,
+  SERIES_PAGE_DEFAULTS,
+  getSeriesPageSettings,
+  saveSeriesPageSettings,
+  listSeriesForPage,
+} from './series-page';
+export type { SeriesPageSettings, SaveSeriesPageInput, SeriesPageEntry } from './series-page';
+
+// A series' people (subscribers, week RSVPs, hosts) for the planner's
+// Manage tab ("Email list") and its CSV export. See series-people.ts.
+export { listSeriesPeople } from './series-people';
+export type { SeriesPerson, SeriesPeople, SeriesPeopleCounts } from './series-people';
+
+// A series' email figures (letters per week and overall, opens/clicks where
+// SendGrid events exist, mailings) for the planner's "Manage" tab. See
+// series-analytics.ts.
+export { getSeriesEmailStats } from './series-analytics';
+export type {
+  SeriesEmailStats,
+  SeriesEmailLine,
+  SeriesEmailTracking,
+  SeriesLetterKind,
+  SeriesMailingSummary,
+  SeriesSessionEmailStats,
+} from './series-analytics';
 
 // Feed write gate + stewardship (migration 138).
 export { canPostToFeed } from './org-feeds';
@@ -1146,6 +1252,9 @@ export {
   checkConnection,
   beginConnectionAuth,
   completeConnectionAuth,
+  getMetaPageTarget,
+  getThreadsTarget,
+  getInstagramLoginTarget,
   connectionIdFromState,
   getConnectionAccessToken,
   connectionRedirectUri,
@@ -1153,7 +1262,7 @@ export {
   connectionsHandlers,
   CONNECTION_PROVIDERS,
 } from './connections';
-export type { UserConnection, ConnectionProvider, ConnectionStatus, ConnectionResult } from './connections';
+export type { UserConnection, ConnectionProvider, ConnectionStatus, ConnectionResult, ConnectionTarget } from './connections';
 
 // Where a thread's recordings are published (threads.metadata.publish). See publish-target.ts.
 export { getPublishTarget, setPublishTarget } from './publish-target';
@@ -1163,3 +1272,34 @@ export type { PublishTargetView, YoutubePublishTarget, PublishPrivacy, PublishMo
 // (youtube-uploader.ts) is worker only and not exported here.
 export { listThreadUploads, actOnUpload, scanYoutubeUploads, RECORDINGS_FOLDER } from './youtube-uploads';
 export type { VideoUpload, VideoUploadStatus } from './youtube-uploads';
+
+// Data deletion requests (migration 216): the /data/delete form and Meta's callback.
+export { createDeletionRequest, getDeletionRequestByCode, listDeletionRequests, resolveDeletionRequest, createDeletionRequestHandler, deleteMetaConnections, fulfilMetaDeletion } from './data-deletion';
+export type { DeletionRequest, DeletionRequestStatus, DeletionRequestSource } from './data-deletion';
+
+// Onboarding tasks (2026-10-29): "is this done yet?" for the getting-started course and hub checklists.
+export { getOnboardingTaskStatus, getOnboardingTaskStatuses, ONBOARDING_TASK_IDS, ORG_TASK_IDS } from './onboarding-tasks';
+export type { OnboardingTaskId, OnboardingTaskStatus } from './onboarding-tasks';
+
+// Social posts: the Studio's Post kind (migration 219, 2026-10-31).
+export {
+  listSocialPosts,
+  getSocialPost,
+  createSocialPost,
+  updateSocialPost,
+  archiveSocialPost,
+  recordSocialShare,
+  type SocialPost,
+  type SocialPostPatch,
+  type SocialImage,
+  type SocialShare,
+  type SocialPlatform,
+} from './social-posts';
+
+// Meta webhook deliveries (migration 220, 2026-10-31).
+export { recordMetaWebhookEvent } from './meta-webhooks';
+
+// Org channels, the publish ledger and the Center route factory (2026-11-01).
+export { listOrgChannels, listChannelsForManager, setOrgChannel, isOrgChannel, type OrgChannel, type ChannelProvider } from './org-channels';
+export { startPublishJob, finishPublishJob, listPublishJobs, type PublishJobView } from './publish-jobs';
+export { centerRoutes } from './center-routes';

@@ -1,0 +1,26 @@
+{
+  "id": "cl-023",
+  "status": "draft",
+  "source": { "paper": "2más2KC", "place": "Kansas City, Missouri/Kansas", "date": "2021-02-18", "era": "2020s", "language": ["es", "en"] },
+  "summary": "A bilingual Spanish/English community paper where every ad is a full-colour display box: paired red/blue category tabs (EMPLEO | EMPLOYMENT), each box in its own clashing typeface, coloured border and clip art. Loud, handmade and cheerful.",
+  "family": "color-display-mosaic",
+  "frame": { "columns": 3, "columnWidth": "wide", "gutter": "normal", "columnRules": "none", "flow": "modular", "masthead": "Royal-blue band: red 2más2KC logo tile, white caps CLASSIFIEDS / Clasificados, phone and email, page number and date at right." },
+  "headers": [
+    { "id": "paired-tabs", "kind": "tint-bar", "example": "EMPLEO | EMPLOYMENT", "fg": "#ffffff", "bg": "#d7261e", "align": "center", "box": [0.01, 0.055, 0.24, 0.012], "notes": "Spanish word on a red tab, English on a blue tab, side by side. PUBLIC ANNOUNCEMENTS gets a green tab." }
+  ],
+  "units": [
+    { "id": "colour-box", "kind": "display", "frequency": "dominant", "lead": "bold-caps", "align": "center", "border": "thin", "example": "RECEPTIONIST / We are looking for a Bi-lingual Receptionist...", "notes": "Each box picks its own border colour (red, blue, teal) and its own font; condensed Times on red, Impact-like heads, bullets." },
+    { "id": "tint-box", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "fill": "#f6e7a6", "example": "TACOS EL GALLO / NECESITAMOS", "notes": "Cream/yellow fills, rooster logo, condensed bold copy." },
+    { "id": "rainbow-display", "kind": "house-ad", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "Does advertising work?? IT JUST DID", "notes": "Rainbow-gradient condensed caps, the paper's own ad." },
+    { "id": "red-banner", "kind": "reverse-display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "none", "fill": "#d7261e", "example": "TRADUCCIONES / TRANSLATIONS", "notes": "Full-width red block, white condensed caps and italic serif." }
+  ],
+  "type": [
+    { "role": "header", "classification": "grotesque", "look": "Arial Black / Helvetica Bold caps", "weight": "black", "width": "normal", "case": "upper", "webFont": "Archivo Black" },
+    { "role": "display", "classification": "condensed-grotesque", "look": "Impact and condensed Times mixed freely", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Anton" },
+    { "role": "body", "classification": "grotesque", "look": "Arial bold for bullet lists", "weight": "bold", "width": "normal", "case": "sentence", "webFont": "Arimo" },
+    { "role": "display", "classification": "news-serif", "look": "Condensed Times for Spanish copy", "weight": "regular", "width": "condensed", "case": "sentence", "webFont": "Tinos" }
+  ],
+  "color": { "mode": "process", "paper": "#ffffff", "ink": "#111111", "accents": [ { "hex": "#1f3f99", "use": "masthead band, English tabs" }, { "hex": "#d7261e", "use": "Spanish tabs, banners, borders" }, { "hex": "#3aa335", "use": "public announcements tab" }, { "hex": "#f6e7a6", "use": "box fills" } ] },
+  "ornaments": ["clip art (nurse, cleaning lady, house)", "stock photos", "small logo repeats as a divider row", "devotional image"],
+  "notes": ["The point is the lack of a system: every advertiser brings their own type. A generator family for this should randomise font and border per ad from a pool."]
+}

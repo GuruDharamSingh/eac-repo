@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getProfileBySlug, listWriting } from "@elkdonis/services";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { ProfileView } from "@elkdonis/cms-ui/profile";
 import { WritingSection, StartPiece } from "@elkdonis/cms-ui/writing";
 import { StoreShowcase } from "@elkdonis/commerce/components";
@@ -46,6 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MemberPage({ params }: Props) {
   const { slug } = await params;
   const profile = await getProfileBySlug(slug);
+  if (!profile) await redirectRenamedProfile(slug, (current) => `/artists/${current}`);
   if (!profile || !(await isMember(profile.userId))) notFound();
 
   // Whether the person reading this is the person it is about (or an admin).

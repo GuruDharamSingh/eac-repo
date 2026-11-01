@@ -57,6 +57,12 @@ export interface EmailSurfaceProps {
   canEdit?: boolean;
   /** Rendered as a page rather than a popup — drops the frame's own chrome. */
   asPage?: boolean;
+  /**
+   * Which tabs to offer, in the usual order. Omit for all five. With one tab
+   * the tab bar is not drawn (IFAC's per-series letters page shows Letters
+   * only).
+   */
+  tabs?: EmailTab[];
 }
 
 function fmt(iso: string): string {
@@ -103,8 +109,12 @@ export function EmailSurface({
   tab: initialTab = "activity",
   canEdit = true,
   asPage = false,
+  tabs,
 }: EmailSurfaceProps) {
-  const [tab, setTab] = React.useState<EmailTab>(initialTab);
+  const shownTabs = tabs ? TABS.filter((t) => tabs.includes(t.key)) : TABS;
+  const [tab, setTab] = React.useState<EmailTab>(() =>
+    shownTabs.some((t) => t.key === initialTab) ? initialTab : (shownTabs[0]?.key ?? initialTab)
+  );
   const [busy, setBusy] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -141,22 +151,24 @@ export function EmailSurface({
 
   const body = (
     <div className="eac-email">
-      <nav className="eac-email-tabs" aria-label="Email">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            className={`eac-email-tab${tab === t.key ? " is-current" : ""}`}
-            aria-current={tab === t.key ? "page" : undefined}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-            {t.key === "inbox" && data.unread > 0 && (
-              <span className="eac-email-tab-count">{data.unread}</span>
-            )}
-          </button>
-        ))}
-      </nav>
+      {shownTabs.length > 1 && (
+        <nav className="eac-email-tabs" aria-label="Email">
+          {shownTabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`eac-email-tab${tab === t.key ? " is-current" : ""}`}
+              aria-current={tab === t.key ? "page" : undefined}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+              {t.key === "inbox" && data.unread > 0 && (
+                <span className="eac-email-tab-count">{data.unread}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {tab === "activity" && <ActivityTab data={data} />}
       {tab === "inbox" && (
@@ -933,6 +945,30 @@ function LettersTab({
     setStatus(null);
   }
 
+  /** Delete this letter's scoped override (`resetLabel`), after asking. */
+  async function reset() {
+    if (!selected || !letter?.resetLabel || !connectors?.resetTemplate) return;
+    if (typeof window !== "undefined" && !window.confirm(`${letter.resetLabel}? The words written here are deleted.`)) {
+      return;
+    }
+    setSaving(true);
+    setStatus(null);
+    try {
+      const result = await connectors.resetTemplate(selected);
+      if (!result.ok) {
+        setStatus(result.error ?? "Couldn't change it back.");
+        return;
+      }
+      setStatus("Changed back.");
+      setSlotDrafts({});
+      setBodyDrafts({});
+      render(selected);
+      await connectors.refresh?.();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   /** Put a token on the clipboard, so it can be pasted into any box. */
   function copyToken(name: string) {
     const token = `{${name}}`;
@@ -970,7 +1006,7 @@ function LettersTab({
           >
             <span className="eac-letters-pick-title">{t.title}</span>
             <span className={`eac-letters-state is-${t.override}`}>
-              {OVERRIDE_LABEL[t.override]}
+              {t.stateLabel ?? OVERRIDE_LABEL[t.override]}
             </span>
           </button>
         ))}
@@ -983,6 +1019,9 @@ function LettersTab({
             <p className="eac-email-hint">
               {letter.trigger}. Goes to {letter.recipient.toLowerCase()}.
             </p>
+            {letter.scopeNote && (
+              <p className="eac-letters-scope">{letter.scopeNote}</p>
+            )}
           </div>
 
           {/* The way through to the layout editor, as a BUTTON and at the top.
@@ -1013,7 +1052,8 @@ function LettersTab({
               <p className="eac-email-hint">
                 {letter.editable
                   ? "Only this organisation's owners and guides can change what it says."
-                  : "This letter goes to you rather than out, so there is nothing to word."}
+                  : (letter.lockedNote ??
+                    "This letter goes to you rather than out, so there is nothing to word.")}
               </p>
             )}
 
@@ -1139,6 +1179,16 @@ function LettersTab({
                     Send me one
                   </button>
                 )}
+                {letter.resetLabel && connectors?.resetTemplate && (
+                  <button
+                    type="button"
+                    className="eac-btn eac-btn--quiet"
+                    disabled={saving}
+                    onClick={() => void reset()}
+                  >
+                    {letter.resetLabel}
+                  </button>
+                )}
                 {status && <span className="eac-email-hint">{status}</span>}
               </div>
             )}
@@ -1174,6 +1224,29 @@ function LettersTab({
             ) : null}
           </section>
         </div>
+      )}
+
+      {data.series && data.series.length > 0 && (
+        <section className="eac-letters-series" aria-label="Series">
+          <span className="eac-email-label">Series</span>
+          <p className="eac-email-hint">
+            A series can have its own version of its letters. The rest use the letters above.
+          </p>
+          <ul>
+            {data.series.map((s) => (
+              <li key={s.id}>
+                <a href={s.href}>{s.title}</a>
+                <span className="eac-letters-state">
+                  {s.customised === 0
+                    ? "uses these letters"
+                    : s.customised === 1
+                      ? "1 letter customised"
+                      : `${s.customised} letters customised`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

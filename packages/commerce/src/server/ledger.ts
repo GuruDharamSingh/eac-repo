@@ -18,15 +18,17 @@ import { db } from "@elkdonis/db";
 // after the fact.
 // ============================================================================
 
-export type PartyKind = "user" | "org" | "platform";
+export type PartyKind = "user" | "org" | "platform" | "payee";
 export type EntryType = "accrual" | "release" | "payout" | "adjustment" | "refund";
 export type HoldReason =
   | "no_payout_account"
   | "below_threshold"
   | "org_unowned"
-  | "dispute_window";
+  | "dispute_window"
+  /** Directed to a charity a buyer suggested; held until an org approves it. */
+  | "pending_beneficiary";
 
-const PARTY_KINDS: PartyKind[] = ["user", "org", "platform"];
+const PARTY_KINDS: PartyKind[] = ["user", "org", "platform", "payee"];
 const ENTRY_TYPES: EntryType[] = [
   "accrual",
   "release",
@@ -39,6 +41,8 @@ export interface Party {
   kind: PartyKind;
   userId?: string | null;
   orgId?: string | null;
+  /** A `payee` row (migration 209): an outside charity, or an org by payee id. */
+  payeeId?: string | null;
 }
 
 export interface LedgerEntry {
@@ -77,6 +81,7 @@ function mapEntry(r: Row): LedgerEntry {
       kind: r.party_kind,
       userId: r.party_user_id ?? null,
       orgId: r.party_org_id ?? null,
+      payeeId: r.party_payee_id ?? null,
     },
     entryType: r.entry_type,
     amountMinor: Number(r.amount_minor),
@@ -96,15 +101,17 @@ function assertParty(p: Party): void {
   if (!PARTY_KINDS.includes(p.kind)) {
     throw new Error(`Unknown party kind: ${p.kind}`);
   }
+  const ids = [p.userId, p.orgId, p.payeeId].filter(Boolean).length;
   if (p.kind === "platform") {
-    if (p.userId || p.orgId) throw new Error("The platform party names no id.");
+    if (ids > 0) throw new Error("The platform party names no id.");
     return;
   }
-  if (Boolean(p.userId) === Boolean(p.orgId)) {
-    throw new Error("A party is exactly one of a user or an org.");
+  if (ids !== 1) {
+    throw new Error("A party is exactly one of a user, an org or a payee.");
   }
   if (p.kind === "user" && !p.userId) throw new Error("A user party needs a userId.");
   if (p.kind === "org" && !p.orgId) throw new Error("An org party needs an orgId.");
+  if (p.kind === "payee" && !p.payeeId) throw new Error("A payee party needs a payeeId.");
 }
 
 export interface WriteEntryInput {
@@ -145,12 +152,13 @@ export async function writeEntry(
 
   const rows = (await tx`
     INSERT INTO payout_ledger (
-      party_kind, party_user_id, party_org_id,
+      party_kind, party_user_id, party_org_id, party_payee_id,
       entry_type, amount_minor, currency,
       order_id, order_line_id, agreement_id,
       hold_reason, releases_entry_id, payout_id, note, created_by
     ) VALUES (
       ${input.party.kind}, ${input.party.userId ?? null}, ${input.party.orgId ?? null},
+      ${input.party.payeeId ?? null},
       ${input.entryType}, ${input.amountMinor}, ${input.currency},
       ${input.orderId ?? null}, ${input.orderLineId ?? null}, ${input.agreementId ?? null},
       ${input.holdReason ?? null}, ${input.releasesEntryId ?? null},
@@ -165,6 +173,7 @@ export async function writeEntry(
 function partyWhere(p: Party, t: typeof db) {
   assertParty(p);
   if (p.kind === "platform") return t`pl.party_kind = 'platform'`;
+  if (p.payeeId) return t`pl.party_payee_id = ${p.payeeId}`;
   return p.userId
     ? t`pl.party_user_id = ${p.userId}`
     : t`pl.party_org_id = ${p.orgId!}`;
@@ -249,10 +258,11 @@ export async function listHeld(
 ): Promise<Array<LedgerEntry & { partyName: string | null }>> {
   const limit = Math.min(opts.limit ?? 200, 1000);
   const rows = (await db`
-    SELECT pl.*, COALESCE(u.display_name, u.email, o.name) AS party_name
+    SELECT pl.*, COALESCE(u.display_name, u.email, o.name, py.name) AS party_name
     FROM payout_ledger pl
     LEFT JOIN users u ON u.id = pl.party_user_id
     LEFT JOIN organizations o ON o.id = pl.party_org_id
+    LEFT JOIN payee py ON py.id = pl.party_payee_id
     WHERE pl.hold_reason IS NOT NULL
       ${opts.reason ? db`AND pl.hold_reason = ${opts.reason}` : db``}
       AND NOT EXISTS (
@@ -392,11 +402,12 @@ export async function recordPayout(
   const payoutId = await db.begin(async (tx) => {
     const rows = (await tx`
       INSERT INTO payout (
-        artist_user_id, party_org_id, amount_minor, currency,
+        artist_user_id, party_org_id, party_payee_id, amount_minor, currency,
         method, reference, status, sent_at, notes
       ) VALUES (
         ${input.party.kind === "user" ? input.party.userId! : null},
         ${input.party.kind === "org" ? input.party.orgId! : null},
+        ${input.party.kind === "payee" ? input.party.payeeId! : null},
         ${amount}, ${currency},
         ${input.method}, ${input.reference ?? null},
         'sent', NOW(), ${input.note ?? null}
@@ -472,20 +483,22 @@ export async function listPayable(
     ),
     totals AS (
       SELECT
-        party_kind, party_user_id, party_org_id,
+        party_kind, party_user_id, party_org_id, party_payee_id,
         COALESCE(SUM(amount_minor) FILTER (WHERE payable), 0)::bigint AS payable_minor,
         COALESCE(SUM(amount_minor) FILTER (WHERE NOT payable), 0)::bigint AS held_minor,
         MIN(created_at) FILTER (WHERE payable AND entry_type = 'accrual') AS owed_since
       FROM entries
-      GROUP BY party_kind, party_user_id, party_org_id
+      GROUP BY party_kind, party_user_id, party_org_id, party_payee_id
     )
     SELECT
       t.*,
-      COALESCE(u.display_name, u.email, o.name) AS party_name,
-      u.payout_method, u.payout_email, u.country, u.stripe_onboarded_at
+      COALESCE(u.display_name, u.email, o.name, py.name) AS party_name,
+      u.payout_method, u.payout_email, u.country, u.stripe_onboarded_at,
+      py.website AS payee_website
     FROM totals t
     LEFT JOIN users u         ON u.id = t.party_user_id
     LEFT JOIN organizations o ON o.id = t.party_org_id
+    LEFT JOIN payee py        ON py.id = t.party_payee_id
     WHERE t.payable_minor > 0
     ORDER BY t.owed_since ASC NULLS LAST
     LIMIT ${limit}
@@ -496,6 +509,7 @@ export async function listPayable(
       kind: r.party_kind as PartyKind,
       userId: (r.party_user_id as string | null) ?? null,
       orgId: (r.party_org_id as string | null) ?? null,
+      payeeId: (r.party_payee_id as string | null) ?? null,
     },
     partyName: (r.party_name as string | null) ?? null,
     payableMinor: Number(r.payable_minor),
@@ -525,6 +539,10 @@ export interface EarningsLine {
   /** How it was sent, where this line IS a payout. */
   payoutMethod: string | null;
   payoutReference: string | null;
+  /** The sale behind an accrual: price, the collective's commission, the card fee (migration 209). */
+  grossMinor: number | null;
+  commissionMinor: number | null;
+  processorFeeMinor: number | null;
 }
 
 /**
@@ -547,6 +565,9 @@ export async function getEarningsStatement(
       pl.*,
       o.number AS order_number,
       l.description AS line_description,
+      (l.unit_price_minor * l.quantity) AS gross_minor,
+      l.gallery_share_minor AS commission_minor,
+      l.processor_fee_minor,
       p.method AS payout_method,
       p.reference AS payout_reference,
       EXISTS (
@@ -579,5 +600,8 @@ export async function getEarningsStatement(
     description: (r.line_description as string | null) ?? null,
     payoutMethod: (r.payout_method as string | null) ?? null,
     payoutReference: (r.payout_reference as string | null) ?? null,
+    grossMinor: r.gross_minor == null ? null : Number(r.gross_minor),
+    commissionMinor: r.commission_minor == null ? null : Number(r.commission_minor),
+    processorFeeMinor: r.processor_fee_minor == null ? null : Number(r.processor_fee_minor),
   }));
 }

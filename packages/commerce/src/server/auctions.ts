@@ -19,8 +19,9 @@
 import { db } from "@elkdonis/db";
 import type { AuctionLot } from "../types";
 import { num, type Row } from "./map-order";
-import { requireArtworkAccess } from "./access";
+import { requireArtworkAccess, requireArtworkForSeriesDesk } from "./access";
 import { createOrder, loadVariantItem } from "./orders";
+import { DEFAULT_INCREMENT_LADDER, type IncrementStep } from "../money";
 
 export interface CreateLotInput {
   artworkId: string;
@@ -32,6 +33,26 @@ export interface CreateLotInput {
   reserveMinor?: number | null;
   bidIncrementMinor?: number;
   antiSnipeMinutes?: number;
+  /** Shown until the first bid; a buyer may take the piece at this price. */
+  buyNowMinor?: number | null;
+  /**
+   * The increment rule. `ladder` (default) copies the marketplace's ladder
+   * onto the lot (metadata.ladder) so later edits to the default do not move
+   * a running auction; `flat` uses `bidIncrementMinor`.
+   */
+  incrementMode?: "ladder" | "flat";
+  ladder?: IncrementStep[] | null;
+  /** The series this lot is in, and its number for a staggered close. */
+  seriesId?: string | null;
+  lotNumber?: number | null;
+  /**
+   * The series desk puts an artist's own published listing up for auction in
+   * this series (series workspace, 2026-10-28). Access is then canEditSeries
+   * on this series plus the piece being a person's listing in the series'
+   * marketplace, instead of a seat on the piece's store. The lot records
+   * `metadata.listedBySeries`; the artist sees it in My art and may withdraw it.
+   */
+  onBehalfOfSeriesId?: string | null;
 }
 
 const MIN_DURATION_MS = 60 * 60_000;
@@ -58,6 +79,8 @@ function mapLotRow(r: Row): AuctionLot {
     metadata: (r.metadata as Record<string, unknown>) ?? {},
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    seriesId: (r.series_id as string | null) ?? null,
+    lotNumber: r.lot_number == null ? null : num(r.lot_number),
   };
 }
 
@@ -88,10 +111,20 @@ export async function createLot(input: CreateLotInput): Promise<AuctionLot> {
   const increment = Math.round(input.bidIncrementMinor ?? 1000);
   if (!(increment > 0)) throw new Error("The bid increment must be positive.");
   const antiSnipe = Math.max(0, Math.round(input.antiSnipeMinutes ?? 5));
+  const buyNow = input.buyNowMinor != null && input.buyNowMinor > 0 ? Math.round(input.buyNowMinor) : null;
+  if (buyNow != null && buyNow < startingBid) throw new Error("Buy-now cannot be below the starting bid.");
+  if (buyNow != null && reserve != null && buyNow < reserve) throw new Error("Buy-now cannot be below the reserve.");
+  const mode = input.incrementMode ?? "ladder";
+  let ladder: IncrementStep[] | null = null;
+  if (mode === "ladder") {
+    ladder = input.ladder && input.ladder.length > 0 ? input.ladder : await marketplaceLadder();
+  }
 
   const row = await db.begin(async (tx) => {
     const t = tx as unknown as typeof db;
-    const { orgId, status } = await requireArtworkAccess(t, input.artworkId, input.actorUserId);
+    const { orgId, status } = input.onBehalfOfSeriesId
+      ? await requireArtworkForSeriesDesk(t, input.artworkId, input.actorUserId, input.onBehalfOfSeriesId)
+      : await requireArtworkAccess(t, input.artworkId, input.actorUserId);
     if (status !== "available") {
       throw new Error("Publish the piece before putting it up for auction.");
     }
@@ -116,19 +149,30 @@ export async function createLot(input: CreateLotInput): Promise<AuctionLot> {
       INSERT INTO auction_lot (
         artwork_variant_id, org_id, start_at, end_at,
         starting_bid_minor, reserve_minor, bid_increment_minor, anti_snipe_minutes,
+        buy_now_minor, series_id, lot_number,
         currency, status, metadata
       ) VALUES (
         ${variant.id as string}, ${orgId}, ${startAt.toISOString()}, ${endAt.toISOString()},
         ${startingBid}, ${reserve}, ${increment}, ${antiSnipe},
+        ${buyNow}, ${input.seriesId ?? null}, ${input.lotNumber ?? null},
         ${variant.currency as string},
         ${startAt.getTime() <= now ? "live" : "scheduled"},
-        ${tx.json({ createdBy: input.actorUserId })}
+        ${tx.json({ createdBy: input.actorUserId, ...(ladder ? { ladder } : {}), ...(input.onBehalfOfSeriesId ? { listedBySeries: input.onBehalfOfSeriesId } : {}) } as never)}
       )
       RETURNING *
     `) as unknown as Row[];
     return rows[0]!;
   });
   return mapLotRow(row);
+}
+
+/** The marketplace's current ladder (marketplace_settings), else the built-in default. */
+export async function marketplaceLadder(orgId = "market"): Promise<IncrementStep[]> {
+  const [row] = (await db`
+    SELECT increment_ladder FROM marketplace_settings WHERE org_id = ${orgId} LIMIT 1
+  `) as unknown as Row[];
+  const l = row?.increment_ladder;
+  return Array.isArray(l) && l.length > 0 ? (l as IncrementStep[]) : DEFAULT_INCREMENT_LADDER;
 }
 
 /** Withdraw a lot that has attracted no bids. */

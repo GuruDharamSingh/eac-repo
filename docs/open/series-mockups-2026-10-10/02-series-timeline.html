@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series composer: timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mockup 02, variant A (2026-10-10): series composer with a promotional
+   series card on top and a timeline of session squares under it.
+   Palette as 01: light hub tokens, white fields on a tinted well.
+   Measured: ink #171615 on #fffdf8 17.8:1; ink-soft #4f4a44 on #f3eee4 7.58:1,
+   on #e6ebf1 (selected square) 7.2:1; faint #6b6259 on #fffdf8 5.87:1;
+   oxide #9a3f2f on #fffdf8 6.61:1 ("Needs a host"); blue #273d54 on #e6ebf1 9.31:1;
+   field edge #7d705a on #ffffff 4.84:1; white on blue 11.16:1, on oxide 6.72:1;
+   cover label #f3eee4 on #2b2f3a 11.9:1. */
+:root {
+  --ink: #171615; --ink-soft: #4f4a44; --faint: #6b6259;
+  --paper: #f8f5ef; --card: #fffdf8; --well: #f3eee4; --field: #ffffff;
+  --line: #d8d0c2; --field-line: #7d705a; --oxide: #9a3f2f; --blue: #273d54; --blue-soft: #e6ebf1;
+  --bar: #24282b; --bar-ink: #ece7e1; --bar-muted: #b3ada3;
+  --serif: "Cormorant Garamond", Georgia, serif; --sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { font-size: 112.5%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+a { color: inherit; }
+.bar { background: var(--bar); color: var(--bar-ink); border-bottom: 3px solid #9c40d8; }
+.bar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.seal { display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid #c79a42; border-radius: 50%; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; color: #e3c572; flex: none; }
+.bar__name { font-family: var(--serif); font-size: 1.2rem; }
+.bar__right { margin-left: auto; color: var(--bar-muted); font-size: 0.9rem; }
+.wrap { width: min(1100px, calc(100% - 32px)); margin-inline: auto; }
+
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 22px 0 18px; font-size: 1rem; color: var(--ink-soft); }
+.crumbs a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--field-line); }
+.crumbs [aria-current] { color: var(--ink); font-weight: 700; }
+.crumbs .sep { color: var(--faint); }
+.crumbs__status { margin-left: auto; font-size: 0.88rem; color: var(--faint); }
+
+.label { margin: 0 0 8px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.label small { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.88rem; color: var(--faint); }
+
+.field { display: grid; gap: 5px; min-width: 0; }
+.field > span { font-size: 0.88rem; font-weight: 600; color: var(--ink-soft); }
+.input { width: 100%; min-height: 46px; border: 1.5px solid var(--field-line); border-radius: 4px; background: var(--field); color: var(--ink); padding: 9px 12px; font: inherit; font-size: 1rem; }
+textarea.input { min-height: 110px; resize: vertical; }
+select.input { appearance: auto; }
+.input::placeholder { color: var(--faint); }
+.input:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+.btn { min-height: 46px; padding: 0 18px; border-radius: 4px; border: 1.5px solid var(--field-line); background: var(--field); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.btn--primary { background: var(--oxide); border-color: var(--oxide); color: #fff; }
+.btn--small { min-height: 38px; padding: 0 12px; font-size: 0.9rem; }
+.quiet { background: none; border: 0; padding: 0; font: inherit; font-size: 0.9rem; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ── the series card ── */
+.scard { background: var(--card); border: 1px solid var(--line); border-top: 4px solid var(--blue); border-radius: 4px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.scard__face { border-right: 1px solid var(--line); display: grid; align-content: start; }
+.cover { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(140deg, #2b2f3a 0%, #3b2f4a 55%, #2b2f3a 100%); color: #f3eee4; display: grid; place-items: center; text-align: center; padding: 20px; }
+.promo { padding: 16px 20px 20px; display: grid; gap: 4px; }
+.promo p { margin: 0; }
+.promo__k { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--blue); }
+.promo__t { font-family: var(--serif); font-size: 1.75rem; font-weight: 600; line-height: 1.12; }
+.promo__w { font-weight: 600; margin-top: 6px; }
+.promo__d { color: var(--ink-soft); }
+.promo__note { margin-top: 10px !important; font-size: 0.85rem; color: var(--faint); }
+.cover__lbl { font-size: 0.95rem; }
+.cover__lbl b { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 500; margin-bottom: 4px; }
+.cover .btn { position: absolute; left: 14px; bottom: 14px; }
+.scard__body { padding: 18px 20px 20px; display: grid; gap: 14px; align-content: start; }
+.title-input { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; line-height: 1.15; min-height: 54px; }
+.cadence { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; background: var(--blue-soft); border-radius: 4px; color: var(--blue); font-weight: 600; }
+.cadence svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex: none; }
+.cadence span.s { color: var(--ink-soft); font-weight: 400; }
+.joinbox { background: var(--well); border-radius: 4px; padding: 12px; display: grid; gap: 10px; }
+.joinbox__h { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--ink-soft); }
+.joinbox small { color: var(--ink-soft); font-size: 0.85rem; }
+
+/* ── the timeline ── */
+.sessions { margin-top: 30px; }
+.tl { --cols: 5; --gap: 20px; --sq-h: 176px; position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: var(--gap); }
+.tl::before { content: ""; position: absolute; left: 6%; right: 6%; top: calc(var(--sq-h) / 2); height: 3px; background: var(--blue); z-index: 0; }
+.sq { position: relative; z-index: 1; height: var(--sq-h); }
+.sq > button { width: 100%; height: 100%; text-align: left; display: grid; align-content: start; gap: 4px; padding: 12px 12px 10px; border: 1.5px solid var(--field-line); border-radius: 4px; background: var(--card); color: var(--ink); font: inherit; cursor: pointer; overflow: hidden; }
+.sq > button:hover { border-color: var(--blue); }
+.sq > button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.sq__n { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-soft); }
+.sq__d { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; line-height: 1.1; }
+.sq__t { font-size: 0.95rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sq__t.is-empty { color: var(--faint); font-style: italic; }
+.sq__h { margin-top: auto; font-size: 0.85rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+.sq__h i { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); flex: none; }
+.sq__h.is-open { color: var(--oxide); font-weight: 600; }
+.sq__h.is-open i { background: none; border: 2px solid var(--oxide); }
+.sq.is-sel > button { border: 2.5px solid var(--blue); background: var(--blue-soft); box-shadow: 0 6px 18px rgba(39, 61, 84, 0.18); }
+.sq.is-sel .sq__n { color: var(--blue); }
+.sq--add > button { border-style: dashed; background: var(--paper); place-content: center; justify-items: center; text-align: center; color: var(--ink-soft); }
+.sq--add .plus { font-size: 2rem; line-height: 1; color: var(--blue); }
+.sq--add b { color: var(--ink); }
+
+/* the selected session's editor: row 2 across the full width on wide screens */
+.ed { --i: 2; grid-row: 2; grid-column: 1 / -1; position: relative; z-index: 1; margin-top: 4px; background: var(--card); border: 2.5px solid var(--blue); border-radius: 4px; }
+.ed::before { content: ""; position: absolute; top: -13px; left: calc((100% + var(--gap)) * (var(--i) - 0.5) / var(--cols) - var(--gap) / 2 - 12px); width: 22px; height: 22px; background: var(--card); border-left: 2.5px solid var(--blue); border-top: 2.5px solid var(--blue); transform: rotate(45deg); }
+.ed__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 16px 20px 12px; border-bottom: 1px solid var(--line); }
+.ed__head h3 { margin: 0; font-family: var(--serif); font-size: 1.55rem; font-weight: 600; }
+.ed__head p { margin: 0; color: var(--ink-soft); }
+.ed__step { margin-left: auto; display: flex; gap: 8px; }
+.ed__body { padding: 16px 20px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; }
+.well { background: var(--well); border-radius: 4px; padding: 14px; display: grid; gap: 14px; align-content: start; }
+.drop { border: 1.5px dashed var(--field-line); border-radius: 4px; background: var(--field); padding: 16px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
+.drop b { color: var(--ink); }
+.mats { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mats li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--field-line); border-radius: 4px; background: var(--field); font-size: 0.92rem; min-width: 0; }
+.mats .k { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--blue); flex: none; }
+.mats .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mats .quiet { margin-left: auto; flex: none; }
+.addlink { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.ed__foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 20px; border-top: 1px solid var(--line); }
+.ed__foot .btn--primary { margin-left: auto; }
+
+.pagefoot { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin: 26px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.note { margin: 26px 0 40px; border: 1.5px dashed var(--faint); border-radius: 4px; padding: 14px 16px; font-size: 0.92rem; color: var(--ink-soft); }
+.note b { color: var(--ink); }
+.note ul { margin: 6px 0 0; padding-left: 20px; }
+
+@media (max-width: 900px) {
+  .scard { grid-template-columns: 1fr; }
+  .scard__face { border-right: 0; border-bottom: 1px solid var(--line); }
+  .cover { aspect-ratio: 16 / 9; }
+  .promo__note { display: none; }
+  .ed__body { grid-template-columns: 1fr; }
+}
+/* phones and narrow tablets: the row becomes a vertical timeline, and the
+   editor opens in place under the chosen session */
+@media (max-width: 720px) {
+  .crumbs__status { margin-left: 0; flex-basis: 100%; }
+  .tl { grid-template-columns: 1fr; gap: 12px; padding-left: 30px; }
+  .tl::before { left: 10px; right: auto; top: 24px; bottom: 30px; width: 3px; height: auto; }
+  .sq { height: auto; }
+  .sq::before { content: ""; position: absolute; left: -26px; top: 22px; width: 15px; height: 15px; border-radius: 50%; background: var(--card); border: 3px solid var(--blue); }
+  .sq.is-sel::before { background: var(--blue); }
+  .sq--add::before { border-style: dashed; background: var(--paper); }
+  .sq > button { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; padding: 10px 12px; }
+  .sq__n { grid-column: 1 / -1; }
+  .sq__d { grid-row: span 2; font-size: 1.2rem; min-width: 70px; }
+  .sq__h { grid-column: 2; margin-top: 2px; }
+  .sq--add > button { grid-template-columns: auto auto; justify-content: start; gap: 10px; padding: 12px; }
+  .sq--add .plus { font-size: 1.5rem; }
+  .ed { grid-row: auto; grid-column: auto; margin-top: -4px; }
+  .ed::before { left: 24px; }
+  .ed__step { margin-left: 0; flex-basis: 100%; }
+}
+@media (max-width: 420px) {
+  .scard__body, .ed__head, .ed__body, .ed__foot { padding-left: 12px; padding-right: 12px; }
+  .well { padding: 10px; }
+  .title-input { font-size: 1.45rem; }
+  .ed__foot .btn, .pagefoot .btn { flex: 1 1 100%; margin-left: 0; }
+  .addlink { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap"><span class="seal">IFAC</span><span class="bar__name">Members' hub</span><span class="bar__right">Signed in</span></div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="#">Hub</a><span class="sep" aria-hidden="true">›</span>
+    <a href="#">Compose</a><span class="sep" aria-hidden="true">›</span>
+    <span aria-current="page">Series</span>
+    <span class="crumbs__status">Draft · saved 2 minutes ago</span>
+  </nav>
+
+  <!-- the series card: what the site shows at the top of the series page and on the home page -->
+  <p class="label">Series card <small>Shown at the top of the series page and on the home page</small></p>
+  <section class="scard" aria-label="Series card">
+    <div class="scard__face">
+      <div class="cover">
+        <div class="cover__lbl"><b>Cover image</b>Drop an image, or choose from the library</div>
+        <button class="btn btn--small" type="button">Choose image</button>
+      </div>
+      <div class="promo" aria-label="How the card reads on the site">
+        <p class="promo__k">Weekly series · IFAC</p>
+        <p class="promo__t">Explorations in Art Forms by Non Professionals</p>
+        <p class="promo__w">Mondays, 6:00 PM Pacific</p>
+        <p class="promo__d">12 October to 2 November 2026 · online</p>
+        <p class="promo__note">Preview: updates as the fields change.</p>
+      </div>
+    </div>
+    <div class="scard__body">
+      <label class="field"><span>Series title</span><input class="input title-input" value="Explorations in Art Forms by Non Professionals"></label>
+      <label class="field"><span>Description</span><textarea class="input" placeholder="What the series is about and who it is for.">Placeholder description: a weekly online session in which members who are not professional artists try an art form together. Each week has its own host and topic.</textarea></label>
+      <div class="row">
+        <label class="field"><span>Repeats</span><select class="input"><option>Every week</option><option>Every two weeks</option><option>Every month</option></select></label>
+        <label class="field"><span>On</span><select class="input"><option>Monday</option></select></label>
+        <label class="field"><span>At</span><input class="input" value="6:00 PM"></label>
+        <label class="field"><span>Time zone</span><select class="input"><option>Pacific</option></select></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>First session</span><input class="input" value="Mon 12 Oct 2026"></label>
+        <label class="field"><span>Last session</span><input class="input" value="Mon 2 Nov 2026"></label>
+      </div>
+      <p class="cadence"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Mondays, 6:00 PM Pacific <span class="s">· 12 Oct to 2 Nov 2026 · 4 sessions</span></p>
+      <div class="joinbox">
+        <p class="joinbox__h">Meeting link, the same every week</p>
+        <label class="field"><span>Join URL</span><input class="input" placeholder="https://zoom.example/j/0000000000"></label>
+        <div class="row">
+          <label class="field"><span>Meeting ID</span><input class="input" placeholder="000 0000 0000"></label>
+          <label class="field"><span>Passcode</span><input class="input" placeholder="PASSCODE"></label>
+        </div>
+        <small>Sent in the weekly email and shown to people who have signed up. Not shown on the public page.</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="sessions" aria-labelledby="sh">
+    <p class="label" id="sh">Sessions <small>4 sessions · 2 need a host · choose a square to edit it</small></p>
+    <ol class="tl" id="tl">
+      <li class="sq" data-i="1" data-n="Session 1" data-date="Monday 12 October" data-title="Session title" data-host="Host name" data-cohost="Co-host name">
+        <button type="button"><span class="sq__n">Session 1</span><span class="sq__d">Mon 12 Oct</span><span class="sq__t">Session title</span><span class="sq__h"><i></i>Host name</span></button>
+      </li>
+      <li class="sq is-sel" data-i="2" data-n="Session 2" data-date="Monday 19 October" data-title="Session title" data-host="Host name" data-cohost="">
+        <button type="button" aria-pressed="true"><span class="sq__n">Session 2</span><span class="sq__d">Mon 19 Oct</span><span class="sq__t">Session title</span><span class="sq__h"><i></i>Host name</span></button>
+      </li>
+
+      <li class="ed" id="ed" aria-label="Edit session">
+        <div class="ed__head">
+          <h3 id="ed-n">Session 2</h3>
+          <p id="ed-d">Monday 19 October, 6:00 PM Pacific</p>
+          <div class="ed__step"><button class="btn btn--small" type="button" id="prev">‹ Previous</button><button class="btn btn--small" type="button" id="next">Next ›</button></div>
+        </div>
+        <div class="ed__body">
+          <div class="well">
+            <div class="row">
+              <label class="field"><span>Host</span><select class="input" id="ed-host"><option value="">Nobody yet</option><option selected>Host name</option><option>Co-host name</option><option>Member name</option></select></label>
+              <label class="field"><span>Co-host</span><select class="input" id="ed-cohost"><option value="" selected>Nobody yet</option><option>Host name</option><option>Co-host name</option><option>Member name</option></select></label>
+            </div>
+            <label class="field"><span>Title</span><input class="input" id="ed-title" value="Session title" placeholder="What this session is called"></label>
+            <label class="field"><span>Write-up</span><textarea class="input" rows="5" placeholder="What you will do, what to bring, what to look at before.">Placeholder write-up for this session: what the group will try, what to have to hand, and what to look at beforehand.</textarea></label>
+          </div>
+          <div class="well">
+            <div class="field"><span>Cover image</span><div class="drop"><b>Drop an image</b>, or choose from the library. Uses the series cover if left empty.</div></div>
+            <div class="field"><span>Materials</span>
+              <ul class="mats">
+                <li><span class="k">Document</span><span class="n">Reading for this session (placeholder).pdf</span><button class="quiet" type="button">Remove</button></li>
+                <li><span class="k">Link</span><span class="n">Example page to look at before</span><button class="quiet" type="button">Remove</button></li>
+              </ul>
+            </div>
+            <div class="addlink"><input class="input" placeholder="https:// a page, a recording, a document"><button class="btn" type="button">Add link</button></div>
+            <button class="btn" type="button">Upload a file</button>
+          </div>
+        </div>
+        <div class="ed__foot">
+          <button class="quiet" type="button">Remove this session</button>
+          <button class="btn btn--primary" type="button">Save session 2</button>
+        </div>
+      </li>
+
+      <li class="sq" data-i="3" data-n="Session 3" data-date="Monday 26 October" data-title="" data-host="" data-cohost="">
+        <button type="button"><span class="sq__n">Session 3</span><span class="sq__d">Mon 26 Oct</span><span class="sq__t is-empty">No title yet</span><span class="sq__h is-open"><i></i>Needs a host</span></button>
+      </li>
+      <li class="sq" data-i="4" data-n="Session 4" data-date="Monday 2 November" data-title="" data-host="" data-cohost="">
+        <button type="button"><span class="sq__n">Session 4</span><span class="sq__d">Mon 2 Nov</span><span class="sq__t is-empty">No title yet</span><span class="sq__h is-open"><i></i>Needs a host</span></button>
+      </li>
+      <li class="sq sq--add">
+        <button type="button"><span class="plus" aria-hidden="true">+</span><span><b>Add session</b><br>Mon 9 Nov</span></button>
+      </li>
+    </ol>
+  </section>
+
+  <div class="pagefoot">
+    <button class="btn" type="button">Preview series page</button>
+    <button class="btn btn--primary" type="button">Publish series</button>
+  </div>
+
+  <aside class="note">
+    <b>Mockup note (variant A).</b>
+    <ul>
+      <li>The card on top holds everything that is the same every week. The squares hold what changes.</li>
+      <li>Choosing a square opens its editor under the row (try it: the squares work in this file). Under 720 px the row becomes a vertical timeline and the editor opens in place under the chosen session.</li>
+      <li>"Add session" adds the next date in the pattern and moves the last-session date with it.</li>
+      <li>Open question: above five or six sessions the row needs to scroll sideways inside the timeline, or show a window of sessions around the next one.</li>
+    </ul>
+  </aside>
+</main>
+
+<script>
+// Mockup only: choose a square, move the editor beside it, fill a few fields.
+(function () {
+  var tl = document.getElementById('tl'), ed = document.getElementById('ed');
+  var sqs = Array.prototype.slice.call(tl.querySelectorAll('.sq:not(.sq--add)'));
+  function pick(li) {
+    sqs.forEach(function (s) { s.classList.remove('is-sel'); s.querySelector('button').removeAttribute('aria-pressed'); });
+    li.classList.add('is-sel'); li.querySelector('button').setAttribute('aria-pressed', 'true');
+    li.after(ed);
+    ed.style.setProperty('--i', li.dataset.i);
+    document.getElementById('ed-n').textContent = li.dataset.n;
+    document.getElementById('ed-d').textContent = li.dataset.date + ', 6:00 PM Pacific';
+    document.getElementById('ed-title').value = li.dataset.title;
+    document.getElementById('ed-host').value = li.dataset.host;
+    document.getElementById('ed-cohost').value = li.dataset.cohost;
+    ed.querySelector('.ed__foot .btn--primary').textContent = 'Save ' + li.dataset.n.toLowerCase();
+  }
+  sqs.forEach(function (li) { li.querySelector('button').addEventListener('click', function () { pick(li); }); });
+  function step(d) { var cur = tl.querySelector('.sq.is-sel'); var i = sqs.indexOf(cur) + d; if (i >= 0 && i < sqs.length) pick(sqs[i]); }
+  document.getElementById('prev').addEventListener('click', function () { step(-1); });
+  document.getElementById('next').addEventListener('click', function () { step(1); });
+})();
+</script>
+</body>
+</html>

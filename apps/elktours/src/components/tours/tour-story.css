@@ -1,0 +1,256 @@
+/* The stop-by-stop route: text column plus a sticky map / Street View panel. */
+
+.tour-story {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .tour-story {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 46%);
+    gap: 3rem;
+    align-items: start;
+  }
+  .tour-stop__media {
+    display: none;
+  }
+}
+
+.tour-story__text {
+  min-width: 0;
+}
+
+.tour-stop {
+  padding: 1.5rem 0 2.5rem;
+  border-top: 1px solid hsl(var(--border));
+  scroll-margin-top: 6rem;
+  transition: opacity 0.4s ease;
+}
+.tour-stop.is-active .tour-stop__title {
+  color: hsl(var(--primary));
+}
+
+.tour-stop__kicker {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.tour-stop__title {
+  margin-top: 0.4rem;
+  font-family: var(--eac-font-title, Georgia, serif);
+  font-size: 1.6rem;
+  line-height: 1.15;
+}
+
+.tour-stop__media {
+  margin-top: 1rem;
+}
+.tour-stop__media-slot {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius, 0);
+  background: hsl(var(--muted));
+}
+
+.tour-stop__body {
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+.tour-stop__body p + p {
+  margin-top: 0.8em;
+}
+
+/* Hidden below the desktop breakpoint: the per-stop media carries the picture there. */
+.tour-story__panel {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .tour-story__panel {
+    display: grid;
+    position: sticky;
+    top: 5rem;
+    grid-template-rows: 1fr 1fr;
+    gap: 0.75rem;
+    height: calc(100vh - 6rem);
+    min-height: 520px;
+  }
+}
+
+.tour-story__map,
+.tour-story__view {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius, 0);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+}
+.tour-story__map > div {
+  height: 100%;
+}
+
+.tour-story__caption {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  background: hsl(var(--background) / 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+}
+
+/* Map pins (Leaflet divIcon). */
+.tour-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 2px solid hsl(var(--foreground));
+  font: 600 0.8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+.tour-pin.is-active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+  transform: scale(1.25);
+}
+
+/* MapLibre canvas on the brand palette. */
+.maplibregl-map {
+  font-family: inherit;
+  background: hsl(var(--muted));
+}
+
+/* ── Route preview player ─────────────────────────────────────────────── */
+.route-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  border-radius: var(--radius, 0);
+}
+.route-preview--full {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  aspect-ratio: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+/* maplibre.css sets .maplibregl-map { position: relative } after this file, so size the box explicitly. */
+.route-preview__map { position: absolute !important; inset: 0; width: 100%; height: 100%; }
+.route-preview__map .maplibregl-ctrl-bottom-right { bottom: 3.2rem; }
+
+.route-preview__bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(to top, hsl(var(--background) / 0.96), hsl(var(--background) / 0.7));
+  backdrop-filter: blur(6px);
+  border-top: 1px solid hsl(var(--border));
+}
+.route-preview__btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-radius: 999px;
+}
+.route-preview__btn--main { width: 2.6rem; height: 2.6rem; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: hsl(var(--primary)); }
+.route-preview__dots { display: flex; gap: 0.3rem; margin-left: 0.5rem; flex-wrap: wrap; }
+.route-preview__dot {
+  width: 1.6rem; height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  font: 600 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: hsl(var(--muted-foreground));
+}
+.route-preview__dot.is-done { border-color: hsl(var(--foreground) / 0.5); color: hsl(var(--foreground)); }
+.route-preview__dot.is-active { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.route-preview__progress { position: absolute; left: 0; right: 0; top: -2px; height: 2px; background: hsl(var(--border)); }
+.route-preview__progress span { display: block; height: 100%; background: hsl(var(--primary)); transition: width 0.2s linear; }
+.route-preview__title { margin-left: auto; font-size: 0.78rem; color: hsl(var(--muted-foreground)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30%; }
+
+.route-preview__card {
+  position: absolute;
+  right: 1rem; top: 1rem;
+  width: min(360px, calc(100% - 2rem));
+  max-height: calc(100% - 5rem);
+  overflow: auto;
+  background: hsl(var(--card) / 0.97);
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+  border-radius: var(--radius, 0);
+  /* Shown/hidden by .is-hidden with a transition; a keyframe animation here would override the hidden opacity. */
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.route-preview__card.is-expanded { width: min(460px, calc(100% - 2rem)); }
+@keyframes rp-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.route-preview__media { position: relative; aspect-ratio: 16 / 9; background: hsl(var(--muted)); }
+.route-preview__look {
+  position: absolute; right: 0.5rem; bottom: 0.5rem;
+  padding: 0.3rem 0.6rem; font-size: 0.72rem; font-weight: 600;
+  background: hsl(var(--background) / 0.92); border-radius: 4px; border: 1px solid hsl(var(--border));
+}
+.route-preview__text { padding: 0.9rem 1rem 1rem; }
+.route-preview__h { margin-top: 0.2rem; font-family: var(--eac-font-title, Georgia, serif); font-size: 1.25rem; line-height: 1.2; }
+.route-preview__lede, .route-preview__body { margin-top: 0.4rem; font-size: 0.9rem; line-height: 1.5; }
+.route-preview__body p + p { margin-top: 0.5em; }
+.route-preview__more { margin-top: 0.5rem; font-size: 0.78rem; text-decoration: underline; text-underline-offset: 3px; }
+
+.route-preview__start {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.8rem 1.3rem;
+  background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+  font-weight: 600; border-radius: 999px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.route-preview__start:hover { transform: translate(-50%, -50%) scale(1.03); }
+
+@media (max-width: 640px) {
+  .route-preview { aspect-ratio: 3 / 4; }
+  .route-preview__card { left: 0.5rem; right: 0.5rem; top: auto; bottom: 3.6rem; width: auto; max-height: 55%; }
+  .route-preview__title { display: none; }
+}
+.route-preview--full > .route-preview { position: absolute; inset: 0; aspect-ratio: auto; min-height: 0; border: 0; border-radius: 0; }
+
+/* Player v2: the card stays mounted (one panorama instance); the still sits under the panorama until it is on. */
+.route-preview__card.is-hidden { opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
+.route-preview__still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.6s; }
+.route-preview__still.is-under { opacity: 0; }
+.route-preview__pano { position: absolute; inset: 0; opacity: 0; transition: opacity 0.6s; }
+.route-preview__pano.is-on { opacity: 1; }
+.route-preview__dot.is-heading { border-color: hsl(var(--primary)); color: hsl(var(--primary)); }
+.route-preview__map gmp-map-3d { width: 100%; height: 100%; display: block; }
+.route-preview[data-engine="google"] .route-preview__bar { background: linear-gradient(to top, rgb(20 20 24 / 0.9), rgb(20 20 24 / 0.6)); border-top-color: rgb(255 255 255 / 0.15); }
+.route-preview[data-engine="google"] .route-preview__title { color: rgb(255 255 255 / 0.75); }
+
+/* Hero placement on the tour page. */
+.route-preview--hero { aspect-ratio: 21 / 9; min-height: 420px; max-height: 72vh; }
+.route-preview--hero > .route-preview { position: absolute; inset: 0; aspect-ratio: auto; min-height: 0; border: 0; border-radius: 0; }
+.route-preview__poster-shade { position: absolute; inset: 0; background: linear-gradient(to top, hsl(var(--background) / 0.85), hsl(var(--background) / 0.15) 50%, transparent); pointer-events: none; }
+.route-preview__poster-caption { position: absolute; left: 1.25rem; bottom: 1rem; font-size: 0.85rem; color: hsl(var(--foreground) / 0.85); }
+@media (max-width: 640px) { .route-preview--hero { aspect-ratio: 4 / 5; min-height: 0; } }
+
+.route-preview__start { white-space: nowrap; }

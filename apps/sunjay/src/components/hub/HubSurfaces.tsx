@@ -24,6 +24,9 @@ import { EmailSurface } from "./EmailSurface";
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
 
+const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
+const NETWORK_ORIGIN = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${NETWORK_HOST}`;
+
 const TIME_ZONE = "America/Toronto";
 
 /**
@@ -89,6 +92,11 @@ export function HubSurfaces({
         board: true,
         forum: true,
         profile: true,
+        // The Connections tab (2026-11-01): served by api/center/connections; consent on the network host.
+        connections: {
+          startUrl: `${NETWORK_ORIGIN}/api/connections/start`,
+          carry: (url) => `/api/auth/handoff?to=${encodeURIComponent(url)}`,
+        },
         // "Payouts" inside the profile popup: country first, then Stripe. A
         // person's own (lib/payout-actions.ts); the site holds no account.
         profilePage: {

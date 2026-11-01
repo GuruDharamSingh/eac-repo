@@ -14,11 +14,48 @@ import {
   assignMeetingRole,
   clearMeetingRole,
   removeThreadFromCalendar,
+  SERIES_KIND,
+  saveSeriesSchedule,
+  saveSeriesSettings,
+  ensureSeriesTalkRoom,
+  SeriesError,
+  validTimeZone,
 } from "@elkdonis/services";
 import { db } from "@elkdonis/db";
 import { sanitizePostBody } from "@elkdonis/utils";
 import { siteConfig } from "@/config/site";
 import { getHubViewer } from "@/lib/hub-auth";
+
+/**
+ * The zone IFAC's compose form shows dates in when the form names none
+ * (`components/hub/HubSurfaces.tsx` passes it to defaultThreadToAnswers).
+ */
+const COMPOSE_TIME_ZONE = "America/Toronto";
+
+/** Same minute: the form has minute precision, `timestamptz` keeps microseconds. */
+function sameMinute(a: string | Date | null | undefined, b: string | Date | null | undefined): boolean {
+  if (!a || !b) return !a && !b;
+  const x = new Date(a).getTime();
+  const y = new Date(b).getTime();
+  if (Number.isNaN(x) || Number.isNaN(y)) return false;
+  return Math.floor(x / 60_000) === Math.floor(y / 60_000);
+}
+
+/** `YYYY-MM-DDTHH:mm` as the wall clock in `timeZone`: the compose form's own format. */
+function wallClockInput(value: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(value);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  const hour = get("hour") === "24" ? "00" : get("hour");
+  return `${get("year")}-${get("month")}-${get("day")}T${hour}:${get("minute")}`;
+}
 
 /**
  * IFAC's content save path.
@@ -48,6 +85,8 @@ export type SaveContentResult =
       status?: "draft" | "pending" | "published";
       /** What could not be attached — a Talk room, a document. The thread saved. */
       warnings?: string[];
+      /** Where to go next, when not back to the chooser: a published series' planner. */
+      href?: string;
     }
   | { ok: false; error: string };
 
@@ -60,14 +99,17 @@ export interface SaveContentInput {
    * the schema and the rest of the platform already understand rather than
    * inventing one. It is dated, like an event and a meeting.
    */
-  kind: "post" | "event" | "meeting" | "workshop";
+  kind: "post" | "event" | "meeting" | "workshop" | "series";
   title: string;
   body?: string;
   excerpt?: string;
   status?: "draft" | "published";
   section?: string | null;
   coverImageUrl?: string | null;
-  // Dated kinds
+  // Dated kinds. Instants (ISO with an offset): compose-adapter.ts converts
+  // the form's wall clock in `timeZone` before this is called.
+  /** The zone the form showed its dates in. */
+  timeZone?: string | null;
   scheduledAt?: string | null;
   durationMinutes?: number | null;
   location?: string | null;
@@ -87,6 +129,31 @@ export interface SaveContentInput {
   hostUserId?: string;
   /** Co-host of the NEXT occurrence, same convention. */
   coHostUserId?: string;
+  /** Kind `series` only: what services' saveSeriesSchedule / saveSeriesSettings take. */
+  series?: SeriesComposeInput;
+}
+
+export interface SeriesComposeInput {
+  /** From an edit form: schedule, joining, zones and letter are the planner's and are not written. */
+  editing: boolean;
+  /** Null when the form's first session or zone is missing. */
+  schedule: {
+    weekday: number;
+    time: string;
+    timeZone: string;
+    firstDate: string;
+    lastDate: string | null;
+    durationMinutes: number | null;
+    alsoZones: string[];
+  } | null;
+  lede: string | null;
+  /** `undefined` leaves the stored value alone (an edit). */
+  joinUrl?: string | null;
+  meetingId?: string | null;
+  passcode?: string | null;
+  otherWaysToJoin?: string | null;
+  reminderDays?: number | null;
+  alsoZones?: string[];
 }
 
 /**
@@ -226,8 +293,26 @@ async function updateExisting(
   status: "draft" | "pending" | "published",
   viewerId: string
 ): Promise<SaveContentResult> {
-  const [existing] = await db<Array<{ id: string; slug: string; author_id: string }>>`
-    SELECT id, slug, author_id FROM threads
+  const [existing] = await db<
+    Array<{
+      id: string;
+      slug: string;
+      author_id: string;
+      kind: string;
+      scheduled_at: Date | null;
+      duration_minutes: number | null;
+      recurrence_pattern: string | null;
+      recurrence_until: Date | null;
+      recurrence_custom_rule: string | null;
+      status: string;
+      is_series: boolean;
+    }>
+  >`
+    SELECT id, slug, author_id, kind, status, scheduled_at, duration_minutes,
+           recurrence_pattern, recurrence_until, recurrence_custom_rule,
+           (kind = ${SERIES_KIND}
+            OR COALESCE(jsonb_typeof(metadata->'series') = 'object', false)) AS is_series
+    FROM threads
     WHERE id = ${threadId} AND org_id = ${siteConfig.orgId}
     LIMIT 1
   `;
@@ -239,28 +324,93 @@ async function updateExisting(
     return { ok: false, error: "Only its author or an editor can change this" };
   }
 
+  // A meeting series (kind 'series', or a meeting carrying `metadata.series`
+  // as an object until the kind flip; writing threads carry a string there)
+  // keys its weeks' hosts, notes and topics on occurrence instants derived
+  // from its schedule. A schedule written from here would move the weeks
+  // without their content, so its kind, schedule and recurrence are the
+  // planner's alone (`saveSeriesSchedule`); this save keeps them as stored.
+  const seriesWarnings: string[] = [];
+  if (existing.is_series) {
+    const planner = `/hub/series/${existing.id}`;
+    if (input.kind !== existing.kind) {
+      return {
+        ok: false,
+        error: `This is a series; its kind cannot be changed here. Its schedule is set in the series planner (${planner}). Nothing was saved.`,
+      };
+    }
+    // The form's dates arrive as instants (compose-adapter.ts converts the
+    // wall clock in the form's zone). The form fills them from the stored
+    // instants in that same zone (defaultThreadToAnswers), so an untouched
+    // date compares equal. `recurrence_until` is a date in the form, so it is
+    // compared as the date it reads in that zone.
+    const zone = validTimeZone(input.timeZone) ?? COMPOSE_TIME_ZONE;
+    const asDate = (d: string | Date | null | undefined) => (d ? wallClockInput(new Date(d), zone).slice(0, 10) : null);
+    // A series' own form (kind `series`) hides the schedule and says where it
+    // is changed, so there is nothing to warn about there.
+    const dateChanged =
+      input.kind !== SERIES_KIND &&
+      (!sameMinute(input.scheduledAt, existing.scheduled_at) ||
+        (input.recurrencePattern ?? null) !== existing.recurrence_pattern ||
+        asDate(input.recurrenceUntil) !== asDate(existing.recurrence_until) ||
+        (input.durationMinutes ?? 60) !== (existing.duration_minutes ?? 60));
+    if (dateChanged) {
+      seriesWarnings.push(
+        `This is a series: its date, length and repeat are set in the series planner (${planner}). Those changes were not saved; everything else was.`
+      );
+    }
+  } else if (input.kind === SERIES_KIND) {
+    // A series is made new from Compose, where its schedule is laid down by
+    // saveSeriesSchedule; relabelling a meeting would skip that.
+    return {
+      ok: false,
+      error: "A meeting cannot be turned into a series here. Make the series from Compose › Meeting › Series. Nothing was saved.",
+    };
+  }
+  // For a series the UPDATE below leaves kind, schedule and recurrence as stored.
+  const keep = existing.is_series;
+  // The series form (kind `series`) carries none of the meeting's own fields
+  // (body, place, join link, RSVP limit): leave them as stored.
+  const seriesForm = input.kind === SERIES_KIND;
+
+  // Renaming a published series re-titles its weeks' topics as well, which
+  // saveSeriesSettings does only when it sees the old title, so it runs
+  // before the UPDATE below writes the new one. It also writes the lede.
+  if (seriesForm && existing.status === "published") {
+    try {
+      await saveSeriesSettings({
+        orgId: siteConfig.orgId,
+        threadId,
+        title,
+        ...(input.series && input.series.lede !== undefined ? { lede: input.series.lede } : {}),
+      });
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Could not save the series" };
+    }
+  }
+
   // Members can edit their own posts, so the body is untrusted. createThread
   // sanitises the create path; this hand-written UPDATE has to do it itself.
   const body = input.body?.trim() ? sanitizePostBody(input.body.trim()) : null;
 
   await db`
     UPDATE threads SET
-      kind             = ${input.kind},
+      kind             = ${keep ? db`kind` : input.kind},
       title            = ${title},
-      body             = ${body || null},
+      body             = ${seriesForm ? db`body` : body || null},
       excerpt          = ${input.excerpt?.trim() || null},
       status           = ${status},
       section          = ${input.section || null},
-      scheduled_at     = ${dated ? input.scheduledAt : null},
-      duration_minutes = ${dated ? (input.durationMinutes ?? 60) : null},
-      location         = ${input.location || null},
-      format           = ${dated ? (input.format ?? "online") : null},
-      meeting_url      = ${input.meetingUrl || null},
-      is_rsvp_enabled  = ${dated ? (input.isRsvpEnabled ?? true) : false},
-      attendee_limit   = ${input.attendeeLimit ?? null},
-      recurrence_pattern     = ${dated ? (input.recurrencePattern ?? null) : null},
-      recurrence_until       = ${dated ? (input.recurrenceUntil ?? null) : null},
-      recurrence_custom_rule = ${dated ? (input.recurrenceCustomRule ?? null) : null},
+      scheduled_at     = ${keep ? db`scheduled_at` : dated ? input.scheduledAt : null},
+      duration_minutes = ${keep ? db`duration_minutes` : dated ? (input.durationMinutes ?? 60) : null},
+      location         = ${seriesForm ? db`location` : input.location || null},
+      format           = ${seriesForm ? db`format` : dated ? (input.format ?? "online") : null},
+      meeting_url      = ${seriesForm ? db`meeting_url` : input.meetingUrl || null},
+      is_rsvp_enabled  = ${seriesForm ? db`is_rsvp_enabled` : dated ? (input.isRsvpEnabled ?? true) : false},
+      attendee_limit   = ${seriesForm ? db`attendee_limit` : input.attendeeLimit ?? null},
+      recurrence_pattern     = ${keep ? db`recurrence_pattern` : dated ? (input.recurrencePattern ?? null) : null},
+      recurrence_until       = ${keep ? db`recurrence_until` : dated ? (input.recurrenceUntil ?? null) : null},
+      recurrence_custom_rule = ${keep ? db`recurrence_custom_rule` : dated ? (input.recurrenceCustomRule ?? null) : null},
       published_at     = CASE
         WHEN ${status} = 'published' AND published_at IS NULL THEN NOW()
         ELSE published_at
@@ -269,18 +419,28 @@ async function updateExisting(
     WHERE id = ${threadId} AND org_id = ${siteConfig.orgId}
   `;
 
+  // A draft series published from here: its lede was written above only if
+  // it was already published, so write it now that loadSeries can see it.
+  if (seriesForm && existing.status !== "published" && status === "published" && input.series) {
+    await saveSeriesSettings({ orgId: siteConfig.orgId, threadId, lede: input.series.lede }).catch((err) => {
+      console.error("[ifac] saveSeriesSettings after publish:", err);
+    });
+  }
+
   if (input.coverImageUrl !== undefined) {
     await db`
       UPDATE threads
       SET metadata = COALESCE(metadata, '{}'::jsonb)
         || jsonb_build_object('coverImageUrl', ${input.coverImageUrl ?? null}::text)
-      WHERE id = ${threadId}
+      WHERE id = ${threadId} AND org_id = ${siteConfig.orgId}
     `;
   }
 
   const warnings = [
+    ...seriesWarnings,
     ...(await attachRooms(threadId, title, input)),
-    ...(dated ? await assignNextHosts(threadId, input, viewerId) : []),
+    // A series' hosts are set per week in the planner, not from here.
+    ...(dated && !keep ? await assignNextHosts(threadId, input, viewerId) : []),
   ];
 
   if (dated && status === "published") {
@@ -336,6 +496,7 @@ export async function saveContentAction(
 
   try {
     if (threadId) return await updateExisting(threadId, input, title, dated, status, viewer.userId);
+    if (input.kind === SERIES_KIND) return await createSeries(input, title, status, viewer.userId);
 
     const thread = await createThread({
       kind: input.kind,
@@ -366,7 +527,7 @@ export async function saveContentAction(
           recurrence_pattern = ${input.recurrencePattern},
           recurrence_until = ${input.recurrenceUntil ?? null},
           recurrence_custom_rule = ${input.recurrenceCustomRule ?? null}
-        WHERE id = ${thread.id}
+        WHERE id = ${thread.id} AND org_id = ${siteConfig.orgId}
       `;
     }
     if (input.coverImageUrl) {
@@ -374,7 +535,7 @@ export async function saveContentAction(
         UPDATE threads
         SET metadata = COALESCE(metadata, '{}'::jsonb)
           || jsonb_build_object('coverImageUrl', ${input.coverImageUrl}::text)
-        WHERE id = ${thread.id}
+        WHERE id = ${thread.id} AND org_id = ${siteConfig.orgId}
       `;
     }
 
@@ -397,6 +558,151 @@ export async function saveContentAction(
     console.error("[ifac] saveContentAction:", error);
     return { ok: false, error: "Could not save that" };
   }
+}
+
+/** An http(s) URL, or null. Same rule as saveSeriesSettings, checked before anything is written. */
+function httpUrl(value: string | null | undefined): boolean {
+  if (!value) return true;
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A new meeting series from Compose (2026-10-10,
+ * docs/open/SERIES_KIND_DESIGN_2026-10-10.md §5).
+ *
+ * `createThread` with kind `series` and the whole row at once: the first
+ * session (an instant, from the adapter), WEEKLY with its exclusive end, and
+ * `metadata` with the zone, cover, lede, display zones, letter days and join
+ * details, so a draft series is complete. A published one then goes through
+ * the series services, which read only published rows: `saveSeriesSchedule`
+ * (not a dry run) recomputes the first session and end from the schedule
+ * strings in the series' zone and stores the display zones;
+ * `saveSeriesSettings` writes the lede, join details and letter days through
+ * their own validation; `ensureSeriesTalkRoom` makes the room when asked and
+ * no join link was given. A draft gets its room from `attachRooms`, which
+ * works on any status. No hosts: weeks are planned in /hub/series/<id>.
+ *
+ * Everything that can be refused is checked before the row is written, so a
+ * refusal leaves nothing behind. A failure after the row exists is reported
+ * as a warning on a saved series, not as a lost one.
+ */
+async function createSeries(
+  input: SaveContentInput,
+  title: string,
+  status: "draft" | "pending" | "published",
+  viewerId: string
+): Promise<SaveContentResult> {
+  const series = input.series;
+  const schedule = series?.schedule ?? null;
+  if (!series || !schedule) return { ok: false, error: "Pick the first session and the time zone the series meets in" };
+  const zone = validTimeZone(schedule.timeZone);
+  if (!zone) return { ok: false, error: "Pick a time zone from the list" };
+  if (!input.scheduledAt || Number.isNaN(Date.parse(input.scheduledAt))) {
+    return { ok: false, error: "Pick the date and time of the first session" };
+  }
+  if (input.recurrenceUntil && Date.parse(input.recurrenceUntil) <= Date.parse(input.scheduledAt)) {
+    return { ok: false, error: "The last session is before the first" };
+  }
+  const joinUrl = series.joinUrl ?? null;
+  if (!httpUrl(joinUrl)) return { ok: false, error: "The join link must start with https://" };
+  const duration = input.durationMinutes ?? 60;
+  if (duration < 15 || duration > 600) return { ok: false, error: "A session lasts between 15 minutes and 10 hours" };
+  const alsoZones = (series.alsoZones ?? []).map((z) => validTimeZone(z)).filter((z): z is string => Boolean(z)).slice(0, 6);
+  const reminderDays = Math.max(0, Math.min(14, Math.round(series.reminderDays ?? 2)));
+  const lede = series.lede?.trim().slice(0, 1000) || null;
+
+  const thread = await createThread({
+    kind: SERIES_KIND,
+    orgId: siteConfig.orgId,
+    authorId: viewerId,
+    title,
+    excerpt: lede ?? undefined,
+    status,
+    visibility: "PUBLIC",
+    section: input.section || null,
+    scheduledAt: input.scheduledAt,
+    durationMinutes: duration,
+    format: "online",
+    isRsvpEnabled: true,
+    metadata: {
+      timeZone: zone,
+      ...(input.coverImageUrl ? { coverImageUrl: input.coverImageUrl } : {}),
+      series: { lede, alsoZones, reminderDays },
+      joinDetails: {
+        url: joinUrl,
+        meetingId: series.meetingId ?? null,
+        passcode: series.passcode ?? null,
+        other: series.otherWaysToJoin ?? null,
+      },
+    },
+  });
+  await db`
+    UPDATE threads SET
+      recurrence_pattern = 'WEEKLY',
+      recurrence_until = ${input.recurrenceUntil ?? null}::timestamptz
+    WHERE id = ${thread.id} AND org_id = ${siteConfig.orgId}
+  `;
+
+  const warnings: string[] = [];
+  const wantTalk = Boolean(input.createTalkRoom) && !joinUrl;
+  if (status === "published") {
+    try {
+      await saveSeriesSchedule({
+        orgId: siteConfig.orgId,
+        threadId: thread.id,
+        schedule: { ...schedule, timeZone: zone, durationMinutes: duration, alsoZones },
+      });
+    } catch (err) {
+      console.error("[ifac] saveSeriesSchedule:", err);
+      warnings.push(
+        err instanceof SeriesError
+          ? `The series saved, but its schedule was not confirmed: ${err.message} Check it in the planner.`
+          : "The series saved, but its schedule was not confirmed. Check it in the planner."
+      );
+    }
+    try {
+      await saveSeriesSettings({
+        orgId: siteConfig.orgId,
+        threadId: thread.id,
+        lede,
+        joinUrl,
+        meetingId: series.meetingId ?? null,
+        passcode: series.passcode ?? null,
+        otherWaysToJoin: series.otherWaysToJoin ?? null,
+        reminderDays,
+      });
+    } catch (err) {
+      console.error("[ifac] saveSeriesSettings:", err);
+      warnings.push("The series saved, but its description or joining details were not. Set them in the planner.");
+    }
+    if (wantTalk) {
+      try {
+        await ensureSeriesTalkRoom({ orgId: siteConfig.orgId, threadId: thread.id, actorUserId: viewerId });
+      } catch (err) {
+        console.error("[ifac] ensureSeriesTalkRoom:", err);
+        warnings.push("The Talk room could not be created.");
+      }
+    }
+    await mirrorToCalendar(thread.id);
+  } else if (wantTalk) {
+    warnings.push(...(await attachRooms(thread.id, title, { ...input, createDocument: false })));
+  }
+
+  revalidatePath("/hub");
+  revalidatePath("/");
+  return {
+    ok: true,
+    id: thread.id,
+    slug: thread.slug,
+    status,
+    warnings,
+    // The planner reads published series only (services' loadSeries).
+    ...(status === "published" ? { href: `/hub/series/${thread.id}` } : {}),
+  };
 }
 
 /**

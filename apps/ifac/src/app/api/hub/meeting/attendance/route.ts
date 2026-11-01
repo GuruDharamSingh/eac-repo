@@ -1,5 +1,6 @@
 import { db } from "@elkdonis/db";
 import {
+  SERIES_KIND,
   checkRsvpEligibility,
   clearMeetingAttendance,
   countConfirmedRsvps,
@@ -43,11 +44,26 @@ export async function POST(request: Request) {
 
   // The thread must be IFAC's. Without this a member could answer for any
   // thread in the network by id, since thread_rsvps itself is org-agnostic.
-  const [thread] = await db<Array<{ id: string; is_rsvp_enabled: boolean }>>`
-    SELECT id, is_rsvp_enabled FROM threads
+  const [thread] = await db<Array<{ id: string; kind: string; is_rsvp_enabled: boolean; series_meta: boolean }>>`
+    SELECT id, kind, is_rsvp_enabled,
+           COALESCE(jsonb_typeof(metadata->'series') = 'object', false) AS series_meta
+    FROM threads
     WHERE id = ${threadId} AND org_id = ${siteConfig.orgId}
   `;
   if (!thread) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // A series' own thread holds subscriptions (`thread_rsvps` status
+  // 'subscribed', meeting-series.ts) on the same (thread, user) key: an
+  // answer or a clear here would overwrite or delete one. Weeks are answered
+  // on their own topics (/api/series/rsvp). `metadata.series` as an object
+  // marks a series still stored as kind 'meeting' (until the kind flip);
+  // writing threads carry a string there, which this does not match.
+  if (thread.kind === SERIES_KIND || thread.series_meta) {
+    return Response.json(
+      { error: "This is a series: answer for a week on that week's page, or subscribe to the series." },
+      { status: 409 }
+    );
+  }
 
   if (payload.clear) {
     await clearMeetingAttendance(threadId, viewer.userId);

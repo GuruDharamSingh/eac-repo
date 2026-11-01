@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Landing B: series first</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#000000}
+a{color:#b9c3d6;text-decoration:none}a:hover{color:#eef2f9}
+a:focus-visible,button:focus-visible{outline:2px solid #eef2f9;outline-offset:2px}
+</style>
+</helmet>
+<!-- Landing B: welcome and the series clock side by side, then what changed this week, then every open lot in a plain grid, then collections. -->
+<div style="min-height: 2100px; background: #000000; color: #e9edf6; font-family: 'Jost', 'Segoe UI', system-ui, sans-serif; font-size: 16px; line-height: 1.55; display: flex; flex-direction: column">
+
+<nav style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 30px; width: 100%; max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 20px 32px">
+<a href="Main2.dc.html" style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; color: #eef2f9">Collect-Art</a>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 28px; font-size: 12.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase">
+<a href="#lots" style="padding: 10px 2px">Auction</a>
+<a href="#collections" style="padding: 10px 2px">Collections</a>
+<a href="#artists" style="padding: 10px 2px">Artists</a>
+<a href="About.dc.html" style="padding: 10px 2px">About</a>
+<a href="#signin" style="padding: 10px 2px">Sign in</a>
+</div>
+</nav>
+
+<main style="width: 100%; max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 24px 32px 80px; display: flex; flex-direction: column; gap: 64px">
+
+<!-- Welcome + series clock -->
+<section style="display: flex; flex-wrap: wrap; gap: 32px; align-items: stretch">
+<div style="flex: 1.4 1 480px; min-width: 0; padding: 40px 44px; border: 1px solid rgba(185, 195, 214, 0.3); background: rgba(255, 255, 255, 0.04); display: flex; flex-direction: column; justify-content: center">
+<h1 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; color: #eef2f9">
+<span style="display: block; font-size: 76px; line-height: 1; font-style: italic">Welcome</span>
+<span style="display: block; margin-top: 14px; max-width: 30ch; font-size: 25px; line-height: 1.35; color: #b9c3d6">to the first International Fine Arts Collectors' Auction Series, hosted on the Arts-Collective Platform</span>
+</h1>
+<div style="margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px">
+<a href="#lots" style="min-height: 48px; box-sizing: border-box; padding: 14px 28px; background: #8c1f3a; border: 1px solid #a82a4a; color: #ffffff; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase">See the lots</a>
+<a href="#how" style="min-height: 48px; box-sizing: border-box; padding: 14px 28px; border: 1px solid #b9c3d6; color: #eef2f9; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase">How bidding works</a>
+</div>
+</div>
+<div style="flex: 1 1 340px; min-width: 0; padding: 30px 34px; border: 1px solid #8c1f3a; background: linear-gradient(160deg, #2a0812, #000000 75%); display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 14px; border-bottom: 1px solid rgba(243, 233, 236, 0.2)">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #e7c9d1">Auction Series 1</span>
+<span style="font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 22px; line-height: 1.1; color: #ffffff">[Series name]</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 15.5px; line-height: 1.55; color: #f3e9ec">[Two sentences from the curator on what this series brings together and why.] Proceeds: [ARTIST SHARE / BENEFICIARY].</p>
+<a href="Series.dc.html" style="align-self: flex-start; color: #ffffff; font-size: 14px; border-bottom: 1px solid #c9405f; padding-bottom: 2px">Go to the series page →</a>
+</div>
+<div style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(243, 233, 236, 0.2); display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px">
+<span style="font-size: 13.5px; color: #e7c9d1">Silent bidding until November 21st</span>
+<span style="font-size: 13.5px; color: #e7c9d1">Live auction in <strong style="font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 26px; color: #ffffff; font-variant-numeric: tabular-nums">26d 05h 12m</strong></span>
+</div>
+</div>
+</section>
+
+<!-- This week -->
+<section aria-labelledby="this-week" style="display: flex; flex-wrap: wrap; gap: 24px 48px; padding: 26px 0; border-top: 1px solid rgba(185, 195, 214, 0.22); border-bottom: 1px solid rgba(185, 195, 214, 0.22)">
+<h2 id="this-week" style="flex: 0 0 180px; margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 28px; line-height: 1.1; color: #eef2f9">This week in Series 1</h2>
+<dl style="flex: 0 0 auto; margin: 0; display: flex; gap: 36px">
+<div><dt style="font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #aab3c7">New lots</dt><dd style="margin: 4px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1; color: #eef2f9">+7</dd></div>
+<div><dt style="font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #aab3c7">Bids</dt><dd style="margin: 4px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1; color: #eef2f9">38</dd></div>
+<div><dt style="font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #aab3c7">Top bid</dt><dd style="margin: 4px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1; color: #eef2f9">$3,400</dd></div>
+</dl>
+<ul style="flex: 1 1 360px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px">
+<li><span style="color: #e7c9d1; font-weight: 600; margin-right: 10px">Oct 24</span>Seven new lots, including three works on paper.</li>
+<li><span style="color: #aab3c7; font-weight: 600; margin-right: 10px">Oct 22</span>Moon Over the Field passes $3,000.</li>
+<li><span style="color: #aab3c7; font-weight: 600; margin-right: 10px">Oct 19</span>Week 1 ends with 23 bids across 17 lots.</li>
+</ul>
+</section>
+
+<!-- Open lots -->
+<section id="lots">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 24px">
+<h2 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; color: #eef2f9; padding-bottom: 6px; border-bottom: 2px solid #8c1f3a">Open lots</h2>
+<a href="LotA.dc.html" style="font-size: 14px; color: #eef2f9">All 24 lots →</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 32px 24px">
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 67% 35%, #f2b45a 0 12%, rgba(0,0,0,0) 12.5%), linear-gradient(180deg, #1c2a52 0 50%, #10172f 50% 62%, #27385f 62% 78%, #3a5283 78%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Evening Water</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$1,250</span><span style="color: #aab3c7">2d 14h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 50% 50%, #b2402f 0 8%, #6f8f86 8% 20%, #c58a52 20% 32%, #24344f 32% 44%, #b2402f 44% 58%, #efe3cf 58%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Concentric Study No. 4</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$880</span><span style="color: #aab3c7">1d 03h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 75% 26%, #e8d9a8 0 9%, rgba(0,0,0,0) 9.5%), linear-gradient(118deg, #1c4a4a 0 45%, #2f7a72 45% 72%, #91b8a1 72%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Slope</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$2,100</span><span style="color: #e0a24a; font-weight: 600">Closes in 38m</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 80% 18%, #e58c8a 0 8%, rgba(0,0,0,0) 8.5%), linear-gradient(90deg, #2a1230 0 10%, #521f4a 10% 35%, #2a1230 35% 37%, #8e3a6c 37% 62%, #2a1230 62% 65%, #d9a1b8 65% 90%, #2a1230 90%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Three Doorways</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$640</span><span style="color: #aab3c7">4d 09h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 50% 42%, #26324d 0 18%, rgba(0,0,0,0) 18.5%), repeating-linear-gradient(90deg, #b9503a 0 8%, #e9e1d3 8% 12%, #d9b66a 12% 17%, #e9e1d3 17% 25%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Moon Over the Field</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$3,400</span><span style="color: #aab3c7">5d 01h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: conic-gradient(#fca311 0 25%, #2b4570 25% 50%, #7d93b8 50% 75%, #e5e5e5 75%) 0 0 / 50% 40%"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Ledger</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$420</span><span style="color: #aab3c7">2d 20h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(ellipse 60% 30% at 50% 70%, #c58a52 0 50%, rgba(0,0,0,0) 51%), linear-gradient(180deg, #24344f, #6f8f86)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Low Tide</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$950</span><span style="color: #aab3c7">3d 11h</span></span></a>
+<a href="LotA.dc.html" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 5; border: 1px solid rgba(185, 195, 214, 0.22); background: linear-gradient(45deg, #2f7a72 0 30%, rgba(0,0,0,0) 30%), linear-gradient(-45deg, #e8d9a8 0 40%, #0f2a2e 40%)"></span><span style="display: block; margin-top: 12px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px; line-height: 1.15">Crossing</span><span style="display: block; font-size: 13.5px; color: #aab3c7">Artist Name</span><span style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px"><span style="color: #eef2f9; font-weight: 600">$1,600</span><span style="color: #aab3c7">6d 02h</span></span></a>
+</div>
+</section>
+
+<!-- Collections -->
+<section id="collections">
+<h2 style="margin: 0 0 24px; display: inline-block; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 34px; color: #eef2f9; padding-bottom: 6px; border-bottom: 2px solid #8c1f3a">Collections on the market</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 24px">
+<a href="#collections" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 3; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 67% 35%, #f2b45a 0 12%, rgba(0,0,0,0) 12.5%), linear-gradient(180deg, #0f2a2e 0 50%, #1c4a4a 50% 70%, #2f7a72 70%)"></span><span style="display: block; margin-top: 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px">Landscape &amp; Place</span><span style="font-size: 13px; color: #aab3c7">14 works</span></a>
+<a href="#collections" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 3; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 75% 26%, #efe3cf 0 9%, rgba(0,0,0,0) 9.5%), linear-gradient(118deg, #24344f 0 45%, #c58a52 45% 72%, #efe3cf 72%)"></span><span style="display: block; margin-top: 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px">Works on Paper</span><span style="font-size: 13px; color: #aab3c7">18 works</span></a>
+<a href="#collections" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 3; border: 1px solid rgba(185, 195, 214, 0.22); background: conic-gradient(#fca311 0 25%, #2b4570 25% 50%, #7d93b8 50% 75%, #e5e5e5 75%) 0 0 / 25% 33.4%"></span><span style="display: block; margin-top: 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px">Editioned Prints</span><span style="font-size: 13px; color: #aab3c7">22 works</span></a>
+<a href="#collections" style="display: block; color: #e9edf6"><span style="display: block; aspect-ratio: 4 / 3; border: 1px solid rgba(185, 195, 214, 0.22); background: radial-gradient(circle at 50% 50%, #8e3a6c 0 10%, #d9a1b8 10% 22%, #521f4a 22% 36%, #2a1230 36%)"></span><span style="display: block; margin-top: 10px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 22px">Abstraction</span><span style="font-size: 13px; color: #aab3c7">16 works</span></a>
+</div>
+</section>
+</main>
+
+<footer style="margin-top: auto; border-top: 1px solid rgba(185, 195, 214, 0.22); padding: 26px 32px 34px; text-align: center; font-size: 13px; color: #aab3c7"><a href="About.dc.html" style="text-decoration: underline">About the auction</a> · Presented by International Fine Arts Collectors · Hosted by Elkdonis Arts Collective</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

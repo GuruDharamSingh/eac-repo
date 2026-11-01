@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series index mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Ink #171615 on #fffdf8 17.8:1; #4f4a44 8.6:1; link #273d54 11.0:1. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #f8f5ef; color: #171615; font: 17px/1.55 "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
+.wrap { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+h1 { font: 600 2.1rem/1.1 "Cormorant Garamond", Georgia, serif; margin: 0 0 8px; }
+h2 { font: 600 1.45rem/1.15 "Cormorant Garamond", Georgia, serif; margin: 0; }
+p { margin: 0; }
+.lede { color: #4f4a44; max-width: 74ch; }
+a { color: #273d54; text-underline-offset: 3px; }
+code { font-size: 0.88em; }
+.list { display: grid; gap: 14px; margin-top: 24px; }
+.item { background: #fffdf8; border: 1px solid #d8d0c2; border-radius: 4px; padding: 18px 20px; display: grid; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.item__k { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #4f4a44; }
+.item p, .item li { color: #4f4a44; }
+.item ul { margin: 0; padding-left: 20px; }
+.shots { font-size: 0.92rem; }
+.shots a { margin-right: 10px; white-space: nowrap; }
+.qs { margin-top: 28px; display: grid; gap: 10px; }
+.qs ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; color: #2c2924; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Several series on IFAC: mockups</h1>
+  <p class="lede">Static mockups, 2026-10-18, for running more than one series on ifacgroup.com: a new <code>/series</code> page that introduces every series, a reworked page for one series, and where the series card and the page's intro copy are edited. Built with the live site's colours and type; real data for the current series, a placeholder second series ("Looking Closely", Thursdays, every other week). No app or package code was changed.</p>
+
+  <div class="list">
+    <section class="item">
+      <p class="item__k">A · recommended for the index</p>
+      <h2><a href="a-programme.html">Programme</a></h2>
+      <p>Intro copy, then one wide general card per series (cover, description, schedule, hosts, its next session as one line), then every series' sessions in one dated list, each row marked with its series' colour, with a filter.</p>
+      <ul><li>Reads top-down as "what IFAC offers, then when". Works for one, two or five series.</li><li>Cards are tall; with four or more series the list is far down.</li></ul>
+      <p class="shots"><a href="a-programme-desktop.png">1280 px</a><a href="a-programme-phone.png">390 px</a></p>
+    </section>
+    <section class="item">
+      <p class="item__k">B</p>
+      <h2><a href="b-cards-calendar.html">Cards and calendar</a></h2>
+      <p>Intro beside a short statement; series as portrait cards side by side; then a month calendar with each session as a coloured chip (a list on phones).</p>
+      <ul><li>Compact; the calendar shows how the series interleave.</li><li>A calendar with few sessions looks empty; "I'm coming" moves to the session page.</li></ul>
+      <p class="shots"><a href="b-cards-calendar-desktop.png">1280 px</a><a href="b-cards-calendar-phone.png">390 px</a></p>
+    </section>
+    <section class="item">
+      <p class="item__k">C</p>
+      <h2><a href="c-featured-lanes.html">Featured and lanes</a></h2>
+      <p>One featured series large, with its video; the others smaller beside it; then one column of upcoming sessions per series.</p>
+      <ul><li>Keeps a clear lead (the same series the landing slide leads with).</li><li>Lanes get narrow past two series; a session's date order across series is harder to see.</li></ul>
+      <p class="shots"><a href="c-featured-lanes-desktop.png">1280 px</a><a href="c-featured-lanes-phone.png">390 px</a></p>
+    </section>
+    <section class="item">
+      <p class="item__k">D · goes with A, B or C</p>
+      <h2><a href="d-series-page.html">One series page, reworked</a></h2>
+      <p><code>/series/&lt;slug&gt;</code> led by the series, not this week: title, cover video, then the general card (About, schedule, hosts, Subscribe, sign-in). The next session is one band; the other sessions are rows that open their own pages. This week's write-up is no longer shown twice.</p>
+      <p class="shots"><a href="d-series-page-desktop.png">1280 px</a><a href="d-series-page-phone.png">390 px</a></p>
+    </section>
+    <section class="item">
+      <p class="item__k">E · editing</p>
+      <h2><a href="e-editing.html">The card and the page, in the hub</a></h2>
+      <p>The planner's Series settings gain a "Card" part (colour, rhythm line, status chip, where it shows) with a live preview of the card and of the landing slide. A new organisation setting, "Series page", holds the intro heading and text and the order of the series. New series in <code>/hub/compose</code> get a Card step.</p>
+      <p class="shots"><a href="e-editing-desktop.png">1280 px</a><a href="e-editing-phone.png">390 px</a></p>
+    </section>
+  </div>
+
+  <section class="qs">
+    <h2>Questions for the developer</h2>
+    <ol>
+      <li>Which index layout: A, B, C, or a mix (for example A's cards with B's calendar)?</li>
+      <li>The new series: its title, schedule (day, time, zone, weekly or fortnightly), first date, and who organises it. Same planner and the same join link, or its own Zoom/Talk room?</li>
+      <li>Nav: rename "Current series" to "Series" and point it at <code>/series</code>? With one series listed, should <code>/series</code> go straight to that series' page?</li>
+      <li>Should unannounced weeks show as "To be announced" in the lists (mockups do), or only published weeks (today's rule)?</li>
+      <li>Landing slides: one slide per listed series, or only the featured one?</li>
+      <li>Is the older published "Weekly Meeting" thread (<code>T0V4HGRpN0AUtEbjDWeoR</code>) to stay out of the series list? It is a recurring meeting thread and would otherwise be picked up.</li>
+      <li>Series colour: needed (dots, row edges, calendar chips), or keep everything gold?</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series page with weekly email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mockup 04 (2026-10-10): public series page top on the dark .ifs site
+   (apps/ifac/src/app/site.css, revision 4 tokens), with a "Keep up to date
+   with this series" email band beside the Coming up list, and one week open.
+   Measured (from site.css, re-run here): ink #ece7e1 on #121214 15.2:1;
+   muted #b3ada3 on #0b0b0d 8.8:1, on #121214 8.4:1; faint #857f76 on #050506
+   5.1:1, on #0b0b0d 4.96:1, on #121214 4.72:1; gold text #e3c572 on #121214
+   11.1:1; #050506 on gold fill #c9a24a 8.5:1; email field edge #6c6c76 on #050506 3.8:1 (3:1 applies).
+   Anchor fix: rows carry scroll-margin-top (header height + 24 px), so
+   #week-2 lands below the sticky header. (Use this or scroll-padding-top on
+   the root, not both: the two add up.) */
+* { box-sizing: border-box; }
+body { margin: 0; background: #050506; }
+.ifs { display: flow-root; }
+.ifs {
+  --ifs-bg: #050506; --ifs-bg-2: #0b0b0d; --ifs-bg-3: #121214;
+  --ifs-line: #1f1f24; --ifs-line-strong: #3a3a42;
+  --ifs-ink: #ece7e1; --ifs-muted: #b3ada3; --ifs-faint: #857f76;
+  --ifs-gold: #c9a24a; --ifs-gold-text: #e3c572; --ifs-gold-on: #050506;
+  --ifs-frame: #5c62e6; --ifs-frame-soft: #2b2f6e;
+  --ifs-serif: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+  --ifs-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --ifs-header-h: 64px;
+  min-height: 100vh; background: var(--ifs-bg); color: var(--ifs-ink); font-family: var(--ifs-sans); font-size: 18px; line-height: 1.6;
+}
+.ifs a { color: inherit; text-decoration: none; }
+.ifs h1, .ifs h2, .ifs h3 { font-family: var(--ifs-serif); font-weight: 500; line-height: 1.08; margin: 0; }
+.ifs p { margin: 0; }
+.ifs-wrap { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+.ifs-eyebrow { font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-link { color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px; border: 1px solid var(--ifs-line-strong); background: transparent; color: var(--ifs-ink); font: inherit; font-weight: 600; font-size: 1.02rem; cursor: pointer; white-space: nowrap; }
+.ifs .ifs-btn--primary { background: var(--ifs-gold); border-color: var(--ifs-gold); color: var(--ifs-gold-on); }
+.ifs-btn--small { min-height: 42px; padding: 0 18px; font-size: 0.95rem; }
+.ifs svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* header (sticky, 64 px) */
+.ifs-header { position: sticky; top: 0; z-index: 10; background: rgba(20, 20, 22, 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ifs-line); }
+.ifs-header .ifs-wrap { display: flex; align-items: center; gap: 20px; height: var(--ifs-header-h); }
+.ifs-brand { display: flex; align-items: center; gap: 12px; font-family: var(--ifs-serif); font-size: 1.25rem; min-width: 0; }
+.ifs-seal { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--ifs-gold); border-radius: 50%; font: 700 0.74rem var(--ifs-sans); letter-spacing: 0.08em; color: var(--ifs-gold-text); flex: none; }
+.ifs-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.ifs-nav a { padding: 10px 14px; border-radius: 8px; color: var(--ifs-muted); font-weight: 600; font-size: 1rem; }
+.ifs-nav a[aria-current] { color: var(--ifs-ink); background: var(--ifs-bg-3); }
+.ifs-nav a.cta { color: var(--ifs-gold-on); background: var(--ifs-gold); margin-left: 8px; }
+.ifs-menu { display: none; width: 44px; height: 44px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; background: none; color: var(--ifs-ink); place-items: center; }
+
+/* series head */
+.ifs-event-head { padding: 48px 0 36px; border-bottom: 1px solid var(--ifs-line); }
+.ifs-event-head .ifs-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.ifs-event-head h1 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); margin-top: 10px; }
+.ifs-lede { font-size: 1.1rem; color: var(--ifs-muted); max-width: 58ch; margin-top: 16px !important; }
+.ifs-facts { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 22px; font-size: 1.02rem; }
+.ifs-facts span { display: inline-flex; align-items: center; gap: 8px; }
+.ifs-facts svg { color: var(--ifs-gold-text); }
+.ifs-rsvp-card { border: 1px solid var(--ifs-line-strong); border-radius: 14px; background: var(--ifs-bg-2); padding: 22px; display: grid; gap: 14px; }
+.ifs-rsvp-card__when { display: flex; gap: 14px; align-items: center; }
+.ifs-datebox { flex: none; width: 64px; border: 1px solid var(--ifs-gold); border-radius: 8px; text-align: center; padding: 6px 0 8px; line-height: 1; }
+.ifs-datebox__d { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-datebox__n { font-family: var(--ifs-serif); font-size: 1.9rem; margin: 4px 0 2px; }
+.ifs-datebox__m { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ifs-muted); }
+.ifs-rsvp-card__t { font-family: var(--ifs-serif); font-size: 1.3rem; }
+.ifs-rsvp-card__s { color: var(--ifs-muted); font-size: 0.95rem; }
+.ifs-gate { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px dashed var(--ifs-line-strong); border-radius: 10px; font-size: 0.92rem; color: var(--ifs-muted); }
+.ifs-gate svg { color: var(--ifs-gold-text); }
+
+/* sessions + email band */
+.ifs-sessions { padding: 44px 0 56px; }
+.ifs-sessions .ifs-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 36px; align-items: start; }
+.ifs-head2 { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.ifs-head2 h2 { font-size: 2.1rem; margin-top: 6px; }
+.ifs-list { display: grid; gap: 10px; }
+.ifs-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 20px; align-items: start; padding: 18px 20px; border: 1px solid var(--ifs-line); border-radius: 12px; background: var(--ifs-bg-2);
+  scroll-margin-top: calc(var(--ifs-header-h) + 24px); }
+.ifs-row.is-open { border-color: var(--ifs-gold); }
+.ifs-row .ifs-datebox { width: 72px; }
+.ifs-row__main { display: grid; gap: 4px; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: 0; font: inherit; cursor: pointer; }
+.ifs-row__k { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-gold-text); }
+.ifs-row__t { font-family: var(--ifs-serif); font-size: 1.55rem; line-height: 1.15; }
+.ifs-row__t.is-empty { color: var(--ifs-muted); font-style: italic; }
+.ifs-row__h { color: var(--ifs-muted); font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+.ifs-row__h i { width: 26px; height: 26px; border-radius: 50%; background: var(--ifs-bg-3); border: 1px solid var(--ifs-line-strong); display: inline-block; flex: none; }
+.ifs-row__side { display: grid; gap: 8px; justify-items: end; }
+.ifs-row__chev { color: var(--ifs-muted); }
+.ifs-row__detail { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 28px; padding-top: 18px; margin-top: 4px; border-top: 1px solid var(--ifs-line); }
+.ifs-row__detail .when { color: var(--ifs-ink); font-size: 0.98rem; margin-bottom: 8px !important; }
+.ifs-row__detail .prose { color: var(--ifs-muted); line-height: 1.6; }
+.ifs-row__detail h4 { margin: 0 0 8px; font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-faint); }
+.ifs-cover { aspect-ratio: 16 / 9; border-radius: 8px; margin-bottom: 14px; background: radial-gradient(60% 70% at 50% 40%, #2a1540, #0b0b0d); display: grid; place-items: center; color: var(--ifs-muted); font-size: 0.9rem; border: 1px solid var(--ifs-line-strong); }
+.ifs-materials { display: grid; gap: 8px; }
+.ifs-materials a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; background: var(--ifs-bg); font-size: 0.92rem; min-width: 0; }
+.ifs-materials a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifs-materials svg { color: var(--ifs-gold-text); }
+.ifs-row__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+.ifs-keep { position: sticky; top: calc(var(--ifs-header-h) + 20px); border: 2px solid var(--ifs-frame); background: var(--ifs-bg-2); padding: 22px; display: grid; gap: 14px; }
+.ifs-keep h2 { font-size: 1.75rem; }
+.ifs-keep__p { color: var(--ifs-muted); font-size: 0.98rem; }
+.ifs-keep form { display: grid; gap: 10px; }
+.ifs-keep label { display: grid; gap: 5px; font-size: 0.9rem; color: var(--ifs-muted); font-weight: 600; }
+.ifs-keep input { height: 48px; border: 1px solid #6c6c76; border-radius: 8px; background: var(--ifs-bg); color: var(--ifs-ink); padding: 0 12px; font: inherit; font-size: 1rem; width: 100%; }
+.ifs-keep input::placeholder { color: var(--ifs-faint); }
+.ifs-keep input:focus { outline: 2px solid var(--ifs-gold); outline-offset: 1px; }
+.ifs-keep .ifs-btn { width: 100%; }
+.ifs-keep__fine { font-size: 0.86rem; color: var(--ifs-faint); }
+.ifs-sample { border-top: 1px solid var(--ifs-line-strong); padding-top: 14px; display: grid; gap: 6px; font-size: 0.9rem; }
+.ifs-sample summary { cursor: pointer; color: var(--ifs-gold-text); font-weight: 600; }
+.ifs-sample__mail { margin-top: 10px; border: 1px solid var(--ifs-line-strong); border-radius: 8px; background: var(--ifs-bg); padding: 12px 14px; display: grid; gap: 4px; color: var(--ifs-muted); }
+.ifs-sample__mail b { color: var(--ifs-ink); font-weight: 600; }
+.ifs-sample__mail code { font-family: ui-monospace, monospace; font-size: 0.82rem; color: var(--ifs-gold-text); word-break: break-all; }
+
+.mock-note { margin: 0 auto 48px; border: 1.5px dashed #6c6660; border-radius: 8px; padding: 14px 16px; font-size: 0.92rem; color: var(--ifs-muted); }
+.mock-note b { color: var(--ifs-ink); }
+.mock-note ul { margin: 6px 0 0; padding-left: 20px; }
+.mock-note code { color: var(--ifs-gold-text); font-size: 0.85rem; }
+
+@media (max-width: 1000px) {
+  .ifs-event-head .ifs-wrap, .ifs-sessions .ifs-wrap { grid-template-columns: 1fr; }
+  .ifs-keep { position: static; order: -1; }
+  .ifs-nav a:not(.cta):not([aria-current]) { display: none; }
+}
+@media (max-width: 640px) {
+  .ifs { font-size: 17px; --ifs-header-h: 56px; }
+  .ifs-brand__name, .ifs-nav a[aria-current] { display: none; }
+  .ifs-menu { display: inline-grid; }
+  .ifs-nav a.cta { padding: 8px 12px; margin-left: 0; }
+  .ifs-event-head { padding: 30px 0 26px; }
+  .ifs-event-head .ifs-wrap { gap: 26px; }
+  .ifs-rsvp-card, .ifs-keep { padding: 16px; }
+  .ifs-rsvp-card .ifs-btn { width: 100%; }
+  .ifs-row { grid-template-columns: 60px minmax(0, 1fr); gap: 14px; padding: 14px; }
+  .ifs-row .ifs-datebox { width: 60px; }
+  .ifs-row__side { grid-column: 1 / -1; justify-items: start; grid-auto-flow: column; align-items: center; justify-content: space-between; }
+  .ifs-row__detail { grid-column: 1 / -1; grid-template-columns: 1fr; gap: 18px; }
+  .ifs-row__t { font-size: 1.35rem; }
+  .ifs-row__actions .ifs-btn { flex: 1 1 100%; }
+  .ifs-head2 h2 { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+<div class="ifs">
+  <header class="ifs-header">
+    <div class="ifs-wrap">
+      <a class="ifs-brand" href="#"><span class="ifs-seal">IFAC</span><span class="ifs-brand__name">International Fine Art Collectors</span></a>
+      <nav class="ifs-nav" aria-label="Site">
+        <a href="#">Home</a><a href="#" aria-current="page">Series</a><a href="#">About</a><a href="#">Publications</a><a href="#">Forum</a>
+        <a href="#" class="cta">Join / Sign in</a>
+      </nav>
+      <button class="ifs-menu" type="button" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </header>
+
+  <section class="ifs-event-head">
+    <div class="ifs-wrap">
+      <div>
+        <p class="ifs-eyebrow">Weekly series · IFAC</p>
+        <h1>Explorations in Art Forms by Non Professionals</h1>
+        <p class="ifs-lede">Placeholder description: a weekly online session in which members who are not professional artists try an art form together. Each week has its own host and topic.</p>
+        <div class="ifs-facts">
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Mondays</span>
+          <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>6:00 PM Pacific</span>
+          <span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>Online · free</span>
+        </div>
+      </div>
+      <aside class="ifs-rsvp-card" aria-label="Next session">
+        <p class="ifs-eyebrow">Next session</p>
+        <div class="ifs-rsvp-card__when">
+          <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">12</div><div class="ifs-datebox__m">Oct</div></div>
+          <div><p class="ifs-rsvp-card__t">Session title</p><p class="ifs-rsvp-card__s">6:00 PM Pacific · Host name</p></div>
+        </div>
+        <a class="ifs-btn ifs-btn--primary" href="#week-1">RSVP for Monday</a>
+        <p class="ifs-gate"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Sign in or sign up for the weekly email to get the join link.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="ifs-sessions">
+    <div class="ifs-wrap">
+      <div>
+        <div class="ifs-head2">
+          <div><p class="ifs-eyebrow">Sessions</p><h2>Coming up</h2></div>
+          <a class="ifs-btn ifs-btn--small" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Whole series to calendar</a>
+        </div>
+        <div class="ifs-list">
+          <article class="ifs-row" id="week-1">
+            <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">12</div><div class="ifs-datebox__m">Oct</div></div>
+            <button class="ifs-row__main" type="button" aria-expanded="false"><span class="ifs-row__k">This week · Session 1</span><span class="ifs-row__t">Session title</span><span class="ifs-row__h"><i></i>Host name · with Co-host name</span></button>
+            <div class="ifs-row__side"><a class="ifs-btn ifs-btn--small ifs-btn--primary" href="#">RSVP</a><span class="ifs-row__chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+          </article>
+
+          <article class="ifs-row is-open" id="week-2">
+            <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">19</div><div class="ifs-datebox__m">Oct</div></div>
+            <button class="ifs-row__main" type="button" aria-expanded="true"><span class="ifs-row__k">Session 2</span><span class="ifs-row__t">Session title</span><span class="ifs-row__h"><i></i>Host name</span></button>
+            <div class="ifs-row__side"><a class="ifs-btn ifs-btn--small ifs-btn--primary" href="#">RSVP</a><span class="ifs-row__chev"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></span></div>
+            <div class="ifs-row__detail">
+              <div>
+                <p class="when">Monday, October 19 · 6:00 PM Pacific</p>
+                <p class="prose">Placeholder write-up for this session: what the group will try, what to have to hand, and what to look at beforehand. The host writes this in the hub.</p>
+                <div class="ifs-row__actions">
+                  <a class="ifs-btn ifs-btn--small" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Add to calendar</a>
+                  <a class="ifs-btn ifs-btn--small" href="#">Session page →</a>
+                </div>
+              </div>
+              <div>
+                <div class="ifs-cover">Cover image</div>
+                <h4>Materials for this week</h4>
+                <div class="ifs-materials">
+                  <a href="#"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span>Reading for this session (placeholder)</span></a>
+                  <a href="#"><svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg><span>Example page to look at before</span></a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="ifs-row" id="week-3">
+            <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">26</div><div class="ifs-datebox__m">Oct</div></div>
+            <button class="ifs-row__main" type="button" aria-expanded="false"><span class="ifs-row__k">Session 3</span><span class="ifs-row__t is-empty">To be announced</span><span class="ifs-row__h">Host to be announced</span></button>
+            <div class="ifs-row__side"><a class="ifs-btn ifs-btn--small ifs-btn--primary" href="#">RSVP</a><span class="ifs-row__chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+          </article>
+
+          <article class="ifs-row" id="week-4">
+            <div class="ifs-datebox"><div class="ifs-datebox__d">Mon</div><div class="ifs-datebox__n">2</div><div class="ifs-datebox__m">Nov</div></div>
+            <button class="ifs-row__main" type="button" aria-expanded="false"><span class="ifs-row__k">Session 4</span><span class="ifs-row__t is-empty">To be announced</span><span class="ifs-row__h">Host to be announced</span></button>
+            <div class="ifs-row__side"><a class="ifs-btn ifs-btn--small ifs-btn--primary" href="#">RSVP</a><span class="ifs-row__chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+          </article>
+        </div>
+      </div>
+
+      <aside class="ifs-keep" aria-labelledby="keep-h">
+        <p class="ifs-eyebrow">Weekly email</p>
+        <h2 id="keep-h">Keep up to date with this series</h2>
+        <p class="ifs-keep__p">One email a week, the day before each session: who is hosting, the title, what to look at, and the Zoom link.</p>
+        <form onsubmit="return false">
+          <label>Email address<input type="email" placeholder="you@example.com" autocomplete="email"></label>
+          <label>Name (optional)<input type="text" placeholder="Your name" autocomplete="name"></label>
+          <button class="ifs-btn ifs-btn--primary" type="submit">Send me the weekly email</button>
+        </form>
+        <p class="ifs-keep__fine">Each email has a link to stop. The address is used for this series only. Signed-in members can turn it on from their account.</p>
+        <details class="ifs-sample">
+          <summary>What the email looks like</summary>
+          <div class="ifs-sample__mail">
+            <span><b>Subject:</b> Tomorrow, 6:00 PM Pacific: Session title</span>
+            <span><b>Host:</b> Host name</span>
+            <span><b>Join:</b> <code>https://zoom.example/j/0000000000</code></span>
+            <span><b>Meeting ID:</b> 000 0000 0000 · <b>Passcode:</b> PASSCODE</span>
+            <span>Materials and the write-up follow, then a link to stop.</span>
+          </div>
+        </details>
+      </aside>
+    </div>
+  </section>
+
+  <div class="ifs-wrap">
+    <aside class="mock-note">
+      <b>Mockup note.</b>
+      <ul>
+        <li>The email band sits beside "Coming up" on wide screens and stays in view while the list scrolls; under 1000 px it comes before the list.</li>
+        <li>Cut-off card: <code>session-list.tsx</code> gives each row <code>id="week-N"</code>, and <code>site.css</code> has no <code>scroll-margin-top</code>, so a jump to <code>#week-2</code> puts the card top under the 64 px sticky header. Here each row has <code>scroll-margin-top: calc(header height + 24px)</code>, which also follows the shorter phone header. Open <a class="ifs-link" href="#week-2">#week-2</a> to check.</li>
+        <li>The linked week should also open on arrival; today only the next week opens by default.</li>
+      </ul>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

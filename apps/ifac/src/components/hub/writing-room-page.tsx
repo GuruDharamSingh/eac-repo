@@ -21,8 +21,11 @@ import { Button } from "@elkdonis/primitives";
  *
  * Publishing navigates to the finished piece rather than replacing a layer,
  * because a page has no layer to replace.
+ *
+ * `studioHref` adds "Open in Studio": the network Studio on arts-collective
+ * (lib/hub-links.ts), in a new tab so a draft here is not left behind.
  */
-export function WritingRoomPage({ threadId }: { threadId?: string }) {
+export function WritingRoomPage({ threadId, studioHref }: { threadId?: string; studioHref?: string }) {
   const router = useRouter();
 
   const room = useWritingRoom({
@@ -39,12 +42,20 @@ export function WritingRoomPage({ threadId }: { threadId?: string }) {
 
   return (
     <div className="ifac-room">
-      {/* No back control here: the compose page's own header already has
-          one, and two "Back to the hub" buttons 250px apart is worse than
-          none. */}
+      {/* No back control here: the compose page's breadcrumb is the way
+          back. */}
       <div className="ifac-room-head">
-        <p className="kicker">{editing ? "Writing room · editing" : "Writing room"}</p>
-        <h2 className="ifac-room-title">{title.trim() || "New post"}</h2>
+        <div>
+          <p className="kicker">{editing ? "Writing room · editing" : "Writing room"}</p>
+          <h2 className="ifac-room-title">{title.trim() || "New post"}</h2>
+        </div>
+        {studioHref ? (
+          <Button asChild variant="outline" size="sm" className="ifac-room-studio">
+            <a href={studioHref} target="_blank" rel="noopener">
+              Open in Studio ↗
+            </a>
+          </Button>
+        ) : null}
       </div>
 
       {loading ? (

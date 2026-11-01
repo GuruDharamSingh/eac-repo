@@ -10,7 +10,9 @@ import {
   listOrgEventsInRange,
   listListingRequests,
 } from "@elkdonis/services";
-import { getOrgBySlug, getOrgFeed } from "@/lib/org";
+import { getOrgBySlug, getOrgFeed, getOfferingThread } from "@/lib/org";
+import { hasOrgHome } from "@/lib/puck/store";
+import { removeOrgHomeAction } from "@/lib/puck/actions";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
 import { getConsoleState, paymentsConfigured } from "@/lib/org-console";
 import { getCrossOrgForum } from "@/lib/org-forum";
@@ -112,7 +114,7 @@ export default async function OrganizationTabPage({
   // "Open site" only where the address works: a verified own domain, or the
   // collective itself. *.arts-collective.com resolves but has no certificate
   // in production (checked 2026-09-18), so a subdomain link is an error page.
-  const siteLive = Boolean(identity?.primaryDomain) || selected.orgSlug === "elkdonis";
+  const siteLive = Boolean(identity?.primaryDomain) || selected.orgSlug === "arts-collective";
   const ARTDIRECT = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
   // Members show by default; these hid themselves and asked back (migration 149).
   const listingRequests = canEdit ? await listListingRequests(selected.orgId).catch(() => []) : [];
@@ -134,6 +136,19 @@ export default async function OrganizationTabPage({
   // Member-only: what the org has published lately, linked to its home.
   const recent = canEdit ? [] : await getOrgFeed(selected.orgId, 6);
 
+  // Editor-only: what the subdomain root shows today (Settings → Site & address).
+  const [designed, offering] = canEdit
+    ? await Promise.all([hasOrgHome(selected.orgId), getOfferingThread(selected.orgId)])
+    : [false, null];
+  const leading: ConsoleSettingsProps["leading"] =
+    org?.layout_mode === "silex" && org.silex_published_path
+      ? { mode: "silex" }
+      : designed
+        ? { mode: "designed" }
+        : offering
+          ? { mode: offering.pinned ? "pinned" : "latest", title: offering.title }
+          : { mode: "default" };
+
   // The email face draws real correspondence, so it needs the suite's data —
   // and only editors get it, because the face's own controls send in the org's
   // name. A member sees no tile rather than a tile that refuses them.
@@ -154,6 +169,10 @@ export default async function OrganizationTabPage({
         homeUrl,
         layoutMode: org?.layout_mode === "silex" ? "silex" : "default",
         hasPublishedSilex: Boolean(org?.silex_published_path),
+        designHref: `/hub/sites/${encodeURIComponent(selected.orgSlug)}/design`,
+        hasDesignedPage: designed,
+        leading,
+        onRemoveDesign: removeOrgHomeAction,
         identity: {
           displayName: identity?.orgName ?? selected.orgName,
           headline: identity?.headline ?? "",
@@ -191,6 +210,7 @@ export default async function OrganizationTabPage({
       feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
       settings={settings}
       email={emailSuite}
+      hasDesignedPage={designed}
     >
       <div className="w-full py-10">
         <header className="mb-8 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
@@ -285,6 +305,21 @@ export default async function OrganizationTabPage({
               orgSlug={selected.orgSlug}
               paymentsReady={paymentsConfigured()}
             />
+
+            <section className="space-y-2 border-t border-border pt-6 text-sm">
+              <h2 className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                Store
+              </h2>
+              <p>
+                <Link className="underline underline-offset-4" href={`/hub/store?org=${selected.orgSlug}`}>
+                  Store team &amp; beneficiaries →
+                </Link>
+                <span className="ml-2 text-muted-foreground">
+                  Who may list and sell for {selected.orgName} on the marketplace, and where a
+                  listing&rsquo;s money may go.
+                </span>
+              </p>
+            </section>
 
             {owner && (
               <section className="space-y-2 border-t border-border pt-6 text-sm">

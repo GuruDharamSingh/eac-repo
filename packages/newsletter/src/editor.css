@@ -22,8 +22,11 @@
 }
 .eac-nl-actions button:hover:not(:disabled) { border-color: #999; }
 .eac-nl-actions button:disabled { opacity: .55; cursor: default; }
-.eac-nl-primary { background: #111; border-color: #111 !important; color: #fff; }
-.eac-nl-primary:hover:not(:disabled) { background: #333; }
+/* Scoped under .eac-nl-actions: `.eac-nl-actions button` above sets a white
+   background at higher specificity than a bare `.eac-nl-primary`, which left
+   white text on white (seen on IFAC, 2026-10-10). */
+.eac-nl-actions .eac-nl-primary { background: #111; border-color: #111 !important; color: #fff; }
+.eac-nl-actions .eac-nl-primary:hover:not(:disabled) { background: #333; }
 .eac-nl-status { font: 12px system-ui, sans-serif; color: #6b7280; }
 
 /* min-height:0 matters: without it the flex child refuses to shrink and the

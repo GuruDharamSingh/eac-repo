@@ -15,6 +15,7 @@ const TABS = [
   { href: "/manage/sections", label: "Site copy & events" },
   { href: "/manage/submissions", label: "Submissions" },
   { href: "/manage/email", label: "Email" },
+  { href: "/manage/store", label: "Store" },
   { href: "/manage/appearance", label: "Appearance" },
   { href: "/manage/cloud", label: "Cloud storage" },
   { href: "/manage/analytics", label: "Visitors" },

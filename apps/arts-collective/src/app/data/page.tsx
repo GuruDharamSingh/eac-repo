@@ -1,14 +1,20 @@
 import Link from "next/link";
+import "@elkdonis/cms-ui/data-policy.css";
+import { DataPolicy } from "@elkdonis/cms-ui/data-policy";
 import { SiteShell } from "@/components/site-shell";
 
 export const metadata = {
   title: "Your data · Elkdonis Arts Collective",
 };
 
+export const POLICY_UPDATED = "2026-10-29";
+export const CONTACT_EMAIL = "info@elkdonis-arts.org";
+
 /**
- * The data notice linked from the landing footer. Each statement here is
- * either a fact about the platform (cookieless analytics: packages/analytics)
- * or a commitment the collective has made; keep it to those.
+ * The data notice linked from the landing footer. The three opening
+ * statements are the collective's own; the sections after them are the
+ * shared policy (@elkdonis/cms-ui/data-policy), the same text as on
+ * elkdonis-arts.org/data. Registered with Meta as the app's privacy policy.
  */
 export default function DataPage() {
   return (
@@ -49,10 +55,26 @@ export default function DataPage() {
             <h2 className="font-serif text-xl">Leaving</h2>
             <p className="text-muted-foreground">
               If you want to go, ask an organiser of your collective or the
-              network administrators. We will give you a copy of your files
-              and what you have published, and remove your account.
+              network administrators, or use the{" "}
+              <Link href="/data/delete" className="underline underline-offset-4">deletion page</Link>.
+              We will give you a copy of your files and what you have published,
+              and remove your account.
             </p>
           </section>
+        </div>
+
+        <hr className="my-12 border-border/60" />
+
+        <div
+          className="text-sm text-foreground"
+          style={{ ["--policy-heading-face" as string]: "var(--font-serif, Georgia, serif)" }}
+        >
+          <DataPolicy
+            orgName="The Elkdonis Arts Collective"
+            host="arts-collective.com"
+            contactEmail={CONTACT_EMAIL}
+            updated={POLICY_UPDATED}
+          />
         </div>
 
         <p className="mt-12 text-sm">

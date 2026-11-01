@@ -21,12 +21,36 @@ export type ComposeKindId =
   | "article"
   | "event"
   | "meeting"
+  | "series"
   | "workshop"
   | "service"
   | "questionnaire"
   | "poll"
   | "art-piece"
   | "blog";
+
+/**
+ * Options that are one door with a switch on the form rather than separate
+ * cards in the picker: "One meeting | Series" (2026-10-10). The picker shows
+ * only the group's `primary` option; the form above shows the switch.
+ */
+export interface ComposeOptionGroup {
+  id: "gathering";
+  /** The option's name on the switch. */
+  label: string;
+  /** The option the picker shows for the whole group. */
+  primary?: boolean;
+}
+
+/** What the switch for a group says: a short question and one or two neutral lines. */
+export const COMPOSE_GROUPS: Record<ComposeOptionGroup["id"], { prompt: string; help: string }> = {
+  gathering: {
+    prompt: "Recurring series?",
+    help:
+      "A series is a set of sessions on a regular day and time, with one page and one join link. " +
+      "You plan each week (host, title, write-up) in the series planner.",
+  },
+};
 
 export interface ComposeOption {
   id: ComposeKindId;
@@ -63,6 +87,8 @@ export interface ComposeOption {
    * `connectors.custom["compose:<id>"]` to answer for it.
    */
   writes: { table: "threads" | "questionnaires" | "artwork" | "writing"; kind: string };
+  /** Set when this option shares a door with others (see `ComposeOptionGroup`). */
+  group?: ComposeOptionGroup;
 }
 
 export interface ComposeContext {
@@ -114,6 +140,16 @@ export interface ComposeContext {
    * meeting kind, which otherwise promises a room it cannot create.
    */
   hasMeetings?: boolean;
+  /**
+   * Whether this org runs meeting series (kind `series`: weekly sessions
+   * planned week by week in a series planner). Adds "Series" beside
+   * "Meeting" as "One meeting | Series". Off by default: the host needs the
+   * series pages and planner (IFAC, 2026-10-10) for the option to lead
+   * anywhere.
+   */
+  hasSeries?: boolean;
+  /** Hide the standalone Event option (IFAC, 2026-10-10: a meeting covers it). */
+  hideEvents?: boolean;
   /**
    * How a workshop is authored: the ten-step template wizard on its own page
    * ("route", the default — arts-collective), or the compose surface's form
@@ -168,7 +204,7 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     icon: "◆",
     mode: "dialog",
     writes: { table: "threads", kind: "event" },
-    available: (ctx) => ctx.canPublishContent !== false && ctx.canPublishDated !== false,
+    available: (ctx) => ctx.canPublishContent !== false && ctx.canPublishDated !== false && !ctx.hideEvents,
   },
   {
     id: "meeting",
@@ -177,8 +213,22 @@ const ALL: Array<ComposeOption & { available: (ctx: ComposeContext) => boolean }
     icon: "◎",
     mode: "dialog",
     writes: { table: "threads", kind: "meeting" },
+    group: { id: "gathering", label: "One meeting", primary: true },
     available: (ctx) =>
       ctx.canPublishContent !== false && ctx.canPublishDated !== false && Boolean(ctx.hasMeetings),
+  },
+  {
+    id: "series",
+    title: "Series",
+    blurb: "Sessions on a regular day and time",
+    icon: "◎",
+    mode: "dialog",
+    writes: { table: "threads", kind: "series" },
+    group: { id: "gathering", label: "Series" },
+    // Dated and org-wide, like a meeting; and only where the host has the
+    // series pages and planner to send it to.
+    available: (ctx) =>
+      ctx.canPublishContent !== false && ctx.canPublishDated !== false && Boolean(ctx.hasSeries),
   },
   {
     id: "workshop",
@@ -251,6 +301,23 @@ export function buildComposeCatalogue(ctx: ComposeContext): ComposeOption[] {
     }
     return { ...option, href: option.href?.replace(":orgSlug", ctx.orgSlug) };
   });
+}
+
+/**
+ * The options a picker draws: one card per group (its primary option), so
+ * "Series" is reached through "Meeting" and its switch rather than as a
+ * second card. A grouped option whose primary is unavailable keeps its card.
+ */
+export function pickerOptions(options: ComposeOption[]): ComposeOption[] {
+  const primaries = new Set(options.filter((o) => o.group?.primary).map((o) => o.group!.id));
+  return options.filter((o) => !o.group || o.group.primary || !primaries.has(o.group.id));
+}
+
+/** The other options sharing `selected`'s door, itself included, in catalogue order. */
+export function groupOptions(options: ComposeOption[], selected: ComposeOption | null): ComposeOption[] {
+  if (!selected?.group) return [];
+  const members = options.filter((o) => o.group?.id === selected.group!.id);
+  return members.length > 1 ? members : [];
 }
 
 /** Look one up by id, after filtering — returns undefined if unavailable here. */

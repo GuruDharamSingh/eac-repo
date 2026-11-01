@@ -8,6 +8,7 @@ import {
 import { sanitizeRichText } from "@elkdonis/utils";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
+import { saveSeriesLetter, seriesScopeFrom } from "@/lib/series-letters-store";
 
 /**
  * Save this organisation's version of one email.
@@ -19,6 +20,11 @@ import { siteConfig } from "@/config/site";
  *
  * The AUTHORISATION BOUNDARY is here. Nothing in @elkdonis/email checks who is
  * asking; every function there takes the orgId it is handed.
+ *
+ * `?series=<id>&purpose=<p>` saves one series' version instead (the key
+ * `reminder:<id>:<purpose>` or `rsvp-guest:<id>`): the series must be an
+ * IFAC series and the purpose one of `REMINDER_PURPOSES` (reminder only).
+ * See `lib/series-letters.ts`.
  */
 export async function PUT(
   request: NextRequest,
@@ -31,6 +37,10 @@ export async function PUT(
   const meta = templateMeta(key);
   if (!isTemplateKey(key) || !meta?.editable) {
     return NextResponse.json({ error: "Unknown template" }, { status: 404 });
+  }
+  const target = await seriesScopeFrom(request.nextUrl.searchParams, key);
+  if (target.kind === "error") {
+    return NextResponse.json({ error: target.error }, { status: target.status });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -70,16 +80,24 @@ export async function PUT(
     return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
   }
 
-  const result = await saveOrgTemplate(siteConfig.orgId, key, input, editor.userId);
+  const result =
+    target.kind === "series"
+      ? await saveSeriesLetter(target.scope, input, editor.userId)
+      : await saveOrgTemplate(siteConfig.orgId, key, input, editor.userId);
   if (!result.ok) {
     return NextResponse.json({ error: result.error ?? "Could not save" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }
 
-/** Drop this org's override so the network's default applies again. */
+/**
+ * Drop this org's override so the network's default applies again. With
+ * `?series=&purpose=`, drop only that series' row (`clearOrgTemplate` deletes
+ * exactly the key it is given), so the IFAC letter applies to the series
+ * again; the org-wide row is not touched.
+ */
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ key: string }> }
 ) {
   const { key } = await params;
@@ -88,7 +106,14 @@ export async function DELETE(
   if (!isTemplateKey(key)) {
     return NextResponse.json({ error: "Unknown template" }, { status: 404 });
   }
+  const target = await seriesScopeFrom(request.nextUrl.searchParams, key);
+  if (target.kind === "error") {
+    return NextResponse.json({ error: target.error }, { status: target.status });
+  }
 
-  const ok = await clearOrgTemplate(siteConfig.orgId, key);
+  const ok = await clearOrgTemplate(
+    siteConfig.orgId,
+    target.kind === "series" ? target.scope.scopedKey : key
+  );
   return NextResponse.json({ ok }, { status: ok ? 200 : 500 });
 }

@@ -75,7 +75,7 @@ export function ArrivalNotice({ endpoint }: ArrivalNoticeProps) {
   return (
     <aside role="status" aria-label="Signed in through the network" style={box}>
       <p style={{ margin: 0 }}>
-        Signed in as <strong>{who}</strong> through the Elkdonis network.
+        Signed in as <strong>{who}</strong> through the Arts Collective network.
       </p>
       <p style={{ margin: "0.35rem 0 0", color: "var(--eac-control-muted, #555)" }}>
         You are on {orgName}

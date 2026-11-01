@@ -1,0 +1,129 @@
+/* ==========================================================================
+   /series, every series IFAC runs (2026-10-18). Developer's choice from
+   docs/open/series-index-mockups-2026-10-18/: B's cards as a carousel, A's
+   larger type, rows or a calendar, an "Earlier series" shelf. Sits inside
+   `.ifs` (site.css tokens). Series colours come in as --acc (mark) and
+   --acc-text (label) from SERIES_ACCENTS (packages/services/src/series-page.ts),
+   all >= 9:1 as text on #0b0b0d and >= 3:1 as marks.
+   Pairs: ink #ece7e1 on #0b0b0d 16.0:1, muted #b3ada3 8.8:1, faint
+   #857f76 4.7:1; gold-on #0b0b0d on #c9a24a 8.2:1.
+   ========================================================================== */
+
+.isx-intro { padding: 52px 0 6px; }
+.isx-intro h1 { font-size: clamp(2.5rem, 4.6vw, 3.8rem); margin-top: 6px; max-width: 20ch; }
+.isx-intro__text { margin-top: 16px; max-width: 64ch; font-size: 1.2rem; color: var(--ifs-muted); }
+
+/* ── the cards, a carousel past two ── */
+.isx-cards { padding-top: 30px; }
+.isx-carousel { position: relative; }
+.isx-carousel__track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 24px) / 2);
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  padding-bottom: 6px;
+}
+.isx-carousel.is-single .isx-carousel__track { grid-auto-columns: 100%; }
+.isx-carousel__nav { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.isx-carousel__nav .ifs-btn { min-width: 48px; font-size: 1.3rem; }
+.isx-carousel__nav .ifs-btn:disabled { opacity: 0.4; cursor: default; }
+
+.isx-card {
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  border: 1px solid var(--ifs-line-strong);
+  border-top: 5px solid var(--acc, var(--ifs-gold));
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ifs-bg-2);
+}
+.isx-carousel.is-single .isx-card { grid-template-rows: none; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.isx-card__cover { position: relative; display: block; aspect-ratio: 16 / 10; }
+.isx-carousel.is-single .isx-card__cover { aspect-ratio: auto; min-height: 360px; }
+.isx-card__media { position: absolute; inset: 0; }
+.isx-card__blank { display: grid; place-items: center; background: radial-gradient(80% 80% at 50% 35%, #2a1540, #070709); }
+.isx-card__blank img { width: 46%; max-width: 240px; height: auto; }
+.isx-card__tag {
+  position: absolute; top: 14px; left: 14px; padding: 5px 12px;
+  background: rgba(5, 5, 6, 0.88); border: 1px solid var(--acc, var(--ifs-gold)); border-radius: 999px;
+  color: var(--acc-text, var(--ifs-gold-text)); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.isx-card__body { padding: 24px 26px 26px; display: grid; gap: 14px; align-content: start; }
+.isx-card__rhythm { display: inline-flex; align-items: center; gap: 9px; font-size: 0.86rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--acc-text, var(--ifs-gold-text)); }
+.isx-card__rhythm i { width: 11px; height: 11px; border-radius: 50%; background: var(--acc, var(--ifs-gold)); }
+.isx-card__t { font-size: clamp(2rem, 2.8vw, 2.5rem); line-height: 1.08; }
+.isx-card__t a { color: var(--ifs-ink); }
+.isx-card__t a:hover, .isx-card__t a:focus-visible { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+.isx-card__lede { font-size: 1.15rem; color: var(--ifs-muted); line-height: 1.55; }
+.isx-card__time { font-size: 1.02rem; color: var(--ifs-muted); }
+.isx-card__acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+.isx-next {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center;
+  padding: 14px 16px; border: 1px solid var(--ifs-line-strong); border-radius: 10px; background: var(--ifs-bg);
+}
+.isx-next:hover { border-color: var(--acc, var(--ifs-gold)); }
+.isx-next--empty { display: block; color: var(--ifs-muted); font-size: 1rem; }
+.isx-next__date { text-align: center; line-height: 1.05; border: 1px solid var(--acc, var(--ifs-gold)); border-radius: 8px; padding: 7px 10px; min-width: 60px; }
+.isx-next__date b { display: block; font: 600 1.6rem var(--ifs-serif); }
+.isx-next__date small { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ifs-muted); }
+.isx-next > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.isx-next__k { font-size: 0.76rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--acc-text, var(--ifs-gold-text)); }
+.isx-next__t { font: 500 1.4rem/1.15 var(--ifs-serif); color: var(--ifs-ink); }
+.isx-next__h { font-size: 0.95rem; color: var(--ifs-muted); }
+
+/* ── sessions: list or calendar ── */
+.isx-sessions { padding: 56px 0 8px; }
+.isx-sessions__head { margin-bottom: 8px; }
+.isx-switch { display: inline-flex; gap: 8px; margin-bottom: 18px; }
+.isx-switch .ifs-btn.is-on { border-color: var(--ifs-ink); background: var(--ifs-bg-3); }
+.isx-view--calendar .isx-view__list { display: none; }
+.isx-week + .isx-week { margin-top: 10px; }
+.isx-week__h { display: flex; align-items: center; gap: 12px; margin: 18px 0 10px; font-size: 0.82rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ifs-muted); font-weight: 700; }
+.isx-week__h::after { content: ""; flex: 1; height: 1px; background: var(--ifs-line); }
+.isx-note { margin-top: 18px; font-size: 0.98rem; }
+
+.isx-cal { border: 1px solid var(--ifs-line-strong); border-radius: 12px; overflow: hidden; background: var(--ifs-bg-2); }
+.isx-cal__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 16px 20px; border-bottom: 1px solid var(--ifs-line-strong); }
+.isx-cal__head h3 { font-size: 1.8rem; }
+.isx-cal__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--ifs-muted); font-size: 0.98rem; }
+.isx-cal__legend span { display: inline-flex; align-items: center; gap: 8px; }
+.isx-cal__legend i { width: 11px; height: 11px; border-radius: 50%; }
+.isx-cal__dow, .isx-cal__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.isx-cal__dow span { padding: 9px 10px; font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ifs-muted); font-weight: 700; border-bottom: 1px solid var(--ifs-line); }
+.isx-cal__day { min-height: 118px; padding: 8px; display: grid; align-content: start; gap: 6px; border-right: 1px solid var(--ifs-line); border-bottom: 1px solid var(--ifs-line); min-width: 0; }
+.isx-cal__day:nth-child(7n) { border-right: 0; }
+.isx-cal__n { font-size: 0.92rem; color: var(--ifs-muted); }
+.isx-cal__day.is-today .isx-cal__n { color: var(--ifs-ink); font-weight: 700; }
+.isx-cal__day.is-past .isx-cal__n { color: var(--ifs-faint); }
+.isx-cal__ev { display: grid; gap: 2px; padding: 7px 9px; border-radius: 6px; border-left: 4px solid var(--acc); background: var(--ifs-bg-3); font-size: 0.88rem; line-height: 1.25; min-width: 0; }
+.isx-cal__ev b { font-weight: 600; color: var(--ifs-ink); overflow-wrap: anywhere; }
+.isx-cal__ev span { color: var(--ifs-muted); font-size: 0.82rem; }
+.isx-cal__ev:hover b, .isx-cal__ev:focus-visible b { text-decoration: underline; }
+
+/* ── earlier series ── */
+.isx-earlier { padding: 56px 0 8px; }
+.isx-shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+.isx-shelf a { display: grid; gap: 6px; padding-bottom: 6px; border-bottom: 3px solid var(--acc, var(--ifs-line-strong)); }
+.isx-shelf b { font: 500 1.3rem/1.15 var(--ifs-serif); color: var(--ifs-ink); }
+.isx-shelf__cover { aspect-ratio: 16 / 9; border-radius: 8px; }
+.isx-shelf__cover.is-empty { display: block; background: radial-gradient(80% 80% at 50% 35%, #2a1540, #070709); }
+
+@media (max-width: 900px) {
+  .isx-carousel.is-single .isx-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .isx-carousel.is-single .isx-card__cover { aspect-ratio: 16 / 10; min-height: 0; }
+}
+@media (max-width: 760px) {
+  .isx-carousel__track { grid-auto-columns: 88%; gap: 14px; }
+  .isx-carousel.is-single .isx-carousel__track { grid-auto-columns: 100%; }
+  .isx-card__body { padding: 18px 16px 20px; }
+  /* Phones: always the list. */
+  .isx-switch, .isx-cal { display: none; }
+  .isx-view--calendar .isx-view__list { display: block; }
+  .isx-intro { padding-top: 36px; }
+}

@@ -80,18 +80,56 @@ export function splitCommission(
 }
 
 /**
- * Compute the next minimum bid given current bid and increment.
- * If no current bid, returns the lot's starting bid.
+ * One band of a bid-increment ladder: bids up to `upTo` (minor units, inclusive)
+ * step by `step`; the last band has no `upTo`. ORG_STORE_BRIEF R4.
+ */
+export interface IncrementStep {
+  upTo?: number;
+  step: number;
+}
+
+/** The marketplace default ladder (minor units): <$100 $5 · $100–499 $10 · $500–999 $25 · $1k–4,999 $100 · $5k+ $250. */
+export const DEFAULT_INCREMENT_LADDER: IncrementStep[] = [
+  { upTo: 9999, step: 500 },
+  { upTo: 49999, step: 1000 },
+  { upTo: 99999, step: 2500 },
+  { upTo: 499999, step: 10000 },
+  { step: 25000 },
+];
+
+/** The increment that applies at a given current bid. */
+export function incrementAt(currentMinor: number, ladder: IncrementStep[] | null | undefined): number {
+  const steps = Array.isArray(ladder) && ladder.length > 0 ? ladder : DEFAULT_INCREMENT_LADDER;
+  const cur = Number(currentMinor);
+  for (const s of steps) {
+    if (s.upTo == null || cur <= Number(s.upTo)) return Math.max(1, Number(s.step));
+  }
+  return Math.max(1, Number(steps[steps.length - 1]!.step));
+}
+
+/**
+ * Compute the next minimum bid given the current bid and the lot's increment
+ * rule: a ladder when the lot carries one, else its flat increment. With no
+ * current bid, the starting bid.
  */
 export function nextMinimumBid(opts: {
   startingBidMinor: number;
   currentBidMinor?: number | null;
   bidIncrementMinor: number;
+  ladder?: IncrementStep[] | null;
 }): number {
   // Number(): a bigint column that reaches here as a string would otherwise
   // concatenate ("1500" + 1000 = "15001000").
   if (opts.currentBidMinor == null) return Number(opts.startingBidMinor);
-  return Number(opts.currentBidMinor) + Number(opts.bidIncrementMinor);
+  const cur = Number(opts.currentBidMinor);
+  const inc = opts.ladder && opts.ladder.length > 0 ? incrementAt(cur, opts.ladder) : Number(opts.bidIncrementMinor);
+  return cur + inc;
+}
+
+/** The ladder a lot uses, read from its metadata; null means its flat increment. */
+export function lotLadder(metadata: Record<string, unknown> | null | undefined): IncrementStep[] | null {
+  const l = metadata?.ladder;
+  return Array.isArray(l) && l.length > 0 ? (l as IncrementStep[]) : null;
 }
 
 /** Pretty short money for badges: "$1.2k" / "$899" */

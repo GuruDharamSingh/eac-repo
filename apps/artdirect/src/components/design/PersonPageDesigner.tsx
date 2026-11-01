@@ -20,7 +20,7 @@ import { OfferingPickerField } from "./OfferingPickerField";
 // profile page) and /<slug>/featured/design (their featured page).
 //
 // The canvas is wrapped in the same frame as the published page
-// (`.eac-person-page.eac-person-page--frame.oad-person`), so what is arranged
+// (`.eac-person-page.eac-person-page--oad.oad-person`), so what is arranged
 // here is what shows there. The person blocks read `metadata.person`, loaded
 // by the route; the resolvers are the published page's own
 // (personPageResolvers), so there is no HTTP twin.
@@ -49,7 +49,7 @@ export interface PersonPageDesignerProps {
 /** The published page's frame, around the canvas. */
 function FrameWrap({ children }: { settings: Record<string, unknown>; children?: ReactNode }) {
   return (
-    <div className="eac-person-page eac-person-page--frame oad-person" data-person-page="">
+    <div className="eac-person-page eac-person-page--oad oad-person" data-person-page="">
       <div className="oad-person-doc">{children}</div>
     </div>
   );

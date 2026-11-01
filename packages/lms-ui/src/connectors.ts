@@ -1,11 +1,39 @@
 import type { ComponentType } from "react";
-import type { AcknowledgeResult, CreateDiscussionThread, HubWorkshop, LmsViewer, Offering, Realm } from "@elkdonis/lms";
+import type { AcknowledgeResult, CreateDiscussionThread, HubWorkshop, LmsViewer, Offering, Realm, StepTask, TaskStatus } from "@elkdonis/lms";
 
 /** A host-supplied rich-text editor. It must render a form field called `name` holding HTML. */
 export type LmsEditorProps = { name: string; defaultValue: string; ariaLabel: string };
 
 export interface LmsHostViewer extends LmsViewer {
   name: string | null;
+}
+
+/** What a `task` step's box receives from the page. The host draws it (a client component). */
+export interface LmsTaskBoxProps {
+  task: StepTask;
+  status: TaskStatus;
+  signedIn: boolean;
+  /** Enrolled in this course, so a finished task will be recorded. */
+  enrolled: boolean;
+  /** This step's own path, for "come back here" return links. */
+  here: string;
+  signInHref: string;
+  /** The organisation an `org` task acts on, when the viewer owns one. */
+  orgId: string | null;
+}
+
+/**
+ * Task steps ("do it on the platform", completion mode `derived`): the host
+ * says whether each task is done and draws the box that lets the learner do
+ * it in place. See packages/lms/src/tasks.ts.
+ */
+export interface LmsTaskConnectors {
+  /** Is this task done for this viewer? Called on every render of the step; keep it cheap or cached. */
+  status: (task: StepTask, viewer: LmsHostViewer, ctx: { orgId: string | null }) => Promise<TaskStatus>;
+  /** The organisation `org` tasks act on for this viewer; `requested` is a `?org=` override. Absent = none. */
+  orgFor?: (viewer: LmsHostViewer, requested: string | null) => Promise<string | null>;
+  /** The box under the lesson text. A client component may open the host's surfaces. */
+  render: ComponentType<LmsTaskBoxProps>;
 }
 
 export interface LmsHrefs {
@@ -81,4 +109,6 @@ export interface LmsConnectors {
   offeringUrl?: (o: Offering) => string;
   /** Tell a learner their guide answered. Absent = in-app only. Must never throw. */
   notifyAcknowledged?: (n: AcknowledgeResult, stepUrl: string) => Promise<void>;
+  /** Task steps. Absent = a task step reads as text and never completes. */
+  tasks?: LmsTaskConnectors;
 }

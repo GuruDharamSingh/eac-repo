@@ -13,13 +13,15 @@
  */
 export const siteConfig = {
   orgId: "inner_group",
-  orgName: "InnerGathering",
+  orgName: "Elkdonis Arts Collective",
   shortName: "EAC",
   tagline: "Elkdonis Arts Collective — a mutual aid society for objective arts, education and cultural exchange",
   city: "Toronto",
   landingConfigOrgId: "elkdonis",
   /** Fallback recipient for guest RSVP and contact notifications. */
   fallbackNotifyEmail: process.env.INNERGATHERING_OWNER_EMAIL ?? "info@elkdonis-arts.org",
+  /** The org's zone for dates on /center and the hub. No site_config key holds it (2026-10-08). */
+  timeZone: "America/Toronto",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Programme</title>
+<link rel="stylesheet" href="mock.css">
+<style>
+/* A: one wide general card per series, stacked; then every series' sessions
+   in one chronological list, each row marked with its series' colour. */
+.intro { padding: 48px 0 8px; display: grid; gap: 14px; }
+.intro h1 { font-size: clamp(2.4rem, 4.4vw, 3.6rem); }
+.scards { display: grid; gap: 22px; margin-top: 30px; }
+.scard { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); border: 2px solid var(--frame); background: var(--bg2); }
+.scard .cover { min-height: 330px; }
+.scard__body { padding: 26px 28px 26px; display: grid; gap: 14px; align-content: start; }
+.scard__body h2 { font-size: clamp(1.9rem, 2.8vw, 2.5rem); }
+.scard__body h2 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+.scard__top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.scard__acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters .btn.on { border-color: var(--ink); }
+@media (max-width: 860px) {
+  .scard { grid-template-columns: minmax(0, 1fr); }
+  .scard .cover { min-height: 0; aspect-ratio: 16 / 9; }
+  .scard__body { padding: 18px 16px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="mockbar"><b>Mockup A · Programme</b> <span>/series · 2026-10-18 · static, no app code</span> <a href="index.html">all mockups</a></div>
+<header class="hdr"><div class="wrap"><a class="hdr__logo" href="#">IFAC</a><nav><a href="#">Home</a><a class="on" href="#">Series</a><a href="#">About</a><a href="#">Publications</a><a href="#">Forum</a><a class="join" href="#">Join / Sign in</a></nav></div></header>
+
+<main class="wrap">
+  <section class="intro">
+    <p class="eyebrow">IFAC series</p>
+    <h1>Series on art, from IFAC</h1>
+    <p class="lede">IFAC runs online series for people who love art. Each series has its own theme and its own hosts, artists and dealers from the collective. Sessions are free. Come to one, or subscribe to a series and we'll email you before each session.</p>
+    <p class="note"><b>Editable intro.</b> Heading and text are an organisation setting, edited from the hub (see mockup E). Wording here is a placeholder.</p>
+  </section>
+
+  <section class="scards" aria-label="Series">
+    <article class="scard s1">
+      <a class="cover" href="#"><img src="img/painter.jpg" alt=""><span class="cover__tag">Running</span><span class="cover__play">▶ Series video</span></a>
+      <div class="scard__body">
+        <div class="scard__top"><span class="sname"><span class="dot"></span>Weekly · Mondays</span><span class="faint">Session 2 of an open series</span></div>
+        <h2><a href="d-series-page.html">Explorations in Art Forms by Non Professionals</a></h2>
+        <p class="muted">A weekly online hour for people who love art and might be hesitant to engage creating or are looking for new forms. Each week a different IFAC artist or dealer hosts.</p>
+        <div class="facts"><span>Mondays</span><span>6 pm Pacific · 9 pm Eastern · 3 am Paris (Tue)</span><span>Online · free</span></div>
+        <div class="hosts"><span class="hosts__faces"><img src="img/kevin.jpg" alt=""><img src="img/eric.jpg" alt=""><i>J</i></span>Kevin Meadows, Eric Brummel, Jason Ford and others</div>
+        <a class="nextline" href="#">
+          <span class="nextline__date"><small>Mon</small><b>19</b><small>Oct</small></span>
+          <span><span class="nextline__k">Next session · tomorrow</span><br><span class="nextline__t">Putting Art as Tai Chi into Practice</span><br><span class="nextline__h">with Kevin Meadows</span></span>
+          <span class="btn btn--s btn--p">I'm coming</span>
+        </a>
+        <div class="scard__acts"><a class="btn" href="d-series-page.html">Open the series →</a><a class="btn" href="#">Subscribe</a></div>
+      </div>
+    </article>
+
+    <article class="scard s2">
+      <a class="cover cover--blank" href="#"><img src="img/ifac-lettering.png" alt=""><span class="cover__tag">Starts 5 Nov</span></a>
+      <div class="scard__body">
+        <div class="scard__top"><span class="sname"><span class="dot"></span>Fortnightly · Thursdays</span><span class="faint">6 sessions</span></div>
+        <h2><a href="#">Looking Closely</a></h2>
+        <p class="muted">One painting, one hour: a host brings a single work from their collection and the group looks at it slowly together.</p>
+        <div class="facts"><span>Thursdays, every other week</span><span>5 pm Pacific · 8 pm Eastern</span><span>Online · free</span></div>
+        <div class="hosts"><span class="hosts__faces"><i>?</i></span>Hosts to be announced</div>
+        <a class="nextline" href="#">
+          <span class="nextline__date"><small>Thu</small><b>5</b><small>Nov</small></span>
+          <span><span class="nextline__k">First session</span><br><span class="nextline__t">To be announced</span><br><span class="nextline__h">Subscribe to hear when it's posted</span></span>
+          <span class="btn btn--s">Subscribe</span>
+        </a>
+        <div class="scard__acts"><a class="btn" href="#">Open the series →</a></div>
+      </div>
+    </article>
+    <p class="note"><b>Second series is a placeholder</b> (title, schedule, copy). Card order: running series first, then by first session date; an organiser can pin one first.</p>
+  </section>
+
+  <section class="sec">
+    <div class="sec__head">
+      <div><p class="eyebrow">Sessions</p><h2>Coming up</h2></div>
+      <div class="filters"><a class="btn btn--s on" href="#">All series</a><a class="btn btn--s s1" href="#"><span class="dot s1"></span>Explorations</a><a class="btn btn--s" href="#"><span class="dot s2"></span>Looking Closely</a></div>
+    </div>
+    <div class="rows">
+      <p class="weekhead">This week</p>
+      <article class="row s1"><div class="datebox"><small>Mon</small><b>19</b><small>Oct</small></div><div><span class="sname"><span class="dot"></span>Explorations · Session 2</span><p class="row__t">Putting Art as Tai Chi into Practice</p><p class="row__sub">A relaxed, hands-on painting workshop</p><p class="row__meta"><img src="img/kevin.jpg" alt="">Kevin Meadows · 6 pm Pacific</p></div><div class="row__side"><a class="btn btn--s btn--p" href="#">I'm coming</a></div></article>
+      <p class="weekhead">Week of 26 October</p>
+      <article class="row s1"><div class="datebox"><small>Mon</small><b>26</b><small>Oct</small></div><div><span class="sname"><span class="dot"></span>Explorations · Session 3</span><p class="row__t">Collage workshop</p><p class="row__meta"><i class="dot" style="background:#3a3a42"></i>Jason Ford aka sunjye · 6 pm Pacific</p></div><div class="row__side"><a class="btn btn--s btn--p" href="#">I'm coming</a></div></article>
+      <p class="weekhead">Week of 2 November</p>
+      <article class="row s1 is-tba"><div class="datebox"><small>Mon</small><b>2</b><small>Nov</small></div><div><span class="sname"><span class="dot"></span>Explorations · Session 4</span><p class="row__t">To be announced</p><p class="row__meta">Host to be announced</p></div><div class="row__side"></div></article>
+      <article class="row s2 is-tba"><div class="datebox"><small>Thu</small><b>5</b><small>Nov</small></div><div><span class="sname"><span class="dot"></span>Looking Closely · Session 1</span><p class="row__t">To be announced</p><p class="row__meta">5 pm Pacific</p></div><div class="row__side"><a class="btn btn--s" href="#">Subscribe</a></div></article>
+    </div>
+    <p class="note" style="margin-top:14px"><b>One list, all series.</b> Rows link to each session's own page. Today the series page lists only published weeks; whether unannounced weeks show here as "To be announced" is a question (index, Q4).</p>
+  </section>
+</main>
+<footer class="foot"><div class="wrap">Home · Series · About · Publications · Forum</div></footer>
+</body>
+</html>

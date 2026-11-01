@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   SurfaceProvider,
   SurfaceFrame,
@@ -21,7 +22,9 @@ import {
   ScheduleSurface,
   ResponsesSurface,
   PeopleSurface,
+  PublishedSurface,
 } from "./ConsoleSurfaces";
+import { togglePinAction } from "@/lib/cms/actions";
 import { ConsoleSettings, type ConsoleSettingsProps } from "./ConsoleSettings";
 import { EmailSurface, type EmailSuiteData, type EmailTab } from "@elkdonis/cms-ui/email";
 import { useEmailConnectors } from "@/components/hub/email/use-email-connectors";
@@ -55,6 +58,7 @@ export function OrgConsoleHost({
   feeds,
   settings,
   email,
+  hasDesignedPage = false,
   children,
 }: {
   state: ConsoleState;
@@ -67,6 +71,8 @@ export function OrgConsoleHost({
   feeds: Array<{ slug: string; name: string }>;
   /** Omitted for a member: there is nothing for them to configure. */
   settings: ConsoleSettingsProps | null;
+  /** A landing page designed in the page editor is published for this org. */
+  hasDesignedPage?: boolean;
   /**
    * The org's email, when this viewer may see it. Omitted for a member — the
    * face is not drawn at all rather than drawn and refused, because a tile
@@ -241,6 +247,9 @@ export function OrgConsoleHost({
           [CONSOLE_SURFACES.people]: () => (
             <PeopleSurface state={state} orgSlug={orgSlug} />
           ),
+          [CONSOLE_SURFACES.published]: () => (
+            <PublishedSurface state={state} orgHomeUrl={orgHomeUrl} canEdit={canEdit} hasDesignedPage={hasDesignedPage} />
+          ),
           [CONSOLE_SURFACES.settings]: ({ descriptor }) =>
             settings ? (
               <ConsoleSettings
@@ -259,8 +268,31 @@ export function OrgConsoleHost({
 
         onMutated: () => router.refresh(),
       }),
+      // The pin, on the thread's own popup: what leads the site. Only a
+      // published PUBLIC thread can lead, which is also what the offering
+      // query selects. `extra.pinned` comes from /api/org/[slug]/threads/[id].
+      threadActions(thread, { refresh }) {
+        if (!canEdit || thread.status !== "published" || thread.visibility !== "PUBLIC") return [];
+        const pinned = Boolean(thread.extra?.pinned);
+        return [
+          {
+            label: pinned ? "Stop leading the site" : "Lead the site with this",
+            done: pinned,
+            onClick: async () => {
+              const r = await togglePinAction(thread.id);
+              if (r.ok === false) {
+                toast.error(r.error);
+                return;
+              }
+              toast.success(r.pinned ? "This now leads the site" : "No longer leading the site");
+              refresh();
+              router.refresh();
+            },
+          },
+        ];
+      },
     }),
-    [state, orgId, orgSlug, orgName, orgHomeUrl, displayName, canEdit, compose, settings, email, emailConnectors, router]
+    [state, orgId, orgSlug, orgName, orgHomeUrl, displayName, canEdit, compose, settings, email, emailConnectors, router, hasDesignedPage]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;

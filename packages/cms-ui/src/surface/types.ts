@@ -20,6 +20,7 @@ export type SurfaceKind =
   | "post"
   | "event"
   | "meeting"
+  | "series"
   | "workshop"
   | "service"
   | "product"
@@ -255,6 +256,36 @@ export type SurfaceDescriptor =
       material: SurfaceMaterial;
       /** Named above the title: "Last meeting", "Workshop materials". */
       context?: string | null;
+    }
+  | {
+      /**
+       * A journey: where a person stands on a multi-step errand and the
+       * controls to take the next step, in one dialog (Center, 2026-10-18).
+       * `auction` is "sell your work in the Art Auction": publish a piece,
+       * show your store on the auction site, set up payouts.
+       */
+      type: "journey";
+      id: SurfaceJourneyId;
+      /** The `org` journey: which organisation. */
+      orgId?: string;
+    }
+  | {
+      /**
+       * The person's own profile as a control panel (Center, 2026-10-31):
+       * the listing journey's tabs (details, offer, where you show, links)
+       * plus Connections, without the journey rail. "View profile" on /center.
+       */
+      type: "me";
+      tab?: SurfaceMeTab;
+    }
+  | {
+      /**
+       * Catalogue work, several pieces in one sitting (Center, 2026-10-18).
+       * Each piece is saved as a draft as soon as the next one is started;
+       * "Publish all" publishes the queue. The host's `artwork` connectors do
+       * the writing through commerce; without them the surface says so.
+       */
+      type: "artwork";
     }
   | {
       type: "custom";
@@ -877,9 +908,17 @@ export interface SurfaceProfileConnectors {
 // Structurally @elkdonis/services' UserConnection, minus nothing: no secret
 // or token ever reaches the browser.
 
+export interface SurfaceConnectionTarget {
+  id: string;
+  name: string;
+  canPublish: boolean;
+  instagramUserId: string | null;
+  instagramUsername: string | null;
+}
+
 export interface SurfaceConnection {
   id: string;
-  provider: "youtube";
+  provider: "youtube" | "meta" | "threads" | "instagram";
   label: string;
   clientId: string;
   status: "pending" | "connected" | "error";
@@ -890,16 +929,28 @@ export interface SurfaceConnection {
   connectedAt: string | null;
   lastUsedAt: string | null;
   createdAt: string;
+  /** Meta: the Pages (and linked Instagram accounts) the connection may publish to. */
+  targets: SurfaceConnectionTarget[];
 }
 
 export type SurfaceConnectionResult = { ok: true } | { ok: false; error: string };
 
 export interface SurfaceConnectionsConnectors {
-  load: () => Promise<{ connections: SurfaceConnection[]; redirectUri: string }>;
-  create: (input: { provider: "youtube"; label: string; clientId: string; clientSecret: string }) => Promise<SurfaceConnectionResult>;
+  load: () => Promise<{
+    connections: SurfaceConnection[];
+    redirectUri: string;
+    /** Orgs the person may set channels for (owner or guide), and their channels (2026-11-01). */
+    orgs?: Array<{ orgId: string; name: string }>;
+    channels?: Array<{ orgId: string; provider: string; externalId: string; label: string }>;
+  }>;
+  create: (input: { provider: "youtube"; label: string; clientId: string; clientSecret: string } | { provider: "meta" | "threads" | "instagram"; label?: string }) => Promise<SurfaceConnectionResult>;
   update: (id: string, input: { label?: string; clientId?: string; clientSecret?: string }) => Promise<SurfaceConnectionResult>;
   check: (id: string) => Promise<SurfaceConnectionResult>;
   remove: (id: string) => Promise<SurfaceConnectionResult>;
+  /** Facebook only: attach a Page by id or URL when the Page list came back empty (2026-11-01). */
+  addPage?: (id: string, page: string) => Promise<SurfaceConnectionResult>;
+  /** Make an account on this connection an org's channel, or stop (2026-11-01). */
+  setChannel?: (id: string, input: { orgId: string; externalId: string; on: boolean }) => Promise<SurfaceConnectionResult>;
   /** A link that starts consent at Google; `returnTo` is where to come back. */
   startHref: (id: string, returnTo?: string) => string;
 }
@@ -1069,6 +1120,150 @@ export interface SurfaceProfilePageConnectors {
   disconnectPayouts?: () => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
+// ── Journeys ──────────────────────────────────────────────────────────────
+
+/**
+ * auction  sell your work in the Art Auction (store, payouts)
+ * org      set up an organisation you own or guide (details, people)
+ * profile  your page on ArtDirect
+ * site     start an organisation of your own on a subdomain
+ */
+export type SurfaceJourneyId = "auction" | "org" | "profile" | "site";
+
+/** The tabs of the `me` surface (the profile control panel). */
+export type SurfaceMeTab = "details" | "offer" | "show" | "links" | "connections";
+
+/**
+ * Where a person stands on the auction errand. Structurally
+ * @elkdonis/commerce's `AuctionJourney`, declared here so this package takes
+ * no dependency on commerce (the same reasoning as SurfaceProfilePayouts).
+ */
+export interface SurfaceAuctionJourney {
+  store: {
+    state: "none" | "pending" | "active" | "paused" | "rejected";
+    id: string | null;
+    handle: string | null;
+    commissionPercent: number | null;
+  };
+  artworks: { published: number; sold: number; drafts: number };
+  payouts: { state: "none" | "pending" | "ready"; country: string | null; available: boolean };
+  canClaimStore: boolean;
+}
+
+export interface SurfaceSiteConnectors {
+  /** Live check of an address as the person types. */
+  check: (raw: string) => Promise<{ slug: string; ok: boolean; reason?: "invalid" | "taken" }>;
+  /** Create the organisation; the caller becomes its owner. */
+  create: (input: { title: string; subdomain: string }) => Promise<{ ok: true; slug: string } | { ok: false; error: string }>;
+  /** The network host, for showing "name.<host>". */
+  networkHost: string;
+  /** Where an organisation's console is on the network hub, by slug. */
+  manageHref: (slug: string) => string | null;
+}
+
+export interface SurfaceJourneyConnectors {
+  /** The current state, re-read after every action. */
+  load: (id: SurfaceJourneyId) => Promise<SurfaceAuctionJourney>;
+  /** Step 2 of the auction journey: list the store on the marketplace. */
+  publishStore: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Where the steps go. Null hides that control. */
+  links: {
+    /** The artwork form: this site's own, or the marketplace studio's. */
+    addWork: string | null;
+    /** A store's public page on the marketplace, by its handle. */
+    store: (handle: string) => string | null;
+    /** The auction site's front page. */
+    auctionSite: string | null;
+    /** Where "About the auction" goes. */
+    about: string | null;
+    /** This org's public site, for the org journey's rail. */
+    orgSite?: string | null;
+    /** Where starting a new organisation begins on the network (the wizard), for the site journey. */
+    startOrg?: string | null;
+  };
+  /** Series facts for the rail. Omit what is not fixed yet. */
+  dates?: Array<{ label: string; when: string }>;
+  /** Starting an organisation, in place. Omit and the journey links to the network hub. */
+  site?: SurfaceSiteConnectors;
+}
+
+// ── Artwork, in a queue ───────────────────────────────────────────────────
+
+export interface SurfaceArtworkInput {
+  title: string;
+  imageUrl: string;
+  medium: string;
+  yearCreated: string;
+  heightCm: string;
+  widthCm: string;
+  kind: "original" | "limited_edition" | "open_edition";
+  /** Major units as typed; blank publishes as "price on request". */
+  price: string;
+  descriptionHtml: string;
+}
+
+export interface SurfaceArtworkConnectors {
+  /** Asked before the form is drawn; `canOpenStore` offers the one-click store. */
+  checkStore: () => Promise<{ ok: boolean; reason?: "signed-out" | "no-store" | "store-pending" | string; canOpenStore?: boolean }>;
+  /** Create (no id) or update (id) a draft. Returns the artwork id. */
+  saveDraft: (input: SurfaceArtworkInput, id?: string | null) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
+  /** Publish these drafts. `urls` are the pieces' pages, in order, when the host knows them. */
+  publish: (ids: string[]) => Promise<{ ok: true; urls?: string[] } | { ok: false; error: string }>;
+}
+
+// ── A person's own services, offered on their ArtDirect page (2026-10-18) ──
+// Structurally a trimmed @elkdonis/services Offering of kind 'service'.
+
+export interface SurfaceOwnService {
+  id: string;
+  title: string;
+  /** Major units; 0 means free. */
+  price: number;
+  currency: string;
+  status: "draft" | "published";
+  format: "online" | "in_person" | "hybrid" | null;
+  shortDescription: string | null;
+}
+
+export interface SurfaceOwnServiceInput {
+  title: string;
+  shortDescription: string;
+  price: string;
+  format: "online" | "in_person" | "hybrid";
+  status: "draft" | "published";
+}
+
+export interface SurfaceServiceConnectors {
+  list: () => Promise<SurfaceOwnService[]>;
+  /** Create (no id) or update. */
+  save: (input: SurfaceOwnServiceInput, id?: string | null) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
+  setStatus: (id: string, status: "draft" | "published") => Promise<{ ok: boolean; error?: string }>;
+}
+
+// ── An org's people (Center, 2026-10-18) ──────────────────────────────────
+// Structurally @elkdonis/services' OrgPerson.
+
+export interface SurfaceOrgPerson {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: "owner" | "guide" | "member" | "viewer";
+  joinedAt: string;
+  listing: { isPublic: boolean; slug: string | null; kind: "artist" | "dealer" } | null;
+  arrivedAt: string | null;
+  arrivedFrom: string | null;
+  isNew: boolean;
+}
+
+export interface SurfaceOrgPeopleConnectors {
+  list: (orgId: string) => Promise<SurfaceOrgPerson[]>;
+  setRole: (orgId: string, userId: string, role: "viewer" | "member" | "guide") => Promise<{ ok: boolean; error?: string }>;
+  setListed: (orgId: string, userId: string, on: boolean) => Promise<{ ok: boolean; error?: string }>;
+  /** The org's full console, when the host has one. */
+  manageHref?: string | null;
+}
+
 // ── Arranging a center ────────────────────────────────────────────────────
 
 export interface SurfaceCenterLayoutShape {
@@ -1206,6 +1401,15 @@ export interface SurfaceConnectors {
   /** Suggested ideas. Omit and the ideas face stays hidden. */
   ideas?: SurfaceIdeaConnectors;
 
+  /** Journeys (the auction errand). Omit and journey cards and the surface stay hidden. */
+  journey?: SurfaceJourneyConnectors;
+  /** Cataloguing work from here. Omit and "Add a work" sends people to the marketplace. */
+  artwork?: SurfaceArtworkConnectors;
+  /** An org's people, for its owners and guides. Omit and the People tab hides. */
+  orgPeople?: SurfaceOrgPeopleConnectors;
+  /** The person's own services on their ArtDirect page. Omit and the Offer tab shows art only. */
+  services?: SurfaceServiceConnectors;
+
   /**
    * What a thread holds (migration 131). Omit and threads still RENDER their
    * gathered band — that comes down with the thread itself — but there is no
@@ -1252,7 +1456,7 @@ export interface SurfaceConnectors {
 }
 
 /** Whether a kind happens at a time. Mirrors SCHEDULED_KINDS in services. */
-export const SCHEDULED_KINDS: ReadonlySet<string> = new Set(["event", "meeting", "workshop", "reading_group"]);
+export const SCHEDULED_KINDS: ReadonlySet<string> = new Set(["event", "meeting", "series", "workshop", "reading_group"]);
 /** Whether a kind has a price. Which kinds are *purchasable* is commerce's call. */
 export const PRICED_KINDS: ReadonlySet<string> = new Set(["workshop", "service", "product"]);
 

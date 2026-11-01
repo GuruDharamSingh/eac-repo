@@ -1,10 +1,10 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename } from "@elkdonis/services";
+import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename, isOccurrenceHost } from "@elkdonis/services";
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { db } from "@elkdonis/db";
 import { nanoid } from "nanoid";
-import { getApiEditor } from "@/lib/auth";
+import { getApiMember } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
 const ORG_ID = siteConfig.orgId;
@@ -57,10 +57,27 @@ const MEDIA_CONFIG: Array<{
 
 export async function POST(request: NextRequest) {
   try {
-    const editor = await getApiEditor();
+    // Owner/guide, or (2026-10-10) a member who hosts or co-hosts the week
+    // named by `threadId` + `occurrenceAt`: the week page's in-place editor
+    // uploads that week's cover and materials. The thread must be this org's,
+    // and the host row is read from meeting_hosts, not taken from the client.
+    const editor = await getApiMember();
     if (!editor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const formData = await request.formData();
+    if (!editor.canEdit) {
+      const threadId = String(formData.get("threadId") ?? "");
+      const occurrenceAt = String(formData.get("occurrenceAt") ?? "");
+      if (!threadId || !occurrenceAt || Number.isNaN(Date.parse(occurrenceAt))) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const [thread] = await db<Array<{ id: string }>>`
+        SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG_ID}
+      `;
+      if (!thread || !(await isOccurrenceHost(threadId, occurrenceAt, editor.userId))) {
+        return NextResponse.json({ error: "Only an organiser, or that week's host, can upload here." }, { status: 403 });
+      }
+    }
     const file = formData.get("file") as File | null;
     const rawVisibility = String(formData.get("visibility") ?? "PUBLIC");
     const visibility =

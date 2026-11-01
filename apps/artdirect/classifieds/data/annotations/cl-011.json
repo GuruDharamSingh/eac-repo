@@ -1,0 +1,23 @@
+{
+  "id": "cl-011",
+  "status": "draft",
+  "source": { "paper": "Old Autos", "place": "Ontario, Canada", "date": "2024-06-03", "era": "2020s", "language": ["en"] },
+  "summary": "A collector-car trade paper: five columns where every ad is a greyscale photo over a justified liner with a bold caps lead. Black reverse category bars, a ruled masthead box, and one large framed display ad.",
+  "family": "photo-liner-specialty",
+  "frame": { "columns": 5, "columnWidth": "medium", "gutter": "open", "columnRules": "none", "flow": "vertical", "masthead": "Ruled box: script-and-car logo, CLASSIFIEDS in heavy serif caps, contact line, italic small print." },
+  "headers": [
+    { "id": "reverse-bar", "kind": "reverse-bar", "example": "1. VEHICLES FOR SALE", "fg": "#ffffff", "bg": "#111111", "numbering": "prefix", "align": "left", "box": [0.005, 0.105, 0.19, 0.017], "notes": "Bold condensed caps, repeated at the top of each column." }
+  ],
+  "units": [
+    { "id": "photo-liner", "kind": "photo-liner", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "FORD 1931, MODEL A TUDOR style, runs great... Phone (705) 879-9986, Bobcaygeon, ON. 9~11p", "box": [0.005, 0.125, 0.19, 0.17], "notes": "Column-wide photo; lead is MAKE YEAR, MODEL in bold caps; ends with town and an issue-run code (9~11p)." },
+    { "id": "framed-display", "kind": "display", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "heavy", "example": "Old Is New Again / VEHICLES WANTED!", "box": [0.605, 0.68, 0.385, 0.305], "notes": "Oval logo, black bar with white italic caps headline, condensed bold phone line." }
+  ],
+  "type": [
+    { "role": "header", "classification": "condensed-grotesque", "look": "Helvetica Condensed Black-like", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Roboto Condensed" },
+    { "role": "body", "classification": "grotesque", "look": "Helvetica-like sans, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" },
+    { "role": "masthead", "classification": "transitional", "look": "Heavy serif caps", "weight": "black", "width": "normal", "case": "upper", "webFont": "Libre Caslon Text" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "ornaments": ["small car silhouettes as spacers", "issue-run codes"],
+  "notes": ["Photos are what define this family; the generator needs an image slot per unit."]
+}

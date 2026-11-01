@@ -76,7 +76,10 @@
   --sf-shadow: var(--forum-shadow, 0 18px 44px -20px rgba(20, 20, 25, 0.28), 0 2px 8px rgba(20, 20, 25, 0.06));
   --sf-font-body: var(--forum-font-body, var(--eac-font-body, system-ui, -apple-system, "Segoe UI", sans-serif));
   --sf-font-title: var(--forum-font-title, var(--eac-font-title, Georgia, "Times New Roman", serif));
-  --sf-font-record: var(--forum-font-record, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  /* The "record" face (counts, dates, labels) was a monospace until
+     2026-10-28; it is the body face now. A host can set --forum-font-record
+     to bring a monospace back. */
+  --sf-font-record: var(--forum-font-record, var(--sf-font-body));
 
   /* ── the forum's own tokens ─────────────────────────────────────────── */
   --gf-blue: var(--forum-link, #3b5b7a);

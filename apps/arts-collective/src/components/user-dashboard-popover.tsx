@@ -95,7 +95,7 @@ export function UserDashboardPopover({
             <MenuLink href={`${rootBase}/account`}>Account</MenuLink>
             <MenuLink href={`${rootBase}/commitments`}>Commitments</MenuLink>
             <MenuLink href={`${rootBase}/artists`}>
-              Explore Elkdonis artists
+              Explore Arts Collective artists
             </MenuLink>
             {isOwner && (
               <MenuLink href={`${rootBase}/hub`}>

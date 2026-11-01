@@ -204,7 +204,7 @@ export function JournalEntryCard({ r, c, back }: { r: JournalEntry; c: LmsConnec
 export const SIDES: Record<Realm, { kicker: string; title: string; blurb: string }> = {
   inner: {
     kicker: "Inner",
-    title: "Spiritual teachings",
+    title: "Inner Work",
     blurb: "Teachings, practices and gatherings for the inner life, from guides teaching in living traditions.",
   },
   outer: {

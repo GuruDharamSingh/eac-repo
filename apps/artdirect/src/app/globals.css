@@ -120,19 +120,11 @@ a { color: inherit; }
 }
 
 /* ---------------------------------------------------------------------------
-   Person page (standard layout): the shared "frame" look from IFAC's artist
-   page (person-page.css, `.eac-person-page--frame`; developer's choice,
-   2026-09-26). It covers the person page only: the directory index and the
-   dossier keep ArtDirect's dark Courier ground, so the body takes the frame
-   ground only while a frame page is on it.
+   Person page (standard layout): cms-ui PersonPage with the `--oad` variant,
+   defined in app/artdirect.css on ArtDirect's own palette (2026-10-08;
+   replaced the IFAC "frame" look chosen 2026-09-26). The site header, index
+   and featured page share those tokens.
    ------------------------------------------------------------------------ */
-body:has(.eac-person-page--frame) {
-  background: #020202;
-}
-
-.oad-person.eac-person-page--frame {
-  min-height: 100vh;
-}
 
 /* The reading layer (article.css, writing.css) ships dark ink for light
    grounds; its tokens are declared on :root, so they are redefined here. */

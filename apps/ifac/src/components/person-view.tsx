@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getServerSession } from "@elkdonis/auth-server";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import {
   getPersonPage,
   getThemeOverrides,
@@ -144,6 +145,8 @@ export async function PersonView({
     // WritingSection shows four and uses a fifth to decide on "more".
     writingLimit: 5,
   });
+  // A renamed person's old slug answers 308 to the current one.
+  if (!page) await redirectRenamedProfile(slug, (current) => `/${kind}/${current}`);
   // getPersonPage lets an editor see a non-public profile; IFAC does not.
   if (!page?.orgProfile || !page.orgProfile.isPublic || !kindMatches(kind, page.orgProfile.tags)) notFound();
 

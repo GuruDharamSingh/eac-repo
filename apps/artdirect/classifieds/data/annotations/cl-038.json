@@ -1,0 +1,25 @@
+{
+  "id": "cl-038",
+  "status": "draft",
+  "source": { "paper": "The Tribune", "place": "Chandigarh, India", "date": "2021-05-29", "era": "2020s", "language": ["en"] },
+  "summary": "A full page of Brides Wanted matrimonials: eight columns of near-identical justified liners grouped under community names, broken only by a few boxed notices and a house ad.",
+  "family": "indian-dense-liner",
+  "frame": { "columns": 8, "columnWidth": "narrow", "gutter": "tight", "columnRules": "none", "flow": "vertical", "masthead": "Page number, CLASSIFIEDS in spaced grey serif caps, the paper’s logo and date at right." },
+  "headers": [
+    { "id": "boxed-title", "kind": "boxed-title", "example": "MATRIMONIALS / BRIDES WANTED", "fg": "#141414", "bg": "transparent", "align": "center", "box": [0.0, 0.04, 0.125, 0.045], "notes": "Heavy-ruled box; subtitle reversed out of black." },
+    { "id": "community-head", "kind": "plain-caps", "example": "AGGARWAL", "fg": "#141414", "bg": "transparent", "align": "center", "box": [0.0, 0.4, 0.125, 0.01], "notes": "Condensed bold caps, centred, the only grouping inside the wall of text." }
+  ],
+  "units": [
+    { "id": "matri-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold", "align": "justify", "border": "none", "example": "Suitable match for handsome boy, Class One Punjab Govt Officer. Caste no bar. 98159-78656. (CL21017075)", "box": [0.0, 0.11, 0.125, 0.04], "notes": "Bold opening phrase, birth details, job, income, phone, then the booking code in parentheses." },
+    { "id": "boxed-notice", "kind": "notice", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "thin", "example": "ATTN: READERS — Readers are requested to write correct Box Number...", "box": [0.375, 0.31, 0.125, 0.085] },
+    { "id": "house-ad", "kind": "house-ad", "frequency": "occasional", "lead": "bold-caps", "align": "center", "border": "none", "example": "The Tribune NEWSPAPER CLASSIFIEDS / ADVERTISEMENT BOOKING", "box": [0.25, 0.455, 0.5, 0.085], "notes": "The only colour on the page (blue/green), four columns wide." }
+  ],
+  "type": [
+    { "role": "header", "classification": "condensed-grotesque", "look": "Bold condensed caps", "weight": "bold", "width": "condensed", "case": "upper", "webFont": "Oswald" },
+    { "role": "body", "classification": "news-serif", "look": "Times-like at agate size, tight justification", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Tinos" },
+    { "role": "code", "classification": "news-serif", "look": "Booking code in parentheses, same face", "weight": "regular", "width": "normal", "case": "upper", "webFont": "Tinos" }
+  ],
+  "color": { "mode": "spot", "paper": "#ffffff", "ink": "#141414", "accents": [ { "hex": "#1f6fb5", "use": "house ad only" } ] },
+  "ornaments": ["booking codes (CL21016313)", "disclaimer box bottom right"],
+  "notes": ["Strong generator target: the copy is formulaic (age, height, caste, job, salary, contact)."]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "cl-008",
+  "status": "draft",
+  "source": { "paper": "unknown Srinagar daily (Greater Kashmir or similar)", "place": "Srinagar, Kashmir, India", "date": "2016-07 (wedding dates 15–17 July 2016)", "era": "2010s", "language": ["en"] },
+  "summary": "A grid of boxed public notices, nearly all INVITATION CANCELLED wedding notices from the July 2016 unrest. Every box repeats the same structure: heavy condensed caps head, justified body, bold centred name block.",
+  "family": "boxed-notice-grid",
+  "frame": { "columns": 4, "columnWidth": "medium", "gutter": "normal", "columnRules": "none", "flow": "modular" },
+  "headers": [
+    { "id": "notice-head", "kind": "rule-label", "example": "INVITATION CANCELLED", "fg": "#111111", "bg": "transparent", "align": "center", "box": [0.5, 0.02, 0.24, 0.03], "notes": "Heavy condensed grotesque caps filling the box width; a variant reverses it out of black." },
+    { "id": "notice-head-reverse", "kind": "reverse-bar", "example": "CONDOLENCE", "fg": "#ffffff", "bg": "#111111", "align": "center", "box": [0.26, 0.02, 0.23, 0.03] }
+  ],
+  "units": [
+    { "id": "notice-box", "kind": "notice", "frequency": "dominant", "lead": "none", "align": "justify", "border": "thin", "example": "We regret to inform that due to prevailing situation, the marriage ceremony of our daughter... Mr. Ajaz Ahmad Shah / H No 129 Shadab Lane...", "box": [0.75, 0.02, 0.24, 0.19], "notes": "Body in regular sans, justified; sign-off name in bold, address and phone below, centred." },
+    { "id": "big-notice", "kind": "reverse-display", "frequency": "occasional", "lead": "bold-caps", "align": "justify", "border": "heavy", "example": "INVITATION / CANCELLED", "box": [0.02, 0.17, 0.23, 0.32], "notes": "Double-height head: INVITATION in huge white caps on black, CANCELLED in spaced caps below; phone numbers in black tags." },
+    { "id": "serif-notice", "kind": "notice", "frequency": "occasional", "lead": "none", "align": "justify", "border": "thin", "example": "Cancellation of Dawat-e-Waleema", "notes": "Reverse head in a Clarendon-like serif, serif body: shows mixing within one grid." }
+  ],
+  "type": [
+    { "role": "header", "classification": "condensed-grotesque", "look": "Impact / Franklin Gothic Extra Condensed-like", "weight": "black", "width": "condensed", "case": "upper", "webFont": "Anton" },
+    { "role": "body", "classification": "grotesque", "look": "Arial-like, justified", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Arimo" },
+    { "role": "notice", "classification": "slab", "look": "Clarendon-style bold serif head on one notice", "weight": "bold", "width": "normal", "case": "title", "webFont": "Alfa Slab One" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "notes": ["Repetition with tiny variation is the whole look: one template, different head weights and reverses.", "Content is tied to a real crisis; use the layout, not the copy."]
+}

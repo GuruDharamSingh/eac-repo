@@ -7,8 +7,10 @@ import {
   getThreadOrgs,
   getThreadWithWorkshopPage,
   isOrgOwner,
+  canEditOrgSite,
 } from "@/lib/org";
 import { ArticleBody } from "@/components/ArticleBody";
+import { ThreadEditorBar } from "@/components/sites/ThreadEditorBar";
 import { renderWorkshopTemplate, readWorkshopCss } from "@/lib/cms/workshop-render";
 import { workshopFieldDefs, workshopCssVarDefs } from "@elkdonis/cms-bindings";
 import { WorkshopLiveEditor } from "@/components/WorkshopLiveEditor";
@@ -34,7 +36,16 @@ export default async function ContentSlugPage({
   if (!workshopData) {
     const thread = await getPublicThread(org.id, contentSlug);
     if (!thread) notFound();
-    return <ArticleBody org={org} thread={thread} orgs={await getThreadOrgs(thread.id)} />;
+    // Editors get the pin here as well as in the console: "lead the site with
+    // this" is a decision usually taken while reading the thing itself.
+    const viewer = await getCurrentUser();
+    const canEdit = viewer ? await canEditOrgSite(viewer.id, org.id) : false;
+    return (
+      <>
+        {canEdit && <ThreadEditorBar threadId={thread.id} pinned={thread.pinned} />}
+        <ArticleBody org={org} thread={thread} orgs={await getThreadOrgs(thread.id)} />
+      </>
+    );
   }
 
   const user = await getCurrentUser();

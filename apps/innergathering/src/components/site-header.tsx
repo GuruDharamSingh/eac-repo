@@ -45,7 +45,6 @@ export function SiteHeader({ feeds, signedIn, canEdit, isMember = false }: SiteH
       <div className="ig-topbar-inner">
         <Link href="/" className="ig-wordmark" onClick={() => setOpen(false)}>
           <span className="ig-wordmark-main">{siteConfig.orgName}</span>
-          <span className="ig-wordmark-sub">Elkdonis Arts Collective</span>
         </Link>
 
         <nav className="ig-nav" aria-label="Primary">

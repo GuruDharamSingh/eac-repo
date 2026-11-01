@@ -45,6 +45,7 @@ export function NewsletterEditor({
   fields = [],
   threads = [],
   palette: hostPalette,
+  audienceLabel,
 }: {
   slug: string;
   title: string;
@@ -53,6 +54,12 @@ export function NewsletterEditor({
   sendEndpoint: string;
   /** How many contacts a real send would reach, for the confirmation. */
   recipientCount: number;
+  /**
+   * Who a real send reaches, as a plural noun phrase for the confirmation and
+   * the send button ("subscribers of Art for Non-Professionals"). Absent:
+   * "person" / "people", as before (2026-10-10).
+   */
+  audienceLabel?: string;
   /** The signed-in editor's own address, prefilled for a test send. */
   testAddress: string;
   /**
@@ -422,7 +429,7 @@ export function NewsletterEditor({
     if (!test) {
       const ok = window.confirm(
         `Send "${title.trim() || slug}" to ${recipientCount} ` +
-          `${recipientCount === 1 ? "person" : "people"}? This cannot be undone.`
+          `${audienceLabel ?? (recipientCount === 1 ? "person" : "people")}? This cannot be undone.`
       );
       if (!ok) return;
     }
@@ -597,7 +604,13 @@ export function NewsletterEditor({
               className="eac-nl-primary"
               onClick={() => void send(false)}
               disabled={!ready || Boolean(busy) || recipientCount === 0}
-              title={recipientCount === 0 ? "This org has no contacts to send to" : undefined}
+              title={
+                recipientCount === 0
+                  ? audienceLabel
+                    ? `There are no ${audienceLabel} to send to`
+                    : "This org has no contacts to send to"
+                  : undefined
+              }
             >
               {busy === "send" ? "Sending…" : `Send to ${recipientCount}`}
             </button>

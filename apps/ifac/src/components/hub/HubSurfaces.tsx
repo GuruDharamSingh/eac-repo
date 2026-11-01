@@ -8,7 +8,7 @@ import {
   defaultThreadToAnswers,
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
-import { CloudSurface, PlanAheadSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { CloudSurface, PlanAheadSurface, SeriesPlannerSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
@@ -18,9 +18,15 @@ import {
   startPayoutsAction,
   disconnectPayoutsAction,
 } from "@/lib/cms/payout-actions";
+import { loadJourneyAction, publishStoreAction, checkSiteAction, createSiteAction } from "@/lib/cms/journey-actions";
+import { checkStoreAction, saveArtworkDraftAction, publishArtworksAction } from "@/lib/cms/artwork-actions";
+import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction } from "@/lib/cms/own-service-actions";
+import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction } from "@/lib/cms/org-people-actions";
+import { marketplaceLinks } from "@elkdonis/commerce/links";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
 import { FilesSurface } from "./FilesCard";
+import { SERIES_PEOPLE_ENDPOINT, SERIES_STATS_ENDPOINT, seriesEmailsHref, seriesMailingsHref } from "./SeriesPlannerPage";
 import { PageSectionsSurface } from "./PageSectionsCard";
 import { HelpSurface, QuestionnairesSurface } from "./wide-surfaces";
 import { QuestionnaireComposeSurface } from "./questionnaire-composer";
@@ -30,6 +36,11 @@ import { BlogGate } from "./blog-gate";
 // packages/cms-ui/src/whiteboard. Excalidraw is an optional peer of cms-ui,
 // so importing this subpath is what opts this app into the dependency.
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
+
+/** The network hub, for links out of the journeys. Carries the sign-in through this site's SSO hop. */
+const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
+const NETWORK_ORIGIN = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${NETWORK_HOST}`;
+const NETWORK_HUB = (path: string) => `/api/auth/handoff?to=${encodeURIComponent(NETWORK_ORIGIN + path)}`;
 
 /**
  * IFAC's connectors for the shared surface system.
@@ -98,6 +109,7 @@ export function HubSurfaces({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const market = marketplaceLinks(siteConfig.marketplaceUrl, { from: "ifac", handoff: true });
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () =>
@@ -156,6 +168,11 @@ export function HubSurfaces({
         // /api/center/avatar, which this app now serves the same way
         // amrit-canada and innergathering do.
         profile: true,
+        // The Connections tab (2026-11-01): served by api/center/connections; consent on the network host.
+        connections: {
+          startUrl: `${NETWORK_ORIGIN}/api/connections/start`,
+          carry: (url) => `/api/auth/handoff?to=${encodeURIComponent(url)}`,
+        },
         // "What your page carries" and "Payouts" inside the profile popup.
         // Payouts is here rather than on a page of its own because being
         // payable is a fact about the person, and the popup is where a person
@@ -168,6 +185,47 @@ export function HubSurfaces({
           disconnectPayouts: disconnectPayoutsAction,
         },
         onMutated: () => router.refresh(),
+
+        // The auction journey (Center, 2026-10-18): where this person stands
+        // on "sell your work in the Art Auction" and its one-click step. The
+        // artwork form is the marketplace's own (handed off signed in); the
+        // auction dates are the series' and are filled in when fixed.
+        journey: {
+          load: loadJourneyAction,
+          publishStore: publishStoreAction,
+          links: {
+            addWork: market.newListing,
+            store: (handle) => market.store(handle),
+            auctionSite: market.home,
+            about: `${siteConfig.marketplaceUrl.replace(/\/$/, "")}/about`,
+            orgSite: "/",
+            startOrg: NETWORK_HUB("/hub/organization?new=1"),
+          },
+          site: {
+            check: checkSiteAction,
+            create: createSiteAction,
+            networkHost: NETWORK_HOST,
+            manageHref: (slug) => NETWORK_HUB(`/hub/organization?org=${encodeURIComponent(slug)}`),
+          },
+        },
+        // Cataloguing work from Center, several pieces per sitting, and the
+        // org's people for its owners and guides (take two, 2026-10-18).
+        artwork: {
+          checkStore: checkStoreAction,
+          saveDraft: saveArtworkDraftAction,
+          publish: publishArtworksAction,
+        },
+        services: {
+          list: listOwnServicesAction,
+          save: saveOwnServiceAction,
+          setStatus: setOwnServiceStatusAction,
+        },
+        orgPeople: {
+          list: listOrgPeopleAction,
+          setRole: setOrgPersonRoleAction,
+          setListed: setOrgPersonListedAction,
+          manageHref: "/manage/people",
+        },
 
         // What this site can compose. Stated once, here, rather than again on
         // every page that draws a compose control.
@@ -183,6 +241,9 @@ export function HubSurfaces({
           // offers, saved onto the same rota row.
           hostCandidates,
           hasMeetings: true,
+          // Series through Meeting's switch; no standalone Event (owner, 2026-10-10).
+          hasSeries: true,
+          hideEvents: true,
           canCreateDocument: true,
           // "Or make a Talk room": a public room (type 3) joinable by link,
           // which is how guests get in without a Nextcloud account. Offered
@@ -285,6 +346,19 @@ export function HubSurfaces({
               timeZone="America/Toronto"
             />
           ),
+          // The weeks of a meeting series: host, title, write-up, materials
+          // per week. Backed by /api/hub/series (2026-10-08).
+          "meeting-series": ({ descriptor }) => (
+            <SeriesPlannerSurface
+              threadId={String(descriptor.props?.threadId ?? "")}
+              canPlan={Boolean(descriptor.props?.canPlan)}
+              timeZone="America/New_York"
+              peopleEndpoint={SERIES_PEOPLE_ENDPOINT}
+              statsEndpoint={SERIES_STATS_ENDPOINT}
+              emailsHref={seriesEmailsHref(String(descriptor.props?.threadId ?? ""))}
+              mailingsHref={seriesMailingsHref(String(descriptor.props?.threadId ?? ""))}
+            />
+          ),
           "page-sections": ({ descriptor }) => (
             <PageSectionsSurface descriptor={descriptor} />
           ),
@@ -335,6 +409,7 @@ export function HubSurfaces({
           return { ok: true, attending: Boolean(data.attending ?? going), count: data.count };
         },
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `market` is pure of its config
     [signedIn, canEdit, isMember, hostCandidates, userId, displayName, feeds, router]
   );
 

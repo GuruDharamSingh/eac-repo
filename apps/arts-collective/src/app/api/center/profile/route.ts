@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  canEditOrgIdentity,
+  getOrgIdentity,
   getProfile,
   getProfileDetails,
   saveProfileDetails,
   updateProfile,
 } from "@elkdonis/services";
+import { db } from "@elkdonis/db";
 import type { SurfaceProfile, SurfaceProfileInput } from "@elkdonis/cms-ui/surface";
 import { getCurrentUser } from "@/lib/session";
 
@@ -26,12 +29,25 @@ const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.co
 const NETWORK_PROTO = NETWORK_HOST.includes("localhost") ? "http" : "https";
 
 /**
- * The network hub serves the person's OWN profile only. An org's identity is
- * edited on that org's own site (its /center), where the org is implied.
+ * Without `?org=`, the person's own row. With it, that organisation's
+ * identity row (migration 099): anyone signed in may read it, its owners and
+ * guides may write it. The network host serves every org, so the org is
+ * whichever the caller names (2026-10-29; it returned 404 before, which left
+ * the Center's org Details form on "Loading…").
  */
 async function resolveTarget(userId: string, orgId: string | null) {
-  if (orgId) return null;
-  return { targetUserId: userId, kind: "person" as const, canEdit: true, pageHref: null as string | null };
+  if (!orgId) return { targetUserId: userId, kind: "person" as const, canEdit: true, pageHref: null as string | null };
+  const [row] = await db<Array<{ slug: string; profile_user_id: string | null }>>`
+    SELECT slug, profile_user_id FROM organizations WHERE id = ${orgId} LIMIT 1
+  `;
+  if (!row?.profile_user_id) return null;
+  const identity = await getOrgIdentity(row.slug).catch(() => null);
+  return {
+    targetUserId: row.profile_user_id,
+    kind: "organization" as const,
+    canEdit: await canEditOrgIdentity(userId, orgId),
+    pageHref: identity?.primaryDomain ? `https://${identity.primaryDomain}` : `${NETWORK_PROTO}://${row.slug}.${NETWORK_HOST}/profile`,
+  };
 }
 
 export async function GET(request: NextRequest) {

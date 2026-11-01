@@ -61,6 +61,32 @@ on this date).
   on the client while the server render is correct; a JSX attribute such as
   `glyph="✚"` renders the escape literally.
 
+## A dev-mode preview of a production app (claude, 2026-10-30)
+Used for arts-collective on 2026-10-30. `docker compose run` gives the one-off
+container its own anonymous `.next` volume, which came up root-owned (`EACCES`
+on `.next/dev`), so mount a scratch directory instead:
+
+    docker compose run -d --name ac-preview -p 127.0.0.1:3107:3007 \
+      -v <scratch>/ac-preview-next:/app/apps/arts-collective/.next \
+      arts-collective sh -c 'cd apps/arts-collective && pnpm dev'
+
+Pages compile on first request (6 s); the dev server restarted itself once in
+15 minutes (two requests answered `000`), so retry before blaming the route.
+`docker rm -f ac-preview` when done. For a signed-in screenshot: a
+`zenika/alpine-chrome` container on `guru-eac_eac-network` with
+`--remote-debugging-address=0.0.0.0`, driven from a `node:24-alpine` container
+(global `WebSocket`) with raw CDP (`Network.setCookie`, `Page.navigate`,
+`Runtime.evaluate` to press a button, `Page.captureScreenshot`); address CDP
+by the container's IP, and the page by `http://ac-preview:3007/...`.
+`chromium-browser --screenshot` against the dev server hung and was killed.
+2026-10-30: the one-off dev server's `.next/dev/required-server-files.json`
+went missing after a burst of new routes compiled, and every route compiled
+after that answered 500 with that ENOENT while earlier ones kept working;
+`docker restart ac-preview` regenerated it. Build the CDP driver's JSON config
+with Python (`json.dumps`), since a shell heredoc mangles the quoting; Puck's
+header Publish is a `<span class="_Button…">`, not a `<button>`, so click it
+by its text node.
+
 ## Minting a session cookie
 Procedure used 2026-09-13 to 2026-09-16; not re-run 2026-09-23.
 
@@ -235,6 +261,13 @@ the page reloads in a loop.
   about 40 inbound foreign keys and several are `RESTRICT`.
 - Confirm the exact target set with the user before acting on more than one
   row or org.
+- Do not trial a service function against `elkdonis_dev` by wrapping or
+  monkeypatching `db.begin` in a script: a script importing
+  `@elkdonis/db/dist/index.mjs` gets a different module instance from the
+  services code (which loads `dist/index.js`), the patch never applies, and the
+  write commits. On 2026-10-10 this moved the live IFAC series schedule. Trial
+  service writes with a dry-run parameter, or as raw SQL inside
+  `BEGIN; … ROLLBACK;` in psql. (claude, 2026-10-10)
 
 ## Rules and constraints
 - Render the page before reporting UI work done: status codes and service-level

@@ -72,7 +72,7 @@ in the container; source changed after that date is not live.
 | art-auction | eac-art-auction | 3009 | prod | market.arts-collective.com | yes | 09-21 |
 | blog-tester | eac-blog-tester | 3011 | dev | – | no | – |
 | hidden-enneagram | eac-hidden-enneagram | 3012 | prod | hiddenenneagram.com | yes | 09-16 |
-| artdirect | eac-artdirect | 3013 | dev | directory.arts-collective.com | yes (2026-09-27: edge 200; earlier 09-25 502 no longer applies) | – |
+| artdirect | eac-artdirect | 3013 | prod (since 2026-10-19) | directory.arts-collective.com | yes (2026-09-27: edge 200; earlier 09-25 502 no longer applies) | – |
 | pigeonshoot | eac-pigeonshoot | 3014 | dev | – | no | – |
 | innergathering | eac-innergathering | 3015 | prod | elkdonis-arts.org, www | yes | 09-23 |
 | elastrocal | eac-elastrocal | 3016 | dev | – (basePath `/astro`) | no | – |
@@ -126,7 +126,7 @@ container's `.next` volume:
 
 | Services | Test | Lines |
 |---|---|---|
-| ifac, sunjay | `[ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ]` | `docker-compose.yml:1280`, `:425` |
+| ifac, sunjay, artdirect | `[ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ]` | `docker-compose.yml:1280`, `:425` |
 | amrit-canada, art-auction, arts-collective, danamccool, hidden-enneagram, inner-gathering, innergathering | `[ -f .next/server/pages-manifest.json ]` | `:939`, `:1364`, `:777`, `:1502`, `:1445`, `:602`, `:1029` |
 
 `next build` writes `pages-manifest.json` during compilation, before type

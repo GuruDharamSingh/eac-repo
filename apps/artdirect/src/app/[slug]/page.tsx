@@ -14,6 +14,7 @@ import {
   contactHref,
 } from "@/lib/oad";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import { DossierActions } from "@/components/oad/DossierActions";
 import { DossierSidebar } from "@/components/oad/DossierSidebar";
 import { ManageSpace } from "@/components/oad/ManageSpace";
@@ -43,9 +44,12 @@ import {
 } from "@elkdonis/cms-ui/profile";
 import { WritingSection } from "@elkdonis/cms-ui/writing";
 import { StoreShowcase } from "@elkdonis/commerce/components";
+import type { Artwork } from "@elkdonis/commerce/types";
+import { CreditedWork } from "@/components/oad/CreditedWork";
 import {
   getStoreForUser,
   getStoreShowcaseForUser,
+  listArtworks,
   hasProfileSection,
 } from "@elkdonis/commerce/queries";
 import { resolveLayout } from "@/lib/profile-layouts";
@@ -132,7 +136,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DossierPage({ params }: Props) {
   const { slug } = await params;
   const [meta, user] = await Promise.all([getDossierMeta(slug), getCurrentUser()]);
-  if (!meta) notFound();
+  if (!meta) {
+    // A renamed person's old slug answers 308 to the current one.
+    await redirectRenamedProfile(slug, (current) => `/${current}`);
+    notFound();
+  }
 
   // Their drafts are only ever unlocked by the viewer BEING them; there is no
   // flag for it. See getAuthoredThreads.
@@ -168,6 +176,13 @@ export default async function DossierPage({ params }: Props) {
     hasStore && storeSectionOn && uid
       ? await getStoreShowcaseForUser(uid, { limit: 6 }).catch(() => null)
       : null;
+  // Work credited to them in other stores (migration 209): an org store's
+  // donated piece naming them as the artist. Shown whether or not they run
+  // a store of their own; they can decline the credit here.
+  const creditedWork = uid
+    ? (await listArtworks({ personUserId: uid, status: ["available", "reserved", "sold"], limit: 12 }).catch(() => []))
+        .filter((a) => a.creditedArtistUserId === uid && a.storeId !== ownStore?.id)
+    : [];
   const useTemplate = layout !== "standard";
   // Strict match: admins do not get the inline tools here, although
   // ProfileEditorPanel's note allows for them (brief, "Found during the survey").
@@ -207,7 +222,7 @@ export default async function DossierPage({ params }: Props) {
 
   const standard = useTemplate || designed
     ? null
-    : await renderStandard({ slug, identity, viewerId, isSelf, hasStore, storeSectionOn, storeShowcase, marketplaceUrl, featuredLink });
+    : await renderStandard({ slug, identity, viewerId, isSelf, hasStore, storeSectionOn, storeShowcase, creditedWork, marketplaceUrl, featuredLink });
 
   // The nav and the file are rendered apart so the owner's sidebar can sit
   // between them, on the folder — it is about the file, not part of it.
@@ -334,6 +349,7 @@ async function renderStandard({
   hasStore,
   storeSectionOn,
   storeShowcase,
+  creditedWork,
   marketplaceUrl,
   featuredLink,
 }: {
@@ -344,6 +360,7 @@ async function renderStandard({
   hasStore: boolean;
   storeSectionOn: boolean;
   storeShowcase: Awaited<ReturnType<typeof getStoreShowcaseForUser>> | null;
+  creditedWork: Artwork[];
   marketplaceUrl: string;
   /** Link to their published featured page, under the role; null when none. */
   featuredLink: ReactNode;
@@ -415,20 +432,33 @@ async function renderStandard({
         empty={page.canEdit ? "No events yet." : null}
       />
     ),
-    store: storeShowcase ? (
-      <StoreShowcase
-        store={storeShowcase.store}
-        artworks={storeShowcase.artworks}
-        marketplaceUrl={marketplaceUrl}
-        from="artdirect"
-        className="eac-profile-store"
-      />
-    ) : null,
+    store:
+      storeShowcase || creditedWork.length > 0 ? (
+        <>
+          {storeShowcase && (
+            <StoreShowcase
+              store={storeShowcase.store}
+              artworks={storeShowcase.artworks}
+              marketplaceUrl={marketplaceUrl}
+              from="artdirect"
+              className="eac-profile-store"
+            />
+          )}
+          {creditedWork.length > 0 && (
+            <CreditedWork
+              artworks={creditedWork}
+              marketplaceUrl={marketplaceUrl}
+              canDecline={isSelf}
+              heading={storeShowcase ? "Also credited on" : "Work credited to them"}
+            />
+          )}
+        </>
+      ) : null,
   };
 
   return (
     <PersonPage
-      className="oad-person eac-person-page--frame"
+      className="oad-person eac-person-page--oad"
       person={{
         displayName: profile.displayName,
         role: profile.headline,
@@ -512,7 +542,7 @@ async function renderDesigned({
   if (!resolved) return null;
   const key = identity.slug ?? identity.userId;
   return (
-    <div className="eac-person-page eac-person-page--frame oad-person" data-person-page="" data-person-doc="profile">
+    <div className="eac-person-page eac-person-page--oad oad-person" data-person-page="" data-person-doc="profile">
       <nav className="eac-person-intro oad-person-bar" aria-label="Page">
         <a className="eac-person-back" href="/">
           ← ArtDirect

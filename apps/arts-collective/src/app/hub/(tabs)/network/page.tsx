@@ -66,7 +66,7 @@ export default async function NetworkTabPage({
     verifiedHomes.filter((h) => h.primaryDomain).map((h) => [h.orgSlug, `https://${h.primaryDomain}`] as const)
   );
   const liveSite = (slug: string): string | null =>
-    verified.get(slug) ?? (slug === "elkdonis" ? networkUrl() : null);
+    verified.get(slug) ?? (slug === "arts-collective" ? networkUrl() : null);
 
   // The same "current" rule as the Organization tab, so both tabs agree.
   const current =
@@ -132,7 +132,10 @@ export default async function NetworkTabPage({
       {/* A person's own cloud storage. Everyone has a folder at
           EAC_Network/users/<slug>/ whether or not they have a Nextcloud
           login, so this is the only way most members can reach it. */}
-      <FilesCard />
+      {/* `#files`: where /center on an org site sends "Your files". */}
+      <div id="files">
+        <FilesCard />
+      </div>
 
       <CommunityHeader />
 

@@ -14,7 +14,24 @@ import type { SurfaceConnection, SurfaceConnectionsConnectors } from "./types";
 //
 // With `onSelect`, each connected item gets a "Publish here" choice — how a
 // circle picks which channel its recordings go to.
+//
+// 2026-10-29: Facebook & Instagram and Threads use the collective's own apps,
+// so they need no client form: one click creates the row and sends the
+// person to Meta's consent screen. The item then lists the Pages found.
 // ============================================================================
+
+const PROVIDER_NAME: Record<SurfaceConnection["provider"], string> = {
+  youtube: "YouTube",
+  meta: "Facebook & Instagram",
+  threads: "Threads",
+  instagram: "Instagram",
+};
+const CONSENT_AT: Record<SurfaceConnection["provider"], string> = {
+  youtube: "Google",
+  meta: "Facebook",
+  threads: "Threads",
+  instagram: "Instagram",
+};
 
 const STATUS_LABEL: Record<SurfaceConnection["status"], string> = {
   pending: "Not connected yet",
@@ -37,6 +54,42 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
   const [list, setList] = React.useState<SurfaceConnection[] | null>(null);
   const [redirectUri, setRedirectUri] = React.useState<string>("");
   const [error, setError] = React.useState<string | null>(null);
+  const [pageRef, setPageRef] = React.useState<Record<string, string>>({});
+  const [orgs, setOrgs] = React.useState<Array<{ orgId: string; name: string }>>([]);
+  const [channels, setChannels] = React.useState<Array<{ orgId: string; provider: string; externalId: string }>>([]);
+
+  /** "Channel for <org>" picker on an account the person's connection holds (2026-11-01). */
+  function channelPicker(c: SurfaceConnection, externalId: string, provider: string) {
+    if (!api.setChannel || orgs.length === 0 || !externalId) return null;
+    const current = channels.find((ch) => ch.provider === provider && ch.externalId === externalId)?.orgId ?? "";
+    return (
+      <label className="eac-conn__channel">
+        <span>Channel for</span>
+        <select
+          value={current}
+          disabled={busy === `chan:${c.id}:${externalId}`}
+          onChange={(e) => {
+            const next = e.target.value;
+            void run(`chan:${c.id}:${externalId}`, async () => {
+              if (current) {
+                const off = await api.setChannel!(c.id, { orgId: current, externalId, on: false });
+                if (off.ok === false) return off;
+              }
+              if (next) return api.setChannel!(c.id, { orgId: next, externalId, on: true });
+              return { ok: true as const };
+            }, next ? "Set as the organisation's channel." : "No longer an organisation's channel.").then(() => void load());
+          }}
+        >
+          <option value="">— just me —</option>
+          {orgs.map((o) => (
+            <option key={o.orgId} value={o.orgId}>
+              {o.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
   const [notice, setNotice] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [adding, setAdding] = React.useState(false);
@@ -48,8 +101,9 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
       const r = await api.load();
       setList(r.connections);
       setRedirectUri(r.redirectUri);
+      setOrgs(r.orgs ?? []);
+      setChannels(r.channels ?? []);
       onLoaded?.(r.connections);
-      if (r.connections.length === 0) setAdding(true);
     } catch {
       setError("Could not load your connections.");
     }
@@ -106,6 +160,25 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
 
   const showForm = adding || editing !== null;
 
+  /** Meta/Threads: create the row, then go straight to consent. */
+  async function connectApp(provider: "meta" | "threads" | "instagram") {
+    setBusy(`add:${provider}`);
+    setError(null);
+    setNotice(null);
+    const before = new Set((list ?? []).map((c) => c.id));
+    const r = await api.create({ provider }).catch(() => ({ ok: false as const, error: "Could not reach the server." }));
+    if (r.ok === false) {
+      setBusy(null);
+      setError(r.error);
+      return;
+    }
+    const after = await api.load().catch(() => null);
+    setBusy(null);
+    const created = after?.connections.find((c) => !before.has(c.id) && c.provider === provider);
+    if (after) setList(after.connections);
+    if (created) window.location.href = api.startHref(created.id, returnTo);
+  }
+
   return (
     <div className="eac-conn">
       {intro}
@@ -119,13 +192,13 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
           {list.map((c) => (
             <li key={c.id} className="eac-conn__item" data-status={c.status}>
               <div className="eac-conn__head">
-                <strong>{c.label || "YouTube"}</strong>
+                <strong>{c.label || PROVIDER_NAME[c.provider]}</strong>
                 <span className="eac-conn__status">{STATUS_LABEL[c.status]}</span>
               </div>
               <div className="eac-conn__meta">
                 {c.accountName ? (
                   <>
-                    Channel:{" "}
+                    {c.provider === "youtube" ? "Channel" : c.provider === "meta" ? "Facebook account" : c.provider === "instagram" ? "Account" : "Profile"}:{" "}
                     {c.accountUrl ? (
                       <a href={c.accountUrl} target="_blank" rel="noreferrer">
                         {c.accountName}
@@ -134,14 +207,52 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
                       c.accountName
                     )}
                   </>
-                ) : (
+                ) : c.provider === "youtube" ? (
                   <>YouTube · client …{c.clientId.split("-")[0].slice(-6)}</>
+                ) : (
+                  <>{PROVIDER_NAME[c.provider]} · not connected yet</>
                 )}
               </div>
+              {c.provider === "meta" && c.targets.length > 0 && (
+                <ul className="eac-conn__targets">
+                  {c.targets.map((t) => (
+                    <li key={t.id}>
+                      {t.name}
+                      {t.instagramUsername ? ` · Instagram @${t.instagramUsername}` : ""}
+                      {!t.canPublish ? " · your role cannot post" : ""}
+                      {channelPicker(c, t.id, "meta")}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {c.provider !== "meta" && c.status === "connected" && c.accountId && (
+                <div className="eac-conn__targets">{channelPicker(c, c.accountId, c.provider)}</div>
+              )}
               {c.error && <div className="eac-conn__error">{c.error}</div>}
+              {c.provider === "meta" && c.status === "connected" && api.addPage && (
+                <form
+                  className="eac-conn__addpage"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const ref = pageRef[c.id] ?? "";
+                    if (!ref.trim()) return;
+                    void run(`page:${c.id}`, () => api.addPage!(c.id, ref), "Page attached.").then(() => setPageRef((s) => ({ ...s, [c.id]: "" })));
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={pageRef[c.id] ?? ""}
+                    placeholder={c.targets.length ? "Another Page: id or facebook.com address" : "Page missing? Its id or facebook.com address"}
+                    onChange={(e) => setPageRef((s) => ({ ...s, [c.id]: e.target.value }))}
+                  />
+                  <button type="submit" className="eac-btn" disabled={busy === `page:${c.id}`}>
+                    {busy === `page:${c.id}` ? "…" : "Attach Page"}
+                  </button>
+                </form>
+              )}
               <div className="eac-conn__actions">
                 <a className="eac-btn eac-btn--primary" href={api.startHref(c.id, returnTo)}>
-                  {c.status === "connected" ? "Reconnect" : "Connect at Google"}
+                  {c.status === "connected" ? "Reconnect" : `Connect at ${CONSENT_AT[c.provider]}`}
                 </a>
                 {c.status === "connected" && (
                   <button
@@ -164,23 +275,25 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
                     Publish here
                   </label>
                 )}
-                <button
-                  type="button"
-                  className="eac-btn eac-btn--quiet"
-                  onClick={() => {
-                    setAdding(false);
-                    setEditing(c.id);
-                    setForm({ label: c.label, clientId: c.clientId, clientSecret: "" });
-                  }}
-                >
-                  Edit
-                </button>
+                {c.provider === "youtube" && (
+                  <button
+                    type="button"
+                    className="eac-btn eac-btn--quiet"
+                    onClick={() => {
+                      setAdding(false);
+                      setEditing(c.id);
+                      setForm({ label: c.label, clientId: c.clientId, clientSecret: "" });
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
                 <button
                   type="button"
                   className="eac-btn eac-btn--quiet"
                   disabled={busy === `del:${c.id}`}
                   onClick={() => {
-                    if (!window.confirm("Remove this connection? Uploads to this channel stop.")) return;
+                    if (!window.confirm(c.provider === "youtube" ? "Remove this connection? Uploads to this channel stop." : "Remove this connection? Posting there stops, and the stored token is deleted.")) return;
                     void run(`del:${c.id}`, () => api.remove(c.id), "Removed.").then(() => {
                       if (selectedId === c.id) onSelect?.(null);
                     });
@@ -195,9 +308,20 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
       )}
 
       {list && !showForm && (
-        <button type="button" className="eac-btn" onClick={() => setAdding(true)}>
-          Add a YouTube connection
-        </button>
+        <div className="eac-conn__actions">
+          <button type="button" className="eac-btn" disabled={busy === "add:meta"} onClick={() => void connectApp("meta")}>
+            {busy === "add:meta" ? "…" : "Connect Facebook & Instagram"}
+          </button>
+          <button type="button" className="eac-btn" disabled={busy === "add:instagram"} onClick={() => void connectApp("instagram")}>
+            {busy === "add:instagram" ? "…" : "Connect Instagram (no Page)"}
+          </button>
+          <button type="button" className="eac-btn" disabled={busy === "add:threads"} onClick={() => void connectApp("threads")}>
+            {busy === "add:threads" ? "…" : "Connect Threads"}
+          </button>
+          <button type="button" className="eac-btn" onClick={() => setAdding(true)}>
+            Add a YouTube connection
+          </button>
+        </div>
       )}
 
       {showForm && (
@@ -307,6 +431,8 @@ export function createConnectionsConnectors(opts: {
     update: (id, input) => send("PATCH", { id, ...input }),
     check: (id) => send("PATCH", { id, check: true }),
     remove: (id) => send("DELETE", undefined, `?id=${encodeURIComponent(id)}`),
+    addPage: (id, page) => send("PATCH", { id, addPage: page }),
+    setChannel: (id, input) => send("PATCH", { id, channel: input }),
     startHref(id, returnTo) {
       const q = new URLSearchParams({ id });
       if (returnTo) q.set("return", returnTo);

@@ -61,7 +61,7 @@ const ORGANIZATIONS = [
   { value: 'inner_group', label: 'InnerGathering' },
   { value: 'sunjay', label: "Sunjay's Teaching Circle" },
   { value: 'guru-dharam', label: "Guru Dharam's Practice" },
-  { value: 'elkdonis', label: 'Elkdonis Arts Collective' },
+  { value: 'elkdonis', label: 'Arts Collective' },
 ];
 
 export default function NextcloudPage() {

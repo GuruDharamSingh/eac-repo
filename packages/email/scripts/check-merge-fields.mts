@@ -18,25 +18,41 @@
  */
 import { renderTemplateBody } from "../src/seed";
 import { mergeFieldsFor, mergeValuesFor, fillHtml } from "../src/merge-fields";
-import { sampleProps } from "../src/samples";
+import { sampleProps, type SampleOptions } from "../src/samples";
 import { TEMPLATE_META } from "../src/samples";
 
 const ORG = "Amrit Canada";
 let failures = 0;
 
+/**
+ * Sample variants per letter. A field may appear in only one variant: the
+ * reminder's `{comingUrl}` is seeded only for `purpose: 'subscriber'`
+ * (claude, 2026-10-10). Every declared field must appear in at least one
+ * variant; the other checks run on each variant.
+ */
+const VARIANTS: Record<string, SampleOptions[]> = {
+  reminder: [{}, { purpose: "subscriber" }],
+};
+
 for (const meta of TEMPLATE_META) {
   const fields = mergeFieldsFor(meta.key);
   if (!meta.editable || fields.length === 0) continue;
 
-  const body = await renderTemplateBody(meta.key, { orgName: ORG });
   const problems: string[] = [];
-
-  if (!body) {
-    problems.push("seeded to nothing — no editable body found in the render");
+  const seeds: string[] = [];
+  for (const variant of VARIANTS[meta.key] ?? [{}]) {
+    const opts: SampleOptions = { orgName: ORG, ...variant };
+    const label = variant.purpose ? ` (${variant.purpose})` : "";
+    const body = await renderTemplateBody(meta.key, opts);
+    seeds.push(body);
+    if (!body) {
+      problems.push(`seeded to nothing${label} — no editable body found in the render`);
+    }
+    problems.push(...checkSeed(meta.key, body, opts).map((p) => p + label));
   }
 
   for (const field of fields) {
-    if (!body.includes(`{${field.name}}`)) {
+    if (!seeds.some((body) => body.includes(`{${field.name}}`))) {
       problems.push(
         `{${field.name}} is declared but never appears — its reader does not ` +
           `match what the template renders, or the value is outside the editable body`
@@ -44,9 +60,20 @@ for (const meta of TEMPLATE_META) {
     }
   }
 
+  const mark = problems.length === 0 ? "ok  " : "FAIL";
+  console.log(
+    `${mark}  ${meta.key.padEnd(16)} ${fields.length} field(s), ${seeds.map((b) => b.length).join("/")} bytes`
+  );
+  for (const problem of problems) console.log(`        ${problem}`);
+  if (problems.length > 0) failures += 1;
+}
+
+function checkSeed(key: string, body: string, opts: SampleOptions): string[] {
+  const problems: string[] = [];
+  const fields = mergeFieldsFor(key);
   // The other direction: a sample value that survived into the seed is a real
   // person's name about to be mailed to everyone.
-  const rendered = mergeValuesFor(meta.key, sampleProps(meta.key, { orgName: ORG }));
+  const rendered = mergeValuesFor(key, sampleProps(key, opts));
   for (const [name, value] of Object.entries(rendered)) {
     if (value && value.length > 6 && body.includes(value)) {
       problems.push(`the sample value for {${name}} survived into the seed: "${value}"`);
@@ -75,13 +102,7 @@ for (const meta of TEMPLATE_META) {
   if (/\{\w+\}/.test(fillHtml(shouted, rendered))) {
     problems.push("an upper-cased token was not filled — fillHtml is case-sensitive again");
   }
-
-  const mark = problems.length === 0 ? "ok  " : "FAIL";
-  console.log(
-    `${mark}  ${meta.key.padEnd(16)} ${fields.length} field(s), ${body.length} bytes`
-  );
-  for (const problem of problems) console.log(`        ${problem}`);
-  if (problems.length > 0) failures += 1;
+  return problems;
 }
 
 console.log(failures === 0 ? "\nall letters seed cleanly" : `\n${failures} letter(s) with problems`);

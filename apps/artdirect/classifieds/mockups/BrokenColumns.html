@@ -1,0 +1,579 @@
+<title>Broken Columns</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=Pathway+Gothic+One&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&family=Archivo+Black&family=Anton&family=Arimo:ital,wght@0,400;0,700;1,400&family=Tinos:ital,wght@0,400;0,700;1,400&family=Alfa+Slab+One&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Display&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ultra&family=Rye&family=Courier+Prime:wght@400;700&family=Oswald:wght@500;700&family=Bowlby+One&family=Righteous&display=swap">
+<style>
+/* Layout: four fixed 900×1300 pages, scaled to fit the viewport width, stacked on a dark reading field.
+   Single-theme by choice: the pages are paper and ink whatever the viewer's theme. */
+:root {
+  --field: #26241f;
+  --field-ink: #e6e0d2;
+  --paper: #f4f0e6;
+  --ink: #161412;
+  --pink: #f9cfdc;
+  --red: #c4262e;
+  --vermilion: #e8502b;
+  --yellow: #ffd21f;
+  --orange: #f26a1b;
+  --blue: #1f3f99;
+  --green: #3aa335;
+  --comic: #f6c4c8;
+  --cream: #f3e3b0;
+  --sepia: #efe4cc;
+  --sepia-ink: #231d14;
+  --ui: 'Courier Prime', 'Courier New', monospace;
+  color-scheme: dark;
+}
+html, body { margin: 0; }
+body { background: var(--field); color: var(--field-ink); font-family: var(--ui); padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.intro { max-width: 900px; margin: 0 auto 28px; font-size: 13px; line-height: 1.5; }
+.intro h1 { font-family: 'Libre Caslon Display', Georgia, serif; font-weight: 400; font-size: 34px; margin: 0 0 6px; letter-spacing: 0.01em; text-wrap: balance; }
+.intro p { margin: 6px 0; }
+.stack { display: flex; flex-direction: column; gap: 40px; align-items: center; }
+.frame { width: 100%; max-width: 900px; overflow: hidden; }
+.scaler { width: 900px; height: 1300px; transform-origin: 0 0; }
+figure { margin: 0; }
+figcaption { max-width: 900px; margin: 12px auto 0; font-size: 12.5px; line-height: 1.55; }
+figcaption b { color: #fff; }
+.page { width: 900px; height: 1300px; box-sizing: border-box; overflow: hidden; background: var(--paper); color: var(--ink); position: relative; box-shadow: 0 2px 2px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.45); }
+.page p { margin: 0; }
+.page * { box-sizing: border-box; min-width: 0; }
+/* ---- common devices ---- */
+.tab { background: #141414; color: #fff; padding: 3px 7px 4px; margin: 8px 0 5px; font-family: 'Roboto Condensed', sans-serif; line-height: 1; }
+.tab small { display: block; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
+.tab span { display: block; font-size: 19px; font-weight: 700; letter-spacing: .01em; }
+.num { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 4px; padding: 3px 0; border-top: 2px solid #141414; border-bottom: 1px solid #141414; font-family: 'League Spartan', sans-serif; font-weight: 800; font-size: 14px; }
+.ln { margin: 0 0 6px; font-family: 'Source Serif 4', Georgia, serif; font-size: 10.5px; line-height: 1.22; text-align: justify; hyphens: auto; text-indent: -6px; padding-left: 6px; }
+.ln b { font-weight: 400; text-transform: uppercase; letter-spacing: .02em; }
+.ln i { font-size: 9px; letter-spacing: .06em; }
+.pink { background: var(--pink); padding: 4px 4px 4px 10px; }
+.pink b { color: var(--red); font-weight: 700; }
+.box { margin: 0 0 6px; font-family: 'Source Serif 4', Georgia, serif; font-size: 10.5px; line-height: 1.22; text-align: center; border: 1px solid #141414; padding: 5px; }
+.box b { font-family: 'League Spartan', sans-serif; font-weight: 800; font-size: 13px; display: block; }
+.col { display: flex; flex-direction: column; }
+.rule-r { border-right: 1px solid #141414; padding-right: 8px; }
+</style>
+
+<div class="intro">
+  <h1>Broken Columns: four classified sections</h1>
+  <p>Four hand-composed pages, 900 × 1300 each, in the manner of the first mock-ups. In every one the column grid breaks part-way down the page: a band of six agate columns gives way to three wide ones, a notice grid turns into seven lines of personals, a Victorian page runs beside a comic back page with its own gutters. Copy is newly written; real details are [PLACEHOLDER]s. Devices borrowed from the specimens are listed under each page.</p>
+</div>
+
+<div class="stack">
+
+<!-- ================================================================ PAGE 1 -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="p1" style="padding: 30px 32px; display: flex; flex-direction: column;">
+  <style>
+    #p1 .masth { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-bottom: 1px solid #141414; padding-bottom: 6px; }
+    #p1 h1 { margin: 0; font-family: 'League Spartan', sans-serif; font-weight: 900; font-size: 88px; line-height: .85; letter-spacing: -.02em; }
+    #p1 .deadlines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; row-gap: 2px; font-family: 'Roboto Condensed', sans-serif; font-size: 11px; }
+    #p1 .band6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 12px; }
+    #p1 .band3 { display: grid; grid-template-columns: 1.2fr 2fr 1fr; column-gap: 16px; border-top: 3px solid #141414; border-bottom: 3px solid #141414; padding: 10px 0; margin: 10px 0; }
+    #p1 .band5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 12px; flex-grow: 1; }
+    #p1 .disp { border: 1px solid #141414; padding: 12px 10px 10px; text-align: center; }
+    #p1 .disp .big { font-family: 'Pathway Gothic One', sans-serif; font-size: 54px; line-height: .92; letter-spacing: .02em; }
+    #p1 .disp p { margin: 8px 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 12px; line-height: 1.3; }
+    #p1 .disp .who { font-family: 'Pathway Gothic One', sans-serif; font-size: 30px; letter-spacing: .04em; }
+    #p1 .agency { font-family: 'Source Serif 4', Georgia, serif; font-size: 10.5px; line-height: 1.4; }
+    #p1 .agency .h { text-align: center; font-family: 'Pathway Gothic One', sans-serif; font-size: 22px; margin: 4px 0 2px; }
+    #p1 .foot { margin-top: 8px; border-top: 1px solid #141414; padding-top: 4px; display: flex; justify-content: space-between; font-family: 'Roboto Condensed', sans-serif; font-size: 10.5px; }
+  </style>
+  <div class="masth">
+    <h1>Want Ads</h1>
+    <div class="deadlines">
+      <b>RUN DAY</b><b>DEADLINE</b>
+      <span>Monday ........</span><span>3 p.m. Friday</span>
+      <span>Wednesday ...</span><span>noon Tuesday</span>
+      <span>Saturday ......</span><span>noon Friday</span>
+      <span style="grid-column: span 2; margin-top: 4px; font-weight: 700; letter-spacing: .06em">PLACE YOUR AD ON ARTDIRECT · ANY HOUR · ANY LANGUAGE</span>
+    </div>
+  </div>
+
+  <!-- six agate columns -->
+  <div class="band6" style="margin-top: 6px">
+    <div class="col">
+      <div class="tab"><small>HELP WANTED</small><span>STAGE</span></div>
+      <p class="ln"><b>SCENE PAINTER,</b> must know a sky from a ceiling. Night work, overtime in tech week. Apply at stage door after 4.</p>
+      <p class="ln"><b>FLY OPERATOR</b> wanted for touring opera. Strong arms, calm nerves, no fear of heights or sopranos. <i>Box C-201.</i></p>
+      <p class="ln pink"><b>LIGHTING DESIGNER</b> for a play set entirely at dusk. Six weeks, modest budget, unlimited amber. Call [PHONE].</p>
+      <p class="ln"><b>DRESSER,</b> quick hands, quicker changes. Must sew a hem in under forty seconds.</p>
+    </div>
+    <div class="col">
+      <div class="num"><span>Studio Help</span><span>14</span></div>
+      <p class="ln"><b>ASSISTANT</b> to a sculptor. Lifting, sanding, saying nothing about the size of it. Three days a week.</p>
+      <p class="ln"><b>STRETCHER</b> builder, canvases up to twelve feet. Wood shop access included. <i>Box C-214.</i></p>
+      <p class="ln"><b>STUDIO MANAGER</b> for a painter who forgets everything but colour. Must keep the calendar and the kettle.</p>
+    </div>
+    <div class="col">
+      <div class="num"><span>Teaching</span><span>15</span></div>
+      <p class="ln"><b>CERAMICS</b> instructor, adult evening class. Kiln experience required, glaze opinions welcome.</p>
+      <p class="ln"><b>ART TEACHER</b> for a school of eleven children and one goat. Rural, room and board. <i>Box C-220.</i></p>
+      <p class="ln pink"><b>TUTOR</b> in perspective, one hour weekly. Student keeps drawing roads that go up. [PHONE].</p>
+    </div>
+    <div class="col">
+      <div class="tab"><small>HELP WANTED</small><span>GALLERY</span></div>
+      <p class="ln"><b>INVIGILATOR,</b> weekends. Must sit with one painting for eight hours and still like it.</p>
+      <p class="ln"><b>ART HANDLER,</b> white gloves supplied, steady nerves not. Driving licence required.</p>
+      <p class="ln"><b>FRONT DESK</b> for a small gallery. Answer the phone, explain the installation, sweep the sand.</p>
+    </div>
+    <div class="col">
+      <div class="num"><span>Part Time</span><span>17</span></div>
+      <p class="ln"><b>EVENINGS:</b> usher at the old cinema. Free films, sticky floors, good company.</p>
+      <p class="ln"><b>SATURDAYS:</b> help run a print stall at the market. Must know how to roll a poster.</p>
+      <p class="ln"><b>MORNINGS:</b> walk the theatre cat. One cat, many opinions.</p>
+      <p class="box"><b>MODELS WANTED</b>Life class, Tues &amp; Fri evenings. Paid hourly. Robe provided. [PHONE]</p>
+    </div>
+    <div class="col">
+      <div class="tab"><small>WORK</small><span>WANTED</span></div>
+      <p class="ln"><b>EXPERIENCED</b> bookbinder seeks bench in a shared studio. Will trade repairs for rent.</p>
+      <p class="ln"><b>YOUNG POET</b> will write the verse for your card, shop window or tombstone. <i>Box C-240.</i></p>
+      <p class="ln pink"><b>SIGN WRITER,</b> steady hand, own ladder, own brushes. Gold leaf on request. [PHONE].</p>
+    </div>
+  </div>
+
+  <!-- the grid breaks: three wide columns -->
+  <div class="band3">
+    <div class="agency">
+      <div class="num" style="margin-top: 0"><span>Agencies</span><span>8</span></div>
+      <div class="h">ARTS HELP</div>
+      2—Scene Painters—[RATE] day<br>1—Gilder—[RATE] hr<br>3—Ushers—[RATE] eve<br>1—Archivist—[RATE] wk<br>4—Set Builders—[RATE] day<br>1—Projectionist—[RATE] eve<br>2—Kiln Hands—[RATE] day<br>1—Copyist—[RATE] page
+      <div class="h" style="font-size: 20px">MANY JOBS<br>AVAILABLE</div>
+      <div style="text-align: center; font-family: 'League Spartan', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: .08em">KEY EMPLOYMENT · [ADDRESS]</div>
+    </div>
+    <div class="disp">
+      <div class="big">ATTENTION<br>SIGN PAINTERS</div>
+      <p>We want a steady hand to letter forty shopfronts along the old high street before the spring fair. Gold leaf a plus. Ladders, lunches and a view of the whole street provided. Apply with three letters of the alphabet, any size.</p>
+      <div class="who">THE HIGH STREET GUILD</div>
+      <div style="margin-top: 6px; border-top: 1px solid #141414; padding-top: 4px; font-family: 'League Spartan', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: .08em">APPLY IN PERSON · MONDAY 9 TO NOON · [ADDRESS]</div>
+    </div>
+    <div class="col">
+      <div class="num" style="margin-top: 0"><span>Film &amp; Photo</span><span>16</span></div>
+      <p class="ln"><b>FOCUS PULLER</b> for a short film shot in one take. Must not sneeze. <i>Box C-231.</i></p>
+      <p class="ln"><b>DARKROOM</b> technician, black and white only. Good eyes in red light.</p>
+      <p class="ln pink"><b>EXTRAS</b> wanted for a crowd scene. Bring a hat from before 1960. [PHONE].</p>
+      <p class="ln"><b>SOUND RECORDIST</b> to capture a city at 4 a.m. One night, good pay.</p>
+      <p class="box"><b>NOW HIRING</b>Front of house, bar &amp; cloakroom for the winter season.<br><b style="font-size: 11px">[VENUE] · [PHONE]</b></p>
+    </div>
+  </div>
+
+  <!-- and breaks again: five columns, one of them a double -->
+  <div class="band5">
+    <div class="col">
+      <div class="tab"><small>FOR SALE</small><span>PRESSES</span></div>
+      <p class="ln"><b>ETCHING PRESS,</b> hand-cranked, bed 18 by 30, one owner, still prints straight. Buyer collects, buyer brings three friends.</p>
+      <p class="ln"><b>RISOGRAPH,</b> two-colour, drums for blue and fluorescent pink, paper not included, enthusiasm is.</p>
+    </div>
+    <div class="col">
+      <div class="num"><span>Instruments</span><span>31</span></div>
+      <p class="ln"><b>CELLO,</b> strings good, case bad, bow missing. Sounds better than it looks. <i>Box C-301.</i></p>
+      <p class="ln"><b>UPRIGHT PIANO</b> wanted, any make, for a school of eleven children and one goat.</p>
+      <p class="ln pink"><b>DRUMMER</b> for a three-piece who keeps losing drummers. We are nicer now. [PHONE].</p>
+    </div>
+    <div class="col" style="grid-column: span 2; border-left: 1px solid #141414; border-right: 1px solid #141414; padding: 0 10px">
+      <div class="num"><span>Studios &amp; Space to Let</span><span>40</span></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px">
+        <div>
+          <p class="ln"><b>NORTH-LIGHT STUDIO,</b> third floor, deep sink, freight lift, no fumes after nine. Share with a quiet printmaker who does not whistle. <i>Box A-112.</i></p>
+          <p class="ln"><b>BENCH SPACE</b> in a working foundry yard. Bring your own gloves and your own patience. Pour days are Thursdays.</p>
+        </div>
+        <div>
+          <p class="ln"><b>A WALL</b> forty feet long, freshly primed, facing the morning. Available to anyone with a good reason. Apply with sketches.</p>
+          <p class="ln"><b>A ROOM,</b> quiet, warm, with a view of other people's washing. Ideal for someone who writes in the mornings.</p>
+        </div>
+      </div>
+      <p class="box" style="margin-top: 4px"><b>KILN TIME</b>Tuesday nights, cone 6, share the firing and the cost. Bring your own pots and a sense of proportion. [PHONE]</p>
+    </div>
+    <div class="col">
+      <div class="tab"><small>LOST &amp;</small><span>FOUND</span></div>
+      <p class="ln"><b>LOST:</b> one afternoon in late October, last seen near the canal, golden at the edges. Reward.</p>
+      <p class="ln"><b>FOUND:</b> a sketchbook full of hands, on the No. 9 tram. Owner may claim by describing the third hand.</p>
+      <p class="ln"><b>LOST:</b> the thread of an idea about blue. Finder please do not tug.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Pink ads are premium listings · Box replies c/o the Daily</span><span>MORE WANT ADS IN EVERY DIRECTION</span></div>
+</div>
+</div>
+<figcaption><b>1. Want Ads (1960s daily).</b> Six agate columns break into three wide ones for the agency list and the light-condensed "ATTENTION SIGN PAINTERS" display, then into five with a ruled double column for studios. Borrowed: heavy grotesque masthead and run-day table (cl-017/018), two-tier black tabs (cl-017), numbered heads with the number flush right (cl-039), caps-lead justified agate with hanging indent (cl-039), pink premium liners (cl-015), quantity—job—rate agency list (cl-039).</figcaption>
+</figure>
+
+<!-- ================================================================ PAGE 2 -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="p2" style="padding: 22px 24px; display: flex; flex-direction: column; background: #fff;">
+  <style>
+    #p2 .banner { position: relative; background: var(--orange); color: #fff; padding: 10px 16px 8px; overflow: hidden; }
+    #p2 .banner .roll { position: absolute; inset: 0; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 9px; line-height: 1.35; letter-spacing: .04em; color: rgba(255,255,255,.35); white-space: normal; overflow: hidden; padding: 0 6px; text-transform: uppercase; }
+    #p2 .banner h1 { position: relative; margin: 0; font-family: 'Archivo Black', sans-serif; font-size: 58px; line-height: 1; letter-spacing: -.01em; text-shadow: 3px 3px 0 #a3360a; }
+    #p2 .banner .meta { position: relative; display: flex; justify-content: space-between; font-family: 'Arimo', sans-serif; font-size: 11px; font-weight: 700; margin-top: 4px; }
+    #p2 .band8 { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); column-gap: 7px; margin-top: 8px; }
+    #p2 .ic { display: flex; align-items: center; gap: 5px; background: var(--yellow); color: var(--red); font-family: 'Archivo Black', sans-serif; font-size: 9.5px; padding: 2px 4px; margin: 6px 0 3px; line-height: 1.1; text-transform: uppercase; }
+    #p2 .ic::before { content: ""; width: 10px; height: 10px; border: 2px solid var(--red); border-radius: 2px 2px 50% 50%; flex-shrink: 0; }
+    #p2 .l { font-family: 'Tinos', 'Times New Roman', serif; font-size: 9.6px; line-height: 1.18; text-align: justify; margin-bottom: 4px; }
+    #p2 .l b { font-weight: 700; }
+    #p2 .l.t { background: var(--pink); padding: 3px 3px; }
+    #p2 .l.t b { color: var(--red); }
+    #p2 .l .ph { font-weight: 700; letter-spacing: .02em; }
+    #p2 .yb { background: var(--yellow); border: 2px solid var(--red); text-align: center; padding: 6px 4px; margin: 4px 0; }
+    #p2 .yb .h { font-family: 'Archivo Black', sans-serif; font-size: 15px; line-height: 1; color: var(--red); }
+    #p2 .yb .ph { font-family: 'Anton', Impact, sans-serif; font-size: 22px; line-height: 1; margin-top: 4px; letter-spacing: .02em; }
+    #p2 .yb p { font-family: 'Arimo', sans-serif; font-size: 9.5px; margin: 3px 0; line-height: 1.25; }
+    #p2 .mosaic { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 0; padding: 10px 0; border-top: 4px solid var(--blue); border-bottom: 4px solid var(--blue); }
+    #p2 .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap: 4px; }
+    #p2 .pair span { text-align: center; color: #fff; font-family: 'Archivo Black', sans-serif; font-size: 11px; letter-spacing: .06em; padding: 3px; }
+    #p2 .mb { padding: 8px; text-align: center; font-family: 'Arimo', sans-serif; font-size: 11px; line-height: 1.35; }
+    #p2 .band6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 8px; flex-grow: 1; }
+    #p2 .foot { margin-top: 6px; background: var(--blue); color: #fff; font-family: 'Anton', sans-serif; font-size: 13px; letter-spacing: .08em; text-align: center; padding: 3px; }
+  </style>
+  <div class="banner">
+    <div class="roll">IRON &amp; CEMENT, EYE CARE, COOKING, FLOORINGS, YOGA &amp; MEDITATION, BEAUTY PARLOUR, HOUSE KEEPING, COURIERS, DRIVING SCHOOLS, TAILORING, CELL PHONES, SCHOOL UNIFORMS, GENERATORS, FRAMES, PIANOS, PRINTS, LESSONS, VANS, STUDIOS, EASELS, KILNS, PAINT, CANVAS, GOLD LEAF, TYPE, PAPER, GLAZE, CLAY, WAX, INK, BRASS, STRINGS, REEDS, FILM, DARKROOMS, LAMPS, LADDERS, RIBBON, PLASTER, STONE, WOOD, WIRE, THREAD, LOOMS, DYES, BRUSHES, PENS, NIBS, BLOTTERS, BINDINGS, IRON &amp; CEMENT, EYE CARE, COOKING, FLOORINGS, YOGA &amp; MEDITATION, BEAUTY PARLOUR, HOUSE KEEPING, COURIERS, DRIVING SCHOOLS, TAILORING, CELL PHONES, SCHOOL UNIFORMS, GENERATORS, FRAMES, PIANOS, PRINTS, LESSONS, VANS</div>
+    <h1>BAZAAR CLASSIFIEDS</h1>
+    <div class="meta"><span>Page 8 · [CITY] · [DATE]</span><span>Book by phone 10 a.m. to 6 p.m. · [PHONE] · or on ArtDirect, any hour</span></div>
+  </div>
+
+  <!-- eight narrow columns -->
+  <div class="band8">
+    <div class="col">
+      <div class="ic">Studios</div>
+      <p class="l"><b>North-light</b> studio, 3rd floor, deep sink, freight lift. Share with quiet printmaker. <span class="ph">[PHONE]</span></p>
+      <p class="l t"><b>Bench space</b> in foundry yard. Own gloves. Pour days Thursdays. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>A wall</b> 40 ft, primed, facing morning. Apply with sketches.</p>
+      <div class="ic">Kilns</div>
+      <p class="l"><b>Kiln time</b> Tuesdays, cone 6, share firing &amp; cost. Own pots. <span class="ph">[PHONE]</span></p>
+    </div>
+    <div class="col">
+      <div class="ic">Frames</div>
+      <p class="l"><b>Frames made</b> to measure, reclaimed oak, gilding, glazing. Delivery within river. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Gold leaf</b> by the book, loose or transfer. Burnisher of a saint also. <span class="ph">[PHONE]</span></p>
+      <div class="yb"><div class="h">PRINTS</div><p>Risograph two-colour, blue &amp; fluorescent pink. Bring paper.</p><div class="ph">[PHONE]</div></div>
+    </div>
+    <div class="col">
+      <div class="ic">Pianos</div>
+      <p class="l t"><b>Upright piano</b> wanted, any make, school of 11 children &amp; one goat. Will tune ourselves. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Cello</b>, strings good, case bad, bow missing. Sounds better than looks.</p>
+      <p class="l"><b>Loom</b> 4-shaft, folding, slightly haunted. Threads started. <span class="ph">[PHONE]</span></p>
+      <div class="ic">Lessons</div>
+      <p class="l"><b>Ceramics</b> evening class, kiln exp. req., glaze opinions welcome.</p>
+    </div>
+    <div class="col">
+      <div class="ic">Vans</div>
+      <p class="l"><b>Van &amp; driver</b> for one very large painting &amp; one very small sofa. Sunday early. <span class="ph">[PHONE]</span></p>
+      <p class="l t"><b>Rides</b> to the harvest fair, 3 seats, bring a pie. <span class="ph">[PHONE]</span></p>
+      <div class="yb"><div class="h">MODELS<br>WANTED</div><p>Life class Tue &amp; Fri. Paid hourly. Robe, tea.</p><div class="ph">[PHONE]</div></div>
+    </div>
+    <div class="col">
+      <div class="ic">Wanted</div>
+      <p class="l"><b>Old wood type</b> any size, cases, quoins. Cash on spot, no questions re splinters. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Postcards</b> of other people's holidays, stranger the better. Pay by box.</p>
+      <p class="l t"><b>Good easel</b> not leaning left. Will trade one that does. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>12 tubes</b> of a blue no longer believed in, for anything yellow.</p>
+    </div>
+    <div class="col">
+      <div class="ic">Help</div>
+      <p class="l"><b>Scene painter</b> must know sky from ceiling. Night work. Stage door after 4.</p>
+      <p class="l"><b>Dresser</b> quick hands, hem in 40 sec. <span class="ph">[PHONE]</span></p>
+      <p class="l t"><b>Invigilator</b> weekends, sit with one painting 8 hrs &amp; still like it. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Art handler</b> gloves supplied, nerves not. Licence req.</p>
+    </div>
+    <div class="col">
+      <div class="ic">Services</div>
+      <p class="l"><b>Portfolios</b> photographed daylight only. No filters, no flattery. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Grants written</b> by someone turned down more times than you.</p>
+      <div class="yb"><div class="h">LETTERING</div><p>Shopfronts, vans, tombstones. Gold leaf a speciality.</p><div class="ph">[PHONE]</div></div>
+    </div>
+    <div class="col">
+      <div class="ic">Lost</div>
+      <p class="l"><b>Lost:</b> one afternoon, late Oct., near canal, golden edges. Reward. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Found:</b> sketchbook of hands, No. 9 tram. Describe third hand.</p>
+      <div class="ic">Personal</div>
+      <p class="l t"><b>To the painter</b> in the green coat: you were right about the corner. Repainted.</p>
+    </div>
+  </div>
+
+  <!-- the grid breaks into a colour mosaic -->
+  <div class="mosaic">
+    <div class="pair">
+      <span style="background: var(--red)">EMPLEO</span><span style="background: var(--blue)">EMPLOYMENT</span>
+      <span style="background: var(--red)">SERVICIOS</span><span style="background: var(--blue)">SERVICES</span>
+      <span style="background: var(--green); grid-column: span 2">PUBLIC ANNOUNCEMENTS · ANUNCIOS PÚBLICOS</span>
+    </div>
+    <div class="mb" style="border: 3px solid var(--red)">
+      <div style="font-family: 'Anton', Impact, sans-serif; font-size: 30px; line-height: 1; color: var(--red)">¡TALLER GRATIS!</div>
+      <div style="font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--blue); margin-top: 2px">FREE MURAL WORKSHOP</div>
+      <p style="font-weight: 700; margin-top: 6px">Sábados 10 a.m. · Saturdays 10 a.m.<br>Pinturas incluidas · Paint included<br>Todas las edades · All ages</p>
+      <div style="font-family: 'Anton', sans-serif; font-size: 24px; margin-top: 6px">[PHONE]</div>
+    </div>
+    <div class="mb" style="border: 3px solid #0e8a8a; background: #f6e7a6; font-family: 'Tinos', serif">
+      <div style="font-family: 'Tinos', serif; font-weight: 700; font-size: 26px; line-height: 1; color: #0e8a8a">TACOS &amp; TEMPERA</div>
+      <div style="font-family: 'Archivo Black', sans-serif; font-size: 12px; margin-top: 4px">NECESITAMOS · WE NEED</div>
+      <p style="font-size: 12px; margin-top: 6px">Personas para la cocina y el fresco. Tardes y fines de semana. Cooks for the kitchen and the wall.<br>Presentarse a: [ADDRESS]</p>
+      <div style="font-family: 'Anton', sans-serif; font-size: 22px; margin-top: 4px">[PHONE]</div>
+    </div>
+    <div class="mb" style="background: var(--red); color: #fff; font-family: 'Tinos', serif">
+      <div style="font-family: 'Anton', Impact, sans-serif; font-size: 26px; line-height: 1; letter-spacing: .02em">TRADUCCIONES<br>TRANSLATIONS</div>
+      <p style="font-style: italic; font-size: 12px; margin-top: 6px">Si necesitas traducciones de calidad de español a inglés. If you need professional translations from English into Spanish, Telugu, Konkani or Marathi.</p>
+      <div style="font-family: 'Archivo Black', sans-serif; font-size: 14px; margin-top: 6px">ArtDirect · [PHONE]</div>
+    </div>
+    <div class="mb" style="border: 2px dashed var(--blue)">
+      <div style="font-family: 'Archivo Black', sans-serif; font-size: 20px; line-height: 1; color: var(--blue)">MEDICAL ASSISTANT<br><span style="font-size: 12px">FOR A SCULPTURE</span></div>
+      <p style="text-align: left; margin-top: 6px">• Must be able to hold a leg steady for an hour<br>• Bilingual plaster / bronze<br>• Reliable, multitask, no fear of dust</p>
+      <div style="font-family: 'Anton', sans-serif; font-size: 22px; margin-top: 4px">[PHONE]</div>
+    </div>
+    <div class="mb" style="border: 3px solid var(--green); grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; align-items: center; text-align: left">
+      <div>
+        <div style="font-family: 'Anton', Impact, sans-serif; font-size: 32px; line-height: 1; background: linear-gradient(90deg, #d7261e, #f26a1b, #ffd21f, #3aa335, #1f3f99); -webkit-background-clip: text; background-clip: text; color: transparent">DOES ADVERTISING WORK??</div>
+        <div style="font-family: 'Archivo Black', sans-serif; font-size: 22px; margin-top: 2px">IT JUST DID.</div>
+      </div>
+      <div style="font-size: 12px"><b>Your box here.</b> Any colour, any font, any language. The paper will set it however you like and then set it slightly differently somewhere else. <div style="font-family: 'Anton', sans-serif; font-size: 26px; margin-top: 4px">[PHONE]</div></div>
+    </div>
+  </div>
+
+  <!-- six columns again -->
+  <div class="band6">
+    <div class="col">
+      <div class="ic">Properties</div>
+      <p class="l"><b>Shop for rent</b> 32 m², main road, tall windows, good for a gallery that sells bread. <span class="ph">[PHONE]</span></p>
+      <p class="l t"><b>Double height</b> studio with mezzanine, north light, freight lift, 2 min from station. <span class="ph">[PHONE]</span></p>
+    </div>
+    <div class="col">
+      <div class="ic">Matrimonial</div>
+      <p class="l"><b>Printer, 43,</b> 5'8", own press, seeks weaver of any shaft count. Send sample. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Potter</b> seeks painter who will not use the good bowls for mixing. Photo &amp; glaze chart.</p>
+    </div>
+    <div class="col">
+      <div class="ic">Astro</div>
+      <p class="l"><b>We don't just say.</b> We do it. Beware of those who make false promises. Yantra for the blank page, remedy for the second coat. <span class="ph">[PHONE]</span></p>
+    </div>
+    <div class="col">
+      <div class="yb" style="margin-top: 6px"><div class="h">FLATS FOR<br>SALE</div><p>@ Karekar Residency, 3.5 km from Panjim madness. Studio-sized rooms, river view, no GST on dreams.</p><div class="ph">[PHONE]</div></div>
+    </div>
+    <div class="col">
+      <div class="ic">Pest control</div>
+      <p class="l"><b>Woodworm</b> in your type cases? Treatment 10 yrs guarantee, press-safe. <span class="ph">[PHONE]</span></p>
+      <p class="l t"><b>Moth</b> in the costume store. Discreet, same day. <span class="ph">[PHONE]</span></p>
+    </div>
+    <div class="col">
+      <div class="ic">Situations</div>
+      <p class="l"><b>Urgently required</b> gallery front desk, M/F, must sweep sand. <span class="ph">[PHONE]</span></p>
+      <p class="l"><b>Wanted</b> telecallers to ring sitters who cancelled. Patience. <span class="ph">[PHONE]</span></p>
+    </div>
+  </div>
+  <div class="foot">CLASS CONTD · EVERY DIRECTION</div>
+</div>
+</div>
+<figcaption><b>2. Bazaar (present-day regional daily with a colour-mosaic band).</b> Eight narrow columns break into a three-column bilingual mosaic, then come back as six. Borrowed: orange banner with the category roll behind it (cl-015), icon labels on yellow bars (cl-015), pink premium liners and bold openings (cl-015/027), yellow boxes with huge phone numbers (cl-015/021), paired red/blue tabs, each box in its own font and border, the rainbow house ad (cl-023), blue continuation bar (cl-027).</figcaption>
+</figure>
+
+<!-- ================================================================ PAGE 3 -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="p3" style="padding: 34px 38px; display: flex; flex-direction: column; background: #fbfaf7;">
+  <style>
+    #p3 .head { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Arimo', sans-serif; font-size: 11px; border-bottom: 2px solid #111; padding-bottom: 4px; }
+    #p3 .title { display: flex; align-items: center; gap: 18px; margin-top: 10px; }
+    #p3 h1 { margin: 0; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 74px; line-height: .9; letter-spacing: .01em; }
+    #p3 .bar { background: var(--vermilion); color: #fff; padding: 4px 10px; font-family: 'Anton', sans-serif; font-size: 16px; letter-spacing: .06em; }
+    #p3 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 14px; margin-top: 12px; }
+    #p3 .nb { border: 1.5px solid #111; padding: 9px 11px; background: #fff; margin-bottom: 10px; }
+    #p3 .nh { margin: 0 0 5px; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 23px; line-height: 1; text-align: center; letter-spacing: .01em; }
+    #p3 .nt { margin: 0; font-family: 'Arimo', sans-serif; font-size: 11.5px; line-height: 1.36; text-align: justify; }
+    #p3 .ns { margin: 7px 0 0; text-align: center; font-family: 'Arimo', sans-serif; font-size: 11px; line-height: 1.35; }
+    #p3 .ns b { display: block; font-size: 12.5px; }
+    #p3 .rev { background: #111; color: #fff; margin: -9px -11px 8px; padding: 6px 11px; text-align: center; }
+    #p3 .wood { grid-column: span 2; border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 8px; text-align: center; background: var(--sepia); color: var(--sepia-ink); margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #p3 .wood .w1 { font-family: 'Ultra', serif; font-size: 34px; line-height: 1; }
+    #p3 .wood .w2 { font-family: 'Old Standard TT', serif; font-style: italic; font-size: 14px; margin-top: 4px; }
+    #p3 .wood .w3 { font-family: 'Old Standard TT', serif; font-variant: small-caps; letter-spacing: .18em; font-size: 12px; margin-top: 4px; }
+    #p3 .wood .w4 { font-family: 'Old Standard TT', serif; font-size: 10.5px; line-height: 1.3; margin-top: 6px; text-align: justify; }
+    #p3 .ribbon { margin-top: 6px; position: relative; text-align: center; }
+    #p3 .ribbon .v { font-family: 'Bowlby One', sans-serif; font-size: 64px; line-height: .9; letter-spacing: .02em; color: #111; background: repeating-radial-gradient(circle, #111 0 .6px, transparent .6px 2.2px); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    #p3 .ribbon .r { position: absolute; left: 0; right: 0; top: 54%; transform: rotate(-1.5deg); background: #fbfaf7; border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; font-family: 'Roboto Condensed', sans-serif; font-size: 12px; letter-spacing: .14em; padding: 2px 0; white-space: nowrap; overflow: hidden; }
+    #p3 .grid7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); column-gap: 8px; border-top: 2px solid #111; padding-top: 8px; margin-top: 8px; flex-grow: 1; }
+    #p3 .ll { font-family: 'Roboto Condensed', sans-serif; font-size: 9.5px; line-height: 1.22; margin-bottom: 5px; }
+    #p3 .ll b { text-transform: uppercase; }
+    #p3 .lb { border: 1.5px solid #111; padding: 6px 5px; text-align: center; margin-bottom: 6px; }
+    #p3 .lb .n { font-family: 'Alfa Slab One', serif; font-size: 13px; line-height: 1.05; letter-spacing: .04em; }
+    #p3 .lb p { font-family: 'Libre Caslon Text', serif; font-size: 10.5px; line-height: 1.3; margin: 3px 0; }
+    #p3 .lb i { font-family: 'Libre Caslon Text', serif; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  </style>
+  <div class="head"><span>[DATE]</span><span>ARTDIRECT · NOTICES &amp; LOVE LINES</span><span>PAGE 9</span></div>
+  <div class="title">
+    <h1>NOTICES</h1>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px">
+      <div class="bar">MARRIAGES · BIRTHS · IN MEMORIAM · THANKS · CANCELLATIONS</div>
+      <div style="font-family: 'Arimo', sans-serif; font-style: italic; font-size: 12px">Notices are set as received. ArtDirect does not verify claims made in them. Love Lines close at noon on the 13th.</div>
+    </div>
+  </div>
+
+  <!-- three-column notice grid -->
+  <div class="grid3">
+    <div>
+      <div class="nb"><h2 class="nh">A MARRIAGE</h2><p class="nt">The marriage took place quietly on Saturday between a weaver of this parish and a printer of the next. The couple will live above the shop and argue about kerning. No gifts; bring thread or type.</p><p class="ns"><b>[NAME] &amp; [NAME]</b>The Old Mill</p></div>
+      <div class="nb"><div class="rev"><div style="font-family: 'Anton', sans-serif; font-size: 46px; line-height: .95">STUDIO</div><div style="font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .4em">CLOSED</div></div><p class="nt">The ceramics studio on the second floor will be closed from the first frost until the kiln is repaired. Members may collect fired work on Saturdays between ten and one. Unclaimed pots will be planted with bulbs and given to the street.</p><div style="margin-top: 8px; display: flex; flex-direction: column; gap: 3px; font-family: 'Arimo', sans-serif; font-size: 11px"><div style="display: flex; justify-content: space-between"><span>Studio manager</span><span style="background: #111; color: #fff; padding: 0 6px; font-weight: 700">[PHONE]</span></div><div style="display: flex; justify-content: space-between"><span>Kiln enquiries</span><span style="background: #111; color: #fff; padding: 0 6px; font-weight: 700">[PHONE]</span></div></div></div>
+    </div>
+    <div>
+      <div class="nb" style="border-width: 3px"><h2 class="nh" style="font-size: 21px">IN MEMORIAM</h2><p class="nt" style="text-align: center; font-family: 'Libre Caslon Text', serif; font-size: 13px; line-height: 1.45">For the old projector at the Rialto, who showed ten thousand films and never once complained about the endings. Switched off for the last time this spring.</p><p class="ns" style="font-family: 'Libre Caslon Text', serif; font-style: italic">Remembered by everyone in the back row</p></div>
+      <div class="nb"><h2 class="nh">A BIRTH</h2><p class="nt">Announcing the arrival of a daughter to two members of the Thursday choir. Both mother and alto are doing well. Visitors welcome; lullabies in any key, hymns by arrangement.</p><p class="ns"><b>[NAME]</b>7 lb 4 oz · a soprano, we think</p></div>
+      <div class="nb"><h2 class="nh" style="font-family: 'Alfa Slab One', serif; font-size: 20px">Card of Thanks</h2><p class="nt">Many thanks to everyone who came to the reading on Thursday, to the stranger who held the umbrella over the microphone, and to the café for not minding the poems.</p><p class="ns" style="font-family: 'Libre Caslon Text', serif; font-style: italic; font-size: 12.5px">With gratitude, the Thursday Poets</p></div>
+    </div>
+    <div>
+      <div class="nb"><h2 class="nh">CHANGE OF NAME</h2><p class="nt">I, the painter formerly known on the platform as [OLD NAME], shall henceforth work and exhibit as [NEW NAME]. All previous work remains mine; all future work may surprise us both.</p><p class="ns"><b>[NEW NAME]</b>ArtDirect file no. [ID]</p></div>
+      <div class="nb" style="background: #111; color: #fff; text-align: center"><div style="font-family: 'Anton', sans-serif; font-size: 28px; line-height: 1">CALL FOR WORK</div><p class="nt" style="margin-top: 6px; text-align: center; color: #fff">Open submission for the winter salon. Any medium, any size that fits through a door. Deadline the first Monday of December.</p><div style="margin-top: 8px; background: #fff; color: #111; padding: 3px; font-family: 'Arimo', sans-serif; font-weight: 700; font-size: 11.5px">SUBMIT ON ARTDIRECT · ENTRY FREE</div></div>
+      <div class="nb"><h2 class="nh">MEETING NOTICE</h2><p class="nt">The annual meeting of the Printmakers' Guild will be held at the library on the 12th at 6 p.m. Agenda: the press, the roof, and the question of the press on the roof.</p></div>
+    </div>
+    <!-- a woodtype stack intrudes across two columns -->
+    <div class="wood">
+      <div><div class="w1">ALLEN'S<br>IRON TONIC</div><div class="w2">For the Tired Hand and the Timid Line.</div><div class="w3">sold by every druggist.</div></div>
+      <div class="w4">One spoonful before the first mark and the brush goes where it is sent. Cures hesitation, blotting, the second guess and the third coat. Testimonials from forty painters, nine of them sober. Sample bottle on receipt of stamp. NOYES BROS. &amp; CUTLER, Wholesale Agents, [ADDRESS]. <span style="font-size: 9px">m18 1m</span></div>
+    </div>
+    <div class="nb"><h2 class="nh">FOUND, ONE SCARF</h2><p class="nt">Green, hand-knitted, on the back of a chair after the lecture on colour. The owner may collect it from the office on production of a matching glove.</p></div>
+  </div>
+
+  <!-- the grid breaks into seven: love lines -->
+  <div class="ribbon">
+    <div class="v">VALENTINE</div>
+    <div class="r">LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES · LOVE LINES</div>
+  </div>
+  <div class="grid7">
+    <div><div class="lb"><div class="n">JOHN MINOR</div><p>I wanna be loved by you. There isn't anything I wouldn't do. I wanna be held by you.</p><i>Love, Ellen</i></div><p class="ll"><b>Hi Eddie</b> I have loved you for eight years and always will. Your secret admirer, no longer secret.</p></div>
+    <div><p class="ll"><b>Hi family</b> I love you. I love you. I love you all. Happy Valentine's Day, love Mommy Connor.</p><div class="lb"><div class="n">JOE GILLESPIE</div><p>Happy Valentine's Day! I love you very much!</p><i>Love, Lisa &amp; Baby</i></div><p class="ll"><b>Jeff,</b> 222 days left before we become one! Will you be my Valentine for the sixth time?</p></div>
+    <div><div class="lb" style="border-width: 2.5px"><div class="n" style="font-size: 16px">JOYCE</div><p style="font-size: 11.5px">Being without you has to be the most painful time of my life. But my love for you only grows stronger and stronger. I need and love you very much.</p><i>Gary B.</i></div></div>
+    <div><p class="ll"><b>Kathy,</b> you're the greatest wife and mom us guys could ever want. We love you very much. Barry and Sean.</p><div class="lb"><p style="font-family: 'Roboto Condensed', sans-serif; text-transform: uppercase; font-size: 10px">You're not a house-painter, it's true, yet I love the little things you do, and our love keeps on building</p></div><p class="ll"><b>Keith,</b> I'll be waiting for you under the Christmas tree. I miss you. Love always, Amy.</p></div>
+    <div><div class="lb"><div class="n">LILLIAN PARNELL</div><p>I love and miss you so much it hurts. All I ever wanted was you. I'll always be there when you need me.</p><i>Always, Mike</i></div><p class="ll"><b>Lee R.,</b> my love in print to let you know I will always love you. XOX 88.</p></div>
+    <div><p class="ll"><b>To the painter</b> in the green coat: you were right about the corner. I have repainted it. Box A-171.</p><div class="lb"><div class="n">MICHAEL</div><p>I love you Bushel and a Peck.</p><i>Love, your little honey</i></div><p class="ll"><b>Maria,</b> bunny, I love you so much and I want to ask you a question. Will you be my Valentine?</p></div>
+    <div><div class="lb"><div class="n">CAROL</div><p>After 10 years you're still the one I draw first.</p><i>Gary</i></div><p class="ll"><b>Dana,</b> for the one who holds the ladder. Always. Your back row.</p><p class="ll"><b>Mark C.,</b> happy Valentine's to the only person I know how to care about. Melissa D.</p></div>
+  </div>
+</div>
+</div>
+<figcaption><b>3. Notices and Love Lines (boxed grid breaking into personals).</b> Three columns of boxed notices, a Victorian tonic stack intruding across two of them, then the grid breaks into seven narrow columns under a textured VALENTINE ribbon. Borrowed: near-identical boxed notices with heavy condensed heads and centred name blocks (cl-008), double-height reversed head with phone tags (cl-008), Card of Thanks in slab (cl-017), reversed "CALL FOR WORK" panel (cl-003), vermilion bar (cl-027), woodtype stack with insertion code (cl-037), illustrated banner, bold-lead notes and boxed centred messages with slab names and italic sign-offs (cl-009).</figcaption>
+</figure>
+
+<!-- ================================================================ PAGE 4 -->
+<figure class="frame">
+<div class="scaler">
+<div class="page" id="p4" style="display: grid; grid-template-columns: 58fr 42fr;">
+  <style>
+    #p4 .pioneer { background: var(--sepia); color: var(--sepia-ink); padding: 28px 22px 24px 30px; font-family: 'Old Standard TT', Georgia, serif; display: flex; flex-direction: column; border-right: 2px solid var(--sepia-ink); }
+    #p4 .run { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; border-bottom: 1px solid var(--sepia-ink); padding-bottom: 3px; }
+    #p4 .uneq { display: grid; grid-template-columns: 1.25fr .85fr 1.1fr; column-gap: 10px; margin-top: 8px; }
+    #p4 .uneq > div { border-right: 1px solid var(--sepia-ink); padding-right: 10px; }
+    #p4 .uneq > div:last-child { border-right: 0; padding-right: 0; }
+    #p4 .sc { text-align: center; font-variant: small-caps; letter-spacing: .18em; font-size: 12px; border-top: 1px solid var(--sepia-ink); border-bottom: 1px solid var(--sepia-ink); padding: 2px 0; margin: 8px 0 6px; }
+    #p4 .st { text-align: center; padding: 4px 0 8px; border-bottom: 1px solid var(--sepia-ink); }
+    #p4 .st .a { font-family: 'Ultra', serif; font-size: 26px; line-height: 1; }
+    #p4 .st .b { font-family: 'Rye', serif; font-size: 15px; margin-top: 3px; letter-spacing: .04em; }
+    #p4 .st .c { font-style: italic; font-size: 12.5px; margin-top: 3px; }
+    #p4 .st .d { font-size: 10.5px; line-height: 1.3; margin-top: 4px; text-align: justify; }
+    #p4 .st .e { font-size: 10px; letter-spacing: .08em; margin-top: 3px; }
+    #p4 .st .code { display: block; text-align: right; font-size: 8.5px; letter-spacing: .04em; margin-top: 2px; }
+    #p4 .tt { font-size: 10px; line-height: 1.35; }
+    #p4 .tt .r { display: flex; }
+    #p4 .tt .r span:first-child { flex: 1 1 auto; overflow: hidden; white-space: nowrap; }
+    #p4 .tt .r span:first-child::after { content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."; }
+    #p4 .tt .h { text-align: center; font-weight: 700; letter-spacing: .1em; font-size: 11px; margin: 4px 0 2px; }
+    #p4 .cut { height: 46px; margin: 4px auto 2px; width: 90%; border: 1px solid var(--sepia-ink); background: repeating-linear-gradient(90deg, var(--sepia-ink) 0 1px, transparent 1px 3px), linear-gradient(to top, var(--sepia-ink) 0 30%, transparent 30%); opacity: .55; }
+    #p4 .revout { background: var(--sepia-ink); color: var(--sepia); text-align: center; padding: 8px 4px; margin-top: 8px; font-family: 'Ultra', serif; font-size: 20px; line-height: 1; letter-spacing: .04em; text-shadow: 1px 1px 0 #7a6a4a; }
+    #p4 .two { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; margin-top: 10px; border-top: 3px double var(--sepia-ink); padding-top: 8px; flex-grow: 1; }
+    #p4 .back { background: var(--comic); color: #1b1714; padding: 26px 24px 22px 20px; display: flex; flex-direction: column; }
+    #p4 .back h1 { margin: 0; text-align: center; font-family: 'Rye', serif; font-weight: 400; font-size: 48px; line-height: .95; text-shadow: 3px 3px 0 #b42a22; }
+    #p4 .back .sub { text-align: center; font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 11px; letter-spacing: .04em; margin-top: 4px; }
+    #p4 .offers { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; grid-auto-rows: min-content; flex-grow: 1; }
+    #p4 .ad { border: 1.5px solid #1b1714; padding: 7px 8px; background: #f6e9bd; display: flex; flex-direction: column; gap: 4px; }
+    #p4 .ah { margin: 0; font-family: 'Archivo Black', sans-serif; font-size: 14px; line-height: 1.02; text-transform: uppercase; }
+    #p4 .at { margin: 0; font-family: 'Courier Prime', monospace; font-size: 10px; line-height: 1.3; }
+    #p4 .pr { align-self: flex-end; font-family: 'Alfa Slab One', serif; font-size: 16px; color: #b42a22; }
+    #p4 .coupon { grid-column: span 2; border: 2px dashed #1b1714; padding: 10px 12px; position: relative; background: #f6e9bd; }
+    #p4 .line { border-bottom: 1px dotted #1b1714; height: 16px; font-family: 'Courier Prime', monospace; font-size: 10px; display: flex; align-items: flex-end; margin-top: 6px; }
+    #p4 .back .foot { margin-top: 8px; border-top: 2px solid #1b1714; padding-top: 4px; font-family: 'Courier Prime', monospace; font-size: 9.5px; display: flex; justify-content: space-between; }
+  </style>
+  <div class="pioneer">
+    <div class="run"><span>Daily Pioneer</span><span>Tuesday, June 6, 1871</span><span>Advertisements</span></div>
+    <!-- three unequal columns -->
+    <div class="uneq">
+      <div>
+        <div class="sc">Sewing Machines.</div>
+        <div class="st"><div class="cut"></div><div class="a">THE HOWE</div><div class="b">STRETCHING MACHINE</div><div class="c">The Grandest Production of Inventive Genius.</div><div class="d">Adapted to every variety of canvas, from postcard to barn door. Leave it overnight and it pulls itself tight as a drum. No staples, no swearing. Agents wanted to sell this world-renowned machine.</div><div class="e">E. R. BRYANT, GENERAL AGENT, [ADDRESS]</div><span class="code">dec10 3m</span></div>
+        <div class="sc">Freight.</div>
+        <div class="st"><div class="a" style="font-size: 20px">CHEAP FREIGHT LINE</div><div class="d">The undersigned are prepared to forward paintings from any studio to any wall on the river. Our rates are: Small Canvases, [RATE] per 100 lbs.; Large Canvases, [RATE]; Sculpture, by arrangement and prayer.</div><div class="e">W. J. McLANE, [ADDRESS]</div><span class="code">m16 6m</span></div>
+      </div>
+      <div>
+        <div class="sc">Clothing.</div>
+        <div class="st"><div class="b">H. PFANKUCH &amp; CO.</div><div class="c">Jobbers of</div><div class="a" style="font-size: 22px">SMOCKS</div><div class="d">Painters' Furnishing Goods, &amp;c. Aprons, sleeves, and the hat with the brim.</div><span class="code">m17m</span></div>
+        <div class="sc">Wines, Liquors, &amp;c.</div>
+        <div class="st"><div class="b">NEW STORE! PURE TURPENTINE!</div><div class="c">M. FRANKEL deals in</div><div class="a" style="font-size: 18px">BRANDIES</div><div class="d">Wines, Gins, Whiskies and Spirits of Turpentine. Three doors above the studios. A quiet place to think.</div><span class="code">ap15 ly</span></div>
+        <div class="revout">ALLEN'S<br>IRON TONIC<br>BITTERS</div>
+      </div>
+      <div>
+        <div class="sc">Railroads.</div>
+        <div class="st" style="border-bottom: 0">
+          <div class="cut" style="height: 40px"></div>
+          <div class="a" style="font-size: 18px">ST. PAUL &amp; PACIFIC</div>
+          <div class="tt">
+            <div class="h">1871. SUMMER TIME TABLE. 1871.</div>
+            <div class="r"><span>Leave the Studio</span><span>7.30 a.m.</span></div>
+            <div class="r"><span>Arrive at the Gallery</span><span>7.45 a.m.</span></div>
+            <div class="r"><span>Leave the Gallery, discouraged</span><span>12.01 p.m.</span></div>
+            <div class="r"><span>Arrive at the Café</span><span>12.15 p.m.</span></div>
+            <div class="r"><span>Leave the Café, restored</span><span>3.00 p.m.</span></div>
+            <div class="r"><span>Arrive at the Studio</span><span>3.20 p.m.</span></div>
+            <div class="h">BRANCH LINE</div>
+            <div class="r"><span>Leave the Kiln</span><span>cone 6</span></div>
+            <div class="r"><span>Stop for Dinner, 20 minutes</span><span>Litchfield</span></div>
+            <div class="r"><span>Arrive at the Harvest Fair</span><span>sunset</span></div>
+          </div>
+          <div class="e" style="margin-top: 6px">ASK FOR TICKETS VIA WINONA CUT OFF.<br>J. H. RANDALL, General Ticket Agent.</div>
+        </div>
+      </div>
+    </div>
+    <!-- the three uneven columns become two -->
+    <div class="two">
+      <div class="st" style="border-bottom: 0"><div class="a" style="font-size: 24px">WINONA &amp; ST. PETER</div><div class="b">COMPLETION OF THE</div><div class="a" style="font-size: 30px; letter-spacing: .06em">CUT OFF.</div><div class="d">Making the shortest and smoothest route from the first sketch to the last coat, and all other points in between. Two daily trains each way, Sundays excepted. Elegant drawing-room coaches for those who draw in rooms.</div><div class="e">ASK FOR TICKETS · J. H. STEWART, GEN. SUPT.</div><span class="code">jan20tf</span></div>
+      <div class="st" style="border-bottom: 0"><div class="sc" style="margin-top: 0">Carriages.</div><div class="cut" style="height: 36px"></div><div class="a" style="font-size: 22px">CARRIAGES</div><div class="c">For the Sale of the Only Genuine</div><div class="b">STUDEBAKER EASEL</div><div class="d">Also harness, straps and every variety of buckle for the travelling painter. Repairs promptly done. Studio on wheels built to order.</div><div class="e">CAMPBELL &amp; BROTHER, [ADDRESS]</div><span class="code">m18 1m</span></div>
+    </div>
+  </div>
+
+  <div class="back">
+    <div style="display: flex; justify-content: space-between; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: .06em"><span>BACK OF THE BOOK</span><span style="background: #b42a22; color: var(--comic); padding: 1px 7px">BY MAIL OR ARTDIRECT</span></div>
+    <h1 style="margin-top: 8px">AMAZING<br>OFFERS!</h1>
+    <div class="sub">THINGS FOR ARTISTS, DREAMERS AND PEOPLE WHO READ TO THE LAST PAGE</div>
+    <div class="offers">
+      <div class="ad" style="grid-row: span 2"><p class="ah" style="font-size: 18px">X-RAY<br>SKETCH-<br>BOOK</p><p class="at">See right through your own bad habits! Pages so thin you can trace your heroes. Hold it to the light and watch last year's drawings show through this year's.</p><p class="at"><b>Scientific!</b> Guaranteed to contain paper.</p><span class="pr">$1.00</span></div>
+      <div class="ad"><p class="ah">GROW YOUR OWN AUDIENCE</p><p class="at">Just add water and one honest painting. Results in six to eight years.</p><span class="pr">25¢</span></div>
+      <div class="ad"><p class="ah">INSTANT MUSE</p><p class="at">Tiny living ideas! Hatch them in a glass of water. Each kit holds a hundred possibilities, most of them good.</p><span class="pr">50¢</span></div>
+      <div class="ad" style="grid-column: span 2; background: #1b1714; color: var(--comic); text-align: center"><p class="ah" style="font-size: 13px; color: var(--comic)">I WAS A 97-SKETCH WEAKLING</p><div style="font-family: 'Rye', serif; font-size: 26px; line-height: 1; color: #f6e9bd">until I found<br>DYNAMIC DRAWING</div><p class="at" style="color: var(--comic)">Fifteen minutes a day in the privacy of your own kitchen. Thicker lines! Bolder shadows! Hands that look like hands!</p><span style="align-self: center; background: #b42a22; color: #fff; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 11px; padding: 2px 9px; letter-spacing: .06em">SEND FOR IT TODAY · DEPT. 9</span></div>
+      <div class="ad"><p class="ah">BE A CARTOONIST!</p><p class="at">Draw funny people for fun and profit. Includes one pencil and the secret of noses.</p><span class="pr">$1.50</span></div>
+      <div class="ad"><p class="ah" style="font-size: 12px">STAMMERING PEN?</p><p class="at">Blots, skips, false starts cured at home. Pamphlet in plain wrapper.</p><span class="pr">FREE</span></div>
+      <div class="coupon">
+        <span style="position: absolute; top: -9px; left: 12px; background: var(--comic); padding: 0 3px; font-size: 14px; line-height: 1">✂</span>
+        <div style="text-align: center; font-family: 'Archivo Black', sans-serif; font-size: 20px; line-height: 1">YES! SEND ME THE<br><span style="color: #b42a22">FREE CATALOG</span></div>
+        <p class="at" style="text-align: center; margin-top: 4px">of a thousand and one things every studio needs and several it does not.</p>
+        <div class="line">NAME</div><div class="line">ADDRESS</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"><div class="line">CITY</div><div class="line">AGE</div></div>
+        <p class="at" style="margin-top: 6px; text-align: center"><b>Mail to Dept. B-12, c/o ArtDirect, or post this on the platform.</b></p>
+      </div>
+      <div class="ad" style="grid-column: span 2; background: #b42a22; color: #f6e9bd; border-color: #b42a22; text-align: center"><div style="font-family: 'Rye', serif; font-size: 22px; line-height: 1">TERRORS OF THE BLANK PAGE</div><p class="at" style="color: #f6e9bd">exposed at last! What the masters never told you about the first mark. Send stamp for details.</p></div>
+    </div>
+    <div class="foot"><span>Allow 4 to 6 weeks. Wonder not guaranteed.</span><span>ADVERTISE HERE · [PHONE]</span></div>
+  </div>
+</div>
+</div>
+<figcaption><b>4. Pioneer beside the Back Pages (1871 broadsheet and comic mail order on one page).</b> The left 58 % runs three unequal columns (1.25 : 0.85 : 1.1) that become two under a double rule; the right 42 % is a different paper with its own two-column offer grid. Borrowed: small-cap labels with full stops, centred stacks each line in a different face, timetable with dot leaders, engraved cuts (stand-ins), insertion codes at the ad foot, white-on-black reverse-out (cl-037); circus woodtype masthead with red offset shadow, tiny boxed offers with price, scissor coupon on spot-colour paper (cl-030).</figcaption>
+</figure>
+
+</div>
+
+<script>
+(function () {
+  function fit() {
+    var w = Math.min(900, document.documentElement.clientWidth - 32);
+    var s = w / 900;
+    document.querySelectorAll('.scaler').forEach(function (el) {
+      el.style.transform = 'scale(' + s + ')';
+      // The transform leaves the layout box at 900×1300; pull the caption up to the scaled edge.
+      el.style.marginBottom = Math.round(-1300 * (1 - s)) + 'px';
+    });
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>

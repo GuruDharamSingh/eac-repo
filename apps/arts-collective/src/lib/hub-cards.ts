@@ -96,7 +96,7 @@ export const SITE_PANELS: HubCard[] = [
   },
   {
     id: "eac_account",
-    title: "Elkdonis Account",
+    title: "Arts Collective Account",
     blurb:
       "Your EAC membership settings — email, notifications, deeper partnership options.",
     href: "/account",

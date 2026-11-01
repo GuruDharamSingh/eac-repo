@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession, isAdmin } from "@elkdonis/auth-server";
 import {
@@ -19,6 +19,27 @@ export async function getCurrentUserId(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * The sign-in URL that comes back to the page being rendered. Layouts cannot
+ * see their own path, so it is read from the `x-market-url` header the proxy
+ * sets (src/proxy.ts); without it, the studio layout sent everyone back to
+ * /studio, including people who had come to open a store at /studio/apply.
+ */
+export async function signInPath(fallback = "/studio"): Promise<string> {
+  let next = fallback;
+  const url = (await headers()).get("x-market-url");
+  if (url) {
+    try {
+      const u = new URL(url, "http://local");
+      const path = u.pathname + u.search;
+      if (path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/login")) next = path;
+    } catch {
+      // Keep the fallback.
+    }
+  }
+  return `/login?next=${encodeURIComponent(next)}`;
 }
 
 export interface CurrentUser {
@@ -132,7 +153,7 @@ export async function requireStudioStore(
   requested?: string | null
 ): Promise<StudioContext> {
   const { userId, store, stores } = await resolveStudioStore(requested);
-  if (!userId) redirect("/login?next=/studio");
+  if (!userId) redirect(await signInPath());
   if (!store) redirect("/studio/apply");
   if (store.status !== "active") {
     // Fall back to any active store before bouncing to the status page.

@@ -6,6 +6,7 @@ import { WritingDesk } from "@elkdonis/cms-ui/writing";
 import "@elkdonis/cms-ui/editor.css";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
+import { redirectRenamedProfile } from "@/lib/slug-redirect";
 import {
   deletePieceAction,
   loadPieceListingAction,
@@ -54,7 +55,10 @@ export default async function WritingPiecePage({ params, searchParams }: Props) 
   const { slug, piece } = await params;
   const { edit } = await searchParams;
   const profile = await getProfileBySlug(slug);
-  if (!profile) notFound();
+  if (!profile) {
+    await redirectRenamedProfile(slug, (current) => `/${current}/writing/${encodeURIComponent(piece)}`);
+    notFound();
+  }
 
   const user = await getCurrentUser();
   const editable = Boolean(user && (await canEditProfile(user.id, profile.userId)));

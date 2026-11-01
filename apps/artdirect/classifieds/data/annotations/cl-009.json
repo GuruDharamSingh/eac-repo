@@ -1,0 +1,25 @@
+{
+  "id": "cl-009",
+  "status": "draft",
+  "source": { "paper": "unknown US daily, Valentine's personals section", "place": "USA", "era": "1980s (inferred from typefaces and halftone)", "language": ["en"] },
+  "summary": "A once-a-year Valentine 'Love Lines' section: a row of outlined hearts, VALENTINE in giant stippled black letters wrapped by a ribbon banner, then columns mixing short bold-lead love notes with boxed centred messages in heavy slab names and italic sign-offs.",
+  "family": "seasonal-personals",
+  "frame": { "columns": 7, "columnWidth": "medium", "gutter": "normal", "columnRules": "thin", "flow": "mixed", "masthead": "Illustrated banner: outline hearts, stippled-texture display letters, a ribbon reading LOVE LINES · LOVE LINES." },
+  "headers": [
+    { "id": "ribbon-banner", "kind": "banner", "example": "LOVE LINES · LOVE LINES", "fg": "#111111", "bg": "#ffffff", "align": "center", "box": [0.0, 0.33, 1.0, 0.1], "notes": "Wavy ribbon of light geometric sans caps with middots, weaving through the display letters." }
+  ],
+  "units": [
+    { "id": "love-liner", "kind": "liner-bold-lead", "frequency": "dominant", "lead": "bold-caps", "align": "justify", "border": "none", "example": "KATHY, YOU'RE the greatest Wife and Mom us guys could ever want...", "notes": "Name and first words in bold caps; very small condensed sans body." },
+    { "id": "love-box", "kind": "display", "frequency": "common", "lead": "bold-caps", "align": "center", "border": "thin", "example": "JOYCE / Being without you has to be the most painful time of my life... / GARY B.", "box": [0.44, 0.5, 0.15, 0.48], "notes": "Name in bold slab caps, message in large roman serif, sign-off in italic caps. Box sizes vary by price." },
+    { "id": "caps-box", "kind": "boxed-liner", "frequency": "occasional", "lead": "none", "align": "center", "border": "thin", "example": "YOU'RE NOT A HOUSE-PAINTER, IT'S TRUE...", "notes": "Whole message in serif caps, centred." }
+  ],
+  "type": [
+    { "role": "display", "classification": "grotesque", "look": "Ultra-heavy sans with a stippled/sponge texture fill", "weight": "black", "width": "normal", "case": "upper", "webFont": "Bowlby One" },
+    { "role": "lead", "classification": "slab", "look": "Bold Clarendon/Rockwell-like caps for names", "weight": "bold", "width": "normal", "case": "upper", "webFont": "Alfa Slab One" },
+    { "role": "body", "classification": "transitional", "look": "Roman serif for boxed messages, italic for sign-offs", "weight": "regular", "width": "normal", "case": "sentence", "webFont": "Libre Caslon Text" },
+    { "role": "body", "classification": "condensed-grotesque", "look": "Tiny condensed sans for liner notes", "weight": "regular", "width": "condensed", "case": "sentence", "webFont": "Roboto Condensed" }
+  ],
+  "color": { "mode": "mono", "paper": "#ffffff", "ink": "#111111", "accents": [] },
+  "ornaments": ["outline hearts", "ribbon banner", "XOXO sign-offs"],
+  "notes": ["Seasonal sections are a natural generator mode: swap the banner and sign-off vocabulary (Valentine, Christmas greetings, graduation)."]
+}

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createArtwork, publishArtwork } from "@elkdonis/commerce/server";
-import { getStoreForUser } from "@elkdonis/commerce/queries";
+import { getStoreForUser, getStoreForOrg } from "@elkdonis/commerce/queries";
+import { canActForStore } from "@elkdonis/commerce/server";
+import { MARKETPLACE_ORG } from "./marketplace";
 import { marketplaceLinks } from "@elkdonis/commerce/links";
 import type { ArtworkKind } from "@elkdonis/commerce/types";
 import { getHubViewer } from "@/lib/hub-auth";
@@ -39,6 +41,8 @@ export interface ArtPieceInput {
   price?: string;
   certificateOfAuthenticity?: boolean;
   provenanceNotes?: string;
+  /** List in IFAC's store instead of the member's own (migration 209). */
+  listAsOrg?: boolean;
 }
 
 export type ArtPieceResult =
@@ -62,13 +66,26 @@ function num(value: string | undefined): number | null {
 export async function canListArtPieceAction(): Promise<{
   ok: boolean;
   reason?: "signed-out" | "no-store" | "store-pending";
+  /** Set when the viewer may also list in IFAC's own store. */
+  orgStoreName?: string | null;
 }> {
   const viewer = await getHubViewer();
   if (!viewer) return { ok: false, reason: "signed-out" };
-  const store = await getStoreForUser(viewer.userId).catch(() => null);
-  if (!store) return { ok: false, reason: "no-store" };
-  if (store.status !== "active") return { ok: false, reason: "store-pending" };
-  return { ok: true };
+  const [store, orgStore] = await Promise.all([
+    getStoreForUser(viewer.userId).catch(() => null),
+    getStoreForOrg(siteConfig.orgId, MARKETPLACE_ORG).catch(() => null),
+  ]);
+  const canListForOrg =
+    orgStore?.status === "active" && (await canActForStore(viewer.userId, orgStore.id));
+  const orgStoreName = canListForOrg ? siteConfig.orgName : null;
+  if (!store) {
+    // No personal store, but a seat on IFAC's: the form opens for the org.
+    return canListForOrg ? { ok: true, orgStoreName } : { ok: false, reason: "no-store" };
+  }
+  if (store.status !== "active") {
+    return canListForOrg ? { ok: true, orgStoreName } : { ok: false, reason: "store-pending" };
+  }
+  return { ok: true, orgStoreName };
 }
 
 export async function createArtPieceAction(
@@ -83,9 +100,23 @@ export async function createArtPieceAction(
     return { ok: false, error: "A piece needs an image" };
   }
 
+  // Which store: the member's own, or IFAC's when asked and permitted. The
+  // commerce layer checks the actor against the store either way.
+  let storeRef: { storeId?: string; artistUserId?: string | null };
+  if (input.listAsOrg) {
+    const orgStore = await getStoreForOrg(siteConfig.orgId, MARKETPLACE_ORG).catch(() => null);
+    if (!orgStore || !(await canActForStore(viewer.userId, orgStore.id))) {
+      return { ok: false, error: "You are not on IFAC's store team." };
+    }
+    storeRef = { storeId: orgStore.id, artistUserId: null };
+  } else {
+    storeRef = { artistUserId: viewer.userId };
+  }
+
   try {
     const { id, slug } = await createArtwork({
-      artistUserId: viewer.userId,
+      ...storeRef,
+      actorUserId: viewer.userId,
       title,
       descriptionHtml: input.descriptionHtml?.trim() || null,
       kind: input.kind ?? "original",

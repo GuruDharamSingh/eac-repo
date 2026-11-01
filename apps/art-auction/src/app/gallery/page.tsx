@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listArtworks } from "@elkdonis/commerce/queries";
+import { getArtworkById, listArtworks } from "@elkdonis/commerce/queries";
 import { VirtualGallery } from "@/components/virtual-gallery";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,18 @@ export const metadata: Metadata = {
  */
 const ROOM_CAPACITY = 40;
 
-export default async function GalleryPage() {
-  const artworks = await listArtworks({ limit: ROOM_CAPACITY });
+export default async function GalleryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ piece?: string }>;
+}) {
+  const { piece } = await searchParams;
+  let artworks = await listArtworks({ limit: ROOM_CAPACITY });
+  // Arriving from a piece's page: make sure that piece is in the room, first.
+  if (piece && !artworks.some((a) => a.id === piece)) {
+    const asked = await getArtworkById(piece).catch(() => null);
+    if (asked) artworks = [asked, ...artworks.slice(0, ROOM_CAPACITY - 1)];
+  }
 
   if (artworks.length === 0) {
     return (
@@ -51,7 +61,7 @@ export default async function GalleryPage() {
       </header>
 
       <div className="overflow-hidden rounded-xl border border-border bg-muted">
-        <VirtualGallery artworks={artworks} />
+        <VirtualGallery artworks={artworks} initialPieceId={piece ?? null} />
       </div>
     </main>
   );

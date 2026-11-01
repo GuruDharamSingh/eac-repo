@@ -1,4 +1,4 @@
-import { renderWithProps, sampleProps } from './samples';
+import { renderWithProps, sampleProps, type SampleOptions } from './samples';
 import { mergeFieldsFor, mergeValuesFor } from './merge-fields';
 import type { EmailChrome } from './components/EmailShell';
 
@@ -53,7 +53,10 @@ export function extractEditableBody(html: string): string {
  * parses rather than matches.
  */
 export function extractRegion(html: string, marker: string): string {
-  const at = html.indexOf(marker);
+  // Match the attribute (`data-eac-body="1"`), not the bare name: EmailShell's
+  // phone <style> in <head> names `[data-eac-body]` too, and the first bare
+  // hit would land there and return '' (claude, 2026-10-10).
+  const at = html.indexOf(`${marker}=`);
   if (at === -1) return '';
   const markerIndex = at;
 
@@ -141,6 +144,8 @@ export interface SeedOptions {
   chrome?: EmailChrome;
   /** Which body face the letter is set in, by id. */
   bodyFont?: string;
+  /** Which reminder to seed (`SampleOptions.purpose`); `subscriber` carries `{comingUrl}`. */
+  purpose?: SampleOptions['purpose'];
 }
 
 /**
