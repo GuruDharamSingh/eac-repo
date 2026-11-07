@@ -1,0 +1,132 @@
+/* ==========================================================================
+   The Hidden Enneagram: the house look (2026-11-07 re-stand).
+
+   Adopted from Ario's ÆON draft (~/aeon-enneagram, 2026-10-29): a near-black
+   ground with a faint gold and violet glow, warm ink, gold for marks and
+   links, and the three centre hues (gut teal, heart rose, head violet).
+   Supersedes the 2026-09-09 light theme; the Silex pages were always dark.
+
+   Two layers, so one change moves everything:
+     1. shadcn HSL triplets (what Site style edits; site-style-schema.ts)
+     2. --he-* tokens derived from them (what the blocks, the figure, the
+        header and footer read), plus the shared kits' --eac-* tokens.
+
+   Contrast, measured on the ÆON values (the defaults below):
+     ink #ece7d8 on ground #07080d     16.5:1
+     quiet ink #a7a193 on ground        7.8:1
+     gold #d4b062 on ground             8.2:1
+     gut #5fc2ae 8.4:1 · heart #e88d80 7.0:1 · head #ab9fe6 6.8:1
+     ink on card #10131e               15.0:1
+     ground-coloured text on gold       8.2:1 (the primary button)
+   The faint ink (≈4.2:1) is for large or bold labels only.
+   ========================================================================== */
+
+:root {
+  --radius: 0.5rem;
+
+  --background: 230 30% 4%;          /* night  #07080d */
+  --foreground: 45 34% 89%;          /* ink    #ece7d8 */
+  --card: 227 30% 9%;                /* card   #10131e */
+  --card-foreground: 45 34% 89%;
+  --popover: 227 30% 9%;
+  --popover-foreground: 45 34% 89%;
+  --primary: 41 57% 61%;             /* aurum  #d4b062 */
+  --primary-foreground: 230 30% 4%;
+  --secondary: 226 26% 16%;          /* card edge #1f2435 */
+  --secondary-foreground: 45 34% 89%;
+  --muted: 228 31% 6%;               /* well   #0b0d15 */
+  --muted-foreground: 42 10% 62%;    /* dim    #a7a193 */
+  --accent: 226 26% 16%;
+  --accent-foreground: 45 34% 89%;
+  --destructive: 0 62% 68%;          /* #e07a7a, 7.2:1 on the ground */
+  --destructive-foreground: 230 30% 4%;
+  --border: 226 25% 20%;             /* line   #262c40 */
+  --input: 226 18% 34%;              /* field edge, 3:1 on the ground */
+  --ring: 43 70% 70%;                /* focus  #e8ca7e */
+
+  /* The three centres and the stress line (Site style: Figure). */
+  --gut: 168 45% 57%;                /* #5fc2ae */
+  --heart: 8 69% 71%;                /* #e88d80 */
+  --head: 250 59% 76%;               /* #ab9fe6 */
+  --stress: 18 62% 65%;              /* #dd8f6e */
+
+  /* ── layer 2: the house tokens ───────────────────────────────────────── */
+  --he-night: hsl(var(--background));
+  --he-well: hsl(var(--muted));
+  --he-card: hsl(var(--card));
+  --he-card-edge: hsl(var(--secondary));
+  --he-line: hsl(var(--border));
+  --he-hairline: color-mix(in srgb, hsl(var(--border)) 55%, hsl(var(--background)));
+  --he-ink: hsl(var(--foreground));
+  --he-ink-dim: hsl(var(--muted-foreground));
+  --he-ink-faint: color-mix(in srgb, hsl(var(--muted-foreground)) 62%, hsl(var(--background)));
+  --he-aurum: hsl(var(--primary));
+  --he-aurum-soft: color-mix(in srgb, hsl(var(--primary)) 13%, transparent);
+  --he-aurum-glow: color-mix(in srgb, hsl(var(--primary)) 32%, transparent);
+  --he-gut: hsl(var(--gut));
+  --he-heart: hsl(var(--heart));
+  --he-head: hsl(var(--head));
+  --he-gut-soft: color-mix(in srgb, hsl(var(--gut)) 12%, transparent);
+  --he-heart-soft: color-mix(in srgb, hsl(var(--heart)) 12%, transparent);
+  --he-head-soft: color-mix(in srgb, hsl(var(--head)) 12%, transparent);
+  --he-stress: hsl(var(--stress));
+  --he-growth: hsl(var(--primary));
+  --he-focus: hsl(var(--ring));
+  --he-font-display: var(--site-font-heading, var(--font-marcellus), "Palatino Linotype", "Book Antiqua", serif);
+  --he-font-body: var(--site-font-body, var(--font-spectral), Georgia, "Times New Roman", serif);
+  --he-font-mono: var(--font-chivo-mono), "SFMono-Regular", Consolas, monospace;
+  --he-max: 1180px;
+  --he-gutter: clamp(18px, 4vw, 48px);
+
+  /* The old dark band (the triads page and the Silex-era sections). */
+  --band: var(--background);
+  --band-foreground: var(--foreground);
+  --band-muted: var(--muted-foreground);
+  --band-primary: var(--primary);
+  --band-danger: var(--destructive);
+
+  /* The shared blocks (@elkdonis/blocks), in this palette. */
+  --eac-block-bg: hsl(var(--background));
+  --eac-block-bg-soft: hsl(var(--card));
+  --eac-block-fg: hsl(var(--foreground));
+  --eac-block-muted: hsl(var(--muted-foreground));
+  --eac-block-line: hsl(var(--border));
+  --eac-block-accent: hsl(var(--primary));
+  --eac-block-on-accent: hsl(var(--primary-foreground));
+  /* On a dark ground the accent already reads as ink; no darkening. */
+  --eac-block-accent-ink: hsl(var(--primary));
+  --eac-block-band: hsl(var(--card));
+  --eac-block-band-fg: hsl(var(--foreground));
+  --eac-block-field-bg: hsl(var(--muted));
+  --eac-block-radius: var(--radius);
+  --eac-block-font-title: var(--he-font-display);
+  --eac-block-font-body: var(--he-font-body);
+
+  /* The shared controls (editor panels, pickers, the manage kit). */
+  --eac-control-bg: hsl(var(--background));
+  --eac-control-fg: hsl(var(--foreground));
+  --eac-control-muted: hsl(var(--muted-foreground));
+  --eac-control-line: hsl(var(--border));
+  --eac-control-accent: hsl(var(--primary));
+  --eac-control-accent-on: hsl(var(--primary-foreground));
+  --eac-control-accent-ink: hsl(var(--primary));
+  --eac-control-radius: var(--radius);
+  --eac-card-bg: hsl(var(--card));
+  --eac-card-fg: hsl(var(--card-foreground));
+
+  /* The surface layer (popups, /hub, /center, the forum). */
+  --eac-surface-bg: hsl(var(--card));
+  --eac-surface-bg-soft: hsl(var(--muted));
+  --eac-surface-fg: hsl(var(--foreground));
+  --eac-surface-muted: hsl(var(--muted-foreground));
+  --eac-surface-faint: var(--he-ink-faint);
+  --eac-surface-line: hsl(var(--border));
+  --eac-surface-accent: hsl(var(--primary));
+  --eac-surface-danger: hsl(var(--destructive));
+  --eac-surface-on-accent: hsl(var(--primary-foreground));
+  --eac-surface-radius: var(--radius);
+  --eac-forum-blue: hsl(var(--primary));
+  --eac-font-title: var(--he-font-display);
+
+  color-scheme: dark;
+}

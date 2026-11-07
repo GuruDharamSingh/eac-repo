@@ -1,3 +1,5 @@
+import { HubCardGrid, HubLinkCard } from "@elkdonis/cms-ui/hubsite";
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -11,11 +13,10 @@ import { listOrdersForCustomer } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
 import { Badge } from "@/components/ui/badge";
-import { SiteNav } from "@/components/site-nav";
 import { getThreadsForFeed } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getForumSnapshot } from "@/lib/forum";
-import { siteConfig } from "@/config/site";
+import { courseUrl, siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Members",
@@ -73,7 +74,6 @@ export default async function HubPage() {
 
   return (
     <>
-      <SiteNav />
       {/* The template's stylesheet: tokens, the spotlight-grid pen, then the
           hub's own layout — one file, the same one the Silex editor loads. */}
       <link rel="stylesheet" href="/api/silex/templates/hub.css" />
@@ -95,6 +95,18 @@ export default async function HubPage() {
           )}
           <ForumFace forum={forum} />
         </SurfaceCardGrid>
+
+        {/* The rooms (2026-11-07): the network's Center and Channel, the back
+            office and the page editor for editors, and Ario's course. */}
+        <div className="mt-10">
+          <HubCardGrid label="Rooms">
+            <HubLinkCard href="/center" glyph="◌" title="Center" blurb="Your home on the network: who you follow, what is coming up." />
+            {viewer.canEdit ? <HubLinkCard href="/channel" glyph="◉" title="Channel" blurb="Post writing and sessions to Facebook, Instagram and Threads, and see where each went." /> : null}
+            {viewer.canEdit ? <HubLinkCard href="/manage" glyph="◧" title="Manage" blurb="Content, orders, contacts, the newsletter, pages and the site's look." /> : null}
+            {viewer.canEdit ? <HubLinkCard href="/studio" glyph="✎" title="Page editor" blurb="Arrange blocks to build the home page, The Figure and new pages." /> : null}
+            <HubLinkCard href={courseUrl()} glyph="Ⅶ" title="Enneagram Foundations" blurb="The free course on Sophia: seven modules, short steps, private reflections." />
+          </HubCardGrid>
+        </div>
 
         {memberFeeds.length === 0 ? (
           <p className="mt-14 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">

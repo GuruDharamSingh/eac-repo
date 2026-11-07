@@ -1,4 +1,5 @@
 import { listOrdersForOrg, getOrderLines } from "@elkdonis/commerce/queries";
+import { PageHeader } from "@elkdonis/cms-ui/manage";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
@@ -22,7 +23,7 @@ export default async function ManageOrdersPage() {
 
   return (
     <div>
-      <h2 className="font-serif text-xl">Orders</h2>
+      <PageHeader title="Orders" description="Bookings of Ario’s services: card payments confirm themselves, eTransfers are confirmed here." />
 
       {orders.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">No bookings yet.</p>

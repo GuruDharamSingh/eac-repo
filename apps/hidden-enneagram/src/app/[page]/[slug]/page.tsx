@@ -6,7 +6,6 @@ import { ArticleView } from "@elkdonis/cms-ui/article";
 import { canViewFeed, getOrgFeed } from "@elkdonis/services";
 import { getThreadBySlug } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
-import { SiteNav } from "@/components/site-nav";
 import { siteConfig } from "@/config/site";
 
 interface PageProps {
@@ -60,7 +59,6 @@ export default async function ThreadPage({ params }: PageProps) {
 
   return (
     <>
-    <SiteNav />
     <main className="mx-auto max-w-[720px] px-6 py-16 font-sans">
     <article>
       <Link

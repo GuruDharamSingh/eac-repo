@@ -1599,6 +1599,9 @@ importers:
       '@elkdonis/auth-server':
         specifier: workspace:*
         version: link:../../packages/auth-server
+      '@elkdonis/blocks':
+        specifier: workspace:*
+        version: link:../../packages/blocks
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -1614,6 +1617,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -1626,6 +1632,9 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
+      '@elkdonis/page-builder':
+        specifier: workspace:*
+        version: link:../../packages/page-builder
       '@elkdonis/payments':
         specifier: workspace:*
         version: link:../../packages/payments
@@ -1647,6 +1656,9 @@ importers:
       '@marsidev/react-turnstile':
         specifier: ^1.4.1
         version: 1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.7.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
       '@tiptap/extension-link':
         specifier: ^2.8.0
         version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)

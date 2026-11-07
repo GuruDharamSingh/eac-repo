@@ -49,3 +49,9 @@ export async function getApiEditor(): Promise<Viewer | null> {
   const viewer = await getViewer();
   return viewer?.canEdit ? viewer : null;
 }
+
+/** Signed in AND holding any role in this org (sunjay's; the /api/center routes use it). */
+export async function getApiMember(): Promise<Viewer | null> {
+  const viewer = await getViewer();
+  return viewer?.isMember ? viewer : null;
+}

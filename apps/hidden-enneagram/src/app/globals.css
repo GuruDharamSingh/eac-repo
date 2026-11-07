@@ -5,6 +5,9 @@
    ship their own markup must be named explicitly or their utility classes
    are silently dropped from the build. */
 @source "../../../../packages/cms-ui/src";
+@source "../../../../packages/page-builder/src";
+@source "../../../../packages/blocks/src";
+@source "../../../../packages/checkout/src";
 
 /* The shared systems this site now hosts. Plain CSS driven by custom
    properties, so they take this site's own dark palette rather than
@@ -16,6 +19,8 @@
 @import "@elkdonis/cms-ui/article.css";
 @import "@elkdonis/cms-ui/reading-theme.css";
 @import "@elkdonis/cms-ui/surface.css";
+/* /center (CenterPage, sunjay's pattern). */
+@import "@elkdonis/cms-ui/center.css";
 @import "@elkdonis/cms-ui/profile.css";
 /* Person pages at /about/<slug> (PersonPage). */
 @import "@elkdonis/cms-ui/person-page.css";
@@ -51,85 +56,21 @@
 @import "@elkdonis/cms-ui/feed-list.css";
 
 /* ==========================================================================
-   The Hidden Enneagram — single LIGHT theme with dark features.
-
-   Was a single dark theme. Flipped 2026-09-09 for legibility: the body now
-   reads as warm paper with near-black ink, and darkness is kept as a
-   deliberate accent — the masthead band, the footer, and the enneagram
-   diagrams stay dark, so the site keeps its character without asking anyone
-   to read long passages of cream-on-black.
-
-   Every pair below is measured against WCAG AA (4.5:1 for body text, 3:1
-   for large/secondary): ink on paper is 16.7:1, muted 6.2:1, the quietest
-   grey 4.2:1. The teal had to darken from #3aa99c to #1f6f66 — the original
-   was 2.6:1 on paper, which is unreadable; it is 5.4:1 now and unchanged
-   against the dark bands, where it was always fine.
-
-   There is still no .dark block; the shadcn tokens below just resolve the
-   one theme a shadcn app would toggle between.
-
-   HSL triplets converted from the original flat hex palette so shadcn
-   primitives (button, card, badge, etc.) and @elkdonis/checkout's
-   PaymentInstructionsCard — both of which read hsl(var(--x)) tokens — drop
-   in without a second theme. The --color-* names in @theme inline are kept
-   stable: the shared embed shells (Tailwind utilities like bg-card /
-   border-border / bg-primary) already depend on those exact names.
+   2026-11-07 re-stand: the page builder and the house look.
+   The page blocks and the record frame at the ROOT (Puck's iframe mirrors the
+   parent document's sheets), under Tailwind's utilities as on katie/sunjay.
    ========================================================================== */
-
-:root {
-  --radius: 0.625rem;
-
-  --background: 40 36% 95%;         /* #f7f4ee paper */
-  --foreground: 240 13% 9%;         /* #14141a ink — 16.71:1 on paper */
-
-  --card: 43 64% 98%;               /* #fdfbf6 — a shade above the paper */
-  --card-foreground: 240 13% 9%;
-
-  --popover: 43 64% 98%;
-  --popover-foreground: 240 13% 9%;
-
-  --primary: 173 56% 28%;           /* teal #1f6f66 — 5.43:1 (was 2.61:1) */
-  --primary-foreground: 0 0% 100%;  /* white — 5.96:1 on the teal */
-
-  --secondary: 42 32% 88%;          /* #eae4d6 */
-  --secondary-foreground: 240 13% 9%;
-
-  --muted: 42 35% 90%;              /* #efeade */
-  --muted-foreground: 37 7% 35%;    /* #5f5a52 — 6.23:1 on paper */
-
-  --accent: 42 35% 90%;
-  --accent-foreground: 240 13% 9%;
-
-  --destructive: 4 65% 39%;         /* #a32b22 — 6.54:1 on paper */
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 41 23% 76%;             /* #cfc6b3 — 1.55:1, a line you can see */
-  --input: 41 23% 76%;
-  --ring: 173 56% 28%;
-
-  /* The dark band kept as a feature: masthead, footer, and any section that
-     wants the old ground. Text on it is the former foreground, unchanged. */
-  --band: 240 9% 4%;                /* #0a0a0c */
-  --band-foreground: 40 28% 90%;    /* #ece7dd — 16.34:1 on the band */
-  --band-muted: 40 6% 62%;          /* #a49e92 — 7.29:1 on the band */
-  --band-primary: 173 49% 55%;      /* #56c4b6 — 8.16:1 on the band */
-  --band-danger: 0 62% 68%;         /* #e07a7a — 7.16:1 on the band */
-
-  /* The shared surface layer (@elkdonis/cms-ui/surface) and the forum built
-     on it read their own --eac-surface-* tokens, whose defaults assume a
-     light page. This site is permanently dark, so without this mapping every
-     surface renders dark ink on a near-black ground. Maps onto the shadcn
-     tokens above, so the popups and /forum follow the site's palette. */
-  --eac-surface-bg: hsl(var(--background));
-  --eac-surface-bg-soft: hsl(var(--card));
-  --eac-surface-fg: hsl(var(--foreground));
-  --eac-surface-muted: hsl(var(--muted-foreground));
-  --eac-surface-line: hsl(var(--border));
-  --eac-surface-accent: hsl(var(--primary));
-  --eac-surface-danger: hsl(var(--destructive));
-  --eac-surface-on-accent: hsl(var(--primary-foreground));
-  --eac-forum-blue: hsl(var(--primary));
-}
+@import "@elkdonis/blocks/blocks.css" layer(components);
+@import "@elkdonis/blocks/record.css" layer(components);
+/* The back office primitives (/manage), already inside @layer components. */
+@import "@elkdonis/cms-ui/manage.css";
+/* /hub's room cards (HubCardGrid / HubLinkCard). */
+@import "@elkdonis/cms-ui/hubsite.css";
+/* The palette (ÆON's dark house look, tokenised), the shell and the site
+   blocks, then the figure / dossier / course card. */
+@import "./palette.css";
+@import "./site.css";
+@import "../components/aeon/aeon.css";
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -152,10 +93,12 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --font-serif: "Cormorant Garamond", Georgia, serif;
+  /* The house faces (lib/fonts.ts). font-serif = display, font-sans = reading. */
+  --font-serif: var(--he-font-display);
   --font-cormorant: "Cormorant Garamond", Georgia, serif;
   --font-eb-garamond: "EB Garamond", Georgia, serif;
-  --font-sans: "EB Garamond", Georgia, serif;
+  --font-sans: var(--he-font-body);
+  --font-mono: var(--he-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -163,8 +106,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-html,
-body {
+html {
   background: var(--color-background);
   color: var(--color-foreground);
 }

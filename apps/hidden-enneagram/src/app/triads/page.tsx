@@ -1,7 +1,6 @@
-import { EnneagramDiagram } from "@/components/enneagram/EnneagramDiagram";
+import { AeonFigure } from "@/components/aeon/figure";
 import { EnneagramSection } from "@/components/enneagram/EnneagramSection";
 import { CentersDiagram } from "@/components/enneagram/CentersDiagram";
-import { SiteNav } from "@/components/site-nav";
 
 export const metadata = {
   title: "Centers & Triads",
@@ -12,7 +11,6 @@ export const metadata = {
 export default function EnneagramPage() {
   return (
     <>
-    <SiteNav />
     <main
       style={{
         backgroundColor: "hsl(var(--band))",
@@ -45,7 +43,14 @@ export default function EnneagramPage() {
         </p>
 
         <div className="max-w-md mx-auto">
-          <EnneagramDiagram showControls />
+          {/* 2026-11-07: the new instrument (ÆON), on the object-relation lens the
+              triads below are about; the full dossiers are on /enneagram. */}
+          <div style={{ textAlign: "left" }}>
+            <AeonFigure mode="object" start={9} size="medium" reader="none" idBase="triads-fig" />
+          </div>
+          <a href="/enneagram" className="he-btn" style={{ marginTop: 24 }}>
+            Read the nine types in The Figure →
+          </a>
         </div>
       </section>
 

@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { getServerSession } from "@elkdonis/auth-server";
 import { getPersonPage, personThreadHref, type PersonThread } from "@elkdonis/services";
 import { PersonPage, PersonThreadList } from "@elkdonis/cms-ui/profile";
-import { SiteNav } from "@/components/site-nav";
 import { getGuideBySlug } from "@/lib/data";
 import { siteConfig } from "@/config/site";
 
@@ -111,7 +110,6 @@ export default async function GuidePage({ params }: GuidePageProps) {
 
   return (
     <>
-      <SiteNav />
       <main className="font-sans">
         <PersonPage
           person={{

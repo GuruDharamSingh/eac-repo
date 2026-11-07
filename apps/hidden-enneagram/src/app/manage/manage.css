@@ -1,0 +1,26 @@
+/* The back office frame (the kit draws tabs, headers, notices and toasts;
+   this is the console's own width and cards, katie's shape in this palette). */
+.he-m {
+  width: min(1120px, calc(100% - 2 * var(--he-gutter)));
+  margin: clamp(24px, 5vw, 48px) auto;
+}
+.he-m-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.he-m-title { margin: 0; font-size: clamp(2rem, 4vw, 2.6rem); }
+.he-m-who { margin: 4px 0 0; font-size: 0.9rem; color: var(--he-ink-dim); }
+.he-m-who b { color: var(--he-ink); font-weight: 500; }
+.he-m-head-actions { display: flex; flex-wrap: wrap; gap: 16px; }
+.he-m-head-actions a { font-family: var(--he-font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--he-ink-dim); text-decoration: none; }
+.he-m-head-actions a:hover { color: var(--he-aurum); }
+.mg-tabs { margin-top: 1.25rem; }
+.he-m-body { margin-top: 28px; }
+.he-m-cols { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 20px; }
+.he-m-card { padding: 20px 22px; background: var(--he-card); border: 1px solid var(--he-card-edge); border-radius: var(--radius); }
+.he-m-card h2 { margin: 0 0 0.5em; font-size: 1.35rem; }
+.he-m-card p { color: var(--he-ink-dim); }
+.he-m-plain { list-style: none; padding: 0; margin: 0.5em 0; display: grid; gap: 8px; }
+.he-m-inline { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.he-m-plain a, .he-m-card p a { color: var(--he-aurum); }
+.he-m-fine { font-size: 0.82rem; color: var(--he-ink-dim); }
+.he-m-actions { margin-top: 1em; }
+.mg-pagehead-title { font-weight: 400; }
+.mg-notice a, .mg-pagehead-desc a { color: var(--he-aurum); }

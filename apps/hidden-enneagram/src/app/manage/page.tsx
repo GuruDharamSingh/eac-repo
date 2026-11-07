@@ -7,6 +7,7 @@ import { ContentRowActions } from "@/components/manage/content-row-actions";
 import { getAllThreadsForOrg } from "@/lib/data";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
+import { PageHeader } from "@elkdonis/cms-ui/manage";
 
 /**
  * The editorial dashboard — everything on the site, published or not.
@@ -29,15 +30,18 @@ export default async function ManageDashboard() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-serif text-2xl">Content</h2>
-        <Button asChild size="sm">
-          <Link href="/manage/content/new">
-            <Plus className="size-4" aria-hidden />
-            New
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Content"
+        description="Writing and offerings on the site, published or not. Bookable services live here too."
+        actions={
+          <Button asChild size="sm">
+            <Link href="/manage/content/new">
+              <Plus className="size-4" aria-hidden />
+              New
+            </Link>
+          </Button>
+        }
+      />
 
       {threads.length === 0 ? (
         <p className="mt-8 rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">

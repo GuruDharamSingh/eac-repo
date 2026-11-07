@@ -1,4 +1,5 @@
 import { db } from "@elkdonis/db";
+import { PageHeader } from "@elkdonis/cms-ui/manage";
 import { siteConfig } from "@/config/site";
 import { requireOrgEditor } from "@/lib/auth";
 
@@ -36,19 +37,19 @@ export default async function ManageContactsPage() {
 
   return (
     <div>
-      <h2 className="font-serif text-xl">Contacts</h2>
+      <PageHeader title="Contacts" description="Inquiries sent from the site's contact form." />
 
       <p className="mt-2 text-sm text-muted-foreground">
-        Pages are built with the Silex editor.{" "}
-        <a
-          href={`${artsUrl}/hub`}
-          target="_blank"
-          rel="noopener"
-          className="underline underline-offset-4"
-        >
-          Open the editor
-        </a>{" "}
-        to change site copy — sign in there with the same email.
+        The home page and The Figure are built in the{" "}
+        <a href="/studio" className="underline underline-offset-4">
+          page editor
+        </a>
+        ; the older chapter pages (/introduction, /type-1 …) are still Silex pages, opened with{" "}
+        &ldquo;Edit page&rdquo; on each (or from the{" "}
+        <a href={`${artsUrl}/hub`} target="_blank" rel="noopener" className="underline underline-offset-4">
+          network hub
+        </a>
+        , signed in with the same email).
       </p>
 
       <h3 className="mt-8 font-serif text-lg">Recent inquiries</h3>

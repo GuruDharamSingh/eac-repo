@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
     "@elkdonis/cms-ui",
     "@elkdonis/newsletter",
     "@elkdonis/forum-ui",
+    // The page builder, the look layer and the blocks (2026-11-07 re-stand).
+    "@elkdonis/blocks",
+    "@elkdonis/page-builder",
+    "@elkdonis/direct-edit",
+    "@elkdonis/analytics",
+    "@elkdonis/redis",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
@@ -30,7 +36,7 @@ const nextConfig: NextConfig = {
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : undefined,
   },
   output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
-  allowedDevOrigins: ["localhost", "*.localhost", "192.168.0.24", "*.192.168.0.24"],
+  allowedDevOrigins: ["localhost", "*.localhost", "127.0.0.1", "192.168.0.24", "*.192.168.0.24"],
 };
 
 export default nextConfig;

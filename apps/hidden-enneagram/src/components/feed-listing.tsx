@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import type { OrgFeed } from "@elkdonis/services";
 import { Badge } from "@/components/ui/badge";
-import { SiteNav } from "@/components/site-nav";
 import { getThreadsForFeed } from "@/lib/data";
 import { siteConfig } from "@/config/site";
 
@@ -25,7 +24,6 @@ export async function FeedListing({
 
   return (
     <>
-      <SiteNav />
       <main className="mx-auto max-w-[880px] px-6 py-16 font-sans">
         {feed.minRole && (
           <p className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">

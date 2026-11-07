@@ -1,0 +1,366 @@
+/* ==========================================================================
+   The Hidden Enneagram: the shell (body, header, footer, the plain pages)
+   and the four site blocks' frames. Plain CSS on the --he-* tokens
+   (palette.css). The figure, dossier and course card are in
+   components/aeon/aeon.css.
+   ========================================================================== */
+
+body {
+  background:
+    radial-gradient(900px 540px at 78% -10%, color-mix(in srgb, var(--he-aurum) 7%, transparent), transparent 65%),
+    radial-gradient(760px 520px at -12% 36%, color-mix(in srgb, var(--he-head) 5%, transparent), transparent 60%),
+    var(--he-night);
+  background-attachment: fixed;
+  color: var(--he-ink);
+  font-family: var(--he-font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  font-family: var(--he-font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+::selection { background: var(--he-aurum-soft); }
+:focus-visible { outline: 2px solid var(--he-focus); outline-offset: 3px; }
+
+/* ── header ───────────────────────────────────────────────────────────── */
+
+.he-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--he-night) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--he-hairline);
+}
+.he-header__row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 64px;
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin-inline: auto;
+}
+.he-header__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  font-family: var(--he-font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  color: var(--he-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.he-header__brand:hover { text-decoration: none; text-shadow: 0 0 14px var(--he-aurum-glow); }
+.he-header__mark { color: var(--he-aurum); text-shadow: 0 0 16px var(--he-aurum-glow); }
+.he-header__nav {
+  display: flex;
+  gap: 22px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.he-header__nav a,
+.he-header__tools > a {
+  font-family: var(--he-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--he-ink-dim);
+  text-decoration: none;
+}
+.he-header__nav a:hover,
+.he-header__nav a[aria-current="page"],
+.he-header__tools > a:hover { color: var(--he-ink); text-shadow: 0 0 14px var(--he-aurum-glow); }
+.he-header__nav .he-lock { margin-left: 0.35em; opacity: 0.7; }
+.he-header__tools { display: flex; align-items: center; gap: 16px; }
+.he-header__toggle { display: none; }
+
+/* The account menu: a native <details>, no script. */
+.he-acct { position: relative; }
+.he-acct > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--he-ink-dim);
+  font-family: var(--he-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+.he-acct > summary::-webkit-details-marker { display: none; }
+.he-acct__dot {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--he-aurum);
+  color: var(--he-aurum);
+  font-family: var(--he-font-display);
+  font-size: 0.85rem;
+}
+.he-acct__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 200px;
+  display: grid;
+  padding: 8px;
+  background: var(--he-card);
+  border: 1px solid var(--he-card-edge);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--he-night) 70%, transparent);
+}
+.he-acct__panel a,
+.he-acct__panel button {
+  display: block;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--he-ink);
+  font-family: var(--he-font-body);
+  font-size: 0.95rem;
+  text-align: left;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.he-acct__panel a:hover,
+.he-acct__panel button:hover { background: var(--he-aurum-soft); color: var(--he-aurum); }
+.he-acct__panel hr { border: 0; border-top: 1px solid var(--he-line); margin: 6px 4px; }
+
+/* Collapses earlier than the blocks do: signed in, an editor sees eight
+   menu links (the members-only feeds too). */
+@media (max-width: 1080px) {
+  .he-header__nav,
+  .he-header__tools { display: none; }
+  .he-header__toggle {
+    display: inline-block;
+    margin-left: auto;
+    padding: 6px 14px;
+    color: var(--he-ink);
+    background: none;
+    border: 1px solid var(--he-line);
+    border-radius: 999px;
+    font-family: var(--he-font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .he-header__sheet {
+    display: grid;
+    gap: 4px;
+    padding: 12px var(--he-gutter) 20px;
+    border-top: 1px solid var(--he-hairline);
+  }
+  .he-header__sheet a,
+  .he-header__sheet button {
+    padding: 10px 0;
+    color: var(--he-ink);
+    font-family: var(--he-font-display);
+    font-size: 1.1rem;
+    text-decoration: none;
+    text-align: left;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+}
+@media (min-width: 1081px) {
+  .he-header__sheet { display: none; }
+}
+
+/* ── footer ───────────────────────────────────────────────────────────── */
+
+.he-footer {
+  margin-top: clamp(48px, 8vw, 96px);
+  border-top: 1px solid var(--he-hairline);
+  padding-block: 36px 44px;
+  color: var(--he-ink-dim);
+}
+.he-footer__row {
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 36px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.he-footer__title { margin: 0; font-family: var(--he-font-display); font-size: 1.05rem; color: var(--he-ink); letter-spacing: 0.04em; }
+.he-footer nav { display: flex; flex-wrap: wrap; gap: 18px; }
+.he-footer a { color: var(--he-ink-dim); text-decoration: none; font-family: var(--he-font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.he-footer a:hover { color: var(--he-aurum); }
+.he-footer__note {
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin: 18px auto 0;
+  font-family: var(--he-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--he-ink-faint);
+}
+
+/* ── page frame and editor affordances ───────────────────────────────── */
+
+.he-content { padding-bottom: 24px; }
+/* The site blocks take the page measure themselves (they may also sit in a
+   column, where 100% of the column wins). */
+.he-hero,
+.he-passage,
+.he-fig-block,
+.he-course-block {
+  width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
+  margin-inline: auto;
+}
+.he-edit-page {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  padding: 8px 16px;
+  font: 500 13px system-ui, sans-serif;
+  color: var(--he-night);
+  background: var(--he-aurum);
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: 0 0 24px var(--he-aurum-glow);
+}
+.he-edit-page:hover { text-decoration: none; filter: brightness(1.07); }
+
+/* The Silex pages keep their own sheet; this only adds the editor's link. */
+.he-silex-edit .he-btn { display: inline-flex; align-items: center; gap: 8px; }
+.he-silex-edit { position: fixed; right: 16px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); z-index: 1000; }
+
+/* A plain page (studio index, Center frame): the reading measure. */
+.he-page {
+  width: min(880px, calc(100% - 2 * var(--he-gutter)));
+  margin: clamp(32px, 6vw, 64px) auto;
+}
+.he-page h1 { font-size: clamp(2rem, 4vw, 2.8rem); margin: 0 0 0.4em; }
+.he-page p { color: var(--he-ink-dim); }
+.he-list { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
+.he-list li { padding: 12px 14px; border: 1px solid var(--he-line); border-radius: var(--radius); background: var(--he-card); }
+.he-list a { color: var(--he-aurum); }
+.he-input {
+  padding: 8px 12px;
+  color: var(--he-ink);
+  background: var(--he-well);
+  border: 1px solid hsl(var(--input));
+  border-radius: var(--radius);
+  font: inherit;
+}
+.he-note { font-size: 0.85rem; color: var(--he-ink-dim); }
+.he-why {
+  margin: 10px 0 0;
+  font: 500 12px/1.4 system-ui, sans-serif;
+  color: var(--he-ink-dim);
+}
+
+/* ── shared pieces of the four site blocks ───────────────────────────── */
+
+.he-eyebrow {
+  margin: 0 0 1rem;
+  font-family: var(--he-font-mono);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--he-aurum);
+}
+.he-sigil-dot { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--dot, var(--he-aurum)) 35%, transparent)); }
+
+/* Opening (he-hero) */
+.he-hero { padding-block: clamp(48px, 7vw, 96px) clamp(32px, 5vw, 64px); }
+.he-hero-grid { display: grid; gap: clamp(28px, 5vw, 64px); align-items: center; }
+.he-hero[data-side="yes"] .he-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
+.he-hero-title {
+  font-size: clamp(2.4rem, 5.2vw, var(--he-hero-title-size, 64px));
+  line-height: 1.08;
+  margin: 0 0 0.45em;
+}
+.he-hero-title .he-accent { color: var(--he-aurum); text-shadow: 0 0 28px var(--he-aurum-glow); }
+.he-hero-lede { max-width: 36em; font-size: 1.12rem; color: var(--he-ink-dim); }
+.he-hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 1.8em; }
+.he-hero-figure { margin: 0; justify-self: center; width: min(100%, 460px); }
+.he-hero-picture img { display: block; width: 100%; height: auto; border-radius: var(--radius); }
+@media (max-width: 860px) {
+  .he-hero[data-side="yes"] .he-hero-grid { grid-template-columns: 1fr; }
+  .he-hero-figure { width: min(78%, 360px); order: -1; }
+}
+
+/* Passage (he-passage) */
+.he-passage { padding-block: clamp(36px, 5vw, 64px); }
+.he-passage + .he-passage { border-top: 1px solid var(--he-hairline); }
+.he-passage-grid { display: grid; gap: clamp(24px, 4vw, 56px); }
+.he-passage[data-links="aside"] .he-passage-grid { grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); align-items: start; }
+.he-passage[data-width="reading"] .he-passage-main { max-width: 680px; }
+.he-passage-title { font-size: clamp(1.9rem, 3.4vw, 2.7rem); margin: 0 0 0.6em; }
+.he-passage-body { max-width: 680px; font-size: 1.06rem; line-height: 1.75; color: var(--he-ink-dim); }
+.he-passage-body p { margin: 0 0 1em; }
+.he-passage-body strong { color: var(--he-ink); font-weight: 500; }
+.he-passage-body a { color: var(--he-aurum); }
+.he-passage-body blockquote {
+  margin: 1.4em 0 0;
+  padding: 0.2em 0 0.2em 1.2em;
+  border-left: 2px solid var(--he-aurum);
+  font-style: italic;
+  font-size: 1.12rem;
+  color: var(--he-ink);
+}
+.he-passage[data-drop="yes"] .he-passage-body > p:first-child::first-letter {
+  float: left;
+  font-family: var(--he-font-display);
+  font-size: 3.4em;
+  line-height: 0.9;
+  padding: 0.06em 0.04em 0 0;
+  color: var(--he-aurum);
+}
+.he-passage-links { display: grid; gap: 2px; border-top: 1px solid var(--he-line); }
+.he-passage-links a {
+  display: grid;
+  gap: 2px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--he-line);
+  text-decoration: none;
+  transition: padding 0.2s ease, background 0.2s ease;
+}
+.he-passage-links a:hover { padding-left: 10px; background: var(--he-aurum-soft); text-decoration: none; }
+.he-passage-link { font-family: var(--he-font-display); font-size: 1.05rem; color: var(--he-ink); }
+.he-passage-links a:hover .he-passage-link { color: var(--he-aurum); }
+.he-passage-note { font-family: var(--he-font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--he-ink-faint); }
+.he-passage[data-links="below"] .he-passage-links { max-width: 680px; }
+@media (max-width: 860px) {
+  .he-passage[data-links="aside"] .he-passage-grid { grid-template-columns: 1fr; }
+}
+
+/* The Figure and the Course card (frames; the insides are aeon.css) */
+.he-fig-block,
+.he-course-block { padding-block: clamp(40px, 6vw, 80px); }
+.he-fig-block .he-section-head,
+.he-course-block .he-section-head { max-width: 640px; }
+.he-section-head h2 { margin: 0 0 0.5em; }
+
+/* The figure summary (reader "summary"): the repo keywords as quiet tags. */
+.he-keywords { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0.4em 0 1em; padding: 0; }
+.he-keywords span {
+  padding: 2px 10px;
+  border: 1px solid var(--he-line);
+  border-radius: 999px;
+  font-family: var(--he-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--he-ink-dim);
+}
+.he-dossier-more { margin: 1em 0 0; }
+.he-dossier-more a { color: var(--he-aurum); font-family: var(--he-font-mono); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* /center: the network kit draws its cards in its own light hand; only its
+   page heading sits on this site's night ground, so it takes the house ink. */
+.eac-center-head { --sf-fg: var(--he-ink); --sf-muted: var(--he-ink-dim); }
+.eac-center-head-title { font-family: var(--he-font-display); }

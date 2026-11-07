@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SiteNav } from "@/components/site-nav";
 import { getGuides, getSiteSections } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -22,7 +21,6 @@ export default async function AboutPage() {
 
   return (
     <>
-      <SiteNav />
       <main className="mx-auto max-w-[880px] px-6 py-16 font-sans">
         <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
           {about?.roleTitle ?? "The Hidden Enneagram"}
