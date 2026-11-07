@@ -20,6 +20,12 @@ export interface SiteContext {
   user: SessionUser | null;
   /** Owner or guide of this org (`canEditOrgSite`), or may edit its identity. */
   canEdit: boolean;
+  /**
+   * May open the page designer (/hub/sites/<slug>/design), which checks
+   * `canEditOrgSite` alone. `canEdit` also admits identity-only editors, who
+   * got a 404 from "Edit this page" (2026-11-01).
+   */
+  canEditSite: boolean;
   host: string;
   proto: string;
   rootHost: string;
@@ -43,9 +49,8 @@ export async function loadSiteContext(slug: string): Promise<SiteContext | null>
     (requestDomain !== null && !isNetworkHost(requestDomain));
   const mainSiteUrl = identity?.primaryDomain && !arrivedOnOwnDomain ? `https://${identity.primaryDomain}` : null;
 
-  const canEdit = user
-    ? (await canEditOrgSite(user.id, org.id)) || (await canEditOrgIdentity(user.id, org.id))
-    : false;
+  const canEditSite = user ? await canEditOrgSite(user.id, org.id) : false;
+  const canEdit = canEditSite || (user ? await canEditOrgIdentity(user.id, org.id) : false);
 
   const rootHost = host.replace(new RegExp(`^${slug}\\.`), "");
   return {
@@ -53,6 +58,7 @@ export async function loadSiteContext(slug: string): Promise<SiteContext | null>
     identity,
     user,
     canEdit,
+    canEditSite,
     host,
     proto,
     rootHost,

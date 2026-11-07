@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
     // Sophia's learner pages at /learn (2026-10-29).
     "@elkdonis/lms",
     "@elkdonis/lms-ui",
+    // Action registry: task status, presentation and runAction (2026-11-06).
+    "@elkdonis/actions",
+    // The dock: current course step and page actions in a corner box (2026-11-06).
+    "@elkdonis/dock",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
     "@elkdonis/reels",
     // BookingScheduler for /hub/bookings and /bookings/<token> (migration 174).
@@ -28,6 +32,9 @@ const nextConfig: NextConfig = {
     "@elkdonis/sky-ui",
     "@elkdonis/tokens",
     "@elkdonis/studio",
+    // Classifieds editor: the direct-editing panel and the shared font library (2026-11-01).
+    "@elkdonis/direct-edit",
+    "@elkdonis/fonts",
   ],
   // Packages the server must REQUIRE at runtime rather than have bundled.
   //

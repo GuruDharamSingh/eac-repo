@@ -69,7 +69,7 @@ site is a labelled sample.
 - Probe: `packages/commerce/scripts/probe-tour-booking.mts` (14 checks, no
   Stripe call, email disabled; self-cleaning). Passed 2026-10-18.
 
-### App (`apps/elktours`, dev mode, `ELKTOURS_URL=http://192.168.0.11:3021`)
+### App (`apps/elktours`; 2026-11-03: production mode, `ELKTOURS_URL=https://elkdonisexperiences.com`; source edits need a rebuild)
 - Public: `/` (hero, tours, how it works, guides), `/tours`, `/tours/[slug]`
   (facts, body, highlights, the route: `TourStory` with a sticky MapLibre GL
   map (OpenFreeMap tiles, 3D buildings, pitched fly-to) + Street View slot
@@ -161,7 +161,7 @@ site is a labelled sample.
    with coordinates and headings estimated by hand — Dana to check each stop's
    position and Street View heading in the Stops tab, add photos, then publish
    and add departures. The three other circuits are outline drafts.
-2. Dana: sign in, `/manage/tours` → Getting paid → country France → Stripe
+2. (2026-11-03: done; French Express account, onboarded per `users.stripe_onboarded_at`, started from IFAC.) Dana: sign in, `/manage/tours` → Getting paid → country France → Stripe
    Express onboarding. Bookings open once Stripe enables payouts.
 3. Google Maps key: done 2026-10-18 (JavaScript + Street View Static enabled).
    Add referrer restrictions when the domain exists; Map Tiles API only if the
@@ -188,3 +188,37 @@ site is a labelled sample.
 8. Another session's untracked `packages/services/src/org-people.ts` imported
    `'./db'` (no such file) and broke every dev-mode app from 18:48; this session
    changed that one line to `'@elkdonis/db'`. Owner of that file to confirm.
+
+## 2026-11-01: films, in-place editing, schedule (claude)
+
+- Public at `https://elkdonisexperiences.com` (edge host exists). Sign-in there is broken until `.env` has
+  `ELKTOURS_URL=https://elkdonisexperiences.com` and `https://elkdonisexperiences.com/**,https://www.elkdonisexperiences.com/**`
+  appended to `ADDITIONAL_REDIRECT_URLS`, then `docker compose up -d supabase-auth` and `up -d --no-deps arts-collective elktours`.
+  Cause: GoTrue sends an OAuth return to a non-allow-listed URL to `SITE_URL` (elkdonis-arts.org), and the network host refuses
+  the handoff from an unknown issuer. Not applied: the edit was refused as a shared-file change.
+- Eight tours published with ElkTourUnity films: six new threads with the Unity folder ids (`elkIleCite1tour000001`,
+  `elkLegends1tour000010`, `elkLatinQu1tour000003`, `elkMarais01tour000004`, `elkMontmar1tour000008`, `elkFoodMon1tour000009`;
+  intros written by Claude in the brief voice, no prices or durations), plus French Revolution and Napoléon. The sample tour is
+  archived. `scripts/import-films-2026-11-01.mts`. Films in `Media/Videos` (1080p web encode + 720p), posters in `Media/Images`.
+  French Revolution uses the 30 s route cut (the directed render is 69 s, over the Google limit).
+- `threads.metadata.film = {url, url720, poster}` (top-level: the tour form rewrites `metadata.tour` whole). The film frame is never
+  cropped on the tour page (credits are burned into its edges); cards and the home background carry a credit line.
+- Tour page = blocks in Puck `Config` shape (`src/blocks/tour/`: TourFilm, TourIntro, TourMain, TourMore, TourText), drawn from the
+  layout document `site_config` `puck:tour-detail` (`lib/tour-layout.ts`; no row = `DEFAULT_TOUR_LAYOUT`). Not yet mounted in
+  `<Puck>`: needs `@elkdonis/page-builder` + `@puckeditor/core@0.23.0` in package.json and a container install, then a
+  `/studio/tour-detail` route over `tourConfig` with a sample tour in `TourPageProvider`.
+- Editors get an "Edit page" bar on every tour page: title, intro, facts, description, highlights/included, price, film and
+  poster upload, published toggle, saved by `patchTourAction` (`lib/tour-live-actions.ts`, merges only touched fields).
+  Signed-in editing not verified in a browser.
+- `/manage/schedule` (week planner + repeat scheduler, `lib/schedule-plan.ts`, `lib/schedule-actions.ts`): type-checked, date maths
+  tested across DST; signed-in UI not viewed.
+- Route refresh on stop save now uses FOSSGIS foot routing (`routing.openstreetmap.de/routed-foot`), like the films.
+
+## 2026-11-03: direct editor on the landing page (claude)
+
+- `src/app/page.tsx` draws from code until an owner or guide saves it from "Edit page"; then `site_config` `puck:landing` is the page, and its words stop following `/manage/pages`. Live parts:
+  `hero-backdrop`, `hero-actions`, `tour-cards`, `guides`. Restore (page name pill) deletes the row. The Add menu offers box, words and picture only: this site has no `/api/blocks/thread-feed`.
+- Verified 2026-11-03 in a browser on the LAN URL with a temporary guide account, since removed: Save disabled until an edit; real save; saved page equals the coded page (section heights 556, 1193, 238, 285; four parts; six cards, three guides); no button or editor CSS for visitors; Restore. Not tested: a signed-in non-editor calling the save action; touch; a picture upload in the editor.
+- Incident 2026-11-03: a test save put the heading "Walk Paris, a pilot edit." on the public page for about 15 minutes (saved 17:38 UTC); the row was deleted. Test saves here are public: make only invisible edits, and delete the row at once.
+- Correction to the 2026-11-01 note: `.env` now has the public domain in `ELKTOURS_URL` and `ADDITIONAL_REDIRECT_URLS`. Verified 2026-11-03 through the edge: the SSO handoff returns to `elkdonisexperiences.com`, password sign-in gives a session, and a signed-in person with no role sees no "Edit page". Google sign-in on that host and Dana's own account were not tested.
+

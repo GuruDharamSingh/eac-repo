@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { listSeries } from "@elkdonis/commerce/queries";
 import { canCreateSeries } from "@elkdonis/commerce/server";
-import { getCurrentUserId } from "@/lib/marketplace-auth";
+import { getCurrentUserId, requireAdmin } from "@/lib/marketplace-auth";
 import { NewSeriesForm } from "./series-panels";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,10 @@ function fmt(d: string | null): string {
 }
 
 export default async function AdminSeriesPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const userId = await getCurrentUserId();
   const [series, mayCreate] = await Promise.all([
     listSeries({ orgId: "market" }),

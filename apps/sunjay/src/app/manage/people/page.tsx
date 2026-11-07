@@ -1,7 +1,7 @@
 import { db } from "@elkdonis/db";
 import { listOrgMembers } from "@elkdonis/services";
 import { MemberRow } from "@/components/manage/member-row";
-import { getViewer } from "@/lib/auth";
+import { getViewer, requireOrgEditor } from "@/lib/auth";
 import { formatShortDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { Badge } from "@elkdonis/primitives";
@@ -34,6 +34,10 @@ interface ContactRow {
  * conjure a person. See the brand doc for why that boundary is where it is.
  */
 export default async function ManagePeoplePage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const viewer = await getViewer();
 
   const [members, profiles, contacts] = await Promise.all([

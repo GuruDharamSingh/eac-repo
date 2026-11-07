@@ -1,0 +1,173 @@
+/*
+ * The dock (packages/dock, 2026-11-06). Plain CSS on --eac-dock-* hooks with
+ * literal fallbacks; no Tailwind (it floats over every page of a host, so it
+ * keeps its own solid ground rather than following the page's).
+ *
+ * Measured pairs (WCAG relative luminance, 2026-11-06), on the literals:
+ *   ink #1f1d1a on ground #ffffff          16.81:1  body text
+ *   muted #57534e on #ffffff                7.63:1  labels, details, hints
+ *   button text #ffffff on #1f1d1a         16.81:1
+ *   quiet button #1f1d1a on #ffffff, border #78716c 4.80:1 (non-text, >= 3:1)
+ *   Done #166534 on #dcfce7                 6.49:1
+ *   Begun #92400e on #fef3c7                6.37:1
+ *   Not yet #44403c on #f5f5f4              9.42:1
+ *   error #b91c1c on #ffffff                6.47:1
+ *   link and focus ring #1d4ed8 on #ffffff  6.70:1
+ *   tab text #1f1d1a on #f5f5f4            15.41:1; tab border #78716c 4.80:1 on #ffffff
+ * A host that redefines a hook re-measures its pair.
+ */
+.eac-dock {
+  --dk-ground: var(--eac-dock-ground, #ffffff);
+  --dk-ink: var(--eac-dock-ink, #1f1d1a);
+  --dk-muted: var(--eac-dock-muted, #57534e);
+  --dk-line: var(--eac-dock-line, #78716c);
+  --dk-tab: var(--eac-dock-tab, #f5f5f4);
+  --dk-btn: var(--eac-dock-button, #1f1d1a);
+  --dk-btn-on: var(--eac-dock-button-on, #ffffff);
+  --dk-link: var(--eac-dock-link, #1d4ed8);
+  --dk-error: var(--eac-dock-error, #b91c1c);
+  --dk-done: var(--eac-dock-done, #166534);
+  --dk-done-ground: var(--eac-dock-done-ground, #dcfce7);
+  --dk-partial: var(--eac-dock-partial, #92400e);
+  --dk-partial-ground: var(--eac-dock-partial-ground, #fef3c7);
+  --dk-none: var(--eac-dock-none, #44403c);
+  --dk-none-ground: var(--eac-dock-none-ground, #f5f5f4);
+
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  font-family: var(--eac-dock-font, var(--font-inter, system-ui, -apple-system, "Segoe UI", sans-serif));
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--dk-ink);
+}
+
+.eac-dock__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--dk-line);
+  border-radius: 999px;
+  background: var(--dk-tab);
+  color: var(--dk-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.eac-dock__box {
+  width: 320px;
+  max-width: 100%;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--dk-line);
+  border-radius: 10px;
+  background: var(--dk-ground);
+  color: var(--dk-ink);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.eac-dock__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.eac-dock__eyebrow,
+.eac-dock__label {
+  margin: 0;
+  color: var(--dk-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.eac-dock__headbtns { display: inline-flex; gap: 4px; }
+.eac-dock__icon {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dk-ink);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.eac-dock__icon:hover { background: var(--dk-tab); }
+
+.eac-dock__part + .eac-dock__part {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dk-tab);
+}
+.eac-dock__title { margin: 2px 0 6px; font-size: 15px; font-weight: 600; }
+.eac-dock__row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; margin: 0 0 8px; }
+.eac-dock__detail { margin: 0 0 8px; color: var(--dk-muted); font-size: 13px; }
+.eac-dock__row .eac-dock__detail { margin: 0; }
+.eac-dock__hint { color: var(--dk-muted); font-size: 12px; }
+p.eac-dock__hint { margin: 0 0 8px; }
+
+.eac-dock__state {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dk-none-ground);
+  color: var(--dk-none);
+  font-size: 12px;
+  font-weight: 600;
+}
+.eac-dock__state--done { background: var(--dk-done-ground); color: var(--dk-done); }
+.eac-dock__state--partial { background: var(--dk-partial-ground); color: var(--dk-partial); }
+
+.eac-dock__act { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; }
+.eac-dock__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--dk-btn);
+  border-radius: 6px;
+  background: var(--dk-btn);
+  color: var(--dk-btn-on);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.eac-dock__btn[disabled] { opacity: 0.7; cursor: progress; }
+.eac-dock__btn--quiet { background: var(--dk-ground); color: var(--dk-ink); border-color: var(--dk-line); }
+
+.eac-dock__form { margin: 0 0 4px; }
+.eac-dock__field { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 13px; color: var(--dk-muted); }
+.eac-dock__field input {
+  padding: 6px 8px;
+  border: 1px solid var(--dk-line);
+  border-radius: 6px;
+  background: var(--dk-ground);
+  color: var(--dk-ink);
+  font: inherit;
+}
+
+.eac-dock__back { margin: 4px 0 0; font-size: 13px; }
+.eac-dock__back a { color: var(--dk-link); }
+
+.eac-dock__msg { margin: 10px 0 0; color: var(--dk-muted); font-size: 13px; }
+.eac-dock__msg--error { color: var(--dk-error); }
+
+.eac-dock :focus-visible { outline: 2px solid var(--dk-link); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .eac-dock { right: 16px; left: 16px; align-items: stretch; }
+  .eac-dock__tab { align-self: flex-end; }
+  .eac-dock__box { width: auto; }
+}

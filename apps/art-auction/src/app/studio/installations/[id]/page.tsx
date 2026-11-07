@@ -14,10 +14,10 @@ export default async function EditInstallationPage({ params }: { params: Promise
   const { id } = await params;
   const { stores } = await requireStudioStore();
   const installation = await getInstallation(id);
-  if (!installation || !stores.some((s) => s.id === installation.storeId)) notFound();
+  if (!installation?.storeId || !stores.some((s) => s.id === installation.storeId)) notFound();
 
   const [hangable, hung, pieces] = await Promise.all([
-    listHangableArtworks(installation.storeId),
+    listHangableArtworks(installation.storeId!),
     listInstallationArtworks(id, { publicOnly: false }),
     listInstallationPieces(id),
   ]);

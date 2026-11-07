@@ -58,11 +58,18 @@ export async function StepBody({ step, c, thread, enrolled = false, here = "", o
  */
 async function TaskBox({ task, step, c, enrolled, here, orgId }: { task: NonNullable<ReturnType<typeof stepTask>>; step: OutlineStepView; c: LmsConnectors; enrolled: boolean; here: string; orgId: string | null }) {
   if (!c.tasks) {
-    return <p className="so-callout">This step is done on the network itself; this site cannot do it from here.</p>;
+    const elsewhere = c.taskElsewhere?.(here) ?? null;
+    return elsewhere
+      ? <p className="so-callout">This step is done on the network itself. <a href={elsewhere}>Open it there</a>: it ticks itself when it is done.</p>
+      : <p className="so-callout">This step is done on the network itself; this site cannot do it from here.</p>;
   }
   const viewer = await c.viewer();
   const done = step.status === "completed" || step.status === "waived";
-  const status = done ? { done: true } : await c.tasks.status(task, viewer, { orgId }).catch(() => ({ done: false }));
+  // Always read it (settleTaskStep already did, so the host's cache answers):
+  // a recorded step still needs the current detail, link and values — a form
+  // task drawn without its values would save blanks over them (2026-11-06).
+  const read = await c.tasks.status(task, viewer, { orgId }).catch(() => ({ done: false }));
+  const status = done ? { ...read, done: true } : read;
   const Box = c.tasks.render;
   return (
     <section className="so-task" aria-label="What to do">

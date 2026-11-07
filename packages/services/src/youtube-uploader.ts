@@ -15,11 +15,11 @@
  * whatever privacyStatus asks for.
  */
 
-import { mkdir, open, rm, stat } from 'node:fs/promises';
+import { mkdir, open, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { getConnectionAccessToken } from './connections';
 import { resolveOrgPath } from './org-storage';
-import { davDownloadToFile } from './video-render';
+import { davDownloadToFile, probeMedia, stillVideoFromAudio } from './video-render';
 import {
   failUpload,
   finishUpload,
@@ -70,6 +70,8 @@ function nextOffset(res: Response): number {
 export async function processUpload(job: ClaimedUpload, log: Log): Promise<void> {
   const ext = path.extname(job.sourcePath).toLowerCase();
   const local = path.join(WORK, 'uploads', `${job.id}${ext}`);
+  /** What is sent: the download, or its title-card mp4 when it has no picture. */
+  let file = local;
   try {
     if (!job.connectionId) throw new UploadError('No YouTube connection: choose a channel in the circle’s settings.');
 
@@ -80,8 +82,25 @@ export async function processUpload(job: ClaimedUpload, log: Log): Promise<void>
       log(`[upload] ${job.id}: downloading ${job.sourcePath}`);
       await davDownloadToFile(resolveOrgPath(job.orgId, job.sourcePath), local);
     }
-    const size = (await stat(local)).size;
-    if (size <= 0) throw new UploadError('The recording is empty.');
+    if ((await stat(local)).size <= 0) throw new UploadError('The recording is empty.');
+
+    // 1b. Audio only (the browser reading recorder): a title card under the
+    // sound, since YouTube will not process a file without a picture. Kept on
+    // disk like the download so a resumed session sends the same bytes.
+    const probe = await probeMedia(local);
+    if (!probe.hasVideo && !probe.hasAudio) throw new UploadError('The recording has neither picture nor sound.');
+    if (!probe.hasVideo) {
+      const still = path.join(WORK, 'uploads', `${job.id}.still.mp4`);
+      if ((await stat(still).then((s) => s.size).catch(() => 0)) <= 0) {
+        log(`[upload] ${job.id}: audio only; adding a title card`);
+        const part = `${still}.part.mp4`;
+        await stillVideoFromAudio(local, part, job.title);
+        await rename(part, still);
+      }
+      file = still;
+    }
+    const size = (await stat(file)).size;
+    const mime = MIME[path.extname(file).toLowerCase()] ?? 'video/*';
 
     // 2. An access token, refreshed as the upload goes on.
     let token = '';
@@ -126,7 +145,7 @@ export async function processUpload(job: ClaimedUpload, log: Log): Promise<void>
           Authorization: await auth(),
           'Content-Type': 'application/json; charset=UTF-8',
           'X-Upload-Content-Length': String(size),
-          'X-Upload-Content-Type': MIME[ext] ?? 'video/*',
+          'X-Upload-Content-Type': mime,
         },
         body: JSON.stringify({
           snippet: { title: job.title, description: job.description },
@@ -141,7 +160,7 @@ export async function processUpload(job: ClaimedUpload, log: Log): Promise<void>
     }
 
     // 4. The chunks.
-    const fh = await open(local, 'r');
+    const fh = await open(file, 'r');
     try {
       let serverErrors = 0;
       while (offset < size) {
@@ -176,6 +195,7 @@ export async function processUpload(job: ClaimedUpload, log: Log): Promise<void>
           await finishUpload(job.id, video.id);
           log(`[upload] ${job.id}: published → https://youtu.be/${video.id}`);
           await rm(local, { force: true });
+          if (file !== local) await rm(file, { force: true });
           return;
         }
         if (res.status === 401) {

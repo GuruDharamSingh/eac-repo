@@ -1,0 +1,200 @@
+/* An org's classifieds page: the sheet (public and editor) and the editor's
+   chrome. Everything is prefixed cl- / cle- so it cannot collide with the
+   app's Tailwind classes. Selection uses printer's registration colours:
+   cyan = selected, magenta = hover, amber = outside the family. */
+
+.cl-sheet {
+  --paper: #ece5d3;
+  background: var(--paper);
+  background-image: linear-gradient(rgba(60, 40, 10, .035) 1px, transparent 1px);
+  background-size: 100% 3px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(34px, auto);
+  grid-auto-flow: dense;
+  gap: 10px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .08), 0 10px 30px rgba(0, 0, 0, .12);
+  color: #1d1a16;
+  color-scheme: light;
+}
+.cl-masthead { grid-column: 1 / -1; text-align: center; font: 700 30px/1.05 'Bodoni Moda', Georgia, serif; letter-spacing: .02em; border-bottom: 3px double #1d1a16; padding-bottom: 6px; text-wrap: balance; }
+.cl-masthead small { display: block; font: 400 10px/1.6 'Old Standard TT', Georgia, serif; letter-spacing: .3em; text-transform: uppercase; margin-top: 4px; }
+.cl-empty { grid-column: 1 / -1; text-align: center; font: italic 14px/1.5 'Old Standard TT', Georgia, serif; padding: 32px 0; }
+
+.cl-ad { box-sizing: border-box; --ink: #1d1a16; --spot: #7a2e1f; --adpaper: transparent; position: relative; display: flex; flex-direction: column; gap: 4px; color: var(--ink); background: var(--adpaper); min-width: 0; text-decoration: none; }
+a.cl-ad { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+a.cl-ad:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+a.cl-ad:focus-visible { outline: 2px solid #0a7ea4; outline-offset: 3px; }
+.cl-ad.b-none { border: 0; }
+.cl-ad.b-hairline { border: 1px solid var(--ink); }
+.cl-ad.b-double { border: 3px double var(--ink); }
+.cl-ad.b-heavy { border: 2.5px solid var(--ink); }
+.cl-ad.t-tinted { --adpaper: color-mix(in srgb, var(--ink) 7%, transparent); }
+.cl-ad.t-reversed { --adpaper: var(--ink); color: var(--paper); }
+.cl-ad.t-reversed .cl-part { color: var(--paper); }
+.cl-part { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.cl-header { align-self: stretch; text-align: center; letter-spacing: .14em; text-transform: uppercase; }
+.cl-h-rule { border-top: 2px solid currentColor; border-bottom: 1px solid currentColor; padding: 1px 0; }
+.cl-h-reversed { background: var(--ink); color: var(--paper) !important; padding: 2px 6px; }
+.t-reversed .cl-h-reversed { background: var(--paper); color: var(--ink) !important; }
+.cl-h-boxed { align-self: center; border: 1.5px solid currentColor; padding: 1px 8px; }
+.cl-h-ornament::before { content: "\2766  "; }
+.cl-h-ornament::after { content: "  \2766"; }
+.cl-h-tab { align-self: flex-start; background: var(--spot); color: #fff !important; padding: 2px 9px; letter-spacing: .1em; }
+.cl-h-none { display: none; }
+.cle-editing .cl-h-none { display: block; opacity: .35; border: 1px dashed currentColor; font-size: 9px !important; }
+.cl-title { line-height: 1.08; text-wrap: balance; }
+.cl-body { flex: 1 1 auto; hyphens: auto; }
+.cl-price { font-variant-numeric: tabular-nums; }
+.cl-linkmark { position: absolute; right: 4px; bottom: 3px; font: 600 9px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; opacity: .55; }
+.cl-part[contenteditable="true"] { outline: 2px solid #0a7ea4; outline-offset: 2px; cursor: text; background: rgba(255, 255, 255, .55); }
+
+@media (max-width: 640px) {
+  .cl-sheet { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; padding: 12px; }
+  .cl-ad { grid-column: span 2 !important; width: auto !important; }
+  .cl-masthead { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { a.cl-ad { transition: none; } }
+
+/* Rich words (b, i, u, links, bullets). */
+.cl-part a, .cl-rl { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.cl-list { margin: 0; padding-left: 1.2em; list-style: disc; text-align: left; }
+.cl-part b { font-weight: 700; }
+
+/* The phone-width preview in the editor: the same rules as the narrow-screen media query. */
+.cl-sheet.cl-phone { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; padding: 12px; }
+.cl-sheet.cl-phone .cl-ad { grid-column: span 2 !important; width: auto !important; }
+.cl-sheet.cl-phone .cl-masthead { font-size: 24px; }
+
+/* ---------------------------------------------------------------- editor */
+.cle {
+  --c-chrome: #f2f3f1; --c-panel: #ffffff; --c-line: #d8dbd5; --c-text: #1b1e1c; --c-muted: #5f6762;
+  --c-cyan: #0a7ea4; --c-magenta: #b8236f; --c-amber: #a86b12;
+  --c-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --c-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  position: fixed; inset: 0; z-index: 50; display: grid; grid-template-rows: auto auto 1fr;
+  background: var(--c-chrome); color: var(--c-text); font: 13px/1.45 var(--c-ui); color-scheme: light;
+}
+.cle button, .cle select, .cle input, .cle textarea { font: inherit; color: inherit; }
+.cle button { cursor: pointer; }
+.cle :focus-visible { outline: 2px solid var(--c-cyan); outline-offset: 2px; }
+.cle-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 8px 16px; background: var(--c-panel); border-bottom: 1px solid var(--c-line); }
+.cle-top h1 { font-size: 14px; font-weight: 600; margin: 0 6px 0 0; }
+.cle-crumbs { display: flex; gap: 4px; align-items: center; font: 12px var(--c-mono); color: var(--c-muted); flex: 1 1 200px; flex-wrap: wrap; min-width: 0; }
+.cle-crumbs button { border: 0; background: none; padding: 2px 4px; border-radius: 3px; color: var(--c-muted); }
+.cle-crumbs button:hover { background: var(--c-chrome); color: var(--c-text); }
+.cle-crumbs .here { color: var(--c-cyan); font-weight: 600; }
+.cle-seg { display: inline-flex; border: 1px solid var(--c-line); border-radius: 6px; overflow: hidden; }
+.cle-seg button { border: 0; background: var(--c-panel); padding: 4px 10px; border-right: 1px solid var(--c-line); }
+.cle-seg button:last-child { border-right: 0; }
+.cle-seg button[aria-pressed="true"] { background: var(--c-text); color: var(--c-panel); }
+.cle-btn { border: 1px solid var(--c-line); background: var(--c-panel); border-radius: 6px; padding: 4px 10px; }
+.cle-btn:hover { border-color: var(--c-muted); }
+.cle-btn:disabled { opacity: .4; cursor: default; }
+.cle-btn.primary { background: var(--c-cyan); border-color: var(--c-cyan); color: #fff; font-weight: 600; }
+.cle-status { font-size: 12px; color: var(--c-muted); }
+.cle-status.bad { color: #b42318; }
+.cle-label { font-size: 11px; color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; }
+.cle-help { padding: 6px 16px; font-size: 12px; color: var(--c-muted); border-bottom: 1px solid var(--c-line); display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.cle-help b { color: var(--c-text); font-weight: 500; }
+.cle-main { display: grid; grid-template-columns: 200px minmax(0, 1fr) 340px; min-height: 0; }
+.cle-pane { background: var(--c-panel); min-height: 0; overflow: auto; }
+.cle-left { border-right: 1px solid var(--c-line); overflow-x: hidden; }
+.cle-right { border-left: 1px solid var(--c-line); overflow: hidden; display: flex; flex-direction: column; }
+.cle-right.de-panel { height: auto; }
+.cle-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c-muted); margin-left: 8px; vertical-align: middle; }
+.cle-dot[hidden] { display: none; }
+.cle-editing .cle-hidden { outline: 1px dashed currentColor; outline-offset: 1px; }
+.de-row.c-words textarea, .de-row input#cle-title, .de-row input#cle-url, .de-row input#cle-ulabel { width: 100%; border: 1px solid transparent; border-radius: 7px; background: var(--de-field); padding: 6px 8px; resize: vertical; font: inherit; }
+.de-row.c-words { align-items: start; }
+.de-row.c-words textarea:focus, .de-row input#cle-title:focus { border-color: var(--de-cyan); background: var(--de-bg); outline: none; }
+.cle-pane section { padding: 12px 14px; border-bottom: 1px solid var(--c-line); display: grid; gap: 8px; }
+.cle-pane h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--c-muted); margin: 0; font-weight: 600; }
+.cle-tree { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+.cle-tree ul { list-style: none; margin: 0; padding: 0 0 0 14px; }
+.cle-tree button { width: 100%; text-align: left; border: 0; background: none; padding: 3px 6px; border-radius: 4px; display: flex; gap: 6px; align-items: baseline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cle-tree button:hover { background: var(--c-chrome); }
+.cle-tree button.on { background: color-mix(in srgb, var(--c-cyan) 16%, transparent); color: var(--c-cyan); font-weight: 600; }
+.cle-kind { font: 10px var(--c-mono); color: var(--c-muted); }
+.cle-tpl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; font-size: 12px; padding: 4px 0; border-top: 1px dashed var(--c-line); }
+.cle-tpl:first-of-type { border-top: 0; }
+.cle-tpl small { color: var(--c-muted); grid-column: 1; }
+.cle-tpl button { grid-row: span 2; }
+.cle-canvas { overflow: auto; min-height: 0; padding: 24px; }
+.cle-wrap { position: relative; margin: 0 auto; }
+.cle-page { transform-origin: 0 0; }
+.cle-overlay { position: absolute; inset: 0; pointer-events: none; }
+.cle-hud { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--c-text); color: var(--c-panel); padding: 7px 12px; border-radius: 6px; font: 500 12px/1.3 var(--c-mono); z-index: 80; opacity: 0; transition: opacity .15s; pointer-events: none; max-width: calc(100% - 32px); }
+.cle-hud.show { opacity: 1; }
+.cle-flag { font-size: 11px; color: var(--c-amber); border: 1px solid var(--c-amber); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
+.cle-flag button { border: 0; background: none; color: inherit; text-decoration: underline; padding: 0 0 0 4px; font-size: 11px; }
+.cle-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.cle-note { font-size: 12px; color: var(--c-muted); margin: 0; }
+@media (max-width: 860px) {
+  .cle { position: static; display: block; }
+  .cle-main { grid-template-columns: minmax(0, 1fr); }
+  .cle-main.cle-nopanel { grid-template-columns: minmax(0, 1fr); }
+  .cle-canvas { padding: 12px; overflow: visible; }
+  .cle-pane { overflow: visible; }
+  .cle-left, .cle-right { border: 0; border-top: 1px solid var(--c-line); }
+}
+@media (prefers-reduced-motion: reduce) { .cle-hud { transition: none; } }
+
+/* ------------------------------------------------- pass 2: tools, view, cursors */
+.cle-main.cle-nopanel { grid-template-columns: 200px minmax(0, 1fr) 0; }
+.cle-main.cle-nopanel .cle-right { display: none; }
+.cle-iconbtn { display: inline-flex; align-items: center; gap: 6px; }
+.cle-iconbtn svg { width: 15px; height: 15px; }
+.cle-iconbtn[aria-pressed="true"] { background: var(--c-text); color: var(--c-panel); border-color: var(--c-text); }
+.cle-tools { position: sticky; top: 0; left: 0; z-index: 30; width: max-content; max-width: 100%; display: flex; align-items: center; gap: 2px; background: var(--c-panel); border: 1px solid var(--c-line); border-radius: 10px; padding: 4px; margin: 0 0 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.cle-tools button { border: 0; background: none; min-width: 30px; height: 30px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
+.cle-tools button:hover { background: var(--c-chrome); }
+.cle-tools button[aria-pressed="true"] { background: color-mix(in srgb, var(--c-cyan) 16%, transparent); color: var(--c-cyan); }
+.cle-tools svg { width: 16px; height: 16px; }
+.cle-zoomlabel { font: 12px var(--c-mono); min-width: 46px !important; }
+.cle-tsep { width: 1px; height: 18px; background: var(--c-line); margin: 0 4px; }
+.cle-canvas { position: relative; }
+.cle-wrap { box-shadow: 0 0 0 1px rgba(0, 0, 0, .03); }
+.cle-wrap[data-zoom] .cle-page { will-change: transform; }
+
+/* Cursors. Arrow to select, crosshair for the text tool, grab for the hand,
+   I-beam while typing; resize and move cursors come from direct-edit.css. */
+.cle .cl-sheet, .cle .cl-sheet * { cursor: default; }
+.cle[data-tool="text"] .cl-sheet, .cle[data-tool="text"] .cl-sheet * { cursor: crosshair; }
+.cle[data-tool="hand"] .cle-canvas, .cle[data-tool="hand"] .cl-sheet, .cle[data-tool="hand"] .cl-sheet * { cursor: grab; }
+.cle .cl-sheet [contenteditable="true"], .cle .cl-sheet [contenteditable="true"] * { cursor: text; }
+.cle button:not(:disabled), .cle select, .cle a, .cle [data-add] { cursor: pointer; }
+.cle button:disabled { cursor: not-allowed; }
+.cle .cle-tpl button { cursor: pointer; }
+.cle-hidden { outline: 1px dashed currentColor; outline-offset: 1px; }
+
+/* ------------------------------------------------- pass 3: nodes in containers */
+.cl-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cl-rule { border: 0; border-top: 1px solid currentColor; margin: 2px 0; height: 0; align-self: stretch; }
+.cl-image { display: block; width: 100%; max-width: 100%; height: auto; object-fit: cover; min-width: 0; }
+.cl-noimage { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; background: repeating-linear-gradient(45deg, rgba(0, 0, 0, .05) 0 8px, transparent 8px 16px); font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace; text-transform: uppercase; letter-spacing: .06em; }
+.cl-h-plain { }
+
+/* Feed cards: one design drawn for every item of a feed, on the page's own background. */
+.cl-sheet.cl-list { background: transparent; background-image: none; box-shadow: none; padding: 0; color: #1b1e1c; }
+.cl-listhead { grid-column: 1 / -1; margin: 0; font: 600 12px/1.2 "IBM Plex Mono", ui-monospace, monospace; text-transform: uppercase; letter-spacing: .18em; color: #5f6762; }
+.cl-sheet.cl-list.cl-phone, .cle .cl-sheet.cl-list { padding: 4px; }
+
+/* editor: boxes faintly outlined, empty things labelled, thin dividers easy to hit */
+.cle-editing .cl-box { outline: 1px dotted rgba(10, 126, 164, .3); outline-offset: 1px; }
+.cle-editing .cle-empty { min-height: 26px; outline: 1px dashed rgba(10, 126, 164, .55); }
+.cle-ph { font: 500 10px/1.3 "IBM Plex Mono", ui-monospace, monospace; color: #5f6762; padding: 6px; align-self: center; }
+.cle-editing .cl-rule { position: relative; }
+.cle-editing .cl-rule::after { content: ""; position: absolute; inset: -6px 0; }
+.cle-editing img.cl-image { pointer-events: auto; user-select: none; }
+.cle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cle-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--c-line); background: var(--c-panel); border-radius: 7px; padding: 4px 8px; font-size: 12px; cursor: grab !important; touch-action: none; }
+.cle-chip svg { width: 14px; height: 14px; color: var(--c-muted); }
+.cle-chip:hover { border-color: var(--c-cyan); }
+.cle-chip:active { cursor: grabbing !important; }
+.cle .cle-note { font-size: 11.5px; }
+.cle-pattern .cle-canvas { background: #ecebe6; }
+.cle-tools button:disabled { opacity: .45; }
+/* Touch: a selected block or part can be dragged with a finger; everything else still scrolls. */
+.cle .cl-sheet [data-de-sel] { touch-action: none; }

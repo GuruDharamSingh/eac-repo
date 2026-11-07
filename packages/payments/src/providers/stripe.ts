@@ -88,9 +88,50 @@ export interface StripeCheckoutLine {
   imageUrl?: string | null;
 }
 
+/**
+ * What Stripe's hosted page should ask the buyer for, on top of the card.
+ * Optional and additive (2026-11-07, katie-the-potter's "Buy now"): a caller
+ * that passes nothing gets exactly the session it always got.
+ *
+ *   email            let the buyer type their email on Stripe's page instead
+ *                    of prefilling `customerEmail` (Stripe always asks when no
+ *                    email is passed, so an empty `customerEmail` implies it)
+ *   shippingAddress  ask for a shipping address in one of these countries
+ *   phone            ask for a phone number (carriers often want one)
+ *
+ * What the buyer entered comes back as `collected` on the session status and
+ * through {@link collectedFromSession} in the webhook.
+ */
+export interface StripeCollectOptions {
+  email?: boolean;
+  shippingAddress?: { allowedCountries: string[] } | null;
+  phone?: boolean;
+}
+
+/** An address as Stripe collected it, in commerce's `Address` shape. */
+export interface StripeCollectedAddress {
+  recipientName: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  region: string | null;
+  postalCode: string;
+  country: string;
+  phone: string | null;
+}
+
+/** What the buyer gave Stripe's page: email, name, phone, shipping address. */
+export interface StripeCollectedCustomer {
+  email: string | null;
+  name: string | null;
+  phone: string | null;
+  shippingAddress: StripeCollectedAddress | null;
+}
+
 export interface CreateCheckoutSessionInput {
   orderId: string;
   orderNumber: string;
+  /** Prefilled on Stripe's page. Empty = Stripe asks the buyer for it. */
   customerEmail: string;
   lines: StripeCheckoutLine[];
   successUrl: string;
@@ -105,6 +146,8 @@ export interface CreateCheckoutSessionInput {
   /** Stripe enforces 30 minutes to 24 hours. Defaults to 60. */
   expiresInMinutes?: number;
   metadata?: Record<string, string>;
+  /** Optional: what else Stripe's page asks for. Omitted = as before. */
+  collect?: StripeCollectOptions | null;
 }
 
 export interface StripeCheckoutSession {
@@ -124,6 +167,8 @@ export interface StripeCheckoutSessionStatus {
   orderId: string | null;
   amountTotalMinor: number | null;
   currency: string | null;
+  /** What the buyer entered on Stripe's page (null before they did). */
+  collected?: StripeCollectedCustomer | null;
 }
 
 export interface StripeAccountStatus {
@@ -178,6 +223,121 @@ function toIso(unixSeconds: number | null | undefined): string {
   return new Date((unixSeconds ?? Math.floor(Date.now() / 1000)) * 1000).toISOString();
 }
 
+/**
+ * The exact params `createCheckoutSession` sends to Stripe. Pure (no network),
+ * exported so a caller can inspect what WOULD be sent without creating a
+ * session (katie-the-potter's checks run against live keys).
+ *
+ * Payment methods: no `payment_method_types` is set, on purpose. Checkout then
+ * uses the methods switched on in the Dashboard (dynamic payment methods), and
+ * with card on, Apple Pay and Google Pay appear by themselves on a device and
+ * browser that support them. Stripe's hosted page needs no domain
+ * registration for the wallets.
+ */
+export function buildCheckoutSessionParams(
+  input: CreateCheckoutSessionInput,
+  nowSeconds: number = Math.floor(Date.now() / 1000)
+): Stripe.Checkout.SessionCreateParams {
+  if (input.lines.length === 0) throw new Error("Nothing to charge for.");
+  const minutes = Math.min(
+    MAX_EXPIRY_MINUTES,
+    Math.max(MIN_EXPIRY_MINUTES, input.expiresInMinutes ?? 60)
+  );
+  const expiresAt = nowSeconds + minutes * 60;
+
+  const useDestination = Boolean(input.destinationAccountId);
+  const fee = useDestination ? Math.max(0, Math.round(input.applicationFeeMinor ?? 0)) : 0;
+
+  const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
+    metadata: { orderId: input.orderId, orderNumber: input.orderNumber },
+  };
+  if (useDestination) {
+    paymentIntentData.transfer_data = { destination: input.destinationAccountId! };
+    if (fee > 0) paymentIntentData.application_fee_amount = fee;
+  }
+
+  // Prefill the email unless the caller asked Stripe to collect it, or has
+  // none yet (an empty customer_email is refused by Stripe; omitting it makes
+  // the hosted page ask).
+  const collect = input.collect ?? null;
+  const email = input.customerEmail?.trim() ?? "";
+  const prefillEmail = email.length > 0 && !collect?.email;
+  const countries = (collect?.shippingAddress?.allowedCountries ?? [])
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => /^[A-Z]{2}$/.test(c));
+
+  return {
+    mode: "payment",
+    ...(prefillEmail ? { customer_email: email } : {}),
+    client_reference_id: input.orderId,
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+    expires_at: expiresAt,
+    metadata: { orderId: input.orderId, orderNumber: input.orderNumber, ...(input.metadata ?? {}) },
+    payment_intent_data: paymentIntentData,
+    ...(countries.length > 0
+      ? {
+          shipping_address_collection: {
+            allowed_countries:
+              countries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
+          },
+        }
+      : {}),
+    ...(collect?.phone ? { phone_number_collection: { enabled: true } } : {}),
+    line_items: input.lines.map((l) => ({
+      quantity: Math.max(1, Math.round(l.quantity)),
+      price_data: {
+        currency: l.currency.toLowerCase(),
+        unit_amount: Math.max(0, Math.round(l.amountMinor)),
+        product_data: {
+          name: l.name,
+          ...(l.description ? { description: l.description.slice(0, 500) } : {}),
+          ...(l.imageUrl && /^https?:\/\//.test(l.imageUrl) ? { images: [l.imageUrl] } : {}),
+        },
+      },
+    })),
+  };
+}
+
+const blank = (v: string | null | undefined): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+/**
+ * What the buyer gave Stripe's page, from a Checkout Session object (a
+ * retrieved one, or a webhook's `event.data.object`). Null when nothing
+ * useful was entered. The shipping details are read from
+ * `collected_information` (API 2025-03-31 and later) and, for a webhook
+ * endpoint pinned to an older API version, from the legacy top-level
+ * `shipping_details`. `customer_details.address` is the BILLING address and
+ * is never taken for shipping.
+ */
+export function collectedFromSession(s: Stripe.Checkout.Session): StripeCollectedCustomer | null {
+  const cd = s.customer_details ?? null;
+  const legacy = (s as unknown as { shipping_details?: { name?: string | null; address?: Stripe.Address | null } | null })
+    .shipping_details;
+  const ship = s.collected_information?.shipping_details ?? legacy ?? null;
+  const a = ship?.address ?? null;
+  const shippingAddress: StripeCollectedAddress | null =
+    a && blank(a.line1) && blank(a.country)
+      ? {
+          recipientName: blank(ship?.name),
+          line1: blank(a.line1)!,
+          line2: blank(a.line2),
+          city: blank(a.city) ?? "",
+          region: blank(a.state),
+          postalCode: blank(a.postal_code) ?? "",
+          country: blank(a.country)!.toUpperCase(),
+          phone: blank(cd?.phone),
+        }
+      : null;
+  const out: StripeCollectedCustomer = {
+    email: blank(cd?.email),
+    name: blank(cd?.name) ?? blank(ship?.name),
+    phone: blank(cd?.phone),
+    shippingAddress,
+  };
+  return out.email || out.name || out.phone || out.shippingAddress ? out : null;
+}
+
 export function createStripeProvider(opts: StripeProviderOptions): StripeProvider {
   const client = new Stripe(opts.secretKey, {
     // Let the SDK's pinned API version apply; the types are generated for it.
@@ -187,46 +347,7 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
   async function createCheckoutSession(
     input: CreateCheckoutSessionInput
   ): Promise<StripeCheckoutSession> {
-    if (input.lines.length === 0) throw new Error("Nothing to charge for.");
-    const minutes = Math.min(
-      MAX_EXPIRY_MINUTES,
-      Math.max(MIN_EXPIRY_MINUTES, input.expiresInMinutes ?? 60)
-    );
-    const expiresAt = Math.floor(Date.now() / 1000) + minutes * 60;
-
-    const useDestination = Boolean(input.destinationAccountId);
-    const fee = useDestination ? Math.max(0, Math.round(input.applicationFeeMinor ?? 0)) : 0;
-
-    const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
-      metadata: { orderId: input.orderId, orderNumber: input.orderNumber },
-    };
-    if (useDestination) {
-      paymentIntentData.transfer_data = { destination: input.destinationAccountId! };
-      if (fee > 0) paymentIntentData.application_fee_amount = fee;
-    }
-
-    const session = await client.checkout.sessions.create({
-      mode: "payment",
-      customer_email: input.customerEmail,
-      client_reference_id: input.orderId,
-      success_url: input.successUrl,
-      cancel_url: input.cancelUrl,
-      expires_at: expiresAt,
-      metadata: { orderId: input.orderId, orderNumber: input.orderNumber, ...(input.metadata ?? {}) },
-      payment_intent_data: paymentIntentData,
-      line_items: input.lines.map((l) => ({
-        quantity: Math.max(1, Math.round(l.quantity)),
-        price_data: {
-          currency: l.currency.toLowerCase(),
-          unit_amount: Math.max(0, Math.round(l.amountMinor)),
-          product_data: {
-            name: l.name,
-            ...(l.description ? { description: l.description.slice(0, 500) } : {}),
-            ...(l.imageUrl && /^https?:\/\//.test(l.imageUrl) ? { images: [l.imageUrl] } : {}),
-          },
-        },
-      })),
-    });
+    const session = await client.checkout.sessions.create(buildCheckoutSessionParams(input));
 
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
     return { id: session.id, url: session.url, expiresAt: toIso(session.expires_at) };
@@ -243,6 +364,7 @@ export function createStripeProvider(opts: StripeProviderOptions): StripeProvide
       orderId: s.metadata?.orderId ?? s.client_reference_id ?? null,
       amountTotalMinor: s.amount_total ?? null,
       currency: s.currency ? s.currency.toUpperCase() : null,
+      collected: collectedFromSession(s),
     };
   }
 

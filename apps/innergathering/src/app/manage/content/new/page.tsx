@@ -3,6 +3,7 @@ import { listOrgFeeds } from "@elkdonis/services";
 import { ContentForm } from "@/components/manage/content-form";
 import { emptyDefaults } from "@/lib/cms/form-defaults";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 interface NewContentPageProps {
   /** ?feed=yoga preselects a page — the "post to this section" entry point. */
@@ -10,6 +11,10 @@ interface NewContentPageProps {
 }
 
 export default async function NewContentPage({ searchParams }: NewContentPageProps) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const [{ feed }, feeds] = await Promise.all([
     searchParams,
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }),

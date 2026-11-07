@@ -20,6 +20,8 @@ const ORG = siteConfig.orgId;
 export interface ImageSlot {
   path?: string;
   alt?: string;
+  /** How the picture sits in the banner: focal point and zoom (`coverFrameStyle`). */
+  frame?: { fx: number; fy: number; zoom: number } | null;
 }
 
 export interface ImageSpacesConfig {

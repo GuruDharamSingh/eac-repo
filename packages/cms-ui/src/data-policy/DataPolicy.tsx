@@ -13,6 +13,8 @@ export interface DataPolicyProps {
   updated: string;
   /** Rendered between the heading and the sections (a site's own opening). */
   intro?: ReactNode;
+  /** The network's Terms and Acceptable Use; default "/terms". */
+  termsHref?: string;
 }
 
 /**
@@ -21,7 +23,7 @@ export interface DataPolicyProps {
  * collective has made; the facts are cited in packages/cms-ui/src/data-policy/README.md.
  * Hosts wrap it in their own page frame and import data-policy.css.
  */
-export function DataPolicy({ orgName, host, contactEmail, deleteHref = "/data/delete", updated, intro }: DataPolicyProps) {
+export function DataPolicy({ orgName, host, contactEmail, deleteHref = "/data/delete", updated, intro, termsHref = "/terms" }: DataPolicyProps) {
   return (
     <div className="eac-policy">
       {intro}
@@ -93,7 +95,7 @@ export function DataPolicy({ orgName, host, contactEmail, deleteHref = "/data/de
           <li><strong>Google</strong>, only if you choose to sign in with it. Google tells us your email and name.</li>
           <li><strong>Stripe</strong> for card payments and payouts to artists.</li>
           <li><strong>SendGrid</strong> (Twilio) to deliver our email. Every newsletter carries an unsubscribe link that works in one click.</li>
-          <li><strong>Meta</strong>: see the next section.</li>
+          <li><strong>Meta</strong> and <strong>Google (YouTube)</strong>: see the next two sections.</li>
         </ul>
         <p>
           Nextcloud, the database and the sites themselves run on the collective&rsquo;s own server. We do not
@@ -113,16 +115,39 @@ export function DataPolicy({ orgName, host, contactEmail, deleteHref = "/data/de
             a site to them, the text and images of that post are sent to Meta.
           </li>
           <li>
-            <strong>Your own Page or account.</strong> From the Studio on arts-collective.com you can connect a
-            Facebook Page, Instagram professional account or Threads profile you manage and publish your own work to it. To do
-            this Meta gives us your name, the id of your account, the Pages and accounts you chose, and an
-            access token. We store these only to publish what you ask us to publish, and never post on our own
-            initiative. Disconnecting in Studio deletes the token and ids. So does removing the app from your
+            <strong>Your own Page or account.</strong> You connect a Facebook Page, Instagram professional account
+            or Threads profile you manage from your Center (View profile, then Connections) on any network site,
+            or from the Studio on arts-collective.com, and publish your own work to it. To do this Meta gives us
+            your name, the id of your account, the Pages and accounts you chose, and an access token. We store
+            these only to publish what you ask us to publish, and never post on our own initiative; every use is
+            written to a log you can read under Connections. Removing the connection deletes the token and ids and,
+            for Facebook, tells Meta to withdraw the app&rsquo;s access. So does removing the app from your
             Facebook settings, which sends us a deletion request that we carry out on our{" "}
             <a href={deleteHref}>data deletion page</a>.
           </li>
         </ul>
         <p>We do not use Facebook, Instagram or Threads for sign-in, and we receive nothing about your friends, followers or activity there.</p>
+      </section>
+
+      <section>
+        <h2>Google and YouTube</h2>
+        <p>
+          You can connect a YouTube channel in the same place, so that recordings of your groups or videos made
+          in the Studio go to your channel. Google then gives us an access token for the channel and its name.
+          We use the token only to upload what you ask us to upload and to read the channel&rsquo;s name back.
+          We never read your videos, comments, subscribers or anything else, and we keep nothing from Google
+          but the token and the channel name.
+        </p>
+        <p>
+          Our use of information received from Google APIs follows the{" "}
+          <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noreferrer">Google API Services User Data Policy</a>,
+          including its Limited Use requirements. By connecting a channel you also agree to the{" "}
+          <a href="https://www.youtube.com/t/terms" rel="noreferrer">YouTube Terms of Service</a>; the{" "}
+          <a href="https://policies.google.com/privacy" rel="noreferrer">Google Privacy Policy</a> applies to Google&rsquo;s side.
+          You can revoke our access at any time at{" "}
+          <a href="https://myaccount.google.com/permissions" rel="noreferrer">myaccount.google.com/permissions</a> or by removing
+          the connection here.
+        </p>
       </section>
 
       <section>
@@ -148,6 +173,14 @@ export function DataPolicy({ orgName, host, contactEmail, deleteHref = "/data/de
         <p>
           Write to <a href={`mailto:${contactEmail}`}>{contactEmail}</a> for any of these. We answer within
           thirty days.
+        </p>
+      </section>
+
+      <section>
+        <h2>Terms</h2>
+        <p>
+          What you may do on the network, and who publishes what, is in our{" "}
+          <a href={termsHref}>Terms and Acceptable Use</a>, accepted when an account is created.
         </p>
       </section>
 

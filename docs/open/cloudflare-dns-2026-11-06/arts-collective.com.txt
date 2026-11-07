@@ -1,0 +1,35 @@
+; arts-collective.com — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN arts-collective.com.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+@	3600	IN	MX	0 mx.sendgrid.net.
+mail	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+www	3600	IN	CNAME	arts-collective.com. ; cf_tags=cf-proxied:false
+ftp	3600	IN	CNAME	arts-collective.com. ; cf_tags=cf-proxied:false
+cpanel	3600	IN	CNAME	arts-collective.com. ; cf_tags=cf-proxied:false
+webmail	3600	IN	CNAME	arts-collective.com. ; cf_tags=cf-proxied:false
+@	3600	IN	TXT	"v=spf1 a mx include:websitewelcome.com ~all"
+_autodiscover._tcp	3600	IN	SRV	0 0 443 cpanelemaildiscovery.cpanel.net.
+whm	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+autoconfig	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+autodiscover	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+webdisk	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+default._domainkey	3600	IN	TXT	"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0LEdYMfVN6g9l81Elc+NMcO2gtANGkp3ocFDaTBZ2Gg6SAM3vqRVvVIA7uPnDinNlfMA5AgqNwOJryQMUfA6rbkzghv6MCOlraqu0uBtdEEU7jHKJb9AMaRGBTLJlFK6MJZq/VsLq6d0ogENNNPmWaT1ZnZ6Dp4gbwn+aqhWdIeKRZeOC2+bK/uDkjeHfiITI" "kUjHD9j7PdX78Qts50mfsz0x3cWKZQIG+oKWP+xkUTQN96hpQ7iiOmUinNhmxRePBdIFSB5sjZMkcycLpJ9fGsKcRuwsd9y/a4WwaMNuijjZ6N5AkDQSOjW/Loq1WSz1rud91gp/BuDwxMe98bptQIDAQAB;"
+_dmarc	3600	IN	TXT	"v=DMARC1; p=none"
+imap	3600	IN	CNAME	mail.arts-collective.com. ; cf_tags=cf-proxied:false
+pop	3600	IN	CNAME	mail.arts-collective.com. ; cf_tags=cf-proxied:false
+smtp	3600	IN	CNAME	mail.arts-collective.com. ; cf_tags=cf-proxied:false
+ssh	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+edit	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+forum	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+em8442	14400	IN	CNAME	u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+market	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+directory	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+s1._domainkey	14400	IN	CNAME	s1.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s2._domainkey	14400	IN	CNAME	s2.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+*	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+_cpanel-dcv-test-record	3600	IN	TXT	"_cpanel-dcv-test-record=Gj_cJbd3Ev9hJwWbL0dNbWkXEaz7QKlClFZuyg4o96Fi0LeYaT9pzjHiFgOJesSC"
+@	14400	IN	TXT	"google-site-verification=Hl3JFRcYTNUka48JnSFblWQ6JmCZhcXBbVrmyaQ435Y"
+live	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false

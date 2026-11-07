@@ -24,7 +24,7 @@ replaced; the research files hold the evidence and sources.
 | Piece | Where |
 |---|---|
 | Schema: content / delivery / record (+ run conversations) | migrations `140`–`143` (applied) |
-| Services, unlock engine, step-type registry, JSON-LD, refs to threads | `packages/lms` (`pnpm test:unlock`, 17 assertions) |
+| Services, unlock engine, step-type registry, JSON-LD, refs to threads | `packages/lms` (`pnpm test:unlock`, 17 assertions; `pnpm test:visibility`, the who-reads-what matrix through the services, against a scratch `_test` database — see the script header) |
 | Pages (catalogue, course, step, journal, guide desk, care) + form-action handler; **no client JS** | `packages/lms-ui` |
 | Host | `apps/sophia`, compose service `sophia`, port **3020** |
 | Flagship scaffold | `packages/lms/scripts/seed-elkdonis-path.mts` → `/elkdonis-path`, **unlisted** (noindex, off sitemap) until the guide flips it to `public` |
@@ -63,7 +63,7 @@ roles, threads, questionnaires, media-authz, commerce, email).
 6. **A short list of typed unlock rules** — sequential, after-module, date, offset-from-run-start, requires-course — evaluated by one pure function returning `{allowed, reason, unlocksAt}`. No rule language, no adaptive branching, **no gradebook**.
 7. **Entitlement ≠ enrolment.** The right to take a course (free, role, RSVP, order, grant) is separate from a seat in a run. Roles are scope rows: author→course, guide→run, mentor→learners. Org admin comes from `user_organizations.role`; no new role vocabulary.
 8. **Courses are org-owned; `org_id` on every delivery/record row; all access through the package's services with a viewer.** The network catalogue is a filtered view of org catalogues.
-9. **Private by default, stated to the learner.** Reflections have four visible levels (me / my guide / my circle / public), chosen per entry, never emailed, never cross-org, never AI-readable unless opted in. Do **not** reuse `listPendingReviews()` as-is — it is network-wide.
+9. **Private by default, stated to the learner.** Reflections have four visible levels (me / my guide / my circle / public), chosen per entry, never emailed, never cross-org, never AI-readable unless opted in. Do **not** reuse `listPendingReviews()` as-is — it is network-wide. Reading "my guide" and "my circle" entries, and answering them, is for the guides **named on the run** (`lms_run_staff`) only — an org role or global admin gives no view (narrowed 2026-10-14). A course's open run names its creator as guide when it is first made (else the publisher), so "my guide" always has a reader there (2026-10-16; existing runs were not backfilled).
 10. **Leave seams, build nothing, for:** Open Badges 3.0 (achievement + award tables now, signing later), AI (plain-text export per step, actor-type on records, drafts-only generation), payments (entitlement source `order`), drip and spaced re-prompts.
 
 ## Package layout (its own resources)

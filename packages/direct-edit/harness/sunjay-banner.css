@@ -1,0 +1,51 @@
+/* Extract of sunjay's served CSS (2026-11-04), written by sunjay-extract.cjs: what pt-banner's classes use, in their
+   real layers. The variables and the preflight are scoped to the banner's section, so the test page's other blocks keep
+   their own look. --font-fraunces comes from next/font on the real site; a system serif stands in, with no network. */
+@layer base,components,utilities;
+section.isolate{--spacing:.25rem;--container-2xl:42rem;--container-5xl:64rem;--text-sm:.875rem;--text-sm--line-height:calc(1.25/.875);--text-lg:1.125rem;--text-lg--line-height:calc(1.75/1.125);--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5/2.25);--text-5xl:3rem;--text-5xl--line-height:1;--font-weight-medium:500;--font-weight-semibold:600;--tracking-tight:-.025em;--leading-relaxed:1.625;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4,0,.2,1);--border:203 7% 23%;--font-fraunces:Georgia,"Times New Roman",serif}
+section.isolate,section.isolate *{--tw-border-style:solid}
+@layer base{section.isolate,section.isolate *,section.isolate :after,section.isolate :before{box-sizing:border-box;border:0 solid;margin:0;padding:0}section.isolate h1{font-size:inherit;font-weight:inherit}section.isolate a{color:inherit;text-decoration:inherit}section.isolate img{display:block;max-width:100%}}
+@layer utilities{.absolute{position:absolute}
+.relative{position:relative}
+.inset-0{inset:calc(var(--spacing)*0)}
+.isolate{isolation:isolate}
+.-z-10{z-index:calc(10*-1)}
+.mx-auto{margin-inline:auto}
+.mt-3{margin-top:calc(var(--spacing)*3)}
+.mt-6{margin-top:calc(var(--spacing)*6)}
+.mt-8{margin-top:calc(var(--spacing)*8)}
+.flex{display:flex}
+.inline-block{display:inline-block}
+.h-full{height:100%}
+.w-full{width:100%}
+.max-w-2xl{max-width:var(--container-2xl)}
+.max-w-5xl{max-width:var(--container-5xl)}
+.items-center{align-items:center}
+.overflow-hidden{overflow:hidden}
+.border{border-style:var(--tw-border-style);border-width:1px}
+.border-b{border-bottom-style:var(--tw-border-style);border-bottom-width:1px}
+.border-border{border-color:hsl(var(--border))}
+.object-cover{object-fit:cover}
+.px-5{padding-inline:calc(var(--spacing)*5)}
+.py-2\.5{padding-block:calc(var(--spacing)*2.5)}
+.py-12{padding-block:calc(var(--spacing)*12)}
+.py-20{padding-block:calc(var(--spacing)*20)}
+.py-28{padding-block:calc(var(--spacing)*28)}
+.text-center{text-align:center}
+.text-left{text-align:left}
+.font-serif{font-family:var(--font-fraunces)}
+.text-4xl{font-size:var(--text-4xl);line-height:var(--tw-leading,var(--text-4xl--line-height))}
+.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}
+.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}
+.leading-relaxed{--tw-leading:var(--leading-relaxed);line-height:var(--leading-relaxed)}
+.font-medium{--tw-font-weight:var(--font-weight-medium);font-weight:var(--font-weight-medium)}
+.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}
+.tracking-tight{--tw-tracking:var(--tracking-tight);letter-spacing:var(--tracking-tight)}
+.italic{font-style:italic}
+.transition-opacity{transition-property:opacity;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}
+@media (hover:hover){.hover\:opacity-80:hover{opacity:.8}}
+@media (min-width:40rem){.sm\:py-16{padding-block:calc(var(--spacing)*16)}
+.sm\:py-28{padding-block:calc(var(--spacing)*28)}
+.sm\:py-40{padding-block:calc(var(--spacing)*40)}
+.sm\:text-5xl{font-size:var(--text-5xl);line-height:var(--tw-leading,var(--text-5xl--line-height))}}}
+.bg-header-footer{background:#2b3134}

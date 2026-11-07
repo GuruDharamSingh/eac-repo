@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-countdown",
+  "version": "1.0.0",
+  "name": "Countdown",
+  "description": "Counts down from the given minutes, starting when played. Restart begins again from the minutes set.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "customActions": [{ "id": "restart", "name": "Restart", "description": "Count down again from the minutes set", "schema": null }],
+  "schema": {
+    "type": "object",
+    "properties": {
+      "label": { "type": "string", "title": "Label", "default": "Starting in", "maxLength": 60, "gddType": "single-line" },
+      "minutes": { "type": "number", "title": "Minutes", "default": 5, "minimum": 0, "maximum": 600 },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cleanBoxDoc } from "@elkdonis/direct-edit/block";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { listOrgFeeds } from "@elkdonis/services";
 import { stripResolved } from "@/blocks/resolved-keys";
 import { getApiEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
-import { HOME_SLUG, savePage } from "./store";
+import { deletePage, HOME_SLUG, savePage } from "./store";
+import { LANDING_SLUG } from "./landing";
 import { RESERVED_SLUGS, TEMPLATE_SLUGS } from "./reserved";
 
 /**
@@ -44,11 +46,29 @@ export async function savePageAction(
   const problem = await slugProblem(slug, { allowTemplate: true });
   if (problem) return { ok: false, error: problem };
 
-  const result = await savePage(slug, stripResolved(data));
+  const result = await savePage(slug, cleanBoxDoc(stripResolved(data)));
   if (result.ok) {
     if (TEMPLATE_SLUGS.has(slug)) revalidatePath("/", "layout");
     else revalidatePath(slug === HOME_SLUG ? "/" : `/${slug}`);
   }
+  return result;
+}
+
+/** Save the home page as a tree. The check is here because a client component is not an authorisation boundary. */
+export async function saveLandingAction(data: unknown): Promise<{ ok: boolean; error?: string }> {
+  const editor = await getApiEditor();
+  if (!editor) return { ok: false, error: "Only editors can change this page." };
+  const result = await savePage(LANDING_SLUG, cleanBoxDoc(data));
+  if (result.ok) revalidatePath("/");
+  return result;
+}
+
+/** Back to the home page as it is written in code. Same gate as saving. */
+export async function restoreLandingAction(): Promise<{ ok: boolean; error?: string }> {
+  const editor = await getApiEditor();
+  if (!editor) return { ok: false, error: "Only editors can change this page." };
+  const result = await deletePage(LANDING_SLUG);
+  if (result.ok) revalidatePath("/");
   return result;
 }
 

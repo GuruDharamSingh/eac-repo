@@ -1,6 +1,7 @@
 import { listOrgFeeds } from "@elkdonis/services";
 import { FeedEditor } from "@/components/manage/feed-editor";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 /**
  * The pages of the site.
@@ -10,6 +11,10 @@ import { siteConfig } from "@/config/site";
  * and order all come from the database.
  */
 export default async function ManageFeedsPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const feeds = await listOrgFeeds(siteConfig.orgId, { includePrivate: true });
 
   return (

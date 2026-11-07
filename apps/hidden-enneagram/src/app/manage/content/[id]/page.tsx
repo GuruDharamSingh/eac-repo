@@ -3,6 +3,7 @@ import { getServiceOfferingById, listOrgFeeds, serviceAnswersFromOffering } from
 import { ContentComposerBody } from "@/components/manage/content-composer-body";
 import { getThreadById } from "@/lib/data";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata = { title: "Edit" };
 
@@ -16,6 +17,10 @@ export default async function EditContentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const { id } = await params;
   const [thread, feeds] = await Promise.all([
     getThreadById(id),

@@ -10,9 +10,16 @@ export const metadata: Metadata = {
 
 const TABS = [
   { href: "/manage/tours", label: "Tours" },
+  { href: "/manage/places", label: "Places" },
+  { href: "/manage/businesses", label: "Businesses" },
+  { href: "/manage/suggestions", label: "Suggestions" },
+  { href: "/manage/experiences", label: "Experiences" },
+  { href: "/manage/flyovers", label: "Fly-overs" },
+  { href: "/manage/schedule", label: "Schedule" },
   { href: "/manage/bookings", label: "Bookings" },
   { href: "/manage", label: "Journal" },
   { href: "/manage/feeds", label: "Pages" },
+  { href: "/manage/builder", label: "Page builder" },
   { href: "/manage/pages", label: "Site copy" },
   { href: "/manage/people", label: "People" },
 ];

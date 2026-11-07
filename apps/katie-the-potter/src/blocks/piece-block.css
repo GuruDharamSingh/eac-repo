@@ -1,0 +1,318 @@
+/* ==========================================================================
+   Smart pieces: ktp-piece, ktp-piece-row, ktp-piece-details.
+   The card markup and its base look are artwork-grid.css (.ktp-card*), shared
+   with the grid; this file only lays the card out per layout.
+
+   LAYOUT comes from the block: data-layout = card | compact | row | feature
+   (a chosen layout, or "auto" resolved from placement). WIDTH then refines it
+   with container queries on the frame, identically in the editor and on the
+   page:
+     any layout, frame < 15rem      tight vertical (small type, no plinth)
+     auto card,  frame >= 34rem     drawn as a row (picture beside words)
+     feature,    frame <  34rem     stacked (picture above words)
+   Tokens (all optional, all fall back to the site's): --ktp-card-bg,
+   --ktp-card-ink, --ktp-accent, --ktp-radius.
+
+   The generic half is @elkdonis/blocks/record.css (imported in globals.css):
+   the root is `.blk-rec.ktp-piece`, the frame `.blk-rec-frame.ktp-piece-frame`.
+   It supplies the page measure ([data-top]), the column gutter
+   ([data-in="column"]), the placeholder and the editor's "why" line; this
+   file names the container and keeps everything about the card.
+   ========================================================================== */
+
+.ktp-piece {
+  --ktp-title-size: 1.15rem;
+  --ktp-meta-size: 0.85rem;
+  --ktp-aspect: 4 / 5;
+  color: var(--ktp-card-ink, var(--blk-fg));
+  font-family: var(--blk-font-body);
+}
+.ktp-piece-frame {
+  container: ktp-piece / inline-size;
+}
+.ktp-piece .ktp-card {
+  --pic-w: 100%;
+  min-width: 0;
+}
+.ktp-piece .ktp-card-link:hover .ktp-card-img {
+  transform: scale(1.03);
+}
+.ktp-piece .ktp-card-cta {
+  margin-top: 0.75rem;
+}
+.ktp-piece .ktp-card-cta .ktp-buy {
+  padding: 0.6rem 1.15rem;
+  font-size: 0.92rem;
+}
+.ktp-card-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ktp-accent, var(--blk-accent-ink));
+}
+.ktp-card-note {
+  margin-top: 0.35rem;
+  font-size: var(--ktp-meta-size);
+  line-height: 1.5;
+  color: var(--blk-muted);
+}
+
+/* -- row and feature: picture beside words ------------------------------- */
+.ktp-piece[data-layout="row"] .ktp-card,
+.ktp-piece[data-layout="feature"] .ktp-card {
+  --pic-w: 42%;
+}
+.ktp-piece[data-layout="feature"] .ktp-card {
+  --pic-w: 54%;
+  --ktp-title-size: clamp(1.7rem, 3.4cqi, 2.6rem);
+  --ktp-meta-size: 0.95rem;
+}
+.ktp-piece[data-layout="row"] .ktp-card,
+.ktp-piece[data-layout="feature"] .ktp-card {
+  display: grid;
+  grid-template-columns: var(--pic-w) minmax(0, 1fr);
+  /* the words and the button centre together beside the picture */
+  grid-template-rows: 1fr auto auto 1fr;
+  column-gap: 1.5rem;
+}
+.ktp-piece[data-layout="row"] .ktp-card-link,
+.ktp-piece[data-layout="feature"] .ktp-card-link {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+}
+.ktp-piece[data-layout="row"] .ktp-card-pic,
+.ktp-piece[data-layout="feature"] .ktp-card-pic {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: center;
+}
+.ktp-piece[data-layout="row"] .ktp-card-cap,
+.ktp-piece[data-layout="feature"] .ktp-card-cap {
+  grid-column: 2;
+  grid-row: 2;
+}
+.ktp-piece[data-layout="row"] .ktp-card-cta,
+.ktp-piece[data-layout="feature"] .ktp-card-cta {
+  /* outside the link (a button cannot sit in an <a>), laid in the link's grid */
+  grid-column: 2;
+  grid-row: 3;
+  position: relative;
+  margin-left: 0;
+}
+.ktp-piece[data-layout="feature"] .ktp-card-cap {
+  gap: 0.4rem;
+}
+.ktp-piece[data-layout="feature"] .ktp-card-price {
+  font-size: 1.15rem;
+}
+
+/* -- compact: a small picture beside the words -------------------------- */
+.ktp-piece[data-layout="compact"] .ktp-card {
+  --pic-w: 6rem;
+  --ktp-title-size: 1rem;
+  --ktp-meta-size: 0.8rem;
+}
+.ktp-piece[data-layout="compact"] .ktp-card-link {
+  display: grid;
+  grid-template-columns: var(--pic-w) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+}
+.ktp-piece[data-layout="compact"] .ktp-card-cap {
+  padding: 0;
+}
+.ktp-piece[data-layout="compact"] .ktp-card-plinth {
+  display: none;
+}
+.ktp-piece[data-layout="compact"] .ktp-card-cta {
+  margin: 0.5rem 0 0 calc(var(--pic-w) + 0.85rem);
+}
+.ktp-piece[data-layout="compact"] .ktp-card-cta .ktp-buy {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+}
+
+/* -- width refinements (container queries) ------------------------------- */
+@container ktp-piece (min-width: 34rem) {
+  /* auto compact with room to spare (a wide column): a larger picture and title */
+  .ktp-piece[data-choice="auto"][data-layout="compact"] .ktp-card {
+    --pic-w: 10rem;
+    --ktp-title-size: 1.15rem;
+  }
+  .ktp-piece[data-choice="auto"][data-layout="card"] .ktp-card {
+    --pic-w: 40%;
+    display: grid;
+    grid-template-columns: var(--pic-w) minmax(0, 1fr);
+    /* the words and the button centre together beside the picture */
+    grid-template-rows: 1fr auto auto 1fr;
+    column-gap: 1.5rem;
+  }
+  .ktp-piece[data-choice="auto"][data-layout="card"] .ktp-card-link {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+  .ktp-piece[data-choice="auto"][data-layout="card"] .ktp-card-pic {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: center;
+  }
+  .ktp-piece[data-choice="auto"][data-layout="card"] .ktp-card-cap {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .ktp-piece[data-choice="auto"][data-layout="card"] .ktp-card-cta {
+    /* outside the link (a button cannot sit in an <a>), laid in the link's grid */
+    grid-column: 2;
+    grid-row: 3;
+    position: relative;
+    margin-left: 0;
+  }
+}
+@container ktp-piece (max-width: 34rem) {
+  .ktp-piece[data-layout="feature"] .ktp-card-link,
+  .ktp-piece[data-layout="row"] .ktp-card-link {
+    display: flex;
+    flex-direction: column;
+    /* the side-by-side rule centres the two columns; stacked, the picture takes the full width */
+    align-items: stretch;
+    gap: 0;
+  }
+  .ktp-piece[data-layout="feature"] .ktp-piece-thumbs {
+    max-width: none;
+  }
+  .ktp-piece[data-layout="feature"] .ktp-card,
+  .ktp-piece[data-layout="row"] .ktp-card {
+    display: block;
+  }
+  .ktp-piece[data-layout="feature"] .ktp-card-pic,
+  .ktp-piece[data-layout="row"] .ktp-card-pic {
+    align-self: stretch;
+  }
+}
+@container ktp-piece (max-width: 15rem) {
+  .ktp-piece .ktp-card {
+    --ktp-title-size: 0.95rem;
+    --ktp-meta-size: 0.78rem;
+  }
+  .ktp-piece .ktp-card-plinth {
+    display: none;
+  }
+  .ktp-piece[data-layout="compact"] .ktp-card-link {
+    grid-template-columns: 4rem minmax(0, 1fr);
+  }
+  .ktp-piece[data-layout="compact"] .ktp-card-cta {
+    margin-left: 0;
+  }
+}
+
+/* -- the editor's own marks (the rest is .blk-rec-empty / .blk-rec-why) -- */
+.ktp-piece-empty {
+  border-radius: var(--ktp-radius, var(--blk-radius));
+}
+.ktp-piece-thumbs {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+.ktp-piece[data-layout="feature"] .ktp-piece-thumbs {
+  max-width: var(--pic-w, 54%);
+}
+
+/* -- a row of pieces ----------------------------------------------------- */
+.ktp-piece-row {
+  width: min(100%, var(--blk-measure));
+  margin-inline: auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 4vw, 3rem);
+}
+.ktp-piece-row-title {
+  margin-bottom: 1.25rem;
+}
+.ktp-piece-row-cells {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, max(var(--ktp-row-min), calc((100% - (var(--ktp-row-max) - 1) * var(--ktp-row-gap)) / var(--ktp-row-max)))), 1fr)
+  );
+  gap: var(--ktp-row-gap);
+  align-items: start;
+}
+
+/* -- the hero's piece slot ----------------------------------------------- */
+.ktp-hero-feature {
+  min-width: 0;
+}
+.ktp-hero[data-place="left"] .ktp-hero-feature {
+  order: -1;
+}
+
+/* -- piece details (the detail template) --------------------------------- */
+.ktp-details {
+  display: grid;
+  gap: 1rem;
+  width: min(100%, var(--blk-measure));
+  margin-inline: auto;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+}
+.ktp-details-desc {
+  max-width: 64ch;
+  font-size: 1.05rem;
+}
+.ktp-details-note {
+  margin: 0;
+  max-width: 54ch;
+  font-size: 0.88rem;
+  color: var(--blk-muted);
+}
+.ktp-piece-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+}
+.ktp-piece-nav a {
+  color: var(--blk-muted);
+  text-decoration: none;
+}
+.ktp-piece-nav a:hover {
+  color: var(--blk-fg);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.ktp-piece-back {
+  font-weight: 500;
+}
+.ktp-piece-steps {
+  display: flex;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.ktp-piece-steps a,
+.ktp-piece-steps .is-off {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ktp-piece-steps .is-off,
+.ktp-piece-sep {
+  color: var(--blk-faint);
+}
+
+/* A compact card is too small for a status badge over its picture; the line
+   under it (sold / reserved / enquire) already says it. */
+.ktp-piece[data-layout="compact"] .ktp-card-badge {
+  display: none;
+}

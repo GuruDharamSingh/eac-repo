@@ -90,7 +90,7 @@ export default async function ThreadPage({ params, searchParams }: Props) {
           ) : (
             <p style={{ color: "var(--ink-muted)" }}>No description yet.</p>
           )}
-          {thread.documentUrl && (
+          {viewer?.isAffiliate && thread.documentUrl && (
             <a className="structure__doc" href={thread.documentUrl} target="_blank" rel="noreferrer">
               <FileDown size={14} aria-hidden /> The session&rsquo;s document
             </a>

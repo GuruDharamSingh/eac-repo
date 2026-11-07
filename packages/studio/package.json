@@ -9,7 +9,15 @@
     ".": "./src/index.ts",
     "./studio.css": "./src/studio.css",
     "./frame": "./src/frame.tsx",
-    "./post": "./src/post/index.ts"
+    "./post": "./src/post/index.ts",
+    "./meeting": "./src/meeting/index.ts",
+    "./capture": "./src/capture/index.ts",
+    "./capture.css": "./src/capture/capture.css",
+    "./recording": "./src/recording/index.ts",
+    "./image": "./src/image/index.ts",
+    "./image.css": "./src/image/image-editor.css",
+    "./channel": "./src/channel/index.ts",
+    "./channel.css": "./src/channel/channel.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
@@ -26,7 +34,11 @@
     "@tiptap/extension-underline": "^2.8.0",
     "@tiptap/pm": "^2.8.0",
     "@tiptap/react": "^2.8.0",
-    "@tiptap/starter-kit": "^2.8.0"
+    "@tiptap/starter-kit": "^2.8.0",
+    "konva": "9.3.18",
+    "react-filerobot-image-editor": "5.0.0-beta.159",
+    "react-konva": "~19.0.10",
+    "styled-components": "^6.1.0"
   },
   "peerDependencies": {
     "next": "^15 || ^16",

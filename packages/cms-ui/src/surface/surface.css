@@ -3893,6 +3893,10 @@ dialog.eac-surface:has(.eac-me-dialog) { width: min(960px, calc(100vw - 32px)); 
 .eac-series__banner--new { cursor: default; }
 
 /* Connections: the Pages a Facebook connection may publish to (2026-10-29). */
+.eac-conn__log { margin: 10px 0 4px; font-size: 0.82rem; color: var(--sf-muted); }
+.eac-conn__log summary { cursor: pointer; }
+.eac-conn__log ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+.eac-conn__log time { font-variant-numeric: tabular-nums; }
 .eac-conn__channel { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 0.8rem; color: var(--sf-muted); }
 .eac-conn__channel select { padding: 3px 6px; border: 1px solid var(--sf-line); border-radius: 6px; background: var(--sf-bg); color: var(--sf-fg); font: inherit; font-size: 0.8rem; }
 .eac-conn__addpage { display: flex; gap: 8px; margin: 6px 0 2px; }

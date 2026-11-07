@@ -56,10 +56,6 @@ export interface SceneLighting {
   lamps: LampSettings;
 }
 
-/** Scene-wide settings stored with an installation (`art_installation.scene`). */
-export interface SceneSettings {
-  lighting?: Partial<SceneLighting> | null;
-}
 
 export const DEFAULT_LIGHTING: SceneLighting = {
   brightness: 1,
@@ -168,11 +164,6 @@ export function normalizeLighting(raw: unknown): SceneLighting {
   };
 }
 
-/** A scene document as stored: only the keys this version knows, bounded. */
-export function normalizeScene(raw: unknown): { lighting: SceneLighting } {
-  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
-  return { lighting: normalizeLighting(r.lighting) };
-}
 
 /** The preset these settings match, or null when they have been adjusted ("Custom"). */
 export function presetOf(lighting: SceneLighting): LightPresetId | null {

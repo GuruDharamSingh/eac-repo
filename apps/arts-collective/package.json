@@ -12,6 +12,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@elkdonis/actions": "workspace:*",
     "@elkdonis/analytics": "workspace:*",
     "@elkdonis/astro": "workspace:*",
     "@elkdonis/auth-client": "workspace:*",
@@ -23,7 +24,10 @@
     "@elkdonis/checkout": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/direct-edit": "workspace:*",
+    "@elkdonis/dock": "workspace:*",
     "@elkdonis/email": "workspace:*",
+    "@elkdonis/fonts": "workspace:*",
     "@elkdonis/live-editor": "workspace:*",
     "@elkdonis/lms": "workspace:*",
     "@elkdonis/lms-ui": "workspace:*",

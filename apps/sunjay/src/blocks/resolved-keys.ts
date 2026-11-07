@@ -1,3 +1,5 @@
+import { stripResolvedKeys } from "@elkdonis/blocks/record";
+
 // ============================================================================
 // Which props each data block's resolver fills in.
 //
@@ -29,25 +31,16 @@ export const RESOLVED_KEYS: Record<string, readonly string[]> = {
   "pt-journal": ["items"],
   "pt-article": ["post"],
   "pt-series-nav": ["items", "series", "current"],
+  // Shared blocks this site resolves (2026-11-07).
+  "featured-person": ["who", "opened"],
+  "link-button": ["opened"],
+  "feature-card": ["bound", "opened"],
 };
 
-type Node = { type?: unknown; props?: Record<string, unknown> };
-
-/** Copy of a Puck document with every resolver-filled prop removed. */
+/**
+ * Copy of a Puck document with every resolver-filled prop removed. The shared walker since 2026-11-07
+ * (`@elkdonis/blocks/record`, docs/reference/record-blocks.md); it also keeps a stored `__proto__` key as data.
+ */
 export function stripResolved<T>(data: T): T {
-  const walk = (value: unknown): unknown => {
-    if (Array.isArray(value)) return value.map(walk);
-    if (!value || typeof value !== "object") return value;
-    const node = value as Node;
-    if (typeof node.type === "string" && node.props && typeof node.props === "object") {
-      const drop = new Set(RESOLVED_KEYS[node.type] ?? []);
-      const props: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(node.props)) {
-        if (!drop.has(k)) props[k] = walk(v);
-      }
-      return { ...node, props };
-    }
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v)]));
-  };
-  return walk(data) as T;
+  return stripResolvedKeys(data, RESOLVED_KEYS);
 }

@@ -350,3 +350,8 @@ container with `NODE_OPTIONS=--max-old-space-size=3584`):
   gates)?
 - Whether `writing` pieces should be able to lead an org site (`OFF_FEED_KINDS` keeps them
   off `/offering`), or whether "first offering" means a post, event or service only.
+
+## 7. Follow-on (2026-11-06)
+
+The developer chose to grow task steps into an action layer (registry, in-lesson actions, a
+dock across sites, runbooks per subject): `docs/open/LMS_ACTION_LAYER_BRIEF_2026-11-06.md`.

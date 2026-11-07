@@ -7,6 +7,7 @@ import { ContentRowActions } from "@/components/manage/content-row-actions";
 import { getAllThreadsForOrg, getAttendanceCount, getCycleStatus } from "@/lib/data";
 import { formatShortDate, formatTime } from "@/lib/format";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 /**
  * The editorial dashboard.
@@ -17,6 +18,10 @@ import { siteConfig } from "@/config/site";
  * everything on it, including what a guide posted.
  */
 export default async function ManageDashboard() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const [threads, feeds, standingId] = await Promise.all([
     getAllThreadsForOrg(),
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }),

@@ -1,0 +1,28 @@
+/* Guest camera page (GuestCamera): one plain screen for someone without an
+   account. Own tokens: the page is not inside the Studio frame. */
+.gc {
+  --gc-bg: #f4f1ea; --gc-ink: #1f1b16; --gc-muted: #6b645a; --gc-line: #ddd6c8; --gc-accent: #8a6d1f; --gc-accent-ink: #fff; --gc-live: #a63d3d;
+  min-height: 100vh; background: var(--gc-bg); color: var(--gc-ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif; display: grid; align-content: start; justify-items: center; gap: 16px; padding: 20px 16px 40px;
+}
+@media (prefers-color-scheme: dark) {
+  .gc { --gc-bg: #15130f; --gc-ink: #ece6da; --gc-muted: #a39b8e; --gc-line: #3a352d; --gc-accent: #d6c38e; --gc-accent-ink: #15130f; --gc-live: #e07b7b; }
+}
+.gc-head { width: min(960px, 100%); display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--gc-muted); }
+.gc-head b { color: var(--gc-ink); font-weight: 600; }
+.gc-stage { position: relative; width: min(960px, 100%); aspect-ratio: 16 / 9; background: #000; border-radius: 12px; overflow: hidden; display: grid; place-items: center; }
+.gc-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); }
+.gc-stage p { color: #b8b3aa; position: relative; margin: 0; }
+.gc-dot { position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; }
+.gc-dot.is-live { background: var(--gc-live); }
+.gc-controls { width: min(960px, 100%); display: grid; gap: 12px; }
+.gc-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.gc-row label { display: grid; gap: 4px; font-size: 13px; color: var(--gc-muted); flex: 1 1 200px; min-width: 0; }
+.gc-row select { font: inherit; color: var(--gc-ink); background: transparent; border: 1px solid var(--gc-line); border-radius: 8px; padding: 8px; min-width: 0; }
+.gc-actions { align-items: center; }
+.gc-btn { font: inherit; font-size: 15px; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--gc-line); background: transparent; color: var(--gc-ink); cursor: pointer; }
+.gc-btn--primary { background: var(--gc-accent); border-color: var(--gc-accent); color: var(--gc-accent-ink); font-weight: 600; }
+.gc-btn.is-off { border-color: var(--gc-live); color: var(--gc-live); }
+.gc-btn:focus-visible, .gc-row select:focus-visible { outline: 2px solid var(--gc-accent); outline-offset: 2px; }
+.gc-state { margin: 0; font-size: 15px; }
+.gc-note { margin: 0; font-size: 13px; color: var(--gc-muted); }

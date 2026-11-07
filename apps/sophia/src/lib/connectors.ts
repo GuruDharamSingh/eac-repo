@@ -2,6 +2,7 @@ import { createThread, folderForMime, listOrgMediaLibrary, searchForum, uploadOr
 import { validateUploadBuffer } from "@elkdonis/utils";
 import { sendEmail } from "@elkdonis/email";
 import type { LmsConnectors } from "@elkdonis/lms-ui";
+import { COURSE_ACTIONS } from "@elkdonis/actions/catalogue";
 import { getViewer } from "./viewer";
 import { EditorIsland } from "@/components/EditorIsland";
 import { FORUM_URL, NETWORK_URL, SITE, SOPHIA_URL } from "./site";
@@ -58,6 +59,12 @@ export const connectors: LmsConnectors = {
   // Media is served by this host's own /api/media (services' serveMedia — the
   // shared read path, authorised per file), so stored paths are used as they are.
   mediaUrl: (url) => url,
+  // The tasks a "Something to set up" step may ask for (@elkdonis/actions, 2026-11-06).
+  // Learners do them on the network host's /learn; this host has no task box. Post entries
+  // (scope 'thread') are left out: a step cannot name a post until runbooks supply one.
+  taskCatalogue: COURSE_ACTIONS,
+  // A task step here links to the same step on the network host, where its box can act.
+  taskElsewhere: (here) => `${NETWORK_URL}/learn${here}`,
 
   // The shared upload path: sniff the CONTENT, cap the size, uploadOrgFile into
   // EAC_Network/<org>/Media/<kind>, which serveMedia reads back publicly.

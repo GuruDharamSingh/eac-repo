@@ -49,9 +49,11 @@ type Props = {
   writingHref: string;
   /** Their bookings on the network hub: times to confirm for booked services. */
   bookingsHref: string;
+  /** Studio on the network host, wrapped in this site's handoff so the sign-in travels. */
+  studioHref?: string;
 };
 
-export function ManageSpace({ slug, displayName, startGroupHref, writingHref, bookingsHref }: Props) {
+export function ManageSpace({ slug, displayName, startGroupHref, writingHref, bookingsHref, studioHref }: Props) {
   const router = useRouter();
 
   const connectors = React.useMemo<SurfaceConnectors>(
@@ -121,6 +123,11 @@ export function ManageSpace({ slug, displayName, startGroupHref, writingHref, bo
   return (
     <SurfaceProvider connectors={connectors} syncUrl={false}>
       <div className={styles.dock}>
+        {studioHref ? (
+          <a className={styles.open} href={studioHref}>
+            Open Studio
+          </a>
+        ) : null}
         <OpenButton />
       </div>
     </SurfaceProvider>

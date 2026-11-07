@@ -40,4 +40,9 @@ export {
   type StripeCheckoutSessionStatus,
   type StripeAccountStatus,
   type CreateCheckoutSessionInput,
+  type StripeCollectOptions,
+  type StripeCollectedAddress,
+  type StripeCollectedCustomer,
+  buildCheckoutSessionParams,
+  collectedFromSession,
 } from "./providers/stripe";

@@ -13,7 +13,7 @@ import { SceneLights } from './SceneLights';
 import { normalizeLighting, type SceneLighting } from './lighting';
 import { DropTarget } from './DropTarget';
 import { ViewRig } from './ViewRig';
-import { NUDGE, NUDGE_FAST, placementScale, type Placement } from './layout';
+import { NUDGE, NUDGE_FAST, placementScale, type Placement, type WallSide } from './layout';
 import { placementRatio } from './framing';
 import { HALLWAY_VENUE, orderInVenue, type Venue } from './venue';
 import { FRAME_STYLES, getFrame, type FrameStyle } from './frames';
@@ -43,6 +43,11 @@ export interface HallwayExperienceProps {
   venue?: Venue;
   /** Open the cutaway already looking at this hung piece. */
   focusPieceId?: string | null;
+  /**
+   * Open the cutaway at this side and distance along the route (a saved
+   * opening view). Used when no `focusPieceId` is given.
+   */
+  initialWall?: { side: WallSide; s: number } | null;
   /**
    * How the room and the picture lamps are lit; partial or absent values take
    * the defaults, which draw each venue as built. Changes apply live.
@@ -143,6 +148,7 @@ export function HallwayExperience({
   initialView,
   venue = HALLWAY_VENUE,
   focusPieceId = null,
+  initialWall = null,
   lighting: lightingProp = null,
 }: HallwayExperienceProps) {
   const lighting = useMemo(() => normalizeLighting(lightingProp), [lightingProp]);
@@ -159,7 +165,7 @@ export function HallwayExperience({
   // Open on the view this use calls for, starting the cutaway near the entrance.
   useEffect(() => {
     const focus = focusPieceId ? placements.find((p) => p.pieceId === focusPieceId) : undefined;
-    const at = focus ? venue.wall.locate(focus.wallId, focus.x) : null;
+    const at = focus ? venue.wall.locate(focus.wallId, focus.x) : initialWall;
     useHallwayStore.setState({
       viewMode: initialView ?? (editable ? 'overview' : 'wall'),
       wallSide: at?.side ?? 'L',
@@ -167,7 +173,7 @@ export function HallwayExperience({
     });
     // Opening state only: later placements must not pull the camera back.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialView, editable, venue, focusPieceId]);
+  }, [initialView, editable, venue, focusPieceId, initialWall?.side, initialWall?.s]);
 
   const flipWall = () => {
     const s = useHallwayStore.getState();

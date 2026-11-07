@@ -256,3 +256,36 @@ export async function davDelete(path: string): Promise<boolean> {
   });
   return res.ok || res.status === 404;
 }
+
+// ---------------------------------------------------------------------------
+// Chunked upload (Nextcloud chunking v2): long files sent in pieces, then
+// assembled server-side. Chunks are numbered from 1 and must be at least 5 MB
+// except the last. Used for camera recordings (obs.ts "Camera recordings").
+// ---------------------------------------------------------------------------
+
+function davUploadsUrl(id: string, chunk?: string): string {
+  return `${NEXTCLOUD_URL}/remote.php/dav/uploads/${encodeURIComponent(NEXTCLOUD_USER)}/${encodeURIComponent(id)}${chunk ? `/${chunk}` : ''}`;
+}
+
+export async function davChunkStart(id: string, destination: string): Promise<void> {
+  const res = await fetch(davUploadsUrl(id), { method: 'MKCOL', headers: { Authorization: davAuthHeader(), Destination: davUrl(destination) } });
+  if (!res.ok) throw new Error(`Storage refused the upload (${res.status})`);
+}
+
+export async function davChunkPut(id: string, index: number, body: ArrayBuffer, destination: string): Promise<void> {
+  const res = await fetch(davUploadsUrl(id, String(index).padStart(5, '0')), {
+    method: 'PUT',
+    headers: { Authorization: davAuthHeader(), Destination: davUrl(destination), 'Content-Length': String(body.byteLength) },
+    body,
+  });
+  if (!res.ok) throw new Error(`Storage refused part ${index} (${res.status})`);
+}
+
+export async function davChunkFinish(id: string, destination: string): Promise<void> {
+  const res = await fetch(davUploadsUrl(id, '.file'), { method: 'MOVE', headers: { Authorization: davAuthHeader(), Destination: davUrl(destination), Overwrite: 'F' } });
+  if (!res.ok) throw new Error(`Storage could not assemble the file (${res.status})`);
+}
+
+export async function davChunkAbort(id: string): Promise<void> {
+  await fetch(davUploadsUrl(id), { method: 'DELETE', headers: { Authorization: davAuthHeader() } }).catch(() => {});
+}

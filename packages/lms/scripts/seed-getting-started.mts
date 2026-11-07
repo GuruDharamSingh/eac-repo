@@ -3,7 +3,7 @@
 // served on the network host at arts-collective.com/learn/getting-started
 // (docs/open/ONBOARDING_COURSE_BRIEF_2026-10-29.md). Most steps are `task`
 // steps: they tick themselves when the thing they ask for exists on the
-// platform (packages/services/src/onboarding-tasks.ts). Public; the network
+// platform (packages/actions/src/server/status.ts). Public; the network
 // host enrols a signed-in visitor on first open.
 //
 // Safe to re-run: steps are matched by slug and publish is a no-op without

@@ -3,19 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  SurfaceProvider,
-  SurfaceFrame,
-  useSurface,
-  defaultThreadToAnswers,
-  type SurfaceConnectors,
-} from "@elkdonis/cms-ui/surface";
+import { SurfaceProvider, type SurfaceConnectors } from "@elkdonis/cms-ui/surface";
 import { createHubConnectors } from "@elkdonis/cms-ui/hub";
-import { MediaPicker } from "@elkdonis/cms-ui/files";
-import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import type { ComposeContext } from "@elkdonis/cms-ui/compose";
-import { createThreadAction } from "@/lib/cms/actions";
-import type { ThreadFormInput } from "@/lib/cms/schema";
+import { orgComposeConnectors, orgComposeContext } from "./org-compose";
 import { CONSOLE_SURFACES } from "./AttentionBands";
 import {
   DraftsSurface,
@@ -28,7 +19,6 @@ import { togglePinAction } from "@/lib/cms/actions";
 import { ConsoleSettings, type ConsoleSettingsProps } from "./ConsoleSettings";
 import { EmailSurface, type EmailSuiteData, type EmailTab } from "@elkdonis/cms-ui/email";
 import { useEmailConnectors } from "@/components/hub/email/use-email-connectors";
-import { QuestionnaireComposer } from "@/components/cms/questionnaire-composer";
 import type { ConsoleState } from "@/lib/org-console";
 
 /**
@@ -84,23 +74,9 @@ export function OrgConsoleHost({
   const router = useRouter();
   const emailConnectors = useEmailConnectors(orgSlug);
 
-  const compose = React.useMemo<ComposeContext>(
-    () => ({
-      orgSlug,
-      feeds,
-      canManageOrg: canEdit,
-      // This app is the network hub: cross-posting is the point of it, and
-      // Talk rooms are already wired here (see /api/talk/join).
-      canShareToNetwork: true,
-      hasMeetings: true,
-      // The workshop wizard is a route, not a sheet body — the catalogue says
-      // so and ComposeFace honours it by navigating rather than opening an
-      // empty dialog over it.
-      hasWorkshops: true,
-      canCreateTalkRoom: true,
-    }),
-    [orgSlug, feeds, canEdit]
-  );
+  const compose = React.useMemo<ComposeContext>(() => orgComposeContext({ orgSlug, feeds, canEdit }), [orgSlug, feeds, canEdit]);
+  const composeParts = React.useMemo(() => orgComposeConnectors({ orgSlug, orgHomeUrl, compose }), [orgSlug, orgHomeUrl, compose]);
+  const { customCompose, ...composeConnectors } = composeParts;
 
   const connectors = React.useMemo<SurfaceConnectors>(
     () => ({
@@ -125,106 +101,12 @@ export function OrgConsoleHost({
         profile: false,
         centerLayout: false,
 
-        // The names this person writes under. Scoped to the signed-in account
-        // by the route itself, so nothing here identifies whose a name is.
-        identities: {
-          list: async () => {
-            const res = await fetch("/api/hub/identities", { cache: "no-store" });
-            if (!res.ok) throw new Error("identities");
-            const data = await res.json();
-            return data.identities ?? [];
-          },
-          create: async (input) => {
-            const res = await fetch("/api/hub/identities", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify(input),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) return { ok: false as const, error: data.error ?? "Could not open that name." };
-            return { ok: true as const, identity: data.identity };
-          },
-          setRetired: async (identityId, retired) => {
-            const res = await fetch("/api/hub/identities", {
-              method: "PATCH",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ identityId, retired }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) return { ok: false as const, error: data.error ?? "Could not change that name." };
-            return { ok: true as const };
-          },
-        },
-
-        compose,
-
-        composeSlots: {
-          body: ({ value, onChange, tier }) => (
-            <RichTextEditor
-              value={value}
-              onChange={onChange}
-              toolbar={tier === "quick" ? "compact" : "full"}
-            />
-          ),
-          // Never a URL box: upload, or choose from what this org already has.
-          media: ({ value, onChange, label, hint, accept }) => (
-            <MediaPicker
-              value={typeof value === "string" ? value : undefined}
-              onChange={onChange}
-              uploadEndpoint="/api/upload/image"
-              libraryEndpoint="/api/media/library"
-              label={label ?? "Image"}
-              hint={hint}
-              accept={accept}
-            />
-          ),
-        },
-
-        async saveThread({ kind, answers, status, actingAs }) {
-          // Cast to one open shape: `CreateThreadResult` is a discriminated
-          // union and this repo compiles with `strict: false`, where TS will
-          // not narrow one — reading `.error` off the union is an error
-          // without it. Same trap as PublishDraftResult.
-          const result = (await createThreadAction(
-            {
-              ...answers,
-              orgSlug,
-              kind,
-              status,
-            } as unknown as ThreadFormInput,
-            { actingAs }
-          )) as {
-            ok: boolean;
-            id?: string;
-            slug?: string;
-            error?: string;
-          };
-          if (!result.ok || !result.id) {
-            return { ok: false, error: result.error ?? "Could not save it" };
-          }
-          // The thread lives on the ORG'S site, not on this console, so the
-          // "see it" link the surface offers has to point there.
-          return {
-            ok: true,
-            id: result.id,
-            href: result.slug ? `${orgHomeUrl}/${result.slug}` : null,
-          };
-        },
-
-        threadToAnswers(thread) {
-          return { ...defaultThreadToAnswers(thread), kind: thread.kind };
-        },
+        // Compose for this org: identities, context, editor slots, save (org-compose.tsx).
+        ...composeConnectors,
 
         custom: {
-          // Questionnaires and polls do NOT write to `threads` — they have
-          // their own table and their own save path — so the compose surface
-          // deliberately hides them unless the host registers a surface under
-          // this exact key. Without these two the picker would silently drop
-          // both kinds, which is what happened to the row this replaced.
-          "compose:questionnaire": () => (
-            <ComposeQuestionnaire orgSlug={orgSlug} kind="questionnaire" />
-          ),
-          "compose:poll": () => <ComposeQuestionnaire orgSlug={orgSlug} kind="poll" />,
+          // Questionnaire and poll composers (org-compose.tsx).
+          ...customCompose,
 
           // The email suite, in the popup. The SAME component the full page at
           // /hub/email renders — which is the whole point of consolidating the
@@ -292,38 +174,8 @@ export function OrgConsoleHost({
         ];
       },
     }),
-    [state, orgId, orgSlug, orgName, orgHomeUrl, displayName, canEdit, compose, settings, email, emailConnectors, router, hasDesignedPage]
+    [state, orgId, orgSlug, orgName, orgHomeUrl, displayName, canEdit, composeParts, settings, email, emailConnectors, router, hasDesignedPage]
   );
 
   return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;
-}
-
-/**
- * The questionnaire/poll composer, wearing a surface.
- *
- * `QuestionnaireComposer` is this app's own form against its own table; all
- * this adds is the shared frame so it looks like every other popup, and a
- * close that pops the layer rather than navigating.
- */
-function ComposeQuestionnaire({
-  orgSlug,
-  kind,
-}: {
-  orgSlug: string;
-  kind: "questionnaire" | "poll";
-}) {
-  const surface = useSurface();
-  return (
-    <SurfaceFrame
-      kind={kind}
-      title={kind === "poll" ? "New poll" : "New questionnaire"}
-      kicker={orgSlug}
-    >
-      <QuestionnaireComposer
-        orgSlug={orgSlug}
-        kind={kind}
-        onDone={() => surface.close()}
-      />
-    </SurfaceFrame>
-  );
 }

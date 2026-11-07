@@ -30,8 +30,12 @@ export async function puckPageMetadata(slug: string): Promise<Metadata | null> {
   const page = await loadPage(slug, KNOWN_TYPES);
   if (!page) return null;
   const root = (page.data as Data).root;
-  const title = root && "props" in root ? (root.props as { title?: string })?.title : undefined;
-  return { title: title?.trim() || slug.replace(/-/g, " ") };
+  const props = root && "props" in root ? (root.props as { title?: string; noindex?: unknown }) : undefined;
+  return {
+    title: props?.title?.trim() || slug.replace(/-/g, " "),
+    // Set by hand in a stored document, for a page that is not for search engines (`try`).
+    ...(props?.noindex === true ? { robots: { index: false, follow: false } } : {}),
+  };
 }
 
 /**
@@ -64,7 +68,7 @@ export async function renderPuckPage(
       <Render config={serverPuckConfig} data={resolved as Data} />
       {viewer?.canEdit ? (
         <a
-          href={`/studio/${slug}`}
+          href={`/studio/${slug}/canvas`}
           className="fixed bottom-4 right-4 z-50 border border-[hsl(var(--primary))]/60 bg-card px-4 py-2 text-sm font-medium text-[hsl(var(--primary))] shadow-lg hover:bg-[hsl(var(--primary))]/15"
         >
           Edit this page

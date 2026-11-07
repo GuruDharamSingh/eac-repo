@@ -921,6 +921,8 @@ export interface SurfaceConnection {
   provider: "youtube" | "meta" | "threads" | "instagram";
   label: string;
   clientId: string;
+  /** Uses the collective's app rather than a client the person brought (2026-11-01). */
+  collective?: boolean;
   status: "pending" | "connected" | "error";
   error: string | null;
   accountId: string | null;
@@ -939,11 +941,15 @@ export interface SurfaceConnectionsConnectors {
   load: () => Promise<{
     connections: SurfaceConnection[];
     redirectUri: string;
+    /** The server has the collective's Google client: YouTube connects without a client form (2026-11-01). */
+    youtubeCollective?: boolean;
     /** Orgs the person may set channels for (owner or guide), and their channels (2026-11-01). */
     orgs?: Array<{ orgId: string; name: string }>;
     channels?: Array<{ orgId: string; provider: string; externalId: string; label: string }>;
+    /** The person's recent connection events, newest first (the audit log they can see). */
+    events?: Array<{ id: number; connectionId: string; provider: string; event: string; detail: Record<string, unknown>; at: string }>;
   }>;
-  create: (input: { provider: "youtube"; label: string; clientId: string; clientSecret: string } | { provider: "meta" | "threads" | "instagram"; label?: string }) => Promise<SurfaceConnectionResult>;
+  create: (input: { provider: "youtube"; label: string; clientId: string; clientSecret: string } | { provider: "youtube" | "meta" | "threads" | "instagram"; label?: string }) => Promise<SurfaceConnectionResult>;
   update: (id: string, input: { label?: string; clientId?: string; clientSecret?: string }) => Promise<SurfaceConnectionResult>;
   check: (id: string) => Promise<SurfaceConnectionResult>;
   remove: (id: string) => Promise<SurfaceConnectionResult>;
@@ -1322,6 +1328,8 @@ export interface SurfaceViewer {
 
 export interface SurfaceConnectors {
   viewer: SurfaceViewer;
+  /** Where "Edit" on a series goes, on a site that edits series in the planner page. Omit to use the compose form. */
+  seriesEditHref?: (threadId: string) => string;
   /** Shown in kickers ("Calendar · Amrit Canada"). */
   orgName?: string;
   /** The profile surface. Omit and profile faces simply navigate. */

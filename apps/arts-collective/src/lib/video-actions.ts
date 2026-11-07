@@ -11,13 +11,20 @@ import {
   publishReel,
   unpublishReel,
   queueReelRender,
+  queueReelTranscript,
+  getReelTranscript,
+  type ReelTranscript,
   saveReelProject,
   shareReelMusic,
+  listReelSounds,
+  shareReelSound,
+  searchFreesound,
+  importFreesound,
   type ReelProject,
   type ReelRender,
 } from "@elkdonis/services/reels";
 import type { ReelEdit, ReelTemplateId } from "@elkdonis/reels";
-import type { VideoFinished, VideoProject, VideoPublication, VideoRender, VideoResult, VideoTrack } from "@elkdonis/reels/editor";
+import type { VideoFinished, VideoFreesoundHit, VideoProject, VideoPublication, VideoRender, VideoResult, VideoSound, VideoTrack, VideoTranscript } from "@elkdonis/reels/editor";
 import { getCurrentUser } from "@/lib/session";
 
 /**
@@ -98,6 +105,31 @@ export async function shareVideoMusic(path: string): Promise<VideoResult<{ path:
   return res.ok && res.path ? { ok: true, value: { path: res.path } } : { ok: false, error: res.error ?? "Not shared" };
 }
 
+export async function listVideoSounds(): Promise<{ network: VideoSound[]; mine: VideoSound[] }> {
+  const id = await userId();
+  return id ? listReelSounds(id) : { network: [], mine: [] };
+}
+
+export async function shareVideoSound(path: string, category: string): Promise<VideoResult<{ path: string }>> {
+  const id = await userId();
+  if (!id) return { ok: false, error: "Sign in again" };
+  const res = await shareReelSound(id, path, String(category ?? "").slice(0, 60));
+  return res.ok && res.path ? { ok: true, value: { path: res.path } } : { ok: false, error: res.error ?? "Not shared" };
+}
+
+export async function searchVideoFreesound(query: string, page: number): Promise<VideoResult<{ hits: VideoFreesoundHit[]; more: boolean }>> {
+  if (!(await userId())) return { ok: false, error: "Sign in again" };
+  const res = await searchFreesound(String(query ?? ""), Number(page) || 1);
+  return res.ok ? { ok: true, value: { hits: res.hits ?? [], more: !!res.more } } : { ok: false, error: res.error ?? "Search failed" };
+}
+
+export async function importVideoFreesound(soundId: number): Promise<VideoResult<VideoSound>> {
+  const id = await userId();
+  if (!id) return { ok: false, error: "Sign in again" };
+  const res = await importFreesound(id, Number(soundId));
+  return res.ok && res.sound ? { ok: true, value: res.sound } : { ok: false, error: res.error ?? "Not added" };
+}
+
 export async function queueVideoRender(projectId: string): Promise<VideoResult<VideoRender>> {
   const id = await userId();
   if (!id) return { ok: false, error: "Sign in again" };
@@ -132,4 +164,29 @@ export async function unpublishVideo(projectId: string): Promise<VideoResult> {
   if (!id) return { ok: false, error: "Sign in again" };
   const res = await unpublishReel(id, projectId);
   return res.ok ? { ok: true, value: undefined } : { ok: false, error: res.error ?? "Not unpublished" };
+}
+
+const toTranscript = (t: ReelTranscript): VideoTranscript => ({
+  id: t.id,
+  path: t.path,
+  status: t.status,
+  progress: t.progress,
+  words: t.words,
+  pauses: t.pauses,
+  peaks: t.peaks,
+  error: t.error,
+});
+
+export async function transcribeVideo(projectId: string, path: string): Promise<VideoResult<VideoTranscript>> {
+  const id = await userId();
+  if (!id) return { ok: false, error: "Sign in again" };
+  const res = await queueReelTranscript(id, projectId, path);
+  return res.ok && res.transcript ? { ok: true, value: toTranscript(res.transcript) } : { ok: false, error: res.error ?? "Could not start the transcript" };
+}
+
+export async function getVideoTranscript(projectId: string, path: string): Promise<VideoTranscript | null> {
+  const id = await userId();
+  if (!id) return null;
+  const t = await getReelTranscript(id, projectId, path);
+  return t ? toTranscript(t) : null;
 }

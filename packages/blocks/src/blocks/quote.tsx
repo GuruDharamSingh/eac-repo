@@ -53,6 +53,11 @@ export const quote = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Quote block", sel: "> .blk-quote" },
+      words: { label: "Words", sel: ".blk-quote-text", prop: "text" },
+      by: { label: "Who said it", sel: ".blk-quote-by", draws: { props: { attribution: "A name" } } },
+    },
   },
   Quote,
   () => ({

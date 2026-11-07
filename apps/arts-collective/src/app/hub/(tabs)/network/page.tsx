@@ -10,7 +10,8 @@ import { CreateContentDialog } from "@/components/cms/create-content-dialog";
 import { TierBadge } from "@/components/hub/TierBadge";
 import { FilesCard } from "@elkdonis/cms-ui/files";
 import { OrgSwitcher, PersonPanel, type OrgSwitcherItem } from "@elkdonis/cms-ui/center";
-import { getProfile, listOrgHomes, listUserMemberships } from "@elkdonis/services";
+import { getNetworkTerms, getProfile, hasAcceptedNetworkTerms, listOrgHomes, listUserMemberships } from "@elkdonis/services";
+import { TermsNotice } from "@/components/hub/TermsNotice";
 import { networkUrl } from "@/lib/org-url";
 import { NetworkCenterHost } from "./NetworkCenterHost";
 import { NewsroomSection } from "@/components/hub/NewsroomSection";
@@ -33,12 +34,15 @@ export default async function NetworkTabPage({
   searchParams: Promise<{ org?: string }>;
 }) {
   const user = await getCurrentUser();
+  // Members from before the Terms (migration 223) accept them here.
+  const [networkTerms, termsAccepted] = user ? await Promise.all([getNetworkTerms(), hasAcceptedNetworkTerms(user.id)]) : [null, true];
 
   // Signed out, the tab is the network newsroom alone (the public landing
   // until 2026-10-03); everything below it is about the signed-in person.
   if (!user) {
     return (
       <div className="w-full py-10">
+      {networkTerms && !termsAccepted && <TermsNotice version={networkTerms.version} />}
         <CommunityHeader />
         <NewsroomSection user={null} />
       </div>

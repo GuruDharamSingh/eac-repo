@@ -1,6 +1,6 @@
 # Package catalogue and conventions
 
-Every directory in `packages/` (42), with its purpose, how it is consumed
+Every directory in `packages/` (43), with its purpose, how it is consumed
 (built `dist/` or source export), its main consumers, and a status. Followed by
 the conventions that decide whether a change to a package type-checks, builds
 and renders in the apps that use it. Build mode is read from each
@@ -48,6 +48,7 @@ apps), unused (no consumer), dormant (consumers not running).
 
 | Package | Purpose | Build | Main consumers | Status |
 |---|---|---|---|---|
+| actions | Action registry: catalogue of things a person or org can do or have (`.`/`/catalogue`), presentation (`/present`), completion checks and handlers (`/server`) | src | arts-collective, sophia | new 2026-11-06; deployed 2026-11-06 (arts-collective, Sophia); HTTP routes, audit (`action_events`, migration 245) and 8 runners deployed on arts-collective the same evening — see package README |
 | analytics | First-party cookieless visit analytics: beacon (`/beacon`), collector route (`/route`), queries and access (`/server`), shared dashboard (`/dashboard`, Recharts); tables in migration 180 | src | amrit-canada, arts-collective | new 2026-10-01, not deployed — see package README |
 | astro | Natal-chart engine on `sweph`; root is client-safe, `/server` engine, `/svg`, `/wheel`, `/keywords` | src | elastrocal, arts-collective, sky-ui | active |
 | astro-corpus | Astro Studio corpus: factor registry, text tagger, question screening; `/server` corpus tables (migration 167); `build:tagger` bundles a standalone tagger into `dist/` | src | none yet (elastrocal studio planned) | active — docs/open/ASTRO_STUDIO_BRIEF_2026-09-26.md |
@@ -80,6 +81,7 @@ apps), unused (no consumer), dormant (consumers not running).
 | primitives | Token-driven UI primitives, plain CSS + Radix | src | amrit-canada, fourthwayBookreaders, ifac, sunjay | active — [frontend-ui.md](frontend-ui.md) |
 | reading-wizard | Book-import / reading-programme wizard | dist | none | unused |
 | redis | Redis client and cache helpers | dist | art-auction, arts-collective, danamccool, hidden-enneagram, inner-gathering, auth-server, services | active |
+| series-site | An org's public series: pages, routes, mail, reminders, planner pages, hero card | src | ifac, sunjay | active |
 | services | Business logic: threads, profiles, org calendar, forum, media, galleries, dav, storage | src | 17 apps, 10 packages | active |
 | silex | Silex container build files | n/a | Compose `silex` | active — [authoring.md](authoring.md) |
 | silex-nextcloud-connector | Silex storage connector to Nextcloud | n/a (JS) | Compose `silex` | active |

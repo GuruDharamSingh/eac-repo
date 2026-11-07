@@ -4,82 +4,37 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useSurfaceOptional, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import type { LmsTaskBoxProps } from "@elkdonis/lms-ui";
-import { gainSpaceAction } from "@/lib/cms/journey-actions";
+import { presentAction, type PresentField, type Presentation } from "@elkdonis/actions/present";
+import { runAction } from "@/lib/actions/run";
+import { LEARN_FRAME, useLearnOrg } from "./LearnHost";
 
 /**
  * The box under a task step: where the person stands, and the one control
  * that does the thing — here, in this host's own surface (the profile popup,
- * a journey dialog, the artwork queue), or a link to the page that does it.
- * When the dialog closes the page refreshes and the step re-reads its state.
+ * a journey dialog, the artwork queue, the org's composer, the Studio framed
+ * over the lesson), a small form in the step, a window for a site that
+ * cannot be framed, or a button that performs it through the action registry
+ * (`runAction`). Which control each task gets is the registry's
+ * (@elkdonis/actions/present, since 2026-11-06). When a dialog or window
+ * closes the page refreshes and the step re-reads its state.
  */
 
-const ARTDIRECT = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
-const NEXTCLOUD = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "");
-const SOPHIA = (process.env.NEXT_PUBLIC_SOPHIA_URL ?? "").replace(/\/$/, "");
-
-type Control =
-  | { kind: "surface"; label: string; descriptor: SurfaceDescriptor; hint?: string }
-  | { kind: "link"; label: string; href: string; external?: boolean; hint?: string }
-  | { kind: "gain-space"; label: string }
-  | { kind: "none"; hint: string };
-
-function control(p: LmsTaskBoxProps): Control {
-  const { task, status, orgId } = p;
-  switch (task.id) {
-    case "profile":
-      return { kind: "surface", label: status.partial ? "Finish your profile" : "Fill in your profile", descriptor: { type: "profile", mode: "edit" } };
-    case "gain-space":
-      return { kind: "gain-space", label: "Take my space" };
-    case "listing":
-      return status.partial
-        ? { kind: "surface", label: "Open “Where you show”", descriptor: { type: "profile", tab: "show" }, hint: "Switch on the network directory." }
-        : { kind: "surface", label: "Choose your page address", descriptor: { type: "profile", tab: "details" }, hint: "Your address is under Details." };
-    case "studio":
-      return { kind: "link", label: status.partial ? "Back to the Studio" : "Open the Studio", href: "/studio", hint: "Write, then press Publish." };
-    case "show-on":
-      return { kind: "surface", label: "Choose where it shows", descriptor: { type: "profile", tab: "show" }, hint: "“Show on” lists each piece on the sites you belong to." };
-    case "cloud":
-      return NEXTCLOUD
-        ? { kind: "link", label: "Open the cloud", href: `${NEXTCLOUD}/login`, external: true, hint: "Press “Sign in with Elkdonis” there, once. Your folders appear within about ten minutes." }
-        : { kind: "none", hint: "The cloud sign-in is not configured on this site." };
-    case "service":
-      return { kind: "surface", label: status.partial ? "Publish your service" : "Offer a service", descriptor: { type: "journey", id: "profile" }, hint: "Under “Offer & get paid”." };
-    case "store":
-      return { kind: "surface", label: status.partial ? "See your store" : "Open a store", descriptor: { type: "journey", id: "auction" }, hint: "Step 2 of “Sell your art”." };
-    case "artwork":
-      return { kind: "surface", label: status.partial ? "Finish and publish" : "Add a work", descriptor: { type: "artwork" } };
-    case "payouts":
-      return { kind: "surface", label: status.partial ? "Finish with Stripe" : "Set up payouts", descriptor: { type: "journey", id: "auction" }, hint: "Step 3 of “Sell your art”. Stripe brings you back here." };
-    case "org":
-      return { kind: "surface", label: "Start an organisation", descriptor: { type: "journey", id: "site" } };
-    case "org-details":
-      return orgId ? { kind: "surface", label: "Fill in the details", descriptor: { type: "journey", id: "org", orgId } } : { kind: "none", hint: "Start an organisation first." };
-    case "org-people":
-      return orgId ? { kind: "surface", label: "Who is in it", descriptor: { type: "journey", id: "org", orgId }, hint: "The People tab." } : { kind: "none", hint: "Start an organisation first." };
-    case "org-offering":
-      return status.href ? { kind: "link", label: "Open your console", href: status.href, hint: "Publish a post, an event or a service and pin the one that should lead, or design the page under Settings → Site & address." } : { kind: "none", hint: "Start an organisation first." };
-    case "org-email":
-      return status.href ? { kind: "link", label: "Open the email suite", href: status.href, hint: "The Look tab: a sending name and a reply-to address." } : { kind: "none", hint: "Start an organisation first." };
-    case "org-site":
-      return status.href && status.done ? { kind: "link", label: "Open your site", href: status.href, external: true } : { kind: "none", hint: "Nothing to press: the collective confirms the address and adds it to the edge." };
-    default:
-      return { kind: "none", hint: "This step is not known to this site yet." };
-  }
-}
+const LINKS = {
+  artdirect: (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, ""),
+  nextcloud: (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "") || undefined,
+};
 
 export function TaskBox(p: LmsTaskBoxProps) {
   const surfaces = useSurfaceOptional();
+  const learnOrg = useLearnOrg();
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [saved, setSaved] = React.useState(false);
   const { status } = p;
-  const c = control(p);
+  const c = presentAction({ id: p.task.id, status, orgId: p.orgId, links: LINKS, params: p.task.params });
 
   // When a dialog opened from here closes, the page re-reads the task.
-  const openSurface = (d: SurfaceDescriptor) => {
-    if (!surfaces) return;
-    surfaces.open(d);
-  };
   React.useEffect(() => {
     const onFocus = () => router.refresh();
     window.addEventListener("focus", onFocus);
@@ -99,51 +54,137 @@ export function TaskBox(p: LmsTaskBoxProps) {
     );
   }
 
+  const btn = status.done ? "so-btn so-btn--quiet" : "so-btn";
+
+  /** Perform the entry through the registry; `values` for a form. */
+  const run = async (values?: Record<string, string>) => {
+    setBusy(true);
+    setError(null);
+    setSaved(false);
+    const r = await runAction(p.task.id, values, { org: p.orgId }).catch(() => ({ ok: false as const, error: "Could not reach the server." }));
+    setBusy(false);
+    if (r.ok === false) setError(r.error);
+    else {
+      setSaved(true);
+      router.refresh();
+    }
+  };
+
   return (
     <>
       <p className={stateClass}><span>{state}</span>{status.done && status.href && <a href={status.href} target={status.href.startsWith("http") ? "_blank" : undefined} rel="noopener">See it →</a>}</p>
       {status.detail && <p className="so-task__detail">{status.detail}</p>}
       {!p.enrolled && <p className="so-meta">Begin the course below to have this recorded.</p>}
-      <div className="so-task__act">
-        {c.kind === "surface" && (
-          surfaces ? (
-            <button type="button" className={status.done ? "so-btn so-btn--quiet" : "so-btn"} onClick={() => openSurface(c.descriptor)}>{status.done ? "Open again" : c.label}</button>
-          ) : (
-            <a className="so-btn" href={`/hub/network?surface=${encodeURIComponent(serialize(c.descriptor))}`}>{c.label}</a>
-          )
-        )}
-        {c.kind === "link" && (
-          <a className={status.done ? "so-btn so-btn--quiet" : "so-btn"} href={c.href} {...(c.external ? { target: "_blank", rel: "noopener" } : {})}>{c.label}{c.external ? " ↗" : ""}</a>
-        )}
-        {c.kind === "gain-space" && !status.done && (
-          <button
-            type="button"
-            className="so-btn"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError(null);
-              const r = await gainSpaceAction().catch(() => ({ ok: false as const, error: "Could not reach the server." }));
-              setBusy(false);
-              if ("error" in r) setError(r.error);
-              else router.refresh();
-            }}
-          >
-            {busy ? "Setting up…" : c.label}
-          </button>
-        )}
-        {"hint" in c && c.hint && <span className="so-meta">{c.hint}</span>}
-        {task_hint(p.task.id) && <span className="so-meta">{task_hint(p.task.id)}</span>}
-      </div>
+      {c.kind === "form" ? (
+        <TaskForm key={JSON.stringify(status.values ?? {})} fields={c.fields} values={status.values ?? {}} label={busy ? c.busyLabel : c.label} busy={busy} onSubmit={run} hint={c.hint} note={c.note} saved={saved} />
+      ) : (
+        <div className="so-task__act">
+          <Control c={c} btn={btn} done={status.done} busy={busy} canOpen={(d) => canOpen(d, surfaces !== null, learnOrg, p.orgId)} open={(d) => surfaces?.open(d)} onRun={() => run()} onClosed={() => router.refresh()} />
+          {c.hint && <span className="so-meta">{c.hint}</span>}
+          {c.note && <span className="so-meta">{c.note}</span>}
+        </div>
+      )}
       {error && <p className="so-meta" role="alert">{error}</p>}
     </>
   );
 }
 
-function task_hint(id: string): string | null {
-  if (id === "listing" && ARTDIRECT) return `Your page lives at ${ARTDIRECT.replace(/^https?:\/\//, "")}/<your address>.`;
-  if (id === "studio" && SOPHIA) return null;
-  return null;
+/** A compose surface opens only for the org this stack composes for; anything else needs a surface stack at all. */
+function canOpen(d: SurfaceDescriptor, hasStack: boolean, learnOrg: ReturnType<typeof useLearnOrg>, orgId: string | null): boolean {
+  if (!hasStack) return false;
+  if (d.type === "compose") return Boolean(learnOrg?.canCompose && orgId && learnOrg.orgId === orgId);
+  return true;
+}
+
+function Control({ c, btn, done, busy, canOpen, open, onRun, onClosed }: {
+  c: Exclude<Presentation, { kind: "form" }>;
+  btn: string;
+  done: boolean;
+  busy: boolean;
+  canOpen: (d: SurfaceDescriptor) => boolean;
+  open: (d: SurfaceDescriptor) => void;
+  onRun: () => void;
+  onClosed: () => void;
+}) {
+  switch (c.kind) {
+    case "surface":
+      if (canOpen(c.descriptor)) {
+        return <button type="button" className={btn} onClick={() => open(c.descriptor)}>{done && c.descriptor.type !== "compose" ? "Open again" : c.label}</button>;
+      }
+      if (c.fallback) return <a className={btn} href={c.fallback.href}>{c.fallback.label}</a>;
+      if (c.descriptor.type === "compose") return null;
+      return <a className="so-btn" href={`/hub/network?surface=${encodeURIComponent(serialize(c.descriptor))}`}>{c.label}</a>;
+    case "link":
+      return <a className={btn} href={c.href} {...(c.external ? { target: "_blank", rel: "noopener" } : {})}>{c.label}{c.external ? " ↗" : ""}</a>;
+    case "frame": {
+      const d: SurfaceDescriptor = { type: "custom", key: LEARN_FRAME, title: c.title, size: "full", props: { src: c.src } };
+      return canOpen(d)
+        ? <button type="button" className={btn} onClick={() => open(d)}>{c.label}</button>
+        : <a className={btn} href={c.src}>{c.label}</a>;
+    }
+    case "popup":
+      return (
+        <a
+          className={btn}
+          href={c.href}
+          target="_blank"
+          rel="noopener"
+          onClick={(e) => {
+            const w = window.open(c.href, "eac-task", "popup,width=560,height=760");
+            if (!w) return; // blocked: the link opens a tab instead
+            e.preventDefault();
+            const timer = window.setInterval(() => {
+              if (w.closed) {
+                window.clearInterval(timer);
+                onClosed();
+              }
+            }, 800);
+          }}
+        >
+          {c.label} ↗
+        </a>
+      );
+    case "run":
+      return done ? null : <button type="button" className="so-btn" disabled={busy} onClick={onRun}>{busy ? c.busyLabel : c.label}</button>;
+    default:
+      return null;
+  }
+}
+
+/** The step's own small form: the fields the registry names, prefilled from the task's current values. */
+function TaskForm({ fields, values, label, busy, onSubmit, hint, note, saved }: {
+  fields: PresentField[];
+  values: Record<string, string>;
+  label: string;
+  busy: boolean;
+  onSubmit: (values: Record<string, string>) => void;
+  hint?: string;
+  note?: string;
+  saved: boolean;
+}) {
+  return (
+    <form
+      className="so-task__form so-form so-fields"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        onSubmit(Object.fromEntries(fields.map((f) => [f.name, String(fd.get(f.name) ?? "")])));
+      }}
+    >
+      {fields.map((f) => (
+        <label key={f.name}>
+          {f.label}
+          <input name={f.name} type={f.type} defaultValue={values[f.name] ?? ""} maxLength={f.maxLength} placeholder={f.placeholder} />
+        </label>
+      ))}
+      <div className="so-task__act">
+        <button type="submit" className="so-btn" disabled={busy}>{label}</button>
+        {saved && !busy && <span className="so-meta" role="status">Saved.</span>}
+        {hint && <span className="so-meta">{hint}</span>}
+        {note && <span className="so-meta">{note}</span>}
+      </div>
+    </form>
+  );
 }
 
 /** The profile and journey descriptors as the URL scheme spells them (surface/url.ts). */

@@ -5,6 +5,7 @@ import { lastOccurrenceEnd } from "@elkdonis/utils";
 import { Badge } from "@/components/ui/badge";
 import { getThreadById } from "@/lib/data";
 import { formatDateTime, formatShortDate } from "@/lib/format";
+import { requireOrgEditor } from "@/lib/auth";
 
 interface AttendeesPageProps {
   params: Promise<{ id: string }>;
@@ -27,6 +28,10 @@ interface Row {
  * /manage layout's owner/guide gate.
  */
 export default async function AttendeesPage({ params }: AttendeesPageProps) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const { id } = await params;
   const thread = await getThreadById(id);
   if (!thread) notFound();

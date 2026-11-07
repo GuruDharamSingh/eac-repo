@@ -4,6 +4,7 @@ import { listManageContacts, listManageMembers } from "@/lib/manage";
 import { listAllDirectory } from "@/lib/directory-admin";
 import { getUpcomingEvents } from "@/lib/data";
 import { siteConfig } from "@/config/site";
+import { requireIfacManager } from "@/lib/manage-auth";
 
 export const metadata = { title: "Manage IFAC" };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,10 @@ export const dynamic = "force-dynamic";
  * opening straight onto a JSON textarea, which is what /admin did.
  */
 export default async function ManageOverviewPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireIfacManager();
   const [members, contacts, roster, events, chatRoom] = await Promise.all([
     listManageMembers(),
     listManageContacts(),

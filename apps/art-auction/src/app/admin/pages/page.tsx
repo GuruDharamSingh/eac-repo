@@ -6,9 +6,8 @@ import { requirePagesEditor } from "@/lib/puck/auth";
 import { NewPageForm } from "@/components/pages/new-page-form";
 import { listStores } from "@elkdonis/commerce/queries";
 import { loadHeroSettings } from "@/lib/home-hero";
-import { loadHomeLoft, loadLoftSettings } from "@/lib/home-sections";
+import { loadLoftPointer } from "@/lib/landing-loft";
 import { HeroForm } from "./hero-form";
-import { LoftForm } from "./loft-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pages" };
@@ -20,13 +19,11 @@ export const metadata: Metadata = { title: "Pages" };
  */
 export default async function AdminPagesPage() {
   await requirePagesEditor("/admin/pages");
-  const [stores, hero, loft, loftSettings] = await Promise.all([
+  const [stores, hero, loft] = await Promise.all([
     listStores({ limit: 60 }).catch(() => []),
     loadHeroSettings(),
-    loadHomeLoft().catch(() => ({ hung: [], pool: [] })),
-    loadLoftSettings(),
+    loadLoftPointer().catch(() => ({ installationId: null, published: null })),
   ]);
-  const loftWorks = loft.pool.map((w) => ({ id: w.id, label: w.artistName ? `${w.title} — ${w.artistName}` : w.title }));
   const heroArtists = stores.filter((st) => st.ownerKind === "user" && st.displayName).map((st) => ({ id: st.id, name: st.displayName! }));
   const pages = await listPages();
   const stored = new Map(pages.map((p) => [p.slug, p.updatedAt]));
@@ -48,13 +45,18 @@ export default async function AdminPagesPage() {
       <section className="rounded-lg border border-border p-6">
         <h2 className="font-serif text-2xl">Home page loft</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          The virtual scene under the hero hangs two works from the market and leaves a third spot free for visitors to
-          fill. Choose the two here; their frame proportion and crop, and the welcome letter above the hero, are edited on
-          the home page itself.
+          The virtual scene under the hero: works from anywhere on the market, their size, framing and lamps, the room&apos;s
+          light, the view visitors open on, and a free spot visitors fill. Edited in the scene editor; changes reach the home
+          page when you put them on it. The welcome letter above the hero is edited on the home page itself.
         </p>
-        <div className="mt-4">
-          <LoftForm works={loftWorks} initial={loftSettings.spots} />
-        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {loft.published
+            ? `On the page since ${new Date(loft.published.at).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}.`
+            : "Visitors see the starting hang: the two newest pictured works and the free spot."}
+        </p>
+        <Link href="/admin/loft" className="mt-3 inline-block text-sm underline underline-offset-4">
+          Edit the loft scene
+        </Link>
       </section>
 
       <section className="rounded-lg border border-border p-6">

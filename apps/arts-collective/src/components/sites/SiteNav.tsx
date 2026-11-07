@@ -13,7 +13,7 @@ export function SiteNav({
   signedIn = false,
 }: {
   orgName: string;
-  current: "offering" | "profile" | "community" | "center";
+  current: "offering" | "profile" | "community" | "center" | "classifieds";
   mainSiteUrl?: string | null;
   /** Adds the Center tab; /center redirects a signed-out visitor to login. */
   signedIn?: boolean;

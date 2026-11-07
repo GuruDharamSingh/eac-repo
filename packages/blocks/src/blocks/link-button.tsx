@@ -1,4 +1,5 @@
 import { defineBlock, type PropsOf } from "../registry";
+import { OPENS_PROP, openedAttrs, type Opened } from "../opens";
 
 // ============================================================================
 // A call to action.
@@ -16,6 +17,7 @@ import { defineBlock, type PropsOf } from "../registry";
 const props = [
   { name: "label", kind: "string", label: "Label", required: true, inlineEditable: true },
   { name: "href", kind: "url", label: "Goes to", required: true },
+  OPENS_PROP,
   {
     name: "tone",
     kind: "select",
@@ -45,17 +47,23 @@ const props = [
   },
 ] as const;
 
-export type LinkButtonProps = PropsOf<typeof props>;
+export type LinkButtonProps = PropsOf<typeof props> & {
+  /** From the host's resolver for `opens` (opens.ts). Never stored. */
+  opened?: Opened | null;
+};
 
-export function LinkButton({ label, href, tone = "filled", align = "start", newTab = false }: LinkButtonProps) {
-  if (!label || !href) return null;
+export function LinkButton({ label, href, tone = "filled", align = "start", newTab = false, opened }: LinkButtonProps) {
+  // Opens, when the host resolved one, replaces the typed address: they answer the same question.
+  const open = openedAttrs(opened);
+  if (!label || !(open || href)) return null;
 
   return (
     <div className="blk blk-cta" data-align={align}>
       <a
         className="blk-cta-link"
         data-tone={tone}
-        href={href}
+        href={open?.href ?? href}
+        {...(open?.["data-opens"] ? { "data-opens": open["data-opens"] } : {})}
         // noreferrer alongside noopener: without it the new page can read
         // where it came from, and opener access is the actual security issue.
         {...(newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}

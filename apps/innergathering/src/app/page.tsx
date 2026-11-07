@@ -4,6 +4,12 @@ import { GallerySlider } from "@/components/landing/GallerySlider";
 import { JoinSection } from "@/components/landing/JoinSection";
 import { OfferingsBand, type OfferingItem } from "@/components/landing/OfferingsBand";
 import { getLandingConfig, getWorkQuestion, getWorkQuestionThread, mediaSrc } from "@/lib/landing";
+import { Render, resolveAllData } from "@puckeditor/core/rsc";
+import type { Data } from "@puckeditor/core";
+import { serverPuckConfig } from "@/lib/puck/config.server";
+import { loadPage } from "@/lib/puck/store";
+import { LANDING_SLUG } from "@/lib/puck/landing";
+import { siteConfig } from "@/config/site";
 import { renderForumRoute } from "@elkdonis/forum-ui";
 import { getForumConnectors } from "@/lib/forum";
 import { GuestAnswer } from "@/components/landing/GuestAnswer";
@@ -16,6 +22,9 @@ import {
   getThreadsForFeed,
 } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
+import { patchCss, patchFontsHref, type PuckDoc } from "@elkdonis/direct-edit/block";
+import { loadPageEdits } from "@/lib/page-edits";
+import { EditPageButton } from "@/components/landing/EditPageButton";
 import type { Thread } from "@/lib/types";
 
 /**
@@ -27,14 +36,18 @@ import type { Thread } from "@/lib/types";
  * Mantine-free one.
  */
 export default async function LandingPage() {
-  const [config, workQuestion, offeringThreads, board, viewer, sections] = await Promise.all([
+  const [config, workQuestion, offeringThreads, board, viewer, sections, edits, tree] = await Promise.all([
     getLandingConfig(),
     getWorkQuestion(),
     getThreadsForFeed("offerings"),
     getBoard(),
     getViewer().catch(() => null),
     getSiteSections(),
+    loadPageEdits("home"),
+    loadPage(LANDING_SLUG, new Set(Object.keys(serverPuckConfig.components))),
   ]);
+  const editCss = patchCss(edits);
+  const editFonts = patchFontsHref(edits);
   const [offerings, forumThread] = await Promise.all([
     loadOfferings(offeringThreads, viewer?.userId ?? null),
     workQuestion ? getWorkQuestionThread(workQuestion.question.question) : Promise.resolve(null),
@@ -84,6 +97,133 @@ export default async function LandingPage() {
     .map((p) => (typeof p === "string" ? mediaSrc(p) : null))
     .filter((s): s is string => Boolean(s));
 
+  // The parts of this page that stay live when it is edited as a tree of boxes: they
+  // change by viewer or follow the site's data. Each root element carries its name, so
+  // the editor leaves it alone and the stored tree draws it from here.
+  const parts = {
+    "hero-actions": (
+      <div className="ig-hero-actions" data-landing-part="hero-actions" data-edit-name="Sign-in buttons">
+        <Link href={hero.ctaHref} className="cta-btn ig-hero-cta">{hero.ctaLabel}</Link>
+        <Link href={viewer ? "/hub" : "/login"} className="ig-hero-cta-quiet">
+          {viewer ? "Open the portal" : "Sign in"}
+        </Link>
+      </div>
+    ),
+    offerings: (
+      <div data-edit-section="offerings" data-edit-name="What's on" data-edit-atom data-landing-part="offerings">
+        <OfferingsBand
+          items={offerings}
+          signedIn={Boolean(viewer)}
+          nextcloudUrl={process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? null}
+        />
+      </div>
+    ),
+    // Empty for anyone signed in, so it is always there to be kept when the page is converted.
+    "login-banner": (
+      <div data-landing-part="login-banner" data-edit-name="Sign-in banner">
+        {!viewer && (
+          <section className="site-login-banner">
+            <div className="site-login-banner-inner">
+              <p className="site-login-banner-copy">
+                Already part of the collective? <strong>Sign in</strong> to join the conversation, or{" "}
+                <strong>create an account</strong> to get started.
+              </p>
+              <div className="site-login-banner-actions">
+                <Link href="/login" className="site-login-banner-btn site-login-banner-btn--filled">Create account</Link>
+                <Link href="/login" className="site-login-banner-btn site-login-banner-btn--ghost">Sign in</Link>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    ),
+    gallery: (
+      <div data-edit-section="gallery" data-edit-name="Gallery" data-edit-atom data-landing-part="gallery">
+        <GallerySlider slides={gallery} />
+      </div>
+    ),
+    join: (
+      <div data-edit-section="join" data-edit-name="Join" data-edit-atom data-landing-part="join">
+        <JoinSection />
+      </div>
+    ),
+    forum: (
+      <div data-landing-part="forum" data-edit-name="The Grand Forum">
+        {(forumEmbed || workQuestion) && (
+          <section id="grand-forum" className="ig-forum-section" aria-labelledby="ig-forum-heading">
+            <div className="ig-forum-head">
+              <div>
+                <p className="ig-forum-eyebrow">Across the arts collectives</p>
+                <h2 id="ig-forum-heading" className="ig-forum-heading">The Grand Forum</h2>
+              </div>
+              <p className="ig-forum-lede">
+                The independent forum used across the arts collectives, shared by every group in the
+                network rather than owned by any one of them.
+              </p>
+              <Link href="/forum" className="ig-forum-btn ig-forum-btn--primary">Enter the forum</Link>
+            </div>
+
+            {forumEmbed && <div className="gf-page ig-forum-embed">{forumEmbed}</div>}
+
+            {!viewer && workQuestion && (
+              <div className="ig-forum-guest">
+                <GuestAnswer questionId={workQuestion.question.id} question={workQuestion.question.question} />
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    ),
+    "fundraising-progress": (
+      <div data-landing-part="fundraising-progress" data-edit-name="Money raised">
+        {fundraising.raised > 0 && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#5a5240", marginBottom: "0.4rem" }}>
+              <span>{fundraising.currency} ${fundraising.raised.toLocaleString()} raised</span>
+              <span>Goal: ${fundraising.goal.toLocaleString()} ({pct}%)</span>
+            </div>
+            <div style={{ height: 5, background: "rgba(1,18,78,0.12)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #b79a55, #8f763c)", borderRadius: 3 }} />
+            </div>
+          </div>
+        )}
+      </div>
+    ),
+    "fundraising-status": (
+      <p data-landing-part="fundraising-status" data-edit-name="Fundraising status" style={{ margin: "0 0 1rem" }}>{fundraising.status}</p>
+    ),
+    "board-list": (
+      <div data-landing-part="board-list" data-edit-name="Board members">
+        <Reveal as="ul" className="ig-members" style={{ marginTop: "1.5rem" }}>
+          {board.map((m) => (
+            <li key={m.userId} className="ig-member">
+              {m.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="ig-member-photo" src={m.photoUrl} alt="" />
+              ) : (
+                <span className="ig-member-initials" aria-hidden>{initials(m.displayName)}</span>
+              )}
+              <p className="ig-member-name"><Link href={`/about/${m.slug}`}>{m.displayName}</Link></p>
+              {m.roleTitle && <p className="ig-member-title">{m.roleTitle}</p>}
+            </li>
+          ))}
+        </Reveal>
+      </div>
+    ),
+  };
+
+  // Once the page has been saved as a tree, the tree is the page.
+  if (tree) {
+    const metadata = { orgId: siteConfig.orgId, slug: LANDING_SLUG, parts };
+    const filled = await resolveAllData(tree.data as Data, serverPuckConfig, metadata);
+    return (
+      <div className="marketing-root">
+        <Render config={serverPuckConfig} data={filled as Data} metadata={metadata} />
+        {viewer?.canEdit && <EditPageButton page="home" doc={edits} tree={tree.data as PuckDoc} />}
+      </div>
+    );
+  }
+
   return (
     <div className="marketing-root">
       {/* ── Hero ──
@@ -92,7 +232,7 @@ export default async function LandingPage() {
           right. Everything here is editable copy over the words that used to
           be hard-coded, and the image is an admin-set space that falls back
           to the intro banner, so the section is never half-empty. */}
-      <header className={`ig-hero${heroImage ? "" : " ig-hero--plain"}`}>
+      <header className={`ig-hero${heroImage ? "" : " ig-hero--plain"}`} data-edit-section="hero" data-edit-name="Opening">
         <div className="ig-hero-inner">
           <div className="ig-hero-copy">
             <p className="ig-hero-eyebrow">{hero.eyebrow}</p>
@@ -100,12 +240,7 @@ export default async function LandingPage() {
             <p className="ig-hero-subtitle">{hero.subtitle}</p>
             <hr className="gold-rule ig-hero-rule" style={{ "--rule-width": "72px" } as React.CSSProperties} />
             <p className="ig-hero-tagline">{hero.tagline}</p>
-            <div className="ig-hero-actions">
-              <Link href={hero.ctaHref} className="cta-btn ig-hero-cta">{hero.ctaLabel}</Link>
-              <Link href={viewer ? "/hub" : "/login"} className="ig-hero-cta-quiet">
-                {viewer ? "Open the portal" : "Sign in"}
-              </Link>
-            </div>
+            {parts["hero-actions"]}
           </div>
 
           {heroImage && (
@@ -129,30 +264,13 @@ export default async function LandingPage() {
       </header>
 
       {/* ── Current offerings — the public ways in, with their RSVP ── */}
-      <OfferingsBand
-        items={offerings}
-        signedIn={Boolean(viewer)}
-        nextcloudUrl={process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? null}
-      />
+      {parts.offerings}
 
       {/* ── Login / signup banner — shown to signed-out visitors only ── */}
-      {!viewer && (
-        <section className="site-login-banner">
-          <div className="site-login-banner-inner">
-            <p className="site-login-banner-copy">
-              Already part of the collective? <strong>Sign in</strong> to join the conversation, or{" "}
-              <strong>create an account</strong> to get started.
-            </p>
-            <div className="site-login-banner-actions">
-              <Link href="/login" className="site-login-banner-btn site-login-banner-btn--filled">Create account</Link>
-              <Link href="/login" className="site-login-banner-btn site-login-banner-btn--ghost">Sign in</Link>
-            </div>
-          </div>
-        </section>
-      )}
+      {parts["login-banner"]}
 
       {/* ── About / Mutual Aid ── */}
-      <section id="about" className="about-section">
+      <section id="about" className="about-section" data-edit-section="about" data-edit-name="About">
         <div style={{ maxWidth: "var(--content-max)", margin: "0 auto", padding: "0 1.5rem" }}>
           <Reveal style={{ textAlign: "center", marginBottom: "4rem" }}>
             <h2 className="section-heading" style={{ fontFamily: '"Brothers", sans-serif', fontSize: "clamp(3.75rem, 7.5vw, 5.625rem)" }}>A Mutual Aid Society</h2>
@@ -177,42 +295,20 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Gallery (admin-set images) ── */}
-      <GallerySlider slides={gallery} />
+      {parts.gallery}
 
       {/* ── Join the Collective ── */}
-      <JoinSection />
+      {parts.join}
 
       {/* ── The Grand Forum ──
           The forum itself, full width, opened on the work question's thread,
           under a short heading that says what it is: the network's forum,
           larger than this one group. A visitor without an account can still
           answer below it. */}
-      {(forumEmbed || workQuestion) && (
-        <section id="grand-forum" className="ig-forum-section" aria-labelledby="ig-forum-heading">
-          <div className="ig-forum-head">
-            <div>
-              <p className="ig-forum-eyebrow">Across the arts collectives</p>
-              <h2 id="ig-forum-heading" className="ig-forum-heading">The Grand Forum</h2>
-            </div>
-            <p className="ig-forum-lede">
-              The independent forum used across the arts collectives, shared by every group in the
-              network rather than owned by any one of them.
-            </p>
-            <Link href="/forum" className="ig-forum-btn ig-forum-btn--primary">Enter the forum</Link>
-          </div>
-
-          {forumEmbed && <div className="gf-page ig-forum-embed">{forumEmbed}</div>}
-
-          {!viewer && workQuestion && (
-            <div className="ig-forum-guest">
-              <GuestAnswer questionId={workQuestion.question.id} question={workQuestion.question.question} />
-            </div>
-          )}
-        </section>
-      )}
+      {parts.forum}
 
       {/* ── Fundraising Goal / Community Support ── */}
-      <section id="fundraising" className="fundraising-section">
+      <section id="fundraising" className="fundraising-section" data-edit-section="fundraising" data-edit-name="Fundraising">
         <div className="section-inner" style={{ maxWidth: 1040 }}>
           <Reveal>
             <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -225,23 +321,13 @@ export default async function LandingPage() {
                 <p style={{ fontFamily: '"Basteleur", serif', color: "#022278", lineHeight: 1.8, marginBottom: "1.5rem" }}>
                   We Will Specialize in Grant Writing, Finding, and Even Our Own Micro Grants
                 </p>
-                {fundraising.raised > 0 && (
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#5a5240", marginBottom: "0.4rem" }}>
-                      <span>{fundraising.currency} ${fundraising.raised.toLocaleString()} raised</span>
-                      <span>Goal: ${fundraising.goal.toLocaleString()} ({pct}%)</span>
-                    </div>
-                    <div style={{ height: 5, background: "rgba(1,18,78,0.12)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #b79a55, #8f763c)", borderRadius: 3 }} />
-                    </div>
-                  </div>
-                )}
+                {parts["fundraising-progress"]}
                 <a href="https://www.gofundme.com/f/empowering-artists-in-toronto-and-la" target="_blank" rel="noopener noreferrer" className="cta-btn" style={{ display: "inline-flex" }}>
                   Support on GoFundMe
                 </a>
               </div>
               <div style={{ fontFamily: '"Basteleur", serif', color: "#022278", lineHeight: 1.8 }}>
-                <p style={{ margin: "0 0 1rem" }}>{fundraising.status}</p>
+                {parts["fundraising-status"]}
                 <p style={{ margin: 0, fontFamily: '"Venture", serif', fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8f763c" }}>
                   Instagram · GoFundMe · Substack — links in the footer
                 </p>
@@ -252,7 +338,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Cities ── */}
-      <Reveal as="section" style={{ background: "#2a5a2a", padding: "5rem 4rem", display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+      <Reveal as="section" editSection="cities" editName="Cities" style={{ background: "#2a5a2a", padding: "5rem 4rem", display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
         {[
           ["Toronto", "Operations · Technology · Performance"],
           ["Los Angeles", "Music · Education · Outreach"],
@@ -269,28 +355,15 @@ export default async function LandingPage() {
       </Reveal>
 
       {/* ── Board — from members' own profiles ── */}
-      <section id="board" className="board-section">
+      <section id="board" className="board-section" data-edit-section="board" data-edit-name="Board">
         <div className="section-inner">
           <p className="section-eyebrow" style={{ textAlign: "center" }}>The Board</p>
-          <Reveal as="ul" className="ig-members" style={{ marginTop: "1.5rem" }}>
-            {board.map((m) => (
-              <li key={m.userId} className="ig-member">
-                {m.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="ig-member-photo" src={m.photoUrl} alt="" />
-                ) : (
-                  <span className="ig-member-initials" aria-hidden>{initials(m.displayName)}</span>
-                )}
-                <p className="ig-member-name"><Link href={`/about/${m.slug}`}>{m.displayName}</Link></p>
-                {m.roleTitle && <p className="ig-member-title">{m.roleTitle}</p>}
-              </li>
-            ))}
-          </Reveal>
+          {parts["board-list"]}
         </div>
       </section>
 
       {/* ── Vision Statement ── */}
-      <section style={{ background: "#01124E", borderTop: "1px solid rgba(80,120,200,0.18)", padding: "8rem 4rem", textAlign: "center" }}>
+      <section data-edit-section="vision" data-edit-name="Vision" style={{ background: "#01124E", borderTop: "1px solid rgba(80,120,200,0.18)", padding: "8rem 4rem", textAlign: "center" }}>
         <blockquote style={{ fontFamily: '"Basteleur", serif', fontSize: "clamp(1.1rem, 2.2vw, 1.5rem)", fontWeight: 300, lineHeight: 1.9, color: "rgba(198,221,255,0.78)", maxWidth: 700, margin: "0 auto 2.5rem", border: "none", padding: 0 }}>
           &ldquo;The collective is committed to using art as the means of inquiry. Each inquiry focuses on a particular question that is grounded in what it is to be human. We are unique in our purpose and are not commercial. Our works are intended to be experienced, not sold.&rdquo;
         </blockquote>
@@ -300,6 +373,11 @@ export default async function LandingPage() {
       </section>
 
       <div id="contact" />
+      {/* Owners' visual edits: one stylesheet, built and validated on the server (block/patch.ts). */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      {editFonts && <link rel="stylesheet" href={editFonts} />}
+      {editCss && <style data-edit-patches-public dangerouslySetInnerHTML={{ __html: editCss }} />}
+      {viewer?.canEdit && <EditPageButton page="home" doc={edits} tree={null} />}
     </div>
   );
 }

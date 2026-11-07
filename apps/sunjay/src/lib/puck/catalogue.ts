@@ -1,4 +1,4 @@
-import { SHARED_BLOCKS, type Block } from "@elkdonis/blocks";
+import { SHARED_BLOCKS, featuredPerson, type Block } from "@elkdonis/blocks";
 import { SITE_BLOCKS } from "@/blocks";
 
 /**
@@ -9,7 +9,8 @@ import { SITE_BLOCKS } from "@/blocks";
  * profile's galleries and need a host that supplies that person (ArtDirect,
  * IFAC, the market); here they would render empty. `contact-form` posts to
  * `/api/contact`, which this site does not have (its form is `/api/inquiry`).
- * `feature-card` binds to records through a host resolver this site lacks.
+ * `feature-card` is filled from a gathering, series or piece through this site's resolver (2026-11-07,
+ * lib/opens-server.ts), and Featured person comes with it.
  */
 const SHARED_IDS = new Set([
   "split-row",
@@ -28,9 +29,15 @@ const SHARED_IDS = new Set([
   "picture-wall",
   "link-button",
   "thread-feed",
+  "feature-card",
+  // Layout blocks added 2026-11-07.
+  "sticky-split",
+  "tab-set",
+  "accordion-set",
 ]);
 
 export const CATALOGUE: Block<never>[] = [
   ...SITE_BLOCKS,
   ...SHARED_BLOCKS.filter((b) => SHARED_IDS.has(b.def.id)),
+  featuredPerson as unknown as Block<never>,
 ];

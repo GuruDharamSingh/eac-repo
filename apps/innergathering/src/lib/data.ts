@@ -124,7 +124,7 @@ function mapThread(row: ThreadRow): Thread {
     isOnline: row.is_online ?? false,
     meetingUrl: row.meeting_url,
     videoLink: row.video_link,
-    documentUrl: row.document_url,
+    documentUrl: null, // set by withDocumentLink on single-thread reads
     talkToken: row.nextcloud_talk_token,
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
@@ -239,6 +239,19 @@ async function mayRead(thread: Thread): Promise<boolean> {
   );
 }
 
+/**
+ * A thread's document link is a public writable share: holding the link is the
+ * permission. Only single-thread reads carry it, and only for owners, guides
+ * and members; a follower (viewer role) reads the thread without it. List reads
+ * leave it null because their rows reach client components (ThreadCard), whose
+ * props are sent to the browser.
+ */
+async function withDocumentLink(thread: Thread, row: ThreadRow): Promise<Thread> {
+  if (!row.document_url) return thread;
+  const viewer = await getViewer().catch(() => null);
+  return viewer?.isMember ? { ...thread, documentUrl: row.document_url } : thread;
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -252,7 +265,7 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
     if (!row) return null;
     const thread = mapThread(row);
     if (!(await mayRead(thread))) return null;
-    return await withTerms(thread);
+    return await withTerms(await withDocumentLink(thread, row));
   } catch (err) {
     console.error(`[innergathering] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -270,7 +283,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
     if (!row) return null;
     const thread = mapThread(row);
     if (!(await mayRead(thread))) return null;
-    return await withTerms(thread);
+    return await withTerms(await withDocumentLink(thread, row));
   } catch (err) {
     console.error(`[innergathering] getThreadById(${id}):`, err);
     return null;

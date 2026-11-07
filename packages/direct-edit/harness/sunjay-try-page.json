@@ -1,0 +1,342 @@
+{
+  "root": {
+    "props": {
+      "title": "Try the editor",
+      "noindex": true
+    }
+  },
+  "zones": {},
+  "content": [
+    {
+      "type": "pt-banner",
+      "props": {
+        "id": "try-banner",
+        "title": "Ritual Theatre",
+        "subtitle": "A paratheatre medium to express the internal landscape.",
+        "body": "",
+        "ctaLabel": "Community",
+        "ctaHref": "/community",
+        "imageUrl": "/api/media/EAC_Network/sunjay/Media/Images/1792209953508-image-6xbss3.jpg",
+        "imageAlt": "",
+        "scrim": 60,
+        "scrimColor": "",
+        "inkColor": "",
+        "accentColor": "",
+        "align": "center",
+        "size": "regular",
+        "height": 0
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-feed-band",
+        "ground": "plain",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-threads",
+            "props": {
+              "id": "try-feed-cards",
+              "heading": "Suggested materials",
+              "intro": "",
+              "rule": true,
+              "source": "feed",
+              "feed": "materials",
+              "limit": 4,
+              "layout": "cards",
+              "cardLabel": "Materials",
+              "emptyMessage": "Nothing here yet."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-next-band",
+        "ground": "raised",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-standing",
+            "props": {
+              "id": "try-standing",
+              "tall": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-split-band",
+        "ground": "plain",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "split-row",
+            "props": {
+              "id": "try-split",
+              "ratio": "even",
+              "align": "start",
+              "gap": "regular",
+              "columns": "stacked",
+              "start": [
+                {
+                  "type": "pt-profile",
+                  "props": {
+                    "id": "try-profile",
+                    "showLinks": true,
+                    "linkLabel": "Read more"
+                  }
+                }
+              ],
+              "end": [
+                {
+                  "type": "pt-calendar",
+                  "props": {
+                    "id": "try-calendar"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-list-band",
+        "ground": "raised",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-threads",
+            "props": {
+              "id": "try-feed-list",
+              "heading": "Recent posts",
+              "intro": "",
+              "rule": true,
+              "source": "author",
+              "feed": "",
+              "limit": 5,
+              "layout": "list",
+              "emptyMessage": "Nothing published yet."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-forum-band",
+        "ground": "plain",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-forum",
+            "props": {
+              "id": "try-forum",
+              "heading": "Forum"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-writing-band",
+        "ground": "raised",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-writing",
+            "props": {
+              "id": "try-writing",
+              "heading": "Writing",
+              "limit": 6,
+              "allLabel": "All writing →",
+              "allHref": "/writing"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-gallery-band",
+        "ground": "plain",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-gallery",
+            "props": {
+              "id": "try-gallery",
+              "heading": "Gallery",
+              "limit": 12,
+              "autoAdvanceSeconds": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-about",
+        "ground": "raised",
+        "rule": true,
+        "padding": "regular",
+        "width": "narrow",
+        "content": [
+          {
+            "type": "section-heading",
+            "props": {
+              "id": "try-about-heading",
+              "title": "About",
+              "eyebrow": "Para Theater",
+              "subtitle": "",
+              "level": "h2",
+              "align": "start",
+              "rule": true
+            }
+          },
+          {
+            "type": "prose",
+            "props": {
+              "id": "try-about-text",
+              "body": "<p>We are perceptual Artist/scientist seers who use art/theater as our primary investigative tool.</p><p>The collective is an informal group of diversely talented artists working together and independently, inspiring one another and collaborating together on many different projects; working as individuals and as a group, across the nation and abroad.</p><p>Our work is in self exploratory reductionist rituals and theatre. We start with work on self and progress to world work</p>",
+              "size": "regular",
+              "align": "start",
+              "measure": true
+            }
+          },
+          {
+            "type": "pt-link",
+            "props": {
+              "id": "try-about-link",
+              "label": "Visit the collective",
+              "href": "https://elkdonis-arts.org",
+              "look": "button"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-pictures",
+        "ground": "plain",
+        "rule": true,
+        "padding": "regular",
+        "width": "wide",
+        "content": [
+          {
+            "type": "pt-heading",
+            "props": {
+              "id": "try-pictures-heading",
+              "text": "Pictures",
+              "level": "2",
+              "rule": true,
+              "align": "left"
+            }
+          },
+          {
+            "type": "picture-wall",
+            "props": {
+              "id": "try-wall",
+              "min": 240,
+              "shape": "square",
+              "gap": "regular",
+              "captionPlace": "below",
+              "captionAt": "bottom-left",
+              "captionShow": "always",
+              "captionWeight": "regular",
+              "captionFont": "caption",
+              "captionSize": "theme",
+              "captionColor": "",
+              "captionScrim": "soft",
+              "pictures": [
+                {
+                  "src": "/api/media/EAC_Network/sunjay/Media/Images/20181117-234733-yt3fbk.jpg",
+                  "alt": "",
+                  "caption": "Picture 1",
+                  "href": "",
+                  "at": "",
+                  "color": ""
+                },
+                {
+                  "src": "/api/media/EAC_Network/sunjay/Media/Images/20210503-1340172-3yz5w5.jpg",
+                  "alt": "",
+                  "caption": "Picture 2",
+                  "href": "",
+                  "at": "",
+                  "color": ""
+                },
+                {
+                  "src": "/api/media/EAC_Network/sunjay/Media/Images/20200922-145533-ths6nr.jpg",
+                  "alt": "",
+                  "caption": "Picture 3",
+                  "href": "",
+                  "at": "",
+                  "color": ""
+                },
+                {
+                  "src": "/api/media/EAC_Network/sunjay/Media/Images/20200922-133836-33xhgk.jpg",
+                  "alt": "",
+                  "caption": "Picture 4",
+                  "href": "",
+                  "at": "",
+                  "color": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "pt-band",
+      "props": {
+        "id": "try-quote-band",
+        "ground": "raised",
+        "rule": true,
+        "padding": "regular",
+        "width": "narrow",
+        "content": [
+          {
+            "type": "quote",
+            "props": {
+              "id": "try-quote",
+              "text": "The collective is committed to using art as the means of inquiry. Each inquiry focuses on a particular question that is grounded in what it is to be human.",
+              "attribution": "Elkdonis Arts Collective",
+              "source": ""
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

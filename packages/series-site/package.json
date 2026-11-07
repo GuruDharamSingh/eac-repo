@@ -1,0 +1,48 @@
+{
+  "name": "@elkdonis/series-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./lib": "./src/lib/series.ts",
+    "./time": "./src/lib/series-time.ts",
+    "./share": "./src/lib/series-share.ts",
+    "./stage": "./src/lib/stage.ts",
+    "./mail": "./src/lib/series-mail.ts",
+    "./note-page": "./src/lib/note-page.ts",
+    "./reminders": "./src/lib/reminders.ts",
+    "./pages": "./src/pages/index.ts",
+    "./routes": "./src/routes/index.ts",
+    "./hub": "./src/hub/index.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./site.css": "./src/site.css"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "next": "^15 || ^16",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "dependencies": {
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
+    "@elkdonis/newsletter": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5.3.3"
+  }
+}

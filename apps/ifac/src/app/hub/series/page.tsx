@@ -1,5 +1,5 @@
 import { requireOrgMember } from "@/lib/auth";
-import { SeriesPageEditorPage } from "@/components/hub/SeriesPageEditorPage";
+import { SeriesPageEditorPage } from "@elkdonis/series-site/hub";
 
 /**
  * The public Series page's settings (members read, organisers write;
@@ -9,5 +9,5 @@ export const dynamic = "force-dynamic";
 
 export default async function HubSeriesIndexPage() {
   await requireOrgMember("/hub/series");
-  return <SeriesPageEditorPage />;
+  return <SeriesPageEditorPage defaultHeading="Series from IFAC" />;
 }

@@ -3,6 +3,7 @@ import { requireOrgEditor } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { listPages } from "@/lib/puck/store";
+import { LANDING_SLUG } from "@/lib/puck/landing";
 
 /**
  * The list of visually-edited pages.
@@ -25,7 +26,7 @@ export default async function StudioIndex({
   const { slug } = await searchParams;
   if (slug && isValidSlug(slug)) redirect(`/studio/${slug}`);
 
-  const pages = await listPages();
+  const pages = (await listPages()).filter((p) => p.slug !== LANDING_SLUG);
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1.25rem" }}>
@@ -57,6 +58,8 @@ export default async function StudioIndex({
                 <Link href={`/studio/${page.slug}`} style={{ fontWeight: 600 }}>
                   {page.slug}
                 </Link>
+                {" · "}
+                <Link href={`/studio/${page.slug}/canvas`}>Canvas</Link>
                 <div style={{ fontSize: ".8rem", color: "var(--muted-foreground, #666)" }}>
                   Last published {new Date(page.updatedAt).toLocaleString()}
                 </div>

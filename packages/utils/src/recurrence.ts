@@ -98,6 +98,28 @@ export function isWithinCurrentCycle(
 // which they would the moment a second copy of the interval table appeared.
 // ============================================================================
 
+/**
+ * The `k`th monthly occurrence: the same weekday in the same week of the month
+ * (2026-11-02), read in UTC. Like the weekly grid it keeps the UTC hour, so a
+ * cell can be an hour off the series clock across daylight saving.
+ */
+function monthlyOccurrence(start: Date, k: number): Date {
+  const week = Math.ceil(start.getUTCDate() / 7);
+  const first = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + k, 1));
+  const target = 1 + ((start.getUTCDay() - first.getUTCDay() + 7) % 7) + (week - 1) * 7;
+  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  return new Date(
+    Date.UTC(
+      first.getUTCFullYear(),
+      first.getUTCMonth(),
+      target > last ? target - 7 : target,
+      start.getUTCHours(),
+      start.getUTCMinutes(),
+      start.getUTCSeconds()
+    )
+  );
+}
+
 /** The minimum a thing needs for the grid to place it. */
 export interface Occurring {
   scheduledAt: string | Date | null;
@@ -133,6 +155,15 @@ export function expandOccurrences<T extends Occurring>(
     const pattern = item.recurrencePattern;
     if (!pattern || pattern === "NONE") {
       if (start >= from && start < to) out.push({ item, at: start });
+      continue;
+    }
+
+    if (pattern.toUpperCase() === "MONTHLY") {
+      for (let k = 0; k < maxPerItem; k++) {
+        const at = monthlyOccurrence(start, k);
+        if (at >= to) break;
+        if (at >= from) out.push({ item, at });
+      }
       continue;
     }
 

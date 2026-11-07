@@ -18,14 +18,18 @@
  */
 
 import {
+  collectedFromSession,
   getStripeProvider,
   isStripeConfigured,
   type StripeCheckoutLine,
+  type StripeCollectedCustomer,
+  type StripeCollectOptions,
 } from "@elkdonis/payments";
 import {
   confirmOrderPaid,
   cancelOrder,
   recordStripeCheckout,
+  recordCheckoutCustomer,
   getPayoutIdentity,
   setPayoutIdentity,
   markStripeAccountOnboarded,
@@ -120,6 +124,14 @@ export async function startStripeCheckout(input: {
   cancelUrl: string;
   /** Absolute image URLs only; Stripe ignores anything else. */
   imageBase?: string | null;
+  /**
+   * Optional (2026-11-07): have Stripe's page ask for the buyer's email,
+   * shipping address and/or phone, for an order created without them ("Buy
+   * now"). What they enter is written onto the order by syncStripeOrder and
+   * the webhook (recordCheckoutCustomer: fills blanks only). Omitted = the
+   * session every caller always got.
+   */
+  collect?: StripeCollectOptions | null;
 }): Promise<{ url: string; sessionId: string }> {
   const stripe = requireStripe();
   const order = await getOrderById(input.orderId);
@@ -168,6 +180,7 @@ export async function startStripeCheckout(input: {
       destinationAccountId,
       applicationFeeMinor,
       expiresInMinutes: 60,
+      ...(input.collect ? { collect: input.collect } : {}),
     });
   } catch (err) {
     // Stripe declining the SESSION (as opposed to the card, which happens on
@@ -203,11 +216,18 @@ export async function syncStripeOrder(orderId: string): Promise<Order | null> {
   if (!stripe) return order;
   const sessionId = (order.paymentMetadata?.stripe as { sessionId?: string } | undefined)?.sessionId;
   if (!sessionId) return order;
-  if (!(UNPAID_ORDER_STATUSES as readonly string[]).includes(order.status)) return order;
+  const unpaid = (UNPAID_ORDER_STATUSES as readonly string[]).includes(order.status);
+  // An order created without an email (Stripe's page collected it) that is
+  // already paid, e.g. confirmed by a webhook running code that predates
+  // recordCheckoutCustomer, still gets the buyer's details filled in here.
+  const missingBuyer = !order.customerEmail?.trim();
+  if (!unpaid && !missingBuyer) return order;
 
   try {
     const s = await stripe.retrieveCheckoutSession(sessionId);
-    if (s.paymentStatus === "paid") {
+    // Before confirming, so the seller's sale notice carries the email.
+    const filled = await applyCollected(orderId, s.collected ?? null);
+    if (unpaid && s.paymentStatus === "paid") {
       return await confirmOrderPaid({
         orderId,
         confirmedByUserId: null,
@@ -216,10 +236,31 @@ export async function syncStripeOrder(orderId: string): Promise<Order | null> {
         notes: `Stripe session ${sessionId} reconciled on return`,
       });
     }
+    if (filled) return (await getOrderById(orderId)) ?? order;
   } catch (err) {
     console.error(`[checkout] syncStripeOrder(${orderId}):`, err);
   }
   return order;
+}
+
+/**
+ * Write what the buyer entered on Stripe's page onto the order (blanks only;
+ * see recordCheckoutCustomer). Never throws: a failure here must not stop a
+ * paid order from being confirmed.
+ */
+async function applyCollected(orderId: string, c: StripeCollectedCustomer | null): Promise<boolean> {
+  if (!c) return false;
+  try {
+    return await recordCheckoutCustomer({
+      orderId,
+      email: c.email,
+      name: c.name,
+      shippingAddress: c.shippingAddress,
+    });
+  } catch (err) {
+    console.error(`[checkout] recordCheckoutCustomer(${orderId}):`, err);
+    return false;
+  }
 }
 
 /**
@@ -258,6 +299,9 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
         const orderId = s.metadata?.orderId ?? s.client_reference_id;
         if (orderId && s.payment_status === "paid") {
           const pi = typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent?.id;
+          // Who the buyer is, when Stripe's page asked (Buy now): before the
+          // confirmation, so the seller's sale notice carries their email.
+          await applyCollected(orderId, collectedFromSession(s));
           try {
             await confirmOrderPaid({
               orderId,

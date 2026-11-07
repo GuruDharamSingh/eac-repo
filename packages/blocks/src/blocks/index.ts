@@ -8,6 +8,9 @@ export {
   type ThreadFeedItem,
 } from "./thread-feed";
 export { SplitRow, splitRow, type SplitRowProps } from "./split-row";
+export { StickySplit, stickySplit, type StickySplitProps } from "./sticky-split";
+export { TabSet, tabSet, type TabSetProps } from "./tab-set";
+export { AccordionSet, accordionSet, type AccordionSetProps } from "./accordion-set";
 export { Grid, grid, type GridProps } from "./grid";
 export { StoreFrame, storeFrame, type StoreFrameProps } from "./store-frame";
 export { StoreHeader, storeHeader, type StoreHeaderProps } from "./store-header";
@@ -78,3 +81,4 @@ export {
 } from "./person-memberships";
 export { PersonStore, personStore, type PersonStoreProps } from "./person-store";
 export { OfferingSpotlight, offeringSpotlight, type OfferingSpotlightProps } from "./offering-spotlight";
+export { FeaturedPerson, featuredPerson, type FeaturedPersonProps, type FeaturedWho } from "./featured-person";

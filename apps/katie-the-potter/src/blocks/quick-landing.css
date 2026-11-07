@@ -1,0 +1,190 @@
+/*
+  Quick landing — tokens only (no Tailwind), so it draws the same on the
+  published page and inside the editor's iframe (the root layout imports it).
+
+  Every colour comes from a --blk-* token or from a --ktp-hero-* variable the
+  block sets from its fields. Sizes likewise. Change the look in the studio,
+  not here.
+*/
+
+.ktp-hero {
+  --ktp-hero-ink: var(--blk-fg);
+  --ktp-hero-ground: transparent;
+  position: relative;
+  isolation: isolate;
+  min-height: var(--ktp-hero-minh, auto);
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  background: var(--ktp-hero-ground);
+  color: var(--ktp-hero-ink);
+  font-family: var(--blk-font-body);
+}
+
+/* Behind the words: the picture fills the block, the wash sits on it, and the
+   ink defaults to the light band ink (an author may still set a dark one). */
+.ktp-hero[data-place="background"] {
+  --ktp-hero-ink: var(--blk-band-fg);
+  background: var(--blk-band);
+}
+.ktp-hero[data-place="background"] .ktp-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+.ktp-hero-wash {
+  position: absolute;
+  inset: 0;
+  background: var(--ktp-hero-wash);
+  z-index: -1;
+}
+
+.ktp-hero-inner {
+  width: min(100%, var(--blk-measure));
+  margin-inline: auto;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 4vw, 3rem);
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+}
+.ktp-hero[data-place="right"] .ktp-hero-inner,
+.ktp-hero[data-place="left"] .ktp-hero-inner {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+.ktp-hero[data-place="left"] .ktp-hero-figure {
+  order: -1;
+}
+@media (max-width: 760px) {
+  .ktp-hero[data-place="right"] .ktp-hero-inner,
+  .ktp-hero[data-place="left"] .ktp-hero-inner {
+    grid-template-columns: 1fr;
+  }
+  .ktp-hero[data-place="left"] .ktp-hero-figure {
+    order: 0;
+  }
+}
+
+.ktp-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 36rem;
+}
+.ktp-hero[data-align="center"] .ktp-hero-copy {
+  text-align: center;
+  align-items: center;
+  margin-inline: auto;
+}
+.ktp-hero[data-align="center"][data-place="none"] .ktp-hero-inner,
+.ktp-hero[data-align="center"][data-place="background"] .ktp-hero-inner {
+  justify-items: center;
+}
+
+.ktp-hero-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blk-accent-ink);
+}
+.ktp-hero[data-place="background"] .ktp-hero-kicker {
+  color: var(--ktp-hero-ink);
+  opacity: 0.85;
+}
+
+.ktp-hero-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-weight: 400;
+  font-size: var(--ktp-hero-title-size);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.ktp-hero[data-title="italic"] .ktp-hero-title {
+  font-style: italic;
+}
+@media (max-width: 760px) {
+  .ktp-hero-title {
+    font-size: min(var(--ktp-hero-title-size), 11vw);
+  }
+}
+
+.ktp-hero-lede {
+  margin: 0;
+  font-size: var(--ktp-hero-lede-size);
+  line-height: 1.55;
+  color: var(--ktp-hero-ink);
+  opacity: 0.86;
+}
+
+.ktp-hero-actions {
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+.ktp-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--blk-accent);
+  background: var(--blk-accent);
+  color: var(--blk-on-accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.ktp-hero-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--blk-accent) 70%, transparent);
+}
+.ktp-hero[data-cta="outline"] .ktp-hero-cta {
+  background: transparent;
+  color: var(--blk-accent-ink);
+  border-color: currentColor;
+}
+.ktp-hero[data-place="background"][data-cta="outline"] .ktp-hero-cta {
+  color: var(--ktp-hero-ink);
+}
+.ktp-hero-link {
+  color: var(--ktp-hero-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
+}
+
+/* The side picture. Its shape and corner size are fields. */
+.ktp-hero-figure {
+  margin: 0;
+  min-width: 0;
+}
+.ktp-hero-figure .ktp-hero-img {
+  display: block;
+  /* A ground behind a cut-out picture (a transparent PNG), the studio-wall
+     colours of the sample, mixed toward the site's own tokens so Site style
+     tints reach it. An opaque photo covers it entirely. */
+  background: linear-gradient(180deg, color-mix(in srgb, #d9c8b0 78%, var(--blk-bg-soft)), color-mix(in srgb, #8a6a50 85%, var(--blk-fg)));
+  width: 100%;
+  height: auto;
+  max-height: min(78vh, 720px);
+  object-fit: cover;
+  aspect-ratio: 4 / 5;
+}
+.ktp-hero[data-shape="rounded"] .ktp-hero-figure .ktp-hero-img {
+  border-radius: var(--ktp-hero-radius);
+}
+.ktp-hero[data-shape="arch"] .ktp-hero-figure .ktp-hero-img {
+  border-radius: 999px 999px var(--ktp-hero-radius) var(--ktp-hero-radius);
+}
+.ktp-hero[data-shape="square"] .ktp-hero-figure .ktp-hero-img {
+  border-radius: 0;
+}

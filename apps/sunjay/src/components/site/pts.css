@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Para Theater public site (2026-11-02). Plain CSS on the shared series tokens: `.pts` beside
+   `.ifs` overrides `--ifs-*` (packages/series-site/src/site.css), so the series pages take this
+   site's type, colour and square corners without their own markup.
+
+   Contrast against --ifs-bg #101214: ink #f1ede4 15.9:1, muted #bdb6a8 9.4:1,
+   faint #8f897d 5.4:1, saffron text #e4cf9c 12.1:1; #101214 on saffron fill #d9c08a 10.3:1.
+   ========================================================================== */
+
+:root { --pts-header-h: 60px; }
+
+/* Two classes: site.css loads after this file and `.ifs` would otherwise win the tokens. */
+.ifs.pts {
+  --ifs-bg: #101214;
+  --ifs-bg-2: #16191c;
+  --ifs-bg-3: #1e2225;
+  --ifs-line: #2a2f33;
+  --ifs-line-strong: #41484d;
+  --ifs-ink: #f1ede4;
+  --ifs-muted: #bdb6a8;
+  --ifs-faint: #8f897d;
+  --ifs-gold: #d9c08a;
+  --ifs-gold-text: #e4cf9c;
+  --ifs-gold-on: #101214;
+  --ifs-frame: #5d5439;
+  --ifs-frame-soft: #2d291d;
+  --ifs-serif: var(--font-fraunces), Georgia, serif;
+  --ifs-sans: var(--font-spectral), Georgia, serif;
+  --ifs-radius: 0;
+  min-height: 0;
+}
+.pts .ifs-btn { border-radius: 0; }
+.pts h1, .pts h2, .pts h3 { text-wrap: balance; }
+.pts p { text-wrap: pretty; }
+
+/* ── a page at a time ─────────────────────────────────────────────────── */
+
+/* Each panel fills the screen under the header. Mandatory on a screen large enough to hold one; a phone
+   or a short window scrolls with proximity, so a panel taller than the screen stays readable. */
+html:has(.pts-snap) { scroll-padding-top: var(--pts-header-h); scroll-snap-type: y proximity; }
+@media (min-width: 900px) and (min-height: 640px) {
+  html:has(.pts-snap) { scroll-snap-type: y mandatory; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.pts-snap) { scroll-behavior: smooth; }
+}
+.pts-snap > .pts-panel { scroll-snap-align: start; scroll-snap-stop: always; }
+html:has(.pts-snap) .pts-footer { scroll-snap-align: end; }
+
+.pts-panel {
+  min-height: calc(100svh - var(--pts-header-h));
+  display: grid;
+  align-content: center;
+  padding-block: clamp(28px, 5svh, 64px);
+}
+.pts-panel--line { border-top: 1px solid var(--ifs-line); }
+.pts-panel--flush { padding: 0; align-content: stretch; }
+.pts-wrap { width: min(var(--ifs-max), calc(100% - 32px)); margin-inline: auto; }
+.pts-cq { container-type: inline-size; }
+.pts-stack { display: grid; gap: 20px; align-content: start; min-width: 0; }
+.pts-measure { max-width: 68ch; }
+.pts-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+.pts-head h2, .pts-h2 { font-size: clamp(1.9rem, 3.4vw, 3rem); }
+.pts-h1 { font-size: clamp(2.4rem, 5vw, 4rem); }
+.pts-lede { font-size: 1.2rem; line-height: 1.6; color: var(--ifs-muted); max-width: 54ch; }
+.pts-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.pts-split--center { align-items: center; }
+@container (max-width: 760px) { .pts-split { grid-template-columns: minmax(0, 1fr); } }
+.pts-note { display: grid; gap: 14px; justify-items: start; padding: 28px; background: var(--ifs-bg-2); border: 1px solid var(--ifs-line); }
+
+/* ── header and footer ────────────────────────────────────────────────── */
+
+.pts-header {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in oklab, #101214 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #2a2f33;
+  font-family: var(--font-spectral), Georgia, serif;
+}
+.pts-header__row { display: flex; align-items: center; gap: 28px; min-height: var(--pts-header-h); width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+.pts-header__brand { font-family: var(--font-fraunces), Georgia, serif; font-size: 1.25rem; font-weight: 600; color: #e4cf9c; white-space: nowrap; }
+.pts-header__nav { display: flex; gap: 4px; margin-inline: auto; }
+.pts-header__tools { display: flex; align-items: center; gap: 4px; }
+.pts-header a:not(.pts-header__brand) { padding: 8px 12px; color: #bdb6a8; font-size: 1rem; }
+.pts-header a:not(.pts-header__brand):hover, .pts-header a[aria-current] { color: #f1ede4; }
+.pts-header a[aria-current] { box-shadow: inset 0 -2px 0 #d9c08a; }
+.pts-header a.pts-header__cta { margin-left: 6px; color: #101214; background: #d9c08a; font-weight: 600; }
+.pts-header a.pts-header__cta:hover { color: #101214; background: #e4cf9c; }
+.pts-header__toggle { display: none; margin-left: auto; padding: 8px; color: #e4cf9c; }
+.pts-header__sheet { display: grid; padding: 4px 16px 16px; border-top: 1px solid #2a2f33; }
+.pts-header__sheet a { padding-block: 12px; }
+.pts-header__sheet a.pts-header__cta { margin: 8px 0 0; text-align: center; }
+@media (max-width: 760px) {
+  .pts-header__nav, .pts-header__tools { display: none; }
+  .pts-header__toggle { display: block; }
+}
+
+.pts-footer { padding: 28px 16px; background: #0b0c0e; border-top: 1px solid #2a2f33; color: #bdb6a8; font-family: var(--font-spectral), Georgia, serif; }
+.pts-footer__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 28px; width: min(1180px, 100%); margin-inline: auto; }
+.pts-footer__line { font-family: var(--font-fraunces), Georgia, serif; font-size: 1.15rem; color: #e4cf9c; }
+.pts-footer nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.pts-footer a:hover { color: #f1ede4; }
+.pts-footer__note { width: min(1180px, 100%); margin: 14px auto 0; font-size: 0.9rem; color: #8f897d; }
+
+/* ── landing ──────────────────────────────────────────────────────────── */
+
+.pts-hero { padding: 0; align-content: stretch; grid-template-rows: minmax(190px, 1fr) auto; gap: 22px; padding-bottom: 22px; }
+.pts-banner {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; align-items: end;
+  background: radial-gradient(120% 140% at 15% 0%, #33302a 0%, #16191c 60%);
+}
+.pts-banner--tall { grid-row: 1 / -1; }
+.pts-banner > img, .pts-banner img[data-landing-part] { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; }
+/* A photograph is arbitrary, so the words sit on a scrim: #f1ede4 on the darkest stop 14:1. */
+.pts-banner::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, color-mix(in oklab, #101214 88%, transparent), color-mix(in oklab, #101214 35%, transparent)); }
+.pts-banner__words { width: min(var(--ifs-max), calc(100% - 32px)); margin-inline: auto; padding-block: 28px; }
+.pts-banner h1 { font-size: clamp(2.2rem, 5.2vw, 4.4rem); line-height: 1.04; }
+.pts-banner__sub { margin-top: 8px; font-size: clamp(1.05rem, 1.7vw, 1.35rem); font-style: italic; color: var(--ifs-gold-text); }
+.pts-banner__edit { position: absolute; top: 14px; right: 14px; padding: 8px 14px; background: #101214; border: 1px solid var(--ifs-line-strong); color: var(--ifs-ink); cursor: pointer; }
+.pts-banner__edit:hover { border-color: var(--ifs-gold); }
+.pts-hero__stage .ifs-stage { min-height: 400px; }
+/* A series with no cover: the next session's date, in words, where the picture would be. */
+.pts .ifs-stage__media.is-blank { justify-content: center; gap: 12px; padding: 24px; text-align: center; background: radial-gradient(90% 90% at 50% 40%, #2a271f, var(--ifs-bg-2) 75%); }
+.pts .ifs-stage__media.is-blank .ifs-stage__blank { display: none; }
+.pts .ifs-stage__media.is-blank .ifs-stage__tag { position: static; align-self: center; padding: 0; background: none; border: 0; }
+.pts .ifs-stage__media.is-blank .ifs-stage__caption { padding: 0; background: none; border: 0; }
+.pts .ifs-stage__media.is-blank .ifs-stage__caption .t { font-size: clamp(1.8rem, 3vw, 2.6rem); }
+
+/* `.ifs p` and `.ifs h2` (0,1,1) outrank these single-class rules from site.css. */
+.pts .ifs-week__crumb { margin: 22px 0 10px; }
+.pts .ifs-week__h2 { margin-top: 24px; margin-bottom: 8px; }
+.pts .ifs-week__prose { margin-top: 12px; }
+.pts .ifs-subtitle { margin-top: 8px; }
+
+.pts-dialog { --ink: var(--ifs-ink); --ink-soft: var(--ifs-muted); --line: var(--ifs-line-strong); --gold: var(--ifs-gold-text); width: min(720px, calc(100vw - 32px)); margin: auto; padding: 24px; background: var(--ifs-bg-2); color: var(--ifs-ink); border: 1px solid var(--ifs-line-strong); }
+.pts-dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+.pts-dialog h2 { margin-bottom: 16px; font-size: 1.6rem; }
+.pts-dialog__field { display: grid; gap: 6px; margin-top: 16px; }
+.pts-dialog__field input { padding: 10px 12px; background: var(--ifs-bg); border: 1px solid var(--ifs-line-strong); color: var(--ifs-ink); }
+.pts-dialog__problem { margin-top: 12px; color: #f2a79b; }
+.pts-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ── about ────────────────────────────────────────────────────────────── */
+
+.pts-about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.pts-person {
+  position: relative; overflow: hidden; isolation: isolate;
+  /* 9:16, no taller than the screen under the header. */
+  width: min(100%, calc((100svh - var(--pts-header-h) - 64px) * 9 / 16));
+  aspect-ratio: 9 / 16;
+  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--ifs-bg-3); border: 1px solid var(--ifs-line);
+}
+/* The picture above the words, so a face is not under them. */
+.pts-person img { width: 100%; height: 100%; min-height: 0; object-fit: cover; object-position: center 75%; }
+.pts-person__blank { display: grid; place-items: center; font-family: var(--ifs-serif); font-size: 6rem; color: var(--ifs-faint); }
+.pts-person__words { display: grid; gap: 8px; padding: 20px; }
+.pts-person h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.1; }
+.pts-person p { font-size: 1rem; line-height: 1.45; }
+.pts-person__links { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.pts-person__links a { color: var(--ifs-gold-text); text-decoration: underline; text-underline-offset: 3px; }
+.pts-about__org { display: grid; gap: 24px; min-width: 0; }
+.pts-orgcard { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; padding: 22px 26px; background: var(--ifs-bg-2); border: 1px solid var(--ifs-line); border-left: 3px solid var(--ifs-gold); }
+.pts-orgcard h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); }
+.pts-orgcard > p { max-width: 36ch; color: var(--ifs-muted); font-style: italic; }
+.pts-prose { display: grid; gap: 14px; font-size: 1.1rem; line-height: 1.65; max-width: 68ch; }
+@container (max-width: 760px) {
+  .pts-about { grid-template-columns: minmax(0, 1fr); }
+  .pts-person { width: min(100%, 360px); margin-inline: auto; }
+}
+.pts-threads { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+@media (max-width: 760px) { .pts-threads { grid-auto-flow: row; } }
+.pts-threadcard { position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: end; min-height: 44svh; padding: clamp(20px, 4vw, 48px); background: radial-gradient(120% 120% at 10% 0%, #33302a, #16191c 65%); border-inline-end: 1px solid var(--ifs-line); }
+.pts-threadcard img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+.pts-threadcard:hover img { transform: scale(1.03); }
+.pts-threadcard::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, color-mix(in oklab, #101214 90%, transparent) 25%, color-mix(in oklab, #101214 25%, transparent)); }
+.pts-threadcard__words { display: grid; gap: 10px; max-width: 46ch; }
+.pts-threadcard b { font-family: var(--ifs-serif); font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.6rem); line-height: 1.1; text-wrap: balance; }
+.pts-threadcard:hover b { color: var(--ifs-gold-text); }
+.pts-quote { padding-left: 18px; border-left: 3px solid var(--ifs-gold); font-family: var(--ifs-serif); font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.4; }
+
+/* ── community ────────────────────────────────────────────────────────── */
+
+/* The meeting's cover is whatever was uploaded; it may not take the panel. */
+.pts-standing img { max-height: 42svh; width: 100%; object-fit: contain; }
+
+.pts-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.pts-links a { display: grid; gap: 2px; height: 100%; padding: 14px 16px; background: var(--ifs-bg-2); border: 1px solid var(--ifs-line); }
+.pts-links a:hover { border-color: var(--ifs-gold); }
+.pts-links b { font-family: var(--ifs-serif); font-weight: 600; font-size: 1.1rem; }
+.pts-links span { color: var(--ifs-muted); font-size: 0.95rem; }
+
+/* Panels arrive with the scroll where the browser can tie an animation to it. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .pts-panel--line > .pts-wrap { animation: pts-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+    @keyframes pts-rise { from { opacity: 0.25; translate: 0 28px; } }
+  }
+}
+
+/* Empty covers in this site's colours; site.css draws them purple. */
+.pts .ifs-srow__thumb.is-empty, .pts .isx-card__blank, .pts .isx-shelf__cover.is-empty { background: radial-gradient(80% 80% at 50% 35%, #2a271f, var(--ifs-bg-2)); }
+
+/* The planner and Series page settings as hub pages. */
+.ifac-series-page { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding-block: 18px 40px; }
+.ifac-series-page__crumb { margin-bottom: 12px; color: #bdb6a8; }
+.ifac-series-page__crumb a:hover { color: #f1ede4; }
+
+/* The picture library inside the banner dialog. */
+.pts-dialog .eac-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 220px; margin-block: 8px; overflow-y: auto; }
+.pts-dialog .eac-picker-grid button { aspect-ratio: 1; overflow: hidden; border: 1px solid var(--ifs-line); background: var(--ifs-bg); }
+.pts-dialog .eac-picker-grid button:hover { border-color: var(--ifs-gold); }
+.pts-dialog .eac-picker-grid img { width: 100%; height: 100%; object-fit: cover; }

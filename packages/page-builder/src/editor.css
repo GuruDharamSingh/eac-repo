@@ -267,3 +267,208 @@
   border: 0;
   border-top: 1px solid #e1e4ea;
 }
+
+/* ── Parts of a block (parts/picker.tsx, parts/panel.tsx) ───────────────────
+   Marks are drawn in the canvas iframe, which mirrors this sheet. Puck's own
+   azure for the selected part, a lighter dash for the others. The label sits
+   above the part, or inside it when the part touches the top of the canvas. */
+.eac-part-mark {
+  position: fixed;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  outline: 1px dashed color-mix(in srgb, var(--puck-color-azure-06, #6499cf) 85%, transparent);
+  outline-offset: -1px;
+  pointer-events: none;
+}
+.eac-part-mark[data-on] {
+  outline: 2px solid var(--puck-color-azure-04, #0158ad);
+  outline-offset: 0;
+}
+.eac-part-mark-label {
+  position: absolute;
+  top: -20px;
+  left: -2px;
+  padding: 0 6px;
+  border-radius: 4px 4px 4px 0;
+  /* White on azure-04: 6.3:1. Fixed, not inherited: the site's own type applies in the canvas. */
+  background: var(--puck-color-azure-04, #0158ad);
+  color: #ffffff;
+  font: 600 11px/18px system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+.eac-part-mark-label[data-below] {
+  top: 2px;
+  left: 2px;
+  border-radius: 4px;
+}
+
+.eac-parts {
+  display: grid;
+  gap: var(--puck-space-3, 12px);
+  padding: var(--puck-space-4, 16px);
+  color: var(--puck-color-text, #000);
+  font-family: var(--puck-font-family);
+  font-size: 13px;
+}
+.eac-parts-bar {
+  padding-bottom: var(--puck-space-3, 12px);
+  border-bottom: 1px solid var(--puck-color-border, #dcdcdc);
+}
+.eac-parts-back,
+.eac-parts-reset,
+.eac-parts-chip,
+.eac-parts-choices button {
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-m, 4px);
+  background: var(--puck-color-surface, #fff);
+  color: var(--puck-color-text, #000);
+  font: inherit;
+  cursor: pointer;
+}
+.eac-parts-back {
+  padding: 5px 10px;
+  /* Puck's azure-04 on white: 6.3:1. */
+  color: #0158ad;
+  font-weight: 600;
+}
+.eac-parts-head { display: grid; gap: 2px; }
+.eac-parts-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.eac-parts-sub {
+  margin: 0;
+  color: var(--puck-color-text-secondary, #5a5a5a);
+  font-size: 12px;
+}
+.eac-parts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.eac-parts-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.eac-parts-chip[aria-pressed="true"],
+.eac-parts-choices button[aria-pressed="true"] {
+  border-color: #0158ad;
+  background: var(--puck-color-azure-11, #e7eef7);
+  color: #0158ad;
+  font-weight: 600;
+}
+.eac-parts-count { color: var(--puck-color-text-secondary, #5a5a5a); font-weight: 400; }
+.eac-parts-section {
+  display: grid;
+  gap: 8px;
+  padding-top: var(--puck-space-3, 12px);
+  border-top: 1px solid var(--puck-color-border, #dcdcdc);
+}
+.eac-parts-section-title {
+  margin: 0;
+  color: var(--puck-color-text-secondary, #5a5a5a);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.eac-parts-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.eac-parts-label { color: var(--puck-color-text, #000); font-size: 13px; }
+.eac-parts-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.eac-parts-input input[type="text"],
+.eac-parts-input select,
+.eac-parts-css textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--puck-field-color-border, var(--puck-color-border, #dcdcdc));
+  border-radius: var(--puck-field-radius, var(--puck-radius-m, 4px));
+  background: var(--puck-field-color-bg, var(--puck-color-surface, #fff));
+  color: var(--puck-field-color-text, var(--puck-color-text, #000));
+  font: inherit;
+  font-size: 13px;
+}
+.eac-parts-css textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+.eac-parts-input input:focus-visible,
+.eac-parts-input select:focus-visible,
+.eac-parts-css textarea:focus-visible,
+.eac-parts button:focus-visible {
+  outline: 2px solid #0158ad;
+  outline-offset: 1px;
+}
+.eac-parts-unit {
+  flex: none;
+  color: var(--puck-color-text-secondary, #5a5a5a);
+  font-size: 12px;
+}
+.eac-parts-color input[type="color"] {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-m, 4px);
+  background: var(--puck-color-surface, #fff);
+  cursor: pointer;
+}
+.eac-parts-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.eac-parts-choices button { padding: 3px 8px; font-size: 12px; }
+.eac-parts-switch input { justify-self: start; width: 16px; height: 16px; }
+.eac-parts-css { display: grid; gap: 6px; }
+.eac-parts-kept,
+.eac-parts-refused {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.eac-parts-kept { color: var(--puck-color-text-secondary, #5a5a5a); }
+/* #a4161a on white: 7.5:1. */
+.eac-parts-refused { color: #a4161a; }
+.eac-parts-foot { padding-top: var(--puck-space-3, 12px); border-top: 1px solid var(--puck-color-border, #dcdcdc); }
+.eac-parts-reset { padding: 5px 10px; }
+.eac-parts-reset:disabled { color: var(--puck-color-grey-07, #ababab); cursor: default; }
+.eac-parts-back:hover,
+.eac-parts-reset:hover:not(:disabled),
+.eac-parts-chip:hover,
+.eac-parts-choices button:hover {
+  background: var(--puck-color-azure-11, #f3f6fb);
+}
+/* A part pointed at from the layer tree. */
+.eac-part-mark[data-over] {
+  outline: 2px dashed var(--puck-color-azure-04, #0158ad);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--puck-color-azure-04, #0158ad) 8%, transparent);
+}
+/* A look panel mounted from another package (direct-edit's), in Puck's right column. */
+.eac-look-panel.de-panel { height: auto; min-height: 100%; }
+.eac-parts-bar-pad { padding: var(--puck-space-3, 12px) var(--puck-space-4, 16px); font-family: var(--puck-font-family); font-size: 13px; }
+/* Puck's right column is narrower than the canvas's panel (274px against 330px): a
+   narrower label column and Width/Height menu, or a four-digit width shows one digit. */
+.eac-look-panel .de-row:not(.bare) { grid-template-columns: 70px minmax(0, 1fr) 22px; gap: 4px 6px; }
+.eac-look-panel .de-align .de-row { grid-template-columns: minmax(0, 1fr) 22px; }
+.eac-look-panel .de-dim select { flex: 0 0 62px; width: 62px; }
+.eac-look-panel .de-dim .de-num { flex: 1 1 56px; min-width: 56px; padding: 0 4px; }

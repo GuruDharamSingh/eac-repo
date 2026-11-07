@@ -15,7 +15,7 @@ import { getTourById, type TourRoute } from "@/lib/tours";
  * from the rows themselves.
  *
  * Walking route: OSRM foot geometry between the meeting point and the stops,
- * stored in threads.metadata.tour.route. The public OSRM demo server is used;
+ * stored in threads.metadata.tour.route. FOSSGIS's public foot router is used;
  * it has no SLA, so a failure keeps the previous route.
  */
 
@@ -74,7 +74,9 @@ export async function refreshTourRoute(threadId: string): Promise<TourRoute | nu
   let legs: LngLat[][] = points.slice(1).map((p, i) => [points[i]!, p]);
   try {
     const path = points.map((p) => `${p[0]},${p[1]}`).join(";");
-    const res = await fetch(`https://router.project-osrm.org/route/v1/foot/${path}?overview=full&geometries=geojson&steps=false`, {
+    // FOSSGIS's foot profile (OSRM API): the project-osrm.org demo answers every profile with car routing, which
+    // skips footbridges such as the Pont des Arts. Same router as the ElkTourUnity films (claude, 2026-11-01).
+    const res = await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${path}?overview=full&geometries=geojson&steps=false`, {
       signal: AbortSignal.timeout(8000),
       headers: { "User-Agent": "elkdonis-tours/1.0 (route cache)" },
     });

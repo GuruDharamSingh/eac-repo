@@ -100,7 +100,8 @@ export async function loadThreadFeed(
       coverImageUrl: row.cover_image_url,
       scheduledAt: row.scheduled_at,
       durationMinutes: row.duration_minutes,
-      location: row.location,
+      // Rows reach signed-out visitors. A join link pasted as the place is not a place, and it can carry the meeting's password.
+      location: row.location && /https?:\/\//i.test(row.location) ? null : row.location,
       authorName: row.author_name,
       accent: row.feed_accent,
     }));

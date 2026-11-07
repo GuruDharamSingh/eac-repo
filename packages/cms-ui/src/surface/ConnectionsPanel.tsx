@@ -18,6 +18,10 @@ import type { SurfaceConnection, SurfaceConnectionsConnectors } from "./types";
 // 2026-10-29: Facebook & Instagram and Threads use the collective's own apps,
 // so they need no client form: one click creates the row and sends the
 // person to Meta's consent screen. The item then lists the Pages found.
+//
+// 2026-11-01: YouTube does the same when the server has the collective's
+// Google client (`youtubeCollective`); the paste-a-client form stays behind
+// "Use your own Google client".
 // ============================================================================
 
 const PROVIDER_NAME: Record<SurfaceConnection["provider"], string> = {
@@ -39,6 +43,23 @@ const STATUS_LABEL: Record<SurfaceConnection["status"], string> = {
   error: "Needs attention",
 };
 
+/** What each audit row means, in the person's words (connection_events, 2026-11-01). */
+const EVENT_LABEL: Record<string, string> = {
+  created: "connection added",
+  connected: "connected",
+  connect_failed: "connection failed",
+  token_used: "used to post or read",
+  tested: "tested",
+  page_attached: "Page attached",
+  channel_set: "set as an organisation's channel",
+  channel_cleared: "no longer an organisation's channel",
+  removed: "removed",
+  revoke_attempted: "access revoked at the platform",
+  refreshed: "token renewed",
+  refresh_failed: "renewal failed, reconnect needed",
+  expiry_warned: "reconnect reminder sent",
+};
+
 export interface ConnectionsPanelProps {
   api: SurfaceConnectionsConnectors;
   /** Where Google sends the person back to after consent (an absolute URL). */
@@ -53,10 +74,12 @@ export interface ConnectionsPanelProps {
 export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded, intro }: ConnectionsPanelProps) {
   const [list, setList] = React.useState<SurfaceConnection[] | null>(null);
   const [redirectUri, setRedirectUri] = React.useState<string>("");
+  const [youtubeCollective, setYoutubeCollective] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pageRef, setPageRef] = React.useState<Record<string, string>>({});
   const [orgs, setOrgs] = React.useState<Array<{ orgId: string; name: string }>>([]);
   const [channels, setChannels] = React.useState<Array<{ orgId: string; provider: string; externalId: string }>>([]);
+  const [events, setEvents] = React.useState<Array<{ id: number; connectionId: string; provider: string; event: string; detail: Record<string, unknown>; at: string }>>([]);
 
   /** "Channel for <org>" picker on an account the person's connection holds (2026-11-01). */
   function channelPicker(c: SurfaceConnection, externalId: string, provider: string) {
@@ -101,8 +124,10 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
       const r = await api.load();
       setList(r.connections);
       setRedirectUri(r.redirectUri);
+      setYoutubeCollective(Boolean(r.youtubeCollective));
       setOrgs(r.orgs ?? []);
       setChannels(r.channels ?? []);
+      setEvents(r.events ?? []);
       onLoaded?.(r.connections);
     } catch {
       setError("Could not load your connections.");
@@ -160,8 +185,8 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
 
   const showForm = adding || editing !== null;
 
-  /** Meta/Threads: create the row, then go straight to consent. */
-  async function connectApp(provider: "meta" | "threads" | "instagram") {
+  /** The collective's apps (Meta, Threads, Instagram; YouTube when set): create the row, then go straight to consent. */
+  async function connectApp(provider: "youtube" | "meta" | "threads" | "instagram") {
     setBusy(`add:${provider}`);
     setError(null);
     setNotice(null);
@@ -207,7 +232,7 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
                       c.accountName
                     )}
                   </>
-                ) : c.provider === "youtube" ? (
+                ) : c.provider === "youtube" && !c.collective ? (
                   <>YouTube · client …{c.clientId.split("-")[0].slice(-6)}</>
                 ) : (
                   <>{PROVIDER_NAME[c.provider]} · not connected yet</>
@@ -275,7 +300,7 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
                     Publish here
                   </label>
                 )}
-                {c.provider === "youtube" && (
+                {c.provider === "youtube" && !c.collective && (
                   <button
                     type="button"
                     className="eac-btn eac-btn--quiet"
@@ -307,6 +332,25 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
         </ul>
       )}
 
+      {events.length > 0 && (
+        <details className="eac-conn__log">
+          <summary>Recent activity ({events.length})</summary>
+          <ul>
+            {events.map((e) => (
+              <li key={e.id}>
+                <time dateTime={e.at}>{new Date(e.at).toLocaleString("en-CA", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</time>
+                {" · "}
+                {PROVIDER_NAME[e.provider as keyof typeof PROVIDER_NAME] ?? e.provider}
+                {" · "}
+                {EVENT_LABEL[e.event] ?? e.event}
+                {e.detail && typeof e.detail.by === "string" ? ` (${e.detail.by})` : ""}
+                {e.detail && typeof e.detail.name === "string" ? `: ${e.detail.name}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {list && !showForm && (
         <div className="eac-conn__actions">
           <button type="button" className="eac-btn" disabled={busy === "add:meta"} onClick={() => void connectApp("meta")}>
@@ -318,9 +362,20 @@ export function ConnectionsPanel({ api, returnTo, selectedId, onSelect, onLoaded
           <button type="button" className="eac-btn" disabled={busy === "add:threads"} onClick={() => void connectApp("threads")}>
             {busy === "add:threads" ? "…" : "Connect Threads"}
           </button>
-          <button type="button" className="eac-btn" onClick={() => setAdding(true)}>
-            Add a YouTube connection
-          </button>
+          {youtubeCollective ? (
+            <>
+              <button type="button" className="eac-btn" disabled={busy === "add:youtube"} onClick={() => void connectApp("youtube")}>
+                {busy === "add:youtube" ? "…" : "Connect YouTube"}
+              </button>
+              <button type="button" className="eac-btn eac-btn--quiet" onClick={() => setAdding(true)}>
+                Use your own Google client
+              </button>
+            </>
+          ) : (
+            <button type="button" className="eac-btn" onClick={() => setAdding(true)}>
+              Add a YouTube connection
+            </button>
+          )}
         </div>
       )}
 

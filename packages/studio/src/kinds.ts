@@ -11,9 +11,12 @@ export const STUDIO_KINDS: StudioKind[] = [
   { id: 'video', label: 'Video', noun: 'reel', ready: true, href: '/studio?kind=video' },
   // Posts for Facebook, Instagram and Threads (2026-10-31); an extension like Video.
   { id: 'post', label: 'Posts', noun: 'post', ready: true, href: '/studio?kind=post' },
+  // Recordings: camera, screen or phone into your files (2026-11-01); an extension like Video.
+  { id: 'recording', label: 'Recordings', noun: 'recording', ready: true, href: '/studio?kind=recording' },
   { id: 'artwork', label: 'Artwork', noun: 'work', ready: false },
-  { id: 'event', label: 'Events', noun: 'event', ready: false },
-  { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: false },
+  // Meetings and events are one shape (content-fields.ts) and the live rows are all meeting;
+  // one tab, an extension like Post (2026-11-01).
+  { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: true, href: '/studio?kind=meeting' },
   { id: 'workshop', label: 'Workshops', noun: 'workshop', ready: false },
   { id: 'service', label: 'Services', noun: 'service', ready: false },
   { id: 'question', label: 'Questions', noun: 'questionnaire', ready: false },

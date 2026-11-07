@@ -12,6 +12,7 @@ import {
   LIGHT_PRESETS,
   LIGHTING_BOUNDS,
   ZOOM_MAX,
+  OPEN_SPOT_ID,
   isUncropped,
   placementCrop,
   placementLamp,
@@ -34,8 +35,11 @@ import {
   type LampAt,
   type LampSettings,
   type Placement,
+  type Scene,
   type SceneLighting,
+  type SceneView,
 } from "@elkdonis/three/hallway";
+import { drawOpenSpot, openSpotPiece } from "@/lib/open-spot";
 import { Button } from "@/components/ui/button";
 import { ART_FRAME_STYLES } from "@/lib/frame-styles";
 import type { Installation, InstallationArtwork, InstallationPiece } from "@/lib/installations";
@@ -69,13 +73,16 @@ function toPiece(a: InstallationArtwork): HallwayPiece {
   };
 }
 
-type SaveState = "saved" | "saving" | "pending" | "error";
+export type SaveState = "saved" | "saving" | "pending" | "error";
 
-/** What undo steps over: the hang and the scene's lighting together. */
+/** What undo steps over: the hang, the scene's lighting and its opening view together. */
 interface Doc {
   placements: Placement[];
   lighting: SceneLighting;
+  view: SceneView | null;
 }
+
+const VIEW_NAMES: Record<SceneView["mode"], string> = { overview: "Overview", wall: "Wall view", walk: "Walk" };
 
 /** The worse of two save states, for the one status line. */
 function worse(a: SaveState, b: SaveState): SaveState {
@@ -89,20 +96,42 @@ export function InstallationEditor({
   initialPieces,
   saveLayout = saveLayoutAction,
   saveScene = saveSceneAction,
+  studioControls = true,
+  openSpot = false,
+  trayTitle = "Your works",
+  trayEmpty = "Add artworks with images to your store first.",
+  toolbar,
 }: {
   installation: Installation;
   artworks: InstallationArtwork[];
   initialPieces: InstallationPiece[];
   /** Where a changed hang is sent. The studio action unless a harness swaps it. */
   saveLayout?: (id: string, pieces: InstallationPiece[]) => Promise<unknown>;
-  /** Where changed scene settings (lighting) are sent. */
-  saveScene?: (id: string, scene: { lighting: SceneLighting }) => Promise<unknown>;
+  /** Where changed scene settings (lighting, opening view, free spot) are sent. */
+  saveScene?: (id: string, scene: Scene) => Promise<unknown>;
+  /** The studio's own controls: rename, change space, open to visitors. Off for the landing loft. */
+  studioControls?: boolean;
+  /** Offer the visitors' free spot (a placeholder visitors fill), stored in the scene. */
+  openSpot?: boolean;
+  trayTitle?: string;
+  trayEmpty?: string;
+  /** The host's own buttons in the header, given the save state. */
+  toolbar?: (state: { saveState: SaveState }) => React.ReactNode;
 }) {
-  const pieces = React.useMemo(() => artworks.filter((a) => a.imageUrl).map(toPiece), [artworks]);
+  // The free spot's placeholder is drawn on a canvas once mounted.
+  const [spotImage, setSpotImage] = React.useState("");
+  React.useEffect(() => {
+    if (openSpot) setSpotImage(drawOpenSpot());
+  }, [openSpot]);
+  const spotPiece = React.useMemo(() => (spotImage ? openSpotPiece(spotImage) : null), [spotImage]);
+  const pieces = React.useMemo(() => {
+    const list = artworks.filter((a) => a.imageUrl).map(toPiece);
+    return spotPiece ? [...list, spotPiece] : list;
+  }, [artworks, spotPiece]);
   const byId = React.useMemo(() => new Map(artworks.map((a) => [a.id, a])), [artworks]);
 
   const [doc, setDoc] = React.useState<Doc>(() => ({
-    placements: initialPieces.map((p) => ({
+    placements: initialPieces.map<Placement>((p) => ({
       pieceId: p.artworkId,
       wallId: p.wallId,
       x: p.x,
@@ -112,10 +141,15 @@ export function InstallationEditor({
       ratio: p.ratio,
       crop: p.crop,
       lamp: p.lamp,
-    })),
+    })).concat(
+      openSpot && installation.scene.openSpot
+        ? [{ pieceId: OPEN_SPOT_ID, frameId: "float", ...installation.scene.openSpot }]
+        : []
+    ),
     lighting: installation.scene.lighting,
+    view: installation.scene.view,
   }));
-  const { placements, lighting } = doc;
+  const { placements, lighting, view } = doc;
   // The current document, kept in step with every write. The history is kept
   // here rather than inside state updaters: React may call an updater twice
   // (it does in development), which recorded every step twice.
@@ -215,6 +249,9 @@ export function InstallationEditor({
   const venue = React.useMemo(() => venueFor(venueId), [venueId]);
   // Walking order depends on the space: the hallway's route, or a room's way round.
   const ordered = React.useMemo(() => orderInVenue(venue, placements), [venue, placements]);
+  // The free spot is a placement in the editor, stored in the scene, not in the hang.
+  const works = React.useMemo(() => ordered.filter((p) => p.pieceId !== OPEN_SPOT_ID), [ordered]);
+  const spot = React.useMemo(() => placements.find((p) => p.pieceId === OPEN_SPOT_ID) ?? null, [placements]);
   const hungIds = React.useMemo(() => new Set(placements.map((p) => p.pieceId)), [placements]);
 
   const [title, setTitle] = React.useState(installation.title);
@@ -239,7 +276,7 @@ export function InstallationEditor({
       try {
         await saveLayout(
           installation.id,
-          ordered.map((p) => ({
+          works.map((p) => ({
             artworkId: p.pieceId,
             wallId: p.wallId,
             x: p.x,
@@ -258,7 +295,7 @@ export function InstallationEditor({
       }
     }, SAVE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [ordered, installation.id, saveLayout]);
+  }, [works, installation.id, saveLayout]);
 
   // The lighting saves on its own timer: a slider stroke is many renders, and
   // re-sending the whole hang for each would be waste.
@@ -272,14 +309,22 @@ export function InstallationEditor({
     const timer = window.setTimeout(async () => {
       setSceneState("saving");
       try {
-        await saveScene(installation.id, { lighting });
+        await saveScene(installation.id, {
+          lighting,
+          view,
+          openSpot: !openSpot
+            ? installation.scene.openSpot
+            : spot
+              ? { wallId: spot.wallId, x: spot.x, y: spot.y, scale: placementScale(spot) }
+              : null,
+        });
         setSceneState("saved");
       } catch {
         setSceneState("error");
       }
     }, SAVE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [lighting, installation.id, saveScene]);
+  }, [lighting, view, spot, openSpot, installation.id, installation.scene.openSpot, saveScene]);
 
   // Leaving with an unsaved hang loses the last move.
   React.useEffect(() => {
@@ -315,6 +360,13 @@ export function InstallationEditor({
     changeDoc((d) => ({ ...d, lighting: { ...d.lighting, lamps: { ...d.lighting.lamps, ...patch } } }));
   const setLampsLive = (patch: Partial<LampSettings>) =>
     setDocLive((d) => ({ ...d, lighting: { ...d.lighting, lamps: { ...d.lighting.lamps, ...patch } } }));
+
+  /** "Look from here": the current view becomes the one visitors open on. */
+  const lookFromHere = () => {
+    const s = useHallwayStore.getState();
+    changeDoc((d) => ({ ...d, view: { mode: s.viewMode, side: s.wallSide, s: Math.round(s.wallS * 100) / 100 } }));
+  };
+  const clearView = () => changeDoc((d) => (d.view ? { ...d, view: null } : d));
 
   const resetFraming = (pieceId: string) =>
     setPlacements((all) => all.map((p) => (p.pieceId === pieceId ? { ...p, ratio: "auto", crop: { ...DEFAULT_CROP } } : p)));
@@ -375,11 +427,14 @@ export function InstallationEditor({
 
   const selected = selectedId ? ordered.find((p) => p.pieceId === selectedId) : undefined;
   const selectedWork = selectedId ? byId.get(selectedId) : undefined;
-  const unhung = pieces.filter((p) => !hungIds.has(p.id));
+  const selectedIsSpot = selectedId === OPEN_SPOT_ID;
+  const unhung = pieces.filter((p) => !hungIds.has(p.id) && p.id !== OPEN_SPOT_ID);
+  const spotInTray = spotPiece && !hungIds.has(OPEN_SPOT_ID) ? spotPiece : null;
 
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center gap-3">
+        {studioControls ? (
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -388,6 +443,9 @@ export function InstallationEditor({
           aria-label="Collection name"
           className="h-10 min-w-[240px] flex-1 rounded-md border border-transparent bg-transparent px-2 font-serif text-2xl tracking-tight hover:border-input focus:border-input"
         />
+        ) : (
+          <h2 className="min-w-[240px] flex-1 px-2 font-serif text-2xl tracking-tight">{title}</h2>
+        )}
         <span className="text-xs text-muted-foreground" aria-live="polite">
           {saveState === "saved" ? "All changes saved" : saveState === "error" ? "Could not save — try again" : "Saving…"}
         </span>
@@ -399,6 +457,8 @@ export function InstallationEditor({
             Redo
           </Button>
         </div>
+        {studioControls && (
+        <>
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Space</span>
           <select
@@ -421,16 +481,25 @@ export function InstallationEditor({
             Walk it as a visitor →
           </Link>
         )}
+        </>
+        )}
+        {toolbar?.({ saveState })}
       </header>
 
       <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)_260px]">
         {/* The tray: works not yet on a wall. */}
         <aside className="rounded-lg border border-border bg-card p-3 lg:max-h-[min(72vh,720px)] lg:overflow-y-auto">
-          <h3 className="mb-1 text-sm font-semibold">Your works</h3>
+          <h3 className="mb-1 text-sm font-semibold">{trayTitle}</h3>
           <p className="mb-3 text-xs text-muted-foreground">Drag one onto any wall.</p>
+          {spotInTray && (
+            <div className="mb-3">
+              <TrayItem piece={spotInTray} thumb={spotInTray.imageUrl} />
+              <p className="mt-1 text-[11px] text-muted-foreground">A spot visitors fill with a work of their choosing.</p>
+            </div>
+          )}
           {unhung.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              {pieces.length === 0 ? "Add artworks with images to your store first." : "Everything is hung."}
+              {artworks.length === 0 ? trayEmpty : "Everything is hung."}
             </p>
           ) : (
             <ul className="grid grid-cols-2 gap-2">
@@ -461,12 +530,14 @@ export function InstallationEditor({
 
         {/* What is hung, in the order a visitor meets it, and the selected piece. */}
         <aside className="space-y-4 lg:max-h-[min(72vh,720px)] lg:overflow-y-auto">
-          {selected && selectedWork && (
+          {selected && (selectedWork || selectedIsSpot) && (
             <div className="rounded-lg border border-border bg-card p-3">
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">No. {selected.sequence} on the walk</p>
-                  <p className="font-medium leading-snug">{selectedWork.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedIsSpot ? "Visitors choose what hangs here" : `No. ${selected.sequence} on the walk`}
+                  </p>
+                  <p className="font-medium leading-snug">{selectedWork?.title ?? "Visitors' free spot"}</p>
                 </div>
                 <button type="button" onClick={release} className="text-lg leading-none text-muted-foreground" aria-label="Deselect">
                   ×
@@ -505,6 +576,8 @@ export function InstallationEditor({
                   Reset to its recorded size (×{placementScale(selected).toFixed(2)} now)
                 </button>
               )}
+              {selectedWork && (
+              <>
               <p className="mb-1.5 text-xs font-semibold">Framing</p>
               <FramingFields
                 imageUrl={selectedWork.imageUrl ? sized(selectedWork.imageUrl, 320) : null}
@@ -562,11 +635,32 @@ export function InstallationEditor({
               </label>
               </>
               )}
+              </>
+              )}
               <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => takeDown(selected.pieceId)}>
                 Take it down
               </Button>
             </div>
           )}
+
+          <div className="rounded-lg border border-border bg-card p-3" data-testid="view-panel">
+            <h3 className="mb-1 text-sm font-semibold">Opening view</h3>
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              {view
+                ? `${VIEW_NAMES[view.mode]}${view.mode === "overview" ? "" : `, ${view.side === "L" ? "left" : "right"} side, ${view.s.toFixed(1)} m along`}.`
+                : "Visitors open on the wall view at the first piece."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={lookFromHere} title="Use the current view and position">
+                Look from here
+              </Button>
+              {view && (
+                <Button variant="ghost" size="sm" onClick={clearView}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
 
           <LightingPanel
             lighting={lighting}
@@ -583,7 +677,7 @@ export function InstallationEditor({
           />
 
           <div className="rounded-lg border border-border bg-card p-3">
-            <h3 className="mb-1 text-sm font-semibold">On the walls ({ordered.length})</h3>
+            <h3 className="mb-1 text-sm font-semibold">On the walls ({works.length})</h3>
             <p className="mb-3 text-xs text-muted-foreground">
               In walking order from the entrance. Move a piece along the hall to change its place.
             </p>
@@ -606,7 +700,9 @@ export function InstallationEditor({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={sized(work.imageUrl, 96)} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
                       )}
-                      <span className="truncate">{work?.title ?? "Untitled"}</span>
+                      <span className="truncate">
+                        {p.pieceId === OPEN_SPOT_ID ? "Visitors' free spot" : (work?.title ?? "Untitled")}
+                      </span>
                     </button>
                   </li>
                 );

@@ -1,5 +1,5 @@
 import { createWebhookHandlers } from "@elkdonis/meta/webhook";
-import { recordMetaWebhookEvent } from "@elkdonis/services";
+import { processMetaWebhookEvent, recordMetaWebhookEvent } from "@elkdonis/services";
 
 /**
  * Meta webhook for the collective's threads app (2026-10-31): the dashboard's
@@ -12,7 +12,15 @@ export const dynamic = "force-dynamic";
 const handlers = createWebhookHandlers({
   verifyToken: process.env.META_WEBHOOK_VERIFY_TOKEN,
   appSecret: process.env.THREADS_APP_SECRET,
-  onEvent: (event) => recordMetaWebhookEvent("threads", event),
+  onEvent: async (event) => {
+    await recordMetaWebhookEvent("threads", event);
+    // Comments on posts the network sent out become rows under their thread (migration 225).
+    const r = await processMetaWebhookEvent(event).catch((err) => {
+      console.error("[meta webhook] process:", err);
+      return null;
+    });
+    if (r && (r.stored || r.removed || r.unmatched)) console.log(`[meta webhook] threads: ${r.stored} stored, ${r.removed} removed, ${r.unmatched} unmatched`);
+  },
 });
 
 export const GET = handlers.GET;

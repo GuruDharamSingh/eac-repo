@@ -76,7 +76,7 @@ export interface Catalogue {
  * `id`, an editor-context object, and `children` for a root component. Better
  * to refuse the declaration than to debug the overwrite.
  */
-const RESERVED_PROP_NAMES = new Set(["id", "puck", "editMode", "children"]);
+const RESERVED_PROP_NAMES = new Set(["id", "puck", "editMode", "children", "morph"]);
 
 export function createCatalogue(blocks: Block<never>[]): Catalogue {
   const byId = new Map<string, Block<never>>();

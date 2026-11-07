@@ -2021,3 +2021,98 @@ a.blk-card:focus-visible {
   .blk-spotlight[data-picture="end"] { grid-template-columns: minmax(0, 1fr); }
   .blk-spotlight[data-picture="end"] > .blk-spotlight-media { order: 0; }
 }
+
+/* Featured person (2026-11-06): one person from a record; featured-person.tsx. Inks are the block tokens, so a site's theme carries over. */
+.blk-fperson { display: flex; gap: 1.1rem; align-items: flex-start; }
+.blk-fperson[data-layout="stack"] { flex-direction: column; }
+.blk-fperson-portrait { width: 5.5rem; height: 5.5rem; flex: 0 0 auto; border-radius: 999px; object-fit: cover; display: block; }
+.blk-fperson-portrait--none { background: var(--blk-line); }
+.blk-fperson-body { min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.blk-fperson-title { margin: 0; font-family: var(--blk-font-title); font-size: 1.25rem; line-height: 1.3; }
+.blk-fperson-title a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+.blk-fperson-role,
+.blk-fperson-via { margin: 0; font-size: 0.9rem; color: var(--blk-muted); }
+.blk-fperson-via::first-letter { text-transform: uppercase; }
+.blk-fperson-bio { margin: 0.35rem 0 0; font-size: 0.95rem; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.blk-fperson--empty { padding: 1rem; border: 1px dashed var(--blk-line); border-radius: var(--blk-radius); }
+.blk-fperson-note { margin: 0; font-size: 0.9rem; color: var(--blk-muted); }
+
+/* ── Sticky side (blocks/sticky-split.tsx, 2026-11-07) ───────────────────── */
+.blk-sticky { container-type: inline-size; }
+.blk-sticky-grid {
+  display: grid;
+  grid-template-columns: var(--sticky-cols, 1fr 2fr);
+  grid-template-areas: "side main";
+  gap: var(--sticky-gap, 1.5rem);
+  align-items: start;
+}
+.blk-sticky[data-ratio="half"]    { --sticky-cols: 1fr 1fr; }
+.blk-sticky[data-ratio="quarter"] { --sticky-cols: 1fr 3fr; }
+.blk-sticky[data-side="end"] { --sticky-cols: 2fr 1fr; }
+.blk-sticky[data-side="end"] .blk-sticky-grid { grid-template-areas: "main side"; }
+.blk-sticky[data-side="end"][data-ratio="half"]    { --sticky-cols: 1fr 1fr; }
+.blk-sticky[data-side="end"][data-ratio="quarter"] { --sticky-cols: 3fr 1fr; }
+.blk-sticky[data-gap="tight"] { --sticky-gap: 0.75rem; }
+.blk-sticky[data-gap="loose"] { --sticky-gap: 3rem; }
+.blk-sticky-side { grid-area: side; position: sticky; top: var(--sticky-top, 96px); align-self: start; display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.blk-sticky-main { grid-area: main; display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+@container (max-width: 40rem) {
+  .blk-sticky .blk-sticky-grid, .blk-sticky[data-side="end"] .blk-sticky-grid { grid-template-columns: 1fr; grid-template-areas: "side" "main"; }
+  .blk-sticky-side { position: static; }
+}
+
+/* ── Tabs (blocks/tab-set.tsx, 2026-11-07) ───────────────────────────────── */
+.blk-tabs { color: var(--blk-fg); font-family: var(--blk-font-body); }
+.blk-tabs-list { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 1.25rem; }
+.blk-tabs[data-align="center"] .blk-tabs-list { justify-content: center; }
+.blk-tabs-tab {
+  appearance: none; background: none; border: 0; cursor: pointer; color: var(--blk-muted);
+  font: inherit; font-weight: 600; padding: 0.55rem 0.9rem; border-radius: var(--blk-radius-sm, 4px);
+}
+.blk-tabs-tab:hover { color: var(--blk-fg); }
+.blk-tabs-tab[aria-selected="true"] { color: var(--blk-fg); }
+.blk-tabs-tab:focus-visible { outline: 2px solid var(--blk-accent-ink); outline-offset: 2px; }
+.blk-tabs[data-look="line"] .blk-tabs-list { border-bottom: 1px solid var(--blk-line); gap: 0.5rem; }
+.blk-tabs[data-look="line"] .blk-tabs-tab { border-radius: 0; margin-bottom: -1px; border-bottom: 2px solid transparent; }
+.blk-tabs[data-look="line"] .blk-tabs-tab[aria-selected="true"] { border-bottom-color: var(--blk-accent-ink); }
+.blk-tabs[data-look="pills"] .blk-tabs-tab[aria-selected="true"] { background: var(--blk-accent); color: var(--blk-on-accent, #fff); }
+.blk-tabs[data-look="boxed"] .blk-tabs-list { border-bottom: 1px solid var(--blk-line); gap: 0.25rem; margin-bottom: 0; }
+.blk-tabs[data-look="boxed"] .blk-tabs-tab { border: 1px solid transparent; border-bottom: 0; border-radius: var(--blk-radius-sm, 4px) var(--blk-radius-sm, 4px) 0 0; margin-bottom: -1px; }
+.blk-tabs[data-look="boxed"] .blk-tabs-tab[aria-selected="true"] { border-color: var(--blk-line); background: var(--blk-bg, transparent); }
+.blk-tabs[data-look="boxed"] .blk-tabs-panel { border: 1px solid var(--blk-line); border-top: 0; padding: 1.25rem; }
+.blk-tabs-body { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.blk-tabs-heading { display: none; margin: 0 0 0.75rem; font-family: var(--blk-font-title); font-size: 1.15rem; }
+.blk-tabs-panel[hidden] { display: none; }
+/* While a page is being edited every panel shows under its own name, so each can take a dropped block. */
+.blk-tabs[data-editing] > .blk-tabs-list { display: none; }
+.blk-tabs[data-editing] > .blk-tabs-panel, .blk-tabs[data-editing] > .blk-tabs-panel[hidden] { display: block; }
+.blk-tabs[data-editing] > .blk-tabs-panel + .blk-tabs-panel { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--blk-line); }
+.blk-tabs[data-editing] .blk-tabs-heading { display: block; }
+/* Before the script runs only the first panel shows, so the page does not jump. */
+.blk-tabs:not([data-scripted]) > .blk-tabs-panel ~ .blk-tabs-panel { display: none; }
+/* Without scripts every panel shows under its own name, and the tab row (which could do nothing) goes. */
+@media (scripting: none) {
+  .blk-tabs-list { display: none; }
+  .blk-tabs > .blk-tabs-panel, .blk-tabs:not([data-scripted]) > .blk-tabs-panel ~ .blk-tabs-panel { display: block; }
+  .blk-tabs-panel + .blk-tabs-panel { margin-top: 2rem; }
+  .blk-tabs-heading { display: block; }
+}
+
+/* ── Sections that open (blocks/accordion-set.tsx, 2026-11-07) ───────────── */
+.blk-acc { color: var(--blk-fg); font-family: var(--blk-font-body); }
+.blk-acc[data-look="divided"] .blk-acc-item + .blk-acc-item { border-top: 1px solid var(--blk-line); }
+.blk-acc[data-look="divided"] .blk-acc-item:first-child { border-top: 1px solid var(--blk-line); }
+.blk-acc[data-look="divided"] .blk-acc-item:last-child { border-bottom: 1px solid var(--blk-line); }
+.blk-acc[data-look="boxed"] .blk-acc-item { border: 1px solid var(--blk-line); border-radius: var(--blk-radius, 8px); padding-inline: 1rem; }
+.blk-acc[data-look="boxed"] .blk-acc-item + .blk-acc-item { margin-top: 0.75rem; }
+.blk-acc-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding-block: 1rem; cursor: pointer; list-style: none;
+  font-family: var(--blk-font-title); font-size: 1.15rem; font-weight: 600;
+}
+.blk-acc-head::-webkit-details-marker { display: none; }
+.blk-acc-head:focus-visible { outline: 2px solid var(--blk-accent-ink); outline-offset: 2px; }
+.blk-acc-mark { width: 1.25rem; height: 1.25rem; flex: none; transition: transform 0.2s ease; color: var(--blk-muted); }
+.blk-acc-item[open] > .blk-acc-head .blk-acc-mark { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .blk-acc-mark { transition: none; } }
+.blk-acc-body { display: flex; flex-direction: column; gap: 1rem; padding-block: 0 1.25rem; min-width: 0; }

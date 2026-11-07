@@ -315,6 +315,17 @@ export const banner = defineBlock(
     styling: "tailwind",
     resize: { height: "height" },
     props: bannerProps,
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Banner", sel: "> section" },
+      image: { label: "Photograph", sel: "> section > img", prop: "imageUrl", draws: { props: { imageUrl: "/x.jpg" } } },
+      wash: { label: "Wash", sel: '> section > [aria-hidden="true"]:not(img)' },
+      copy: { label: "Words", sel: "> section > div:last-child" },
+      title: { label: "Title", sel: "h1", prop: "title" },
+      subtitle: { label: "Subtitle", sel: "h1 + p.italic", prop: "subtitle", draws: { props: { subtitle: "A line" } } },
+      body: { label: "Paragraph", sel: "p.leading-relaxed", prop: "body", draws: { props: { body: "Some words." } } },
+      button: { label: "Button", sel: "a", prop: "ctaLabel", draws: { props: { ctaLabel: "Go", ctaHref: "/" } } },
+    },
   },
   Banner,
   () => ({

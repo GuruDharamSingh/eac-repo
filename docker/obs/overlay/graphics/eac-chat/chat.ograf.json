@@ -1,0 +1,34 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-chat",
+  "version": "1.0.0",
+  "name": "Viewer chat",
+  "description": "The newest viewer messages from the stream's destinations (Twitch, YouTube), stacked in a corner. Reads the Studio's chat while playing.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "customActions": [{ "id": "sample", "name": "Sample", "description": "Show three made-up messages for ten seconds, to check the place and size", "schema": null }],
+  "schema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string", "title": "Heading", "default": "", "maxLength": 40, "gddType": "single-line" },
+      "place": {
+        "type": "string", "title": "Place", "enum": ["bottom-left", "bottom-right", "top-left", "top-right"], "default": "bottom-left",
+        "gddType": "select",
+        "gddOptions": { "labels": { "bottom-left": "Bottom left", "bottom-right": "Bottom right", "top-left": "Top left", "top-right": "Top right" } }
+      },
+      "count": { "type": "integer", "title": "Messages on screen", "default": 5, "minimum": 1, "maximum": 10 },
+      "hold": { "type": "integer", "title": "Seconds each stays (0 = until pushed out)", "default": 0, "minimum": 0, "maximum": 600 },
+      "minutes": { "type": "integer", "title": "Leave out messages older than (minutes)", "default": 10, "minimum": 1, "maximum": 720 },
+      "platform": {
+        "type": "string", "title": "From", "enum": ["all", "twitch", "youtube", "kick", "facebook"], "default": "all",
+        "gddType": "select",
+        "gddOptions": { "labels": { "all": "Every destination", "twitch": "Twitch only", "youtube": "YouTube only", "kick": "Kick only", "facebook": "Facebook only" } }
+      },
+      "badges": { "type": "boolean", "title": "Show where each came from", "default": true },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

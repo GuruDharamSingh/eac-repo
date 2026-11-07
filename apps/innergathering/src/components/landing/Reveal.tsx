@@ -14,12 +14,17 @@ export function Reveal({
   threshold = 0.1,
   id,
   style,
+  editSection,
+  editName,
   children,
 }: {
   as?: "div" | "section" | "ul" | "aside";
   className?: string;
   threshold?: number;
   id?: string;
+  /** Declares this as a section of the page's edit mode (@elkdonis/direct-edit). */
+  editSection?: string;
+  editName?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
@@ -45,7 +50,7 @@ export function Reveal({
 
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Tag ref={ref as any} id={id} style={style} className={`reveal ${visible ? "in-view" : ""} ${className}`.trim()}>
+    <Tag ref={ref as any} id={id} style={style} data-edit-section={editSection} data-edit-name={editName} className={`reveal ${visible ? "in-view" : ""} ${className}`.trim()}>
       {children}
     </Tag>
   );

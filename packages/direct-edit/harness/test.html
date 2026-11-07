@@ -1,0 +1,32 @@
+<title>Click-Through Test</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--paper:#ebe5d4;--ink:#1d1a16;--tab:#1c2024}
+body{background:var(--paper);color:var(--ink);font:15px Georgia,serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:60px 80px}
+#page{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+#page header{display:flex;flex-direction:column;gap:8px}.rw{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;border-bottom:1px solid var(--ink);padding-bottom:6px;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+#page h1{font-size:clamp(38px,8vw,72px);margin:0;text-align:center;line-height:1.05;text-wrap:balance}#page nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;font-size:13px;letter-spacing:.14em;text-transform:uppercase}#page nav a{color:inherit}
+#band{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}.col{display:flex;flex-direction:column;gap:8px;border:1px solid var(--ink);padding:12px;min-width:0}
+#page h2{font-size:13px;letter-spacing:.2em;text-transform:uppercase;margin:0;text-align:center;border-block:1px solid var(--ink);padding:4px 0}.col p{margin:0;line-height:1.4}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.gal i{display:block;height:64px;background:#b6b0a7}.gal i:nth-child(2n){background:#8f8a80}
+.tt-tabs{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483002;display:flex;gap:4px;padding:4px;background:var(--tab);border-radius:8px;font:13px system-ui,sans-serif}
+.tt-tabs button{font:inherit;color:#fff;background:none;border:0;border-radius:5px;padding:5px 10px;cursor:pointer}.tt-tabs button[aria-pressed=true]{background:#0a7ea4}.tt-tabs button:focus-visible{outline:2px solid #fff}
+#tt-acts{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483002;display:flex;gap:4px;padding:4px;background:var(--tab);border-radius:8px;font:13px system-ui,sans-serif}
+#tt-acts[hidden]{display:none}
+#tt-acts button{font:inherit;color:#fff;background:none;border:0;border-radius:5px;padding:5px 10px;cursor:pointer}#tt-acts button:focus-visible{outline:2px solid #fff}
+@media (max-width:720px){.tt-tabs{left:max(12px,env(safe-area-inset-left,0px));flex-wrap:wrap;justify-content:flex-end}#tt-acts{bottom:calc(112px + env(safe-area-inset-bottom,0px))}}
+.tt-try{margin:0 0 -28px;padding:10px 14px;background:#fff3c4;border:1px solid #d9b84a;border-radius:8px;font:14px/1.4 system-ui,sans-serif;color:#2b2410}
+.tt-tree{min-height:100vh;padding-top:44px;margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px)))}
+.tt-blocks{padding-inline:16px}
+/* The tabs lie over the foot of the panel. This room lets its last row scroll clear of them. */
+.de-vpanel .de-body::after{content:"";display:block;height:88px}
+body.tt-land{padding:0}
+/*__EDITOR_CSS__*/
+/*__BLOCKS_CSS__*/
+/*__SUNJAY_CSS__*/
+</style>
+<div class="tt-tabs" data-de-ui role="group" aria-label="Test views"><button type="button" data-v="blocks">Blocks</button><button type="button" data-v="landing">Landing page</button><button type="button" data-v="tree">Classifieds</button><button type="button" data-v="page">Any page</button><button type="button" data-v="cards">Feed cards</button><button type="button" data-v="sheet">Old ad editor</button></div>
+<div id="tt-acts" data-de-ui hidden></div>
+<div id="fixture" hidden><div id="page" data-edit-section="landing" aria-label="Landing"><header id="hd"><div class="rw"><span>Vol. I</span><span>Sunday, 1 November</span></div><h1>The Classifieds</h1><nav aria-label="Sections"><a href="#sale">For sale</a><a href="#wanted">Wanted</a><a href="#studios">Studios</a></nav></header><section id="band" aria-label="First page of ads"><div class="col"><div><h2>For sale</h2></div><p><b>EASEL,</b> oak H-frame, adjustable, some paint.</p><p><b>KILN,</b> electric, cone 6, collect from the studio.</p><button type="button">Ask about this</button></div><div class="col"><h2>Wanted</h2><p>A second pair of hands at the press, two mornings a week.</p></div><div class="col" data-edit-name="Picture grid" data-edit-atom><h2>Studios</h2><div class="gal"><i></i><i></i><i></i><i></i><i></i><i></i></div></div></section></div></div><div id="stage"></div>
+<script id="land-data" type="application/json">__LAND_DATA__</script>
+<script>__TEST_JS__</script>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listPages, HOME_SLUG } from "@/lib/puck/store";
 import { NewPageForm } from "@/components/manage/new-page-form";
 import { TEMPLATE_SLUGS } from "@/lib/puck/reserved";
+import { requireOrgEditor } from "@/lib/auth";
 
 const TEMPLATES = [
   {
@@ -25,8 +26,11 @@ const TEMPLATES = [
 export const dynamic = "force-dynamic";
 
 export default async function BuilderPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const pages = await listPages();
-  const home = pages.find((p) => p.slug === HOME_SLUG);
   const others = pages.filter((p) => p.slug !== HOME_SLUG && !TEMPLATE_SLUGS.has(p.slug));
   const stored = new Map(pages.map((p) => [p.slug, p.updatedAt]));
 
@@ -34,30 +38,11 @@ export default async function BuilderPage() {
     <>
       <h2 className="font-serif text-2xl">Page builder</h2>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        Lay out the landing page and any other page from blocks. The sections, people and gatherings
+        Lay out extra pages from blocks. The landing page is built in code (2026-11-02). The sections, people and gatherings
         those blocks show are still managed in the other tabs.
       </p>
 
       <div className="mt-6 space-y-4">
-        <section className="card-natural p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-serif text-xl">Home page</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {home
-                  ? `Live from the editor — last published ${new Date(home.updatedAt).toLocaleString("en-CA")}.`
-                  : "Not built in the editor yet. Visitors see the original landing page."}
-              </p>
-            </div>
-            <Link
-              href={`/studio/${HOME_SLUG}`}
-              className="border border-[hsl(var(--primary))]/50 bg-[hsl(var(--primary))]/15 px-4 py-2 text-sm font-medium text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/25"
-            >
-              {home ? "Edit the home page" : "Start from the current landing page"}
-            </Link>
-          </div>
-        </section>
-
         <section className="card-natural p-6">
           <h3 className="font-serif text-xl">Other pages</h3>
           {others.length === 0 ? (

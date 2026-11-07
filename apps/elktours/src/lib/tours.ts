@@ -6,6 +6,9 @@ import {
   type TourStop,
 } from "@elkdonis/commerce/server";
 import { siteConfig } from "@/config/site";
+import { publicTourAssets } from "@/lib/assets";
+import type { PublicTourAssets, StopExtras } from "@/lib/catalogue-types";
+import { placeBusinessesFor, placeLinksFor } from "@/lib/places";
 
 /**
  * Read layer for tours.
@@ -57,6 +60,20 @@ export const EMPTY_DETAILS: TourDetails = {
   route: null,
 };
 
+/**
+ * The tour's promotional film (`threads.metadata.film`, a top-level key so the
+ * tour form's whole-object write of `metadata.tour` never drops it). Films are
+ * rendered offline in ElkTourUnity over Google 3D tiles: ≤30 s, attribution
+ * burned in, promotional use only.
+ */
+export interface TourFilm {
+  /** Full-size file (1080p for the rendered films). */
+  url: string;
+  /** Lighter file for phones and cards; falls back to `url`. */
+  url720: string | null;
+  poster: string | null;
+}
+
 export interface Tour {
   id: string;
   title: string;
@@ -66,6 +83,7 @@ export interface Tour {
   body: string | null;
   excerpt: string | null;
   coverImageUrl: string | null;
+  film: TourFilm | null;
   /** Price per person, major units. Null or 0 = not bookable yet. */
   price: number | null;
   currency: string;
@@ -86,6 +104,14 @@ export interface Tour {
 export interface TourFull extends Tour {
   stops: TourStop[];
   departures: TourDeparture[];
+  /**
+   * The asset switches (tour_assets, migration 233): visible hero film and poster, the 3D-map
+   * switch, per-stop Street View switches, visible stills and images. `film` above is taken
+   * from here (the visible hero), so hiding the film asset hides it everywhere.
+   */
+  assets: PublicTourAssets;
+  /** Per stop id: the public excerpt (tour_stops.excerpt) and the linked place's confident outbound links. */
+  stopExtras: Record<string, StopExtras>;
 }
 
 interface TourRow {
@@ -152,6 +178,16 @@ function readRoute(v: unknown): TourRoute | null {
   return { legs, fetchedAt: typeof r.fetchedAt === "string" ? r.fetchedAt : "", source: r.source === "osrm" ? "osrm" : "straight" };
 }
 
+export function readFilm(v: unknown): TourFilm | null {
+  const f = v as { url?: unknown; url720?: unknown; poster?: unknown } | null | undefined;
+  if (!f || typeof f.url !== "string" || !f.url) return null;
+  return {
+    url: f.url,
+    url720: typeof f.url720 === "string" && f.url720 ? f.url720 : null,
+    poster: typeof f.poster === "string" && f.poster ? f.poster : null,
+  };
+}
+
 function mapTour(r: TourRow): Tour {
   const meta = r.metadata ?? {};
   const price = r.price == null ? null : Number(r.price);
@@ -163,6 +199,7 @@ function mapTour(r: TourRow): Tour {
     body: r.body,
     excerpt: r.excerpt,
     coverImageUrl: typeof meta.coverImageUrl === "string" ? meta.coverImageUrl : null,
+    film: readFilm(meta.film),
     price: price != null && Number.isFinite(price) ? price : null,
     currency: r.currency ?? siteConfig.currency,
     durationMinutes: r.duration_minutes,
@@ -225,7 +262,7 @@ export async function getTourById(id: string): Promise<Tour | null> {
 
 /** A tour with its stops and departures — the tour page and the editor. */
 export async function loadTourFull(tour: Tour, opts: { upcomingOnly?: boolean; includeCancelled?: boolean } = {}): Promise<TourFull> {
-  const [stops, departures] = await Promise.all([
+  const [stops, departures, assets] = await Promise.all([
     listTourStops(tour.id).catch((err) => {
       console.error("[elktours] listTourStops:", err);
       return [] as TourStop[];
@@ -234,8 +271,10 @@ export async function loadTourFull(tour: Tour, opts: { upcomingOnly?: boolean; i
       console.error("[elktours] listTourDepartures:", err);
       return [] as TourDeparture[];
     }),
+    publicTourAssets(tour.id),
   ]);
-  return { ...tour, stops, departures };
+  const film = assets.film ? { url: assets.film.url, url720: assets.film.url720, poster: assets.film.poster } : null;
+  return { ...tour, film, stops, departures, assets, stopExtras: await stopExtrasFor(tour.id, stops) };
 }
 
 /** The next scheduled departure per tour, for cards. */
@@ -269,3 +308,24 @@ export async function listGuides(): Promise<{ id: string; name: string; email: s
 
 // ── formatting: pure helpers live in tour-format.ts (client-safe) ─────────
 export { formatPrice, formatDuration, formatDeparture, toParisInput } from "@/lib/tour-format";
+
+/** Excerpt + place links per stop. Fail-soft: empty extras on error. */
+export async function stopExtrasFor(threadId: string, stops: TourStop[]): Promise<Record<string, StopExtras>> {
+  const out: Record<string, StopExtras> = {};
+  for (const s of stops) out[s.id] = { excerpt: null, links: [], business: null };
+  if (stops.length === 0) return out;
+  try {
+    const rows = (await db`SELECT id, excerpt FROM tour_stops WHERE thread_id = ${threadId} AND excerpt IS NOT NULL`) as unknown as { id: string; excerpt: string }[];
+    for (const r of rows) if (out[r.id]) out[r.id]!.excerpt = r.excerpt;
+    const placeIds = stops.map((s) => s.placeId).filter((v): v is string => !!v);
+    const [links, biz] = await Promise.all([placeLinksFor(placeIds), placeBusinessesFor(placeIds)]);
+    for (const s of stops) {
+      if (!s.placeId) continue;
+      out[s.id]!.links = links.get(s.placeId) ?? [];
+      out[s.id]!.business = (biz.get(s.placeId) ?? []).find((b) => b.isPrimary) ?? null;
+    }
+  } catch (err) {
+    console.error("[elktours] stopExtrasFor:", err);
+  }
+  return out;
+}

@@ -49,6 +49,7 @@ export function ConnectionsBand({
   orgId,
   orgSlug,
   paymentsReady,
+  follower = false,
 }: {
   state: ConsoleState;
   /** The storage root is keyed on the org ID, not its slug — `amrit_canada`,
@@ -58,10 +59,28 @@ export function ConnectionsBand({
   orgId: string;
   orgSlug: string;
   paymentsReady: boolean;
+  /** A follower has no team folder and no use for the org's service counts,
+   *  so only their own files show. */
+  follower?: boolean;
 }) {
   const { all, total } = { all: state.people.all, total: state.people.total };
   const onNextcloud = all.filter((p) => p.hasNextcloud).length;
   const onStripe = all.filter((p) => p.stripeOnboarded).length;
+
+  const mine = {
+    id: "mine",
+    label: "My files",
+    endpoint: "/api/my-files",
+    canUpload: true,
+  };
+
+  if (follower) {
+    return (
+      <section aria-label="Your files" className="mb-10">
+        <FilesCard title="Files" sources={[mine]} />
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Connections" className="mb-10">
@@ -89,7 +108,7 @@ export function ConnectionsBand({
         <Stat
           label="Team folder"
           value={`EAC_Network/${orgId}`}
-          note="Shared with everyone in this org. Owners and guides can add to it."
+          note="Shared with this org's members. Owners and guides can add to it."
         />
       </div>
 
@@ -103,12 +122,7 @@ export function ConnectionsBand({
               endpoint: `/api/org/${encodeURIComponent(orgSlug)}/files`,
               initialPath: "Media",
             },
-            {
-              id: "mine",
-              label: "My files",
-              endpoint: "/api/my-files",
-              canUpload: true,
-            },
+            mine,
           ]}
         />
       </div>

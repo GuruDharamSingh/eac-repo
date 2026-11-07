@@ -23,6 +23,7 @@ import {
   IdeasFace,
   PipelineFace,
   ProfileFace,
+  SeriesFace,
   StandingMeetingFace,
 } from "@elkdonis/cms-ui/hub";
 import { HubViewToggle, HUB_VIEW_COOKIE } from "@elkdonis/cms-ui/hubsite";
@@ -32,6 +33,7 @@ import { siteConfig } from "@/config/site";
 import { getPipelineBoard } from "@/lib/pipeline";
 import { getForumSnapshot } from "@/lib/forum";
 import { getAllThreadsForOrg } from "@/lib/data";
+import { hubSeriesCards } from "@/lib/public-site";
 import { EmailFace } from "@/components/hub/EmailFace";
 // Lifted into the shared package when IFAC wanted the same canvas.
 import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
@@ -62,6 +64,7 @@ export default async function HubPage() {
   }
 
   const calendarFrom = startOfMonth(new Date());
+  const seriesCards = await hubSeriesCards();
   const [
     profile,
     chatRoom,
@@ -171,6 +174,9 @@ export default async function HubPage() {
         </div>
         <SurfaceCardGrid className="hub-band-grid hub-band-grid--lead">
           {/* The standing gathering: what a member opens the hub to check. */}
+          {seriesCards.map((s) => (
+            <SeriesFace key={s.id} series={s} canPlan={viewer.canEdit} timeZone={TIME_ZONE} plannerHref={`/hub/series/${s.id}`} />
+          ))}
           <StandingMeetingFace standing={standing} canEdit={viewer.canEdit} timeZone={TIME_ZONE} />
           <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
           <ForumFace forum={forum} />

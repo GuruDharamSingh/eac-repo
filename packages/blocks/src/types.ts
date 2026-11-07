@@ -230,6 +230,48 @@ export interface PropDef {
   format?: "color";
 }
 
+/** One inner element of a block that a page may restyle. Declared here, never stored. */
+export interface PartDef {
+  /** In the layer tree and the panel heading. For artists. */
+  label: string;
+  /**
+   * One complex selector, no comma. Starting with ">": the element right after
+   * the marker (the block's root), then a path from it. Otherwise: inside the
+   * root. A block with a slot uses the ">" form only, so it cannot reach into
+   * nodes placed in the slot.
+   */
+  sel: string;
+  /** Drawn more than once, and styled as a whole. */
+  repeat?: true;
+  /** The part appears only under some settings. Read by the part checks. */
+  draws?: { props?: Record<string, unknown> };
+  /**
+   * The prop this part shows. The part's panel lists that prop's field first,
+   * and the block popup types into it in place. "<rows prop>.<field>" (for
+   * example "steps.title") names one field of a row: the row is the one the
+   * part's nearest `editItem("<rows prop>", index)` mark names (2026-11-06).
+   */
+  prop?: string;
+}
+
+/**
+ * Part names are stored in page JSON, like block ids:
+ * /^[a-z][a-zA-Z0-9]{0,31}$/, never renamed casually. `root` is the block's
+ * outermost element.
+ */
+export type PartMap = Record<string, PartDef>;
+
+/**
+ * A custom property a page may set on one block. A `font` token's name holds
+ * `-font`, as `--blk-font-title` does: the stylesheet recognises one by its name
+ * and writes the family as a stack (`direct-edit/block/morph.ts`, `isFontToken`).
+ */
+export interface TokenDef {
+  name: `--${string}`;
+  label: string;
+  type: "color" | "font" | "length";
+}
+
 /**
  * A block's declaration — pure data, importable anywhere.
  *
@@ -244,6 +286,11 @@ export interface BlockDef {
   label: string;
   description: string;
   props: PropDef[];
+
+  /** Inner elements a page may restyle, stored as the node's `morph`. Data only: declaring parts changes no markup. */
+  parts?: PartMap;
+  /** Custom properties a page may set on this block, beyond BLOCK_TOKENS (`contract.ts`). */
+  tokens?: readonly TokenDef[];
 
   /**
    * Whether an untrusted author (any member) may place this block.

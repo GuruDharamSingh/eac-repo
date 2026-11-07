@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getViewer } from "@/lib/auth";
+import { getViewer, requireOrgEditor } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { AnalyticsDashboard } from "@elkdonis/analytics/dashboard";
 import { getDashboardData } from "@elkdonis/analytics/server";
@@ -17,6 +17,10 @@ export default async function ManageAnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor("/manage");
   const viewer = await getViewer();
   if (viewer?.role !== "owner") notFound();
   const sp = await searchParams;

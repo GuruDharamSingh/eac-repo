@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAdminStats } from "@elkdonis/commerce/queries";
 import { listHeld } from "@elkdonis/commerce/server";
 import { formatMoney } from "@elkdonis/commerce/money";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ function Stat({
 }
 
 export default async function AdminOverviewPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const [stats, held] = await Promise.all([
     getAdminStats(),
     listHeld({ limit: 50 }).catch(() => []),

@@ -1,5 +1,6 @@
 import { defineBlock, type PropsOf } from "../registry";
 import { sized, srcSet } from "../media";
+import { OPENS_PROP, openedAttrs, type Opened } from "../opens";
 
 // ============================================================================
 // A card: a picture, a small line, a title, a few words, a details line.
@@ -77,6 +78,7 @@ const props = [
       "Optional. A post, event or artwork: the card shows its current title, picture and details wherever you left a field empty.",
     default: "",
   },
+  OPENS_PROP,
   {
     name: "tone",
     kind: "select",
@@ -94,6 +96,8 @@ const props = [
 export type FeatureCardProps = PropsOf<typeof props> & {
   /** From the host's resolver, when `record` names something it can read. */
   bound?: CardRecord | null;
+  /** From the host's resolver for `opens` (opens.ts): replaces the link when chosen. */
+  opened?: Opened | null;
   /** Puck's editor context, passed to every block; only `isEditing` is read. */
   puck?: { isEditing?: boolean };
 };
@@ -119,6 +123,7 @@ export function FeatureCard({
   // with none keeps the look it always had.
   tone = "panel",
   bound,
+  opened,
   puck,
 }: FeatureCardProps) {
   const b = bound ?? null;
@@ -128,7 +133,8 @@ export function FeatureCard({
   const shownImage = text(image) || text(b?.image);
   const shownKicker = text(kicker) || text(b?.kicker) || text(b?.kind);
   const shownMeta = text(meta) || text(b?.meta);
-  const link = safeHref(text(href) || text(b?.href));
+  const open = openedAttrs(opened);
+  const link = open?.href ?? safeHref(text(href) || text(b?.href));
   const editing = Boolean(puck?.isEditing);
   const wantsRecord = text(record) !== "";
 
@@ -180,7 +186,7 @@ export function FeatureCard({
   // reader, and it is the usual way a "clickable card" goes wrong. In the
   // editor a link inside the canvas would navigate the canvas away.
   return link && !editing ? (
-    <a className="blk blk-card" data-tone={tone} href={link}>
+    <a className="blk blk-card" data-tone={tone} href={link} {...(open?.["data-opens"] ? { "data-opens": open["data-opens"] } : {})}>
       {inner}
     </a>
   ) : (
@@ -200,6 +206,15 @@ export const featureCard = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Card", sel: "> .blk-card" },
+      image: { label: "Picture", sel: ".blk-card-cover", prop: "image", draws: { props: { image: "/x.jpg" } } },
+      marker: { label: "Marker", sel: ".blk-card-marker", prop: "marker", draws: { props: { marker: "01" } } },
+      kicker: { label: "Kicker", sel: ".blk-card-kicker", prop: "kicker", draws: { props: { kicker: "Work" } } },
+      title: { label: "Title", sel: ".blk-card-title", prop: "title", draws: { props: { title: "A title" } } },
+      body: { label: "Words", sel: ".blk-card-body", prop: "body", draws: { props: { body: "Some words." } } },
+      meta: { label: "Details", sel: ".blk-card-meta", prop: "meta", draws: { props: { meta: "2026" } } },
+    },
   },
   FeatureCard,
   () => ({

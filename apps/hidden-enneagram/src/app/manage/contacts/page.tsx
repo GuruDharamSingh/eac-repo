@@ -1,5 +1,6 @@
 import { db } from "@elkdonis/db";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata = { title: "Contacts" };
 
@@ -26,6 +27,10 @@ async function recentContacts(): Promise<ContactRow[]> {
 }
 
 export default async function ManageContactsPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const contacts = await recentContacts();
   const artsUrl = process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ?? "http://localhost:3007";
 

@@ -345,3 +345,14 @@
   display: block; width: auto; max-width: 100%; max-height: 80vh; aspect-ratio: auto;
   object-fit: contain; margin: 0 auto 2rem; background: #000; border-radius: 6px;
 }
+
+/* ── Comments from the outside copy of the piece (ExternalComments, 2026-11-01) ── */
+.eac-xcomments { max-width: var(--read-measure, 68ch); margin: 2.5rem auto 0; padding-top: 1.5rem; border-top: var(--read-rule-weight, 1px) solid var(--read-rule); color: var(--read-ink); }
+.eac-xcomments__h { margin: 0 0 1rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--read-muted); font-weight: 600; }
+.eac-xcomments__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.eac-xcomments__item--reply { margin-left: 1.5rem; padding-left: 0.9rem; border-left: 2px solid var(--read-rule); }
+.eac-xcomments__meta { margin: 0 0 0.25rem; display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.85rem; color: var(--read-muted); }
+.eac-xcomments__meta strong { color: var(--read-ink); font-weight: 600; }
+.eac-xcomments__meta a { color: var(--read-accent); text-decoration: none; }
+.eac-xcomments__meta a:hover { text-decoration: underline; }
+.eac-xcomments__text { margin: 0; font-size: 0.98em; line-height: 1.55; white-space: pre-wrap; }

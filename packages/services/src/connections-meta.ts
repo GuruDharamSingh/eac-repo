@@ -27,6 +27,8 @@ export const META_SCOPES = [
   // Business portfolios: lets a Page assigned through a business be found
   // when /me/accounts is empty (dev, 2026-10-31). Also in the login configuration.
   'business_management',
+  // Subscribe a Page to the app's webhook, so comments on posts reach the network (2026-11-01). Also in the login configuration.
+  'pages_manage_metadata',
 ];
 export const THREADS_SCOPES = ['threads_basic', 'threads_content_publish'];
 

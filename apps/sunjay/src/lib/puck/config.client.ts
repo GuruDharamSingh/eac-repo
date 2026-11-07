@@ -1,11 +1,17 @@
 "use client";
 
 import { createElement, type ReactNode } from "react";
-import type { PropDef } from "@elkdonis/blocks";
-import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
+import type { Block, PropDef } from "@elkdonis/blocks";
+import { BOX_BLOCKS, BOX_ROOT } from "@elkdonis/direct-edit/puck/blocks";
+import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
+import { buildEditorConfig, buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
+// By path until @elkdonis/blocks exports it: the package's `exports` has no entry for this file.
+import { contractOf } from "../../../../../packages/blocks/src/contract";
 import { fontVariables } from "@/lib/fonts";
 import { CATALOGUE } from "./catalogue";
 import { ServicePickerField } from "@/components/studio/service-picker";
+import { PersonPickerField } from "@/components/studio/person-picker";
+import { opensDrawAction, personWhoAction } from "@/lib/featured-person-actions";
 import { SAMPLE_EVENT } from "@/blocks/event-sample";
 import { SAMPLE_BOOKING, SAMPLE_SERVICES } from "@/blocks/service-sample";
 import { SAMPLE_JOURNAL, SAMPLE_POST } from "@/blocks/writing-sample";
@@ -65,7 +71,14 @@ const orSample =
 
 const eventSample = (id: string) => orSample(id, () => ({ event: SAMPLE_EVENT }), (b) => !b.event);
 
+/** Featured person, Opens and a Card's record (2026-11-07): through the editors' actions, the same answer a visitor's page gets. */
+const str = (v: unknown) => (typeof v === "string" && v ? v : null);
+const opensOf = async (v: unknown) => { const s = str(v); return s ? (((await opensDrawAction("opens", s))?.opened as unknown) ?? null) : null; };
+
 const clientResolvers: BlockResolvers = {
+  "featured-person": async (props) => ({ who: str(props.person) ? await personWhoAction(props.person as string) : null, opened: await opensOf(props.opens) }),
+  "link-button": async (props) => ({ opened: await opensOf(props.opens) }),
+  "feature-card": async (props) => ({ bound: str(props.record) ? (((await opensDrawAction("record", props.record as string))?.bound as unknown) ?? null) : null, opened: await opensOf(props.opens) }),
   "pt-standing": viaApi("pt-standing"),
   "pt-calendar": viaApi("pt-calendar"),
   "pt-profile": viaApi("pt-profile"),
@@ -106,9 +119,44 @@ function CanvasFonts({ children }: { settings: Record<string, unknown>; children
   return createElement("div", { className: fontVariables }, children);
 }
 
+// Puck's editor opens a page the canvas saved, so the box blocks are ordinary blocks to it too.
+const blocks = [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])];
+
+/**
+ * Rows only: the canvas draws a block's own sample when a resolver finds nothing,
+ * and labels it, so it has to be able to tell the two apart. Puck's editor keeps
+ * the `orSample` resolvers above.
+ */
+const canvasResolvers: BlockResolvers = {
+  ...clientResolvers,
+  ...Object.fromEntries(
+    [
+      "pt-event-header",
+      "pt-event-about",
+      "pt-talk-room",
+      "pt-event-rsvp",
+      "pt-event-materials",
+      "pt-offering-card",
+      "pt-services",
+      "pt-service",
+      "pt-booking",
+      "pt-journal",
+      "pt-article",
+      "pt-series-nav",
+    ].map((id) => [id, viaApi(id)])
+  ),
+};
+
+/** The canvas editor draws with the published shape: the editor shape's chrome needs Puck's own context. */
+export const canvasConfig = buildPuckConfig({ resolvers: canvasResolvers, blocks, root: BOX_ROOT, morph: MorphMark });
+
+/** What each sealed block declares: its settings in the right column, and its parts to click into. */
+export const canvasContract = contractOf(CATALOGUE);
+
 export const puckConfig = buildEditorConfig({
   resolvers: clientResolvers,
-  blocks: CATALOGUE,
+  blocks,
+  morph: MorphMark,
   root: { props: [], wrap: CanvasFonts },
   fields: {
     // A string that BINDS to a service gets a picker; every other string keeps
@@ -118,7 +166,12 @@ export const puckConfig = buildEditorConfig({
         ? function ServiceProp(props: Record<string, unknown>) {
             return createElement(ServicePickerField, props as never);
           }
-        : null,
+        : // A person, an Opens or a Card's record gets "From what?" (2026-11-07).
+          prop.binds === "person" || prop.binds === "opens" || prop.binds === "record"
+          ? function ReferenceProp(props: Record<string, unknown>) {
+              return createElement(PersonPickerField, { ...(props as object), binds: prop.binds } as never);
+            }
+          : null,
   },
   media: {
     uploadEndpoint: "/api/upload",

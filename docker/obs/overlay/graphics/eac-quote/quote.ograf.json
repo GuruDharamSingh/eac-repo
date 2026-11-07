@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-quote",
+  "version": "1.0.0",
+  "name": "Quote",
+  "description": "The frame dimmed and a quotation in large type, with who said it.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string", "title": "Quote", "default": "", "maxLength": 400, "gddType": "multi-line" },
+      "by": { "type": "string", "title": "Who said it", "default": "", "maxLength": 120, "gddType": "single-line" },
+      "dim": { "type": "number", "title": "Dim (0-1)", "default": 0.72, "minimum": 0, "maximum": 1 },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

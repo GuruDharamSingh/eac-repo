@@ -28,6 +28,7 @@ import {
 import { ffmpegAvailable, processVideoJob } from '../src/video-render.ts';
 import { claimNextUpload, requeueStaleUploads, scanYoutubeUploads } from '../src/youtube-uploads.ts';
 import { processUpload } from '../src/youtube-uploader.ts';
+import { refreshStaleConnections } from '../src/connection-maintenance.ts';
 
 const SCAN_MS = Number(process.env.VIDEO_SCAN_SECONDS || 60) * 1000;
 const once = process.argv.includes('--once');
@@ -97,7 +98,19 @@ async function main() {
   const requeuedUploads = await requeueStaleUploads(0);
   if (requeuedUploads) log(`[upload] requeued ${requeuedUploads} interrupted upload(s)`);
 
+  // Outside connections: refresh stale tokens and send reconnect reminders,
+  // once at start and then daily (connection-maintenance.ts, 2026-11-01).
+  let lastMaintenance = 0;
   for (;;) {
+    if (Date.now() - lastMaintenance > 24 * 60 * 60 * 1000) {
+      lastMaintenance = Date.now();
+      try {
+        const r = await refreshStaleConnections();
+        log(`[connections] maintenance: ${r.checked} checked, ${r.refreshed} refreshed, ${r.failed} failed, ${r.warned} warned; pages ${r.subscriptions}`);
+      } catch (err) {
+        log(`[connections] maintenance failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     await scanAll();
     await drain();
     await scanUploads();

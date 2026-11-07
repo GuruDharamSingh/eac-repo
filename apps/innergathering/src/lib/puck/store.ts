@@ -3,6 +3,7 @@ import {
   loadPage as loadPageFor,
   savePage as savePageFor,
 } from "@elkdonis/page-builder/server";
+import { withOrg } from "@elkdonis/db";
 import { siteConfig } from "@/config/site";
 
 // ============================================================================
@@ -21,3 +22,16 @@ export const savePage = (slug: string, data: unknown) =>
   savePageFor(siteConfig.orgId, slug, data);
 
 export const listPages = () => listPagesFor(siteConfig.orgId);
+
+/** Remove a page's stored document. Used to go back to a code-built page. */
+export async function deletePage(slug: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await withOrg(siteConfig.orgId, (sql) => sql`
+      DELETE FROM site_config WHERE org_id = ${siteConfig.orgId} AND key = ${`puck:${slug}`}
+    `);
+    return { ok: true };
+  } catch (err) {
+    console.error("[puck] deletePage:", err);
+    return { ok: false, error: "Could not restore the page." };
+  }
+}

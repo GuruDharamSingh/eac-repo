@@ -1,4 +1,6 @@
 import { loadThreadFeed } from "@elkdonis/blocks/server";
+import { SHARED_BLOCKS, type Block } from "@elkdonis/blocks";
+import { BOX_BLOCKS, BOX_ROOT } from "@elkdonis/direct-edit/puck/blocks";
 import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { siteConfig } from "@/config/site";
 
@@ -22,4 +24,8 @@ const serverResolvers: BlockResolvers = {
   },
 };
 
-export const serverPuckConfig = buildPuckConfig({ resolvers: serverResolvers });
+export const serverPuckConfig = buildPuckConfig({
+  resolvers: serverResolvers,
+  blocks: [...SHARED_BLOCKS, ...(BOX_BLOCKS as unknown as Block<never>[])],
+  root: BOX_ROOT,
+});

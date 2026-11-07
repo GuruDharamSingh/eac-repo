@@ -61,7 +61,7 @@ in the container; source changed after that date is not live.
 | Service | Container | Port | Mode | Public host | Running | Build date |
 |---|---|---|---|---|---|---|
 | admin | eac-admin | 3000 | dev (override) | none, LAN only | yes | – |
-| sunjay | eac-sunjay | 3001 | prod | paratheater.arts-collective.com | yes | 09-20 |
+| sunjay | eac-sunjay | 3001 | prod | paratheater.arts-collective.com | yes | 11-06 |
 | blog-guru-dharam | eac-blog-guru-dharam | 3002 | dev | – | no | – |
 | forum | eac-forum | 3003 | dev | forum.arts-collective.com | no (2026-09-26: stopped at developer request) | – |
 | inner-gathering | eac-inner-gathering | 3004 | prod | meetings.elkdonis-arts.org | yes | 09-06 |
@@ -88,6 +88,7 @@ in the container; source changed after that date is not live.
 | video-worker | eac-video-worker | – | – | – | yes | – |
 | install (profile tools) | one-shot | – | – | – | – | – |
 | photon (profile geo) | eac-photon | 2322 | – | – | no | – |
+| elktours | eac-elktours | 3021 | prod (2026-11-03) | elkdonisexperiences.com | yes | 11-06 |
 
 Container names that do not match the service: `eac-arts-network` is service
 `arts-collective`; `eac-arts-collective` is service `elkdonis-arts-collective`.
@@ -278,6 +279,7 @@ removed (`Resource busy`); clear its contents with `rm -rf .next/*`.
    (arts-collective: `NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2`).
    `next build` clears `.next` early, so the site can fail requests during the
    build and stays down if the build fails.
+   (claude, 2026-11-04) A build can fail with `next/font/google queries have exactly one entry` through no fault of the code: Google Fonts sometimes answers with a `fonts.gstatic.com/l/font?kit=…&skey=…` URL instead of `/s/<family>/…` (1 of 12 direct requests; 1 of 7 sunjay builds, Fraunces only). Verified: same source passed on the next run. Rerun the build at once; any other failure means restore.
    Address the container by name (`docker exec eac-<app> …`) when a one-off
    `docker compose run` container exists for the service
    (`docker ps --filter label=com.docker.compose.oneoff=True`):
@@ -369,6 +371,10 @@ through `eac-ifac`); the older advice to `docker exec eac-ifac … pnpm install
   that do not exist publicly.
 - Do not edit `docker/nginx/` to change production routing: nothing mounts it.
 - Test through the edge with SNI after any edge or build change.
+- Do not run `check-types` inside a live dev-mode app container: on 2026-11-03 it ran in `elktours` (4 GiB cap, public site), the exec exited 137 and the container restarted about 25 seconds later. Causation assumed from the timing. Use a container that is not serving the public. (claude, 2026-11-03)
+- Export only async functions from a `"use server"` file: one exported object makes every action in that page's action loader return 500, while the page itself still renders 200. Verified on elktours `/manage/tours` from the log, 2026-11-03. (claude, 2026-11-03)
+- `eac-postgres` and `eac-redis` have restart policy `no` (2026-11-03, `docker inspect`), while the apps restart at boot: after a host reboot the apps come up without a database until someone starts it. On 2026-11-03 the database was down from 23:56:39 to 00:00:21 UTC after a reboot at 23:55:54. (claude, 2026-11-03)
+- The `eac-dev` image has BusyBox `cp`: it rejects `--preserve=...`. Test a copy into `.next` before emptying the directory; on 2026-11-03 the rejected flag left elktours with an empty `.next` and a 53-second outage while the start command rebuilt it. (claude, 2026-11-03)
 
 ## Open items
 - `scripts/add-proxy-host.sh:163` passes `$NPM_EMAIL` to `jq` under `set -u`.

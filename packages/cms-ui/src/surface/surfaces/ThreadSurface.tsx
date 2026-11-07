@@ -145,12 +145,17 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
       label: "Edit",
       quiet: true,
       // Writing is edited in the writing room; everything else in the form.
-      onClick: () =>
-        push(
-          thread.kind === "post"
-            ? { type: "write", kind: "post", threadId: thread.id }
-            : { type: "compose", kind: thread.kind, threadId: thread.id }
-        ),
+      // A host with a series planner page but no series form sends a series there.
+      ...(thread.kind === "series" && connectors.seriesEditHref
+        ? { href: connectors.seriesEditHref(thread.id) }
+        : {
+            onClick: () =>
+              push(
+                thread.kind === "post"
+                  ? { type: "write", kind: "post", threadId: thread.id }
+                  : { type: "compose", kind: thread.kind, threadId: thread.id }
+              ),
+          }),
     });
   }
 

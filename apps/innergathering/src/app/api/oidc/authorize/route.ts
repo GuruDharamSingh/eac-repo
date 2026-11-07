@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@elkdonis/db";
-import { getServerAuth } from "@elkdonis/auth-server";
+import { getServerAuth, getVerifiedSession } from "@elkdonis/auth-server";
 import { createAuthCode, externalOrigin, findUser, getClient, interAppSecret, verifyHs256 } from "@/lib/oidc";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +70,8 @@ export async function GET(req: NextRequest) {
     }
   } else {
     const supabase = await getServerAuth();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Verified: a decoded-only cookie would let anyone sign into Nextcloud as anyone.
+    const session = (await getVerifiedSession(supabase))?.session ?? null;
     if (!session) {
       // Not signed in here: sign in, then come straight back to this URL.
       const origin = externalOrigin(req);

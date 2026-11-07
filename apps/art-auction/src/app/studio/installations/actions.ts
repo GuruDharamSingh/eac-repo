@@ -15,21 +15,14 @@ import {
   type InstallationPiece,
   type InstallationStatus,
 } from "@/lib/installations";
+import { cleanPieces } from "@/lib/installation-input";
 import { isVenueId } from "@/lib/installation-venues";
-// The banner-free entry: the client one marks every export as a client reference.
-import { isFrameRatio, normalizeLamp } from "@elkdonis/three/hallway/model";
-
-/** A number within [lo, hi], or the fallback when it is not a number. */
-function bound(value: unknown, lo: number, hi: number, fallback: number): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
-}
 
 /** The installation, if one of the stores this person acts for owns it. */
 async function ownInstallation(id: string): Promise<Installation> {
   const { stores } = await requireStudioStore();
   const installation = await getInstallation(id);
-  if (!installation || !stores.some((s) => s.id === installation.storeId)) {
+  if (!installation?.storeId || !stores.some((s) => s.id === installation.storeId)) {
     throw new Error("That installation is not one of yours.");
   }
   return installation;
@@ -55,25 +48,8 @@ export async function createInstallationAction(formData: FormData) {
 
 export async function saveLayoutAction(id: string, pieces: InstallationPiece[]) {
   const installation = await ownInstallation(id);
-  const sane = pieces
-    .filter((p) => typeof p.artworkId === "string" && typeof p.wallId === "string")
-    .map((p) => ({
-      artworkId: p.artworkId,
-      wallId: p.wallId.slice(0, 16),
-      x: Number(p.x) || 0,
-      y: Number(p.y) || 0,
-      frameId: p.frameId ? String(p.frameId).slice(0, 40) : null,
-      scale: Math.min(4, Math.max(0.25, Number(p.scale) || 1)),
-      ratio: isFrameRatio(p.ratio) ? p.ratio : "auto",
-      crop: {
-        x: bound(p.crop?.x, 0, 100, 50),
-        y: bound(p.crop?.y, 0, 100, 50),
-        zoom: bound(p.crop?.zoom, 1, 3, 1),
-      },
-      lamp: normalizeLamp(p.lamp),
-      sequence: Math.max(1, Math.round(Number(p.sequence) || 1)),
-    }));
-  const hung = await saveInstallationLayout(installation.id, installation.storeId, sane);
+  const sane = cleanPieces(pieces);
+  const hung = await saveInstallationLayout(installation.id, { storeId: installation.storeId! }, sane);
   revalidatePath(`/installations/${id}`);
   return { hung, savedAt: new Date().toISOString() };
 }

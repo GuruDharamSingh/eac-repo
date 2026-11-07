@@ -13,6 +13,7 @@ import {
   WIDTH,
   HEIGHT,
 } from './artwork-reel';
+import { ClipReelComposition, clipReelDuration, clipReelSize, FPS as CLIP_FPS } from './clip';
 
 export interface ReelTemplate {
   id: ReelTemplateId;
@@ -23,6 +24,8 @@ export interface ReelTemplate {
   width: number;
   height: number;
   durationInFrames(input: ReelInput): number;
+  /** Per-edit frame size (the clip template's format); width/height otherwise. */
+  dimensions?(input: ReelInput): { width: number; height: number };
 }
 
 export const REEL_TEMPLATES: Record<ReelTemplateId, ReelTemplate> = {
@@ -36,6 +39,20 @@ export const REEL_TEMPLATES: Record<ReelTemplateId, ReelTemplate> = {
     height: HEIGHT,
     durationInFrames: artworkReelDuration,
   },
+  clip: {
+    id: 'clip',
+    label: 'Clip with overlays',
+    description: 'One recording, trimmed, with a title, a lower third, a corner label and an end card. 16:9, 9:16 or 1:1.',
+    component: ClipReelComposition,
+    fps: CLIP_FPS,
+    width: 1920,
+    height: 1080,
+    durationInFrames: clipReelDuration,
+    dimensions: clipReelSize,
+  },
 };
+
+/** The frame size an edit renders at. */
+export const templateSize = (t: ReelTemplate, input: ReelInput) => t.dimensions?.(input) ?? { width: t.width, height: t.height };
 
 export { ArtworkReel, planArtworkReel };

@@ -34,15 +34,24 @@ export default async function ContentSlugPage({
   // this route only ever asked for workshops while /profile linked to all of
   // them. Workshops keep the bound template below; everything else reads.
   if (!workshopData) {
-    const thread = await getPublicThread(org.id, contentSlug);
-    if (!thread) notFound();
     // Editors get the pin here as well as in the console: "lead the site with
-    // this" is a decision usually taken while reading the thing itself.
+    // this" is a decision usually taken while reading the thing itself. They
+    // also see a draft at its own URL (2026-11-06), where the dock offers Publish;
+    // everyone else still gets a 404 for it.
     const viewer = await getCurrentUser();
     const canEdit = viewer ? await canEditOrgSite(viewer.id, org.id) : false;
+    const thread = await getPublicThread(org.id, contentSlug, { includeDrafts: canEdit });
+    if (!thread) notFound();
+    const isDraft = thread.status === "draft";
     return (
       <>
-        {canEdit && <ThreadEditorBar threadId={thread.id} pinned={thread.pinned} />}
+        {isDraft && (
+          <p role="status" style={{ margin: 0, padding: "0.6rem 1rem", background: "#fff4d6", color: "#4a3500", borderBottom: "1px solid #e6cf8a", font: "500 0.9rem/1.4 system-ui, sans-serif", textAlign: "center" }}>
+            {/* #4a3500 on #fff4d6: 10.64:1 */}
+            Draft: only the organisation’s owners and guides see this page until it is published.
+          </p>
+        )}
+        {canEdit && !isDraft && <ThreadEditorBar threadId={thread.id} pinned={thread.pinned} />}
         <ArticleBody org={org} thread={thread} orgs={await getThreadOrgs(thread.id)} />
       </>
     );

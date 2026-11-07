@@ -1,0 +1,484 @@
+/* ==========================================================================
+   Card LOOKS (looks.ts): Ember, Glaze Lab, Profile. House = no rules here.
+
+   Which look a card wears, nearest first, as ONE selector per look whose three
+   arms never match the same card twice (so the nearest choice always wins,
+   whatever the nesting, with no specificity games):
+     .ktp-card[data-look=X]                          the card's own block
+     .ktp-piece-row[data-look=X] .ktp-card            its row (card has none)
+     [data-site-look=X] .ktp-card, not in a row with a look
+   The same for the visitor popup (.ktp-dialog). Everything is CSS, so the
+   editor canvas, the Edit-look popup and the published page agree, and a
+   block's own look (morph) and its Tweaks tokens still apply on top.
+   Decoration is CSS only. Motion stops under prefers-reduced-motion.
+   ========================================================================== */
+
+/* -- shared: swatches exist in the markup only for pieces with 2+ pictures,
+      and only Glaze Lab shows them ----------------------------------------- */
+.ktp-card-swatches {
+  display: none;
+}
+.ktp-card-pour {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  clip-path: inset(0 0 100% 0);
+  animation: ktp-pour 0.75s cubic-bezier(0.55, 0, 0.25, 1) forwards;
+}
+@keyframes ktp-pour {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@property --ktp-wheel {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ==========================================================================
+   A · EMBER: wood-fired. An arched kiln mouth, the glow of the firing from
+   below, a few embers rising, a gloss sweep across the glaze on hover.
+   ========================================================================== */
+:is(
+    .ktp-card[data-look="ember"],
+    .ktp-piece-row[data-look="ember"] .ktp-card:not([data-look]),
+    [data-site-look="ember"] .ktp-card:not([data-look]):not(.ktp-piece-row[data-look] .ktp-card)
+  ) {
+  --em-char: #1f1510;
+  --em-glow: #e8753a;
+  --em-spark: #ffc27a;
+  /* price and marks on the cream page: 6.4:1 on #f6f1e9 */
+  --em-ink: #8f3412;
+
+  & .ktp-card-pic {
+    border-radius: 999px 999px var(--ktp-radius, 12px) var(--ktp-radius, 12px);
+    background:
+      /* the firing behind the piece: dark glazes read as a silhouette against it */
+      radial-gradient(52% 40% at 50% 48%, rgba(240, 128, 64, 0.55), rgba(200, 90, 40, 0.18) 55%, transparent 75%),
+      radial-gradient(75% 48% at 50% 96%, color-mix(in srgb, var(--em-glow) 85%, transparent), color-mix(in srgb, #a3401a 55%, transparent) 42%, transparent 72%),
+      linear-gradient(180deg, var(--em-char), #33210f 62%, #4a2a17);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 170, 110, 0.22),
+      inset 0 -26px 36px -22px rgba(255, 140, 60, 0.55),
+      0 14px 30px -20px rgba(60, 25, 10, 0.55);
+  }
+  & .ktp-card-img {
+    /* a crisp rim of firelight, not a fog: dark glazes stay legible on the char */
+    filter: drop-shadow(0 0 1px rgba(255, 196, 150, 0.85)) drop-shadow(0 10px 14px rgba(255, 110, 40, 0.22));
+  }
+  & .ktp-card-plinth {
+    mix-blend-mode: screen;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 150, 80, 0.55), transparent 72%);
+  }
+  /* embers */
+  & .ktp-card-pic::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    background:
+      radial-gradient(2px 2px at 22% 78%, var(--em-spark), transparent 70%),
+      radial-gradient(1.5px 1.5px at 35% 64%, var(--em-spark), transparent 70%),
+      radial-gradient(2px 2px at 68% 72%, var(--em-spark), transparent 70%),
+      radial-gradient(1.5px 1.5px at 80% 58%, var(--em-spark), transparent 70%),
+      radial-gradient(1.5px 1.5px at 55% 84%, var(--em-spark), transparent 70%);
+    opacity: 0.85;
+    animation: ktp-embers 5.5s ease-in infinite;
+  }
+  /* the gloss sweep */
+  & .ktp-card-pic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(112deg, transparent 38%, rgba(255, 238, 215, 0.34) 50%, transparent 62%);
+    transform: translateX(-120%);
+    transition: transform 0.9s cubic-bezier(0.3, 0.6, 0.2, 1);
+    opacity: 1;
+  }
+  & .ktp-card-link:is(:hover, :focus-visible) .ktp-card-pic::after {
+    transform: translateX(120%);
+  }
+  /* the arch would clip a corner badge: it hangs in the kiln mouth */
+  & .ktp-card-badge {
+    top: 16%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--em-char);
+    color: var(--em-spark);
+    box-shadow: 0 0 0 1px rgba(255, 170, 110, 0.35);
+  }
+  & .ktp-card-cap::before {
+    content: "";
+    display: block;
+    width: 28px;
+    height: 2px;
+    margin-bottom: 0.45rem;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--em-ink), var(--em-glow));
+  }
+  & .ktp-card-kicker,
+  & .ktp-card-price {
+    color: var(--ktp-accent, var(--em-ink));
+  }
+  & .ktp-card-meta {
+    letter-spacing: 0.08em;
+  }
+  & .ktp-card-cta .ktp-buy:not(.ktp-buy--ghost) {
+    background: linear-gradient(180deg, #a8431a, var(--em-ink));
+    color: #fff7ef;
+  }
+}
+@keyframes ktp-embers {
+  0% {
+    transform: translateY(6%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-28%);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   B · GLAZE LAB: made to order. Graph-paper ground, the piece on a banding
+   wheel that turns on hover, and its own pictures as glaze swatches that pour
+   over the picture when chosen.
+   ========================================================================== */
+:is(
+    .ktp-card[data-look="glaze-lab"],
+    .ktp-piece-row[data-look="glaze-lab"] .ktp-card:not([data-look]),
+    [data-site-look="glaze-lab"] .ktp-card:not([data-look]):not(.ktp-piece-row[data-look] .ktp-card)
+  ) {
+  --gl-paper: #f8f6f1;
+  --gl-rule: rgba(36, 33, 30, 0.07);
+  --gl-ink: #24211e;
+  /* 5.9:1 on #f6f1e9 */
+  --gl-glaze: #2f5f73;
+
+  & .ktp-card-pic {
+    border-radius: 6px;
+    background:
+      linear-gradient(var(--gl-rule) 1px, transparent 1px) 0 0 / 18px 18px,
+      linear-gradient(90deg, var(--gl-rule) 1px, transparent 1px) 0 0 / 18px 18px,
+      var(--ktp-card-bg, var(--gl-paper));
+    box-shadow: inset 0 0 0 1px rgba(36, 33, 30, 0.14);
+  }
+  /* the banding wheel */
+  & .ktp-card-plinth {
+    left: 14%;
+    right: 14%;
+    bottom: 5%;
+    height: 9%;
+    mix-blend-mode: normal;
+    /* a turned wheel: three rings and a few faint ticks that turn on hover */
+    background:
+      repeating-conic-gradient(from var(--ktp-wheel), rgba(36, 33, 30, 0.1) 0 1.5deg, transparent 1.5deg 24deg),
+      radial-gradient(closest-side, #ece6dc 0 28%, #d3cbbf 29% 31%, #e8e1d6 32% 63%, #d3cbbf 64% 66%, #e4ddd1 67% 95%, #c9c0b2 96% 100%);
+    box-shadow: 0 5px 8px -5px rgba(36, 33, 30, 0.45), inset 0 -2px 0 rgba(36, 33, 30, 0.12);
+    transition: --ktp-wheel 1.6s cubic-bezier(0.3, 0.6, 0.2, 1);
+  }
+  & .ktp-card-link:is(:hover, :focus-visible) .ktp-card-plinth {
+    --ktp-wheel: 180deg;
+  }
+  & .ktp-card-kicker,
+  & .ktp-card-price {
+    color: var(--ktp-accent, var(--gl-glaze));
+  }
+  & .ktp-card-meta {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: calc(var(--ktp-meta-size) * 0.92);
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+  & .ktp-card-badge {
+    background: var(--gl-paper);
+    color: var(--gl-ink);
+    box-shadow: inset 0 0 0 1px var(--gl-ink);
+    border-radius: 3px;
+  }
+  & .ktp-card-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0.55rem 0.2rem 0;
+  }
+  & .ktp-card-swatch {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--gl-paper);
+    box-shadow: 0 0 0 1px rgba(36, 33, 30, 0.22);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  & .ktp-card-swatch img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* the glaze, not the pot's outline: look at its middle */
+    transform: scale(2.2);
+  }
+  & .ktp-card-swatch:hover {
+    transform: translateY(-1px);
+  }
+  & .ktp-card-swatch[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px var(--gl-ink);
+  }
+  & .ktp-card-swatch:focus-visible {
+    outline: 2px solid var(--gl-glaze);
+    outline-offset: 2px;
+  }
+  & .ktp-card-cta .ktp-buy:not(.ktp-buy--ghost) {
+    background: var(--gl-ink);
+    color: #fbfaf7;
+  }
+}
+/* On a feature card the swatches stand in for the thumbnail strip. */
+.ktp-piece:has(:is(
+    .ktp-card[data-look="glaze-lab"],
+    .ktp-piece-row[data-look="glaze-lab"] .ktp-card:not([data-look]),
+    [data-site-look="glaze-lab"] .ktp-card:not([data-look]):not(.ktp-piece-row[data-look] .ktp-card)
+  ) .ktp-card-swatches) .ktp-piece-thumbs {
+  display: none;
+}
+
+/* ==========================================================================
+   C · PROFILE: a hang tag. The piece is drawn as a section (outline, centre
+   line, hatching on the cut half) from its own picture; on hover or focus the
+   finished piece wipes in. The ground line carries the record's dimensions.
+   ========================================================================== */
+:is(
+    .ktp-card[data-look="profile"],
+    .ktp-piece-row[data-look="profile"] .ktp-card:not([data-look]),
+    [data-site-look="profile"] .ktp-card:not([data-look]):not(.ktp-piece-row[data-look] .ktp-card)
+  ) {
+  --pf-stock: #efe5d3;
+  --pf-ink: #2b2420;
+  --pf-line: #3a2f28;
+  /* 7.0:1 on the tag stock */
+  --pf-mark: #7a3418;
+
+  position: relative;
+  padding: 0.7rem 0.7rem 0.85rem;
+  background: var(--ktp-card-bg, var(--pf-stock));
+  color: var(--ktp-card-ink, var(--pf-ink));
+  border-radius: 4px;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 1px rgba(43, 36, 32, 0.12);
+
+  /* the punched hole */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    z-index: 4;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--blk-bg, #f6f1e9);
+    box-shadow: inset 0 1px 2px rgba(43, 36, 32, 0.45), 0 0 0 2px rgba(43, 36, 32, 0.12);
+  }
+  & .ktp-card-link {
+    color: inherit;
+  }
+  /* the tag's clipped corners would cut an outside focus ring */
+  & .ktp-card-link:focus-visible {
+    outline-offset: -3px;
+  }
+  & .ktp-card-pic {
+    border-radius: 2px;
+    background:
+      linear-gradient(to bottom, rgba(58, 47, 40, 0.5) 50%, transparent 50%) center top / 1px 9px repeat-y,
+      #f7f1e6;
+    box-shadow: inset 0 0 0 1px rgba(58, 47, 40, 0.18);
+  }
+  /* the outline: the picture as a white shape with an ink edge */
+  & .ktp-card-pic::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--ktp-pic-src) center / cover no-repeat;
+    filter: brightness(0) invert(1) drop-shadow(1.2px 0 0 var(--pf-line)) drop-shadow(-1.2px 0 0 var(--pf-line)) drop-shadow(0 1.2px 0 var(--pf-line)) drop-shadow(0 -1.2px 0 var(--pf-line));
+  }
+  /* the cut half, hatched inside the shape */
+  & .ktp-card-pic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(-45deg, rgba(58, 47, 40, 0.42) 0 1px, transparent 1px 6px);
+    mask: var(--ktp-pic-src) center / cover no-repeat;
+    clip-path: inset(0 0 0 50%);
+    opacity: 1;
+  }
+  /* the finished piece, wiped in */
+  & .ktp-card-img {
+    position: relative;
+    z-index: 1;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.8s cubic-bezier(0.5, 0, 0.2, 1);
+  }
+  & .ktp-card-link:is(:hover, :focus-visible) .ktp-card-img {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+  /* ground line + the record's dimensions (none recorded: no label) */
+  & .ktp-card-plinth {
+    left: 10%;
+    right: 10%;
+    bottom: 6%;
+    height: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--pf-line);
+    background: none;
+    mix-blend-mode: normal;
+    z-index: 2;
+  }
+  & .ktp-card-plinth::after {
+    content: attr(data-dims);
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1px 5px;
+    white-space: nowrap;
+    background: #f7f1e6;
+    font: 500 10px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+    letter-spacing: 0.04em;
+    color: var(--pf-line);
+  }
+  & .ktp-card-badge {
+    top: 18px;
+    background: transparent;
+    color: var(--pf-mark);
+    box-shadow: inset 0 0 0 1.5px var(--pf-mark);
+    border-radius: 3px;
+    transform: rotate(-5deg);
+  }
+  & .ktp-card-cap {
+    padding-inline: 0.15rem;
+  }
+  & .ktp-card-title {
+    font-style: italic;
+  }
+  & .ktp-card-kicker,
+  & .ktp-card-price {
+    color: var(--ktp-accent, var(--pf-mark));
+  }
+  & .ktp-card-meta {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    text-transform: lowercase;
+  }
+  & .ktp-card-cta .ktp-buy:not(.ktp-buy--ghost) {
+    background: var(--pf-ink);
+    color: var(--pf-stock);
+  }
+}
+/* A touch screen has no hover: show the finished piece, keep the tag. */
+@media (hover: none) {
+  :is(
+      .ktp-card[data-look="profile"],
+      .ktp-piece-row[data-look="profile"] .ktp-card:not([data-look]),
+      [data-site-look="profile"] .ktp-card:not([data-look]):not(.ktp-piece-row[data-look] .ktp-card)
+    )
+    .ktp-card-img {
+    clip-path: none;
+  }
+}
+
+/* ==========================================================================
+   The visitor popup wears its card's look (same three arms, on .ktp-dialog).
+   ========================================================================== */
+:is(
+    .ktp-dialog[data-look="ember"],
+    .ktp-piece-row[data-look="ember"] .ktp-dialog:not([data-look]),
+    [data-site-look="ember"] .ktp-dialog:not([data-look]):not(.ktp-piece-row[data-look] .ktp-dialog)
+  ) {
+  & .ktp-pop-media {
+    background:
+      radial-gradient(75% 45% at 50% 100%, rgba(232, 117, 58, 0.75), transparent 70%),
+      linear-gradient(180deg, #1f1510, #3a2412);
+  }
+  & .ktp-pop-price {
+    color: #8f3412;
+  }
+}
+:is(
+    .ktp-dialog[data-look="glaze-lab"],
+    .ktp-piece-row[data-look="glaze-lab"] .ktp-dialog:not([data-look]),
+    [data-site-look="glaze-lab"] .ktp-dialog:not([data-look]):not(.ktp-piece-row[data-look] .ktp-dialog)
+  ) {
+  & .ktp-pop-media {
+    background:
+      linear-gradient(rgba(36, 33, 30, 0.07) 1px, transparent 1px) 0 0 / 18px 18px,
+      linear-gradient(90deg, rgba(36, 33, 30, 0.07) 1px, transparent 1px) 0 0 / 18px 18px,
+      #f8f6f1;
+  }
+  & .ktp-pop-price {
+    color: #2f5f73;
+  }
+  & .ktp-gallery-thumb {
+    border-radius: 50%;
+  }
+}
+:is(
+    .ktp-dialog[data-look="profile"],
+    .ktp-piece-row[data-look="profile"] .ktp-dialog:not([data-look]),
+    [data-site-look="profile"] .ktp-dialog:not([data-look]):not(.ktp-piece-row[data-look] .ktp-dialog)
+  ) {
+  & .ktp-pop {
+    background: #efe5d3;
+  }
+  & .ktp-pop-media {
+    background: #f7f1e6;
+  }
+  & .ktp-pop-title {
+    font-style: italic;
+  }
+  & .ktp-pop-price {
+    color: #7a3418;
+  }
+}
+
+/* The detail page's facts follow the site look's ink. */
+[data-site-look="ember"] .ktp-details .ktp-facts dt {
+  color: #8f3412;
+}
+[data-site-look="glaze-lab"] .ktp-details .ktp-facts dd {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.92em;
+}
+[data-site-look="profile"] .ktp-details .ktp-facts dd {
+  font-variant: small-caps;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ktp-card .ktp-card-pic::before {
+    animation: none !important;
+  }
+  .ktp-card .ktp-card-pic::after,
+  .ktp-card .ktp-card-img,
+  .ktp-card .ktp-card-plinth {
+    transition: none !important;
+  }
+  .ktp-card-pour {
+    animation: none;
+    clip-path: none;
+  }
+}

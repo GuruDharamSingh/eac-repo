@@ -1,0 +1,31 @@
+{
+  "name": "@elkdonis/actions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./catalogue": "./src/catalogue.ts",
+    "./present": "./src/present.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "dependencies": {
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "check:registry": "pnpm --filter @elkdonis/lms exec tsx ../actions/scripts/check-registry.mts"
+  }
+}

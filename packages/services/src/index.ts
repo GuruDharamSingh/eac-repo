@@ -662,6 +662,9 @@ export type { DavEntry } from './dav';
 export { serveMedia } from './media-serve';
 export type { ServeMediaOptions } from './media-serve';
 export { THUMBNAIL_WIDTHS, parseThumbnailWidth } from './media-thumbnail';
+// The Studio's image tools: a stored picture resized/converted with sharp. See media-convert.ts.
+export { convertMediaImage, CONVERT_SIZES } from './media-convert';
+export type { ConvertMediaOptions, ConvertFormat } from './media-convert';
 
 // Blog documents that live in both places: a thread's markdown body and a
 // file in the author's own EAC_Network/users/<slug>/Documents/, kept in step.
@@ -911,6 +914,13 @@ export {
   listHostRemindersDue,
   claimHostReminder,
 } from './meeting-rota';
+export {
+  listAttendeeRemindersDue,
+  listAttendeeReminderRecipients,
+  claimAttendeeReminder,
+  recordAttendeeReminderSent,
+} from './attendee-reminders';
+export type { AttendeeReminder, ReminderRecipient } from './attendee-reminders';
 export type {
   RotaAssignment,
   RotaOccurrence,
@@ -1264,6 +1274,10 @@ export {
 } from './connections';
 export type { UserConnection, ConnectionProvider, ConnectionStatus, ConnectionResult, ConnectionTarget } from './connections';
 
+// Instagram and YouTube on a person's ArtDirect page (2026-11-01).
+export { getSocialAccounts, getInstagramFeed, getYoutubeFeed, forgetSocialFeeds } from './social-feeds';
+export type { InstagramPost, YoutubeVideo, SocialAccounts, SocialFeed } from './social-feeds';
+
 // Where a thread's recordings are published (threads.metadata.publish). See publish-target.ts.
 export { getPublishTarget, setPublishTarget } from './publish-target';
 export type { PublishTargetView, YoutubePublishTarget, PublishPrivacy, PublishMode } from './publish-target';
@@ -1277,9 +1291,7 @@ export type { VideoUpload, VideoUploadStatus } from './youtube-uploads';
 export { createDeletionRequest, getDeletionRequestByCode, listDeletionRequests, resolveDeletionRequest, createDeletionRequestHandler, deleteMetaConnections, fulfilMetaDeletion } from './data-deletion';
 export type { DeletionRequest, DeletionRequestStatus, DeletionRequestSource } from './data-deletion';
 
-// Onboarding tasks (2026-10-29): "is this done yet?" for the getting-started course and hub checklists.
-export { getOnboardingTaskStatus, getOnboardingTaskStatuses, ONBOARDING_TASK_IDS, ORG_TASK_IDS } from './onboarding-tasks';
-export type { OnboardingTaskId, OnboardingTaskStatus } from './onboarding-tasks';
+// Onboarding tasks (2026-10-29) moved to @elkdonis/actions/server (actionStatus) on 2026-11-06.
 
 // Social posts: the Studio's Post kind (migration 219, 2026-10-31).
 export {
@@ -1303,3 +1315,13 @@ export { recordMetaWebhookEvent } from './meta-webhooks';
 export { listOrgChannels, listChannelsForManager, setOrgChannel, isOrgChannel, type OrgChannel, type ChannelProvider } from './org-channels';
 export { startPublishJob, finishPublishJob, listPublishJobs, type PublishJobView } from './publish-jobs';
 export { centerRoutes } from './center-routes';
+
+// Connections audit log and the network Terms (migrations 223-224, 2026-11-01).
+export { logConnectionEvent, listConnectionEvents, type ConnectionEventName, type ConnectionEventView } from './connection-events';
+export { getNetworkTerms, hasAcceptedNetworkTerms, acceptNetworkTerms, NETWORK_TERMS_ORG, NETWORK_TERMS_KEY, type NetworkTerms } from './network-terms';
+export { refreshStaleConnections, type MaintenanceReport } from './connection-maintenance';
+// Comments from the outside copy of a thread (migration 225, 2026-11-01).
+export { listExternalComments, threadForExternalPost, recordExternalComment, removeExternalComment, processMetaWebhookEvent, subscribePageFeed, subscribeAllPageFeeds, type ExternalComment } from './external-comments';
+
+// Meetings and events for any org: the Studio's save path (2026-11-01).
+export { MEETING_KINDS, meetingComposeContext, listOrgMeetings, loadMeetingContent, saveMeetingContent, removeMeetingContent, type MeetingKind, type MeetingInput, type MeetingSummary, type MeetingRecord, type MeetingComposeContext, type MeetingResult } from "./meeting-content";

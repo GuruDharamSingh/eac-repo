@@ -37,7 +37,7 @@
  *
  *     AND t.kind <> ALL(${OFF_FEED_KINDS})
  */
-export const OFF_FEED_KINDS: string[] = ['wiki_page', 'writing', 'document', 'series_session', 'tour'];
+export const OFF_FEED_KINDS: string[] = ['wiki_page', 'writing', 'document', 'series_session', 'tour', 'experience'];
 
 /**
  * A guided tour with stops and dated departures (migration 208). Listed only

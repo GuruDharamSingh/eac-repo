@@ -39,11 +39,13 @@ async function gate(slug: string) {
   `;
   const orgId = rows[0]?.id;
   if (!orgId) return { error: "Organization not found", status: 404 as const };
-  // Any standing in the org at all, viewer included — reading the team folder
-  // is what membership means here. `isOrgMember` in services is a different
-  // thing: it takes a forum viewer, not a user id.
+  // Members and above. `viewer` is refused because /api/org/join and Follow
+  // grant it to anyone with an account; until 2026-11-04 a follower could list
+  // the whole tree, Private/ included. Same exclusion as isOrgAffiliate in
+  // media-authz. `isOrgMember` in services is a different thing: it takes a
+  // forum viewer, not a user id.
   const role = await getOrgRole(user.id, orgId);
-  if (!role) {
+  if (!role || role === "viewer") {
     return { error: "Not a member of this organisation", status: 403 as const };
   }
   return { orgId, userId: user.id, canEdit: await canEditOrgSite(user.id, orgId) };

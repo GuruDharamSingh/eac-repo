@@ -1,0 +1,7 @@
+; elkdonisexperiences.com — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN elkdonisexperiences.com.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+www	3600	IN	CNAME	elkdonisexperiences.com. ; cf_tags=cf-proxied:false

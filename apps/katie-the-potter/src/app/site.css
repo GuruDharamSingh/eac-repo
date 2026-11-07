@@ -1,0 +1,334 @@
+/* ==========================================================================
+   Katie the Potter — the public shell (header, footer, plain pages).
+
+   Plain CSS on the site's tokens, modelled on sunjay's pts.css. Everything
+   on the LANDING is a block (quick-landing, artwork-grid) and carries its own
+   stylesheet; this file is only the frame around the blocks.
+   ========================================================================== */
+
+:root {
+  --ktp-header-h: 64px;
+  --ktp-max: 1180px;
+}
+
+/* ── header ───────────────────────────────────────────────────────────── */
+
+.ktp-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in oklab, hsl(var(--background)) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsl(var(--border));
+}
+.ktp-header__row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-height: var(--ktp-header-h);
+  width: min(var(--ktp-max), calc(100% - 32px));
+  margin-inline: auto;
+}
+.ktp-header__brand {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-size: 1.35rem;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  text-decoration: none;
+}
+.ktp-header__nav {
+  display: flex;
+  gap: 4px;
+  margin-inline: auto;
+}
+.ktp-header__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ktp-header a:not(.ktp-header__brand) {
+  padding: 8px 12px;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.ktp-header a:not(.ktp-header__brand):hover,
+.ktp-header a[aria-current] {
+  color: hsl(var(--foreground));
+}
+.ktp-header a[aria-current] {
+  box-shadow: inset 0 -2px 0 hsl(var(--primary));
+}
+.ktp-header a.ktp-header__cta {
+  margin-left: 6px;
+  padding-inline: 16px;
+  border-radius: 999px;
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+  font-weight: 600;
+}
+.ktp-header a.ktp-header__cta:hover {
+  color: hsl(var(--primary-foreground));
+  background: #8f3f28;
+}
+.ktp-header a.ktp-header__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ktp-header__count {
+  min-width: 1.35rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: hsl(var(--primary-foreground));
+  color: hsl(var(--primary));
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ktp-header__count[data-empty] {
+  background: color-mix(in srgb, hsl(var(--primary-foreground)) 25%, transparent);
+  color: hsl(var(--primary-foreground));
+}
+/* The signed-in menu: a native <details>, no script. */
+.ktp-acct {
+  position: relative;
+}
+.ktp-acct > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  list-style: none;
+  color: hsl(var(--foreground));
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ktp-acct > summary::-webkit-details-marker {
+  display: none;
+}
+.ktp-acct > summary:hover,
+.ktp-acct[open] > summary {
+  background: hsl(var(--accent) / 0.6);
+}
+.ktp-acct__dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.ktp-acct__name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ktp-acct__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  display: grid;
+  min-width: 12rem;
+  padding: 6px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background: hsl(var(--card));
+  box-shadow: 0 18px 36px -18px rgb(0 0 0 / 0.45);
+}
+.ktp-acct__panel a,
+.ktp-acct__out {
+  display: block;
+  padding: 0.55rem 0.8rem !important;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: hsl(var(--foreground)) !important;
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ktp-acct__panel a:hover,
+.ktp-acct__out:hover {
+  background: hsl(var(--muted));
+}
+.ktp-header__sheet .ktp-acct__out {
+  padding: 12px 0 !important;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-header__toggle {
+  display: none;
+  margin-left: auto;
+  padding: 8px;
+  background: none;
+  border: 0;
+  color: hsl(var(--foreground));
+  font: inherit;
+  cursor: pointer;
+}
+.ktp-header__sheet {
+  display: grid;
+  padding: 4px 16px 16px;
+  border-top: 1px solid hsl(var(--border));
+}
+.ktp-header__sheet a {
+  padding-block: 12px;
+}
+.ktp-header__sheet a.ktp-header__cta {
+  margin: 8px 0 0;
+  text-align: center;
+}
+@media (max-width: 760px) {
+  .ktp-header__nav,
+  .ktp-header__tools {
+    display: none;
+  }
+  .ktp-header__toggle {
+    display: block;
+  }
+}
+
+/* ── footer ───────────────────────────────────────────────────────────── */
+
+.ktp-footer {
+  margin-top: 48px;
+  padding: 32px 16px;
+  background: hsl(var(--muted));
+  border-top: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+.ktp-footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 28px;
+  width: min(var(--ktp-max), 100%);
+  margin-inline: auto;
+}
+.ktp-footer__line {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  color: hsl(var(--foreground));
+}
+.ktp-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+.ktp-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+.ktp-footer a:hover {
+  color: hsl(var(--foreground));
+}
+.ktp-footer__note {
+  width: min(var(--ktp-max), 100%);
+  margin: 14px auto 0;
+  font-size: 0.85rem;
+}
+
+/* ── plain pages (studio list, errors) ────────────────────────────────── */
+
+.ktp-page {
+  width: min(var(--ktp-max), calc(100% - 32px));
+  margin-inline: auto;
+  padding-block: 40px;
+}
+.ktp-page h1 {
+  font-size: 2rem;
+  margin: 0 0 12px;
+}
+.ktp-page p {
+  max-width: 64ch;
+  line-height: 1.6;
+}
+.ktp-page a {
+  color: #8f3f28;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ktp-list {
+  padding-left: 1.2rem;
+}
+.ktp-list li {
+  margin-bottom: 8px;
+}
+.ktp-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1.5px solid hsl(var(--primary));
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ktp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ktp-btn--ghost {
+  background: transparent;
+  color: #8f3f28;
+}
+.ktp-input {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid hsl(var(--input));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font: inherit;
+}
+
+/* The way into the editor from a published page, for editors only. */
+.ktp-edit-page {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.4);
+}
+
+/* The /preview ribbon: a thin band under the header saying these are samples. */
+.ktp-preview-ribbon {
+  margin: 0;
+  padding: 6px 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: hsl(var(--primary-foreground));
+  background: repeating-linear-gradient(135deg, hsl(var(--primary)) 0 12px, #8f3f28 12px 24px);
+}
+
+/* Blocks on a page stack with their own spacing; the Style layer adds more. */
+.ktp-content {
+  display: flex;
+  flex-direction: column;
+}

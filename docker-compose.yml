@@ -228,6 +228,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FORUM_URL:-http://localhost:3003}
       ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
@@ -276,11 +279,14 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-sophia
     restart: unless-stopped
-    mem_limit: 3g
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${SOPHIA_URL:-http://localhost:3020}
       NEXT_PUBLIC_NETWORK_URL: ${NETWORK_URL:-http://localhost:3007}
@@ -310,14 +316,14 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # Non-production only: impersonate a users.id.
       SOPHIA_DEV_VIEWER_ID: ${SOPHIA_DEV_VIEWER_ID:-}
-      NODE_ENV: development
-      NODE_OPTIONS: --max-old-space-size=1536
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=1024
     volumes:
       - .:/app
       - /app/apps/sophia/.next
     ports:
       - "3020:3020"
-    command: sh -c "cd apps/sophia && pnpm dev"
+    command: sh -c "cd apps/sophia && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2 pnpm build; } && pnpm start"
     networks:
       - eac-network
       - nextcloud-network
@@ -352,6 +358,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${SUNJAY_URL:-http://localhost:3001}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
@@ -382,6 +395,7 @@ services:
       # The network's SSO hop (packages/auth-server/src/handoff.ts): the
       # inter-app signing secret and the origins a handoff may target.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # Redis
@@ -634,6 +648,9 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${EAC_URL:-http://localhost:3005}
       NODE_ENV: development
@@ -701,6 +718,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       # The network's own host (no scheme). Org subdomains hang off it, and the
@@ -716,10 +740,15 @@ services:
       # because Inbound Parse allows one endpoint per MX host and the hub is
       # the one app that already serves every organisation.
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      # The collective's Google client for YouTube connections (2026-11-01).
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
       META_APP_ID: ${META_APP_ID}
       META_APP_SECRET: ${META_APP_SECRET}
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
       META_LOGIN_CONFIG_ID: ${META_LOGIN_CONFIG_ID:-}
+      # Studio sound effects: Freesound CC0 search/import (packages/services/src/reels.ts); empty = off.
+      FREESOUND_API_KEY: ${FREESOUND_API_KEY:-}
       THREADS_APP_ID: ${THREADS_APP_ID}
       THREADS_APP_SECRET: ${THREADS_APP_SECRET}
       INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID}
@@ -767,6 +796,13 @@ services:
       # Server-side OBS control (/studio/broadcast) through docker/obs/agent.mjs.
       OBS_AGENT_URL: http://obs:4456
       OBS_AGENT_SECRET: ${OBS_AGENT_SECRET:-}
+      # Stream relay (docker/relay/agent.mjs): one stream in, copied to every destination.
+      RELAY_AGENT_URL: http://relay:4457
+      RELAY_AGENT_SECRET: ${RELAY_AGENT_SECRET:-}
+      # Shown in Feeds in once the port is open, e.g. rtmp://live.arts-collective.com/in
+      RELAY_PUBLIC_INGEST_URL: ${RELAY_PUBLIC_INGEST_URL:-}
+      # 1 = Feeds in offers "Copy guest camera link" (/guest/camera/<key>, WHIP).
+      RELAY_GUEST_CAMERAS: ${RELAY_GUEST_CAMERAS:-}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL}
       # Optional browser-reachable Silex editor origin for /edit/{slug} launch.
@@ -783,6 +819,7 @@ services:
       # site's token as an "unknown issuer" even though the token itself
       # was valid, because this was the one service missing the list.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
     volumes:
       - .:/app
@@ -827,6 +864,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ARTDIRECT_URL:-http://localhost:3013}
       # Stripe — card payment for service bookings (@elkdonis/checkout
@@ -846,7 +890,16 @@ services:
       # Network SSO (src/proxy.ts, /api/auth/handoff): the person page is the
       # root of a person's network presence, so it takes part (2026-09-26).
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env — it signs the network session handoff}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      # Connect Instagram / YouTube from the person's page (2026-11-01): the
+      # row is created here with the collective's apps, consent runs on the
+      # network host, and the feeds are read here.
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID:-}
+      INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET:-}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
       # Production mode since 2026-10-19: `next dev` served the public
       # directory host and held about 4 GB. Same shape as ifac below.
       NODE_ENV: production
@@ -908,6 +961,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       # Network sign-out mark (packages/auth-server/src/sso-state.ts) and session cache.
       REDIS_URL: redis://redis:6379
@@ -942,6 +1002,7 @@ services:
       # inter-app signing secret and the origins a handoff may target. Values
       # come from .env; no defaults here on purpose.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       # The Pipeline hub tile renders the org's OWN Deck board, resolved from
@@ -1039,11 +1100,16 @@ services:
       # inter-app signing secret and the origins a handoff may target. Values
       # come from .env; no defaults here on purpose.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       # Nextcloud's "Sign in with Elkdonis" (src/app/api/oidc, ported from
       # inner-gathering 2026-09-18): the ID-token signing key and Nextcloud's
       # client secret. Same values inner-gathering used, so tokens and the
       # sociallogin config carry over unchanged.
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs the Nextcloud ID token}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       NEXTCLOUD_OIDC_SECRET: ${NEXTCLOUD_OIDC_SECRET:?set NEXTCLOUD_OIDC_SECRET in .env — Nextcloud sociallogin client secret}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
@@ -1054,6 +1120,8 @@ services:
       # pointed at the same cards.
       # SendGrid
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
       META_APP_ID: ${META_APP_ID}
       META_APP_SECRET: ${META_APP_SECRET}
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
@@ -1114,6 +1182,14 @@ services:
       NODE_OPTIONS: --max-old-space-size=512
       # Decrypts user_connections tokens for YouTube uploads (services/connections.ts, migration 192).
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
+      # Daily connection maintenance (services/connection-maintenance.ts): Meta token refresh and reconnect mail.
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v21.0}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     volumes:
       - .:/app
       # Scratch for downloads and encodes — recordings are gigabytes, so not
@@ -1153,6 +1229,37 @@ services:
     networks:
       - eac-network
 
+  # Stream chat (2026-11-01, migration 228): follows the chat of each ticked
+  # stream destination that names a channel (Twitch: anonymous IRC, read
+  # only) and writes messages to stream_chat_messages for the Studio's Chat
+  # panel; keeps 30 days. packages/services/scripts/stream-chat.mts.
+  stream-chat:
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-stream-chat
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      STREAM_CHAT_SCAN_SECONDS: ${STREAM_CHAT_SCAN_SECONDS:-15}
+      # YouTube chat: at most one chat read per this many seconds (5 quota units each).
+      STREAM_CHAT_YOUTUBE_SECONDS: ${STREAM_CHAT_YOUTUBE_SECONDS:-10}
+      # Decrypt user_connections tokens to read YouTube chat (services/connections.ts).
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
+      NODE_OPTIONS: --max-old-space-size=160
+    volumes:
+      - .:/app
+    working_dir: /app/packages/services
+    command: node_modules/.bin/tsx scripts/stream-chat.mts
+    networks:
+      - eac-network
+
   # Reel renderer (Remotion). Polls reel_renders (migration 189) for the
   # Studio's /studio/video jobs. Folder renders by hand:
   #   docker compose run --rm reel-render --project "EAC_Network/<org>/Private/Video/Reels/<name>" [--init]
@@ -1183,18 +1290,63 @@ services:
       OBS_VNC_PASSWORD: ${OBS_VNC_PASSWORD:-}
       # auto = VA-API on the iGPU when present, else x264; x264 forces the CPU.
       OBS_ENCODER: ${OBS_ENCODER:-auto}
+      # OBS publishes the program to the relay and reads feeds from it as user "obs".
+      RELAY_OBS_PASS: ${RELAY_OBS_PASS:-}
       NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
     volumes:
       - ./docker/obs/agent.mjs:/opt/obs-agent/agent.mjs:ro
+      # The overlay page (agent.mjs serves it to OBS's "Overlays" source).
+      - ./docker/obs/overlay:/opt/obs-overlay:ro
       - obs-home:/home/obs
       - obs-recordings:/recordings
     ports:
-      - "127.0.0.1:6080:6080"
+      # The booth door (agent.mjs): noVNC files, and desktop/audio/program
+      # streams that each need a one-time token. The edge sends
+      # arts-collective.com/obs/ here.
+      - "4458:4458"
     networks:
       - eac-network
       - nextcloud-network
+
+  # Stream relay: MediaMTX + ffmpeg fan-out + agent (docker/relay/). OBS
+  # publishes once to rtmp://relay:1935/program; the agent copies it (no
+  # encode) to every destination armed from the Go live card. Feeds in
+  # publish to rtmp://relay:1935/in/<key>. RTMP 1935 is published on
+  # RELAY_RTMP_BIND, 127.0.0.1 by default (closed to the outside). To take
+  # feeds from the internet (Zoom): RELAY_RTMP_BIND=0.0.0.0 in .env, the
+  # router forwarding WAN 1935 to this host, `docker compose up -d relay`;
+  # set it back to close. Agent bind-mounted: restart after editing.
+  relay:
+    build:
+      context: docker/relay
+    image: eac-relay
+    container_name: eac-relay
+    restart: unless-stopped
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      RELAY_AGENT_SECRET: ${RELAY_AGENT_SECRET:?set RELAY_AGENT_SECRET in .env}
+      RELAY_OBS_PASS: ${RELAY_OBS_PASS:?set RELAY_OBS_PASS in .env}
+      # WHIP guest cameras (docker/relay/start.sh): public host(s) for ICE
+      # candidates, optional TURN (coturn shared secret), TCP ICE on 8189.
+      RELAY_WEBRTC_HOSTS: ${RELAY_WEBRTC_HOSTS:-}
+      RELAY_TURN_URL: ${RELAY_TURN_URL:-}
+      RELAY_TURN_SECRET: ${RELAY_TURN_SECRET:-}
+      RELAY_WEBRTC_TCP: ${RELAY_WEBRTC_TCP:-}
+    volumes:
+      - ./docker/relay/agent.mjs:/opt/relay-agent/agent.mjs:ro
+      - relay-data:/data
+    ports:
+      - "${RELAY_RTMP_BIND:-127.0.0.1}:1935:1935"
+      # WHIP over HTTP (NPM location /relay/ -> 192.168.0.11:8889) and ICE.
+      - "${RELAY_WEBRTC_BIND:-127.0.0.1}:8889:8889"
+      - "${RELAY_WEBRTC_BIND:-127.0.0.1}:8189:8189/udp"
+      - "${RELAY_WEBRTC_BIND:-127.0.0.1}:8189:8189/tcp"
+    networks:
+      - eac-network
 
   reel-render:
     build:
@@ -1247,6 +1399,9 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${PIGEONSHOOT_URL:-http://localhost:3014}
       NODE_ENV: development
@@ -1311,6 +1466,9 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       # Astro Studio helper AI (packages/astro-corpus); empty disables it.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -1382,6 +1540,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${IFAC_URL:-http://localhost:3008}
       # Stripe — IFAC takes no money itself; its artists connect the network's
@@ -1409,6 +1574,7 @@ services:
       # The network's SSO hop (packages/auth-server/src/handoff.ts): the
       # inter-app signing secret and the origins a handoff may target.
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
       REDIS_URL: redis://redis:6379
@@ -1472,6 +1638,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NODE_ENV: production
@@ -1557,6 +1730,9 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NODE_ENV: production
       # V8 sizes its heap from HOST RAM when unset — on this 60GB box that
@@ -1646,6 +1822,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${DANAMCCOOL_URL:-http://localhost:3018}
       DANAMCCOOL_COMING_SOON: ${DANAMCCOOL_COMING_SOON:-false}
@@ -1680,6 +1863,94 @@ services:
       - eac-network
       - nextcloud-network
 
+  # Katie the Potter — a ceramic artist's own shop site (org: katie-the-potter).
+  # Port 3023. Her store and pieces live in the marketplace (art-auction);
+  # this site reads them and links there to buy. Same production shape as
+  # danamccool/sunjay: the "development" build target, NODE_ENV=production,
+  # a guarded `next build` then `next start`.
+  katie-the-potter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: eac-dev
+    user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
+    container_name: eac-katie-the-potter
+    restart: unless-stopped
+    # The ceiling has to clear the build peak, not steady-state serving.
+    mem_limit: 5g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supabase-auth:
+        condition: service_started
+    environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile: the site key is baked in at build time; the
+      # secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
+      # The public origin — baked at build time. Stripe return URLs and every
+      # link in an order confirmation are built from it. The default is the
+      # live host so a build without KATIE_THE_POTTER_URL in .env is still right.
+      NEXT_PUBLIC_APP_URL: ${KATIE_THE_POTTER_URL:-https://pottery.arts-collective.com}
+      # The site owner's address — PLACEHOLDER until Katie's real one is known
+      # (also the key in migration 243). Baked in at build time.
+      NEXT_PUBLIC_KATIE_THE_POTTER_OWNER_EMAIL: ${KATIE_THE_POTTER_OWNER_EMAIL:-katie@katiethepotter.example}
+      # The marketplace her pieces are sold through, and ArtDirect.
+      NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
+      NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
+      # Keys the analytics visitor hash (packages/analytics).
+      ANALYTICS_SECRET: ${INTER_APP_JWT_SECRET:?set INTER_APP_JWT_SECRET in .env}
+      # The network's SSO hop (packages/auth-server): the inter-app signing
+      # secret and the host a handoff may target. Same set as sunjay.
+      INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
+      ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
+      NODE_ENV: production
+      PORT: 3023
+      NODE_OPTIONS: --max-old-space-size=1024
+      # Supabase Auth
+      SUPABASE_URL: http://supabase-auth:9999
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:?set SUPABASE_SERVICE_KEY in .env — it is the service-role key}
+      # Stripe — LIVE keys. Card checkout (src/lib/shop-actions.ts) opens Stripe's
+      # hosted page and returns to THIS site (/api/checkout/return). The webhook
+      # stays on the marketplace (market.arts-collective.com/api/stripe/webhook):
+      # orders are in the shared database, and the webhook and our return hop
+      # both call confirmOrderPaid, which is idempotent. Sample pieces are
+      # refused on card (src/lib/sample-guard.ts).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # SendGrid — order emails (buyer invoice/receipt, Katie's "new order",
+      # the platform copy) sent from this process. Same three lines as
+      # art-auction; @elkdonis/email reads EMAIL_FROM (+ the authenticated
+      # domains) and the org's site_config email identity. Added 2026-11-06.
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      EMAIL_AUTHENTICATED_DOMAINS: ${EMAIL_AUTHENTICATED_DOMAINS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-info@em6860.elkdonis-arts.org}
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Nextcloud (media upload/serve via src/app/api/media/*)
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+    volumes:
+      - .:/app
+      - /app/apps/katie-the-potter/.next
+    ports:
+      - "3023:3023"
+    # Build only when there is a COMPLETED build to serve (the two-file
+    # sentinel — see sunjay above for why each file alone is a false positive).
+    command: sh -c "cd apps/katie-the-potter && { [ -f .next/BUILD_ID ] && [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    networks:
+      - eac-network
+      - nextcloud-network
+
   # Fourth Way Book Readers — books.elkdonis-arts.org (org: fourth_way_book_readers).
   # Port 3019: 3010 (the old fourth-way-book-readers stub's port) is held on
   # this host by open-webui, and 3017 by astrology-dev.
@@ -1701,6 +1972,13 @@ services:
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       NEXT_PUBLIC_APP_URL: ${FOURTHWAY_BOOKREADERS_URL:-http://localhost:3019/books}
       # Served under a sub-path of the shared elkdonis-arts.org (which
@@ -1726,6 +2004,9 @@ services:
       REDIS_URL: redis://redis:6379
       # Nextcloud — covers, the side banner, handouts, and the recordings the
       # front page's theatre lists (EAC_Network/fourth_way_book_readers/Media/Videos).
+      # The Akhand Path admin creates YouTube connections here (2026-11-01).
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
       NEXTCLOUD_URL: ${NEXTCLOUD_URL:-http://nextcloud-nginx:80}
       NEXTCLOUD_PUBLIC_URL: ${NEXTCLOUD_PUBLIC_URL:-http://localhost:8080}
       NEXT_PUBLIC_NEXTCLOUD_URL: ${NEXT_PUBLIC_NEXTCLOUD_URL:-http://localhost:8080}
@@ -1733,6 +2014,7 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       # The network's SSO hop (packages/auth-server/src/handoff.ts).
       INTER_APP_JWT_SECRET: ${INTER_APP_JWT_SECRET}
+      CONNECTIONS_KEY: ${CONNECTIONS_KEY:-}
       NEXT_PUBLIC_NETWORK_HOST: ${NEXT_PUBLIC_NETWORK_HOST:-arts-collective.com}
       ADDITIONAL_REDIRECT_URLS: ${ADDITIONAL_REDIRECT_URLS:-}
     volumes:
@@ -1763,22 +2045,31 @@ services:
     user: "${EAC_UID:-3003}:${EAC_GID:-3003}"
     container_name: eac-elktours
     restart: unless-stopped
-    mem_limit: 4g
+    # Production mode (2026-11-03), same shape as danamccool: "development" image target,
+    # NODE_ENV=production, guarded `next build` then `next start`. The ceiling clears the build peak.
+    mem_limit: 5g
     depends_on:
       postgres:
         condition: service_healthy
       supabase-auth:
         condition: service_started
     environment:
+      # GoTrue signing secret: auth-server verifies the session cookie with it
+      # (verify-session.ts). Without it every check costs a GoTrue round trip.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — it signs every GoTrue session}
+      # Cloudflare Turnstile (2026-11-06): the site key is baked in at build time;
+      # the secret makes /api/auth/signup require a token. Set both or neither.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-elkdonis_dev}
       REDIS_URL: redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${ELKTOURS_URL:-http://localhost:3021}
       NEXT_PUBLIC_ARTS_COLLECTIVE_URL: ${ARTS_COLLECTIVE_URL:-http://localhost:3007}
       NEXT_PUBLIC_ART_AUCTION_URL: ${ART_AUCTION_URL:-http://localhost:3009}
       NEXT_PUBLIC_ARTDIRECT_URL: ${ARTDIRECT_URL:-http://localhost:3013}
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3021
-      NODE_OPTIONS: --max-old-space-size=2048
+      NODE_OPTIONS: --max-old-space-size=3584
       SUPABASE_URL: http://supabase-auth:9999
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-http://localhost:9999}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDMxMTI5NDksImV4cCI6MTkxODY4ODk0OX0.vCiIxe5m9r7dLh3fh8MkV0b_3NwGZHZB2bXrGEaJhs8}
@@ -1813,7 +2104,7 @@ services:
       - /app/apps/elktours/.next
     ports:
       - "3021:3021"
-    command: sh -c "cd apps/elktours && pnpm docker:dev"
+    command: sh -c "cd apps/elktours && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
     networks:
       - eac-network
       - nextcloud-network
@@ -1889,6 +2180,7 @@ volumes:
   reel-work:
   obs-home:
   obs-recordings:
+  relay-data:
 
 networks:
   eac-network:

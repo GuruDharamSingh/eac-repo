@@ -5,6 +5,9 @@ import { getOrgFeed, type OrgFeedItem } from "@/lib/org";
 import type { SiteContext } from "@/lib/site-context";
 import { SiteNav } from "@/components/sites/SiteNav";
 import { SiteFooter } from "@/components/sites/SiteFooter";
+import { loadCards } from "@/lib/cards/store";
+import { feedItem } from "@/lib/cards/catalog";
+import { FeedCards } from "@/components/cards/FeedCards";
 
 /**
  * The landing page an org gets before it has designed one or published
@@ -45,8 +48,10 @@ export async function OrgDefaultPage({
   offering: OrgFeedItem | null;
 }) {
   const { org, identity, user, canEdit, mainSiteUrl } = ctx;
+  // Pass 3: an org that designed its feed cards (/hub/sites/<slug>/cards) gets "What's on" drawn with them.
+  const cards = await loadCards(org.id);
   const [feed, roster] = await Promise.all([
-    getOrgFeed(org.id, 6),
+    getOrgFeed(org.id, Math.max(6, (cards?.limit ?? 6) + 1)),
     listOrgPeople(org.id).catch(() => []),
   ]);
   const recent = feed.filter((t) => t.id !== offering?.id);
@@ -92,6 +97,8 @@ export async function OrgDefaultPage({
             <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
               <a href={ctx.hubUrl} className="underline underline-offset-4">Go to your hub →</a>
               <a href={designHref} className="underline underline-offset-4">Design this page →</a>
+              <a href={designHref.replace(/\/design$/, "/classifieds")} className="underline underline-offset-4">Make a classifieds page →</a>
+              <a href={designHref.replace(/\/design$/, "/cards")} className="underline underline-offset-4">Design the feed cards →</a>
             </p>
           </aside>
         )}
@@ -129,6 +136,10 @@ export async function OrgDefaultPage({
             <p className="mt-3 text-sm text-muted-foreground">
               {offering ? "Nothing else published just now." : canEdit ? "Nothing published yet." : "Nothing on just now. Check back soon."}
             </p>
+          ) : cards ? (
+            <div className="mt-3">
+              <FeedCards doc={cards} items={recent.map((t) => feedItem(t))} heading={false} />
+            </div>
           ) : (
             <ul className="mt-3 divide-y divide-border border-y border-border">
               {recent.map((t) => (

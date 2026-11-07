@@ -11,6 +11,7 @@ import {
   listConnections,
   startPublishJob,
   finishPublishJob,
+  subscribePageFeed,
 } from "@elkdonis/services";
 import { postImageToInstagram, postLinkToPage, postToThreads } from "@elkdonis/meta";
 import { postImageWithInstagramLogin } from "@elkdonis/meta/instagram-login";
@@ -107,13 +108,17 @@ export async function sharePiece(postId: string, targetId: string): Promise<Stud
   });
 
   let share: StudioShare;
+  let externalId: string | null = null;
   try {
     if (ref.kind === "page") {
       if (!link) return { ok: false, error: "The piece has no public address yet (no directory slug)." };
       const t = await getMetaPageTarget(ref.connectionId, ref.pageId!);
       if (t.ok === false) return { ok: false, error: t.error };
       const r = await postLinkToPage({ pageId: t.pageId, accessToken: t.accessToken }, { message: text, link }, appSecret);
+      externalId = r.postId;
       share = { targetId, kind: "page", label: `${t.name} (Facebook Page)`, url: r.url, at: new Date().toISOString() };
+      // Comments on this post should reach the thread: keep the Page subscribed (needs pages_manage_metadata; best effort).
+      void subscribePageFeed(ref.connectionId, t.pageId).then((s) => { if ("error" in s) console.warn("[share] page subscription:", s.error); });
     } else if (ref.kind === "instagram") {
       if (!imageUrl) return { ok: false, error: "Instagram needs a cover image (a public JPEG)." };
       const t = await getMetaPageTarget(ref.connectionId, ref.pageId!);
@@ -125,12 +130,14 @@ export async function sharePiece(postId: string, targetId: string): Promise<Stud
         { imageUrl, caption },
         appSecret
       );
+      externalId = r.mediaId;
       share = { targetId, kind: "instagram", label: "Instagram", url: r.url, at: new Date().toISOString() };
     } else if (ref.kind === "iglogin") {
       if (!imageUrl) return { ok: false, error: "Instagram needs a cover image (a public JPEG)." };
       const t = await getInstagramLoginTarget(ref.connectionId);
       if (t.ok === false) return { ok: false, error: t.error };
       const r = await postImageWithInstagramLogin(t.userId, t.accessToken, { imageUrl, caption: link ? `${text}\n\n${link}` : text });
+      externalId = r.mediaId ?? null;
       share = { targetId, kind: "instagram", label: `${connection.accountName ?? "Instagram"} (Instagram)`, url: r.url || null, at: new Date().toISOString() };
     } else {
       const t = await getThreadsTarget(ref.connectionId);
@@ -140,6 +147,7 @@ export async function sharePiece(postId: string, targetId: string): Promise<Stud
         imageUrl: imageUrl ?? undefined,
         linkAttachment: !imageUrl && link ? link : undefined,
       });
+      externalId = r.mediaId ?? null;
       share = { targetId, kind: "threads", label: `${connection.accountName ?? "Threads"} (Threads)`, url: r.url || null, at: new Date().toISOString() };
     }
   } catch (err) {
@@ -147,7 +155,7 @@ export async function sharePiece(postId: string, targetId: string): Promise<Stud
     await finishPublishJob(jobId, { ok: false, error });
     return { ok: false, error };
   }
-  await finishPublishJob(jobId, { ok: true, externalId: null, url: share.url });
+  await finishPublishJob(jobId, { ok: true, externalId, url: share.url });
 
   // Append, never assign: other features keep their own keys in metadata.
   await db`

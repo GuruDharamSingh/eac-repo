@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import {
   SurfaceProvider,
   defaultThreadToAnswers,
+  useSurfaceOptional,
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
-import { createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { SeriesPlannerSurface, createHubConnectors } from "@elkdonis/cms-ui/hub";
+import { SERIES_NEW_ENDPOINT, SERIES_PEOPLE_ENDPOINT, SERIES_STATS_ENDPOINT } from "@elkdonis/series-site/hub";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 import { RichTextEditor } from "@elkdonis/cms-ui/editor";
 import { saveContentAction } from "@/lib/cms/actions";
@@ -23,6 +25,11 @@ import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
+import dynamic from "next/dynamic";
+import { bindOpensLinks } from "@/components/surfaces/opens-links";
+
+/** The person popup loads when it opens: it draws a block, and the blocks package is large (opens-popups.tsx). */
+const PersonPopup = dynamic(() => import("@/components/surfaces/opens-popups").then((m) => m.PersonPopup), { ssr: false });
 
 const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.com";
 const NETWORK_ORIGIN = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${NETWORK_HOST}`;
@@ -198,8 +205,23 @@ export function HubSurfaces({
 
         onMutated: () => router.refresh(),
       }),
+      // This site has no series form: a series is edited in the planner.
+      seriesEditHref: (threadId) => `/hub/series/${threadId}#settings`,
       custom: {
+        // The weeks of a series, as a popup; the hub's card opens the same planner as a page.
+        "meeting-series": ({ descriptor }) => (
+          <SeriesPlannerSurface
+            threadId={String(descriptor.props?.threadId ?? "")}
+            canPlan={Boolean(descriptor.props?.canPlan)}
+            timeZone={TIME_ZONE}
+            peopleEndpoint={SERIES_PEOPLE_ENDPOINT}
+            statsEndpoint={SERIES_STATS_ENDPOINT}
+            createEndpoint={SERIES_NEW_ENDPOINT}
+          />
+        ),
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
+        // Opened by a block's "Opens" (2026-11-07): a person, perhaps with one onward page.
+        person: ({ descriptor }) => <PersonPopup descriptor={descriptor} />,
         whiteboard: () => (
           <WhiteboardSurface
             onSaveError={() => toast.error("Couldn't save the whiteboard.")}
@@ -210,5 +232,21 @@ export function HubSurfaces({
     [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
   );
 
-  return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;
+  return (
+    <SurfaceProvider connectors={connectors}>
+      <OpensLinks />
+      {children}
+    </SurfaceProvider>
+  );
+}
+
+/** The custom popups a block's "Opens" may name; `thread` opens the thread popup and needs no entry. */
+const OPENS_KEYS: ReadonlySet<string> = new Set(["person"]);
+
+/** Links a block drew for "Opens" open their popup over the page (components/surfaces/opens-popups.tsx). */
+function OpensLinks() {
+  const surface = useSurfaceOptional();
+  const open = surface?.open;
+  React.useEffect(() => (open ? bindOpensLinks((d) => open(d), OPENS_KEYS) : undefined), [open]);
+  return null;
 }

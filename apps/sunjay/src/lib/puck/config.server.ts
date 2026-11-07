@@ -1,8 +1,14 @@
+import type { Block } from "@elkdonis/blocks";
 import { loadThreadFeed } from "@elkdonis/blocks/server";
+import { BOX_BLOCKS } from "@elkdonis/direct-edit/puck/blocks";
+import { MorphMark } from "@elkdonis/direct-edit/puck/morph";
 import { buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
 import { BLOCK_DATA_IDS, loadBlockData } from "./block-data";
 import { CATALOGUE } from "./catalogue";
+import { PublishedRoot } from "./page-root";
 import { siteConfig } from "@/config/site";
+import { featuredWho } from "@/lib/featured-person";
+import { cardRecord, resolveOpens } from "@/lib/opens-server";
 
 // ============================================================================
 // The catalogue as a PUBLISHED page sees it.
@@ -21,6 +27,10 @@ const serverResolvers: BlockResolvers = {
       (props: Record<string, unknown>, metadata: Record<string, unknown>) => loadBlockData(id, props, metadata),
     ])
   ),
+  // Featured person, Opens and a Card from a record (2026-11-07): read per request from the stored reference.
+  "featured-person": async (props) => ({ who: await featuredWho(props.person), opened: await resolveOpens(props.opens) }),
+  "link-button": async (props) => ({ opened: await resolveOpens(props.opens) }),
+  "feature-card": async (props) => ({ bound: await cardRecord(props.record), opened: await resolveOpens(props.opens) }),
   "thread-feed": async (props) => ({
     items: await loadThreadFeed(siteConfig.orgId, {
       limit: typeof props.limit === "number" ? props.limit : 10,
@@ -29,4 +39,10 @@ const serverResolvers: BlockResolvers = {
   }),
 };
 
-export const serverPuckConfig = buildPuckConfig({ resolvers: serverResolvers, blocks: CATALOGUE });
+export const serverPuckConfig = buildPuckConfig({
+  resolvers: serverResolvers,
+  // The canvas editor's boxes are ordinary blocks to a published page, and a page's look for one block is `morph`.
+  blocks: [...CATALOGUE, ...(BOX_BLOCKS as unknown as Block<never>[])],
+  root: { props: [], wrap: PublishedRoot },
+  morph: MorphMark,
+});

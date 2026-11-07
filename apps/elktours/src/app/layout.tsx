@@ -10,10 +10,16 @@ import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import { getSiteSections } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getProfile, listOrgFeeds } from "@elkdonis/services";
+import { siteStyleCss, siteStyleFontsHref } from "@elkdonis/direct-edit/site";
+import { loadSiteStyle } from "@/lib/site-style";
+import { SITE_STYLE } from "@/lib/site-style-schema";
+import { SiteStyleButton } from "@/components/site-style/SiteStyleButton";
 
 // Type is local (@font-face in globals.css): Basteleur, Brothers, Venture, shared with innergathering.
 
 export const metadata: Metadata = {
+  // Absolute base for share previews (Open Graph images given as paths).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://elkdonisexperiences.com"),
   title: {
     default: siteConfig.orgName,
     template: `%s · ${siteConfig.orgName}`,
@@ -34,10 +40,15 @@ export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Nav is built from org_feeds, so adding a section to the site is a database
   // row rather than a code change.
-  const [viewer, sections] = await Promise.all([
+  const [viewer, sections, siteStyle] = await Promise.all([
     getViewer().catch(() => null),
     getSiteSections(),
+    loadSiteStyle().catch(() => null),
   ]);
+  // The owner's site style (2026-11-06): theme values and header/footer looks, cleaned on read.
+  // `data-site-style` lets the editor switch this sheet off while it previews a draft.
+  const styleCss = siteStyleCss(siteStyle, SITE_STYLE);
+  const styleFonts = siteStyleFontsHref(siteStyle, SITE_STYLE);
   const canEdit = Boolean(viewer?.canEdit);
   const [feeds, profile] = await Promise.all([
     // Editors compose into private feeds too; visitors only see public ones.
@@ -58,6 +69,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {/* The left-column Kundalini animation (components/kundalini-panel*)
           was taken off 2026-09-26; the component is kept for reuse. */}
       <body suppressHydrationWarning className="flex min-h-screen">
+        {styleFonts ? <link rel="stylesheet" href={styleFonts} /> : null}
+        {styleCss ? <style data-site-style="" dangerouslySetInnerHTML={{ __html: styleCss }} /> : null}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* One surface system for the whole site: a listing card on a feed
               page, a hub tile and a calendar day all open into the same dialog. */}
@@ -80,6 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Toaster position="top-right" />
             <ArrivalNotice endpoint="/api/network/arrival" />
             <AnalyticsBeacon />
+            {canEdit ? <SiteStyleButton initial={siteStyle} /> : null}
           </HubSurfaces>
         </div>
       </body>

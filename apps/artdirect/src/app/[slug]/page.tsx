@@ -33,6 +33,9 @@ import {
   type PersonThread,
   type Profile,
   getFeaturedOffering,
+  getInstagramFeed,
+  getSocialAccounts,
+  getYoutubeFeed,
   resolvePersonSections,
   resolveTheme,
 } from "@elkdonis/services";
@@ -56,6 +59,9 @@ import { resolveLayout } from "@/lib/profile-layouts";
 import { loadPublishedUserPage } from "@elkdonis/page-builder/server";
 import { PERSON_PAGE_ORG, documentTitle, knownTypesFor, liveKey, loadPersonContext } from "@/lib/person-pages";
 import { PersonDoc, resolvePersonDoc } from "@/components/design/PersonDoc";
+import { InstagramSection, YoutubeSection } from "@/components/oad/SocialSections";
+import { getBusinessBySlug, getBusinessConnections, publicBusiness } from "@elkdonis/services/businesses";
+import { BusinessShellPage } from "@/components/business/BusinessShellPage";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +127,12 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  // Network business listings (stewarded shells) have their own page variant.
+  const business = await getBusinessBySlug(slug).catch(() => null);
+  if (business) {
+    if (business.status === "removed") return {};
+    return { title: `${business.name}${business.marking ? " — unclaimed listing" : ""} — ArtDirect`, description: [business.categoryLabel, business.streetAddress, business.city].filter(Boolean).join(" · ") };
+  }
   // An unlisted person's name is not handed to crawlers; the page itself
   // decides whether the viewer sees it.
   const identity = await getProfileBySlug(slug);
@@ -135,6 +147,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DossierPage({ params }: Props) {
   const { slug } = await params;
+  // A business listing (shell or light claimed listing): facts, sources, steward credit,
+  // claim/removal. A removed listing is a tombstone and is not shown (404).
+  const business = await getBusinessBySlug(slug).catch(() => null);
+  if (business) {
+    if (business.status === "removed") notFound();
+    const [connections, viewer] = await Promise.all([getBusinessConnections(business.userId), getCurrentUser()]);
+    return <BusinessShellPage business={publicBusiness(business)} connections={connections} signedIn={!!viewer} />;
+  }
   const [meta, user] = await Promise.all([getDossierMeta(slug), getCurrentUser()]);
   if (!meta) {
     // A renamed person's old slug answers 308 to the current one.
@@ -223,6 +243,26 @@ export default async function DossierPage({ params }: Props) {
   const standard = useTemplate || designed
     ? null
     : await renderStandard({ slug, identity, viewerId, isSelf, hasStore, storeSectionOn, storeShowcase, creditedWork, marketplaceUrl, featuredLink });
+
+  // Instagram and YouTube in the owner's drawer: what is connected and whether
+  // each is switched on (users.profile_sections; off until chosen).
+  const socialAccounts = isSelf && uid ? await getSocialAccounts(uid).catch(() => null) : null;
+  const social = socialAccounts
+    ? {
+        instagram: {
+          connected: Boolean(socialAccounts.instagram),
+          name: socialAccounts.instagram?.name ?? null,
+          on: Boolean(identity.profileSections?.instagram),
+        },
+        youtube: {
+          connected: Boolean(socialAccounts.youtube),
+          name: socialAccounts.youtube?.name ?? null,
+          on: Boolean(identity.profileSections?.youtube),
+        },
+      }
+    : undefined;
+  // Studio and Connections live on the network host; the handoff carries the sign-in.
+  const carry = (url: string) => `/api/auth/handoff?to=${encodeURIComponent(url)}`;
 
   // The nav and the file are rendered apart so the owner's sidebar can sit
   // between them, on the folder — it is about the file, not part of it.
@@ -319,6 +359,9 @@ export default async function DossierPage({ params }: Props) {
           networkUrl={NETWORK_URL}
           sections={drawerSections}
           pageBackground={pageBackground}
+          social={social}
+          studioHref={isSelf ? carry(`${NETWORK_URL}/studio`) : undefined}
+          connectionsHref={isSelf ? carry(`${NETWORK_URL}/hub/network?surface=me:connections`) : undefined}
         />
       ) : null}
       {/* "Manage your space": offerings, the featured one, start a group. */}
@@ -329,6 +372,7 @@ export default async function DossierPage({ params }: Props) {
           startGroupHref={`${NETWORK_URL}/hub/organization`}
           writingHref={`/${slug}/writing`}
           bookingsHref={`${NETWORK_URL}/hub/bookings`}
+          studioHref={carry(`${NETWORK_URL}/studio`)}
         />
       ) : null}
     </>
@@ -371,6 +415,15 @@ async function renderStandard({
     listOrgHomes(),
   ]);
   if (!page) return null;
+  // Instagram and YouTube: only when the person switched the section on and
+  // an account is connected; each feed is cached an hour in services.
+  const [instagramFeed, youtubeFeed] = await Promise.all([
+    identity.profileSections?.instagram ? getInstagramFeed(identity.userId).catch(() => null) : null,
+    identity.profileSections?.youtube ? getYoutubeFeed(identity.userId).catch(() => null) : null,
+  ]);
+  // "not connected" is not an error worth showing a visitor, nor an owner who already sees Connect in the drawer.
+  const igFeed = instagramFeed && (instagramFeed.ok || isSelf) && !(instagramFeed.ok === false && instagramFeed.error === "Instagram is not connected.") ? instagramFeed : null;
+  const ytFeed = youtubeFeed && (youtubeFeed.ok || isSelf) && !(youtubeFeed.ok === false && youtubeFeed.error === "YouTube is not connected.") ? youtubeFeed : null;
   const { profile } = page;
   const key = profile.slug ?? profile.userId;
 
@@ -432,6 +485,8 @@ async function renderStandard({
         empty={page.canEdit ? "No events yet." : null}
       />
     ),
+    instagram: igFeed ? <InstagramSection feed={igFeed} isOwner={isSelf} /> : null,
+    youtube: ytFeed ? <YoutubeSection feed={ytFeed} isOwner={isSelf} /> : null,
     store:
       storeShowcase || creditedWork.length > 0 ? (
         <>
@@ -488,7 +543,7 @@ async function renderStandard({
           <GalleryPanel profileUserId={profile.userId} slug={key} items={galleryItems} editable={isSelf} />
         ) : null
       }
-      order={page.sections.filter((s) => s.on).map((s) => s.key)}
+      order={[...page.sections.filter((s) => s.on).map((s) => s.key), "instagram", "youtube"]}
       slots={slots}
       after={
         orgs.length > 0 ? (

@@ -164,3 +164,8 @@ export function seriesScopeNote(letterTitle: string, seriesTitle: string): strin
 export function seriesLettersHref(seriesId: string): string {
   return `/manage/email/series/${encodeURIComponent(seriesId)}`;
 }
+
+/** This series' letters in the email suite (`/manage/email/series/[id]`). */
+export const seriesEmailsHref = (threadId: string) => `/manage/email/series/${encodeURIComponent(threadId)}`;
+/** Its "Mailings to this series" section, where a mailing is written. */
+export const seriesMailingsHref = (threadId: string) => `${seriesEmailsHref(threadId)}#mailings`;

@@ -59,6 +59,10 @@ export interface TourStop {
   /** Cached Street View still at the pose (migration 211); made on save, served from the org's media. */
   stillUrl: string | null;
   durationMinutes: number | null;
+  /** Catalogue place this stop was picked from (migration 235). Copy on pick: nothing propagates. */
+  placeId: string | null;
+  /** Experience thread featured at this stop (migration 235). */
+  experienceId: string | null;
 }
 
 export interface TourStopInput {
@@ -73,6 +77,9 @@ export interface TourStopInput {
   fov?: number | null;
   imageUrl?: string | null;
   durationMinutes?: number | null;
+  /** Written only when the key is present: `undefined` leaves the column as it is. Must belong to the same org. */
+  placeId?: string | null;
+  experienceId?: string | null;
 }
 
 export type DepartureStatus = "scheduled" | "cancelled";
@@ -143,6 +150,8 @@ function mapStop(r: Row): TourStop {
     imageUrl: (r.image_url as string | null) ?? null,
     stillUrl: (r.still_url as string | null) ?? null,
     durationMinutes: num(r.duration_minutes),
+    placeId: (r.place_id as string | null) ?? null,
+    experienceId: (r.experience_id as string | null) ?? null,
   };
 }
 
@@ -191,6 +200,22 @@ export async function saveTourStops(
   `) as unknown as Row[];
   if (!owner) throw new Error("That tour is not on this site.");
 
+  // Links are written only when given; validate they belong to this org (migration 235).
+  const placeIds = [...new Set(stops.map((s) => s.placeId).filter((v): v is string => typeof v === "string" && v !== ""))];
+  const experienceIds = [...new Set(stops.map((s) => s.experienceId).filter((v): v is string => typeof v === "string" && v !== ""))];
+  if (placeIds.length > 0) {
+    const found = (await db`
+      SELECT id FROM places WHERE org_id = ${orgId} AND id::text = ANY(${placeIds})
+    `) as unknown as Row[];
+    if (found.length !== placeIds.length) throw new Error("A stop links to a place that is not in this catalogue.");
+  }
+  if (experienceIds.length > 0) {
+    const found = (await db`
+      SELECT id FROM threads WHERE org_id = ${orgId} AND kind = 'experience' AND id = ANY(${experienceIds})
+    `) as unknown as Row[];
+    if (found.length !== experienceIds.length) throw new Error("A stop links to an experience that is not on this site.");
+  }
+
   await db.begin(async (tx) => {
     const keep: string[] = [];
     let position = 0;
@@ -212,6 +237,10 @@ export async function saveTourStops(
         imageUrl: s.imageUrl?.trim() || null,
         durationMinutes: clampNum(s.durationMinutes, 0, 24 * 60),
       };
+      const hasPlace = s.placeId !== undefined;
+      const hasExperience = s.experienceId !== undefined;
+      const placeId = s.placeId || null;
+      const experienceId = s.experienceId || null;
       const existing = s.id && /^[0-9a-f-]{36}$/i.test(s.id) ? s.id : null;
       const [row] = (existing
         ? await tx`
@@ -223,7 +252,10 @@ export async function saveTourStops(
                                 AND fov IS NOT DISTINCT FROM ${values.fov}::numeric THEN still_url ELSE NULL END,
               lat = ${values.lat}, lng = ${values.lng}, heading = ${values.heading},
               pitch = ${values.pitch}, fov = ${values.fov}, image_url = ${values.imageUrl},
-              duration_minutes = ${values.durationMinutes}, updated_at = NOW()
+              duration_minutes = ${values.durationMinutes},
+              place_id = CASE WHEN ${hasPlace} THEN ${placeId}::uuid ELSE place_id END,
+              experience_id = CASE WHEN ${hasExperience} THEN ${experienceId}::varchar ELSE experience_id END,
+              updated_at = NOW()
             WHERE id = ${existing} AND thread_id = ${threadId} AND org_id = ${orgId}
             RETURNING id
           `
@@ -233,11 +265,12 @@ export async function saveTourStops(
       } else {
         const [made] = (await tx`
           INSERT INTO tour_stops (
-            thread_id, org_id, position, title, body, guide_notes, lat, lng, heading, pitch, fov, image_url, duration_minutes
+            thread_id, org_id, position, title, body, guide_notes, lat, lng, heading, pitch, fov, image_url, duration_minutes,
+            place_id, experience_id
           ) VALUES (
             ${threadId}, ${orgId}, ${position}, ${values.title}, ${values.body}, ${values.guideNotes},
             ${values.lat}, ${values.lng}, ${values.heading}, ${values.pitch}, ${values.fov},
-            ${values.imageUrl}, ${values.durationMinutes}
+            ${values.imageUrl}, ${values.durationMinutes}, ${placeId}::uuid, ${experienceId}::varchar
           ) RETURNING id
         `) as unknown as Row[];
         keep.push(made!.id as string);

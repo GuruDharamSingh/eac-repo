@@ -1,0 +1,28 @@
+; ifacgroup.com — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN ifacgroup.com.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+@	3600	IN	MX	0 mail.ifacgroup.com.
+mail	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+www	3600	IN	CNAME	ifacgroup.com. ; cf_tags=cf-proxied:false
+ftp	3600	IN	CNAME	ifacgroup.com. ; cf_tags=cf-proxied:false
+cpanel	3600	IN	CNAME	ifacgroup.com. ; cf_tags=cf-proxied:false
+webmail	3600	IN	CNAME	ifacgroup.com. ; cf_tags=cf-proxied:false
+@	3600	IN	TXT	"v=spf1 a mx include:websitewelcome.com ~all"
+_autodiscover._tcp	3600	IN	SRV	0 0 443 cpanelemaildiscovery.cpanel.net.
+autodiscover	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+webdisk	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+whm	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+autoconfig	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+default._domainkey	3600	IN	TXT	"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzvVQOoBAK4yFCuoAdmfe3/YCNY08iYRxlhmiPuTFrt7+TzOJqS/MEe0R19KmvLEms9Apv8VuPDiOGZkVrGfALb9T8htDr+qLEKwWh+5/wbesyXZs+EIY8GB/57aDl0NfhBjcXz5mr4YZLxLYzswLPDuRZjyCRgxjdcq3YMxeXd4fmfYhPmuHOfcvmV2BSTJzy" "YyctHl/nkMdhwBpJurMogfQpUl6KQtxZrCqZC/gDRm3xgRq7GQBsODLOUYOccF/K1VpNOf9LZRg/kvR+T6x557zKvvY9TfZ+E8b3p2qbXpGXsVp2eeFvl3RJyHZY5yeaN1R/H2obdQQOdR7lW6VgwIDAQAB;"
+imap	3600	IN	CNAME	mail.ifacgroup.com. ; cf_tags=cf-proxied:false
+pop	3600	IN	CNAME	mail.ifacgroup.com. ; cf_tags=cf-proxied:false
+smtp	3600	IN	CNAME	mail.ifacgroup.com. ; cf_tags=cf-proxied:false
+@	3600	IN	MX	10 ifacgroup.com.
+_dmarc	3600	IN	TXT	"v=DMARC1; p=none"
+ssh	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+em5156	14400	IN	CNAME	u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s1._domainkey	14400	IN	CNAME	s1.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s2._domainkey	14400	IN	CNAME	s2.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false

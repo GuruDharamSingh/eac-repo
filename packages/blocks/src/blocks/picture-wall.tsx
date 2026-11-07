@@ -342,6 +342,14 @@ export const pictureWall = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Wall", sel: "> .blk-wall" },
+      cell: { label: "Picture and caption", sel: ".blk-wall-cell", repeat: true },
+      frame: { label: "Frame", sel: ".blk-wall-figure", repeat: true },
+      image: { label: "Picture", sel: ".blk-wall-img", repeat: true },
+      caption: { label: "Caption", sel: ".blk-wall-caption", repeat: true },
+      captionWords: { label: "Caption words", sel: ".blk-wall-caption-text", repeat: true, draws: { props: { captionPlace: "on" } } },
+    },
   },
   PictureWall,
   () => ({

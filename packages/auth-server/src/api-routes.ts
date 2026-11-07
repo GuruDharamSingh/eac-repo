@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { deriveCookieDomain, resolveSupabasePublicConfig, getSupabaseServer, invalidateSessionCache } from './index';
 import { ARRIVAL_COOKIE, SSO_COOKIE, markSignedOutEverywhere, ssoCookieValue } from './sso-state';
+import { getVerifiedSession } from './verify-session';
 
 type CookieToSet = {
   name: string;
@@ -471,8 +472,10 @@ async function signOutEverywhere(
   response: NextResponse
 ): Promise<{ response: NextResponse; error: string | null }> {
   const { supabase, applyCookies } = createRouteSupabaseClient(request);
-  const { data } = await supabase.auth.getSession();
-  const authUserId = data.session?.user?.id ?? null;
+  // Only a verified session may mark someone signed out everywhere; a forged
+  // cookie would otherwise sign any user out of the whole network.
+  const verified = await getVerifiedSession(supabase);
+  const authUserId = verified?.claims.sub ?? null;
 
   const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (authUserId) {
@@ -497,15 +500,15 @@ async function signOutEverywhere(
 export async function handleGetSession(request: NextRequest) {
   try {
     const { supabase, applyCookies } = createRouteSupabaseClient(request);
-    const { data, error } = await supabase.auth.getSession();
+    const verified = await getVerifiedSession(supabase);
 
-    if (error || !data.session) {
+    if (!verified) {
       return NextResponse.json({ user: null, session: null });
     }
 
     const response = NextResponse.json({
-      user: data.session.user,
-      session: data.session,
+      user: verified.session.user,
+      session: verified.session,
     });
     await applyCookies(response);
     return response;

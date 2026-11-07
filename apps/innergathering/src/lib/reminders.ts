@@ -1,5 +1,70 @@
-import { claimHostReminder, listHostRemindersDue } from "@elkdonis/services";
+import {
+  claimAttendeeReminder,
+  claimHostReminder,
+  listAttendeeReminderRecipients,
+  listAttendeeRemindersDue,
+  listHostRemindersDue,
+  recordAttendeeReminderSent,
+} from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+
+/**
+ * Remind the people coming: members who said yes and guests who ticked the
+ * reminder box, once, for the next occurrence after they answered. The rule and
+ * its exclusions are in services/attendee-reminders.ts.
+ *
+ * A guest gets the join link only on a PUBLIC thread, where the page already
+ * shows it to anyone. The guest form does not check visibility, so a guest can
+ * hold an RSVP on an ORGANIZATION meeting whose link is for its members.
+ */
+export async function runAttendeeReminderTick(appOrigin: string): Promise<void> {
+  const due = await listAttendeeRemindersDue({ orgId: siteConfig.orgId });
+  if (due.length === 0) return;
+
+  const talkBase = process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "";
+
+  for (const reminder of due) {
+    if (!(await claimAttendeeReminder(reminder.threadId, reminder.occurrenceAt))) continue;
+
+    try {
+      const recipients = await listAttendeeReminderRecipients(reminder);
+      if (recipients.length === 0) continue;
+
+      const { sendReminderEmail } = await import("@elkdonis/email");
+      const pageUrl = `${appOrigin}/${reminder.section ?? "offerings"}/${reminder.slug}`;
+      const talkUrl = reminder.talkToken && talkBase ? `${talkBase}/call/${reminder.talkToken}` : undefined;
+
+      let sent = 0;
+      for (const person of recipients) {
+        const mayHaveLink = person.isMember || reminder.visibility === "PUBLIC";
+        try {
+          const result = await sendReminderEmail(person.email, {
+            purpose: "attendee",
+            guestName: person.name,
+            meetingTitle: reminder.title,
+            scheduledAt: reminder.occurrenceAt,
+            location: reminder.location ?? undefined,
+            meetingUrl: mayHaveLink ? reminder.meetingUrl ?? undefined : undefined,
+            talkJoinUrl: mayHaveLink ? talkUrl : undefined,
+            threadKind: reminder.kind,
+            rsvpUrl: pageUrl,
+            orgId: siteConfig.orgId,
+            orgName: siteConfig.orgName,
+            threadId: reminder.threadId,
+          });
+          if (result.ok) sent++;
+        } catch (error) {
+          console.error(`[innergathering] attendee reminder failed for ${reminder.threadId}:`, error);
+        }
+      }
+
+      await recordAttendeeReminderSent(reminder.threadId, reminder.occurrenceAt, sent);
+      console.log(`[innergathering] attendee reminders: ${reminder.threadId}: sent ${sent}/${recipients.length}`);
+    } catch (error) {
+      console.error(`[innergathering] attendee reminders: tick failed for ${reminder.threadId}:`, error);
+    }
+  }
+}
 
 /**
  * Remind whoever is hosting, shortly before they have to.

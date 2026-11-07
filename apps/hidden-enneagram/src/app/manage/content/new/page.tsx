@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listOrgFeeds } from "@elkdonis/services";
 import { ContentComposerBody } from "@/components/manage/content-composer-body";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata = { title: "New" };
 
@@ -15,6 +16,10 @@ export default async function NewContentPage({
 }: {
   searchParams: Promise<{ feed?: string; kind?: string }>;
 }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const { feed, kind: kindParam } = await searchParams;
   const kind = kindParam === "service" || feed === "services" ? "service" : "post";
   const feeds = await listOrgFeeds(siteConfig.orgId, { includePrivate: true });

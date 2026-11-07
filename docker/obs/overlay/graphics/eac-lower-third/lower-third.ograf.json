@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-lower-third",
+  "version": "1.0.0",
+  "name": "Lower third",
+  "description": "Name and role, bottom left. Styles: panel (fade and slide), slash, reveal, fade. The slash, reveal and fade sequences are adapted from Animated Lower Thirds 1.6 by noeal-dac (MIT).",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "title": "Name", "default": "", "maxLength": 80, "gddType": "single-line" },
+      "title": { "type": "string", "title": "Role or line", "default": "", "maxLength": 120, "gddType": "single-line" },
+      "style": { "type": "string", "title": "Style", "enum": ["panel", "slash", "reveal", "fade"], "default": "panel", "gddType": "select", "gddOptions": { "labels": {"panel": "Panel (fade and slide)", "slash": "Slash", "reveal": "Reveal", "fade": "Fade"} } },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

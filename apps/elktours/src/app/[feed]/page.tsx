@@ -11,9 +11,12 @@ import {
 } from "@/lib/data";
 import { hexToHslTriplet } from "@/lib/color";
 import { siteConfig } from "@/config/site";
+import { puckPageMetadata, renderPuckPage } from "@/lib/puck/render";
 
 /**
- * Every section of the site is this one route.
+ * Every section of the site is this one route — and, when no section answers to the name, a page from the page
+ * builder (/manage/builder, 2026-11-06). A section wins: saving a page under a section's name is refused
+ * (lib/puck/actions.ts `slugProblem`).
  *
  * Before the rebuild /sadhana, /yoga and /gurdwara were three line-for-line
  * duplicate files. Feed identity, accent, presenter and pull-quote now come
@@ -27,7 +30,7 @@ interface FeedPageProps {
 export async function generateMetadata({ params }: FeedPageProps): Promise<Metadata> {
   const { feed: slug } = await params;
   const feed = await getOrgFeed(siteConfig.orgId, slug);
-  if (!feed) return {};
+  if (!feed) return (await puckPageMetadata(slug)) ?? {};
   return {
     title: feed.name,
     description: feed.tagline ?? feed.description ?? undefined,
@@ -43,7 +46,12 @@ export default async function FeedPage({ params }: FeedPageProps) {
 
   // A private feed 404s for the public rather than 403-ing: an unpublished
   // section shouldn't confirm its own existence.
-  if (!feed || !feed.isPublic) notFound();
+  if (!feed) {
+    const page = await renderPuckPage(slug);
+    if (page) return page;
+    notFound();
+  }
+  if (!feed.isPublic) notFound();
 
   const threads = await getThreadsForFeed(feed.slug);
 

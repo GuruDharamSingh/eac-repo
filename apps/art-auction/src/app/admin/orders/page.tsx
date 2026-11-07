@@ -11,6 +11,7 @@ import {
   adminFulfilOrder,
   adminRefundOrder,
 } from "../actions";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Orders · Admin" };
@@ -36,6 +37,10 @@ function fmtDate(d: string): string {
 }
 
 export default async function AdminOrdersPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const orders = await listOrders({ limit: 25 });
   const orderActions = {
     confirm: adminConfirmOrder,

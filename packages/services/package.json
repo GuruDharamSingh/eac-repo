@@ -12,7 +12,14 @@
     "./thread-audience": "./src/thread-audience.ts",
     "./reels": "./src/reels.ts",
     "./obs": "./src/obs.ts",
-    "./video-render": "./src/video-render.ts"
+    "./relay": "./src/relay.ts",
+    "./stream-chat": "./src/stream-chat.ts",
+    "./recordings": "./src/recordings.ts",
+    "./studio-items": "./src/studio-items.ts",
+    "./paath-day": "./src/paath-day.ts",
+    "./video-render": "./src/video-render.ts",
+    "./businesses": "./src/businesses.ts",
+    "./featured-people": "./src/featured-people.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -20,6 +27,7 @@
   },
   "dependencies": {
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/email": "workspace:*",
     "@elkdonis/nextcloud": "workspace:*",
     "@elkdonis/redis": "workspace:*",
     "@elkdonis/types": "workspace:*",

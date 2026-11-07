@@ -61,6 +61,11 @@ function setFocus(next: ItemFocus | null) {
   listeners.forEach((l) => l());
 }
 
+/** Close the open row, if any: the parts plugin does when a part of the block is picked (parts/picker.tsx). */
+export function closeItemFocus(): void {
+  setFocus(null);
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => {

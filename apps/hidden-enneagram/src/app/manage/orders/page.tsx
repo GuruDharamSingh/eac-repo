@@ -3,10 +3,15 @@ import { formatMoney } from "@elkdonis/commerce/money";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
 import { ConfirmOrderButton } from "./confirm-order-button";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata = { title: "Orders" };
 
 export default async function ManageOrdersPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const orders = await listOrdersForOrg(siteConfig.orgId, { limit: 100 });
   const lineDescriptions = await Promise.all(
     orders.map(async (o) => {

@@ -8,15 +8,15 @@ interface SiteFooterProps {
 
 export function SiteFooter({ content }: SiteFooterProps) {
   return (
-    <footer className="mt-16 border-t border-border bg-card">
+    <footer data-chrome="footer" className="mt-16 border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-5 py-10 text-sm">
-        <p className="font-serif text-lg">{content?.body ?? siteConfig.orgName}</p>
-        <p className="mt-2 text-muted-foreground">
+        <p data-part="title" className="font-serif text-lg">{content?.body ?? siteConfig.orgName}</p>
+        <p data-part="note" className="mt-2 text-muted-foreground">
           {content?.note ?? (
             <>
               Guided walks and experiences in {siteConfig.city}. Part of the{" "}
               {process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ? (
-                <a href={process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL} className="underline underline-offset-2">Elkdonis Arts Collective</a>
+                <a href={process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL} data-part="links" className="underline underline-offset-2">Elkdonis Arts Collective</a>
               ) : (
                 "Elkdonis Arts Collective"
               )}{" "}
@@ -24,10 +24,10 @@ export function SiteFooter({ content }: SiteFooterProps) {
             </>
           )}
         </p>
-        <p className="mt-6 text-xs text-muted-foreground">
+        <p data-part="small" className="mt-6 text-xs text-muted-foreground">
           © {new Date().getFullYear()} {siteConfig.orgName} ·{" "}
-          <Link href="/tours" className="underline underline-offset-2">Tours</Link> ·{" "}
-          <Link href="/login" className="underline underline-offset-2">Guide sign in</Link>
+          <Link href="/tours" data-part="links" className="underline underline-offset-2">Tours</Link> ·{" "}
+          <Link href="/login" data-part="links" className="underline underline-offset-2">Guide sign in</Link>
         </p>
       </div>
     </footer>

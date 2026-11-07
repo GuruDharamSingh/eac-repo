@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { Data } from "@puckeditor/core";
 import { isValidSlug } from "@elkdonis/page-builder";
 import { templateDocument } from "@elkdonis/blocks";
 import { requireOrgEditor } from "@/lib/auth";
 import { loadPage, HOME_SLUG } from "@/lib/puck/store";
+import { LANDING_SLUG } from "@/lib/puck/landing";
 import { slugProblem } from "@/lib/puck/actions";
 import { allTemplates, startingTemplate } from "@/lib/puck/templates";
 import { loadHomeSeed } from "@/lib/puck/home-seed";
@@ -32,6 +33,8 @@ export default async function StudioPage({
   const { slug } = await params;
   const { template: start } = await searchParams;
   if (!isValidSlug(slug)) notFound();
+  // The home page's tree is edited on `/`, where its live pieces are.
+  if (slug === LANDING_SLUG) redirect("/");
   await requireOrgEditor(`/studio/${slug}`);
 
   // A name the site already uses (a section, /hub, /about) cannot hold a page.

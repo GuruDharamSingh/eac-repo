@@ -40,7 +40,9 @@ export async function loadEvent(
     // Anyone may see a published thread; a draft only its editors.
     if (t && (t.status === "published" || viewer?.canEdit)) thread = t;
   } else {
-    thread = (await getUpcomingThreads(1))[0] ?? null;
+    // Read again by id: a list read carries no join link, and this block draws it for someone signed in.
+    const next = (await getUpcomingThreads(1))[0];
+    thread = next ? await getThreadById(next.id) : null;
   }
   if (!thread) return { event: null };
 

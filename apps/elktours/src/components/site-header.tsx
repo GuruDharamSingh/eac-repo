@@ -26,10 +26,16 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
   const [open, setOpen] = useState(false);
   const links = [
     { href: "/tours", label: "Tours" },
-    ...offerings.filter((o) => o.slug !== siteConfig.toursFeed).map((o) => ({ href: `/${o.slug}`, label: o.title })),
+    ...offerings
+      .filter((o) => o.slug !== siteConfig.toursFeed)
+      // The Journal listing is the public places catalogue now (/journal redirects to /places).
+      .map((o) => (o.slug === "journal" ? { href: "/places", label: "Places" } : { href: `/${o.slug}`, label: o.title })),
     { href: "/about", label: "About" },
   ];
   const homeHref = isMember ? "/hub" : "/center";
+  // Site style (2026-11-06): the header's parts are named for the owner's style editor (lib/site-style-schema.ts).
+  const isHere = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const partOf = (href: string) => (isHere(href) ? "active" : "links");
   const linkClass = (href: string) =>
     cn(
       "px-3 py-2 text-sm transition-colors hover:text-primary",
@@ -37,21 +43,21 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
     );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+    <header data-chrome="header" className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
         <Link href="/" className="flex flex-col leading-tight" onClick={() => setOpen(false)}>
-          <span className="font-serif text-lg font-semibold tracking-wide">{siteConfig.orgName}</span>
-          <span className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</span>
+          <span data-part="brand" className="font-serif text-lg font-semibold tracking-wide">{siteConfig.orgName}</span>
+          <span data-part="city" className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">{siteConfig.city}</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className={linkClass(l.href)}>{l.label}</Link>
+            <Link key={l.href} href={l.href} data-part={partOf(l.href)} className={linkClass(l.href)}>{l.label}</Link>
           ))}
-          {signedIn && <Link href={homeHref} className={linkClass(homeHref)}>{isMember ? "Hub" : "Center"}</Link>}
-          {canEdit && <Link href="/manage/tours" className={linkClass("/manage")}>Manage</Link>}
+          {signedIn && <Link href={homeHref} data-part={partOf(homeHref)} className={linkClass(homeHref)}>{isMember ? "Hub" : "Center"}</Link>}
+          {canEdit && <Link href="/manage/tours" data-part={partOf("/manage")} className={linkClass("/manage")}>Manage</Link>}
           <Button asChild size="sm" variant="outline" className="ml-2">
-            <Link href={signedIn ? "/account" : "/login"}>{signedIn ? "Account" : "Sign in"}</Link>
+            <Link href={signedIn ? "/account" : "/login"} data-part="account">{signedIn ? "Account" : "Sign in"}</Link>
           </Button>
         </nav>
 
@@ -67,9 +73,9 @@ export function SiteHeader({ signedIn, canEdit, isMember = false, offerings = []
       </div>
 
       {open && (
-        <nav className="border-t border-border px-5 pb-4 md:hidden">
+        <nav data-part="menu" className="border-t border-border px-5 pb-4 md:hidden">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="block py-2.5 text-sm">{l.label}</Link>
+            <Link key={l.href} href={l.href} data-part={partOf(l.href)} onClick={() => setOpen(false)} className="block py-2.5 text-sm">{l.label}</Link>
           ))}
           {signedIn && <Link href={homeHref} onClick={() => setOpen(false)} className="block py-2.5 text-sm">{isMember ? "Hub" : "Center"}</Link>}
           {canEdit && <Link href="/manage/tours" onClick={() => setOpen(false)} className="block py-2.5 text-sm">Manage</Link>}

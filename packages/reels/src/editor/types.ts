@@ -4,6 +4,7 @@
 // @elkdonis/services/reels, which this package does not import.
 
 import type { ReelEdit, ReelTemplateId } from '../types';
+import type { LiveCardProps } from './LiveCard';
 
 export interface VideoProject {
   id: string;
@@ -32,6 +33,28 @@ export interface VideoTrack {
   size: number;
 }
 
+/** A sound effect (services/reels.ts listReelSounds): network library or the person's own, with its credit. */
+export interface VideoSound extends VideoTrack {
+  category: string;
+  title?: string;
+  tags?: string[];
+  licence?: string;
+  source?: string;
+  author?: string;
+  duration?: number;
+}
+
+/** A CC0 result from Freesound; `preview` is an MP3 on Freesound's CDN. */
+export interface VideoFreesoundHit {
+  id: number;
+  name: string;
+  tags: string[];
+  duration: number;
+  author: string;
+  url: string;
+  preview: string;
+}
+
 /** A finished reel, offered as a segment for another reel. */
 export interface VideoFinished {
   projectId: string;
@@ -52,6 +75,20 @@ export interface VideoPublication {
 
 export type VideoResult<T = undefined> = { ok: true; value: T } | { ok: false; error: string };
 
+/** Speech-to-text of a recording (services/reels.ts, migration 229); words in source seconds. */
+export interface VideoTranscript {
+  id: string;
+  path: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  progress: number;
+  words: Array<{ w: string; s: number; e: number }> | null;
+  /** Silences in source seconds (ffmpeg silencedetect); null when the transcript has none. */
+  pauses?: Array<{ s: number; e: number }> | null;
+  /** Sound level, one byte per 1/rate s, base64 (render.mjs wavPeaks); arrives before the words. */
+  peaks?: { rate: number; data: string } | null;
+  error: string | null;
+}
+
 export interface VideoActions {
   listProjects(): Promise<VideoProject[]>;
   createProject(orgId: string, template: ReelTemplateId, title: string): Promise<VideoResult<VideoProject>>;
@@ -65,6 +102,15 @@ export interface VideoActions {
   getPublication(id: string): Promise<VideoPublication | null>;
   publish(id: string, description: string): Promise<VideoResult<VideoPublication>>;
   unpublish(id: string): Promise<VideoResult>;
+  /** Sound effects; without listSounds the timeline offers no Sound overlay. */
+  listSounds?(): Promise<{ network: VideoSound[]; mine: VideoSound[] }>;
+  shareSound?(path: string, category: string): Promise<VideoResult<{ path: string }>>;
+  /** Freesound CC0 search and import; absent when the server has no FREESOUND_API_KEY. */
+  searchFreesound?(query: string, page: number): Promise<VideoResult<{ hits: VideoFreesoundHit[]; more: boolean }>>;
+  importFreesound?(id: number): Promise<VideoResult<VideoSound>>;
+  /** Queue speech-to-text of a recording; without it the timeline offers no subtitles from speech. */
+  transcribe?(id: string, path: string): Promise<VideoResult<VideoTranscript>>;
+  getTranscript?(id: string, path: string): Promise<VideoTranscript | null>;
 }
 
 export interface VideoKindProps {
@@ -76,6 +122,8 @@ export interface VideoKindProps {
    * is `{ path }` (a Nextcloud path) or `{ error }`.
    */
   uploadEndpoint: string;
+  /** The host's picture route (arts-collective /api/studio/image); with it, picture slots get "Edit picture". */
+  imageEndpoint?: string;
   /** Prefix that turns a Nextcloud path into a readable URL: `/api/media/`. */
   mediaBase: string;
   /**
@@ -84,9 +132,18 @@ export interface VideoKindProps {
    */
   libraryEndpoint?: string;
   /**
+   * Phone capture codes (`/api/capture`, @elkdonis/studio/capture): video
+   * slots offer "From my phone"; the clip lands in the person's Recordings and
+   * fills the slot by path. `phoneHost` is the address shown for the phone.
+   */
+  captureEndpoint?: string;
+  phoneHost?: string;
+  /**
    * `broadcastHref`: the server OBS console, passed only to admins.
    * `pageBase`: where a published reel reads, without the piece slug
    * (`<ArtDirect>/<person slug>/writing`); null when the person has no slug.
    */
   links: { broadcastHref?: string; pageBase?: string | null };
+  /** "Go live" card (LiveCard.tsx): the server OBS stream from here. Passed only to admins. */
+  broadcast?: LiveCardProps;
 }

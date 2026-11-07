@@ -11,6 +11,6 @@
     <namespace>EacEmbed</namespace>
     <category>integration</category>
     <dependencies>
-        <nextcloud min-version="30" max-version="34"/>
+        <nextcloud min-version="30" max-version="35"/>
     </dependencies>
 </info>

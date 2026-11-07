@@ -79,6 +79,13 @@ export const prose = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Text block", sel: "> .blk-prose" },
+      paragraph: { label: "Paragraphs", sel: "p", repeat: true, draws: { props: { body: "<p>One.</p><p>Two.</p>" } } },
+      heading: { label: "Subheadings", sel: "h2", repeat: true, draws: { props: { body: "<h2>A heading</h2><p>Words.</p>" } } },
+      link: { label: "Links", sel: "a", repeat: true, draws: { props: { body: '<p><a href="/x">A link</a></p>' } } },
+      quote: { label: "Quotes", sel: "blockquote", repeat: true, draws: { props: { body: "<blockquote>Words.</blockquote>" } } },
+    },
   },
   Prose,
   () => ({

@@ -1,0 +1,8 @@
+/* The Studio's picture editor (ImageEditor.tsx): a full-window dialog. */
+.ie-veil { position: fixed; inset: 0; z-index: 1000; background: rgba(10, 9, 8, 0.72); display: grid; place-items: center; padding: 2vh 2vw; }
+.ie-box { position: relative; width: min(1400px, 96vw); height: min(900px, 94vh); background: #fff; color: #222; border-radius: 8px; overflow: hidden; }
+.ie-busy { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: rgba(255, 255, 255, 0.75); font: 500 1rem system-ui, sans-serif; }
+@media (max-width: 640px) {
+  .ie-veil { padding: 0; }
+  .ie-box { width: 100vw; height: 100dvh; border-radius: 0; }
+}

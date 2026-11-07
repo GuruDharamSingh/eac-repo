@@ -1,0 +1,138 @@
+<!doctype html>
+<!--
+  Graphics renderer for OBS's "Overlays" source: a transparent 1920x1080
+  page that hosts EBU OGraf v1 graphics (https://ograf.ebu.io) in layers.
+  The OBS agent (docker/obs/agent.mjs) serves this page, the graphics'
+  files and the layer state on loopback only, and pushes every change over
+  server-sent events together with the command that caused it.
+
+  For each layer the page imports the graphic's module (default export: an
+  HTMLElement class), registers it as a custom element, and calls the
+  OGraf methods: load, playAction, updateAction, stopAction, customAction,
+  dispose. Calls for one layer run in order; layers run independently.
+  After a reconnect (agent or page restart) the layers are rebuilt from the
+  state without animation.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EAC graphics</title>
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  .layer { position: absolute; inset: 0; display: block; }
+</style>
+</head>
+<body>
+<script type="module">
+  const tags = new Map(); // module URL → custom element tag
+  const local = new Map(); // layer id → { el, graphicId, playing, dataJson, chain }
+  let tagSeq = 0;
+  let zorder = []; // layer ids, bottom first, from the latest state
+
+  async function tagFor(g) {
+    const url = new URL(`graphics/${g.source}/${g.folder}/${g.main}`, location.href).href;
+    if (!tags.has(url)) {
+      const mod = await import(url);
+      const tag = `ograf-graphic-${++tagSeq}`;
+      customElements.define(tag, mod.default);
+      tags.set(url, tag);
+    }
+    return tags.get(url);
+  }
+
+  // Each layer's calls run one after another; a failing call is logged, not fatal.
+  function queue(entry, fn) {
+    entry.chain = entry.chain.then(fn).catch((e) => console.error('[graphics]', e));
+    return entry.chain;
+  }
+
+  function reconcile(state) {
+    const catalog = new Map(state.catalog.map((g) => [g.id, g]));
+    const last = state.last;
+    // A fresh connect rebuilds without animation; a command animates its own layer only.
+    const mine = (id, op) => !!last && last.layerId === id && (!op || last.op === op);
+    const wanted = new Set(state.layers.map((l) => l.id));
+    zorder = state.layers.map((l) => l.id);
+
+    for (const [id, entry] of local) {
+      if (wanted.has(id) && catalog.has(entry.graphicId)) continue;
+      local.delete(id);
+      queue(entry, async () => {
+        if (!entry.el) return;
+        if (entry.playing) await entry.el.stopAction?.({ skipAnimation: !mine(id) });
+        await entry.el.dispose?.({});
+        entry.el.remove();
+      });
+    }
+
+    for (const l of state.layers) {
+      const g = catalog.get(l.graphicId);
+      if (!g) continue;
+      let entry = local.get(l.id);
+      const dataJson = JSON.stringify(l.data);
+      if (!entry) {
+        entry = { el: null, graphicId: l.graphicId, playing: false, dataJson, chain: Promise.resolve() };
+        local.set(l.id, entry);
+        queue(entry, async () => {
+          entry.el = document.createElement(await tagFor(g));
+          entry.el.className = 'layer';
+          entry.el.dataset.layer = l.id;
+          document.body.append(entry.el);
+          order();
+          await entry.el.load({
+            data: l.data,
+            renderType: 'realtime',
+            renderCharacteristics: { resolution: { width: 1920, height: 1080 }, frameRate: 30 },
+          });
+        });
+        if (l.playing) {
+          entry.playing = true;
+          queue(entry, () => entry.el.playAction({ goto: l.step, skipAnimation: true }));
+        }
+        continue;
+      }
+      if (dataJson !== entry.dataJson) {
+        entry.dataJson = dataJson;
+        queue(entry, () => entry.el.updateAction({ data: l.data, skipAnimation: !mine(l.id) }));
+      }
+      if (l.playing && !entry.playing) {
+        entry.playing = true;
+        queue(entry, () => entry.el.playAction(mine(l.id, 'play') ? {} : { goto: l.step, skipAnimation: true }));
+      } else if (!l.playing && entry.playing) {
+        entry.playing = false;
+        queue(entry, () => entry.el.stopAction({ skipAnimation: !mine(l.id) }));
+      } else if (l.playing && mine(l.id, 'step')) {
+        queue(entry, () => entry.el.playAction({ delta: last.delta }));
+      }
+      if (mine(l.id, 'custom')) {
+        queue(entry, () => entry.el.customAction({ id: last.actionId, payload: last.payload }));
+      }
+    }
+    order();
+  }
+
+  // DOM order is z-order: the first layer is at the bottom. Only out-of-place
+  // layers move: moving an element restarts its CSS animations.
+  function order() {
+    let prev = null;
+    for (const id of zorder) {
+      const el = local.get(id)?.el;
+      if (!el?.isConnected) continue;
+      const here = prev ? prev.nextElementSibling : document.querySelector('.layer');
+      if (here !== el) prev ? prev.after(el) : document.body.prepend(el);
+      prev = el;
+    }
+  }
+
+  function connect() {
+    const es = new EventSource('events');
+    es.onmessage = (e) => reconcile(JSON.parse(e.data));
+    es.onerror = () => {
+      es.close();
+      setTimeout(connect, 2000);
+    };
+  }
+  connect();
+</script>
+</body>
+</html>

@@ -10,6 +10,8 @@
  *   network music:  EAC_Network/oad/Private/Music/   (`oad` is the network's own
  *                   org, the collective's artists; its members read it through
  *                   the ordinary org rule in media-authz.ts)
+ *   sound effects:  EAC_Network/oad/Private/Sounds/<Category>/ and
+ *                   <own>/Private/Sounds/, credited in each folder's sounds.json
  * A "Just me" project (org `oad`) lives in the person's own storage; an org
  * project in the org's. Every function takes the acting user and checks
  * ownership itself: callers are server actions and routes, and a project id
@@ -18,16 +20,17 @@
 
 import { db } from '@elkdonis/db';
 import { nanoid } from 'nanoid';
-import { davAuthHeader, davList, davMkcol, davUrl, type DavEntry } from './dav';
+import { davAuthHeader, davGetText, davList, davListDeep, davMkcol, davPut, davUrl, type DavEntry } from './dav';
 import { orgStorageRoot } from './org-storage';
 import { getStorageSlug, userStorageRoot } from './user-storage';
+import { archiveReelItem, ensureReelItem, linkReelPublished, syncReelSources } from './studio-items';
 
 const PERSONAL_ORG_ID = 'oad';
 const ROOT = process.env.NEXTCLOUD_ORG_ROOT_FOLDER || 'EAC_Network';
 export const NETWORK_MUSIC_FOLDER = `${ROOT}/${PERSONAL_ORG_ID}/Private/Music`;
 
-export type ReelSlot = 'logo' | 'artwork' | 'clip' | 'clip2' | 'extra' | 'music';
-export const REEL_SLOTS: ReelSlot[] = ['logo', 'artwork', 'clip', 'clip2', 'extra', 'music'];
+export type ReelSlot = 'logo' | 'artwork' | 'clip' | 'clip2' | 'extra' | 'music' | 'sound';
+export const REEL_SLOTS: ReelSlot[] = ['logo', 'artwork', 'clip', 'clip2', 'extra', 'music', 'sound'];
 
 export interface ReelProject {
   id: string;
@@ -187,7 +190,9 @@ export async function createReelProject(
             ${db.json({ template } as never)}, ${folder})
     RETURNING *
   `;
-  return { ok: true, project: toProject(rows[0]) };
+  const project = toProject(rows[0]);
+  await ensureReelItem(project);
+  return { ok: true, project };
 }
 
 export async function listReelProjects(userId: string): Promise<ReelProject[]> {
@@ -215,7 +220,7 @@ export async function getReelProject(userId: string, id: string): Promise<ReelPr
  */
 async function pathsAllowed(userId: string, project: ReelProject, edit: unknown): Promise<boolean> {
   const own = await personalRoot(userId);
-  const allowed = [project.folder + '/', NETWORK_MUSIC_FOLDER + '/'];
+  const allowed = [project.folder + '/', NETWORK_MUSIC_FOLDER + '/', NETWORK_SOUNDS_FOLDER + '/'];
   if (own) allowed.push(`${own}/`);
   const paths: string[] = [];
   const walk = (x: unknown) => {
@@ -247,13 +252,18 @@ export async function saveReelProject(
     WHERE id = ${id} AND owner_id = ${userId}
     RETURNING *
   `;
-  return { ok: true, project: toProject(rows[0]) };
+  const saved = toProject(rows[0]);
+  // Lineage: the files in the source slots become the reel's sources.
+  if (patch.edit) await syncReelSources(saved, saved.edit);
+  else if (patch.title) await ensureReelItem(saved);
+  return { ok: true, project: saved };
 }
 
 export async function archiveReelProject(userId: string, id: string): Promise<boolean> {
   const rows = await db`
     UPDATE reel_projects SET archived_at = now() WHERE id = ${id} AND owner_id = ${userId} RETURNING id
   `;
+  if (rows.length > 0) await archiveReelItem(userId, id);
   return rows.length > 0;
 }
 
@@ -276,11 +286,11 @@ export async function reelUploadPath(
   const project = await getReelProject(userId, projectId);
   if (!project) return { ok: false, error: 'Not found' };
   const name = `${Date.now()}-${safeName(filename)}`;
-  if (slot === 'music') {
+  if (slot === 'music' || slot === 'sound') {
     const own = await personalRoot(userId);
     if (!own) return { ok: false, error: 'Your storage folder is not set up yet' };
-    const folder = `${own}/Private/Music`;
-    if (!(await mkdirs(folder))) return { ok: false, error: 'Could not create your music folder' };
+    const folder = `${own}/Private/${slot === 'music' ? 'Music' : 'Sounds'}`;
+    if (!(await mkdirs(folder))) return { ok: false, error: `Could not create your ${slot} folder` };
     return { ok: true, path: `${folder}/${name}` };
   }
   return { ok: true, path: `${project.folder}/${slot}-${name}` };
@@ -325,6 +335,197 @@ export async function shareReelMusic(userId: string, path: string): Promise<{ ok
 }
 
 // ---------------------------------------------------------------------------
+// Sound effects
+// ---------------------------------------------------------------------------
+// Network library: EAC_Network/oad/Private/Sounds/<Category>/<file>, read by
+// `oad` members like the network music. Personal: <own>/Private/Sounds/.
+// Each Sounds folder may hold a `sounds.json` crediting its files (source,
+// licence, author), keyed by the path below that folder; a file without an
+// entry is listed with what its folder and name say. Freesound imports are
+// CC0 only and write their entry when they land.
+
+export const NETWORK_SOUNDS_FOLDER = `${ROOT}/${PERSONAL_ORG_ID}/Private/Sounds`;
+const SOUNDS_MANIFEST = 'sounds.json';
+
+export interface ReelSoundCredit {
+  title?: string;
+  category?: string;
+  tags?: string[];
+  licence?: string;
+  source?: string;
+  author?: string;
+  duration?: number;
+}
+
+export interface ReelSound extends ReelSoundCredit {
+  name: string;
+  path: string;
+  size: number;
+  category: string;
+}
+
+type SoundManifest = { version: 1; sounds: Record<string, ReelSoundCredit> };
+
+async function readSoundManifest(folder: string): Promise<SoundManifest> {
+  const text = await davGetText(`${folder}/${SOUNDS_MANIFEST}`);
+  if (!text) return { version: 1, sounds: {} };
+  try {
+    const m = JSON.parse(text);
+    return { version: 1, sounds: m && typeof m.sounds === 'object' ? m.sounds : {} };
+  } catch {
+    return { version: 1, sounds: {} };
+  }
+}
+
+async function soundsIn(folder: string, fallbackCategory: string): Promise<ReelSound[]> {
+  const [entries, manifest] = await Promise.all([davListDeep(folder, 4000), readSoundManifest(folder)]);
+  return entries
+    .filter((e) => AUDIO.test(e.name))
+    .map((e) => {
+      const rel = e.path.slice(folder.length + 1);
+      const credit = manifest.sounds[rel] ?? {};
+      const dir = rel.includes('/') ? rel.split('/')[0] : '';
+      const name = e.name.replace(/^\d{13}-/, '');
+      return {
+        ...credit,
+        name: credit.title || name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '),
+        path: e.path,
+        size: e.size,
+        category: credit.category || dir || fallbackCategory,
+      };
+    })
+    .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+}
+
+export async function listReelSounds(userId: string): Promise<{ network: ReelSound[]; mine: ReelSound[] }> {
+  const own = await personalRoot(userId);
+  const [network, mine] = await Promise.all([
+    soundsIn(NETWORK_SOUNDS_FOLDER, 'Other'),
+    own ? soundsIn(`${own}/Private/Sounds`, 'Mine') : Promise.resolve([] as ReelSound[]),
+  ]);
+  return { network, mine };
+}
+
+async function addSoundCredit(folder: string, rel: string, credit: ReelSoundCredit): Promise<void> {
+  const m = await readSoundManifest(folder);
+  m.sounds[rel] = credit;
+  const body = new TextEncoder().encode(JSON.stringify(m, null, 2));
+  await davPut(`${folder}/${SOUNDS_MANIFEST}`, body, 'application/json');
+}
+
+/** Copy one of the person's own sounds into the network library (its credit goes with it). */
+export async function shareReelSound(userId: string, path: string, category: string): Promise<{ ok: boolean; path?: string; error?: string }> {
+  const own = await personalRoot(userId);
+  const mineFolder = own ? `${own}/Private/Sounds` : null;
+  if (!mineFolder || !path.startsWith(`${mineFolder}/`) || path.includes('..') || !AUDIO.test(path)) {
+    return { ok: false, error: 'Only your own sounds can be shared' };
+  }
+  const cat = safeName(category.trim() || 'Other').replace(/\.+$/, '') || 'Other';
+  const folder = `${NETWORK_SOUNDS_FOLDER}/${cat}`;
+  if (!(await mkdirs(folder))) return { ok: false, error: 'Could not create the network sound folder' };
+  const file = path.split('/').pop()!;
+  const target = `${folder}/${file}`;
+  if (!(await davCopy(path, target))) return { ok: false, error: 'A sound with that name is already shared there' };
+  const credit = (await readSoundManifest(mineFolder)).sounds[path.slice(mineFolder.length + 1)] ?? {};
+  await addSoundCredit(NETWORK_SOUNDS_FOLDER, `${cat}/${file}`, { ...credit, category: cat });
+  return { ok: true, path: target };
+}
+
+// Freesound (freesound.org), CC0 sounds only. The API is free for
+// non-commercial use (its terms); a key goes in FREESOUND_API_KEY. Imports
+// take the HQ MP3 preview: originals need OAuth2 per user.
+const FREESOUND = 'https://freesound.org/apiv2';
+const FREESOUND_CC0 = 'Creative Commons 0';
+
+export interface FreesoundHit {
+  id: number;
+  name: string;
+  tags: string[];
+  duration: number;
+  author: string;
+  url: string;
+  preview: string;
+}
+
+export const freesoundConfigured = () => Boolean(process.env.FREESOUND_API_KEY);
+
+async function freesoundGet(path: string, params: Record<string, string>): Promise<any | null> {
+  const key = process.env.FREESOUND_API_KEY;
+  if (!key) return null;
+  const res = await fetch(`${FREESOUND}${path}?${new URLSearchParams(params)}`, { headers: { Authorization: `Token ${key}` } });
+  if (!res.ok) {
+    console.error(`[reels] freesound ${path} -> ${res.status}`);
+    return null;
+  }
+  return res.json();
+}
+
+const FS_FIELDS = 'id,name,tags,duration,username,license,url,previews';
+const toHit = (s: any): FreesoundHit | null =>
+  s && s.license && /\/publicdomain\/zero\//.test(String(s.license)) && s.previews?.['preview-hq-mp3']
+    ? {
+        id: Number(s.id),
+        name: String(s.name ?? ''),
+        tags: Array.isArray(s.tags) ? s.tags.slice(0, 8).map(String) : [],
+        duration: Number(s.duration) || 0,
+        author: String(s.username ?? ''),
+        url: String(s.url ?? ''),
+        preview: String(s.previews['preview-hq-mp3']),
+      }
+    : null;
+
+/** CC0 sounds matching `query`, up to 12 s long (sound effects, not tracks). */
+export async function searchFreesound(query: string, page = 1): Promise<{ ok: boolean; hits?: FreesoundHit[]; more?: boolean; error?: string }> {
+  if (!freesoundConfigured()) return { ok: false, error: 'Freesound search is not set up on this server' };
+  const q = query.trim().slice(0, 100);
+  if (!q) return { ok: true, hits: [], more: false };
+  const data = await freesoundGet('/search/', {
+    query: q,
+    filter: `license:"${FREESOUND_CC0}" duration:[0 TO 12]`,
+    fields: FS_FIELDS,
+    page_size: '20',
+    page: String(Math.max(1, Math.min(50, page))),
+    sort: 'score',
+  });
+  if (!data) return { ok: false, error: 'Freesound did not answer' };
+  // The licence is checked again per sound: the filter is Freesound's, the guarantee is ours.
+  const hits = (data.results ?? []).map(toHit).filter(Boolean) as FreesoundHit[];
+  return { ok: true, hits, more: Boolean(data.next) };
+}
+
+/** Fetch one CC0 sound's HQ preview into the person's own Sounds, with its credit. */
+export async function importFreesound(userId: string, id: number): Promise<{ ok: boolean; sound?: ReelSound; error?: string }> {
+  if (!freesoundConfigured()) return { ok: false, error: 'Freesound is not set up on this server' };
+  if (!Number.isInteger(id) || id <= 0) return { ok: false, error: 'Unknown sound' };
+  const own = await personalRoot(userId);
+  if (!own) return { ok: false, error: 'Your storage folder is not set up yet' };
+  const hit = toHit(await freesoundGet(`/sounds/${id}/`, { fields: FS_FIELDS }));
+  if (!hit) return { ok: false, error: 'That sound is not CC0 or has no preview' };
+  // Previews come from Freesound's CDN; refuse anything else.
+  if (!/^https:\/\/cdn\.freesound\.org\//.test(hit.preview)) return { ok: false, error: 'Unexpected preview address' };
+  const res = await fetch(hit.preview);
+  if (!res.ok) return { ok: false, error: 'Could not fetch the sound' };
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.length > 8 * 1024 * 1024) return { ok: false, error: 'Too large for a sound effect' };
+  const folder = `${own}/Private/Sounds`;
+  if (!(await mkdirs(`${folder}/Freesound`))) return { ok: false, error: 'Could not create your sound folder' };
+  const file = `${safeName(hit.name.replace(/\.[a-z0-9]{2,4}$/i, '')).slice(0, 80)}-fs${hit.id}.mp3`;
+  const rel = `Freesound/${file}`;
+  if (!(await davPut(`${folder}/${rel}`, buf, 'audio/mpeg'))) return { ok: false, error: 'Storage refused the file' };
+  const credit: ReelSoundCredit = {
+    title: hit.name.replace(/\.[a-z0-9]{2,4}$/i, ''),
+    category: 'Freesound',
+    tags: hit.tags,
+    licence: 'CC0 1.0',
+    source: hit.url,
+    author: hit.author,
+    duration: hit.duration,
+  };
+  await addSoundCredit(folder, rel, credit);
+  return { ok: true, sound: { ...credit, name: credit.title!, path: `${folder}/${rel}`, size: buf.length, category: 'Freesound' } };
+}
+
+// ---------------------------------------------------------------------------
 // Render queue
 // ---------------------------------------------------------------------------
 
@@ -358,6 +559,97 @@ export async function listReelRenders(userId: string, projectId: string): Promis
     ORDER BY r.created_at DESC LIMIT 10
   `;
   return rows.map(toRender);
+}
+
+// ---------------------------------------------------------------------------
+// Transcripts (migration 229): whisper.cpp in the reel-render worker
+// ---------------------------------------------------------------------------
+
+/** One spoken word, in seconds of the source file. */
+export interface ReelWord {
+  w: string;
+  s: number;
+  e: number;
+}
+
+export interface ReelTranscript {
+  id: string;
+  path: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  progress: number;
+  words: ReelWord[] | null;
+  /** Silences in source seconds (migration 231); null before it or for older transcripts. */
+  pauses: Array<{ s: number; e: number }> | null;
+  /** Sound level for the waveform (migration 232): one byte per 1/rate s, base64; null before it. */
+  peaks: { rate: number; data: string } | null;
+  durationS: number | null;
+  error: string | null;
+  createdAt: string;
+}
+
+interface TranscriptRow {
+  id: string;
+  path: string;
+  status: ReelTranscript['status'];
+  progress: number;
+  words: ReelWord[] | null;
+  pauses?: Array<{ s: number; e: number }> | null;
+  peaks?: { rate: number; data: string } | null;
+  duration_s: number | null;
+  error: string | null;
+  created_at: Date;
+}
+
+const toTranscript = (r: TranscriptRow): ReelTranscript => ({
+  id: r.id,
+  path: r.path,
+  status: r.status,
+  progress: r.progress,
+  words: r.words,
+  pauses: r.pauses ?? null,
+  peaks: r.peaks ?? null,
+  durationS: r.duration_s,
+  error: r.error,
+  createdAt: r.created_at.toISOString(),
+});
+
+/**
+ * Queue speech-to-text of a recording the project may use (its own folder or
+ * the person's own storage, the same rule as an edit's paths). A transcript
+ * already queued or running for the same file is returned instead.
+ */
+export async function queueReelTranscript(
+  userId: string,
+  projectId: string,
+  path: string
+): Promise<{ ok: boolean; transcript?: ReelTranscript; error?: string }> {
+  const project = await getReelProject(userId, projectId);
+  if (!project) return { ok: false, error: 'Not found' };
+  if (!(await pathsAllowed(userId, project, { path }))) return { ok: false, error: 'That file is outside this project' };
+  const busy = await db<TranscriptRow[]>`
+    SELECT * FROM reel_transcripts
+    WHERE project_id = ${projectId} AND org_id = ${project.orgId} AND path = ${path} AND status IN ('queued', 'running')
+    ORDER BY created_at DESC LIMIT 1
+  `;
+  if (busy[0]) return { ok: true, transcript: toTranscript(busy[0]) };
+  const rows = await db<TranscriptRow[]>`
+    INSERT INTO reel_transcripts (id, project_id, org_id, requested_by, path, folder)
+    VALUES (${nanoid(12)}, ${projectId}, ${project.orgId}, ${userId}, ${path}, ${project.folder})
+    RETURNING *
+  `;
+  return { ok: true, transcript: toTranscript(rows[0]) };
+}
+
+/** The newest transcript of a recording in this project, any status; null when there is none. */
+export async function getReelTranscript(userId: string, projectId: string, path: string): Promise<ReelTranscript | null> {
+  const project = await getReelProject(userId, projectId);
+  if (!project) return null;
+  const rows = await db<TranscriptRow[]>`
+    SELECT * FROM reel_transcripts
+    WHERE project_id = ${projectId} AND org_id = ${project.orgId} AND path = ${path}
+    ORDER BY created_at DESC LIMIT 1
+  `;
+  return rows[0] ? toTranscript(rows[0]) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -490,6 +782,7 @@ export async function publishReel(
     status: 'published',
   });
   if (saved.ok === false) return { ok: false, error: saved.error };
+  await linkReelPublished(project, saved.post.id);
   return {
     ok: true,
     publication: { threadId: saved.post.id, slug: saved.post.slug, status: 'published', publishedAt: saved.post.publishedAt },

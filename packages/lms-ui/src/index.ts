@@ -1,4 +1,4 @@
-export type { LmsConnectors, LmsHostViewer, LmsHrefs, LmsEditorProps, LmsTaskConnectors, LmsTaskBoxProps } from "./connectors";
+export type { LmsConnectors, LmsHostViewer, LmsHrefs, LmsEditorProps, LmsTaskConnectors, LmsTaskBoxProps, LmsTaskChoice } from "./connectors";
 export { renderLmsRoute, lmsRouteMetadata, type LmsRouteInput } from "./route";
 export { handleLmsAction } from "./actions";
 export { CataloguePage, CoursePage, StepPage, JournalPage, CarePage, chromeState, type PageQuery, type PageResult } from "./pages";

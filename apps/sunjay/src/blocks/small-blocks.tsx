@@ -1,10 +1,16 @@
-import { defineBlock, RichText, type PropsOf } from "@elkdonis/blocks";
+import { defineBlock, editItem, RichText, type PropsOf } from "@elkdonis/blocks";
 
 // ============================================================================
 // Small blocks, used on every template: a callout and numbered steps.
 //
 // Server-safe and data-free, so they render the same in the editor and on the
 // page. `steps` is a `rows` prop: each row is a title and a few lines.
+//
+// Numbered steps declares its parts (2026-11-06), so a page can restyle them,
+// and marks each step with `editItem("steps", <index in the stored rows>)`:
+// the editor maps a click on a step's words to that row's `title` or `text`
+// (a part's `prop` "steps.title"). The marks add one data attribute per step
+// to the published markup; nothing else changes.
 // ============================================================================
 
 // ── steps ───────────────────────────────────────────────────────────────────
@@ -26,15 +32,16 @@ const stepsProps = [
 ] as const;
 
 export function Steps({ heading = "", steps = [], numbered = true }: PropsOf<typeof stepsProps>) {
-  const rows = (steps ?? []).filter((r) => r && (r.title || r.text));
+  // The index in the stored rows, not the position drawn: empty rows are skipped.
+  const rows = (steps ?? []).map((r, at) => ({ r, at })).filter(({ r }) => r && (r.title || r.text));
   if (rows.length === 0) return null;
   return (
     <section>
       {heading ? <h2 className="font-serif text-2xl">{heading}</h2> : null}
       {heading ? <hr className="saffron-divider max-w-[12rem]" /> : null}
       <ol className="space-y-5">
-        {rows.map((r, i) => (
-          <li key={i} className="grid grid-cols-[2.25rem_1fr] gap-4">
+        {rows.map(({ r, at }, i) => (
+          <li key={i} className="grid grid-cols-[2.25rem_1fr] gap-4" {...editItem("steps", at)}>
             <span
               aria-hidden
               className="flex size-9 items-center justify-center border border-[hsl(var(--primary))]/50 font-serif text-lg text-[hsl(var(--primary))]"
@@ -62,6 +69,18 @@ export const steps = defineBlock(
     description: "A short list of steps, each with a title and a few lines: how to join, what to bring, what to read first.",
     memberSafe: true,
     styling: "tailwind",
+    // Selectors over today's markup. `prop` "steps.title": the row is the step's editItem mark.
+    parts: {
+      root: { label: "Numbered steps", sel: "> section" },
+      heading: { label: "Heading", sel: "> section > h2", prop: "heading" },
+      divider: { label: "Rule", sel: "> section > hr" },
+      list: { label: "Steps", sel: "> section > ol" },
+      step: { label: "Step", sel: "> section > ol > li", repeat: true },
+      number: { label: "Number", sel: "> section > ol > li > span", repeat: true },
+      words: { label: "Step words", sel: "> section > ol > li > div", repeat: true },
+      stepTitle: { label: "Step title", sel: "> section > ol > li > div > h3", repeat: true, prop: "steps.title" },
+      stepText: { label: "Step text", sel: "> section > ol > li > div > div", repeat: true, prop: "steps.text" },
+    },
     props: stepsProps,
   },
   Steps,

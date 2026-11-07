@@ -1,0 +1,84 @@
+const { chromium } = require("playwright-core");
+const http = require("http"), fs = require("fs"), path = require("path");
+const srv = http.createServer((q, r) => { const f = path.join("/h", q.url.split("?")[0]); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { "content-type": f.endsWith(".css") ? "text/css" : f.endsWith(".js") ? "text/javascript" : "text/html" }); r.end(d); }); });
+let pass = 0, fail = 0; const ok = (n, c, x) => { if (c) pass++; else { fail++; console.log("FAIL", n, x === undefined ? "" : JSON.stringify(x)); } };
+(async () => {
+  await new Promise((r) => srv.listen(8123, "127.0.0.1", r));
+  const b = await chromium.connectOverCDP("http://127.0.0.1:9222"); const p = b.contexts()[0].pages()[0];
+  p.setDefaultTimeout(15000); p.on("pageerror", (e) => ok("pageerror", false, e.message)); await p.setViewportSize({ width: 1500, height: 950 });
+  await p.goto("http://127.0.0.1:8123/live.html"); await p.waitForSelector(".de-vpanel .de-tabs");
+  const head = () => p.$eval(".de-vpanel .de-head b", (e) => e.textContent);
+  const cen = async (id) => { const r = await p.locator("#" + id).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
+  const labels = () => p.$$eval(".de-menu > button", (e) => e.map((x) => x.querySelector("span").textContent));
+  const rx = async (id) => (await p.locator("#" + id).boundingBox()).x;
+  const [x, y] = await cen("h2a");
+  // Right-click with nothing selected selects the outermost and opens tools
+  await p.mouse.click(x, y, { button: "right" }); await p.waitForSelector(".de-menu");
+  ok("selected outermost", (await head()) === "Column", await head());
+  console.log("tools", (await labels()).join(" | "));
+  ok("tools first, layers last", (await labels()).at(-1) === "Layers" && (await labels()).includes("Copy style"));
+  ok("no fake tools", !(await labels()).some((l) => /Cut|Duplicate|Delete|Group|Flip/.test(l)));
+  ok("reset disabled when clean", await p.$eval('.de-menu [data-mi="reset"]', (e) => e.disabled));
+  ok("parent disabled on root", await p.$eval('.de-menu [data-mi="parent"]', (e) => e.disabled));
+  ok("sub hidden", await p.$eval('.de-menu [data-sub="layers"]', (e) => e.hidden));
+  await p.screenshot({ path: "/h/shots/t-menu.png" });
+  // Keyboard: arrows skip the hidden layers, Right opens, Left closes
+  await p.focus('.de-menu [data-open="layers"]'); await p.keyboard.press("ArrowRight"); await p.waitForTimeout(30);
+  ok("right opens", !(await p.$eval('.de-menu [data-sub="layers"]', (e) => e.hidden)));
+  ok("focus on a layer", await p.evaluate(() => document.activeElement?.dataset?.mi?.startsWith("layer:")));
+  await p.screenshot({ path: "/h/shots/t-layers.png" });
+  const hov = await p.$$(".de-layer-sheet .de-box.hov"); ok("active layer outlined on page", hov.length <= 1);
+  await p.hover('.de-menu [data-mi="layer:2"]'); await p.waitForTimeout(40);
+  ok("hovered layer outlined", (await p.$$(".de-layer-sheet .de-box.hov")).length === 1);
+  const r = await p.$eval(".de-menu", (e) => { const b = e.getBoundingClientRect(); return b.bottom <= innerHeight && b.right <= innerWidth; }); ok("open menu on screen", r);
+  await p.keyboard.press("ArrowLeft"); await p.waitForTimeout(30);
+  ok("left closes", await p.$eval('.de-menu [data-sub="layers"]', (e) => e.hidden));
+  await p.click('.de-menu [data-open="layers"]'); await p.click('.de-menu [data-mi="layer:2"]'); await p.waitForTimeout(40);
+  ok("layer pick", (await p.$eval(".de-head span", (e) => e.textContent)).includes("Wanted"), await p.$eval(".de-head span", (e) => e.textContent));
+  // Move to first / last
+  const open = async () => { const [a, c] = await cen("h2a"); await p.mouse.click(a, c, { button: "right" }); await p.waitForSelector(".de-menu"); };
+  await open();
+  await p.click('.de-menu [data-mi="first"]'); await p.waitForTimeout(40);
+  ok("moved first", (await rx("c2")) < (await rx("c1")));
+  await open(); ok("first disabled now", await p.$eval('.de-menu [data-mi="first"]', (e) => e.disabled)); await p.keyboard.press("Escape");
+  ok("esc closes menu only", (await p.$$(".de-menu")).length === 0 && (await p.$$(".de-vpanel .de-head")).length === 1);
+  await p.mouse.move(5, 500);
+  await p.keyboard.press("]"); await p.waitForTimeout(40);
+  ok("] moves last", (await rx("c2")) > (await rx("c3")));
+  await p.keyboard.press("["); await p.waitForTimeout(40);
+  ok("[ moves first", (await rx("c2")) < (await rx("c1")));
+  await p.click("[data-a=undo]"); await p.click("[data-a=undo]"); await p.click("[data-a=undo]");
+  ok("undone", (await rx("c1")) < (await rx("c2")));
+  // Copy and paste style: looks, not place
+  await p.fill('.de-vpanel [data-f="padding"]', "33");
+  await p.selectOption('.de-vpanel [data-f="height-mode"]', '"fixed"').catch(() => {});
+  await open(); await p.click('.de-menu [data-mi="copy-style"]'); await p.waitForTimeout(30);
+  ok("copied message", (await p.textContent(".de-editbar-hint")).includes("copied"));
+  const [ax, ay] = await cen("h1a");
+  await p.keyboard.press("Escape");
+  await p.mouse.click(ax, ay); await p.waitForTimeout(40);
+  const first = await p.$eval(".de-head span", (e) => e.textContent);
+  ok("first column selected", first.includes("For sale"), first);
+  await p.mouse.click(ax, ay, { button: "right" }); await p.waitForSelector(".de-menu");
+  ok("paste enabled", !(await p.$eval('.de-menu [data-mi="paste-style"]', (e) => e.disabled)));
+  await p.click('.de-menu [data-mi="paste-style"]'); await p.waitForTimeout(30);
+  ok("style pasted", (await p.$eval("#c1", (e) => getComputedStyle(e).paddingTop)) === "33px");
+  const saved = await p.evaluate(() => window.ed.doc());
+  const c1Key = Object.keys(saved.boxes).find((k) => k.endsWith("div:nth-child(1)") && k.includes("section"));
+  ok("place not copied", !("h" in (saved.boxes[c1Key]?.style ?? {})) && !("order" in (saved.boxes[c1Key]?.style ?? {})), saved.boxes[c1Key]);
+  // Hide and reset
+  await p.mouse.click(ax, ay, { button: "right" }); await p.waitForSelector(".de-menu"); await p.click('.de-menu [data-mi="hide"]'); await p.waitForTimeout(900);
+  ok("hide", (await p.$eval("#c1", (e) => getComputedStyle(e).opacity)) === "0.3");
+  await p.mouse.click(ax, ay, { button: "right" }); await p.waitForSelector(".de-menu");
+  ok("offers show", (await p.textContent('.de-menu [data-mi="hide"]')).includes("Show"));
+  await p.click('.de-menu [data-mi="reset"]'); await p.waitForTimeout(30);
+  ok("reset clears the box", (await p.$eval("#c1", (e) => getComputedStyle(e).paddingTop)) === "12px");
+  // Typing [ in a field does not move anything
+  await p.focus('.de-vpanel [data-f="padding"]'); await p.keyboard.press("[");
+  ok("[ in a field is typing", (await rx("c1")) < (await rx("c2")));
+  await p.setViewportSize({ width: 400, height: 800 }); await p.waitForTimeout(60);
+  const [fx, fy] = await cen("ttl"); await p.mouse.click(fx, fy, { button: "right" }); await p.waitForSelector(".de-menu"); await p.click('.de-menu [data-open="layers"]'); await p.waitForTimeout(40);
+  ok("phone menu on screen", await p.$eval(".de-menu", (e) => { const b = e.getBoundingClientRect(); return b.left >= 0 && b.right <= innerWidth && b.top >= 0; }));
+  await p.screenshot({ path: "/h/shots/t-phone.png" });
+  console.log(`pass ${pass} fail ${fail}`); srv.close(); await b.close(); process.exit(fail ? 1 : 0);
+})().catch((e) => { console.error("ERR", e.message.slice(0, 400)); process.exit(2); });

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-title-card",
+  "version": "1.0.0",
+  "name": "Title card",
+  "description": "Dims the frame and shows a title and subtitle: openings, breaks, endings.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string", "title": "Title", "default": "", "maxLength": 120, "gddType": "single-line" },
+      "subtitle": { "type": "string", "title": "Subtitle", "default": "", "maxLength": 160, "gddType": "single-line" },
+      "dim": { "type": "number", "title": "Dim (0-1)", "default": 0.85, "minimum": 0, "maximum": 1 },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

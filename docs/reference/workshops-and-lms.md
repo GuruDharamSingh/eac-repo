@@ -207,9 +207,24 @@ importing a book (pdf/epub/audio/link) into reading units. No app or package dep
 - Host seam: `LmsConnectors.tasks` (`lms-ui/src/connectors.ts`): `status(task, viewer, {orgId})`,
   optional `orgFor(viewer, requested)`, and `render`, a client component drawn by `StepBody` inside
   `section.so-task`. Without it a task step reads as text and never completes (Sophia today).
-- Task ids and their derivations are in `packages/services/src/onboarding-tasks.ts`
-  (`getOnboardingTaskStatus`; 16 ids: profile, gain-space, listing, studio, show-on, cloud, service,
-  store, artwork, payouts, org, org-details, org-offering, org-people, org-email, org-site).
+- Task ids, their completion checks and their presentation are the action registry's
+  (`packages/actions`, since 2026-11-06; before that `packages/services/src/onboarding-tasks.ts`, removed):
+  catalogue `src/catalogue.ts`, checks `src/server/status.ts` (`actionStatus`), controls `src/present.ts`
+  (`presentAction`), handlers `src/server/run.ts` (`performAction`, behind a host's `runAction`). 16 ids:
+  profile, gain-space, listing, studio, show-on, cloud, service, store, artwork, payouts, org, org-details,
+  org-offering, org-people, org-email, org-site. Ids are stored in published versions; never rename one.
+- Phase 2 of the action layer (2026-11-06, deployed the same day on arts-collective and Sophia): task steps can carry `params`
+  (`StepTask.params`, closed option lists from the catalogue, chosen in the studio once the
+  task is saved); `TaskStatus.values` prefills a task offered as a form; `StepBody` always
+  reads status, also for recorded steps; `LmsConnectors.taskElsewhere` lets a host without
+  task boxes (Sophia) link a task step to the network host's `/learn`. On arts-collective
+  the Studio opens framed over the lesson, the cloud sign-in in a popup, org compose in
+  place, the org's mail settings as a form. `docs/open/LMS_ACTION_LAYER_BRIEF_2026-11-06.md` §5b.
+- Studio task picker (2026-11-06): a `derived` step's editor shows "What it asks for", a select over
+  `LmsConnectors.taskCatalogue` (a text field when absent); `studio-save-step` writes `settings.task`
+  with the catalogue's scope, keeps it when the field is absent, removes it on an empty choice
+  (`lms-ui/src/actions.ts` `withTask`). Sophia passes the catalogue. Verified in a dev preview of Sophia
+  on the test course (step added, saved four ways, removed).
 - `renderLmsRoute` / `lmsRouteMetadata` (`lms-ui/src/route.tsx`) mount the learner pages on another host
   (`lms/ORG_SITES.md` item 2). arts-collective serves them at `/learn` with `/api/lms/[action]`
   (`apps/arts-collective/src/lib/lms/connectors.tsx`, `components/learn/`); `autoEnrol` enrols a

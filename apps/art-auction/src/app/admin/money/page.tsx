@@ -5,6 +5,7 @@ import { db } from "@elkdonis/db";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { siteConfig } from "@/config/site";
 import { OwedTable, ReleaseButton, SettingsForm, ApprovePayeeButton, type OwedRow } from "./money-panels";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Money · Admin" };
@@ -18,6 +19,10 @@ function fmtDate(d: string): string {
 }
 
 export default async function AdminMoneyPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const [held, carts, payable, settings, suggested] = await Promise.all([
     listHeld({ limit: 50 }).catch(() => []),
     adminListActiveCarts({ limit: 25 }),

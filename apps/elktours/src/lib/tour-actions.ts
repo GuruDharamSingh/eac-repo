@@ -39,7 +39,7 @@ const optNum = (lo: number, hi: number) =>
     z.number().min(lo).max(hi).optional()
   );
 
-export const tourFormSchema = z.object({
+const tourFormSchema = z.object({
   title: z.string().trim().min(2, "Give the tour a title").max(200),
   excerpt: z.string().trim().max(300).optional().or(z.literal("")),
   body: z.string().optional().or(z.literal("")),

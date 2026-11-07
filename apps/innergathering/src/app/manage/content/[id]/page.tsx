@@ -5,6 +5,7 @@ import { ContentForm } from "@/components/manage/content-form";
 import type { ContentFormDefaults } from "@/lib/cms/form-defaults";
 import { getThreadById, getThreadMaterials } from "@/lib/data";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 interface EditContentPageProps {
   params: Promise<{ id: string }>;
@@ -31,6 +32,10 @@ function toLocalInput(date: Date | null, withTime: boolean): string {
 }
 
 export default async function EditContentPage({ params }: EditContentPageProps) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const { id } = await params;
 
   const [thread, feeds] = await Promise.all([

@@ -6,6 +6,7 @@ import { RichTextEditor } from '@elkdonis/cms-ui/editor';
 import { ArticleView } from '@elkdonis/cms-ui/article';
 import { renderEssayHtml, essayWordCount, essayIsEmpty, type EssayDoc } from '@elkdonis/utils/essay';
 import { Canvas } from '../canvas';
+import { ImageEditor, savedToFile } from '../image';
 import { readMediaDrop, isMediaDrag } from '@elkdonis/cms-ui/files';
 import type { StudioPatch, StudioPiece, StudioResult, StudioUpload } from '../types';
 import type { ThreadCardAttrs } from '@elkdonis/utils/essay';
@@ -60,6 +61,7 @@ export function WritingEditor({ piece, preview, blocks, authorName, upload, onSa
   const [body, setBody] = React.useState(piece.bodyHtml);
   const [doc, setDoc] = React.useState<EssayDoc | null>(piece.bodyDoc);
   const [cover, setCover] = React.useState(piece.coverImageUrl);
+  const [editingCover, setEditingCover] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
 
@@ -260,6 +262,11 @@ export function WritingEditor({ piece, preview, blocks, authorName, upload, onSa
           <span className="studio-coverrow__thumb" style={{ backgroundImage: `url("${cover}")` }} aria-label="Cover image" />
           <span className="studio-coverrow__t">Cover</span>
           {upload && coverPicker('Replace', 'studio-btn studio-btn--ghost')}
+          {upload?.imageEndpoint && (
+            <button type="button" className="studio-btn studio-btn--ghost" title="Crop, filters, text…" onClick={() => setEditingCover(true)}>
+              Edit
+            </button>
+          )}
           <button type="button" className="studio-btn studio-btn--ghost" onClick={() => setCover(null)}>
             Remove
           </button>
@@ -267,6 +274,18 @@ export function WritingEditor({ piece, preview, blocks, authorName, upload, onSa
       ) : upload ? (
         coverPicker('▣ Add a cover image', 'studio-coverrow__add')
       ) : null}
+      {editingCover && cover && upload?.imageEndpoint && (
+        <ImageEditor
+          src={cover}
+          imageEndpoint={upload.imageEndpoint}
+          onClose={() => setEditingCover(false)}
+          onSave={async (saved) => {
+            // The edited copy is uploaded like a new cover; the old file stays.
+            await pickCover(await savedToFile(saved, title || 'cover'));
+            setEditingCover(false);
+          }}
+        />
+      )}
     </div>
   );
 

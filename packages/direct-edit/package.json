@@ -1,0 +1,37 @@
+{
+  "name": "@elkdonis/direct-edit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canvas-grade direct editing over block data: slot schema and freedom levels, history, the right-hand panel, and the canvas overlay. Plain DOM, framework-free.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./richtext": "./src/model/richtext.ts",
+    "./block": "./src/block/index.ts",
+    "./visual": "./src/canvas/visual-editor.ts",
+    "./layers": "./src/canvas/layers.ts",
+    "./puck": "./src/puck/index.ts",
+    "./puck/blocks": "./src/puck/blocks.tsx",
+    "./puck/morph": "./src/puck/morph-mark.tsx",
+    "./direct-edit.css": "./src/direct-edit.css",
+    "./site": "./src/site/index.ts",
+    "./site/editor": "./src/site/SiteStyleEditor.tsx"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elkdonis/fonts": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.3.3"
+  }
+}

@@ -166,7 +166,7 @@ Framing moved from the landing page's `LoftSpot` onto placements:
   their defaults. Not verified: the Framing section with a signed-in owner on the live site
   (harness only). `.next` backup: `~/eac-backups/next/art-auction-20261029-2343.tgz` (52 MB).
 
-## Phase 3 status (2026-10-30, source only)
+## Phase 3 status (2026-10-30; deployed by 2026-11-01)
 First cut as proposed in decision 4 (room presets and sliders plus picture-lamp fixed points); the
 decision was not answered, so the proposal was taken as the default. Bare-bulb point lights from a
 venue list were left out of this cut.
@@ -201,9 +201,72 @@ venue list were left out of this cut.
   "Custom" and saved 1.6; three undos returned Evening, Gallery night, Daylight, and redo/undo
   stepped once each; lamp points uplight, pair and wash drew distinct pools; the lamp switch and a
   piece's lamp undid in one step each; no console errors. Type checks: hallway sources 0 errors,
-  art-auction 0 errors. Not deployed.
+  art-auction 0 errors.
+- Deployed by 2026-11-01: migration 218 applied by the developer; art-auction was rebuilt by another
+  session (`BUILD_ID` 2026-11-01 04:52 UTC) and the source is in commit `61835a3`. Checked 2026-11-01
+  through the edge: `/` 200 with the loft markup, `/studio/installations` 307, a draft installation
+  404; the live client chunks contain the Lighting panel; a draft's rows read back `scene = {}` and
+  `lamp = {"at": "above"}`; no column errors in the log. Not verified: the Lighting panel with a
+  signed-in owner on the live site (harness only).
+
+## Phase 4 status (2026-11-01, deployed)
+Decision 3 was not answered; the visitors' free spot was kept, as a placement in the editor that is
+stored in the scene (not in the hang).
+- Model: `packages/three/src/hallway/scene.ts` (plain; exported from `/hallway` and `/hallway/model`).
+  The scene document is `{ lighting, view, openSpot }`: `view` = opening view {mode, side, s along the
+  route} or null; `openSpot` = {wallId, x, y, scale} or null; `OPEN_SPOT_ID` names its placeholder
+  piece. `normalizeScene` moved here from `lighting.ts`. `HallwayExperience` takes `initialWall`
+  (used when no `focusPieceId` is given).
+- Migration 230 (written, **not applied**): `art_installation.store_id` nullable, new `org_id`
+  (organisations), check that one of the two is set. `lib/installations.ts`: `Installation.storeId`
+  is nullable, `orgId` added, `createOrgInstallation`, `listOrgHangableArtworks` (every pictured work
+  on show in the marketplace), `listArtworksByIds`, and `saveInstallationLayout(id, scope, …)` with
+  scope `{storeId}` or `{orgId}` (org scope accepts only works on show in that org). Studio routes
+  now refuse an installation with no store. Payload bounding moved to `lib/installation-input.ts`
+  (`cleanPieces`).
+- Landing (`lib/landing-loft.ts`): `site_config` (org market) `home_loft = { installationId,
+  published: { at, hallway, scene, pieces } | null }`. The editor autosaves to the installation;
+  "Put on the landing page" copies it into `published`, which is what the home page draws, so work in
+  progress never shows; "Go back to what visitors see" writes the copy back. With nothing published
+  (the state on 2026-11-01: no `home_loft` row) the home page shows the starting hang: the two newest
+  pictured works at the old spot positions and the free spot on wall `S1`. The first visit to
+  `/admin/loft` creates the installation from what visitors see, so opening the editor changes nothing.
+- `/admin/loft` (pages editors; inside the admin layout): `InstallationEditor` with
+  `studioControls={false}` (no rename, space or publish toggle), `openSpot`, the market's catalogue
+  as the tray, and a toolbar ("Put on the landing page", "Go back to what visitors see", publish
+  time). Actions in `app/admin/loft/actions.ts` check the caller and that the id is the landing
+  installation. `/admin/pages` links to it in place of the two-work form.
+- Editor (all installations): "Opening view" panel ("Look from here" stores the current mode and
+  cutaway position; Clear); undo covers it. With `openSpot`, the free spot is a tray item and a
+  placement that can be moved, resized and taken down; its card shows position and size only.
+- Home page: `home-loft.tsx` draws the still from the published hang (the wall with the most on it;
+  frames at their positions and sizes in metres, scaled into a 3.2 m band on the floor line, with
+  each frame's ratio and crop); `home-loft-scene.tsx` renders the installation with its framing,
+  lamps, lighting and opening view, and the visitor's pick in the free spot. `SPOTS`, the canvas
+  crop (`lib/loft-crop.ts`) and the two-work form (`admin/pages/loft-form.tsx`, `saveHomeLoftAction`)
+  are deleted, with the dialog editor's leftover CSS.
+- Public walk (`/installations/<id>`) opens on the saved view.
+- Verified in a dev-only harness (deleted) over the live catalogue (read-only), SwiftShader
+  screenshots: the starting hang drew two works and the free spot; in the editor the free spot
+  listed third on the walls, a typed width saved scale 1.395, "Look from here" saved
+  `{mode: wall, side: L, s: 4.2}`, the free spot's card had no framing fields, taking it down set
+  `openSpot` null and returned it to the tray, and undo restored it; the home still drawn from the
+  saved state showed the first work 1.4× larger and the 3D loft opened at s = 4.2; no console errors.
+  `/` 200 with the placed still in a dev preview; `/admin/loft` 307 to login. Type checks: hallway
+  sources 0 errors, art-auction 0 errors. Not verified: `/admin/loft` signed in (needs migration 230;
+  its first visit writes the installation and the `home_loft` row), publish and revert against the
+  database.
+- Deployed 2026-11-01 ~20:01 UTC: migration 230 applied by the developer (with 231 from another
+  session); three package and art-auction rebuilt (the build also carried other sessions' service and
+  page-builder edits; type check clean first), container restarted. Through the edge: `/` 200 with the
+  placed still (`hl-hang`, frames at the starting positions, the free spot), the `.hl-hang` rule in the
+  served CSS chunk, `/admin/loft` and `/admin/pages` 307 to login, `/studio/installations` 307, a draft
+  installation 404, no errors in the log. No `home_loft` row yet: it is written on the first signed-in
+  visit to `/admin/loft`. `.next` backup: `~/eac-backups/next/art-auction-20261101-1500.tgz` (52 MB).
 
 ## History
 - 2026-10-29: brief written after the developer's scope change; phase 1 built and deployed the same
   day; phase 2 built and deployed the same evening (migration 215).
 - 2026-10-30: phase 3 (lighting) built in source; migration 218 pending.
+- 2026-11-01: migration 218 applied; phase 3 found live in another session's rebuild and checked.
+- 2026-11-01: phase 4 (landing from an installation, `/admin/loft`) built, migration 230 applied, deployed.

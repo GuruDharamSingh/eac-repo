@@ -10,7 +10,7 @@ import { getViewer } from "@/lib/auth";
  * asks Stripe whether payouts are enabled and stamps the account if so
  * (`refreshStripeAccountStatus`) — the webhook does the same, but a seller
  * should not have to wait for it. Every onboarding return page must do this
- * (docs/reference/commerce.md, Webhooks). Then on to /manage, where the status
+ * (docs/reference/commerce.md, Webhooks). Then on to /hub (since 2026-11-06; /manage before), where the status
  * is shown; a person who cannot manage the site goes to their center.
  */
 export const runtime = "nodejs";
@@ -19,11 +19,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const base = publicOriginFrom(request.headers, process.env.NEXT_PUBLIC_APP_URL);
   const viewer = await getViewer().catch(() => null);
-  if (!viewer) return NextResponse.redirect(new URL("/login?next=/manage", base));
+  if (!viewer) return NextResponse.redirect(new URL("/login?next=/hub", base));
 
   const state = request.nextUrl.searchParams.get("payouts") === "refresh" ? "refresh" : "done";
   if (state === "done") await refreshStripeAccountStatus(viewer.userId);
 
-  const target = viewer.canEdit ? "/manage/tours" : "/center";
+  const target = viewer.canEdit ? "/hub" : "/center";
   return NextResponse.redirect(new URL(`${target}?payouts=${state}#payouts`, base));
 }

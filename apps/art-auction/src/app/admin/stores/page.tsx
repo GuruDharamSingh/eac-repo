@@ -4,6 +4,7 @@ import { listStores } from "@elkdonis/commerce/queries";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { adminPauseStore, adminReactivateStore } from "../actions";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Stores · Admin" };
@@ -24,6 +25,10 @@ function fmtDate(d: string): string {
 }
 
 export default async function AdminStoresPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const stores = await listStores({
     limit: 100,
     status: ["active", "pending", "paused", "rejected"],

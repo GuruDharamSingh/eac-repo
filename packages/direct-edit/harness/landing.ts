@@ -1,0 +1,21 @@
+import { createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
+import { Render } from "@puckeditor/core";
+import { openPageAsTree, BOX_BLOCKS, BOX_ROOT } from "/app/packages/direct-edit/src/puck/index";
+import { cleanBoxDoc } from "/app/packages/direct-edit/src/block/puck-tree";
+import { SHARED_BLOCKS } from "/app/packages/blocks/src/index";
+import { sanitizeRichValues } from "/app/packages/blocks/src/text";
+import { buildPuckConfig } from "/app/packages/page-builder/src/config";
+import { validatePage } from "/app/packages/page-builder/src/validate";
+const config: any = buildPuckConfig({ blocks: [...SHARED_BLOCKS, ...(BOX_BLOCKS as any)] as any, root: BOX_ROOT as any });
+const inView = (l: string[]) => (l.includes("reveal") && !l.includes("in-view") ? [...l, "in-view"] : l);
+(window as any).kit = { config, cleanBoxDoc, sanitizeRichValues, validatePage };
+(window as any).saved = [];
+(window as any).openIt = (tree: any, edits: any) => {
+  const root = document.querySelector<HTMLElement>(".marketing-root")!;
+  root.querySelectorAll(".reveal").forEach((e) => e.classList.add("in-view"));
+  (window as any).ed = openPageAsTree({ root, tree, edits, title: "Landing page", pageName: "Landing page", classes: inView, config, onSave: async (d: any) => { (window as any).saved.push(d); return { ok: true }; }, onRestore: () => {} });
+  return (window as any).ed.skipped;
+};
+(window as any).published = (doc: any, parts: any) => { const h = document.createElement("div"); h.id = "pub"; h.className = "marketing-root"; document.body.appendChild(h); flushSync(() => createRoot(h).render(createElement(Render as any, { config, data: doc, metadata: { parts } }))); return h; };

@@ -37,7 +37,7 @@ export default async function OrgSiteRootPage({
   const { slug } = await params;
   const ctx = await loadSiteContext(slug);
   if (!ctx) notFound();
-  const { org, user, canEdit, mainSiteUrl } = ctx;
+  const { org, user, canEdit, canEditSite, mainSiteUrl } = ctx;
 
   if (org.layout_mode === "silex" && org.silex_published_path) {
     return <SilexLayout org={org} />;
@@ -65,7 +65,7 @@ export default async function OrgSiteRootPage({
         <ThemeStyle orgId={org.id} pageKey="home" />
         <SiteNav orgName={org.name} current="offering" mainSiteUrl={mainSiteUrl} signedIn={Boolean(user)} />
         <main className="flex flex-col gap-2" data-page="org-designed">{designed}</main>
-        {canEdit && (
+        {canEditSite && (
           <a
             href={designHref}
             className="fixed bottom-4 right-4 z-50 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium shadow-lg hover:bg-accent"

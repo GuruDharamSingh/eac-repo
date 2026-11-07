@@ -94,6 +94,13 @@ export const sectionBanner = defineBlock(
     memberSafe: true,
     styling: "tokens",
     resize: { height: "height" },
+    parts: {
+      root: { label: "Banner", sel: "> .blk-banner" },
+      shell: { label: "Words", sel: ".blk-shell" },
+      eyebrow: { label: "Small label", sel: ".blk-banner-eyebrow", prop: "eyebrow", draws: { props: { eyebrow: "A label" } } },
+      title: { label: "Title", sel: ".blk-banner-title", prop: "title" },
+      subtitle: { label: "Subtitle", sel: ".blk-banner-sub", prop: "subtitle", draws: { props: { subtitle: "A line" } } },
+    },
   },
   SectionBanner,
   () => ({

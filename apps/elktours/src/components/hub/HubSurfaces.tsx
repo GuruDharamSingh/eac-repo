@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   SurfaceProvider,
   defaultThreadToAnswers,
+  useSurfaceOptional,
   type SurfaceConnectors,
 } from "@elkdonis/cms-ui/surface";
 import { createHubConnectors } from "@elkdonis/cms-ui/hub";
@@ -17,6 +19,14 @@ import { toContentFormValues } from "@/lib/cms/compose-adapter";
 import { EmailSurface } from "./EmailSurface";
 import { WhiteboardSurface } from "@elkdonis/cms-ui/whiteboard";
 import { siteConfig } from "@/config/site";
+import { TourPopup } from "@/components/tours/tour-popup";
+import { ExperiencePopup } from "@/components/surfaces/experience-popup";
+import { PlacePopup } from "@/components/surfaces/place-popup";
+import { bindOpensLinks } from "@/components/surfaces/opens-links";
+
+/** The Opens popups load when one opens: they draw blocks, and the blocks package is large (opens-popups.tsx). */
+const ReviewsPopup = dynamic(() => import("@/components/surfaces/opens-popups").then((m) => m.ReviewsPopup), { ssr: false });
+const PersonPopup = dynamic(() => import("@/components/surfaces/opens-popups").then((m) => m.PersonPopup), { ssr: false });
 
 const TIME_ZONE = "Europe/Paris";
 
@@ -178,6 +188,14 @@ export function HubSurfaces({
       }),
       custom: {
         email: ({ descriptor }) => <EmailSurface descriptor={descriptor} />,
+        // elktours popups (spec 2026-11-02 §3): local tabs, cms-ui untouched.
+        tour: ({ descriptor }) => <TourPopup descriptor={descriptor} />,
+        experience: ({ descriptor }) => <ExperiencePopup descriptor={descriptor} />,
+        // Private catalogue: its data route answers editors only.
+        place: ({ descriptor }) => <PlacePopup descriptor={descriptor} />,
+        // Opened by a block's "Opens" (2026-11-06): reviews of a tour, experience or place; a person.
+        reviews: ({ descriptor }) => <ReviewsPopup descriptor={descriptor} />,
+        person: ({ descriptor }) => <PersonPopup descriptor={descriptor} />,
         whiteboard: () => (
           <WhiteboardSurface
             onSaveError={() => toast.error("Couldn't save the whiteboard.")}
@@ -188,5 +206,21 @@ export function HubSurfaces({
     [signedIn, canEdit, userId, displayName, feeds, talkBaseUrl, router]
   );
 
-  return <SurfaceProvider connectors={connectors}>{children}</SurfaceProvider>;
+  return (
+    <SurfaceProvider connectors={connectors}>
+      <OpensLinks />
+      {children}
+    </SurfaceProvider>
+  );
+}
+
+/** The popups a block's "Opens" may name (place's data route answers editors only, so it is not one of them). */
+const OPENS_KEYS: ReadonlySet<string> = new Set(["tour", "experience", "reviews", "person"]);
+
+/** Links a block drew for "Opens" open their popup over the page (components/surfaces/opens-popups.tsx). */
+function OpensLinks() {
+  const surface = useSurfaceOptional();
+  const open = surface?.open;
+  React.useEffect(() => (open ? bindOpensLinks((d) => open(d), OPENS_KEYS) : undefined), [open]);
+  return null;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getProfile, listListableOrgs, listSocialPosts, listWriting } from "@elkdonis/services";
 import { isAdmin } from "@elkdonis/auth-server";
-import { listReelProjects } from "@elkdonis/services/reels";
+import { freesoundConfigured, listReelProjects } from "@elkdonis/services/reels";
 import type { ReelEdit, ReelTemplateId } from "@elkdonis/reels";
 import { StudioApp } from "@/components/studio/StudioApp";
 // Imported here, not in globals.css: this app's CSS pipeline has dropped
@@ -9,6 +9,8 @@ import { StudioApp } from "@/components/studio/StudioApp";
 import "@elkdonis/cms-ui/article.css";
 import "@elkdonis/studio/studio.css";
 import "@elkdonis/reels/editor.css";
+import "@elkdonis/studio/capture.css";
+import "@elkdonis/studio/image.css";
 
 // The Studio's own faces (the mockup's) come from Google Fonts by
 // stylesheet, not next/font: Turbopack's font step failed two builds out of
@@ -19,6 +21,37 @@ const STUDIO_FONTS =
 import { requireUser } from "@/lib/session";
 import { listShareTargets, sharePiece } from "@/lib/share-actions";
 import { archiveSocialPostAction, createSocialPostAction, listSocialPostsAction, publishSocialPost, saveSocialPostAction } from "@/lib/post-actions";
+import {
+  listMeetingsAction,
+  loadMeetingAction,
+  meetingContextAction,
+  removeMeetingAction,
+  saveMeetingAction,
+} from "@/lib/meeting-actions";
+import { broadcastClaim, broadcastPeek, broadcastStream, broadcastStreamSettings } from "@/lib/broadcast-actions";
+import {
+  relayAddFeed,
+  relayChat,
+  relayFeedToScene,
+  relayGoLive,
+  relayRemoveDestination,
+  relayRemoveFeed,
+  relaySaveDestination,
+  relaySetEnabled,
+  relayStop,
+  relayView,
+} from "@/lib/relay-actions";
+import { relayConfigured } from "@elkdonis/services/relay";
+import { listRecordings } from "@elkdonis/services/recordings";
+import {
+  boothCopyRecordingAction,
+  boothRecordingsAction,
+  boothRemoveRecordingAction,
+  deleteRecordingAction,
+  listRecordingsAction,
+  renameRecordingAction,
+} from "@/lib/recording-actions";
+import { obsConfigured } from "@elkdonis/services/obs";
 import {
   listStudioIdentities,
   listStudioPieces,
@@ -43,6 +76,12 @@ import {
   saveVideoProject,
   shareVideoMusic,
   unpublishVideo,
+  transcribeVideo,
+  getVideoTranscript,
+  listVideoSounds,
+  shareVideoSound,
+  searchVideoFreesound,
+  importVideoFreesound,
 } from "@/lib/video-actions";
 
 /**
@@ -68,6 +107,8 @@ export default async function StudioPage({ searchParams }: Props) {
   const { org, id, kind } = await searchParams;
   const isVideo = kind === "video";
   const isPost = kind === "post";
+  const isMeeting = kind === "meeting";
+  const isRecording = kind === "recording";
 
   const [profile, orgs, reels, admin] = await Promise.all([
     getProfile(user.id),
@@ -76,7 +117,7 @@ export default async function StudioPage({ searchParams }: Props) {
     isAdmin(user.id),
   ]);
   const initialOrgId = org && orgs.some((o) => o.orgId === org) ? org : PERSONAL_ORG_ID;
-  const [pieces, socialPosts] = await Promise.all([
+  const [pieces, socialPosts, meetings, meetingContext] = await Promise.all([
     listWriting(user.id, {
       orgId: initialOrgId === PERSONAL_ORG_ID ? undefined : initialOrgId,
       includeDrafts: true,
@@ -84,6 +125,8 @@ export default async function StudioPage({ searchParams }: Props) {
     }),
     // Tolerates a missing table (migration 219 not applied): the Studio still opens.
     listSocialPosts(user.id, initialOrgId).catch(() => []),
+    listMeetingsAction(initialOrgId),
+    meetingContextAction(initialOrgId),
   ]);
 
   const slug = profile?.slug ?? null;
@@ -102,7 +145,7 @@ export default async function StudioPage({ searchParams }: Props) {
         orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name, slug: o.slug })),
         initialPieces: pieces,
         initialOrgId,
-        initialPieceId: isVideo || isPost ? null : (id ?? null),
+        initialPieceId: isVideo || isPost || isMeeting || isRecording ? null : (id ?? null),
         initialKind: kind ?? null,
         actions: {
           listPieces: listStudioPieces,
@@ -120,7 +163,7 @@ export default async function StudioPage({ searchParams }: Props) {
         // /api/upload/image needs an orgSlug the viewer belongs to; the shell
         // adds the acting org's. For "Just me" that is `oad`, which every
         // artist of the collective is a member of.
-        upload: { endpoint: "/api/upload/image", fields: { context: "studio" } },
+        upload: { endpoint: "/api/upload/image", fields: { context: "studio" }, imageEndpoint: "/api/studio/image" },
         links: {
           hubHref: "/hub",
           pieceBase: slug && ARTDIRECT_URL ? `${ARTDIRECT_URL}/${slug}/writing` : null,
@@ -153,14 +196,51 @@ export default async function StudioPage({ searchParams }: Props) {
           getPublication: getVideoPublication,
           publish: publishVideo,
           unpublish: unpublishVideo,
+          transcribe: transcribeVideo,
+          getTranscript: getVideoTranscript,
+          listSounds: listVideoSounds,
+          shareSound: shareVideoSound,
+          // Only offered when the server has a Freesound key.
+          ...(freesoundConfigured() ? { searchFreesound: searchVideoFreesound, importFreesound: importVideoFreesound } : {}),
         },
         uploadEndpoint: "/api/reels/upload",
+        imageEndpoint: "/api/studio/image",
         mediaBase: "/api/media/",
         libraryEndpoint: "/api/my-files",
+        captureEndpoint: "/api/capture",
+        phoneHost: process.env.NEXT_PUBLIC_NETWORK_HOST || "arts-collective.com",
         links: {
           broadcastHref: admin ? "/studio/broadcast" : undefined,
           pageBase: slug && ARTDIRECT_URL ? `${ARTDIRECT_URL}/${slug}/writing` : null,
         },
+        // "Go live" from the Video kind (admins; one shared OBS instance).
+        broadcast: admin
+          ? {
+              peek: broadcastPeek,
+              claim: broadcastClaim,
+              stream: broadcastStream,
+              streamSettings: broadcastStreamSettings,
+              releaseEndpoint: "/api/broadcast/release",
+              consoleHref: "/studio/broadcast",
+              // The stream relay (docker/relay): one stream out of OBS, copied to each ticked destination.
+              relay: relayConfigured()
+                ? {
+                    view: relayView,
+                    saveDestination: relaySaveDestination,
+                    setEnabled: relaySetEnabled,
+                    removeDestination: relayRemoveDestination,
+                    goLive: relayGoLive,
+                    stop: relayStop,
+                    addFeed: relayAddFeed,
+                    removeFeed: relayRemoveFeed,
+                    feedToScene: relayFeedToScene,
+                    chat: relayChat,
+                    ingestUrl: process.env.RELAY_PUBLIC_INGEST_URL || "rtmp://relay:1935/in",
+                    guestCameraPath: process.env.RELAY_GUEST_CAMERAS === "1" ? "/guest/camera" : undefined,
+                  }
+                : undefined,
+            }
+          : undefined,
       }}
       post={{
         initialPosts: socialPosts.map((p) => ({
@@ -177,7 +257,38 @@ export default async function StudioPage({ searchParams }: Props) {
           publishPost: publishSocialPost,
         },
         uploadEndpoint: "/api/upload/image",
+        imageEndpoint: "/api/studio/image",
         links: { connectionsHref: "/hub/network?surface=me:connections" },
+      }}
+      meeting={{
+        initialOrgId,
+        initialMeetings: meetings,
+        initialContext: meetingContext,
+        initialMeetingId: isMeeting ? (id ?? null) : null,
+        actions: {
+          context: meetingContextAction,
+          listMeetings: listMeetingsAction,
+          loadMeeting: loadMeetingAction,
+          saveMeeting: saveMeetingAction,
+          removeMeeting: removeMeetingAction,
+        },
+        uploadEndpoint: "/api/upload/image",
+        libraryEndpoint: "/api/media/library?org=:org",
+      }}
+      recording={{
+        // Listed only when the kind is open: one PROPFIND per folder.
+        initialItems: isRecording ? await listRecordings(user.id).catch(() => []) : [],
+        actions: { list: listRecordingsAction, rename: renameRecordingAction, remove: deleteRecordingAction },
+        uploadEndpoint: "/api/studio/recordings/upload",
+        captureEndpoint: "/api/capture",
+        phoneHost: process.env.NEXT_PUBLIC_NETWORK_HOST || "arts-collective.com",
+        mediaBase: "/api/media/",
+        reelHref: "/studio?kind=video",
+        // The booth's own OBS recordings, for admins (as the booth itself).
+        booth:
+          admin && obsConfigured()
+            ? { list: boothRecordingsAction, copy: boothCopyRecordingAction, remove: boothRemoveRecordingAction }
+            : undefined,
       }}
     />
     </>

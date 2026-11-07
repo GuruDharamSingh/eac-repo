@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { getServerSession } from "@elkdonis/auth-server";
 import { siteConfig } from "@/config/site";
 import { defaultSiteContent } from "@/lib/default-content";
-import "@/app/site.css";
+import "@elkdonis/series-site/site.css";
 import { SocialRow } from "./social-row";
-export { Icon } from "./icons";
+export { Icon } from "@elkdonis/series-site/components/icons";
 
 /**
  * Chrome for the public IFAC pages (landing, series, about, publications):

@@ -1,10 +1,5 @@
 import { db } from "@elkdonis/db";
-import {
-  normalizeLamp,
-  normalizeScene,
-  type PieceLamp,
-  type SceneLighting,
-} from "@elkdonis/three/hallway/model";
+import { normalizeLamp, normalizeScene, type PieceLamp, type Scene } from "@elkdonis/three/hallway/model";
 
 // ============================================================================
 // Installations: a store's collection hung in the 3D hallway (migration 213).
@@ -24,15 +19,18 @@ export type InstallationStatus = "draft" | "published";
 
 export interface Installation {
   id: string;
-  storeId: string;
+  /** The store that owns it; null for an organisation's own (the landing loft, migration 230). */
+  storeId: string | null;
+  /** The organisation that owns a store-less installation (migration 230). */
+  orgId: string | null;
   title: string;
   hallway: string;
   status: InstallationStatus;
   updatedAt: string;
   publishedAt: string | null;
   pieceCount: number;
-  /** Scene-wide settings (migration 218); defaults when the column is empty or absent. */
-  scene: { lighting: SceneLighting };
+  /** Scene-wide settings (migrations 218, 230): lighting, opening view, free spot. */
+  scene: Scene;
 }
 
 export interface InstallationPiece {
@@ -70,7 +68,8 @@ const num = (v: unknown) => (v == null ? null : Number(v));
 function mapInstallation(r: Row): Installation {
   return {
     id: r.id as string,
-    storeId: r.store_id as string,
+    storeId: (r.store_id as string | null) ?? null,
+    orgId: (r.org_id as string | null) ?? null,
     title: r.title as string,
     hallway: r.hallway as string,
     status: r.status as InstallationStatus,
@@ -163,6 +162,36 @@ export async function listHangableArtworks(storeId: string): Promise<Installatio
 }
 
 /**
+ * What an organisation's own installation can hang: every pictured work on
+ * show in its marketplace, from any store (the landing loft's tray).
+ */
+export async function listOrgHangableArtworks(orgId: string): Promise<InstallationArtwork[]> {
+  const rows = (await db`
+    SELECT ${ARTWORK_FIELDS}
+    FROM artwork a
+    ${ARTWORK_JOINS}
+    WHERE a.org_id = ${orgId}
+      AND a.status IN ('available', 'reserved', 'sold')
+      AND a.primary_image_id IS NOT NULL
+    ORDER BY a.created_at DESC
+  `) as unknown as Row[];
+  return rows.map(mapArtwork);
+}
+
+/** Works by id, in no particular order; `publicOnly` keeps those on show. */
+export async function listArtworksByIds(ids: string[], opts: { publicOnly: boolean }): Promise<InstallationArtwork[]> {
+  if (ids.length === 0) return [];
+  const rows = (await db`
+    SELECT ${ARTWORK_FIELDS}
+    FROM artwork a
+    ${ARTWORK_JOINS}
+    WHERE a.id = ANY(${ids})
+      ${opts.publicOnly ? db`AND a.status IN ('available', 'reserved', 'sold')` : db``}
+  `) as unknown as Row[];
+  return rows.map(mapArtwork);
+}
+
+/**
  * The works hung in an installation, for showing it. Drafts and archived
  * pieces are left out of a public view even if they are still on a wall.
  */
@@ -191,6 +220,16 @@ export async function createInstallation(
   const rows = (await db`
     INSERT INTO art_installation (store_id, title, created_by, hallway)
     VALUES (${storeId}, ${title}, ${userId}, ${venueId})
+    RETURNING id
+  `) as unknown as Row[];
+  return rows[0]!.id as string;
+}
+
+/** An organisation's own installation, with no store (migration 230). Returns its id. */
+export async function createOrgInstallation(orgId: string, title: string, userId: string, venueId: string): Promise<string> {
+  const rows = (await db`
+    INSERT INTO art_installation (org_id, title, created_by, hallway)
+    VALUES (${orgId}, ${title}, ${userId}, ${venueId})
     RETURNING id
   `) as unknown as Row[];
   return rows[0]!.id as string;
@@ -242,21 +281,34 @@ export async function deleteInstallation(id: string): Promise<void> {
   await db`DELETE FROM art_installation WHERE id = ${id}`;
 }
 
+/** Whose works an installation may hang: one store's, or any on show in an organisation's marketplace. */
+export type HangScope = { storeId: string } | { orgId: string };
+
+/** The scope an installation hangs from, by its owner. */
+export function hangScope(installation: Installation): HangScope {
+  return installation.storeId ? { storeId: installation.storeId } : { orgId: installation.orgId ?? "" };
+}
+
 /**
  * Replace the whole hang in one transaction. The editor always sends the full
  * layout, already in walking order, so a save is never a partial state; works
- * that are not the installation's store's own are dropped rather than hung.
+ * outside the installation's scope are dropped rather than hung.
  */
 export async function saveInstallationLayout(
   id: string,
-  storeId: string,
+  scope: HangScope,
   pieces: InstallationPiece[]
 ): Promise<number> {
   const ids = [...new Set(pieces.map((p) => p.artworkId))];
   return db.begin(async (tx) => {
-    const owned = ids.length
-      ? ((await tx`SELECT id FROM artwork WHERE store_id = ${storeId} AND id = ANY(${ids})`) as unknown as Row[])
-      : [];
+    const owned = !ids.length
+      ? []
+      : "storeId" in scope
+        ? ((await tx`SELECT id FROM artwork WHERE store_id = ${scope.storeId} AND id = ANY(${ids})`) as unknown as Row[])
+        : ((await tx`
+            SELECT id FROM artwork
+            WHERE org_id = ${scope.orgId} AND status IN ('available', 'reserved', 'sold') AND id = ANY(${ids})
+          `) as unknown as Row[]);
     const allowed = new Set(owned.map((r) => r.id as string));
     const keep = pieces.filter((p) => allowed.has(p.artworkId));
 

@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
     // matching `@source` in globals.css is what makes Tailwind scan it.
     "@elkdonis/cms-ui",
     "@elkdonis/forum-ui",
+    // Puck page builder (studio routes) and the block library it draws from, as danamccool does.
+    "@elkdonis/page-builder",
+    "@elkdonis/direct-edit",
+    "@elkdonis/blocks",
   ],
   // Build concurrency. Next defaults to one worker per CPU; this host has 32
   // while the container is capped well below what 31 workers need, so
@@ -35,6 +39,10 @@ const nextConfig: NextConfig = {
   // default; the compose command sets NEXT_BUILD_CPUS when building in-container.
   experimental: {
     cpus: process.env.NEXT_BUILD_CPUS ? Number(process.env.NEXT_BUILD_CPUS) : undefined,
+    // Phone photos for custom locations go through a server action (lib/custom-place-actions.ts, 25 MB cap);
+    // the defaults are 1 MB for actions and 10 MB through the proxy.
+    serverActions: { bodySizeLimit: "26mb" },
+    proxyClientMaxBodySize: "26mb",
   },
   output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
 };

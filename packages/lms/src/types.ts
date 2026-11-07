@@ -80,6 +80,18 @@ export interface StepRefs {
 export interface StepTask {
   id: string;
   scope?: 'person' | 'org';
+  /**
+   * Choices the author made for this task (e.g. `{ kind: 'event' }` for
+   * "publish on your org's site"). Strings only; the host's catalogue says
+   * which names and values an id accepts (2026-11-06).
+   */
+  params?: Record<string, string>;
+  /**
+   * A routine step (2026-11-07, docs/open/DAILY_ROUTINE_BRIEF_2026-11-06.md):
+   * the same task again each period, so it is never recorded as completed;
+   * the host's status answers for the current period (today) each time.
+   */
+  repeat?: 'daily';
 }
 /** What the host reports about a task for one viewer. */
 export interface TaskStatus {
@@ -90,6 +102,8 @@ export interface TaskStatus {
   detail?: string | null;
   /** Where the finished thing lives, once it exists. */
   href?: string | null;
+  /** Current values, for a task the host offers as a form in the step (2026-11-06). */
+  values?: Record<string, string>;
 }
 
 export interface StepSettings {

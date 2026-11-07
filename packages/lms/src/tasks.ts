@@ -13,7 +13,16 @@ import { stepTypeDef } from './step-types';
 export function stepTask(step: Pick<PublishedStep, 'type' | 'settings'>): StepTask | null {
   if (stepTypeDef(step.type).completion !== 'derived') return null;
   const t = step.settings.task;
-  return t && typeof t.id === 'string' && t.id ? { id: t.id, scope: t.scope === 'org' ? 'org' : 'person' } : null;
+  if (!t || typeof t.id !== 'string' || !t.id) return null;
+  const params = t.params && typeof t.params === 'object'
+    ? Object.fromEntries(Object.entries(t.params).filter((e): e is [string, string] => typeof e[1] === 'string'))
+    : {};
+  return {
+    id: t.id,
+    scope: t.scope === 'org' ? 'org' : 'person',
+    ...(Object.keys(params).length ? { params } : {}),
+    ...(t.repeat === 'daily' ? { repeat: 'daily' as const } : {}),
+  };
 }
 
 export interface SettledTask {
@@ -46,7 +55,8 @@ export async function settleTaskStep(
     status = { done: false, detail: null };
   }
   const already = step.status === 'completed' || step.status === 'waived';
-  if (!status.done || already || !o.enrolment || !step.access.allowed) {
+  // A routine step is done for today only: report it, never record it.
+  if (task.repeat || !status.done || already || !o.enrolment || !step.access.allowed) {
     return { task, status, completedNow: false, courseCompleted: false };
   }
   const r = await completeStep(viewer, o.enrolment.id, step.stepId);

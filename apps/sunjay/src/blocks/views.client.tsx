@@ -344,8 +344,11 @@ export function MemberView({
 export function ForumView({ forum, heading = "Forum" }: { forum?: SurfaceForum | null; heading?: string }) {
   return (
     <EnsureSurface>
-      <Heading text={heading} />
-      <ForumFace forum={forum ?? null} href="/forum" />
+      {/* One root element: a page's look for this block reaches only what is inside its first element. */}
+      <div>
+        <Heading text={heading} />
+        <ForumFace forum={forum ?? null} href="/forum" />
+      </div>
     </EnsureSurface>
   );
 }
@@ -365,13 +368,16 @@ export function GalleryView({
   if (list.length === 0) return null;
   return (
     <EnsureSurface>
-      <Heading text={heading} />
-      <GalleryFace
-        key={list.map((i) => i.url).join("|")}
-        images={list}
-        title={heading || "Gallery"}
-        autoAdvanceMs={autoAdvanceSeconds > 0 ? autoAdvanceSeconds * 1000 : undefined}
-      />
+      {/* One root element, as ForumView. */}
+      <div>
+        <Heading text={heading} />
+        <GalleryFace
+          key={list.map((i) => i.url).join("|")}
+          images={list}
+          title={heading || "Gallery"}
+          autoAdvanceMs={autoAdvanceSeconds > 0 ? autoAdvanceSeconds * 1000 : undefined}
+        />
+      </div>
     </EnsureSurface>
   );
 }

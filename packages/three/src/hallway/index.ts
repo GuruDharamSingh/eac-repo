@@ -47,7 +47,6 @@ export {
   isLampAt,
   normalizeLamp,
   normalizeLighting,
-  normalizeScene,
   placementLamp,
   presetOf,
   type KeyFrom,
@@ -56,8 +55,18 @@ export {
   type LightPresetId,
   type PieceLamp,
   type SceneLighting,
-  type SceneSettings,
 } from './lighting';
+export {
+  OPEN_SPOT_ID,
+  normalizeOpenSpot,
+  normalizeScene,
+  normalizeView,
+  type OpenSpot,
+  type Scene,
+  type SceneSettings,
+  type SceneView,
+  type SceneViewMode,
+} from './scene';
 export type { HallwayPiece } from './types';
 export {
   HALLWAY_VENUE,

@@ -224,6 +224,13 @@ export const textImage = defineBlock(
       "A paragraph or several with an image beside, above or below them. Text wraps around the image.",
     memberSafe: true,
     styling: "tokens",
+    parts: {
+      root: { label: "Text and picture", sel: "> .blk-textimg" },
+      figure: { label: "Picture and caption", sel: ".blk-textimg-figure", draws: { props: { src: "/x.jpg" } } },
+      image: { label: "Picture", sel: ".blk-textimg-img", prop: "src", draws: { props: { src: "/x.jpg" } } },
+      caption: { label: "Caption", sel: ".blk-textimg-caption", prop: "caption", draws: { props: { src: "/x.jpg", caption: "A caption" } } },
+      body: { label: "Words", sel: ".blk-textimg-body" },
+    },
     // Position and size are a GESTURE where an editor can offer one. The same
     // three props remain ordinary fields everywhere else.
     manipulate: { target: "image", place: "place", size: "size", offset: "offsetY" },

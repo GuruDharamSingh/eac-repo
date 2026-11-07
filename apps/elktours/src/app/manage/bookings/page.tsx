@@ -2,8 +2,13 @@ import Link from "next/link";
 import { listOrgDepartures, listOrgTourBookings } from "@elkdonis/commerce/server";
 import { formatDeparture, formatPrice } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export default async function ManageBookingsPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const [departures, bookings] = await Promise.all([
     listOrgDepartures(siteConfig.orgId).catch(() => []),
     listOrgTourBookings(siteConfig.orgId, 100).catch(() => []),

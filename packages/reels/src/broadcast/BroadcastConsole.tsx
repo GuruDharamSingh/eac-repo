@@ -3,23 +3,31 @@
 // Control panel for the server's OBS instance (docker/obs): live program
 // picture, scenes, the Browser scene's page, record and stream, and the
 // recordings OBS has written, which can be saved into the person's files.
-// The full OBS window (sources, filters, layout) is noVNC; this panel covers
-// the run of a session.
+// The full OBS window (sources, filters, layout) is the booth's Desktop
+// (BroadcastDesk); this panel covers the run of a session.
 
 import * as React from 'react';
+import { newTabId, useBroadcastLease } from './lease';
+import { CameraPanel } from './CameraPanel';
+import { GraphicsPanel } from './GraphicsPanel';
+import { SceneEditor, type SceneEditorProps } from './SceneEditor';
+import { BroadcastTabContext } from './tab-context';
 import type { BroadcastConsoleProps, BroadcastRecording, BroadcastStatus } from './types';
 
 const fmtBytes = (n: number) => (n > 1e9 ? `${(n / 1e9).toFixed(2)} GB` : `${(n / 1e6).toFixed(1)} MB`);
 const tc = (t?: string) => (t ? t.replace(/\.\d+$/, '') : '00:00:00');
 
-/** Tab id: one session is one tab, so a second tab of the same person is refused too. */
-function newTabId(): string {
-  const a = new Uint8Array(12);
-  crypto.getRandomValues(a);
-  return Array.from(a, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
-}
-
-export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, links, releaseEndpoint }: BroadcastConsoleProps) {
+export function BroadcastConsole({
+  initialStatus,
+  actions: bound,
+  mediaBase,
+  links,
+  releaseEndpoint,
+  extra,
+  graphicsUploadEndpoint,
+  cameraUploadEndpoint,
+  doorBase,
+}: BroadcastConsoleProps) {
   const [tabId] = React.useState(newTabId);
   // The rest of the component calls actions without the tab id.
   const actions = React.useMemo(
@@ -37,26 +45,26 @@ export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, lin
     }),
     [bound, tabId]
   );
-  // null: not asked yet; then the agent's answer, renewed every 5 s. The
-  // lease lapses 20 s after the last renewal, so a crashed tab frees itself.
-  const [claim, setClaim] = React.useState<{ held: boolean; lock: { name: string; since: string } | null; error?: string } | null>(null);
-  React.useEffect(() => {
-    let stop = false;
-    const tick = async () => {
-      const c = await bound.claim(tabId);
-      if (!stop) setClaim(c);
+  const claim = useBroadcastLease(bound.claim, tabId, releaseEndpoint);
+  // The scene editor's calls, bound to this tab once (stable for its effects).
+  const studioProps = React.useMemo((): Omit<SceneEditorProps, 'disabled' | 'onChange'> | null => {
+    const st = bound.studio;
+    if (!st) return null;
+    const token = bound.doorToken;
+    return {
+      load: () => st.studio(tabId),
+      command: (c) => st.studioCommand(tabId, c),
+      settings: (n) => st.sourceSettings(tabId, n),
+      browse: (p) => st.browseMedia(tabId, p),
+      levelsUrl:
+        token && doorBase
+          ? async () => {
+              const r = await token(tabId, 'levels');
+              return r.ok ? new URL(`${doorBase.replace(/\/$/, '')}/levels?token=${encodeURIComponent(r.value.token)}`, window.location.href).toString() : null;
+            }
+          : undefined,
     };
-    void tick();
-    const t = window.setInterval(tick, 5000);
-    const release = () => navigator.sendBeacon?.(releaseEndpoint, tabId);
-    window.addEventListener('pagehide', release);
-    return () => {
-      stop = true;
-      window.clearInterval(t);
-      window.removeEventListener('pagehide', release);
-      release();
-    };
-  }, [bound, tabId, releaseEndpoint]);
+  }, [bound, tabId, doorBase]);
   const held = claim?.held === true;
 
   const [status, setStatus] = React.useState<BroadcastStatus>(initialStatus);
@@ -120,6 +128,11 @@ export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, lin
           <a className="studio-btn" href={links.videoHref}>
             Video
           </a>
+          {links.desktopHref && (
+            <a className="studio-btn" href={links.desktopHref} title="The full OBS window: sources, filters, mixer">
+              Desktop
+            </a>
+          )}
         </header>
         <div className="vs-empty bc-locked" role="status">
           {claim === null ? (
@@ -152,6 +165,11 @@ export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, lin
         <a className="studio-btn" href={links.videoHref}>
           Video
         </a>
+        {links.desktopHref && (
+          <a className="studio-btn" href={links.desktopHref} title="The full OBS window: sources, filters, mixer">
+            Desktop
+          </a>
+        )}
         <span className="studio-spacer" />
         <span className="studio-status" aria-live="polite">
           {!status.connected && <span className="studio-err">OBS is not running</span>}
@@ -192,20 +210,24 @@ export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, lin
             </label>
           </div>
           <h2>Scenes</h2>
-          <div className="bc-scenes">
-            {(status.scenes ?? []).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className="studio-btn"
-                aria-pressed={s === status.currentScene}
-                disabled={busy !== null}
-                onClick={() => void act('scene', () => actions.setScene(s))}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+          {studioProps ? (
+            <SceneEditor {...studioProps} disabled={!status.connected} onChange={() => void actions.status().then(setStatus)} />
+          ) : (
+            <div className="bc-scenes">
+              {(status.scenes ?? []).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="studio-btn"
+                  aria-pressed={s === status.currentScene}
+                  disabled={busy !== null}
+                  onClick={() => void act('scene', () => actions.setScene(s))}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           {st && (
             <p className="vs-faint bc-stats">
               {st.fps.toFixed(0)} fps · CPU {st.cpu.toFixed(0)}% · render {st.renderMs.toFixed(1)} ms · skipped{' '}
@@ -231,6 +253,70 @@ export function BroadcastConsole({ initialStatus, actions: bound, mediaBase, lin
               Load page
             </button>
           </section>
+
+          {bound.graphics && (
+            <>
+              <h2>Graphics</h2>
+              <GraphicsPanel
+                graphics={status.graphics}
+                disabled={!status.connected}
+                send={async (cmd) => {
+                  const r = await bound.graphics!(tabId, cmd);
+                  setStatus(await actions.status());
+                  return r;
+                }}
+                deleteFolder={
+                  bound.deleteGraphic
+                    ? async (folder) => {
+                        const r = await bound.deleteGraphic!(tabId, folder);
+                        setStatus(await actions.status());
+                        return r;
+                      }
+                    : undefined
+                }
+                upload={
+                  graphicsUploadEndpoint
+                    ? async (folder, files) => {
+                        const form = new FormData();
+                        form.append('tabId', tabId);
+                        form.append('folder', folder);
+                        for (const f of files) {
+                          form.append('path', f.path);
+                          form.append('file', f.file);
+                        }
+                        const res = await fetch(graphicsUploadEndpoint, { method: 'POST', body: form });
+                        const j = (await res.json().catch(() => ({}))) as { error?: string };
+                        setStatus(await actions.status());
+                        return res.ok ? { ok: true } : { ok: false, error: j.error ?? `Upload failed (${res.status})` };
+                      }
+                    : undefined
+                }
+              />
+            </>
+          )}
+
+          <h2>Camera</h2>
+          <CameraPanel
+            scenes={status.scenes ?? []}
+            program={status.currentScene}
+            disabled={!status.connected}
+            uploadEndpoint={cameraUploadEndpoint}
+            mediaBase={mediaBase}
+            cameraWsUrl={
+              bound.doorToken && doorBase
+                ? async ({ name, scene, layout }) => {
+                    const r = await bound.doorToken!(tabId, 'camera');
+                    if (r.ok === false) return null;
+                    const u = new URL(`${doorBase!.replace(/\/$/, '')}/camera/ws`, window.location.href);
+                    u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+                    u.search = new URLSearchParams({ token: r.value.token, name, scene, layout }).toString();
+                    return u.toString();
+                  }
+                : undefined
+            }
+          />
+
+          {extra && <BroadcastTabContext.Provider value={tabId}>{extra}</BroadcastTabContext.Provider>}
 
           <h2>Stream</h2>
           <section className="vs-slot">

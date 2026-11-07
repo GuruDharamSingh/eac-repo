@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { mirrorLoginHref, signInWithGoogle, useAuthForm } from "@elkdonis/auth-client";
+import { TurnstileField, turnstileEnabled } from "@elkdonis/cms-ui/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { siteConfig } from "@/config/site";
@@ -52,6 +53,13 @@ function LoginInner() {
   });
 
   const isSignup = f.mode === "signup";
+  // Turnstile (2026-11-06): signup is refused without a token when the app has
+  // TURNSTILE_SECRET_KEY. A token is single-use, so a failed attempt resets it.
+  const awaitingTurnstile = isSignup && turnstileEnabled && !f.turnstileToken;
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  useEffect(() => {
+    if (f.error && isSignup) setTurnstileReset((n) => n + 1);
+  }, [f.error, isSignup]);
 
   return (
     <main className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-6 py-16">
@@ -120,11 +128,15 @@ function LoginInner() {
               />
             </Field>
 
+            {isSignup && (
+              <TurnstileField onToken={f.setTurnstileToken} resetSignal={turnstileReset} />
+            )}
+
             <Button
               type="submit"
               size="lg"
               className="w-full"
-              disabled={f.submitting}
+              disabled={f.submitting || awaitingTurnstile}
             >
               {f.submitting
                 ? "Working…"

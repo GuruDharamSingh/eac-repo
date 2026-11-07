@@ -163,7 +163,8 @@ one array), the result of `JSON.stringify(x)::jsonb` writes. Code that reads
   188 hides it from everyone but the author (fails closed). Queries that admit
   it: `forum.ts` `visibleTo`, `forum-search.ts`, `forum-people.ts`,
   `gather.ts` `visibleToGatherer`, `forum-write.ts` (write gate), and
-  `apps/innergathering/src/lib/data.ts` (`mayRead`). Others (`center.ts`, `lms/pool.ts`,
+  `apps/innergathering/src/lib/data.ts` (`mayRead`), arts-collective
+  `api/org/[slug]/threads/[id]` (`canViewThread`, 2026-11-04). Others (`center.ts`, `lms/pool.ts`,
   per-app listings) still hide such rows: add `restrictedReadSql` when one needs them.
 - Only innergathering's `/manage` form offers the audiences. Platform admins and
   the author read everything; unpublished threads need an editor who meets `min_role`.

@@ -28,9 +28,16 @@ export const SITE_DEFAULT_PAGE = '';
  * boundary and not decoration. Anything failing the test is dropped rather than
  * escaped: a silently ignored colour is a much better failure than a broken
  * stylesheet on every page of a site.
+ *
+ * Quotes are allowed (2026-11-01) so a font stack can be stored:
+ * "Source Sans 3", sans-serif. Each kind must be balanced, because the rule is
+ * written on one line and an open string would swallow the declarations after
+ * it. Still never a semicolon, braces, angle brackets, a colon or a line break,
+ * and no function that loads a resource (url, image, image-set, cross-fade,
+ * element, src) or runs one (expression).
  */
 const NAME_RE = /^--[a-z0-9-]{1,60}$/i;
-const VALUE_RE = /^[a-z0-9\s.,%#()/_-]{1,120}$/i;
+const VALUE_RE = /^(?![\s\S]*(?:url|image|image-set|cross-fade|element|src|expression)[ \t]*\()(?=(?:[^"]*"[^"]*")*[^"]*$)(?=(?:[^']*'[^']*')*[^']*$)[a-z0-9 \t.,%#()/_'"-]{1,120}$/i;
 
 export function sanitizeThemeVars(vars: unknown): ThemeVars {
   if (!vars || typeof vars !== 'object') return {};

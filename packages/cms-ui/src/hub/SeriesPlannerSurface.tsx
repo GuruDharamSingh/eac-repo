@@ -84,6 +84,8 @@ export interface SeriesPlannerSchedule {
   alsoZones: string[] | null;
   /** Meets every n weeks (1 = weekly; 2026-10-18). */
   intervalWeeks?: number;
+  /** The same weekday of each month (2026-11-02); `intervalWeeks` is then ignored. */
+  monthly?: boolean;
 }
 
 /** The series' cover: a picture, an uploaded video, or a YouTube/Vimeo page ("embed"). */
@@ -410,7 +412,7 @@ export function SeriesPlannerSurface({
   // Tabs only for organisers, and only when the host serves the people list
   // or the creation endpoint ("+ New series").
   const plannerTabs = React.useMemo(() => {
-    const t: Array<{ id: PlannerTab; label: string; accent?: boolean }> = [{ id: "weeks", label: "Weeks" }];
+    const t: Array<{ id: PlannerTab; label: string; accent?: boolean }> = [{ id: "weeks", label: "Sessions" }];
     if (peopleEndpoint) t.push({ id: "manage", label: "Manage" });
     if (createEndpoint) t.push({ id: "new", label: "+ New series", accent: true });
     return t;
@@ -425,10 +427,10 @@ export function SeriesPlannerSurface({
       {!data && !error && <p className="eac-rota-intro">Loading the weeks…</p>}
       {data && (
         <p className="eac-rota-intro">
-          Each week has a host, a title, a short write-up and the materials to look at before. A week shows on the
+          Each session has a host, a title, a short write-up and the materials to look at before. A session shows on the
           public page once it has a title and is published.
-          {editable && open > 0 ? ` ${open} coming ${open === 1 ? "week has" : "weeks have"} nobody yet.` : ""}
-          {editable && drafts > 0 ? ` ${drafts} coming ${drafts === 1 ? "week is a draft" : "weeks are drafts"}.` : ""}
+          {editable && open > 0 ? ` ${open} coming ${open === 1 ? "session has" : "sessions have"} nobody yet.` : ""}
+          {editable && drafts > 0 ? ` ${drafts} coming ${drafts === 1 ? "session is a draft" : "sessions are drafts"}.` : ""}
         </p>
       )}
       {editable && data?.settings && (
@@ -558,7 +560,7 @@ export function SeriesPlannerSurface({
 }
 
 const PLANNER_TABS: Array<{ id: PlannerTab; label: string }> = [
-  { id: "weeks", label: "Weeks" },
+  { id: "weeks", label: "Sessions" },
   { id: "manage", label: "Manage" },
 ];
 
@@ -1215,10 +1217,16 @@ type ScheduleFields = {
   lastDate: string;
   durationMinutes: string;
   alsoZones: string[];
+  /** "1"–"4", or "monthly". */
   intervalWeeks: string;
 };
 
-function scheduleFields(s: SeriesPlannerSchedule): ScheduleFields {
+/** The schedule's repeat, as the save endpoints read it. */
+function repeatOf(value: string): { intervalWeeks: number; monthly: boolean } {
+  return value === "monthly" ? { intervalWeeks: 1, monthly: true } : { intervalWeeks: Number.parseInt(value, 10) || 1, monthly: false };
+}
+
+function scheduleFields(s: SeriesPlannerSchedule, recurrencePattern?: string | null): ScheduleFields {
   return {
     weekday: String(s.weekday),
     time: s.time,
@@ -1227,7 +1235,7 @@ function scheduleFields(s: SeriesPlannerSchedule): ScheduleFields {
     lastDate: s.lastDate ?? "",
     durationMinutes: String(s.durationMinutes ?? 60),
     alsoZones: s.alsoZones ?? [],
-    intervalWeeks: String(s.intervalWeeks ?? 1),
+    intervalWeeks: recurrencePattern === "MONTHLY" ? "monthly" : String(s.intervalWeeks ?? 1),
   };
 }
 
@@ -1268,6 +1276,10 @@ function SeriesSettingsForm({
   create?: { onCreate: (args: { settings: Record<string, unknown>; schedule: Record<string, unknown> }) => Promise<boolean>; defaultZone: string };
 }) {
   const [open, setOpen] = React.useState(Boolean(create));
+  // "Edit series" on the public pages links to `#settings`.
+  React.useEffect(() => {
+    if (window.location.hash === "#settings") setOpen(true);
+  }, []);
   const [sched, setSched] = React.useState<ScheduleFields>(() => ({
     weekday: "1",
     time: "18:00",
@@ -1338,7 +1350,7 @@ function SeriesSettingsForm({
         lastDate: sched.lastDate || null,
         durationMinutes: Number.parseInt(sched.durationMinutes, 10) || 60,
         alsoZones: sched.alsoZones,
-        intervalWeeks: Number.parseInt(sched.intervalWeeks, 10) || 1,
+        ...repeatOf(sched.intervalWeeks),
       },
     });
     setSaving(false);
@@ -1347,9 +1359,9 @@ function SeriesSettingsForm({
   const talk = fields.joinMode === "talk";
   const cover = fields.cover ? (JSON.parse(fields.cover) as SeriesPlannerCover) : null;
   const savedCover = saved.cover ? (JSON.parse(saved.cover) as SeriesPlannerCover) : null;
-  const joinSummary = saved.joinMode === "talk" ? (settings.talkUrl ? "Joining by Talk room" : "Talk room not made yet") : saved.joinUrl ? "Join link set" : "No join link yet";
+  const joinSummary = saved.joinMode === "talk" ? (settings.talkUrl ? "Joining by Talk room" : "Talk room not made yet") : saved.joinUrl ? "Join link set" : saved.meetingId ? "Meeting ID set" : "No join link yet";
   const when = settings.schedule
-    ? `${WEEKDAYS[settings.schedule.weekday]}s ${settings.schedule.time} · ${ZONE_CHOICES.find((z) => z.id === settings.schedule!.timeZone)?.label ?? settings.schedule.timeZone}`
+    ? `${settings.recurrencePattern === "MONTHLY" ? `Monthly, ${WEEKDAYS[settings.schedule.weekday]}` : `${WEEKDAYS[settings.schedule.weekday]}s`} ${settings.schedule.time} · ${ZONE_CHOICES.find((z) => z.id === settings.schedule!.timeZone)?.label ?? settings.schedule.timeZone}`
     : null;
 
   return (
@@ -1378,7 +1390,7 @@ function SeriesSettingsForm({
           </span>
         </span>
         <span className="eac-series__settings-btn">
-          Series settings <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+          Cover, about and schedule <span aria-hidden="true">{open ? "▴" : "▾"}</span>
         </span>
       </button>
       )}
@@ -1621,7 +1633,7 @@ function SeriesSettingsForm({
                 </button>
               </div>
 
-              {settings.schedule && <ScheduleForm schedule={settings.schedule} weeks={weeks} onSchedule={onSchedule} />}
+              {settings.schedule && <ScheduleForm recurrencePattern={settings.recurrencePattern} schedule={settings.schedule} weeks={weeks} onSchedule={onSchedule} />}
             </>
           )}
         </div>
@@ -1631,6 +1643,7 @@ function SeriesSettingsForm({
 }
 
 function ScheduleForm({
+  recurrencePattern,
   schedule,
   weeks,
   onSchedule,
@@ -1641,8 +1654,9 @@ function ScheduleForm({
   onSchedule: (schedule: Record<string, unknown>, dryRun: boolean) => Promise<{ ok: boolean; body: Record<string, unknown> }>;
   /** Create mode: the parent owns the values and saves them with the new series; there is nothing to move. */
   controlled?: { value: ScheduleFields; onChange: (next: ScheduleFields) => void };
+  recurrencePattern?: string | null;
 }) {
-  const savedKey = JSON.stringify(scheduleFields(schedule));
+  const savedKey = JSON.stringify(scheduleFields(schedule, recurrencePattern));
   const saved = React.useMemo(() => JSON.parse(savedKey) as ScheduleFields, [savedKey]);
   const [ownFields, setOwnFields] = React.useState<ScheduleFields>(saved);
   const fields = controlled ? controlled.value : ownFields;
@@ -1682,7 +1696,7 @@ function ScheduleForm({
     lastDate: fields.lastDate || null,
     durationMinutes: Number.parseInt(fields.durationMinutes, 10) || null,
     alsoZones: fields.alsoZones,
-    intervalWeeks: Number.parseInt(fields.intervalWeeks, 10) || 1,
+    ...repeatOf(fields.intervalWeeks),
   });
 
   async function check() {
@@ -1725,6 +1739,7 @@ function ScheduleForm({
             <option value="2">Every 2 weeks</option>
             <option value="3">Every 3 weeks</option>
             <option value="4">Every 4 weeks</option>
+            <option value="monthly">Monthly (same weekday)</option>
           </select>
         </label>
         <label className="eac-series__field">

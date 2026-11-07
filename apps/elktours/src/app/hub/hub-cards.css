@@ -1,0 +1,81 @@
+/*
+  hub-cards.css — elktours' "Cards 2" hub (2026-11-02), after IFAC's
+  (apps/ifac/src/app/hub/hub-cards.css). The cards themselves are cms-ui's
+  hubsite (`.eac-hp-grid`, `.eac-hp-card`); this only fixes the row widths and
+  styles the two panels that are not single links (tour schedule, payouts).
+  Colours are the --sf-* surface tokens, so the site theme carries.
+*/
+
+/* Rows: explicit tracks, so a row of three never resolves to two and an orphan. */
+.el-c2 .el-row-3 > .eac-hp-grid,
+.el-c2 .eac-hp-grid.el-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.el-c2 .eac-hp-grid.el-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.el-c2 .eac-hp-grid.el-row-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1039px) {
+  .el-c2 .eac-hp-grid.el-row-3,
+  .el-c2 .eac-hp-grid.el-row-4,
+  .el-c2 .eac-hp-grid.el-row-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 599px) {
+  .el-c2 .eac-hp-grid.el-row-3,
+  .el-c2 .eac-hp-grid.el-row-4,
+  .el-c2 .eac-hp-grid.el-row-5 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The welcome row, as IFAC's. */
+.el-c2-welcome { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.el-c2-welcome h1 { margin: 4px 0 0; font-family: var(--sf-font-title); font-size: 2rem; line-height: 1.1; }
+
+/* ── Tour schedule panel ─────────────────────────────────────────────── */
+.el-schedule { min-height: 0; }
+.el-schedule:hover { transform: none; }
+.el-schedule a { color: var(--sf-fg); text-decoration: underline; text-underline-offset: 3px; }
+.el-schedule-link { font-size: 0.9rem; }
+.el-schedule-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.el-schedule-filter button {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: var(--sf-muted);
+  background: transparent;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.el-schedule-filter button[aria-pressed="true"] { color: var(--sf-bg); background: var(--sf-fg); border-color: var(--sf-fg); }
+.el-schedule-list { display: grid; margin: 6px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--sf-line); }
+.el-schedule-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--sf-line);
+  font-size: 0.92rem;
+}
+@media (max-width: 720px) {
+  .el-schedule-list > li { grid-template-columns: minmax(0, 1fr); }
+}
+.el-schedule-name a { font-weight: 600; text-decoration: none; }
+.el-schedule-name a:hover { text-decoration: underline; }
+.el-schedule-badge {
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sf-muted);
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+}
+.el-schedule-next { color: var(--sf-muted); }
+.el-schedule-actions { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
+.el-schedule-foot { display: flex; gap: 18px; white-space: normal; }
+
+/* The payouts panel keeps PayoutsCard's own markup; give it the card's edge. */
+.el-c2-payouts > section {
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-line);
+  border-top: 3px solid var(--sf-rule);
+  border-radius: var(--sf-radius);
+  color: var(--sf-fg);
+}

@@ -8,13 +8,20 @@
 // container, which writes the MP4 back into the project's Finished/ folder.
 
 import * as React from 'react';
-import { Player } from '@remotion/player';
-import { REEL_TEMPLATES } from '../templates';
+import { Player, type PlayerRef } from '@remotion/player';
+import { REEL_TEMPLATES, templateSize } from '../templates';
+import { ClipControls } from './ClipControls';
+import { Timeline } from './Timeline';
+import { useEditHistory } from './history';
+import { ImageEditor, savedToFile } from '@elkdonis/studio/image';
 import { editPaths, missingForRender, type ReelClipRef, type ReelEdit, type ReelMediaRef } from '../types';
 import type { VideoKindProps, VideoProject, VideoPublication, VideoRender, VideoTrack } from './types';
+import type { SoundLibrary } from './Sounds';
 import { StudioColumns, StudioTopActions, StudioTopStatus, useStudioFrame } from '@elkdonis/studio/frame';
+import { PhoneHandoff } from '@elkdonis/studio/capture';
 import { Recorder } from './Recorder';
 import { SlotLibrary, type LibraryPick } from './SlotLibrary';
+import { LiveCard } from './LiveCard';
 import type { VideoFinished } from './types';
 
 const SLOT_KINDS: Record<Exclude<SlotKey, 'music'>, Array<'image' | 'video'>> = {
@@ -27,6 +34,8 @@ const SLOT_KINDS: Record<Exclude<SlotKey, 'music'>, Array<'image' | 'video'>> = 
 
 /** Longest useful recording per slot: what the template uses of it. */
 const RECORD_MAX: Partial<Record<SlotKey, number>> = { clip: 15, clip2: 10, extra: 8 };
+/** Pictures the editor can open (not SVG or GIF). */
+const EDITABLE = /\.(jpe?g|png|webp)$/i;
 
 type SlotKey = 'logo' | 'artwork' | 'clip' | 'clip2' | 'extra' | 'music';
 
@@ -36,6 +45,11 @@ const SLOT_INFO: Array<{ key: Exclude<SlotKey, 'music'>; label: string; hint: st
   { key: 'clip', label: 'Clip', hint: 'You talking or working. Up to 15 s is used.', accept: 'video/*', required: true },
   { key: 'clip2', label: 'Second clip', hint: 'Optional. Up to 10 s.', accept: 'video/*' },
   { key: 'extra', label: 'Something else', hint: 'Optional. A detail, another work, the studio: photo or video.', accept: 'image/*,video/*' },
+];
+
+// The clip template has one slot: the recording, trimmed in ClipControls.
+const CLIP_SLOT_INFO: typeof SLOT_INFO = [
+  { key: 'clip', label: 'Clip', hint: 'The recording. Trim it under Trim; any length.', accept: 'video/*', required: true },
 ];
 
 const mediaUrl = (base: string, path: string) => base + path.split('/').map(encodeURIComponent).join('/');
@@ -109,6 +123,8 @@ export function VideoKind(props: VideoKindProps) {
   const [music, setMusic] = React.useState<{ network: VideoTrack[]; mine: VideoTrack[] } | null>(null);
   const [renders, setRenders] = React.useState<VideoRender[]>([]);
   const [recording, setRecording] = React.useState<SlotKey | null>(null);
+  const playerRef = React.useRef<PlayerRef>(null);
+  const [phoneFor, setPhoneFor] = React.useState<SlotKey | null>(null);
   const [libraryFor, setLibraryFor] = React.useState<SlotKey | null>(null);
   // Publishing: undefined = not loaded yet for this reel, null = never published.
   const [publication, setPublication] = React.useState<VideoPublication | null | undefined>(undefined);
@@ -150,11 +166,42 @@ export function VideoKind(props: VideoKindProps) {
     change(setSlot(edit, key, ref));
   }
 
+  // "Use in a reel" from the Recordings kind: /studio?kind=video&clip=<path>
+  // fills the open reel's first clip slot when it is empty.
+  // "Edit with overlays" adds &new=clip: a new clip reel is made for it first.
+  const pendingClip = React.useRef<string | null>(null);
+  const pendingFresh = React.useRef(false);
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const clip = url.searchParams.get('clip');
+    if (!clip) return;
+    pendingClip.current = clip;
+    const fresh = url.searchParams.get('new') === 'clip';
+    url.searchParams.delete('clip');
+    url.searchParams.delete('new');
+    window.history.replaceState(null, '', url);
+    pendingFresh.current = fresh;
+    if (fresh) void newProject('clip');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  React.useEffect(() => {
+    const clip = pendingClip.current;
+    if (!clip || !edit) return;
+    // Wait for the new clip reel rather than filling whatever was open.
+    if (pendingFresh.current && (edit.template !== 'clip' || edit.clip?.path)) return;
+    pendingClip.current = null;
+    pendingFresh.current = false;
+    if (!getSlot(edit, 'clip')?.path) pickLibrary('clip', { path: clip, name: clip.split('/').pop() ?? clip, kind: 'video' });
+    else setError('This reel already has a first clip; the recording was not put in. Use “From my files…” on another slot.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit]);
+
   // Open a project: load its edit, renders and the music lists.
   const open = React.useCallback(
     (p: VideoProject | null) => {
       setCurrent(p);
       setEdit(p?.edit ?? null);
+      resetHistory();
       setTitle(p?.title ?? '');
       setSave('saved');
       setError(null);
@@ -199,10 +246,11 @@ export function VideoKind(props: VideoKindProps) {
     return () => window.clearTimeout(t);
   }, [edit, title, save, current, actions]);
 
-  const change = (next: ReelEdit) => {
+  // Undo and redo (history.ts); the open reel's changes only.
+  const { change, history, reset: resetHistory } = useEditHistory<ReelEdit>(edit, (next) => {
     setEdit(next);
     setSave('dirty');
-  };
+  });
 
   // Poll while a render is queued or running.
   const active = renders.find((r) => r.status === 'queued' || r.status === 'running');
@@ -245,6 +293,55 @@ export function VideoKind(props: VideoKindProps) {
     change(setSlot(edit, key, ref));
   }
 
+  /** A picture for a clip overlay, into the project's folder like the logo slot. */
+  // The picture editor (@elkdonis/studio/image): open on a stored picture;
+  // resolves with the edited copy's ref once saved, or null when closed.
+  const [editingPic, setEditingPic] = React.useState<{ ref: ReelMediaRef; done(r: ReelMediaRef | null): void } | null>(null);
+  const editPicture = (ref: ReelMediaRef) =>
+    new Promise<ReelMediaRef | null>((done) => setEditingPic({ ref, done }));
+  async function saveEditedPicture(file: File, slot: SlotKey): Promise<ReelMediaRef | null> {
+    if (!current) return null;
+    const res = await upload(uploadEndpoint, { project: current.id, slot, name: file.name }, file, () => {});
+    if (!res.path) {
+      setError(res.error ?? 'Upload failed');
+      return null;
+    }
+    return { path: res.path, name: file.name };
+  }
+
+  async function uploadOverlayImage(file: File): Promise<ReelMediaRef | null> {
+    if (!current) return null;
+    setError(null);
+    const res = await upload(uploadEndpoint, { project: current.id, slot: 'logo', name: file.name }, file, () => {});
+    if (!res.path) {
+      setError(res.error ?? 'Upload failed');
+      return null;
+    }
+    return { path: res.path, name: file.name };
+  }
+
+  // Sound effects for the timeline's Sound overlay (Sounds.tsx).
+  const projectId = current?.id;
+  const sounds = React.useMemo<SoundLibrary | undefined>(() => {
+    if (!actions.listSounds || !projectId) return undefined;
+    return {
+      list: actions.listSounds,
+      share: actions.shareSound,
+      search: actions.searchFreesound,
+      importFs: actions.importFreesound,
+      url: (p) => mediaUrl(mediaBase, p),
+      upload: async (file) => {
+        setError(null);
+        const res = await upload(uploadEndpoint, { project: projectId, slot: 'sound', name: file.name }, file, () => {});
+        if (!res.path) {
+          setError(res.error ?? 'Upload failed');
+          return null;
+        }
+        return { path: res.path, name: file.name };
+      },
+    };
+  }, [actions, projectId, mediaBase, uploadEndpoint]);
+
   async function render() {
     if (!current || !edit) return;
     setError(null);
@@ -263,7 +360,27 @@ export function VideoKind(props: VideoKindProps) {
     setMusic(await actions.listMusic());
   }
 
+  // Speech-to-text of the clip's recording, for the timeline's subtitles.
+  const clipPath = edit?.clip?.path;
+  const transcript = React.useMemo(() => {
+    const { transcribe, getTranscript } = actions;
+    if (!current || !clipPath || !transcribe || !getTranscript) return undefined;
+    return {
+      start: async () => {
+        const r = await transcribe(current.id, clipPath);
+        if (r.ok === false) {
+          setError(r.error);
+          return null;
+        }
+        return r.value;
+      },
+      get: () => getTranscript(current.id, clipPath),
+    };
+  }, [actions, current, clipPath]);
+
   const template = edit ? REEL_TEMPLATES[edit.template] : null;
+  // A clip reel records up to five minutes into its one slot.
+  const recordMax = (k: SlotKey) => (edit?.template === 'clip' && k === 'clip' ? 300 : RECORD_MAX[k]);
   // "Just me" (oad) signs with the person's own name; an org with its name.
   const fallbackName =
     !current || current.orgId === 'oad'
@@ -310,6 +427,7 @@ export function VideoKind(props: VideoKindProps) {
         wideSettings
         drawer={
           <div className="vs-projects">
+          {props.broadcast && <LiveCard {...props.broadcast} />}
           <h2>New</h2>
           {Object.values(REEL_TEMPLATES).map((t) => (
             <button key={t.id} type="button" className="vs-template" onClick={() => void newProject(t.id)}>
@@ -344,23 +462,39 @@ export function VideoKind(props: VideoKindProps) {
                   setSave('dirty');
                 }}
               />
-              <div className="vs-player">
+              <div className="vs-player" data-format={edit?.template === 'clip' ? (edit.format ?? 'landscape') : 'portrait'}>
                 <Player
+                  ref={playerRef}
                   // Player is typed over Record<string, unknown> props; templates take ReelInput.
                   component={template.component as unknown as React.FC<Record<string, unknown>>}
                   inputProps={input as unknown as Record<string, unknown>}
                   durationInFrames={template.durationInFrames(input)}
-                  compositionWidth={template.width}
-                  compositionHeight={template.height}
+                  compositionWidth={templateSize(template, input).width}
+                  compositionHeight={templateSize(template, input).height}
                   fps={template.fps}
                   controls
                   loop
-                  // Frame 0 is the logo fading in from black; open on the artwork.
-                  initialFrame={45}
+                  // Artwork reel: frame 0 is the logo fading in from black; open on the artwork.
+                  initialFrame={template.id === 'artwork-reel' ? 45 : 0}
                   acknowledgeRemotionLicense
                   style={{ width: '100%', height: '100%' }}
                 />
               </div>
+              {edit?.template === 'clip' && (
+                <Timeline
+                  edit={edit}
+                  change={change}
+                  player={playerRef}
+                  srcUrl={edit.clip?.path ? mediaUrl(mediaBase, edit.clip.path) : undefined}
+                  library={props.libraryEndpoint ? { endpoint: props.libraryEndpoint, mediaBase } : undefined}
+                  uploadImage={uploadOverlayImage}
+                  editImage={props.imageEndpoint ? editPicture : undefined}
+                  history={history}
+                  transcript={transcript}
+                  name={title}
+                  sounds={sounds}
+                />
+              )}
               {lastFailed && <p className="studio-err">Last render failed: {lastFailed.error}</p>}
               {done?.outputPath && (
                 <div className="vs-done">
@@ -432,7 +566,7 @@ export function VideoKind(props: VideoKindProps) {
           edit && current ? (
             <div className="vs-panel">
             <h2>Slots</h2>
-            {SLOT_INFO.map((s) => {
+            {(edit.template === 'clip' ? CLIP_SLOT_INFO : SLOT_INFO).map((s) => {
               const ref = getSlot(edit, s.key);
               const pct = busy[s.key];
               const isVideo = s.key === 'clip' || s.key === 'clip2' || (s.key === 'extra' && (ref as { kind?: string })?.kind === 'video');
@@ -453,20 +587,35 @@ export function VideoKind(props: VideoKindProps) {
                   {ref?.name && <p className="vs-file">{ref.name}{ref.duration ? ` · ${ref.duration.toFixed(1)} s` : ''}</p>}
                   {recording === s.key ? (
                     <Recorder
-                      maxSeconds={RECORD_MAX[s.key] ?? 15}
+                      maxSeconds={recordMax(s.key) ?? 15}
                       onCancel={() => setRecording(null)}
                       onDone={(file, seconds) => {
                         setRecording(null);
                         void pickFile(s.key, file, seconds);
                       }}
                     />
+                  ) : phoneFor === s.key && props.captureEndpoint ? (
+                    <PhoneHandoff
+                      captureEndpoint={props.captureEndpoint}
+                      phoneHost={props.phoneHost}
+                      onCancel={() => setPhoneFor(null)}
+                      onSaved={(res) => {
+                        setPhoneFor(null);
+                        pickLibrary(s.key, { path: res.path, name: res.name, kind: 'video', duration: res.seconds ?? undefined } as LibraryPick);
+                      }}
+                    />
                   ) : pct !== undefined ? (
                     <progress max={1} value={pct} />
                   ) : (
                     <>
-                    {RECORD_MAX[s.key] && (
+                    {recordMax(s.key) && (
                       <button type="button" className="studio-btn vs-pick" onClick={() => setRecording(s.key)}>
                         Record…
+                      </button>
+                    )}{' '}
+                    {recordMax(s.key) && props.captureEndpoint && (
+                      <button type="button" className="studio-btn vs-pick" onClick={() => setPhoneFor(s.key)}>
+                        From my phone…
                       </button>
                     )}{' '}
                     {props.libraryEndpoint && (
@@ -477,6 +626,19 @@ export function VideoKind(props: VideoKindProps) {
                         onClick={() => setLibraryFor(libraryFor === s.key ? null : s.key)}
                       >
                         From my files…
+                      </button>
+                    )}{' '}
+                    {props.imageEndpoint && ref?.path && !isVideo && EDITABLE.test(ref.path) && (
+                      <button
+                        type="button"
+                        className="studio-btn vs-pick"
+                        title="Crop, filters, text…"
+                        onClick={async () => {
+                          const next = await editPicture(ref);
+                          if (next) change(setSlot(edit, s.key, { ...ref, ...next }));
+                        }}
+                      >
+                        Edit picture…
                       </button>
                     )}{' '}
                     <label className="studio-btn vs-pick">
@@ -506,6 +668,8 @@ export function VideoKind(props: VideoKindProps) {
                   )}
                   {ref?.path && isVideo && (
                     <div className="vs-row">
+                      {/* The clip template trims on its timeline. */}
+                      {edit.template !== 'clip' && (
                       <label>
                         Start at (s)
                         <input
@@ -517,6 +681,7 @@ export function VideoKind(props: VideoKindProps) {
                           onChange={(e) => change(setSlot(edit, s.key, { ...ref, trimStart: Math.max(0, Number(e.target.value) || 0) }))}
                         />
                       </label>
+                      )}
                       <label className="vs-check">
                         <input
                           type="checkbox"
@@ -531,6 +696,9 @@ export function VideoKind(props: VideoKindProps) {
               );
             })}
 
+            {edit.template === 'clip' && (
+              <ClipControls edit={edit} change={change} />
+            )}
             <h2>Music</h2>
             <section className="vs-slot" data-filled={Boolean(edit.music?.path)}>
               {edit.music?.path ? (
@@ -653,6 +821,23 @@ export function VideoKind(props: VideoKindProps) {
           ) : null
         }
       />
+      {editingPic && (
+        <ImageEditor
+          src={mediaUrl(mediaBase, editingPic.ref.path)}
+          imageEndpoint={props.imageEndpoint}
+          onClose={() => {
+            editingPic.done(null);
+            setEditingPic(null);
+          }}
+          onSave={async (saved) => {
+            // The edited copy goes into the project folder; the original stays.
+            const file = await savedToFile(saved, editingPic.ref.name ?? editingPic.ref.path.split('/').pop() ?? 'picture');
+            const next = await saveEditedPicture(file, 'logo');
+            editingPic.done(next);
+            setEditingPic(null);
+          }}
+        />
+      )}
     </>
   );
 }

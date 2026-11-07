@@ -43,15 +43,20 @@ export default async function HubEmailPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/email");
 
-  const memberships = await listUserMemberships(user.id);
+  // Only the orgs this person may read email for: the suite holds the address
+  // book and the inbox, which are for owners and guides.
+  const memberships = (await listUserMemberships(user.id)).filter(
+    (m) => m.role === "owner" || m.role === "guide"
+  );
   if (memberships.length === 0) {
     return (
       <SiteShell wide>
         <div className="mx-auto w-full max-w-3xl px-6 py-16">
           <h1 className="font-serif text-3xl">Email</h1>
           <p className="mt-3 text-muted-foreground">
-            Email belongs to an organisation. Once you&rsquo;re part of one,
-            everything it sends and receives appears here.
+            Email belongs to an organisation&rsquo;s owners and guides. Once
+            you hold one of those roles, everything it sends and receives
+            appears here.
           </p>
           <Link href="/hub/organization" className="mt-6 inline-block underline underline-offset-4">
             Find or start an organisation
@@ -63,10 +68,7 @@ export default async function HubEmailPage({
 
   // Same selection rule as the organization tab, so switching between the two
   // never silently changes which org you are looking at.
-  const selected =
-    memberships.find((m) => m.orgSlug === orgParam) ??
-    memberships.find((m) => m.role === "owner" || m.role === "guide") ??
-    memberships[0];
+  const selected = memberships.find((m) => m.orgSlug === orgParam) ?? memberships[0];
 
   const guard = await guardOrgEmail(selected.orgSlug);
   if (!guard) redirect("/hub/organization");
@@ -106,13 +108,6 @@ export default async function HubEmailPage({
             </nav>
           )}
         </header>
-
-        {!guard.canEdit && (
-          <p className="mb-5 rounded border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-            You can read this organisation&rsquo;s email, but only its owners
-            and guides can send in its name or change its settings.
-          </p>
-        )}
 
         <EmailSuiteHost
           orgSlug={guard.orgSlug}

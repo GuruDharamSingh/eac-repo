@@ -107,6 +107,10 @@ export const faq = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Questions", sel: "> .blk-faq" },
+      item: { label: "Question and answer", sel: ".blk-faq-item", repeat: true },
+    },
   },
   Faq,
   () => ({

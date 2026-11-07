@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies, headers } from 'next/headers';
 import { isSignedOutEverywhere } from './sso-state';
 import { deviceTokenUser } from './device-tokens';
+import { getVerifiedSession } from './verify-session';
 
 /**
  * Derive the Domain attribute for auth cookies so a session set on the root
@@ -279,11 +280,13 @@ export async function getServerSession(): Promise<Session> {
 
     const supabase = await getServerAuth();
 
-    const { data: { session }, error } = await supabase.auth.getSession();
-
-    if (error || !session?.user) {
+    // Verified, not just decoded: getSession() alone trusts whatever the
+    // cookie says (verify-session.ts).
+    const verified = await getVerifiedSession(supabase);
+    if (!verified) {
       return { user: null };
     }
+    const { session, claims } = verified;
 
     // Signed out on another site of the network since this token was issued
     // (sso-state.ts): this site's cookie is stale, not a session.
@@ -291,7 +294,7 @@ export async function getServerSession(): Promise<Session> {
       return { user: null };
     }
 
-    const authUserId = session.user.id;
+    const authUserId = claims.sub;
 
     // Try Redis cache first
     try {
@@ -362,7 +365,7 @@ export async function getServerSession(): Promise<Session> {
 
         await setCachedSession(cacheKey, {
           userId: user.id,
-          email: user.email || session.user.email || '',
+          email: user.email || claims.email || '',
           displayName: undefined,
           nextcloudUserId: user.nextcloud_user_id || undefined,
           nextcloudAppPassword: user.nextcloud_app_password || undefined,
@@ -379,7 +382,7 @@ export async function getServerSession(): Promise<Session> {
         id: authUserId,
         auth_user_id: authUserId,
         db_user_id: user.id,
-        email: user.email || session.user.email || '',
+        email: user.email || claims.email || '',
         nextcloud_user_id: user.nextcloud_user_id,
         nextcloud_app_password: user.nextcloud_app_password,
       } : null,
@@ -408,5 +411,6 @@ export async function invalidateSessionCache(userId: string): Promise<void> {
 export * from './api-routes';
 export * from './handoff';
 export * from './arrival';
+export { getVerifiedSession, verifyAccessToken, type VerifiedClaims, type VerifiedSession } from './verify-session';
 export { DEVICE_TOKEN_PREFIX, createDeviceToken, listDeviceTokens, revokeDeviceToken, revokeRequestDeviceToken, type DeviceTokenRow } from './device-tokens';
 export { SSO_COOKIE, ARRIVAL_COOKIE, markSignedOutEverywhere } from './sso-state';

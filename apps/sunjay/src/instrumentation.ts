@@ -15,6 +15,10 @@ export async function register() {
     try {
       const { runReminderTick } = await import("@/lib/reminders");
       await runReminderTick(appOrigin);
+      // A series' sessions, subscribers and hosts: their own ledger kinds.
+      const { createSeriesReminders } = await import("@elkdonis/series-site/reminders");
+      const { seriesSite } = await import("@/lib/series-site");
+      await createSeriesReminders(seriesSite).runReminderTick(appOrigin);
     } catch (err) {
       console.error("[sunjay] reminders: scheduler tick error:", err);
     }

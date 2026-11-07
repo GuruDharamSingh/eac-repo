@@ -7,6 +7,7 @@ import { READING_GROUP_KIND } from "@/lib/types";
 import { formatDay, formatRecurrence, formatWhen } from "@/lib/format";
 import { getFeaturedGroupId } from "@/lib/featured";
 import { setFeaturedGroup } from "@/lib/circle-actions";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Reading groups · Manage" };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,10 @@ const ORG = siteConfig.orgId;
  * section at the bottom stages its sessions. The layout gates this to editors.
  */
 export default async function ManageGroupsPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor("/manage");
   const [groups, members, featuredId] = await Promise.all([
     db<Array<{
       id: string; slug: string | null; title: string; status: string;

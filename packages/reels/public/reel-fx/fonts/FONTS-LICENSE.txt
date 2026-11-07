@@ -1,0 +1,7 @@
+Fonts used for the FX graphics' text line (latin subsets, weight 600, as served by Google Fonts):
+
+  Fraunces-600-latin.woff2   Fraunces, Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
+  Inter-600-latin.woff2      Inter, Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
+
+Both are licensed under the SIL Open Font License, Version 1.1:
+https://openfontlicense.org/open-font-license-official-text/

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { adminListArtworks } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Artworks · Admin" };
@@ -16,6 +17,10 @@ const ARTWORK_STATUS_TONE: Record<string, BadgeProps["tone"]> = {
 };
 
 export default async function AdminArtworksPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const artworks = await adminListArtworks({ limit: 50 });
 
   return (

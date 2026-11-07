@@ -23,7 +23,7 @@
 
 import { spawn } from 'node:child_process';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, rm, stat } from 'node:fs/promises';
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, extname } from 'node:path';
 import { Readable } from 'node:stream';
@@ -110,6 +110,44 @@ export async function probeMedia(file: string): Promise<VideoProbe> {
     hasVideo: Boolean(v),
     hasAudio: Boolean(a),
   };
+}
+
+// The repo is bind-mounted at /app in the worker (docker/video-worker.Dockerfile).
+const CARD_FONT = process.env.VIDEO_CARD_FONT || '/app/packages/astro/fonts/Inter.ttf';
+
+/**
+ * An audio-only recording (the browser reading recorder writes audio-only
+ * .webm) as an H.264/AAC mp4 over a still title card: YouTube refuses to
+ * process a file with no picture. The title goes through `textfile=` so no
+ * drawtext escaping is needed; without the font the card is plain.
+ * `-shortest` ends at the audio, since MediaRecorder webm often has no duration.
+ */
+export async function stillVideoFromAudio(input: string, output: string, title: string): Promise<void> {
+  const hasFont = await stat(CARD_FONT).then(() => true, () => false);
+  const textFile = `${output}.title.txt`;
+  const filters = ['format=yuv420p'];
+  if (hasFont && title.trim()) {
+    await writeFile(textFile, title.trim(), 'utf8');
+    filters.unshift(
+      `drawtext=fontfile=${CARD_FONT}:textfile=${textFile}:fontcolor=0xf2efe6:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2`
+    );
+  }
+  try {
+    const { code, stderr } = await run(FFMPEG, [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      '-f', 'lavfi', '-i', 'color=c=0x1d1b2e:s=1280x720:r=2',
+      '-i', input,
+      '-map', '0:v', '-map', '1:a',
+      '-vf', filters.join(','),
+      '-c:v', 'libx264', '-tune', 'stillimage', '-preset', 'veryfast', '-crf', '28',
+      '-c:a', 'aac', '-b:a', '160k', '-ar', '48000',
+      '-shortest', '-movflags', '+faststart', '-threads', THREADS,
+      output,
+    ]);
+    if (code !== 0) throw new Error(`ffmpeg could not make a still video: ${stderr.trim().slice(-500)}`);
+  } finally {
+    await rm(textFile, { force: true });
+  }
 }
 
 export interface Silence {

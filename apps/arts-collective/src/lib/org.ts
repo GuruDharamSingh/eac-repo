@@ -244,6 +244,8 @@ export type OrgFeedItem = {
   reply_count: number | null;
   nextcloud_talk_token: string | null;
   nextcloud_doc_url: string | null;
+  /** threads.metadata->>'coverImageUrl' (getOrgFeed only; feed cards show it). */
+  cover_image_url?: string | null;
 };
 
 export async function getOrgFeed(
@@ -259,7 +261,8 @@ export async function getOrgFeed(
         price, currency, sessions, share_to_network,
         published_at, created_at,
         view_count, reply_count,
-        nextcloud_talk_token, nextcloud_doc_url
+        nextcloud_talk_token, nextcloud_doc_url,
+        metadata->>'coverImageUrl' AS cover_image_url
       FROM threads
       WHERE org_id = ${orgId}
         AND status = 'published'
@@ -482,6 +485,8 @@ export type PublicThread = {
   location: string | null;
   metadata: Record<string, unknown> | null;
   pinned: boolean;
+  /** 'published', or 'draft' when the caller asked for drafts (an editor's view). */
+  status: string;
   author_name: string | null;
   author_slug: string | null;
 };
@@ -500,22 +505,30 @@ export type PublicThread = {
  */
 export async function getPublicThread(
   orgId: string,
-  slug: string
+  slug: string,
+  /**
+   * `includeDrafts` (2026-11-06): also a draft, at any visibility, for the org's
+   * owners and guides — the caller checks that (canEditOrgSite). Without it a
+   * draft's own URL was a 404 for the people about to publish it.
+   */
+  opts: { includeDrafts?: boolean } = {}
 ): Promise<PublicThread | null> {
   try {
     const rows = await db<PublicThread[]>`
       SELECT
         t.id, t.slug, t.kind, t.title, t.body, t.body_format, t.excerpt,
-        t.published_at, t.scheduled_at, t.location, t.metadata, t.pinned,
+        t.published_at, t.scheduled_at, t.location, t.metadata, t.pinned, t.status,
         u.display_name AS author_name,
         u.slug         AS author_slug
       FROM threads t
       LEFT JOIN users u ON u.id = t.author_id
       WHERE t.org_id = ${orgId}
         AND t.slug = ${slug}
-        AND t.status = 'published'
         AND t.kind <> ALL(${OFF_FEED_KINDS})
-        AND t.visibility = 'PUBLIC'
+        AND (
+          (t.status = 'published' AND t.visibility = 'PUBLIC')
+          OR (${opts.includeDrafts === true} AND t.status = 'draft')
+        )
       LIMIT 1
     `;
     const row = rows[0];

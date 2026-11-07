@@ -5,10 +5,15 @@ import { getAllThreadsForOrg } from "@/lib/data";
 import { threadHref } from "@/components/thread-card";
 import { siteConfig } from "@/config/site";
 import { formatWhen } from "@/lib/format";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Manage" };
 
 export default async function ManagePage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor("/manage");
   const { saved } = await searchParams;
   const [threads, ideas] = await Promise.all([
     getAllThreadsForOrg(60).then((all) => all.filter((t) => t.kind !== "idea")),

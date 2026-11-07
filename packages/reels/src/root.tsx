@@ -20,7 +20,10 @@ const Root: React.FC = () => (
         height={t.height}
         durationInFrames={1}
         defaultProps={{ edit: { template: t.id }, urls: {} } satisfies ReelInput}
-        calculateMetadata={({ props }) => ({ durationInFrames: t.durationInFrames(props as unknown as ReelInput) })}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: t.durationInFrames(props as unknown as ReelInput),
+          ...(t.dimensions ? t.dimensions(props as unknown as ReelInput) : {}),
+        })}
       />
     ))}
   </>

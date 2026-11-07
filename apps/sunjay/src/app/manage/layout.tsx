@@ -14,6 +14,7 @@ const TABS = [
   { href: "/manage/pages", label: "Site copy" },
   { href: "/manage/builder", label: "Page builder" },
   { href: "/manage/people", label: "People" },
+  { href: "/hub/series", label: "Series" },
 ];
 
 const OWNER_TABS = [{ href: "/manage/analytics", label: "Visitors" }];

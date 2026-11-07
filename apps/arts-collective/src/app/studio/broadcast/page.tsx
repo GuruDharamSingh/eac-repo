@@ -7,18 +7,26 @@ import "@elkdonis/studio/studio.css";
 import "@elkdonis/reels/editor.css";
 import "@elkdonis/reels/broadcast.css";
 import { requireUser } from "@/lib/session";
+import { RelayFeedsSlot } from "@/components/studio/RelayFeedsSlot";
 import {
   broadcastClaim,
   broadcastDeleteRecording,
+  broadcastBrowseMedia,
+  broadcastDeleteGraphic,
+  broadcastDoorToken,
+  broadcastGraphics,
   broadcastRecord,
   broadcastRecordings,
   broadcastSaveRecording,
   broadcastScreenshot,
   broadcastSetBrowserUrl,
   broadcastSetScene,
+  broadcastSourceSettings,
   broadcastStatus,
   broadcastStream,
   broadcastStreamSettings,
+  broadcastStudio,
+  broadcastStudioCommand,
 } from "@/lib/broadcast-actions";
 
 /**
@@ -56,10 +64,23 @@ export default async function StudioBroadcastPage() {
           recordings: broadcastRecordings,
           saveRecording: broadcastSaveRecording,
           deleteRecording: broadcastDeleteRecording,
+          graphics: broadcastGraphics,
+          deleteGraphic: broadcastDeleteGraphic,
+          studio: {
+            studio: broadcastStudio,
+            studioCommand: broadcastStudioCommand,
+            sourceSettings: broadcastSourceSettings,
+            browseMedia: broadcastBrowseMedia,
+          },
+          doorToken: broadcastDoorToken,
         }}
         mediaBase="/api/media/"
         releaseEndpoint="/api/broadcast/release"
-        links={{ studioHref: "/studio", videoHref: "/studio?kind=video" }}
+        graphicsUploadEndpoint="/api/broadcast/graphics"
+        cameraUploadEndpoint="/api/broadcast/camera-upload"
+        doorBase={process.env.OBS_DOOR_BASE || "/obs"}
+        links={{ studioHref: "/studio", videoHref: "/studio?kind=video", desktopHref: "/studio/broadcast/desktop" }}
+        extra={<RelayFeedsSlot />}
       />
     </>
   );

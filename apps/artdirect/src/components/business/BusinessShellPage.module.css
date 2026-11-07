@@ -1,0 +1,99 @@
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  color: var(--oad-ink, #f7f1e3);
+}
+.banner {
+  border: 1px solid var(--oad-ink-soft, #a9a293);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+}
+.head {
+  margin-bottom: 1.5rem;
+}
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: var(--oad-ink-soft, #a9a293);
+  margin: 0 0 0.25rem;
+}
+.title {
+  font-size: 2rem;
+  margin: 0 0 0.25rem;
+}
+.address {
+  margin: 0;
+  color: var(--oad-ink-soft, #a9a293);
+}
+.photo {
+  margin: 0 0 1.5rem;
+}
+.photo img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.photo figcaption {
+  font-size: 0.8rem;
+  color: var(--oad-ink-soft, #a9a293);
+}
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 2rem;
+}
+.facts dt {
+  color: var(--oad-ink-soft, #a9a293);
+}
+.facts dd {
+  margin: 0;
+}
+.section {
+  margin-top: 2rem;
+}
+.section h2 {
+  font-size: 1.1rem;
+}
+.list {
+  padding-left: 1.1rem;
+}
+.muted {
+  color: var(--oad-ink-soft, #a9a293);
+  font-size: 0.9rem;
+}
+.details {
+  margin: 0.75rem 0;
+}
+.details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.form label {
+  display: grid;
+  gap: 0.25rem;
+}
+.form input,
+.form select,
+.form textarea {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--oad-ink-soft, #a9a293);
+  background: transparent;
+  color: inherit;
+}
+.ok {
+  color: #9fd59f;
+}
+.err {
+  color: #f0a0a0;
+}

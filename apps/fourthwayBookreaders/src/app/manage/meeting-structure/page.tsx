@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteSections } from "@/lib/data";
 import { SectionForm, type Field } from "@/components/manage/section-form";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Structure of a meeting" };
 
@@ -13,6 +14,10 @@ const FIELDS: Field[] = [
 ];
 
 export default async function Page() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor("/manage");
   const sections = await getSiteSections();
   return (
     <>

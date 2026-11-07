@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@elkdonis/services",
+    "@elkdonis/series-site",
     "@elkdonis/pipeline",
     "@elkdonis/primitives",
     "@elkdonis/chat",

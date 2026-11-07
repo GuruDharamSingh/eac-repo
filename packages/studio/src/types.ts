@@ -25,7 +25,8 @@ export type StudioKindId =
   | 'service'
   | 'question'
   | 'video'
-  | 'post';
+  | 'post'
+  | 'recording';
 
 export interface StudioKind {
   id: StudioKindId;
@@ -168,6 +169,8 @@ export interface StudioUpload {
   endpoint: string;
   /** Extra fields; `orgSlug` is added by the shell from the acting org. */
   fields?: Record<string, string>;
+  /** The host's picture route (image/ImageEditor.tsx); with it, a cover gets "Edit". */
+  imageEndpoint?: string;
 }
 
 export interface StudioLinks {

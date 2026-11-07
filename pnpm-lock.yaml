@@ -600,6 +600,9 @@ importers:
 
   apps/arts-collective:
     dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../../packages/actions
       '@elkdonis/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -630,9 +633,18 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
+      '@elkdonis/dock':
+        specifier: workspace:*
+        version: link:../../packages/dock
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@elkdonis/fonts':
+        specifier: workspace:*
+        version: link:../../packages/fonts
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../../packages/live-editor
@@ -1272,6 +1284,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -1281,6 +1296,9 @@ importers:
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../../packages/nextcloud
+      '@elkdonis/page-builder':
+        specifier: workspace:*
+        version: link:../../packages/page-builder
       '@elkdonis/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline
@@ -1302,6 +1320,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.73.1(react@19.1.0))
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.7.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
       '@radix-ui/react-checkbox':
         specifier: ^1.1.2
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1320,6 +1341,9 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.2.4(@types/react@19.2.14)(react@19.1.0)
+      '@tiptap/core':
+        specifier: ^2.8.0
+        version: 2.26.4(@tiptap/pm@2.26.4)
       '@tiptap/extension-link':
         specifier: ^2.8.0
         version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
@@ -1347,6 +1371,9 @@ importers:
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
+      exifr:
+        specifier: ^7.1.3
+        version: 7.1.3
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.1.0)
@@ -1374,6 +1401,9 @@ importers:
       react-hook-form:
         specifier: ^7.73.1
         version: 7.73.1(react@19.1.0)
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1762,6 +1792,9 @@ importers:
       '@elkdonis/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@elkdonis/series-site':
+        specifier: workspace:*
+        version: link:../../packages/series-site
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
@@ -2022,6 +2055,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -2142,6 +2178,94 @@ importers:
       zod:
         specifier: ^3.25.76
         version: 3.25.76
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.13
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9
+        version: 9.34.0(jiti@2.6.0)
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.59.3(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2))(eslint@9.34.0(jiti@2.6.0))(typescript@5.9.2)
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.13
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
+  apps/katie-the-potter:
+    dependencies:
+      '@elkdonis/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../../packages/auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../../packages/auth-server
+      '@elkdonis/blocks':
+        specifier: workspace:*
+        version: link:../../packages/blocks
+      '@elkdonis/checkout':
+        specifier: workspace:*
+        version: link:../../packages/checkout
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../../packages/cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
+      '@elkdonis/page-builder':
+        specifier: workspace:*
+        version: link:../../packages/page-builder
+      '@elkdonis/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../../packages/services
+      '@elkdonis/studio-ui':
+        specifier: workspace:*
+        version: link:../../packages/studio-ui
+      '@elkdonis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.7.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -2324,6 +2448,9 @@ importers:
 
   apps/sophia:
     dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../../packages/actions
       '@elkdonis/auth-server':
         specifier: workspace:*
         version: link:../../packages/auth-server
@@ -2415,6 +2542,9 @@ importers:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@elkdonis/direct-edit':
+        specifier: workspace:*
+        version: link:../../packages/direct-edit
       '@elkdonis/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -2433,6 +2563,9 @@ importers:
       '@elkdonis/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@elkdonis/series-site':
+        specifier: workspace:*
+        version: link:../../packages/series-site
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
@@ -2561,6 +2694,37 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  packages/actions:
+    dependencies:
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../cms-ui
+      '@elkdonis/commerce':
+        specifier: workspace:*
+        version: link:../commerce
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../email
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   packages/analytics:
     dependencies:
       '@elkdonis/auth-server':
@@ -2583,7 +2747,7 @@ importers:
         version: 19.1.0(react@19.1.0)
       recharts:
         specifier: ^3.2.1
-        version: 3.10.1(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-is@16.13.1)(react@19.1.0)(redux@5.0.1)
+        version: 3.10.1(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-is@19.3.1)(react@19.1.0)(redux@5.0.1)
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -3055,6 +3219,50 @@ importers:
         specifier: ^5.0.0
         version: 5.9.2
 
+  packages/direct-edit:
+    dependencies:
+      '@elkdonis/fonts':
+        specifier: workspace:*
+        version: link:../fonts
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
+  packages/dock:
+    dependencies:
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../actions
+      next:
+        specifier: ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: ^19
+        version: 19.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.2
+
   packages/email:
     dependencies:
       '@elkdonis/db':
@@ -3096,6 +3304,12 @@ importers:
         version: 8.5.0(@swc/core@1.15.33(@swc/helpers@0.5.15))(jiti@2.6.0)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.2)
       typescript:
         specifier: ^5.0.0
+        version: 5.9.2
+
+  packages/fonts:
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
         version: 5.9.2
 
   packages/forum-ui:
@@ -3536,11 +3750,63 @@ importers:
         specifier: ^5
         version: 5.9.2
 
+  packages/series-site:
+    dependencies:
+      '@elkdonis/auth-client':
+        specifier: workspace:*
+        version: link:../auth-client
+      '@elkdonis/auth-server':
+        specifier: workspace:*
+        version: link:../auth-server
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../cms-ui
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../email
+      '@elkdonis/newsletter':
+        specifier: workspace:*
+        version: link:../newsletter
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.6
+      next:
+        specifier: ^15 || ^16
+        version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
+      react:
+        specifier: ^19
+        version: 19.1.0
+      react-dom:
+        specifier: ^19
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.2
+
   packages/services:
     dependencies:
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../db
+      '@elkdonis/email':
+        specifier: workspace:*
+        version: link:../email
       '@elkdonis/nextcloud':
         specifier: workspace:*
         version: link:../nextcloud
@@ -3690,6 +3956,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^2.8.0
         version: 2.26.4
+      konva:
+        specifier: 9.3.18
+        version: 9.3.18
       next:
         specifier: ^15 || ^16
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
@@ -3699,6 +3968,15 @@ importers:
       react-dom:
         specifier: ^19
         version: 19.1.0(react@19.1.0)
+      react-filerobot-image-editor:
+        specifier: 5.0.0-beta.159
+        version: 5.0.0-beta.159(@babel/core@7.28.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-konva@19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(styled-components@6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+      react-konva:
+        specifier: ~19.0.10
+        version: 19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      styled-components:
+        specifier: ^6.1.0
+        version: 6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     devDependencies:
       '@types/react':
         specifier: 19.2.14
@@ -4247,6 +4525,12 @@ packages:
 
   '@emnapi/wasi-threads@1.1.0':
     resolution: {integrity: sha512-WI0DdZ8xFSbgMjR1sFsKABJ/C5OnRrjT06JXbZKexJGrDuPTzZdDYfFlsgcCXCyf+suG5QU2e/y1Wo2V/OapLQ==}
+
+  '@emotion/is-prop-valid@1.4.0':
+    resolution: {integrity: sha512-QgD4fyscGcbbKwJmqNvUMSE02OsHUa+lAWKdEUIJKgqe5IwRSKd7+KhibEWdaKwgjLj0DRSHA9biAIqGBk05lw==}
+
+  '@emotion/memoize@0.9.0':
+    resolution: {integrity: sha512-30FAj7/EoJ5mwVPOWhAyCX+FPfMDrVecJAM+Iw9NRoSl4BBAQeqj4cApHHUXOVvIPgLVDsCFoz/hGD+5QQD1GQ==}
 
   '@esbuild/aix-ppc64@0.25.10':
     resolution: {integrity: sha512-0NFWnA+7l41irNuaSVlLfgNT12caWJVLzp5eAVhZ0z1qpxbockccEt3s+149rE64VUI3Ml2zt8Nv5JVc4QXTsw==}
@@ -6547,6 +6831,25 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
+  '@scaleflex/icons@3.0.0-beta.10':
+    resolution: {integrity: sha512-l/dDTOd1V7x/KYUsqg4t/vBwOSzYgjosY7r9QQsDjW7OSaL0IszPAOukxEKzlGhWZPj+5AZ6xkX1e2om2nVpmg==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@types/react': 19.2.14
+      '@types/react-dom': 19.2.3
+      react: '>=19.0.0'
+      react-dom: '>=19.0.0'
+
+  '@scaleflex/ui@3.0.0-beta.10':
+    resolution: {integrity: sha512-+bV6IxOIeCpsRZcMiWTPhUco+XEIvYhVwRx32PCMLmhrZrcDymrJ5dRq6QVLibF66Tr259dJjUfSLF62zUAa+w==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@types/react': 19.2.14
+      '@types/react-dom': 19.2.3
+      react: '>=19.0.0'
+      react-dom: '>=19.0.0'
+      styled-components: '>=6.0.0'
+
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
 
@@ -6803,6 +7106,12 @@ packages:
 
   '@tanstack/virtual-core@3.17.11':
     resolution: {integrity: sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g==}
+
+  '@tippyjs/react@4.2.6':
+    resolution: {integrity: sha512-91RicDR+H7oDSyPycI13q3b7o4O60wa2oRbjlz2fyRLmHImc4vyDwuUP8NtZaN0VARJY5hybvDYrFzhY9+Lbyw==}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
 
   '@tiptap/core@2.26.4':
     resolution: {integrity: sha512-F8t0Nc1OeV51CCHR1WYVMg/gOzHD2fJALUpMxF67/LDjFnxM/rarsqTQnLZuBoP9U3TfbNLSAQLZ4TCnBZnXRA==}
@@ -7240,6 +7549,12 @@ packages:
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
 
+  '@types/lodash.merge@4.6.9':
+    resolution: {integrity: sha512-23sHDPmzd59kUgWyKGiOMO2Qb9YtqRO/x4IhkgNUiPQ1+5MUVqi6bCZeq9nBJ17msjIMbEIO5u+XW4Kz6aGUhQ==}
+
+  '@types/lodash@4.17.27':
+    resolution: {integrity: sha512-VenMRv/eKNrspX9v3H4dbmjsrnCOYdYBG3kxXKk3dG6X+urBGcj2Prww3xw1U5K4FV/mE4h5GbWd0szEKf+9ew==}
+
   '@types/markdown-it@14.1.2':
     resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
 
@@ -7281,11 +7596,19 @@ packages:
     peerDependencies:
       '@types/react': 19.2.14
 
+  '@types/react-reconciler@0.32.3':
+    resolution: {integrity: sha512-cMi5ZrLG7UtbL7LTK6hq9w/EZIRk4Mf1Z5qHoI+qBh7/WkYkFXQ7gOto2yfUvPzF5ERMAhaXS5eTQ2SAnHjLzA==}
+    peerDependencies:
+      '@types/react': 19.2.14
+
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
 
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
+
+  '@types/stylis@4.2.7':
+    resolution: {integrity: sha512-VgDNokpBoKF+wrdvhAAfS55OMQpL6QRglwTwNC3kIgBrzZxA4WsFj+2eLfEA/uMUDzBcEhYmjSbwQakn/i3ajA==}
 
   '@types/three@0.170.0':
     resolution: {integrity: sha512-CUm2uckq+zkCY7ZbFpviRttY+6f9fvwm6YqSqPfA5K22s9w7R4VnA3rzJse8kHVvuzLcTx+CjNCs2NYe0QFAyg==}
@@ -9062,6 +9385,9 @@ packages:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
 
+  konva@9.3.18:
+    resolution: {integrity: sha512-ad5h0Y9phUrinBrKXyIISbURRHQO7Rx5cz7mAEEfdVCs45gDqRD8Y0I0nJRk8S6iqEbiRE87CEZu5GVSnU8oow==}
+
   language-subtag-registry@0.3.23:
     resolution: {integrity: sha512-0K65Lea881pHotoGEa5gDlMxt3pctLi2RplBb7Ezh4rRdLEOtgi7n4EwK9lamnUCkKBqaeKRVebTq6BAxSkpXQ==}
 
@@ -9786,6 +10112,9 @@ packages:
   promise-worker-transferable@1.0.4:
     resolution: {integrity: sha512-bN+0ehEnrXfxV2ZQvU2PetO0n4gqBD4ulq3MI1WOPLgr7/Mg9yRQkX5+0v1vagr74ZTsl7XtzlaYDo2EuCeYJw==}
 
+  prop-types@15.7.2:
+    resolution: {integrity: sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==}
+
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
 
@@ -9914,6 +10243,13 @@ packages:
       '@types/react-dom':
         optional: true
 
+  rb-tippyjs-react@4.3.1:
+    resolution: {integrity: sha512-zC9Y571x3ILE9fVfJzWBHOKI4t/SYBbrH26aSCnQOlCEa6Vk4aKTozcuBRC1M3wcnP+rAnK5EEhhGhuCser8xg==}
+    peerDependencies:
+      '@babel/core': ^7.26.9
+      react: ^19.0
+      react-dom: ^19.0
+
   react-colorful@5.6.1:
     resolution: {integrity: sha512-1exovf0uGTGyq5mXQT0zgQ80uvj2PCwvF8zY1RN9/vbJVSjSo3fsB/4L3ObbF7u70NduSiK4xu4Y6q1MHoUGEw==}
     peerDependencies:
@@ -9948,6 +10284,14 @@ packages:
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
 
+  react-filerobot-image-editor@5.0.0-beta.159:
+    resolution: {integrity: sha512-PGmZVUD42fTTnjovHJqaY+X7dlP/uUG4fQOfmQkjYfaDV/8fuVpn6MgVbrsUiLetbtknVJx09mfvxoLfdH9Kmg==}
+    peerDependencies:
+      react: '>=19.0.0'
+      react-dom: '>=19.0.0'
+      react-konva: '>=19.0.0'
+      styled-components: '>=5.3.5'
+
   react-grid-layout@2.2.4:
     resolution: {integrity: sha512-Eb57FsgOMYOfsUGrMI1ku/FFR+dPNPrE8qo+3hwZubpqVSy4GO9v52DeX50Tl3JDYAlCypP4rmw7Vrqk/zOIvA==}
     peerDependencies:
@@ -9969,6 +10313,24 @@ packages:
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
+
+  react-konva-utils@1.1.0:
+    resolution: {integrity: sha512-3ylRN4eUeYU553tmY2Hgi69efrlUBjE8MLXXAQT+rLDBCPW4CwlvJFUCgPQoSEZmaJKTH/gvZz0Y4f8tUfV0rw==}
+    peerDependencies:
+      konva: ^8.3.5 || ^9.0.0
+      react: ^18.2.0 || ^19.0.0
+      react-dom: ^18.2.0 || ^19.0.0
+      react-konva: ^18.2.10 || ^19.0.1
+
+  react-konva@19.0.10:
+    resolution: {integrity: sha512-tJID7bungYs8ri5McjjlHWCniQMAasiNkTgATd8OJEnLrz3B7S5JN7nFkNfWETIHPx9rEN3gc+kQg32RhdZJcw==}
+    peerDependencies:
+      konva: ^8.0.1 || ^7.2.5 || ^9.0.0 || ^10.0.0
+      react: ^18.3.1 || ^19.0.0
+      react-dom: ^18.3.1 || ^19.0.0
+
   react-number-format@5.4.4:
     resolution: {integrity: sha512-wOmoNZoOpvMminhifQYiYSTCLUDOiUbBunrMrMjA+dV52sY+vck1S4UhR6PkgnoCquvvMSeJjErXZ4qSaWCliA==}
     peerDependencies:
@@ -9977,6 +10339,12 @@ packages:
 
   react-promise-suspense@0.3.4:
     resolution: {integrity: sha512-I42jl7L3Ze6kZaq+7zXWSunBa3b1on5yfvUW6Eo/3fFOj6dZ5Bqmcd264nJbTK/gn1HjjILAjSwnZbV4RpSaNQ==}
+
+  react-reconciler@0.32.0:
+    resolution: {integrity: sha512-2NPMOzgTlG0ZWdIf3qG+dcbLSoAc/uLfOwckc3ofy5sSK0pLJqnQLpUFxvGcN2rlXSjnVtGeeFLNimCQEj5gOQ==}
+    engines: {node: '>=0.10.0'}
+    peerDependencies:
+      react: ^19.1.0
 
   react-redux@9.3.0:
     resolution: {integrity: sha512-KQopgqFo/p/fgmAs5qz6p5RWaNAzq40WAu7fJIXnQpYxFPbJYtsJPWvGeF2rOBaY/kEuV77AVsX8TsQzKm+A/g==}
@@ -10377,6 +10745,22 @@ packages:
   strnum@1.1.2:
     resolution: {integrity: sha512-vrN+B7DBIoTTZjnPNewwhx6cBA/H+IS7rfW68n7XxC1y7uoiGQBxaKzqucGUgavX15dJgiGztLJ8vxuEzwqBdA==}
 
+  styled-components@6.6.0:
+    resolution: {integrity: sha512-drKKsqvDBxVRn4ySU67iQ5nQBuo/1xyYeBfdhDde112PkqrS3+95KPnpDs5hFRcmrW+q6+gbyywYYYR14oWFtw==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      css-to-react-native: '>= 3.2.0'
+      react: '>= 16.8.0'
+      react-dom: '>= 16.8.0'
+      react-native: '>= 0.68.0'
+    peerDependenciesMeta:
+      css-to-react-native:
+        optional: true
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+
   styled-jsx@5.1.6:
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
     engines: {node: '>= 12.0.0'}
@@ -10739,6 +11123,12 @@ packages:
     engines: {node: '>= 10.0.0'}
     peerDependencies:
       react: '>=16.8.0'
+
+  use-image@1.1.4:
+    resolution: {integrity: sha512-P+swhszzHHgEb2X2yQ+vQNPCq/8Ks3hyfdXAVN133pvnvK7UK++bUaZUa5E+A3S02Mw8xOCBr9O6CLhk2fjrWA==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   use-isomorphic-layout-effect@1.2.1:
     resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
@@ -11319,6 +11709,12 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@emotion/is-prop-valid@1.4.0':
+    dependencies:
+      '@emotion/memoize': 0.9.0
+
+  '@emotion/memoize@0.9.0': {}
 
   '@esbuild/aix-ppc64@0.25.10':
     optional: true
@@ -13586,6 +13982,29 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
+  '@scaleflex/icons@3.0.0-beta.10(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@types/react': 19.2.14
+      '@types/react-dom': 19.2.3(@types/react@19.2.14)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+
+  '@scaleflex/ui@3.0.0-beta.10(@babel/core@7.28.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(styled-components@6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+    dependencies:
+      '@popperjs/core': 2.11.8
+      '@scaleflex/icons': 3.0.0-beta.10(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@types/lodash.merge': 4.6.9
+      '@types/react': 19.2.14
+      '@types/react-dom': 19.2.3(@types/react@19.2.14)
+      lodash.merge: 4.6.2
+      prop-types: 15.8.1
+      rb-tippyjs-react: 4.3.1(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      styled-components: 6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+    transitivePeerDependencies:
+      - '@babel/core'
+
   '@selderee/plugin-htmlparser2@0.11.0':
     dependencies:
       domhandler: 5.0.3
@@ -13822,6 +14241,12 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
 
   '@tanstack/virtual-core@3.17.11': {}
+
+  '@tippyjs/react@4.2.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      tippy.js: 6.3.7
 
   '@tiptap/core@2.26.4(@tiptap/pm@2.26.4)':
     dependencies:
@@ -14281,6 +14706,12 @@ snapshots:
 
   '@types/linkify-it@5.0.0': {}
 
+  '@types/lodash.merge@4.6.9':
+    dependencies:
+      '@types/lodash': 4.17.27
+
+  '@types/lodash@4.17.27': {}
+
   '@types/markdown-it@14.1.2':
     dependencies:
       '@types/linkify-it': 5.0.0
@@ -14320,11 +14751,17 @@ snapshots:
     dependencies:
       '@types/react': 19.2.14
 
+  '@types/react-reconciler@0.32.3(@types/react@19.2.14)':
+    dependencies:
+      '@types/react': 19.2.14
+
   '@types/react@19.2.14':
     dependencies:
       csstype: 3.2.3
 
   '@types/stats.js@0.17.4': {}
+
+  '@types/stylis@4.2.7': {}
 
   '@types/three@0.170.0':
     dependencies:
@@ -16373,6 +16810,8 @@ snapshots:
 
   klona@2.0.6: {}
 
+  konva@9.3.18: {}
+
   language-subtag-registry@0.3.23: {}
 
   language-tags@1.0.9:
@@ -17154,6 +17593,12 @@ snapshots:
       is-promise: 2.2.2
       lie: 3.3.0
 
+  prop-types@15.7.2:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 16.13.1
+
   prop-types@15.8.1:
     dependencies:
       loose-envify: 1.4.0
@@ -17386,6 +17831,14 @@ snapshots:
       '@types/react': 19.2.14
       '@types/react-dom': 19.2.3(@types/react@19.2.14)
 
+  rb-tippyjs-react@4.3.1(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@babel/core': 7.28.4
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-is: 19.3.1
+      tippy.js: 6.3.7
+
   react-colorful@5.6.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -17422,6 +17875,24 @@ snapshots:
       prop-types: 15.8.1
       react: 19.1.0
 
+  react-filerobot-image-editor@5.0.0-beta.159(@babel/core@7.28.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-konva@19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(styled-components@6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)):
+    dependencies:
+      '@babel/runtime': 7.28.4
+      '@scaleflex/icons': 3.0.0-beta.10(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@scaleflex/ui': 3.0.0-beta.10(@babel/core@7.28.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(styled-components@6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+      '@tippyjs/react': 4.2.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      konva: 9.3.18
+      prop-types: 15.7.2
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-konva: 19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react-konva-utils: 1.1.0(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react-konva@19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      styled-components: 6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/react'
+      - '@types/react-dom'
+
   react-grid-layout@2.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       clsx: 2.1.1
@@ -17444,6 +17915,28 @@ snapshots:
 
   react-is@16.13.1: {}
 
+  react-is@19.3.1: {}
+
+  react-konva-utils@1.1.0(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react-konva@19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
+    dependencies:
+      konva: 9.3.18
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-konva: 19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      use-image: 1.1.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+
+  react-konva@19.0.10(@types/react@19.2.14)(konva@9.3.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@types/react-reconciler': 0.32.3(@types/react@19.2.14)
+      its-fine: 2.0.0(@types/react@19.2.14)(react@19.1.0)
+      konva: 9.3.18
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      react-reconciler: 0.32.0(react@19.1.0)
+      scheduler: 0.26.0
+    transitivePeerDependencies:
+      - '@types/react'
+
   react-number-format@5.4.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -17452,6 +17945,11 @@ snapshots:
   react-promise-suspense@0.3.4:
     dependencies:
       fast-deep-equal: 2.0.1
+
+  react-reconciler@0.32.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      scheduler: 0.26.0
 
   react-redux@9.3.0(@types/react@19.2.14)(react@19.1.0)(redux@5.0.1):
     dependencies:
@@ -17534,7 +18032,7 @@ snapshots:
 
   readdirp@5.1.1: {}
 
-  recharts@3.10.1(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-is@16.13.1)(react@19.1.0)(redux@5.0.1):
+  recharts@3.10.1(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react-is@19.3.1)(react@19.1.0)(redux@5.0.1):
     dependencies:
       '@reduxjs/toolkit': 2.13.0(react-redux@9.3.0(@types/react@19.2.14)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
       clsx: 2.1.1
@@ -17544,7 +18042,7 @@ snapshots:
       immer: 11.1.18
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      react-is: 16.13.1
+      react-is: 19.3.1
       react-redux: 9.3.0(@types/react@19.2.14)(react@19.1.0)(redux@5.0.1)
       reselect: 5.2.0
       tiny-invariant: 1.3.3
@@ -17950,6 +18448,16 @@ snapshots:
 
   strnum@1.1.2: {}
 
+  styled-components@6.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@emotion/is-prop-valid': 1.4.0
+      '@types/stylis': 4.2.7
+      csstype: 3.2.3
+      react: 19.1.0
+      stylis: 4.3.6
+    optionalDependencies:
+      react-dom: 19.1.0(react@19.1.0)
+
   styled-jsx@5.1.6(@babel/core@7.28.4)(react@19.1.0):
     dependencies:
       client-only: 0.0.1
@@ -18334,6 +18842,11 @@ snapshots:
   use-debounce@9.0.4(react@19.1.0):
     dependencies:
       react: 19.1.0
+
+  use-image@1.1.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   use-isomorphic-layout-effect@1.2.1(@types/react@19.2.14)(react@19.1.0):
     dependencies:

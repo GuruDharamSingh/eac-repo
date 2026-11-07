@@ -24,6 +24,7 @@
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
     "@elkdonis/db": "workspace:*",
+    "@elkdonis/direct-edit": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/meta": "workspace:*",
     "@elkdonis/forum-ui": "workspace:*",

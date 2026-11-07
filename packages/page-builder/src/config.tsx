@@ -73,6 +73,44 @@ export interface BlockResolvers {
 }
 
 /**
+ * Where a block sits on the page, handed to its resolver as `metadata.placement`
+ * (Puck 0.23's resolveData `parent`). `parentType` is null at the top level.
+ * `slot` is the parent prop that holds the block, `index` its position there,
+ * `siblingTypes` the types in that slot. Puck re-resolves a block when it is
+ * moved to another parent ("move"), not when it is reordered within one, so a
+ * resolver should rely on `parentType`/`slot` and treat the rest as a hint.
+ */
+export interface BlockPlacement {
+  parentType: string | null;
+  slot: string | null;
+  index: number;
+  siblingTypes: string[];
+}
+
+type PlacementParent = { type?: string; props?: Record<string, unknown> };
+
+/**
+ * The placement of the block with `id` inside `parent` (null = top level).
+ * Puck hands top-level blocks the ROOT as their parent (type "root", in the
+ * editor and in resolveAllData alike); that is the top level here too.
+ */
+export function placementOf(id: unknown, parent: PlacementParent | null): BlockPlacement {
+  if (!parent?.props || parent.type === "root") return { parentType: null, slot: null, index: -1, siblingTypes: [] };
+  for (const [slot, value] of Object.entries(parent.props)) {
+    if (!Array.isArray(value)) continue;
+    const index = value.findIndex((c) => (c as { props?: { id?: unknown } } | null)?.props?.id === id);
+    if (index < 0) continue;
+    return {
+      parentType: parent.type ?? null,
+      slot,
+      index,
+      siblingTypes: value.map((c) => String((c as { type?: unknown } | null)?.type ?? "")),
+    };
+  }
+  return { parentType: parent.type ?? null, slot: null, index: -1, siblingTypes: [] };
+}
+
+/**
  * A control for `kind: "image"` props, supplied by the caller.
  *
  * Optional, and only the browser-side config passes one: a published page
@@ -288,6 +326,13 @@ export interface PuckConfigOptions {
    */
   style?: boolean;
   styleField?: (props: Record<string, unknown>) => React.ReactElement;
+
+  /**
+   * What draws a node's `morph`: a page's look for one block
+   * (@elkdonis/direct-edit's MorphMark). Passed by a host in both its server
+   * and client configs. Without one the prop is removed and ignored.
+   */
+  morph?: ComponentType<{ def: BlockDef; morph: unknown; editing: boolean; children?: ReactNode }>;
 }
 
 /**
@@ -315,6 +360,7 @@ export function buildPuckConfig({
   style: styleEnabled = true,
   styleField,
   richText = false,
+  morph: MorphMark,
 }: PuckConfigOptions = {}): Config {
   // Typed as Puck's own map rather than Record<string, unknown>, so the
   // compiler actually checks that toPuckFields() produces field shapes Puck
@@ -395,6 +441,18 @@ export function buildPuckConfig({
       fields[STYLE_PROP] = { type: "custom", label: "Style", render: styleField } as unknown as (typeof fields)[string];
     }
 
+    // `morph` gets a field of its own that the panel never shows. Puck's editor
+    // runs its field transforms over props it has no field for, and matches by
+    // name: a look on a part called `title` (morph.parts.title) was swapped for
+    // the inline editor of the block's `title` field, so the block drew no look
+    // in Puck's editor (verified 2026-11-06, harness/frankenstein). A custom
+    // field has no transform, so Puck passes the value through untouched.
+    // Published pages were never affected: <Render> transforms only slots and
+    // rich text, by field path.
+    if (MorphMark) {
+      fields.morph = { type: "custom", visible: false, render: () => null } as unknown as (typeof fields)[string];
+    }
+
     components[def.id] = {
       label: def.label,
       fields,
@@ -407,9 +465,14 @@ export function buildPuckConfig({
         ? {
             resolveData: async (
               data: { props: Record<string, unknown> },
-              ctx: { metadata?: Record<string, unknown>; trigger?: string }
+              ctx: { metadata?: Record<string, unknown>; trigger?: string; parent?: PlacementParent | null }
             ) => {
-              const props = await remember(def.id, resolve, data.props, ctx.metadata ?? {}, ctx.trigger);
+              // Where the block sits (Puck passes the parent in the editor and in
+              // resolveAllData alike), as `metadata.placement`. Additive: a resolver
+              // that never reads it is unaffected, and `remember` only re-runs a
+              // resolver for a move when it READ placement (it tracks keys read).
+              const metadata = { ...(ctx.metadata ?? {}), placement: placementOf(data.props.id, ctx.parent ?? null) };
+              const props = await remember(def.id, resolve, data.props, metadata, ctx.trigger);
               noteResolvedKeys(def.id, props);
               // readOnly tells the editor these props belong to the resolver,
               // so the fields panel locks them instead of offering an author a
@@ -439,15 +502,30 @@ export function buildPuckConfig({
             }
           : (block.Component as ComponentType<never>);
 
+        // A page's look for this block. Off the props before anything below, so
+        // a client component never receives it. With nothing set it renders the
+        // block alone, so an unstyled page's markup is unchanged. Innermost, so
+        // the marker stays right before the block's root whatever a site wraps
+        // around it. In an editor it always goes through the mark, which keeps
+        // one element shape: the first look set must not remount the block.
+        const morphed = function Morphed(props: Record<string, unknown>) {
+          const { morph, ...rest } = props;
+          const drawn = createElement(inner as ComponentType<never>, rest as never);
+          if (!MorphMark) return drawn;
+          const puck = props.puck as { boxEditing?: boolean; isEditing?: boolean } | undefined;
+          const editing = !!(puck?.boxEditing || puck?.isEditing);
+          return morph || editing ? createElement(MorphMark, { def, morph, editing }, drawn) : drawn;
+        };
+
         // The per-block style wraps the block itself; with nothing set it
         // renders the block alone, so an unstyled page's markup is unchanged.
         const base = styled
           ? function Styled(props: Record<string, unknown>) {
-              const drawn = createElement(inner as ComponentType<never>, props as never);
+              const drawn = createElement(morphed as ComponentType<never>, props as never);
               const settings = props[styled.name];
               return settings ? createElement(styled.wrap, { settings }, drawn) : drawn;
             }
-          : inner;
+          : morphed;
 
         // Outermost of the block's own output, inside the editor chrome. With
         // nothing set it renders the block alone.

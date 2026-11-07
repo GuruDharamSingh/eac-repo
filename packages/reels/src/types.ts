@@ -9,7 +9,112 @@
 // local file server. One conversion, in the bundle, for both.
 // ============================================================================
 
-export type ReelTemplateId = 'artwork-reel';
+export type ReelTemplateId = 'artwork-reel' | 'clip';
+
+/** The clip template's frame: 16:9, 9:16 or 1:1. */
+export type ReelFormat = 'landscape' | 'portrait' | 'square';
+
+/** Kinds of overlay on a clip reel (templates/clip.tsx). */
+export type ReelOverlayKind = 'title' | 'lower' | 'caption' | 'quote' | 'bug' | 'image' | 'ticker' | 'fx' | 'text' | 'subtitles' | 'sound';
+
+/**
+ * One overlay on the clip template's timeline. `at` and `seconds` are in the
+ * edited clip's time (after cuts); `seconds` 0 runs to the end of the clip.
+ * Fields by kind:
+ *   title    text, sub (subtitle)           dims the frame
+ *   lower    text (name), sub (role), style lower third
+ *   caption  text, place                    a line of text, bottom or top
+ *   quote    text, sub (who said it)        dims the frame
+ *   bug      text, corner                   short label in a corner
+ *   image    image, corner, size            a picture (logo) in a corner
+ *   ticker   text, sub (label)              scrolling band along the bottom
+ *   fx       fx (catalog id), sub (a call's price line)
+ *                                           a Collect Art video FX with alpha
+ *                                           (templates/fx-catalog.ts); a one-shot
+ *                                           or transition lasts its own length,
+ *                                           a loop repeats for `seconds`
+ *   text     text, x, y, size, color, font, weight, align, box
+ *                                           free text placed anywhere
+ *   subtitles cues, place, size, color, font, box, highlight
+ *                                           one item for the whole clip; cues are
+ *                                           in SOURCE seconds, so they follow the
+ *                                           cuts (a cut-out cue never shows)
+ *   sound    sound, volume                  a sound effect played at `at` for
+ *                                           `seconds` (its length); nothing drawn
+ */
+export interface ReelOverlayItem {
+  id: string;
+  kind: ReelOverlayKind;
+  at: number;
+  seconds: number;
+  text?: string;
+  sub?: string;
+  style?: 'panel' | 'slash' | 'reveal' | 'fade';
+  corner?: 'tl' | 'tr' | 'bl' | 'br';
+  place?: 'top' | 'bottom';
+  image?: ReelMediaRef;
+  /** image: width as a percentage of the frame's short side (5-60).
+   *  text, subtitles: letter height as a percentage of the short side (2-20). */
+  size?: number;
+  /** fx: the FX catalog entry's id (templates/fx-catalog.ts). */
+  fx?: string;
+  /** text: centre of the text in % of the frame (0-100). */
+  x?: number;
+  y?: number;
+  /** text, subtitles: #rrggbb. */
+  color?: string;
+  font?: 'serif' | 'sans' | 'mono';
+  weight?: 'normal' | 'bold';
+  align?: 'left' | 'center' | 'right';
+  /** text, subtitles: a dark box behind the text. */
+  box?: boolean;
+  /** subtitles: the lines, in source seconds. */
+  cues?: ReelCue[];
+  /** subtitles: colour of the word being spoken (#rrggbb); empty = no highlight. */
+  highlight?: string;
+  /** sound: the effect (network Sounds library or the person's own); `seconds` is its length. */
+  sound?: ReelMediaRef;
+  /** sound: 0-1.5, default 1. */
+  volume?: number;
+}
+
+/** A spoken word, in seconds of the source file; `b` marks the start of a phrase. */
+export interface ReelWord {
+  w: string;
+  s: number;
+  e: number;
+  b?: 1;
+}
+
+/**
+ * One subtitle line, in source seconds. `words` are the transcript's words
+ * for word-by-word highlight; editing the text drops them (the line then
+ * shows as plain text for its span).
+ */
+export interface ReelCue {
+  id: string;
+  from: number;
+  to: number;
+  text: string;
+  words?: ReelWord[];
+}
+
+/** The clip template's overlays. */
+export interface ReelOverlays {
+  items?: ReelOverlayItem[];
+  /** #rrggbb for bars and rules. */
+  accent?: string;
+  /** Before 2026-11-02 (one of each); read into `items` by overlayItems(). */
+  title?: { text: string; subtitle?: string; seconds?: number };
+  lowerThird?: { name: string; role?: string; at?: number; seconds?: number; style?: 'panel' | 'slash' | 'reveal' | 'fade' };
+  bug?: { text: string; corner?: 'tl' | 'tr' | 'bl' | 'br' };
+}
+
+/** A part of the source kept in the edit, in source seconds. */
+export interface ReelSegment {
+  from: number;
+  to: number;
+}
 
 export interface ReelMediaRef {
   /** Nextcloud path (or, in folder mode, a local file name). */
@@ -25,6 +130,10 @@ export interface ReelClipRef extends ReelMediaRef {
   duration?: number;
   /** The clip has speech: music is lowered under it. Default true. */
   voice?: boolean;
+  /** Length of the whole source file, once known. */
+  sourceSeconds?: number;
+  /** Clip template: the parts kept, in order; absent = trimStart + duration. */
+  segments?: ReelSegment[];
 }
 
 export interface ReelEdit {
@@ -41,6 +150,12 @@ export interface ReelEdit {
   extra?: (ReelMediaRef & { kind: 'image' }) | (ReelClipRef & { kind: 'video' });
   endCard?: { title?: string; subtitle?: string; link?: string };
   music?: ReelMediaRef & { volume?: number };
+  /** Clip template: frame shape, how the clip fills it, and the overlays. */
+  format?: ReelFormat;
+  fit?: 'cover' | 'contain';
+  overlays?: ReelOverlays;
+  /** Clip template: even out the sound to -16 LUFS after rendering (default on; render.mjs levelAudio). */
+  levelAudio?: boolean;
 }
 
 export interface ReelInput {
@@ -127,6 +242,7 @@ export function toArtworkReelProps({ edit, urls, fallbackName }: ReelInput): Art
 /** Slots the renderer cannot do without. */
 export function missingForRender(edit: ReelEdit): string[] {
   const out: string[] = [];
+  if (edit.template === 'clip') return edit.clip?.path ? out : ['clip'];
   if (!edit.artwork?.path) out.push('artwork');
   if (!edit.clip?.path) out.push('clip');
   return out;

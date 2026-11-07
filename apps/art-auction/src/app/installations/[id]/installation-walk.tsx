@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { HallwayExperience, type HallwayPiece, type Placement, type SceneLighting } from "@elkdonis/three/hallway";
+import { HallwayExperience, type HallwayPiece, type Placement, type SceneLighting, type SceneView } from "@elkdonis/three/hallway";
 import { ART_FRAME_STYLES } from "@/lib/frame-styles";
 import type { InstallationArtwork, InstallationPiece } from "@/lib/installations";
 import { venueFor } from "@/lib/venues";
@@ -16,6 +16,7 @@ export function InstallationWalk({
   pieces,
   venueId,
   lighting,
+  view = null,
 }: {
   artworks: InstallationArtwork[];
   pieces: InstallationPiece[];
@@ -23,7 +24,10 @@ export function InstallationWalk({
   venueId: string;
   /** `art_installation.scene.lighting`. */
   lighting: SceneLighting;
+  /** `art_installation.scene.view`: the view the curator chose to open on. */
+  view?: SceneView | null;
 }) {
+  const initialWall = React.useMemo(() => (view ? { side: view.side, s: view.s } : null), [view]);
   const venue = React.useMemo(() => venueFor(venueId), [venueId]);
   const byId = React.useMemo(() => new Map(artworks.map((a) => [a.id, a])), [artworks]);
   const hallPieces = React.useMemo<HallwayPiece[]>(
@@ -91,6 +95,8 @@ export function InstallationWalk({
       placements={placements}
       frames={ART_FRAME_STYLES}
       lighting={lighting}
+      initialView={view?.mode}
+      initialWall={initialWall}
       height="min(78vh, 760px)"
       renderDetail={renderDetail}
       fallback={

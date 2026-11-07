@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { canEditProfile, getProfileBySlug, getWritingPost } from "@elkdonis/services";
-import { ArticleView } from "@elkdonis/cms-ui/article";
+import { ArticleView, ExternalComments } from "@elkdonis/cms-ui/article";
+import { listExternalComments } from "@elkdonis/services";
 import { WritingDesk } from "@elkdonis/cms-ui/writing";
 import "@elkdonis/cms-ui/editor.css";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
@@ -64,6 +65,8 @@ export default async function WritingPiecePage({ params, searchParams }: Props) 
   const editable = Boolean(user && (await canEditProfile(user.id, profile.userId)));
 
   const post = await getWritingPost(profile.userId, piece, { includeDrafts: editable });
+
+  const externalComments = post ? await listExternalComments(post.id) : [];
   if (!post) notFound();
 
   const key = profile.slug ?? profile.userId;
@@ -117,6 +120,8 @@ export default async function WritingPiecePage({ params, searchParams }: Props) 
               <a href={`${basePath}/${post.slug}?edit=1`}>Edit this piece →</a>
             </p>
           ) : null}
+          {/* Comments left on the Facebook or Instagram copy of this piece (migration 225). */}
+          <ExternalComments comments={externalComments} />
         </ArticleView>
       </main>
     </>

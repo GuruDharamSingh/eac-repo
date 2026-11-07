@@ -1,0 +1,10 @@
+; danamccool.com — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN danamccool.com.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+www	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+em6443	14400	IN	CNAME	u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s1._domainkey	14400	IN	CNAME	s1.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s2._domainkey	14400	IN	CNAME	s2.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false

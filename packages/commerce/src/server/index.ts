@@ -105,6 +105,7 @@ export {
   createEtransferOrder,
   switchOrderToEtransfer,
   recordStripeCheckout,
+  recordCheckoutCustomer,
   confirmOrderPaid,
   confirmEtransferReceived,
   cancelOrder,

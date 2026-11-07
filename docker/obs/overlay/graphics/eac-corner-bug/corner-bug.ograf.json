@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-corner-bug",
+  "version": "1.0.0",
+  "name": "Corner bug",
+  "description": "A short label held in one corner for the whole programme.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string", "title": "Text", "default": "Elkdonis Arts Collective", "maxLength": 60, "gddType": "single-line" },
+      "corner": { "type": "string", "title": "Corner", "enum": ["tl", "tr", "bl", "br"], "default": "tr", "gddType": "select", "gddOptions": { "labels": {"tl": "Top left", "tr": "Top right", "bl": "Bottom left", "br": "Bottom right"} } },
+      "accent": { "type": "string", "title": "Accent", "default": "#8a6d1f", "gddType": "color-rrggbb" }
+    }
+  }
+}

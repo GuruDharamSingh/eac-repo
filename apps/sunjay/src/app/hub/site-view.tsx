@@ -1,4 +1,7 @@
 import "@elkdonis/cms-ui/hubsite.css";
+import { SeriesFace } from "@elkdonis/cms-ui/hub";
+import { SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import { hubSeriesCards } from "@/lib/public-site";
 import { ChatCard } from "@elkdonis/chat";
 import {
   getMeetingAttendance,
@@ -96,6 +99,7 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
   ]);
 
   // The chat, as the card hub loads it.
+  const seriesCards = await hubSeriesCards();
   const name = profile?.displayName?.trim() || viewer.email;
   const [chatMessages, chatIdentity, chatRoomUrl] = chatRoom
     ? await Promise.all([
@@ -171,6 +175,16 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
         </div>
 
         <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
+
+        {seriesCards.length > 0 && (
+          <section aria-label="Series">
+            <SurfaceCardGrid>
+              {seriesCards.map((s) => (
+                <SeriesFace key={s.id} series={s} canPlan={viewer.canEdit} timeZone={TIME_ZONE} plannerHref={`/hub/series/${s.id}`} />
+              ))}
+            </SurfaceCardGrid>
+          </section>
+        )}
 
         <div className="eac-hs-two eac-hs-two--portrait">
           <HubPortrait name={name} avatarUrl={profile?.avatarUrl ?? null} centerHref="/center" />

@@ -22,11 +22,15 @@ export type {
   PropKind,
   PropValue,
   SelectOption,
+  PartDef,
+  PartMap,
+  TokenDef,
 } from "./types";
 
 export { Region } from "./slot";
 export { Paragraphs, toParagraphs, RichText, isRichHtml, textToHtml, hasText, sanitizeRichValues } from "./text";
 export { EDIT_ITEM_ATTR, editItem, parseEditItem } from "./edit-item";
+export { OPENS_PROP, openedAttrs, type Opened } from "./opens";
 export type { RegionProps, SlotRenderer, SlotValue } from "./slot";
 export { defineBlock, createCatalogue, type Catalogue, type PropsOf } from "./registry";
 export { coerceProps, propsFromAttributes, type RawProps } from "./coerce";
@@ -47,6 +51,9 @@ import { sectionBanner } from "./blocks/section-banner";
 import { cycleBadge } from "./blocks/cycle-badge";
 import { threadFeed } from "./blocks/thread-feed";
 import { splitRow } from "./blocks/split-row";
+import { stickySplit } from "./blocks/sticky-split";
+import { tabSet } from "./blocks/tab-set";
+import { accordionSet } from "./blocks/accordion-set";
 import { grid } from "./blocks/grid";
 import { storeFrame } from "./blocks/store-frame";
 import { storeHeader } from "./blocks/store-header";
@@ -95,6 +102,9 @@ export const SHARED_BLOCKS = [
   flowColumn,
   cardGrid,
   divider,
+  stickySplit,
+  tabSet,
+  accordionSet,
   // Headers
   sectionHeading,
   // Content

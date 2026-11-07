@@ -3,10 +3,10 @@ import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { listSeriesForPage, type MeetingSeries, type SeriesSession } from "@elkdonis/services";
 import { nextPublicSession } from "@/lib/series";
-import { dateParts, seriesZones, timeInZones, weekdayPlural } from "@/lib/series-time";
 import { PublicBanner, PublicFooter, PublicHeader, PublicShell } from "@/components/site/chrome";
-import { EventStage, type StageSlide } from "@/components/site/event-stage";
-import { JoinFrame } from "@/components/site/join-frame";
+import { EventStage, type StageSlide } from "@elkdonis/series-site/components/event-stage";
+import { seriesStageSlide } from "@elkdonis/series-site/stage";
+import { JoinFrame } from "@elkdonis/series-site/components/join-frame";
 import { ArtGallery, type GalleryArt } from "@/components/site/art-gallery";
 import { listDirectory } from "@/lib/directory";
 
@@ -35,52 +35,8 @@ export default async function HomePage() {
 
   const slides: StageSlide[] = [];
   /** One slide for a series: its next published week, else the series itself. */
-  const slideFor = (s: MeetingSeries, week: SeriesSession | null, label: string): StageSlide => {
-    const { zone, zones } = seriesZones(s);
-    const pres = s.presentation ?? {};
-    const [head, em] = splitTitle(s.title);
-    const href = `/series/${s.slug}`;
-    if (!week) {
-      return {
-        kind: "Series",
-        eyebrow: entries.length > 1 ? "Series" : "Current series",
-        title: head,
-        titleEm: em,
-        lede: pres.lede ?? s.excerpt ?? null,
-        facts: s.scheduledAt
-          ? [
-              { icon: "calendar", text: weekdayPlural(s.scheduledAt, zone) },
-              { icon: "clock", text: timeInZones(s.scheduledAt, zones) },
-            ]
-          : [],
-        actions: [{ label: "About the series", href, primary: true }],
-        imageUrl: s.coverImageUrl ?? null,
-        imageFrame: s.cover?.kind === "image" ? s.cover.frame ?? null : null,
-      };
-    }
-    const d = dateParts(week.at, zone);
-    return {
-      kind: "Weekly series",
-      eyebrow: entries.length > 1 ? "Series" : "Current series",
-      title: head,
-      titleEm: em,
-      lede: pres.lede ?? s.excerpt ?? null,
-      facts: [
-        { icon: "calendar", text: `${label} · ${d.long}` },
-        { icon: "clock", text: timeInZones(week.at, zones) },
-        { icon: "video", text: s.format === "in_person" ? s.location ?? "In person" : "Online" },
-      ],
-      // One call to action (2026-10-10): the series page, from its top.
-      actions: [{ label: "See all sessions", href, primary: true }],
-      imageUrl: week.coverStillUrl ?? s.coverImageUrl ?? null,
-      imageFrame: week.coverStillUrl ? week.coverFrame : s.cover?.kind === "image" ? s.cover.frame ?? null : null,
-      tag: `${label} · ${d.weekday} ${d.day} ${d.month}`,
-      caption: {
-        title: week.title ?? "To be announced",
-        sub: `Session ${week.number}${week.host?.displayName ? ` · hosted by ${week.host.displayName}` : ""}`,
-      },
-    };
-  };
+  const slideFor = (s: MeetingSeries, week: SeriesSession | null, label: string): StageSlide =>
+    seriesStageSlide(s, { week, label, many: entries.length > 1, onlineLabel: "Online" });
   entries.forEach((e, i) => {
     const next = nextPublicSession(e.series);
     slides.push(slideFor(e.series, next, next ? (next.isNext ? "This week" : "Next session") : ""));
@@ -114,7 +70,7 @@ export default async function HomePage() {
       {/* The current series first, then who we are (developer, 2026-10-13;
           was the other way round from 2026-10-10). */}
       <div className="ifs-wrap ifs-stage-wrap">
-        <EventStage slides={slides} />
+        <EventStage slides={slides} blankMark={{ src: "/ifac-lettering.png", alt: "IFAC" }} />
       </div>
 
       <div className="ifs-wrap">
@@ -190,15 +146,6 @@ const AUCTION_SLIDE: StageSlide = {
 async function landingSeries() {
   const entries = await listSeriesForPage(siteConfig.orgId, { count: 8 }).catch(() => []);
   return entries.filter((e) => e.inLanding && !e.ended);
-}
-
-/** "Art for Non-Professionals" → ["Art for", "Non-Professionals"] (italic tail). A plain
- * hyphen: Cormorant Garamond draws U+2011 as a cross-like glyph (2026-10-10). */
-function splitTitle(title: string): [string, string | null] {
-  const words = title.split(" ");
-  if (words.length < 2) return [title, null];
-  const n = words.length >= 5 ? 2 : 1;
-  return [words.slice(0, -n).join(" "), words.slice(-n).join(" ")];
 }
 
 const GALLERY_MAX = 24;

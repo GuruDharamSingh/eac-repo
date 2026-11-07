@@ -1,5 +1,6 @@
 import { AnalyticsBeacon } from "@elkdonis/analytics/beacon";
 import "./globals.css";
+import "@/components/site/pts.css";
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
@@ -45,11 +46,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const talkBaseUrl =
     process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
 
-  // "general" is the forum's private catch-all, not a page — see migration 150.
-  const offerings = feeds
-    .filter((f) => f.isPublic && f.slug !== "general")
-    .map((f) => ({ slug: f.slug, title: f.name }));
-
   return (
     <html
       lang="en"
@@ -84,7 +80,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             signedIn={Boolean(viewer)}
             canEdit={canEdit}
             isMember={Boolean(viewer?.isMember)}
-            offerings={offerings}
           />
           <main className="flex-1">{children}</main>
           <SiteFooter content={sections.footer} />

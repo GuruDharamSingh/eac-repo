@@ -49,7 +49,10 @@
     "./store.css": "./src/store/store.css",
     "./email-theme.css": "./src/email/email-theme.css",
     "./data-policy": "./src/data-policy/index.ts",
-    "./data-policy.css": "./src/data-policy/data-policy.css"
+    "./data-policy.css": "./src/data-policy/data-policy.css",
+    "./manage": "./src/manage/index.tsx",
+    "./manage/client": "./src/manage/client.tsx",
+    "./manage.css": "./src/manage/manage.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

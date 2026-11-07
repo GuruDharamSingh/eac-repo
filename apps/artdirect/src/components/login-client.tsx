@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signInWithPassword, signUp } from "@elkdonis/auth-client";
+import { TurnstileField, turnstileEnabled } from "@elkdonis/cms-ui/auth";
 
 const card: React.CSSProperties = {
   maxWidth: 420,
@@ -42,16 +43,24 @@ export function LoginClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Turnstile (2026-11-06): signup is refused without a token when the app has
+  // TURNSTILE_SECRET_KEY. A token is single-use, so a failed attempt resets it.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const awaitingTurnstile = mode === "signup" && turnstileEnabled && !turnstileToken;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBusy(true);
-    const fn = mode === "signin" ? signInWithPassword : signUp;
-    const { user, error: err } = await fn(email, password);
+    const { user, error: err } =
+      mode === "signin"
+        ? await signInWithPassword(email, password)
+        : await signUp(email, password, undefined, undefined, turnstileToken ?? undefined);
     if (err) {
       setBusy(false);
       setError(err);
+      if (mode === "signup") setTurnstileReset((n) => n + 1);
       return;
     }
     if (!user) {
@@ -83,9 +92,15 @@ export function LoginClient() {
 
       {error && <p style={{ color: "#8c3b3b", fontWeight: 700, marginTop: "0.75rem" }}>{error}</p>}
 
+      {mode === "signup" && (
+        <div style={{ marginTop: "1rem" }}>
+          <TurnstileField onToken={setTurnstileToken} resetSignal={turnstileReset} />
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || awaitingTurnstile}
         style={{ marginTop: "1.25rem", width: "100%", background: "#1a1a1a", color: "#f7f1e3", border: "none", padding: "0.65rem", letterSpacing: 1, textTransform: "uppercase", fontFamily: "inherit", fontWeight: 700, cursor: "pointer" }}
       >
         {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}

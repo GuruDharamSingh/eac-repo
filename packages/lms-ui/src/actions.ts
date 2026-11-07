@@ -45,6 +45,29 @@ export function textToHtml(text: string): string {
   }).join("\n");
 }
 const FORM_SETTINGS = new Set(["minutes", "practice", "alternative", "prompt"]);
+/**
+ * A task step's `task` from the studio's picker. The field is absent on other
+ * step types: then the step keeps whatever task it had. An empty choice
+ * removes it. Scope comes from the host's catalogue, else stays as it was.
+ */
+function withTask(settings: Record<string, unknown>, fd: FormData, catalogue: LmsConnectors["taskCatalogue"]): Record<string, unknown> {
+  if (!fd.has("task")) return settings;
+  const id = str(fd, "task").slice(0, 80);
+  const { task: prev, ...rest } = settings as { task?: { id?: string; scope?: string } };
+  if (!id) return rest;
+  const entry = catalogue?.find((t) => t.id === id);
+  const scope = entry?.scope ?? (prev?.id === id && prev?.scope === "org" ? "org" : "person");
+  // The task's own choices, each checked against its closed list; a choice
+  // the form did not send keeps the saved one when the task is unchanged.
+  const params: Record<string, string> = {};
+  for (const p of entry?.params ?? []) {
+    const sent = str(fd, `task_param_${p.name}`);
+    const kept = prev?.id === id ? (prev as { params?: Record<string, string> }).params?.[p.name] : undefined;
+    const v = [sent, kept].find((x) => x && p.options.some((o) => o.value === x));
+    if (v) params[p.name] = v;
+  }
+  return { ...rest, task: { id, scope, ...(Object.keys(params).length ? { params } : {}) } };
+}
 /** The settings the studio form does not own, kept across a save. */
 function keepSettings(s: Record<string, unknown> | undefined): Record<string, unknown> {
   return Object.fromEntries(Object.entries(s ?? {}).filter(([k]) => !FORM_SETTINGS.has(k)));
@@ -197,7 +220,7 @@ export async function handleLmsAction({ request, action, connectors }: { request
         summary: str(fd, "summary") || null, bodyHtml: textToHtml(str(fd, "body")),
         // Keys this form does not edit (a task step's `task`, anything a
         // seed wrote) ride through: upsertStepDraft replaces settings whole.
-        settings: { ...keepSettings(before?.settings), ...(minutes > 0 ? { minutes } : {}), ...(str(fd, "practice") ? { practice: str(fd, "practice") } : {}), ...(str(fd, "alternative") ? { alternative: str(fd, "alternative") } : {}), ...(str(fd, "prompt") ? { prompt: str(fd, "prompt") } : {}) },
+        settings: withTask({ ...keepSettings(before?.settings), ...(minutes > 0 ? { minutes } : {}), ...(str(fd, "practice") ? { practice: str(fd, "practice") } : {}), ...(str(fd, "alternative") ? { alternative: str(fd, "alternative") } : {}), ...(str(fd, "prompt") ? { prompt: str(fd, "prompt") } : {}) }, fd, connectors.taskCatalogue),
         refs: { ...(threadId ? { threadId } : {}), ...(media.length ? { media } : {}), ...(links.length ? { links } : {}) },
       });
       return r.ok === false ? fail(r.error) : done(back, "Saved to the working copy. Readers see it when you publish.");

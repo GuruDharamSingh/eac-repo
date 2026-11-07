@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getSiteSections } from "@/lib/data";
 import { SectionForm, type Field } from "@/components/manage/section-form";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Hero, banner & copy" };
 
@@ -19,6 +20,10 @@ const MISSION: Field[] = [
 const ABOUT: Field[] = [{ key: "body", label: "The About page", type: "richtext" }];
 
 export default async function Page() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor("/manage");
   const s = await getSiteSections();
   return (
     <div style={{ display: "grid", gap: 30 }}>

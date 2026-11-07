@@ -57,7 +57,9 @@ function extractSubdomain(hostHeader: string | null): string | null {
   const network = networkHost();
   if (network !== "localhost" && hostNoPort.endsWith(`.${network}`)) {
     const sub = hostNoPort.slice(0, -(network.length + 1));
-    if (!sub || RESERVED_SUBDOMAINS.has(sub)) return null;
+    // One label only: a.b.arts-collective.com is never an org (scanner noise
+    // that 500'd as slug "a.b", 2026-11-01).
+    if (!sub || sub.includes(".") || RESERVED_SUBDOMAINS.has(sub)) return null;
     return sub;
   }
 
@@ -141,6 +143,23 @@ function rewriteForOrg(
   //
   // /api, /_next and file requests never reach here; the matcher excludes them.
   const segments = pathname.split("/").filter(Boolean);
+
+  // An org's host shows only that org. /sites/<slug>/… is the internal tree
+  // the rewrite targets; typed on an org host it would otherwise render ANY
+  // org (tara.arts-collective.com/sites/ifac returned 200, 2026-11-01).
+  // Its own slug goes to the canonical path; any other slug is a 404.
+  if (segments[0] === "sites") {
+    if (segments[1] && segments[1].toLowerCase() === slug.toLowerCase()) {
+      const canonical = req.nextUrl.clone();
+      canonical.pathname = "/" + segments.slice(2).join("/");
+      return NextResponse.redirect(canonical, 308);
+    }
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+
   if (segments.length > 0 && !PASSTHROUGH_PATHS.has(segments[0])) {
     url.pathname = `/sites/${slug}/${segments.join("/")}`;
     return NextResponse.rewrite(url, init);

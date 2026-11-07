@@ -1,0 +1,525 @@
+/* ==========================================================================
+   The back office: /manage, /account. Plain `.ktp-m*` CSS on the site's
+   tokens (cream/terracotta, globals.css). The shared Tailwind-flavoured
+   pieces inside it (the picture uploader, the rich-text editor, PayoutSetup)
+   read the shadcn token names the palette already defines.
+   ========================================================================== */
+
+.ktp-m {
+  width: min(70rem, calc(100% - 32px));
+  margin-inline: auto;
+  padding-block: clamp(1.25rem, 3vw, 2.5rem) clamp(2rem, 5vw, 4rem);
+  color: hsl(var(--foreground));
+}
+.ktp-m--narrow {
+  width: min(44rem, calc(100% - 32px));
+}
+.ktp-m-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+.ktp-m-title {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.05;
+}
+.ktp-m-who {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-m-head-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.ktp-m-crumb {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+}
+.ktp-m-crumb a {
+  color: hsl(var(--muted-foreground));
+}
+
+/* tabs: ManageTabs (.mg-tabs, @elkdonis/cms-ui/manage.css); the space above them is this layout's */
+.mg-tabs {
+  margin-top: 1.25rem;
+}
+.ktp-m-body {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* cards, tiles, banners */
+.ktp-m-card {
+  padding: 1.25rem 1.4rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 4px);
+  background: hsl(var(--card));
+}
+.ktp-m-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+.ktp-m-card p {
+  margin: 0 0 0.75rem;
+  line-height: 1.55;
+}
+.ktp-m-card p:last-child {
+  margin-bottom: 0;
+}
+.ktp-m-fine {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+/* banners: <Notice> (.mg-notice, @elkdonis/cms-ui/manage.css) */
+.ktp-m-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.ktp-m-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.ktp-m-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+.ktp-m-tile {
+  display: grid;
+  gap: 0.1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 4px);
+  background: hsl(var(--card));
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.ktp-m-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 26px -18px color-mix(in srgb, hsl(var(--foreground)) 50%, transparent);
+}
+.ktp-m-tile[data-hot] {
+  border-color: hsl(var(--primary));
+  background: color-mix(in srgb, hsl(var(--primary)) 7%, hsl(var(--card)));
+}
+.ktp-m-tile-n {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 2.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ktp-m-tile-l {
+  font-weight: 600;
+}
+.ktp-m-tile-s {
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-m-status {
+  display: inline-block;
+  margin: 0 0 0.6rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.ktp-m-status[data-tone="ok"] {
+  background: color-mix(in srgb, hsl(var(--secondary)) 55%, hsl(var(--background)));
+}
+.ktp-m-status[data-tone="warn"] {
+  background: color-mix(in srgb, hsl(var(--primary)) 18%, hsl(var(--background)));
+}
+.ktp-m-plain {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ktp-m-plain a,
+.ktp-m-fine a {
+  color: #8f3f28;
+}
+.ktp-m-kv {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+.ktp-m-kv > div {
+  display: flex;
+  gap: 1rem;
+}
+.ktp-m-kv dt {
+  width: 7rem;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-m-kv dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* feedback */
+.ktp-m-msg {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  color: hsl(var(--destructive));
+}
+.ktp-m-msg[data-ok] {
+  color: #3d6a52;
+}
+.ktp-m-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* bar, filters */
+.ktp-m-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.ktp-m-filters a {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.ktp-m-filters a[aria-current] {
+  background: hsl(var(--foreground));
+  border-color: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+
+/* lists: pieces and orders (a table on a wide screen, cards on a phone) */
+.ktp-m-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 4px);
+  background: hsl(var(--card));
+  overflow: hidden;
+}
+.ktp-m-row,
+.ktp-m-order {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 1.1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+.ktp-m-order {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+.ktp-m-list > li:first-child {
+  border-top: 0;
+}
+.ktp-m-thumb {
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 8px;
+  background: hsl(var(--muted));
+}
+.ktp-m-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ktp-m-row-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.15rem;
+  color: inherit;
+  text-decoration: none;
+}
+.ktp-m-row-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.ktp-m-row-meta,
+.ktp-m-order-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.9rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-m-order-top {
+  margin: 0;
+  color: inherit;
+}
+.ktp-m-price {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.ktp-m-row-side,
+.ktp-m-order-side {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: end;
+  text-align: right;
+}
+.ktp-m-row-links {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+.ktp-m-row-links a {
+  color: #8f3f28;
+}
+.ktp-m-badge {
+  display: inline-block;
+  padding: 0.12rem 0.6rem;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ktp-m-badge[data-tone="available"],
+.ktp-m-badge[data-tone="ok"] {
+  background: color-mix(in srgb, hsl(var(--secondary)) 55%, hsl(var(--background)));
+}
+.ktp-m-badge[data-tone="reserved"],
+.ktp-m-badge[data-tone="pending"] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.ktp-m-badge[data-tone="sold"] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+.ktp-m-badge[data-tone="sample"] {
+  background: transparent;
+  border: 1px dashed hsl(var(--input));
+  color: hsl(var(--muted-foreground));
+}
+
+/* "Shown as" segmented control */
+.ktp-m-seg-wrap {
+  display: grid;
+  justify-items: end;
+}
+.ktp-m-seg {
+  display: inline-flex;
+  border: 1px solid hsl(var(--input));
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ktp-m-seg button {
+  padding: 0.3rem 0.8rem;
+  border: 0;
+  border-left: 1px solid hsl(var(--input));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.ktp-m-seg button:first-child {
+  border-left: 0;
+}
+.ktp-m-seg button[aria-pressed="true"] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.ktp-m-seg button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ktp-m-retire {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+}
+
+.ktp-m-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+.ktp-m-order-actions .ktp-m-fine,
+.ktp-m-order-actions .ktp-m-msg {
+  flex-basis: 100%;
+  max-width: 22rem;
+}
+.ktp-btn--sm {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+/* the piece form */
+.ktp-m-form {
+  display: grid;
+  gap: 1.25rem;
+}
+.ktp-m-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.1rem;
+}
+.ktp-m-grid--4 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.ktp-m-span2 {
+  grid-column: 1 / -1;
+}
+.ktp-m-field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.ktp-m-field > span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+.ktp-m-form .ktp-input {
+  width: 100%;
+}
+.ktp-m-savebar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 0;
+  background: linear-gradient(to top, hsl(var(--background)) 70%, transparent);
+}
+@media (max-width: 760px) {
+  .ktp-m-grid,
+  .ktp-m-grid--4 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ktp-m-row {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+  .ktp-m-row-side,
+  .ktp-m-order-side {
+    grid-column: 1 / -1;
+    justify-items: start;
+    text-align: left;
+  }
+  .ktp-m-order {
+    grid-template-columns: 1fr;
+  }
+  .ktp-m-seg-wrap {
+    justify-items: start;
+  }
+  .ktp-m-order-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* The shared commerce components (PayoutSetup, EarningsStatement) read --pc-*. */
+.eac-commerce {
+  --pc-ink: hsl(var(--foreground));
+  --pc-ink-soft: hsl(var(--muted-foreground));
+  --pc-ink-faint: hsl(var(--muted-foreground));
+  --pc-line: hsl(var(--border));
+  --pc-mat: hsl(var(--muted));
+  --pc-surface: transparent;
+  --pc-accent: hsl(var(--primary));
+  --pc-on-accent: hsl(var(--primary-foreground));
+  --pc-radius: var(--radius);
+}
+/* The shared analytics dashboard, on the site's own control tokens (set in globals.css). */
+
+/* ── page anatomy: @elkdonis/cms-ui/manage (PageHeader, Toolbar,
+   EmptyState, Notice, ManageTabs, toasts), styled by its manage.css; only
+   this site's type and link colour on top. ───────────────────────────── */
+.mg-pagehead-title,
+.mg-empty-title {
+  font-weight: 400;
+}
+.mg-empty-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+}
+.mg-notice a,
+.mg-pagehead-desc a,
+.mg-empty-body a {
+  color: #8f3f28;
+}
+
+/* people */
+.ktp-m-person {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1.1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+.ktp-m-person-main {
+  display: grid;
+  min-width: 0;
+}
+.ktp-m-person-main b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ktp-m-handover {
+  display: grid;
+  gap: 0.75rem;
+}
+.ktp-m-linkbox {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, hsl(var(--secondary)) 22%, hsl(var(--card)));
+}
+.ktp-m-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+.ktp-m-bullets {
+  margin: 0 0 0.9rem;
+  padding-left: 1.2rem;
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ktp-m-tile {
+    transition: none;
+  }
+}

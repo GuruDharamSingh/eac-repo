@@ -10,11 +10,15 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
     "./edit-item": "./src/edit-item.ts",
+    "./contract": "./src/contract.ts",
+    "./opens": "./src/opens.ts",
+    "./record": "./src/record/index.ts",
+    "./record.css": "./src/record/record.css",
     "./blocks.css": "./src/blocks.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "test": "tsx scripts/smoke.mts"
+    "test": "tsx scripts/smoke.mts && tsx scripts/record.mts"
   },
   "peerDependencies": {
     "react": "^19",

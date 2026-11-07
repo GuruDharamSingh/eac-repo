@@ -44,6 +44,12 @@ export { CanvasDrag } from "./drag/canvas-drag";
 export { useFocusedItem } from "./drag/item-focus";
 
 export { templatesPlugin } from "./templates/templates-plugin";
+
+// Click into a block and change the look of its parts (2026-11-06). See parts/plugin.tsx.
+export { partsPlugin } from "./parts/plugin";
+export { partSelection, selectPart, onPartSelection } from "./parts/store";
+export type { PartsPluginOptions, PartsContract, PartsEntry, PartDecl, TokenDecl, PartLook, PartLookHelpers, PartSelection, PartPanelContext, PartPanelHandle, PartPanelMount, BlockPopupContext, BlockPopupHandle, BlockPopupOpen } from "./parts/types";
+export { blockPopupOpen } from "./parts/popup";
 export type { CanvasDragProps } from "./drag/canvas-drag";
 
 export { validatePage } from "./validate";

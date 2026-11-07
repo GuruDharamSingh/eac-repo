@@ -536,6 +536,8 @@ lat/lng on the row; syndication is a `settingsPanel` + `afterPublish` hook.
 
 ## History
 
+- 2026-11-01 (claude): Meetings kind (phase 2, §4.3 Event / Meeting). One tab: `event` and `meeting` are one shape and every live dated row is `meeting`, so the Events tab is gone from `STUDIO_KINDS`. The form is the shared field list (`cms-ui/compose/content-fields.ts`) through `ContentComposer`, split over the columns (`packages/studio/src/meeting/`, `/studio/meeting`): main = title, description, schedule, repeats, hosting, attendance, links and rooms; settings = cover, where it goes, status, page, remove. Explicit Save draft / Publish, no autosave. The save is org-parameterised in services (`meeting-content.ts`: `saveMeetingContent`, `loadMeetingContent`, `listOrgMeetings`, `removeMeetingContent`, `meetingComposeContext`), generalised from IFAC’s `saveContentAction` (rooms, rota hosts, calendar mirror, review rule) so a merged single app keeps one copy; the per-app copies are untouched. Owner/guide to create, author or owner/guide to edit; "Just me" cannot hold a meeting. Series are listed but read-only (planner). arts-collective: `lib/meeting-actions.ts`, `StudioApp`, `/studio?kind=meeting&id=`. Deployed in the 00:43 arts-collective build; service checked end to end on astromonarch (create, edit, guards, remove; test row deleted). Not yet: signed-in browser check, Plan ahead embed, series creation from the Studio, Workshops, Services, Questions.
+
 - 2026-10-04 (claude): §7.1 started. `packages/studio/src/frame.tsx`
   (`@elkdonis/studio/frame`): `StudioExtension`, `StudioColumns`,
   `StudioTopActions`/`StudioTopStatus`, `useStudioFrame`. `StudioShell` takes

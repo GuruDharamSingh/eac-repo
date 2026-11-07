@@ -284,6 +284,20 @@ async function loadPublished(orgId: string): Promise<ConsoleState["published"]> 
   };
 }
 
+/**
+ * For anyone who is not an owner or guide. OrgConsoleHost is a client component,
+ * so what it is handed goes to the browser whether or not a surface opens: the
+ * full state carries the roster's addresses, drafts and form responses, and a
+ * follower is anyone with an account (2026-11-04).
+ */
+export const EMPTY_CONSOLE_STATE: ConsoleState = {
+  drafts: { count: 0, recent: [] },
+  upcoming: { count: 0, rsvpTotal: 0, items: [] },
+  responses: { count: 0, recent: [] },
+  people: { total: 0, byRole: {}, all: [], recent: [], waiting: [] },
+  published: { count: 0, lastAt: null, recent: [] },
+};
+
 /** Everything the console shows, in one pass. */
 export async function getConsoleState(orgId: string): Promise<ConsoleState> {
   const [drafts, upcoming, responses, people, published] = await Promise.all([

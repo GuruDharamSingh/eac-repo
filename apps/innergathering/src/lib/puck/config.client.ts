@@ -1,6 +1,8 @@
 "use client";
 
-import { buildEditorConfig, type BlockResolvers } from "@elkdonis/page-builder";
+import { SHARED_BLOCKS, type Block } from "@elkdonis/blocks";
+import { BOX_BLOCKS, BOX_ROOT } from "@elkdonis/direct-edit/puck/blocks";
+import { buildEditorConfig, buildPuckConfig, type BlockResolvers } from "@elkdonis/page-builder";
 
 // ============================================================================
 // The catalogue as the EDITOR sees it.
@@ -34,7 +36,15 @@ const clientResolvers: BlockResolvers = {
   },
 };
 
+// Puck's editor opens box pages too: the box blocks are ordinary blocks to it.
+const blocks = [...SHARED_BLOCKS, ...(BOX_BLOCKS as unknown as Block<never>[])];
+
+/** The canvas editor draws with the published shape: the editor shape's chrome needs Puck's own context. */
+export const canvasConfig = buildPuckConfig({ resolvers: clientResolvers, blocks, root: BOX_ROOT });
+
 export const puckConfig = buildEditorConfig({
+  blocks,
+  root: BOX_ROOT,
   resolvers: clientResolvers,
   media: {
     // The same two endpoints the site's own composer uses, so a page block

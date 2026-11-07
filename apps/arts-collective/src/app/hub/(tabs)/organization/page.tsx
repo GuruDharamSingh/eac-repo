@@ -14,7 +14,7 @@ import { getOrgBySlug, getOrgFeed, getOfferingThread } from "@/lib/org";
 import { hasOrgHome } from "@/lib/puck/store";
 import { removeOrgHomeAction } from "@/lib/puck/actions";
 import { orgHomeUrl, orgHomeUrlMap } from "@/lib/org-url.server";
-import { getConsoleState, paymentsConfigured } from "@/lib/org-console";
+import { EMPTY_CONSOLE_STATE, getConsoleState, paymentsConfigured } from "@/lib/org-console";
 import { getCrossOrgForum } from "@/lib/org-forum";
 import { Button } from "@/components/ui/button";
 import { ConsoleFaces } from "@/components/hub/console/ConsoleFaces";
@@ -200,7 +200,7 @@ export default async function OrganizationTabPage({
 
   return (
     <OrgConsoleHost
-      state={consoleState}
+      state={canEdit ? consoleState : EMPTY_CONSOLE_STATE}
       orgId={selected.orgId}
       orgSlug={selected.orgSlug}
       orgName={selected.orgName}
@@ -402,6 +402,7 @@ export default async function OrganizationTabPage({
               orgId={selected.orgId}
               orgSlug={selected.orgSlug}
               paymentsReady={paymentsConfigured()}
+              follower={selected.role === "viewer"}
             />
 
             <section className="space-y-3 border-t border-border pt-6">

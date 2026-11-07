@@ -1,5 +1,7 @@
 import { db } from "@elkdonis/db";
-import { getOrgRole } from "@elkdonis/services";
+import { getIdentityIds, getOrgRole } from "@elkdonis/services";
+import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
+import { isAdmin } from "@elkdonis/auth-server";
 import { toSurfaceThread } from "@elkdonis/cms-ui/surface";
 import { requireUser } from "@/lib/session";
 
@@ -11,12 +13,11 @@ import { requireUser } from "@/lib/session";
  *
  * Access follows the THREAD, not the route. A published PUBLIC thread reads
  * for any member of the org, ORGANIZATION needs membership (which the gate
- * already established), and a draft needs an editor. Anything else answers
- * 404 rather than 403 — an unpublished item should not confirm it exists.
+ * already established), INVITE_ONLY needs its min_role, and a draft needs an
+ * editor (canViewThread). Anything else answers 404 rather than 403 — an
+ * unpublished item should not confirm it exists.
  */
 export const dynamic = "force-dynamic";
-
-const EDITOR_ROLES = new Set(["owner", "guide"]);
 
 export async function GET(
   _request: Request,
@@ -37,7 +38,8 @@ export async function GET(
   const [row] = await db<
     Array<{
       id: string; title: string; slug: string | null; kind: string;
-      status: string; visibility: string; excerpt: string | null;
+      status: string; visibility: string; min_role: string | null;
+      author_id: string | null; excerpt: string | null;
       body: string | null; cover_image_url: string | null;
       author_name: string | null; author_photo: string | null;
       published_at: Date | null; scheduled_at: Date | null;
@@ -50,7 +52,8 @@ export async function GET(
       rsvp_count: number; viewer_attending: boolean; pinned: boolean;
     }>
   >`
-    SELECT t.id, t.title, t.slug, t.kind, t.status, t.visibility, t.excerpt,
+    SELECT t.id, t.title, t.slug, t.kind, t.status, t.visibility, t.min_role,
+           t.author_id, t.excerpt,
            t.body, t.metadata->>'coverImageUrl' AS cover_image_url,
            u.display_name AS author_name, u.avatar_url AS author_photo,
            t.published_at, t.scheduled_at, t.duration_minutes, t.location,
@@ -69,9 +72,24 @@ export async function GET(
   `;
 
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
-  if (row.status !== "published" && !EDITOR_ROLES.has(role)) {
-    return Response.json({ error: "Not found" }, { status: 404 });
-  }
+  // Until 2026-11-04 this tested status only, so anyone with a role, a follower
+  // included, read a members-only or only-me thread by id. A piece written under
+  // a pen name is still its author's.
+  const mine = await getIdentityIds(user.id);
+  const readable = canViewThread(
+    {
+      visibility: row.visibility,
+      minRole: row.min_role,
+      authorId: row.author_id && mine.includes(row.author_id) ? user.id : row.author_id ?? "",
+      status: row.status,
+    },
+    {
+      userId: user.id,
+      role: role as ThreadRole,
+      isGlobalAdmin: await isAdmin(user.id).catch(() => false),
+    }
+  );
+  if (!readable) return Response.json({ error: "Not found" }, { status: 404 });
 
   return Response.json(
     toSurfaceThread(
@@ -99,7 +117,9 @@ export async function GET(
         isRsvpEnabled: row.is_rsvp_enabled,
         attendeeLimit: row.attendee_limit,
         rsvpDeadline: row.rsvp_deadline,
-        documentUrl: row.document_url,
+        // A public writable share: holding the link is the permission, so a
+        // follower (viewer role) reads the thread without it.
+        documentUrl: role === "viewer" ? null : row.document_url,
         videoLink: row.video_link,
       },
       // `pinned` rides in `extra` for the console's "Lead the site" action.

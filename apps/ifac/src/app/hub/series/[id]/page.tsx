@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { getMeetingSeries } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { requireOrgMember } from "@/lib/auth";
-import { SeriesPlannerPage } from "@/components/hub/SeriesPlannerPage";
+import { SeriesPlannerPage } from "@elkdonis/series-site/hub";
+import { seriesEmailsHref, seriesMailingsHref } from "@/lib/series-letters";
 
 /**
  * The Series planner as a page of the hub (members), reached from the
@@ -22,6 +23,8 @@ export default async function HubSeriesPage({ params }: { params: Promise<{ id: 
       canPlan={viewer.canEdit}
       timeZone={series.timeZone ?? "America/New_York"}
       publicHref={`/series/${series.slug}`}
+      emailsHref={seriesEmailsHref(series.id)}
+      mailingsHref={seriesMailingsHref(series.id)}
     />
   );
 }

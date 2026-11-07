@@ -20,7 +20,7 @@ import { contentFormSchema, slugifyTitle, type ContentFormValues } from "@/lib/c
 import { zonedInputToDate } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { deriveExcerpt, sanitizeRichText } from "@elkdonis/utils";
-import { ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
+import { SERIES_KIND, ensureUniqueThreadSlug, removeThreadAs } from "@elkdonis/services";
 
 /**
  * Server actions for the editorial surface.
@@ -201,11 +201,18 @@ export async function saveContentAction(
 
   try {
     if (threadId) {
-      const [existing] = await db<{ id: string }[]>`
-        SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG} LIMIT 1
+      const [existing] = await db<{ id: string; is_series: boolean }[]>`
+        SELECT id, (kind = ${SERIES_KIND} OR COALESCE(jsonb_typeof(metadata->'series') = 'object', false)) AS is_series
+        FROM threads WHERE id = ${threadId} AND org_id = ${ORG} LIMIT 1
       `;
       if (!existing) return { ok: false, error: "Not found" };
+      // This form writes kind, slug, section and schedule as a gathering. On a series that
+      // unmakes it (2026-11-03: the sessions lost their parent and the Zoom details were wiped).
+      if (existing.is_series) {
+        return { ok: false, error: `This is a series, so it is edited in the series planner: /hub/series/${existing.id}. Nothing was changed.` };
+      }
 
+      // Metadata: only this form's keys are replaced; other features keep theirs.
       await db`
         UPDATE threads SET
           kind             = ${data.kind},
@@ -216,7 +223,7 @@ export async function saveContentAction(
           excerpt          = ${excerpt},
           status           = ${data.status},
           visibility       = ${data.visibility},
-          metadata         = ${db.json(metadata)},
+          metadata         = (COALESCE(metadata, '{}'::jsonb) - 'coverImageUrl' - 'timeZone') || ${db.json(metadata)},
           is_meeting       = ${isMeeting},
           scheduled_at     = ${scheduledAt},
           duration_minutes = ${isMeeting ? (data.durationMinutes ?? null) : null},

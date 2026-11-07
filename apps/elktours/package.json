@@ -22,6 +22,7 @@
     "@elkdonis/chat": "workspace:*",
     "@elkdonis/cms-ui": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/direct-edit": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/forum-ui": "workspace:*",
@@ -63,7 +64,12 @@
     "@elkdonis/checkout": "workspace:*",
     "maplibre-gl": "^5.6.0",
     "three": "^0.184.0",
-    "3d-tiles-renderer": "^0.5.3"
+    "3d-tiles-renderer": "^0.5.3",
+    "@elkdonis/page-builder": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "@tiptap/core": "^2.8.0",
+    "exifr": "^7.1.3",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

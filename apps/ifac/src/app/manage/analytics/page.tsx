@@ -17,6 +17,10 @@ export default async function ManageAnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireIfacManager();
   const viewer = await getViewer();
   if (viewer?.role !== "owner") return <p style={{ padding: "1rem 0" }}>Visitor figures are visible to the site owner only.</p>;
   const sp = await searchParams;
@@ -29,3 +33,5 @@ export default async function ManageAnalyticsPage({
 
   return <AnalyticsDashboard data={data} title={`Visitors · ${siteConfig.orgName}`} basePath="/manage/analytics" />;
 }
+
+import { requireIfacManager } from "@/lib/manage-auth";

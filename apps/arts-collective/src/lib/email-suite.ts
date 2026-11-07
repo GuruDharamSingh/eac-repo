@@ -42,10 +42,15 @@ export interface EmailGuard {
 }
 
 /**
- * Resolve the org behind a slug and the viewer's standing in it.
+ * Resolve the org behind a slug, for its owners and guides only.
+ *
+ * The suite holds the org's address book and its inbox, so a role in the org is
+ * not enough: `/api/org/join` hands `viewer` to any signed-in person who names an
+ * org (2026-11-04: this admitted any role). ifac and innergathering gate the same
+ * data the same way.
  *
  * Returns null rather than throwing for every failure — not signed in, no such
- * org, not a member — because the caller turns all three into the same 404.
+ * org, not an editor — because the caller turns all three into the same 404.
  * Distinguishing them in the response would tell a stranger which org slugs
  * exist and who is in them.
  */
@@ -59,7 +64,7 @@ export async function guardOrgEmail(slug: string): Promise<EmailGuard | null> {
   if (!org) return null;
 
   const role = await getOrgRole(user.id, org.id);
-  if (!role) return null;
+  if (!role || !EDITOR_ROLES.includes(role)) return null;
 
   return {
     userId: user.id,
@@ -71,7 +76,7 @@ export async function guardOrgEmail(slug: string): Promise<EmailGuard | null> {
   };
 }
 
-/** A write. Same as the above but refuses anyone who cannot send. */
+/** A write. Kept separate from the read guard so each route says which it is. */
 export async function guardOrgEmailWrite(slug: string): Promise<EmailGuard | null> {
   const guard = await guardOrgEmail(slug);
   return guard?.canEdit ? guard : null;

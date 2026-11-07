@@ -113,6 +113,14 @@ export const heroBanner = defineBlock(
     memberSafe: true,
     styling: "tokens",
     resize: { height: "height" },
+    parts: {
+      root: { label: "Banner", sel: "> .blk-hero" },
+      image: { label: "Picture", sel: ".blk-hero-img", prop: "imageUrl", draws: { props: { imageUrl: "/x.jpg" } } },
+      wash: { label: "Wash", sel: ".blk-hero-wash" },
+      copy: { label: "Words", sel: ".blk-hero-copy" },
+      title: { label: "Title", sel: ".blk-hero-title", prop: "title" },
+      subtitle: { label: "Subtitle", sel: ".blk-hero-sub", prop: "subtitle", draws: { props: { subtitle: "A line" } } },
+    },
   },
   HeroBanner,
   () => ({

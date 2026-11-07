@@ -27,7 +27,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const profile = await getProfileBySlug(slug);
   if (!profile || !profile.directoryListed) return {};
-  return { title: `Writing — ${profile.displayName} — ArtDirect` };
+  const key = profile.slug ?? profile.userId;
+  return {
+    title: `Writing — ${profile.displayName} — ArtDirect`,
+    // Feed readers and importers (Substack, Ghost, WordPress) discover the feed here.
+    alternates: { types: { "application/rss+xml": `/${key}/writing/feed.xml` } },
+  };
 }
 
 export default async function WritingShelfPage({ params }: Props) {

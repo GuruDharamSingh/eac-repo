@@ -153,10 +153,23 @@ function stepDaysOf(pattern: string | null | undefined): number {
     case 'DAILY':
       return 1;
     case 'MONTHLY':
-      return 30; // matches recurrenceIntervalMs in @elkdonis/utils
+      return 30; // an estimate only: a monthly clock steps by calendar month (clockParts)
     default:
       return 7;
   }
+}
+
+/**
+ * The date `k` months after y-mo-d on the same weekday in the same week of the
+ * month. A fifth weekday falls back to the fourth in a month without one.
+ */
+function monthlyDate(y: number, mo: number, d: number, k: number): { y: number; mo: number; d: number } {
+  const weekday = new Date(Date.UTC(y, mo - 1, d)).getUTCDay();
+  const week = Math.ceil(d / 7);
+  const first = new Date(Date.UTC(y, mo - 1 + k, 1));
+  const target = 1 + ((weekday - first.getUTCDay() + 7) % 7) + (week - 1) * 7;
+  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  return { y: first.getUTCFullYear(), mo: first.getUTCMonth() + 1, d: target > last ? target - 7 : target };
 }
 
 function clockParts(clock: SeriesClock) {
@@ -170,8 +183,21 @@ function clockParts(clock: SeriesClock) {
   const stepDays = stepDaysOf(pattern) * ((pattern ?? '').toUpperCase() === 'WEEKLY' ? intervalWeeksOf(clock.intervalWeeks) : 1);
   const wall = wallClock(anchor, zone);
   const msPart = ((anchor % 1000) + 1000) % 1000;
-  const nth = (k: number) => zonedInstant(wall.y, wall.mo, wall.d + k * stepDays, wall.h, wall.mi, wall.s, msPart, zone);
-  return { anchor, zone, pattern, until, stepMs: stepDays * DAY_MS, nth };
+  const monthly = (pattern ?? '').toUpperCase() === 'MONTHLY';
+  // MONTHLY keeps the anchor's place in the month (the first Saturday stays the
+  // first Saturday, 2026-11-02): 30-day steps would leave the weekday at once.
+  const nth = (k: number) => {
+    if (!monthly) return zonedInstant(wall.y, wall.mo, wall.d + k * stepDays, wall.h, wall.mi, wall.s, msPart, zone);
+    const m = monthlyDate(wall.y, wall.mo, wall.d, k);
+    return zonedInstant(m.y, m.mo, m.d, wall.h, wall.mi, wall.s, msPart, zone);
+  };
+  /** The occurrence index at or just before `ms`, near enough to start a walk from. */
+  const indexNear = (ms: number) => {
+    if (!monthly) return Math.floor((ms - anchor) / (stepDays * DAY_MS));
+    const w = wallClock(ms, zone);
+    return (w.y - wall.y) * 12 + (w.mo - wall.mo);
+  };
+  return { anchor, zone, pattern, until, monthly, indexNear, stepMs: stepDays * DAY_MS, nth };
 }
 
 /**
@@ -184,7 +210,7 @@ export function seriesOccurrencesFrom(clock: SeriesClock, from: Date, count = 8)
   const limit = Math.max(1, Math.min(count, 104));
   if (!c.pattern) return c.anchor >= from.getTime() ? [new Date(c.anchor)] : [];
   const out: Date[] = [];
-  let k = Math.max(0, Math.floor((from.getTime() - c.anchor) / c.stepMs) - 1);
+  let k = Math.max(0, c.indexNear(from.getTime()) - 1);
   for (let guard = 0; guard < limit + 8 && out.length < limit; guard++, k++) {
     const t = c.nth(k);
     if (c.until !== null && t >= c.until) break;
@@ -199,7 +225,7 @@ export function seriesOccurrencesBefore(clock: SeriesClock, before: Date, count 
   if (!c || count <= 0) return [];
   if (!c.pattern) return c.anchor < before.getTime() ? [new Date(c.anchor)] : [];
   const out: Date[] = [];
-  let k = Math.floor((before.getTime() - c.anchor) / c.stepMs) + 1;
+  let k = c.indexNear(before.getTime()) + 1;
   for (; k >= 0 && out.length < count; k--) {
     const t = c.nth(k);
     if (t >= before.getTime()) continue;
@@ -213,6 +239,7 @@ export function seriesOccurrencesBefore(clock: SeriesClock, before: Date, count 
 export function seriesOccurrenceNumber(clock: SeriesClock, at: Date | string): number {
   const c = clockParts(clock);
   if (!c || !c.pattern) return 1;
+  if (c.monthly) return Math.max(1, c.indexNear(new Date(at).getTime()) + 1);
   // A daylight-saving hour is far smaller than a step, so rounding is exact.
   return Math.max(1, Math.round((new Date(at).getTime() - c.anchor) / c.stepMs) + 1);
 }
@@ -1887,6 +1914,8 @@ export interface SeriesScheduleInput {
   alsoZones?: string[] | null;
   /** Every n weeks (1–4); absent leaves it as it is. */
   intervalWeeks?: number | null;
+  /** True: the same weekday of each month; false: back to weeks. Absent leaves it as it is. */
+  monthly?: boolean | null;
 }
 
 export interface SeriesWeekMove {
@@ -1978,7 +2007,8 @@ export async function saveSeriesSchedule(input: {
   const untilMs = last ? zonedInstant(last.y, last.mo, last.d + 1, 0, 0, 0, 0, zone) : null;
   if (untilMs !== null && untilMs <= anchorMs) throw new SeriesError('The last date is before the first session.');
 
-  const pattern = row.recurrence_pattern ?? 'WEEKLY';
+  const current = row.recurrence_pattern ?? 'WEEKLY';
+  const pattern = s.monthly === true ? 'MONTHLY' : s.monthly === false && current === 'MONTHLY' ? 'WEEKLY' : current;
   const oldClock = clockOf(row);
   const newClock: SeriesClock = {
     scheduledAt: new Date(anchorMs),

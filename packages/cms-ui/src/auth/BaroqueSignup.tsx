@@ -52,6 +52,8 @@ export interface BaroqueSignupProps {
   googleRedirectTo?: string;
   /** Show the ornamental sigil above the heading. Default true. */
   showSigil?: boolean;
+  /** Terms the new account must accept (2026-11-01): a required checkbox in signup mode linking to the text. */
+  terms?: { href: string; label?: ReactNode };
   /** Submit label per mode. Defaults "Join the Collective" / "Sign In". */
   submitLabel?: { signup?: string; signin?: string };
   /** Text of the success panel after sign-up. Defaults to the network's welcome line. */
@@ -72,6 +74,7 @@ function Sigil() {
 }
 
 export function BaroqueSignup({
+  terms,
   initialMode = "signup",
   title,
   subtitle,
@@ -93,6 +96,8 @@ export function BaroqueSignup({
     },
   });
   const isSignup = f.mode === "signup";
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const awaitingTerms = isSignup && Boolean(terms) && !termsAccepted;
 
   // Turnstile is optional: unset key means no widget and no gate on submit.
   const turnstileKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -198,6 +203,22 @@ export function BaroqueSignup({
             />
           </div>
 
+          {isSignup && terms && (
+            <label className="eac-bq-check">
+              <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
+              <span>
+                {terms.label ?? (
+                  <>
+                    I accept the{" "}
+                    <a href={terms.href} target="_blank" rel="noreferrer">
+                      Terms and Acceptable Use
+                    </a>
+                    : what I publish here or send to an account I connect is published by me.
+                  </>
+                )}
+              </span>
+            </label>
+          )}
           {isSignup && turnstileKey && (
             <div className="eac-bq-turnstile">
               <Turnstile
@@ -219,7 +240,7 @@ export function BaroqueSignup({
           <button
             type="submit"
             className="eac-bq-cta"
-            disabled={f.submitting || awaitingTurnstile}
+            disabled={f.submitting || awaitingTurnstile || awaitingTerms}
           >
             {f.submitting
               ? isSignup

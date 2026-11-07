@@ -56,8 +56,8 @@ export function SeriesFace({
       title={series.title}
       blurb={
         gaps > 0
-          ? `${gaps} coming ${gaps === 1 ? "week needs" : "weeks need"} a host.`
-          : "Every coming week has a host."
+          ? `${gaps} coming ${gaps === 1 ? "session needs" : "sessions need"} a host.`
+          : "Every coming session has a host."
       }
       cue={plannerHref ? "→" : "+"}
       href={plannerHref ?? undefined}

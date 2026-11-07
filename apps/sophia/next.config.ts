@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [{ source: "/(.*)", headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }] }];
   },
   // Source-exported workspace packages, compiled in-app (same pattern as apps/forum).
-  transpilePackages: ["@elkdonis/db", "@elkdonis/utils", "@elkdonis/services", "@elkdonis/cms-ui", "@elkdonis/lms", "@elkdonis/lms-ui"],
+  transpilePackages: ["@elkdonis/db", "@elkdonis/utils", "@elkdonis/services", "@elkdonis/cms-ui", "@elkdonis/lms", "@elkdonis/lms-ui", "@elkdonis/actions"],
   // Pin the monorepo root — see apps/forum/next.config.ts for why inference is not safe here.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   turbopack: { root: path.resolve(__dirname, "../..") },

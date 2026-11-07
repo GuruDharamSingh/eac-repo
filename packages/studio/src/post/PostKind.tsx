@@ -12,6 +12,7 @@
 // ============================================================================
 
 import * as React from 'react';
+import { convertedUrl, ImageEditor, mediaPathOf, savedToFile } from '../image';
 import { StudioColumns, StudioTopActions, StudioTopStatus, useStudioFrame } from '../frame';
 import type { StudioShare, StudioShareTarget } from '../types';
 import { POST_LIMITS, POST_PLATFORM_LABEL, type PostImage, type PostKindProps, type PostPlatform, type SocialPostView } from './types';
@@ -52,7 +53,7 @@ function blocker(post: SocialPostView, kind: StudioShareTarget['kind']): string 
 
 export function PostKind(props: PostKindProps) {
   const frame = useStudioFrame();
-  const { actions, uploadEndpoint, links } = props;
+  const { actions, uploadEndpoint, imageEndpoint, links } = props;
   const orgId = frame.orgId;
   const setError = frame.setError;
   const [posts, setPosts] = React.useState<SocialPostView[]>(props.initialPosts);
@@ -61,6 +62,8 @@ export function PostKind(props: PostKindProps) {
   );
   const [save, setSave] = React.useState<SaveState>('saved');
   const [uploading, setUploading] = React.useState(0);
+  // The picture open in the editor, by its place in the post.
+  const [editing, setEditing] = React.useState<number | null>(null);
   const [targets, setTargets] = React.useState<StudioShareTarget[] | null>(null);
   const [posting, setPosting] = React.useState<string | null>(null);
   const [note, setNote] = React.useState<string | null>(null);
@@ -142,30 +145,60 @@ export function PostKind(props: PostKindProps) {
     setCurrent(null);
   }
 
+  /** Upload one picture through the host's route; its /api/media URL, or null (the error is shown). */
+  async function uploadOne(file: File): Promise<string | null> {
+    const orgSlug = frame.orgs.find((o) => o.orgId === orgId)?.slug ?? orgId;
+    const fd = new FormData();
+    fd.set('file', file);
+    fd.set('orgSlug', orgSlug);
+    fd.set('context', 'social');
+    try {
+      const res = await fetch(uploadEndpoint, { method: 'POST', body: fd });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        setError(data.error ?? `Upload failed (${res.status}).`);
+        return null;
+      }
+      return data.url;
+    } catch {
+      setError('Upload failed: connection lost.');
+      return null;
+    }
+  }
+
   async function addFiles(files: FileList | null) {
     if (!current || !files || files.length === 0) return;
-    const orgSlug = frame.orgs.find((o) => o.orgId === orgId)?.slug ?? orgId;
     const room = 10 - current.images.length;
     const picked = Array.from(files).slice(0, Math.max(0, room));
     if (picked.length === 0) return setError('A post takes up to ten pictures.');
     setUploading((n) => n + picked.length);
     const added: PostImage[] = [];
     for (const file of picked) {
-      const fd = new FormData();
-      fd.set('file', file);
-      fd.set('orgSlug', orgSlug);
-      fd.set('context', 'social');
-      try {
-        const res = await fetch(uploadEndpoint, { method: 'POST', body: fd });
-        const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-        if (!res.ok || !data.url) setError(data.error ?? `Upload failed (${res.status}).`);
-        else added.push({ url: data.url, alt: null });
-      } catch {
-        setError('Upload failed: connection lost.');
-      }
+      const url = await uploadOne(file);
+      if (url) added.push({ url, alt: null });
       setUploading((n) => n - 1);
     }
     if (added.length) edit({ images: [...(current.images ?? []), ...added] });
+  }
+
+  /** Put a new file in place of picture `i` (the old file stays in storage). */
+  async function replaceImage(i: number, file: File) {
+    if (!current) return;
+    setUploading((n) => n + 1);
+    const url = await uploadOne(file);
+    setUploading((n) => n - 1);
+    if (!url) return;
+    edit({ images: current.images.map((img, j) => (j === i ? { ...img, url } : img)) });
+  }
+
+  /** Instagram takes JPEG only: convert with sharp on the server and save it as a new picture. */
+  async function makeJpeg(i: number) {
+    const img = current?.images[i];
+    if (!img || !imageEndpoint) return;
+    const res = await fetch(convertedUrl(img.url, imageEndpoint, { max: 4096, format: 'jpeg' }));
+    if (!res.ok) return setError('Could not convert this picture.');
+    const name = (img.url.split('/').pop() ?? 'picture').split('?')[0]!.replace(/\.[^.]+$/, '');
+    await replaceImage(i, new File([await res.blob()], `${name}.jpg`, { type: 'image/jpeg' }));
   }
 
   function removeImage(i: number) {
@@ -265,8 +298,16 @@ export function PostKind(props: PostKindProps) {
         {current.images.map((img, i) => (
           <figure key={img.url + i} className="sp-pic">
             <img src={img.url} alt={img.alt ?? ''} />
-            {!isJpeg(img.url) && <span className="sp-pic__flag" title="Instagram takes JPEG only">not JPEG</span>}
+            {!isJpeg(img.url) &&
+              (imageEndpoint && mediaPathOf(img.url) ? (
+                <button type="button" className="sp-pic__flag" title="Instagram takes JPEG only: convert this picture" onClick={() => void makeJpeg(i)}>
+                  Make JPEG
+                </button>
+              ) : (
+                <span className="sp-pic__flag" title="Instagram takes JPEG only">not JPEG</span>
+              ))}
             <span className="sp-pic__tools">
+              <button type="button" aria-label="Edit picture" title="Crop, filters, text…" onClick={() => setEditing(i)}>✎</button>
               <button type="button" aria-label="Move left" disabled={i === 0} onClick={() => moveImage(i, -1)}>←</button>
               <button type="button" aria-label="Move right" disabled={i === current.images.length - 1} onClick={() => moveImage(i, 1)}>→</button>
               <button type="button" aria-label="Remove picture" onClick={() => removeImage(i)}>×</button>
@@ -278,6 +319,19 @@ export function PostKind(props: PostKindProps) {
           {uploading > 0 ? `Uploading ${uploading}…` : current.images.length ? '+ Add' : '+ Add pictures'}
         </label>
       </div>
+      {editing !== null && current.images[editing] && (
+        <ImageEditor
+          src={current.images[editing]!.url}
+          imageEndpoint={imageEndpoint}
+          onClose={() => setEditing(null)}
+          onSave={async (saved) => {
+            const i = editing;
+            const name = (current.images[i]!.url.split('/').pop() ?? 'picture').split('?')[0]!;
+            await replaceImage(i, await savedToFile(saved, decodeURIComponent(name)));
+            setEditing(null);
+          }}
+        />
+      )}
       <input
         className="sp-link"
         type="url"

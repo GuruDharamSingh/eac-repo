@@ -11,7 +11,8 @@
     "./editor": "./src/editor/index.ts",
     "./editor.css": "./src/editor/video-studio.css",
     "./broadcast": "./src/broadcast/index.ts",
-    "./broadcast.css": "./src/broadcast/broadcast.css"
+    "./broadcast.css": "./src/broadcast/broadcast.css",
+    "./guest.css": "./src/broadcast/guest.css"
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",

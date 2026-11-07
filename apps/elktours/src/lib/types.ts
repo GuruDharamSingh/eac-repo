@@ -95,3 +95,6 @@ export interface Attendee {
   guideSlug: string | null;
   respondedAt: Date;
 }
+
+// Places, assets, fly-overs, experiences, commissions, suggestions (Phase A contract).
+export type * from "./catalogue-types";

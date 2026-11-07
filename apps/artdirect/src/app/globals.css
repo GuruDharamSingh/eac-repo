@@ -127,15 +127,18 @@ a { color: inherit; }
    ------------------------------------------------------------------------ */
 
 /* The reading layer (article.css, writing.css) ships dark ink for light
-   grounds; its tokens are declared on :root, so they are redefined here. */
+   grounds; its tokens are declared on :root, so they are redefined here on
+   the --oad-* palette, which follows the colour scheme (artdirect.css). The
+   earlier chain through --ink/--paper was dark-only: in light mode a piece
+   read as cream on cream (2026-11-01). */
 :root {
-  --read-ink: var(--ink, #f7f1e3);
-  --read-muted: var(--ink-soft, #a9a293);
-  --read-faint: var(--ink-soft, #a9a293);
-  --read-rule: var(--line, #35322c);
-  --read-accent: var(--gold, #c79a42);
-  --read-bg: var(--paper, #121413);
-  --eac-color-surface: var(--paper, #121413);
+  --read-ink: var(--oad-ink);
+  --read-muted: var(--oad-ink-soft);
+  --read-faint: var(--oad-ink-soft);
+  --read-rule: var(--oad-line);
+  --read-accent: var(--oad-gold);
+  --read-bg: var(--oad-panel);
+  --eac-color-surface: var(--oad-paper);
 }
 
 .oad-reading {

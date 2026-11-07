@@ -5,6 +5,7 @@ import { getDashboardData, getFunnel, getProgression, type FunnelStep } from "@e
 import { RANGES, parseRangeKey } from "@elkdonis/analytics";
 import "@elkdonis/analytics/dashboard.css";
 import { analyticsOptions } from "@/lib/analytics";
+import { requireAdmin } from "@/lib/marketplace-auth";
 
 // The admin layout already gates on requireAdmin().
 export const dynamic = "force-dynamic";
@@ -22,6 +23,10 @@ const BUYING: FunnelStep[] = [
 ];
 
 export default async function AdminVisitorsPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireAdmin();
   const sp = await searchParams;
   const range = parseRangeKey(sp.range);
   const scope = { orgId: analyticsOptions.defaultOrgId as string };

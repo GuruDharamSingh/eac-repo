@@ -53,7 +53,12 @@ export function LoginForm() {
             ? `One account works across the whole network — you're joining ${orgSlug} now.`
             : "One account across the whole network. Artists, facilitators, and members share a single sign-in — your role in each space is set separately."
         }
+        terms={{ href: "/terms" }}
         onSuccess={async ({ mode }) => {
+          // The account is signed in now: record the Terms acceptance (migration 223).
+          if (mode === "signup") {
+            await fetch("/api/terms/accept", { method: "POST" }).catch(() => {});
+          }
           if (orgSlug) {
             try {
               await fetch("/api/org/join", {

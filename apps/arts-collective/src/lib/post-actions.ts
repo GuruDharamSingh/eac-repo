@@ -17,6 +17,7 @@ import {
   isOrgChannel,
   startPublishJob,
   finishPublishJob,
+  subscribePageFeed,
   PERSONAL_ORG_ID as BLOG_ORG_ID,
   type SocialPost,
 } from "@elkdonis/services";
@@ -187,12 +188,15 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
   });
 
   let share: StudioShare;
+  let externalId: string | null = null;
   try {
     if (ref.kind === "page") {
       const t = await getMetaPageTarget(ref.connectionId, ref.pageId!);
       if (t.ok === false) return { ok: false, error: t.error };
       const r = await postToPage({ pageId: t.pageId, accessToken: t.accessToken }, { message: text, link: post.link, imageUrls: images }, appSecret);
+      externalId = r.postId;
       share = { targetId, kind: "page", label: `${t.name} (Facebook Page)`, url: r.url, at };
+      void subscribePageFeed(ref.connectionId, t.pageId).then((s) => { if ("error" in s) console.warn("[posts] page subscription:", s.error); });
     } else if (ref.kind === "instagram" || ref.kind === "iglogin") {
       if (images.length === 0) return { ok: false, error: "Instagram needs a picture." };
       if (!isJpeg(images[0]!)) return { ok: false, error: "Instagram takes JPEG pictures only; make the first picture a JPEG." };
@@ -202,11 +206,13 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
         if (t.ok === false) return { ok: false, error: t.error };
         if (!t.instagramUserId) return { ok: false, error: "No Instagram account is linked to that Page." };
         const r = await postImageToInstagram({ pageId: t.pageId, accessToken: t.accessToken, instagramUserId: t.instagramUserId }, { imageUrl: images[0]!, caption }, appSecret);
+        externalId = r.mediaId;
         share = { targetId, kind: "instagram", label: "Instagram", url: r.url, at };
       } else {
         const t = await getInstagramLoginTarget(ref.connectionId);
         if (t.ok === false) return { ok: false, error: t.error };
         const r = await postImageWithInstagramLogin(t.userId, t.accessToken, { imageUrl: images[0]!, caption });
+        externalId = r.mediaId ?? null;
         share = { targetId, kind: "instagram", label: `${connection.accountName ?? "Instagram"} (Instagram)`, url: r.url || null, at };
       }
     } else {
@@ -217,6 +223,7 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
         imageUrl: images[0],
         linkAttachment: images.length === 0 && post.link ? post.link : undefined,
       });
+      externalId = r.mediaId ?? null;
       share = { targetId, kind: "threads", label: `${connection.accountName ?? "Threads"} (Threads)`, url: r.url || null, at };
     }
   } catch (err) {
@@ -224,7 +231,7 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
     await finishPublishJob(jobId, { ok: false, error });
     return { ok: false, error };
   }
-  await finishPublishJob(jobId, { ok: true, externalId: null, url: share.url });
+  await finishPublishJob(jobId, { ok: true, externalId, url: share.url });
   await recordSocialShare(viewer, postId, share);
   // On the network too; a failure here is logged, the outside post stands.
   await mirrorToThread(viewer, post).catch((err) => console.error("[posts] mirror:", err));

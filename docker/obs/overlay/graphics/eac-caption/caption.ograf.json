@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ograf.ebu.io/v1/specification/json-schemas/graphics/schema.json",
+  "id": "eac-caption",
+  "version": "1.0.0",
+  "name": "Caption",
+  "description": "A line or two of text on a dark box, bottom or top centre: what is happening, a translation, a note.",
+  "author": { "name": "Elkdonis Arts Collective" },
+  "main": "graphic.mjs",
+  "supportsRealTime": true,
+  "supportsNonRealTime": false,
+  "stepCount": 1,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string", "title": "Text", "default": "", "maxLength": 300, "gddType": "multi-line" },
+      "place": {
+        "type": "string", "title": "Place", "enum": ["bottom", "top"], "default": "bottom",
+        "gddType": "select", "gddOptions": { "labels": { "bottom": "Bottom", "top": "Top" } }
+      }
+    }
+  }
+}

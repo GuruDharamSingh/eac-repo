@@ -1,0 +1,701 @@
+/*
+  Artwork grid, its cards, its popup — and the gallery / facts / description
+  rules the detail page shares. Tokens only, no Tailwind. Every size and
+  colour is a --ktp-* variable the block (or the detail page) sets, or a
+  --blk-* token.
+
+  The card: a pot photographed on a cream ground sits on a "plinth" — a soft
+  shadow ellipse low in the frame — under a faint inner vignette, so a cut-out
+  product shot and a studio photo read the same. The arch top (a field) is a
+  kiln mouth: a slightly deeper inner shade at the crown and a hairline ring.
+*/
+
+.ktp-works {
+  /* --ktp-card-bg, --ktp-card-ink, --ktp-accent and --ktp-radius are TOKENS:
+     a block's fields (inline) or the look panel (morph) set them; every use
+     falls back to the site's own --blk-* tokens, so nothing is declared here
+     that could out-rank a look. */
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+  width: min(100%, var(--blk-measure));
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 3rem);
+}
+
+.ktp-works-head {
+  margin-bottom: clamp(1.25rem, 3vw, 2.25rem);
+}
+.ktp-works-title {
+  margin: 0;
+  font-family: var(--blk-font-title);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  line-height: 1.1;
+}
+.ktp-works-intro {
+  margin: 0.5rem 0 0;
+  max-width: 56ch;
+  color: var(--blk-muted);
+  line-height: 1.55;
+}
+.ktp-works-note {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--blk-line);
+  border-radius: var(--blk-radius-sm);
+  color: var(--blk-muted);
+  font-size: 0.85rem;
+}
+.ktp-works-empty {
+  margin: 0;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--blk-muted);
+  border: 1px dashed var(--blk-line);
+  border-radius: var(--ktp-radius, var(--blk-radius));
+  font-family: var(--blk-font-title);
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+/* ── the grid ─────────────────────────────────────────────────────────── */
+
+.ktp-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--ktp-col), 100%), 1fr));
+  gap: var(--ktp-gap);
+}
+
+.ktp-card {
+  min-width: 0;
+}
+.ktp-card-link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: var(--ktp-card-ink, var(--blk-fg));
+  text-decoration: none;
+  border-radius: var(--ktp-radius, var(--blk-radius));
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease;
+}
+.ktp-card-link:focus-visible {
+  outline: 2px solid var(--blk-accent);
+  outline-offset: 5px;
+  border-radius: var(--ktp-radius, var(--blk-radius));
+}
+
+/* The picture frame: cream ground, inner vignette, plinth shadow. */
+.ktp-card-pic {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, var(--ktp-card-bg, var(--blk-bg-soft)) 92%, white), var(--ktp-card-bg, var(--blk-bg-soft)) 70%);
+  aspect-ratio: var(--ktp-aspect, auto);
+  border-radius: var(--ktp-radius, var(--blk-radius));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blk-line) 70%, transparent), inset 0 -18px 28px -24px color-mix(in srgb, var(--blk-fg) 35%, transparent);
+}
+.ktp-works[data-shape="square"] .ktp-card-pic,
+.ktp-works[data-shape="square"] .ktp-card-link {
+  border-radius: 0;
+}
+.ktp-works[data-shape="arch"] .ktp-card-pic {
+  border-radius: 999px 999px var(--ktp-radius, var(--blk-radius)) var(--ktp-radius, var(--blk-radius));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blk-line) 70%, transparent), inset 0 26px 36px -30px color-mix(in srgb, var(--blk-fg) 55%, transparent), inset 0 -18px 28px -24px color-mix(in srgb, var(--blk-fg) 35%, transparent);
+}
+.ktp-works[data-shape="arch"] .ktp-card-link {
+  border-radius: 999px 999px var(--ktp-radius, var(--blk-radius)) var(--ktp-radius, var(--blk-radius));
+}
+.ktp-card-pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ktp-works[data-aspect="auto"] .ktp-card-pic img {
+  height: auto;
+}
+.ktp-works[data-fit="contain"] .ktp-card-pic img {
+  object-fit: contain;
+  padding: 7% 7% 10%;
+}
+/* The plinth: a soft shadow ellipse low in the frame, under the pot. Drawn
+   over the picture at low strength so it also grounds a cut-out shot. */
+.ktp-card-plinth {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 7%;
+  height: 6%;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--blk-fg) 22%, transparent), transparent 70%);
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.ktp-works[data-fit="cover"] .ktp-card-plinth {
+  opacity: 0.6;
+}
+
+.ktp-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: var(--blk-band);
+  color: var(--blk-band-fg);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px -3px rgb(0 0 0 / 0.4);
+}
+.ktp-works[data-shape="arch"] .ktp-card-badge {
+  top: auto;
+  bottom: 10px;
+}
+.ktp-card[data-status="reserved"] .ktp-card-badge {
+  background: var(--blk-accent);
+  color: var(--blk-on-accent);
+}
+.ktp-card[data-status="sold"] .ktp-card-pic img {
+  filter: saturate(0.55);
+  opacity: 0.8;
+}
+
+/* Caption: serif title, letter-spaced small-caps medium, tabular price. */
+.ktp-card-cap {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.2rem 0.3rem;
+}
+.ktp-card-title {
+  font-family: var(--blk-font-title);
+  font-size: var(--ktp-title-size);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.ktp-card-meta {
+  font-size: var(--ktp-meta-size);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.06em;
+  color: var(--blk-muted);
+}
+.ktp-card-price {
+  margin-top: 0.25rem;
+  font-size: var(--ktp-meta-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ktp-accent, var(--blk-accent-ink));
+}
+.ktp-card[data-status="sold"] .ktp-card-price {
+  color: var(--blk-muted);
+  font-weight: 500;
+}
+
+/* Caption over the picture: a wash from the bottom, shown on hover or focus. */
+.ktp-works[data-caption="overlay"] .ktp-card-link {
+  position: relative;
+}
+.ktp-works[data-caption="overlay"] .ktp-card-cap {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 2.5rem 1rem 1rem;
+  color: var(--blk-band-fg);
+  background: linear-gradient(to top, color-mix(in srgb, var(--blk-band) 85%, transparent), transparent);
+  border-radius: 0 0 var(--ktp-radius, var(--blk-radius)) var(--ktp-radius, var(--blk-radius));
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.ktp-works[data-caption="overlay"] .ktp-card-cap .ktp-card-meta,
+.ktp-works[data-caption="overlay"] .ktp-card-cap .ktp-card-price {
+  color: var(--blk-band-fg);
+  opacity: 0.9;
+}
+.ktp-works[data-caption="overlay"] .ktp-card-link:hover .ktp-card-cap,
+.ktp-works[data-caption="overlay"] .ktp-card-link:focus-visible .ktp-card-cap {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .ktp-works[data-caption="overlay"] .ktp-card-cap {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hover: a lift with a warm shadow, or an ember glow with a gloss sweep. */
+.ktp-works[data-hover="lift"] .ktp-card-link:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 36px -22px color-mix(in srgb, var(--blk-fg) 55%, transparent), 0 8px 14px -12px color-mix(in srgb, var(--blk-accent) 40%, transparent);
+}
+.ktp-works[data-hover="lift"] .ktp-card-link:hover .ktp-card-pic img,
+.ktp-works[data-hover="glow"] .ktp-card-link:hover .ktp-card-pic img {
+  transform: scale(1.035);
+}
+.ktp-works[data-hover="glow"] .ktp-card-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--blk-accent) 55%, transparent), 0 16px 40px -14px color-mix(in srgb, var(--blk-accent) 75%, transparent);
+}
+.ktp-works[data-hover="glow"] .ktp-card-pic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, color-mix(in srgb, white 45%, transparent) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.ktp-works[data-hover="glow"] .ktp-card-link:hover .ktp-card-pic::after {
+  transition: transform 0.7s ease;
+  transform: translateX(120%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ktp-card-link,
+  .ktp-card-pic img,
+  .ktp-card-pic::after,
+  .ktp-card-cap {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── the gallery (popup and detail page) ──────────────────────────────── */
+
+.ktp-gallery {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+}
+.ktp-gallery-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  background: radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, var(--ktp-card-bg, var(--blk-bg-soft)) 92%, white), var(--ktp-card-bg, var(--blk-bg-soft)) 70%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blk-line) 70%, transparent);
+}
+.ktp-gallery[data-large] .ktp-gallery-stage {
+  aspect-ratio: 4 / 5;
+  min-height: 0;
+}
+.ktp-gallery-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 32px);
+  object-fit: contain;
+}
+.ktp-gallery-plinth {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 6%;
+  height: 5%;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--blk-fg) 18%, transparent), transparent 70%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+@keyframes ktp-fade {
+  from {
+    opacity: 0;
+  }
+}
+.ktp-gallery-thumbs {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 0 0;
+  overflow-x: auto;
+}
+.ktp-pop .ktp-gallery-thumbs {
+  padding: 8px;
+}
+.ktp-gallery-thumb {
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--blk-radius-sm);
+  overflow: hidden;
+  background: var(--ktp-card-bg, var(--blk-bg-soft));
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.ktp-gallery-thumb:hover {
+  border-color: color-mix(in srgb, var(--blk-accent) 50%, transparent);
+}
+.ktp-gallery-thumb[aria-pressed="true"] {
+  border-color: var(--blk-accent);
+}
+.ktp-gallery-thumb:focus-visible {
+  outline: 2px solid var(--blk-accent);
+  outline-offset: 2px;
+}
+.ktp-gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── facts, description, buy (popup and detail page) ──────────────────── */
+
+.ktp-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--blk-line);
+  border-bottom: 1px solid var(--blk-line);
+  font-size: 0.92rem;
+}
+.ktp-facts > div {
+  display: contents;
+}
+.ktp-facts dt {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  color: var(--blk-muted);
+}
+.ktp-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ktp-desc {
+  line-height: 1.65;
+}
+.ktp-desc p {
+  margin: 0 0 0.75rem;
+}
+.ktp-desc p:last-child {
+  margin-bottom: 0;
+}
+.ktp-desc a {
+  color: var(--blk-accent-ink);
+}
+.ktp-buy {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  border-radius: 999px;
+  background: var(--ktp-accent, var(--blk-accent));
+  color: var(--blk-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.ktp-buy:hover {
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+}
+.ktp-buy:focus-visible {
+  outline: 2px solid var(--blk-accent);
+  outline-offset: 3px;
+}
+[data-status="sold"] .ktp-buy {
+  background: transparent;
+  color: var(--blk-accent-ink);
+  border: 1.5px solid currentColor;
+}
+
+/* ── the popup ────────────────────────────────────────────────────────── */
+
+/* The dialog fills the viewport and IS the backdrop (its tint is a field),
+   so a click on it, outside the panel, closes. ::backdrop stays clear. */
+.ktp-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  background: var(--ktp-pop-backdrop);
+  color: var(--blk-fg);
+  font-family: var(--blk-font-body);
+  overflow: auto;
+}
+.ktp-dialog:not([open]) {
+  display: none;
+}
+.ktp-dialog[open] {
+  display: grid;
+  place-items: center;
+}
+.ktp-dialog::backdrop {
+  background: transparent;
+}
+
+.ktp-pop {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  width: min(100%, 880px);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  background: var(--blk-bg);
+  border-radius: var(--ktp-pop-radius);
+  box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.5);
+  transform-origin: var(--ktp-origin, 50% 50%);
+  animation: ktp-pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ktp-works[data-pop-width="narrow"] .ktp-pop {
+  width: min(100%, 680px);
+}
+.ktp-works[data-pop-width="wide"] .ktp-pop {
+  width: min(100%, 1120px);
+}
+.ktp-works[data-pop-side="right"] .ktp-pop-media {
+  order: 2;
+}
+@keyframes ktp-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+@media (max-width: 760px) {
+  /* A full-bleed sheet from the top (same specificity as the [open] rule
+     above, or it would stay centred and overflow past the top edge). No
+     opacity animation on the sheet: it is tall, and a fade caught mid-way
+     reads as a see-through panel. */
+  .ktp-dialog[open] {
+    padding: 0;
+    place-items: start stretch;
+  }
+  .ktp-pop {
+    grid-template-columns: 1fr;
+    width: 100%;
+    min-height: 100vh;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
+    background: var(--blk-bg);
+    animation: ktp-sheet-in 0.25s ease-out;
+  }
+  @keyframes ktp-sheet-in {
+    from {
+      transform: translateY(24px);
+    }
+  }
+  .ktp-works[data-pop-side="right"] .ktp-pop-media {
+    order: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ktp-pop,
+  .ktp-gallery-img {
+    animation: none;
+  }
+}
+
+.ktp-pop-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blk-bg) 85%, transparent);
+  color: var(--blk-fg);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px -4px rgb(0 0 0 / 0.4);
+}
+.ktp-pop-close:hover {
+  background: var(--blk-bg-soft);
+}
+.ktp-pop-close:focus-visible {
+  outline: 2px solid var(--blk-accent);
+  outline-offset: 2px;
+}
+
+.ktp-pop-media {
+  display: grid;
+  min-height: 320px;
+  background: var(--ktp-card-bg, var(--blk-bg-soft));
+}
+.ktp-pop-media .ktp-gallery-stage {
+  box-shadow: none;
+}
+.ktp-pop-media .ktp-gallery-img {
+  max-height: calc(100vh - 120px);
+}
+@media (max-width: 760px) {
+  .ktp-pop-media .ktp-gallery-stage {
+    aspect-ratio: 4 / 5;
+    min-height: 0;
+  }
+}
+
+.ktp-pop-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  overflow-y: auto;
+}
+.ktp-pop-title {
+  margin: 0;
+  padding-right: 2.5rem;
+  font-family: var(--blk-font-title);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.ktp-pop-price {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--blk-accent-ink);
+}
+.ktp-pop[data-status="sold"] .ktp-pop-price {
+  color: var(--blk-muted);
+}
+.ktp-pop-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin: auto 0 0;
+  padding-top: 0.5rem;
+}
+.ktp-pop-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+}
+.ktp-pop-page {
+  color: var(--blk-muted);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.ktp-pop-page:hover {
+  color: var(--blk-fg);
+}
+
+.ktp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── the buy control: Add to cart, its states, and the quiet market link ─ */
+
+.ktp-buy:disabled {
+  cursor: default;
+  filter: none;
+  transform: none;
+}
+.ktp-buy:disabled:not([aria-busy="true"]) {
+  background: color-mix(in srgb, var(--blk-accent) 18%, var(--blk-bg));
+  color: var(--blk-accent-ink);
+}
+.ktp-buy--ghost {
+  background: transparent;
+  color: var(--blk-accent-ink);
+  border: 1.5px solid currentColor;
+}
+.ktp-buy-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.ktp-buy-status {
+  font-size: 0.9rem;
+  color: var(--blk-muted);
+}
+.ktp-buy-status a {
+  color: var(--blk-accent-ink);
+  font-weight: 600;
+}
+.ktp-buy-status--error {
+  color: var(--blk-danger);
+}
+.ktp-buy-note {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: var(--blk-radius-sm);
+  background: var(--blk-bg-soft);
+  color: var(--blk-muted);
+  font-size: 0.95rem;
+}
+.ktp-market-link {
+  color: var(--blk-muted);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.ktp-market-link:hover {
+  color: var(--blk-fg);
+}
+
+/* ── Buy now + Add to cart · continue shopping (a piece's page, 2026-11-07) ─ */
+.ktp-buy-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.ktp-buy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem 0.75rem;
+}
+.ktp-buy--now,
+.ktp-piece .ktp-card-cta .ktp-buy.ktp-buy--now {
+  padding: 0.75rem 1.6rem;
+  font-size: 1.02rem;
+}
+/* Same height side by side, whatever their type size. */
+.ktp-buy-row .ktp-buy {
+  min-height: 3rem;
+  box-sizing: border-box;
+}
+.ktp-buy-now-note {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--blk-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+@media (max-width: 520px) {
+  .ktp-buy-actions,
+  .ktp-buy-row,
+  .ktp-buy-row > .ktp-buy,
+  .ktp-buy-row > .ktp-buy-wrap,
+  .ktp-buy-row > .ktp-buy-wrap > .ktp-buy {
+    width: 100%;
+  }
+  .ktp-buy-row > .ktp-buy,
+  .ktp-buy-row > .ktp-buy-wrap > .ktp-buy {
+    justify-content: center;
+  }
+}

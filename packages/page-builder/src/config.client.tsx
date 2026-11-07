@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import type { Config } from "@puckeditor/core";
 import type { PropDef } from "@elkdonis/blocks";
 import type { Block } from "@elkdonis/blocks";
@@ -25,6 +25,11 @@ import { StyleField } from "./style/field";
 export interface EditorConfigOptions extends PuckConfigOptions {
   /** Where this site's pictures are uploaded to and chosen from. */
   media: MediaSources;
+}
+
+/** A field that draws nothing: for a prop this site cannot fill (an unclaimed Opens). */
+function NoField(): React.ReactElement {
+  return createElement(Fragment);
 }
 
 export function buildEditorConfig({ media, ...options }: EditorConfigOptions): Config {
@@ -99,17 +104,21 @@ export function buildEditorConfig({ media, ...options }: EditorConfigOptions): C
       // A site may claim strings for its own pickers (Dana's `binds`). What it
       // hands back as null still gets a colour control when the prop is one,
       // so a site's override never costs it the shared ones.
+      // An Opens (`binds: "opens"`, 2026-11-06) needs the site's chooser and resolver: a site that has
+      // not claimed it gets no field, rather than a box holding a reference nobody can write by hand.
       string: (prop: PropDef) =>
         options.fields?.string?.(prop) ??
-        (prop.format === "color"
-          ? function ColorProp(props: Record<string, unknown>) {
-              return createElement(ColorField, {
-                ...(props as object),
-                hint: prop.description,
-                field: { label: prop.label },
-              } as never);
-            }
-          : null),
+        (prop.binds === "opens"
+          ? NoField
+          : prop.format === "color"
+            ? function ColorProp(props: Record<string, unknown>) {
+                return createElement(ColorField, {
+                  ...(props as object),
+                  hint: prop.description,
+                  field: { label: prop.label },
+                } as never);
+              }
+            : null),
     },
   });
 }

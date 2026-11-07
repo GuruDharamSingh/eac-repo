@@ -1,0 +1,174 @@
+import { Buffer } from "node:buffer";
+import { NextRequest, NextResponse } from "next/server";
+import { uploadFile, getUploadPath, getProxyFileUrl, uploadFilename, isOccurrenceHost } from "@elkdonis/services";
+import { validateUploadBuffer } from "@elkdonis/utils";
+import { db } from "@elkdonis/db";
+import { nanoid } from "nanoid";
+import type { SeriesSite } from "../config";
+import { apiMember } from "../config";
+
+export function mediaUploadRoutes(site: SeriesSite) {
+
+const ORG_ID = site.orgId;
+
+/**
+ * Uploads into the ORG's media tree (`EAC_Network/<org>/Media/...`).
+ *
+ * This is the second upload route, and the distinction is the whole point.
+ * `/api/upload` puts a file in an ARTIST's own folder
+ * (`EAC_Network/users/<slug>/`) because a portrait and a body of work belong
+ * to the artist and follow them across every org that publishes them. It
+ * therefore requires a `memberSlug`, and rightly refuses without one.
+ *
+ * A meeting's cover image is not an artist's work — it is the org's. The compose
+ * surface's media picker was posting to that route with no slug and getting
+ * "memberSlug is required" back, which read as a permissions failure to
+ * whoever was composing ("I'm the owner, why won't it let me?") when in fact
+ * the org had no org-media upload path at all.
+ *
+ * Owner/guide only: uploading here is publishing for the collective. Modelled
+ * on amrit-canada's equivalent, including the visibility-based path routing,
+ * so a members-only item's cover lands under `Private/Media`.
+ */
+
+type MediaCategory = "image" | "audio" | "video" | "document";
+
+const DOCUMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "application/zip",
+]);
+
+const MEDIA_CONFIG: Array<{
+  type: MediaCategory;
+  folder: "Images" | "Audio" | "Videos" | "Documents";
+  maxSizeMb: number;
+  test: (mime: string) => boolean;
+}> = [
+  { type: "image", folder: "Images", maxSizeMb: 25, test: (m) => m.startsWith("image/") },
+  { type: "audio", folder: "Audio", maxSizeMb: 150, test: (m) => m.startsWith("audio/") },
+  { type: "video", folder: "Videos", maxSizeMb: 500, test: (m) => m.startsWith("video/") },
+  { type: "document", folder: "Documents", maxSizeMb: 50, test: (m) => DOCUMENT_MIME_TYPES.has(m) },
+];
+
+async function POST(request: NextRequest) {
+  try {
+    // Owner/guide, or (2026-10-10) a member who hosts or co-hosts the week
+    // named by `threadId` + `occurrenceAt`: the week page's in-place editor
+    // uploads that week's cover and materials. The thread must be this org's,
+    // and the host row is read from meeting_hosts, not taken from the client.
+    const editor = await apiMember(site);
+    if (!editor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const formData = await request.formData();
+    if (!editor.canEdit) {
+      const threadId = String(formData.get("threadId") ?? "");
+      const occurrenceAt = String(formData.get("occurrenceAt") ?? "");
+      if (!threadId || !occurrenceAt || Number.isNaN(Date.parse(occurrenceAt))) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const [thread] = await db<Array<{ id: string }>>`
+        SELECT id FROM threads WHERE id = ${threadId} AND org_id = ${ORG_ID}
+      `;
+      if (!thread || !(await isOccurrenceHost(threadId, occurrenceAt, editor.userId))) {
+        return NextResponse.json({ error: "Only an organiser, or that week's host, can upload here." }, { status: 403 });
+      }
+    }
+    const file = formData.get("file") as File | null;
+    const rawVisibility = String(formData.get("visibility") ?? "PUBLIC");
+    const visibility =
+      rawVisibility === "ORGANIZATION" || rawVisibility === "INVITE_ONLY"
+        ? rawVisibility
+        : "PUBLIC";
+
+    if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+    const config = MEDIA_CONFIG.find((c) => c.test(file.type));
+    if (!config) {
+      return NextResponse.json(
+        { error: `Unsupported file type: ${file.type || "unknown"}` },
+        { status: 400 }
+      );
+    }
+    if (file.size > config.maxSizeMb * 1024 * 1024) {
+      return NextResponse.json(
+        { error: `${config.type} files must be under ${config.maxSizeMb}MB` },
+        { status: 400 }
+      );
+    }
+
+    // The name the piece was given, when the surface sends one. A stored page
+    // keeps this address for as long as the picture exists, so it is worth the
+    // form field: `nightjar-4k9wqp.jpg` rather than
+    // `1726790000000-il_570xN.302087606.jpg.jpg`. Blank or absent falls back to
+    // the uploaded file's own name.
+    const title = String(formData.get("title") ?? "").trim().slice(0, 200);
+    const filename = uploadFilename(file.name, title || null);
+    const relativePath = getUploadPath(ORG_ID, config.folder, filename, visibility);
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // The `test:` predicates above match the CLIENT-supplied MIME string,
+    // which is attacker-controlled, and `image/svg+xml` passes
+    // `startsWith("image/")`. An SVG is a script container, so the actual
+    // leading bytes decide — validateUploadBuffer classifies SVG as its own
+    // kind and never as `image`.
+    const validation = validateUploadBuffer(buffer, [config.type], {
+      allowText: file.type === "text/plain",
+    });
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: "reason" in validation ? validation.reason : "Rejected" },
+        { status: 415 }
+      );
+    }
+
+    if (!(await uploadFile(relativePath, buffer, file.type))) {
+      return NextResponse.json({ error: "Failed to upload to Nextcloud" }, { status: 500 });
+    }
+
+    const url = getProxyFileUrl(relativePath);
+
+    // Recorded in `media` so the library picker can offer it again — without
+    // this the file exists in Nextcloud but the "Library" tab never sees it.
+    // A failed row must not fail the upload: the file is already stored, and
+    // throwing here would tell the person their upload failed when it did not.
+    const mediaId = nanoid();
+    try {
+      await db`
+        INSERT INTO media (
+          id, org_id, uploaded_by, nextcloud_file_id, nextcloud_path,
+          url, type, filename, size_bytes, mime_type
+        ) VALUES (
+          ${mediaId}, ${ORG_ID}, ${editor.userId}, ${filename}, ${relativePath},
+          ${url}, ${config.type}, ${file.name}, ${file.size}, ${file.type}
+        )
+      `;
+    } catch (error) {
+      console.error("[series] org media upload — row not recorded:", error);
+    }
+
+    // `name` is the ORIGINAL file name, not the stored one: a picker offering
+    // to fill in a title wants what the person recognises ("Nightjar.jpg"),
+    // not the slug we derived from it.
+    return NextResponse.json({
+      success: true,
+      id: mediaId,
+      url,
+      path: relativePath,
+      type: config.type,
+      name: file.name,
+    });
+  } catch (error) {
+    console.error("[series] org media upload:", error);
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  }
+}
+
+  return { POST };
+}

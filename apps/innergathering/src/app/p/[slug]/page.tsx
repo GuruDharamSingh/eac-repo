@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { LANDING_SLUG } from "@/lib/puck/landing";
 import type { Metadata } from "next";
 // The /rsc entry explicitly, not "@puckeditor/core". Both export a component
 // called Render and TypeScript types them identically, but they are different
@@ -50,6 +51,7 @@ export default async function PublishedPage({
 }) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
+  if (slug === LANDING_SLUG) redirect("/");
 
   const page = await loadPage(slug, KNOWN_TYPES);
   // Covers both "never published" and "stored but not renderable" — loadPage

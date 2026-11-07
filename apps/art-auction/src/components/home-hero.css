@@ -97,14 +97,19 @@
 .hl-kicker { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #5c554d; }
 .hl-title { margin: 8px 0 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: clamp(26px, 2.6vw, 36px); line-height: 1.1; letter-spacing: -0.01em; color: #1d1a16; }
 .hl-lede { margin: 0; max-width: 36em; font-size: 15px; color: #5c554d; }
-.hl-edit { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #8a8378; background: #ffffff; color: #1d1a16; font-size: 12px; font-weight: 500; cursor: pointer; }
-.hl-edit:hover { border-color: #1d1a16; }
 .hl-still { position: relative; max-width: 80rem; margin: 0 auto 40px; height: min(60vh, 560px); overflow: hidden; border-radius: 14px; background: #ffffff; border: 1px solid #e0dbd6; }
 /* The wall behind the frost: a plaster gradient with a floor line. */
 .hl-wall { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: clamp(28px, 5vw, 80px); padding: 0 48px; background: linear-gradient(180deg, #ffffff 0 80%, #e6e2db 80% 80.4%, #f3f0eb 80.4%); }
 .hl-frame { display: flex; align-items: center; justify-content: center; height: 54%; aspect-ratio: 4 / 5; box-sizing: border-box; overflow: hidden; background: #1f1c19; padding: 10px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22); }
 .hl-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .hl-frame.is-free { background: #f3f0eb; border: 3px dashed #8a8378; font-family: var(--font-fraunces), Georgia, serif; font-size: 18px; color: #1d1a16; text-align: center; padding: 20px; }
+/* The hang as placed at /admin/loft: a box WALL_M tall standing on the floor
+   line (80% down), as wide as the hung span, fitted to the still either way;
+   frames sit inside it at their places in metres (home-loft.tsx). */
+.hl-wall { container-type: size; }
+.hl-hang { position: absolute; left: 50%; bottom: 20%; transform: translateX(-50%); height: min(80cqh, calc(96cqw * var(--hl-wall) / var(--hl-span))); aspect-ratio: calc(var(--hl-span) / var(--hl-wall)); }
+.hl-frame.is-placed { position: absolute; height: auto; aspect-ratio: auto; padding: 0.6cqh; }
+.hl-frame.is-placed.is-free { padding: 8px; font-size: clamp(11px, 2.4cqh, 18px); border-width: 2px; }
 .hl-frost { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(14px) saturate(0.8); -webkit-backdrop-filter: blur(14px) saturate(0.8); }
 .hl-open { height: 52px; padding: 0 28px; border-radius: 12px; border: 1px solid #a82a4a; background: #8c1f3a; color: #ffffff; font-size: 16px; font-weight: 500; cursor: pointer; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25); }
 .hl-open:hover { background: #a82a4a; }
@@ -114,18 +119,6 @@
 .hl-close { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(24, 21, 18, 0.88); color: #ffffff; font-size: 13px; font-weight: 600; cursor: pointer; }
 .hl-loading, .hl-fallback { display: flex; align-items: center; justify-content: center; height: min(72vh, 680px); color: #5c554d; font-size: 14px; }
 
-/* The owners' loft editor: two spot cards with a live preview of the frame. */
-.hl-dialog { width: min(960px, calc(100vw - 32px)); }
-.hl-dialog-lede { margin: -4px 0 4px; font-size: 14px; line-height: 1.45; color: #c4cad6; }
-.hl-spots { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.hl-spot { display: grid; gap: 10px; margin: 0; padding: 14px; border: 1px solid #3a4152; border-radius: 10px; }
-.hl-spot legend { padding: 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #c4cad6; }
-.hl-spot-preview { display: flex; align-items: center; justify-content: center; height: 220px; border-radius: 8px; background: linear-gradient(180deg, #ffffff 0 80%, #e6e2db 80% 80.4%, #f3f0eb 80.4%); }
-.hl-spot-preview .hl-frame { height: 72%; }
-.hl-spot-preview .hl-frame.is-free { font-size: 13px; padding: 10px; }
-.hl-spot select { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #6f7a92; background: #000000; color: #eef2f9; font: inherit; font-size: 14px; }
-.hl-spot input[type="range"] { width: 100%; accent-color: #a82a4a; }
-.hl-spot-reset { justify-self: start; height: 32px; font-size: 13px; }
 /* The picker and detail panels sit on the hall's light panel (#fbf9f5, ink #1d1a16). */
 .hl-picker-title, .hl-detail h2 { margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 400; font-size: 22px; line-height: 1.2; }
 .hl-picker-lede { margin: 6px 0 14px; font-size: 13px; color: #5c554d; }
@@ -150,5 +143,5 @@
   .hl-wall { gap: 16px; padding: 0 16px; }
   .hl-frame { height: 46%; }
   .hl-frame.is-free { font-size: 14px; padding: 10px; }
-  .hl-spots { grid-template-columns: 1fr; }
+  .hl-frame.is-placed.is-free { font-size: 11px; padding: 4px; }
 }

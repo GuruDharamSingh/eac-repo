@@ -1,0 +1,34 @@
+; elkdonis-arts.org — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN elkdonis-arts.org.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+@	3600	IN	MX	0 mail.elkdonis-arts.org.
+mail	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+www	3600	IN	CNAME	elkdonis-arts.org. ; cf_tags=cf-proxied:false
+ftp	3600	IN	CNAME	elkdonis-arts.org. ; cf_tags=cf-proxied:false
+cpanel	3600	IN	CNAME	elkdonis-arts.org. ; cf_tags=cf-proxied:false
+webmail	3600	IN	CNAME	elkdonis-arts.org. ; cf_tags=cf-proxied:false
+@	3600	IN	TXT	"v=spf1 ip4:50.6.19.65 a mx include:websitewelcome.com ~all"
+autodiscover	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+_autodiscover._tcp	3600	IN	SRV	0 0 443 cpanelemaildiscovery.cpanel.net.
+autoconfig	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+whm	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+webdisk	3600	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+default._domainkey	3600	IN	TXT	"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr1FFzy0tnsl4LO5VwFXF0tMe0JOn82rKHMSZY10DqK9/GWSAdra3+zqnylXTZA7WNdzRj6OWCDq7ubh+WUca7BPRj6uIbCmYDFDLrQ4kLA8BBIWj5JDCXWM6hHF5M6pDcqRmlKl2exIPye7GF3zDd0v2EI7WJOYGdNWHD9rdA6AjkXmRm/SF4swQtvUWnbcH/" "fk0UXJ5uJmcRfKdYpFObT1kTN/PjIFbImyHctTKdnPmlRJNBcxHudlLp6gflYcwGz/PvGq4m5brCtV1vl0rPz3NZAXA95Viy7i0dmW1nk/mr7JW0/H15NK3w0hmiJLF6t7yytZA4mhxoTu0PnC0+wIDAQAB;"
+imap	3600	IN	CNAME	mail.elkdonis-arts.org. ; cf_tags=cf-proxied:false
+pop	3600	IN	CNAME	mail.elkdonis-arts.org. ; cf_tags=cf-proxied:false
+smtp	3600	IN	CNAME	mail.elkdonis-arts.org. ; cf_tags=cf-proxied:false
+@	3600	IN	MX	10 elkdonis-arts.org.
+_dmarc	3600	IN	TXT	"v=DMARC1; p=none"
+cloud	3600	IN	CNAME	eris.in-transit.ca. ; cf_tags=cf-proxied:false
+eac	14400	IN	CNAME	eris.in-transit.ca. ; cf_tags=cf-proxied:false
+meetings	3600	IN	CNAME	eris.in-transit.ca. ; cf_tags=cf-proxied:false
+auth	3600	IN	CNAME	eris.in-transit.ca. ; cf_tags=cf-proxied:false
+edit	3600	IN	CNAME	eris.in-transit.ca. ; cf_tags=cf-proxied:false
+*	14400	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+em6860	14400	IN	CNAME	u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s1._domainkey	14400	IN	CNAME	s1.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s2._domainkey	14400	IN	CNAME	s2.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+inbound	14400	IN	MX	10 mx.sendgrid.net.

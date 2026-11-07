@@ -46,6 +46,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/pipeline",
     "@elkdonis/chat",
     "@elkdonis/db",
+    "@elkdonis/direct-edit",
+    "@elkdonis/fonts",
     "@elkdonis/email",
     "@elkdonis/newsletter",
     "@elkdonis/types",

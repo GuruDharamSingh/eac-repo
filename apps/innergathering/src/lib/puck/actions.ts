@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cleanBoxDoc } from "@elkdonis/direct-edit/block";
 import { getApiEditor } from "@/lib/auth";
-import { savePage } from "./store";
+import { deletePage, savePage } from "./store";
+import { LANDING_SLUG } from "./landing";
 
 /**
  * Publish a page.
@@ -19,7 +21,14 @@ export async function savePageAction(
   const editor = await getApiEditor();
   if (!editor) return { ok: false, error: "Only editors can publish pages." };
 
-  const result = await savePage(slug, data);
+  const result = await savePage(slug, cleanBoxDoc(data));
   if (result.ok) revalidatePath(`/p/${slug}`);
   return result;
+}
+
+/** Back to the landing page as it is written in code. Same gate as saving. */
+export async function restoreLandingAction(): Promise<{ ok: boolean; error?: string }> {
+  const editor = await getApiEditor();
+  if (!editor) return { ok: false, error: "Only editors can change this page." };
+  return deletePage(LANDING_SLUG);
 }

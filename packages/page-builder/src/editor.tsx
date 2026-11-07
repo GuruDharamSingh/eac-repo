@@ -107,6 +107,20 @@ export function PuckEditor({
   // never passes `loading` to its own button, so it will not stop this for us.
   const publishing = useRef(false);
 
+  // Edits that could not be saved (see runSave), restored once on load.
+  // Read in an effect, not during render: localStorage does not exist on the
+  // server, and Puck reads `data` only once, so a restore remounts it.
+  const stashKey = `eac-puck-unsaved:${orgId}:${slug}`;
+  const [restored, setRestored] = useState<Data | null>(null);
+  useEffect(() => {
+    const data = readStash(stashKey);
+    setRestored(data);
+    if (data) {
+      setDirty(true);
+      setStatus("Restored edits that did not save. Publish to keep them.");
+    }
+  }, [stashKey]);
+
   /**
    * Warn before closing with unsaved work.
    *
@@ -121,46 +135,59 @@ export function PuckEditor({
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const publish = useCallback(
-    async (data: Data) => {
+  /**
+   * One save, publish or draft. The action can THROW rather than answer:
+   * after a rebuild of the site, a tab opened before it holds server-action
+   * ids the new build does not know ("Server action not found", 2026-11-01).
+   * Without the catch the editor stayed on "Saving…" and every later click
+   * returned early, so the tab could never save again and said nothing.
+   * Now the work is stashed in this browser and restored after a reload.
+   */
+  const runSave = useCallback(
+    async (
+      action: (slug: string, data: Data) => Promise<{ ok: boolean; error?: string }>,
+      data: Data,
+      okLabel: string
+    ) => {
       if (publishing.current) return;
       publishing.current = true;
       setStatus("Saving…");
-
-      const res = await onPublish(slug, data);
-      publishing.current = false;
-
-      if (res.ok) {
-        saved.current = data;
-        setDirty(false);
-        setStatus(publishedLabel);
-      } else {
-        // Keep `dirty` true on failure: the work is still only in this tab, so
-        // the leave-warning must stay armed.
-        setStatus(res.error ?? "Could not save");
+      try {
+        const res = await action(slug, data);
+        if (res.ok) {
+          saved.current = data;
+          setDirty(false);
+          clearStash(stashKey);
+          setStatus(okLabel);
+        } else {
+          // Keep `dirty` true on failure: the work is still only in this tab, so
+          // the leave-warning must stay armed.
+          setStatus(res.error ?? "Could not save");
+        }
+      } catch {
+        const kept = writeStash(stashKey, data);
+        setStatus(
+          kept
+            ? "Could not save: the site was updated since this page opened. Reload the page; your edits are kept in this browser."
+            : "Could not save: the site was updated since this page opened. Reload the page to save (unsaved edits will be lost)."
+        );
+      } finally {
+        publishing.current = false;
       }
     },
-    [slug, onPublish, publishedLabel]
+    [slug, stashKey]
   );
+
+  const publish = useCallback((data: Data) => runSave(onPublish, data, publishedLabel), [runSave, onPublish, publishedLabel]);
 
   // Same guard and bookkeeping as publish: a saved draft is what "saved"
   // now means, so the leave-warning disarms until the next change.
   const saveDraft = useCallback(
     async (data: Data) => {
-      if (!onSaveDraft || publishing.current) return;
-      publishing.current = true;
-      setStatus("Saving…");
-      const res = await onSaveDraft(slug, data);
-      publishing.current = false;
-      if (res.ok) {
-        saved.current = data;
-        setDirty(false);
-        setStatus("Draft saved");
-      } else {
-        setStatus(res.error ?? "Could not save");
-      }
+      if (!onSaveDraft) return;
+      await runSave(onSaveDraft, data, "Draft saved");
     },
-    [slug, onSaveDraft]
+    [runSave, onSaveDraft]
   );
 
   // Stable unless the host's draft action changes: Puck re-derives its whole
@@ -188,9 +215,9 @@ export function PuckEditor({
         // uncontrolled component. Keying on the slug is what makes moving
         // between pages load the right one instead of silently keeping the
         // first page's content.
-        key={slug}
+        key={restored ? `${slug}:restored` : slug}
         config={config}
-        data={initial}
+        data={restored ?? initial}
         // The sanctioned channel for ambient context. Unlike `data`, metadata
         // updates live, and it reaches every block as `props.puck.metadata`
         // and every resolver — which is how a data-driven block learns which
@@ -206,6 +233,41 @@ export function PuckEditor({
       />
     </div>
   );
+}
+
+/** Unsaved edits kept in this browser after a save that could not reach the server. */
+const STASH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function readStash(key: string): Data | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { at?: number; data?: Data };
+    if (!parsed.data || !parsed.at || Date.now() - parsed.at > STASH_MAX_AGE_MS) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeStash(key: string, data: Data): boolean {
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ at: Date.now(), data }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearStash(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    /* storage unavailable: nothing was stashed */
+  }
 }
 
 /** "Save draft", beside Publish. Reads the document at the moment of the click. */

@@ -391,6 +391,45 @@ does not check `layout_mode`; `theme_overrides` is not read in
 `packages/silex-render/src/queries.ts`; the Silex org home binds the org's
 latest workshop regardless of URL.
 
+### Studio picture editor (2026-11-01, deployed on arts-collective)
+
+`@elkdonis/studio/image` (`packages/studio/src/image/`): `ImageEditor`, a
+full-window dialog around Filerobot Image Editor (MIT,
+`react-filerobot-image-editor` 5.0.0-beta.159 with `react-konva` ~19.0.10,
+`konva` 9.3.18, `styled-components` 6; the 4.x line predates React 19).
+Tabs: Adjust (crop with presets 4:5, 1:1, 9:16, 16:9, 1.91:1; rotate; flip),
+Finetune, Filters, Resize, Annotate (text, shapes), Watermark. Saves JPEG
+0.9. `FilerobotView.tsx` loads through `next/dynamic` with `ssr: false`:
+Konva's server entry requires the native `canvas` package and the Turbopack
+build fails on it otherwise. It opens on Adjust; the beta throws when Filters
+is the first tab before the picture loads.
+
+Server part: `GET /api/studio/image?path=&max=&format=` (arts-collective)
+→ `convertMediaImage` (`packages/services/src/media-convert.ts`): signed-in,
+`canReadMedia`, sizes 1080/2048/4096 (long edge, never enlarged), jpeg/png/
+webp, 60 MB and 80 MP ceilings, EXIF orientation applied and metadata dropped,
+`no-store`. The editor opens stored pictures through it at 2048 px. Saving
+goes through the host's normal upload route as a new file; the original stays.
+
+Post kind (`PostKind.tsx`): ✎ on each picture opens the editor and replaces
+the picture with the edited copy; "Make JPEG" on a non-JPEG picture converts
+it through the route (Instagram takes JPEG only). Prop `imageEndpoint`.
+
+Verified 2026-11-01: Filerobot in headless Chrome with a 6000x4000 JPEG
+(all tabs, a filter, save 1.3 s, whole browser ~384 MB); the `ImageEditor`
+component in a harness with the app's React (opens, Save returns a JPEG
+data URL, dialog closes); sharp on the same picture: 1080x1350 JPEG 517 ms,
+1080x1920 WebP 461 ms, 50 MB; route 401 when signed out; arts-collective
+build and restart. Not verified: anything signed in (the editor from a real
+post, the route returning a picture, Make JPEG).
+
+Also (2026-11-01, deployed ~14:45 EST): Writing cover "Edit" (`StudioUpload.imageEndpoint`;
+the edited copy uploads as a new cover), Video kind "Edit picture…" on a
+picture slot (logo, artwork, a picture `extra`; JPEG/PNG/WebP) and on a
+clip's picture overlay in the timeline (`VideoKindProps.imageEndpoint`,
+`Timeline` `editImage`); edited copies go into the project folder as slot
+`logo`. Not verified signed in.
+
 ## Rules and constraints
 
 Reasons for each are given in Current state above.

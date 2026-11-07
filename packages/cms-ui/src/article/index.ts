@@ -5,3 +5,4 @@ export type {
   ArticleProvenance,
   ReadingVoice,
 } from "./ArticleView";
+export { ExternalComments, type ExternalCommentView } from "./ExternalComments";

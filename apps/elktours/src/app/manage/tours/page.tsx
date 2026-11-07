@@ -3,46 +3,30 @@ import { Plus } from "lucide-react";
 import { Button, Badge } from "@elkdonis/primitives";
 import { formatDeparture, formatPrice, listTours, nextDepartures } from "@/lib/tours";
 import { TourRowActions } from "@/components/manage/tour-row-actions";
-import { PayoutsCard } from "@/components/manage/payouts-card";
-import { getPayoutIdentity } from "@elkdonis/commerce/server";
-import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
-import { getViewer } from "@/lib/auth";
+import { requireOrgEditor } from "@/lib/auth";
 
-export default async function ManageToursPage({ searchParams }: { searchParams: Promise<{ payouts?: string }> }) {
-  const [{ payouts: returned = null }, viewer] = await Promise.all([searchParams, getViewer()]);
-  const [tours, identity] = await Promise.all([
-    listTours({ includeDrafts: true }),
-    viewer ? getPayoutIdentity(viewer.userId).catch(() => null) : null,
-  ]);
+// Getting paid moved off Manage on 2026-11-06 (onboarding is done); it stays in /hub, where Stripe now returns.
+export default async function ManageToursPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
+  const tours = await listTours({ includeDrafts: true });
   const next = await nextDepartures(tours.map((t) => t.id));
 
   return (
     <>
-      {viewer && (
-        <div className="mb-10">
-          {/* The guide is the payee of every tour they author (commerce.md): this is their own Stripe account, not the site's. */}
-          <PayoutsCard
-            identity={{
-              country: identity?.country ?? null,
-              payoutMethod: identity?.payoutMethod ?? null,
-              payoutEmail: identity?.payoutEmail ?? null,
-              hasAccount: Boolean(identity?.stripeAccountId),
-              onboarded: Boolean(identity?.canReceiveDestinationCharge),
-            }}
-            cardAvailable={isCardPaymentAvailable()}
-            returned={returned}
-          />
-        </div>
-      )}
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-serif text-2xl">Tours</h2>
+        <span className="flex items-center gap-4">
+        <Link href="/studio/tour-detail" className="text-sm underline underline-offset-4">Page layout</Link>
         <Button asChild size="sm">
           <Link href="/manage/tours/new">
             <Plus className="size-4" aria-hidden />
             New tour
           </Link>
         </Button>
+        </span>
       </div>
 
       {tours.length === 0 ? (

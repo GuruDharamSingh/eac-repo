@@ -87,6 +87,22 @@ with Python (`json.dumps`), since a shell heredoc mangles the quoting; Puck's
 header Publish is a `<span class="_Button…">`, not a `<button>`, so click it
 by its text node.
 
+(claude, 2026-11-06) A dev preview rewrites the app's `next-env.d.ts` to
+`import "./.next/dev/types/routes.d.ts"`; inside the production container that path
+holds stale dev types, and `check-types` then fails in `.next/types/validator.ts`
+("Type '"/learn"' is not assignable to type 'LayoutRoutes'"). Put the line back to
+`import "./.next/types/routes.d.ts";` (what `next build` writes) after the preview.
+Sophia's copy is tracked; arts-collective's is not.
+(claude, 2026-11-06) A headless Chrome for CDP runs as `docker run -d --rm --name claude-chrome
+--network guru-eac_eac-network zenika/alpine-chrome:latest --no-sandbox
+--remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 about:blank` (the session's
+permission classifier refused it until the developer allowed it). Address it by IP from a
+`node:24-alpine` container on the same network; `PUT /json/new` opens a tab, and a popup
+opened by the page appears in `/json/list`.
+
+(claude, 2026-11-02) A one-off dev preview can be OOM-killed without any page error: `docker inspect -f '{{.State.OOMKilled}}'` was
+true for `sunjay-series-preview` when a browser run came back as white pages. `docker start` it and retry before debugging the page.
+
 ## Minting a session cookie
 Procedure used 2026-09-13 to 2026-09-16; not re-run 2026-09-23.
 
@@ -102,7 +118,8 @@ Procedure used 2026-09-13 to 2026-09-16; not re-run 2026-09-23.
 3. Get tokens: `POST /admin/generate_link` `{type:"magiclink", email}` returns
    `hashed_token`; `POST /verify` `{type:"magiclink", token_hash}` returns the
    session. A password grant (`POST /token?grant_type=password`) also returns a
-   session (**assumed**, not recorded as tried).
+   session (verified 2026-11-04: the cookie authenticated on amrit-canada with token
+   checking on).
 4. Cookie `sb-eac-auth=base64-<base64(JSON.stringify(session))>`. Appending
    `-auth-token` to the name does not authenticate.
 5. `curl -H "Cookie: sb-eac-auth=…"` (with `-H`; `curl -b` mangled this cookie

@@ -1,187 +1,209 @@
+import "@elkdonis/cms-ui/hubsite.css";
+import "./hub-cards.css";
 import type { Metadata } from "next";
 import {
-  getOrgChatIdentity,
-  getOrgChatRoom,
   getProfile,
-  listOrgChatMessages,
-  listOrgDocuments,
-  listOrgIdeas,
-  listOrgMediaLibrary,
   getStandingMeeting,
-  getViewerAlerts,
+  listOrgDocuments,
   listOrgEventsInRange,
+  listOrgMediaLibrary,
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
-import { ChatCard, ProvisionChat } from "@elkdonis/chat";
-import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
-import {
-  CalendarFace,
-  ComposeFace,
-  DocumentsFace,
-  GalleryFace,
-  IdeasFace,
-  PipelineFace,
-  ProfileFace,
-  StandingMeetingFace,
-  hubCards,
-} from "@elkdonis/cms-ui/hub";
+import { HubCardGrid, HubLinkCard, MeetingBanner, type MeetingBannerData } from "@elkdonis/cms-ui/hubsite";
+import { SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import { DocumentsFace, GalleryFace } from "@elkdonis/cms-ui/hub";
+import { getPayoutIdentity } from "@elkdonis/commerce/server";
+import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
 import { requireOrgMember } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { getPipelineBoard } from "@/lib/pipeline";
-import { getForumSnapshot } from "@/lib/forum";
 import { getAllThreadsForOrg } from "@/lib/data";
+import { formatDeparture, listTours, nextDepartures } from "@/lib/tours";
 import { EmailFace } from "@/components/hub/EmailFace";
-// Lifted into the shared package when IFAC wanted the same canvas.
-import { WhiteboardFace } from "@elkdonis/cms-ui/whiteboard";
+import { PayoutsCard } from "@/components/manage/payouts-card";
+import { TourScheduleCard } from "@/components/hub/tour-schedule-card";
+import { listSuggestionsAction } from "@/lib/suggestion-actions";
 
 export const metadata: Metadata = { title: "Hub" };
 export const dynamic = "force-dynamic";
 
-/** This org's zone. Was a bare literal inside StandingMeetingFace before the
- *  face was shared; it belongs to the site, not to the component. */
 const TIME_ZONE = "Europe/Paris";
+const TALK_BASE = (process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? "").replace(/\/$/, "");
 
 /**
- * The members' hub: a grid of faces, each the tile-sized form of the popup it
- * opens. Every read the tiles need happens here, in parallel, server-side.
- * The popups fetch their own fuller record when opened, so a member who only
- * wanted the next gathering's time pays for nothing else.
+ * The members' hub in IFAC's "Cards 2" layout (apps/ifac/src/app/hub/
+ * cards-view.tsx; 2026-11-02): the gathering banner, then cards that are
+ * plain links to their own pages, built from cms-ui's shared hubsite
+ * (`HubCardGrid`, `HubLinkCard`, `MeetingBanner`).
+ *
+ *   three across  Publish · Profile / Center · Tours (editors)
+ *   panel         Tours offered: every tour, drafts filter, a way into each editor (editors)
+ *   panel         Getting paid: the Stripe onboarding (editors; Stripe returns here since 2026-11-06, when it left /manage/tours)
+ *   four across   Calendar · Manage the site · Whiteboard · General chat
+ *   then          Working together: Forum · Ideas · Pipeline
+ *   editor tools  Email, Gallery, Documents open in place (no page of their own on this site yet)
  */
-export default async function HubPage() {
+export default async function HubPage({ searchParams }: { searchParams: Promise<{ payouts?: string }> }) {
   const viewer = await requireOrgMember("/hub");
+  const { payouts: returned = null } = await searchParams;
 
-  const calendarFrom = startOfMonth(new Date());
-  const [
-    profile,
-    chatRoom,
-    events,
-    standing,
-    board,
-    forum,
-    documents,
-    ideas,
-    media,
-    alerts,
-    emailThreads,
-  ] = await Promise.all([
-    getProfile(viewer.userId),
-    getOrgChatRoom(siteConfig.orgId),
-    // The calendar face draws this month; it fetches later months itself.
-    listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1)),
-    // Which gathering leads the hub — an editor's flag first, then a weekly
-    // series, then whatever is soonest. See getStandingMeeting.
-    getStandingMeeting(siteConfig.orgId),
-    // Only the fields the tile draws come out of this; the surface loads the
-    // full board when it opens. A Deck outage costs the tile, not the hub.
+  const from = startOfMonth(new Date());
+  const [profile, standing, events, board, documents, media, emailThreads, tours, identity] = await Promise.all([
+    getProfile(viewer.userId).catch(() => null),
+    getStandingMeeting(siteConfig.orgId).catch(() => null),
+    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+    // A Deck outage costs the card's count line, not the hub.
     getPipelineBoard().catch(() => null),
-    // The same snapshot /api/hub/forum returns, so the tile and the popup it
-    // opens agree. A forum outage costs the tile, not the hub.
-    getForumSnapshot().catch(() => null),
-    // The documents face draws the current document's first LINES, so one
-    // snippet is read back from Nextcloud; the rest of the list is the index
-    // in site_config and costs nothing.
     listOrgDocuments(siteConfig.orgId, { withSnippets: 1 }).catch(() => []),
-    listOrgIdeas(siteConfig.orgId, { limit: 10 }).catch(() => []),
-    // Editors only, matching /api/media/library: listing the library reveals
-    // filenames of unpublished material.
+    // Editors only, as /api/media/library: the library lists unpublished material.
     viewer.canEdit
       ? listOrgMediaLibrary(siteConfig.orgId)
-          // `filename` → `name`, the same rename `createHubConnectors.listMedia`
-          // does on the client, so the face and the surface agree on the shape.
           .then((items) => items.map((i) => ({ url: i.url, name: i.filename })))
           .catch(() => [])
       : [],
-    // Unread messages, unread notifications, and gatherings here this person
-    // said they are coming to. Stated on the profile face, never linked —
-    // no app serves an inbox route yet.
-    getViewerAlerts(viewer.userId, siteConfig.orgId),
-    // Editors only — the Email card can message any thread's attendees.
     viewer.canEdit
       ? getAllThreadsForOrg(50)
           .then((threads) => threads.filter((t) => t.kind !== "post"))
           .catch(() => [])
       : [],
+    viewer.canEdit ? listTours({ includeDrafts: true }).catch(() => []) : [],
+    viewer.canEdit ? getPayoutIdentity(viewer.userId).catch(() => null) : null,
   ]);
+  // Visitors' suggestions waiting for an editor (round 6). A failure costs the count line, not the hub.
+  const waiting = viewer.canEdit
+    ? await listSuggestionsAction({ status: "pending" }).then((l) => l.length).catch(() => null)
+    : null;
+  const next = viewer.canEdit && tours.length ? await nextDepartures(tours.map((t) => t.id)).catch(() => new Map()) : new Map();
 
-  const [chatMessages, chatIdentity] = chatRoom
-    ? await Promise.all([
-        listOrgChatMessages(siteConfig.orgId, viewer.userId, { limit: 20 }),
-        getOrgChatIdentity(
-          siteConfig.orgId,
-          viewer.userId,
-          profile?.displayName?.trim() || viewer.email
-        ),
-      ])
-    : [[], undefined];
+  // The banner as IFAC's Cards 2 draws it, without the rota and light this site does not run.
+  const meeting: MeetingBannerData | null = standing
+    ? {
+        id: standing.event.id,
+        title: standing.event.title,
+        at: standing.at.toISOString(),
+        location: standing.event.location,
+        kicker: standing.source === "next" ? "Next gathering" : "Next weekly meeting",
+        photos: standing.event.coverImageUrl ? [standing.event.coverImageUrl] : [],
+        joinUrl:
+          standing.event.meetingUrl ||
+          (standing.event.talkToken && TALK_BASE ? `${TALK_BASE}/call/${standing.event.talkToken}` : null),
+        attendance: null,
+        host: null,
+        light: null,
+        planAheadThreadId: null,
+      }
+    : null;
 
-  // What this site actually has. The catalogue's words live in cms-ui; which
-  // of them are real is a fact about this host. Gallery, compose, profile,
-  // documents and ideas are live FACES now rather than catalogue entries, so
-  // they are no longer named here — what is left is the tiles that genuinely
-  // are a word and a door.
-  const cards = hubCards({
-    files: false,
-    questionnaires: false,
-    help: false,
-    manageHref: "/manage",
-  });
+  const displayName = profile?.displayName?.trim() || viewer.email.split("@")[0];
+  const firstName = displayName.split(/\s+/)[0] || displayName;
 
-  const visible = cards.filter((c) => !c.adminOnly || viewer.canEdit);
-  const main = visible.filter((c) => !c.wide);
-  const wide = visible.filter((c) => c.wide);
+  const now = Date.now();
+  const nextEvent = events
+    .filter((e) => e.scheduledAt && new Date(e.scheduledAt).getTime() >= now)
+    .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())[0];
+  const calendarLine = nextEvent
+    ? `Next: ${nextEvent.title} · ${new Date(nextEvent.scheduledAt!).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TIME_ZONE })}`
+    : undefined;
+  const boardCards = board ? board.stacks.reduce((n, s) => n + (s.cards ?? []).filter((c) => !c.archived).length, 0) : null;
+  const drafts = tours.filter((t) => t.status !== "published").length;
 
   return (
-    <>
-      {/* The surface provider is mounted once in the root layout. */}
-      <div className="mx-auto max-w-6xl px-5 py-12">
-        <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">
-          {siteConfig.orgName}
-        </p>
-        <h1 className="mt-1 font-serif text-3xl">Hub</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Everything opens in place. Pick a day to see what&rsquo;s on, or to add something to it.
-        </p>
+    <main className="hub">
+      <div className="eac-hs el-c2">
+        <div className="el-c2-welcome">
+          <div>
+            <p className="eac-hs-kicker">{siteConfig.orgName}</p>
+            <h1>Welcome back, {firstName}.</h1>
+          </div>
+        </div>
 
-        <div className="mt-8">
-          <SurfaceCardGrid>
-            {/* The standing gathering: what a member opens the hub to check. */}
-            <StandingMeetingFace standing={standing} canEdit={viewer.canEdit} timeZone={TIME_ZONE} />
+        <MeetingBanner meeting={meeting} timeZone={TIME_ZONE} />
 
-            <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
-
-            <PipelineFace board={board} canEdit={viewer.canEdit} />
-
-            <ForumFace forum={forum} />
-
-            {/* Your identity, opened in place. The tile this replaces linked
-                out to ArtDirect: click your own name on your own org's hub and
-                you were on a different site with no way back but the browser's
-                button. It is one `users` row and the profile surface already
-                reads and writes it. */}
-            <ProfileFace
-            centerHref="/center"
-              summary={{
-                displayName: profile?.displayName?.trim() || viewer.email,
-                avatarUrl: profile?.avatarUrl ?? null,
-                headline: profile?.headline ?? null,
-                alerts,
-              }}
+        <HubCardGrid label="Hub" className="el-row-3">
+          {viewer.canEdit ? (
+            <HubLinkCard href="/manage/compose" glyph="✚" title="Publish" blurb="Journal posts, gatherings, pages: everything the site puts out." />
+          ) : null}
+          <HubLinkCard href="/center" title="Profile / Center" blurb="Your profile, what you follow, and your own efforts." />
+          {viewer.canEdit ? (
+            <HubLinkCard
+              href="/manage/tours"
+              glyph="⌖"
+              title="Tours"
+              blurb="Write and edit tours, their stops, films and dates."
+              meta={`${tours.length} tour${tours.length === 1 ? "" : "s"}${drafts ? ` · ${drafts} draft${drafts === 1 ? "" : "s"}` : ""}`}
             />
+          ) : null}
+        </HubCardGrid>
 
-            {/* The face IS the form: type it, press Enter. Opening the tile
-                goes to the ideas feed, where they are discussed. */}
-            <IdeasFace initialIdeas={ideas} />
+        {viewer.canEdit ? (
+          <TourScheduleCard
+            tours={tours.map((t) => {
+              const d = next.get(t.id);
+              return { id: t.id, slug: t.slug, title: t.title, status: t.status, next: d ? formatDeparture(d.startsAt) : null };
+            })}
+          />
+        ) : null}
 
+        {viewer.canEdit ? (
+          <div className="el-c2-payouts">
+            {/* The Stripe onboarding (it was also on /manage/tours until 2026-11-06): the guide is the payee of the tours they author. */}
+            <PayoutsCard
+              identity={{
+                country: identity?.country ?? null,
+                payoutMethod: identity?.payoutMethod ?? null,
+                payoutEmail: identity?.payoutEmail ?? null,
+                hasAccount: Boolean(identity?.stripeAccountId),
+                onboarded: Boolean(identity?.canReceiveDestinationCharge),
+              }}
+              cardAvailable={isCardPaymentAvailable()}
+              returned={returned}
+            />
+          </div>
+        ) : null}
+
+        <HubCardGrid label="Calendar and tools" className={viewer.canEdit ? "el-row-5" : "el-row-3"}>
+          <HubLinkCard href="/hub/calendar" glyph="▦" title="Calendar" blurb="Every gathering and departure, month by month." meta={calendarLine} />
+          {viewer.canEdit ? (
+            <HubLinkCard href="/manage" glyph="◈" title="Manage the site" blurb="Places, experiences, fly-overs, people and site copy." />
+          ) : null}
+          {viewer.canEdit ? (
+            <HubLinkCard
+              href="/manage/suggestions"
+              glyph="✉"
+              title="Suggestions"
+              blurb="Spots and walks visitors suggested on the places page."
+              meta={waiting != null ? (waiting === 0 ? "Nothing waiting" : `${waiting} waiting`) : undefined}
+            />
+          ) : null}
+          <HubLinkCard href="/hub/whiteboard" glyph="✎" title="Whiteboard" blurb="A shared canvas. Sketch a route, a plan, an idea." />
+          <HubLinkCard href="/hub/chat" glyph="☏" title="General chat" blurb={`Everyone in ${siteConfig.orgName}. Say hello, ask the room.`} />
+        </HubCardGrid>
+
+        <section className="eac-hp-section" aria-labelledby="c2-together">
+          <h2 id="c2-together" className="eac-hp-section-title">
+            Working together
+          </h2>
+          <HubCardGrid label="Working together" className="el-row-3">
+            <HubLinkCard href="/forum" glyph="☰" title="Forum" blurb="What is being discussed, every board in full." />
+            <HubLinkCard href="/forum/ideas" glyph="✦" title="Ideas" blurb="Suggestions for the site and the tours." />
+            <HubLinkCard
+              href="/hub/pipeline"
+              glyph="▥"
+              title="Pipeline"
+              blurb="What the team is working on, on its Deck board."
+              meta={boardCards !== null ? `${boardCards} card${boardCards === 1 ? "" : "s"} on the board` : undefined}
+            />
+          </HubCardGrid>
+        </section>
+
+        {/* These open in place: this site has no page for them yet, so they stay as faces. */}
+        <section className="eac-hp-section" aria-labelledby="c2-tools">
+          <h2 id="c2-tools" className="eac-hp-section-title">
+            {viewer.canEdit ? "Documents and editor tools" : "Documents"}
+          </h2>
+          <SurfaceCardGrid>
             <DocumentsFace documents={documents} />
-
-            <WhiteboardFace />
-
-            {viewer.canEdit && <ComposeFace />}
-
-            {/* Editors only — the library lists unpublished material, which is
-                why /api/media/library is editors-only too. */}
             {viewer.canEdit && <GalleryFace images={media} />}
-
             {viewer.canEdit && (
               <EmailFace
                 threads={emailThreads.map((t) => ({
@@ -192,46 +214,9 @@ export default async function HubPage() {
                 }))}
               />
             )}
-
-            {main.map((card) => (
-              <SurfaceCard
-                key={card.id}
-                kind={card.kind}
-                glyph={card.glyph}
-                kicker={null}
-                title={card.title}
-                blurb={card.blurb}
-                disabled={!card.available}
-                surface={card.available ? card.surface : undefined}
-                href={card.available ? card.href : undefined}
-              />
-            ))}
-
-            <div className="w-full">
-              {chatRoom ? (
-                <ChatCard messages={chatMessages} canPost={viewer.isMember} identity={chatIdentity} />
-              ) : (
-                <ProvisionChat canProvision={viewer.canEdit} compact />
-              )}
-            </div>
-
-            {wide.map((card) => (
-              <SurfaceCard
-                key={card.id}
-                wide
-                kind={card.kind}
-                glyph={card.glyph}
-                kicker={null}
-                title={card.title}
-                blurb={card.blurb}
-                disabled={!card.available}
-                surface={card.available ? card.surface : undefined}
-                href={card.available ? card.href : undefined}
-              />
-            ))}
           </SurfaceCardGrid>
-        </div>
+        </section>
       </div>
-    </>
+    </main>
   );
 }

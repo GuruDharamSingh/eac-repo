@@ -1,5 +1,6 @@
 import { SectionEditor } from "@/components/manage/section-editor";
 import { getSiteSections } from "@/lib/data";
+import { requireOrgEditor } from "@/lib/auth";
 
 /**
  * The wording on the fixed parts of the site — hero, about, visiting
@@ -69,6 +70,10 @@ const SECTIONS: {
 ];
 
 export default async function ManagePagesPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const sections = await getSiteSections();
 
   return (

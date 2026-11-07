@@ -19,7 +19,8 @@ import { HomeHero } from "@/components/home-hero";
 import { HomeWelcome } from "@/components/home-welcome";
 import { HomeLoft } from "@/components/home-loft";
 import { canEditHome, loadHeroSlides } from "@/lib/home-hero";
-import { loadHomeLoft, loadWelcome } from "@/lib/home-sections";
+import { loadWelcome } from "@/lib/home-sections";
+import { loadHomeLoft } from "@/lib/landing-loft";
 import { getCurrentUserId } from "@/lib/marketplace-auth";
 import "@/components/home-hero.css";
 import { siteConfig } from "@/config/site";
@@ -119,7 +120,7 @@ export default async function HomePage({
           loft. Everything from the featured work down is the market as it was. */}
       {welcome && <HomeWelcome content={welcome} canEdit={editor} />}
       {hero ? <HomeHero slides={heroSlides} /> : hosts && <AuctionSplash presenter={hosts.presenter} host={hosts.host} />}
-      {loft && loft.pool.length > 0 && <HomeLoft loft={loft} />}
+      {loft && (loft.pieces.length > 0 || loft.scene.openSpot) && <HomeLoft loft={loft} />}
 
       {series && !hero && (
         <div className="border-b border-border">

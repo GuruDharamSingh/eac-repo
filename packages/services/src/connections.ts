@@ -1,7 +1,9 @@
 /**
  * Connections — a person's own OAuth links to outside services (migration 192).
  *
- * YouTube first. The person brings their own Google Cloud OAuth client: they
+ * YouTube first. Since 2026-11-01 the collective's Google client
+ * (YOUTUBE_CLIENT_ID/SECRET, youtubeApp()) is the default; a person may still
+ * bring their own Google Cloud OAuth client: they
  * paste its client id and secret, then authorise once at Google; the refresh
  * token kept here lets the platform upload to that person's channel later
  * without them present (a circle's recordings, Studio publishing).
@@ -26,6 +28,7 @@ import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:cr
 import { db } from '@elkdonis/db';
 import { listUserMemberships } from './org-membership';
 import { listChannelsForManager, setOrgChannel, type ChannelProvider } from './org-channels';
+import { listConnectionEvents, logConnectionEvent } from './connection-events';
 import { nanoid } from 'nanoid';
 import {
   facebookAuthorizeUrl,
@@ -72,6 +75,8 @@ export interface UserConnection {
   label: string;
   /** The client id is not a secret; shown so the person can tell clients apart. */
   clientId: string;
+  /** Uses the collective's app (always for Meta and Threads; YouTube when its client is YOUTUBE_CLIENT_ID). */
+  collective: boolean;
   status: ConnectionStatus;
   error: string | null;
   accountId: string | null;
@@ -121,6 +126,18 @@ const YT_CHANNELS = 'https://www.googleapis.com/youtube/v3/channels';
 /** How long a started authorisation stays valid. */
 const STATE_TTL_MS = 15 * 60 * 1000;
 
+/**
+ * The collective's own Google OAuth client (YOUTUBE_CLIENT_ID/SECRET,
+ * 2026-11-01), as Meta's apps are for Facebook: when set, a person connects
+ * YouTube without bringing a client. Bring-your-own stays for anyone who
+ * wants their own quota.
+ */
+export function youtubeApp(): { appId: string; appSecret: string } | null {
+  const appId = process.env.YOUTUBE_CLIENT_ID;
+  const appSecret = process.env.YOUTUBE_CLIENT_SECRET;
+  return appId && appSecret ? { appId, appSecret } : null;
+}
+
 export function connectionRedirectUri(): string {
   const explicit = process.env.CONNECTIONS_OAUTH_REDIRECT_URI;
   if (explicit) return explicit;
@@ -139,26 +156,61 @@ export function connectionStartUrl(id: string, returnTo?: string): string {
 
 // ── encryption ──────────────────────────────────────────────────────────────
 
-function key(): Buffer {
+/**
+ * Two key versions (2026-11-01). `v2` derives from CONNECTIONS_KEY, a secret
+ * only the services that read connections hold; `v1` from INTER_APP_JWT_SECRET,
+ * which every container has. New seals use v2 when the key is set; v1 rows
+ * are re-sealed the next time they are read (resealLegacy).
+ */
+function keyFor(version: 'v1' | 'v2'): Buffer {
+  if (version === 'v2') {
+    const secret = process.env.CONNECTIONS_KEY;
+    if (!secret) throw new Error('CONNECTIONS_KEY is not set in this container; a v2-sealed secret cannot be read here.');
+    return Buffer.from(hkdfSync('sha256', secret, 'eac-connections', 'user_connections v2', 32));
+  }
   const secret = process.env.INTER_APP_JWT_SECRET;
   if (!secret) throw new Error('INTER_APP_JWT_SECRET is not set; connections cannot store secrets.');
   return Buffer.from(hkdfSync('sha256', secret, 'eac-connections', 'user_connections v1', 32));
 }
+const SEAL_VERSION: 'v1' | 'v2' = process.env.CONNECTIONS_KEY ? 'v2' : 'v1';
+const isLegacySeal = (sealed: string | null | undefined) => SEAL_VERSION === 'v2' && typeof sealed === 'string' && sealed.startsWith('v1.');
 
 /** "v1.<iv>.<tag>.<ciphertext>", base64url parts. */
 function seal(plain: string): string {
   const iv = randomBytes(12);
-  const c = createCipheriv('aes-256-gcm', key(), iv);
+  const c = createCipheriv('aes-256-gcm', keyFor(SEAL_VERSION), iv);
   const body = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
-  return ['v1', iv.toString('base64url'), c.getAuthTag().toString('base64url'), body.toString('base64url')].join('.');
+  return [SEAL_VERSION, iv.toString('base64url'), c.getAuthTag().toString('base64url'), body.toString('base64url')].join('.');
 }
 
 function open(sealed: string): string {
   const [v, iv, tag, body] = sealed.split('.');
-  if (v !== 'v1' || !iv || !tag || body === undefined) throw new Error('Unreadable stored secret.');
-  const d = createDecipheriv('aes-256-gcm', key(), Buffer.from(iv, 'base64url'));
+  if ((v !== 'v1' && v !== 'v2') || !iv || !tag || body === undefined) throw new Error('Unreadable stored secret.');
+  const d = createDecipheriv('aes-256-gcm', keyFor(v), Buffer.from(iv, 'base64url'));
   d.setAuthTag(Buffer.from(tag, 'base64url'));
   return Buffer.concat([d.update(Buffer.from(body, 'base64url')), d.final()]).toString('utf8');
+}
+
+/** Re-seal a row's v1 secrets with the v2 key the first time they are read. Best effort. */
+async function resealLegacy(id: string): Promise<void> {
+  if (SEAL_VERSION !== 'v2') return;
+  try {
+    const rows = await db`SELECT client_secret_enc, refresh_token_enc, targets FROM user_connections WHERE id = ${id}`;
+    const row = rows[0];
+    if (!row) return;
+    const targets = (Array.isArray(row.targets) ? (row.targets as MetaPageTarget[]) : []);
+    const legacy = isLegacySeal(row.client_secret_enc) || isLegacySeal(row.refresh_token_enc) || targets.some((t) => isLegacySeal(t.tokenEnc));
+    if (!legacy) return;
+    const re = (v: string | null) => (v ? seal(open(v)) : v);
+    const nextTargets = targets.map((t) => ({ ...t, tokenEnc: t.tokenEnc ? seal(open(t.tokenEnc)) : t.tokenEnc }));
+    await db`
+      UPDATE user_connections SET client_secret_enc = ${re(row.client_secret_enc)}, refresh_token_enc = ${re(row.refresh_token_enc)},
+        targets = ${db.json(nextTargets as unknown as Parameters<typeof db.json>[0])}
+      WHERE id = ${id}
+    `;
+  } catch (err) {
+    console.warn('[connections] re-seal skipped:', err instanceof Error ? err.message : String(err));
+  }
 }
 
 // ── rows ────────────────────────────────────────────────────────────────────
@@ -171,6 +223,7 @@ function mapRow(r: any): UserConnection {
     provider: r.provider,
     label: r.label ?? '',
     clientId: r.client_id,
+    collective: r.provider !== 'youtube' || r.client_id === process.env.YOUTUBE_CLIENT_ID,
     status: r.status,
     error: r.error ?? null,
     accountId: r.account_id ?? null,
@@ -247,6 +300,16 @@ export async function createConnection(
   }
   if (provider !== 'youtube') return { ok: false, error: 'Unknown provider.' };
   const { label, clientId, clientSecret } = cleanInput(input);
+  // No client posted: the collective's, when the server has one.
+  const collective = !clientId ? youtubeApp() : null;
+  if (collective) {
+    const id = nanoid(21);
+    await db`
+      INSERT INTO user_connections (id, user_id, provider, label, client_id, client_secret_enc)
+      VALUES (${id}, ${userId}, ${provider}, ${label ?? ''}, ${collective.appId}, ${seal(collective.appSecret)})
+    `;
+    return { ok: true, connection: (await getConnection(userId, id))! };
+  }
   if (!clientId || !CLIENT_ID_RE.test(clientId)) {
     return { ok: false, error: 'The client ID should end in .apps.googleusercontent.com.' };
   }
@@ -296,15 +359,40 @@ export async function updateConnection(
 export async function deleteConnection(userId: string, id: string): Promise<boolean> {
   const rows = await db`
     DELETE FROM user_connections WHERE user_id = ${userId} AND id = ${id}
-    RETURNING refresh_token_enc, provider
+    RETURNING refresh_token_enc, provider, account_id
   `;
   if (!rows[0]) return false;
   const sealed = rows[0].refresh_token_enc as string | null;
-  if (sealed && rows[0].provider === 'meta') {
+  void logConnectionEvent({ userId, connectionId: id, provider: rows[0].provider, event: 'removed' });
+  if (sealed && (rows[0].provider === 'threads' || rows[0].provider === 'instagram')) {
+    // Neither API documents a revoke call (2026-11-01); the DELETE on
+    // /me/permissions is tried in case it answers, and the outcome logged.
+    // The person removes the app in their Threads or Instagram settings.
+    const base = rows[0].provider === 'threads' ? 'https://graph.threads.net/v1.0' : 'https://graph.instagram.com';
+    let outcome = 'unsupported';
     try {
-      await facebookRevoke(open(sealed));
+      const res = await fetch(`${base}/me/permissions?access_token=${encodeURIComponent(open(sealed))}`, { method: 'DELETE' });
+      outcome = `${res.status}`;
     } catch {
-      /* best effort */
+      outcome = 'unreachable';
+    }
+    void logConnectionEvent({ userId, connectionId: id, provider: rows[0].provider, event: 'revoke_attempted', detail: { outcome } });
+    return true;
+  }
+  if (sealed && rows[0].provider === 'meta') {
+    // Revoking at Facebook kills every token of that Facebook account, so
+    // skip it while another connection still uses the same account
+    // (2026-11-01: removing a duplicate row silently broke the kept one).
+    const siblings = rows[0].account_id
+      ? await db`SELECT 1 FROM user_connections WHERE provider = 'meta' AND account_id = ${rows[0].account_id} AND user_id = ${userId} LIMIT 1`
+      : [];
+    if (siblings.length === 0) {
+      try {
+        await facebookRevoke(open(sealed));
+        void logConnectionEvent({ userId, connectionId: id, provider: 'meta', event: 'revoke_attempted', detail: { outcome: 'ok' } });
+      } catch {
+        void logConnectionEvent({ userId, connectionId: id, provider: 'meta', event: 'revoke_attempted', detail: { outcome: 'failed' } });
+      }
     }
     return true;
   }
@@ -393,6 +481,7 @@ export async function completeConnectionAuth(
   const pending = row.oauth_state as { nonce?: string; returnTo?: string | null; startedAt?: number } | null;
   const returnTo = pending?.returnTo ?? null;
   const fail = async (error: string) => {
+    void logConnectionEvent({ userId, connectionId: id, provider: row.provider, event: 'connect_failed', detail: { error } });
     await db`
       UPDATE user_connections SET oauth_state = NULL, status = CASE WHEN refresh_token_enc IS NULL THEN 'error' ELSE status END,
         error = ${error}, updated_at = now()
@@ -423,6 +512,7 @@ export async function completeConnectionAuth(
     } catch (err) {
       return fail(err instanceof Error ? err.message : String(err));
     }
+    void logConnectionEvent({ userId, connectionId: id, provider: row.provider, event: 'connected' });
     return { ok: true, connection: (await getConnection(userId, id))!, returnTo };
   }
 
@@ -506,6 +596,25 @@ async function fetchOwnChannel(
 const NO_PAGE_ERROR =
   'Connected, but no Page came back from Facebook. Connect from your personal Facebook profile (not while switched into the Page), and in the dialog tick the Page and its Instagram account, or choose all current and future Pages. If the Page is yours only through a business portfolio, the app also needs business_management.';
 
+/**
+ * Pages attached by id keep their place across a reconnect, but their tokens
+ * are re-minted with the new user token (the old ones die when the app is
+ * re-authorised or revoked, 2026-11-01). A Page that no longer answers is dropped.
+ */
+async function refreshAttachedPages(userToken: string, prev: MetaPageTarget[]): Promise<MetaPageTarget[]> {
+  const out: MetaPageTarget[] = [];
+  for (const t of prev) {
+    if (!t.id) continue;
+    try {
+      const page = await facebookPageById(userToken, t.id);
+      if (page) out.push({ id: page.id, name: page.name, tokenEnc: seal(page.accessToken), tasks: page.tasks, instagramUserId: page.instagramUserId, instagramUsername: page.instagramUsername });
+    } catch {
+      /* dropped: Facebook no longer gives this account the Page */
+    }
+  }
+  return out;
+}
+
 /** Facebook: code → long-lived user token, the person, their Pages (with tokens) and Instagram accounts. */
 async function completeMeta(userId: string, id: string, app: { appId: string; appSecret: string }, code: string) {
   const short = await facebookExchangeCode({ ...app, redirectUri: connectionRedirectUri(), code });
@@ -524,7 +633,7 @@ async function completeMeta(userId: string, id: string, app: { appId: string; ap
   // tokens stay valid until revoked, rather than wiping them (2026-11-01).
   if (targets.length === 0) {
     const prev = await db`SELECT targets FROM user_connections WHERE user_id = ${userId} AND id = ${id}`;
-    targets = ((prev[0]?.targets ?? []) as MetaPageTarget[]).filter((t) => t.id && t.tokenEnc);
+    targets = await refreshAttachedPages(long.access_token, (prev[0]?.targets ?? []) as MetaPageTarget[]);
   }
   await db`
     UPDATE user_connections SET
@@ -587,7 +696,7 @@ async function completeInstagram(userId: string, id: string, app: { appId: strin
  * Meta/Threads: the stored long-lived token, exchanged for a fresh one when it
  * is older than TOKEN_REFRESH_AFTER_MS. Not user-scoped (see getConnectionAccessToken).
  */
-async function metaFamilyToken(id: string): Promise<ConnectionResult<{ accessToken: string; provider: ConnectionProvider; accountId: string | null }>> {
+async function metaFamilyToken(id: string, force = false): Promise<ConnectionResult<{ accessToken: string; provider: ConnectionProvider; accountId: string | null }>> {
   const rows = await db`
     SELECT provider, client_id, client_secret_enc, refresh_token_enc, token_refreshed_at, account_id
     FROM user_connections WHERE id = ${id}
@@ -596,7 +705,7 @@ async function metaFamilyToken(id: string): Promise<ConnectionResult<{ accessTok
   if (!row?.refresh_token_enc) return { ok: false, error: 'Not connected.' };
   let token = open(row.refresh_token_enc);
   const age = row.token_refreshed_at ? Date.now() - new Date(row.token_refreshed_at).getTime() : Infinity;
-  if (age > TOKEN_REFRESH_AFTER_MS) {
+  if (force || age > TOKEN_REFRESH_AFTER_MS) {
     try {
       const fresh =
         row.provider === 'meta'
@@ -658,6 +767,15 @@ export async function getThreadsTarget(connectionId: string): Promise<Connection
 }
 
 /**
+ * The daily maintenance's handle on a Meta-family token (connection-maintenance.ts):
+ * `force` exchanges it now whatever its age. System actor; no user scope.
+ */
+export async function refreshConnectionToken(id: string, opts: { force: boolean }): Promise<ConnectionResult<{ accessToken: string }>> {
+  const t = await metaFamilyToken(id, opts.force);
+  return t.ok === false ? t : { ok: true, accessToken: t.accessToken };
+}
+
+/**
  * A fresh access token for a connection. With `userId` the connection must
  * be that person's (every request-driven caller passes it, 2026-11-01);
  * without it the caller is a system actor (the upload worker running a
@@ -671,6 +789,8 @@ export async function getConnectionAccessToken(id: string, userId?: string): Pro
   const row = rows[0];
   if (!row || (userId && row.user_id !== userId)) return { ok: false, error: 'Not found.' };
   if (!row.refresh_token_enc) return { ok: false, error: 'Not connected.' };
+  await resealLegacy(id);
+  void logConnectionEvent({ userId: row.user_id, connectionId: id, provider: row.provider, event: 'token_used', detail: { by: userId ? 'person' : 'system' } });
   if (row.provider === 'meta' || row.provider === 'threads' || row.provider === 'instagram') {
     const t = await metaFamilyToken(id);
     return t.ok === false ? t : { ok: true, accessToken: t.accessToken };
@@ -745,6 +865,7 @@ export async function addMetaPage(userId: string, id: string, pageRef: string): 
     UPDATE user_connections SET targets = ${db.json(targets as unknown as Parameters<typeof db.json>[0])}, error = NULL, status = 'connected', updated_at = now()
     WHERE user_id = ${userId} AND id = ${id}
   `;
+  void logConnectionEvent({ userId, connectionId: id, provider: 'meta', event: 'page_attached', detail: { pageId: page.id, name: page.name } });
   return { ok: true, connection: (await getConnection(userId, id))! };
 }
 
@@ -776,13 +897,16 @@ export async function setConnectionChannel(
     provider = mine.provider as ChannelProvider;
     label = mine.accountName ?? '';
   }
-  return setOrgChannel(userId, { orgId, provider, externalId, label, on });
+  const r = await setOrgChannel(userId, { orgId, provider, externalId, label, on });
+  if (r.ok) void logConnectionEvent({ userId, connectionId: id, provider: mine.provider, event: on ? 'channel_set' : 'channel_cleared', detail: { orgId, externalId } });
+  return r;
 }
 
 /** Re-read the channel name with a fresh token: a "Test" button. */
 export async function checkConnection(userId: string, id: string): Promise<ConnectionResult<{ connection: UserConnection }>> {
   const mine = await getConnection(userId, id);
   if (!mine) return { ok: false, error: 'Not found.' };
+  void logConnectionEvent({ userId, connectionId: id, provider: mine.provider, event: 'tested' });
   const token = await getConnectionAccessToken(id, userId);
   if (token.ok === false) return token;
   if (mine.provider === 'meta') {
@@ -794,7 +918,10 @@ export async function checkConnection(userId: string, id: string): Promise<Conne
         instagramUserId: p.instagramUserId, instagramUsername: p.instagramUsername,
       }));
       // As in completeMeta: an empty list keeps the Pages attached by id.
-      if (targets.length === 0) targets = ((mine.targets.length ? (await db`SELECT targets FROM user_connections WHERE id = ${id}`)[0]?.targets : []) ?? []) as MetaPageTarget[];
+      if (targets.length === 0) {
+        const prev = await db`SELECT targets FROM user_connections WHERE id = ${id}`;
+        targets = await refreshAttachedPages(token.accessToken, (prev[0]?.targets ?? []) as MetaPageTarget[]);
+      }
       await db`
         UPDATE user_connections SET account_id = ${me.id}, account_name = ${me.name}, targets = ${db.json(targets as unknown as Parameters<typeof db.json>[0])},
           status = 'connected', error = ${targets.length === 0 ? NO_PAGE_ERROR : null}, updated_at = now()
@@ -865,13 +992,14 @@ export function connectionsHandlers(getUserId: () => Promise<string | null>) {
       const userId = await who();
       if (!userId) return json({ error: 'Sign in first' }, 401);
       // The orgs this person may set channels for, and those orgs' channels (2026-11-01).
-      const [connections, memberships, channels] = await Promise.all([
+      const [connections, memberships, channels, events] = await Promise.all([
         listConnections(userId),
         listUserMemberships(userId).catch(() => []),
         listChannelsForManager(userId).catch(() => []),
+        listConnectionEvents(userId, 30),
       ]);
       const orgs = memberships.filter((m) => m.role === 'owner' || m.role === 'guide').map((m) => ({ orgId: m.orgId, name: m.orgName }));
-      return json({ connections, redirectUri: connectionRedirectUri(), orgs, channels });
+      return json({ connections, redirectUri: connectionRedirectUri(), youtubeCollective: Boolean(youtubeApp()), orgs, channels, events });
     },
     async POST(request: Request) {
       const userId = await who();
@@ -880,6 +1008,7 @@ export function connectionsHandlers(getUserId: () => Promise<string | null>) {
       if (!body) return json({ error: 'Bad request' }, 400);
       const r = await createConnection(userId, body);
       if (r.ok === false) return json({ error: r.error }, 400);
+      void logConnectionEvent({ userId, connectionId: r.connection.id, provider: r.connection.provider, event: 'created' });
       return json({ connection: r.connection });
     },
     async PATCH(request: Request) {

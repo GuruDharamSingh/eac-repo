@@ -1,0 +1,45 @@
+{
+  "name": "katie-the-potter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3023 --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start --port 3023",
+    "docker:start": "next start -H 0.0.0.0 -p 3023",
+    "check-types": "tsc --noEmit --incremental false",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@elkdonis/analytics": "workspace:*",
+    "@elkdonis/auth-client": "workspace:*",
+    "@elkdonis/auth-server": "workspace:*",
+    "@elkdonis/blocks": "workspace:*",
+    "@elkdonis/checkout": "workspace:*",
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/db": "workspace:*",
+    "@elkdonis/direct-edit": "workspace:*",
+    "@elkdonis/page-builder": "workspace:*",
+    "@elkdonis/redis": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "@elkdonis/studio-ui": "workspace:*",
+    "@elkdonis/types": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "nanoid": "^5.0.0",
+    "next": "16.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

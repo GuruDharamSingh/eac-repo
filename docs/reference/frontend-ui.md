@@ -180,6 +180,21 @@ arts-collective, ifac, innergathering, sunjay. Constraints:
   not on `.hub`, because the single `<dialog>` renders outside `.hub`.
 - `FirstStepsFace` (docs/open/BRIEF_E_HUB_TOUR_2026-09-18.md) is not built as of 2026-09-23.
 
+### Record blocks and the manage kit (2026-11-06)
+
+Two kits extracted from katie-the-potter and used there:
+
+- `@elkdonis/blocks/record` (+ `record.css`, imported `layer(components)` at
+  the app root): placement rules, the width frame (`RecordFrame`, a container
+  for the app's own `@container` rules), the editor marks, resolver-key
+  stripping and look presets for a "smart" one-record block. Guide:
+  `docs/reference/record-blocks.md`.
+- `@elkdonis/cms-ui/manage` (server-safe `PageHeader`, `Toolbar`,
+  `EmptyState`, `Notice`), `./manage/client` (`ManageTabs`, `ToastProvider`,
+  `useToast`, `normaliseResult`) and `./manage.css` (`mg-` classes on the
+  shadcn triplets): the /manage page anatomy, meant for org-site's shared
+  /manage routes too. Guide: `docs/reference/manage-ui.md`.
+
 ### Shared rich-text editor (`@elkdonis/cms-ui/editor`)
 
 `RichTextEditor` (`packages/cms-ui/src/editor/RichTextEditor.tsx:47-69`):

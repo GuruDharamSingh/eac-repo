@@ -23,7 +23,6 @@ export {
   isLampAt,
   normalizeLamp,
   normalizeLighting,
-  normalizeScene,
   presetOf,
   type KeyFrom,
   type LampAt,
@@ -31,5 +30,15 @@ export {
   type LightPresetId,
   type PieceLamp,
   type SceneLighting,
-  type SceneSettings,
 } from './lighting';
+export {
+  OPEN_SPOT_ID,
+  normalizeOpenSpot,
+  normalizeScene,
+  normalizeView,
+  type OpenSpot,
+  type Scene,
+  type SceneSettings,
+  type SceneView,
+  type SceneViewMode,
+} from './scene';

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ContentRowActions } from "@/components/manage/content-row-actions";
 import { getAllThreadsForOrg } from "@/lib/data";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 /**
  * The editorial dashboard — everything on the site, published or not.
@@ -15,6 +16,10 @@ import { siteConfig } from "@/config/site";
  * for a site with an owner).
  */
 export default async function ManageDashboard() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const [threads, feeds] = await Promise.all([
     getAllThreadsForOrg(),
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }),

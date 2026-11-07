@@ -17,3 +17,4 @@ export type { DataPolicyProps } from "./DataPolicy";
 export { DeletionRequestForm } from "./DeletionRequestForm";
 export { DeletionStatus } from "./DeletionStatus";
 export type { DeletionStatusRequest } from "./DeletionStatus";
+export { Terms, type TermsProps } from "./Terms";

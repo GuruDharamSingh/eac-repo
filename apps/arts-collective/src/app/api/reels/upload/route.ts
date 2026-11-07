@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/session";
  * the body. The body is streamed straight to Nextcloud, not parsed as a form:
  * phone video runs to hundreds of megabytes and this container's heap is
  * 1 GB. Where the file lands is decided by reelUploadPath (project folder, or
- * the person's private Music folder), from the session user and the stored
+ * the person's private Music or Sounds folder), from the session user and the stored
  * project, never from the request.
  */
 
@@ -19,6 +19,7 @@ const RULES: Record<ReelSlot, { kinds: string[]; max: number }> = {
   clip2: { kinds: ["video/"], max: 1024 * MB },
   extra: { kinds: ["image/", "video/"], max: 1024 * MB },
   music: { kinds: ["audio/"], max: 80 * MB },
+  sound: { kinds: ["audio/"], max: 20 * MB },
 };
 
 export async function POST(request: NextRequest) {

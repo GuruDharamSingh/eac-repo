@@ -12,7 +12,7 @@ async function loadVisible(id: string) {
   if (!installation) return null;
   if (installation.status === "published") return { installation, preview: false };
   const { stores } = await resolveStudioStore();
-  return stores.some((s) => s.id === installation.storeId) ? { installation, preview: true } : null;
+  return installation.storeId && stores.some((s) => s.id === installation.storeId) ? { installation, preview: true } : null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -54,6 +54,7 @@ export default async function InstallationPage({ params }: { params: Promise<{ i
           pieces={pieces}
           venueId={installation.hallway}
           lighting={installation.scene.lighting}
+          view={installation.scene.view}
         />
       </div>
     </main>

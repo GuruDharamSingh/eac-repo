@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { LANDING_SLUG } from "@/lib/puck/landing";
 import type { Data } from "@puckeditor/core";
 import { requireOrgEditor } from "@/lib/auth";
 import { EMPTY_PAGE, isValidSlug } from "@elkdonis/page-builder";
@@ -21,6 +22,7 @@ export default async function StudioPage({
 }) {
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
+  if (slug === LANDING_SLUG) redirect("/");
 
   await requireOrgEditor(`/studio/${slug}`);
 

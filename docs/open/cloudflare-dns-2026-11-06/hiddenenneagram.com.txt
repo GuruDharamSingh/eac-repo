@@ -1,0 +1,23 @@
+; hiddenenneagram.com — Cloudflare import file, generated 2026-11-06
+; Every proxiable record is DNS-only (grey). Turn on the proxy later,
+; per host, from the 'orange later' list in README.md.
+$ORIGIN hiddenenneagram.com.
+
+@	3600	IN	A	69.196.152.249 ; cf_tags=cf-proxied:false
+@	3600	IN	MX	0 mail.hiddenenneagram.com.
+mail	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+www	7200	IN	CNAME	hiddenenneagram.com. ; cf_tags=cf-proxied:false
+@	3600	IN	TXT	"v=spf1 a mx include:websitewelcome.com ~all"
+autodiscover	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+webdisk	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+default._domainkey	3600	IN	TXT	"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvWK+Q1CpfDr6LzMyVZ/K/zQGh+QxOmCVOhhgJZmFKzFMvNSCV2Mr8f9UZd4xY+1Hb8ISngRLrkxWj4oKpY5OUGXSgH91PxpQLJwO1ZZ/IJibEIGuFXYu0IOfJAhj5TIAoZYThPbizzy671uj20KcKRYWAaxbGGPvTwCcEqZyW5d+GrtLMdT8qNqoOoIsjieJy" "rA+4E3uxoGfaMlxRyZyvDWA0YOnVxVrSBfY+XwwDDmbOflsSD+089Kug/owqHi11rbPpLbNOpTL8Kop9i4Kg8PD1Ea1PMaS4OPjFRdnAJwpXaTbPx6oXLeZKihvqWNdH11ckMJwNrCY+SHDwmz6OQIDAQAB;"
+imap	3600	IN	CNAME	mail.hiddenenneagram.com. ; cf_tags=cf-proxied:false
+pop	3600	IN	CNAME	mail.hiddenenneagram.com. ; cf_tags=cf-proxied:false
+smtp	3600	IN	CNAME	mail.hiddenenneagram.com. ; cf_tags=cf-proxied:false
+ssh	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+ftp	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+cpanel	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+webmail	7200	IN	A	50.6.19.74 ; cf_tags=cf-proxied:false
+em5087	14400	IN	CNAME	u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s1._domainkey	14400	IN	CNAME	s1.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false
+s2._domainkey	14400	IN	CNAME	s2.domainkey.u54282917.wl168.sendgrid.net. ; cf_tags=cf-proxied:false

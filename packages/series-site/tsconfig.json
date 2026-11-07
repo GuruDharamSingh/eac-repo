@@ -1,0 +1,4 @@
+{
+  "extends": "../../packages/cms-ui/tsconfig.json",
+  "include": ["src"]
+}

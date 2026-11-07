@@ -14,6 +14,9 @@
 export const siteConfig = {
   orgId: "sunjay",
   orgName: "Para Theater",
+  shortName: "Para Theater",
+  /** Links in mail and on the `.ics`. */
+  domain: "paratheater.arts-collective.com",
   tagline: "Rock balancing, qi gong, and conscious creativity",
   /**
    * The person this site is about. The landing page's bio card and social
@@ -23,7 +26,7 @@ export const siteConfig = {
    * Stored as a slug, not an id: `users.slug` is stable and readable, and
    * the same lookup (`getProfileBySlug`) every other site uses takes one.
    */
-  guideSlug: "rev-dr-sunjye-fnord-p-p-p-i-ulc-ac",
+  guideSlug: "jason-ford",
   /**
    * What to call him in running copy ("From Sunjay").
    *

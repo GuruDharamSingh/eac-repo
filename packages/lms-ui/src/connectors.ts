@@ -111,4 +111,28 @@ export interface LmsConnectors {
   notifyAcknowledged?: (n: AcknowledgeResult, stepUrl: string) => Promise<void>;
   /** Task steps. Absent = a task step reads as text and never completes. */
   tasks?: LmsTaskConnectors;
+  /**
+   * The tasks an author may choose for a task step in the studio (the action
+   * registry's catalogue, @elkdonis/actions). Absent = the studio asks for a
+   * task id as text.
+   */
+  taskCatalogue?: ReadonlyArray<LmsTaskChoice>;
+  /**
+   * Where a task step can be done, when this host has no `tasks` connector
+   * (Sophia: the network host's /learn). `here` is this step's path on this
+   * host. Absent = the step says it is done elsewhere, without a link.
+   */
+  taskElsewhere?: (here: string) => string | null;
+}
+
+/** One choosable task: what the studio's picker lists. */
+export interface LmsTaskChoice {
+  id: string;
+  label: string;
+  describe: string;
+  scope: "person" | "org";
+  /** A grouping word (profile, market, org…). */
+  area?: string;
+  /** Choices the author makes for this task, each a closed list (settings.task.params). */
+  params?: ReadonlyArray<{ name: string; label: string; default: string; options: ReadonlyArray<{ value: string; label: string }> }>;
 }

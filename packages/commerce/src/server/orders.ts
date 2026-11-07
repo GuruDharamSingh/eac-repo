@@ -19,7 +19,7 @@
 
 import { db } from "@elkdonis/db";
 import { buildEtransferInstructions, generateOrderNumber } from "../etransfer";
-import type { Order } from "../types";
+import type { Address, Order } from "../types";
 import { jsonb, mapOrder, num, type Row } from "./map-order";
 import { HOST_PAYOUT_EMAIL, resolveSettlement, estimateProcessorFeeMinor, type LineSettlement } from "./settlement";
 import { writeEntry } from "./ledger";
@@ -554,6 +554,45 @@ export async function recordStripeCheckout(input: {
         AND r.status = 'active'
     `;
   });
+}
+
+/**
+ * Fill in who the buyer is from what they entered on the payment provider's
+ * page (Stripe Checkout asked for email and shipping address because the
+ * order was created without them: katie-the-potter's "Buy now" and express
+ * cart, 2026-11-07). Fills ONLY what the order lacks: an email, a name or a
+ * shipping address the buyer already typed on our own form is never
+ * overwritten. Safe to call more than once (return hop and webhook both do).
+ * Returns whether anything changed.
+ *
+ * Call it BEFORE confirmOrderPaid, so the seller's sale notice carries the
+ * buyer's email.
+ */
+export async function recordCheckoutCustomer(input: {
+  orderId: string;
+  email?: string | null;
+  name?: string | null;
+  shippingAddress?: Address | null;
+}): Promise<boolean> {
+  const email = typeof input.email === "string" && /^[^@\s]+@[^@\s]+$/.test(input.email.trim()) ? input.email.trim().slice(0, 320) : null;
+  const name = typeof input.name === "string" && input.name.trim() ? input.name.trim().slice(0, 200) : null;
+  const addr = input.shippingAddress && input.shippingAddress.line1 ? input.shippingAddress : null;
+  if (!email && !name && !addr) return false;
+  const rows = (await db`
+    UPDATE commerce_order SET
+      customer_email = CASE WHEN COALESCE(BTRIM(customer_email), '') = '' AND ${email}::text IS NOT NULL THEN ${email}::text ELSE customer_email END,
+      customer_name = CASE WHEN COALESCE(BTRIM(customer_name), '') = '' AND ${name}::text IS NOT NULL THEN ${name}::text ELSE customer_name END,
+      shipping_address = COALESCE(shipping_address, ${addr ? jsonb(addr) : null}),
+      updated_at = NOW()
+    WHERE id = ${input.orderId}
+      AND (
+        (COALESCE(BTRIM(customer_email), '') = '' AND ${email}::text IS NOT NULL)
+        OR (COALESCE(BTRIM(customer_name), '') = '' AND ${name}::text IS NOT NULL)
+        OR (shipping_address IS NULL AND ${addr ? "yes" : null}::text IS NOT NULL)
+      )
+    RETURNING id
+  `) as unknown as Row[];
+  return rows.length > 0;
 }
 
 export interface ConfirmOrderPaidInput {

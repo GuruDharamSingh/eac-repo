@@ -1,6 +1,7 @@
 import { listPipelineAssets, listVideoJobs, listVideoPipelines } from "@elkdonis/services";
 import { VideoPipelinesView, type PipelineView } from "@/components/manage/video-pipelines";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,10 @@ export const dynamic = "force-dynamic";
  * automatic edit got it wrong, and approves it for publishing.
  */
 export default async function ManageVideoPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const pipelines = await listVideoPipelines(siteConfig.orgId);
   const jobs = await listVideoJobs(siteConfig.orgId, { limit: 100 });
   const views: PipelineView[] = await Promise.all(

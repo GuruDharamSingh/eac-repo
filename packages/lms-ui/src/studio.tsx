@@ -299,6 +299,7 @@ export async function StudioStepPage({ c, courseSlug, stepId, q }: { c: LmsConne
         <label>Minutes to give it<input type="number" name="minutes" min={0} max={600} defaultValue={step.settings.minutes ?? ""} /></label>
         {c.editor ? <div className="so-field"><span>What to read</span><c.editor name="body" defaultValue={step.bodyHtml ?? ""} ariaLabel="Step body" /></div>
           : <label>What to read<textarea name="body" rows={12} defaultValue={step.bodyHtml ?? ""} placeholder={"Blank lines make paragraphs.\n## makes a heading, > a quotation, - a list."} /></label>}
+        {def.completion === "derived" && <TaskPicker catalogue={c.taskCatalogue} current={step.settings.task?.id ?? ""} params={step.settings.task?.params} />}
         <fieldset className="so-group">
           <legend>The practice</legend>
           <p className="so-meta">Every lesson ends in something to do, make or notice. A step with only reading is a draft.</p>
@@ -511,4 +512,41 @@ export async function StudioPoolPage({ c, courseSlug, q }: { c: LmsConnectors; c
     </main>
   );
   return { kind: "ok", node };
+}
+
+/**
+ * The task a "Something to set up" step asks for (settings.task), chosen from
+ * the host's action catalogue; a text field when the host passes none. The
+ * save keeps the step's task when this field is absent (studio-save-step).
+ */
+function TaskPicker({ catalogue, current, params }: { catalogue?: LmsConnectors["taskCatalogue"]; current: string; params?: Record<string, string> }) {
+  const known = !!catalogue?.some((t) => t.id === current);
+  // A task's own choices show once it is saved: plain forms, no script to swap them.
+  const choices = catalogue?.find((t) => t.id === current)?.params ?? [];
+  const areas = [...new Set((catalogue ?? []).map((t) => t.area ?? "other"))];
+  return (
+    <fieldset className="so-group">
+      <legend>What it asks for</legend>
+      <p className="so-meta">The step ticks itself when this exists on the platform for the learner. There is nothing for them to press.</p>
+      {catalogue?.length ? (
+        <label>Task<select name="task" defaultValue={current}>
+          <option value="">— choose a task —</option>
+          {current && !known && <option value={current}>{current} (not known to this site)</option>}
+          {areas.map((a) => (
+            <optgroup key={a} label={a.replace(/^\w/, (ch) => ch.toUpperCase())}>
+              {catalogue.filter((t) => (t.area ?? "other") === a).map((t) => <option key={t.id} value={t.id}>{t.label}{t.scope === "org" ? " (organisation)" : ""} — {t.describe}</option>)}
+            </optgroup>
+          ))}
+        </select></label>
+      ) : (
+        <label>Task id<input name="task" defaultValue={current} maxLength={80} /></label>
+      )}
+      {choices.map((p) => (
+        <label key={p.name}>{p.label}<select name={`task_param_${p.name}`} defaultValue={params?.[p.name] ?? p.default}>
+          {p.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select></label>
+      ))}
+      {!choices.length && catalogue?.some((t) => t.params?.length) && <p className="so-meta">Some tasks take a choice (which kind, say); it appears here once the task is saved.</p>}
+    </fieldset>
+  );
 }

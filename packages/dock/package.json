@@ -1,0 +1,28 @@
+{
+  "name": "@elkdonis/dock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The dock: a signed-in person's current course step and the page's actions, in a corner box (brief LMS_ACTION_LAYER §3.3, shape B).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./dock.css": "./src/dock.css"
+  },
+  "dependencies": {
+    "@elkdonis/actions": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "next": "^16",
+    "react": "^19"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
+}

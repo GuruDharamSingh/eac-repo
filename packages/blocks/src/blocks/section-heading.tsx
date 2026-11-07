@@ -88,6 +88,13 @@ export const sectionHeading = defineBlock(
     memberSafe: true,
     styling: "tokens",
     props,
+    parts: {
+      root: { label: "Heading block", sel: "> .blk-heading" },
+      eyebrow: { label: "Small label", sel: ".blk-heading-eyebrow", prop: "eyebrow", draws: { props: { eyebrow: "A label" } } },
+      title: { label: "Heading", sel: ".blk-heading-title", prop: "title" },
+      rule: { label: "Rule", sel: ".blk-heading-rule", draws: { props: { rule: true } } },
+      subtitle: { label: "Line underneath", sel: ".blk-heading-sub", prop: "subtitle", draws: { props: { subtitle: "A line" } } },
+    },
   },
   SectionHeading,
   () => ({

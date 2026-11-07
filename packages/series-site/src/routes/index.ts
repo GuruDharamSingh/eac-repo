@@ -1,0 +1,12 @@
+export { calendarRoutes } from "./calendar";
+export { comingRoutes } from "./coming";
+export { commentRoutes } from "./comment";
+export { hubNewSeriesRoutes } from "./hubNewSeries";
+export { hubPeopleRoutes } from "./hubPeople";
+export { hubSeriesRoutes } from "./hubSeries";
+export { hubSeriesPageRoutes } from "./hubSeriesPage";
+export { hubStatsRoutes } from "./hubStats";
+export { mediaUploadRoutes } from "./mediaUpload";
+export { rsvpRoutes } from "./rsvp";
+export { subscribeRoutes } from "./subscribe";
+export { unsubscribeRoutes } from "./unsubscribe";

@@ -1,6 +1,7 @@
 import { getCenterPromo } from "@elkdonis/services";
 import { CenterPromoEditor } from "@/components/manage/center-promo-editor";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 /**
  * What /center shows that is not content: the promotion slot. The layout
@@ -11,6 +12,10 @@ import { siteConfig } from "@/config/site";
  * as taken and can be cleared, not edited.
  */
 export default async function ManageCenterPage() {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const promo = await getCenterPromo(siteConfig.orgId);
   const editable =
     promo?.kind === "link"

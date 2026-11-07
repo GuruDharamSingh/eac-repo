@@ -36,8 +36,8 @@ no container on 2026-09-23 (`docker compose ps`).
 | elastrocal | 3016 | elastrocal | dev | `elastrocal` | arts-collective.com/astro | live (started 2026-09-26) |
 | danamccool | 3018 | danamccool | prod | `danamccool` | danamccool.com | live |
 | fourthwayBookreaders | 3019 | fourthway-bookreaders | prod | `fourth_way_book_readers` | elkdonis-arts.org/books | live |
-| sophia | 3020 | sophia | dev | no fixed org | none (URL var set) | not running |
-| elktours | 3021 | elktours | dev | `elktours` | none (`ELKTOURS_URL` = LAN ip) | running (2026-10-18) |
+| sophia | 3020 | sophia | prod (checked 2026-11-06) | no fixed org | none (URL var set) | running (2026-11-06) |
+| elktours | 3021 | elktours | prod (2026-11-03) | `elktours` | elkdonisexperiences.com | running (2026-11-03) |
 | signal-watch | — | — | — | — | — | not a web app |
 
 Proxy mapping verified 2026-09-23 by reading `/data/nginx/proxy_host/*.conf`
@@ -90,9 +90,16 @@ containers on this host. Launch procedure and edge details:
   `org_site_sections.hero.title`, `org_site_sections.footer.body` and
   `siteConfig.orgName` (`src/config/site.ts:16`).
 - Domain: `SUNJAY_URL`; `org_domains` row from migration 154.
-- UI: template stack, dark palette on `:root`, square corners (`--radius: 0`).
-- Entry: `src/app/page.tsx` (landing bands), `src/lib/data.ts`, `/hub` with
-  card and page layouts chosen by the `hub_view` cookie.
+- UI: template stack, dark palette on `:root`, square corners (`--radius: 0`). Public pages (2026-11-02,
+  deployed 2026-11-02): plain CSS in `src/components/site/pts.css`, which overrides the shared `--ifs-*`
+  tokens on `.ifs.pts`, and `data-edit-section` on each panel for the direct-editing layer.
+- Entry: `src/app/page.tsx` (three full-height panels; the Puck `puck:home` row was deleted 2026-11-02, copy in `~/eac-backups/site-config/`),
+  `/about`, `/publications`, `/community`, `/series` (`src/lib/series-site.tsx`, `@elkdonis/series-site`),
+  `src/lib/data.ts`, `/hub` with card and page layouts chosen by the `hub_view` cookie.
+- Series: edited only in the planner, `/hub/series/<id>` (hub card; "Edit series" on the landing card and series page; `/manage` rows redirect).
+  `saveContentAction` refuses a series (verified 2026-11-03 through the popup form).
+- Banner: "Change banner" on the landing (owners, guides) writes `site_config.image_spaces.hero`
+  `{path, alt, frame}`; the frame is a focal point and zoom, the file is not cut.
 - Traps: `org_profiles.bio_override` is read only by this app
   (`src/lib/data.ts:543`); the shared profile query ignores it.
 
@@ -317,6 +324,12 @@ containers on this host. Launch procedure and edge details:
 - Purpose: ArtDirect, the cross-org artist directory and profile editor
   (`/[slug]`, `/new`). No fixed org (an `oad` org row exists); reads `users`.
 - Runs `next dev` behind a public host. Photon geocoder via `PHOTON_URL`.
+- Writing feed: `/<slug>/writing/feed.xml` (RSS 2.0, published pieces of a
+  listed person, full bodies in `content:encoded`, relative media made absolute
+  with `publicOriginFrom`; linked from the shelf page's `alternates`). For
+  readers and importers (Substack, Ghost, WordPress); Substack has no publishing
+  API. Source 2026-11-01, probed against live data; not deployed until the next
+  artdirect rebuild. (claude, 2026-11-01)
 - Trap: `src/app/api/auth/signup/route.ts:11` is the last bare
   `export { handleSignup as POST }` in the repo.
 - Trap: on 2026-09-27 the dev server kept serving the old
@@ -324,6 +337,27 @@ containers on this host. Launch procedure and edge details:
   newly imported CSS files compiled. Verified by fetching the chunk inside the
   container. Put new rules in a CSS file imported by a component (e.g.
   `components/oad/person-frame.css`), or restart the service. (claude, 2026-09-27)
+- Instagram and YouTube on the person page (2026-11-01, deployed; ArtDirect rebuilt and recreated):
+  the owner's drawer (`PersonDrawer` `Accounts`) connects each through
+  `lib/social-actions.ts` (`createConnection` with the collective's apps, consent on
+  the network host, return to `/<slug>`) and switches the section on or off in
+  `users.profile_sections.instagram|youtube` (off by default). Feeds come from
+  `packages/services/src/social-feeds.ts` (hourly in-process cache): Instagram's 9
+  latest posts through an Instagram Login connection or a Page-linked account of a
+  `meta` connection; YouTube from the channel's public RSS feed (public videos only,
+  no token). Rendered by `components/oad/SocialSections.tsx` on the **standard**
+  layout only; designed (Puck) pages and the dossier layout do not show them. Order is
+  fixed after the other sections. "Open Studio" sits in the owner's dock and drawer,
+  through `/api/auth/handoff`. The service needs `YOUTUBE_CLIENT_*`, `INSTAGRAM_APP_*`
+  and `CONNECTIONS_KEY` (in compose; container recreated).
+  Verified 2026-11-01: `check-types` clean; feed functions against live accounts
+  (Instagram 9 posts, YouTube 0 public videos); anonymous render of `/jg` with both
+  flags on (Instagram grid present, YouTube hidden while empty); owner render with a
+  throwaway account (Open Studio, Connect buttons, handoff links); both connect starts
+  redirect to Instagram and Google consent. Not verified in a browser: clicking Connect
+  or the "Show on my page" checkbox, the YouTube section with videos, a completed consent.
+  Trap: a second session's build finished at 14:57, two minutes after this one, and the
+  running server threw ChunkLoadError until `docker restart eac-artdirect`.
 
 ### pigeonshoot (3014)
 - Purpose: street-pigeon photos as crowdsourced trading cards (migration 077).
@@ -508,6 +542,12 @@ containers on this host. Launch procedure and edge details:
 - Purpose: the network LMS host over `@elkdonis/lms` + `lms-ui`. Not running;
   `SOPHIA_URL` is set but no proxy host exists. See
   [workshops-and-lms.md](workshops-and-lms.md).
+- 2026-11-06 correction: `eac-sophia` is running in production mode (`next start`
+  behind the two-file sentinel, `NODE_ENV=production`; checked with `docker inspect`),
+  so source edits need a rebuild. A dev preview: `docker compose run -d --name
+  sophia-preview -e NODE_ENV=development -p 127.0.0.1:3120:3020 -v
+  <scratch>/sophia-preview-next:/app/apps/sophia/.next sophia sh -c 'cd apps/sophia &&
+  pnpm dev'`. (claude, 2026-11-06)
 
 ### elktours (3021)
 - Purpose: Elkdonis Tours & Experiences — Dana McCool's Paris tour company.

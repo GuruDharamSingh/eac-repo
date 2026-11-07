@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Icon } from "./icons";
-import { SeriesRsvp } from "./series-rsvp";
-import { CoverMedia, weekCover } from "./cover-media";
+import { Icon } from "@elkdonis/series-site/components/icons";
+import { SeriesRsvp } from "@elkdonis/series-site/components/series-rsvp";
+import { CoverMedia, weekCover } from "@elkdonis/series-site/components/cover-media";
 
 export interface SessionRowHost {
   name: string;

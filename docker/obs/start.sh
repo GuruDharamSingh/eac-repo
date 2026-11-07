@@ -78,6 +78,11 @@ Track1Bitrate=160
 [Audio]
 SampleRate=48000
 ChannelSetup=Stereo
+# Monitoring ("Monitor and Output") plays into its own sink, which the booth
+# page listens to. Not the default sink: Desktop Audio captures that one, and
+# monitored sound would come back into the program as an echo.
+MonitoringDeviceId=booth
+MonitoringDeviceName=Booth
 INI
 
 echo "$ENC_JSON" > "$CFG/basic/profiles/EAC/streamEncoder.json"
@@ -91,24 +96,32 @@ JSON
 # (software GL, ~0.8-3.3 cores); here it composites on the Radeon 610M
 # (~0.03-0.16 cores, 2026-10-28). Needs no monitor and never touches the
 # card's KMS outputs (the host console keeps HDMI). wayvnc replaces x11vnc for
-# the noVNC view; it has no password (wayvnc auth needs TLS or RSA keys).
+# the noVNC view; it has no password (wayvnc auth needs TLS or RSA keys), so
+# it and websockify listen on loopback and the agent's door gates them.
 export XDG_RUNTIME_DIR=/tmp/xdg-$(id -u)
+# /tmp survives `docker compose restart`: PulseAudio's old pid file there
+# stops the new daemon from starting (no monitoring, no Desktop Audio).
+rm -rf "$XDG_RUNTIME_DIR/pulse"
 mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 export WLR_BACKENDS=headless WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128
 
 pulseaudio --daemonize=yes --exit-idle-time=-1 --disallow-exit 2>/dev/null
-pactl load-module module-null-sink sink_name=eac sink_properties=device.description=EAC >/dev/null 2>&1 || true
+pactl load-module module-null-sink sink_name=eac rate=48000 sink_properties=device.description=EAC >/dev/null 2>&1 || true
+pactl load-module module-null-sink sink_name=booth rate=48000 sink_properties=device.description=Booth >/dev/null 2>&1 || true
+pactl set-default-sink eac >/dev/null 2>&1 || true
 
 SESSION=$HOME/.obs-session
 cat > "$SESSION" <<'SH'
 #!/bin/bash
 # Started by sway, so WAYLAND_DISPLAY is set.
 wayvnc 127.0.0.1 5900 >/dev/null 2>&1 &
-websockify --web /usr/share/novnc 6080 localhost:5900 >/dev/null 2>&1 &
+# Loopback only: the agent's door (token per connection) is the way in.
+websockify 127.0.0.1:6080 localhost:5900 >/dev/null 2>&1 &
 # The agent reconnects to OBS on its own; OBS is restarted if it exits.
 node /opt/obs-agent/agent.mjs &
-while true; do
+while [ ! -e "$HOME/.obs-stopping" ]; do
   obs --profile EAC --collection EAC --disable-shutdown-check --disable-missing-files-check 2>&1 | grep -vE 'QStandardPaths'
+  [ -e "$HOME/.obs-stopping" ] && break
   echo "[obs-start] obs exited; restarting in 5 s"
   sleep 5
 done
@@ -122,4 +135,18 @@ xwayland disable
 default_border none
 exec $SESSION
 CONF
-sway -c "$HOME/.config/sway/config" 2>&1 | grep -vE '^\S+ \[(DEBUG|INFO)\]'
+# Container stop: ask OBS to quit so it saves the scene collection (a killed
+# OBS loses changes made since its last save, found 2026-11-01), then sway.
+# PID 1 ignores SIGTERM unless trapped, and Docker kills after the grace period.
+rm -f "$HOME/.obs-stopping"
+stop() {
+  touch "$HOME/.obs-stopping"
+  pkill -TERM -x obs
+  for _ in $(seq 1 60); do pgrep -x obs >/dev/null || break; sleep 0.25; done
+  echo "[obs-start] obs stopped"
+  pkill -TERM -x sway
+  exit 0
+}
+trap stop TERM INT
+sway -c "$HOME/.config/sway/config" 2>&1 | grep -vE '^\S+ \[(DEBUG|INFO)\]' &
+wait $!

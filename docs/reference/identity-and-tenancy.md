@@ -65,6 +65,15 @@ wrappers under `apps/<app>/src/app/api/auth/`:
 - 2026-09-23: 17 apps mount `login`, `signup`, `logout`, `session`; 12 of
   them also mount `callback`, 8 mount `handoff`. `forum` and `sophia` mount
   only `handoff/accept` and get sessions from the network host.
+- Turnstile rollout (2026-11-06, source and compose only, nothing rebuilt): keys in
+  `.env`, the secret parked as `TURNSTILE_SECRET_KEY_PENDING`; compose passes
+  both variables to the 11 live signup apps. Every signup form renders a widget
+  (`BaroqueSignup`, sunjay `signup-card`, hidden-enneagram `auth-panel`, and
+  `TurnstileField` from `@elkdonis/cms-ui/auth` in art-auction, artdirect and
+  `series-site/series-signin`). Signup happens on each app's own host, so every
+  domain must be in the widget's hostname list. Order: rebuild each app with
+  the site key, then rename the secret and recreate; a secret on an app built
+  without the site key rejects every signup. (claude, 2026-11-06)
 - Signup: optional Cloudflare Turnstile (`TURNSTILE_SECRET_KEY`), signs out
   any existing session, calls `signUp`, then for each `defaultOrgs` entry
   inserts a `user_organizations` row and an `org_profiles` row

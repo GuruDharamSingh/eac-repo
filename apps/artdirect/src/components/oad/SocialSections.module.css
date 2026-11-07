@@ -1,0 +1,120 @@
+/* Instagram and YouTube sections on a person's page (SocialSections.tsx).
+   Text takes the page's own ink (currentColor), so it follows the person's
+   chosen background; the play mark is white on a black disc, over any
+   thumbnail. */
+
+.account {
+  font-size: 0.85rem;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+.cell {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.18);
+  color: inherit;
+}
+.cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cell:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.noImage {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 0.8rem;
+}
+.badge {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.videos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.video {
+  margin: 0;
+}
+.video figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+.video figcaption a {
+  color: inherit;
+}
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.frame iframe,
+.play {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.play {
+  padding: 0;
+  cursor: pointer;
+  background: #000;
+}
+.play img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.play:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.playMark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.2rem;
+  height: 3.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

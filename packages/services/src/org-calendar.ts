@@ -245,7 +245,13 @@ function toRrule(thread: SchedulableThread): string | undefined {
   // written. Emitting a guess would be worse than emitting a single event.
   if (!base) return undefined;
   const n = Number(thread.series_interval);
-  const rule = thread.recurrence_pattern === 'WEEKLY' && Number.isInteger(n) && n > 1 && n <= 4 ? `${base};INTERVAL=${n}` : base;
+  let rule = thread.recurrence_pattern === 'WEEKLY' && Number.isInteger(n) && n > 1 && n <= 4 ? `${base};INTERVAL=${n}` : base;
+  // Monthly means the same weekday of the month (expandOccurrences; the series clock).
+  if (thread.recurrence_pattern === 'MONTHLY' && thread.scheduled_at) {
+    const at = new Date(thread.scheduled_at);
+    const week = Math.min(4, Math.ceil(at.getUTCDate() / 7));
+    rule = `${base};BYDAY=${week}${['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][at.getUTCDay()]}`;
+  }
   if (!thread.recurrence_until) return rule;
   const until = new Date(thread.recurrence_until)
     .toISOString()

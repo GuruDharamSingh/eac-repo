@@ -12,9 +12,14 @@
   right: 16px;
   bottom: 68px;
   z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .open {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;

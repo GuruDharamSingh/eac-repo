@@ -159,7 +159,7 @@ addresses, letters, look), `TemplateWordsEditor`, `email.css`,
 
 | Host | Route | Gate |
 |---|---|---|
-| arts-collective | `/email?org=<slug>`; API `/api/org/[slug]/email/*`; face in the org console | view: any role in that org; edit: owner or guide (`apps/arts-collective/src/lib/email-suite.ts:33`, `:52`, `:75`) |
+| arts-collective | `/email?org=<slug>`; API `/api/org/[slug]/email/*`; face in the org console | owner or guide (`guardOrgEmail`, `apps/arts-collective/src/lib/email-suite.ts`; 2026-11-04: until then any role, including a self-joined `viewer`, could read it) |
 | innergathering | `/hub/email`, `/hub/email/[key]`, `/hub/email/[key]/edit`, `/hub/newsletter`, `/unsubscribe`; API `/api/hub/email/*`, `/api/newsletter/[slug]{,/send}` | owner or guide (`requireOrgEditor`, `getApiEditor`) |
 | ifac | `/manage/email` (`/hub/email` redirects there); `/hub/email/[key]`, `/hub/email/[key]/edit`; API `/api/hub/email/*` incl. `reply` | `/manage/email`: `canManageIfac` = configured owner email, network admin, or owner/guide role (`apps/ifac/src/lib/data.ts:120`); API: owner or guide |
 

@@ -9,7 +9,7 @@ import { Button, Badge } from "@elkdonis/primitives";
 import { getPayoutIdentity } from "@elkdonis/commerce/server";
 import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
 import { PayoutsCard } from "@/components/manage/payouts-card";
-import { getViewer } from "@/lib/auth";
+import { getViewer, requireOrgEditor } from "@/lib/auth";
 
 /**
  * The editorial dashboard.
@@ -24,6 +24,10 @@ export default async function ManageDashboard({
 }: {
   searchParams?: Promise<{ payouts?: string }>;
 }) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const [threads, feeds, standingId, viewer] = await Promise.all([
     getAllThreadsForOrg(),
     listOrgFeeds(siteConfig.orgId, { includePrivate: true }),
@@ -102,7 +106,7 @@ export default async function ManageDashboard({
                 <tr key={thread.id} className="align-top">
                   <td className="py-3 pr-4">
                     <Link
-                      href={`/manage/content/${thread.id}`}
+                      href={thread.kind === "series" ? `/hub/series/${thread.id}` : `/manage/content/${thread.id}`}
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {thread.title}

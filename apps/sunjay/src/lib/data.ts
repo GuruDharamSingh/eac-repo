@@ -107,6 +107,8 @@ interface ThreadRow {
   author_photo: string | null;
 }
 
+const JOIN_LINK = /https?:\/\/\S+/i;
+
 function mapThread(row: ThreadRow): Thread {
   return {
     id: row.id,
@@ -120,11 +122,13 @@ function mapThread(row: ThreadRow): Thread {
     excerpt: row.excerpt,
     coverImageUrl: row.cover_image_url,
     timeZone: row.time_zone,
-    location: row.location,
-    isOnline: row.is_online ?? false,
-    meetingUrl: row.meeting_url,
+    // A join link pasted as the place is not a place, and it can carry the
+    // meeting's password. It makes the thread online and is not printed.
+    location: JOIN_LINK.test(row.location ?? "") ? null : row.location,
+    isOnline: (row.is_online ?? false) || JOIN_LINK.test(row.location ?? "") || Boolean(row.meeting_url),
+    meetingUrl: null, // set by withJoinLink on single-thread reads
     videoLink: row.video_link,
-    documentUrl: row.document_url,
+    documentUrl: null, // set by withDocumentLink on single-thread reads
     talkToken: row.nextcloud_talk_token,
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
@@ -275,6 +279,50 @@ async function mayRead(thread: Thread): Promise<boolean> {
   );
 }
 
+/**
+ * A thread's document link is a public writable share: holding the link is the
+ * permission. Only single-thread reads carry it, and only for owners, guides
+ * and members; a follower (viewer role) reads the thread without it. List reads
+ * leave it null because their rows reach client components (ThreadCard), whose
+ * props are sent to the browser.
+ */
+async function withDocumentLink(thread: Thread, row: ThreadRow): Promise<Thread> {
+  if (!row.document_url) return thread;
+  const viewer = await getViewer().catch(() => null);
+  return viewer?.isMember ? { ...thread, documentUrl: row.document_url } : thread;
+}
+
+/**
+ * A meeting's join link can carry its password, so signed-out visitors do not
+ * receive it (developer's decision, 2026-11-04). Only single-thread reads carry
+ * it, and only for someone signed in; list reads leave it null because their rows
+ * reach client components, whose props are sent to the browser. RSVP and reminder
+ * mail read the column directly, so a guest who RSVPs still gets the link.
+ */
+async function withJoinLink(thread: Thread, row: ThreadRow): Promise<Thread> {
+  const url = JOIN_LINK.exec(row.meeting_url ?? row.location ?? "")?.[0] ?? null;
+  if (!url) return thread;
+  const viewer = await getViewer().catch(() => null);
+  return viewer ? { ...thread, meetingUrl: url } : thread;
+}
+
+/**
+ * The same rule for a row of the shared calendar service (`listOrgEventsInRange`,
+ * `getStandingMeeting`), which returns the raw columns. A page a signed-out visitor
+ * can open passes these rows to client components, so it goes through here first.
+ */
+export function eventForViewer<T extends { location: string | null; meetingUrl: string | null }>(event: T, signedIn: boolean): T {
+  return {
+    ...event,
+    location: JOIN_LINK.test(event.location ?? "") ? null : event.location,
+    meetingUrl: signedIn ? JOIN_LINK.exec(event.meetingUrl ?? event.location ?? "")?.[0] ?? null : null,
+  };
+}
+
+export function standingForViewer<T extends { event: { location: string | null; meetingUrl: string | null } }>(standing: T | null, signedIn: boolean): T | null {
+  return standing && { ...standing, event: eventForViewer(standing.event, signedIn) };
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -288,7 +336,7 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
     if (!row) return null;
     const thread = mapThread(row);
     if (!(await mayRead(thread))) return null;
-    return await withTerms(thread);
+    return await withTerms(await withJoinLink(await withDocumentLink(thread, row), row));
   } catch (err) {
     console.error(`[sunjay] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -303,7 +351,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
       WHERE t.org_id = ${ORG} AND t.id = ${id}
       LIMIT 1
     `;
-    return row ? await withTerms(mapThread(row)) : null;
+    return row ? await withTerms(await withJoinLink(await withDocumentLink(mapThread(row), row), row)) : null;
   } catch (err) {
     console.error(`[sunjay] getThreadById(${id}):`, err);
     return null;

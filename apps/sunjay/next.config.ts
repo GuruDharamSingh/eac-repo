@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   // carried: same duplicate-copy problem, different package. The only thing
   // imported from @elkdonis/ui now is BaroqueSignup, which is Mantine-free.
   transpilePackages: [
+    "@elkdonis/direct-edit",
     "@elkdonis/pipeline",
     "@elkdonis/chat",
     "@elkdonis/db",
@@ -22,6 +23,7 @@ const nextConfig: NextConfig = {
     "@elkdonis/utils",
     "@elkdonis/auth-client",
     "@elkdonis/services",
+    "@elkdonis/series-site",
     // Service booking on the services page template (checkout → commerce + payments).
     "@elkdonis/checkout",
     "@elkdonis/commerce",

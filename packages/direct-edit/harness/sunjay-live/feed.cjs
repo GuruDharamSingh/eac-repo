@@ -1,0 +1,54 @@
+const { chromium } = require("playwright-core"); const http = require("http"), fs = require("fs");
+const page = `<!doctype html><meta charset=utf-8><link rel=stylesheet href=/site.css><link rel=stylesheet href=/editor.css><body class="dark"><div id="host" style="min-height:100vh"></div><script src=/live.js></script>`;
+const types = { css: "text/css", js: "text/javascript" };
+const srv = http.createServer((q, r) => { const m = q.url.match(/^\/(site\.css|editor\.css|live\.js)$/); if (m) { r.writeHead(200, { "content-type": types[m[1].split(".").pop()] }); r.end(fs.readFileSync("/h/" + m[1])); return; } r.writeHead(200, { "content-type": "text/html" }); r.end(page); });
+(async () => {
+  await new Promise((r) => srv.listen(8123, "127.0.0.1", r));
+  const b = await chromium.connectOverCDP("http://127.0.0.1:9222"); const p = b.contexts()[0].pages()[0];
+  p.setDefaultTimeout(9000); await p.setViewportSize({ width: 1500, height: 950 });
+  const errs = []; p.on("pageerror", (e) => errs.push(e.message.slice(0, 200))); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 200)); });
+  await p.goto("http://127.0.0.1:8123/"); await p.waitForSelector(".de-vpanel"); await p.waitForTimeout(600);
+  const box = (sel) => p.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const centre = async (sel) => { const r = await box(sel); return [r.x + r.w / 2, r.y + r.h / 2]; };
+  const open = async (id) => { const sel = `[data-tree-node="${id}"]`; await p.locator(sel).first().scrollIntoViewIfNeeded(); await p.waitForTimeout(150); const bb = await box(sel); await p.mouse.dblclick(bb.x + bb.w / 2, bb.y + Math.min(bb.h / 2, 40)); await p.waitForSelector(".de-popup"); await p.waitForTimeout(400); };
+  const head = () => p.locator(".de-popup .de-head b").first().innerText();
+  const clickPart = async (sel) => { await p.locator(`.de-popup-stage ${sel}`).first().scrollIntoViewIfNeeded().catch(() => {}); const [x, y] = await centre(`.de-popup-stage ${sel}`); await p.mouse.click(x, y); await p.waitForTimeout(180); return head(); };
+  const arr = () => p.$$eval('.de-popup [data-arr]', (l) => l.map((e) => e.getAttribute("data-arr")));
+  const row = async (name) => { const l = p.locator(".de-popup .de-layer").filter({ has: p.locator(`b:text-is("${name}")`) }).first(); await l.click(); await p.waitForTimeout(220); return head(); };
+  await open("try-feed-cards");
+  // Clicks on one spot, as a person would: does it reach the title under the card's cover button?
+  const [tx, ty] = await centre(".de-popup-stage .eac-face-title"); console.log("under the point:", await p.evaluate(([x, y]) => document.elementsFromPoint(x, y).slice(0, 7).map((e) => e.tagName.toLowerCase() + "." + String(e.className).split(" ")[0] + (getComputedStyle(e).pointerEvents === "none" ? "(none)" : "")), [tx, ty]));
+  console.log("title, 1 click:", await clickPart(".eac-face-title")); console.log("title, 2 clicks:", await clickPart(".eac-face-title")); console.log("title, 3 clicks:", await clickPart(".eac-face-title"));
+  console.log("selected row:", await row("Cards"));
+  await p.click('.de-popup [data-arr="as:c2"]'); await p.waitForTimeout(300);
+  console.log("cards grid:", await p.$eval(".de-popup-stage div.space-y-4", (e) => getComputedStyle(e).gridTemplateColumns));
+  console.log("card tops:", await p.$$eval(".de-popup-stage article.eac-face", (l) => l.map((e) => Math.round(e.getBoundingClientRect().top))));
+  await p.screenshot({ path: "/h/shots/f1-two-cols.png" });
+  console.log("selected row:", await row("Card"));
+  console.log("order rows:", await p.$$eval(".de-popup .de-arr-name", (l) => l.map((e) => e.textContent)));
+  console.log("notes:", await p.$$eval(".de-popup .de-arrange .de-note", (l) => l.map((e) => e.textContent.slice(0, 110))));
+  await p.click('.de-popup [data-arr="move:title:-1"]'); await p.waitForTimeout(150);
+  await p.click('.de-popup [data-arr="move:title:-1"]'); await p.waitForTimeout(250);
+  await p.screenshot({ path: "/h/shots/f2-title-first.png" });
+  await p.click('.de-popup [data-arr="as:row"]'); await p.waitForTimeout(300);
+  await p.screenshot({ path: "/h/shots/f3-card-row.png" });
+  await p.click('.de-popup [data-arr="as:c2"]'); await p.waitForTimeout(300);
+  await p.screenshot({ path: "/h/shots/f4-card-c2.png" });
+  // Back to the first stage, then the look: one colour on the title, on all four.
+  await p.click('.de-popup [data-arr="as:built"]'); await p.waitForTimeout(250);
+  console.log("title row:", await row("Title"));
+  console.log("colour fields:", await p.$$eval('.de-popup input[type=color], .de-popup [data-f*="color"]', (l) => l.length));
+  const before = await p.$$eval(".de-popup-stage .eac-face-title", (l) => l.map((e) => getComputedStyle(e).fontSize));
+  console.log("use on page"); await p.click('.de-popup [data-a="save"]'); await p.waitForTimeout(400);
+  console.log("popup closed:", (await p.locator(".de-popup").count()) === 0);
+  await p.screenshot({ path: "/h/shots/f5-page.png" });
+  console.log("page cards grid:", await p.$eval('[data-tree-node="try-feed-cards"] div.space-y-4', (e) => getComputedStyle(e).gridTemplateColumns + " gap " + getComputedStyle(e).columnGap));
+  console.log("morph kept:", await p.evaluate(() => 1));
+  // Page Save, then the document that would be stored.
+  await p.click('.de-pill [data-a="save"]'); await p.waitForTimeout(500);
+  const saved = await p.evaluate(() => globalThis.__saved);
+  const feed = saved.content.find((c) => c.props.id === "try-feed-band").props.content[0].props;
+  console.log("saved morph parts:", Object.keys(feed.morph?.parts || feed.morph || {}), "rows stored:", "threads" in feed);
+  console.log("errors", errs.length, [...new Set(errs)].slice(0, 6));
+  await b.close(); srv.close(); process.exit(0);
+})().catch((e) => { console.error(e); process.exit(1); });

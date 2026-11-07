@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "What the Elkdonis Arts Collective keeps about you, why, and how to have it removed.",
 };
 
-export const POLICY_UPDATED = "2026-10-29";
+export const POLICY_UPDATED = "2026-11-01";
 export const CONTACT_EMAIL = "info@elkdonis-arts.org";
 
 /**

@@ -549,6 +549,11 @@ type TopicRowRaw = {
   nc_url: string | null; nc_synced: boolean;
 } & PersonRow;
 
+/** A join link pasted as a thread's place is not a place, and it can carry the meeting's password. */
+function placeOnly(location: string | null): string | null {
+  return location && /https?:\/\//i.test(location) ? null : location;
+}
+
 function topicRow(r: TopicRowRaw): ForumTopicRow {
   return {
     id: r.id,
@@ -680,11 +685,20 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
     coverImageUrl: r.cover_image_url,
     isDrawing: Boolean(r.is_drawing),
     durationMinutes: r.duration_minutes,
-    location: r.location,
+    location: placeOnly(r.location),
     isOnline: r.is_online,
-    meetingUrl: r.meeting_url,
+    // Signed-out visitors do not receive a join link: it can carry the password.
+    meetingUrl: viewer.userId ? r.meeting_url : null,
     talkToken: r.nextcloud_talk_token,
-    documentUrl: r.document_url,
+    // A public writable share: holding the link is the permission. PUBLIC and
+    // ORGANIZATION threads reach signed-out visitors and followers, so the link
+    // goes only to the org's owners, guides and members, global admins and the author.
+    documentUrl:
+      viewer.isGlobalAdmin ||
+      ['owner', 'guide', 'member'].includes(viewer.roles[r.org_id] ?? '') ||
+      viewerIdentityIds(viewer).includes(r.a_id)
+        ? r.document_url
+        : null,
     videoLink: r.video_link,
     recurrencePattern: r.recurrence_pattern,
     recurrenceUntil: r.recurrence_until,
@@ -852,7 +866,7 @@ export async function listHappening(
   `;
   return rows.map((r) => ({
     id: r.id, slug: r.slug, title: r.title, kind: r.kind, scheduledAt: r.scheduled_at,
-    durationMinutes: r.duration_minutes, location: r.location, isOnline: r.is_online,
+    durationMinutes: r.duration_minutes, location: placeOnly(r.location), isOnline: r.is_online,
     org: { id: r.org_id, slug: r.org_slug, name: r.org_name },
     feed: { slug: r.feed_slug ?? 'general', name: r.feed_name },
     rsvpCount: r.rsvp_count, attendeeLimit: r.attendee_limit,

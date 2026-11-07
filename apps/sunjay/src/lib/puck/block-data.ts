@@ -6,10 +6,12 @@ import {
 } from "@elkdonis/services";
 import { addMonths, startOfMonth } from "@elkdonis/utils";
 import {
+  eventForViewer,
   getGuideBySlug,
   getThreadsByAuthor,
   getThreadsForFeed,
   listMyRsvps,
+  standingForViewer,
 } from "@/lib/data";
 import { getForumSnapshot } from "@/lib/forum";
 import { listGalleryImages, listWritingShelf } from "@/lib/landing";
@@ -154,12 +156,15 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
         }),
         getViewer().catch(() => null),
       ]);
-      return { standing, canEdit: Boolean(viewer?.canEdit) };
+      return { standing: standingForViewer(standing, Boolean(viewer)), canEdit: Boolean(viewer?.canEdit) };
     }
     case "pt-calendar": {
       const from = startOfMonth(new Date());
-      const events = await listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []);
-      return { events };
+      const [events, viewer] = await Promise.all([
+        listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+        getViewer().catch(() => null),
+      ]);
+      return { events: events.map((e) => eventForViewer(e, Boolean(viewer))) };
     }
     case "pt-profile":
       return loadProfile();

@@ -47,6 +47,8 @@ export interface PostKindProps {
   actions: PostActions;
   /** POST multipart `file` + `orgSlug` + `context`; answers `{ url }` (an /api/media path). */
   uploadEndpoint: string;
+  /** The host's sharp route (arts-collective /api/studio/image): opens pictures in the editor at a working size, makes JPEGs. */
+  imageEndpoint?: string;
   links: { connectionsHref?: string };
 }
 

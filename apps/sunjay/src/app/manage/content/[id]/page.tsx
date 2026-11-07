@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { db } from "@elkdonis/db";
 import { listOrgFeeds } from "@elkdonis/services";
 import { ContentForm } from "@/components/manage/content-form";
 import type { ContentFormDefaults } from "@/lib/cms/form-defaults";
 import { getThreadById, getThreadMaterials } from "@/lib/data";
 import { siteConfig } from "@/config/site";
+import { requireOrgEditor } from "@/lib/auth";
 
 interface EditContentPageProps {
   params: Promise<{ id: string }>;
@@ -30,7 +32,21 @@ function toLocalInput(date: Date | null, withTime: boolean): string {
 }
 
 export default async function EditContentPage({ params }: EditContentPageProps) {
+  // Gate in the page as well as the layout: Next renders the two in parallel, and
+  // the layout's redirect did not stop this page's data from streaming to a
+  // signed-out visitor (verified on the live sites, 2026-11-06).
+  await requireOrgEditor();
   const { id } = await params;
+
+  // A series and its sessions are edited in the planner: this form would turn them into a gathering.
+  const [row] = await db<Array<{ kind: string; is_series: boolean; series_id: string | null }>>`
+    SELECT kind,
+           COALESCE(jsonb_typeof(metadata->'series') = 'object', false) AS is_series,
+           metadata->'seriesSession'->>'seriesId' AS series_id
+    FROM threads WHERE id = ${id} AND org_id = ${siteConfig.orgId} LIMIT 1
+  `;
+  if (row?.kind === "series" || row?.is_series) redirect(`/hub/series/${id}#settings`);
+  if (row?.kind === "series_session" && row.series_id) redirect(`/hub/series/${row.series_id}`);
 
   const [thread, feeds] = await Promise.all([
     getThreadById(id),

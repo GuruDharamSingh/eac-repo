@@ -21,11 +21,21 @@ const NETWORK_URL = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://
  * header says Hub, but the rail on every center links back here.
  * The links are the single-org set from @elkdonis/cms-ui/center
  * (`buildOrgSiteCenterLinks`); only what this host knows is passed in.
- * Brief: CENTER_PAGE_BRIEF_2026-09-09.md.
+ * Brief: CENTER_PAGE_BRIEF_2026-09-09.md. Reached from the hub's
+ * "Profile / Center" card, as on IFAC (apps/ifac/src/app/center/page.tsx):
+ * a way back to the hub, Manage for editors, and Stripe's `?payouts=done`
+ * return re-reads the account.
  */
-export default async function CenterRoute() {
+export default async function CenterRoute({ searchParams }: { searchParams?: Promise<{ payouts?: string }> }) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login?next=/center");
+  const sp = (await searchParams) ?? {};
+
+  // Asking Stripe on return is what stamps the account payable; the webhook says the same later.
+  if (sp.payouts === "done") {
+    const { refreshStripeAccountStatus } = await import("@elkdonis/checkout/stripe");
+    await refreshStripeAccountStatus(viewer.userId).catch(() => null);
+  }
 
   // The org's definition over the network default (center-layout.ts).
   const { layout } = await resolveCenterLayout(siteConfig.orgId);
@@ -47,14 +57,22 @@ export default async function CenterRoute() {
     artdirectUrl: ARTDIRECT_URL,
     marketplaceUrl: siteConfig.marketplaceUrl,
     forumHref: "/forum",
-    composeHref: "/forum",
+    composeHref: viewer.canEdit ? "/manage/compose" : "/forum",
     // A link to another site carries the sign-in with it (the network's SSO hop).
     crossSite: (url) => (/^https?:\/\//i.test(url) ? handoffUrl(url) : url),
   });
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
-      <CenterPage data={data} links={links} layout={layout} signedIn timeZone={siteConfig.timeZone} />
+      <CenterPage
+        data={data}
+        links={links}
+        layout={layout}
+        back={{ href: viewer.isMember ? "/hub" : "/", label: siteConfig.orgName }}
+        manageHref={viewer.canEdit ? "/manage" : null}
+        signedIn
+        timeZone={siteConfig.timeZone}
+      />
     </div>
   );
 }

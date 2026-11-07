@@ -10,6 +10,7 @@ import {
   StandingView,
   ThreadsView,
 } from "./views.client";
+import { FORUM_PARTS, STANDING_PARTS } from "./shared-parts";
 
 // ============================================================================
 // Para Theater's data blocks: what the landing page draws from the database.
@@ -46,6 +47,8 @@ export const standing = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: STANDING_PARTS,
     props: standingProps,
   },
   StandingView as unknown as React.ComponentType<PropsOf<typeof standingProps>>,
@@ -64,6 +67,12 @@ export const calendar = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Calendar", sel: '> section' },
+      heading: { label: "Heading", sel: '.eac-hs-h' },
+      grid: { label: "Month", sel: '.eac-cal-grid' },
+    },
     props: [],
   },
   CalendarView as unknown as React.ComponentType<Record<string, never>>,
@@ -130,6 +139,14 @@ export const profile = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Profile", sel: '> article' },
+      photo: { label: "Photograph", sel: 'img' },
+      name: { label: "Name", sel: 'h3' },
+      role: { label: "Role", sel: 'h3 + p' },
+      links: { label: "Links", sel: 'p ~ div' },
+    },
     props: profileProps,
   },
   ProfileBlock,
@@ -200,6 +217,27 @@ export const threads = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Posts", sel: '> div' },
+      heading: { label: "Heading", sel: 'h2', prop: "heading", draws: { props: { heading: "A heading" } } },
+      intro: { label: "Line under the heading", sel: 'h2 + p', prop: "intro", draws: { props: { heading: "A heading", intro: "A line" } } },
+      rule: { label: "Bronze line", sel: 'hr', draws: { props: { heading: "A heading" } } },
+      cards: { label: "Cards", sel: 'div.space-y-4' },
+      card: { label: "Card", sel: 'article.eac-face' },
+      cover: { label: "Picture", sel: '.eac-face-cover' },
+      kicker: { label: "Small label", sel: '.eac-face-kicker', prop: "cardLabel" },
+      title: { label: "Title", sel: '.eac-face-title' },
+      blurb: { label: "Summary", sel: '.eac-face-blurb' },
+      meta: { label: "Details", sel: '.eac-face-meta' },
+      actions: { label: "Button row", sel: '.eac-face-actions' },
+      button: { label: "Button", sel: '.eac-face-actions a' },
+      list: { label: "List", sel: 'ul' },
+      row: { label: "Row", sel: 'ul > li' },
+      rowTitle: { label: "Row title", sel: 'li span.font-medium' },
+      rowLine: { label: "Row line", sel: 'li span.line-clamp-2' },
+      rowDate: { label: "Row date", sel: 'li span.uppercase' },
+    },
     props: threadsProps,
   },
   ThreadsView as unknown as React.ComponentType<PropsOf<typeof threadsProps>>,
@@ -257,6 +295,8 @@ export const forum = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: FORUM_PARTS,
     props: forumProps,
   },
   ForumView as unknown as React.ComponentType<PropsOf<typeof forumProps>>,
@@ -303,6 +343,20 @@ export const writing = defineBlock(
     memberSafe: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Writing", sel: '> div' },
+      heading: { label: "Heading", sel: '.eac-shelf__heading', prop: "heading" },
+      lead: { label: "First piece", sel: '.eac-shelf__lead' },
+      leadPicture: { label: "First piece picture", sel: '.eac-shelf__lead-cover' },
+      leadTitle: { label: "First piece title", sel: '.eac-shelf__lead-title' },
+      list: { label: "The others", sel: '.eac-shelf__list' },
+      row: { label: "Piece", sel: '.eac-shelf__row' },
+      rowPicture: { label: "Piece picture", sel: '.eac-shelf__row-cover' },
+      rowTitle: { label: "Piece title", sel: '.eac-shelf__row-title' },
+      lede: { label: "Summary", sel: '.eac-shelf__lede' },
+      date: { label: "Date", sel: '.eac-shelf__dateline' },
+    },
     props: writingProps,
   },
   WritingBlock,
@@ -343,6 +397,16 @@ export const gallery = defineBlock(
     interactive: true,
     dataDriven: true,
     styling: "tailwind",
+    // Selectors over today's markup: a data-part attribute would change what every visitor is sent.
+    parts: {
+      root: { label: "Gallery", sel: '> div' },
+      heading: { label: "Heading", sel: 'h2', prop: "heading" },
+      card: { label: "Card", sel: 'article.eac-face' },
+      picture: { label: "Picture", sel: '.eac-gal-face-shot img' },
+      count: { label: "Count", sel: '.eac-gal-face-count' },
+      title: { label: "Title", sel: '.eac-face-title' },
+      blurb: { label: "Summary", sel: '.eac-face-blurb' },
+    },
     props: galleryProps,
   },
   GalleryView as unknown as React.ComponentType<PropsOf<typeof galleryProps>>,
