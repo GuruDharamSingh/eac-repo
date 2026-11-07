@@ -17,13 +17,13 @@ export const metadata: Metadata = {
 const STUDIO_FONTS =
   "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap";
 
-type Props = { searchParams: Promise<{ org?: string; view?: string; notice?: string }> };
+type Props = { searchParams: Promise<{ org?: string; view?: string; filter?: string; notice?: string }> };
 
 /**
  * The Channel console: one acting org (or "Just me") and everything it posts,
  * where it went, and the accounts it posts through. Org sites link here
  * through the SSO hand-off (katie-the-potter /channel).
- * docs/open/CHANNEL_CONSOLE_2026-11-07.md.
+ * docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md.
  */
 export default async function ChannelPage({ searchParams }: Props) {
   const params = await searchParams;

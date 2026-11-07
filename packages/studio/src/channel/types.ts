@@ -1,7 +1,7 @@
 // ============================================================================
 // Channel console: the data a host hands the console. Pure types, no data
 // layer: the host (arts-collective /studio/channel today) loads these and
-// passes them in, as PostKind's host does (docs/open/CHANNEL_CONSOLE_2026-11-07.md).
+// passes them in, as PostKind's host does (docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md).
 // ============================================================================
 
 /** Views drawn inside the console. Every other left-column item links out. */
@@ -87,6 +87,7 @@ export interface ChannelJob {
   error: string | null;
   createdAt: string;
   sourceKind: string;
+  sourceId: string;
   /** The post or piece title when the host could resolve it. */
   sourceTitle: string | null;
   sourceHref: string | null;
@@ -126,6 +127,8 @@ export interface ChannelData {
   /** Orgs the person can act for (owner or guide). */
   orgs: ChannelOrg[];
   view: ChannelViewId;
+  /** The view's filter (`?filter=`): Artwork all | unposted | posted; Activity all | failed | sent. */
+  filter: string | null;
   links: ChannelLinks;
   artworks: ChannelArtwork[];
   posts: ChannelPost[];

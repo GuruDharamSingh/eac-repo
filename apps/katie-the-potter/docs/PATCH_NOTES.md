@@ -241,3 +241,10 @@ One slip, fixed within two minutes: the browser tool accepted the native "Retire
 - A Buy-now piece is held 75 minutes while the buyer is on Stripe's page (as card checkout already was); backing out leaves it reserved until Stripe expires the session.
 - Not from this test: card order ART-20261107-2895 (Pair of cups, 23:42, gurudharamsingh@gmail.com) was pending on Stripe while this was checked; it holds the piece until paid or expired.
 - Phase 2 (shipping with EasyPost): `docs/SHIPPING_PLAN.md`, with questions for you at the end.
+
+## 2026-11-07 · Channel card on /hub
+
+**Spotted:** the developer asked for a Channel on the hub: one place for posting pieces to Facebook, Instagram and Threads, following up with video or writing, and the newsletter.
+**Fixed:** `/channel` (signed-in redirect through the SSO hand-off, like `/center`) to the network console at `arts-collective.com/studio/channel?org=katie-the-potter`, and a Channel card on `/hub`. The console itself is shared (`@elkdonis/studio/channel`, hosted by arts-collective).
+**Where:** `src/app/channel/page.tsx`, `src/app/hub/page.tsx`; console and status in `docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md` §0 (repo root).
+**Left for you:** this site and arts-collective both need a rebuild before the card works; the console's Site links for this shop (Pages → /manage/site, People, Store → /manage/pieces) are set in arts-collective `src/lib/channel-data.ts` `SITE_PATHS`.

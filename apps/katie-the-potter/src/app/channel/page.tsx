@@ -15,7 +15,7 @@ const NETWORK_URL = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://
  * social accounts, publish history, links to video, writing and newsletter)
  * lives once on the network Studio, for every org, at
  * <network>/studio/channel?org=<org_id>. The SSO hop carries the session.
- * docs/open/CHANNEL_CONSOLE_2026-11-07.md.
+ * docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md.
  */
 export default async function ChannelRoute() {
   const viewer = await getViewer().catch(() => null);

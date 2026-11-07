@@ -28,7 +28,7 @@ import type { SessionUser } from "@/lib/session";
 // Loader for /studio/channel: everything the Channel console shows for one
 // acting org (or "Just me"), read once per request. Every read is
 // best-effort: a missing table or a failed query empties its view instead of
-// taking the page down. docs/open/CHANNEL_CONSOLE_2026-11-07.md.
+// taking the page down. docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md.
 // ============================================================================
 
 /** The personal org: "Just me" posts are stored under it (Studio page.tsx). */
@@ -118,7 +118,7 @@ function buildLinks(org: ChannelOrg | null, domain: string | null, profileSlug: 
   };
 }
 
-export async function loadChannel(user: SessionUser, params: { org?: string; view?: string; notice?: string }): Promise<ChannelData> {
+export async function loadChannel(user: SessionUser, params: { org?: string; view?: string; filter?: string; notice?: string }): Promise<ChannelData> {
   const orgs = await listChannelOrgs(user.id);
   const org = orgs.find((o) => o.orgId === params.org) ?? null;
   const actingOrgId = org?.orgId ?? PERSONAL_ORG_ID;
@@ -221,6 +221,7 @@ export async function loadChannel(user: SessionUser, params: { org?: string; vie
         error: j.error,
         createdAt: j.createdAt,
         sourceKind: j.sourceKind,
+        sourceId: j.sourceId,
         sourceTitle: post?.title ?? null,
         sourceHref: post?.editHref ?? (j.sourceKind === "thread" ? `/studio?id=${encodeURIComponent(j.sourceId)}${orgQ}` : null),
       };
@@ -231,6 +232,7 @@ export async function loadChannel(user: SessionUser, params: { org?: string; vie
     org,
     orgs,
     view,
+    filter: params.filter && /^[a-z]{1,12}$/.test(params.filter) ? params.filter : null,
     links,
     artworks,
     posts: channelPosts,
