@@ -65,9 +65,11 @@ has none) · **replace** (the new face supersedes it).
 |---|---|---|---|
 | Focus-mode shell: top bar, rail, form, preview | `StudioShell` focus mode (writing), `StudioColumns` for extensions (drawer/main/settings) | **extend** | The forms render as a StudioExtension inside the shell. Its top bar keeps "← Studio", the kind switch and "Making as". The form's top-bar actions go through `StudioTopActions`. The rail replaces the drawer *in focus*. The list drawer is still one click away. |
 | Preview layout 2a toggle / 2b rail / split | none | **gap** | `layout: 'split'\|'toggle'\|'rail'` prop, as the design asks. Default is `toggle` until Justin picks (§7 Q4). |
-| Preview card/page | cms-ui `surface` cards (`SurfaceCard`, kind cards), `series-card.ts` lines, `content` `PieceRow` | **beyond the design** | Render the **site's real card components** inside a preview frame themed with the *target org's* `site_themes` vars. Don't redraw Broadsheet cards. Then the preview is honest for every org. The neighbour item comes from the org's feed. |
+| Preview card/page | cms-ui `surface` cards (`SurfaceCard`, kind cards), `series-card.ts` lines, `content` `PieceRow`; HE's own record blocks (`he-shelf`, `he-service`) | **beyond the design** | Render the **site's real card components** inside a preview frame themed with the *target org's* `site_themes` vars. Don't redraw Broadsheet cards. The card renderer is a **host connector**, `FormHost.preview.cards[kind]`, defaulting to the cms-ui surface cards; HE passes its record blocks. The neighbour item comes from the org's feed. |
 | Kind switcher (caret) | the shell's kind switch, `STUDIO_KINDS` | **have** | |
-| `history.replaceState` on mount | `StudioShell.tsx:310-331` | **fix first** | `system32-a1`: inside a frame it reloads the frame. Guard it with `window.top === window` or a `syncUrl={false}` prop. Needed before quick compose frames anything. |
+| `history.replaceState` on mount | `StudioShell.tsx:310-331` | **fix first** (pass 1) | `system32-a1`: inside a frame it reloads the frame. The fix has two parts: (a) write the URL only when it differs from `location.href`; (b) add a `syncUrl` prop that a framed host sets to false. Don't rely on `window.top === window` alone, because it breaks with same-origin frames and "Open full screen". |
+| Shell props hosts work around today | HE hides the stub tabs with CSS; `coming-kind.tsx` stubs stop "New ▾" from falling through to `/studio?kind=…` (Puck on HE) | **pass 1** | Add `personalOrg={false}` and a host link builder (below) to `StudioShell`. |
+| Links to the Studio | `/studio` is hard-coded in `content` `studioNewHref` and in Studio links | **rule** | **Forms never hard-code `/studio`.** On katie, elktours, sunjay and HE, `/studio` is the Puck editor, and HE mounts authoring at `/publish`. Every link ("Open in Studio", "Keep editing", quick compose's hand-off) comes from the host, `FormHost.studioHref({kind, id, preset, focus})`. That is the architect's `ContentHost` / `org_sites.manage_paths`. |
 | Hydration-safe ids | n/a | rule | Use Puck block id or field name for ids. Never `useId`/random ids in markup that SSRs (a1). |
 
 ### 1.5 Fields
@@ -76,7 +78,7 @@ has none) · **replace** (the new face supersedes it).
 |---|---|---|---|
 | Headline title, `.input`, seg, switch, checkbox rows, More row, tag input, people chips | `WizardFieldControl` (`cms-ui/wizard/fields`), `@elkdonis/primitives` (Switch, Checkbox, Tabs…) | **replace the face, keep the contract** | New field components take the same `WizardFieldSpec` + value + onChange, so the schema doesn't fork. Built on `primitives` behaviour (Radix) where it fits. No shadcn (`.design-sync/NOTES.md`). |
 | Body: block editor (Post, focus) | Studio essay `Canvas` (tiptap, picture/gallery/pull quote/aside/thread cards) | **have** | It is the design's "+" menu list already. It goes in the body slot in focus only. |
-| Toolbar editor (Description, quick compose) | `cms-ui/editor` `RichTextEditor` | **have** | Toolbar size by `tier`, already in the slot props. |
+| Toolbar editor (Description, quick compose) | `cms-ui/editor` `RichTextEditor` (tiptap) | **have, focus only** | Weight rule (a1 #6): `./forms` ships a **lite editor**, a textarea with a B/I/list/link toolbar that writes markdown-lite and converts to sanitised HTML on save. `./forms/focus` uses `RichTextEditor`. A site that already bundles tiptap can pass `RichTextEditor` through the `body` slot. That choice belongs to the host, so tiptap never enters the essentials bundle by default. |
 | Media: Upload / Library / Camera, focal point | `MediaPicker` (`cms-ui/files`), `studio/capture` `PhoneHandoff`, `CoverFrame` (focal + zoom), `focal` input | **have** | Camera = the phone hand-off. |
 | Icons: Phosphor duotone | the repo uses `lucide-react`. No Phosphor anywhere | **gap / decision** | Icons go through a small icon map owned by the theme (`theme.icons`). Broadsheet's map uses `@phosphor-icons/react` (a new dependency). Other themes can use lucide. §7 Q6. |
 
@@ -84,7 +86,8 @@ has none) · **replace** (the new face supersedes it).
 
 | Design | Ours | Status |
 |---|---|---|
-| **Post**: title, body, cover, goes on, public/members | `StudioActions.savePiece`, `StudioPatch`, `setListing(orgIds)` | **have** |
+| **Post**: title, body, cover, goes on, public/members | `StudioActions.savePiece`, `StudioPatch`, `setListing(orgIds)` | **have**. There are **two bindings** (a1 #7): the Studio's network `writing` pieces homed on `oad`, and a site's own `kind='post'` threads in a chosen feed (HE `src/lib/studio/writing-actions.ts`), which the site's pages read. The host binds its own `FormActions` for Post, and "Goes on" supplies the feed. |
+| **Service** ("Offering"; a1 #1): title, subline, card summary, description, price + currency, sliding scale (floor + note), length, sessions, one-to-one/group/not live, online/in person/either, place, booking state, picture, visibility | `content-fields.ts` kind `service` (booking group, pricing, sliding scale), `upsertServiceOffering`, HE's `components/publish/service-kind.tsx` (the reference) | **have** schema and server; Studio kind `ready:false`. Pass 2. **Payee rule:** a service pays its thread author (`resolveSettlement`), so the adapter saves the **signed-in user** as author, never the org's service account (HE migration 253 fixed this after the fact). |
 | Post: excerpt (lede), also show on (profile, other orgs) | `lede`, `StudioListing` | **have**. *Verify* that "their editors approve" exists for cross-org listings; if not, it is a **gap**. |
 | Post: tags | `writing.ts` mentions tags; `StudioPatch` has no tags | **verify → likely gap** in the Studio contract |
 | Post: schedule publish | no scheduled status on pieces (`content` model has `scheduled` for display only) | **gap** (needs a job; pass 4) |
@@ -128,8 +131,8 @@ Recommended over a new `packages/compose`:
 3. **The architecture doc already settled it** (`NETWORK_SERVING_ARCHITECTURE` §4 row 95, step
    7): `@elkdonis/studio/forms`, an essentials variant without tiptap.
 4. **Weight control** is a subpath discipline, not a package boundary. `./forms` (essentials,
-   quick compose: no tiptap, no three, no Remotion) and `./forms/focus` (full, may import the
-   Canvas). A site that imports only `./forms` never pulls the Studio's heavy modules. Apps that
+   quick compose: no tiptap, no three, no Remotion; the lite editor of §1.5) and `./forms/focus`
+   (full, may import the Canvas and `RichTextEditor`). A site that imports only `./forms` never pulls the Studio's heavy modules. Apps that
    import `StudioShell` need the 3584 MB heap (a1). Apps that import only `./forms` should not,
    and pass 3 checks that on the pilot.
 
@@ -159,8 +162,8 @@ Exports: `./forms`, `./forms/focus`, `./forms.css`, `./forms/broadsheet.css`.
 ## 3. Form-state model (the bone's contract, pass 1)
 
 ```ts
-type FormKindId = 'post' | 'gathering' | 'artwork';          // 'series' is derived, never chosen
-type CodeKind  = 'writing' | 'meeting' | 'series' | 'artwork'; // what the adapter saves
+type FormKindId = 'post' | 'gathering' | 'artwork' | 'service'; // 'series' is derived, never chosen
+type CodeKind  = 'writing' | 'post' | 'meeting' | 'series' | 'artwork' | 'service'; // what the adapter saves
 
 interface FormKindSchema {
   id: FormKindId;
@@ -178,11 +181,20 @@ interface FormState { kind; answers; openSections: Set<string>; fromPreset: Reco
   savedAt?: string; publishedAt?: string; record?: unknown }
 interface FormActions<R> { context(orgId); save(orgId, answers, intent: 'draft'|'published', id|null): Promise<StudioResult<{record: R; warnings: string[]}>>;
   load?(id); presets?(orgId, kind): Promise<FormPreset[]>; lastSettings?(orgId, kind): Promise<FormPreset|null>; onPublished?(record: R) }
+interface FormHost {                                   // supplied by each host; nothing in forms assumes a route
+  studioHref(o: { kind: FormKindId; id?: string; preset?: string; focus?: boolean }): string;
+  viewHref?(record: unknown): string | null;
+  preview: { cards?: Partial<Record<FormKindId | 'series', CardRenderer>>; themeVars?: Record<string, string> };
+  feeds: Array<{ slug: string; name: string }>;        // "Goes on"
+  actions: Partial<Record<FormKindId, FormActions<unknown>>>; // a host binds its own Post (site threads) or the Studio's
+}
 ```
 
 - **Answers keep today's keys** (`scheduled_at`, `meeting_url`, `is_rsvp_enabled`, …), so
-  adapters and server parsers don't change. New design-only fields get new keys, namespaced where
-  the server can't take them yet (`emails.*`, `rsvp_answers`, `repeat.count`, `credits[]`). An
+  adapters and server parsers don't change. New design-only fields get new keys
+  (`emails.*`, `rsvp_answers`, `repeat.count`, `credits[]`). On the server they are stored under **one root,
+  `metadata.forms.*`** (`metadata.forms.emails`, `.rsvp_answers`, `.credits`), never top-level
+  `metadata.*`, because sites already read top-level keys (a1 #8). Stored Puck documents are not touched. An
   adapter drops what its action can't store and returns a warning saying so.
 - **Series is derived**: `repeat.enabled && repeat.asSeries` → `codeKind 'series'`, and the
   answers go through `switchContentKind('meeting','series')`. Turning it off goes back without
@@ -231,10 +243,19 @@ migrations without Justin.
 | Pass | Scope | Who | Needs |
 |---|---|---|---|
 | **0** (this plan is done; the stubs come next) | This plan; `forms/contract.ts`, `state.ts`, `presets.ts` stubs; the schema extension (`section`/`summary`/`rules` on content-fields, backward compatible) | bone | — |
-| **1** | FormShell (focus) with the layout switch, rail, readiness and validation summary; fields; preview frame with real site cards; `forms.css` + `broadsheet.css`; **Post** (Canvas body) and **Gathering** wired to existing `StudioActions`/`MeetingActions`; Studio reads `?focus=1` and `?preset=`; the `replaceState` frame guard; harness for 1a, 2a, 2b, 1b, 1h, 1i, 1j, 1l–1n | tendons (shell/fields/preview/theme), soft tissue (post, gathering, rules, mobile), bone (state, adapters, review) | Studio route wiring in `apps/arts-collective` **waits for the PM's go**. Until then the work is in packages + harness only. |
-| **2** | **Series in place** (Repeat → as series, list planner, skip/restore renumbering, Series page row), composite `series-create` adapter; **Artwork** (multi-picture, credits, price modes incl. inquiries, edition, variants) wired to commerce | soft tissue (kinds), bone (series/artwork adapters), tendons (planner grid, variants grid joints) | Verify the artwork gaps (§1.6) first. |
-| **3** | **Quick compose** popover + bottom sheet (`tier:'quick'` + preset line), "Open in Studio" carries the state (`?preset=` or a draft id); **Poll/Questions** add-ons standalone (`QuestionBuilder` underneath); `onPublished` hook + Channel `delivery` close; one pilot site | tendons (quick), soft tissue (addons), bone (hand-off contract, pilot) | Pilot site is the PM's call (sunjay or a shell org, per the architecture doc). `packages/content` `CREATE_KINDS.ready` flips once its owner frees it. |
+| **1** | FormShell (focus) with the layout switch, rail, readiness and validation summary; fields; preview frame with host card connectors; `forms.css` + `broadsheet.css`; **Post** (both bindings) and **Gathering** wired to existing `StudioActions`/`MeetingActions`; `FormHost` contract; Studio reads `?focus=1` and `?preset=`; the two-part `replaceState` fix, `personalOrg={false}` and host links on `StudioShell`; harness for 1a, 2a, 2b, 1b, 1h, 1i, 1j, 1l–1n | tendons (shell/fields/preview/theme), soft tissue (post, gathering, rules, mobile), bone (state, adapters, review) | Studio route wiring in `apps/arts-collective` **waits for the PM's go**. Until then the work is in packages + harness only. |
+| **2** | **Series in place** (Repeat → as series, list planner, skip/restore renumbering, Series page row), composite `series-create` adapter; **Artwork** (multi-picture, credits, price modes incl. inquiries, edition, variants) wired to commerce; **Service** ("Offering") from HE's `service-kind.tsx`, author = signed-in user | soft tissue (kinds), bone (series/artwork adapters), tendons (planner grid, variants grid joints) | Verify the artwork gaps (§1.6) first. |
+| **3** | **Quick compose** popover + bottom sheet (`tier:'quick'` + preset line), "Open in Studio" carries the state (`?preset=` or a draft id) through `FormHost.studioHref`; the **framed-surface protocol** (below); quick compose registrable as the custom surface `popup:custom:compose:<kind>` (kit §2.5, `SMART_COMPONENTS_KIT_2026-11-08.md`); **Poll/Questions** add-ons standalone (`QuestionBuilder` underneath); `onPublished` hook + Channel `delivery` close; one pilot site | tendons (quick, protocol), soft tissue (addons), bone (hand-off contract, pilot) | **Pilot: hidden-enneagram** (PM ruling), run with `system32-a1`. `packages/content` `CREATE_KINDS.ready` flips once its owner frees it. |
 | **4** | Needs Justin: presets store (`content_prefs` / lane A2), per-thread email switches read by one reminder engine, RSVP answer sets, poll attached to a thread, scheduled publishing, planner calendar + programme variants, N hosts | split per item | Migrations, cross-lane work |
+
+**Framed-surface protocol** (pass 3, from HE `components/publish/bridge.ts`; it lives in
+`studio/frame`, so no host re-implements it):
+- `postMessage` types `saved`, `published`, `navigate` and `close`. `navigate` means the frame left
+  its route: close the popup and navigate the parent.
+- The receiver checks **both** `event.origin` and `event.source`.
+- The caller refreshes **only after a save**, never on mount. A mount refresh fired twice under
+  StrictMode and reloaded the frame mid-typing.
+- "Open full screen" follows the item currently open, not the one the popup started with.
 
 ## 7. Agent split and file ownership
 
@@ -254,7 +275,7 @@ migrations without Justin.
 
 1. **Naming.** UI word "Gathering", code id `meeting`: OK? And the design's "Post" = writing, while
    the Studio's `post` = a social post. Proposal: rename the Studio tab to "Social posts" and keep
-   "Post" for writing in the forms and the Publish card.
+   "Post" for writing in the forms and the Publish card. A service's UI word: "Offering" (proposed)?
 2. **Package**: `@elkdonis/studio/forms` for the UI, with the schema staying in `cms-ui/compose` (§2). Agree?
 3. **Preview honesty**: render the *target site's* real cards in its own theme (my recommendation) rather than Broadsheet cards?
 4. **Preview layout**: 2a toggle or 2b rail? Built as a switch either way. 2a is the default until you pick.
@@ -273,3 +294,22 @@ migrations without Justin.
   for quick compose's "Open in Studio" on a site. Pass 3 follows it.
 - Hydration: ids from the block or field, never `useId`/random. Server code imports page-builder
   `/config` or `/server` only.
+
+## 10. Review round 1 (system32-a1, 2026-11-08): all eight notes taken
+
+1. The `service` kind was added (pass 2, "Offering"; HE `service-kind.tsx` is the reference; author = signed-in user).
+2. `personalOrg={false}` and host links moved into pass 1.
+3. No hard-coded `/studio`: every link comes from `FormHost.studioHref`.
+4. `replaceState` gets the two-part fix (write only on change, plus a `syncUrl` prop).
+5. The framed-surface protocol is standardised in `studio/frame`, and quick compose can be registered as `popup:custom:compose:<kind>`.
+6. Weight: `./forms` uses a lite editor, and tiptap appears only in `./forms/focus` or when a host passes it in.
+7. Post has two bindings, and the host binds its own `FormActions`.
+8. New keys go under `metadata.forms.*`.
+
+Q3 answered by a1: yes, with cards as a host connector. The PM accepted all eight and named
+hidden-enneagram the pass 3 pilot. Q1–Q7 are still with Justin.
+
+**One link builder.** `FormHost.studioHref` is the single source of Studio links. `@elkdonis/content`
+`studioNewHref` already takes `base` (enough for HE's `/publish` today). When the contract lands
+in pass 1, it gets a small change: `StudioHandoff.href?: FormHost['studioHref']`, used ahead of
+`base`, with the kind mapping kept in `CREATE_KINDS`. That edit waits until the PM frees `packages/content`.
