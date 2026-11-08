@@ -77,8 +77,26 @@ export interface FormRule {
   short: string;
 }
 
+/** What a kind's own section component (FormSection.render) receives from the shell. */
+export interface SectionProps {
+  answers: Answers;
+  patch: (fields: Partial<Answers>) => void;
+  ctx: FormContext;
+  /** Issues for this section, shown only once validation was attempted. */
+  issues: FormIssue[];
+  fromPreset: Record<string, string>;
+  tier: FormTier;
+  host: FormHost;
+  /** Draw one cms-ui field by name with the shell's field components (so kinds never restyle a field). */
+  field: (name: string, override?: Partial<Record<string, unknown>>) => React.ReactNode;
+}
+
 export interface FormKindSchema {
   id: FormKindId;
+  /** FormSection.render keys → components. Owned by the kind (soft tissue); drawn by the shell (tendons). */
+  components?: Record<string, React.ComponentType<SectionProps>>;
+  /** Sections the design shows that this pass leaves out, with the reason and the pass that brings them (PLAN §1). */
+  deferred?: Array<{ id: string; label: string; reason: string; pass: number }>;
   /** "New gathering" | "New series". */
   label: (a: Answers) => string;
   sections: FormSection[];

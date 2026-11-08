@@ -276,7 +276,17 @@ migrations without Justin.
   Phosphor is proposed, not installed, until the lockfile is free); `packages/studio/src/channel` (lane A).
 - Sub-agents start after Justin answers Q1–Q3. Q4–Q7 can be answered while pass 1 runs.
 
-## 8. Owner questions (for Justin, via the PM)
+## 8. Owner questions — ANSWERED 2026-11-08 ("all recs", via the PM)
+
+1. People see **"Gathering"**, and the code id stays `meeting`. The Studio's social tab becomes **"Social posts"**. "Post" means writing in the forms and on the Publish card. Service = "Offering".
+2. The UI goes in `@elkdonis/studio/forms` (`./forms` + `./forms/focus`), and the schema stays and grows in `cms-ui/compose`.
+3. The preview renders the **target site's real cards in its own theme**.
+4. **2a (top-bar toggle)** is the default, still built as a switch.
+5. **Draft gatherings stay off the org calendar and autosave to the server.** (Bone: check that every calendar/listing query excludes drafts before turning autosave on.)
+6. Icons: **lucide**. No Phosphor dependency.
+7. Emails: **show only the switches that work today**; the rest arrive in pass 4. More generally, a section with nothing behind it is listed in the schema's `deferred` and not drawn.
+
+The questions as asked:
 
 1. **Naming.** UI word "Gathering", code id `meeting`: OK? And the design's "Post" = writing, while
    the Studio's `post` = a social post. Proposal: rename the Studio tab to "Social posts" and keep
