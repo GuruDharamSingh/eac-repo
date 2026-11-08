@@ -134,6 +134,8 @@ export interface SeriesFormInput {
   shareToNetwork?: boolean;
   sessions: SeriesFormSession[];
   page: SeriesFormPage;
+  /** "N sessions" as the form counted them; kept on a draft so it reopens counting. Not stored on a published series. */
+  repeatCount?: number | null;
 }
 
 export interface SeriesFormRecord {
@@ -411,6 +413,8 @@ async function planOf(
   const lede = clean(input.excerpt, 1000);
   const body = typeof input.bodyHtml === 'string' && input.bodyHtml.trim() ? input.bodyHtml.trim().slice(0, 60_000) : null;
   const shareToNetwork = input.shareToNetwork === true;
+  const count = Number(input.repeatCount);
+  const repeatCount = Number.isInteger(count) && count >= 1 && count <= 260 ? count : null;
 
   const stored: SeriesFormInput = {
     intent: 'draft',
@@ -426,6 +430,7 @@ async function planOf(
     shareToNetwork,
     sessions: weeks.map((w) => ({ date: w.date, title: w.title, note: w.note, skipped: w.skipped, reason: w.reason })),
     page,
+    repeatCount,
   };
 
   return {
