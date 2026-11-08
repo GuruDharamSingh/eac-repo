@@ -38,6 +38,11 @@ import {
   StandingMeetingFace,
 } from "@elkdonis/cms-ui/hub";
 import { HubDrawer } from "@/components/hub/HubDrawer";
+import "@elkdonis/hub/hub-cards.css";
+import "@elkdonis/hub/industry.css";
+import { membersServer } from "@elkdonis/hub/server/members";
+import { hubSite, getHubCardViewer } from "@/lib/hub-site";
+import { MembersCardMount } from "@/components/hub/hub-card-host";
 import { KindTilesFace } from "@/components/hub/KindTilesFace";
 import { HelpErrand } from "@/components/hub/HelpErrand";
 import { FilesFace } from "@/components/hub/FilesCard";
@@ -191,6 +196,13 @@ export default async function HubPage({
   // its coming weeks for the Series face.
   const series = await getPresentedSeries({ count: 6 });
 
+  // Owners and guides get the Members card; it decides everything else from `can`.
+  const cardViewer = viewer.canEdit ? await getHubCardViewer() : null;
+  const membersFace = cardViewer ? await membersServer.load(hubSite, cardViewer).catch((err) => {
+    console.error("[hub] members card:", err);
+    return null;
+  }) : null;
+
   const [meetingLight, meetingAnswer] = standing
     ? await Promise.all([
         resolveMeetingLight(standing.event.id, { occurrence: standing.at }),
@@ -338,6 +350,8 @@ export default async function HubPage({
 
           <SurfaceCardGrid className="hub-band-grid ifac-four-grid">
             <CalendarFace initialEvents={events} canEdit={viewer.canEdit} />
+            {/* The shared Members hub card (pilot, docs/open/hub-cards-handoff/PLAN.md). */}
+            {membersFace && <MembersCardMount data={membersFace} />}
             {/* Running the site is an editor's errand; the card is theirs only. */}
             {viewer.canEdit && (
               <SurfaceCard

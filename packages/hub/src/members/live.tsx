@@ -99,7 +99,7 @@ export function useMembersLive(data: MembersFaceData, host: MembersHost, base: M
         host.refresh?.();
         return;
       }
-      error = res.error;
+      error = "error" in res && typeof res.error === "string" ? res.error : error;
     } catch (e) {
       if (e instanceof Error && e.message) error = e.message;
     }
