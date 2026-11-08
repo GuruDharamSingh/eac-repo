@@ -202,7 +202,7 @@ export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  *   site-page-create           { title, path, start: string, fromPath?, templateId? } → Puck page (sanitised)
  *   site-page-meta-save        { pageId, title?, notes?, linkPreview? }       needs migration 256 (can.notes)
  *   site-template-save         { fromPath, name }                             needs migration 257 (can.savedTemplates)
- *   site-identity-save         { name, line, where, primaryKind?, alsoKinds? } kinds need migration 260 (can.kinds)
+ *   site-identity-save         { name, line, where, markUrl?, primaryKind?, alsoKinds? } kinds need migration 260 (can.kinds)
  *   site-theme-exception-remove { pageId }                                    site_themes row for that page
  */
 export const SITE_BUILDER_ACTIONS = [

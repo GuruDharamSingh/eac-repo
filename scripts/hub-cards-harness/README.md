@@ -1,6 +1,6 @@
 # Hub cards render harness
 
-Renders the real Members card (`packages/hub/src/members`: Face, Popup, Detail) on the design's
+Renders the real Members card and the real Site Builder card (`packages/hub/src/members`: Face, Popup, Detail) on the design's
 sample data (`docs/open/hub-cards-handoff/source/MemberHub.dc.html`), with no server and no
 database. `host.act` resolves `{ ok: true }` after 600 ms and logs; `host.refresh` logs.
 Use it to see a layout change before a rebuild. It cannot catch server-only problems.
@@ -28,3 +28,19 @@ sudo -n docker rm -f shot-hubcards
 
 `out/` and `png/` are build output (git-ignored). When `members/model.ts` changes, update the sample
 data in `members.tsx`; the stub `act` accepts any action id.
+
+## Site Builder pages
+
+`site-builder.tsx` renders `packages/hub/src/site-builder` (Face, Popup, Detail) on the design's sample data
+(`docs/open/hub-cards-handoff/source/SiteBuilderCard.dc.html` seed(): IFAC with 20 pages, mixed kinds, a nested page, two shared
+layouts and two colour exceptions; Book Readers with the two template pages whose Home slots are README 1i). Thumbnails are small
+generated SVGs for pages that have a shape and `null` (the placeholder) for the rest. The host stub has `puckEditHref`,
+`themeEditorHref`, an `uploadImage` that resolves after 400 ms, and logs `act` / `navigate` / `refresh`.
+
+Pages (each `sb-*` HTML in `out/`, bundle `out/site-builder.js`): sb-card (1a), sb-card-bookreaders (1b), sb-card-noeditor (host
+without an editor), sb-popup (1d), sb-popup-template (1e, Book Readers Home expanded), sb-popup-nonotes (`can.notes` and
+`can.savedTemplates` false), sb-pages-grid (1f), sb-pages-list (1g), sb-pages-expanded-editor (1h), sb-pages-expanded-template,
+sb-pages-nonotes, sb-bookreaders (1i), sb-new-page (1j), sb-new-nested (1o), sb-save-template (1p), sb-theme (1k), sb-profile (1m),
+sb-profile-nokinds (`can.kinds` false), sb-pages-plain (org palette, no Industry), sb-popup-phone and sb-pages-phone (390 wide).
+Pages that show a state drive the real controls from `site-builder.tsx` after mount. The build and shot steps above cover all pages
+of both cards; `shot.mjs <ip> sb-card,sb-theme` limits it.

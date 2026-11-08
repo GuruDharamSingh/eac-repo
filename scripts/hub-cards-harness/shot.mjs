@@ -26,6 +26,12 @@ const shots = [
   ["small-org", 1280, 900], ["small-org-guide", 1280, 800], ["solo", 1280, 700],
   ["card-plain", 1280, 420], ["people-plain", 1280, 1100],
   ["popup-phone", 390, 900], ["people-phone", 390, 900],
+  ["sb-card", 1280, 440], ["sb-card-bookreaders", 1280, 440], ["sb-card-noeditor", 1280, 440],
+  ["sb-popup", 1280, 900], ["sb-popup-template", 1280, 1100], ["sb-popup-nonotes", 1280, 900],
+  ["sb-pages-grid", 1280, 1500], ["sb-pages-list", 1280, 1500], ["sb-pages-expanded-editor", 1280, 1300], ["sb-pages-expanded-template", 1280, 1300],
+  ["sb-pages-nonotes", 1280, 1300], ["sb-bookreaders", 1280, 1500], ["sb-new-page", 1280, 1200], ["sb-new-nested", 1280, 1300], ["sb-save-template", 1280, 1300],
+  ["sb-theme", 1280, 1200], ["sb-profile", 1280, 1100], ["sb-profile-nokinds", 1280, 1100], ["sb-pages-plain", 1280, 1400],
+  ["sb-popup-phone", 390, 900], ["sb-pages-phone", 390, 900],
 ];
 for (const [name, w, h] of shots) {
   if (only && !only.includes(name)) continue;

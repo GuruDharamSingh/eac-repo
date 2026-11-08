@@ -173,6 +173,8 @@ export const SITE_BUILDER_RUNNERS: Record<string, Runner<unknown>> = {
       name: z.string().trim().min(1).max(120),
       line: z.string().trim().max(120),
       where: z.string().trim().max(120),
+      /** A stored upload's URL (the host's uploadImage result); the identity row's picture. */
+      markUrl: z.string().trim().max(1000).regex(/^(https:\/\/|\/)[^\s"'<>]+$/).optional(),
       primaryKind: z.enum(KINDS).optional(),
       alsoKinds: z.array(z.enum(KINDS)).max(6).optional(),
     }),
@@ -183,7 +185,12 @@ export const SITE_BUILDER_RUNNERS: Record<string, Runner<unknown>> = {
       if (!(await canEditOrgIdentity(ctx.userId, orgId))) return fail('Only owners and guides edit the identity card.', 'forbidden');
       const [org] = await db<Array<{ profile_user_id: string | null }>>`SELECT profile_user_id FROM organizations WHERE id = ${orgId}`;
       if (!org?.profile_user_id) return fail('This organisation has no identity card yet.', 'failed');
-      await updateProfile(org.profile_user_id, { displayName: input.name, headline: input.line || null, city: input.where || null });
+      await updateProfile(org.profile_user_id, {
+        displayName: input.name,
+        headline: input.line || null,
+        city: input.where || null,
+        ...(input.markUrl ? { avatarUrl: input.markUrl } : {}),
+      });
       if (input.primaryKind !== undefined) {
         const also = (input.alsoKinds ?? []).filter((k) => k !== input.primaryKind);
         try {
