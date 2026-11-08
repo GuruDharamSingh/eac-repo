@@ -91,6 +91,21 @@ export interface StudioHandoff {
    * `studio:focus`); it is sent so the hand-off is ready when it does. Default true.
    */
   focus?: boolean;
+  /**
+   * The host's own Studio link builder (2026-11-08; the forms' `FormHost.studioHref`,
+   * docs/open/publishing-forms-handoff/PLAN.md §10). When set it wins over `base`:
+   * `/studio` is the Puck editor on several sites, and hidden-enneagram mounts the
+   * authoring Studio at `/publish`. A function, so pass it from a client module.
+   */
+  href?: (o: StudioHrefRequest) => string;
+}
+
+/** What `StudioHandoff.href` is asked for. `studioKind` is the Studio's `?kind=` from CREATE_KINDS (null = writing). */
+export interface StudioHrefRequest {
+  kind: CreateKindId;
+  studioKind: string | null;
+  org: string | null;
+  focus: boolean;
 }
 
 /**
@@ -100,6 +115,7 @@ export interface StudioHandoff {
  */
 export function studioNewHref(kind: CreateKindId, o: StudioHandoff = {}): string {
   const meta = createKind(kind);
+  if (o.href) return o.href({ kind, studioKind: meta.studio.kind, org: o.org ?? null, focus: o.focus !== false });
   const q = new URLSearchParams();
   if (meta.studio.kind) q.set("kind", meta.studio.kind);
   if (o.org) q.set("org", o.org);

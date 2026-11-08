@@ -78,7 +78,7 @@ has none) · **replace** (the new face supersedes it).
 |---|---|---|---|
 | Headline title, `.input`, seg, switch, checkbox rows, More row, tag input, people chips | `WizardFieldControl` (`cms-ui/wizard/fields`), `@elkdonis/primitives` (Switch, Checkbox, Tabs…) | **replace the face, keep the contract** | New field components take the same `WizardFieldSpec` + value + onChange, so the schema doesn't fork. Built on `primitives` behaviour (Radix) where it fits. No shadcn (`.design-sync/NOTES.md`). |
 | Body: block editor (Post, focus) | Studio essay `Canvas` (tiptap, picture/gallery/pull quote/aside/thread cards) | **have** | It is the design's "+" menu list already. It goes in the body slot in focus only. |
-| Toolbar editor (Description, quick compose) | `cms-ui/editor` `RichTextEditor` (tiptap) | **have, focus only** | Weight rule (a1 #6): `./forms` ships a **lite editor**, a textarea with a B/I/list/link toolbar that writes markdown-lite and converts to sanitised HTML on save. `./forms/focus` uses `RichTextEditor`. A site that already bundles tiptap can pass `RichTextEditor` through the `body` slot. That choice belongs to the host, so tiptap never enters the essentials bundle by default. |
+| Toolbar editor (Description, quick compose) | `cms-ui/editor` `RichTextEditor` (tiptap) | **have, focus only** | Weight rule (a1 #6): `./forms` ships a **lite editor**, a textarea with a B/I/list/link toolbar that writes markdown-lite and converts to sanitised HTML on save. `./forms/focus` uses `RichTextEditor`. A site that already bundles tiptap can pass `RichTextEditor` through the `body` slot. That choice belongs to the host, so tiptap never enters the essentials bundle by default. **Round-trip rule** (a1 round 2): stored bodies are HTML. The lite editor declares the subset it supports (paragraphs, H2/H3, lists, links, bold, italic, underline). A body outside that subset opens read-only with "Edit in full editor", so re-saving never strips formatting silently. HE passes `RichTextEditor`. |
 | Media: Upload / Library / Camera, focal point | `MediaPicker` (`cms-ui/files`), `studio/capture` `PhoneHandoff`, `CoverFrame` (focal + zoom), `focal` input | **have** | Camera = the phone hand-off. |
 | Icons: Phosphor duotone | the repo uses `lucide-react`. No Phosphor anywhere | **gap / decision** | Icons go through a small icon map owned by the theme (`theme.icons`). Broadsheet's map uses `@phosphor-icons/react` (a new dependency). Other themes can use lucide. §7 Q6. |
 
@@ -250,12 +250,17 @@ migrations without Justin.
 
 **Framed-surface protocol** (pass 3, from HE `components/publish/bridge.ts`; it lives in
 `studio/frame`, so no host re-implements it):
-- `postMessage` types `saved`, `published`, `navigate` and `close`. `navigate` means the frame left
-  its route: close the popup and navigate the parent.
-- The receiver checks **both** `event.origin` and `event.source`.
-- The caller refreshes **only after a save**, never on mount. A mount refresh fired twice under
-  StrictMode and reloaded the frame mid-typing.
+- `postMessage` types are `saved {kind,id}`, `published {kind,id,href}` and `close`, each tagged
+  with a `source`. They are posted to the same origin, and only when framed (parent ≠ self and the
+  parent's origin is the same, in try/catch).
+- The listener checks `e.origin === location.origin && e.source === frame.contentWindow`.
+- **Navigation is detected by the host, not messaged.** On the frame's `onLoad`, the host reads
+  `contentWindow.location`. A path outside the Studio route (taken from `FormHost.studioHref`) or
+  `/login` closes the popup and pushes that path on the parent.
+- **Refresh:** saved/published only set a `changed` flag. The host refreshes once, when the popup
+  closes or unmounts. `published` also closes the popup. Never refresh while the frame is open.
 - "Open full screen" follows the item currently open, not the one the popup started with.
+- (Corrected against HE's code by `system32-a1`, round 2.)
 
 ## 7. Agent split and file ownership
 
