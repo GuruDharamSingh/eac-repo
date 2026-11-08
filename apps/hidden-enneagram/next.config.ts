@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/redis",
     // The authoring Studio at /publish (round 4, 2026-11-07).
     "@elkdonis/studio",
+    "@elkdonis/chat",
+    "@elkdonis/pipeline",
   ],
   // Pin tracing root to the monorepo so Next doesn't pick a stray lockfile.
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
@@ -51,6 +53,8 @@ const nextConfig: NextConfig = {
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ source: `/type-${n}`, destination: `/enneagram#type-${n}`, permanent: true })),
       { source: "/contact", destination: "/#contact", permanent: true },
       { source: "/services", destination: "/readings", permanent: true },
+      // Round 5: the Silex editor bounce is gone; an old "Edit page" link lands in the page editor.
+      { source: "/edit", destination: "/studio", permanent: false },
     ];
   },
   allowedDevOrigins: ["localhost", "*.localhost", "127.0.0.1", "192.168.0.24", "*.192.168.0.24"],

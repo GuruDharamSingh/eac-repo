@@ -1,6 +1,68 @@
 # The Hidden Enneagram: patch notes
 > Your friendly neighbourhood patch log: what changed, why, and what it touched. Newest first.
 > Guide to the editor and blocks: `docs/editor.md`.
+## 2026-11-07 · Round 5: hub + cleanup (preview only; live not rebuilt)
+
+### Thwip: the hub drops its Silex suit
+- `/hub` no longer renders the Silex hub template ("Members" masthead, "What you can do" tiles). Gone with it:
+  `lib/hub-template.ts`, `/api/silex/templates/hub.css`, the `.eac-hub` token block and the `feed-list.css` import
+  (only the template's org-feed slot used it). The dev hydration mismatch on `/hub` went with the template.
+- New `/hub` = innergathering's "Cards 2" in this site's look: quiet header (org name, "Signed in as …"), one grid.
+  Cards: Publish (editors) · Readings & bookings · Forum (popup) · Chat · Calendar · Documents · Files · Whiteboard ·
+  Pipeline (members) · Your page · Channel · Manage · Page editor (editors) · the course. Table in `editor.md`.
+- Inner Work and Your bookings stay as quiet sections under the grid, each shown only when it has something:
+  they are content (what is new, what you booked), not tools, and neither has a page a card could open.
+- Pipeline has no Deck board yet: the card says "Not set up yet", and `/hub/pipeline` shows the kit's
+  "Create the board" (editors). Nothing was created.
+
+### Thwip: the kit, copied byte-identical
+- From innergathering (= sunjay = amrit): `api/pipeline/*` (16), `lib/pipeline.ts`, `api/chat/{identity,messages,provision}`,
+  `api/hub/{calendar,documents}`, `hub/pipeline/page.tsx`, `hub/documents/page.tsx`, `lib/auth.ts`.
+- From sunjay (= amrit; whiteboard page also = ifac): `hub/{chat,calendar,whiteboard}/page.tsx`,
+  `components/hub/{CalendarPageView,CalendarGrid}.tsx`, `api/hub/whiteboard/route.ts`.
+- Re-pointed, not identical: `lib/{chat,pipeline}-api.ts` (logLabel only); `hub/files/page.tsx` (innergathering's
+  without the framed Nextcloud Files, which `eac_embed` only allows on elkdonis-arts.org).
+- Chat is sunjay's native Talk page, not innergathering's framed one, for the same frame reason.
+
+### Thwip: who counts as a member
+- `lib/auth.ts` is now the kit's: `isMember` = owner/guide/member, plus `isAffiliate` = any role. It used to be
+  "any role", so every signup (a follower) passed `/api/center/files` and the member gates. Content reads that
+  meant "any role" now say `isAffiliate` (`[page]`, `[page]/[slug]`, `api/hub/threads/[id]`): no visible change.
+  The header's Hub link shows for anyone signed in (the hub page itself never required a role).
+
+### Thwip: cleanup
+- Removed: `[page]`'s Silex step, `lib/silex-pages.ts`, `app/edit` (now `/edit` → `/studio`, 307), `api/silex/*`
+  (token, assets, `enneagram.css`, `hub.css`), `components/edit-page-button.tsx`, the `.he-silex-edit` CSS, the
+  "Still in Silex" card on Manage → Pages, the Silex sentences on `/studio` and Manage → Contacts,
+  `components/enneagram/*` (old EnneagramDiagram / CentersDiagram, the `/triads` hydration warning),
+  `components/manage/media-field.tsx`, unused shadcn `components/ui/{card,input,label,select,separator,switch,tabs,textarea}`.
+- Dependencies: removed `@elkdonis/cms-bindings`, `@elkdonis/nextcloud`, six `@tiptap/*`, `next-themes`; added
+  `@elkdonis/chat`, `@elkdonis/pipeline`, `@elkdonis/primitives`, `@excalidraw/excalidraw` (install via
+  `docker compose run --rm install`; the lock changed only in this app's importer block). Kept
+  `@elkdonis/silex-render`: `handleOrgContact` (the contact form's route) lives there.
+
+### Thwip: fixes
+- Center display fonts: `public/fonts/` gets ifac's five files (Basteleur Bold/Moonlight woff+woff2,
+  BrothersTypeface), byte-identical. `/fonts/*` 404 → 200.
+- Toasts (Manage): the sonner wrapper read `var(--popover)`, a bare HSL triplet here, so toasts had no
+  background; now `hsl(var(--…))`, theme fixed to dark (no `next-themes`).
+- Borders: Tailwind 4 draws a bare `border` in the ink colour; kit pages (chat, pipeline) had near-white frames.
+  A base-layer default (`border-color: var(--color-border)`) in `globals.css`.
+- Passages and the other site blocks inside ANY column (Split, Tabs, Sticky…) fill the column instead of
+  taking the page gutter again (`.blk :is(.he-hero, .he-passage, .he-fig-block, .he-course-block)`); this
+  generalises round 3's Sticky-only rule. `/`, `/enneagram`, `/readings`, `/about` measure the same as before.
+- Publish popup "double navigation": one document load, then StudioShell's `history.replaceState` added `org=`
+  to the frame's address ~200 ms later. The frame now opens with `org=` already in it, so that write changes
+  nothing. (StudioShell still calls replaceState unconditionally: a package note, not changed here.)
+- `/account`: "booking history will live here" → points at the hub ("Open the hub →").
+
+### Thwip: tests
+- tsc clean (throwaway container). Signed-out route sweep on :3024 = live :3012 except the intended: `/edit` 307
+  → `/studio`, `/api/silex/*` 404, `/hub/*` 307 → login, `/fonts/*` 200.
+- Signed in as Ario (session minted, then revoked; own Chromium on eris): every hub card's page 200 with no
+  console errors; Forum popup and Publish → chooser → Writing (Studio frame) open. Screenshots in
+  `%TEMP%\.playwright-mcp\he-r5\`.
+
 ## 2026-11-07 · Round 4: Studio (preview only; live not rebuilt)
 
 ### Thwip: the network's Studio lives here now

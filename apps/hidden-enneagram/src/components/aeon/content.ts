@@ -3,7 +3,8 @@
  *
  * Source: ~/aeon-enneagram/js/content.js (2026-10-29 draft), ported to typed
  * constants. `keywords` and `description` are not in the ÆON file; they come
- * from the repo's older data in ../enneagram/enneagram-data.ts.
+ * from the repo's older data (components/enneagram/enneagram-data.ts, removed in
+ * round 5; it lives in git history before that).
  *
  * Wording is ÆON's; disagreements with the older site are listed in
  * docs/PATCH_NOTES.md.

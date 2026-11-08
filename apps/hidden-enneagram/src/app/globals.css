@@ -8,6 +8,9 @@
 @source "../../../../packages/page-builder/src";
 @source "../../../../packages/blocks/src";
 @source "../../../../packages/checkout/src";
+@source "../../../../packages/chat/src";
+@source "../../../../packages/pipeline/src";
+@source "../../../../packages/primitives/src";
 
 /* The shared systems this site now hosts. Plain CSS driven by custom
    properties, so they take this site's own dark palette rather than
@@ -28,32 +31,12 @@
 @import "@elkdonis/forum-ui/forum.css";
 @import "@elkdonis/forum-ui/forum-modern.css";
 
-/* The Silex hub template and the spotlight-grid pen inside it read --eac-*
-   tokens with their own cream-and-terracotta fallbacks. Mapped here onto this
-   site's palette so /hub reads as this site. Scoped to .eac-hub so the
-   template's own :root tokens cannot reach the rest of the page.
-   Measured on the opened page: tile title 17.74:1, tile sub 6.61:1,
-   kicker 8.12:1, card frame 3.39:1. */
-.eac-hub {
-  --eac-bg: hsl(var(--background));
-  --eac-surface: hsl(var(--card));
-  --eac-text: hsl(var(--foreground));
-  --eac-text-soft: hsl(var(--muted-foreground));
-  --eac-accent: hsl(var(--primary));
-  --eac-border: hsl(var(--border));
-  --eac-font-sans: var(--font-sans);
-  --eac-font-serif: var(--font-serif);
-}
 @import "@elkdonis/cms-ui/gallery.css";
 @import "@elkdonis/cms-ui/fields.css";
 @import "@elkdonis/cms-ui/compose.css";
 /* The one rich-text editor, shared by every app. */
 @import "@elkdonis/cms-ui/editor.css";
 @import "@elkdonis/cms-ui/files-card.css";
-/* The feed-list pen. The Silex block carries its own CSS into the published
-   page, but the LIVE org-feed slot does not — it is rendered by this app, so
-   the look has to be imported here. Same stylesheet either way. */
-@import "@elkdonis/cms-ui/feed-list.css";
 
 /* ==========================================================================
    2026-11-07 re-stand: the page builder and the house look.
@@ -64,7 +47,7 @@
 @import "@elkdonis/blocks/record.css" layer(components);
 /* The back office primitives (/manage), already inside @layer components. */
 @import "@elkdonis/cms-ui/manage.css";
-/* /hub's room cards (HubCardGrid / HubLinkCard). */
+/* /hub and its pages (HubCardGrid / HubLinkCard / HubPageFrame). */
 @import "@elkdonis/cms-ui/hubsite.css";
 /* The palette (ÆON's dark house look, tokenised), the shell and the site
    blocks, then the figure / dossier / course card. */
@@ -107,6 +90,13 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Round 5: Tailwind 4 draws a bare `border` in currentColor (the ink), so the
+   kit pages (chat, pipeline, the forum) framed their boxes in near-white.
+   shadcn's base rule, as a default that every explicit colour still beats. */
+@layer base {
+  *, ::before, ::after, ::backdrop, ::file-selector-button { border-color: var(--color-border); }
 }
 
 html {

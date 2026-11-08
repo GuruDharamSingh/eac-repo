@@ -97,7 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           displayName={viewer?.email.split("@")[0] ?? null}
           feeds={feeds.map((f) => ({ slug: f.slug, name: f.name }))}
         >
-          <SiteHeader links={links} more={more} signedIn={Boolean(viewer)} canEdit={canEdit} isMember={Boolean(viewer?.isMember)} email={viewer?.email ?? null} />
+          <SiteHeader links={links} more={more} signedIn={Boolean(viewer)} canEdit={canEdit} isMember={Boolean(viewer)} email={viewer?.email ?? null} />
           {/* Not a <main>: most pages bring their own (they did before the header moved here). */}
           <div className="flex-1">{children}</div>
           <SiteFooter body={footer.body} note={footer.note} />

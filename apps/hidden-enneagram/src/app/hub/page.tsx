@@ -1,226 +1,240 @@
-import { HubCardGrid, HubLinkCard } from "@elkdonis/cms-ui/hubsite";
-
+import "@elkdonis/cms-ui/hubsite.css";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Lock } from "lucide-react";
-import { canViewFeed, listOrgFeeds } from "@elkdonis/services";
-import { applyManifestBindings } from "@elkdonis/cms-bindings";
-import { getOrgBySlug, renderSilexHtmlWithEmbeds } from "@elkdonis/silex-render";
-import { sanitizeSilexHtml } from "@elkdonis/utils";
-import { hubTemplateHtml, hubTemplateSections } from "@/lib/hub-template";
+import { HubCardGrid, HubLinkCard } from "@elkdonis/cms-ui/hubsite";
+import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
+import {
+  canViewFeed,
+  getOrgDeckBoardId,
+  getProfile,
+  listOrgDocuments,
+  listOrgEventsInRange,
+  listOrgFeeds,
+} from "@elkdonis/services";
+import { addMonths, startOfMonth } from "@elkdonis/utils";
 import { listOrdersForCustomer } from "@elkdonis/commerce/queries";
 import { formatMoney } from "@elkdonis/commerce/money";
-import { ForumFace, SurfaceCard, SurfaceCardGrid } from "@elkdonis/cms-ui/surface";
 import { PublishCard } from "@/components/publish/publish-door";
-import { Badge } from "@/components/ui/badge";
 import { getThreadsForFeed } from "@/lib/data";
 import { getViewer } from "@/lib/auth";
 import { getForumSnapshot } from "@/lib/forum";
 import { courseUrl, siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Members",
+  title: "Hub",
   // A members area has no business in search results.
   robots: { index: false, follow: false },
 };
+export const dynamic = "force-dynamic";
 
 /**
- * The members area — this org's equivalent of arts-collective's /hub.
+ * The hub (round 5, 2026-11-07): innergathering's "Cards 2" shape — a quiet
+ * header and one grid of cards, each a door to its own page with a breadcrumb
+ * back (or, for Publish and the forum, a popup). The Silex hub template that
+ * used to sit on top is gone.
  *
- * Signed-out visitors are sent to login with a return path rather than 404'd:
- * unlike a locked feed, the existence of a members area is not itself a
- * secret, and bouncing someone to a dead end when the fix is "sign in" is
- * hostile.
+ * Who sees what:
+ *   signed in (anyone, a follower included): Readings & bookings, the forum,
+ *     Your page, the course;
+ *   members (owner, guide, member — `viewer.isMember`): the group's tools,
+ *     Chat, Calendar, Documents, Files, Whiteboard, Pipeline. Their pages and
+ *     APIs gate on the same rule (requireOrgMember / getApiMember);
+ *   editors (owner, guide): Publish, Channel, Manage, the page editor.
  *
- * Everyone who signs up here is made a member of this org by the signup route,
- * so membership is self-serve today. If that ever needs to be an invitation,
- * the gate is org role and this page needs no change.
+ * Signed-out visitors go to login with a return path: the existence of a hub
+ * is not a secret, and a dead end where the fix is "sign in" is hostile.
  *
- * The top of the page is the Silex HUB TEMPLATE
- * (packages/silex-nextcloud-connector/src/templates/hub), rendered through the
- * same pipeline a published org site goes through: bind the declared traits,
- * sanitize, then swap <eac-embed> markers for live React. So the masthead, the
- * tile grid and the two live slots are all editable in Silex by whoever owns
- * this org, and what they see in the editor is what this page renders.
- *
- * Everything below the template — the member-only feeds and this person's
- * bookings — stays in React, because neither can be expressed as a static
- * template: one is gated per feed role, the other is per-viewer.
+ * Under the grid, two quiet sections rather than cards: the members' feeds
+ * (Inner Work) and this person's bookings. They are content, not tools — what
+ * is new and what you have booked — and neither has a page of its own to send
+ * a card to, so a card would only be a link to a list that lives here anyway.
+ * Each section is left out entirely when it has nothing in it.
  */
 export default async function HubPage() {
   const viewer = await getViewer();
   if (!viewer) redirect(`/login?next=${encodeURIComponent("/hub")}`);
 
-  const feeds = await listOrgFeeds(siteConfig.orgId).catch(() => []);
-  const memberFeeds = feeds.filter(
-    (feed) => feed.minRole && canViewFeed(feed, viewer.role)
-  );
-
-  const [feedContents, orders, forum] = await Promise.all([
-    Promise.all(
-      memberFeeds.map(async (feed) => ({
-        feed,
-        threads: await getThreadsForFeed(feed.slug, { isMember: true, limit: 6 }),
-      }))
-    ),
+  const from = startOfMonth(new Date());
+  const [profile, feeds, orders, forum, events, documents, boardId] = await Promise.all([
+    getProfile(viewer.userId).catch(() => null),
+    listOrgFeeds(siteConfig.orgId).catch(() => []),
     listOrdersForCustomer(viewer.userId, { limit: 20 }).catch(() => []),
-    // The same snapshot /api/hub/forum returns, so the tile and the popup it
-    // opens agree. A forum outage costs the tile, not the page.
+    // The same snapshot /api/hub/forum returns, so the card and the popup it
+    // opens agree. A forum outage costs the card, not the page.
     getForumSnapshot().catch(() => null),
+    // The tools' card lines. Members only, so a follower's hub reads nothing
+    // it will not show.
+    viewer.isMember
+      ? listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => [])
+      : [],
+    viewer.isMember ? listOrgDocuments(siteConfig.orgId).catch(() => []) : [],
+    viewer.isMember ? getOrgDeckBoardId(siteConfig.orgId).catch(() => null) : null,
   ]);
 
+  const memberFeeds = feeds.filter((feed) => feed.minRole && canViewFeed(feed, viewer.role));
+  const feedContents = (
+    await Promise.all(
+      memberFeeds.map(async (feed) => ({
+        feed,
+        threads: await getThreadsForFeed(feed.slug, { isMember: true, limit: 3 }).catch(() => []),
+      }))
+    )
+  ).filter(({ threads }) => threads.length > 0);
   const myOrders = orders.filter((o) => o.metadata?.orgId === siteConfig.orgId);
-  const hub = await renderHubTemplate(viewer.email);
+
+  const name = profile?.displayName?.trim() || viewer.email;
+  const now = Date.now();
+  const nextEvent = events
+    .filter((e) => e.scheduledAt && new Date(e.scheduledAt).getTime() >= now)
+    .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())[0];
+  const when = (d: Date | string) =>
+    new Date(d).toLocaleString("en-CA", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: siteConfig.timeZone,
+    });
+  const notSetUp = viewer.canEdit ? "Not set up yet: open it to set it up." : "Not set up yet.";
 
   return (
-    <>
-      {/* The template's stylesheet: tokens, the spotlight-grid pen, then the
-          hub's own layout — one file, the same one the Silex editor loads. */}
-      <link rel="stylesheet" href="/api/silex/templates/hub.css" />
-      {hub}
-      <main className="mx-auto w-[min(1040px,calc(100%-48px))] pt-2 pb-16 font-sans">
-        {/* One grid (round 4 tidy, 2026-11-07): Publish (editors), the forum, readings and
-            bookings, then the rooms. Members see the forum, readings, Center and the course. */}
-        <HubCardGrid label="What to do here">
-          {viewer.canEdit ? <PublishCard /> : null}
-          <ForumFace forum={forum} />
+    <main className="eac-hp he-hub">
+      <header className="eac-hp-head">
+        <div>
+          <p className="eac-hs-kicker">{siteConfig.orgName}</p>
+          <h1 className="eac-hp-title">Hub</h1>
+          <p className="eac-hp-intro">Signed in as {name}.</p>
+        </div>
+      </header>
+
+      <HubCardGrid label="Hub">
+        {viewer.canEdit ? <PublishCard /> : null}
+        <HubLinkCard
+          href={myOrders.length > 0 ? "#bookings" : "/readings"}
+          glyph="◇"
+          title="Readings & bookings"
+          blurb={
+            myOrders.length > 0
+              ? `${myOrders.length} booked. Yours are listed below.`
+              : "Book a reading or a counselling session."
+          }
+        />
+        <ForumFace forum={forum} />
+        {viewer.isMember ? (
+          <HubLinkCard href="/hub/chat" glyph="☏" title="Chat" blurb="The group's room: messages, in Nextcloud Talk." />
+        ) : null}
+        {viewer.isMember ? (
           <HubLinkCard
-            href={myOrders.length > 0 ? "#bookings" : "/readings"}
-            glyph="◇"
-            title="Readings & bookings"
-            blurb={
-              myOrders.length > 0
-                ? `${myOrders.length} booked. Yours are listed below.`
-                : "Book a reading or a counselling session."
+            href="/hub/calendar"
+            glyph="▦"
+            title="Calendar"
+            blurb="Everything scheduled, month by month."
+            meta={nextEvent ? `Next: ${nextEvent.title} · ${when(nextEvent.scheduledAt!)}` : undefined}
+          />
+        ) : null}
+        {viewer.isMember ? (
+          <HubLinkCard
+            href="/hub/documents"
+            glyph="▭"
+            title="Documents"
+            blurb="Write together in shared documents."
+            meta={
+              documents.length > 0
+                ? `${documents.length} document${documents.length === 1 ? "" : "s"} · latest: ${documents[0].title}`
+                : undefined
             }
           />
-          <HubLinkCard href="/center" glyph="◌" title="Center" blurb="Your home on the network: who you follow, what is coming up." />
-          {viewer.canEdit ? <HubLinkCard href="/channel" glyph="◉" title="Channel" blurb="Post writing and sessions to Facebook, Instagram and Threads, and see where each went." /> : null}
-          {viewer.canEdit ? <HubLinkCard href="/manage" glyph="◧" title="Manage" blurb="Content, orders, contacts, the newsletter, pages and the site's look." /> : null}
-          {viewer.canEdit ? <HubLinkCard href="/studio" glyph="▦" title="Page editor" blurb="Arrange blocks to build the home page, The Figure and new pages." /> : null}
-          <HubLinkCard href={courseUrl()} glyph="Ⅶ" title="Enneagram Foundations" blurb="The free course on Sophia: seven modules, short steps, private reflections." />
-        </HubCardGrid>
+        ) : null}
+        {viewer.isMember ? (
+          <HubLinkCard href="/hub/files" glyph="▤" title="Files" blurb="The site's folder and your own." />
+        ) : null}
+        {viewer.isMember ? (
+          <HubLinkCard href="/hub/whiteboard" glyph="✎" title="Whiteboard" blurb="A shared canvas. Sketch a plan, a diagram, an idea." />
+        ) : null}
+        {viewer.isMember ? (
+          <HubLinkCard
+            href="/hub/pipeline"
+            glyph="▥"
+            title="Pipeline"
+            blurb="What is being worked on, as a board."
+            meta={boardId === null ? notSetUp : undefined}
+          />
+        ) : null}
+        <HubLinkCard href="/center" glyph="◌" title="Your page" blurb="Your home on the network: who you follow, what is coming up." />
+        {viewer.canEdit ? (
+          <HubLinkCard href="/channel" glyph="◉" title="Channel" blurb="Post writing and sessions to Facebook, Instagram and Threads." />
+        ) : null}
+        {viewer.canEdit ? (
+          <HubLinkCard href="/manage" glyph="◧" title="Manage" blurb="Content, orders, contacts, the newsletter, pages and the site's look." />
+        ) : null}
+        {viewer.canEdit ? (
+          <HubLinkCard href="/studio" glyph="▣" title="Page editor" blurb="Arrange blocks to build the home page, The Enneagram and new pages." />
+        ) : null}
+        <HubLinkCard href={courseUrl()} glyph="Ⅶ" title="Enneagram Foundations" blurb="The free course on Sophia." />
+      </HubCardGrid>
 
-        {memberFeeds.length === 0 ? (
-          <p className="mt-14 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-            Nothing has been shared with members yet.
-          </p>
-        ) : (
-          feedContents.map(({ feed, threads }) => (
-            <section key={feed.slug} className="mt-14">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="inline-flex items-center gap-2 font-serif text-2xl font-medium">
-                  <Lock className="size-4 text-muted-foreground" aria-hidden />
-                  {feed.name}
-                </h2>
-                <Link
-                  href={`/${feed.slug}`}
-                  className="text-xs uppercase tracking-[0.2em] text-primary no-underline"
-                >
-                  All →
-                </Link>
-              </div>
-              {feed.tagline && (
-                <p className="mt-1 text-sm text-muted-foreground">{feed.tagline}</p>
-              )}
-
-              {threads.length === 0 ? (
-                <p className="mt-6 text-sm text-muted-foreground">Nothing here yet.</p>
-              ) : (
-                <SurfaceCardGrid className="mt-6">
-                  {threads.map((thread) => (
-                    <SurfaceCard
-                      key={thread.id}
-                      title={thread.title}
-                      blurb={thread.excerpt ?? undefined}
-                      kind={thread.kind}
-                      kicker={new Date(
-                        thread.publishedAt ?? thread.createdAt
-                      ).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
-                      // The card carries what it already knows, so the surface
-                      // paints before its fetch returns.
-                      surface={{
-                        type: "thread",
-                        id: thread.id,
-                        preview: {
-                          title: thread.title,
-                          kind: thread.kind,
-                          coverImageUrl: thread.coverImageUrl,
-                          feedName: feed.name,
-                        },
-                      }}
-                    />
-                  ))}
-                </SurfaceCardGrid>
-              )}
-            </section>
-          ))
-        )}
-
-        <section id="bookings" className="mt-16 scroll-mt-24 border-t border-border pt-12">
-          <h2 className="font-serif text-2xl font-medium">Your bookings</h2>
-          {myOrders.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              You haven&rsquo;t booked anything yet.{" "}
-              <Link href="/services" className="text-primary underline underline-offset-4">
-                See what&rsquo;s offered
-              </Link>
-              .
-            </p>
-          ) : (
-            <ul className="mt-6 grid gap-3">
-              {myOrders.map((order) => (
-                <li key={order.id}>
-                  <Link
-                    href={`/services/orders/${order.id}`}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-4 no-underline transition-colors hover:border-primary/60"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {order.number}
-                    </span>
-                    <span>{formatMoney(order.totalMinor, order.currency)}</span>
-                    <Badge variant={order.status === "paid" ? "default" : "secondary"}>
-                      {order.status === "paid" ? "paid" : "awaiting payment"}
-                    </Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+      {feedContents.map(({ feed, threads }) => (
+        <section key={feed.slug} className="eac-hp-section he-hub-section" aria-labelledby={`feed-${feed.slug}`}>
+          <div className="he-hub-section-head">
+            <h2 id={`feed-${feed.slug}`} className="eac-hp-section-title">
+              {feed.name}
+            </h2>
+            <Link href={`/${feed.slug}`} className="he-hub-all">
+              All →
+            </Link>
+          </div>
+          {feed.tagline ? <p className="he-hub-note">{feed.tagline}</p> : null}
+          <SurfaceCardGrid className="mt-5">
+            {threads.map((thread) => (
+              <SurfaceCard
+                key={thread.id}
+                title={thread.title}
+                blurb={thread.excerpt ?? undefined}
+                kind={thread.kind}
+                kicker={new Date(thread.publishedAt ?? thread.createdAt).toLocaleDateString("en-CA", {
+                  month: "short",
+                  day: "numeric",
+                })}
+                // The card carries what it already knows, so the surface
+                // paints before its fetch returns.
+                surface={{
+                  type: "thread",
+                  id: thread.id,
+                  preview: {
+                    title: thread.title,
+                    kind: thread.kind,
+                    coverImageUrl: thread.coverImageUrl,
+                    feedName: feed.name,
+                  },
+                }}
+              />
+            ))}
+          </SurfaceCardGrid>
         </section>
-      </main>
-    </>
+      ))}
+
+      {myOrders.length > 0 ? (
+        <section id="bookings" className="eac-hp-section he-hub-section" aria-labelledby="bookings-title">
+          <h2 id="bookings-title" className="eac-hp-section-title">
+            Your bookings
+          </h2>
+          <ul className="he-hub-orders">
+            {myOrders.map((order) => (
+              <li key={order.id}>
+                <Link href={`/services/orders/${order.id}`} className="he-hub-order">
+                  <span className="he-hub-order-no">{order.number}</span>
+                  <span>{formatMoney(order.totalMinor, order.currency)}</span>
+                  <span className={`he-hub-order-state${order.status === "paid" ? " is-paid" : ""}`}>
+                    {order.status === "paid" ? "paid" : "awaiting payment"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </main>
   );
-}
-
-/**
- * The hub template, rendered with its live slots resolved.
- *
- * Fails soft to null: a hub that arrives without its masthead is worse than
- * one without its tiles, and everything below this in the page is independent
- * of it. The template is bound BEFORE it is sanitized, which is the order the
- * rest of the pipeline uses — a binding writes real values into the document,
- * so those values have to pass through DOMPurify too.
- */
-async function renderHubTemplate(email: string) {
-  const html = hubTemplateHtml();
-  if (!html) return null;
-
-  const org = await getOrgBySlug(siteConfig.orgId).catch(() => null);
-  if (!org) return null;
-
-  try {
-    const bound = applyManifestBindings(html, hubTemplateSections(), {
-      hub: {
-        org_name: siteConfig.orgName,
-        whoami: `Signed in as ${email}`,
-        all_url: "/",
-      },
-    });
-    return await renderSilexHtmlWithEmbeds(sanitizeSilexHtml(bound), org);
-  } catch (error) {
-    console.error("[hidden-enneagram] hub template render:", error);
-    return null;
-  }
 }

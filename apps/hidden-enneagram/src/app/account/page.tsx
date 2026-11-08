@@ -42,13 +42,13 @@ export default async function AccountPage() {
           Welcome
         </h1>
         <p style={{ marginTop: 14, fontSize: 18, color: "hsl(var(--band-muted))" }}>
-          Signed in as {user.email}. This is your member area — booking history
-          and member content will live here.
+          Signed in as {user.email}. Your bookings, the forum and your page are
+          in the hub.
         </p>
 
         <div style={{ marginTop: 36, display: "flex", gap: 16, flexWrap: "wrap" }}>
           <Link
-            href="/"
+            href="/hub"
             style={{
               padding: "10px 24px",
               border: "1px solid rgba(236,231,221,0.18)",
@@ -60,7 +60,7 @@ export default async function AccountPage() {
               textTransform: "uppercase",
             }}
           >
-            ← Back to site
+            Open the hub →
           </Link>
           {owner && (
             <Link

@@ -33,13 +33,14 @@ starts a reading.
 | `/about` | `puck:about`, else `DEFAULT_ABOUT_PAGE` (ifac's About shape: Ario's card + statement). `/about/<slug>` stays the PersonPage. | `/studio/about` |
 | `/services/<slug>` | `puck:service`, else `DEFAULT_SERVICE_PAGE`: ONE template for every service; `he-service` draws the service in the address. | `/studio/service` |
 | `/music` | `puck:music`, else `DEFAULT_MUSIC_PAGE` (round 2) | `/studio/music` |
-| `/<slug>` | 1. a studio page `puck:<slug>`, 2. a Silex page (none left), 3. an org feed, 4. 404 | `/studio/<slug>` |
+| `/<slug>` | 1. a studio page `puck:<slug>`, 2. an org feed, 3. 404 | `/studio/<slug>` |
 
 - Redirects (308, `next.config.ts`, before any route): `/introduction` → `/enneagram#introduction`,
   `/centers` → `#centers`, `/triads` → `#triads`, `/type-N` → `/enneagram#type-N` (the row opens, the
   figure selects N), `/contact` → `/#contact`, `/services` → `/readings`; `/services/<slug>/book` →
   `/services/<slug>` (page-level 308, keeps `?payment=cancelled`). Those slugs are in `ROUTE_SLUGS`, so
   the studio refuses them; `home` and `service` are in `ELSEWHERE_SLUGS`, so `[page]` never serves them.
+  `/edit` (the old Silex editor bounce) → `/studio` (307).
 - The studio refuses this app's own routes and the org's feed slugs (`ROUTE_SLUGS` in
   `src/lib/puck/store.ts`, feeds read live), so a page can never hide a route or a feed.
 - Save: `savePageAction` (`src/lib/puck/actions.ts`) checks owner/guide, strips resolver keys
@@ -47,7 +48,7 @@ starts a reading.
 
 ## The house look (round 3)
 
-- Default = Ario's ORIGINAL Silex look (live `/introduction`, template tokens): `#0a0a0c`, ink `#ece7dd`,
+- Default = Ario's ORIGINAL Silex look (the old Silex pages' template tokens): `#0a0a0c`, ink `#ece7dd`,
   reading ink `#bcb6aa`, teal `#3aa99c`; Cormorant Garamond + EB Garamond (`lib/fonts.ts`); centred,
   one idea per band, 720px reading column (`--he-reading`), hairlines, the white-core orb (`.he-orb`,
   block `he-orb`) between bands. `app/palette.css`, `app/site.css` (round 3 section at the end).
@@ -113,10 +114,9 @@ colour a token). Wording is ÆON's; where it differs from the live site, PATCH_N
 
 - `/manage` on `@elkdonis/cms-ui/manage`: tabs Content, Orders, Contacts, Newsletter, Pages,
   Site, Visitors (owner). Toasts go to sonner through `components/manage/manage-toasts.tsx`.
-- `/hub` keeps its members' room and gains Rooms cards (Center, Channel, Manage, Page editor, Course).
 - `/center` is sunjay's full Center (`app/center/page.tsx` + `app/api/center/*`, copied
   byte-identical); `/channel` is katie's redirect to the network console.
-- Header account menu: Manage, Edit the site, Hub (members), Center, Channel (editors), Account.
+- Header account menu: Manage, Edit the site, Hub (anyone signed in), Center, Channel (editors), Account.
 - Bookings (round 3): **Book and pay** on the service page goes straight to Stripe Checkout
   (`lib/booking-actions.ts` `bookAndPay` → `startServiceCheckout({ customerEmail: viewer or "",
   collect: { email: !viewer }, schedule: null })`; katie's Buy now). A sliding-scale service shows an
@@ -127,6 +127,38 @@ colour a token). Wording is ÆON's; where it differs from the live site, PATCH_N
   times sent opens the form (`lib/booking-after.ts`). Payee: unchanged, `resolveSettlement` (author).
 - Header (round 3): one line of five (The Enneagram, Readings, Writing, Music, About); Forum, the other
   feeds and the free course sit in the account menu, the phone sheet and the footer.
+
+## The hub (round 5)
+
+`/hub` is innergathering's "Cards 2" hub in this site's look (`app/hub/page.tsx`): a quiet header (org name,
+"Signed in as …") and one `HubCardGrid` (`@elkdonis/cms-ui/hubsite`). No Silex template, no meeting banner.
+
+| Card | Goes to | Who |
+|---|---|---|
+| Publish | `studio:choose` popup (round 4 `PublishCard`) | editors |
+| Readings & bookings | `#bookings` if any, else `/readings` | anyone signed in |
+| Forum | `ForumFace` popup (new topics) | anyone signed in |
+| Chat | `/hub/chat` (native Talk mirror, `@elkdonis/chat`) | members |
+| Calendar | `/hub/calendar` | members |
+| Documents | `/hub/documents` | members |
+| Files | `/hub/files` (WebDAV browser over `/api/center/files`) | members |
+| Whiteboard | `/hub/whiteboard` (Excalidraw) | members |
+| Pipeline | `/hub/pipeline` (Deck); "Not set up yet" until an editor creates the board | members |
+| Your page | `/center` | anyone signed in |
+| Channel · Manage · Page editor | `/channel` · `/manage` · `/studio` | editors |
+| Enneagram Foundations | the course on Sophia | anyone signed in |
+
+- Under the grid, only when non-empty: the members' feeds (Inner Work, 3 newest) and **Your bookings**.
+- Roles (`lib/auth.ts`, byte-identical with innergathering/sunjay): `canEdit` = owner/guide; `isMember` =
+  owner/guide/member (the tools and their APIs); `isAffiliate` = any role, a follower (`viewer`) included
+  (ORGANIZATION-visibility posts, feeds). Signups are followers, so they see the hub without the tools.
+- Kit copies (keep them byte-identical so the org-site kit can absorb them): `api/pipeline/*`, `lib/pipeline.ts`,
+  `api/chat/*`, `api/hub/{calendar,documents}`, `hub/{pipeline,documents}/page.tsx` (innergathering);
+  `hub/{chat,calendar,whiteboard}/page.tsx`, `components/hub/Calendar{PageView,Grid}.tsx`,
+  `api/hub/whiteboard/route.ts` (sunjay = amrit). Re-pointed: `lib/{chat,pipeline}-api.ts` (logLabel),
+  `hub/files/page.tsx` (no Nextcloud frame).
+- Nextcloud frames: Nextcloud lets only `https://elkdonis-arts.org` frame it (`eac_embed frame_ancestors`), so on
+  hiddenenneagram.com an opened document's frame is refused; "Open in Nextcloud ↗" under it still works.
 
 ## Preview and testing
 

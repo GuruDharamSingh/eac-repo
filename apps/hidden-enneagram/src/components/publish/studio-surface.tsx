@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { SurfaceFrame, useSurface, useSurfaceOptional, type SurfaceDescriptor } from "@elkdonis/cms-ui/surface";
 import { isStudioMessage } from "./bridge";
+import { siteConfig } from "@/config/site";
 
 // ============================================================================
 // "studio:compose": the Studio (/publish) in a popup, over whatever page Ario
@@ -23,6 +24,9 @@ import { isStudioMessage } from "./bridge";
 // ============================================================================
 
 export const STUDIO_SURFACE = "studio:compose";
+
+/** This site's org, as StudioShell writes it into the address (siteConfig.orgId). */
+const STUDIO_ORG = siteConfig.orgId;
 
 export type StudioPopupKind = "writing" | "service";
 
@@ -89,7 +93,14 @@ export function StudioComposeSurface({ descriptor }: { descriptor: Extract<Surfa
   const frameRef = React.useRef<HTMLIFrameElement | null>(null);
   const initial = React.useMemo(() => readProps(descriptor), [descriptor]);
   // The frame's src is fixed at open; the full-screen link follows what is open inside.
-  const [src] = React.useState(() => `${studioHref(initial)}${studioHref(initial).includes("?") ? "&" : "?"}framed=1`);
+  // `org` is in it from the start (round 5): StudioShell writes `org=` into the address
+  // once it mounts (history.replaceState), which showed as a second navigation of the
+  // frame ~200 ms after the first. With it already there, that write changes nothing.
+  // /publish ignores the param (the org is fixed server-side).
+  const [src] = React.useState(() => {
+    const href = studioHref(initial);
+    return `${href}${href.includes("?") ? "&" : "?"}org=${STUDIO_ORG}&framed=1`;
+  });
   const [current, setCurrent] = React.useState<StudioPopupOptions>(initial);
   const [loaded, setLoaded] = React.useState(false);
   // Set by the first save or publish inside; only then does closing refresh the page

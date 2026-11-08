@@ -36,7 +36,7 @@ export async function GET(
   const published = thread.status === "published";
   const allowed =
     (published && thread.visibility === "PUBLIC") ||
-    (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isMember)) ||
+    (published && thread.visibility === "ORGANIZATION" && Boolean(viewer?.isAffiliate)) ||
     Boolean(viewer?.canEdit);
   if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

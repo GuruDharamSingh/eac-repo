@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   ]);
   if (!feed || !canViewFeed(feed, viewer?.role ?? null)) return {};
 
-  const thread = await getThreadBySlug(feedSlug, slug, { isMember: Boolean(viewer?.isMember) });
+  const thread = await getThreadBySlug(feedSlug, slug, { isMember: Boolean(viewer?.isAffiliate) });
   if (!thread) return {};
 
   const nonPublic = Boolean(feed.minRole) || thread.visibility === "ORGANIZATION";
@@ -51,7 +51,7 @@ export default async function ThreadPage({ params }: PageProps) {
   // a public feed is equally unreachable to a signed-out visitor with the
   // direct link — the gate is the query, not the link.
   const thread = await getThreadBySlug(feedSlug, slug, {
-    isMember: Boolean(viewer?.isMember),
+    isMember: Boolean(viewer?.isAffiliate),
   });
   if (!thread) notFound();
 

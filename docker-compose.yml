@@ -1791,7 +1791,10 @@ services:
     # the service restart-loops with no way out. That is exactly what happened
     # to amrit-canada. NEXT_BUILD_CPUS caps workers so the build fits under
     # mem_limit instead of being killed.
-    command: sh -c "cd apps/hidden-enneagram && { [ -f .next/server/pages-manifest.json ] || NEXT_BUILD_CPUS=4 pnpm build; } && pnpm docker:start"
+    # The build needs more heap than the 1 GB serving cap (NODE_OPTIONS above):
+    # since 2026-11-07 the app bundles excalidraw, Tone.js and the Studio, and a
+    # 1 GB build died "JavaScript heap out of memory". Same shape as sophia.
+    command: sh -c "cd apps/hidden-enneagram && { [ -f .next/server/pages-manifest.json ] || NODE_OPTIONS=--max-old-space-size=3584 NEXT_BUILD_CPUS=2 pnpm build; } && pnpm docker:start"
     restart: unless-stopped
     networks:
       - eac-network

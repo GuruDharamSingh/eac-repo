@@ -1602,12 +1602,12 @@ importers:
       '@elkdonis/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
+      '@elkdonis/chat':
+        specifier: workspace:*
+        version: link:../../packages/chat
       '@elkdonis/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
-      '@elkdonis/cms-bindings':
-        specifier: workspace:*
-        version: link:../../packages/cms-bindings
       '@elkdonis/cms-ui':
         specifier: workspace:*
         version: link:../../packages/cms-ui
@@ -1629,15 +1629,18 @@ importers:
       '@elkdonis/newsletter':
         specifier: workspace:*
         version: link:../../packages/newsletter
-      '@elkdonis/nextcloud':
-        specifier: workspace:*
-        version: link:../../packages/nextcloud
       '@elkdonis/page-builder':
         specifier: workspace:*
         version: link:../../packages/page-builder
       '@elkdonis/payments':
         specifier: workspace:*
         version: link:../../packages/payments
+      '@elkdonis/pipeline':
+        specifier: workspace:*
+        version: link:../../packages/pipeline
+      '@elkdonis/primitives':
+        specifier: workspace:*
+        version: link:../../packages/primitives
       '@elkdonis/redis':
         specifier: workspace:*
         version: link:../../packages/redis
@@ -1656,30 +1659,15 @@ importers:
       '@elkdonis/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@excalidraw/excalidraw':
+        specifier: ^0.18.0
+        version: 0.18.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@marsidev/react-turnstile':
         specifier: ^1.4.1
         version: 1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@puckeditor/core':
         specifier: 0.23.0
         version: 0.23.0(@floating-ui/dom@1.7.4)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(immer@11.1.18)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
-      '@tiptap/extension-link':
-        specifier: ^2.8.0
-        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
-      '@tiptap/extension-placeholder':
-        specifier: ^2.8.0
-        version: 2.27.2(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)
-      '@tiptap/extension-underline':
-        specifier: ^2.8.0
-        version: 2.26.4(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))
-      '@tiptap/pm':
-        specifier: ^2.8.0
-        version: 2.26.4
-      '@tiptap/react':
-        specifier: ^2.8.0
-        version: 2.26.3(@tiptap/core@2.26.4(@tiptap/pm@2.26.4))(@tiptap/pm@2.26.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tiptap/starter-kit':
-        specifier: ^2.8.0
-        version: 2.26.4
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1695,9 +1683,6 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.104.1)
-      next-themes:
-        specifier: ^0.4.6
-        version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       pitchy:
         specifier: ^4.1.0
         version: 4.1.0

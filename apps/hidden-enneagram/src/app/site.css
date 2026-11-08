@@ -229,6 +229,12 @@ h1, h2, h3, h4 {
   width: min(var(--he-max), calc(100% - 2 * var(--he-gutter)));
   margin-inline: auto;
 }
+/* Round 5: inside a column (Split, Sticky side, Tabs, any container block) the
+   column has already taken the page gutter, so the block fills it instead of
+   taking the gutter a second time (round 1 open item: double margins on a phone). */
+.blk :is(.he-hero, .he-passage, .he-fig-block, .he-course-block) {
+  width: 100%;
+}
 .he-edit-page {
   position: fixed;
   right: 16px;
@@ -244,9 +250,6 @@ h1, h2, h3, h4 {
 }
 .he-edit-page:hover { text-decoration: none; filter: brightness(1.07); }
 
-/* The Silex pages keep their own sheet; this only adds the editor's link. */
-.he-silex-edit .he-btn { display: inline-flex; align-items: center; gap: 8px; }
-.he-silex-edit { position: fixed; right: 16px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); z-index: 1000; }
 
 /* A plain page (studio index, Center frame): the reading measure. */
 .he-page {
@@ -485,7 +488,6 @@ html[data-he-look="aeon"] .he-passage-body blockquote { padding: 0.2em 0 0.2em 1
 
 /* ── /enneagram: the figure stays beside the text ────────────────────── */
 .blk-sticky { width: min(var(--he-max), calc(100% - 2 * var(--he-gutter))); margin-inline: auto; }
-.blk-sticky-side .he-fig-block, .blk-sticky-main .he-passage { width: 100%; }
 .blk-sticky-side .he-fig-block { padding-block: clamp(16px, 3vw, 32px); }
 /* The side (lens chips, wheel, legend, the summary) is taller than a laptop
    window: while it sticks, it scrolls on its own so the summary stays reachable. */
@@ -659,3 +661,32 @@ html[data-he-look="aeon"] .he-passage-body blockquote { padding: 0.2em 0 0.2em 1
 /* ── footer: the quiet course line ──────────────────────────────────── */
 .he-footer__course { margin-top: 10px; }
 .he-footer__course a { font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: none; color: var(--he-ink-dim); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ==========================================================================
+   Round 5 (2026-11-07): the hub, innergathering's card hub in this look.
+   The cards and HubPageFrame come from @elkdonis/cms-ui/hubsite.css; these
+   are only the quiet sections under the grid and a shorter card on phones.
+   ========================================================================== */
+.he-hub { padding-bottom: 64px; }
+.he-hub .eac-hs-kicker { margin: 0 0 6px; }
+.he-hub-section { margin-top: 48px; padding-top: 28px; border-top: 1px solid hsl(var(--border)); }
+.he-hub-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.he-hub-section-head .eac-hp-section-title { margin: 0; }
+.he-hub-all { font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: hsl(var(--primary)); text-decoration: none; }
+.he-hub-all:hover { text-decoration: underline; text-underline-offset: 4px; }
+.he-hub-note { margin: 6px 0 0; font-size: 14px; color: hsl(var(--muted-foreground)); }
+.he-hub-orders { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
+.he-hub-order {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+  background: hsl(var(--card)); color: hsl(var(--foreground)); text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+.he-hub-order:hover { border-color: hsl(var(--primary) / 0.6); text-decoration: none; }
+.he-hub-order-no { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; color: hsl(var(--muted-foreground)); }
+.he-hub-order-state { font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid hsl(var(--border)); color: hsl(var(--muted-foreground)); }
+.he-hub-order-state.is-paid { border-color: hsl(var(--primary) / 0.6); color: hsl(var(--primary)); }
+/* One column on a phone: a 148px card per door is a lot of scrolling. */
+@media (max-width: 560px) {
+  .he-hub .eac-hp-card { min-height: 0; }
+}

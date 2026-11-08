@@ -1,21 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { EmptyState, PageHeader } from "@elkdonis/cms-ui/manage";
+import { PageHeader } from "@elkdonis/cms-ui/manage";
 import { requireOrgEditor } from "@/lib/auth";
 import { BUILT_IN_SLUGS, listPages } from "@/lib/puck/store";
-import { SILEX_PAGES } from "@/lib/silex-pages";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pages" };
 
-/** The page builder from the back office: what is built, what still comes from Silex. */
+/** The page builder from the back office: what is built. */
 export default async function ManagePages() {
   await requireOrgEditor("/manage/pages");
   const pages = await listPages().catch(() => [] as Awaited<ReturnType<typeof listPages>>);
   const stored = new Map(pages.map((p) => [p.slug, p]));
   const builtIn = new Set(BUILT_IN_SLUGS.map((b) => b.slug));
   const others = pages.filter((p) => !builtIn.has(p.slug));
-  const silexLeft = [...SILEX_PAGES].filter((s) => !stored.has(s));
 
   return (
     <>
@@ -49,23 +47,6 @@ export default async function ManagePages() {
               </li>
             ))}
           </ul>
-        </section>
-        <section className="he-m-card">
-          <h2>Still in Silex</h2>
-          {silexLeft.length ? (
-            <>
-              <p>These pages are drawn from the Silex site. Each keeps working; publishing a studio page at the same address replaces it.</p>
-              <ul className="he-m-plain he-m-inline">
-                {silexLeft.map((s) => (
-                  <li key={s}>
-                    <Link href={`/${s}`}>/{s}</Link>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <EmptyState title="All moved" body="Every Silex page has a studio page in its place." />
-          )}
         </section>
       </div>
     </>

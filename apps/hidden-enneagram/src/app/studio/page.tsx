@@ -6,7 +6,6 @@ import { listOrgFeeds } from "@elkdonis/services";
 import { requireOrgEditor } from "@/lib/auth";
 import { BUILT_IN_SLUGS, listPages, ROUTE_SLUGS } from "@/lib/puck/store";
 import { siteConfig } from "@/config/site";
-import { SILEX_PAGES } from "@/lib/silex-pages";
 import { readingSlug } from "@/lib/reading-privacy";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +14,7 @@ export const metadata: Metadata = { title: "Pages", robots: { index: false, foll
 /**
  * The pages built in the studio (katie's index). The two built-in pages are
  * always listed: until published they draw their code default, and opening
- * one starts from that design. A new address that is one of the Silex pages
- * replaces that Silex page once published (the way to move them over).
+ * one starts from that design.
  */
 export default async function StudioIndex({ searchParams }: { searchParams: Promise<{ slug?: string; reading?: string }> }) {
   await requireOrgEditor("/studio");
@@ -67,7 +65,6 @@ export default async function StudioIndex({ searchParams }: { searchParams: Prom
             <Link href={`/studio/${page.slug}`}>{page.slug.replace(/-/g, " ")}</Link>{" "}
             <span className="he-note">
               — <Link href={`/${page.slug}`}>/{page.slug}</Link>
-              {SILEX_PAGES.has(page.slug) ? " (replaces the Silex page)" : ""}
               {page.slug.startsWith("reading-") ? " (a reading: private link, not in search engines)" : ""}, last published{" "}
               {new Date(page.updatedAt).toLocaleDateString()}
             </span>
@@ -102,10 +99,6 @@ export default async function StudioIndex({ searchParams }: { searchParams: Prom
           {refused}
         </p>
       ) : null}
-      <p className="he-note" style={{ marginTop: 16 }}>
-        The Silex pages (/introduction, /centers, /contact, /type-1 … /type-9) are still drawn from Silex. A studio page
-        published at one of those addresses takes its place.
-      </p>
     </div>
   );
 }

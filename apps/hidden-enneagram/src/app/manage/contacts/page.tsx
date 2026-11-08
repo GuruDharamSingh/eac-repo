@@ -33,23 +33,17 @@ export default async function ManageContactsPage() {
   // signed-out visitor (verified on the live sites, 2026-11-06).
   await requireOrgEditor();
   const contacts = await recentContacts();
-  const artsUrl = process.env.NEXT_PUBLIC_ARTS_COLLECTIVE_URL ?? "http://localhost:3007";
 
   return (
     <div>
       <PageHeader title="Contacts" description="Inquiries sent from the site's contact form." />
 
       <p className="mt-2 text-sm text-muted-foreground">
-        The home page and The Figure are built in the{" "}
+        Every page, the contact form&rsquo;s words included, is built in the{" "}
         <a href="/studio" className="underline underline-offset-4">
           page editor
         </a>
-        ; the older chapter pages (/introduction, /type-1 …) are still Silex pages, opened with{" "}
-        &ldquo;Edit page&rdquo; on each (or from the{" "}
-        <a href={`${artsUrl}/hub`} target="_blank" rel="noopener" className="underline underline-offset-4">
-          network hub
-        </a>
-        , signed in with the same email).
+        .
       </p>
 
       <h3 className="mt-8 font-serif text-lg">Recent inquiries</h3>
