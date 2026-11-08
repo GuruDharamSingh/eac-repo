@@ -117,13 +117,13 @@ export interface HubCardHost extends HostLinks {
   icons: HubIconMap;
 }
 
-export interface HubCardProps<D> {
+export interface HubCardProps<D, H extends HubCardHost = HubCardHost> {
   data: D;
-  host: HubCardHost;
+  host: H;
   nav: HubNav;
 }
 
-export interface HubCardDef<FaceData = unknown, DetailData = unknown> {
+export interface HubCardDef<FaceData = unknown, DetailData = unknown, H extends HubCardHost = HubCardHost> {
   /** Stable; also the /hub/<id> route. */
   id: string;
   title: string;
@@ -140,9 +140,9 @@ export interface HubCardDef<FaceData = unknown, DetailData = unknown> {
    * per app, so they come through HostLinks.manageHref(screen).
    */
   retires: ReadonlyArray<{ screen: string; tab: string | null }>;
-  Face: React.ComponentType<HubCardProps<FaceData>>;
-  Popup: React.ComponentType<HubCardProps<FaceData>>;
-  Detail: React.ComponentType<HubCardProps<DetailData>>;
+  Face: React.ComponentType<HubCardProps<FaceData, H>>;
+  Popup: React.ComponentType<HubCardProps<FaceData, H>>;
+  Detail: React.ComponentType<HubCardProps<DetailData, H>>;
   /** Set for Channel/Studio-backed cards: Open = an SSO hop. */
   central?: { href(site: HubSite): string };
 }
@@ -154,7 +154,7 @@ export interface HubCardServerDef<FaceData = unknown, DetailData = unknown> {
   loadDetail(site: HubSite, viewer: HubViewer, tab: string | null): Promise<DetailData>;
 }
 
-export function defineHubCard<F, D>(def: HubCardDef<F, D>): HubCardDef<F, D> {
+export function defineHubCard<F, D, H extends HubCardHost = HubCardHost>(def: HubCardDef<F, D, H>): HubCardDef<F, D, H> {
   return def;
 }
 
