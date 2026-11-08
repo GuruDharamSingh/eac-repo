@@ -6,6 +6,7 @@ import { z } from 'zod/v4';
 import type { ActionResult } from '../types';
 import type { ActorContext, Runner } from './run';
 import { SITE_BUILDER_RUNNERS } from './sb-runners';
+import { REVIEW_RUNNERS } from './review-runners';
 
 const runner = <I>(r: Runner<I>): Runner<unknown> => r as Runner<unknown>;
 
@@ -65,4 +66,6 @@ export const HUB_RUNNERS: Record<string, Runner<unknown>> = {
 
   // Site Builder (./sb-runners.ts)
   ...SITE_BUILDER_RUNNERS,
+  // Review queue (./review-runners.ts)
+  ...REVIEW_RUNNERS,
 };

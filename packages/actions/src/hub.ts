@@ -83,6 +83,32 @@ export const HUB_ACTIONS: readonly ActionMeta[] = [
     'The organisation’s name, short line, place and kinds, as the network shows them.',
     'Writes the org identity row (owners and guides); kinds need migration 260.',
   ),
+  // Review queue (2026-11-08): one queue for a member's post, a store panel and a
+  // post from another site asking to show here. Owners and guides (canModerateOrg).
+  hub(
+    'listing-approve',
+    'Show a post from another site',
+    'Let a post from another network site show on this one too.',
+    'thread_orgs status approved (services reviewListing); only requests to show on this site.',
+  ),
+  hub(
+    'listing-decline',
+    'Turn down a post from another site',
+    'Keep a post from another network site off this one.',
+    'thread_orgs status declined (services reviewListing). Asking again puts it back in the queue.',
+  ),
+  hub(
+    'submission-review',
+    'Decide a submission',
+    'Let a member’s post or store panel through, or turn it down.',
+    'Posts: services reviewThread (only this site’s). Store panels: services reviewUserPage.',
+  ),
+  hub(
+    'review-switch',
+    'Hold submissions for a look',
+    'Whether members’ posts wait for a look first, and whether members’ store panels are hosted.',
+    'organizations.member_posts_review / member_store_panels (services setOrgReview / setOrgStorePanels).',
+  ),
   hub(
     'site-theme-exception-remove',
     'Remove a page’s colour exception',
