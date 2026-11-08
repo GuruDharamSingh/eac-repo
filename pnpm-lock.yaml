@@ -1756,6 +1756,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
+      '@elkdonis/actions':
+        specifier: workspace:*
+        version: link:../../packages/actions
       '@elkdonis/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -1789,6 +1792,9 @@ importers:
       '@elkdonis/forum-ui':
         specifier: workspace:*
         version: link:../../packages/forum-ui
+      '@elkdonis/hub':
+        specifier: workspace:*
+        version: link:../../packages/hub
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../../packages/live-editor
@@ -3455,6 +3461,40 @@ importers:
         version: 8.5.0(@swc/core@1.15.33(@swc/helpers@0.5.15))(jiti@2.6.0)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.2)
       typescript:
         specifier: ^5.0.0
+        version: 5.9.2
+
+  packages/hub:
+    dependencies:
+      '@elkdonis/analytics':
+        specifier: workspace:*
+        version: link:../analytics
+      '@elkdonis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@elkdonis/fonts':
+        specifier: workspace:*
+        version: link:../fonts
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
+      '@elkdonis/utils':
+        specifier: workspace:*
+        version: link:../utils
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
+      react:
+        specifier: ^19
+        version: 19.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
         version: 5.9.2
 
   packages/live-editor:
