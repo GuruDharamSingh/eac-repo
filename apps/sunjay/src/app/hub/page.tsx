@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import "@elkdonis/hub/hub-cards.css";
+import "@elkdonis/hub/industry.css";
+import { siteBuilderServer } from "@elkdonis/hub/server/site-builder";
+import { hubSite, getHubCardViewer } from "@/lib/hub-site";
+import { SiteBuilderCardMount } from "@/components/hub/hub-card-host";
 import { cookies } from "next/headers";
 import {
   getOrgChatIdentity,
@@ -116,6 +121,15 @@ export default async function HubPage() {
           .catch(() => [])
       : [],
   ]);
+
+  // Owners and guides get the Site Builder card (pilot, docs/open/hub-cards-handoff/PLAN.md).
+  const cardViewer = viewer.canEdit ? await getHubCardViewer() : null;
+  const siteFace = cardViewer
+    ? await siteBuilderServer.load(hubSite, cardViewer).catch((err) => {
+        console.error("[hub] site builder card:", err);
+        return null;
+      })
+    : null;
 
   const [chatMessages, chatIdentity] = chatRoom
     ? await Promise.all([
@@ -270,6 +284,11 @@ export default async function HubPage() {
           <h2>Running things</h2>
           <p>The pages that are a page, not a popup.</p>
         </div>
+        {siteFace && (
+          <div style={{ marginBottom: 28, maxWidth: 420 }}>
+            <SiteBuilderCardMount data={siteFace} />
+          </div>
+        )}
         <div className="hub-errands">
           {viewer.canEdit && (
             <a className="hub-errand" href="/manage">

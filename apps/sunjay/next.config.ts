@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
     // matching `@source` in globals.css is what makes Tailwind scan it.
     "@elkdonis/cms-ui",
     "@elkdonis/forum-ui",
+    // The shared hub cards (Site Builder pilot) and their write door.
+    "@elkdonis/hub",
+    "@elkdonis/actions",
+    "@elkdonis/fonts",
   ],
   // Build concurrency. Next defaults to one worker per CPU; this host has 32
   // while the container is capped well below what 31 workers need, so
