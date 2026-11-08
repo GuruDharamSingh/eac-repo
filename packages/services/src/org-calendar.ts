@@ -34,6 +34,7 @@
 import { db } from '@elkdonis/db';
 import { addMonths, expandOccurrences, startOfMonth } from '@elkdonis/utils';
 import { SERIES_KIND } from './thread-kinds';
+import { joinableThreadIds } from './join-link';
 import {
   createCalendarEvent,
   deleteCalendarEvent,
@@ -300,8 +301,12 @@ export async function pushThreadToCalendar(
     status: 'CONFIRMED',
   };
   if (thread.body) event.description = stripHtml(thread.body).slice(0, 2000);
-  if (thread.location) event.location = thread.location;
-  if (thread.meeting_url) event.url = thread.meeting_url;
+  // The org calendar is read by every member (and by anyone it is shared
+  // with), not only by people who RSVP'd, so it never carries the join link
+  // (join-link.ts): no URL field, and a location that is just a link is left
+  // out. The hub keeps the link; pulling back never writes meeting_url.
+  const place = placeWithoutLink(thread.location);
+  if (place) event.location = place;
   const rrule = toRrule(thread);
   if (rrule) event.recurrence = rrule;
   if (thread.reminder_minutes_before) {
@@ -409,11 +414,51 @@ export interface OrgCalendarEvent {
   rsvpCount: number;
 }
 
+/**
+ * A location with any link taken out. Some gatherings keep their join link in
+ * the location ("https://zoom.us/j/… to start or join"); that is the door, not
+ * a place, so it goes only where the link may go. Null when no place is left.
+ */
+export function placeWithoutLink(location: string | null | undefined): string | null {
+  if (!location) return null;
+  const rest = location.replace(/https?:\/\/\S+/gi, '').replace(/\s{2,}/g, ' ').trim().replace(/^[\s,;:|-]+|[\s,;:|-]+$/g, '');
+  if (!rest || !/[\p{L}\p{N}]/u.test(rest) || /^(to\s+)?(start\s+or\s+)?join\b/i.test(rest)) return null;
+  return rest;
+}
+
+/**
+ * Who is reading, for the join link. Every event comes back with `meetingUrl`
+ * and `talkToken` cleared (and a link-only `location` cleared) unless this
+ * viewer may receive that event's link — RSVP'd going/maybe, a host, or an
+ * org editor (join-link.ts). Omitted = nobody: links are stripped.
+ */
+export interface CalendarViewer {
+  userId: string | null | undefined;
+  /** Already known to be an editor of this org: skips the query. */
+  canEdit?: boolean;
+}
+
+/** Clear the join link from every event this viewer may not receive it for. */
+export async function eventsForViewer<T extends { id: string; location: string | null; meetingUrl: string | null; talkToken: string | null }>(
+  events: T[],
+  viewer?: CalendarViewer | null
+): Promise<T[]> {
+  const allowed = viewer?.userId
+    ? await joinableThreadIds(events.map((e) => e.id), viewer.userId, { canEdit: viewer.canEdit })
+    : new Set<string>();
+  return events.map((e) =>
+    allowed.has(e.id)
+      ? e
+      : { ...e, meetingUrl: null, talkToken: null, location: placeWithoutLink(e.location) }
+  );
+}
+
 export async function listOrgEventsInRange(
   orgId: string,
   from: Date,
   to: Date,
-  limit = 200
+  limit = 200,
+  viewer?: CalendarViewer | null
 ): Promise<OrgCalendarEvent[]> {
   // Take in anything changed in Nextcloud first, if the last sync is more than
   // two minutes old. Every hub's calendar reads through here — the card, the
@@ -467,7 +512,7 @@ export async function listOrgEventsInRange(
       LIMIT ${limit}
     `;
 
-    return rows.map((row) => ({
+    return eventsForViewer(rows.map((row) => ({
       id: row.id,
       title: row.title,
       slug: row.slug,
@@ -484,7 +529,7 @@ export async function listOrgEventsInRange(
       isRsvpEnabled: row.is_rsvp_enabled,
       attendeeLimit: row.attendee_limit,
       rsvpCount: row.rsvp_count,
-    }));
+    })), viewer);
   } catch (error) {
     // Fail-soft: an empty calendar is legible, a 500 on the hub is not.
     console.error(`[org-calendar] listOrgEventsInRange ${orgId}:`, error);
@@ -530,7 +575,9 @@ const STANDING_KEY = 'standing_meeting';
  * started in March would otherwise report March.
  */
 export async function getStandingMeeting(
-  orgId: string
+  orgId: string,
+  /** For the join link; see CalendarViewer. Omitted = the link is stripped. */
+  viewer?: CalendarViewer | null
 ): Promise<StandingMeeting | null> {
   const now = new Date();
   // Three months: long enough that a monthly series always has a next
@@ -541,7 +588,7 @@ export async function getStandingMeeting(
   // thread are subscriptions (status 'subscribed', meeting-series.ts), and the
   // tile's "Will you make it?" answer would overwrite one with an attendance
   // status. Its weeks are answered on their own topics.
-  const events = (await listOrgEventsInRange(orgId, now, horizon)).filter((e) => e.kind !== SERIES_KIND);
+  const events = (await listOrgEventsInRange(orgId, now, horizon, 200, viewer)).filter((e) => e.kind !== SERIES_KIND);
   const upcoming = expandOccurrences(events, now, horizon);
   if (upcoming.length === 0) return null;
 
@@ -655,7 +702,9 @@ export const CALENDAR_MAX_SPAN_DAYS = 92;
 
 export async function readOrgCalendarWindow(
   orgId: string,
-  params: URLSearchParams
+  params: URLSearchParams,
+  /** For the join link; see CalendarViewer. Omitted = the link is stripped. */
+  viewer?: CalendarViewer | null
 ): Promise<OrgCalendarWindow> {
   const parse = (value: string | null): Date | null => {
     if (!value) return null;
@@ -671,5 +720,5 @@ export async function readOrgCalendarWindow(
     return { ok: false, error: 'Range too wide' };
   }
 
-  return { ok: true, from, to, events: await listOrgEventsInRange(orgId, from, to) };
+  return { ok: true, from, to, events: await listOrgEventsInRange(orgId, from, to, 200, viewer) };
 }

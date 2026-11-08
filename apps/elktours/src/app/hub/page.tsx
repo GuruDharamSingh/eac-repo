@@ -50,8 +50,8 @@ export default async function HubPage({ searchParams }: { searchParams: Promise<
   const from = startOfMonth(new Date());
   const [profile, standing, events, board, documents, media, emailThreads, tours, identity] = await Promise.all([
     getProfile(viewer.userId).catch(() => null),
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
-    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+    getStandingMeeting(siteConfig.orgId, viewer).catch(() => null),
+    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, viewer).catch(() => []),
     // A Deck outage costs the card's count line, not the hub.
     getPipelineBoard().catch(() => null),
     listOrgDocuments(siteConfig.orgId, { withSnippets: 1 }).catch(() => []),

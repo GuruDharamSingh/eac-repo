@@ -6,6 +6,7 @@ import {
   countConfirmedRsvps,
   getOrgIdentity,
   getRsvpStatus,
+  mayReceiveJoinLink,
 } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
@@ -79,6 +80,10 @@ export async function OfferingPage({ slug }: { slug: string }) {
         user ? getRsvpStatus(offering.id, user.id) : Promise.resolve(null),
       ])
     : [0, null];
+  // The join link only for people who RSVP'd, hosts and editors (join-link.ts).
+  const mayJoin = offering?.meeting_url
+    ? await mayReceiveJoinLink(offering.id, user?.id ?? null, { canEdit })
+    : false;
 
   const rootHost = host.replace(new RegExp(`^${slug}\\.`), "");
   const loginUrl = `${proto}://${rootHost}/login`;
@@ -195,7 +200,7 @@ export async function OfferingPage({ slug }: { slug: string }) {
             </div>
           )}
 
-          {offering.meeting_url && (
+          {offering.meeting_url && mayJoin && (
             <p className="mt-6 text-sm">
               <a
                 className="underline underline-offset-4"

@@ -1,5 +1,6 @@
 import { db } from '@elkdonis/db';
 import { restrictedReadSql } from './thread-access';
+import { mayReceiveJoinLink } from './join-link';
 import { OFF_FEED_KINDS } from './thread-kinds';
 // One list of what "happens at a time" — this file used to spell it out twice.
 import { SCHEDULED_KINDS } from './org-calendar';
@@ -679,6 +680,13 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
   `;
   const r = rows[0];
   if (!r) return null;
+  // The join link goes only to people who RSVP'd, hosts and org editors
+  // (join-link.ts); everyone else sees that it is online, not where.
+  const mayJoin =
+    Boolean(r.meeting_url || r.nextcloud_talk_token) &&
+    (await mayReceiveJoinLink(r.id, uid, {
+      canEdit: viewer.isGlobalAdmin || ['owner', 'guide'].includes(viewer.roles[r.org_id] ?? ''),
+    }));
   return {
     ...topicRow(r),
     bodyHtml: r.body,
@@ -687,9 +695,9 @@ export async function getForumThread(id: string, viewer: ForumViewer): Promise<F
     durationMinutes: r.duration_minutes,
     location: placeOnly(r.location),
     isOnline: r.is_online,
-    // Signed-out visitors do not receive a join link: it can carry the password.
-    meetingUrl: viewer.userId ? r.meeting_url : null,
-    talkToken: r.nextcloud_talk_token,
+    // It can carry the password: only for those who may join (above).
+    meetingUrl: mayJoin ? r.meeting_url : null,
+    talkToken: mayJoin ? r.nextcloud_talk_token : null,
     // A public writable share: holding the link is the permission. PUBLIC and
     // ORGANIZATION threads reach signed-out visitors and followers, so the link
     // goes only to the org's owners, guides and members, global admins and the author.

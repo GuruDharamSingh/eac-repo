@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { getIdentityIds, getOrgRole } from "@elkdonis/services";
+import { getIdentityIds, getOrgRole, mayReceiveJoinLink } from "@elkdonis/services";
 import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
 import { isAdmin } from "@elkdonis/auth-server";
 import { toSurfaceThread } from "@elkdonis/cms-ui/surface";
@@ -90,6 +90,10 @@ export async function GET(
     }
   );
   if (!readable) return Response.json({ error: "Not found" }, { status: 404 });
+  // The join link only for people who RSVP'd, hosts and editors (join-link.ts).
+  const mayJoin =
+    Boolean(row.meeting_url || row.talk_token) &&
+    (await mayReceiveJoinLink(row.id, user.id, { canEdit: role === "owner" || role === "guide" }));
 
   return Response.json(
     toSurfaceThread(
@@ -110,8 +114,8 @@ export async function GET(
         durationMinutes: row.duration_minutes,
         location: row.location,
         format: row.format,
-        meetingUrl: row.meeting_url,
-        talkToken: row.talk_token,
+        meetingUrl: mayJoin ? row.meeting_url : null,
+        talkToken: mayJoin ? row.talk_token : null,
         recurrencePattern: row.recurrence_pattern,
         recurrenceUntil: row.recurrence_until,
         isRsvpEnabled: row.is_rsvp_enabled,

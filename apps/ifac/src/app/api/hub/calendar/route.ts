@@ -23,7 +23,8 @@ export async function GET(request: Request) {
 
   const result = await readOrgCalendarWindow(
     siteConfig.orgId,
-    new URL(request.url).searchParams
+    new URL(request.url).searchParams,
+    viewer
   );
   // `=== false`, not `!result.ok`: this union does not narrow through the
   // negation in this repo's TS config.

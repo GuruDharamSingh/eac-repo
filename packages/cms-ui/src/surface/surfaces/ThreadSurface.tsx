@@ -134,6 +134,12 @@ export function ThreadSurface({ descriptor }: { descriptor: Descriptor }) {
     setNoticeTone("normal");
     setNotice(result.attending ? "You're on the list." : "You're no longer marked as coming.");
     connectors.onMutated?.();
+    // The join link is served only to people who RSVP'd (and hosts/editors),
+    // so it changes with the answer: read the thread again for it.
+    if (result.attending !== !!thread.viewerAttending) {
+      const fresh = await connectors.loadThread(thread.id).catch(() => null);
+      if (fresh) setThread(fresh);
+    }
   }
 
   // ── actions ──────────────────────────────────────────────────────────────

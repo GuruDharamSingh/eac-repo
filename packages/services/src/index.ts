@@ -1328,3 +1328,7 @@ export { listExternalComments, threadForExternalPost, recordExternalComment, rem
 
 // Meetings and events for any org: the Studio's save path (2026-11-01).
 export { MEETING_KINDS, meetingComposeContext, listOrgMeetings, loadMeetingContent, saveMeetingContent, removeMeetingContent, type MeetingKind, type MeetingInput, type MeetingSummary, type MeetingRecord, type MeetingComposeContext, type MeetingResult } from "./meeting-content";
+
+// Join links: who receives a meeting's meeting_url / Talk token (RSVP yes|maybe, hosts, org editors).
+export { mayReceiveJoinLink, joinableThreadIds, withoutJoinLink, JOIN_LINK_RSVP_STATUSES } from "./join-link";
+export { eventsForViewer, placeWithoutLink, type CalendarViewer } from "./org-calendar";

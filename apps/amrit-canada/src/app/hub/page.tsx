@@ -67,10 +67,10 @@ export default async function HubPage() {
     getProfile(viewer.userId),
     getOrgChatRoom(siteConfig.orgId),
     // The calendar face draws this month; it fetches later months itself.
-    listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1)),
+    listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1), 200, viewer),
     // Which gathering leads the hub — an editor's flag first, then a weekly
     // series, then whatever is soonest. See getStandingMeeting.
-    getStandingMeeting(siteConfig.orgId),
+    getStandingMeeting(siteConfig.orgId, viewer),
     // Only the fields the tile draws come out of this; the surface loads the
     // full board when it opens. A Deck outage costs the tile, not the hub.
     getPipelineBoard().catch(() => null),

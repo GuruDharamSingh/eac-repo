@@ -6,6 +6,8 @@ import {
   resolveTerms,
   type OrgProfile,
   OFF_FEED_KINDS,
+  mayReceiveJoinLink,
+  placeWithoutLink,
 } from "@elkdonis/services";
 import { isAdmin } from "@elkdonis/auth-server";
 import { canViewThread, type ThreadRole } from "@elkdonis/services/thread-audience";
@@ -120,12 +122,12 @@ function mapThread(row: ThreadRow): Thread {
     timeZone: row.time_zone,
     // Stored only when switched off, so every existing meeting keeps its badge.
     showCycleBadge: row.show_cycle_badge !== "false",
-    location: row.location,
-    isOnline: row.is_online ?? false,
-    meetingUrl: row.meeting_url,
+    location: placeWithoutLink(row.location), // a pasted join link is the door, not a place; withJoinLink restores it
+    isOnline: (row.is_online ?? false) || Boolean(row.meeting_url) || /https?:\/\//i.test(row.location ?? ""),
+    meetingUrl: null, // set by withJoinLink on single-thread reads
     videoLink: row.video_link,
     documentUrl: null, // set by withDocumentLink on single-thread reads
-    talkToken: row.nextcloud_talk_token,
+    talkToken: null, // set by withJoinLink on single-thread reads
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
     isRsvpEnabled: row.is_rsvp_enabled ?? false,
@@ -252,6 +254,22 @@ async function withDocumentLink(thread: Thread, row: ThreadRow): Promise<Thread>
   return viewer?.isMember ? { ...thread, documentUrl: row.document_url } : thread;
 }
 
+/**
+ * A meeting's join link (meeting_url, or the Talk token behind /call/<token>)
+ * can carry its password, so it goes only to people who RSVP'd going or maybe,
+ * the meeting's hosts and this org's editors (@elkdonis/services join-link.ts,
+ * owner's rule 2026-11-08). Only single-thread reads carry it; list reads leave
+ * both null because their rows reach client components, whose props are sent
+ * to the browser. RSVP and reminder mail read the columns directly, and go only
+ * to people who RSVP'd.
+ */
+async function withJoinLink(thread: Thread, row: ThreadRow): Promise<Thread> {
+  if (!row.meeting_url && !row.nextcloud_talk_token && row.location === thread.location) return thread;
+  const viewer = await getViewer().catch(() => null);
+  if (!(await mayReceiveJoinLink(thread.id, viewer?.userId, { canEdit: Boolean(viewer?.canEdit) }))) return thread;
+  return { ...thread, location: row.location, meetingUrl: row.meeting_url, talkToken: row.nextcloud_talk_token };
+}
+
 export async function getThreadBySlug(feedSlug: string, slug: string): Promise<Thread | null> {
   try {
     const [row] = await db<ThreadRow[]>`
@@ -265,7 +283,7 @@ export async function getThreadBySlug(feedSlug: string, slug: string): Promise<T
     if (!row) return null;
     const thread = mapThread(row);
     if (!(await mayRead(thread))) return null;
-    return await withTerms(await withDocumentLink(thread, row));
+    return await withTerms(await withJoinLink(await withDocumentLink(thread, row), row));
   } catch (err) {
     console.error(`[innergathering] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -283,7 +301,7 @@ export async function getThreadById(id: string): Promise<Thread | null> {
     if (!row) return null;
     const thread = mapThread(row);
     if (!(await mayRead(thread))) return null;
-    return await withTerms(await withDocumentLink(thread, row));
+    return await withTerms(await withJoinLink(await withDocumentLink(thread, row), row));
   } catch (err) {
     console.error(`[innergathering] getThreadById(${id}):`, err);
     return null;

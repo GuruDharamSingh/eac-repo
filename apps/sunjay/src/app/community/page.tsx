@@ -29,8 +29,8 @@ export default async function CommunityPage() {
   const [sections, entries, standingRow, eventRows, materials, forum, viewer] = await Promise.all([
     getSiteSections(),
     currentSeries(),
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
-    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+    (async () => getStandingMeeting(siteConfig.orgId, await getViewer().catch(() => null)))().catch(() => null),
+    (async () => listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, await getViewer().catch(() => null)))().catch(() => []),
     getThreadsForFeed("materials", 6).catch(() => []),
     getForumSnapshot().catch(() => null),
     getViewer().catch(() => null),

@@ -5,6 +5,7 @@ import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { siteConfig } from "@/config/site";
 import { getSiteContent } from "@/lib/data";
 import { getHubViewer } from "@/lib/hub-auth";
+import { mayReceiveJoinLink } from "@elkdonis/services";
 import { SiteFooter } from "@/components/site-chrome";
 import { HubCrumbBar } from "@/components/hub/HubCrumbBar";
 import { RsvpPanel } from "@/components/hub/RsvpPanel";
@@ -92,7 +93,9 @@ export default async function MeetingPage({
 
   const talkBase =
     process.env.NEXT_PUBLIC_NEXTCLOUD_URL ?? process.env.NEXTCLOUD_PUBLIC_URL ?? null;
-  const joinUrl =
+  // The join link only for people who RSVP'd, hosts and editors (join-link.ts).
+  const mayJoin = await mayReceiveJoinLink(thread.id, viewer.userId, { canEdit: viewer.canEdit });
+  const joinUrl = !mayJoin ? null :
     thread.meeting_url ??
     (thread.nextcloud_talk_token && talkBase
       ? `${talkBase.replace(/\/$/, "")}/call/${thread.nextcloud_talk_token}`

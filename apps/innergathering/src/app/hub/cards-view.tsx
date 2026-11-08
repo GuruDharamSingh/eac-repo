@@ -38,8 +38,8 @@ export async function HubCardsView({ viewer }: { viewer: Viewer }) {
   const from = startOfMonth(new Date());
   const [profile, standing, events, documents, cloud] = await Promise.all([
     getProfile(viewer.userId).catch(() => null),
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
-    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+    getStandingMeeting(siteConfig.orgId, viewer).catch(() => null),
+    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, viewer).catch(() => []),
     listOrgDocuments(siteConfig.orgId).catch(() => []),
     getViewerCloud(viewer.userId, siteConfig.orgId).catch(() => null),
   ]);

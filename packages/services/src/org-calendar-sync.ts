@@ -11,6 +11,7 @@ import {
 import { createThread } from './posts';
 import {
   getOrgCalendarUri,
+  placeWithoutLink,
   pushThreadToCalendar,
   SCHEDULED_KINDS,
   syncOrgCalendarShares,
@@ -399,7 +400,10 @@ async function pullObject(thread: ThreadRow, obj: CalendarObject): Promise<boole
 
   const next = {
     title: obj.summary.slice(0, 200),
-    location: obj.location ?? null,
+    // The calendar never carries the join link (pushThreadToCalendar pushes
+    // the location without it), so finding it absent there is not an edit.
+    location:
+      (obj.location ?? null) === placeWithoutLink(thread.location) ? thread.location : obj.location ?? null,
     scheduled_at: scheduledAt,
     duration_minutes: minutes,
     recurrence_pattern: pattern,

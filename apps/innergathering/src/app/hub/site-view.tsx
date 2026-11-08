@@ -62,8 +62,8 @@ export async function HubSiteView({ viewer }: { viewer: Viewer }) {
   const calendarFrom = startOfMonth(new Date());
   const [profile, standing, events, activity, library, chatRoom, memberships, homes] = await Promise.all([
     getProfile(viewer.userId),
-    getStandingMeeting(siteConfig.orgId),
-    listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1)),
+    getStandingMeeting(siteConfig.orgId, viewer),
+    listOrgEventsInRange(siteConfig.orgId, calendarFrom, addMonths(calendarFrom, 1), 200, viewer),
     listOrgActivity(siteConfig.orgId, viewer.userId, { affiliated: true, limit: 8 }).catch(() => []),
     // Editors only, as on the card hub: the library lists unpublished files.
     viewer.canEdit

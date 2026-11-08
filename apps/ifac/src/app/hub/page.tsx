@@ -160,10 +160,10 @@ export default async function HubPage({
     // editor's flag first, then a weekly series, then whatever is soonest —
     // and it reports WHICH, so the tile only says "Weekly meeting" when that
     // is true. IFAC's query could only ever guess from the section name.
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
+    getStandingMeeting(siteConfig.orgId, viewer).catch(() => null),
     // The shared query, not this app's own copy of it — see the note in
     // api/hub/calendar/route.ts.
-    listOrgEventsInRange(siteConfig.orgId, monthStart, monthEnd),
+    listOrgEventsInRange(siteConfig.orgId, monthStart, monthEnd, 200, viewer),
     listOrgIdeas(siteConfig.orgId, { limit: 12 }),
     // One snippet read back from Nextcloud, for the face's snapshot of the
     // current document. Entries created before the move carry no path and so

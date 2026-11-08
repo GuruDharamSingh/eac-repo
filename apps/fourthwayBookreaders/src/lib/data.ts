@@ -7,9 +7,11 @@ import {
   listOrgFiles,
   listOrgMediaLibrary,
   OFF_FEED_KINDS,
+  mayReceiveJoinLink,
   type Quote,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
+import { getViewer } from "@/lib/auth";
 // Media URLs are stored canonical (`/api/media/...`) and prefixed on the way
 // OUT, never on the way in — so the rows stay portable if this app is later
 // moved to a domain of its own.
@@ -124,11 +126,11 @@ function mapThread(row: ThreadRow): Thread {
     excerpt: row.excerpt,
     coverImageUrl: withBaseMaybe(row.cover_image_url),
     location: row.location,
-    isOnline: row.is_online ?? false,
-    meetingUrl: row.meeting_url,
+    isOnline: (row.is_online ?? false) || Boolean(row.meeting_url),
+    meetingUrl: null, // set by withJoinLink on single-thread reads
     videoLink: row.video_link,
     documentUrl: withBaseMaybe(row.document_url),
-    talkToken: row.nextcloud_talk_token,
+    talkToken: null, // set by withJoinLink on single-thread reads
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
     isRsvpEnabled: row.is_rsvp_enabled ?? false,
@@ -158,6 +160,24 @@ function mapThread(row: ThreadRow): Thread {
         ? withBase(row.recording_url)
         : null,
   };
+}
+
+/**
+ * A meeting's join link (meeting_url, or the Talk token behind /call/<token>)
+ * can carry its password, so it goes only to people who RSVP'd going or maybe,
+ * the meeting's hosts and this org's editors (@elkdonis/services join-link.ts,
+ * owner's rule 2026-11-08). mapThread leaves both null — list rows reach client
+ * components — and the single-thread reads below put them back through here.
+ */
+async function withJoinLink(thread: Thread | null): Promise<Thread | null> {
+  if (!thread) return thread;
+  const [row] = await db<{ meeting_url: string | null; nextcloud_talk_token: string | null }[]>`
+    SELECT meeting_url, nextcloud_talk_token FROM threads WHERE id = ${thread.id}
+  `;
+  if (!row?.meeting_url && !row?.nextcloud_talk_token) return thread;
+  const viewer = await getViewer().catch(() => null);
+  if (!(await mayReceiveJoinLink(thread.id, viewer?.userId, { canEdit: Boolean(viewer?.canEdit) }))) return thread;
+  return { ...thread, meetingUrl: row.meeting_url, talkToken: row.nextcloud_talk_token };
 }
 
 /**
@@ -280,13 +300,13 @@ export async function getFinishedGroups(limit = 12): Promise<Thread[]> {
  */
 export async function getCurrentGroupThread(): Promise<Thread | null> {
   const groups = await getReadingGroups(6);
-  if (groups[0]) return groups[0];
+  if (groups[0]) return withJoinLink(groups[0]);
 
   const upcoming = await getUpcomingThreads(8);
   const dated = upcoming
     .filter((t) => t.nextOccurrenceAt)
     .sort((a, b) => a.nextOccurrenceAt!.getTime() - b.nextOccurrenceAt!.getTime());
-  if (dated[0]) return dated[0];
+  if (dated[0]) return withJoinLink(dated[0]);
 
   try {
     const rows = await db<ThreadRow[]>`
@@ -295,7 +315,7 @@ export async function getCurrentGroupThread(): Promise<Thread | null> {
       ORDER BY COALESCE(t.published_at, t.created_at) DESC
       LIMIT 1
     `;
-    return rows[0] ? mapThread(rows[0]) : null;
+    return withJoinLink(rows[0] ? mapThread(rows[0]) : null);
   } catch (err) {
     console.error("[fourthway] getCurrentGroupThread:", err);
     return null;
@@ -370,7 +390,7 @@ export async function getThreadBySlug(
         AND (t.slug = ${slug} OR t.id = ${slug})
       LIMIT 1
     `;
-    return rows[0] ? mapThread(rows[0]) : null;
+    return withJoinLink(rows[0] ? mapThread(rows[0]) : null);
   } catch (err) {
     console.error(`[fourthway] getThreadBySlug(${feedSlug}/${slug}):`, err);
     return null;
@@ -681,7 +701,7 @@ export async function getThreadById(id: string, opts: { orgVisible?: boolean } =
       WHERE ${opts.orgVisible ? AFFILIATE_FILTER : PUBLISHED_FILTER} AND t.id = ${id}
       LIMIT 1
     `;
-    return rows[0] ? mapThread(rows[0]) : null;
+    return withJoinLink(rows[0] ? mapThread(rows[0]) : null);
   } catch (err) {
     console.error(`[fourthway] getThreadById(${id}):`, err);
     return null;

@@ -34,6 +34,8 @@ export interface Thread {
   documentUrl: string | null;
   /** Nextcloud Talk room token, when one was provisioned. */
   talkToken: string | null;
+  /** A Talk room exists, whether or not this viewer may have its token. */
+  hasTalkRoom?: boolean;
   scheduledAt: Date | null;
   durationMinutes: number | null;
   isRsvpEnabled: boolean;

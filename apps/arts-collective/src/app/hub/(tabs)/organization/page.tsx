@@ -104,7 +104,7 @@ export default async function OrganizationTabPage({
       getOrgIdentity(selected.orgSlug),
       getConsoleState(selected.orgId),
       listOrgFeeds(selected.orgId),
-      listOrgEventsInRange(selected.orgId, monthFrom, monthTo),
+      listOrgEventsInRange(selected.orgId, monthFrom, monthTo, 200, { userId: user.id, canEdit }),
       // Every org this person belongs to, not just the selected one — see
       // CrossOrgForum for why the board is deliberately the wider scope.
       getCrossOrgForum(memberships.map((m) => m.orgId)),

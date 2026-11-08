@@ -132,7 +132,9 @@ export async function POST(
         meetingTitle: thread.title,
         scheduledAt: thread.scheduled_at?.toISOString(),
         location: thread.location ?? undefined,
-        meetingUrl: thread.meeting_url ?? undefined,
+        // The join link goes only to people who RSVP'd (join-link.ts); a custom
+        // list is whoever an editor typed in, so it gets the page, not the door.
+        meetingUrl: audience === "custom" ? undefined : thread.meeting_url ?? undefined,
         senderName: editor.email,
         orgId: siteConfig.orgId,
         orgName: siteConfig.orgName,

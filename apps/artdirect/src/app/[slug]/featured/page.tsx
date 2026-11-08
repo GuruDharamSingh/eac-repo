@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { loadPublishedUserPage } from "@elkdonis/page-builder/server";
-import { canEditProfile, getFeaturedOffering, getProfileBySlug, type Offering, type Profile } from "@elkdonis/services";
+import { canEditProfile, getFeaturedOffering, getProfileBySlug, mayReceiveJoinLink, type Offering, type Profile } from "@elkdonis/services";
 import { ThemeStyle } from "@elkdonis/live-editor/theme";
 import { getCurrentUser } from "@/lib/session";
 import { redirectRenamedProfile } from "@/lib/slug-redirect";
@@ -61,6 +61,11 @@ export default async function FeaturedPage({ params }: Props) {
   const offering = await getFeaturedOffering(identity.userId).catch(() => null);
   if (offering) {
     const home = identity.slug ?? slug;
+    // The join link only for people who RSVP'd, hosts and editors (join-link.ts).
+    const shown =
+      offering.meetingUrl && !(await mayReceiveJoinLink(offering.id, viewerId, { canEdit }))
+        ? { ...offering, meetingUrl: null }
+        : offering;
     return (
       <>
         <ThemeStyle userId={identity.userId} precedence="user" />
@@ -70,7 +75,7 @@ export default async function FeaturedPage({ params }: Props) {
               ← {identity.displayName}
             </a>
           </nav>
-          <FeaturedOffering offering={offering} home={home} />
+          <FeaturedOffering offering={shown} home={home} />
         </div>
       </>
     );

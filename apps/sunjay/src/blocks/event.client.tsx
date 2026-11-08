@@ -171,10 +171,11 @@ export function TalkRoomView({
       );
     }
     if (event.hasRoom) {
-      // A room exists but this viewer may not have it.
+      // A room exists but this viewer may not have it: the link goes to people
+      // who RSVP'd, hosts and editors (join-link.ts).
       return shell(
         <p className="mt-2 text-sm text-muted-foreground">
-          The room opens once you join the group.{" "}
+          The room opens once you RSVP.{" "}
           {!event.signedIn ? (
             <Link href="/login" className="underline underline-offset-2">
               Sign in

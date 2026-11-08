@@ -44,7 +44,7 @@ export default async function HomePage() {
     getSiteSections(),
     getImageSpaces(),
     currentSeries(),
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
+    (async () => getStandingMeeting(siteConfig.orgId, await getViewer().catch(() => null)))().catch(() => null),
     getForumSnapshot().catch(() => null),
     getViewer().catch(() => null),
     loadPage(LANDING_SLUG, KNOWN_TYPES).catch(() => null),

@@ -28,13 +28,15 @@ export async function GET(
   `;
   const orgId = rows[0]?.id;
   if (!orgId) return Response.json({ error: "Not found" }, { status: 404 });
-  if (!(await getOrgRole(user.id, orgId))) {
+  const role = await getOrgRole(user.id, orgId);
+  if (!role) {
     return Response.json({ error: "Members only" }, { status: 403 });
   }
 
   const result = await readOrgCalendarWindow(
     orgId,
-    new URL(request.url).searchParams
+    new URL(request.url).searchParams,
+    { userId: user.id, canEdit: role === "owner" || role === "guide" }
   );
   // `=== false`, not `!result.ok`: this union does not narrow through the
   // negation in this repo's TS config.

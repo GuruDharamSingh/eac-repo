@@ -11,6 +11,7 @@ import {
   resolveTerms,
   type OrgProfile,
   OFF_FEED_KINDS,
+  mayReceiveJoinLink,
 } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { isAdmin } from "@elkdonis/auth-server";
@@ -129,7 +130,8 @@ function mapThread(row: ThreadRow): Thread {
     meetingUrl: null, // set by withJoinLink on single-thread reads
     videoLink: row.video_link,
     documentUrl: null, // set by withDocumentLink on single-thread reads
-    talkToken: row.nextcloud_talk_token,
+    talkToken: null, // set by withJoinLink on single-thread reads
+    hasTalkRoom: Boolean(row.nextcloud_talk_token),
     scheduledAt: row.scheduled_at,
     durationMinutes: row.duration_minutes,
     isRsvpEnabled: row.is_rsvp_enabled ?? false,
@@ -293,23 +295,30 @@ async function withDocumentLink(thread: Thread, row: ThreadRow): Promise<Thread>
 }
 
 /**
- * A meeting's join link can carry its password, so signed-out visitors do not
- * receive it (developer's decision, 2026-11-04). Only single-thread reads carry
- * it, and only for someone signed in; list reads leave it null because their rows
- * reach client components, whose props are sent to the browser. RSVP and reminder
- * mail read the column directly, so a guest who RSVPs still gets the link.
+ * A meeting's join link (meeting_url, a link pasted as the location, or the
+ * Talk token behind /call/<token>) can carry its password, so it goes only to
+ * people who RSVP'd going or maybe, the meeting's hosts and this org's editors
+ * (@elkdonis/services join-link.ts, owner's rule 2026-11-08; until then anyone
+ * signed in). Only single-thread reads carry it; list reads leave it null
+ * because their rows reach client components, whose props are sent to the
+ * browser. RSVP and reminder mail read the column directly, and go only to
+ * people who RSVP'd, so a guest who RSVPs still gets the link.
  */
 async function withJoinLink(thread: Thread, row: ThreadRow): Promise<Thread> {
   const url = JOIN_LINK.exec(row.meeting_url ?? row.location ?? "")?.[0] ?? null;
-  if (!url) return thread;
+  if (!url && !row.nextcloud_talk_token) return thread;
   const viewer = await getViewer().catch(() => null);
-  return viewer ? { ...thread, meetingUrl: url } : thread;
+  if (!(await mayReceiveJoinLink(thread.id, viewer?.userId, { canEdit: Boolean(viewer?.canEdit) }))) return thread;
+  return { ...thread, meetingUrl: url, talkToken: row.nextcloud_talk_token };
 }
 
 /**
  * The same rule for a row of the shared calendar service (`listOrgEventsInRange`,
  * `getStandingMeeting`), which returns the raw columns. A page a signed-out visitor
  * can open passes these rows to client components, so it goes through here first.
+ * The service has already cleared the link from every event this viewer may not
+ * join (pass it `{ userId, canEdit }`), so this only moves a link out of the
+ * location for the ones that remain.
  */
 export function eventForViewer<T extends { location: string | null; meetingUrl: string | null }>(event: T, signedIn: boolean): T {
   return {

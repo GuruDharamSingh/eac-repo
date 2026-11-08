@@ -36,7 +36,9 @@ export default async function HubCalendarPage({
   const events = await listOrgEventsInRange(
     siteConfig.orgId,
     from,
-    addMonths(from, 1)
+    addMonths(from, 1),
+    200,
+    viewer
   );
 
   return (

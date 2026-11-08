@@ -39,8 +39,8 @@ export async function HubCardsView({ viewer }: { viewer: HubViewer }) {
   const from = startOfMonth(new Date());
   const [profile, standing, events, documents, board, series] = await Promise.all([
     getProfileSummary(viewer.userId).catch(() => null),
-    getStandingMeeting(siteConfig.orgId).catch(() => null),
-    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+    getStandingMeeting(siteConfig.orgId, viewer).catch(() => null),
+    listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, viewer).catch(() => []),
     listOrgDocuments(siteConfig.orgId).catch(() => []),
     // A Deck outage costs the card's count line, not the hub.
     getPipelineBoard().catch(() => null),

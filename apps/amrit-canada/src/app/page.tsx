@@ -50,7 +50,7 @@ export default async function HomePage() {
     getPinnedThreads(3),
     getUpcomingThreads(20),
     getGuides().catch(() => []),
-    listOrgEventsInRange(siteConfig.orgId, calFrom, addMonths(calFrom, 1)),
+    listOrgEventsInRange(siteConfig.orgId, calFrom, addMonths(calFrom, 1), 200, viewer),
     getGuideBySlug("guru-dharam-singh").catch(() => null),
   ]);
 

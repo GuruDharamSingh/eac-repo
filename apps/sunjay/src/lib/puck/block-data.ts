@@ -150,7 +150,7 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
   switch (id) {
     case "pt-standing": {
       const [standing, viewer] = await Promise.all([
-        getStandingMeeting(siteConfig.orgId).catch((err) => {
+        (async () => getStandingMeeting(siteConfig.orgId, await getViewer().catch(() => null)))().catch((err) => {
           console.error("[sunjay] pt-standing:", err);
           return null;
         }),
@@ -161,7 +161,7 @@ async function read(id: string, props: Props, ctx: Props): Promise<Props> {
     case "pt-calendar": {
       const from = startOfMonth(new Date());
       const [events, viewer] = await Promise.all([
-        listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []),
+        (async () => listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, await getViewer().catch(() => null)))().catch(() => []),
         getViewer().catch(() => null),
       ]);
       return { events: events.map((e) => eventForViewer(e, Boolean(viewer))) };

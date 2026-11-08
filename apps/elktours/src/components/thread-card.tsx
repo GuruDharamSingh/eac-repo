@@ -91,7 +91,7 @@ export function ThreadCard({ thread, cycleStatus, attendanceCount, feedName }: T
         )}
         {recurrence && <span>{recurrence}</span>}
         {thread.location && <span>{thread.location}</span>}
-        {thread.isOnline && thread.meetingUrl && <span>Online</span>}
+        {thread.isOnline && <span>Online</span>}
         {typeof attendanceCount === "number" && attendanceCount > 0 && (
           <span>
             <b>{attendanceCount}</b> coming

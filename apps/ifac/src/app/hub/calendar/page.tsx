@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function HubCalendarPage() {
   const viewer = await requireOrgMember("/hub/calendar");
   const from = startOfMonth(new Date());
-  const events = await listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => []);
+  const events = await listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, viewer).catch(() => []);
 
   return (
     <HubPageShell

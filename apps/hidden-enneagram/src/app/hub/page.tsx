@@ -65,7 +65,7 @@ export default async function HubPage() {
     // The tools' card lines. Members only, so a follower's hub reads nothing
     // it will not show.
     viewer.isMember
-      ? listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1)).catch(() => [])
+      ? listOrgEventsInRange(siteConfig.orgId, from, addMonths(from, 1), 200, viewer).catch(() => [])
       : [],
     viewer.isMember ? listOrgDocuments(siteConfig.orgId).catch(() => []) : [],
     viewer.isMember ? getOrgDeckBoardId(siteConfig.orgId).catch(() => null) : null,

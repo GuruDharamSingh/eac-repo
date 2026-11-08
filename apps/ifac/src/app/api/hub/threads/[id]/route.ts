@@ -1,5 +1,5 @@
 import { db } from "@elkdonis/db";
-import { getGathering, getOrgFeed, hasOrgRole } from "@elkdonis/services";
+import { getGathering, getOrgFeed, hasOrgRole, mayReceiveJoinLink } from "@elkdonis/services";
 import { siteConfig } from "@/config/site";
 import { getViewer } from "@/lib/auth";
 import { createThreadAdminRoutes, getMeetingRota, getStandingMeetingId } from "@elkdonis/services";
@@ -96,6 +96,10 @@ export async function GET(
     (published && row.visibility === "ORGANIZATION" && Boolean(viewer?.role)) ||
     Boolean(viewer?.canEdit);
   if (!allowed) return Response.json({ error: "Not found" }, { status: 404 });
+  // The join link only for people who RSVP'd, hosts and editors (join-link.ts).
+  const mayJoin =
+    Boolean(row.meeting_url || row.talk_token) &&
+    (await mayReceiveJoinLink(row.id, viewer?.userId, { canEdit: Boolean(viewer?.canEdit) }));
 
   const feed = row.section ? await getOrgFeed(siteConfig.orgId, row.section).catch(() => null) : null;
 
@@ -141,8 +145,8 @@ export async function GET(
     durationMinutes: row.duration_minutes,
     location: row.location,
     format: row.format,
-    meetingUrl: row.meeting_url,
-    talkToken: row.talk_token,
+    meetingUrl: mayJoin ? row.meeting_url : null,
+    talkToken: mayJoin ? row.talk_token : null,
     recurrencePattern: row.recurrence_pattern,
     recurrenceUntil: row.recurrence_until,
     isRsvpEnabled: Boolean(row.is_rsvp_enabled),

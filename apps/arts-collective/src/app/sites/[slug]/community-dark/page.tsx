@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getOrgBySlug, getOrgFeed, isOrgOwner, canEditOrgSite } from "@/lib/org";
 import { getCurrentUser } from "@/lib/session";
+import { mayReceiveJoinLink } from "@elkdonis/services";
 import { SubdomainEditorBar } from "@/components/SubdomainEditorBar";
 import { getCommunityFeed, type CommunityFeedItem } from "@/lib/community-feed";
 import type { OrgFeedItem } from "@/lib/org";
@@ -925,6 +926,11 @@ export default async function CommunityDarkPage({
     (t) => t.nextcloud_talk_token && t.scheduled_at && new Date(t.scheduled_at).getTime() > now
   );
   const talkItem = liveItem ?? upcomingItem ?? null;
+  // The Talk room is the join link: only for people who RSVP'd, hosts and
+  // editors (@elkdonis/services join-link.ts). Everyone else sees no room link.
+  const mayJoinTalk = talkItem
+    ? await mayReceiveJoinLink(String(talkItem.id), user?.id ?? null, { canEdit })
+    : false;
   const profile = org.profile;
 
   const html = build({
@@ -939,7 +945,7 @@ export default async function CommunityDarkPage({
     userDisplayName: user?.email.split("@")[0] ?? null,
     loginUrl: `/login?org=${encodeURIComponent(slug)}`,
     signupUrl: `/login?mode=signup&org=${encodeURIComponent(slug)}`,
-    talkToken: talkItem?.nextcloud_talk_token ?? null,
+    talkToken: mayJoinTalk ? talkItem?.nextcloud_talk_token ?? null : null,
     nextcloudUrl, isLive: Boolean(liveItem),
     orgFeed, networkFeed,
   });
