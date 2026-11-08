@@ -38,6 +38,25 @@ export interface SiteBuilderDeclaration {
   look: Look;
   /** New page "Start from" tiles this host offers (sunjay NEW_PAGE_STARTS → blank/services/writing). */
   pageStarts: Array<{ id: string; name: string; note: string }>;
+  /** Path segments a new page may have (sunjay: 1, nested paths collide with /[feed]/[slug]). */
+  maxDepth: number;
+  /** Puck storage slug → site path, when the key isn't the address ('landing' → ''). */
+  pathOf?: Record<string, string>;
+  /** Editor documents that draw many pages (sunjay event-detail): listed with the accent note. */
+  sharedLayouts?: Array<{ key: string; title: string; draws: string }>;
+  /** Storage slugs never listed. */
+  hidden?: string[];
+  /**
+   * The theme as the card states it. `colors` are the site's own defaults (its CSS);
+   * `vars` names the site_themes variable that overrides each role, when the site
+   * stores a theme (ifac --paper/--oxide…). Fonts are family names.
+   */
+  theme: {
+    colors: ThemeColors;
+    headingFont: string;
+    bodyFont: string;
+    vars?: Partial<Record<keyof ThemeColors, string>>;
+  };
 }
 
 // ── loaded data ──

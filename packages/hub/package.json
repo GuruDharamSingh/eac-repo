@@ -17,7 +17,8 @@
     "./server": "./src/server/index.ts",
     "./hub-cards.css": "./src/theme/hub-cards.css",
     "./industry.css": "./src/theme/industry.css",
-    "./server/members": "./src/server/members.ts"
+    "./server/members": "./src/server/members.ts",
+    "./server/site-builder": "./src/server/site-builder.ts"
   },
   "dependencies": {
     "@elkdonis/analytics": "workspace:*",
