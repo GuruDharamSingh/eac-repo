@@ -61,6 +61,28 @@ Do one of these:
      the name she typed at sign-up. If it shows an email address, she can fix
      it in her profile.
 
+### Status on 2026-11-07 (morning check)
+
+- **Sign-up is still blocked.** Checked in a fresh browser at 10:45 EST:
+  the widget still answers **110200** and **Join the Collective** stays
+  greyed out. The site key the page serves is the one in `.env` (same
+  hash as the container's), so this is the Cloudflare widget's hostname
+  list, not a rebuild. Add `pottery.arts-collective.com` under Hostname
+  management, or use the fallback above. Also: the katie service passes
+  `TURNSTILE_SECRET_KEY`, but `.env` only has
+  `TURNSTILE_SECRET_KEY_PENDING`, so the server does not check tokens yet.
+- **Shipping is quote-only and switched Off** (changed the evening of
+  2026-11-07, your "keep it quote only for now"). The collective buys no
+  labels and the Easyship account needs no funding: it only gives quotes.
+  Buyers choose a carrier after paying and pay **Katie** for shipping in a
+  second card page (straight to her Stripe account once she has connected
+  it under Payouts, otherwise held for her in the ledger like her sales);
+  she buys the label herself and types in the tracking. Nothing changes
+  for buyers until Katie (the shop's owner) switches /manage/shipping to
+  **On**: her steps are "For Katie", step 7. Rebuild art-auction at a quiet
+  moment so the network's Stripe webhook also records shipping payments
+  (katie's own return hop already does).
+
 ### What changed tonight (so you know what to expect)
 
 - The site now follows its **store**, not "the first owner". The store is
@@ -148,6 +170,49 @@ count too).
 - **Paid by card:** it's already paid.
 - Pack it, send it, then press **Mark shipped**.
 - If a buyer doesn't pay, press **Cancel**. The piece goes back on sale.
+
+### 7. Shipping quotes (when you're ready)
+
+Today you arrange shipping with each buyer by email. When you'd like buyers
+to choose a carrier from live quotes and pay you for shipping:
+
+1. **Weigh your pieces** (a kitchen scale is fine; the piece itself, no
+   box) and add the **Weight (kg)** on each piece's page, next to the size.
+2. Go to **Shipping**. Fill in **Ship from**: your name (up to 22
+   characters), your studio name, the address you ship from, a phone and an
+   email. Press **Save**.
+3. Check **Packing**: 4 cm of padding on each side and 0.6 kg for the box
+   are the starting values. Change them if your boxes are different.
+4. **Insurance**: "I'll insure parcels" is ticked to start, so every quote
+   includes insurance for the piece's price (you add it when you buy the
+   label). Untick it if you won't insure, or tick "Let buyers choose" to
+   give them a tick box. Press **Save insurance**.
+5. **Try it**: pick a piece and an example address and press **Try it**.
+   You see what a buyer would be offered. (Your address is now "checked".)
+   You can also press **Test** first: only you see Choose shipping then,
+   with sample prices and no payment.
+6. Switch **Shipping quotes** to **On**.
+
+From then on, once a buyer has paid for a piece, their order page says
+**Choose shipping**. They pick a carrier and pay for shipping on a second
+card page. That money is yours: it goes straight to your Stripe account if
+you connected one under Payouts, otherwise the collective holds it for you
+with your sales. You get an email, **Ship this order**, and under **Orders**
+a card with the carrier and service they chose, the address and the box
+size and weight.
+
+1. **Buy that label yourself**: in your own Easyship account
+   (app.easyship.com), on the carrier's website, or at the post office
+   counter. Same carrier and service, and insure it if the card says so.
+2. Pack it, tape the label on, drop it off.
+3. On the order's card type the **carrier** and the **tracking number** and
+   press **Mark shipped**. The buyer gets the tracking by email.
+
+The label may cost a little more or less than the buyer's quote. Small
+differences are yours; buyers are never charged again.
+
+While shipping is on (Test or On), a piece can only be put on sale once it
+has its height, width and weight.
 
 ### If something goes wrong
 

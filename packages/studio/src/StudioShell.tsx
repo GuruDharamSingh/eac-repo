@@ -179,6 +179,8 @@ export function StudioShell({
   const [settings, setSettings] = React.useState(true);
   const [sheet, setSheet] = React.useState<null | 'drawer' | 'settings'>(null);
   const [menu, setMenu] = React.useState(false);
+  // "New ▾" on an extension kind: counted, so the kind can start a new item (frame.tsx useNewRequest)
+  const [newRequest, setNewRequest] = React.useState(0);
   const [preview, setPreview] = React.useState(false);
   const [blocks, setBlocks] = React.useState(false);
   const blocksPref = React.useRef(false);
@@ -513,6 +515,7 @@ export function StudioShell({
     setSheet,
     actionsSlot,
     statusSlot,
+    newRequest,
   };
   const kindSwitch =
     extensions.length > 0 ? (
@@ -632,7 +635,10 @@ export function StudioShell({
                     if (k.id === 'writing') {
                       switchKind('writing');
                       newPiece();
-                    } else if (extensions.some((e) => e.id === k.id)) switchKind(k.id);
+                    } else if (extensions.some((e) => e.id === k.id)) {
+                      switchKind(k.id);
+                      setNewRequest((n) => n + 1);
+                    }
                     else if (k.href) window.location.assign(k.href);
                   }}
                 >

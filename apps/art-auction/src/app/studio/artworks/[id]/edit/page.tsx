@@ -5,6 +5,8 @@ import { getArtworkForEdit } from "@elkdonis/commerce/queries";
 import { requireStudioStore } from "@/lib/marketplace-auth";
 import { ArtworkForm } from "../../../_components/artwork-form";
 import { listingContext } from "../../../listing-context";
+import { ParcelForm } from "../../../_components/shipping-forms";
+import { getArtworkParcel } from "@elkdonis/commerce/shipping";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Edit artwork · My art" };
@@ -20,6 +22,7 @@ export default async function EditArtworkPage({
   if (!artwork) notFound();
 
   const defaultVariant = artwork.variants?.[0];
+  const parcel = await getArtworkParcel(artwork.id).catch(() => null);
   const ctx = await listingContext(store);
   const donation = (artwork.provenance ?? []).find((p) => p.kind === "donated") ?? null;
 
@@ -79,6 +82,16 @@ export default async function EditArtworkPage({
           })),
         }}
       />
+
+      <section id="shipping" className="mt-12 border-t border-border pt-8">
+        <h2 className="font-serif text-2xl tracking-tight">Shipping</h2>
+        <p className="mt-2 mb-4 text-sm text-muted-foreground">
+          The size and weight of the piece as packed for the courier. Buyers get live courier prices from it.
+          Without it, the quote uses the piece&rsquo;s own size plus 8&nbsp;cm a side and 1.5&nbsp;kg for packing;
+          with no size at all, shipping is arranged with the buyer.
+        </p>
+        <ParcelForm artworkId={artwork.id} initial={parcel} />
+      </section>
     </main>
   );
 }

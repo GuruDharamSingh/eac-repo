@@ -119,6 +119,15 @@ export function presentAction({ id, status, orgId, links, params }: PresentInput
     case 'thread-publish':
     case 'thread-pin':
       return { kind: 'none', hint: 'This acts on one post; it is offered beside the post itself.' };
+    // Channel (2026-11-07): the next moves live on the channel's own pages; the other
+    // channel entries act on one piece, slot or step and are offered beside it there.
+    case 'channel-next':
+      return { kind: 'link', label: status.done ? 'Open Channel' : 'See what is next', href: status.href ?? '/channel', hint: status.done ? undefined : status.detail ?? undefined };
+    case 'channel-suggestion-accept':
+    case 'channel-suggestion-dismiss':
+    case 'channel-slot-fill':
+    case 'channel-plan-step':
+      return { kind: 'none', hint: 'This acts on one piece, slot or step; Channel offers it beside them.' };
     // The Akhand Path's day steps: the day page on elkdonis-arts.org, which the check names.
     case 'paath-read':
     case 'paath-record':

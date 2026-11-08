@@ -53,6 +53,7 @@ export default async function EditPiecePage({ params }: { params: Promise<{ id: 
           heightCm: piece.heightCm != null ? Number(piece.heightCm) : null,
           widthCm: piece.widthCm != null ? Number(piece.widthCm) : null,
           depthCm: piece.depthCm != null ? Number(piece.depthCm) : null,
+          weightKg: piece.weightKg != null ? Number(piece.weightKg) : null,
           price: v && v.priceMinor > 0 ? v.priceMinor / 100 : null,
           currency: v?.currency === "USD" ? "USD" : "CAD",
           inventoryQty: v?.inventoryQty && v.inventoryQty > 0 ? v.inventoryQty : 1,

@@ -10,7 +10,9 @@
 import React from 'react';
 import { AbsoluteFill, Audio, Img, interpolate, OffthreadVideo, Sequence, Series, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { ReelClipRef, ReelFormat, ReelInput, ReelMediaRef, ReelOverlayItem, ReelOverlayKind, ReelOverlays, ReelSegment } from '../types';
+import { cleanGradient, type GradientSpec } from '@elkdonis/gradients';
 import { fxEntry } from './fx-catalog';
+import { ReelGround } from './ground';
 import { FxOverlay, FxStinger } from './fx';
 import { cueAt, cueWordsMatch } from './subtitles';
 
@@ -87,6 +89,8 @@ export interface ClipReelProps {
   endCard: { title: string; subtitle?: string; link?: string } | null;
   music?: { src: string; volume: number };
   background: string;
+  /** Painted over `background` (intro, end card, bars); see ./ground. */
+  gradient?: GradientSpec;
 }
 
 /** Edit → props, shared by the preview and the renderer. */
@@ -104,6 +108,7 @@ export function toClipProps({ edit, urls, fallbackName }: ReelInput): ClipReelPr
     endCard: end && (end.title?.trim() || end.link?.trim()) ? { title: end.title?.trim() || name, subtitle: end.subtitle?.trim() || undefined, link: end.link?.trim() || undefined } : null,
     music: edit.music && src(edit.music) ? { src: src(edit.music), volume: edit.music.volume ?? 0.7 } : undefined,
     background: edit.brand?.background || '#111111',
+    gradient: cleanGradient(edit.brand?.gradient) ?? undefined,
   };
 }
 
@@ -424,14 +429,15 @@ const layerOf = (i: ReelOverlayItem) => (i.kind === 'fx' && fxEntry(i.fx)?.categ
 const isEmpty = (i: ReelOverlayItem & { src?: string }) =>
   i.kind === 'image' || i.kind === 'sound' ? !i.src : i.kind === 'fx' ? !fxEntry(i.fx) : i.kind === 'subtitles' ? !i.cues?.length : !i.text?.trim();
 
-function EndCard({ card, u, background, accent }: { card: NonNullable<ClipReelProps['endCard']>; u: number; background: string; accent: string }) {
+function EndCard({ card, u, background, accent, gradient }: { card: NonNullable<ClipReelProps['endCard']>; u: number; background: string; accent: string; gradient?: GradientSpec }) {
   const frame = useCurrentFrame();
   const rise = (d: number): React.CSSProperties => ({
     opacity: interpolate(frame, [d, d + 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
     transform: `translateY(${interpolate(frame, [d, d + 12], [24 * u, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}px)`,
   });
   return (
-    <AbsoluteFill style={{ background, display: 'grid', placeContent: 'center', textAlign: 'center', padding: `0 ${100 * u}px`, color: INK }}>
+    <AbsoluteFill style={{ background, isolation: 'isolate', display: 'grid', placeContent: 'center', textAlign: 'center', padding: `0 ${100 * u}px`, color: INK }}>
+      <ReelGround gradient={gradient} />
       <div style={{ fontFamily: SERIF, fontSize: 92 * u, lineHeight: 1.1, ...rise(0) }}>{card.title}</div>
       <div style={{ width: 100 * u, height: 5 * u, background: accent, margin: `${28 * u}px auto`, ...rise(6) }} />
       {card.subtitle ? <div style={{ fontFamily: SANS, fontSize: 40 * u, color: MUTED, ...rise(10) }}>{card.subtitle}</div> : null}
@@ -454,7 +460,8 @@ export function ClipReel(p: ClipReelProps) {
     .filter((x) => x.span)
     .sort((a, b) => layerOf(a.i) - layerOf(b.i) || a.n - b.n);
   return (
-    <AbsoluteFill style={{ background: p.background }}>
+    <AbsoluteFill style={{ background: p.background, isolation: 'isolate' }}>
+      <ReelGround gradient={p.gradient} />
       <Sequence durationInFrames={frames}>
         {p.clip.src ? (
           // One sequence per kept part; the next part loads a second ahead.
@@ -495,7 +502,7 @@ export function ClipReel(p: ClipReelProps) {
       </Sequence>
       {p.endCard ? (
         <Sequence from={frames} durationInFrames={END_SEC * FPS}>
-          <EndCard card={p.endCard} u={u} background={p.background} accent={p.accent} />
+          <EndCard card={p.endCard} u={u} background={p.background} accent={p.accent} gradient={p.gradient} />
         </Sequence>
       ) : null}
       {p.music ? <Audio src={p.music.src} volume={musicVolume} /> : null}

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { listPendingStoreApplications } from "@elkdonis/commerce/queries";
 import { releaseExpiredOrders, settleExpiredLots } from "@elkdonis/commerce/server";
 import { isCardPaymentAvailable } from "@elkdonis/checkout/stripe";
-import { requireAdmin } from "@/lib/marketplace-auth";
+import { requireKeeper } from "@/lib/marketplace-auth";
 import { siteConfig } from "@/config/site";
 import { TabNav } from "@/components/ui/tab-nav";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Admin overview" };
  * what it renders.
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await requireAdmin();
+  const { isAdmin: admin } = await requireKeeper();
 
   const [expired, settled, pendingApplications] = await Promise.all([
     releaseExpiredOrders().catch(() => 0),
@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   ]);
   const cardAvailable = isCardPaymentAvailable();
 
-  const tabs = [
+  const allTabs = [
     { href: "/admin", label: "Overview" },
     { href: "/admin/orders", label: "Orders" },
     { href: "/admin/stores", label: "Stores" },
@@ -38,6 +38,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/applications", label: "Applications", count: pendingApplications.length },
   ];
+  // Marketplace owners who are not platform admins get the two tabs that show
+  // and hide work; every other page redirects them away.
+  const tabs = admin ? allTabs : allTabs.filter((t) => t.href === "/admin/stores" || t.href === "/admin/artworks");
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">

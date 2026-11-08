@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Channel Home's next row (NextRow.tsx, 2026-11-07), in place of 1a's four
+   count bands. Plain CSS on channel.css's --ch-* tokens, under .chn (the
+   Channel layout wraps every page in it), so light and dark follow it.
+
+   Every text/ground pair is one channel.css already measured (its header,
+   2026-11-07), on --ch-bg:
+     kicker  --ch-accent        6.4:1 light · 9.3:1 dark
+     title   --ch-ink           15.0 · 15.1
+     reason  --ch-muted         6.7 · 8.3
+     status  --ch-muted / --ch-alert 6.7 / 5.9 · 8.3 / 8.1
+     button  --ch-accent on --ch-accent-100 5.4 light (as .chn-next); the
+             --ch-accent-400 border is decorative, the label carries the control
+     rules   --ch-line, structural; the 2px top rule of an urgent card is
+             --ch-accent-fill (non-text; the kicker also says "today")
+   ========================================================================== */
+
+.chn-nx { margin: 0 0 28px; }
+.chn-nx-row {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
+}
+.chn-nx-row > li { display: flex; min-width: 0; }
+
+.chn-nx-card {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0;
+  padding-top: 10px; border-top: 1px solid var(--ch-line);
+}
+.chn-nx-card[data-urgent="1"] { border-top: 2px solid var(--ch-accent-fill); padding-top: 9px; }
+
+.chn-nx-kicker {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-accent);
+}
+.chn-nx-kicker > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chn-nx-kicker .chn-oi { flex: none; }
+
+.chn-nx-title {
+  font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ch-ink); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.chn-nx-reason { font-size: 12.5px; color: var(--ch-muted); overflow-wrap: anywhere; }
+
+.chn-nx-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: auto; padding-top: 6px; }
+.chn-nx-run {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; min-height: 28px;
+  border: 1px solid var(--ch-accent-400); background: var(--ch-accent-100); color: var(--ch-accent);
+  border-radius: var(--ch-radius); font-size: 12.5px; line-height: 1.3; cursor: pointer;
+}
+.chn-nx-run:hover { border-color: var(--ch-accent); }
+.chn-nx-run:disabled { opacity: 0.6; cursor: progress; }
+.chn-nx-open {
+  display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--ch-accent); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px;
+}
+
+.chn-nx-status { min-height: 1em; margin-top: 8px; font-size: 12.5px; color: var(--ch-muted); }
+.chn-nx-status.is-alert { color: var(--ch-alert); }
+.chn-nx-status:empty { margin: 0; min-height: 0; }
+
+@media (max-width: 1180px) {
+  .chn-nx-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+}
+@media (max-width: 480px) {
+  .chn-nx-row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .chn-nx-run, .chn-nx-open { min-height: 44px; }
+}
+
+/* Immediate suggestions (setup): pale-blue chips above the cards. */
+.chn-nx-suggest { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }

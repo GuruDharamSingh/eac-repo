@@ -1293,11 +1293,57 @@ export async function publishArtwork(
       throw new Error("Add at least one image before publishing.");
     }
 
+    const held = (await tx`
+      SELECT 1 FROM artwork
+      WHERE id = ${artworkId} AND metadata->'hiddenByAdmin' IS NOT NULL
+    `) as unknown as Row[];
+    if (held[0]) throw new Error("The marketplace keepers have hidden this piece; ask them to show it again.");
+
     await tx`
       UPDATE artwork SET status = 'available'
       WHERE id = ${artworkId} AND status IN ('draft', 'archived')
     `;
   });
+}
+
+/**
+ * Marketplace keepers hide a piece from the public site without deleting it
+ * (2026-11-07). Public queries already exclude `archived`, so a hide is
+ * `status = 'archived'` plus `metadata.hiddenByAdmin` {from, by, at}. The marker
+ * lets `adminShowArtwork` restore the prior status, and `publishArtwork` refuses
+ * a marked piece so the artist cannot put it back. A reserved piece (open order)
+ * is refused: releasing that order would put it back on sale.
+ */
+export async function adminHideArtwork(artworkId: string, actorUserId: string, orgId: string): Promise<void> {
+  const rows = (await db`
+    UPDATE artwork SET
+      metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+        'hiddenByAdmin',
+        jsonb_build_object('from', status, 'by', ${actorUserId}::text, 'at', NOW()::text)
+      ),
+      status = 'archived'
+    WHERE id = ${artworkId} AND org_id = ${orgId}
+      AND status IN ('available', 'sold', 'draft')
+      AND metadata->'hiddenByAdmin' IS NULL
+    RETURNING id
+  `) as unknown as Row[];
+  if (!rows[0]) {
+    throw new Error("Only an available, sold or draft piece that is not already hidden can be hidden.");
+  }
+}
+
+/** Reverse {@link adminHideArtwork}: restore the status the piece had when it was hidden. */
+export async function adminShowArtwork(artworkId: string, orgId: string): Promise<void> {
+  const rows = (await db`
+    UPDATE artwork SET
+      status = COALESCE(metadata->'hiddenByAdmin'->>'from', 'available'),
+      metadata = metadata - 'hiddenByAdmin'
+    WHERE id = ${artworkId} AND org_id = ${orgId}
+      AND status = 'archived'
+      AND metadata->'hiddenByAdmin' IS NOT NULL
+    RETURNING id
+  `) as unknown as Row[];
+  if (!rows[0]) throw new Error("That piece is not hidden by the keepers.");
 }
 
 /** Archive an owned artwork (removes it from the public storefront). */
@@ -1331,3 +1377,8 @@ export {
   emailSeriesOrgInvitation,
 } from "./series-social";
 export type { SeriesReply, SeriesOrg, SeriesLibrary, ArtistListing } from "./series-social";
+
+// Shipping-label payments after the sale (katie-the-potter, migration 251).
+export { recordShippingLabelPaid, recordShippingLabelSessionExpired, sendCommerceNotice, type ShippingLabelPayment } from "./shipping-label";
+// Quote-only shipping (2026-11-07): the shipping payment is the maker's money, ledger in the same transaction.
+export { recordShippingPaymentPaid, accrueShippingPayment, type ShippingPaymentRecord, type ShippingPaymentLedger } from "./shipping-label";

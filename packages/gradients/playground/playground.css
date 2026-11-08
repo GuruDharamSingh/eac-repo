@@ -1,0 +1,54 @@
+/* Layout: stage (hero preview, output, presets) beside a fixed-width control panel; stacks on phones.
+   Dark by design: the gradients are made for dark grounds, like the logo sheets. */
+:root {
+  color-scheme: dark;
+  --ground: #0B0B0D;
+  --plate: #131316;
+  --line: #2A2A30;
+  --fg: #ECE7E1;
+  --muted: #B3ADA3;
+  --faint: #857F76;
+  --gold: #C9A24A;
+  --display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  /* the control panel reads Puck's variables; map them onto this page's palette */
+  --puck-color-grey-02: #ECE7E1;
+  --puck-color-grey-05: #A39D93;
+  --puck-color-grey-09: #34343B;
+  --puck-color-white: #18181C;
+  --puck-color-azure-04: #E3C572;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; margin: 0; }
+.pg { max-width: 1320px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+.pg-head { display: grid; gap: 8px; }
+.eyebrow { margin: 0; font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+h1, h2 { font-family: var(--display); font-weight: 500; margin: 0; line-height: 1.05; text-wrap: balance; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.4rem); }
+h2 { font-size: 1.6rem; }
+.lede { margin: 0; max-width: 64ch; color: var(--muted); }
+.pg-main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .pg-main { grid-template-columns: 1fr; } .pg-panel { position: static; max-height: none; } }
+.pg-stage { display: grid; gap: 18px; min-width: 0; }
+.hero { min-height: 360px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; place-items: center; }
+.hero-copy { display: grid; justify-items: center; gap: 2px; padding: 32px 16px; text-align: center; color: #0B0B0D; mix-blend-mode: normal; }
+.hero-copy .mark { font-family: var(--display); font-size: clamp(3.4rem, 11vw, 6.4rem); font-weight: 600; line-height: 0.9; color: #ECE7E1; text-shadow: 0 2px 24px #0006; }
+.hero-copy .word { font-family: var(--display); font-size: clamp(1.4rem, 4vw, 2.2rem); letter-spacing: 0.08em; text-transform: uppercase; color: #ECE7E1; text-shadow: 0 1px 12px #0007; }
+.hero-copy .sub { font-size: 0.82rem; letter-spacing: 0.28em; text-transform: uppercase; color: #ECE7E1CC; }
+.out { background: var(--plate); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.out-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.out-tabs button { all: unset; cursor: pointer; padding: 8px 14px; font-size: 0.85rem; color: var(--faint); }
+.out-tabs button[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--gold); }
+.out-tabs button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.out pre { margin: 0; padding: 14px; max-height: 180px; overflow: auto; font: 0.78rem/1.55 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tile { all: unset; cursor: pointer; display: grid; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.tile:focus-visible .tile-art { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tile:hover span { color: var(--fg); }
+.tile { position: relative; }
+.tile-flag { position: absolute; top: 6px; right: 6px; font: 600 0.66rem var(--body); font-style: normal; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg); background: #0B0B0DAA; padding: 2px 6px; border-radius: 3px; }
+.tile-art { height: 92px; border-radius: 6px; border: 1px solid var(--line); overflow: hidden; }
+.pg-panel { background: var(--plate); border: 1px solid var(--line); border-radius: 8px; padding: 14px; position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); max-height: calc(100vh - 24px); overflow: auto; }
+.pg-panel select, .pg-panel input, .pg-panel button { color-scheme: dark; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }

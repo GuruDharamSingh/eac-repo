@@ -16,6 +16,7 @@ import {
 } from 'remotion';
 import { TransitionSeries, linearTiming } from '@remotion/transitions';
 import { fade } from '@remotion/transitions/fade';
+import { ReelGround } from './ground';
 import {
   isClip,
   toArtworkReelProps,
@@ -117,10 +118,12 @@ function Intro({ brand }: { brand: ReelBrand }) {
     <AbsoluteFill
       style={{
         background: brand.background ?? DEFAULT_BG,
+        isolation: 'isolate',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
+      <ReelGround gradient={brand.gradient} />
       <div style={{ opacity: s, transform: `scale(${scale})` }}>
         {brand.logo ? (
           <Img src={brand.logo.src} style={{ width: 600, height: 600, objectFit: 'contain' }} />
@@ -215,8 +218,10 @@ function EndCard({ brand, card }: { brand: ReelBrand; card: ArtworkReelProps['en
         padding: '0 90px',
         gap: 36,
         fontFamily: 'Georgia, serif',
+        isolation: 'isolate',
       }}
     >
+      <ReelGround gradient={brand.gradient} />
       {brand.logo ? (
         <Img src={brand.logo.src} style={{ width: 260, height: 260, objectFit: 'contain', ...rise(0) }} />
       ) : null}

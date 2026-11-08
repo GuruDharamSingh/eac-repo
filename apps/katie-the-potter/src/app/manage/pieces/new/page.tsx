@@ -25,7 +25,7 @@ export default async function NewPiecePage() {
       <PageHeader title="Add a piece" />
       <PieceForm
         readOnlyReason={reason}
-        initial={{ id: null, title: "", descriptionHtml: "", kind: "original", yearCreated: new Date().getFullYear(), medium: "", style: "", heightCm: null, widthCm: null, depthCm: null, price: null, currency: "CAD", inventoryQty: 1, images: [], status: "draft" }}
+        initial={{ id: null, title: "", descriptionHtml: "", kind: "original", yearCreated: new Date().getFullYear(), medium: "", style: "", heightCm: null, widthCm: null, depthCm: null, weightKg: null, price: null, currency: "CAD", inventoryQty: 1, images: [], status: "draft" }}
       />
     </>
   );

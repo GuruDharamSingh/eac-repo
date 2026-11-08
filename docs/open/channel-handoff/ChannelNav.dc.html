@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/styles.css"><script src="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/_ds_bundle.js"></script><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css"></helmet>
+<nav style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;padding:18px 10px 12px;background:var(--color-surface);font-family:var(--font-body);color:var(--color-text);overflow:hidden">
+  <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+    <sc-if value="{{ isOrg }}" hint-placeholder-val="{{ true }}">
+      <div style="width:32px;height:32px;flex:none;border-radius:2px;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-family:var(--font-heading);font-weight:600;font-size:13px">EA</div>
+      <div style="min-width:0;flex:1;display:flex;flex-direction:column">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Elkdonis Arts Collective</span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Channel</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isArtist }}" hint-placeholder-val="{{ false }}">
+      <div style="width:32px;height:32px;flex:none;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-family:var(--font-heading);font-weight:600;font-size:13px">GD</div>
+      <div style="min-width:0;flex:1;display:flex;flex-direction:column">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Guru Dharam</span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Artist channel · 1 org</span>
+      </div>
+    </sc-if>
+    <i class="ph-duotone ph-caret-up-down" style="font-size:16px;color:var(--color-neutral-700)"></i>
+  </div>
+  <div style="display:flex;gap:16px;padding:0 8px;font-size:12px">
+    <a href="#" style="color:var(--color-accent-700);text-decoration:none">← Hub</a>
+    <a href="#" style="color:var(--color-accent-700);text-decoration:none">Studio</a>
+    <a href="#" style="color:var(--color-accent-700);text-decoration:none">Site ↗</a>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+    <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="5">
+      <div style="display:flex;flex-direction:column">
+        <sc-if value="{{ sec.hasTitle }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ sec.toggle }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;height:26px;padding:0 8px;background:none;border:0;cursor:pointer;font-family:inherit;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">
+            <span>{{ sec.title }}</span>
+            <i class="ph-duotone {{ sec.caret }}" style="font-size:12px"></i>
+          </button>
+        </sc-if>
+        <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="4">
+            <a href="#" style="display:flex;align-items:center;gap:10px;height:29px;padding:0 8px;border-radius:2px;text-decoration:none;font-size:14px;color:{{ it.color }};background:{{ it.bg }}">
+              <i class="ph-duotone {{ it.icon }}" style="font-size:17px;color:{{ it.iconColor }}"></i>
+              <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+              <span style="font-size:12px;color:{{ it.metaColor }};white-space:nowrap">{{ it.meta }}</span>
+            </a>
+          </sc-for>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+  <a href="#" style="display:flex;align-items:center;gap:10px;height:29px;padding:0 8px;text-decoration:none;font-size:14px;color:var(--color-text)">
+    <i class="ph-duotone ph-gear-six" style="font-size:17px;color:var(--color-neutral-700)"></i>
+    <span>Channel settings</span>
+  </a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:244,&quot;height&quot;:820},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;compose&quot;,&quot;queue&quot;,&quot;live&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;igLeft&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:18,&quot;min&quot;:0,&quot;max&quot;:25,&quot;tsType&quot;:&quot;number&quot;},&quot;owner&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;org&quot;,&quot;artist&quot;],&quot;default&quot;:&quot;org&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { closed: {} };
+  renderVals() {
+    const a = this.props.active ?? 'home';
+    const ig = this.props.igLeft ?? 18;
+    const muted = 'var(--color-neutral-700)';
+    const mk = (id, label, icon, meta, metaColor) => ({
+      label, icon, meta: meta || '', metaColor: metaColor || muted,
+      color: id === a ? 'var(--color-accent-800)' : 'var(--color-text)',
+      bg: id === a ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'transparent',
+      iconColor: id === a ? 'var(--color-accent)' : muted,
+    });
+    const S = [
+      { id: 'main', title: '', items: [
+        mk('home', 'Home', 'ph-squares-four'),
+        mk('compose', 'New post', 'ph-pencil-simple-line'),
+        mk('queue', 'Queue', 'ph-calendar-blank', '4'),
+        mk('live', 'Live', 'ph-broadcast', 'Sun 2 PM', 'var(--color-accent-2-700)'),
+      ]},
+      { id: 'content', title: 'Content', items: [
+        mk('writing', 'Writing', 'ph-article', '23'),
+        mk('video', 'Video', 'ph-film-strip', '6'),
+        mk('artwork', 'Artwork', 'ph-image', '41'),
+        mk('series', 'Series', 'ph-stack', '3'),
+        mk('meeting', 'Meeting', 'ph-users-three', '8'),
+      ]},
+      { id: 'outlets', title: 'Outlets', items: [
+        mk('site', 'Website', 'ph-globe', '●', 'var(--color-accent)'),
+        mk('ig', 'Instagram', 'ph-instagram-logo', ig + ' of 25', ig === 0 ? 'var(--color-accent-2-700)' : muted),
+        mk('fb', 'Facebook', 'ph-facebook-logo', '●', 'var(--color-accent)'),
+        mk('yt', 'YouTube', 'ph-youtube-logo', 'Connect', 'var(--color-accent-700)'),
+      ]},
+      { id: 'audience', title: 'Audience', items: [
+        mk('news', 'Newsletter', 'ph-envelope-simple', 'Email ↗'),
+        mk('people', 'People', 'ph-users', '212'),
+      ]},
+      { id: 'site', title: 'Site settings', items: [
+        mk('pages', 'Pages', 'ph-browsers', 'Puck'),
+        mk('template', 'Template', 'ph-palette'),
+        mk('seo', 'Identity and SEO', 'ph-identification-card'),
+      ]},
+    ];
+    const artist = this.props.owner === 'artist';
+    if (artist) S.splice(1, 0, { id: 'as', title: 'Publishing as', items: [
+      mk('me', 'Guru Dharam', 'ph-user-circle', 'You'),
+      mk('eac', 'Elkdonis Arts Collective', 'ph-users-three', 'Org'),
+    ]});
+    const closed = { site: true, audience: artist, ...this.state.closed };
+    return {
+      isArtist: artist, isOrg: !artist,
+      sections: S.map(s => ({
+        title: s.title, hasTitle: !!s.title, items: s.items,
+        open: !closed[s.id],
+        caret: closed[s.id] ? 'ph-caret-down' : 'ph-caret-up',
+        toggle: () => this.setState(st => ({ closed: { ...st.closed, [s.id]: !closed[s.id] } })),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -852,6 +852,14 @@ export async function confirmOrderPaid(input: ConfirmOrderPaidInput): Promise<Or
       }
     }
 
+    // Buyer-paid shipping (migration 250). The collective holds it: see
+    // accrueOrderShipping. No-op when shipping_minor is 0.
+    if (num(order.shipping_minor) > 0) {
+      const { accrueOrderShipping } = await import("../shipping");
+      const maker = (lineRows.find((l) => l.artist_user_id)?.artist_user_id as string | undefined) ?? null;
+      await accrueOrderShipping(tx as unknown as typeof db, order, maker, input.confirmedByUserId ?? null, rail);
+    }
+
     // Paying IS how you enrol. A workshop or event sold on a thread line has
     // no inventory to decrement — what it has is a seat, and the seat is the
     // thing the buyer just bought. Done inside the transaction so a confirmed

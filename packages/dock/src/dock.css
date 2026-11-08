@@ -158,6 +158,12 @@ p.eac-dock__hint { margin: 0 0 8px; }
   font: inherit;
 }
 
+/* The channel's one move (2026-11-07): the title on one line, cut with an ellipsis
+   (the full reason is its title attribute), and its one button. Same inks as above. */
+.eac-dock__line { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; min-width: 0; }
+.eac-dock__line-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.eac-dock__btn--small { flex: none; padding: 4px 10px; font-size: 13px; }
+
 .eac-dock__back { margin: 4px 0 0; font-size: 13px; }
 .eac-dock__back a { color: var(--dk-link); }
 

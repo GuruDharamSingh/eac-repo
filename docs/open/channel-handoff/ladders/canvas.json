@@ -1,0 +1,448 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-07T19:41:18Z"
+ },
+ "title": "Channel follow-up ladders",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "L1-Light-path.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1280,
+   "h": 2416,
+   "title": "Ladder 1: Light path",
+   "expand": "fill"
+  },
+  "L2-Artwork-to-live.dc.html": {
+   "x": 1400,
+   "y": 0,
+   "w": 1280,
+   "h": 2610,
+   "title": "Ladder 2: Artwork to live",
+   "expand": "fill"
+  },
+  "L3-Writing-to-conversation.dc.html": {
+   "x": 2800,
+   "y": 0,
+   "w": 1280,
+   "h": 2478,
+   "title": "Ladder 3: Writing to conversation",
+   "expand": "fill"
+  },
+  "L4-Event.dc.html": {
+   "x": 0,
+   "y": 3080,
+   "w": 1280,
+   "h": 2809,
+   "title": "Ladder 4: Event",
+   "expand": "fill"
+  },
+  "L5-Workshop-or-service.dc.html": {
+   "x": 1400,
+   "y": 3080,
+   "w": 1280,
+   "h": 2534,
+   "title": "Ladder 5: Workshop or service launch",
+   "expand": "fill"
+  },
+  "L6-Practice-routine.dc.html": {
+   "x": 2800,
+   "y": 3080,
+   "w": 1280,
+   "h": 2823,
+   "title": "Ladder 6: Practice routine",
+   "expand": "fill"
+  },
+  "L7-Phone.dc.html": {
+   "x": 4200,
+   "y": 0,
+   "w": 390,
+   "h": 2376,
+   "title": "Ladder on a phone",
+   "expand": "fill"
+  },
+  "M1-Matrix.dc.html": {
+   "x": 0,
+   "y": 6553,
+   "w": 1280,
+   "h": 4805,
+   "title": "The matrix: evolution by outlet",
+   "expand": "fill"
+  },
+  "M2-Ladder-tuner.dc.html": {
+   "x": 1360,
+   "y": 6553,
+   "w": 1280,
+   "h": 2304,
+   "title": "Ladder tuner",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "L1b-Website-and-letter.dc.html": {
+   "x": 0,
+   "y": 12008,
+   "w": 1280,
+   "h": 1497,
+   "title": "Ladder 1b: Website and letter only",
+   "expand": "fill"
+  },
+  "L1c-Denser-view-first.dc.html": {
+   "x": 1360,
+   "y": 12008,
+   "w": 1280,
+   "h": 1723,
+   "title": "Ladder 1c: Denser, a new view first",
+   "expand": "fill"
+  },
+  "L2b-Offer-a-print.dc.html": {
+   "x": 2720,
+   "y": 12008,
+   "w": 1280,
+   "h": 1803,
+   "title": "Ladder 2b: The offer branch",
+   "expand": "fill"
+  },
+  "L2c-Talk-first-series.dc.html": {
+   "x": 4080,
+   "y": 12008,
+   "w": 1280,
+   "h": 1900,
+   "title": "Ladder 2c: Talk first, live in a series",
+   "expand": "fill"
+  },
+  "L3b-Card-and-letter.dc.html": {
+   "x": 0,
+   "y": 14558,
+   "w": 1280,
+   "h": 1500,
+   "title": "Ladder 3b: Card and letter, no forum",
+   "expand": "fill"
+  },
+  "L3c-Read-aloud-first.dc.html": {
+   "x": 1360,
+   "y": 14558,
+   "w": 1280,
+   "h": 1734,
+   "title": "Ladder 3c: Read aloud first",
+   "expand": "fill"
+  },
+  "L4b-Three-reminders.dc.html": {
+   "x": 2720,
+   "y": 14558,
+   "w": 1280,
+   "h": 1545,
+   "title": "Ladder 4b: Three reminders and a photo",
+   "expand": "fill"
+  },
+  "L4c-Conversation-led.dc.html": {
+   "x": 4080,
+   "y": 14558,
+   "w": 1280,
+   "h": 1839,
+   "title": "Ladder 4c: Conversation-led",
+   "expand": "fill"
+  },
+  "L5b-Service-without-dates.dc.html": {
+   "x": 0,
+   "y": 17047,
+   "w": 1280,
+   "h": 1690,
+   "title": "Ladder 5b: A service without dates",
+   "expand": "fill"
+  },
+  "L5c-Full-early.dc.html": {
+   "x": 1360,
+   "y": 17047,
+   "w": 1280,
+   "h": 1714,
+   "title": "Ladder 5c: Full early",
+   "expand": "fill"
+  },
+  "L6b-Quiet-read-and-tick.dc.html": {
+   "x": 2720,
+   "y": 17047,
+   "w": 1280,
+   "h": 1704,
+   "title": "Ladder 6b: Quiet, read and tick",
+   "expand": "fill"
+  },
+  "L6c-Public-drawing-routine.dc.html": {
+   "x": 4080,
+   "y": 17047,
+   "w": 1280,
+   "h": 1812,
+   "title": "Ladder 6c: A public drawing routine",
+   "expand": "fill"
+  },
+  "D1-Docket.dc.html": {
+   "x": 0,
+   "y": 19509,
+   "w": 1280,
+   "h": 1906,
+   "title": "Docket: adjusting a suggested step",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "D2-Dock-adjust.dc.html": {
+   "x": 1360,
+   "y": 19509,
+   "w": 1280,
+   "h": 1679,
+   "title": "Dock: the adjustment in one line",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "D3-Phone-adjust.dc.html": {
+   "x": 2720,
+   "y": 19509,
+   "w": 390,
+   "h": 2111,
+   "title": "Adjusting a step on a phone",
+   "expand": "fill"
+  }
+ },
+ "order": [
+  "L1-Light-path.dc.html",
+  "L2-Artwork-to-live.dc.html",
+  "L3-Writing-to-conversation.dc.html",
+  "L4-Event.dc.html",
+  "L5-Workshop-or-service.dc.html",
+  "L6-Practice-routine.dc.html",
+  "L7-Phone.dc.html",
+  "M1-Matrix.dc.html",
+  "M2-Ladder-tuner.dc.html",
+  "L1b-Website-and-letter.dc.html",
+  "L1c-Denser-view-first.dc.html",
+  "L2b-Offer-a-print.dc.html",
+  "L2c-Talk-first-series.dc.html",
+  "L3b-Card-and-letter.dc.html",
+  "L3c-Read-aloud-first.dc.html",
+  "L4b-Three-reminders.dc.html",
+  "L4c-Conversation-led.dc.html",
+  "L5b-Service-without-dates.dc.html",
+  "L5c-Full-early.dc.html",
+  "L6b-Quiet-read-and-tick.dc.html",
+  "L6c-Public-drawing-routine.dc.html",
+  "D1-Docket.dc.html",
+  "D2-Dock-adjust.dc.html",
+  "D3-Phone-adjust.dc.html"
+ ],
+ "notes": {
+  "n-L1-Light-path": {
+   "x": 0,
+   "y": -230,
+   "w": 760,
+   "text": "Light path. Suits a product or print, a short clip, a newsletter issue, a service, or any piece when time is short. Branches once, at +7 days: keep it light (default) or develop it into ladder 2 or 3. Unanswered, it stays light.",
+   "fill": "gray"
+  },
+  "n-L2-Artwork-to-live": {
+   "x": 1400,
+   "y": -230,
+   "w": 760,
+   "text": "Artwork to live. Suits artwork, a long video, a product that is the maker's own work. Branches at +8 days: go live (chosen here), offer a print or a lesson (a service), or keep it light. Live steps are pinned to the event date.",
+   "fill": "gray"
+  },
+  "n-L3-Writing-to-conversation": {
+   "x": 2800,
+   "y": -230,
+   "w": 760,
+   "text": "Writing to conversation. Suits writing, a long video, a newsletter issue. Branches at +14 days on the forum replies: a study group if there are replies, a question in the letter if not, or keep it light. The branch is asked in the dock.",
+   "fill": "gray"
+  },
+  "n-L4-Event": {
+   "x": 0,
+   "y": 2850,
+   "w": 760,
+   "text": "Event. Suits a meeting, a series session, a live stream. Counted back from the date and pinned to it. One conditional step on the RSVP count at −3 days; branches on the day: go live from the room, or one photo. Repeats from the next date.",
+   "fill": "gray"
+  },
+  "n-L5-Workshop-or-service": {
+   "x": 1400,
+   "y": 2850,
+   "w": 760,
+   "text": "Workshop or service launch. Suits a workshop, a service, the first run of a series. Branches at −14 days on the booking count: open a second date if full, or keep going with a free preview live. A service without dates counts from its first post.",
+   "fill": "gray"
+  },
+  "n-L6-Practice-routine": {
+   "x": 2800,
+   "y": 2850,
+   "w": 760,
+   "text": "Practice routine. Suits a daily practice entry or any routine (reading, drawing, study). Circle-only outlets by default. Branches at the start (quiet or recorded) and at the end (repeat, an event series, or rest).",
+   "fill": "gray"
+  },
+  "n-L7-Phone": {
+   "x": 4200,
+   "y": -230,
+   "w": 390,
+   "text": "Phone, 390 px. The light path for a pottery piece: the dock on the shop page (full width, 44 px targets) and the piece's Ladder tab in Channel. The fork stacks its options.",
+   "fill": "gray"
+  },
+  "head": {
+   "x": 0,
+   "y": -530,
+   "text": "Follow-up ladders: one object per piece. A ladder is a short list of optional, dated steps for a piece (offsets from its first post or its date), with one branch where a light path and a developed path split. The same ladder shows in four places: the piece pop-up (every step), the Queue (steps on their days), Home (each piece's next step, in place of the four count boxes) and the dock (that next step, on any page, one line and two buttons). Sample content is illustrative; Saturday Nov 7, 2026 is today on every board.",
+   "kind": "title1",
+   "maxW": 4590
+  },
+  "r2-n-M1-Matrix": {
+   "x": 0,
+   "y": 6323,
+   "w": 760,
+   "text": "The space the ladders come from: six ways a piece evolves (rows) by ten share types (columns). Each cell shows which of the 18 ladders use it. Below: each ladder's path on the same grid, the variation function in plain steps, and the 18 read back as settings.",
+   "fill": "gray"
+  },
+  "r2-n-M2-Ladder-tuner": {
+   "x": 1360,
+   "y": 6323,
+   "w": 760,
+   "text": "Interactive. Tweaks: template (enum), intensity, cadence, effort, reach and goLive (ranges), snapToSlots (switch); the board's own controls do the same and reset when a Tweak changes. renderVals() rebuilds the ladder, its matrix path, the figures and the dock line.",
+   "fill": "gray"
+  },
+  "r2-head-m": {
+   "x": 0,
+   "y": 6023,
+   "text": "The matrix and the function of variation. Rows are how a piece evolves (the same piece re-shared, a new view, commentary, an event around it, an offer, a gathering into something larger); columns are share types and their outlets. A ladder is a path through the cells. The tuner generates one from a template and five settings: intensity, cadence, effort, reach and when to go live.",
+   "kind": "title1",
+   "maxW": 2640
+  },
+  "r2-n-L1b-Website-and-letter": {
+   "x": 0,
+   "y": 11778,
+   "w": 760,
+   "text": "1b: Reach set to the website and the letter: the Instagram and Facebook steps leave, the piece is gathered onto the page and into the letter, and the socials become a branch option.",
+   "fill": "gray"
+  },
+  "r2-n-L1c-Denser-view-first": {
+   "x": 1360,
+   "y": 11778,
+   "w": 760,
+   "text": "1c: Denser and view-first: a carousel and a 20-second print clip come before the card and the story, and the branch at +10 offers a workshop (an offer) instead of writing or a live.",
+   "fill": "gray"
+  },
+  "r2-n-L2b-Offer-a-print": {
+   "x": 2720,
+   "y": 11778,
+   "w": 760,
+   "text": "2b: Takes the offer branch at +8 days: a print edition replaces the live, and a detail carousel replaces the walk-through clip, so nothing needs filming.",
+   "fill": "gray"
+  },
+  "r2-n-L2c-Talk-first-series": {
+   "x": 4080,
+   "y": 11778,
+   "w": 760,
+   "text": "2c: Denser and talk-first: the 30-second talk and a forum question come before the walk-through, the forum feeds the live's questions, and the live opens a monthly series instead of standing alone.",
+   "fill": "gray"
+  },
+  "r2-head-v1": {
+   "x": 0,
+   "y": 11478,
+   "text": "Variations of ladders 1 and 2, two more each. Each takes another path through the matrix: 1b keeps to the website and the letter, 1c puts a new view first and branches to an offer, 2b takes the offer branch (a print edition), 2c leads with commentary and ends in a monthly series.",
+   "kind": "title1",
+   "maxW": 5360
+  },
+  "r2-n-L3b-Card-and-letter": {
+   "x": 0,
+   "y": 14328,
+   "w": 760,
+   "text": "3b: Lighter: two quote cards and the letter excerpt carry it; the forum question, the reading aloud and the study-group branch leave, and the branch moves to +30 days.",
+   "fill": "gray"
+  },
+  "r2-n-L3c-Read-aloud-first": {
+   "x": 1360,
+   "y": 14328,
+   "w": 760,
+   "text": "3c: Recording-first and event-led: the reading aloud moves to day 0, a live reading in the Talk room replaces the study group, and the branch is a monthly series of readings.",
+   "fill": "gray"
+  },
+  "r2-n-L4b-Three-reminders": {
+   "x": 2720,
+   "y": 14328,
+   "w": 760,
+   "text": "4b: Lighter: three reminders (−14, −7, −1 days) and one photo; the save-the-date, the preview clip, the join-link post, the room check and the clip after leave. Seven steps instead of eleven.",
+   "fill": "gray"
+  },
+  "r2-n-L4c-Conversation-led": {
+   "x": 4080,
+   "y": 14328,
+   "w": 760,
+   "text": "4c: Talk-led: a thread at −21 days carries the questions in and the notes out, the letter quotes the thread, and the ending gathers the four sessions into a reader instead of only proposing a date.",
+   "fill": "gray"
+  },
+  "r2-head-v2": {
+   "x": 0,
+   "y": 14028,
+   "text": "Variations of ladders 3 and 4. 3b is lighter (two cards and the letter, no forum), 3c is read aloud first and leads to a series of readings; 4b is three reminders and a photo, 4c is led by a forum thread and ends in a reader.",
+   "kind": "title1",
+   "maxW": 5360
+  },
+  "r2-n-L5b-Service-without-dates": {
+   "x": 0,
+   "y": 16817,
+   "w": 760,
+   "text": "5b: No date: counted forward from the first post, not back from a workshop date; the announce and seat steps become who it is for, a session clip, the open times and a client's words, and the ending repeats each season.",
+   "fill": "gray"
+  },
+  "r2-n-L5c-Full-early": {
+   "x": 1360,
+   "y": 16817,
+   "w": 760,
+   "text": "5c: Takes the full branch on Nov 6: the free preview live and the seat story leave, a second date and a waitlist come in, and the ending gathers both dates into a four-Saturday term (a series).",
+   "fill": "gray"
+  },
+  "r2-n-L6b-Quiet-read-and-tick": {
+   "x": 2720,
+   "y": 16817,
+   "w": 760,
+   "text": "6b: Takes the quiet branch: one daily tick and one weekly note in the circle; the recording, the YouTube upload, the Sunday live and the letter digest leave.",
+   "fill": "gray"
+  },
+  "r2-n-L6c-Public-drawing-routine": {
+   "x": 4080,
+   "y": 16817,
+   "w": 760,
+   "text": "6c: Public where ladder 6 is circle-only: the day's drawing goes to a story, the week gathers into a carousel and the letter, and the ending offers a print set (an offer) instead of a series.",
+   "fill": "gray"
+  },
+  "r2-head-v3": {
+   "x": 0,
+   "y": 16517,
+   "text": "Variations of ladders 5 and 6. 5b is a service without dates, counted forward and repeated each season; 5c is a workshop that filled early (second date, then a term). 6b is the quiet routine; 6c is a public drawing routine that ends in an offer of prints.",
+   "kind": "title1",
+   "maxW": 5360
+  },
+  "r2-n-D1-Docket": {
+   "x": 0,
+   "y": 19279,
+   "w": 760,
+   "text": "Interactive. The Docket on Channel: a week of routine slots and steps, with the walk-through step of Salt Marsh opened for adjustment (idea, day, time, outlets, identity, importance, ladder, skip or never). The week, the Home card and the dock line follow the controls.",
+   "fill": "gray"
+  },
+  "r2-n-D2-Dock-adjust": {
+   "x": 1360,
+   "y": 19279,
+   "w": 760,
+   "text": "Interactive. The same step in the dock on the piece's own page: one line; Adjust opens when, importance and snooze. Right: the four states. Below: an accepted ladder step (white), a routine reminder and a course step (both ghost blue).",
+   "fill": "gray"
+  },
+  "r2-n-D3-Phone-adjust": {
+   "x": 2720,
+   "y": 19279,
+   "w": 390,
+   "text": "Phone, 390 px. The dock expanded on the piece page (40 to 44 px targets), then the full adjustment sheet opened from it, shown at full length.",
+   "fill": "gray"
+  },
+  "r2-head-d": {
+   "x": 0,
+   "y": 18979,
+   "text": "Routines dock / planner. The Docket is the plan, the routines and the queue as one set in motion. A suggested step is adjusted where it is presented: in full in the Docket on Channel (when, where, time, importance, the idea, its ladder, skip or never), in three quick controls in the dock (time, importance, snooze), and as a sheet on a phone.",
+   "kind": "title1",
+   "maxW": 3110
+  }
+ },
+ "designSystems": []
+}

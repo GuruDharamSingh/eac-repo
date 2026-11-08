@@ -14,6 +14,8 @@
     "./capture": "./src/capture/index.ts",
     "./capture.css": "./src/capture/capture.css",
     "./recording": "./src/recording/index.ts",
+    "./wordart": "./src/wordart/index.ts",
+    "./wordart.css": "./src/wordart/wordart.css",
     "./image": "./src/image/index.ts",
     "./image.css": "./src/image/image-editor.css",
     "./channel": "./src/channel/index.ts",
@@ -24,6 +26,9 @@
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/gradients": "workspace:*",
+    "opentype.js": "^1.3.4",
+    "three": "^0.184.0",
     "@elkdonis/utils": "workspace:*",
     "@tiptap/core": "^2.8.0",
     "@tiptap/extension-drag-handle": "^2.26.0",
@@ -47,7 +52,9 @@
   },
   "devDependencies": {
     "@types/react": "^19",
+    "@types/opentype.js": "^1.3.10",
     "@types/react-dom": "^19",
+    "@types/three": "^0.184.0",
     "typescript": "^5"
   }
 }

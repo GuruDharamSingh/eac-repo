@@ -18,7 +18,22 @@ export async function resolveActionOrg(userId: string, requested?: string | null
   return getOwnedOrgId(userId);
 }
 
-/** As `resolveActionOrg` for an `org`-scoped entry; null for any other entry. */
+/**
+ * The org channel a `channel` entry acts on (2026-11-07): the claim when the person is
+ * an owner or guide there, never the personal org `oad`; otherwise null. No fallback to
+ * an owned org: no claim means the person's own channel, and a refused claim is refused
+ * by performAction (it sees `orgClaim` without `orgId`), not widened to another channel.
+ */
+export async function resolveChannelOrg(userId: string, requested?: string | null): Promise<string | null> {
+  const claim = typeof requested === 'string' && requested && requested !== 'oad' ? requested : null;
+  if (!userId || !claim) return null;
+  return (await canManageOrgPeople(userId, claim)) ? claim : null;
+}
+
+/** As `resolveActionOrg` for an `org`-scoped entry, `resolveChannelOrg` for a `channel` one; null for any other entry. */
 export async function actionOrgId(id: string, userId: string, requested?: string | null): Promise<string | null> {
-  return actionMeta(id)?.scope === 'org' ? resolveActionOrg(userId, requested) : null;
+  const scope = actionMeta(id)?.scope;
+  if (scope === 'org') return resolveActionOrg(userId, requested);
+  if (scope === 'channel') return resolveChannelOrg(userId, requested);
+  return null;
 }

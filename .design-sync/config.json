@@ -1,0 +1,34 @@
+{
+  "pkg": "@elkdonis/eac-design-system",
+  "globalName": "EAC",
+  "shape": "package",
+  "entry": ".design-sync/entry/index.ts",
+  "buildCmd": "node .design-sync/build-theme.mjs",
+  "cssEntry": "theme.css",
+  "srcDir": "../../packages",
+  "tsconfig": "tsconfig.json",
+  "componentSrcMap": {
+    "PreviewFrame": null,
+    "ActionButton": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceChromeProvider": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceFacts": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceFrame": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceSection": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceSkeleton": "../../packages/cms-ui/src/surface/SurfaceShell.tsx",
+    "SurfaceCardGrid": "../../packages/cms-ui/src/surface/SurfaceCard.tsx",
+    "BoardMini": "../../packages/cms-ui/src/surface/surfaces/BoardSurface.tsx",
+    "ForumFace": "../../packages/cms-ui/src/surface/surfaces/ForumSurface.tsx",
+    "ForumMini": "../../packages/cms-ui/src/surface/surfaces/ForumSurface.tsx",
+    "MonthGrid": "../../packages/cms-ui/src/surface/surfaces/CalendarSurface.tsx",
+    "WritingRoomBody": "../../packages/cms-ui/src/surface/surfaces/writing-room.tsx",
+    "Icon": "../../packages/series-site/src/components/icons.tsx",
+    "SeriesSignIn": "../../packages/series-site/src/components/series-signin.tsx",
+    "WeekCommentForm": "../../packages/series-site/src/components/week-comments.tsx",
+    "Paragraphs": "../../packages/blocks/src/text.tsx",
+    "RichText": "../../packages/blocks/src/text.tsx",
+    "Region": "../../packages/blocks/src/slot.tsx"
+  },
+  "provider": {
+    "component": "PreviewFrame"
+  }
+}

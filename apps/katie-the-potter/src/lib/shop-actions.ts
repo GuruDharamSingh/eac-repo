@@ -218,13 +218,16 @@ type StripeCollect = NonNullable<Parameters<typeof startStripeCheckout>[0]["coll
 /**
  * What Stripe's page asks for when we have not asked ourselves ("Buy now",
  * "Pay now" on the cart): the email, unless the buyer is signed in, and a
- * shipping address in one of the countries Katie ships to. Stripe's answers
+ * shipping address in one of the countries Katie ships to, and a phone for
+ * the carrier. Stripe's answers
  * are written onto the order on the return hop and by the webhook.
  */
 function stripeCollects(knownEmail: string | null | undefined): StripeCollect {
   return {
     email: !knownEmail?.trim(),
     shippingAddress: { allowedCountries: [...siteConfig.shipToCountries] },
+    // Carriers want the receiver's phone (some insist, for the US). 2026-11-07.
+    phone: true,
   };
 }
 

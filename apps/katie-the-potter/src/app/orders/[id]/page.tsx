@@ -9,6 +9,9 @@ import { loadOrderForViewer } from "@/lib/shop";
 import { formatAddress } from "@/lib/address";
 import { orderHasSamplePiece, SAMPLE_CARD_REFUSAL } from "@/lib/sample-guard";
 import { payOrderByCard, payOrderByEtransfer } from "@/lib/shop-actions";
+import { shippingAccessFor } from "@/lib/shipping/access";
+import { currentShipment, isQuoteFlow, LABEL_STATES } from "@/lib/shipping/shipments";
+import { daysLabel } from "@/lib/shipping/rates";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your order", robots: { index: false, follow: false } };
@@ -54,6 +57,12 @@ export default async function OrderPage({
   const ship = formatAddress(order.shippingAddress);
   // eTransfer is settled by hand: offered only when we can reach the buyer.
   const etransferOffered = Boolean(email);
+  // Shipping after the sale (docs/SHIPPING_PLAN.md). Off = null = as before.
+  const shipAccess = await shippingAccessFor(order).catch(() => null);
+  const shipment = shipAccess ? await currentShipment(order.id, shipAccess.mode).catch(() => null) : null;
+  const hasLabel = Boolean(shipment && (LABEL_STATES as string[]).includes(shipment.status));
+  // Quote-only: the buyer paid Katie for shipping; she buys the label and sends tracking.
+  const shipPaid = Boolean(shipment && shipment.status === "paid" && isQuoteFlow(shipment));
 
   const heading = done
     ? "Thank you. Your payment is in."
@@ -102,15 +111,84 @@ export default async function OrderPage({
             ) : null}
             .{order.paymentMethod === "stripe" ? " Your card receipt comes from Stripe." : null}
           </p>
-          <p>
-            <b>Shipping:</b> you&rsquo;ll get a link to choose a carrier and pay for the label. Until that link is ready, {payeeName} will be in touch to arrange it.
-          </p>
+          {!shipAccess ? (
+            <p>
+              <b>Shipping:</b> you&rsquo;ll get a link to choose a carrier and pay for the label. Until that link is ready, {payeeName} will be in touch to arrange it.
+            </p>
+          ) : hasLabel && shipment ? (
+            <div className="ktp-shop-shipping">
+              <p>
+                <b>Shipping:</b> {shipment.courierName ?? shipment.chosenRate?.service}
+                {shipment.trackingNumber ? (
+                  <>
+                    , tracking <span className="ktp-shop-mono">{shipment.trackingNumber}</span>
+                  </>
+                ) : null}
+                {shipment.trackingStatus ? <> ({shipment.trackingStatus})</> : null}.{shipAccess.mode === "test" ? " (Test mode)" : null}
+              </p>
+              <p className="ktp-shop-actions">
+                {shipment.trackingUrl ? (
+                  <a className="ktp-btn" href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer">
+                    Track your parcel
+                  </a>
+                ) : null}
+                <Link className="ktp-btn ktp-btn--ghost" href={`/orders/${order.id}/shipping`}>
+                  Shipping details
+                </Link>
+              </p>
+            </div>
+          ) : shipPaid && shipment?.chosenRate ? (
+            <p className="ktp-shop-paidship">
+              <b>Shipping paid:</b> {shipment.chosenRate.service}, est. {daysLabel(shipment.chosenRate)}
+              {shipment.paidMinor && shipment.currency ? <>, {formatMoney(shipment.paidMinor, shipment.currency as typeof order.currency)}</> : null}. {payeeName} will send tracking.
+              {shipAccess.mode === "test" ? " (Test mode)" : null}
+            </p>
+          ) : shipment && (shipment.status === "failed" || shipment.status === "refunded") ? (
+            <p>
+              <b>Shipping:</b> {payeeName} will be in touch to arrange it.
+            </p>
+          ) : (
+            <div className="ktp-shop-shipping">
+              <p>
+                <b>Shipping:</b>{" "}
+                {shipAccess.flow === "quote"
+                  ? `choose a carrier and pay for shipping. ${payeeName} then sends it and emails you the tracking.`
+                  : "choose a carrier and pay for the label. It’s bought as soon as you’ve paid, and you get the tracking link."}
+                {shipAccess.mode === "test" ? " (Test mode: only editors see this.)" : null}
+              </p>
+              <p className="ktp-shop-actions">
+                <Link className="ktp-btn" href={`/orders/${order.id}/shipping`}>
+                  {shipment?.status === "awaiting_payment" ? "Finish paying for shipping" : "Choose shipping"}
+                </Link>
+              </p>
+            </div>
+          )}
           {ship ? (
             <p className="ktp-shop-ship">
               <span>Ship to</span> {ship}
             </p>
           ) : null}
         </section>
+      ) : null}
+
+      {unpaid && shipAccess?.rehearsal ? (
+        <div className="ktp-shop-note" data-tone="sample">
+          <p>
+            <b>Test mode, editors only:</b> this order isn&rsquo;t paid, but you can rehearse{" "}
+            <Link href={`/orders/${order.id}/shipping`}>Choose shipping</Link> with sandbox {shipAccess.flow === "quote" ? "quotes" : "labels"}.
+          </p>
+          {shipPaid && shipment?.chosenRate ? (
+            <p className="ktp-shop-paidship">
+              <b>Shipping paid:</b> {shipment.chosenRate.service}, est. {daysLabel(shipment.chosenRate)}
+              {shipment.paidMinor && shipment.currency ? <>, {formatMoney(shipment.paidMinor, shipment.currency as typeof order.currency)}</> : null}. {payeeName} will send tracking. (What the buyer sees once the order is paid.)
+            </p>
+          ) : hasLabel && shipment ? (
+            <p>
+              <b>Shipping:</b> {shipment.courierName}
+              {shipment.trackingNumber ? <>, tracking <span className="ktp-shop-mono">{shipment.trackingNumber}</span></> : null}.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {unpaid ? (
@@ -198,7 +276,15 @@ export default async function OrderPage({
           </div>
           <div data-muted="true">
             <dt>Shipping</dt>
-            <dd>{order.shippingMinor > 0 ? formatMoney(order.shippingMinor, order.currency) : "Arranged with Katie"}</dd>
+            <dd>
+              {order.shippingMinor > 0
+                ? formatMoney(order.shippingMinor, order.currency)
+                : shipment?.paidMinor && shipment.currency && (hasLabel || shipPaid)
+                  ? `${formatMoney(shipment.paidMinor, shipment.currency)}, paid separately`
+                  : shipAccess
+                    ? "Chosen after payment"
+                    : "Arranged with Katie"}
+            </dd>
           </div>
           <div data-total="true">
             <dt>Total</dt>

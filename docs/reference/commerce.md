@@ -255,6 +255,67 @@ page to pay by eTransfer (`packages/checkout/src/server/stripe.ts:94-110`).
   Code: `packages/commerce/src/server/tours.ts`; probe:
   `scripts/probe-tour-booking.mts`. Brief: `docs/open/ELKTOURS_BRIEF_2026-10-18.md`.
 
+### Shipping (2026-11-07, migration 250; live on art-auction since the 2026-11-07 16:15 UTC rebuild)
+
+Easyship (API 2024-09) quotes couriers and, in platform mode, buys labels.
+Client: `packages/commerce/src/shipping/easyship.ts` (only file that calls
+Easyship); service: `@elkdonis/commerce/shipping`
+(`packages/commerce/src/shipping/index.ts`). Env on the art-auction service:
+`EASYSHIP_ENV` (`sandbox` default | `production`), `EASYSHIP_SANDBOX_TOKEN`,
+`EASYSHIP_PRODUCTION_TOKEN`. Decisions (developer, 2026-11-07): ship-from per
+maker, the collective holds shipping money, a network admin sets the mode per
+store, the buyer picks a rate on the order page before paying.
+
+- Data: `users.ship_from` (address + phone + email), `artwork.parcel` (packed
+  cm/kg; else the artwork's own size + 8 cm a side + 1.5 kg; no size → arranged),
+  `store.shipping_mode` (`quote` default · `platform` · `arranged`), `shipment`
+  (one live row per order), the choice in `commerce_order.metadata.shipping`
+  with `shipping_minor` and `total_minor` updated (`chooseOrderShipping`
+  re-quotes server-side, so the client cannot set the price).
+- Quotable only when the order has one maker with a ship-from and every piece
+  has a size; otherwise the order page shows no picker (shipping arranged).
+  USPS Media Mail is filtered out (books and media only).
+- Order page (`apps/art-auction/src/app/orders/[id]/`): picker before the pay
+  buttons; `placeOrder` and `payOrderByCard` send a card buyer to it while a
+  choice is required; eTransfer instructions are rewritten with the new total.
+- Stripe: shipping is its own Checkout line, and on a destination charge it is
+  added to `application_fee_amount` so it stays on the platform account
+  (`packages/checkout/src/server/stripe.ts` `resolveDestination`).
+- Ledger (`accrueOrderShipping`, called from `confirmOrderPaid`): card/manual
+  quote mode → maker accrual held `awaiting_tracking`, released by
+  `recordSellerTracking` (seller's "Add tracking" in Sales); platform mode →
+  platform accrual; eTransfer quote mode → nothing (buyer paid the maker);
+  eTransfer platform mode → maker adjustment −shipping, platform accrual.
+- Labels (`buyPlatformLabel`, "Get shipping label" in Sales for platform-mode
+  stores): claims the shipment row first, then buys with `buy_label: true`,
+  `printing_options.format: "url"` (the label URL serves the PDF without auth,
+  verified in sandbox 2026-11-07).
+- UI: ship-from on `/studio/profile`, packed size on the artwork edit page
+  (`#shipping`), shipment cell in `/studio/sales`, mode select in `/admin/stores`.
+- Verified 2026-11-07 (sandbox, `packages/commerce/scripts/probe-easyship.mts`):
+  rates, shipment + label purchase (label `generated`, tracking `TEST12345678`).
+  Easyship requires `origin_address.company_name` on shipments (client falls
+  back to the contact name). 2026-11-07: migration 250 applied (15:56 UTC, in
+  another session's migrate run with 251); art-auction rebuilt (backup
+  `~/eac-backups/next/art-auction-20261107-1112.tgz`; first build failed on the
+  Google Fonts flake, second passed) and recreated with the Easyship env. A
+  guest order page renders through the edge with the new code ("Arranged with
+  the seller", no picker: no maker has a ship-from yet). Flow verified the same day with throwaway rows
+  (test account, store, draft artwork, guest order; all deleted after,
+  `packages/commerce/scripts/probe-shipping-flow.mts`): order page shows the
+  picker and no pay buttons; sandbox quote (3 Canpar rates) and choice set
+  shipping 5043 and total 85043; a made-up service id is refused; the page then
+  shows $850.43, the pay buttons and a "change" link that reopens the picker
+  prefilled; `accrueOrderShipping` (in a rolled-back transaction) wrote one
+  maker accrual held `awaiting_tracking` for card and nothing for eTransfer;
+  `recordSellerTracking` wrote the shipment, set the order fulfilled and the
+  buyer page shows the tracking; platform mode bought a sandbox label
+  (`label_ready`, PDF URL served, second purchase refused); Easyship
+  `POST /shipments/<id>/cancel` returns 200 in sandbox. Not verified: a Stripe
+  session with the shipping line (live key, not exercised), the release of a
+  committed held accrual, the studio and admin UI signed in, and anything in
+  production Easyship.
+
 ### Stripe
 
 - Hosted Checkout only; card data never touches an app.
@@ -408,6 +469,14 @@ is not the hyphenated app's `INNER_GATHERING_URL`.
   containers carry live keys.
 
 ## Open items
+
+- Shipping (2026-11-07): refunds do not reverse the shipping accrual or cancel
+  a label (`cancelShipment` exists, unwired); no Easyship tracking webhook
+  (tracking is what the seller or the label purchase recorded); production
+  account has no payment source, so platform labels need one before
+  `EASYSHIP_ENV=production`; buying labels for US or FR origins on the
+  Canadian account is unverified; the auto-release on seller tracking departs
+  from "only a network admin releases holds" on the developer's decision.
 
 - **unknown** — one `users` row has `stripe_account_id` set and no
   `stripe_onboarded_at`, with `payout_method = 'etransfer'`. It may be the

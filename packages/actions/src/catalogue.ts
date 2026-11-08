@@ -72,10 +72,41 @@ export const ACTION_CATALOGUE: readonly ActionMeta[] = [
   d('paath-record', 'Record the reading', 'A recording of the day’s reading, from the page or the call.', 'person', 'content'),
   d('paath-note', 'Write the day’s note', 'A note or a stop point for the day.', 'person', 'content'),
   d('paath-publish', 'Send the recording', 'The day’s recording approved and on YouTube.', 'person', 'content'),
+
+  // Channel entries (scope 'channel', 2026-11-07; docs/open/CHANNEL_REGISTRY_AND_BOARD_2026-11-07.md).
+  // The board's moves as entries: what Channel Home's next row, the dock and the HTTP door
+  // run. Every runner writes plans only (a draft delivery, a plan step, a dismissed gap);
+  // scheduling and sending stay with the quick sheet and New post. The org is the call's
+  // claim (owners and guides, never oad); without one, the person's own channel.
+  // Channel setup (2026-11-07): status-only steps a course can name ("Your channel"),
+  // done from platform state. The work happens in Channel's Outlets and New post.
+  d('channel-connect', 'A social account connected', 'Instagram, Facebook or Threads connected to the person’s own account, from Channel’s Outlets.', 'person', 'channel'),
+  d('channel-org-channel', 'The organisation has a channel', 'A Page or account set as the organisation’s own channel, so posts can go out under its name.', 'org', 'channel'),
+  d('channel-first-post', 'A first post sent', 'One post sent from Channel or the Studio to Instagram, Facebook or Threads.', 'person', 'channel'),
+  {
+    ...d('channel-next', 'What is next in the channel', 'The top next moves on a channel’s board: open slots, placed suggestions, gaps, drafts, plan steps and to-dos.', 'channel', 'channel'),
+    performs: 'Reads only. Done when nothing is waiting; otherwise the status lists the moves, each with the entry that performs it.',
+  },
+  {
+    ...d('channel-suggestion-accept', 'Accept a suggestion', 'Put a suggested post for a piece on the queue and in its plan.', 'channel', 'channel', true, false),
+    performs: 'Writes a draft delivery placed where the suggestion was (a routine slot or a date) and a step tagged “from the board” in the piece’s plan.md. Nothing is scheduled or sent. Accepting twice writes nothing the second time.',
+  },
+  {
+    ...d('channel-suggestion-dismiss', 'Dismiss a suggestion', 'Stop suggesting an outlet for a piece.', 'channel', 'channel', true, false),
+    performs: 'Records the gap as dismissed so it stops suggesting itself. Only from the host’s own pages, where the person sees what goes.',
+  },
+  {
+    ...d('channel-slot-fill', 'Fill a routine slot', 'Place a draft post about a piece in one of a routine’s slots.', 'channel', 'channel', true, false),
+    performs: 'Writes a draft delivery in the named slot of a routine the person runs (its outlet, time and name) and a step in the piece’s plan.md. Refuses a slot that is filled, past, or not one of the routine’s. Nothing is scheduled or sent.',
+  },
+  {
+    ...d('channel-plan-step', 'Add or tick a plan step', 'Append a step to a piece’s plan.md, or tick or untick one.', 'channel', 'channel', true, false),
+    performs: 'Appends a step to plan.md, or ticks or unticks the step at an index whose text matches what the caller read (a step added since is refused, not mis-ticked). Recorded in the plan’s event log with the actor kind.',
+  },
 ];
 
-/** The entries a course step can name: everything but subject-scoped ones (`CourseActionScope`). */
-export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => m.scope !== 'thread') as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
+/** The entries a course step can name: person and org entries (`CourseActionScope`). */
+export const COURSE_ACTIONS = ACTION_CATALOGUE.filter((m) => m.scope === 'person' || m.scope === 'org') as ReadonlyArray<ActionMeta & { scope: import('./types').CourseActionScope }>;
 
 const BY_ID = new Map(ACTION_CATALOGUE.map((m) => [m.id, m]));
 

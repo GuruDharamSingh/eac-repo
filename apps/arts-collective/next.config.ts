@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/dock",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
     "@elkdonis/reels",
+    // Gradient backgrounds: reels' brand ground, studio controls (2026-11-07).
+    "@elkdonis/gradients",
     // BookingScheduler for /hub/bookings and /bookings/<token> (migration 174).
     "@elkdonis/checkout",
     "@elkdonis/utils",

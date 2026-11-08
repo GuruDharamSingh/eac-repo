@@ -1,0 +1,41 @@
+/* Word art (packages/studio/src/wordart). Uses the studio's --st-* tokens; the gradient control
+   reads Puck's variables, so they are mapped onto the studio's here. */
+.wa-settings {
+  display: flex; flex-direction: column; gap: 12px;
+  --puck-color-grey-02: var(--st-ink);
+  --puck-color-grey-05: var(--st-muted);
+  --puck-color-grey-09: var(--st-control-line);
+  --puck-color-white: var(--st-panel-2);
+  --puck-color-azure-04: var(--st-accent);
+}
+.wa-main { display: flex; flex-direction: column; gap: 12px; padding: 16px; min-width: 0; }
+.wa-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wa-toolbar .studio-lib__tabs { flex: none; }
+.wa-stage {
+  position: relative; width: 100%; max-height: calc(100vh - 180px); margin: 0 auto; overflow: hidden;
+  border-radius: 8px; border: 1px solid var(--st-line); background: var(--st-panel-2);
+  container-type: size;
+}
+.wa-stage:not(.wa-stage--3d) { max-width: min(100%, calc((100vh - 180px) * 1.78)); }
+.wa-layer { position: absolute; inset: 0; }
+.wa-markwrap { position: absolute; }
+.wa-checker {
+  background-color: #e9e9ec;
+  background-image: linear-gradient(45deg, #d4d4da 25%, transparent 25%), linear-gradient(-45deg, #d4d4da 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d4d4da 75%), linear-gradient(-45deg, transparent 75%, #d4d4da 75%);
+  background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+.wa-gl { position: absolute; inset: 0; cursor: grab; }
+.wa-gl:active { cursor: grabbing; }
+.wa-glerror, .wa-empty { position: absolute; inset: auto 12px 12px; }
+.wa-starters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.wa-saved { display: flex; align-items: center; gap: 2px; }
+.wa-saved .studio-row { flex: 1; min-width: 0; }
+.wa-saved__row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.wa-saved__thumb { width: 36px; height: 36px; border-radius: 4px; flex: none; background: var(--st-panel-2); object-fit: cover; }
+.wa-parts { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.wa-check { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.wa-range { display: grid; grid-template-columns: 92px 1fr 36px; gap: 8px; align-items: center; font-size: 12.5px; color: var(--st-muted); }
+.wa-range input { min-width: 0; }
+.wa-range__v { text-align: right; font-variant-numeric: tabular-nums; color: var(--st-ink); }
+.wa-link { border: 0; background: none; padding: 0; color: var(--st-accent); cursor: pointer; text-decoration: underline; font: inherit; }

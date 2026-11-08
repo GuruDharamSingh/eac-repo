@@ -1,0 +1,9 @@
+{
+  "name": "@elkdonis/eac-design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "design-sync entry: @elkdonis/blocks + @elkdonis/cms-ui (incl. Surface UI) as one design system",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts"
+}

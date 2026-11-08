@@ -22,6 +22,7 @@ import { PhoneHandoff } from '@elkdonis/studio/capture';
 import { Recorder } from './Recorder';
 import { SlotLibrary, type LibraryPick } from './SlotLibrary';
 import { LiveCard } from './LiveCard';
+import { GradientControl } from '@elkdonis/gradients/react';
 import type { VideoFinished } from './types';
 
 const SLOT_KINDS: Record<Exclude<SlotKey, 'music'>, Array<'image' | 'video'>> = {
@@ -792,6 +793,18 @@ export function VideoKind(props: VideoKindProps) {
                   />
                 </label>
               </div>
+              <details className="vs-field vs-gradient" open={!!edit.brand?.gradient}>
+                <summary>Gradient background{edit.brand?.gradient ? ' (on)' : ''}</summary>
+                <p style={{ margin: '4px 0 8px', fontSize: 12, opacity: 0.75 }}>
+                  Paints the intro and end card, and the bars round a clip that doesn’t fill the frame. The colour above stays its base.
+                  Paper Shaders presets show their CSS version in reels.
+                </p>
+                <GradientControl
+                  value={edit.brand?.gradient}
+                  shaders="own"
+                  onChange={(g) => change({ ...edit, brand: { ...(edit.brand ?? {}), gradient: g } })}
+                />
+              </details>
               {(['title', 'subtitle', 'link'] as const).map((f) => (
                 <label key={f} className="vs-field">
                   {f === 'title' ? 'End card title' : f === 'subtitle' ? 'Subtitle (e.g. the work’s title)' : 'Link'}

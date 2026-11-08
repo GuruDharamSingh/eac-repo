@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getViewer } from "@/lib/auth";
-import { getGuides, getSiteSections } from "@/lib/data";
+import { getAssociatedBusinesses, getGuides, getSiteSections } from "@/lib/data";
 import { toPlainText } from "@/lib/format";
 import { listTours } from "@/lib/tours";
 import { siteConfig } from "@/config/site";
@@ -38,9 +38,12 @@ interface Section {
   media?: { url: string; alt: string } | null;
 }
 
+const artdirectUrl = (process.env.NEXT_PUBLIC_ARTDIRECT_URL ?? "").replace(/\/$/, "");
+
 export default async function AboutPage() {
-  const [guides, sections, tours, viewer] = await Promise.all([
+  const [guides, businesses, sections, tours, viewer] = await Promise.all([
     getGuides(),
+    getAssociatedBusinesses().catch(() => []),
     getSiteSections(),
     listTours(),
     getViewer().catch(() => null),
@@ -93,6 +96,27 @@ export default async function AboutPage() {
       link: { href: `/about/${g.slug}`, label: `More about ${g.displayName.split(/\s+/)[0]}` },
       media: g.photoUrl ? { url: g.photoUrl, alt: g.displayName } : null,
     })),
+    ...(businesses.length > 0 && artdirectUrl
+      ? [
+          {
+            id: "places",
+            kicker: "On our routes",
+            title: "Places we visit",
+            body: (
+              <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                {businesses.map((b) => (
+                  <li key={b.slug}>
+                    <a href={`${artdirectUrl}/${b.slug}`} className="underline underline-offset-4">
+                      {b.name}
+                    </a>
+                    {b.kind ? <span className="text-muted-foreground"> · {b.kind}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ),
+          } satisfies Section,
+        ]
+      : []),
     {
       id: "how",
       kicker: "Choose · Book · Meet",

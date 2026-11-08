@@ -11,6 +11,7 @@ import "@elkdonis/studio/studio.css";
 import "@elkdonis/reels/editor.css";
 import "@elkdonis/studio/capture.css";
 import "@elkdonis/studio/image.css";
+import "@elkdonis/studio/wordart.css";
 
 // The Studio's own faces (the mockup's) come from Google Fonts by
 // stylesheet, not next/font: Turbopack's font step failed two builds out of

@@ -126,7 +126,11 @@ export async function placeOrder(values: CheckoutFormValues): Promise<void> {
   await clearCartToken();
   await trackServerEvent("order_placed", { orderId: order.id, rail, signedIn: Boolean(userId) }, analyticsOptions);
 
-  if (rail === "stripe") {
+  // A store that quotes shipping (migration 250): the buyer picks a courier
+  // on the order page first; the card button is there once it is chosen.
+  const { getOrderShippingState } = await import("@elkdonis/commerce/shipping");
+  const shipping = await getOrderShippingState(order.id).catch(() => null);
+  if (rail === "stripe" && !shipping?.required) {
     redirect(await cardCheckoutUrl(order.id));
   }
   redirect(`/orders/${order.id}`);
@@ -164,6 +168,8 @@ export async function payOrderByCard(orderId: string): Promise<void> {
   if (!isCardPaymentAvailable()) {
     throw new Error("Card payments are not available right now.");
   }
+  const { getOrderShippingState } = await import("@elkdonis/commerce/shipping");
+  if ((await getOrderShippingState(orderId).catch(() => null))?.required) redirect(`/orders/${orderId}`);
   await trackServerEvent("pay_card_started", { orderId }, analyticsOptions);
   redirect(await cardCheckoutUrl(orderId));
 }

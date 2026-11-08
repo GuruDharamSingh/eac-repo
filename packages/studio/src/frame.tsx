@@ -45,6 +45,11 @@ export interface StudioFrameApi {
   setSheet: (s: null | 'drawer' | 'settings') => void;
   actionsSlot: HTMLElement | null;
   statusSlot: HTMLElement | null;
+  /**
+   * Goes up each time the top bar's "New ▾" asks this kind for a new item (2026-11-07). Kinds react
+   * with useNewRequest; before it, New on the kind you were already in did nothing.
+   */
+  newRequest: number;
 }
 
 export const StudioFrameContext = React.createContext<StudioFrameApi | null>(null);
@@ -53,6 +58,20 @@ export function useStudioFrame(): StudioFrameApi {
   const api = React.useContext(StudioFrameContext);
   if (!api) throw new Error('useStudioFrame: render inside StudioShell as a registered extension');
   return api;
+}
+
+/** Run `start` when "New ▾" asks this kind for a new item (not on mount: a kind opened fresh starts new anyway). */
+export function useNewRequest(start: () => void) {
+  const { newRequest } = useStudioFrame();
+  const seen = React.useRef(newRequest);
+  const cb = React.useRef(start);
+  cb.current = start;
+  React.useEffect(() => {
+    if (newRequest !== seen.current) {
+      seen.current = newRequest;
+      cb.current();
+    }
+  }, [newRequest]);
 }
 
 /** The three columns, with the shell's collapse and sheet behaviour. */

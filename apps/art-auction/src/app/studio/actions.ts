@@ -669,3 +669,84 @@ export async function removeStoreMemberAction(memberUserId: string): Promise<voi
   revalidatePath("/studio", "layout");
   redirect(res.ok ? "/studio/payouts" : `/studio/payouts?error=${encodeURIComponent(res.error ?? "Failed.")}`);
 }
+
+// ─── Shipping (migration 250) ────────────────────────────────────────────────
+
+/** Quote mode: the seller shipped on their own label and records tracking. */
+export async function recordTrackingAction(input: {
+  orderId: string;
+  courierName: string;
+  trackingNumber: string;
+  trackingUrl?: string;
+}): Promise<Result> {
+  try {
+    const userId = await requireOrderAccess(input.orderId);
+    const { recordSellerTracking } = await import("@elkdonis/commerce/shipping");
+    const r = await recordSellerTracking({ ...input, actorUserId: userId });
+    if (!r.ok) return r;
+    revalidatePath("/studio", "layout");
+    revalidatePath(`/orders/${input.orderId}`);
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Platform mode: buy the label on the collective's Easyship account. */
+export async function buyLabelAction(orderId: string): Promise<Result> {
+  try {
+    const userId = await requireOrderAccess(orderId);
+    const { buyPlatformLabel } = await import("@elkdonis/commerce/shipping");
+    const r = await buyPlatformLabel({ orderId, actorUserId: userId });
+    if (!r.ok) return r;
+    revalidatePath("/studio", "layout");
+    revalidatePath(`/orders/${orderId}`);
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** The signed-in person's own ship-from address (they are the maker). */
+export async function saveShipFromAction(value: {
+  recipientName: string;
+  company?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  region?: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  email: string;
+} | null): Promise<Result> {
+  try {
+    const { userId } = await requireStudioStore();
+    const { setShipFrom } = await import("@elkdonis/commerce/shipping");
+    const r = await setShipFrom(userId, value);
+    if (!r.ok) return r;
+    revalidatePath("/studio/profile");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** The packed parcel couriers quote on. Same access as editing the piece. */
+export async function saveParcelAction(
+  artworkId: string,
+  parcel: { lengthCm: number; widthCm: number; heightCm: number; weightKg: number } | null
+): Promise<Result> {
+  try {
+    const { userId } = await requireStudioStore();
+    const { getArtworkForEdit } = await import("@elkdonis/commerce/queries");
+    if (!(await getArtworkForEdit(artworkId, userId))) return { ok: false, error: "You cannot edit this piece." };
+    const { setArtworkParcel } = await import("@elkdonis/commerce/shipping");
+    const r = await setArtworkParcel(artworkId, parcel);
+    if (!r.ok) return r;
+    revalidatePath(`/studio/artworks/${artworkId}/edit`);
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}

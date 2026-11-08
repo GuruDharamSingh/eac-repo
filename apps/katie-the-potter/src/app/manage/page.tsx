@@ -127,6 +127,21 @@ export default async function ManageOverview({ searchParams }: { searchParams: P
         </section>
 
         <section className="ktp-m-card">
+          <h2>Sharing</h2>
+          <p className="ktp-m-fine">
+            Post your pieces to Instagram and Facebook from Channel, on arts-collective.com. Connect your accounts there once, then make your Page the shop's channel.
+          </p>
+          <p className="ktp-m-actions">
+            <a className="ktp-btn" href="/channel?to=outlets">
+              Connect Instagram and Facebook
+            </a>
+            <a className="ktp-btn ktp-btn--ghost" href="/channel">
+              Open Channel
+            </a>
+          </p>
+        </section>
+
+        <section className="ktp-m-card">
           <h2>Shortcuts</h2>
           <p className="ktp-m-actions">
             <Link className="ktp-btn" href="/manage/pieces/new">

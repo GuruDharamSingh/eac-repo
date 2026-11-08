@@ -9,7 +9,9 @@ import {
   isCardPaymentAvailable,
   syncStripeOrder,
 } from "@elkdonis/checkout/stripe";
+import { getOrderShipment, getOrderShippingState } from "@elkdonis/commerce/shipping";
 import { payOrderByCard, payOrderByEtransfer } from "@/app/actions";
+import { ShippingPicker } from "./shipping-picker";
 import { getCurrentUserId, getIsAdmin } from "@/lib/marketplace-auth";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ paid?: string; cancelled?: string; card?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string; card?: string; shipping?: string }>;
 }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
 
@@ -57,12 +59,24 @@ export default async function OrderPage({
   }
   order = order!;
 
-  const lines = await getOrderLines(order.id);
+  const [lines, shippingState, shipment] = await Promise.all([
+    getOrderLines(order.id),
+    getOrderShippingState(order.id).catch(() => null),
+    getOrderShipment(order.id).catch(() => null),
+  ]);
+  const chosenShipping = shippingState?.chosen ?? null;
   const status = STATUS_COPY[order.status] ?? {
     label: order.status.replace(/_/g, " "),
     tone: "neutral" as const,
   };
   const unpaid = UNPAID.has(order.status);
+  // Shipping must be chosen before paying when the store quotes it
+  // (migration 250); "?shipping=change" reopens the choice.
+  const pickShipping =
+    unpaid &&
+    order.status !== "payment_received" &&
+    Boolean(shippingState?.canQuote) &&
+    (Boolean(shippingState?.required) || sp.shipping === "change");
   // Above Stripe's per-charge ceiling a card button can only bounce back here,
   // so it isn't offered; e-Transfer has no ceiling and stays.
   const cardAvailable =
@@ -113,8 +127,21 @@ export default async function OrderPage({
         )}
       </div>
 
+      {pickShipping && (
+        <section className="mb-8 rounded-lg border border-border bg-accent/30 p-6">
+          <h2 className="mb-3 font-serif text-2xl">Shipping</h2>
+          <ShippingPicker
+            orderId={order.id}
+            initialAddress={chosenShipping?.address ?? order.shippingAddress ?? null}
+            originCountry={shippingState?.originCountry ?? null}
+            canQuote={Boolean(shippingState?.canQuote)}
+            reason={shippingState?.reason ?? null}
+          />
+        </section>
+      )}
+
       {/* Pay: card, or eTransfer instructions, with a switch between them */}
-      {unpaid && (
+      {unpaid && !pickShipping && (
         <section className="mb-8 rounded-lg border border-border bg-accent/30 p-6">
           <h2 className="mb-3 font-serif text-2xl">Complete your payment</h2>
           <dl className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -215,11 +242,24 @@ export default async function OrderPage({
             <dd>{formatMoney(order.subtotalMinor, order.currency)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Shipping</dt>
+            <dt className="text-muted-foreground">
+              Shipping
+              {chosenShipping?.option ? ` · ${chosenShipping.option.name}` : ""}
+              {unpaid && !pickShipping && shippingState?.canQuote && order.status !== "payment_received" && (
+                <>
+                  {" "}
+                  <Link href={`/orders/${order.id}?shipping=change`} className="underline underline-offset-4">
+                    change
+                  </Link>
+                </>
+              )}
+            </dt>
             <dd>
               {order.shippingMinor > 0
                 ? formatMoney(order.shippingMinor, order.currency)
-                : "Arranged with the seller"}
+                : pickShipping
+                  ? "Choose above"
+                  : "Arranged with the seller"}
             </dd>
           </div>
           <div className="mt-1 flex justify-between border-t border-border pt-2 font-medium">
@@ -232,7 +272,24 @@ export default async function OrderPage({
       </section>
 
       <p className="text-sm text-muted-foreground">
-        {order.status === "paid" || order.status === "fulfilled" ? (
+        {shipment?.trackingNumber ? (
+          <>
+            Shipped with {shipment.courierName ?? "the courier"}, tracking{" "}
+            {shipment.trackingUrl ? (
+              <a href={shipment.trackingUrl} className="font-medium text-foreground underline underline-offset-4">
+                {shipment.trackingNumber}
+              </a>
+            ) : (
+              <span className="font-medium text-foreground">{shipment.trackingNumber}</span>
+            )}
+            .
+          </>
+        ) : (order.status === "paid" || order.status === "fulfilled") && chosenShipping?.option ? (
+          <>
+            {payeeName} has been notified and will ship with {chosenShipping.option.name}. Tracking will appear
+            on this page.
+          </>
+        ) : order.status === "paid" || order.status === "fulfilled" ? (
           <>
             {payeeName} has been notified and will arrange shipping with you at{" "}
             <span className="font-medium text-foreground">{order.customerEmail}</span>.

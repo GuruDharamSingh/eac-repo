@@ -6,6 +6,8 @@ import type { Order } from "@elkdonis/commerce/types";
 import { requireStudioStore } from "@/lib/marketplace-auth";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { OrderActions } from "../_components/order-actions";
+import { ShipmentCell } from "../_components/shipping-forms";
+import { getStoreShippingMode, listOrderShipments, orderShippingOf } from "@elkdonis/commerce/shipping";
 import {
   cancelOrderAction,
   confirmOrderPaidAction,
@@ -44,6 +46,10 @@ export default async function StudioSalesPage() {
   };
 
   const orders = await listOrdersForStore(store.id, { limit: 50 });
+  const [shippingMode, shipments] = await Promise.all([
+    getStoreShippingMode(store.id).catch(() => "arranged" as const),
+    listOrderShipments(orders.map((o) => o.id)).catch(() => ({}) as Awaited<ReturnType<typeof listOrderShipments>>),
+  ]);
 
   return (
     <section>
@@ -96,6 +102,17 @@ export default async function StudioSalesPage() {
                     </td>
                     <td className="px-4 py-2 text-right">
                       {canManageSales && <OrderActions order={o} actions={orderActions} />}
+                      {canManageSales && orderShippingOf(o.metadata) && (
+                        <div className="mt-2">
+                          <ShipmentCell
+                            orderId={o.id}
+                            mode={orderShippingOf(o.metadata)!.mode ?? shippingMode}
+                            serviceName={orderShippingOf(o.metadata)!.option?.name ?? null}
+                            canShip={o.status === "paid"}
+                            shipment={shipments[o.id] ?? null}
+                          />
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

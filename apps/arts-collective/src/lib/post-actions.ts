@@ -149,7 +149,12 @@ async function mirrorToThread(userId: string, post: SocialPost): Promise<void> {
 const absolute = (url: string) => (url.startsWith("/") ? `${ORIGIN}${url}` : url);
 const isJpeg = (url: string) => /\.jpe?g($|\?)/i.test(url);
 
-export async function publishSocialPost(postId: string, targetId: string): Promise<StudioResult<StudioShare>> {
+/**
+ * `opts.mirror` (default true): also put the post on the network as a thread.
+ * Channel passes false for a post about a piece that already has its own page
+ * (owner, 2026-11-07: no duplicate feed post for an existing piece).
+ */
+export async function publishSocialPost(postId: string, targetId: string, opts: { mirror?: boolean } = {}): Promise<StudioResult<StudioShare>> {
   const viewer = await viewerId();
   if (!viewer) return { ok: false, error: "Sign in required." };
   const ref = parseTarget(targetId);
@@ -200,7 +205,9 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
     } else if (ref.kind === "instagram" || ref.kind === "iglogin") {
       if (images.length === 0) return { ok: false, error: "Instagram needs a picture." };
       if (!isJpeg(images[0]!)) return { ok: false, error: "Instagram takes JPEG pictures only; make the first picture a JPEG." };
-      const caption = post.link ? `${text}\n\n${post.link}` : text;
+      // A caption that already points to the bio (Channel writes "link in bio",
+      // 2026-11-07) does not get the unclickable URL appended as well.
+      const caption = post.link && !/link in bio/i.test(text) ? `${text}\n\n${post.link}` : text;
       if (ref.kind === "instagram") {
         const t = await getMetaPageTarget(ref.connectionId, ref.pageId!);
         if (t.ok === false) return { ok: false, error: t.error };
@@ -234,6 +241,6 @@ export async function publishSocialPost(postId: string, targetId: string): Promi
   await finishPublishJob(jobId, { ok: true, externalId, url: share.url });
   await recordSocialShare(viewer, postId, share);
   // On the network too; a failure here is logged, the outside post stands.
-  await mirrorToThread(viewer, post).catch((err) => console.error("[posts] mirror:", err));
+  if (opts.mirror !== false) await mirrorToThread(viewer, post).catch((err) => console.error("[posts] mirror:", err));
   return { ok: true, value: share };
 }

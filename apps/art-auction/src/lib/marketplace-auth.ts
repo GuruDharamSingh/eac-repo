@@ -108,6 +108,31 @@ export async function getIsAdmin(): Promise<boolean> {
   }
 }
 
+/**
+ * Whether the person is a marketplace keeper: a platform admin, or an owner of
+ * this marketplace's organisation (`user_organizations.role = 'owner'`, org
+ * `market`). Keepers show or hide artworks and stores (Admin → Stores,
+ * Artworks); the money, orders and member tabs stay admin-only.
+ */
+export async function isMarketKeeper(userId: string): Promise<boolean> {
+  try {
+    if (await isAdmin(userId)) return true;
+    const rows = (await db`
+      SELECT 1 FROM user_organizations
+      WHERE user_id = ${userId} AND org_id = ${siteConfig.marketplaceOrgId} AND role = 'owner'
+      LIMIT 1
+    `) as unknown as unknown[];
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export async function getIsKeeper(): Promise<boolean> {
+  const userId = await getCurrentUserId();
+  return userId ? isMarketKeeper(userId) : false;
+}
+
 // ─── Studio: which store is being worked on ─────────────────────────────────
 
 /** Remembers the store a person last switched the studio to. */
@@ -186,4 +211,13 @@ export async function requireAdmin(): Promise<string> {
   const admin = await isAdmin(userId).catch(() => false);
   if (!admin) redirect("/");
   return userId;
+}
+
+/** Guard for the keepers' admin tabs (Stores, Artworks): an admin or a marketplace owner. */
+export async function requireKeeper(): Promise<{ userId: string; isAdmin: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login?next=/admin/stores");
+  const admin = await isAdmin(userId).catch(() => false);
+  if (!admin && !(await isMarketKeeper(userId))) redirect("/");
+  return { userId, isAdmin: admin };
 }

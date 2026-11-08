@@ -523,3 +523,138 @@
     transition: none;
   }
 }
+
+/* ── /manage/shipping and shipment lines (2026-11-07) ── */
+.ktp-m-shipmode {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.ktp-m-shipmode .ktp-m-seg button {
+  padding: 0.45rem 1.2rem;
+  font-size: 0.9rem;
+}
+.ktp-m-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.ktp-m-tryout {
+  margin-top: 0.5rem;
+}
+.ktp-m-tryrates {
+  list-style: none;
+  margin: 0.4rem 0 0.6rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.ktp-m-tryrate {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+}
+.ktp-m-shipline {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  border-left: 3px solid hsl(var(--input));
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.ktp-m-shipline[data-tone="ok"] {
+  border-left-color: hsl(var(--primary));
+}
+.ktp-m-shipline[data-tone="warn"] {
+  border-left-color: hsl(var(--destructive, 0 70% 50%));
+}
+.ktp-m-shipline .ktp-m-row-meta,
+.ktp-m-shipline .ktp-m-row-links {
+  margin: 0.15rem 0;
+}
+@media (max-width: 560px) {
+  .ktp-m-pair {
+    grid-template-columns: 1fr;
+  }
+}
+.ktp-m-field > .ktp-m-seg {
+  justify-self: start;
+}
+.ktp-m-steps {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: grid;
+  gap: 0.35rem;
+  line-height: 1.5;
+}
+
+/* Quote-only shipping (2026-11-07): Katie's "Ship this" card on /manage/orders,
+   the insurance checkboxes and the parked label-buying note on /manage/shipping. */
+.ktp-m-shipthis {
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid hsl(var(--input));
+  border-left: 3px solid hsl(var(--primary));
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: hsl(var(--muted) / 0.5);
+  display: grid;
+  gap: 0.55rem;
+}
+.ktp-m-shipthis p,
+.ktp-m-shipthis ul {
+  margin: 0;
+}
+.ktp-m-shipthis ul {
+  padding-left: 1.1rem;
+}
+.ktp-m-shipthis-head {
+  line-height: 1.45;
+}
+.ktp-m-shipthis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 0.4rem 1.2rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.ktp-m-shipthis-k {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.15rem !important;
+}
+.ktp-m-shipthis-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) auto;
+  gap: 0.5rem 0.7rem;
+  align-items: end;
+}
+@media (max-width: 640px) {
+  .ktp-m-shipthis-grid,
+  .ktp-m-shipthis-form {
+    grid-template-columns: 1fr;
+  }
+}
+.ktp-m-check {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  line-height: 1.45;
+  margin: 0 0 0.5rem;
+}
+.ktp-m-check input {
+  margin-top: 0.22rem;
+  accent-color: hsl(var(--primary));
+}
+.ktp-m-devnote {
+  margin-top: 0.8rem;
+}
+.ktp-m-devnote summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}

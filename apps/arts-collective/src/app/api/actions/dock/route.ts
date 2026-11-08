@@ -3,6 +3,7 @@ import { dockData } from "@elkdonis/actions/server";
 import { getActiveEnrolment, getCourseBySlug, getLearnerOutline, listMyEnrolments, stepTask } from "@elkdonis/lms";
 import { getCurrentUser } from "@/lib/session";
 import { ACTION_LINKS } from "@/lib/actions/links";
+import { channelNextSource } from "@/lib/channel/next-source";
 
 /**
  * GET /api/actions/dock?path=<the browser's path>  the dock's data for the signed-in
@@ -20,17 +21,23 @@ const LINKS = {
 };
 
 // The onboarding course (lib/lms/connectors.tsx ONBOARDING_COURSE_SLUG; not imported:
-// that module pulls in the lesson's client components).
+// that module pulls in the lesson's client components). Course steps are welcome in the
+// dock elsewhere; on Channel's own pages the ribbon carries the suggestions, so there the
+// dock keeps to routine steps (owner, 2026-11-07).
 const COURSES = ["getting-started"];
 
 const LMS = { getCourseBySlug, getActiveEnrolment, listMyEnrolments, getLearnerOutline, stepTask };
+
+// The channel's next move on Channel's inner pages and in the Studio (server/dock.ts channelDockPath).
+const SOURCES = { channelNext: channelNextSource };
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   const raw = req.nextUrl.searchParams.get("path");
   const path = raw && raw.startsWith("/") ? raw.slice(0, 600) : null;
-  const data = await dockData({ userId: user.id, path, links: LINKS, lms: LMS, courses: COURSES });
+  const onChannel = Boolean(path && /^\/channel(\/|\?|$)/.test(path));
+  const data = await dockData({ userId: user.id, path, links: LINKS, lms: LMS, courses: COURSES, routinesOnly: onChannel, sources: SOURCES });
   if (!data) return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
   return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
 }

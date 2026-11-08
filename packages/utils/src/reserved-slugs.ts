@@ -51,6 +51,8 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "community",
   // The follower's home on every org site (CENTER_PAGE_BRIEF_2026-09-09.md).
   "center",
+  // The publishing console on the network host (docs/open/channel.md).
+  "channel",
 ]);
 
 export function isReservedSlug(slug: string): boolean {

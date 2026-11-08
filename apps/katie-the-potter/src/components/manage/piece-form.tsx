@@ -31,6 +31,7 @@ export interface PieceFormInitial {
   heightCm: number | null;
   widthCm: number | null;
   depthCm: number | null;
+  weightKg?: number | null;
   /** Major units. */
   price: number | null;
   currency: "CAD" | "USD";
@@ -56,6 +57,7 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
   const [h, setH] = useState(initial.heightCm?.toString() ?? "");
   const [w, setW] = useState(initial.widthCm?.toString() ?? "");
   const [d, setD] = useState(initial.depthCm?.toString() ?? "");
+  const [kg, setKg] = useState(initial.weightKg?.toString() ?? "");
   const [price, setPrice] = useState(initial.price?.toString() ?? "");
   const [currency, setCurrency] = useState(initial.currency);
   const [qty, setQty] = useState(String(initial.inventoryQty));
@@ -75,6 +77,7 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
         heightCm: numOrNull(h),
         widthCm: numOrNull(w),
         depthCm: numOrNull(d),
+        weightKg: numOrNull(kg),
         price: numOrNull(price),
         currency,
         inventoryQty: Number(qty) || 1,
@@ -139,7 +142,7 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
       </section>
 
       <section className="ktp-m-card">
-        <h2>Size, price and quantity</h2>
+        <h2>Size and weight, price and quantity</h2>
         <div className="ktp-m-grid ktp-m-grid--4">
           <label className="ktp-m-field">
             <span>Height (cm)</span>
@@ -152,6 +155,10 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
           <label className="ktp-m-field">
             <span>Depth (cm)</span>
             <input className="ktp-input" inputMode="decimal" value={d} onChange={(e) => setD(e.target.value)} disabled={disabled} />
+          </label>
+          <label className="ktp-m-field">
+            <span>Weight (kg)</span>
+            <input className="ktp-input" inputMode="decimal" value={kg} onChange={(e) => setKg(e.target.value)} placeholder="e.g. 0.45" disabled={disabled} />
           </label>
           <label className="ktp-m-field">
             <span>Quantity</span>
@@ -169,7 +176,7 @@ export function PieceForm({ initial, readOnlyReason }: { initial: PieceFormIniti
             </select>
           </label>
         </div>
-        <p className="ktp-m-fine">A piece with no price is shown as &ldquo;Price on request&rdquo; and can&rsquo;t be added to a cart.</p>
+        <p className="ktp-m-fine">A piece with no price is shown as &ldquo;Price on request&rdquo; and can&rsquo;t be added to a cart. Weigh the piece itself, without a box (a kitchen scale is fine): shipping prices are worked out from the size and weight.</p>
       </section>
 
       <section className="ktp-m-card">

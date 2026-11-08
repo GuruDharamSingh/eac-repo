@@ -18,6 +18,14 @@ import {
 import type { ArtworkKind, ArtworkMediaInput, Currency } from "@elkdonis/commerce/types";
 import { guardStore } from "@/lib/manage";
 import { UUID_RE } from "@/lib/shop";
+import { getShippingMode } from "@/lib/shipping/settings";
+
+/** While shipping is Test or Live, a piece needs a size and a weight to go on sale (the parcel is built from them). */
+const NEEDS_SIZE_AND_WEIGHT =
+  "Shipping is switched on, so a piece needs its height, width and weight before it goes on sale (the carriers price the box from them). Add them under Size and weight, then put it on sale again.";
+async function shippingNeedsSize(): Promise<boolean> {
+  return (await getShippingMode().catch(() => "off")) !== "off";
+}
 
 // ============================================================================
 // The seller console's server actions, modelled on art-auction's
@@ -69,6 +77,8 @@ export interface PieceInput {
   heightCm: number | null;
   widthCm: number | null;
   depthCm: number | null;
+  /** The piece itself, unpacked (2026-11-07, for shipping quotes). */
+  weightKg?: number | null;
   /** Major units (dollars); 0 or empty = price on request. */
   price: number | null;
   currency: Currency;
@@ -114,6 +124,12 @@ export async function savePieceAction(artworkId: string | null, input: PieceInpu
   const images = cleanImages(input.images);
   if (typeof images === "string") return fail(images);
   if (input.publish && images.length === 0) return fail("Add at least one picture before putting a piece on sale.");
+  if (input.publish && (await shippingNeedsSize())) {
+    const h = num(input.heightCm, 0, 10_000);
+    const w = num(input.widthCm, 0, 10_000);
+    const kg = num(input.weightKg, 0, 500);
+    if (!h || !w || !kg) return fail(NEEDS_SIZE_AND_WEIGHT);
+  }
 
   const fields = {
     descriptionHtml: input.descriptionHtml ? input.descriptionHtml.slice(0, 20_000) : null,
@@ -124,6 +140,7 @@ export async function savePieceAction(artworkId: string | null, input: PieceInpu
     heightCm: num(input.heightCm, 0, 10_000),
     widthCm: num(input.widthCm, 0, 10_000),
     depthCm: num(input.depthCm, 0, 10_000),
+    weightKg: num(input.weightKg, 0, 500),
     priceMinor: Math.round(price * 100),
     currency,
     inventoryQty: qty,
@@ -174,6 +191,12 @@ export async function setShownAsAction(artworkId: string, mode: ShownAs): Promis
       return fail(`This piece is ${piece.status}; it has an order behind it, so it can't be switched here.`);
     }
     if (mode === "sale") {
+      if (piece.status !== "available" && (await shippingNeedsSize())) {
+        const [dims] = await db<Array<{ h: string | null; w: string | null; kg: string | null }>>`
+          SELECT height_cm AS h, width_cm AS w, weight_kg AS kg FROM artwork WHERE id = ${artworkId} AND store_id = ${g.store.id}
+        `;
+        if (!Number(dims?.h) || !Number(dims?.w) || !Number(dims?.kg)) return fail(NEEDS_SIZE_AND_WEIGHT);
+      }
       await publishArtwork(artworkId, g.viewer.userId);
       await db`UPDATE artwork SET metadata = metadata - 'site' WHERE id = ${artworkId} AND store_id = ${g.store.id}`;
     } else if (mode === "portfolio") {

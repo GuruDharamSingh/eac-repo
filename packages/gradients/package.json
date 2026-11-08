@@ -1,0 +1,34 @@
+{
+  "name": "@elkdonis/gradients",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gradient backgrounds for EAC sites and editors: a cleaned JSON spec, OKLCH ramp generators, allowlist-safe CSS, WebGL shaders, and a slider control for Puck and the direct editor.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "tsx scripts/smoke.mts"
+  },
+  "dependencies": {
+    "culori": "4.0.2",
+    "@paper-design/shaders-react": "0.0.82",
+    "grapick": "0.1.13"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/culori": "4.0.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/node": "^20",
+    "typescript": "^5.3.3",
+    "tsx": "^4.20.6"
+  }
+}

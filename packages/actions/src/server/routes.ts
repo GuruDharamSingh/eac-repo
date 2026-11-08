@@ -20,6 +20,11 @@
  * one 404. Publishing, pinning and editing a published post are refused through this
  * door (`via: 'http'`, code 'forbidden'); a draft can be edited from here.
  *
+ * For a `channel` entry (2026-11-07) `org` names an org's channel: honoured for its
+ * owners and guides (resolveChannelOrg), else the POST answers 403; no `org` is the
+ * person's own channel. Channel rows written through this door record actor kind
+ * 'agent' (`door:http`), and dismissing a suggestion is refused here.
+ *
  * POST answers, in the order they are checked:
  *   404 unknown id · 405 no runner (Allow: GET) · 415 not application/json ·
  *   403 foreign Origin · 401 signed out · 429 over the rate limit (Retry-After) ·
@@ -46,7 +51,7 @@
  */
 import { ACTION_CATALOGUE, actionMeta } from '../catalogue';
 import type { ActionFailure, ActionLinks, ActionMeta, ActionResult } from '../types';
-import { actionStatus } from './status';
+import { actionStatus, type ActionSources } from './status';
 import { performAction, RUNNABLE_IDS } from './run';
 import { actionJsonSchema } from './schema';
 import { actionOrgId } from './org';
@@ -77,6 +82,8 @@ export interface ActionRoutesOptions {
   publicOrigin?: (req: Request) => string;
   /** POST rate limit per person, in memory per process. */
   rateLimit?: ActionRateLimit;
+  /** Host readers for statuses computed by the host's own model (`channel-next`). */
+  sources?: ActionSources;
 }
 
 /** A catalogue row as the catalogue route serves it. */
@@ -249,7 +256,7 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         const subjectId = subjectOf(q.get('subject'));
         // The step's choices (e.g. org-publish ?kind=event); actionParams in the check drops anything undeclared.
         const params = Object.fromEntries([...q.entries()].filter(([k]) => k !== 'org' && k !== 'subject'));
-        const status = await actionStatus(id, { userId: actor.userId, orgId, subjectId, links: opts.links, params });
+        const status = await actionStatus(id, { userId: actor.userId, orgId, subjectId, links: opts.links, params, sources: opts.sources });
         return json({ id, org: orgId, subject: subjectId, status });
       }),
 
@@ -276,9 +283,10 @@ export function actionRoutes(opts: ActionRoutesOptions) {
         }
         const raw = body.value;
         // null for a 'thread' entry: performAction takes its org from the post.
-        const orgId = await actionOrgId(id, actor.userId, typeof raw.org === 'string' ? raw.org : null);
+        const orgClaim = typeof raw.org === 'string' ? raw.org.slice(0, 64) : null;
+        const orgId = await actionOrgId(id, actor.userId, orgClaim);
         const subjectId = subjectOf(raw.subject);
-        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, subjectId, via: 'http' }, raw.input);
+        const result = await performAction(id, { userId: actor.userId, email: actor.email, orgId, orgClaim, subjectId, via: 'http' }, raw.input);
         return json(result, resultStatus(result));
       }),
     },

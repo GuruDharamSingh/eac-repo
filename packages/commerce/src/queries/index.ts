@@ -1641,6 +1641,9 @@ export interface AdminArtworkRow {
   priceMinor: number | null;
   currency: string | null;
   createdAt: string;
+  /** Hidden from the public site by a marketplace keeper (`adminHideArtwork`). */
+  hiddenByAdmin: boolean;
+  storeName: string | null;
 }
 
 /** Every artwork across all artists/statuses — operator inventory view. */
@@ -1652,11 +1655,14 @@ export async function adminListArtworks(
   const rows = (await db`
     SELECT
       a.id, a.title, a.status, a.kind, a.store_id, a.artist_user_id, a.view_count, a.created_at,
+      (a.metadata->'hiddenByAdmin' IS NOT NULL) AS hidden_by_admin,
+      st.display_name AS store_name,
       ${ARTWORK_CREDIT_SELECT},
       pm.url AS primary_image_url,
       v.price_minor, v.currency
     FROM artwork a
     ${ARTWORK_CREDIT_JOIN}
+    LEFT JOIN store st ON st.id = a.store_id
     LEFT JOIN users u ON u.id = a.artist_user_id
     LEFT JOIN artwork_media pm ON pm.id = a.primary_image_id
     LEFT JOIN LATERAL (
@@ -1681,6 +1687,8 @@ export async function adminListArtworks(
     priceMinor: r.price_minor != null ? num(r.price_minor) : null,
     currency: opt(r.currency),
     createdAt: r.created_at as string,
+    hiddenByAdmin: r.hidden_by_admin === true,
+    storeName: opt(r.store_name),
   }));
 }
 

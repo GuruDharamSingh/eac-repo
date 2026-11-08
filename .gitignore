@@ -95,3 +95,14 @@ danascreenshots/
 
 # GeoLite2 database for packages/analytics (licensed; not redistributable)
 var/
+
+# design-sync (generated / machine state)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/entry/node_modules
+.design-sync/entry/theme.css
+.design-sync/entry/fonts/
+.design-sync/entry/stubs/baroque-signup.css

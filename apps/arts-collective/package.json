@@ -28,6 +28,7 @@
     "@elkdonis/dock": "workspace:*",
     "@elkdonis/email": "workspace:*",
     "@elkdonis/fonts": "workspace:*",
+    "@elkdonis/gradients": "workspace:*",
     "@elkdonis/live-editor": "workspace:*",
     "@elkdonis/lms": "workspace:*",
     "@elkdonis/lms-ui": "workspace:*",

@@ -248,3 +248,67 @@ One slip, fixed within two minutes: the browser tool accepted the native "Retire
 **Fixed:** `/channel` (signed-in redirect through the SSO hand-off, like `/center`) to the network console at `arts-collective.com/studio/channel?org=katie-the-potter`, and a Channel card on `/hub`. The console itself is shared (`@elkdonis/studio/channel`, hosted by arts-collective).
 **Where:** `src/app/channel/page.tsx`, `src/app/hub/page.tsx`; console and status in `docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md` §0 (repo root).
 **Left for you:** this site and arts-collective both need a rebuild before the card works; the console's Site links for this shop (Pages → /manage/site, People, Store → /manage/pieces) are set in arts-collective `src/lib/channel-data.ts` `SITE_PATHS`.
+
+## 2026-11-07 · Sign-up check: still blocked
+
+**Spotted:** the morning check of last night's sign-up blocker.
+**Fixed:** nothing (Turnstile settings are the owner's). In a fresh browser, `/login?mode=signup` still shows Turnstile error **110200** and **Join the Collective** stays greyed out. The site key the page serves matches `.env` and the container (same hash), so the widget's hostname list in Cloudflare still lacks `pottery.arts-collective.com`. The katie service does pass `TURNSTILE_SECRET_KEY`, but `.env` only has `TURNSTILE_SECRET_KEY_PENDING`, so the server checks no token.
+**Where:** `docs/ONBOARDING.md` ("Status on 2026-11-07"). Screenshot `C:\Users\Justi\AppData\Local\Temp\.playwright-mcp\shipping\turnstile-signup.png`.
+**Left for you:** add the hostname to the widget in Cloudflare (no rebuild), or create Katie's account by hand (ONBOARDING fallback).
+
+## 2026-11-07 · Shipping labels after the sale (Easyship), switched Off
+
+**Spotted:** the owner wants buyers to agree on shipping after they buy: choose the carrier and pay for the label. The provider in `.env` is Easyship, not EasyPost.
+**Fixed:**
+- **/manage/shipping** (new tab): **Off / Test / Live**; ship-from address; packing (padding, box weight, extra %); **Try it** (one piece to a Montréal or New York example: the options a buyer would get). Live opens only for the shop's owner, once the ship-from is saved and a quote from it has worked.
+- **Piece form:** **Weight (kg)** next to the size. While shipping is Test or Live, putting a piece on sale needs height, width and weight (a friendly message says so). The sample pieces were not changed.
+- **Buyer:** after paying, the order page shows **Choose shipping** → `/orders/<id>/shipping`: up to three carriers (cheapest, fastest, best value) plus "Show all carriers", insurance ticked, duty estimate for the US, "Edit address" when a carrier can't use it, then **Pay for shipping** (a second, small Stripe page; the label is bought only after that payment is confirmed). A failed label is retried once, then refunded in full and Katie is emailed. Tracking shows on the order page.
+- **Katie, /manage/orders:** "Label bought: Canpar - Ground, tracking …", what the buyer paid and what the label cost, **Download label (PDF)**, and **Mark shipped (tracking filled in)**.
+- **Test mode** (editors only): sandbox rates and labels, **Buy test label** with no payment at all, a typed weight for pieces without one, no emails (the shipment's log records what would have gone).
+- Stripe's Buy now / Pay now pages now also ask for a **phone** (carriers want one). Our checkout form already had it.
+- **Off** (as deployed): everything reads and works exactly as before.
+**Checked:** type-checks exit 0 for katie-the-potter, art-auction, artdirect, sunjay, elktours, innergathering, hidden-enneagram, arts-collective, ifac, danamccool; elastrocal still fails on the same 3 errors as before. Sandbox, signed in as the placeholder owner: ship-from saved, Test on, Try it Canada (Canpar Ground $38.68 insured / $37.73 not, Express, Select), Try it US (the sandbox has no Canada→US couriers; one read-only production quote showed DHL and FedEx, so the US request is right), an eTransfer test order, Choose shipping, Buy test label (label PDF downloads, tracking TEST12345678), /manage/orders line, signed webhook simulation (10 checks: unsigned, wrong secret and tampered tokens refused; In transit → Delivered; never backwards). Signed out, the test order showed nothing new. `scripts/shipping-label-params.ts` built the live label session without sending it (17 checks: platform charge, one line, metadata, URLs; Buy now asks for a phone; an existing session is unchanged).
+Found and fixed in testing: Easyship refuses a contact name over 22 characters, so the ship-from name is limited to 22 and a buyer's name is shortened on the label.
+Cleanup: sandbox label cancelled with Easyship, test shipment row deleted (none left), test order ART-20261107-1886 cancelled (Tenmoku tea bowl available, no reservation, still no weight), shipping **Off**, ship-from cleared, no packing saved, session files deleted, browser context closed. **Not done:** no Stripe session or object was created, no production shipment or label.
+**Where:** `src/lib/shipping/*`, `src/app/manage/shipping/page.tsx`, `src/components/manage/shipping-forms.tsx`, `src/app/orders/[id]/shipping/page.tsx`, `src/components/shipping-picker.tsx`, `src/app/api/shipping/{return,webhook,label/[id]}/route.ts`; edits in `src/app/orders/[id]/page.tsx`, `src/app/manage/{layout.tsx,orders/page.tsx,pieces/*}`, `src/components/manage/{order-actions,piece-form}.tsx`, `src/lib/{manage-actions,shop-actions}.ts`, `src/app/{shop.css,manage/manage.css}`; scripts `scripts/shipping-label-params.ts`, `scripts/shipping-rehearsal.ts`. Shared (additive): `packages/checkout/src/server/shipping-label.ts` + a `shipping_label` branch in `handleStripeWebhook`; `packages/commerce/src/server/shipping-label.ts`. Migration `251_katie_order_shipment.sql`. `docker-compose.yml` katie service: four `EASYSHIP_*` lines. Design: `docs/SHIPPING_PLAN.md`. Screenshots: `C:\Users\Justi\AppData\Local\Temp\.playwright-mcp\shipping\`.
+**Left for you:**
+- Defaults chosen for the six questions (change any): box in the weight rule, no handling fee; Canada and the US, with customs; insurance offered and ticked; the collective's Easyship account, label paid to the platform; three options plus "show all"; phone asked on Stripe's page.
+- Fund the production Easyship account, then Katie fills /manage/shipping and the weights and switches Live.
+- Easyship webhook: add `https://pottery.arts-collective.com/api/shipping/webhook` in the Easyship dashboard and put its `webh_…` secret in `.env` as `EASYSHIP_WEBHOOK_SECRET` (then recreate the service). Until then tracking stays at "label bought".
+- Rebuild art-auction so the network's Stripe webhook records label payments too (until then the return hop and /manage/orders do it).
+- Migration 250 (art-auction's Easyship model, another session's) was applied together with 251.
+
+## 2026-11-07 · Channel moves to arts-collective.com/channel
+
+**Spotted:** the owner's Claude Design handoff for Channel replaces the first console (`/studio/channel`) with its own pages at `arts-collective.com/channel`.
+**Fixed:** `/channel` here now hands off to `<network>/channel?org=katie-the-potter` instead of `/studio/channel`. The Channel card on `/hub` is unchanged.
+**Where:** `src/app/channel/page.tsx`; the console and its status in `docs/open/channel.md` (repo root).
+**Left for you:** nothing to build: both sites were rebuilt at 12:58 EST and the hand-off is in this site's build. Not yet followed signed in.
+
+## 2026-11-07 · Shipping is now quote-only: buyers pay Katie, Katie buys the label
+
+**Spotted:** the owner's new direction: "keep it quote only for now, but offering the choice of shipper that they follow up with in parallel checkout. no fund production for now from platform stripe."
+**Fixed:**
+- **Quote only.** The collective buys no labels and the Easyship account needs no money: it only gives quotes (read-only `POST /rates`; no shipment, no label).
+- **Buyers still choose the carrier** after paying (up to three, "Show all carriers"), then pay that amount on a second, small Stripe page linked to the order.
+- **The shipping money is Katie's**, like her sale money, no commission: straight to her Stripe account once she has finished connecting it (destination charge, no application fee), otherwise the collective holds it for her in the ledger (one entry owed to her, less the usual card-fee estimate). Written at the same moment the payment is recorded, once only.
+- **Everyone sees the same choice:** the quote (courier, service, days, price, when it was quoted, the parcel, the addresses) is kept on the shipment, written on the Stripe line and its metadata, shown to the buyer ("Shipping paid: Canpar - Ground, est. 1 business day, $38.68. Katie will send tracking."), emailed to Katie ("Ship this order: …", with the address, box size and weight, and customs details for the US), and shown on a **Ship this** card in Orders with **Carrier + Tracking number → Mark shipped**. The buyer then gets the tracking by email.
+- **Insurance is Katie's setting** (she buys the label): "I'll insure parcels" (on to start) folds it into the price; "Let buyers choose" gives them a tick box instead.
+- **A note for Katie** on Shipping, the card and the email: the label may cost a little more or less than the quote; small differences are hers, buyers are never charged again.
+- **Switch:** Off / Test / On. The first label-buying design is kept but hidden behind a developer flag, labelled "Label buying — not enabled".
+- Found on the way: "Choose a different option" had a broken database update in the label flow (unquoted status); fixed.
+**Checked:** type-checks exit 0 for katie-the-potter, art-auction, artdirect, sunjay, elktours, innergathering, hidden-enneagram, arts-collective, ifac, danamccool (elastrocal: the same 3 old errors). Sandbox walkthrough signed in as the placeholder owner: Try it, an eTransfer test order, Choose shipping (desktop and phone), the parallel Stripe page's settings built for both money routes without sending (28 checks), the payment simulated with a made-up session through the return hop's own path (16 checks: shipment paid, Katie's ledger entry 3726 = 3868 less the 142 fee estimate; the onboarded route's accrual + payout checked inside a rolled-back transaction; no double recording), the Ship-this card, tracking entered, both emails composed (test mode logs them, sends nothing). No Stripe session or object, no production Easyship call.
+**Cleanup:** the test ledger entry and shipment row deleted (ledger and payout fingerprints identical before and after), test order ART-20261107-6749 cancelled (Tenmoku tea bowl available, no reservation), shipping Off, ship-from cleared, session deleted.
+**Where:** `src/lib/shipping/{settings,access,shipments,actions,notices}.ts`, `src/app/manage/shipping/page.tsx`, `src/app/manage/orders/page.tsx`, `src/components/manage/{ship-this,shipping-forms,order-actions}.tsx`, `src/app/orders/[id]/{page,shipping/page}.tsx`, `src/components/shipping-picker.tsx`, `src/app/api/shipping/return/route.ts`, `src/app/{shop.css,manage/manage.css}`, `scripts/shipping-quote-check.ts`. Shared, additive: `packages/checkout/src/server/shipping-label.ts` (+ new exports in `stripe.ts`, comment on the webhook branch), `packages/commerce/src/server/shipping-label.ts` (`recordShippingPaymentPaid`, `accrueShippingPayment`) + `index.ts` export. No migration. Design: `docs/SHIPPING_PLAN.md`. Screenshots: `C:\Users\Justi\AppData\Local\Temp\.playwright-mcp\shipping-quote\`.
+**Left for you:**
+- Katie switches it On herself (owner only): Shipping → ship-from → Try it → **On**. Her steps: `docs/ONBOARDING.md`, step 7.
+- Rebuild **art-auction** at a quiet moment so the network's Stripe webhook records shipping payments too; katie's return hop already does, and today's webhook ignores them harmlessly.
+- Refunding a shipping payment is by hand for now (Stripe dashboard plus a ledger reversal).
+
+## 2026-11-07 · Sharing card on Manage
+
+**Spotted:** onboarding Katie needs a way into connecting Instagram and Facebook from her own site.
+**Fixed:** Manage overview has a **Sharing** card: **Connect Instagram and Facebook** (hands off to Channel's Outlets on arts-collective.com, where she connects her accounts and makes her Page the shop's channel) and **Open Channel**. `/channel?to=outlets` lands on Outlets; `/channel` still lands on Channel Home.
+**Where:** `src/app/manage/page.tsx`, `src/app/channel/page.tsx`. Channel's side: `docs/open/channel.md` "Onboarders like Katie" (repo root).
+**Left for you:** nothing to build: live since the 18:20 EST rebuild of both sites. Her Channel shows her as `pottery.arts-collective.com` until her own domain is listed. Her sign-up still needs the Turnstile hostname.
+

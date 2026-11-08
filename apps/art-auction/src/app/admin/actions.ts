@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  adminHideArtwork,
+  adminShowArtwork,
   approveStore,
   cancelOrder,
   confirmOrderPaid,
@@ -11,7 +13,8 @@ import {
 } from "@elkdonis/commerce/server";
 import { getOrderById } from "@elkdonis/commerce/queries";
 import { isCardPaymentAvailable, refundStripeOrder } from "@elkdonis/checkout/stripe";
-import { requireAdmin } from "@/lib/marketplace-auth";
+import { requireAdmin, requireKeeper } from "@/lib/marketplace-auth";
+import { siteConfig } from "@/config/site";
 
 type Result = { ok: boolean; error?: string };
 
@@ -87,18 +90,37 @@ export async function adminRefundOrder(orderId: string, reason?: string): Promis
   }
 }
 
+// Show / hide (marketplace keepers: admins and owners of the market org).
+// Pausing a store drops its work from browse and blocks new orders; nothing is deleted.
 export async function adminPauseStore(storeId: string): Promise<void> {
-  const adminId = await requireAdmin();
+  const { userId: adminId } = await requireKeeper();
   await pauseStore(storeId, adminId);
   touch();
   revalidatePath("/");
 }
 
 export async function adminReactivateStore(storeId: string): Promise<void> {
-  const adminId = await requireAdmin();
+  const { userId: adminId } = await requireKeeper();
   await approveStore(storeId, adminId);
   touch();
   revalidatePath("/");
+}
+
+/** Hide one artwork from the public site (reversible; see `adminHideArtwork`). */
+export async function adminHideArtworkAction(artworkId: string): Promise<void> {
+  const { userId } = await requireKeeper();
+  await adminHideArtwork(artworkId, userId, siteConfig.marketplaceOrgId);
+  touch();
+  revalidatePath("/");
+  revalidatePath(`/artworks/${artworkId}`);
+}
+
+export async function adminShowArtworkAction(artworkId: string): Promise<void> {
+  await requireKeeper();
+  await adminShowArtwork(artworkId, siteConfig.marketplaceOrgId);
+  touch();
+  revalidatePath("/");
+  revalidatePath(`/artworks/${artworkId}`);
 }
 
 // ─── Money (ledger, settings, beneficiaries) ─────────────────────────────────
@@ -189,4 +211,14 @@ export async function adminApprovePayee(payeeId: string): Promise<Result> {
   } catch (err) {
     return fail(err);
   }
+}
+
+/** Who buys the label for a store's sales (migration 250). Network admins only. */
+export async function adminSetStoreShippingMode(storeId: string, formData: FormData): Promise<void> {
+  await requireAdmin();
+  const mode = String(formData.get("mode") ?? "");
+  const { setStoreShippingMode, SHIPPING_MODES } = await import("@elkdonis/commerce/shipping");
+  if (!(SHIPPING_MODES as string[]).includes(mode)) return;
+  await setStoreShippingMode(storeId, mode as (typeof SHIPPING_MODES)[number]);
+  touch();
 }

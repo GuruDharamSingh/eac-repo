@@ -76,6 +76,21 @@ an entry by id. Design and phases: `docs/open/LMS_ACTION_LAYER_BRIEF_2026-11-06.
   `src/lib/actions/run.ts`, `src/lib/cms/journey-actions.ts`); Sophia's studio step
   editor lists the catalogue through `LmsConnectors.taskCatalogue`.
 
+- Channel entries (scope `channel`, 2026-11-07; `docs/open/CHANNEL_REGISTRY_AND_BOARD_2026-11-07.md`):
+  `channel-next` (status only; `status.next` lists the moves, read through the host's
+  `sources.channelNext`), `channel-suggestion-accept`, `channel-suggestion-dismiss` (host pages
+  only), `channel-slot-fill`, `channel-plan-step`. Plans only: draft deliveries, plan steps, a
+  dismissed gap. The org is a claim settled by `resolveChannelOrg` (owners and guides, never
+  `oad`, no fallback); a refused claim is refused (`orgClaim` without `orgId`). Authorization
+  is `src/server/channel.ts` (the rules of arts-collective `lib/channel/actions.ts`). Channel
+  rows record actor kind 'user' from the host's pages and 'agent' (`door:<via>`) from others.
+  `COURSE_ACTIONS` leaves them out until `@elkdonis/lms` reads the scope.
+- Audit rows carry `actor_type` since 2026-11-07: 'human' for `via` 'app', 'system' for
+  'script', 'ai' for every other door (the column's CHECK allows those three).
+- Dock (2026-11-07): `dockChannel` adds the channel's top move on `/channel/*` (not Home) and
+  `/studio*` (`channelDockPath`); a routine step (`repeat: 'daily'`) done today gives way to the
+  next open step, and a routine course with every step done today to the next course.
+
 ## Rules
 
 - Never rename an id: published course versions store it and are immutable. Retire an

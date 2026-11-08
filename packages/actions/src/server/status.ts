@@ -10,8 +10,23 @@
 import { db } from '@elkdonis/db';
 import { OFF_FEED_KINDS, ARTIST_SPACE_ORG_ID, hasGainedSpace, canManageOrgPeople } from '@elkdonis/services';
 import type { ActionLinks, ActionStatus } from '../types';
+import type { ChannelNextMove } from '../channel';
 import { actionParams } from '../catalogue';
 import { getPaathDayStatus, type PaathDayStatus } from '@elkdonis/services/paath-day';
+
+/**
+ * Readers a host passes in for entries whose state is computed by the host's own
+ * model (2026-11-07). The registry does not import a host, so without the reader
+ * the check says it cannot tell, rather than computing a second, different list.
+ */
+export interface ActionSources {
+  /**
+   * The next moves on a channel's board, most pressing first (arts-collective:
+   * `channelNextSource` in src/lib/channel/next-source.ts, over the /channel loader).
+   * `orgId` null = the person's own channel, which carries the orgs they run.
+   */
+  channelNext?: (q: { userId: string; orgId: string | null; limit: number }) => Promise<ChannelNextMove[]>;
+}
 
 export interface StatusContext {
   userId: string;
@@ -24,6 +39,8 @@ export interface StatusContext {
   subjectId?: string | null;
   /** The day a routine step reads (YYYY-MM-DD); absent = today in the entry's own zone. */
   day?: string | null;
+  /** Host readers (`channel-next`). */
+  sources?: ActionSources;
 }
 
 /** Where the Akhand Path's day pages are (fourthwayBookreaders, basePath /books). */
@@ -263,6 +280,43 @@ export const CHECKS: Record<string, Check> = {
     const [o] = await db<Array<{ slug: string; subdomain_confirmed: boolean }>>`SELECT slug, subdomain_confirmed FROM organizations WHERE id = ${orgId} LIMIT 1`;
     if (!o) return none('Start an organisation first.');
     return o.subdomain_confirmed ? ok(`${o.slug} is live.`) : part(`${o.slug} is being set up; the collective confirms the address.`);
+  },
+  // Channel setup (2026-11-07): the three steps an onboarder like Katie takes before a first post.
+  async 'channel-connect'({ userId, links }) {
+    const href = `${links.hub}/channel/outlets?tab=instagram`;
+    const rows = await db<Array<{ provider: string }>>`
+      SELECT DISTINCT provider FROM user_connections
+      WHERE user_id = ${userId} AND status = 'connected' AND provider IN ('meta', 'instagram', 'threads')
+    `;
+    if (rows.length === 0) return { ...none('No Instagram, Facebook or Threads account connected yet.'), href };
+    const names = rows.map((r) => (r.provider === 'meta' ? 'Facebook and Instagram' : r.provider === 'instagram' ? 'Instagram' : 'Threads'));
+    return ok(`Connected: ${names.join(', ')}.`, href);
+  },
+  async 'channel-org-channel'({ orgId, links }) {
+    if (!orgId) return none('Start an organisation first.');
+    const href = `${links.hub}/channel/outlets?org=${encodeURIComponent(orgId)}&tab=facebook`;
+    const rows = await db<Array<{ label: string }>>`SELECT label FROM org_channels WHERE org_id = ${orgId} ORDER BY created_at LIMIT 3`;
+    if (rows.length === 0) return { ...none('No Page or account is the organisation’s channel yet.'), href };
+    return ok(`Posts go out through ${rows.map((r) => r.label || 'a connected account').join(', ')}.`, href);
+  },
+  async 'channel-first-post'({ userId, orgId, links }) {
+    const href = `${links.hub}/channel/new${orgId ? `?org=${encodeURIComponent(orgId)}` : ''}`;
+    const [row] = await db<Array<{ n: number }>>`
+      SELECT COUNT(*)::int AS n FROM publish_jobs
+      WHERE requested_by = ${userId} AND status = 'done' ${orgId ? db`AND org_id = ${orgId}` : db``}
+    `;
+    return row && row.n > 0 ? ok(`${row.n} post${row.n === 1 ? '' : 's'} sent.`, href) : { ...none('Nothing sent yet.'), href };
+  },
+  // The board's next moves, read through the host's reader (ActionSources). `orgId` is
+  // the org channel settled by actionOrgId (owners and guides); null = the person's own.
+  async 'channel-next'({ userId, orgId, links, sources }) {
+    const href = `${links.hub}/channel${orgId ? `?org=${encodeURIComponent(orgId)}` : ''}`;
+    if (!sources?.channelNext) return { ...none('This site cannot read the channel; open Channel to see what is next.'), href };
+    const moves = await sources.channelNext({ userId, orgId: orgId ?? null, limit: 5 });
+    if (!moves.length) return ok('Nothing is waiting in the channel.', href);
+    const top = moves[0];
+    const more = moves.length > 1 ? ` (and ${moves.length - 1} more)` : '';
+    return { done: false, partial: true, detail: `Next: ${top.title}${top.reason ? ` · ${top.reason}` : ''}${more}`, href, next: moves };
   },
 };
 

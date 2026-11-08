@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es2020", "module": "esnext", "moduleResolution": "bundler", "jsx": "react-jsx", "typeRoots": ["./node_modules/@types"],
+    "strict": false, "skipLibCheck": true, "noEmit": true, "types": [],
+    "baseUrl": ".",
+    "paths": { "next/server": ["./stubs/next-server.ts"], "next/navigation": ["./stubs/next-navigation.ts"], "@elkdonis/cms-ui/baroque-signup.css": ["./stubs/baroque-signup.css"] }
+  },
+  "files": ["index.ts"]
+}

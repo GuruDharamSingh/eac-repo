@@ -28,7 +28,9 @@ export async function runAction(id: string, input: unknown = undefined, opts: { 
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Sign in first.", code: "auth" };
   const entry = String(id);
-  const orgId = await actionOrgId(entry, user.id, opts?.org);
+  // A `channel` entry's claim is kept as asked: performAction refuses one that did not settle (2026-11-07).
+  const orgClaim = typeof opts?.org === "string" ? opts.org.slice(0, 64) : null;
+  const orgId = await actionOrgId(entry, user.id, orgClaim);
   const subjectId = typeof opts?.subject === "string" && opts.subject.trim() ? opts.subject.trim() : null;
-  return performAction(entry, { userId: user.id, email: user.email, orgId, subjectId }, input);
+  return performAction(entry, { userId: user.id, email: user.email, orgId, orgClaim, subjectId }, input);
 }

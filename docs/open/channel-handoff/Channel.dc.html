@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="stylesheet" href="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/styles.css"><script src="_ds/broadsheet-c4bee1de-2a28-4e48-bd39-342edd4790a9/_ds_bundle.js"></script><link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css"><style>body{margin:0;background:#e4e2df}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}.dv-turn{padding:40px 44px 32px;scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 15px/1.2 var(--font-heading);color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 13px/1.3 var(--font-body);color:#4a4848}.dv-card{max-width:100%;background:var(--color-bg);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}.dv-opt:target .dv-oid{background:#0088b0;color:#fff}.dv-next{margin:28px 0 0;font:13px/1.5 var(--font-body);color:#4a4848}</style></helmet>
+<section class="dv-turn" id="t3">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Piece pop-up, content library and plan.md</span></div>
+  <p style="max-width:860px;margin:0 0 28px;font-size:14px;line-height:1.55;color:#4a4848;text-wrap:pretty">Home stays as <a class="dv-oid" href="#1a">1a</a>, with <a class="dv-oid" href="#1b">1b</a> as its matrix view. The piece card on Home is now a face that grows into a wide surface, following the hub's Surface pattern: a kicker, a title, actions, a stack with a back link, and <code>?surface=</code> so it survives a reload. This round shows the artist's channel with their org alongside, and every post is tagged with the identity it went out under. Queue opens the piece board in <a class="dv-oid" href="#2b">2b</a>. Switch piece pushes the content library onto the stack. The library is the Content tab of network search, grouped by the sites this person belongs to. A piece's plan.md starts the day it's added to the queue, starts empty, and fills as you accept suggestions from the board. Agents in the action registry can read and edit it too.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Piece pop-up · opened from the card on Home: where it went, under which identity</div>
+      <div class="dv-card" style="position:relative;width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="home" owner="artist" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:24px;padding:30px 40px;overflow:hidden">
+          <h1 style="margin:0;font-size:36px">Channel</h1>
+          <div style="display:grid;grid-template-columns:360px minmax(0,1fr);gap:40px">
+            <div style="display:flex;flex-direction:column;gap:10px"><span style="height:70px;background:var(--color-surface)"></span><span style="height:70px;background:var(--color-surface)"></span><span style="height:70px;background:var(--color-surface)"></span><span style="height:70px;background:var(--color-surface)"></span></div>
+            <div style="height:420px;outline:2px solid var(--color-accent);outline-offset:4px;background:var(--color-surface)"></div>
+          </div>
+        </main>
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 30%, transparent)"></div>
+        <div style="position:absolute;top:36px;left:288px;right:44px;bottom:36px;display:flex;flex-direction:column;background:var(--color-bg);box-shadow:var(--shadow-lg);border-radius:4px;overflow:hidden">
+          <div style="display:flex;align-items:flex-start;gap:18px;padding:22px 26px 0">
+            <div style="width:84px;height:84px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+              <span style="display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">▣ Artwork<span style="display:inline-flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--color-neutral-700)"><span style="width:16px;height:16px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:7px;font-weight:600">GD</span>Yours · presented by Elkdonis Arts Collective</span></span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15">Salt Marsh, Low Tide</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">Oil on linen · 60 × 90 cm · $2,400</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:2px">
+              <button class="btn btn-ghost" style="white-space:nowrap"><i class="ph-duotone ph-arrows-left-right" style="font-size:16px"></i>Switch piece</button>
+              <button class="btn btn-icon btn-ghost" style="color:var(--color-text)" aria-label="Close"><i class="ph-duotone ph-x" style="font-size:18px"></i></button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:14px 26px 0 128px">
+            <button class="btn btn-primary" style="white-space:nowrap"><i class="ph-duotone ph-pencil-simple-line" style="font-size:16px"></i>New post</button>
+            <button class="btn btn-secondary" style="white-space:nowrap"><i class="ph-duotone ph-calendar-blank" style="font-size:16px"></i>Queue</button>
+            <button class="btn btn-secondary" style="white-space:nowrap"><i class="ph-duotone ph-arrow-square-out" style="font-size:16px"></i>Open in Studio</button>
+            <a href="#" style="font-size:13px;margin-left:8px">View on your page ↗</a>
+          </div>
+          <div style="display:flex;gap:2px;padding:0 26px;margin-top:18px;border-bottom:1px solid var(--color-divider)">
+            <span style="padding:8px 12px;border-bottom:2px solid var(--color-accent);margin-bottom:-1px;font-size:14px">Overview</span>
+            <span style="padding:8px 12px;font-size:14px;color:var(--color-neutral-700)">Plan <span class="tag tag-accent" style="padding:1px 6px;font-size:10px">3 waiting</span></span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:36px;padding:20px 26px 0">
+            <div style="display:flex;flex-direction:column;min-width:0">
+              <h6 style="margin:0 0 4px;color:var(--color-neutral-700)">Where it has gone</h6>
+              <sc-for list="{{ tl3 }}" as="e" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:48px 18px 20px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                  <span style="font-size:13px;color:var(--color-neutral-700);font-variant-numeric:tabular-nums">{{ e.date }}</span>
+                  <span title="{{ e.whoName }}" style="width:18px;height:18px;border-radius:{{ e.round }};background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:7px;font-weight:600">{{ e.ini }}</span>
+                  <i class="ph-duotone {{ e.icon }}" style="font-size:18px;color:{{ e.iconColor }}"></i>
+                  <div style="min-width:0;display:flex;flex-direction:column"><span style="font-size:14px">{{ e.label }}</span><span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.sub }}</span></div>
+                  <span class="tag {{ e.tag }}">{{ e.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+              <div style="display:flex;flex-direction:column">
+                <h6 style="margin:0 0 8px;color:var(--color-neutral-700)">Coverage by identity</h6>
+                <div style="display:grid;grid-template-columns:90px repeat(5,minmax(0,1fr));align-items:end;padding-bottom:6px;border-bottom:1px solid var(--color-divider)">
+                  <span></span>
+                  <sc-for list="{{ cov3cols }}" as="cc" hint-placeholder-count="5"><span title="{{ cc.name }}" style="display:flex;justify-content:center"><i class="ph-duotone {{ cc.icon }}" style="font-size:17px"></i></span></sc-for>
+                </div>
+                <sc-for list="{{ cov3 }}" as="cr" hint-placeholder-count="2">
+                  <div style="display:grid;grid-template-columns:90px repeat(5,minmax(0,1fr));align-items:center;min-height:52px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                    <span style="display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.2"><span style="width:18px;height:18px;flex:none;border-radius:{{ cr.round }};background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:7px;font-weight:600">{{ cr.ini }}</span>{{ cr.who }}</span>
+                    <sc-for list="{{ cr.cells }}" as="c" hint-placeholder-count="5">
+                      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0">
+                        <sc-if value="{{ c.filled }}"><i class="ph-duotone {{ c.icon }}" style="font-size:14px;color:{{ c.color }}"></i><span style="font-size:11px;color:{{ c.color }};white-space:nowrap">{{ c.text }}</span></sc-if>
+                        <sc-if value="{{ c.suggest }}"><button style="padding:2px 6px;border:1px dashed color-mix(in srgb, var(--color-accent) 50%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:11px;color:var(--color-accent-700);cursor:pointer;white-space:nowrap">+ {{ c.sugg }}</button></sc-if>
+                        <sc-if value="{{ c.blank }}"><span style="font-size:12px;color:var(--color-neutral-400)">—</span></sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ actionChips }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <h6 style="margin:0;color:var(--color-neutral-700)">Next for this piece</h6>
+                  <button style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:6px 11px;border:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:13px;color:var(--color-accent-700);cursor:pointer"><i class="ph-duotone ph-lightning" style="font-size:14px"></i>Post the walk-through to Instagram and Facebook</button>
+                  <button style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:6px 11px;border:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:13px;color:var(--color-accent-700);cursor:pointer"><i class="ph-duotone ph-lightning" style="font-size:14px"></i>Go live at the open studio</button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 26px;border-top:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-700)">
+            <span style="flex:1">Opened from Home · <code>?surface=piece:salt-marsh</code></span>
+            <span>Esc closes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Content library · Switch piece stacks it over <a class="dv-oid" href="#3a">3a</a>; it is the Content tab of network search (filter by kind)</div>
+      <div class="dv-card" style="position:relative;width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="home" owner="artist" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;padding:30px 40px"><h1 style="margin:0;font-size:36px">Channel</h1></main>
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 30%, transparent)"></div>
+        <div style="position:absolute;top:36px;left:288px;right:44px;bottom:36px;background:var(--color-bg);box-shadow:var(--shadow-lg);border-radius:4px;overflow:hidden;display:flex;align-items:flex-start;gap:18px;padding:22px 26px">
+          <div style="width:84px;height:84px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15;margin-top:18px">Salt Marsh, Low Tide</span>
+        </div>
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 16%, transparent)"></div>
+        <div style="position:absolute;top:58px;left:308px;right:64px;bottom:22px;display:flex;flex-direction:column;background:var(--color-bg);box-shadow:var(--shadow-lg);border-radius:4px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 18px 0 22px">
+            <a href="#" style="display:flex;align-items:center;gap:6px;font-size:13px;text-decoration:none"><i class="ph-duotone ph-caret-left" style="font-size:15px"></i>Salt Marsh, Low Tide</a>
+            <span style="flex:1"></span>
+            <button class="btn btn-icon btn-ghost" style="color:var(--color-text)" aria-label="Close"><i class="ph-duotone ph-x" style="font-size:18px"></i></button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:4px 22px 0">
+            <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Network search</span><span style="font-family:var(--font-heading);font-weight:600;font-size:24px">Content library</span></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;color:var(--color-neutral-700)"><i class="ph-duotone ph-magnifying-glass" style="font-size:16px;color:var(--color-text)"></i>Search your sites, or the whole network</div>
+              <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden;font-size:13px">
+                <span style="padding:7px 12px;background:var(--color-accent);color:var(--color-bg)">Yours</span>
+                <span style="padding:7px 12px;border-left:1px solid var(--color-divider)">Elkdonis Arts</span>
+                <span style="padding:7px 12px;border-left:1px solid var(--color-divider)">Whole network</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:18px">
+              <div style="display:flex;gap:2px;font-size:14px">
+                <span style="padding:6px 10px;border-bottom:2px solid var(--color-accent)">Content</span>
+                <span style="padding:6px 10px;color:var(--color-neutral-700)">People</span>
+                <span style="padding:6px 10px;color:var(--color-neutral-700)">Sites</span>
+                <span style="padding:6px 10px;color:var(--color-neutral-700)">Forum</span>
+              </div>
+              <span style="flex:1"></span>
+              <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden">
+                <sc-for list="{{ libKinds }}" as="lk" hint-placeholder-count="7">
+                  <button onClick="{{ lk.pick }}" style="padding:5px 10px;border:0;background:{{ lk.bg }};color:{{ lk.color }};font-family:inherit;font-size:12px;cursor:pointer">{{ lk.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:8px;padding:10px 22px 0">
+            <sc-for list="{{ libGroups }}" as="g" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                  <span style="width:18px;height:18px;flex:none;border-radius:{{ g.round }};background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:7px;font-weight:600">{{ g.ini }}</span>
+                  <span style="font-family:var(--font-heading);font-weight:600;font-size:14px">{{ g.site }}</span>
+                  <span style="font-size:12px;color:var(--color-neutral-700)">{{ g.host }}</span>
+                </div>
+                <sc-for list="{{ g.items }}" as="li" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:28px minmax(0,1fr) auto 210px;gap:14px;align-items:center;padding:3px 8px;border-radius:2px;background:{{ li.bg }};cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-text) 5%, transparent)">
+                    <div style="width:28px;height:28px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 6px,var(--color-neutral-300) 6px 7px)"></div>
+                    <div style="min-width:0;display:flex;align-items:baseline;gap:10px">
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ li.title }}</span>
+                      <span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap">{{ li.glyph }} {{ li.kind }}</span>
+                      <sc-if value="{{ li.isCurrent }}"><span class="tag tag-accent" style="padding:1px 6px;font-size:10px">Open now</span></sc-if>
+                    </div>
+                    <span style="display:flex;gap:4px"><sc-for list="{{ li.dots }}" as="d" hint-placeholder-count="7"><i class="ph-duotone {{ d.icon }}" style="font-size:13px;color:{{ d.color }}"></i></sc-for></span>
+                    <span style="font-size:12px;color:{{ li.statusColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ li.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 22px;border-top:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-700)">
+            <span style="flex:1">{{ libCount }} · only sites you belong to</span>
+            <span>Pick a piece to open its pop-up in place of this one</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="3c">
+      <div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Plan tab · plan.md starts empty when the piece joins the queue; accept suggestions to fill it (click Accept)</div>
+      <div class="dv-card" style="position:relative;width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="home" owner="artist" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;padding:30px 40px"><h1 style="margin:0;font-size:36px">Channel</h1></main>
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 30%, transparent)"></div>
+        <div style="position:absolute;top:36px;left:288px;right:44px;bottom:36px;display:flex;flex-direction:column;background:var(--color-bg);box-shadow:var(--shadow-lg);border-radius:4px;overflow:hidden">
+          <div style="display:flex;align-items:flex-start;gap:18px;padding:22px 26px 0">
+            <div style="width:84px;height:84px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+              <span style="display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">▣ Artwork<span style="display:inline-flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--color-neutral-700)"><span style="width:16px;height:16px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:7px;font-weight:600">GD</span>Yours · presented by Elkdonis Arts Collective</span></span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.15">Salt Marsh, Low Tide</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">Oil on linen · 60 × 90 cm · $2,400</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:2px">
+              <button class="btn btn-ghost" style="white-space:nowrap"><i class="ph-duotone ph-arrows-left-right" style="font-size:16px"></i>Switch piece</button>
+              <button class="btn btn-icon btn-ghost" style="color:var(--color-text)" aria-label="Close"><i class="ph-duotone ph-x" style="font-size:18px"></i></button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:14px 26px 0 128px">
+            <button class="btn btn-primary" style="white-space:nowrap"><i class="ph-duotone ph-pencil-simple-line" style="font-size:16px"></i>New post</button>
+            <button class="btn btn-secondary" style="white-space:nowrap"><i class="ph-duotone ph-calendar-blank" style="font-size:16px"></i>Queue</button>
+            <button class="btn btn-secondary" style="white-space:nowrap"><i class="ph-duotone ph-arrow-square-out" style="font-size:16px"></i>Open in Studio</button>
+            <a href="#" style="font-size:13px;margin-left:8px">View on your page ↗</a>
+          </div>
+          <div style="display:flex;gap:2px;padding:0 26px;margin-top:18px;border-bottom:1px solid var(--color-divider)">
+            <span style="padding:8px 12px;font-size:14px;color:var(--color-neutral-700)">Overview</span>
+            <span style="padding:8px 12px;border-bottom:2px solid var(--color-accent);margin-bottom:-1px;font-size:14px">Plan <span class="tag tag-accent" style="padding:1px 6px;font-size:10px">{{ planCount }}</span></span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;padding:18px 26px 0">
+            <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:14px">plan.md</span>
+                <span style="flex:1;font-size:12px;color:var(--color-neutral-700)">Started Nov 5, when you added this to the queue · last edited by you, Nov 6</span>
+                <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden;font-size:12px">
+                  <span style="padding:4px 10px;background:var(--color-accent);color:var(--color-bg)">Read</span>
+                  <span style="padding:4px 10px;border-left:1px solid var(--color-divider)">Markdown</span>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:20px 24px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Goal</span>
+                  <span style="font-size:15px;line-height:1.5">Find a buyer before the open studio on Nov 21.</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Dates</span>
+                  <span style="font-size:14px;line-height:1.5">Nov 12 · On painting the marsh, on your page and in Studio notes</span>
+                  <span style="font-size:14px;line-height:1.5">Nov 21 · Open studio, the painting on the east wall</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Steps</span>
+                  <sc-for list="{{ planSteps }}" as="ps" hint-placeholder-count="2">
+                    <div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:10px;align-items:start;font-size:14px;line-height:1.45">
+                      <span style="width:15px;height:15px;margin-top:3px;border-radius:2px;border:1.5px solid {{ ps.boxBorder }};background:{{ ps.box }};display:grid;place-items:center;color:var(--color-bg)"><i class="ph-duotone ph-check" style="font-size:10px;opacity:{{ ps.checkOp }}"></i></span>
+                      <span>{{ ps.text }}</span>
+                      <span style="font-size:11px;color:{{ ps.noteColor }};white-space:nowrap">{{ ps.note }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Notes</span>
+                  <span style="font-size:14px;line-height:1.5;font-style:italic">The detail from the second morning photographs better than the whole painting.</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><h6 style="margin:0;color:var(--color-neutral-700)">From the board</h6><span style="font-size:12px;color:var(--color-neutral-700)">{{ planCount }}</span></div>
+                <sc-for list="{{ planSugg }}" as="sg" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border:1px dashed var(--color-accent-400);border-radius:2px">
+                    <span style="font-size:14px;line-height:1.4">{{ sg.text }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-700)">{{ sg.why }}</span>
+                    <div style="display:flex;gap:12px;align-items:center">
+                      <button onClick="{{ sg.accept }}" class="btn btn-secondary" style="padding:4px 10px;font-size:13px">Accept</button>
+                      <a href="#" style="font-size:12px">Dismiss</a>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noSugg }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:13px;color:var(--color-neutral-700)">Nothing waiting. New gaps on the board appear here.</span>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="display:flex;align-items:center;gap:6px;font-size:13px"><i class="ph-duotone ph-plugs-connected" style="font-size:16px;color:var(--color-accent-700)"></i>Actions in the registry can read and edit this file.</span>
+                <span style="font-size:12px;color:var(--color-neutral-700)">Every change is listed with who made it.</span>
+              </div>
+              <a href="#" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="ph-duotone ph-calendar-blank" style="font-size:15px"></i>Open the board for this piece</a>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 26px;border-top:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-700)">
+            <span style="flex:1"><code>?surface=piece:salt-marsh&amp;tab=plan</code></span>
+            <span>Esc closes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "Queue calendar controls and timeline shifts on <a class="dv-oid" href="#2a">2a</a>" · "quick sheet with Instagram presets and filters" · "the org-only version of <a class="dv-oid" href="#3a">3a</a>"</p>
+</section>
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Queue as the planner, and quick vs focus editing</span></div>
+  <p style="max-width:860px;margin:0 0 22px;font-size:14px;line-height:1.55;color:#4a4848;text-wrap:pretty">From your notes on <a class="dv-oid" href="#1a">1a</a>, <a class="dv-oid" href="#1b">1b</a>, <a class="dv-oid" href="#1c">1c</a> and <a class="dv-oid" href="#1d">1d</a>. A piece is in motion when it has something dated ahead (a scheduled post, an event, a live), was published in the last two weeks, or sits on a to-do you wrote. In place of the count bands, the Queue shows routines from the Sophia dock. Each routine opens slots in the week, and gaps from the matrix are offered to fill them. Editing comes in three weights. A quick sheet fills a slot or a gap from wherever you are. New post handles cross-posting work that already exists. New long writing opens in Studio's writing room, which starts as a blank page and has a Blocks switch for page layouts.</p>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,250px));gap:28px;margin:0 0 30px">
+    <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">1 · Quick sheet</span><span style="font-size:13px;line-height:1.45;color:#4a4848">Fill a slot or a gap: one outlet, one caption. Opens over whatever you're on. <a class="dv-oid" href="#2c">2c</a></span></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">2 · Expanded sheet</span><span style="font-size:13px;line-height:1.45;color:#4a4848">The same sheet, wider: every outlet side by side, for adjusting a cross-post. <a class="dv-oid" href="#2c">2c</a></span></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">3 · New post</span><span style="font-size:13px;line-height:1.45;color:#4a4848">Work that's already out there, going to more places. Kept as <a class="dv-oid" href="#1d">1d</a>.</span></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">4 · Focus in Studio</span><span style="font-size:13px;line-height:1.45;color:#4a4848">New long writing on a blank page. Outlets wait until it's published. Blocks for page layouts. <a class="dv-oid" href="#2d">2d</a></span></div>
+  </div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Queue · the week: routines open slots, gaps wait in a tray to be placed</div>
+      <div class="dv-card" style="width:1280px;height:880px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="queue" ig-left="{{ igLeft }}" hint-size="244px,880px" style="height:880px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:24px;padding:30px 40px 26px;overflow:hidden">
+          <header style="display:flex;align-items:flex-end;gap:12px">
+            <div style="flex:1;min-width:0">
+              <h1 style="margin:0;font-size:36px">Queue</h1>
+              <p style="margin:6px 0 0;font-size:14px;color:var(--color-neutral-700)">What's planned this week, what your routines ask for, and what's still open.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:2px">
+              <button class="btn btn-icon btn-ghost"><i class="ph-duotone ph-caret-left" style="font-size:16px"></i></button>
+              <span style="font-size:14px;padding:0 6px;white-space:nowrap">Nov 8 – 14</span>
+              <button class="btn btn-icon btn-ghost"><i class="ph-duotone ph-caret-right" style="font-size:16px"></i></button>
+            </div>
+            <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden;font-size:13px">
+              <span style="padding:7px 12px;background:var(--color-accent);color:var(--color-bg)">Week</span>
+              <span style="padding:7px 12px;border-left:1px solid var(--color-divider)">Month</span>
+              <span style="padding:7px 12px;border-left:1px solid var(--color-divider)">Matrix</span>
+            </div>
+            <button class="btn btn-primary" style="white-space:nowrap"><i class="ph-duotone ph-pencil-simple-line" style="font-size:17px"></i>New post</button>
+          </header>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:baseline;gap:12px">
+              <h6 style="margin:0;color:var(--color-neutral-700)">Routines</h6>
+              <span style="flex:1;font-size:12px;color:var(--color-neutral-700)">From your dock in Sophia. Each one opens slots in the week.</span>
+              <a href="#" style="font-size:12px">Edit routines ↗</a>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px">
+              <sc-for list="{{ routines }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <i class="ph-duotone {{ r.icon }}" style="font-size:20px;margin-top:1px;color:{{ r.iconColor }}"></i>
+                  <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ r.name }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-700)">{{ r.cadence }}</span>
+                    <span style="font-size:13px;color:{{ r.statusColor }}">{{ r.status }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:0;padding-top:8px;border-top:1px solid var(--color-divider)">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px">
+                  <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ d.label }}</span>
+                  <span style="font-size:11px;color:var(--color-neutral-700)">{{ d.sub }}</span>
+                </div>
+                <sc-for list="{{ d.items }}" as="it" hint-placeholder-count="1">
+                  <sc-if value="{{ it.isEvent }}">
+                    <div style="display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:1.35;color:var(--color-accent-2-700)"><i class="ph-duotone ph-calendar-blank" style="font-size:14px;margin-top:1px;flex:none"></i><span>{{ it.text }}</span></div>
+                  </sc-if>
+                  <sc-if value="{{ it.isPost }}">
+                    <div style="display:flex;flex-direction:column;gap:5px;padding:9px 10px;background:var(--color-surface);border-radius:2px">
+                      <span style="font-size:11px;color:var(--color-neutral-700)">{{ it.piece }}</span>
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.25">{{ it.title }}</span>
+                      <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-neutral-700)">
+                        <sc-for list="{{ it.icons }}" as="ic"><i class="ph-duotone {{ ic.icon }}" style="font-size:14px;color:var(--color-text)"></i></sc-for>
+                        <span>{{ it.time }}</span>
+                      </span>
+                      <span class="tag {{ it.tag }}" style="align-self:flex-start;padding:2px 7px;font-size:10.5px">{{ it.stage }}</span>
+                      <sc-if value="{{ it.hasRoutine }}">
+                        <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-accent-700)"><i class="ph-duotone ph-repeat" style="font-size:12px"></i>{{ it.routine }}</span>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ it.isSlot }}">
+                    <div style="display:flex;flex-direction:column;gap:6px;padding:9px 10px;border:1px dashed var(--color-accent-400);border-radius:2px">
+                      <span style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--color-accent-800)"><i class="ph-duotone ph-instagram-logo" style="font-size:15px"></i>{{ it.text }}</span>
+                      <span style="font-size:11px;color:var(--color-neutral-700)">{{ it.sub }}</span>
+                      <sc-if value="{{ it.showChip }}">
+                        <button style="display:inline-flex;align-items:flex-start;gap:4px;padding:4px 7px;border:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:12px;line-height:1.3;text-align:left;color:var(--color-accent-700);cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-accent) 8%, transparent)"><i class="ph-duotone ph-lightning" style="font-size:13px;margin-top:1px;flex:none"></i>{{ it.sugg }}</button>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ it.isTodo }}">
+                    <div style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35"><span style="width:14px;height:14px;flex:none;margin-top:2px;border:1.5px solid var(--color-neutral-500);border-radius:2px"></span><span>{{ it.text }}</span></div>
+                  </sc-if>
+                  <sc-if value="{{ it.isSugg }}">
+                    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.35;color:var(--color-neutral-700)">
+                      <span>{{ it.text }}</span>
+                      <button style="display:inline-flex;align-items:flex-start;gap:4px;padding:4px 7px;border:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:12px;line-height:1.3;text-align:left;color:var(--color-accent-700);cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-accent) 8%, transparent)"><i class="ph-duotone ph-lightning" style="font-size:13px;margin-top:1px;flex:none"></i>{{ it.chip }}</button>
+                    </div>
+                  </sc-if>
+                </sc-for>
+                <span style="margin-top:auto;font-size:12px;color:var(--color-neutral-700)">+ To-do</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:baseline;gap:12px">
+              <h6 style="margin:0;color:var(--color-neutral-700)">Not placed yet · 4</h6>
+              <span style="font-size:12px;color:var(--color-neutral-700)">Drafts, gaps from the matrix and your own notes. Drag one onto a day or a slot.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+              <sc-for list="{{ tray }}" as="tr" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:12px minmax(0,1fr);gap:8px;padding:10px 12px;background:var(--color-surface);border-radius:2px;cursor:grab">
+                  <span style="color:var(--color-neutral-500);font-size:13px;line-height:1.3">⠿</span>
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                    <span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:{{ tr.kindColor }}">{{ tr.kind }}</span>
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.25">{{ tr.title }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-700)">{{ tr.sub }}</span>
+                    <span style="display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px;color:var(--color-accent-700)"><i class="ph-duotone ph-lightning" style="font-size:13px"></i>{{ tr.chip }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Piece board · <a class="dv-oid" href="#1b">1b</a> blown up for one artwork: outlets against weeks, gaps placed in time</div>
+      <div class="dv-card" style="width:1280px;height:840px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="artwork" ig-left="{{ igLeft }}" hint-size="244px,840px" style="height:840px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:22px;padding:26px 40px 24px;overflow:hidden">
+          <div style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-700)"><a href="#" style="text-decoration:none">Channel</a><span>/</span><a href="#" style="text-decoration:none">Artwork</a><span>/</span><span>Salt Marsh, Low Tide</span></div>
+          <header style="display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:22px;align-items:end">
+            <div style="height:84px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">▣ Artwork</span>
+              <h1 style="margin:0;font-size:32px">Salt Marsh, Low Tide</h1>
+              <span style="font-size:13px;color:var(--color-neutral-700)">Oil on linen · 60 × 90 cm · $2,400 · in Studio since Oct 28</span>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-secondary" style="white-space:nowrap">Open in Studio</button>
+              <button class="btn btn-primary" style="white-space:nowrap">New post about this</button>
+            </div>
+          </header>
+          <div style="position:relative;display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:132px repeat(7,minmax(0,1fr));padding-bottom:8px;border-bottom:1px solid var(--color-divider)">
+              <span></span>
+              <sc-for list="{{ weeks }}" as="w" hint-placeholder-count="7"><span style="padding:0 5px;font-size:12px;color:{{ w.color }}">{{ w.label }}</span></sc-for>
+            </div>
+            <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:132px repeat(7,minmax(0,1fr));min-height:54px;align-items:center;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                <span style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ph-duotone {{ ln.icon }}" style="font-size:17px"></i>{{ ln.name }}</span>
+                <sc-for list="{{ ln.cells }}" as="cell" hint-placeholder-count="7">
+                  <div style="display:flex;flex-direction:column;gap:4px;padding:5px;min-width:0">
+                    <sc-for list="{{ cell.items }}" as="bi">
+                      <div style="display:flex;gap:5px;align-items:flex-start;padding:5px 7px;border-radius:2px;background:{{ bi.bg }};border:1px {{ bi.borderStyle }} {{ bi.border }};color:{{ bi.color }};font-size:12px;line-height:1.3"><i class="ph-duotone {{ bi.icon }}" style="font-size:13px;margin-top:1px;flex:none"></i><span>{{ bi.text }}</span></div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div style="position:absolute;top:0;bottom:0;left:calc(132px + (100% - 132px) * 0.255);border-left:1.5px solid var(--color-accent-2);pointer-events:none"><span style="position:absolute;bottom:-18px;left:-14px;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-2-700)">Today</span></div>
+          </div>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:12px">
+            <span style="flex:1;font-size:13px;color:var(--color-neutral-700)">{{ boardNote }}</span>
+            <button class="btn btn-secondary">Dismiss</button>
+            <button class="btn btn-primary" style="white-space:nowrap">{{ boardCta }}</button>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Quick sheet · fills the Friday slot from <a class="dv-oid" href="#2a">2a</a>; Expand widens it to every outlet (click Expand)</div>
+      <div class="dv-card" style="position:relative;width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="queue" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:24px;padding:30px 40px;overflow:hidden">
+          <h1 style="margin:0;font-size:36px">Queue</h1>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
+            <sc-for list="{{ ghost }}" as="g" hint-placeholder-count="7">
+              <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--color-divider)">
+                <span style="width:44px;height:12px;background:var(--color-neutral-300)"></span>
+                <sc-for list="{{ g.blocks }}" as="b"><span style="height:{{ b.h }};background:var(--color-surface)"></span></sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </main>
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 30%, transparent)"></div>
+        <aside style="position:absolute;top:0;right:0;bottom:0;width:{{ sheetW }};display:flex;flex-direction:column;background:var(--color-bg);box-shadow:var(--shadow-lg);transition:width 280ms cubic-bezier(0.2,0.9,0.3,1)">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:12px 16px 14px 24px">
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="flex:1;min-width:0;display:flex;align-items:center;gap:5px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i class="ph-duotone ph-repeat" style="font-size:13px;flex:none"></i>Filling · Friday Instagram slot</span>
+              <button class="btn btn-ghost" onClick="{{ toggleWide }}" style="white-space:nowrap"><i class="ph-duotone {{ wideIcon }}" style="font-size:16px"></i>{{ wideLabel }}</button>
+              <button class="btn btn-icon btn-ghost" title="Open in Studio" aria-label="Open in Studio"><i class="ph-duotone ph-arrow-square-out" style="font-size:17px"></i></button>
+              <button class="btn btn-icon btn-ghost" style="color:var(--color-text)" aria-label="Close"><i class="ph-duotone ph-x" style="font-size:18px"></i></button>
+            </div>
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.2">Quote card: Winter Reading Circle</span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:{{ sheetCols }};gap:32px;padding:0 24px">
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--color-surface);border-radius:2px">
+                <div style="width:36px;height:36px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 6px,var(--color-neutral-300) 6px 7px)"></div>
+                <span style="flex:1;display:flex;flex-direction:column;min-width:0"><span style="font-size:11px;color:var(--color-neutral-700)">◈ Series · not on Instagram yet</span><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">Winter Reading Circle</span></span>
+                <a href="#" style="font-size:13px">Change</a>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <span style="font-size:12px;color:var(--color-neutral-700)">Quote, set on the card</span>
+                <div style="padding:8px 10px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:2px;font-size:15px;line-height:1.45">Four Thursday evenings, one book, and time to talk about it.</div>
+                <span style="font-size:12px;color:var(--color-neutral-700)">Taken from the series page. <a href="#">Pick another line</a></span>
+              </div>
+              <sc-if value="{{ quick }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:start">
+                  <div style="width:150px;height:150px;display:flex;flex-direction:column;justify-content:space-between;padding:14px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm)">
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.2">Four Thursday evenings, one book, and time to talk about it.</span>
+                    <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Winter Reading Circle</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.4">
+                    <span style="display:flex;gap:7px"><i class="ph-duotone ph-info" style="font-size:15px;flex:none;color:var(--color-accent-700)"></i>The card is set from the quote and sent as a JPEG.</span>
+                    <span style="display:flex;gap:7px"><i class="ph-duotone ph-info" style="font-size:15px;flex:none;color:var(--color-accent-700)"></i>Links aren't clickable on Instagram, so the sign-up link goes in bio.</span>
+                  </div>
+                </div>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-700)"><span>Caption</span><span>118 / 2,200</span></div>
+                <div style="padding:8px 10px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;line-height:1.5">The Winter Reading Circle starts Thursday, Nov 12 at 7 PM. Four evenings, one book. Sign-up link in bio.</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:12px;color:var(--color-neutral-700);margin-bottom:4px">Send to</span>
+                <div style="display:grid;grid-template-columns:20px 22px minmax(0,1fr);gap:10px;align-items:center;padding:6px 0">
+                  <span style="width:18px;height:18px;border-radius:2px;background:var(--color-accent);display:grid;place-items:center;color:var(--color-bg)"><i class="ph-duotone ph-check" style="font-size:12px"></i></span>
+                  <i class="ph-duotone ph-instagram-logo" style="font-size:19px"></i>
+                  <span style="font-size:14px">Instagram <span style="font-size:12px;color:var(--color-neutral-700)">· this slot</span></span>
+                </div>
+                <button onClick="{{ qFbToggle }}" style="display:grid;grid-template-columns:20px 22px minmax(0,1fr);gap:10px;align-items:center;padding:6px 0;background:none;border:0;text-align:left;font-family:inherit;color:inherit;cursor:pointer">
+                  <span style="width:18px;height:18px;border-radius:2px;border:1.5px solid {{ qFbBorder }};background:{{ qFbBg }};display:grid;place-items:center;color:var(--color-bg)"><i class="ph-duotone ph-check" style="font-size:12px;opacity:{{ qFbCheck }}"></i></span>
+                  <i class="ph-duotone ph-facebook-logo" style="font-size:19px"></i>
+                  <span style="font-size:14px">Also post to Facebook <span style="font-size:12px;color:var(--color-neutral-700)">· with the sign-up link</span></span>
+                </button>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0">
+                <i class="ph-duotone ph-clock" style="font-size:18px"></i>
+                <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px">Fri Nov 13, 10:00 AM</span><span style="font-size:12px;color:var(--color-neutral-700)">From your Instagram routine</span></span>
+                <a href="#" style="font-size:13px">Change</a>
+              </div>
+            </div>
+            <sc-if value="{{ wide }}" hint-placeholder-val="{{ false }}">
+              <div style="min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-content:start">
+                <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-instagram-logo" style="font-size:19px"></i><span style="flex:1;font-family:var(--font-heading);font-weight:600;font-size:15px">Instagram</span><span class="tag tag-accent">On</span></div>
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                    <div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:9px;font-weight:600">EA</span><span style="font-size:13px;font-weight:600">elkdonis.arts</span></div>
+                    <div style="aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between;padding:20px;background:var(--color-bg)">
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.2">Four Thursday evenings, one book, and time to talk about it.</span>
+                      <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Winter Reading Circle · from Nov 12</span>
+                    </div>
+                    <span style="font-size:13px;line-height:1.45"><strong style="font-weight:600">elkdonis.arts</strong> The Winter Reading Circle starts Thursday, Nov 12 at 7 PM… <span style="color:var(--color-neutral-700)">more</span></span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;min-width:0;opacity:1">
+                  <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-facebook-logo" style="font-size:19px"></i><span style="flex:1;font-family:var(--font-heading);font-weight:600;font-size:15px">Facebook</span><sc-if value="{{ qFbOn }}"><span class="tag tag-accent">On</span></sc-if></div>
+                  <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                    <div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:9px;font-weight:600">EA</span><span style="font-size:13px;font-weight:600">Elkdonis Arts Collective</span></div>
+                    <span style="font-size:13px;line-height:1.5">The Winter Reading Circle starts Thursday, Nov 12 at 7 PM. Four evenings, one book. Sign up on the site.</span>
+                    <div style="display:flex;flex-direction:column;border:1px solid var(--color-divider)">
+                      <div style="height:120px;display:flex;align-items:flex-end;padding:12px;background:var(--color-bg)"><span style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.2">Four Thursday evenings, one book…</span></div>
+                      <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--color-surface)"><span style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-700)">elkdonis-arts.org</span><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">Winter Reading Circle</span></div>
+                    </div>
+                  </div>
+                  <span style="font-size:12px;line-height:1.4;color:var(--color-neutral-700)">Facebook keeps the link, so its text says "Sign up on the site" in place of "link in bio".</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 24px 18px;border-top:1px solid var(--color-divider)">
+            <span style="flex:1;min-width:0;font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Saved to the queue as a draft</span>
+            <button class="btn btn-secondary" style="white-space:nowrap">Save draft</button>
+            <button class="btn btn-primary" style="white-space:nowrap">{{ qLabel }}</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2d">
+      <div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Focus · new writing opens in Studio's writing room, with no Channel chrome (switch views, and Text / Blocks)</div>
+      <div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column">
+        <div style="height:60px;flex:none;display:flex;align-items:center;gap:14px;padding:0 24px">
+          <a href="#" style="display:flex;align-items:center;gap:6px;font-size:13px;text-decoration:none;white-space:nowrap"><i class="ph-duotone ph-arrow-left" style="font-size:15px"></i>Content</a>
+          <span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap">Writing · follow-up to Salt Marsh, Low Tide</span>
+          <span style="flex:1"></span>
+          <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden">
+            <sc-for list="{{ fTabs }}" as="ft" hint-placeholder-count="3">
+              <button onClick="{{ ft.pick }}" style="padding:6px 12px;border:0;background:{{ ft.bg }};color:{{ ft.color }};font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap">{{ ft.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden">
+            <sc-for list="{{ fModes }}" as="fm" hint-placeholder-count="2">
+              <button onClick="{{ fm.pick }}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border:0;background:{{ fm.bg }};color:{{ fm.color }};font-family:inherit;font-size:13px;cursor:pointer"><i class="ph-duotone {{ fm.icon }}" style="font-size:14px"></i>{{ fm.label }}</button>
+            </sc-for>
+          </div>
+          <span style="flex:1"></span>
+          <span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap">Draft · 1,240 words · 6 min</span>
+          <button class="btn btn-secondary">Save</button>
+          <button class="btn btn-primary" style="white-space:nowrap">Publish…</button>
+        </div>
+        <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ fGrid }};justify-content:center;overflow:hidden">
+          <sc-if value="{{ showEditor }}" hint-placeholder-val="{{ true }}">
+            <div style="min-width:0;overflow:hidden;padding:44px 56px 0;display:flex;flex-direction:column;gap:18px">
+              <sc-if value="{{ fText }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:18px;max-width:660px">
+                  <div style="font-family:var(--font-heading);font-weight:600;font-size:44px;line-height:1.1;letter-spacing:-0.015em">On painting the marsh</div>
+                  <div style="font-size:20px;line-height:1.45;font-style:italic;color:var(--color-neutral-700)">Three mornings at low tide, and what the water leaves when it goes.</div>
+                  <p style="margin:8px 0 0;font-size:18px;line-height:1.75;text-wrap:pretty">The marsh only holds still for about an hour. At low tide the channels empty to a skin of silver, and the grass stands up out of the mud in clumps that look, from the bank, like brushwork already done.</p>
+                  <p style="margin:0;font-size:18px;line-height:1.75;text-wrap:pretty">I set the easel on the boardwalk the first morning and lost the light before I had the horizon in. The second morning I came earlier and painted only the water: the pale band where the sky sits in it, and the darker cuts where it runs off toward the river.</p>
+                  <p style="margin:0;font-size:18px;line-height:1.75;text-wrap:pretty">By the third morning the painting was mostly a record of the first two. I left the passages that went wrong<span style="display:inline-block;width:2px;height:1.1em;margin-left:1px;vertical-align:-0.15em;background:var(--color-accent)"></span></p>
+                </div>
+              </sc-if>
+              <sc-if value="{{ fBlk }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:10px;max-width:660px">
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start"><span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);padding-top:10px">Heading</span><div style="padding:6px 10px;border:1px dashed var(--color-neutral-400);font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.15">On painting the marsh</div></div>
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start"><span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);padding-top:10px">Text</span><div style="padding:8px 10px;border:1px dashed var(--color-neutral-400);font-size:16px;line-height:1.65">The marsh only holds still for about an hour. At low tide the channels empty to a skin of silver, and the grass stands up out of the mud in clumps that look, from the bank, like brushwork already done.</div></div>
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start"><span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);padding-top:10px">Artwork</span>
+                    <div style="position:relative;display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center;padding:10px;outline:2px solid var(--color-accent);background:var(--color-surface)">
+                      <div style="height:72px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                      <div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--font-heading);font-weight:600;font-size:16px">Salt Marsh, Low Tide</span><span style="font-size:13px;color:var(--color-neutral-700)">Oil on linen · 60 × 90 cm</span><span style="font-size:13px;color:var(--color-accent-700)">$2,400 · Enquire</span></div>
+                      <div style="position:absolute;top:-30px;right:0;display:flex;gap:2px;padding:3px;background:var(--color-bg);box-shadow:var(--shadow-md);border-radius:2px;font-size:15px;color:var(--color-neutral-800)"><span style="padding:3px 6px">⠿</span><i class="ph-duotone ph-arrow-up" style="padding:4px"></i><i class="ph-duotone ph-arrow-down" style="padding:4px"></i><i class="ph-duotone ph-dots-three" style="padding:4px"></i></div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start"><span style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);padding-top:10px">Image</span><div style="height:150px;border:1px dashed var(--color-neutral-400);background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);display:grid;place-items:center;font-size:11px;font-style:italic;color:var(--color-neutral-700)">detail, second morning</div></div>
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center"><span></span>
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px">
+                      <span style="display:flex;align-items:center;gap:4px;color:var(--color-accent-700)"><i class="ph-duotone ph-plus" style="font-size:14px"></i>Add block</span>
+                      <span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Text</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Image</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Artwork</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Video</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Quote</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Gallery</span><span style="padding:3px 9px;background:var(--color-surface);border-radius:2px">Sign-up</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showPreview }}" hint-placeholder-val="{{ false }}">
+            <div style="min-width:0;overflow:hidden;padding:40px 48px 0;display:flex;flex-direction:column;gap:14px;background:var(--color-neutral-100)">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Elkdonis Arts Collective · Studio notes</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1.12">On painting the marsh</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">Thursday, Nov 12 · 6 min read</span>
+              <div style="height:190px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);display:grid;place-items:center;font-size:11px;font-style:italic;color:var(--color-neutral-700)">cover: Salt Marsh, Low Tide</div>
+              <span style="font-size:18px;line-height:1.45;font-style:italic;color:var(--color-neutral-700)">Three mornings at low tide, and what the water leaves when it goes.</span>
+              <p style="margin:0;font-size:16px;line-height:1.7;text-wrap:pretty">The marsh only holds still for about an hour. At low tide the channels empty to a skin of silver, and the grass stands up out of the mud in clumps that look, from the bank, like brushwork already done.</p>
+            </div>
+          </sc-if>
+        </div>
+        <div style="height:46px;flex:none;display:flex;align-items:center;gap:18px;padding:0 24px;font-size:12px;color:var(--color-neutral-700)">
+          <span style="display:flex;align-items:center;gap:6px"><i class="ph-duotone ph-clock" style="font-size:14px"></i>Scheduled Thu Nov 12, 9:00 AM · Website, Studio notes</span>
+          <span style="display:flex;align-items:center;gap:6px"><i class="ph-duotone ph-repeat" style="font-size:14px;color:var(--color-accent-700)"></i>Fills this week's Studio note routine</span>
+          <span style="flex:1"></span>
+          <span>Once it's published, New post offers it to Instagram and Facebook</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "make <a class="dv-oid" href="#2b">2b</a> what opens when you click a piece on Home" · "Home with routines in place of the bands" · "the Month view of <a class="dv-oid" href="#2a">2a</a>" · "how a routine is set up in the Sophia dock"</p>
+</section>
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Channel: home and the unified composer</span></div>
+  <p style="max-width:820px;margin:0 0 28px;font-size:14px;line-height:1.55;color:#4a4848;text-wrap:pretty">Org scope, sample data for Elkdonis Arts Collective, set in Broadsheet. Inside Channel the Studio nav is replaced by one long left column: content kinds, outlets, audience and site settings, grouped like your reference screenshot. Home follows the hub console's idea that a count opens a list. The composer's Instagram notes come from <code>packages/meta</code>: links in captions aren't clickable, the limit is 25 posts a day, and images must be JPEG. Action-registry hooks appear only as light chips under a piece. Tweaks: action chips on/off, a live broadcast in progress, and Instagram posts left today.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Home · pieces in motion, each with a timeline of where it went (click a piece)</div>
+      <div class="dv-card" style="width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="home" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:24px;padding:30px 40px 0;overflow:hidden">
+          <header style="display:flex;align-items:flex-end;gap:12px">
+            <div style="flex:1;min-width:0">
+              <h1 style="margin:0;font-size:36px">Channel</h1>
+              <p style="margin:6px 0 0;font-size:14px;color:var(--color-neutral-700)">Each piece of work and the posts that followed it, across the site, Instagram and Facebook.</p>
+            </div>
+            <button class="btn btn-secondary"><i class="ph-duotone ph-broadcast" style="font-size:17px;color:var(--color-accent-2)"></i>Go live</button>
+            <button class="btn btn-primary"><i class="ph-duotone ph-pencil-simple-line" style="font-size:17px"></i>New post</button>
+          </header>
+          <sc-if value="{{ liveNow }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;background:var(--color-accent-2-100);border-radius:2px;color:var(--color-accent-2-800)">
+              <span style="width:9px;height:9px;flex:none;border-radius:50%;background:var(--color-accent-2)"></span>
+              <strong style="font-weight:600;font-size:14px">Live now</strong>
+              <span style="flex:1;font-size:14px">Print pull from the studio · on Instagram and the site · 38 watching · 24 min</span>
+              <button class="btn btn-secondary" style="color:var(--color-accent-2-800)">Open control room</button>
+            </div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Unfinished</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1">3</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">drafts written, not published</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">This week</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1">4</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">scheduled, one of them live</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Instagram</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1">{{ igLeft }}</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">of 25 posts left in the next 24 hours</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Not on Instagram</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.1">2</span>
+              <span style="font-size:13px;color:var(--color-neutral-700)">pieces only on the site and Facebook</span>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr);gap:40px">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <h6 style="margin:0 0 6px;color:var(--color-neutral-700)">In motion · 5</h6>
+              <sc-for list="{{ threads }}" as="t" hint-placeholder-count="5">
+                <button onClick="{{ t.pick }}" style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;align-items:center;padding:9px 10px;border:0;border-radius:2px;background:{{ t.bg }};text-align:left;cursor:pointer;font-family:inherit;color:inherit">
+                  <div style="width:52px;height:52px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                  <div style="min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span>
+                    <span style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--color-neutral-700)">
+                      <span style="white-space:nowrap">{{ t.glyph }} {{ t.kind }}</span>
+                      <span style="display:flex;gap:4px">
+                        <sc-for list="{{ t.dots }}" as="d" hint-placeholder-count="7"><i class="ph-duotone {{ d.icon }}" style="font-size:14px;color:{{ d.color }}"></i></sc-for>
+                      </span>
+                    </span>
+                    <span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.last }}</span>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+            <section style="min-width:0;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:end">
+                <div style="height:118px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);display:grid;place-items:center;font-size:11px;font-style:italic;color:var(--color-neutral-700)">cover image</div>
+                <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+                  <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">{{ sel.glyph }} {{ sel.kind }}</span>
+                  <h2 style="margin:0;font-size:28px">{{ sel.title }}</h2>
+                  <span style="font-size:13px;color:var(--color-neutral-700)">{{ sel.meta }}</span>
+                  <div style="display:flex;gap:18px;margin-top:6px;font-size:13px">
+                    <a href="#">Open in Studio</a>
+                    <a href="#">View on the site ↗</a>
+                    <a href="#">New post about this</a>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <h6 style="margin:0 0 4px;color:var(--color-neutral-700)">Where it has gone</h6>
+                <sc-for list="{{ sel.timeline }}" as="e" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:56px 24px minmax(0,1fr) auto;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                    <span style="font-size:13px;color:var(--color-neutral-700);font-variant-numeric:tabular-nums">{{ e.date }}</span>
+                    <i class="ph-duotone {{ e.icon }}" style="font-size:19px;color:{{ e.iconColor }}"></i>
+                    <div style="min-width:0;display:flex;flex-direction:column">
+                      <span style="font-size:14px">{{ e.label }}</span>
+                      <span style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.outlet }} · {{ e.sub }}</span>
+                    </div>
+                    <span class="tag {{ e.tag }}">{{ e.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ actionChips }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <h6 style="margin:0;color:var(--color-neutral-700)">Next for this piece</h6>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px">
+                    <sc-for list="{{ sel.chips }}" as="c" hint-placeholder-count="3">
+                      <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:13px;color:var(--color-accent-700);cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-accent) 8%, transparent)"><i class="ph-duotone ph-lightning" style="font-size:14px"></i>{{ c }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Home · coverage matrix: pieces against outlets, gaps become suggestions</div>
+      <div class="dv-card" style="width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="home" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:22px;padding:30px 40px 0;overflow:hidden">
+          <header style="display:flex;align-items:flex-end;gap:12px">
+            <div style="flex:1;min-width:0">
+              <h1 style="margin:0;font-size:36px">Channel</h1>
+              <p style="margin:6px 0 0;font-size:14px;color:var(--color-neutral-700)">Where each piece has been published, and where it hasn't yet.</p>
+            </div>
+            <button class="btn btn-secondary"><i class="ph-duotone ph-broadcast" style="font-size:17px;color:var(--color-accent-2)"></i>Go live</button>
+            <button class="btn btn-primary"><i class="ph-duotone ph-pencil-simple-line" style="font-size:17px"></i>New post</button>
+          </header>
+          <sc-if value="{{ liveNow }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;background:var(--color-accent-2-100);border-radius:2px;color:var(--color-accent-2-800)">
+              <span style="width:9px;height:9px;flex:none;border-radius:50%;background:var(--color-accent-2)"></span>
+              <strong style="font-weight:600;font-size:14px">Live now</strong>
+              <span style="flex:1;font-size:14px">Print pull from the studio · on Instagram and the site · 38 watching · 24 min</span>
+              <button class="btn btn-secondary" style="color:var(--color-accent-2-800)">Open control room</button>
+            </div>
+          </sc-if>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden;font-size:13px">
+              <span style="padding:6px 12px;background:var(--color-accent);color:var(--color-bg)">All</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Artwork</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Writing</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Video</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Series</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Meeting</span>
+            </div>
+            <span style="flex:1"></span>
+            <span style="display:flex;gap:16px;font-size:12px;color:var(--color-neutral-700)">
+              <span style="display:flex;align-items:center;gap:4px"><i class="ph-duotone ph-check" style="font-size:14px;color:var(--color-text)"></i>Published</span>
+              <span style="display:flex;align-items:center;gap:4px"><i class="ph-duotone ph-clock" style="font-size:14px;color:var(--color-accent-700)"></i>Scheduled</span>
+              <span style="display:flex;align-items:center;gap:4px"><i class="ph-duotone ph-pencil-simple" style="font-size:14px;color:var(--color-neutral-700)"></i>Draft</span>
+            </span>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:minmax(0,1.8fr) repeat(7,minmax(0,1fr));align-items:end;padding-bottom:8px;border-bottom:1px solid var(--color-divider)">
+              <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700)">Piece</span>
+              <sc-for list="{{ cols }}" as="col" hint-placeholder-count="7">
+                <span style="display:flex;flex-direction:column;gap:3px;padding:0 6px;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-700)"><i class="ph-duotone {{ col.icon }}" style="font-size:18px;color:var(--color-text)"></i>{{ col.name }}</span>
+              </sc-for>
+            </div>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(0,1.8fr) repeat(7,minmax(0,1fr));align-items:center;min-height:64px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)" style-hover="background:color-mix(in srgb, var(--color-text) 3%, transparent)">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0;padding-right:8px">
+                  <div style="width:40px;height:40px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 6px,var(--color-neutral-300) 6px 7px)"></div>
+                  <div style="min-width:0;display:flex;flex-direction:column">
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.25">{{ r.title }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-700)">{{ r.glyph }} {{ r.kind }}</span>
+                  </div>
+                </div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                  <div style="display:flex;align-items:center;gap:5px;min-width:0;padding:0 6px">
+                    <sc-if value="{{ c.filled }}">
+                      <i class="ph-duotone {{ c.icon }}" style="font-size:15px;color:{{ c.color }}"></i>
+                      <span style="font-size:13px;color:{{ c.color }};white-space:nowrap">{{ c.text }}</span>
+                    </sc-if>
+                    <sc-if value="{{ c.suggest }}">
+                      <button style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border:1px dashed color-mix(in srgb, var(--color-accent) 50%, transparent);background:transparent;border-radius:2px;font-family:inherit;font-size:12px;color:var(--color-accent-700);cursor:pointer;white-space:nowrap" style-hover="background:color-mix(in srgb, var(--color-accent) 8%, transparent)">+ {{ c.sugg }}</button>
+                    </sc-if>
+                    <sc-if value="{{ c.blank }}">
+                      <span style="font-size:13px;color:var(--color-neutral-400)">—</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h6 style="margin:0;color:var(--color-neutral-700)">Coming up · Nov 8 – 14</h6>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
+              <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;flex-direction:column;gap:6px;min-height:76px;padding-top:8px;border-top:1px solid var(--color-divider)">
+                  <span style="font-size:12px;color:var(--color-neutral-700)">{{ d.label }}</span>
+                  <sc-for list="{{ d.items }}" as="it">
+                    <div style="display:flex;gap:6px;align-items:flex-start;font-size:13px;line-height:1.3;color:{{ it.color }}"><i class="ph-duotone {{ it.icon }}" style="font-size:15px;margin-top:1px;flex:none"></i><span>{{ it.text }}</span></div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Composer · one post, per-outlet overrides in tabs (toggle outlets, switch tabs)</div>
+      <div class="dv-card" style="width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr) 392px">
+        <dc-import name="ChannelNav" active="compose" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:18px;padding:26px 36px 0;overflow:hidden">
+          <div style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-700)"><a href="#" style="text-decoration:none">Channel</a><span>/</span><a href="#" style="text-decoration:none">Artwork</a><span>/</span><a href="#" style="text-decoration:none">Salt Marsh, Low Tide</a><span>/</span><span>New post</span></div>
+          <h1 style="margin:0;font-size:32px">New post</h1>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 12px;background:var(--color-surface);border-radius:2px">
+            <div style="width:44px;height:44px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 6px,var(--color-neutral-300) 6px 7px)"></div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <span style="font-size:12px;color:var(--color-neutral-700)">About</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">Salt Marsh, Low Tide</span>
+            </div>
+            <span style="font-size:12px;color:var(--color-neutral-700)">▣ Artwork · in Studio since Oct 28</span>
+            <button class="btn btn-ghost">Change</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span style="font-size:12px;color:var(--color-neutral-700)">Post as</span>
+            <div style="display:inline-flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden;font-size:13px">
+              <span style="padding:6px 12px;background:var(--color-accent);color:var(--color-bg)">Artwork</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Writing</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Video</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Series</span>
+              <span style="padding:6px 12px;border-left:1px solid var(--color-divider)">Meeting</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:12px;color:var(--color-neutral-700)">Title</span>
+            <div style="padding:8px 10px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:2px;font-size:15px">Salt Marsh, Low Tide</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:12px;color:var(--color-neutral-700)">Text</span>
+            <div style="border:1px solid var(--color-divider);border-radius:2px;background:var(--color-surface)">
+              <div style="display:flex;align-items:center;gap:14px;padding:8px 12px;border-bottom:1px solid var(--color-divider);font-size:17px;color:var(--color-neutral-800)">
+                <i class="ph-duotone ph-text-b"></i><i class="ph-duotone ph-text-italic"></i><i class="ph-duotone ph-text-underline"></i>
+                <span style="width:1px;height:16px;background:var(--color-divider)"></span>
+                <i class="ph-duotone ph-link"></i><i class="ph-duotone ph-list-bullets"></i><i class="ph-duotone ph-list-numbers"></i><i class="ph-duotone ph-quotes"></i>
+                <span style="width:1px;height:16px;background:var(--color-divider)"></span>
+                <i class="ph-duotone ph-image"></i><i class="ph-duotone ph-film-strip"></i>
+              </div>
+              <div style="padding:12px 14px;min-height:118px;font-size:15px;line-height:1.6;text-wrap:pretty">
+                <p style="margin:0 0 10px">Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out. Oil on linen, 60 × 90 cm.</p>
+                <p style="margin:0">Available through the studio: <a href="#">elkdonis-arts.org/work/salt-marsh</a></p>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:12px;color:var(--color-neutral-700)">Images · from the artwork in Studio</span>
+            <div style="display:flex;gap:10px">
+              <div style="position:relative;width:88px;height:88px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);outline:2px solid var(--color-accent);outline-offset:2px"><span class="tag tag-accent" style="position:absolute;left:4px;bottom:4px;padding:1px 6px;font-size:10px">Cover</span></div>
+              <div style="width:88px;height:88px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+              <div style="width:88px;height:88px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+              <div style="width:88px;height:88px;border:1px dashed var(--color-neutral-500);display:grid;place-items:center;color:var(--color-neutral-700)"><i class="ph-duotone ph-plus" style="font-size:20px"></i></div>
+            </div>
+          </div>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:14px 0 18px;border-top:1px solid var(--color-divider)">
+            <span style="flex:1;min-width:0;font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Changes saved at 1:24 PM</span>
+            <button class="btn btn-secondary" style="white-space:nowrap"><i class="ph-duotone ph-clock" style="font-size:16px"></i>Publish now<i class="ph-duotone ph-caret-down" style="font-size:12px"></i></button>
+            <button class="btn btn-secondary" style="white-space:nowrap">Save draft</button>
+            <button class="btn btn-primary" style="white-space:nowrap">{{ publishLabel }}</button>
+          </div>
+        </main>
+        <aside style="min-width:0;display:flex;flex-direction:column;gap:16px;padding:26px 24px;background:var(--color-surface);overflow:hidden">
+          <h6 style="margin:0;color:var(--color-neutral-700)">Send to</h6>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ outlets }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.toggle }}" style="display:grid;grid-template-columns:20px 22px minmax(0,1fr);gap:12px;align-items:center;padding:8px 0;background:none;border:0;text-align:left;cursor:pointer;font-family:inherit;color:inherit;opacity:{{ o.opacity }}">
+                <span style="width:18px;height:18px;border-radius:2px;border:1.5px solid {{ o.boxBorder }};background:{{ o.boxBg }};display:grid;place-items:center;color:var(--color-bg)"><i class="ph-duotone ph-check" style="font-size:12px;opacity:{{ o.checkOpacity }}"></i></span>
+                <i class="ph-duotone {{ o.icon }}" style="font-size:20px"></i>
+                <span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:14px">{{ o.name }}</span><span style="font-size:12px;color:var(--color-neutral-700)">{{ o.sub }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:2px;border-bottom:1px solid var(--color-divider)">
+            <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3">
+              <button onClick="{{ tb.pick }}" style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:none;border:0;border-bottom:2px solid {{ tb.rule }};margin-bottom:-1px;font-family:inherit;font-size:13px;color:{{ tb.color }};cursor:pointer"><i class="ph-duotone {{ tb.icon }}" style="font-size:15px"></i>{{ tb.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ tabIg }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-700)"><span>Caption for Instagram</span><span>238 / 2,200</span></div>
+              <div style="padding:10px 12px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;line-height:1.5;white-space:pre-line">New work: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out. Oil on linen, 60 × 90 cm. <mark style="background:var(--color-accent-100);color:var(--color-accent-800)">Link in bio.</mark>
+
+#oilpainting #saltmarsh #elkdonisarts</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.4">
+                <div style="display:flex;gap:8px"><i class="ph-duotone ph-info" style="font-size:16px;flex:none;color:var(--color-accent-700)"></i><span>Links in a caption aren't clickable, so the site link became "Link in bio".</span></div>
+                <div style="display:flex;gap:8px"><i class="ph-duotone ph-info" style="font-size:16px;flex:none;color:var(--color-accent-700)"></i><span>The cover goes out as a JPEG. Instagram rejects PNG.</span></div>
+              </div>
+              <a href="#" style="font-size:13px">Use the main text instead</a>
+            </div>
+          </sc-if>
+          <sc-if value="{{ tabSite }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:12px;color:var(--color-neutral-700)">Feed</span><div style="padding:7px 10px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;display:flex;justify-content:space-between">Artwork<i class="ph-duotone ph-caret-down" style="font-size:12px;align-self:center"></i></div></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:12px;color:var(--color-neutral-700)">Address</span><div style="padding:7px 10px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;font-size:14px">/work/salt-marsh</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:12px;color:var(--color-neutral-700)">Summary · shown in listings and search</span><div style="padding:8px 10px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;line-height:1.45">Oil on linen, painted over three mornings at the edge of the marsh at low tide.</div></div>
+              <div style="display:flex;gap:18px;font-size:13px">
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:16px;height:16px;border-radius:2px;background:var(--color-accent);display:grid;place-items:center;color:var(--color-bg)"><i class="ph-duotone ph-check" style="font-size:11px"></i></span>First on homepage</span>
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:16px;height:16px;border-radius:2px;border:1.5px solid var(--color-neutral-500)"></span>Pinned</span>
+              </div>
+              <span style="font-size:13px;color:var(--color-neutral-700)">Uses the main text and all three images.</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ tabFb }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <span style="font-size:12px;color:var(--color-neutral-700)">Post text for Facebook</span>
+              <div style="padding:10px 12px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;font-size:14px;line-height:1.5">New work in the studio: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out.</div>
+              <div style="display:flex;flex-direction:column;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:2px;overflow:hidden">
+                <div style="height:110px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-700)">elkdonis-arts.org</span><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">Salt Marsh, Low Tide</span></div>
+              </div>
+              <span style="font-size:13px;color:var(--color-neutral-700)">The link preview is read from the site page, so it publishes after the site.</span>
+            </div>
+          </sc-if>
+        </aside>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Composer · shared text on top, each outlet as a live preview beside the others</div>
+      <div class="dv-card" style="width:1280px;height:820px;display:grid;grid-template-columns:244px minmax(0,1fr)">
+        <dc-import name="ChannelNav" active="compose" ig-left="{{ igLeft }}" hint-size="244px,820px" style="height:820px"></dc-import>
+        <main style="min-width:0;display:flex;flex-direction:column;gap:18px;padding:26px 36px 24px;overflow:hidden">
+          <header style="display:flex;align-items:flex-end;gap:10px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-700)"><a href="#" style="text-decoration:none">Channel</a><span>/</span><a href="#" style="text-decoration:none">Salt Marsh, Low Tide</a><span>/</span><span>New post</span></div>
+              <h1 style="margin:0;font-size:32px">New post</h1>
+            </div>
+            <span style="font-size:12px;color:var(--color-neutral-700);margin-right:6px;align-self:center">Saved 1:24 PM</span>
+            <button class="btn btn-secondary"><i class="ph-duotone ph-clock" style="font-size:16px"></i>Publish now<i class="ph-duotone ph-caret-down" style="font-size:12px"></i></button>
+            <button class="btn btn-secondary">Save draft</button>
+            <button class="btn btn-primary">{{ publishLabel }}</button>
+          </header>
+          <div style="display:grid;grid-template-columns:132px minmax(0,1fr);gap:20px;padding:16px;background:var(--color-surface);border-radius:2px">
+            <div style="height:132px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);display:grid;place-items:center;font-size:11px;font-style:italic;color:var(--color-neutral-700)">cover image</div>
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Shared text</span><span style="font-size:12px;color:var(--color-neutral-700)">Every outlet below starts from this. Edit one and the rest keep the shared version.</span></div>
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:22px">Salt Marsh, Low Tide</div>
+              <div style="font-size:14px;line-height:1.55;text-wrap:pretty">Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out. Oil on linen, 60 × 90 cm. Available through the studio: <a href="#">elkdonis-arts.org/work/salt-marsh</a></div>
+              <div style="display:flex;gap:8px;margin-top:2px;font-size:12px;color:var(--color-neutral-700)"><span>▣ Artwork</span><span>·</span><span>3 images</span><span>·</span><a href="#">Open the full editor</a></div>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+            <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-globe" style="font-size:20px"></i><span style="flex:1;font-family:var(--font-heading);font-weight:600;font-size:15px">Website</span><span class="tag tag-accent">On</span></div>
+              <span style="font-size:12px;color:var(--color-neutral-700)">Artwork feed · publishes first, now</span>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Artwork</span>
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.15">Salt Marsh, Low Tide</span>
+                <div style="height:150px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                <span style="font-size:13px;line-height:1.5">Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out.</span>
+                <span style="font-size:13px;color:var(--color-accent-700)">$2,400 · Enquire</span>
+              </div>
+              <span style="font-size:12px;color:var(--color-neutral-700)">Same as shared text</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-instagram-logo" style="font-size:20px"></i><span style="flex:1;font-family:var(--font-heading);font-weight:600;font-size:15px">Instagram</span><span class="tag tag-accent">On</span></div>
+              <span style="font-size:12px;color:var(--color-neutral-700)">@elkdonis.arts · {{ igLeft }} of 25 left today</span>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:10px;font-weight:600">EA</span><span style="flex:1;font-size:13px;font-weight:600">elkdonis.arts</span><i class="ph-duotone ph-dots-three" style="font-size:16px"></i></div>
+                <div style="aspect-ratio:1/1;max-height:220px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                <span style="font-size:13px;line-height:1.45"><strong style="font-weight:600">elkdonis.arts</strong> New work: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh… <span style="color:var(--color-neutral-700)">more</span></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:1.4">
+                <span style="display:flex;gap:6px;color:var(--color-accent-700)"><i class="ph-duotone ph-pencil-simple" style="font-size:14px;flex:none"></i>Edited here: link replaced with "Link in bio", 3 hashtags added</span>
+                <a href="#">Edit for Instagram</a>
+              </div>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:8px"><i class="ph-duotone ph-facebook-logo" style="font-size:20px"></i><span style="flex:1;font-family:var(--font-heading);font-weight:600;font-size:15px">Facebook</span><span class="tag tag-accent">On</span></div>
+              <span style="font-size:12px;color:var(--color-neutral-700)">Elkdonis Arts Collective page · after the site</span>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:10px;font-weight:600">EA</span><span style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600">Elkdonis Arts Collective</span><span style="font-size:11px;color:var(--color-neutral-700)">Just now</span></span></div>
+                <span style="font-size:13px;line-height:1.5">New work in the studio: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out.</span>
+                <div style="display:flex;flex-direction:column;border:1px solid var(--color-divider)">
+                  <div style="height:120px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                  <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--color-surface)"><span style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-700)">elkdonis-arts.org</span><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">Salt Marsh, Low Tide</span></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:1.4">
+                <span style="display:flex;gap:6px;color:var(--color-accent-700)"><i class="ph-duotone ph-pencil-simple" style="font-size:14px;flex:none"></i>Edited here: link moved into a preview card</span>
+                <a href="#">Edit for Facebook</a>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Mobile composer · write, then review each outlet before publishing</div>
+      <div class="dv-card" style="width:840px;display:flex;gap:40px;padding:40px;background:var(--color-neutral-200)">
+        <div style="width:360px;height:740px;flex:none;border-radius:36px;border:1px solid var(--color-divider);background:var(--color-bg);box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600"><span>1:24</span><span style="display:flex;gap:6px;font-size:15px"><i class="ph-duotone ph-cell-signal-full"></i><i class="ph-duotone ph-battery-high"></i></span></div>
+          <div style="height:52px;flex:none;display:flex;align-items:center;padding:0 8px">
+            <button style="width:44px;height:44px;display:grid;place-items:center;background:none;border:0;color:var(--color-text);font-size:22px"><i class="ph-duotone ph-x"></i></button>
+            <span style="flex:1;text-align:center;font-family:var(--font-heading);font-weight:600;font-size:17px">New post</span>
+            <button style="height:44px;padding:0 12px;background:none;border:0;font-family:var(--font-heading);font-weight:600;font-size:15px;color:var(--color-accent-700)">Review</button>
+          </div>
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;padding:6px 20px 16px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--color-surface);border-radius:2px;min-height:44px">
+              <div style="width:40px;height:40px;flex:none;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 6px,var(--color-neutral-300) 6px 7px)"></div>
+              <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:11px;color:var(--color-neutral-700)">About · ▣ Artwork</span><span style="font-family:var(--font-heading);font-weight:600;font-size:15px">Salt Marsh, Low Tide</span></span>
+              <i class="ph-duotone ph-caret-right" style="font-size:16px;color:var(--color-neutral-700)"></i>
+            </div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;line-height:1.2">Salt Marsh, Low Tide</div>
+            <div style="font-size:16px;line-height:1.55;text-wrap:pretty">Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out. Oil on linen, 60 × 90 cm. Available through the studio: <a href="#">elkdonis-arts.org/work/salt-marsh</a></div>
+            <div style="display:flex;gap:8px">
+              <div style="width:72px;height:72px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px);outline:2px solid var(--color-accent);outline-offset:2px"></div>
+              <div style="width:72px;height:72px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+              <div style="width:72px;height:72px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+              <div style="width:72px;height:72px;border:1px dashed var(--color-neutral-500);display:grid;place-items:center;color:var(--color-neutral-700);font-size:20px"><i class="ph-duotone ph-camera"></i></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto">
+              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-700)">Send to</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ mChips }}" as="m" hint-placeholder-count="4">
+                  <button onClick="{{ m.toggle }}" style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:2px;border:1px solid {{ m.border }};background:{{ m.bg }};color:{{ m.color }};opacity:{{ m.opacity }};font-family:inherit;font-size:14px;cursor:pointer"><i class="ph-duotone {{ m.icon }}" style="font-size:18px"></i>{{ m.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:10px 20px 22px;display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-700)"><span>Saved 1:24 PM</span><span style="display:flex;gap:16px;font-size:20px;color:var(--color-neutral-800)"><i class="ph-duotone ph-text-b"></i><i class="ph-duotone ph-link"></i><i class="ph-duotone ph-film-strip"></i></span></div>
+        </div>
+
+        <div style="width:360px;height:740px;flex:none;border-radius:36px;border:1px solid var(--color-divider);background:var(--color-bg);box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600"><span>1:25</span><span style="display:flex;gap:6px;font-size:15px"><i class="ph-duotone ph-cell-signal-full"></i><i class="ph-duotone ph-battery-high"></i></span></div>
+          <div style="height:52px;flex:none;display:flex;align-items:center;padding:0 8px">
+            <button style="width:44px;height:44px;display:grid;place-items:center;background:none;border:0;color:var(--color-text);font-size:22px"><i class="ph-duotone ph-caret-left"></i></button>
+            <span style="flex:1;text-align:center;font-family:var(--font-heading);font-weight:600;font-size:17px;margin-right:44px">Review</span>
+          </div>
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;padding:6px 20px 12px;overflow:hidden">
+            <div style="flex:none;display:flex;border:1px solid var(--color-divider);border-radius:2px;overflow:hidden">
+              <sc-for list="{{ mTabs }}" as="mt" hint-placeholder-count="3">
+                <button onClick="{{ mt.pick }}" style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:{{ mt.bg }};color:{{ mt.color }};font-family:inherit;font-size:14px;cursor:pointer"><i class="ph-duotone {{ mt.icon }}" style="font-size:17px"></i>{{ mt.label }}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ mIg }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:10px;font-weight:600">EA</span><span style="flex:1;font-size:13px;font-weight:600">elkdonis.arts</span></div>
+                  <div style="height:200px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                  <span style="font-size:13px;line-height:1.45"><strong style="font-weight:600">elkdonis.arts</strong> New work: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh… Link in bio.</span>
+                </div>
+                <span style="display:flex;gap:8px;font-size:13px;line-height:1.4"><i class="ph-duotone ph-info" style="font-size:16px;flex:none;color:var(--color-accent-700)"></i>Site link replaced with "Link in bio". The cover is sent as a JPEG.</span>
+                <a href="#" style="font-size:14px;min-height:44px;display:flex;align-items:center">Edit the caption for Instagram</a>
+              </div>
+            </sc-if>
+            <sc-if value="{{ mSite }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                  <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700)">Artwork</span>
+                  <span style="font-family:var(--font-heading);font-weight:600;font-size:20px">Salt Marsh, Low Tide</span>
+                  <div style="height:170px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                  <span style="font-size:13px;line-height:1.5">Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out.</span>
+                  <span style="font-size:13px;color:var(--color-accent-700)">$2,400 · Enquire</span>
+                </div>
+                <span style="font-size:13px;color:var(--color-neutral-700)">Artwork feed · /work/salt-marsh · first on homepage</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ mFb }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);border-radius:2px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:var(--color-text);color:var(--color-bg);display:grid;place-items:center;font-size:10px;font-weight:600">EA</span><span style="font-size:13px;font-weight:600">Elkdonis Arts Collective</span></div>
+                  <span style="font-size:13px;line-height:1.5">New work in the studio: Salt Marsh, Low Tide. Painted over three mornings at the edge of the marsh, when the water pulls back far enough to walk out.</span>
+                  <div style="display:flex;flex-direction:column;border:1px solid var(--color-divider)">
+                    <div style="height:150px;background:repeating-linear-gradient(135deg,var(--color-neutral-200) 0 7px,var(--color-neutral-300) 7px 8px)"></div>
+                    <div style="padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--color-surface)"><span style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-neutral-700)">elkdonis-arts.org</span><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">Salt Marsh, Low Tide</span></div>
+                  </div>
+                </div>
+                <span style="font-size:13px;color:var(--color-neutral-700)">Publishes right after the site, so the link preview exists.</span>
+              </div>
+            </sc-if>
+          </div>
+          <div style="flex:none;display:flex;flex-direction:column;gap:8px;padding:12px 20px 24px;border-top:1px solid var(--color-divider)">
+            <button style="height:44px;display:flex;align-items:center;gap:8px;padding:0;background:none;border:0;font-family:inherit;font-size:15px;color:var(--color-text)"><i class="ph-duotone ph-clock" style="font-size:18px"></i><span style="flex:1;text-align:left">Publish now</span><i class="ph-duotone ph-caret-right" style="font-size:14px;color:var(--color-neutral-700)"></i></button>
+            <button class="btn btn-primary" style="height:50px;font-size:16px">{{ publishLabel }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "the timeline from <a class="dv-oid" href="#1a">1a</a> opening from a row in <a class="dv-oid" href="#1b">1b</a>" · "<a class="dv-oid" href="#1c">1c</a> with the previews from <a class="dv-oid" href="#1d">1d</a> in the right panel" · "the Go live flow" · "Site settings with the Puck pages list"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;actionChips&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behaviour&quot;},&quot;liveNow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behaviour&quot;},&quot;igLeft&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:18,&quot;min&quot;:0,&quot;max&quot;:25,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behaviour&quot;}}">
+class Component extends DCLogic {
+  state = { sel: 'marsh', tab: 'ig', mTab: 'ig', on: { site: true, ig: true, fb: true }, wide: false, qFb: false, fView: 'write', fBlocks: false, lKind: 'All', acc: {} };
+
+  renderVals() {
+    const chips = this.props.actionChips ?? true;
+    const liveNow = this.props.liveNow ?? false;
+    const igLeft = Math.max(0, Math.min(25, this.props.igLeft ?? 18));
+    const igBlocked = igLeft === 0;
+    const { sel, tab, mTab, on } = this.state;
+
+    const C = { done: 'var(--color-text)', sched: 'var(--color-accent-700)', live: 'var(--color-accent-2-700)', draft: 'var(--color-neutral-700)', empty: 'var(--color-neutral-300)' };
+    const COLS = [['site', 'Website', 'ph-globe'], ['ig', 'Instagram', 'ph-instagram-logo'], ['fb', 'Facebook', 'ph-facebook-logo'], ['video', 'Video', 'ph-film-strip'], ['writing', 'Writing', 'ph-article'], ['live', 'Live', 'ph-broadcast'], ['news', 'Letter', 'ph-envelope-simple']];
+    const ICON = Object.fromEntries(COLS.map(c => [c[0], c[2]]));
+    const NAME = { site: 'Website', ig: 'Instagram', fb: 'Facebook', video: 'Video', writing: 'Writing', live: 'Live', news: 'Newsletter' };
+    const STI = { done: 'ph-check', sched: 'ph-clock', live: 'ph-broadcast', draft: 'ph-pencil-simple' };
+    const TAG = { done: ['tag-neutral', 'Published'], sched: ['tag-accent', 'Scheduled'], live: ['tag-accent-2', 'Going live'], draft: ['tag-outline', 'Draft'] };
+
+    const T = [
+      { id: 'marsh', title: 'Salt Marsh, Low Tide', kind: 'Artwork', glyph: '▣', meta: 'Oil on linen · 60 × 90 cm · $2,400', last: 'Writing scheduled for Nov 12',
+        cells: { site: ['done', 'Oct 28'], ig: ['done', 'Oct 28'], fb: ['done', 'Oct 29'], video: ['draft', 'Draft'], writing: ['sched', 'Nov 12'] },
+        sugg: { live: 'Go live', news: 'Add' },
+        timeline: [['Oct 28', 'site', 'Published in Artwork', 'elkdonis-arts.org/work/salt-marsh', 'done'], ['Oct 28', 'ig', 'Cover image and caption', '@elkdonis.arts', 'done'], ['Oct 29', 'fb', 'Shared with a link to the site', 'Elkdonis Arts Collective', 'done'], ['Nov 5', 'video', 'Studio walk-through', '3 min 40 s · not published', 'draft'], ['Nov 12', 'writing', 'On painting the marsh', 'Scheduled for 9:00 AM on the site', 'sched']],
+        chips: ['Post the walk-through to Instagram and Facebook', 'Go live from the studio', 'Add to the December letter'] },
+      { id: 'field', title: 'Field Notes, riso edition', kind: 'Product', glyph: '▣', meta: 'Riso print · edition of 30 · 12 left · $40', last: 'Goes live Sun 2 PM',
+        cells: { site: ['done', 'Oct 14'], ig: ['done', 'Oct 15'], video: ['done', 'Oct 20'], live: ['live', 'Nov 8'], news: ['done', 'Nov 1'] },
+        sugg: { fb: 'Share', writing: 'Write it' },
+        timeline: [['Oct 14', 'site', 'Listed in the shop', 'elkdonis-arts.org/shop/field-notes', 'done'], ['Oct 15', 'ig', 'Four prints as a carousel', '@elkdonis.arts', 'done'], ['Oct 20', 'video', 'Printing the second colour', '1 min 12 s', 'done'], ['Nov 1', 'news', 'In Letter from the studio, No. 7', '412 subscribers', 'done'], ['Nov 8', 'live', 'Print pull, live from the studio', 'Sunday 2:00 PM · Instagram and the site', 'live']],
+        chips: ['Share the shop link on Facebook', 'Write about how it was made', 'Remind followers an hour before the live'] },
+      { id: 'open', title: 'Open studio, November', kind: 'Meeting', glyph: '◎', meta: 'Sat Nov 21 · 1–5 PM · 34 going', last: 'Instagram poster scheduled for Nov 10',
+        cells: { site: ['done', 'Nov 2'], ig: ['sched', 'Nov 10'], fb: ['done', 'Nov 2'] },
+        sugg: { live: 'Go live', news: 'Remind' },
+        timeline: [['Nov 2', 'site', 'Event page with RSVP', 'elkdonis-arts.org/events/open-studio', 'done'], ['Nov 2', 'fb', 'Event shared', 'Elkdonis Arts Collective', 'done'], ['Nov 10', 'ig', 'Poster and caption', 'Scheduled for 10:00 AM', 'sched']],
+        chips: ['Go live on the day', 'Email a reminder to the 34 going'] },
+      { id: 'circle', title: 'Winter Reading Circle', kind: 'Series', glyph: '◈', meta: '4 meetings · Thursdays from Nov 12 · 11 going', last: 'Reading list scheduled for Nov 11',
+        cells: { site: ['done', 'Oct 30'], fb: ['done', 'Nov 3'], writing: ['sched', 'Nov 11'], news: ['done', 'Nov 1'] },
+        sugg: { ig: 'Quote card', live: 'Go live' },
+        timeline: [['Oct 30', 'site', 'Series page with sign-up', 'elkdonis-arts.org/reading-circle', 'done'], ['Nov 1', 'news', 'Announced in Letter No. 7', '412 subscribers', 'done'], ['Nov 3', 'fb', 'Event with all four dates', 'Elkdonis Arts Collective', 'done'], ['Nov 11', 'writing', 'Reading list for week one', 'Scheduled for 8:00 AM on the site', 'sched']],
+        chips: ['Post a quote card to Instagram', 'Open a Talk room for week one', 'Record week one for those who miss it'] },
+      { id: 'letter', title: 'Letter from the studio, No. 7', kind: 'Writing', glyph: '◉', meta: '1,850 words · Studio notes', last: 'Sent to 412 subscribers Nov 1',
+        cells: { site: ['done', 'Nov 1'], fb: ['done', 'Nov 1'], writing: ['done', 'Nov 1'], news: ['done', 'Nov 1'] },
+        sugg: { ig: 'Quote card', video: 'Read it' },
+        timeline: [['Nov 1', 'news', 'Sent as the November letter', '412 subscribers', 'done'], ['Nov 1', 'site', 'Published in Studio notes', 'elkdonis-arts.org/notes/letter-7', 'done'], ['Nov 1', 'fb', 'Shared with a link to the site', 'Elkdonis Arts Collective', 'done']],
+        chips: ['Post a pull-quote card to Instagram', 'Record a reading of it'] },
+    ];
+
+    const threads = T.map(t => ({
+      id: t.id, title: t.title, kind: t.kind, glyph: t.glyph, last: t.last,
+      bg: t.id === sel ? 'color-mix(in srgb, var(--color-accent) 11%, transparent)' : 'transparent',
+      pick: () => this.setState({ sel: t.id }),
+      dots: COLS.map(([k, , icon]) => ({ icon, color: C[(t.cells[k] || ['empty'])[0]] })),
+    }));
+    const s = T.find(t => t.id === sel) || T[0];
+    const selVals = {
+      title: s.title, kind: s.kind, glyph: s.glyph, meta: s.meta, chips: s.chips,
+      timeline: s.timeline.map(([date, k, label, sub, st]) => ({
+        date, label, sub, icon: ICON[k], outlet: NAME[k],
+        iconColor: st === 'live' ? 'var(--color-accent-2)' : st === 'sched' ? 'var(--color-accent)' : st === 'draft' ? 'var(--color-neutral-700)' : 'var(--color-text)',
+        tag: TAG[st][0], status: TAG[st][1],
+      })),
+    };
+
+    const rows = T.map(t => ({
+      title: t.title, kind: t.kind, glyph: t.glyph,
+      cells: COLS.map(([k]) => {
+        const c = t.cells[k]; const sg = t.sugg[k];
+        const suggest = !c && chips && !!sg;
+        return { filled: !!c, icon: c ? STI[c[0]] : '', color: c ? C[c[0]] : '', text: c ? c[1] : '', suggest, sugg: sg || '', blank: !c && !suggest };
+      }),
+    }));
+
+    const acc = 'var(--color-accent-700)';
+    const week = [
+      { label: 'Sun 8', items: [{ icon: 'ph-broadcast', text: 'Print pull, live · 2 PM', color: 'var(--color-accent-2-700)' }] },
+      { label: 'Mon 9', items: [] },
+      { label: 'Tue 10', items: [{ icon: 'ph-instagram-logo', text: 'Open studio poster · 10 AM', color: acc }] },
+      { label: 'Wed 11', items: [{ icon: 'ph-article', text: 'Reading list, week one · 8 AM', color: acc }] },
+      { label: 'Thu 12', items: [{ icon: 'ph-article', text: 'On painting the marsh · 9 AM', color: acc }, { icon: 'ph-users-three', text: 'Reading Circle, week one', color: 'var(--color-text)' }] },
+      { label: 'Fri 13', items: [] },
+      { label: 'Sat 14', items: [] },
+    ];
+
+    const O = [
+      ['site', 'Website', 'Artwork feed · elkdonis-arts.org', 'ph-globe', true],
+      ['ig', 'Instagram', igBlocked ? 'Daily limit of 25 reached · resets in 6 h' : `@elkdonis.arts · ${igLeft} of 25 left today`, 'ph-instagram-logo', !igBlocked],
+      ['fb', 'Facebook', 'Elkdonis Arts Collective page', 'ph-facebook-logo', true],
+      ['yt', 'YouTube', 'Not connected · connect in Outlets', 'ph-youtube-logo', false],
+    ];
+    const toggle = k => () => this.setState(st => ({ on: { ...st.on, [k]: !st.on[k] } }));
+    const outlets = O.map(([k, name, sub, icon, avail]) => {
+      const isOn = avail && !!on[k];
+      return { name, sub, icon, opacity: avail ? 1 : 0.5, checkOpacity: isOn ? 1 : 0,
+        boxBg: isOn ? 'var(--color-accent)' : 'transparent', boxBorder: isOn ? 'var(--color-accent)' : 'var(--color-neutral-500)',
+        toggle: avail ? toggle(k) : () => {} };
+    });
+    const mChips = O.map(([k, name, , icon, avail]) => {
+      const isOn = avail && !!on[k];
+      return { name: k === 'yt' ? 'YouTube' : name, icon: isOn ? 'ph-check' : (avail ? icon : 'ph-plus'), opacity: avail ? 1 : 0.55,
+        bg: isOn ? 'var(--color-accent-100)' : 'transparent', color: isOn ? 'var(--color-accent-800)' : 'var(--color-text)',
+        border: isOn ? 'var(--color-accent)' : 'var(--color-divider)', toggle: avail ? toggle(k) : () => {} };
+    });
+    const count = ['site', 'ig', 'fb'].filter(k => on[k] && !(k === 'ig' && igBlocked)).length;
+    const publishLabel = count === 0 ? 'Choose where to publish' : `Publish to ${count} ${count === 1 ? 'place' : 'places'}`;
+
+    const TB = [['site', 'Website', 'ph-globe'], ['ig', 'Instagram', 'ph-instagram-logo'], ['fb', 'Facebook', 'ph-facebook-logo']];
+    const tabs = TB.map(([k, label, icon]) => ({ label, icon,
+      rule: tab === k ? 'var(--color-accent)' : 'transparent', color: tab === k ? 'var(--color-text)' : 'var(--color-neutral-700)',
+      pick: () => this.setState({ tab: k }) }));
+    const mTabs = TB.map(([k, label, icon]) => ({ label: k === 'site' ? 'Site' : label, icon,
+      bg: mTab === k ? 'var(--color-accent)' : 'transparent', color: mTab === k ? 'var(--color-bg)' : 'var(--color-text)',
+      pick: () => this.setState({ mTab: k }) }));
+
+    // ── Turn 2 ──
+    const A7 = 'var(--color-accent-700)', MUT = 'var(--color-neutral-700)';
+    const routines = [
+      { name: 'Instagram', cadence: 'Tuesdays and Fridays', status: igBlocked ? 'Daily limit reached' : '1 of 2 this week · Friday open', statusColor: A7, icon: 'ph-instagram-logo', iconColor: 'var(--color-text)' },
+      { name: 'Studio note', cadence: 'Thursdays', status: 'Thu: On painting the marsh, drafting', statusColor: MUT, icon: 'ph-article', iconColor: 'var(--color-text)' },
+      { name: 'Letter from the studio', cadence: '1st of the month', status: 'Next Dec 1 · not started', statusColor: MUT, icon: 'ph-envelope-simple', iconColor: 'var(--color-text)' },
+      { name: 'Go live', cadence: 'Second Sunday', status: 'Sun 8: Print pull, booked', statusColor: 'var(--color-accent-2-700)', icon: 'ph-broadcast', iconColor: 'var(--color-accent-2)' },
+    ];
+    const blank = { isPost: false, isSlot: false, isEvent: false, isTodo: false, isSugg: false, hasRoutine: false, showChip: false, icons: [] };
+    const post = (o) => ({ ...blank, isPost: true, hasRoutine: !!o.routine, ...o, icons: o.icons.map(icon => ({ icon })) });
+    const days = [
+      { label: 'Sun 8', sub: 'tomorrow', items: [post({ piece: 'Field Notes', title: 'Print pull, live', time: '2:00 PM', icons: ['ph-broadcast'], tag: 'tag-accent-2', stage: 'Going live', routine: 'Go live routine' }), { ...blank, isTodo: true, text: 'Set up the camera in the print room' }] },
+      { label: 'Mon 9', sub: '', items: [{ ...blank, isTodo: true, text: 'Photograph the second Field Notes run' }] },
+      { label: 'Tue 10', sub: '', items: [post({ piece: 'Open studio', title: 'Poster and caption', time: '10:00 AM', icons: ['ph-instagram-logo'], tag: 'tag-accent', stage: 'Scheduled', routine: 'Instagram routine' })] },
+      { label: 'Wed 11', sub: '', items: [post({ piece: 'Reading Circle', title: 'Reading list, week one', time: '8:00 AM', icons: ['ph-globe'], tag: 'tag-accent', stage: 'Scheduled' })] },
+      { label: 'Thu 12', sub: '', items: [{ ...blank, isEvent: true, text: 'Reading Circle, week one · 7 PM' }, post({ piece: 'Salt Marsh', title: 'On painting the marsh', time: '9:00 AM', icons: ['ph-globe', 'ph-facebook-logo'], tag: 'tag-outline', stage: 'Drafting · 1,240 words', routine: 'Studio note routine' })] },
+      { label: 'Fri 13', sub: '', items: [{ ...blank, isSlot: true, text: 'Instagram slot', sub: 'Tuesdays and Fridays routine', sugg: 'Reading Circle quote card', showChip: chips }] },
+      { label: 'Sat 14', sub: '', items: [{ ...blank, isSugg: chips, text: 'Open studio is a week away', chip: 'Email the 34 going' }] },
+    ];
+    const tray = [
+      { kind: 'Draft · Video', kindColor: MUT, title: 'Studio walk-through', sub: 'Salt Marsh, Low Tide · 3 min 40 s', chip: 'Post to Instagram and Facebook' },
+      { kind: 'Gap', kindColor: A7, title: 'Field Notes is not on Facebook', sub: 'In the shop since Oct 14', chip: 'Share the shop link' },
+      { kind: 'Gap', kindColor: A7, title: 'Letter No. 7 is not on Instagram', sub: 'Sent Nov 1', chip: 'Pull-quote card' },
+      { kind: 'Your note', kindColor: MUT, title: 'Write about how Field Notes was made', sub: 'Added Oct 20', chip: 'Start it in Studio' },
+    ];
+    const ST = {
+      done: { icon: 'ph-check', bg: 'var(--color-surface)', color: 'var(--color-text)', border: 'transparent', borderStyle: 'solid' },
+      sched: { icon: 'ph-clock', bg: 'var(--color-accent-100)', color: 'var(--color-accent-800)', border: 'transparent', borderStyle: 'solid' },
+      draft: { icon: 'ph-pencil-simple', bg: 'transparent', color: 'var(--color-neutral-800)', border: 'var(--color-neutral-400)', borderStyle: 'solid' },
+      sugg: { icon: 'ph-plus', bg: 'transparent', color: A7, border: 'var(--color-accent-400)', borderStyle: 'dashed' },
+      event: { icon: 'ph-calendar-blank', bg: 'var(--color-accent-2-100)', color: 'var(--color-accent-2-800)', border: 'transparent', borderStyle: 'solid' },
+    };
+    const L = [
+      ['Dates', 'ph-calendar-blank', { 3: [['event', 'Open studio · Sat Nov 21']], 5: [['event', 'Letter goes out · Dec 1']] }],
+      ['Website', 'ph-globe', { 0: [['done', 'Oct 28 · Published in Artwork']] }],
+      ['Instagram', 'ph-instagram-logo', { 0: [['done', 'Oct 28 · Cover and caption']], 2: [['sugg', 'Walk-through clip · Fri slot']], 3: [['sugg', 'Detail shot before the open studio']] }],
+      ['Facebook', 'ph-facebook-logo', { 0: [['done', 'Oct 29 · Shared']], 2: [['sugg', 'Walk-through video']] }],
+      ['Video', 'ph-film-strip', { 1: [['draft', 'Nov 5 · Studio walk-through']] }],
+      ['Writing', 'ph-article', { 2: [['sched', 'Nov 12 · On painting the marsh']] }],
+      ['Live', 'ph-broadcast', { 3: [['sugg', 'Go live at the open studio']] }],
+      ['Newsletter', 'ph-envelope-simple', { 5: [['sugg', 'In the December letter']] }],
+    ];
+    const lanes = L.map(([name, icon, by]) => ({ name, icon,
+      cells: [0, 1, 2, 3, 4, 5, 6].map(i => ({ items: (by[i] || []).filter(([st]) => st !== 'sugg' || chips).map(([st, text]) => ({ text, ...ST[st] })) })) }));
+    const weeks = ['Oct 26', 'Nov 2 · this week', 'Nov 9', 'Nov 16', 'Nov 23', 'Nov 30', 'Dec 7'].map((label, i) => ({ label, color: i === 1 ? 'var(--color-text)' : MUT }));
+    const { wide, qFb, fView, fBlocks } = this.state;
+    const ghost = [[96, 40], [60], [110], [96], [30, 120], [90], [50]].map(hs => ({ blocks: hs.map(h => ({ h: h + 'px' })) }));
+    const fTabs = [['write', 'Write'], ['split', 'Side by side'], ['preview', 'Preview']].map(([k, label]) => ({ label,
+      bg: fView === k ? 'var(--color-accent)' : 'transparent', color: fView === k ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ fView: k }) }));
+    const fModes = [[false, 'Text', 'ph-text-aa'], [true, 'Blocks', 'ph-squares-four']].map(([v, label, icon]) => ({ label, icon,
+      bg: fBlocks === v ? 'var(--color-accent)' : 'transparent', color: fBlocks === v ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ fBlocks: v }) }));
+    const t2 = {
+      routines, days, tray, lanes, weeks, ghost,
+      boardNote: chips ? '5 suggestions, placed in your routine slots and around the open studio on Nov 21.' : 'Suggestions are off. Turn on action chips to see where this piece could go next.',
+      boardCta: chips ? 'Add 5 to the queue' : 'Open the queue',
+      wide, quick: !wide, sheetW: wide ? '900px' : '460px', sheetCols: wide ? '380px minmax(0,1fr)' : 'minmax(0,1fr)',
+      wideLabel: wide ? 'Collapse' : 'Expand', wideIcon: wide ? 'ph-arrows-in-simple' : 'ph-arrows-out-simple',
+      toggleWide: () => this.setState(s => ({ wide: !s.wide })),
+      qFbToggle: () => this.setState(s => ({ qFb: !s.qFb })),
+      qFbBg: qFb ? 'var(--color-accent)' : 'transparent', qFbBorder: qFb ? 'var(--color-accent)' : 'var(--color-neutral-500)', qFbCheck: qFb ? 1 : 0,
+      qFbOn: qFb, qLabel: qFb ? 'Schedule to 2 places' : 'Schedule for Friday',
+      fTabs, fModes, fGrid: fView === 'split' ? 'minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,780px)',
+      showEditor: fView !== 'preview', showPreview: fView !== 'write', fText: !fBlocks, fBlk: fBlocks,
+    };
+
+    // ── Turn 3 ──
+    const WHO = { you: { ini: 'GD', name: 'You', round: '50%' }, eac: { ini: 'EA', name: 'Elkdonis Arts Collective', round: '2px' } };
+    const OI = { page: 'ph-user-circle', site: 'ph-globe', ig: 'ph-instagram-logo', fb: 'ph-facebook-logo', market: 'ph-storefront', video: 'ph-film-strip', writing: 'ph-article', news: 'ph-envelope-simple' };
+    const tl3 = [
+      ['Oct 28', 'page', 'Added to your page', 'arts-collective.com/guru-dharam', 'done', 'you'],
+      ['Oct 28', 'ig', 'Cover image and caption', 'Your Instagram', 'done', 'you'],
+      ['Oct 28', 'market', 'Listed for sale · $2,400', 'market.arts-collective.com', 'done', 'you'],
+      ['Oct 28', 'site', 'Presented in Artwork', 'elkdonis-arts.org/work/salt-marsh', 'done', 'eac'],
+      ['Oct 29', 'fb', 'Shared with a link to the site', 'Elkdonis Arts Collective page', 'done', 'eac'],
+      ['Nov 5', 'video', 'Studio walk-through', '3 min 40 s · not published', 'draft', 'you'],
+      ['Nov 12', 'writing', 'On painting the marsh', 'Your page and EAC Studio notes · 9:00 AM', 'sched', 'you'],
+    ].map(([date, k, label, sub, st, who]) => ({ date, label, sub, icon: OI[k], ini: WHO[who].ini, round: WHO[who].round, whoName: WHO[who].name,
+      iconColor: st === 'sched' ? 'var(--color-accent)' : st === 'draft' ? 'var(--color-neutral-700)' : 'var(--color-text)', tag: TAG[st][0], status: TAG[st][1] }));
+    const CV = [['Page / site', 'ph-globe'], ['Instagram', 'ph-instagram-logo'], ['Facebook', 'ph-facebook-logo'], ['Market', 'ph-storefront'], ['Letter', 'ph-envelope-simple']];
+    const cell = (st, text) => st === 'sugg'
+      ? { filled: false, suggest: chips, sugg: text, blank: !chips, icon: '', color: '', text: '' }
+      : st ? { filled: true, suggest: false, sugg: '', blank: false, icon: STI[st], color: C[st], text } : { filled: false, suggest: false, sugg: '', blank: true, icon: '', color: '', text: '' };
+    const cov3 = [
+      { ini: 'GD', round: '50%', who: 'You', cells: [cell('done', 'Oct 28'), cell('done', 'Oct 28'), cell('sugg', 'Share'), cell('done', 'Oct 28'), cell(null)] },
+      { ini: 'EA', round: '2px', who: 'Elkdonis Arts', cells: [cell('done', 'Oct 28'), cell('sugg', 'Share'), cell('done', 'Oct 29'), cell(null), cell('sugg', 'Dec 1')] },
+    ];
+    const lKind = this.state.lKind;
+    const dotsFor = (m) => COLS.map(([k, , icon]) => ({ icon, color: C[m[k] || 'empty'] }));
+    const LIB = [
+      { site: 'Your page', host: 'arts-collective.com/guru-dharam', who: 'you', items: [
+        ['Salt Marsh, Low Tide', 'Artwork', '▣', 'In motion · writing Nov 12', { site: 'done', ig: 'done', fb: 'done', video: 'draft', writing: 'sched' }, true],
+        ['On painting the marsh', 'Writing', '◉', 'Drafting · scheduled Nov 12', { writing: 'draft' }],
+        ['Studio walk-through', 'Video', '▶', 'Draft · 3 min 40 s', { video: 'draft' }],
+        ['Tidewater studies', 'Series', '◈', 'Quiet since Sep 30 · 6 works', { site: 'done', ig: 'done' }],
+      ]},
+      { site: 'Elkdonis Arts Collective', host: 'elkdonis-arts.org', who: 'eac', items: [
+        ['Winter Reading Circle', 'Series', '◈', 'In motion · starts Nov 12', { site: 'done', fb: 'done', writing: 'sched', news: 'done' }],
+        ['Open studio, November', 'Meeting', '◎', 'In motion · Sat Nov 21', { site: 'done', ig: 'sched', fb: 'done' }],
+        ['Letter from the studio, No. 7', 'Writing', '◉', 'Sent Nov 1', { site: 'done', fb: 'done', writing: 'done', news: 'done' }],
+      ]},
+      { site: 'Market', host: 'market.arts-collective.com', who: 'you', items: [
+        ['Field Notes, riso edition', 'Product', '▣', 'In motion · live Sun 2 PM', { site: 'done', ig: 'done', video: 'done', live: 'live', news: 'done' }],
+        ['Salt Marsh, Low Tide', 'Artwork', '▣', 'Same piece as on your page · listed', { site: 'done' }],
+      ]},
+      { site: 'Forum', host: 'forum.arts-collective.com', who: 'you', items: [
+        ['Painting outdoors in November', 'Writing', '☰', 'Your thread · 14 replies', {}],
+      ]},
+    ];
+    const libGroups = LIB.map(g => ({ site: g.site, host: g.host, ini: WHO[g.who].ini, round: WHO[g.who].round,
+      items: g.items.filter(([, kind]) => lKind === 'All' || kind === lKind).map(([title, kind, glyph, status, m, current]) => ({ title, kind, glyph, status, dots: dotsFor(m),
+        bg: current ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent', isCurrent: !!current, statusColor: status.startsWith('In motion') ? A7 : MUT })) }))
+      .filter(g => g.items.length);
+    const libCount = libGroups.reduce((n, g) => n + g.items.length, 0);
+    const libKinds = ['All', 'Artwork', 'Writing', 'Video', 'Series', 'Meeting', 'Product'].map(k => ({ label: k,
+      bg: lKind === k ? 'var(--color-accent)' : 'transparent', color: lKind === k ? 'var(--color-bg)' : 'var(--color-text)', pick: () => this.setState({ lKind: k }) }));
+    const accepted = this.state.acc;
+    const SUG = [
+      { id: 'wt', text: 'Post the walk-through to Instagram and Facebook · Fri Nov 13', why: 'Fills your Friday Instagram slot' },
+      { id: 'live', text: 'Go live at the open studio · Sat Nov 21', why: 'The painting hangs on the east wall that day' },
+      { id: 'letter', text: 'Include it in the December letter · Dec 1', why: 'Elkdonis Arts Collective, Letter routine' },
+    ];
+    const planSteps = [
+      { text: 'Publish on your page, Instagram and the market', done: true, fromBoard: false, note: 'Oct 28' },
+      { text: 'Finish the walk-through video', done: false, fromBoard: false, note: 'your step' },
+      ...SUG.filter(s => accepted[s.id]).map(s => ({ text: s.text, done: false, fromBoard: true, note: 'from the board' })),
+    ].map(s => ({ ...s, box: s.done ? 'var(--color-text)' : 'transparent', boxBorder: s.done ? 'var(--color-text)' : 'var(--color-neutral-500)', noteColor: s.fromBoard ? A7 : MUT, checkOp: s.done ? 1 : 0 }));
+    const planSugg = SUG.filter(s => !accepted[s.id]).map(s => ({ ...s, accept: () => this.setState(st => ({ acc: { ...st.acc, [s.id]: true } })) }));
+    const t3 = { tl3, cov3, cov3cols: CV.map(([name, icon]) => ({ name, icon })), libGroups, libKinds, libCount: `${libCount} ${libCount === 1 ? 'result' : 'results'} across ${libGroups.length} ${libGroups.length === 1 ? 'site' : 'sites'}`,
+      planSteps, planSugg, hasSugg: planSugg.length > 0, noSugg: planSugg.length === 0, planCount: `${planSugg.length} waiting` };
+
+    return {
+      ...t3,
+      ...t2,
+      actionChips: chips, liveNow, igLeft,
+      threads, sel: selVals, rows, week,
+      cols: COLS.map(([, name, icon]) => ({ name, icon })),
+      outlets, mChips, publishLabel, tabs, mTabs,
+      tabSite: tab === 'site', tabIg: tab === 'ig', tabFb: tab === 'fb',
+      mSite: mTab === 'site', mIg: mTab === 'ig', mFb: mTab === 'fb',
+    };
+  }
+}
+</script>
+</body>
+</html>

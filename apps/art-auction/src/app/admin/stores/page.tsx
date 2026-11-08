@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { listStores } from "@elkdonis/commerce/queries";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { adminPauseStore, adminReactivateStore } from "../actions";
-import { requireAdmin } from "@/lib/marketplace-auth";
+import { adminPauseStore, adminReactivateStore, adminSetStoreShippingMode } from "../actions";
+import { listStoreShippingModes } from "@elkdonis/commerce/shipping";
+import { requireKeeper } from "@/lib/marketplace-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Stores · Admin" };
@@ -28,11 +29,11 @@ export default async function AdminStoresPage() {
   // Gate in the page as well as the layout: Next renders the two in parallel, and
   // the layout's redirect did not stop this page's data from streaming to a
   // signed-out visitor (verified on the live sites, 2026-11-06).
-  await requireAdmin();
-  const stores = await listStores({
-    limit: 100,
-    status: ["active", "pending", "paused", "rejected"],
-  });
+  const { isAdmin } = await requireKeeper();
+  const [stores, shippingModes] = await Promise.all([
+    listStores({ limit: 100, status: ["active", "pending", "paused", "rejected"] }),
+    listStoreShippingModes().catch(() => ({}) as Record<string, string>),
+  ]);
 
   return (
     <section>
@@ -42,7 +43,8 @@ export default async function AdminStoresPage() {
       </h2>
       <p className="-mt-2 mb-4 text-sm text-muted-foreground">
         Every front in the marketplace — a person’s or an organisation’s.
-        Pausing hides its work and blocks new orders; nothing is deleted.
+        Pause hides the store and all its work from the site and blocks new orders; Reactivate shows it again. Nothing is deleted.
+        Shipping sets who buys the courier label; buyers get Easyship quotes in the first two.
       </p>
       {stores.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -56,6 +58,7 @@ export default async function AdminStoresPage() {
                 <th className="px-4 py-2 font-medium">Store</th>
                 <th className="px-4 py-2 font-medium">Owner</th>
                 <th className="px-4 py-2 font-medium">Payouts</th>
+                <th className="px-4 py-2 font-medium">Shipping</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Since</th>
                 <th className="px-4 py-2 text-right font-medium"></th>
@@ -86,6 +89,25 @@ export default async function AdminStoresPage() {
                           : "none set"}
                   </td>
                   <td className="px-4 py-2">
+                    {isAdmin ? (
+                    <form action={adminSetStoreShippingMode.bind(null, s.id)} className="flex items-center gap-2">
+                      <select
+                        name="mode"
+                        defaultValue={shippingModes[s.id] ?? "quote"}
+                        className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                        aria-label="Shipping mode"
+                      >
+                        <option value="quote">Quote; seller buys label</option>
+                        <option value="platform">Quote; platform buys label</option>
+                        <option value="arranged">Arranged with buyer</option>
+                      </select>
+                      <Button type="submit" variant="outline" size="sm">Set</Button>
+                    </form>
+                    ) : (
+                      <span className="text-muted-foreground">{shippingModes[s.id] ?? "quote"}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
                     <Badge tone={STORE_STATUS_TONE[s.status] ?? "neutral"}>{s.status}</Badge>
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{fmtDate(s.joinedAt)}</td>
@@ -93,13 +115,13 @@ export default async function AdminStoresPage() {
                     {s.status === "active" ? (
                       <form action={adminPauseStore.bind(null, s.id)}>
                         <Button type="submit" variant="outline" size="sm">
-                          Pause
+                          Hide store
                         </Button>
                       </form>
                     ) : s.status === "paused" ? (
                       <form action={adminReactivateStore.bind(null, s.id)}>
                         <Button type="submit" variant="outline" size="sm">
-                          Reactivate
+                          Show store
                         </Button>
                       </form>
                     ) : s.status === "pending" ? (

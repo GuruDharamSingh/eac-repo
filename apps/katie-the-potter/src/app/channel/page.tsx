@@ -11,14 +11,17 @@ const NETWORK_HOST = process.env.NEXT_PUBLIC_NETWORK_HOST ?? "arts-collective.co
 const NETWORK_URL = `${NETWORK_HOST.includes("localhost") ? "http" : "https"}://${NETWORK_HOST}`;
 
 /**
- * /channel is a redirect, like /center: the Channel console (posts per piece,
- * social accounts, publish history, links to video, writing and newsletter)
- * lives once on the network Studio, for every org, at
- * <network>/studio/channel?org=<org_id>. The SSO hop carries the session.
- * docs/open/CHANNEL_CONSOLE_DESIGN_2026-11-07.md.
+ * /channel is a redirect, like /center: the Channel console (each piece and
+ * where it went, the queue, plans, cross-posting) lives once on the network
+ * host, for every org, at <network>/channel?org=<org_id>. The SSO hop carries
+ * the session. docs/open/channel.md.
  */
-export default async function ChannelRoute() {
+export default async function ChannelRoute({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
+  const { to } = await searchParams;
+  // `?to=outlets` lands on Channel's Outlets, where accounts are connected (Manage overview, "Sharing").
+  const outlets = to === "outlets";
   const viewer = await getViewer().catch(() => null);
-  if (!viewer) redirect("/login?next=/channel");
-  redirect(handoffUrl(`${NETWORK_URL}/studio/channel?org=${encodeURIComponent(siteConfig.orgId)}`));
+  if (!viewer) redirect(outlets ? "/login?next=%2Fchannel%3Fto%3Doutlets" : "/login?next=/channel");
+  const org = encodeURIComponent(siteConfig.orgId);
+  redirect(handoffUrl(outlets ? `${NETWORK_URL}/channel/outlets?org=${org}&tab=instagram` : `${NETWORK_URL}/channel?org=${org}`));
 }

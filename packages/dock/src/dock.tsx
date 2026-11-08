@@ -13,12 +13,16 @@
  *
  * The control is the registry's (`presentAction`). Surfaces and frames need the
  * lesson's surface stack, so for those the dock links to the lesson step instead.
+ *
+ * Channel (2026-11-07): on Channel's inner pages and in the Studio the data also
+ * carries the channel's top next move (`channel`), the same move Channel Home's next
+ * row shows first; the dock shows it on one line with its registry entry as the button.
  */
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { presentAction, type PresentField, type Presentation } from "@elkdonis/actions/present";
-import type { ActionResult, ActionStatus } from "@elkdonis/actions";
+import { CHANNEL_DOCK_ACTIONS, type ActionResult, type ActionStatus, type ChannelNextMove } from "@elkdonis/actions";
 import "./dock.css";
 
 /** The route's JSON (packages/actions/src/server/dock.ts `DockData`; kept in step by hand: that file is server-only). */
@@ -40,6 +44,8 @@ export interface DockWire {
     detail: string | null;
     actions: Array<{ id: string; label: string; busyLabel: string; input?: Record<string, unknown> }>;
   };
+  /** The channel's top next move (2026-11-07; server/dock.ts DockChannel): Channel's inner pages and the Studio. */
+  channel?: null | { label: string; move: ChannelNextMove; more: number; href: string };
   links: { artdirect: string; nextcloud?: string };
 }
 
@@ -108,7 +114,7 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
     void load();
   }, [hidden, dismissed, load]);
 
-  if (hidden || dismissed || !data || (!data.step && !data.post)) return null;
+  if (hidden || dismissed || !data || (!data.step && !data.post && !data.channel)) return null;
 
   const toggle = () => {
     setOpen((o) => {
@@ -134,14 +140,15 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
   };
 
   const { step, post } = data;
-  const tabLabel = step ? "Your next step" : "This post";
+  const channel = data.channel ?? null;
+  const tabLabel = step ? "Your next step" : post ? "This post" : channel?.label ?? "On your board";
 
   return (
     <div className="eac-dock" data-open={open ? "true" : "false"}>
       {open && (
         <section className="eac-dock__box" id="eac-dock-box" aria-label="Your next step and this page">
           <header className="eac-dock__head">
-            <span className="eac-dock__eyebrow">{step ? step.courseTitle : "On this page"}</span>
+            <span className="eac-dock__eyebrow">{step ? step.courseTitle : post ? "On this page" : "Channel"}</span>
             <span className="eac-dock__headbtns">
               <button type="button" className="eac-dock__icon" onClick={toggle} aria-label="Fold the dock away" title="Fold away">–</button>
               <button type="button" className="eac-dock__icon" onClick={dismiss} aria-label="Hide the dock until the browser is closed" title="Hide for this visit">×</button>
@@ -167,6 +174,7 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
               )}
             </div>
           )}
+          {channel && <ChannelPart channel={channel} busy={busy} perform={perform} />}
           {message && (
             <p className={message.kind === "error" ? "eac-dock__msg eac-dock__msg--error" : "eac-dock__msg"} role={message.kind === "error" ? "alert" : "status"}>
               {message.text}
@@ -178,6 +186,48 @@ export function Dock({ run, endpoint = "/api/actions/dock", hiddenOn = defaultHi
         {tabLabel}
         {step?.task && <span className={stateClass(step.task.status)}>{stateWord(step.task.status)}</span>}
       </button>
+    </div>
+  );
+}
+
+/**
+ * The channel's one next move, on one line (owner, 2026-11-07: the dock is the surface
+ * of the board; one line at a time). The button is the move's registry entry, the same
+ * one Channel Home's next row runs; a move without one opens in Channel.
+ */
+function ChannelPart({ channel, busy, perform }: {
+  channel: NonNullable<DockWire["channel"]>;
+  busy: string | null;
+  perform: (key: string, id: string, input: unknown, opts: { org?: string | null }) => Promise<void>;
+}) {
+  const { move } = channel;
+  const run = move.run && CHANNEL_DOCK_ACTIONS.includes(move.run.id) ? move.run : null;
+  const key = `channel:${move.id}`;
+  // The quick sheet and the piece pop-up live in Channel's own surface stack; from the
+  // dock a Channel address opens the piece there (`?piece=`), other addresses go as named.
+  const where = move.href ?? channel.href;
+  const whereLabel = where.startsWith("/channel") ? "Open in Channel" : move.open?.label ?? "Open";
+  return (
+    <div className="eac-dock__part eac-dock__channel">
+      <p className="eac-dock__label">
+        {channel.label} · {move.kicker}
+      </p>
+      <p className="eac-dock__line">
+        <span className="eac-dock__line-text" title={move.reason ?? undefined}>{move.title}</span>
+        {run ? (
+          <button type="button" className="eac-dock__btn eac-dock__btn--small" disabled={busy !== null} onClick={() => perform(key, run.id, run.input, { org: null })}>
+            {busy === key ? run.busyLabel : run.label}
+          </button>
+        ) : (
+          <a className="eac-dock__btn eac-dock__btn--small eac-dock__btn--quiet" href={where}>
+            {whereLabel}
+          </a>
+        )}
+      </p>
+      <p className="eac-dock__back">
+        {run ? <a href={where}>{whereLabel}</a> : <a href={channel.href}>Channel</a>}
+        {channel.more > 0 && <span className="eac-dock__hint"> · {channel.more} more waiting</span>}
+      </p>
     </div>
   );
 }

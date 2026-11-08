@@ -16,6 +16,8 @@
     "./stream-chat": "./src/stream-chat.ts",
     "./recordings": "./src/recordings.ts",
     "./studio-items": "./src/studio-items.ts",
+    "./channel": "./src/channel.ts",
+    "./channel-plan-md": "./src/channel-plan-md.ts",
     "./paath-day": "./src/paath-day.ts",
     "./video-render": "./src/video-render.ts",
     "./businesses": "./src/businesses.ts",

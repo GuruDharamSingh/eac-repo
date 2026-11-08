@@ -26,7 +26,9 @@ export type HoldReason =
   | "org_unowned"
   | "dispute_window"
   /** Directed to a charity a buyer suggested; held until an org approves it. */
-  | "pending_beneficiary";
+  | "pending_beneficiary"
+  /** Buyer-paid shipping owed to the maker; released when they record tracking (migration 250). */
+  | "awaiting_tracking";
 
 const PARTY_KINDS: PartyKind[] = ["user", "org", "platform", "payee"];
 const ENTRY_TYPES: EntryType[] = [

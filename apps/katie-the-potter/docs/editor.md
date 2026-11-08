@@ -1,4 +1,5 @@
 # Katie the Potter: the editor, smart pieces and the look layer
+> Start here for the overall state: `docs/sessions/2026-11-07_katie-the-potter.md` (handover, 2026-11-07).
 
 How the Studio (`/studio`, Puck 0.23 via `@elkdonis/page-builder`) is meant to
 be used on this site, and how the pieces adapt. Written 2026-11-06 (round 5).

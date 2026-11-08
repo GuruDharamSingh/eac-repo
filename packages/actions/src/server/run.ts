@@ -23,6 +23,8 @@ import { z } from 'zod/v4';
 import { db } from '@elkdonis/db';
 import type { ActionResult } from '../types';
 import { actionMeta } from '../catalogue';
+import { CHANNEL_OUTLET_IDS } from '../channel';
+import { acceptSuggestion, dismissSuggestion, fillSlot, planStep } from './channel';
 
 export interface ActorContext {
   /** users.id of the signed-in person, from the host's verified session. */
@@ -30,6 +32,12 @@ export interface ActorContext {
   email: string;
   /** The organisation an `org` entry acts on, resolved and checked by the host. */
   orgId?: string | null;
+  /**
+   * The org the caller asked for, before actionOrgId settled `orgId` (2026-11-07). Read
+   * for `channel` entries only: a claim that did not settle into `orgId` is refused, so
+   * a call meant for an org's channel never lands in the person's own.
+   */
+  orgClaim?: string | null;
   /** Which door performed it, for the audit row: 'app' (a host's server action, the default), 'http' (actionRoutes). */
   via?: string;
   /** A `thread` entry's subject: the post's id, as the caller names it. performAction loads and checks it. */
@@ -93,6 +101,10 @@ async function orgEditor(ctx: ActorContext): Promise<Allowed> {
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** A Channel piece key (`thread:<id>` / `artwork:<id>`; ./channel.ts parses it) and an identity (`user:<uuid>` / `org:<id>`). */
+const CH_PIECE = z.string().trim().max(90);
+const CH_IDENTITY = z.string().trim().max(80).nullable().optional();
 
 /** An optional text field: absent stays absent, '' becomes null (cleared). */
 const cleared = (v: string | undefined): string | null | undefined => (v === undefined ? undefined : v || null);
@@ -305,6 +317,59 @@ export const RUNNERS: Record<string, Runner<unknown>> = {
       return r.ok ? { ok: true, data: { replyToKept: Boolean(row?.inbound) } } : { ok: false, error: r.error ?? 'Could not save the mail settings.' };
     },
   }),
+
+  // Channel (scope 'channel', 2026-11-07): the board's moves. Authorization, the door
+  // policy and the actor kind are in ./channel.ts (the rules of the app's
+  // lib/channel/actions.ts). Plans only: nothing here schedules or sends.
+  'channel-suggestion-accept': runner({
+    input: z.object({
+      pieceKey: CH_PIECE,
+      outlet: z.enum(CHANNEL_OUTLET_IDS),
+      identityId: CH_IDENTITY,
+      text: z.string().trim().max(200).refine((v) => v.length > 0, 'Say what the post is.'),
+      at: z.string().trim().max(40).nullable().optional(),
+      routineId: z.string().trim().max(21).nullable().optional(),
+    }),
+    failure: 'Could not add it to the queue. Try again.',
+    run: (ctx, input) => acceptSuggestion(ctx, input),
+  }),
+
+  'channel-suggestion-dismiss': runner({
+    input: z.object({
+      pieceKey: CH_PIECE,
+      outlet: z.enum(CHANNEL_OUTLET_IDS),
+      identityId: CH_IDENTITY,
+      text: z.string().max(200).optional(),
+    }),
+    failure: 'Could not dismiss it. Try again.',
+    run: (ctx, input) => dismissSuggestion(ctx, input),
+  }),
+
+  'channel-slot-fill': runner({
+    input: z.object({
+      routineId: z.string().trim().regex(/^[A-Za-z0-9_-]{1,21}$/),
+      at: z.string().trim().max(40),
+      pieceKey: CH_PIECE,
+      text: z.string().max(200).optional(),
+    }),
+    failure: 'Could not fill the slot. Try again.',
+    run: (ctx, input) => fillSlot(ctx, input),
+  }),
+
+  'channel-plan-step': runner({
+    input: z
+      .object({
+        pieceKey: CH_PIECE,
+        identityId: CH_IDENTITY,
+        op: z.enum(['add', 'check', 'uncheck']),
+        text: z.string().trim().max(300).refine((v) => v.length > 0, 'Give the step its text.'),
+        index: z.number().int().min(0).max(500).optional(),
+        on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+      })
+      .refine((v) => v.op === 'add' || v.index !== undefined, 'Name the step to tick by its index.'),
+    failure: 'Could not change the plan. Try again.',
+    run: (ctx, input) => planStep(ctx, input),
+  }),
 };
 
 /** The ids that have a runner: the entries a host, a route or a script can perform directly. */
@@ -329,6 +394,10 @@ async function perform(id: string, given: ActorContext, raw: unknown): Promise<{
   let ctx: ActorContext = { ...given, thread: undefined, subjectId: actionMeta(id)?.scope === 'thread' ? given.subjectId : null };
   const r = RUNNERS[id];
   if (!r) return { ctx, input: raw, result: { ok: false, error: 'This cannot be done from here.', code: 'unknown' } };
+  // A `channel` entry asked for an org channel the door did not settle (not an owner or guide there, or `oad`): refuse.
+  if (actionMeta(id)?.scope === 'channel' && typeof given.orgClaim === 'string' && given.orgClaim.trim() && !ctx.orgId) {
+    return { ctx, input: raw, result: { ok: false, error: 'You do not run that organisation’s channel.', code: 'forbidden' } };
+  }
   // A `thread` entry acts on one post: load it, and take its org from the row, never from a claim.
   if (actionMeta(id)?.scope === 'thread') {
     ctx = { ...ctx, orgId: null }; // a claimed org never applies (nor reaches the audit row) for a post entry
@@ -385,6 +454,17 @@ let subjectColumnMissing = false;
 const AUDIT_RETRY_MS = 10 * 60 * 1000;
 
 /**
+ * `action_events.actor_type` (migration 245; CHECK 'human' | 'ai' | 'system'), from the
+ * door (2026-11-07): the host's own pages are the person ('human'); a script is 'system';
+ * every other door counts as an agent ('ai'), the same split Channel records as
+ * `actor_kind` 'user' / 'agent'. Until 2026-11-07 the column was left to its default 'human'.
+ */
+function actorType(via: string | undefined): 'human' | 'ai' | 'system' {
+  const door = via ?? 'app';
+  return door === 'app' ? 'human' : door === 'script' ? 'system' : 'ai';
+}
+
+/**
  * The audit row (migration 245). Best effort: a failed insert is logged and the
  * person's result stands, because the action has already happened by now.
  */
@@ -401,9 +481,9 @@ async function record(id: string, ctx: ActorContext, input: unknown, result: Act
   const subject = typeof ctx.subjectId === 'string' && ctx.subjectId && !subjectColumnMissing ? ctx.subjectId.slice(0, 64) : null;
   try {
     await db`
-      INSERT INTO action_events (action_id, actor_id, org_id, via, input, ok, error, code, result, duration_ms${subject ? db`, subject_id` : db``})
+      INSERT INTO action_events (action_id, actor_id, actor_type, org_id, via, input, ok, error, code, result, duration_ms${subject ? db`, subject_id` : db``})
       VALUES (
-        ${id.slice(0, 60)}, ${ctx.userId}, ${ctx.orgId ?? null}, ${(ctx.via ?? 'app').slice(0, 20)},
+        ${id.slice(0, 60)}, ${ctx.userId}, ${actorType(ctx.via)}, ${ctx.orgId ?? null}, ${(ctx.via ?? 'app').slice(0, 20)},
         ${kept === null ? null : db.json(kept as never)}, ${result.ok}, ${result.ok === false ? result.error : null}, ${result.ok === false ? result.code ?? null : null},
         ${data === null ? null : db.json(data as never)}, ${ms}${subject ? db`, ${subject}` : db``}
       )

@@ -13,6 +13,8 @@ export const STUDIO_KINDS: StudioKind[] = [
   { id: 'post', label: 'Posts', noun: 'post', ready: true, href: '/studio?kind=post' },
   // Recordings: camera, screen or phone into your files (2026-11-01); an extension like Video.
   { id: 'recording', label: 'Recordings', noun: 'recording', ready: true, href: '/studio?kind=recording' },
+  // Word art: EAC logo cut-outs, text or an uploaded logo, filled with the gradient lab, 2D or 3D (2026-11-07).
+  { id: 'wordart', label: 'Word art', noun: 'design', ready: true, href: '/studio?kind=wordart' },
   { id: 'artwork', label: 'Artwork', noun: 'work', ready: false },
   // Meetings and events are one shape (content-fields.ts) and the live rows are all meeting;
   // one tab, an extension like Post (2026-11-01).

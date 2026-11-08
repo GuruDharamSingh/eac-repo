@@ -8,6 +8,7 @@ import {
   listActableStores,
   getCurrentUser,
   getIsAdmin,
+  getIsKeeper,
 } from "@/lib/marketplace-auth";
 import { SiteNav, type NavLink } from "./site-nav";
 
@@ -16,10 +17,11 @@ export async function SiteHeader() {
   const cart = token ? await getCartByToken(token) : null;
   const count = cart?.lines?.length ?? 0;
 
-  const [user, stores, admin] = await Promise.all([
+  const [user, stores, admin, keeper] = await Promise.all([
     getCurrentUser(),
     listActableStores(),
     getIsAdmin(),
+    getIsKeeper(),
   ]);
   const unread = user ? await getUnreadCount(user.id) : 0;
   // Any store the person can act for — their own or an org's — opens the studio.
@@ -42,7 +44,7 @@ export async function SiteHeader() {
     // Messages has its own link beside the cart on wide screens, where it
     // carries the unread count; in the narrow menu it belongs with the rest.
     ...(user ? [{ href: "/messages", label: "Messages", narrowOnly: true }] : []),
-    ...(admin ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(admin ? [{ href: "/admin", label: "Admin" }] : keeper ? [{ href: "/admin/stores", label: "Admin" }] : []),
   ];
 
   return (

@@ -1668,6 +1668,10 @@ services:
       ART_AUCTION_RESERVATION_MINUTES: ${ART_AUCTION_RESERVATION_MINUTES:-15}
       ART_AUCTION_ETRANSFER_DUE_HOURS: ${ART_AUCTION_ETRANSFER_DUE_HOURS:-72}
       ART_AUCTION_GALLERY_PAYOUT_EMAIL: ${ART_AUCTION_GALLERY_PAYOUT_EMAIL:-info@elkdonis-arts.org}
+      # Easyship shipping quotes and labels (migration 250). EASYSHIP_ENV: sandbox | production.
+      EASYSHIP_ENV: ${EASYSHIP_ENV:-sandbox}
+      EASYSHIP_SANDBOX_TOKEN: ${EASYSHIP_SANDBOX_TOKEN:-}
+      EASYSHIP_PRODUCTION_TOKEN: ${EASYSHIP_PRODUCTION_TOKEN:-}
       # Stripe — card payments + Express seller onboarding. Unset = eTransfer only.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
@@ -2001,6 +2005,14 @@ services:
       # refused on card (src/lib/sample-guard.ts).
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # Easyship shipping labels after the sale (src/lib/shipping, migration 251).
+      # The site's own switch (site_config shipping:mode = off|test|live) picks the
+      # token per call: test = sandbox only, live = production. Webhook secrets
+      # (webh_...) come from the Easyship dashboard, for /api/shipping/webhook.
+      EASYSHIP_SANDBOX_TOKEN: ${EASYSHIP_SANDBOX_TOKEN:-}
+      EASYSHIP_PRODUCTION_TOKEN: ${EASYSHIP_PRODUCTION_TOKEN:-}
+      EASYSHIP_WEBHOOK_SECRET: ${EASYSHIP_WEBHOOK_SECRET:-}
+      EASYSHIP_SANDBOX_WEBHOOK_SECRET: ${EASYSHIP_SANDBOX_WEBHOOK_SECRET:-}
       # SendGrid — order emails (buyer invoice/receipt, Katie's "new order",
       # the platform copy) sent from this process. Same three lines as
       # art-auction; @elkdonis/email reads EMAIL_FROM (+ the authenticated

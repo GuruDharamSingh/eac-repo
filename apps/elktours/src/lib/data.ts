@@ -615,9 +615,29 @@ function mapGuide(op: OrgProfile, overrides?: Map<string, string>): Guide {
  * they join — without the flag, an about page would fill with empty stubs.
  */
 export async function getGuides(): Promise<Guide[]> {
-  const rows = await listOrgProfiles(ORG, { onlyPublic: true });
+  // People only: the roster also holds the associated businesses (entity_type
+  // 'organization'), which are places on the routes, not guides (2026-11-07).
+  const rows = (await listOrgProfiles(ORG, { onlyPublic: true })).filter((r) => r.entityType === "person");
   const overrides = await getPhotoOverrides(rows.map((r) => r.userId));
   return rows.map((r) => mapGuide(r, overrides));
+}
+
+export interface AssociatedBusiness {
+  slug: string;
+  name: string;
+  /** Kind of place, from the profile's role title (Museum, Café, ...). */
+  kind: string | null;
+}
+
+/**
+ * The businesses and places listed under this org. They have no page here:
+ * each one's page is on ArtDirect (`<NEXT_PUBLIC_ARTDIRECT_URL>/<slug>`).
+ */
+export async function getAssociatedBusinesses(): Promise<AssociatedBusiness[]> {
+  const rows = await listOrgProfiles(ORG, { onlyPublic: true });
+  return rows
+    .filter((r) => r.entityType === "organization" && r.slug)
+    .map((r) => ({ slug: r.slug as string, name: r.displayName, kind: r.roleTitle }));
 }
 
 export async function getGuideBySlug(slug: string): Promise<Guide | null> {

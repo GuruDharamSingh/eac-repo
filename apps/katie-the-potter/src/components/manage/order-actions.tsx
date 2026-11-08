@@ -19,7 +19,20 @@ const CONFIRM_COPY: Record<Kind, string> = {
  * again (store owner or manager, this store's order, eligible status); the
  * buttons only mirror that so nothing is offered that cannot work.
  */
-export function OrderActions({ id, status, payment }: { id: string; status: string; payment: string }) {
+export function OrderActions({
+  id,
+  status,
+  payment,
+  tracking = null,
+  hideShip = false,
+}: {
+  id: string;
+  status: string;
+  payment: string;
+  tracking?: string | null;
+  /** Quote-only shipping: the Ship-this card has its own Mark shipped, with the tracking. */
+  hideShip?: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const toast = useToast();
@@ -27,15 +40,16 @@ export function OrderActions({ id, status, payment }: { id: string; status: stri
   const unpaid = status === "awaiting_etransfer" || status === "payment_received" || status === "pending_payment";
   const buttons: Array<{ kind: Kind; label: string }> = [];
   if ((status === "awaiting_etransfer" || status === "payment_received") && payment === "etransfer") buttons.push({ kind: "confirm", label: "Confirm eTransfer received" });
-  if (status === "paid") buttons.push({ kind: "ship", label: "Mark shipped" });
+  if (status === "paid" && !hideShip) buttons.push({ kind: "ship", label: tracking ? "Mark shipped (tracking filled in)" : "Mark shipped" });
   if (unpaid) buttons.push({ kind: "cancel", label: "Cancel" });
   if ((status === "paid" || status === "fulfilled") && payment === "etransfer") buttons.push({ kind: "refund", label: "Refund" });
 
   const run = (kind: Kind) => {
-    if (!window.confirm(CONFIRM_COPY[kind])) return;
+    const copy = kind === "ship" && tracking ? `Mark this order as shipped? The note on the order says: Tracking ${tracking}.` : CONFIRM_COPY[kind];
+    if (!window.confirm(copy)) return;
     start(async () => {
       const call: Promise<ActionResult> =
-        kind === "confirm" ? confirmEtransferAction(id) : kind === "ship" ? shipOrderAction(id) : kind === "cancel" ? cancelOrderAction(id) : refundOrderAction(id);
+        kind === "confirm" ? confirmEtransferAction(id) : kind === "ship" ? shipOrderAction(id, tracking ? `Tracking ${tracking}` : undefined) : kind === "cancel" ? cancelOrderAction(id) : refundOrderAction(id);
       const r = await call.catch(() => null);
       toast(r);
       if (r?.ok) router.refresh();

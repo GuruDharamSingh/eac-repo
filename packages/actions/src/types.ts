@@ -16,19 +16,25 @@
  * Whom an entry acts on. `person`: the signed-in person. `org`: an organisation
  * the person may manage (resolved by the host). `thread` (2026-11-06): one
  * existing post, named by the call's `subjectId`; its org is the post's own.
+ * `channel` (2026-11-07): a Channel (arts-collective /channel). With no org it is
+ * the person's own channel, which also carries the orgs they run; with an org
+ * claim it is that org's channel, honoured only for its owners and guides and
+ * never for `oad` (actionOrgId; a refused claim is refused, not widened).
  * Further subject scopes (`series`, `auction`, …) come with runbooks (brief §3.5).
  */
-export type ActionScope = 'person' | 'org' | 'thread';
+export type ActionScope = 'person' | 'org' | 'thread' | 'channel';
 
 /**
  * The scopes a course step can name (`settings.task.scope`). A `thread` entry acts
  * on one existing post, which a step cannot name until runbooks supply a subject
- * (brief §5 phase 4); `COURSE_ACTIONS` leaves those out.
+ * (brief §5 phase 4); `COURSE_ACTIONS` leaves those out. `channel` entries are left
+ * out too until `@elkdonis/lms` `stepTask` and lms-ui's picker know the scope (they
+ * read only 'person' | 'org'; docs/open/CHANNEL_REGISTRY_AND_BOARD_2026-11-07.md).
  */
-export type CourseActionScope = Exclude<ActionScope, 'thread'>;
+export type CourseActionScope = Exclude<ActionScope, 'thread' | 'channel'>;
 
 /** Where an entry belongs, for grouping in the studio's picker. */
-export type ActionArea = 'profile' | 'directory' | 'writing' | 'cloud' | 'market' | 'payments' | 'org' | 'content' | 'email';
+export type ActionArea = 'profile' | 'directory' | 'writing' | 'cloud' | 'market' | 'payments' | 'org' | 'content' | 'email' | 'channel';
 
 /**
  * A choice the author makes for an entry in a course step, stored in
@@ -79,6 +85,29 @@ export interface ActionStatus {
   href?: string | null;
   /** Current values, for an entry presented as a form (prefills the fields). */
   values?: Record<string, string>;
+  /**
+   * What is waiting, most pressing first, for an entry whose status is a list
+   * (2026-11-07: `channel-next`). Each item may name the entry that performs it.
+   */
+  next?: ActionNextItem[];
+}
+
+/**
+ * One thing waiting for the person, as a status lists it. `run` is a registry
+ * entry and its input, performed through the host's door (`runAction(run.id,
+ * run.input, { org })`); `href` is where to finish it when the caller cannot
+ * open it in place (a dock, an agent handing back a link).
+ */
+export interface ActionNextItem {
+  /** Stable within one read: `<kind>:<…>`. */
+  id: string;
+  title: string;
+  /** Why now: "Fills your Friday Instagram slot". */
+  reason: string | null;
+  /** When it is placed or due (ISO), if dated. */
+  at: string | null;
+  href: string | null;
+  run: null | { id: string; input: Record<string, unknown>; label: string; busyLabel: string };
 }
 
 /** The result of performing an entry. Test `r.ok === false`: root tsconfig is not strict. */

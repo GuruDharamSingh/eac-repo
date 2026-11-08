@@ -36,6 +36,7 @@ import {
   refundOrder,
   UNPAID_ORDER_STATUSES,
 } from "@elkdonis/commerce/server";
+import { handleShippingLabelSessionEvent, isShippingLabelSession } from "./shipping-label";
 import { getOrderById, getOrderLines } from "@elkdonis/commerce/queries";
 import { normaliseCountry } from "@elkdonis/commerce/payout-rails";
 import type { Order, PayoutIdentity } from "@elkdonis/commerce/types";
@@ -73,7 +74,11 @@ async function resolveDestination(orderId: string): Promise<{
   // gives all proceeds away has a maker share of 0 and takes no destination.
   const gross = lines.reduce((s, l) => s + l.unitPriceMinor * l.quantity, 0);
   const makerShare = lines.reduce((s, l) => s + (l.artistShareMinor ?? 0), 0);
-  const orgCut = gross - makerShare;
+  // Buyer-paid shipping stays on the platform too (migration 250): the
+  // collective holds it until tracking, or spends it on the label.
+  const order = await getOrderById(orderId);
+  const shippingMinor = Math.max(0, order?.shippingMinor ?? 0);
+  const orgCut = gross - makerShare + shippingMinor;
   if (makers.size !== 1 || makerShare <= 0) return { destinationAccountId: null, applicationFeeMinor: 0 };
   const makerId = [...makers][0];
   if (!makerId) return { destinationAccountId: null, applicationFeeMinor: 0 };
@@ -158,6 +163,18 @@ export async function startStripeCheckout(input: {
       imageUrl: abs,
     };
   });
+
+  // Shipping chosen on the order page (migration 250) is its own line.
+  if (order.shippingMinor > 0) {
+    const ship = (order.metadata as { shipping?: { option?: { name?: string } | null } } | null)?.shipping;
+    lines.push({
+      name: `Shipping${ship?.option?.name ? ` (${ship.option.name})` : ""}`,
+      amountMinor: order.shippingMinor,
+      currency: order.currency,
+      quantity: 1,
+      imageUrl: null,
+    });
+  }
 
   if (order.totalMinor > CARD_CHARGE_CEILING_MINOR) {
     throw new CardCheckoutRefused(
@@ -292,6 +309,16 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
   }
 
   try {
+    // Shipping paid after the sale (migration 251): metadata.kind
+    // "shipping_payment" (quote-only: the maker's money, recorded on the
+    // shipment and in the ledger) or the parked "shipping_label". Not
+    // orders: record it on the shipment and stop, so a shipping session never
+    // confirms or cancels the (already paid) order it belongs to, and never
+    // buys a label.
+    if (event.type.startsWith("checkout.session.") && isShippingLabelSession(event.data.object as { metadata?: Record<string, string> | null })) {
+      await handleShippingLabelSessionEvent(event.type, event.data.object as never, event.id);
+      return new Response("ok", { status: 200 });
+    }
     switch (event.type) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
@@ -635,3 +662,31 @@ export async function completeBidderRegistration(input: {
   });
   return { ok: true };
 }
+
+// ─── Shipping-label payments (migration 251) ─────────────────────────────────
+export {
+  SHIPPING_LABEL_KIND,
+  buildShippingLabelSessionParams,
+  startShippingLabelCheckout,
+  syncShippingLabelPayment,
+  expireShippingLabelSession,
+  refundShippingLabelPayment,
+  onShippingLabelSession,
+  isShippingLabelSession,
+  type ShippingLabelCheckoutInput,
+  type ShippingLabelSessionState,
+  type ShippingLabelSessionEvent,
+  // Quote-only shipping payments (the maker's money).
+  SHIPPING_PAYMENT_KIND,
+  buildShippingPaymentSessionParams,
+  startShippingPaymentCheckout,
+  syncShippingPayment,
+  applyShippingPaymentSession,
+  resolveShippingPaymentRoute,
+  shippingRouteFor,
+  isShippingPaymentSession,
+  type ShippingPaymentCheckoutInput,
+  type ShippingPaymentRoute,
+  type ShippingQuoteFacts,
+  type ShippingSessionLike,
+} from "./shipping-label";

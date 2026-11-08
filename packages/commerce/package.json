@@ -17,7 +17,8 @@
     "./ledger": "./src/server/ledger.ts",
     "./links": "./src/links.ts",
     "./commerce.css": "./src/components/commerce.css",
-    "./payout-rails": "./src/payout-rails.ts"
+    "./payout-rails": "./src/payout-rails.ts",
+    "./shipping": "./src/shipping/index.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

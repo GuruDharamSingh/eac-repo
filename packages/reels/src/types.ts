@@ -9,6 +9,8 @@
 // local file server. One conversion, in the bundle, for both.
 // ============================================================================
 
+import { cleanGradient, type GradientSpec } from '@elkdonis/gradients';
+
 export type ReelTemplateId = 'artwork-reel' | 'clip';
 
 /** The clip template's frame: 16:9, 9:16 or 1:1. */
@@ -143,6 +145,11 @@ export interface ReelEdit {
     background?: string;
     foreground?: string;
     logo?: ReelMediaRef;
+    /**
+     * Gradient ground (@elkdonis/gradients, 2026-11-07): intro, end card and the bars round a clip
+     * that doesn't fill the frame. `background` stays its base colour and the fallback.
+     */
+    gradient?: GradientSpec;
   };
   artwork?: ReelMediaRef;
   clip?: ReelClipRef;
@@ -187,6 +194,7 @@ export interface ReelBrand {
   name: string;
   background?: string;
   foreground?: string;
+  gradient?: GradientSpec;
 }
 
 export interface ArtworkReelProps {
@@ -218,6 +226,7 @@ export function toArtworkReelProps({ edit, urls, fallbackName }: ReelInput): Art
       name,
       background: edit.brand?.background,
       foreground: edit.brand?.foreground,
+      gradient: cleanGradient(edit.brand?.gradient) ?? undefined,
       logo: src(edit.brand?.logo) ? { src: src(edit.brand?.logo) } : undefined,
     },
     artwork: { src: src(edit.artwork) },

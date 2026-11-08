@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ladder tuner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;family=Inter:wght@400;600&amp;display=swap">
+<style>
+/* Tokens copied from apps/arts-collective/src/components/channel/channel.css (.chn, light), 2026-11-07. */
+.chn {
+  --eac-area-channel: #0a7396;
+  --eac-area-channel-ink: #075f7c;
+  --eac-area-studio: #7d5f2a;
+  --eac-area-queue: #5b3f86;
+  --ch-bg: #f2f2f1;
+  --ch-surface: #e7e6e5;
+  --ch-raised: #f9f8f8;
+  --ch-ink: #1f1d1c;
+  --ch-muted: #57534f;
+  --ch-faint: #615d5c;
+  --ch-empty: #b3afae;
+  --ch-line: color-mix(in srgb, var(--ch-ink) 16%, transparent);
+  --ch-line-soft: color-mix(in srgb, var(--ch-ink) 8%, transparent);
+  --ch-accent: var(--eac-area-channel-ink);
+  --ch-accent-fill: var(--eac-area-channel);
+  --ch-on-accent: #ffffff;
+  --ch-accent-100: color-mix(in srgb, var(--ch-accent-fill) 12%, var(--ch-bg));
+  --ch-accent-400: color-mix(in srgb, var(--ch-accent-fill) 55%, var(--ch-bg));
+  --ch-queue: var(--eac-area-queue);
+  --ch-queue-100: color-mix(in srgb, var(--ch-queue) 10%, var(--ch-bg));
+  --ch-studio: var(--eac-area-studio);
+  --ch-studio-100: color-mix(in srgb, var(--ch-studio) 10%, var(--ch-bg));
+  --ch-live: #a3105a;
+  --ch-live-100: color-mix(in srgb, var(--ch-live) 10%, var(--ch-bg));
+  --ch-alert: #a33a14;
+  --ch-shadow-sm: 0 1px 2px rgb(31 29 28 / 0.14);
+  --ch-shadow-md: 0 3px 10px rgb(31 29 28 / 0.16);
+  --ch-radius: 2px;
+  --ch-font: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --ch-mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --dk-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--ch-bg);
+  color: var(--ch-ink);
+  font-family: var(--ch-font);
+  font-size: 14px;
+  line-height: 1.45;
+  color-scheme: light;
+}
+html, body { margin: 0; background: #f2f2f1; }
+.chn, .chn *, .chn *::before, .chn *::after { box-sizing: border-box; }
+:where(.chn) a { color: inherit; text-decoration: none; }
+:where(.chn) button { font: inherit; color: inherit; }
+:where(.chn) :is(h1, h2, h3, h4, p) { margin: 0; }
+:where(.chn) :is(ul, ol) { margin: 0; padding: 0; list-style: none; }
+.ic { flex: none; display: block; }
+
+/* ── pieces copied from channel.css ─────────────────────────────────── */
+.chn-idm { display: inline-grid; place-items: center; flex: none; border-radius: 50%; background: var(--ch-ink); color: var(--ch-bg); font-weight: 600; letter-spacing: 0.02em; line-height: 1; }
+.chn-idm[data-kind="org"] { border-radius: 2px; }
+.chn-thumb { flex: none; border-radius: var(--ch-radius); display: block; }
+.chn-thumb.is-empty { display: grid; place-items: center; color: var(--ch-faint); font-size: 18px; background: repeating-linear-gradient(135deg, var(--ch-surface) 0 8px, color-mix(in srgb, var(--ch-ink) 5%, var(--ch-surface)) 8px 9px); }
+.chn-kicker { font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.chn-kicker.is-accent { color: var(--ch-accent); }
+.chn-quiet { color: var(--ch-muted); font-size: 13px; }
+.chn-help { font-size: 12.5px; color: var(--ch-muted); }
+.chn-linkbtn { border: 0; background: none; padding: 0; color: var(--ch-accent); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.chn-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border: 1px solid var(--ch-line); background: var(--ch-raised); border-radius: var(--ch-radius); font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--ch-ink); }
+.chn-btn.is-primary { background: var(--ch-accent-fill); border-color: var(--ch-accent-fill); color: var(--ch-on-accent); }
+.chn-btn.is-small { height: 28px; padding: 0 10px; font-size: 13px; }
+.chn-btn[disabled] { opacity: 0.55; }
+.chn-seg { display: inline-flex; border: 1px solid var(--ch-line); border-radius: var(--ch-radius); overflow: hidden; background: var(--ch-raised); }
+.chn-seg > * { border-right: 1px solid var(--ch-line); padding: 0 10px; height: 27px; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ch-ink); white-space: nowrap; }
+.chn-seg > *:last-child { border-right: 0; }
+.chn-seg > [aria-pressed="true"] { background: var(--ch-accent-fill); color: var(--ch-on-accent); }
+.chn-nav { background: var(--ch-surface); padding: 18px 10px 12px; display: flex; flex-direction: column; gap: 14px; }
+.chn-nav-head { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.chn-nav-who { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.chn-nav-who strong { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chn-nav-who span { font-size: 12px; color: var(--ch-muted); }
+.chn-nav-links { display: flex; gap: 14px; padding: 0 8px; font-size: 12px; color: var(--ch-accent); }
+.chn-nav-group ul { display: flex; flex-direction: column; gap: 1px; }
+.chn-nav-gh { display: flex; align-items: center; justify-content: space-between; height: 26px; padding: 0 8px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.chn-nav-row { display: flex; align-items: center; gap: 9px; height: 29px; padding: 0 8px; border-radius: var(--ch-radius); font-size: 14px; color: var(--ch-ink); }
+.chn-nav-row[aria-current="page"] { background: color-mix(in srgb, var(--ch-accent-fill) 12%, transparent); color: var(--ch-accent); }
+.chn-nav-row .ic { color: var(--ch-muted); }
+.chn-nav-row[aria-current="page"] .ic { color: var(--ch-accent); }
+.chn-nav-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chn-nav-meta { font-size: 12px; color: var(--ch-muted); white-space: nowrap; }
+.chn-nav-meta[data-tone="live"] { color: var(--ch-live); }
+.chn-motion-row { display: flex; gap: 14px; padding: 10px; border-radius: var(--ch-radius); }
+.chn-motion-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.chn-motion-text strong { font-size: 15px; font-weight: 600; }
+.chn-motion-text small { font-size: 13px; color: var(--ch-muted); }
+
+/* ── board frame ────────────────────────────────────────────────────── */
+.ld { width: 1280px; padding: 36px 40px 0; overflow: hidden; }
+.ld-top { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 40px; align-items: end; padding-bottom: 20px; border-bottom: 1px solid var(--ch-line); }
+.ld-top h1 { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; margin: 6px 0 8px; }
+.ld-lede { font-size: 15px; color: var(--ch-muted); max-width: 660px; }
+.ld-lede b { color: var(--ch-ink); font-weight: 600; }
+.ld-piece { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; background: var(--ch-surface); padding: 12px; border-radius: 4px; }
+.ld-piece .chn-thumb { width: 96px; height: 72px; }
+.ld-piece strong { display: block; font-size: 18px; font-weight: 600; line-height: 1.2; margin: 3px 0 3px; }
+.ld-piece small { display: block; font-size: 12.5px; color: var(--ch-muted); }
+.ld-piece .chn-kicker { color: var(--ch-accent); }
+.ld-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px 0 0; font-size: 12.5px; color: var(--ch-muted); }
+.ld-legend + .ld-legend { padding-top: 6px; }
+.ld-legend .ld-legend-k { width: 74px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.ld-legend li { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.ld-legend .ld-legend-sep { width: 1px; height: 16px; background: var(--ch-line); }
+.ld-legend .ld-dot { width: 12px; height: 12px; }
+.ld-legend [data-area] { font-size: 12.5px; }
+
+.ld-sec { padding: 30px 0 0; }
+.ld-sec-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.ld-num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ch-ink); color: var(--ch-bg); font-size: 12px; font-weight: 600; transform: translateY(-3px); flex: none; }
+.ld-sec-h h2 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.ld-sec-h p { font-size: 13.5px; color: var(--ch-muted); }
+.ld-sec-h .ld-progress { margin-left: auto; font-size: 13px; color: var(--ch-ink); }
+.ld-sec-h .ld-progress span { color: var(--ch-muted); }
+
+/* ── the ladder ─────────────────────────────────────────────────────── */
+.ld-ladder { border-top: 1px solid var(--ch-line); }
+.ld-row { display: grid; grid-template-columns: 92px 28px minmax(0, 1fr) 80px 184px 216px; column-gap: 14px; align-items: center; }
+.ld-head { padding: 8px 0; border-bottom: 1px solid var(--ch-line); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.ld-step { padding: 10px 0; border-bottom: 1px solid var(--ch-line-soft); min-height: 60px; }
+.ld-off { font-size: 13px; color: var(--ch-muted); font-variant-numeric: tabular-nums; line-height: 1.3; padding-left: 8px; }
+.ld-spine { align-self: stretch; position: relative; display: grid; place-items: center; min-height: 20px; }
+.ld-spine::before { content: ""; position: absolute; left: 50%; top: var(--sp-t, -10px); bottom: var(--sp-b, -11px); width: 1.5px; margin-left: -0.75px; background: color-mix(in srgb, var(--ch-ink) 28%, transparent); }
+.ld-seg > .ld-spine { --sp-t: -14px; --sp-b: -6px; }
+.ld-fork > .ld-spine { --sp-t: -14px; --sp-b: -17px; }
+.ld-pre > .ld-spine::before, .ld-post > .ld-spine::before { display: none; }
+[data-path="dev"] > .ld-spine::before { width: 3px; margin-left: -1.5px; background: var(--ch-queue); }
+.ld-step.ld-first > .ld-spine::before { top: 50%; }
+.ld-step.ld-last > .ld-spine::before { bottom: 50%; }
+.ld-fork.ld-first > .ld-spine::before { top: 14px; }
+.ld-fork.ld-last > .ld-spine::before { bottom: calc(100% - 14px); }
+.ld-dot { position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 50%; background: var(--ch-bg); border: 1.5px solid var(--ch-ink); display: grid; place-items: center; color: var(--ch-bg); }
+[data-state="done"] .ld-dot, .ld-dot[data-s="done"] { background: var(--ch-ink); border-color: var(--ch-ink); }
+[data-state="placed"] .ld-dot, .ld-dot[data-s="placed"] { background: var(--ch-accent-fill); border-color: var(--ch-accent-fill); }
+[data-state="live"] .ld-dot, .ld-dot[data-s="live"] { background: var(--ch-live); border-color: var(--ch-live); }
+[data-state="suggested"] .ld-dot, .ld-dot[data-s="suggested"] { border: 1.5px dashed var(--ch-accent-fill); }
+[data-state="skipped"] .ld-dot, .ld-dot[data-s="skipped"],
+[data-state="expired"] .ld-dot, .ld-dot[data-s="expired"],
+[data-state="waiting"] .ld-dot, .ld-dot[data-s="waiting"] { border-color: var(--ch-empty); color: var(--ch-faint); }
+[data-state="waiting"] .ld-dot, .ld-dot[data-s="waiting"] { border-style: dotted; }
+.ld-step[data-next] { background: color-mix(in srgb, var(--ch-accent-fill) 9%, transparent); }
+.ld-step[data-next] .ld-dot { width: 20px; height: 20px; border: 2px solid var(--ch-accent-fill); background: var(--ch-bg); box-shadow: 0 0 0 5px color-mix(in srgb, var(--ch-accent-fill) 20%, transparent); }
+.ld-step[data-next] .ld-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ch-accent-fill); }
+.ld-nextmark { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 3px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--ch-accent); }
+.ld-what { min-width: 0; }
+.ld-what strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; }
+.ld-what small { display: block; font-size: 12.5px; color: var(--ch-muted); margin-top: 2px; line-height: 1.4; }
+.ld-what .ld-if { display: inline-block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--ch-queue); border: 1px solid color-mix(in srgb, var(--ch-queue) 45%, transparent); padding: 0 5px; margin-right: 6px; border-radius: 2px; transform: translateY(-1px); }
+:is([data-state="skipped"], [data-state="expired"]) .ld-what strong { font-weight: 400; color: var(--ch-muted); }
+.ld-out { display: flex; flex-wrap: wrap; gap: 8px; color: var(--ch-ink); }
+:is([data-state="skipped"], [data-state="expired"]) .ld-out { color: var(--ch-empty); }
+.ld-tool { display: inline-flex; gap: 7px; align-items: flex-start; font-size: 13px; line-height: 1.3; }
+.ld-tool .ic { margin-top: 1px; }
+[data-area="channel"] { color: var(--ch-accent); }
+[data-area="studio"] { color: var(--ch-studio); }
+[data-area="queue"] { color: var(--ch-queue); }
+[data-area="audience"] { color: var(--ch-ink); }
+[data-area="live"] { color: var(--ch-live); }
+:is([data-state="skipped"], [data-state="expired"]) .ld-tool { color: var(--ch-muted); }
+.ld-state { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.ld-tag { display: inline-flex; gap: 5px; align-items: center; padding: 2px 8px; font-size: 12px; line-height: 1.4; border-radius: var(--ch-radius); white-space: nowrap; border: 1px solid transparent; }
+.ld-tag[data-state="done"] { background: var(--ch-surface); color: var(--ch-ink); }
+.ld-tag[data-state="placed"] { background: var(--ch-accent-100); color: var(--ch-accent); }
+.ld-tag[data-state="live"] { background: var(--ch-live-100); color: var(--ch-live); }
+.ld-tag[data-state="suggested"] { border: 1px dashed var(--ch-accent-400); color: var(--ch-accent); }
+.ld-tag[data-state="skipped"], .ld-tag[data-state="expired"] { color: var(--ch-muted); border-color: var(--ch-line); }
+.ld-tag[data-state="waiting"] { color: var(--ch-muted); border: 1px dotted color-mix(in srgb, var(--ch-ink) 35%, transparent); }
+.ld-state small { font-size: 12px; color: var(--ch-muted); display: inline-flex; gap: 4px; align-items: flex-start; line-height: 1.35; }
+.ld-state small .ic { margin-top: 1px; }
+.ld-state small[data-tone="queue"] { color: var(--ch-queue); }
+.ld-state small[data-tone="live"] { color: var(--ch-live); }
+
+.ld-seg { padding: 14px 0 6px; }
+.ld-seg-label { grid-column: 3 / -1; display: flex; gap: 10px; align-items: baseline; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--ch-muted); }
+.ld-seg-label span { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 12.5px; }
+.ld-seg[data-path="dev"] .ld-seg-label { color: var(--ch-queue); }
+
+.ld-fork { padding: 14px 0 16px; border-bottom: 1px solid var(--ch-line-soft); align-items: start; background: color-mix(in srgb, var(--ch-queue) 5%, transparent); }
+.ld-fork .ld-off { color: var(--ch-queue); font-weight: 600; padding-top: 3px; }
+.ld-fork > .ld-spine { place-items: start center; padding-top: 1px; }
+.ld-forkmark { position: relative; z-index: 1; width: 26px; height: 26px; border-radius: 4px; background: var(--ch-queue); color: #fff; display: grid; place-items: center; }
+.ld-fork-body { grid-column: 3 / -1; display: flex; flex-direction: column; gap: 10px; padding-right: 12px; }
+.ld-fork-q { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.ld-fork-q strong { font-size: 16px; font-weight: 600; }
+.ld-fork-q small { font-size: 13px; color: var(--ch-muted); }
+.ld-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ld-opts[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ld-opt { border: 1px solid var(--ch-line); background: var(--ch-raised); padding: 10px 12px 11px; border-radius: 3px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ld-opt[data-pick="chosen"], .ld-opt[data-pick="current"] { border: 2px solid var(--ch-queue); padding: 9px 11px 10px; }
+.ld-opt[data-pick="off"] { background: transparent; border-style: dashed; }
+.ld-opt-k { display: flex; justify-content: space-between; gap: 8px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.ld-opt-k b { font-weight: 600; color: var(--ch-queue); }
+.ld-opt strong { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+.ld-opt small { font-size: 12.5px; color: var(--ch-muted); line-height: 1.4; }
+.ld-ends { display: inline-flex; gap: 5px; align-items: center; margin-top: 3px; font-size: 12px; color: var(--ch-ink); }
+.ld-ends .ic { color: var(--ch-queue); }
+
+.ld-foot { display: flex; gap: 24px; padding: 12px 0 0 120px; font-size: 12.5px; color: var(--ch-muted); flex-wrap: wrap; }
+.ld-foot span { display: inline-flex; gap: 6px; align-items: flex-start; max-width: 520px; }
+.ld-foot .ic { color: var(--ch-accent); margin-top: 2px; }
+
+/* ── the overlay ────────────────────────────────────────────────────── */
+.ld-ov { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 30px; align-items: start; }
+.ld-site { position: relative; border: 1px solid var(--ch-line); border-radius: 6px; overflow: hidden; background: #fbfaf8; height: 452px; box-shadow: var(--ch-shadow-sm); font-family: var(--dk-font); color: #2a2826; }
+.ld-url { height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: #e9e8e6; border-bottom: 1px solid var(--ch-line-soft); }
+.ld-url span { flex: 1; height: 22px; display: flex; align-items: center; padding: 0 10px; background: #fbfaf8; border-radius: 11px; font: 12px var(--ch-mono); color: var(--ch-muted); }
+.ld-url em { font-style: normal; font-size: 11px; color: var(--ch-muted); font-family: var(--dk-font); }
+.st-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid #e6e3df; }
+.st-head b { font-family: var(--ch-font); font-size: 17px; font-weight: 600; }
+.st-head nav { display: flex; gap: 18px; font-size: 13px; color: #5e5a56; }
+.st-body { padding: 22px 24px; }
+.st-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 28px; }
+.st-img { background: repeating-linear-gradient(135deg, #e4e2df 0 9px, #dcd9d5 9px 10px); border-radius: 2px; display: grid; place-items: center; color: #77716b; font: italic 12px var(--ch-font); }
+.st-k { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #6f6a65; }
+.st-h { font-family: var(--ch-font); font-size: 26px; font-weight: 600; line-height: 1.15; margin: 6px 0 6px; color: #1f1d1c; }
+.st-p { font-size: 13.5px; color: #4f4b47; line-height: 1.5; }
+.st-btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; background: #2a2826; color: #fff; border-radius: 4px; font-size: 13.5px; font-weight: 600; margin-top: 14px; }
+.st-bar { height: 8px; background: #e6e3df; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.st-bar i { display: block; height: 100%; background: #6b8f71; }
+.st-lines i { display: block; height: 9px; background: #e3e0dc; border-radius: 2px; margin: 9px 0; }
+.st-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.st-tile { background: #fff; border: 1px solid #e6e3df; border-radius: 6px; padding: 14px; min-height: 104px; display: flex; flex-direction: column; gap: 6px; }
+.st-tile b { font-size: 14px; font-weight: 600; }
+.st-tile span { font-size: 12.5px; color: #6a655f; }
+.st-sessions { max-width: 380px; }
+.st-sessions li { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #ebe8e4; font-size: 13.5px; }
+.st-sessions li small { color: #6a655f; font-size: 12.5px; }
+.st-sessions li[data-on] { background: #f1efe9; margin: 0 -10px; padding: 10px; border-radius: 4px; border-bottom-color: transparent; }
+.st-chip { font-size: 12px; border: 1px solid #b9b4ae; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+
+.ld-docked { position: absolute; right: 16px; bottom: 16px; }
+.ld-states { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 12px; font-size: 12.5px; color: var(--ch-muted); }
+.ld-states > span { display: inline-flex; align-items: center; gap: 8px; }
+
+/* the dock (packages/dock/src/dock.css literals) */
+.dk { font-family: var(--dk-font); font-size: 14px; line-height: 1.4; color: #1f1d1a; }
+.dk-box { width: 320px; padding: 12px 14px 14px; border: 1px solid #78716c; border-radius: 10px; background: #fff; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18); }
+.dk-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.dk-eyebrow { margin: 0; color: #57534e; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-x { display: inline-flex; gap: 2px; color: #1f1d1a; }
+.dk-x span { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; }
+.dk-line { margin: 0 0 10px; font-size: 14px; }
+.dk-line b { font-weight: 600; }
+.dk-act { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.dk-btn { display: inline-flex; align-items: center; padding: 6px 12px; border: 1px solid #1f1d1a; border-radius: 6px; background: #1f1d1a; color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.dk-btn.is-quiet { background: #fff; color: #1f1d1a; border-color: #78716c; }
+.dk-link { color: #1d4ed8; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; white-space: nowrap; }
+.dk-tab { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #78716c; border-radius: 999px; background: #f5f5f4; color: #1f1d1a; font-family: var(--dk-font); font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); white-space: nowrap; }
+.dk-tab i { width: 8px; height: 8px; border-radius: 50%; background: #0a7396; }
+.dk-mini { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid #78716c; border-radius: 8px; background: #fff; font-family: var(--dk-font); font-size: 12.5px; color: #1f1d1a; white-space: nowrap; }
+.dk-mini a { color: #1d4ed8; text-decoration: underline; }
+.dk-hint { margin: 8px 0 0; font-size: 12px; color: #57534e; }
+.dk-state { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #f5f5f4; color: #44403c; }
+.dk-state.is-done { background: #dcfce7; color: #166534; }
+
+/* right column */
+.ld-side { display: flex; flex-direction: column; gap: 12px; }
+.ld-side-h { font-size: 13px; color: var(--ch-muted); display: flex; gap: 6px; align-items: center; }
+.ld-side-h b { color: var(--ch-ink); font-weight: 600; }
+.ld-panel { background: var(--ch-bg); border: 1px solid var(--ch-line); box-shadow: var(--ch-shadow-md); border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.ld-panel h3 { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.ld-panel-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ld-panel-top .ic { color: var(--ch-muted); }
+.ld-chip { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--ch-surface); }
+.ld-chip > div { display: flex; flex-direction: column; min-width: 0; }
+.ld-chip strong { font-size: 14px; font-weight: 600; }
+.ld-chip small { font-size: 12px; color: var(--ch-muted); }
+.ld-linkcard { border: 1px solid var(--ch-line); background: var(--ch-raised); }
+.ld-linkcard .chn-thumb { width: 100%; height: 96px; border-radius: 0; }
+.ld-linkcard div { padding: 8px 10px; display: flex; flex-direction: column; }
+.ld-linkcard small { font-size: 10.5px; color: var(--ch-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.ld-linkcard strong { font-size: 14px; font-weight: 600; }
+.ld-field { display: flex; flex-direction: column; gap: 4px; }
+.ld-field > span { font-size: 12.5px; color: var(--ch-muted); display: flex; justify-content: space-between; }
+.ld-field > div { font-size: 14px; background: var(--ch-surface); border: 1px solid var(--ch-line); border-radius: 2px; padding: 8px 10px; line-height: 1.45; }
+.ld-when { font-size: 13px; display: flex; gap: 6px; align-items: flex-start; }
+.ld-when .ic { color: var(--ch-queue); margin-top: 2px; }
+.ld-panel-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--ch-line-soft); padding-top: 12px; }
+.ld-panel-foot .chn-quiet { margin-right: auto; font-size: 12.5px; }
+.ld-rule { font-size: 12.5px; color: var(--ch-muted); display: flex; gap: 6px; align-items: flex-start; }
+.ld-rule .ic { color: var(--ch-accent); margin-top: 2px; }
+.ld-rows li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 13.5px; }
+.ld-rows.is-tagged li { display: grid; grid-template-columns: 74px minmax(0, 1fr); }
+.ld-rows.is-tagged .ld-tag { justify-self: start; }
+.ld-rows li:last-child { border-bottom: 0; }
+.ld-rows li small { display: block; font-size: 12px; color: var(--ch-muted); }
+.ld-rows li > .ic { margin-top: 2px; }
+
+/* clip editor + coach marks */
+.ld-clip { background: #1d1c1b; color: #eeeae6; border-radius: 4px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--ch-shadow-md); font-family: var(--ch-font); }
+.ld-clip-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 12.5px; color: #c9c4be; }
+.ld-clip-bar b { color: #fff; font-weight: 600; font-size: 13.5px; }
+.ld-clip .chn-seg { background: #2a2928; border-color: #4a4745; }
+.ld-clip .chn-seg > * { color: #e6e1dc; border-color: #4a4745; height: 25px; }
+.ld-clip .chn-seg > [aria-pressed="true"] { background: #d2b47a; color: #1d1c1b; }
+.ld-clip-body { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; }
+.ld-vert { position: relative; width: 150px; height: 266px; border-radius: 6px; overflow: hidden; background: repeating-linear-gradient(135deg, #3a3836 0 9px, #33312f 9px 10px); }
+.ld-vert-cap { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font: italic 11px var(--ch-font); color: #a9a39c; }
+.ld-vert-third { position: absolute; left: 8px; right: 8px; bottom: 54px; background: rgb(250 248 245 / 0.92); color: #1f1d1c; padding: 5px 7px; border-left: 3px solid #d2b47a; }
+.ld-vert-third b { display: block; font-size: 11px; font-weight: 600; line-height: 1.2; }
+.ld-vert-third span { font-size: 9.5px; color: #57534f; }
+.ld-vert-sub { position: absolute; left: 10px; right: 30px; bottom: 12px; text-align: center; font: 600 10.5px/1.3 var(--dk-font); color: #fff; text-shadow: 0 1px 2px #000; }
+.ld-coach { display: flex; flex-direction: column; gap: 8px; }
+.ld-coach li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; background: #fff; color: #1f1d1a; border-radius: 8px; padding: 8px 10px; font: 12.5px/1.4 var(--dk-font); }
+.ld-coach li i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; background: #1f1d1a; color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+.ld-coach-foot { font: 12px var(--dk-font); color: #c9c4be; display: flex; gap: 12px; }
+.ld-coach-foot u { color: #9cc2ff; }
+.ld-pin { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #1f1d1a; display: grid; place-items: center; font: 600 11px var(--dk-font); box-shadow: 0 0 0 3px rgb(255 255 255 / 0.35); }
+.ld-time { position: relative; height: 26px; background: #2a2928; border-radius: 3px; }
+.ld-time i { position: absolute; top: 0; bottom: 0; background: #d2b47a; border-radius: 3px; opacity: 0.9; }
+.ld-time span { position: absolute; top: 5px; font: 11px var(--dk-font); color: #1d1c1b; }
+.ld-time em { position: absolute; right: 8px; top: 5px; font: normal 11px var(--dk-font); color: #c9c4be; }
+
+/* email + booth panels */
+.ld-mailrow { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; font-size: 13.5px; padding: 6px 0; border-bottom: 1px solid var(--ch-line-soft); }
+.ld-mailrow span:first-child { color: var(--ch-muted); font-size: 12.5px; }
+.ld-mailbody { font-size: 14px; line-height: 1.55; background: var(--ch-raised); padding: 10px 12px; border: 1px solid var(--ch-line-soft); }
+.ld-mailbody p + p { margin-top: 8px; }
+.ld-dest { display: flex; flex-wrap: wrap; gap: 8px; }
+.ld-dest span { display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border: 1px solid var(--ch-line); background: var(--ch-raised); font-size: 13px; border-radius: 2px; }
+.ld-dest span[data-on] { border-color: var(--ch-live); color: var(--ch-live); background: var(--ch-live-100); }
+.ld-screen { position: relative; height: 150px; background: repeating-linear-gradient(135deg, #3a3836 0 9px, #33312f 9px 10px); border-radius: 3px; overflow: hidden; }
+.ld-screen .ld-vert-third { bottom: 16px; left: 12px; right: auto; width: 310px; }
+.ld-screen .ld-bug { position: absolute; top: 10px; right: 10px; font: 600 10px var(--dk-font); color: #fff; background: #a3105a; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.06em; }
+.ld-screen .ld-vert-cap { top: 40%; }
+.ld-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.ld-week li { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11.5px; color: var(--ch-muted); }
+.ld-week li i { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ch-ink); display: grid; place-items: center; color: var(--ch-bg); }
+.ld-week li[data-d="done"] i { background: var(--ch-ink); }
+.ld-week li[data-d="part"] i { background: linear-gradient(90deg, var(--ch-ink) 50%, var(--ch-bg) 50%); }
+.ld-week li[data-d="today"] i { border-color: var(--ch-accent-fill); border-width: 2px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ch-accent-fill) 20%, transparent); }
+.ld-week li[data-d="today"] { color: var(--ch-accent); font-weight: 600; }
+
+/* ── Home band ──────────────────────────────────────────────────────── */
+.ld-homebox { margin: 0 -40px; position: relative; display: grid; grid-template-columns: 244px minmax(0, 1fr); border-top: 1px solid var(--ch-line); height: 520px; overflow: hidden; }
+.ld-homebox::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(to bottom, rgb(242 242 241 / 0), #f2f2f1 85%); pointer-events: none; }
+.ld-homebox .chn-nav { height: 100%; }
+.ld-homemain { padding: 30px 40px; min-width: 0; }
+.ld-homehead { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
+.ld-homehead h1 { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.ld-homehead p { color: var(--ch-muted); font-size: 15px; margin-top: 6px; max-width: 560px; }
+.ld-homehead .ld-hbtns { display: flex; gap: 8px; }
+.ld-homehead .ld-hbtns .ic.is-live { color: var(--ch-live); }
+.ld-next-h { display: flex; gap: 12px; align-items: baseline; margin-bottom: 12px; }
+.ld-next-h .chn-kicker { font-weight: 600; color: var(--ch-ink); }
+.ld-next-h .chn-linkbtn { margin-left: auto; }
+.ld-next-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ld-hcard { position: relative; background: var(--ch-surface); padding: 12px 14px 13px; border-radius: var(--ch-radius); display: flex; flex-direction: column; gap: 7px; min-height: 168px; }
+.ld-hcard[data-this] { background: var(--ch-raised); box-shadow: inset 0 0 0 2px var(--ch-accent-fill), var(--ch-shadow-sm); }
+.ld-this { position: absolute; top: -9px; left: 10px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; background: var(--ch-accent-fill); color: var(--ch-on-accent); padding: 1px 6px; border-radius: 2px; }
+.ld-hcard-when { display: flex; gap: 5px; align-items: flex-start; font-size: 12px; line-height: 1.35; color: var(--ch-accent); }
+.ld-hcard-when .ic { margin-top: 1px; }
+.ld-hcard-when[data-tone="queue"] { color: var(--ch-queue); }
+.ld-hcard-when[data-tone="live"] { color: var(--ch-live); }
+.ld-hcard-when[data-tone="muted"] { color: var(--ch-muted); }
+.ld-hcard h3 { font-size: 15px; font-weight: 600; line-height: 1.28; }
+.ld-hcard-piece { display: flex; gap: 7px; align-items: flex-start; font-size: 12px; line-height: 1.35; color: var(--ch-muted); margin-top: auto; min-width: 0; }
+.ld-hcard-piece .chn-thumb { width: 22px; height: 22px; font-size: 10px; }
+.ld-hcard-piece > span:last-child { min-width: 0; padding-top: 3px; }
+.ld-hcard-piece .chn-thumb { flex: none; }
+.ld-hcard-act { display: flex; gap: 12px; align-items: center; }
+.ld-lapse { margin-top: 14px; display: flex; gap: 10px; align-items: center; font-size: 13.5px; padding: 8px 12px; border-left: 3px solid var(--ch-queue); background: var(--ch-queue-100); }
+.ld-lapse .ic { color: var(--ch-queue); }
+.ld-lapse .ld-lapse-text { flex: 1; }
+.ld-motion-h { margin: 26px 0 4px; font-weight: 600; }
+.ld-homecap { font-size: 12.5px; color: var(--ch-muted); margin: 0 0 10px; display: flex; gap: 6px; align-items: center; }
+
+/* ── phone board ────────────────────────────────────────────────────── */
+.ph { width: 390px; overflow: hidden; }
+.ph-label { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--ch-ink); color: var(--ch-bg); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.ph-label b { font-weight: 600; }
+.ph-screen { position: relative; height: 844px; overflow: hidden; background: #fbfaf8; font-family: var(--dk-font); color: #2a2826; }
+.ph-status { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font: 600 14px var(--dk-font); color: #1f1d1a; }
+.ph-url { margin: 0 12px 0; height: 34px; border-radius: 10px; background: #ebeae8; display: flex; align-items: center; justify-content: center; font: 12.5px var(--ch-mono); color: var(--ch-muted); }
+.ph-site-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e6e3df; }
+.ph-site-head b { font-family: var(--ch-font); font-size: 17px; font-weight: 600; }
+.ph-site-head span { font-size: 13px; color: #5e5a56; }
+.ph-dock { position: absolute; left: 16px; right: 16px; bottom: 28px; }
+.ph-dock .dk-box { width: auto; }
+.ph-dock .dk-btn, .ph-dock .dk-link { min-height: 44px; }
+.ph-dock .dk-btn { padding: 0 18px; }
+.ph-dock .dk-link { display: inline-flex; align-items: center; padding: 0 6px; }
+.ph-chn { background: var(--ch-bg); font-family: var(--ch-font); color: var(--ch-ink); }
+.ph-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--ch-line-soft); background: var(--ch-surface); }
+.ph-menu { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid var(--ch-line); background: var(--ch-raised); border-radius: var(--ch-radius); font-size: 13px; }
+.ph-mast { display: grid; grid-template-columns: 56px minmax(0, 1fr) 28px; gap: 12px; padding: 16px 16px 12px; align-items: start; }
+.ph-mast .chn-thumb { width: 56px; height: 56px; }
+.ph-mast h2 { font-size: 22px; font-weight: 600; line-height: 1.15; margin: 3px 0 3px; }
+.ph-mast small { font-size: 12.5px; color: var(--ch-muted); }
+.ph-tabs { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--ch-line); }
+.ph-tabs span { padding: 10px 12px; font-size: 14.5px; color: var(--ch-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.ph-tabs span[aria-current] { color: var(--ch-ink); border-bottom-color: var(--ch-accent-fill); }
+.ph-sum { padding: 12px 16px 6px; font-size: 13px; color: var(--ch-muted); }
+.ph-sum b { color: var(--ch-ink); font-weight: 600; }
+.ph-ladder { padding: 0 16px 0 6px; }
+.ph-row { display: grid; grid-template-columns: 62px 22px minmax(0, 1fr); column-gap: 8px; align-items: start; }
+.ph-step { padding: 11px 0 12px; border-bottom: 1px solid var(--ch-line-soft); }
+.ph-step > .ld-spine { align-self: stretch; place-items: start center; padding-top: 3px; }
+.ph-step[data-next] { background: color-mix(in srgb, var(--ch-accent-fill) 9%, transparent); }
+.ph-step[data-next] .ld-dot { width: 18px; height: 18px; border: 2px solid var(--ch-accent-fill); background: var(--ch-bg); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ch-accent-fill) 20%, transparent); }
+.ph-step[data-next] .ld-dot::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ch-accent-fill); }
+.ph-step .ld-off, .ph-fork .ld-off { font-size: 12px; padding: 1px 0 0 10px; }
+.ph-step > .ld-spine { --sp-t: -11px; --sp-b: -13px; }
+.ph-seg > .ld-spine { --sp-t: -12px; --sp-b: -4px; }
+.ph-fork > .ld-spine { --sp-t: -12px; --sp-b: -15px; }
+.ph-step.ld-first > .ld-spine::before { top: 10px; }
+.ph-step.ld-last > .ld-spine::before { bottom: calc(100% - 10px); }
+.ph-what strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; }
+.ph-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin: 5px 0 6px; font-size: 12.5px; color: var(--ch-muted); }
+.ph-meta .ld-out { gap: 6px; }
+.ph-meta .ld-tool { font-size: 12.5px; }
+.ph-what .ld-state { gap: 3px; }
+:is([data-state="skipped"]) .ph-what strong { font-weight: 400; color: var(--ch-muted); }
+.ph-fork { padding: 12px 0 14px; border-bottom: 1px solid var(--ch-line-soft); background: color-mix(in srgb, var(--ch-queue) 5%, transparent); }
+.ph-fork .ld-off { color: var(--ch-queue); font-weight: 600; }
+.ph-fork > .ld-spine { place-items: start center; }
+.ph-fork .ld-forkmark { width: 22px; height: 22px; }
+.ph-fork-body { display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.ph-fork-body > strong { font-size: 15px; font-weight: 600; }
+.ph-fork-body > small { font-size: 12.5px; color: var(--ch-muted); margin-top: -4px; }
+.ph-fork .ld-opt { padding: 9px 11px; min-height: 44px; }
+.ph-fork .ld-opt[data-pick="current"] { padding: 8px 10px; }
+.ph-seg { padding: 12px 0 4px; }
+.ph-seg .ld-seg-label { grid-column: 3; }
+.ph-foot { padding: 14px 16px 24px; font-size: 12.5px; color: var(--ch-muted); display: flex; flex-direction: column; gap: 8px; }
+.ph-foot span { display: flex; gap: 6px; align-items: flex-start; }
+.ph-foot .ic { color: var(--ch-accent); margin-top: 2px; }
+
+/* ── round 2: variations, matrix, tuner, docket (2026-11-07) ─────────── */
+.chn button { cursor: pointer; }
+.ld-kick-row { display: flex; gap: 10px; align-items: baseline; }
+.ld-vbadge { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--ch-queue); border: 1px solid color-mix(in srgb, var(--ch-queue) 45%, transparent); padding: 0 6px; border-radius: 2px; }
+.ld-diff { margin-top: 18px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 11px 16px 12px; background: var(--ch-queue-100); border-left: 3px solid var(--ch-queue); font-size: 15px; line-height: 1.45; }
+.ld-diff > b { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--ch-queue); white-space: nowrap; }
+
+/* comparison band on variation boards */
+.ld-cmpband { display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 40px; align-items: start; }
+.ld-cmpband h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+.cmp { border-top: 1px solid var(--ch-line); }
+.cmp-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 13.5px; align-items: start; }
+.cmp-head { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.cmp-head span:last-child { color: var(--ch-queue); font-weight: 600; }
+.cmp-k { font-size: 12.5px; color: var(--ch-muted); }
+.cmp-row [data-diff] { color: var(--ch-queue); font-weight: 600; }
+.cmp-outs { display: inline-flex; flex-wrap: wrap; gap: 7px; color: var(--ch-ink); }
+.cmp-row [data-diff] .cmp-outs { color: var(--ch-queue); }
+
+/* mini path grid */
+.mxm { display: grid; grid-template-columns: 70px repeat(10, 24px); gap: 3px; align-items: center; }
+.mxm.is-big { grid-template-columns: 84px repeat(10, 30px); gap: 4px; }
+.mxm-ch { display: grid; place-items: center; color: var(--ch-muted); height: 18px; }
+.mxm-rh { font-size: 11.5px; color: var(--ch-muted); white-space: nowrap; }
+.mxm.is-big .mxm-rh { font-size: 12.5px; }
+.mxm-c { height: 20px; border-radius: 2px; background: color-mix(in srgb, var(--ch-ink) 5%, transparent); display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: var(--ch-bg); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.mxm.is-big .mxm-c { height: 24px; font-size: 11.5px; }
+.mxm-c.is-light { background: var(--ch-ink); }
+.mxm-c.is-dev { background: var(--ch-queue); }
+.mxm-c.is-skip { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ch-empty); color: var(--ch-faint); }
+.mxm-c.is-opt { background: transparent; box-shadow: none; border: 1.5px dashed var(--ch-queue); }
+.mxm-c.is-ghost { background: transparent; border: 1.5px dotted color-mix(in srgb, var(--ch-ink) 45%, transparent); }
+.mxm-c.is-opt.is-ghost { border-style: dashed; }
+.mxm-c.is-out { background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ch-ink) 18%, transparent) 4px 5px); color: var(--ch-faint); box-shadow: inset 0 0 0 1px var(--ch-line); }
+.mxm-key { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; font-size: 12px; color: var(--ch-muted); }
+.mxm-key li { display: inline-flex; gap: 6px; align-items: center; }
+.mxm-key .mxm-c { width: 22px; height: 16px; font-size: 9.5px; }
+
+/* the matrix board */
+.mx-top-key { background: var(--ch-surface); padding: 14px 16px; border-radius: 4px; display: flex; flex-direction: column; gap: 9px; font-size: 13px; }
+.mx-top-key p { color: var(--ch-muted); font-size: 12.5px; }
+.mx-top-key ul { display: flex; flex-direction: column; gap: 7px; }
+.mx-top-key li { display: flex; gap: 10px; align-items: center; }
+.mx { display: grid; grid-template-columns: 184px repeat(10, minmax(0, 1fr)); border-top: 1px solid var(--ch-line); }
+.mx-grp { grid-column: span var(--n); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); padding: 8px 8px 6px; border-left: 1px solid var(--ch-line); border-bottom: 1px solid var(--ch-line-soft); }
+.mx-corner { border-bottom: 1px solid var(--ch-line-soft); }
+.mx-ch { padding: 8px 6px 10px 7px; border-left: 1px solid var(--ch-line-soft); border-bottom: 1px solid var(--ch-line); display: flex; flex-direction: column; gap: 4px; }
+.mx-ch.is-gs { border-left-color: var(--ch-line); }
+.mx-ch strong { font-size: 13px; font-weight: 600; line-height: 1.22; display: block; }
+.mx-ch strong .ic { display: inline-block; vertical-align: -2px; margin-right: 5px; color: var(--ch-accent); }
+.mx-ch small { font-size: 11.5px; color: var(--ch-muted); line-height: 1.3; }
+.mx-ch .mx-outs { display: flex; gap: 5px; color: var(--ch-muted); align-items: center; margin-top: auto; padding-top: 2px; }
+.mx-ch .mx-eff { margin-left: auto; font-size: 10.5px; font-weight: 600; color: var(--ch-muted); border: 1px solid var(--ch-line); padding: 0 4px; border-radius: 2px; }
+.mx-rh { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--ch-line-soft); display: flex; flex-direction: column; gap: 3px; }
+.mx-rh strong { font-size: 15px; font-weight: 600; line-height: 1.2; display: flex; gap: 7px; align-items: flex-start; }
+.mx-rh strong .ic { color: var(--ch-queue); margin-top: 2px; }
+.mx-rh small { font-size: 12px; color: var(--ch-muted); line-height: 1.35; padding-left: 23px; }
+.mx-c { border-left: 1px solid var(--ch-line-soft); border-bottom: 1px solid var(--ch-line-soft); padding: 8px 6px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px; min-height: 92px; }
+.mx-c.is-gs { border-left-color: var(--ch-line); }
+.mx-c .mx-n { width: 100%; font-size: 10.5px; color: var(--ch-queue); font-weight: 600; margin-bottom: 1px; }
+.mx-chip { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 10px; font-size: 11px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.mx-chip[data-k="o"] { background: var(--ch-ink); color: var(--ch-bg); }
+.mx-chip[data-k="v"] { box-shadow: inset 0 0 0 1.5px var(--ch-ink); color: var(--ch-ink); }
+.mx-chip[data-k="opt"] { border: 1.5px dashed var(--ch-queue); color: var(--ch-queue); }
+.mx-paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; }
+.mx-path { padding: 14px 0 18px; border-top: 1px solid var(--ch-line-soft); display: flex; flex-direction: column; gap: 8px; }
+.mx-path h3 { font-size: 15px; font-weight: 600; line-height: 1.25; display: flex; gap: 8px; align-items: baseline; }
+.mx-path h3 .mx-chip { transform: translateY(-1px); }
+.mx-path p { font-size: 12.5px; color: var(--ch-muted); line-height: 1.4; }
+.mx-path p b { color: var(--ch-ink); font-weight: 600; }
+.mx-fn { display: grid; grid-template-columns: minmax(0, 1fr) 470px; gap: 40px; align-items: start; }
+.mx-steps { counter-reset: s; display: flex; flex-direction: column; }
+.mx-steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 14px; line-height: 1.5; }
+.mx-steps li::before { content: counter(s); width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ch-ink); display: grid; place-items: center; font-size: 12px; font-weight: 600; margin-top: 1px; }
+.mx-steps li b { font-weight: 600; }
+.mx-io { display: flex; flex-direction: column; gap: 10px; }
+.mx-io-box { border: 1px solid var(--ch-line); background: var(--ch-raised); border-radius: 3px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.mx-io-box .chn-kicker { margin-bottom: 2px; }
+.mx-io-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; }
+.mx-io-row span:first-child { color: var(--ch-muted); font-size: 12.5px; }
+.mx-io-arrow { display: flex; justify-content: center; color: var(--ch-queue); }
+.mx-io-arrow .ic { transform: rotate(90deg); }
+.mx-set { display: grid; grid-template-columns: 54px minmax(0, 2.4fr) minmax(0, 1.3fr) 70px 70px 80px 70px minmax(0, 0.8fr); gap: 12px; align-items: center; }
+.mx-set > * { font-size: 13px; }
+.mx-set.is-head { padding: 8px 0; border-bottom: 1px solid var(--ch-line); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.mx-set.is-head > * { font-size: 10.5px; }
+.mx-set.is-row { padding: 7px 0; border-bottom: 1px solid var(--ch-line-soft); }
+.mx-set.is-row.is-o { border-top: 1px solid var(--ch-line); }
+.mx-set .mx-bar { display: inline-flex; gap: 2px; vertical-align: middle; }
+.mx-set .mx-bar i { width: 8px; height: 10px; background: color-mix(in srgb, var(--ch-ink) 12%, transparent); border-radius: 1px; }
+.mx-set .mx-bar i[data-on] { background: var(--ch-queue); }
+.mx-set .mx-muted { color: var(--ch-muted); }
+.mx-set > .mx-chip { justify-self: start; }
+.mxm-c.is-many { font-size: 9px; letter-spacing: -0.04em; }
+.ld-seg-label > .sc-interp { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; font-size: 11px; }
+.mx-rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.mx-rules li { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 13.5px; }
+.mx-rules .ic { color: var(--ch-accent); margin-top: 2px; }
+
+/* ── tuner ──────────────────────────────────────────────────────────── */
+.tn-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; padding: 16px 18px 18px; background: var(--ch-surface); border-radius: 4px; }
+.tn-ctl { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tn-ctl.is-wide { grid-column: 1 / -1; }
+.tn-ctl-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tn-ctl-h .chn-kicker { font-weight: 600; color: var(--ch-ink); }
+.tn-ctl-h span:last-child { font-size: 13px; color: var(--ch-queue); font-weight: 600; white-space: nowrap; }
+.tn-ctl small { font-size: 12px; color: var(--ch-muted); line-height: 1.35; }
+.tn-rail { display: flex; border: 1px solid var(--ch-line); border-radius: var(--ch-radius); background: var(--ch-raised); overflow: hidden; }
+.tn-rail button { flex: 1 1 0; min-width: 0; border: 0; border-right: 1px solid var(--ch-line); background: none; height: 30px; padding: 0 6px; font-size: 12.5px; color: var(--ch-ink); white-space: nowrap; }
+.tn-rail button:last-child { border-right: 0; }
+.tn-rail button[aria-pressed="true"] { background: var(--ch-accent-fill); color: var(--ch-on-accent); font-weight: 600; }
+.tn-rail button[data-fill="true"] { background: color-mix(in srgb, var(--ch-accent-fill) 16%, var(--ch-raised)); }
+.tn-rail.is-tpl button { height: 34px; font-size: 13.5px; }
+.tn-switch { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; font-size: 13px; color: var(--ch-ink); }
+.tn-switch i { width: 30px; height: 18px; border-radius: 9px; background: var(--ch-empty); position: relative; }
+.tn-switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+.tn-switch[aria-pressed="true"] i { background: var(--ch-accent-fill); }
+.tn-switch[aria-pressed="true"] i::after { left: 14px; }
+.tn-tweak { font-size: 12.5px; color: var(--ch-muted); display: flex; gap: 6px; align-items: center; margin-top: 10px; }
+.tn-tweak .ic { color: var(--ch-accent); }
+.tn-band { display: grid; grid-template-columns: 300px minmax(0, 1fr) 380px; gap: 32px; align-items: start; margin-top: 22px; }
+.tn-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tn-stat { border: 1px solid var(--ch-line); background: var(--ch-raised); padding: 9px 11px 10px; border-radius: 3px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tn-stat .chn-kicker { font-size: 10px; }
+.tn-stat strong { font-size: 21px; font-weight: 600; line-height: 1.15; }
+.tn-stat small { font-size: 12px; color: var(--ch-muted); line-height: 1.3; }
+.tn-stat.is-wide { grid-column: 1 / -1; }
+.tn-outs { display: flex; flex-wrap: wrap; gap: 8px; color: var(--ch-ink); padding-top: 3px; }
+.tn-outs span[data-off="true"] { color: var(--ch-empty); }
+.tn-why { display: flex; flex-direction: column; }
+.tn-why li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 13px; line-height: 1.4; }
+.tn-why li .ic { margin-top: 2px; color: var(--ch-queue); }
+.tn-why li[data-k="out"] .ic { color: var(--ch-muted); }
+.tn-why li[data-k="live"] .ic { color: var(--ch-live); }
+.tn-h { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; gap: 6px; align-items: center; }
+.tn-h .ic { color: var(--ch-accent); }
+.tn-legend-mini { margin-top: 8px; }
+.tn-dock { margin-top: 14px; }
+.tn-dock .dk-box { width: auto; }
+.ld-out .tn-o { display: inline-flex; }
+.ld-out svg, .tn-outs svg, .ld-tool svg { display: block; }
+
+/* ── docket (routines dock / planner) ───────────────────────────────── */
+.dkt-app { margin: 0 -40px; display: grid; grid-template-columns: 244px minmax(0, 1fr); border-top: 1px solid var(--ch-line); border-bottom: 1px solid var(--ch-line); }
+.dkt-main { padding: 26px 32px 30px; min-width: 0; }
+.dkt-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.dkt-head h1 { font-size: 32px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.dkt-head p { color: var(--ch-muted); font-size: 14px; margin-top: 5px; max-width: 520px; }
+.dkt-tabs { display: flex; gap: 2px; margin: 18px 0 0; border-bottom: 1px solid var(--ch-line); }
+.dkt-tabs span { padding: 8px 12px; font-size: 14px; color: var(--ch-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.dkt-tabs span[aria-current] { color: var(--ch-ink); border-bottom-color: var(--ch-accent-fill); font-weight: 600; }
+.rb { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 4px; }
+.rb-k { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); margin-right: 4px; }
+.rb-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 14px; background: color-mix(in srgb, var(--ch-accent-fill) 9%, var(--ch-bg)); border: 1px dashed var(--ch-accent-400); color: var(--ch-accent); font-size: 13px; white-space: nowrap; }
+.rb-chip .ic { color: var(--ch-accent-fill); }
+.dkt-cols { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 26px; align-items: start; margin-top: 16px; }
+.dkt-routines { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ch-queue); padding: 8px 10px; background: var(--ch-queue-100); border-radius: 3px; margin-bottom: 10px; }
+.dkt-routines span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.dkt-routines b { font-weight: 600; }
+.ag { border-top: 1px solid var(--ch-line); }
+.ag-day { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--ch-line-soft); min-height: 46px; }
+
+.ag-d { display: flex; flex-direction: column; padding-top: 3px; }
+.ag-d strong { font-size: 14px; font-weight: 600; line-height: 1.2; }
+.ag-d small { font-size: 11.5px; color: var(--ch-muted); }
+.ag-items { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.ag-it { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 3px; font-size: 13px; min-width: 0; background: var(--ch-raised); border: 1px solid var(--ch-line-soft); }
+.ag-it time { font-size: 12px; color: var(--ch-muted); font-variant-numeric: tabular-nums; }
+.ag-it .ag-t { min-width: 0; display: flex; flex-direction: column; }
+.ag-it .ag-t strong { font-weight: 600; font-size: 13px; line-height: 1.3; }
+.ag-it .ag-t small { font-size: 11.5px; color: var(--ch-muted); line-height: 1.3; }
+.ag-it .ag-o { display: flex; gap: 5px; color: var(--ch-ink); }
+.ag-it[data-k="slot"] { background: transparent; border: 1px dashed color-mix(in srgb, var(--ch-queue) 45%, transparent); color: var(--ch-queue); }
+.ag-it[data-k="slot"] .ag-t small, .ag-it[data-k="slot"] time { color: var(--ch-queue); }
+.ag-it[data-k="sugg"] { background: color-mix(in srgb, var(--ch-accent-fill) 7%, var(--ch-bg)); border: 1px dashed var(--ch-accent-400); }
+.ag-it[data-k="sugg"] .ag-t strong { color: var(--ch-accent); }
+.ag-it[data-k="placed"] { border-left: 3px solid var(--ch-accent-fill); }
+.ag-it[data-k="live"] { border-left: 3px solid var(--ch-live); }
+.ag-it[data-k="event"] { background: var(--ch-live-100); border-color: transparent; }
+.ag-it[data-k="todo"] { background: transparent; border-color: transparent; padding-left: 8px; }
+.ag-it[data-k="todo"] .ag-t strong { font-weight: 400; }
+.ag-it[data-k="skipped"] { background: transparent; border: 1px dashed var(--ch-line); }
+.ag-it[data-k="skipped"] .ag-t strong { font-weight: 400; color: var(--ch-muted); text-decoration: line-through; }
+.ag-it[data-adj="true"] { box-shadow: 0 0 0 2px var(--ch-accent-fill); }
+.ag-it[data-imp="3"] .ag-t strong::after { content: " · matters"; color: var(--ch-alert); font-weight: 600; font-size: 11.5px; }
+.ag-it[data-imp="1"] { opacity: 0.8; }
+.ag-it .ag-mark { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--ch-on-accent); background: var(--ch-accent-fill); padding: 1px 6px; border-radius: 2px; white-space: nowrap; }
+.dkt-tray { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.dkt-tray-h { display: flex; justify-content: space-between; align-items: baseline; }
+.dkt-tray-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dkt-card { background: var(--ch-surface); padding: 8px 10px; border-radius: 2px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.dkt-card small { font-size: 11.5px; color: var(--ch-muted); }
+.dkt-card .chn-kicker { font-size: 10px; }
+
+/* the adjustment panel */
+.adj { background: var(--ch-bg); border: 1px solid var(--ch-line); box-shadow: var(--ch-shadow-md); border-radius: 4px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.adj-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.adj-top .ic { color: var(--ch-muted); }
+.adj h3 { font-size: 19px; font-weight: 600; line-height: 1.22; }
+.adj-f { display: flex; flex-direction: column; gap: 6px; }
+.adj-l { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); }
+.adj-l span:last-child:not(:first-child) { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--ch-queue); }
+.adj-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 1px solid var(--ch-line); background: var(--ch-raised); border-radius: var(--ch-radius); font-size: 13px; color: var(--ch-ink); white-space: nowrap; }
+.pill[aria-pressed="true"] { background: var(--ch-accent-fill); border-color: var(--ch-accent-fill); color: var(--ch-on-accent); }
+.pill[data-slot="true"] { box-shadow: inset 0 -2px 0 var(--ch-queue); }
+.pill[aria-pressed="true"][data-slot="true"] { box-shadow: inset 0 -3px 0 color-mix(in srgb, #fff 60%, var(--ch-queue)); }
+.pill[disabled] { opacity: 0.5; cursor: default; }
+.pill.is-day { flex-direction: column; height: 40px; gap: 0; padding: 0; width: 46px; justify-content: center; line-height: 1.15; }
+.pill.is-day small { font-size: 10.5px; opacity: 0.8; }
+.pill.is-out .ic { margin-left: -2px; }
+.adj-hint { font-size: 12px; color: var(--ch-muted); display: flex; gap: 5px; align-items: flex-start; line-height: 1.35; }
+.adj-hint .ic { color: var(--ch-queue); margin-top: 1px; }
+.adj-hint[data-tone="warn"] { color: var(--ch-alert); }
+.adj-hint[data-tone="warn"] .ic { color: var(--ch-alert); }
+.imp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--ch-line); border-radius: var(--ch-radius); overflow: hidden; }
+.imp button { border: 0; border-right: 1px solid var(--ch-line); background: var(--ch-raised); height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; color: var(--ch-ink); }
+.imp button:last-child { border-right: 0; }
+.imp button[aria-pressed="true"] { background: var(--ch-ink); color: var(--ch-bg); font-weight: 600; }
+.imp-bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+.imp-bars i { width: 3px; background: currentColor; opacity: 0.25; border-radius: 1px; }
+.imp-bars i:nth-child(1) { height: 5px; } .imp-bars i:nth-child(2) { height: 8px; } .imp-bars i:nth-child(3) { height: 12px; }
+.imp-bars[data-n="1"] i:nth-child(-n+1), .imp-bars[data-n="2"] i:nth-child(-n+2), .imp-bars[data-n="3"] i:nth-child(-n+3) { opacity: 1; }
+.adj-note { width: 100%; min-height: 64px; resize: none; font: 14px/1.45 var(--ch-font); color: var(--ch-ink); background: var(--ch-surface); border: 1px solid var(--ch-line); border-radius: 2px; padding: 8px 10px; }
+.adj-origin { font-size: 12px; color: var(--ch-muted); display: flex; gap: 6px; align-items: flex-start; }
+.adj-origin .ic { color: var(--ch-studio); margin-top: 1px; }
+.adj-ladder { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 9px 10px; background: var(--ch-queue-100); border-radius: 3px; font-size: 13px; align-items: start; }
+.adj-ladder .ld-forkmark { width: 24px; height: 24px; }
+.adj-ladder strong { font-weight: 600; }
+.adj-ladder small { display: block; font-size: 12px; color: var(--ch-muted); }
+.adj-ladder .chn-linkbtn { font-size: 12.5px; color: var(--ch-queue); }
+.adj-foot { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--ch-line-soft); padding-top: 12px; }
+.adj-not { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.adj-not button { border: 1px solid var(--ch-line); background: transparent; border-radius: var(--ch-radius); padding: 7px 9px; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.adj-not button strong { font-size: 13px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.adj-not button small { font-size: 11.5px; color: var(--ch-muted); line-height: 1.3; }
+.adj-not button[aria-pressed="true"] { border-color: var(--ch-ink); background: var(--ch-surface); }
+.adj-go { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.adj-go .chn-quiet { margin-right: auto; font-size: 12.5px; }
+.adj-done { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 9px 10px; background: var(--ch-surface); border-radius: 3px; font-size: 13px; }
+.adj-done .ic { margin-top: 2px; color: var(--ch-accent); }
+.adj-done small { display: block; font-size: 12px; color: var(--ch-muted); }
+.adj-sub { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 10px; border: 1px dashed var(--ch-line); border-radius: 3px; font-size: 12.5px; align-items: center; }
+.dkt-prev { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 14px 20px; align-items: start; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ch-line); }
+.dkt-prev > :first-child { grid-column: 1 / -1; }
+.dkt-prev .ld-hcard { min-height: 0; }
+.dkt-prev-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-muted); margin-bottom: 8px; display: block; }
+.dkt-explain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; }
+.dkt-explain li { padding: 10px 0; border-bottom: 1px solid var(--ch-line-soft); font-size: 13.5px; display: flex; flex-direction: column; gap: 3px; }
+.dkt-explain li b { font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.dkt-explain li b .ic { color: var(--ch-accent); }
+.dkt-explain li span { color: var(--ch-muted); font-size: 13px; }
+
+/* dock: ghost-blue suggestion variant and the expander */
+.dk.is-sugg .dk-box { background: #f3f8fb; border: 1px dashed #4f97b8; box-shadow: 0 6px 22px rgba(10, 115, 150, 0.14); }
+.dk.is-sugg .dk-eyebrow { color: #075f7c; }
+.dk.is-sugg .dk-btn { background: #0a7396; border-color: #0a7396; }
+.dk-adj { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 0; color: #44403c; font: 14px var(--dk-font); text-decoration: underline; text-underline-offset: 3px; }
+.dk-adj .ic { transition: none; }
+.dk-exp { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8ec; display: flex; flex-direction: column; gap: 9px; }
+.dk-q { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; align-items: center; }
+.dk-q > * { justify-self: start; }
+.dk-q > span { font-size: 12px; color: #57534e; font-weight: 600; }
+.dk-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.dk-chip { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border: 1px solid #a8a29e; border-radius: 6px; background: #fff; font: 13px var(--dk-font); color: #1f1d1a; white-space: nowrap; }
+.dk-chip[aria-pressed="true"] { background: #1f1d1a; border-color: #1f1d1a; color: #fff; }
+.dk-chip[data-slot="true"]::after { content: "slot"; font-size: 10px; letter-spacing: 0.04em; color: #5b3f86; margin-left: 2px; }
+.dk-chip[aria-pressed="true"][data-slot="true"]::after { color: #d8ccef; }
+.dk-imp { display: inline-flex; border: 1px solid #a8a29e; border-radius: 6px; overflow: hidden; }
+.dk-imp button { border: 0; border-right: 1px solid #d6d3d1; background: #fff; height: 28px; padding: 0 9px; font: 13px var(--dk-font); color: #1f1d1a; display: inline-flex; align-items: center; gap: 5px; }
+.dk-imp button:last-child { border-right: 0; }
+.dk-imp button[aria-pressed="true"] { background: #1f1d1a; color: #fff; font-weight: 600; }
+.dk-res { margin-top: 8px; font-size: 13px; color: #1f1d1a; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.dk-res a, .dk-res button.dk-link { color: #1d4ed8; text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; padding: 0; font: 13px var(--dk-font); }
+.dk-more { font-size: 12.5px; color: #57534e; }
+.dk-more a { color: #1d4ed8; text-decoration: underline; }
+.dk-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #075f7c; background: #e2f0f6; border-radius: 999px; padding: 1px 7px; }
+.dk-tag[data-k="course"] { color: #5b3f86; background: #ece6f5; }
+.dk-tag[data-k="ladder"] { color: #44403c; background: #f0efed; }
+.dkx { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.dkx > div { display: flex; flex-direction: column; gap: 10px; }
+.dkx .dk-box { width: auto; }
+.dkx p.chn-help { min-height: 36px; }
+.dk-statecol { display: flex; flex-direction: column; gap: 14px; }
+.dk-statecol .dk-box { width: 100%; }
+.dk-cap { font-size: 12.5px; color: var(--ch-muted); display: flex; gap: 6px; align-items: baseline; }
+.dk-cap b { color: var(--ch-ink); font-weight: 600; }
+.dk-cap i { font-style: normal; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--ch-ink); color: var(--ch-bg); font-size: 11px; font-weight: 600; flex: none; }
+
+/* phone: bottom sheet */
+.sh-scrim { position: absolute; inset: 0; background: rgb(31 29 28 / 0.38); }
+.sh { position: absolute; left: 0; right: 0; bottom: 0; top: 64px; background: var(--ch-bg); border-radius: 14px 14px 0 0; font-family: var(--ch-font); color: var(--ch-ink); padding: 8px 16px 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+.sh-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--ch-empty); align-self: center; }
+.sh-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.sh-top h2 { font-size: 20px; font-weight: 600; line-height: 1.2; margin-top: 3px; }
+.sh .adj-row { flex-wrap: nowrap; overflow: hidden; }
+.sh .pill { height: 44px; padding: 0 13px; font-size: 14px; }
+.sh .pill.is-day { height: 52px; width: 52px; padding: 0; flex: none; }
+.sh .imp button { height: 44px; font-size: 14px; }
+.sh .adj-note { min-height: 70px; font-size: 15px; }
+.sh-foot { margin-top: auto; padding: 12px 0 22px; border-top: 1px solid var(--ch-line-soft); display: flex; flex-direction: column; gap: 10px; background: var(--ch-bg); }
+.sh-foot .chn-btn { height: 46px; justify-content: center; font-size: 15px; }
+.sh-foot .adj-not button { min-height: 52px; }
+.ph-dock .dk-exp .dk-chip, .ph-dock .dk-imp button { height: 40px; padding: 0 11px; font-size: 14px; }
+.ph-dock .dk-q { grid-template-columns: 1fr; gap: 5px; }
+.ph-cap { padding: 12px 16px 14px; font-size: 12.5px; color: var(--ch-muted); display: flex; flex-direction: column; gap: 6px; background: var(--ch-bg); }
+.ph-cap span { display: flex; gap: 6px; align-items: flex-start; }
+.ph-cap .ic { color: var(--ch-accent); margin-top: 2px; }
+.ag-day[data-today="true"] .ag-d strong { color: var(--ch-accent); }
+.tn-o { display: inline-flex; }
+.sh-wrap { background: #6f6c69; padding-top: 0; }
+.sh-page { height: 64px; }
+.sh.is-flow { position: relative; top: auto; inset: auto; overflow: visible; padding-bottom: 0; }
+.sh-scroll { flex-wrap: nowrap !important; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+
+</style>
+</helmet>
+<svg class="no-check" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="tn-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></g><g id="tn-ig"><rect width="20" height="20" x="2" y="2" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></g><g id="tn-fb"><circle cx="12" cy="12" r="10"/><path d="M15.5 8H14a2 2 0 0 0-2 2v12"/><path d="M9 13h6"/></g><g id="tn-yt"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></g><g id="tn-thr"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></g><g id="tn-mail"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></g><g id="tn-live"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></g><g id="tn-film"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></g><g id="tn-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></g><g id="tn-store"><path d="M3 9 4.5 4h15L21 9"/><path d="M3 9h18v1.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"/><path d="M5 13v8h14v-8"/><path d="M10 21v-5h4v5"/></g><g id="tn-forum"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></g><g id="tn-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g><g id="tn-cal"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></g><g id="tn-repeat"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></g><g id="tn-zap"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></g><g id="tn-check"><path d="M20 6 9 17l-5-5"/></g><g id="tn-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></g><g id="tn-dash"><path d="M7 12h10"/></g><g id="tn-split"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></g><g id="tn-clapper"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></g><g id="tn-panel"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></g><g id="tn-pen"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></g><g id="tn-image"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></g><g id="tn-camera"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></g><g id="tn-book"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g><g id="tn-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></g><g id="tn-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g><g id="tn-min"><path d="M5 12h14"/></g><g id="tn-out"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></g><g id="tn-tower"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.9 4.7a6.14 6.14 0 0 1 .8 7.5"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/></g><g id="tn-hour"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></g><g id="tn-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></g><g id="tn-flag"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></g><g id="tn-home"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></g><g id="tn-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></g><g id="tn-updown"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></g><g id="tn-chev"><path d="m6 9 6 6 6-6"/></g><g id="tn-menu"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></g><g id="tn-layout"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></g><g id="tn-arrow"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></g><g id="tn-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g><g id="tn-sparkle"><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.6 5.6 2.8 2.8"/><path d="m15.6 15.6 2.8 2.8"/><path d="m5.6 18.4 2.8-2.8"/><path d="m15.6 8.4 2.8-2.8"/></g><g id="tn-layers"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></g><g id="tn-eye"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g><g id="tn-msg"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></g><g id="tn-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/></g><g id="tn-share"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/></g><g id="tn-pin"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g><g id="tn-sliders"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></g><g id="tn-alarm"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M12 9v4l2 2"/></g><g id="tn-plus"><path d="M5 12h14"/><path d="M12 5v14"/></g><g id="tn-quote"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></g><g id="tn-gallery"><rect width="14" height="16" x="5" y="4" rx="2"/><path d="M2 7v10"/><path d="M22 7v10"/></g><g id="tn-undo"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g><g id="tn-ban"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></g><g id="tn-skip"><path d="m5 4 10 8-10 8z"/><path d="M19 5v14"/></g><g id="tn-idea"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></g><g id="tn-chevr"><path d="m9 18 6-6-6-6"/></g><g id="tn-chevu"><path d="m18 15-6-6-6 6"/></g><g id="tn-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g><g id="tn-grid"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></g><g id="tn-route"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></g></defs></svg><div class="chn ld">
+<header class="ld-top"><div><p class="chn-kicker is-accent">Follow-up ladders · the function of variation, made visible</p><h1>Ladder tuner</h1><p class="ld-lede">Pick a template and move the sliders, in the Tweaks panel or with the controls below. The ladder redraws from those values: which matrix cells it uses, when each step falls, which outlets it reaches, and how much work it asks for. The piece's first post is today, <b>Sat Nov 7</b>; dated pieces keep their own date.</p></div>
+<div class="ld-piece"><span class="chn-thumb is-empty">{{ piece.glyph }}</span><div><p class="chn-kicker">{{ piece.glyph }} {{ piece.kind }} · sample piece</p><strong>{{ piece.title }}</strong><small>{{ piece.meta }}</small><small>Template {{ tplName }}</small></div></div></header><ul class="ld-legend">
+<li class="ld-legend-k">State</li>
+<li><span class="ld-dot" data-s="suggested"></span>Suggested</li>
+<li><span class="ld-dot" data-s="placed"></span>Placed on a day</li>
+<li><span class="ld-dot" data-s="live"></span>Placed: live</li>
+<li><span class="ld-dot" data-s="done"><svg class="ic" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Done, with date</li>
+<li><span class="ld-dot" data-s="skipped"><svg class="ic" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 12h10"/></svg></span>Skipped, left out or expired</li>
+<li><span class="ld-dot" data-s="waiting"></span>Waiting on a condition</li>
+<li><span class="ld-forkmark" style="width:16px;height:16px;border-radius:3px"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg></span>Branch: light or developed</li>
+</ul><ul class="ld-legend">
+<li class="ld-legend-k">Made with</li>
+<li data-area="channel"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>Channel</li>
+<li data-area="studio"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>Studio</li>
+<li data-area="queue"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Queue, routines, series</li>
+<li data-area="audience"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>Audience: letter, forum, offerings</li>
+<li data-area="live"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.9 4.7a6.14 6.14 0 0 1 .8 7.5"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/></svg>Live</li>
+<li class="ld-legend-sep"></li>
+<li><span style="display:inline-block;width:3px;height:14px;background:var(--ch-queue)"></span>Spine: developed path</li>
+</ul>
+<section class="ld-sec"><div class="ld-sec-h"><span class="ld-num">1</span><h2>Settings</h2><p>Each control matches a Tweak. Changing a Tweak resets the board's own controls to it.</p></div>
+<div class="tn-controls">
+<div class="tn-ctl is-wide"><div class="tn-ctl-h"><span class="chn-kicker">Template</span><span>{{ tplName }}</span></div><div class="tn-rail is-tpl"><sc-for list="{{ ctl.tpl }}" as="b" hint-placeholder-count="6"><button type="button" aria-pressed="{{ b.on }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Intensity</span><span>{{ intLabel }}</span></div><div class="tn-rail"><sc-for list="{{ ctl.int }}" as="b" hint-placeholder-count="5"><button type="button" aria-pressed="{{ b.on }}" data-fill="{{ b.fill }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div><small>1 core steps, no branch · 2–3 ask the branch, light by default · 4 takes the developed side · 5 every tier.</small></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Cadence</span><span>{{ cadLabel }}</span></div><div class="tn-rail"><sc-for list="{{ ctl.cad }}" as="b" hint-placeholder-count="5"><button type="button" aria-pressed="{{ b.on }}" data-fill="{{ b.fill }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div><small>The written days × cadence ÷ 7. At 7 the template keeps its own days; dated pieces count back from the date.</small></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Effort</span><span>{{ effLabel }}</span></div><div class="tn-rail"><sc-for list="{{ ctl.eff }}" as="b" hint-placeholder-count="5"><button type="button" aria-pressed="{{ b.on }}" data-fill="{{ b.fill }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div><small>Low keeps five-minute steps; medium adds clips and carousels; high adds writing and live.</small></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Reach</span><span>{{ rchLabel }}</span></div><div class="tn-rail"><sc-for list="{{ ctl.rch }}" as="b" hint-placeholder-count="5"><button type="button" aria-pressed="{{ b.on }}" data-fill="{{ b.fill }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div><small>Website only, then the letter and forum, Instagram and Facebook, Threads and YouTube, and live.</small></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Go live</span><span>{{ liveLabel }}</span></div><div class="tn-rail"><sc-for list="{{ ctl.live }}" as="b" hint-placeholder-count="5"><button type="button" aria-pressed="{{ b.on }}" data-fill="{{ b.fill }}" onClick="{{ b.pick }}">{{ b.label }}</button></sc-for></div><small>Off, or when: days after the first post, or before the date for a meeting or workshop.</small></div>
+<div class="tn-ctl"><div class="tn-ctl-h"><span class="chn-kicker">Routine slots</span><span></span></div><button type="button" class="tn-switch" aria-pressed="{{ snapOn }}" onClick="{{ toggleSnap }}"><i></i><span>{{ snapLabel }}</span></button><small>Instagram Tue and Fri 10:00 (Katie: Tue and Sat), Studio note Thursdays 9:00, the letter on the 1st.</small></div>
+</div>
+<p class="tn-tweak"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></svg><span>Tweaks: template, intensity, cadence, effort, reach, goLive (0 off … 6), snapToSlots.</span></p></section>
+<div class="tn-band">
+<div><p class="tn-h"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>What it asks</p><div class="tn-stats">
+<div class="tn-stat"><span class="chn-kicker">Steps</span><strong>{{ st.steps }}</strong><small>{{ st.stepsSub }}</small></div>
+<div class="tn-stat"><span class="chn-kicker">Span</span><strong>{{ st.span }}</strong><small>{{ st.spanSub }}</small></div>
+<div class="tn-stat"><span class="chn-kicker">Effort</span><strong>{{ st.effort }}</strong><small>{{ st.effortSub }}</small></div>
+<div class="tn-stat"><span class="chn-kicker">Live</span><strong>{{ st.live }}</strong><small>{{ st.liveSub }}</small></div>
+<div class="tn-stat is-wide"><span class="chn-kicker">Outlets</span><span class="tn-outs"><sc-for list="{{ outlets }}" as="o" hint-placeholder-count="5"><span data-off="{{ o.off }}" title="{{ o.name }}"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ o.icon }}"/></svg></span></sc-for></span><small>Grey: in the template, not reached at these settings.</small></div>
+</div></div>
+<div><p class="tn-h"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>Why it looks like this</p><ul class="tn-why"><sc-for list="{{ why }}" as="w" hint-placeholder-count="5"><li data-k="{{ w.k }}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ w.icon }}"/></svg><span>{{ w.text }}</span></li></sc-for></ul></div>
+<div><p class="tn-h"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Its path through the matrix</p>
+<div class="mxm"><span></span><sc-for list="{{ mcols }}" as="c" hint-placeholder-count="10"><span class="mxm-ch"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ c.icon }}"/></svg></span></sc-for><sc-for list="{{ mrows }}" as="m" hint-placeholder-count="6"><span class="mxm-rh">{{ m.name }}</span><sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="10"><span class="mxm-c {{ c.cls }}">{{ c.label }}</span></sc-for></sc-for></div>
+<ul class="mxm-key tn-legend-mini"><li><span class="mxm-c is-light">1</span>Step</li><li><span class="mxm-c is-dev">5</span>Developed</li><li><span class="mxm-c is-out">×</span>Left out</li><li><span class="mxm-c is-opt"></span>Option</li></ul>
+<sc-if value="{{ dock.has }}" hint-placeholder-val="{{ true }}"><div class="tn-dock dk"><div class="dk-box"><div class="dk-head"><p class="dk-eyebrow">{{ dock.eyebrow }}</p><span class="dk-x"><span><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></span><span><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span></span></div><p class="dk-line"><b>{{ dock.when }}</b> · {{ dock.rest }}</p><div class="dk-act"><span class="dk-btn">Put it in</span><a class="dk-link">Open</a></div></div></div></sc-if>
+</div></div>
+<section class="ld-sec"><div class="ld-sec-h"><span class="ld-num">2</span><h2>The ladder</h2><p>Redrawn from the settings. Same anatomy as ladders 1 to 6.</p></div>
+<ol class="ld-ladder"><li class="ld-row ld-head"><span style="padding-left:8px">When</span><span></span><span>Step</span><span>Goes to</span><span>Made with</span><span>State</span></li><sc-for list="{{ rows }}" as="r" hint-placeholder-count="8"><sc-if value="{{ r.isSeg }}" hint-placeholder-val="{{ false }}"><li class="ld-row ld-seg {{ r.edge }}" data-path="{{ r.path }}"><span></span><span class="ld-spine"></span><p class="ld-seg-label">{{ r.seg }}<span>{{ r.hint }}</span></p></li></sc-if><sc-if value="{{ r.isFork }}" hint-placeholder-val="{{ false }}"><li class="ld-row ld-fork {{ r.edge }}"><span class="ld-off">{{ r.off }}</span><span class="ld-spine"><span class="ld-forkmark"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg></span></span><div class="ld-fork-body"><p class="ld-fork-q"><strong>{{ r.q }}</strong><small>{{ r.note }}</small></p><div class="ld-opts" data-n="{{ r.nOpts }}"><sc-for list="{{ r.opts }}" as="o" hint-placeholder-count="3"><div class="ld-opt" data-pick="{{ o.pick }}"><span class="ld-opt-k"><span>{{ o.k }}</span><b>{{ o.badge }}</b></span><strong>{{ o.t }}</strong><small>{{ o.d }}</small><span class="ld-ends"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ o.icon }}"/></svg>{{ o.ends }}</span></div></sc-for></div></div></li></sc-if><sc-if value="{{ r.isStep }}" hint-placeholder-val="{{ true }}"><li class="ld-row ld-step {{ r.edge }}" data-state="{{ r.state }}" data-next="{{ r.nextAttr }}" data-path="{{ r.path }}"><span class="ld-off">{{ r.off }}</span><span class="ld-spine"><span class="ld-dot"><sc-if value="{{ r.isOut }}" hint-placeholder-val="{{ false }}"><svg class="ic" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 12h10"/></svg></sc-if></span></span><div class="ld-what"><sc-if value="{{ r.next }}" hint-placeholder-val="{{ false }}"><span class="ld-nextmark"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Next · in the dock and on Home</span></sc-if><strong><sc-if value="{{ r.cond }}" hint-placeholder-val="{{ false }}"><span class="ld-if">{{ r.cond }}</span></sc-if>{{ r.title }}</strong><sc-if value="{{ r.sub }}" hint-placeholder-val="{{ false }}"><small>{{ r.sub }}</small></sc-if></div><span class="ld-out"><sc-for list="{{ r.outs }}" as="o" hint-placeholder-count="2"><span class="tn-o" title="{{ o.name }}"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ o.icon }}"/></svg></span></sc-for></span><span class="ld-tool" data-area="{{ r.toolArea }}"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ r.toolIcon }}"/></svg><span>{{ r.toolName }}</span></span><span class="ld-state"><span class="ld-tag" data-state="{{ r.state }}"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ r.tagIcon }}"/></svg>{{ r.tag }}</span><small data-tone="{{ r.subTone }}"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#tn-{{ r.subIcon }}"/></svg>{{ r.ssub }}</small></span></li></sc-if></sc-for></ol>
+<p class="ld-foot"><span><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>The six ladders were written by hand; the tuner spaces steps by rule, so at cadence 7 it shows their shape, not their exact days.</span><span><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>A tuned ladder is a plan of suggestions: starting it writes nothing until a step is accepted.</span></p></section>
+<div style="height:40px"></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2304},"template":{"editor":"enum","options":["Light path","Artwork to live","Writing to conversation","Event","Workshop or service","Practice routine"],"default":"Artwork to live","tsType":"string","section":"Ladder"},"intensity":{"editor":"range","min":1,"max":5,"step":1,"default":4,"tsType":"number","section":"Ladder"},"cadence":{"editor":"range","min":1,"max":14,"step":1,"default":7,"tsType":"number","section":"Ladder"},"effort":{"editor":"range","min":1,"max":3,"step":1,"default":3,"tsType":"number","section":"Ladder"},"reach":{"editor":"range","min":1,"max":5,"step":1,"default":5,"tsType":"number","section":"Outlets"},"goLive":{"editor":"range","min":0,"max":6,"step":1,"default":3,"tsType":"number","section":"Outlets"},"snapToSlots":{"editor":"boolean","default":true,"tsType":"boolean","section":"Outlets"}}'>
+class Component extends DCLogic {
+  state = { ov: {} };
+
+  componentDidUpdate(prev) {
+    const keys = ['template', 'intensity', 'cadence', 'effort', 'reach', 'goLive', 'snapToSlots'];
+    if (Object.keys(this.state.ov).length && keys.some((k) => prev[k] !== this.props[k])) this.setState({ ov: {} });
+  }
+
+  renderVals() {
+    const DAY = 86400000;
+    const TODAY = Date.UTC(2026, 10, 7);
+    const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fmt = (t) => { const d = new Date(t); return WD[d.getUTCDay()] + ' ' + MO[d.getUTCMonth()] + ' ' + d.getUTCDate(); };
+    const wday = (t) => new Date(t).getUTCDay();
+    const days = (n) => n * DAY;
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, Math.round(Number(x))));
+    const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+    const offTxt = (n) => n === 0 ? 'Day 0' : (n > 0 ? '+' : '−') + plural(Math.abs(n), 'day');
+
+    const OUT = {
+      site: ['globe', 'Website', 1], page: ['globe', 'Your page', 1], market: ['store', 'Market', 1], circle: ['users', 'The circle', 1], series: ['cal', 'Series page', 1],
+      mail: ['mail', 'Letter', 2], forum: ['forum', 'Forum', 2],
+      ig: ['ig', 'Instagram', 3], story: ['ig', 'Instagram story', 3], fb: ['fb', 'Facebook', 3],
+      thr: ['thr', 'Threads', 4], yt: ['yt', 'YouTube', 4], talk: ['users', 'Talk room', 5],
+    };
+    const TOOL = {
+      quick: ['channel', 'panel', 'Channel quick sheet'], newpost: ['channel', 'pen', 'Channel New post'], clip: ['studio', 'clapper', 'Studio clip editor'],
+      writing: ['studio', 'file', 'Studio writing'], postkind: ['studio', 'image', 'Studio post editor'], recordings: ['studio', 'mic', 'Studio recordings'],
+      email: ['audience', 'mail', 'Email suite'], booth: ['live', 'tower', 'Broadcast booth'], series: ['queue', 'cal', 'Series planner'],
+      offerings: ['audience', 'store', 'Offerings'], forum: ['audience', 'forum', 'Grand Forum'], day: ['queue', 'book', 'Day page'],
+      uploads: ['live', 'yt', 'Video uploads'], page: ['studio', 'layout', 'Page editor'],
+    };
+    const EVO = ['same', 'view', 'talk', 'event', 'offer', 'gather'];
+    const EVO_NAME = { same: 'Same', view: 'New view', talk: 'Commentary', event: 'Event', offer: 'Offer', gather: 'Gathered' };
+    const SHARE = [['post', 'image'], ['card', 'quote'], ['clip', 'film'], ['carousel', 'gallery'], ['story', 'ig'], ['link', 'link'], ['letter', 'mail'], ['xlink', 'globe'], ['live', 'live'], ['forum', 'forum']];
+    const EFF = ['', 'small', 'medium', 'large'];
+    const MIN = [0, 5, 20, 60];
+    const REACH = ['', 'Website only', '+ Letter and forum', '+ Instagram, Facebook', '+ Threads, YouTube', 'All, plus live'];
+    const INT = ['', 'Lightest', 'Light', 'Middle', 'Developed', 'Most'];
+    const GD_SLOTS = { ig: { days: [2, 5], time: '10:00', name: 'Instagram slot · Tue and Fri' }, note: { days: [4], time: '9:00', name: 'Studio note routine · Thursdays' } };
+    const KP_SLOTS = { ig: { days: [2, 6], time: '10:00', name: 'Instagram slot · Tue and Sat' }, note: null };
+
+    const TEMPLATES = [
+      { name: 'Light path', n: 1, anchor: 'start', forkBase: 7, slots: GD_SLOTS,
+        piece: { glyph: '▣', kind: 'Product', title: 'Field Notes, riso edition', meta: 'Edition of 40 · $35 · first post today' },
+        first: ['In the market and on your page', ['market', 'page'], 'newpost'],
+        q: 'Develop Field Notes, or keep it light?',
+        light: { t: 'Keep it light', d: 'The letter, then a repost from the archive.', ends: 'Ends in a link to the shop', icon: 'link' },
+        steps: [
+          { t: 'One photo where it is missing: Instagram', m: 'same:post', out: ['ig'], eff: 1, tier: 1, base: 0, tool: 'quick', part: 'light' },
+          { t: 'Share the shop link on Facebook', m: 'same:link', out: ['fb'], eff: 1, tier: 1, base: 1, tool: 'quick', part: 'light' },
+          { t: 'Four spreads as a carousel', m: 'view:carousel', out: ['ig', 'fb'], eff: 2, tier: 3, base: 4, tool: 'postkind', part: 'light' },
+          { t: 'A photo in use: the notebook open on a desk', m: 'view:post', out: ['ig'], eff: 1, tier: 2, base: 7, tool: 'quick', part: 'light' },
+          { t: 'Write about how Field Notes was made', m: 'talk:xlink', out: ['page'], eff: 3, tier: 1, base: 10, tool: 'writing', part: 'dev', ends: 'Ends in a conversation', icon: 'forum' },
+          { t: 'Film the second colour going through the riso', m: 'view:clip', out: ['ig', 'fb'], eff: 2, tier: 2, base: 12, tool: 'clip', part: 'dev', ends: 'Ends in a clip', icon: 'film' },
+          { t: 'Pair it with the Marsh sketchbook on your page', m: 'gather:xlink', out: ['page', 'market'], eff: 2, tier: 3, base: 14, tool: 'page', part: 'dev', ends: 'Ends in a set', icon: 'layers' },
+          { t: "Add to the next letter's shop corner", m: 'gather:letter', out: ['mail'], eff: 1, tier: 1, issue: true, tool: 'email', part: 'tail' },
+          { t: 'From the archive: post it again', m: 'same:post', out: ['ig', 'fb'], eff: 1, tier: 2, base: 60, tool: 'quick', part: 'tail' },
+        ],
+        live: { t: 'Go live: a print pull from the studio', ann: 'Announce the print pull with a card' } },
+      { name: 'Artwork to live', n: 2, anchor: 'start', forkBase: 8, slots: GD_SLOTS,
+        piece: { glyph: '▣', kind: 'Artwork', title: 'Salt Marsh, Low Tide', meta: 'Oil on linen · 60 × 90 cm · first post today' },
+        first: ['On your page and in the market', ['page', 'market'], 'newpost'],
+        q: 'Develop it: write, offer a print, or keep it light?',
+        light: { t: 'Keep it light', d: 'The letter, then a repost from the archive.', ends: 'Ends in a link', icon: 'link' },
+        steps: [
+          { t: 'Cover image and caption', m: 'same:post', out: ['ig'], eff: 1, tier: 1, base: 0, tool: 'quick', part: 'light' },
+          { t: 'Link post, after the page is up', m: 'same:link', out: ['fb'], eff: 1, tier: 1, base: 1, tool: 'quick', part: 'light' },
+          { t: 'Post the walk-through to Instagram and Facebook', m: 'view:clip', out: ['ig', 'fb'], eff: 2, tier: 1, base: 3, tool: 'clip', part: 'light' },
+          { t: 'Film a 30-second talk about it', m: 'talk:clip', out: ['ig', 'fb'], eff: 2, tier: 3, base: 4, tool: 'clip', part: 'light' },
+          { t: 'A detail, then the painting in the hall', m: 'view:carousel', out: ['ig'], eff: 2, tier: 2, base: 6, tool: 'postkind', part: 'light' },
+          { t: 'Write about how it was made', m: 'talk:xlink', out: ['page'], eff: 3, tier: 1, base: 8, tool: 'writing', part: 'dev', ends: 'Ends in writing', icon: 'file' },
+          { t: 'Ask the forum: what do you see at low tide?', m: 'talk:forum', out: ['forum'], eff: 1, tier: 2, base: 9, tool: 'forum', part: 'dev', ends: 'Ends in a conversation', icon: 'forum' },
+          { t: 'Offer a print edition', m: 'offer:xlink', out: ['market', 'page'], eff: 2, tier: 3, base: 12, tool: 'offerings', part: 'dev', ends: 'Ends in a print listing', icon: 'store' },
+          { t: 'Add to the next letter', m: 'gather:letter', out: ['mail'], eff: 1, tier: 1, issue: true, tool: 'email', part: 'tail' },
+          { t: 'From the archive: post it again', m: 'same:post', out: ['ig', 'fb'], eff: 1, tier: 2, base: 60, tool: 'quick', part: 'tail' },
+        ],
+        live: { t: 'Go live from the studio', ann: 'Announce the live with a card' } },
+      { name: 'Writing to conversation', n: 3, anchor: 'start', forkBase: 14, slots: GD_SLOTS,
+        piece: { glyph: '◉', kind: 'Writing', title: 'On Reading Aloud', meta: 'Essay · 1,840 words · first post today' },
+        first: ['On your page', ['page'], 'newpost'],
+        q: 'Read it with a study group, or keep it light?',
+        light: { t: 'Keep it light', d: 'A link from related writing, then a re-share if it still holds.', ends: 'Ends in a link', icon: 'link' },
+        steps: [
+          { t: 'Link post with one sentence', m: 'same:link', out: ['fb', 'thr'], eff: 1, tier: 1, base: 0, tool: 'quick', part: 'light' },
+          { t: 'Quote one line on a card', m: 'view:card', out: ['ig'], eff: 1, tier: 1, base: 1, tool: 'quick', part: 'light' },
+          { t: 'Ask the forum a question about it', m: 'talk:forum', out: ['forum'], eff: 1, tier: 2, base: 1, tool: 'forum', part: 'light' },
+          { t: 'Read the opening aloud', m: 'view:clip', out: ['ig', 'fb'], eff: 2, tier: 3, base: 2, tool: 'recordings', part: 'light' },
+          { t: 'Three passages as slides', m: 'view:carousel', out: ['ig'], eff: 2, tier: 2, base: 16, tool: 'postkind', part: 'dev', ends: 'Ends in slides', icon: 'gallery' },
+          { t: 'Read it with a study group', m: 'event:forum', out: ['series'], eff: 2, tier: 1, base: 21, tool: 'series', part: 'dev', ends: 'Ends in a meeting', icon: 'users' },
+          { t: 'Turn it into a talk', m: 'offer:xlink', out: ['page'], eff: 3, tier: 3, base: 30, tool: 'offerings', part: 'dev', ends: 'Ends in a talk', icon: 'store' },
+          { t: 'Excerpt in the letter', m: 'gather:letter', out: ['mail'], eff: 1, tier: 1, issue: true, tool: 'email', part: 'tail' },
+          { t: 'Link it from related writing', m: 'gather:xlink', out: ['page'], eff: 2, tier: 2, base: 30, tool: 'writing', part: 'tail' },
+          { t: 'Share it again if it still holds', m: 'same:post', out: ['fb', 'thr'], eff: 1, tier: 3, base: 60, tool: 'quick', part: 'tail' },
+        ],
+        live: { t: 'Read it aloud, live', ann: 'Announce the reading with a card' } },
+      { name: 'Event', n: 4, anchor: 'date', date: Date.UTC(2026, 11, 17), time: '19:00', forkBase: 0, slots: GD_SLOTS,
+        piece: { glyph: '◎', kind: 'Meeting', title: 'Evening Meetings, session 5', meta: 'Thu Dec 17 · 7:00 PM · Talk room' },
+        q: 'At the meeting: go live, or one photo?',
+        light: { t: 'One photo from the room', d: 'From a phone to Instagram; then the notes and the next date.', ends: 'Ends in a photo', icon: 'camera' },
+        steps: [
+          { t: 'Save the date: series page and the letter', m: 'same:letter', out: ['series', 'mail'], eff: 1, tier: 2, base: -28, tool: 'email', part: 'light', pinned: true },
+          { t: 'Announce with the series cover', m: 'same:card', out: ['ig', 'fb'], eff: 1, tier: 1, base: -14, tool: 'quick', part: 'light', pinned: true },
+          { t: 'A 30-second preview from the last session', m: 'view:clip', out: ['ig'], eff: 2, tier: 3, base: -10, tool: 'clip', part: 'light', pinned: true },
+          { t: 'Write to the series list', m: 'same:letter', out: ['mail'], eff: 1, tier: 1, base: -7, tool: 'email', part: 'light', pinned: true },
+          { t: 'Say there is still room', cond: true, m: 'same:link', out: ['fb'], eff: 1, tier: 3, base: -3, tool: 'quick', part: 'light', pinned: true },
+          { t: 'Remind people tomorrow', m: 'same:story', out: ['story', 'fb'], eff: 1, tier: 1, base: -1, fixed: true, tool: 'quick', part: 'light', pinned: true },
+          { t: 'One photo from the room', m: 'view:story', out: ['story'], eff: 1, tier: 1, base: 0, fixed: true, tool: 'quick', part: 'day', pinned: true },
+          { t: 'Thank people; send the notes to those who said yes', m: 'talk:letter', out: ['fb', 'mail'], eff: 1, tier: 1, base: 1, fixed: true, tool: 'email', part: 'tail' },
+          { t: 'A clip from the recording', m: 'view:clip', out: ['ig'], eff: 2, tier: 2, base: 2, fixed: true, tool: 'clip', part: 'dev', needsLive: true },
+          { t: 'Propose the next date', m: 'gather:xlink', out: ['series'], eff: 1, tier: 1, base: 3, fixed: true, tool: 'series', part: 'tail' },
+        ],
+        live: { t: 'Go live from the room', ann: 'Say it will be live, with a card', pre: 'A short live preview of session 5', preAnn: 'Announce the preview with a card' } },
+      { name: 'Workshop or service', n: 5, anchor: 'date', date: Date.UTC(2026, 11, 12), time: '10:00', forkBase: -14, slots: KP_SLOTS,
+        piece: { glyph: '◈', kind: 'Workshop', title: 'Wheel-throwing, second date', meta: 'Sat Dec 12 · 8 seats · $120' },
+        q: 'Seats full by then, or still open?',
+        light: { t: 'If full: open a waitlist', d: 'The announce steps give way to one: a waitlist for January.', ends: 'Ends in a waitlist', icon: 'cal' },
+        steps: [
+          { t: 'Workshop page, and what people will make', m: 'view:carousel', out: ['site', 'ig', 'fb'], eff: 2, tier: 1, base: -30, tool: 'postkind', part: 'light', pinned: true },
+          { t: 'Feature it in the shop letter', m: 'same:letter', out: ['mail'], eff: 1, tier: 1, base: -27, tool: 'email', part: 'light', pinned: true },
+          { t: 'A 30-second talk at the wheel', m: 'talk:clip', out: ['ig', 'fb'], eff: 2, tier: 2, base: -21, tool: 'clip', part: 'light', pinned: true },
+          { t: 'Seats left: say so', m: 'same:story', out: ['story'], eff: 1, tier: 1, base: -14, tool: 'quick', part: 'light', pinned: true },
+          { t: 'Film the materials, 20 seconds', m: 'view:clip', out: ['ig'], eff: 2, tier: 3, base: -10, tool: 'clip', part: 'light', pinned: true },
+          { t: 'Send the preparation list to the people booked', m: 'same:letter', out: ['mail'], eff: 1, tier: 1, base: -3, fixed: true, tool: 'email', part: 'light', pinned: true },
+          { t: 'One photo of work in progress', m: 'view:story', out: ['story'], eff: 1, tier: 1, base: 0, fixed: true, tool: 'quick', part: 'light', pinned: true },
+          { t: 'Share what people made, with their yes', m: 'view:carousel', out: ['ig', 'fb'], eff: 2, tier: 2, base: 2, fixed: true, tool: 'quick', part: 'dev' },
+          { t: 'Write up the day', m: 'talk:xlink', out: ['site'], eff: 3, tier: 1, base: 7, fixed: true, tool: 'writing', part: 'dev', ends: 'Ends in a write-up', icon: 'file' },
+          { t: 'Gather the dates into a winter term', m: 'gather:xlink', out: ['series'], eff: 2, tier: 3, base: 10, fixed: true, tool: 'series', part: 'dev', ends: 'Ends in a series', icon: 'cal' },
+          { t: 'Open the next date or a waitlist', m: 'offer:xlink', out: ['site'], eff: 1, tier: 1, base: 7, fixed: true, tool: 'offerings', part: 'tail' },
+        ],
+        live: { t: 'Go live from the workshop, 20 minutes', ann: 'Say the day will be live, with a card', pre: 'Free preview live: centring clay', preAnn: 'Announce the preview live with a card' } },
+      { name: 'Practice routine', n: 6, anchor: 'routine', length: 40, slots: GD_SLOTS,
+        piece: { glyph: '◈', kind: 'Reading circle', title: 'Akhand Path, second round', meta: 'Day 1 today · 40 days · invite only' },
+        q: 'Quiet, or recorded?',
+        light: { t: 'Quiet: read and tick', d: 'Only the daily tick and the notes. Nothing leaves the circle.', ends: 'Ends in a record of days read', icon: 'check' },
+        steps: [
+          { t: "Read today's passages", m: null, out: ['circle'], eff: 1, tier: 1, repeat: 'daily', tool: 'day', part: 'light' },
+          { t: 'Record the reading', m: 'view:clip', out: ['circle'], eff: 2, tier: 1, repeat: 'daily', tool: 'recordings', part: 'dev', ends: 'Ends in a recording a day', icon: 'mic' },
+          { t: 'Write the day note', m: 'talk:forum', out: ['forum'], eff: 1, tier: 2, repeat: 'daily', tool: 'day', part: 'dev' },
+          { t: 'Send the recording to YouTube', m: 'same:post', out: ['yt'], eff: 1, tier: 3, repeat: 'daily', tool: 'uploads', part: 'dev' },
+          { t: 'A note in the circle: weeks read', m: 'gather:forum', out: ['forum'], eff: 1, tier: 1, repeat: 'every', tool: 'quick', part: 'light' },
+          { t: 'A question for the week', m: 'talk:forum', out: ['forum'], eff: 1, tier: 2, repeat: 'every', tool: 'forum', part: 'light' },
+          { t: 'The week in the circle letter', m: 'gather:letter', out: ['mail'], eff: 1, tier: 2, repeat: 'every', tool: 'email', part: 'tail' },
+          { t: 'Share one line of the day on Instagram', m: 'view:card', out: ['ig'], eff: 1, tier: 3, repeat: 'every', tool: 'quick', part: 'tail' },
+          { t: 'Invite readers to the closing gathering', m: 'event:xlink', out: ['series'], eff: 1, tier: 1, end: -3, tool: 'series', part: 'tail' },
+          { t: '“What did you notice?” thread', m: 'talk:forum', out: ['forum'], eff: 1, tier: 2, end: 3, tool: 'forum', part: 'tail' },
+        ],
+        live: { t: 'Read together live, then each week', ann: 'Tell the circle when the live reading is' } },
+    ];
+
+    // ── settings: Tweaks props, overridden by the board's own controls ──
+    const ov = this.state.ov || {};
+    const pv = (k, d) => (ov[k] !== undefined ? ov[k] : this.props[k] !== undefined ? this.props[k] : d);
+    const tplName = pv('template', 'Artwork to live');
+    const T = TEMPLATES.find((t) => t.name === tplName) || TEMPLATES[1];
+    const I = clamp(pv('intensity', 4), 1, 5);
+    const C = clamp(pv('cadence', 7), 1, 14);
+    const E = clamp(pv('effort', 3), 1, 3);
+    const R = clamp(pv('reach', 5), 1, 5);
+    const LV = clamp(pv('goLive', 3), 0, 6);
+    const SNAP = !!pv('snapToSlots', true);
+    const set = (k, v) => () => this.setState((s) => ({ ov: { ...s.ov, [k]: v } }));
+
+    // ── 1. which steps the intensity takes ──
+    const lightTier = I === 1 ? 1 : I === 5 ? 3 : 2;
+    const devOn = I >= 4 || (T.anchor === 'routine' && I >= 3);
+    const devTier = I === 5 ? 3 : 2;
+    const tailTier = I <= 2 ? 1 : I === 3 ? 2 : 3;
+    const forkShown = I >= 2;
+    const scale = C / 7;
+    const why = [];
+    const isRoutine = T.anchor === 'routine';
+    const isDate = T.anchor === 'date';
+    const E0 = isDate ? T.date : TODAY;
+    const END = TODAY + days((T.length || 40) - 1);
+
+    // live block
+    const liveWant = LV > 0;
+    const liveOffStart = [0, 3, 7, 14, 21, 28, 42][LV];
+    const liveBefore = [0, 0, 3, 7, 10, 14, 21][LV];
+    let liveReason = null;
+    if (liveWant && R < 5) liveReason = 'reach';
+    else if (liveWant && E < 3) liveReason = 'effort';
+    const liveOn = liveWant && !liveReason;
+    const liveDate = !liveWant ? null : isDate ? T.date - days(liveBefore) : TODAY + days(liveOffStart);
+
+    const rows = [];
+    const reachOk = (o) => OUT[o][2] <= R;
+    for (const s of T.steps) {
+      const tierMax = s.part === 'light' || s.part === 'day' ? lightTier : s.part === 'dev' ? devTier : tailTier;
+      if (s.tier > tierMax) continue;
+      if (s.part === 'dev' && !devOn) continue;
+      if (s.part === 'day' && liveOn && liveBefore === 0) continue; // the live replaces the photo on the day
+      const r = { ...s, outs: s.out.filter(reachOk) };
+      if (s.needsLive && !liveOn) r.left = 'Needs a recording: no live is set';
+      else if (s.eff > E) r.left = 'Asks ' + EFF[s.eff] + ' effort; the setting is ' + EFF[E];
+      else if (!r.outs.length) r.left = 'Outside the reach: ' + s.out.map((o) => OUT[o][1]).join(', ');
+      r.cut = s.out.length - r.outs.length;
+      rows.push(r);
+    }
+
+    // ── 2. dates ──
+    const nextFirst = (t) => { const d = new Date(t + DAY); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + (d.getUTCDate() === 1 ? 0 : 1), 1); };
+    let forkDate;
+    if (isRoutine) forkDate = TODAY;
+    else if (isDate) forkDate = T.date + days(Math.round(T.forkBase * scale));
+    else forkDate = TODAY + days(Math.round(T.forkBase * scale));
+    for (const r of rows) {
+      if (r.repeat === 'daily') { r.date = TODAY; r.off = 'Daily'; continue; }
+      if (r.repeat === 'every') { r.date = TODAY + days(C); r.off = 'Every ' + plural(C, 'day'); continue; }
+      if (r.end !== undefined) { r.date = END + days(r.end); r.off = 'Final day ' + (r.end > 0 ? '+' : '−') + Math.abs(r.end); continue; }
+      if (r.issue) continue;
+      const n = r.fixed ? r.base : Math.round(r.base * scale);
+      r.date = E0 + days(n); r.n = n;
+      r.off = isDate ? (n === 0 ? 'The day' : offTxt(n)) : offTxt(n);
+    }
+    if (!isDate && !isRoutine) {
+      const lastLight = Math.max(TODAY, ...rows.filter((r) => r.part === 'light' && !r.left).map((r) => r.date));
+      forkDate = Math.max(forkDate, lastLight);
+      for (const r of rows) if (r.part !== 'light' && !r.issue && r.date <= forkDate) { r.date = forkDate + DAY; r.n = Math.round((r.date - TODAY) / DAY); r.off = offTxt(r.n); }
+    }
+    for (const r of rows) if (r.issue) { r.date = nextFirst(Math.max(forkDate, TODAY)); r.off = 'Next issue'; }
+
+    // live rows
+    if (liveWant) {
+      const isPre = isDate && liveBefore > 0 && T.live.pre;
+      const liveRow = { t: isPre ? T.live.pre : T.live.t, m: 'event:live', out: ['yt', 'fb'], outs: ['yt', 'fb'].filter(reachOk), eff: 3, tool: 'booth', part: 'dev', isLive: true, date: liveDate, pinned: true };
+      const lo = Math.round((liveDate - E0) / DAY);
+      liveRow.off = isDate ? (lo === 0 ? 'The day' : offTxt(lo)) : isRoutine ? 'Day ' + (lo + 1) : offTxt(lo);
+      if (liveReason) liveRow.left = liveReason === 'reach' ? 'Reach stops before live (set reach to 5)' : 'A live asks large effort; the setting is ' + EFF[E];
+      rows.push(liveRow);
+      if (liveOn) {
+        const ann = liveDate - days(Math.max(1, Math.round(7 * scale)));
+        if (ann > TODAY) { const a = Math.round((ann - E0) / DAY); rows.push({ t: isPre ? T.live.preAnn : T.live.ann, m: 'event:card', out: ['ig', 'fb'], outs: ['ig', 'fb'].filter(reachOk), eff: 1, tool: 'quick', part: 'dev', date: ann, off: isRoutine ? 'Day ' + (a + 1) : (isDate && a === 0) ? 'The day' : offTxt(a), pinned: true }); }
+        const cl = Math.round((liveDate + DAY - E0) / DAY);
+        rows.push({ t: 'Clip the best minute; the replay on your page', m: 'event:clip', out: ['ig', 'page'], outs: ['ig', 'page'].filter(reachOk), eff: 2, tool: 'clip', part: 'dev', date: liveDate + DAY, off: isRoutine ? 'Day ' + (cl + 1) : offTxt(cl) });
+      }
+    }
+
+    // ── 3. placement: routine slots, then staggering ──
+    let snapped = 0, staggered = 0, late = 0;
+    const slotFor = (r) => {
+      if (!SNAP || r.pinned || r.repeat || r.end !== undefined || r.left || r.n === 0) return null;
+      if (r.tool === 'writing' && T.slots.note) return T.slots.note;
+      if (r.outs[0] === 'ig' || r.outs[0] === 'story') return T.slots.ig;
+      return null;
+    };
+    const snapTo = (r, from) => { const sl = slotFor(r); if (!sl) { r.date = from; return; } let d = from; for (let i = 0; i < 8 && !sl.days.includes(wday(d)); i++) d += DAY; r.date = d; r.slot = sl; };
+    const live = rows.filter((r) => !r.left);
+    live.sort((a, b) => a.date - b.date);
+    for (const r of live) { snapTo(r, r.date); if (r.slot) snapped += 1; }
+    const fam = (o) => (o === 'story' ? 'ig' : o);
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false;
+      live.sort((a, b) => a.date - b.date);
+      for (let i = 0; i < live.length; i++) {
+        const r = live[i];
+        if (r.pinned || r.repeat || r.end !== undefined || r.issue || r.n === 0) continue;
+        for (let j = 0; j < live.length; j++) {
+          if (j === i) continue;
+          const o = live[j];
+          if (o.repeat || o.date > r.date || (o.date === r.date && j > i)) continue;
+          const share = r.outs.some((x) => o.outs.map(fam).includes(fam(x)));
+          if (share && r.date - o.date < days(2)) { snapTo(r, o.date + days(2)); r.moved = true; moved = true; }
+        }
+      }
+      if (!moved) break;
+    }
+    staggered = live.filter((r) => r.moved).length;
+
+    // ── 4. rows for the template ──
+    const ICON_OF = (o) => OUT[o][0];
+    const all = rows.slice().sort((a, b) => a.date - b.date || (a.part === 'light' ? -1 : 1));
+    let k = 0;
+    const order = [];
+    const firstNext = all.find((r) => !r.left && r.date >= TODAY && !(isDate && r.date < TODAY));
+    const stepRow = (r) => {
+      const toolT = TOOL[r.tool];
+      const row = { isStep: true, off: r.off, title: r.t, sub: r.left ? '' : r.cut ? 'Leaves out ' + plural(r.cut, 'outlet') + ' outside the reach.' : '', cond: r.cond ? 'If' : '',
+        outs: (r.left ? r.out : r.outs).map((o) => ({ icon: ICON_OF(o), name: OUT[o][1] })), toolArea: toolT[0], toolIcon: toolT[1], toolName: toolT[2],
+        path: r.part === 'dev' ? 'dev' : undefined };
+      if (r.left) { Object.assign(row, { state: 'skipped', tag: 'Left out', tagIcon: 'dash', ssub: r.left, subIcon: 'info', isOut: true }); }
+      else if (isDate && r.date < TODAY) { late += 1; Object.assign(row, { state: 'expired', tag: 'Too late', tagIcon: 'hour', ssub: 'Its day, ' + fmt(r.date) + ', has passed', subIcon: 'hour', isOut: true }); }
+      else if (r.isLive) Object.assign(row, { state: 'live', tag: fmt(r.date) + ' · ' + (isDate ? T.time : '14:00'), tagIcon: 'live', ssub: isDate && liveBefore > 0 ? 'Preview, before the date' : 'Booth graphics from the piece', subIcon: 'flag', subTone: 'live' });
+      else if (r.repeat) Object.assign(row, { state: 'placed', tag: r.repeat === 'daily' ? 'From today' : 'From ' + fmt(r.date), tagIcon: 'cal', ssub: r.repeat === 'daily' ? 'Daily · open until midnight' : 'Every ' + plural(C, 'day'), subIcon: 'repeat', subTone: 'queue' });
+      else if (r.slot) Object.assign(row, { state: 'placed', tag: fmt(r.date) + ' · ' + r.slot.time, tagIcon: 'cal', ssub: r.slot.name + (r.moved ? ' · moved 2 days on' : ''), subIcon: 'repeat', subTone: 'queue' });
+      else if (r.issue) Object.assign(row, { state: 'placed', tag: fmt(r.date), tagIcon: 'cal', ssub: 'Letter routine · 1st of the month', subIcon: 'repeat', subTone: 'queue' });
+      else Object.assign(row, { state: 'suggested', tag: 'Suggested', tagIcon: 'zap', ssub: (r.pinned ? fmt(r.date) + ' · pinned to the date' : (r.date === TODAY ? 'Today' : 'From ' + fmt(r.date))) + (r.moved ? ' · moved 2 days on' : ''), subIcon: r.moved ? 'clock' : 'cal' });
+      row.isDone = false;
+      if (r.m && !row.isOut) { k += 1; order.push({ tag: r.m, n: k, path: r.part === 'dev' ? 'dev' : 'light' }); }
+      if (r === firstNext) { row.next = true; row.nextAttr = '1'; }
+      else if (r.m) order.push({ tag: r.m, n: null, path: 'out' });
+      return row;
+    };
+
+    const OPTS = {
+      1: [{ kind: 'light', k: 'Light', t: 'Keep it light', d: 'The letter, then a repost from the archive.', ends: 'Ends in a link to the shop', icon: 'link' },
+        { kind: 'dev', k: 'Developed', t: 'Write about how Field Notes was made', d: 'Writing in the Studio, then a clip of the riso.', ends: 'Ends in writing', icon: 'file', m: 'talk:xlink' },
+        { kind: 'live', k: 'Developed', t: 'Go live: a print pull', ends: 'Ends in a live stream', icon: 'live', m: 'event:live' }],
+      2: [{ kind: 'light', k: 'Light', t: 'Keep it light', d: 'The letter, then a repost from the archive.', ends: 'Ends in a link', icon: 'link' },
+        { kind: 'live', k: 'Developed', t: 'Go live from the studio', ends: 'Ends in a live stream', icon: 'live', m: 'event:live' },
+        { kind: 'dev', k: 'Developed', t: 'Write about it, then offer a print', d: 'Writing in the Studio, a forum question, a print edition.', ends: 'Ends in a print listing', icon: 'store', m: 'talk:xlink' }],
+      3: [{ kind: 'light', k: 'Light', t: 'Keep it light', d: 'A link from related writing, then a re-share if it still holds.', ends: 'Ends in a link', icon: 'link' },
+        { kind: 'dev', k: 'Developed', t: 'Read it with a study group', d: 'One evening with RSVP, then three passages as slides.', ends: 'Ends in a meeting', icon: 'users', m: 'event:forum' },
+        { kind: 'live', k: 'Developed', t: 'Read it aloud, live', ends: 'Ends in a live reading', icon: 'live', m: 'event:live' }],
+      4: [{ kind: 'light', k: 'Light', t: 'One photo from the room', d: 'From a phone to Instagram; then the notes and the next date.', ends: 'Ends in a photo', icon: 'camera', m: 'view:story' },
+        { kind: 'live', k: 'Developed', t: 'Go live from the room', ends: 'Ends in a live stream and a recording', icon: 'live', m: 'event:live' }],
+      5: [{ kind: 'light', k: 'Light · if full', t: 'Open a waitlist', d: 'The announce steps give way to one: a waitlist for January.', ends: 'Ends in a waitlist', icon: 'cal', m: 'offer:xlink' },
+        { kind: 'dev', k: 'Developed · seats open', t: 'Keep going to the day', d: 'Show what people made and write up the day.', ends: 'Ends in bookings and a write-up', icon: 'store', m: 'view:carousel' }],
+      6: [{ kind: 'light', k: 'Light', t: 'Quiet: read and tick', d: 'Only the daily tick and the notes. Nothing leaves the circle.', ends: 'Ends in a record of days read', icon: 'check' },
+        { kind: 'dev', k: 'Developed', t: 'Recorded: read, record, note, send', d: "Each day's reading to the circle's channel after approval.", ends: 'Ends in a recording a day', icon: 'mic', m: 'view:clip' }],
+    };
+    const forkRow = () => {
+      const spec = OPTS[T.n];
+      const liveSpec = spec.find((x) => x.kind === 'live');
+      const devSpec = spec.find((x) => x.kind === 'dev');
+      const chosen = T.n === 4 ? (liveOn && liveBefore === 0 ? liveSpec : spec[0]) : !devOn ? spec[0] : (liveOn && liveSpec ? liveSpec : devSpec || liveSpec);
+      const lightChosen = chosen === spec[0];
+      const o = spec.map((x) => {
+        let d = x.d;
+        if (x.kind === 'live') d = liveOn && isDate && liveBefore > 0 ? 'Go live is set to a preview ' + liveBefore + ' days before; set it to Day for the room.' : liveOn ? 'Set by the Go live slider: ' + fmt(liveDate) + '.' : liveReason ? 'Not reachable: ' + (liveReason === 'reach' ? 'reach is below 5.' : 'effort is below high.') : 'Move the Go live slider to offer it.';
+        return { k: x.k, t: x.t, d, ends: x.ends, icon: x.icon, m: x.m, pick: x === chosen ? (lightChosen ? 'current' : 'chosen') : 'off', badge: x === chosen ? (lightChosen ? 'Default' : T.n === 4 ? 'Chosen by Go live' : 'Chosen by intensity') : '' };
+      });
+      for (const x of o) if (x.pick === 'off' && x.m && !order.some((c) => c.tag === x.m)) order.push({ tag: x.m, n: null, path: 'opt' });
+      const fo = isRoutine ? 'Day 1' : isDate ? (forkDate === T.date ? 'The day' : offTxt(Math.round((forkDate - T.date) / DAY))) : offTxt(Math.round((forkDate - TODAY) / DAY));
+      const when = fmt(Math.max(forkDate, TODAY));
+      const note = T.n === 5 ? 'Decided by the booking count on ' + when + '; the tuner assumes seats are open from intensity 4.' : T.n === 4 ? 'Chosen with the series; the Go live slider sets it here.' : lightChosen ? 'Asked once, on ' + when + '. Unanswered, it stays light.' : 'Taken at intensity ' + I + '; it can change until ' + when + '.';
+      return { isFork: true, off: fo, q: T.q, note, opts: o, nOpts: String(o.length) };
+    };
+
+    const out = [];
+    const seg = (s, hint, path) => out.push({ isSeg: true, seg: s, hint: hint || '', path });
+    if (isRoutine) {
+      seg('At the start', 'Day 1 is today, ' + fmt(TODAY) + '; Day ' + T.length + ' is ' + fmt(END) + '.');
+      out.push({ isStep: true, off: 'Day 1', title: 'Begin the reading', sub: 'The circle is told; nothing else is sent.', outs: [{ icon: 'users', name: 'The circle' }], toolArea: 'queue', toolIcon: 'book', toolName: 'Day page', state: 'placed', tag: 'Today', tagIcon: 'cal', ssub: 'The anchor', subIcon: 'flag' });
+      if (forkShown) out.push(forkRow());
+      const groups = [['Every day', (r) => r.repeat === 'daily'], ['Every ' + plural(C, 'day'), (r) => r.repeat === 'every' || (r.isLive) || r.m === 'event:card' || r.m === 'event:clip'], ['Near the end', (r) => r.end !== undefined]];
+      for (const [name, f] of groups) { const g = all.filter(f); if (!g.length) continue; seg(name, '', g.some((r) => r.part === 'dev') && name === 'Every day' && devOn ? 'dev' : undefined); for (const r of g) out.push(stepRow(r)); }
+    } else if (isDate) {
+      seg('Before the date', 'Counted back from ' + fmt(T.date) + ', ' + T.time + '. Steps before the date keep their days.');
+      const pre = all.filter((r) => r.date < forkDate || (r.date === forkDate && forkDate !== T.date && r.part === 'light'));
+      const post = all.filter((r) => !pre.includes(r));
+      for (const r of pre) out.push(stepRow(r));
+      if (forkShown) out.push(forkRow());
+      seg(forkDate === T.date ? 'On the day and after' : 'After the branch', '');
+      for (const r of post) out.push(stepRow(r));
+    } else {
+      seg('Light path', 'Counted from the first post, today, ' + fmt(TODAY) + '.');
+      out.push({ isStep: true, off: 'Day 0', title: T.first[0], sub: 'The first post. Every later step links back to it.', outs: T.first[1].map((o) => ({ icon: ICON_OF(o), name: OUT[o][1] })), toolArea: 'channel', toolIcon: 'pen', toolName: 'Channel New post', state: 'placed', tag: 'Today', tagIcon: 'cal', ssub: 'The anchor', subIcon: 'flag' });
+      const pre = all.filter((r) => r.part === 'light');
+      const post = all.filter((r) => r.part !== 'light');
+      for (const r of pre) out.push(stepRow(r));
+      if (forkShown) out.push(forkRow());
+      if (devOn) {
+        const dv = post.filter((r) => r.part === 'dev'), tl = post.filter((r) => r.part !== 'dev');
+        if (dv.length) { seg('Developed path', 'Taken because intensity is ' + I + '.', 'dev'); for (const r of dv) out.push(stepRow(r)); }
+        if (tl.length) { seg('Both paths', ''); for (const r of tl) out.push(stepRow(r)); }
+      } else if (post.length) {
+        seg('Light path, continued', 'Shown because the light side is the default.');
+        for (const r of post) out.push(stepRow(r));
+      }
+    }
+
+    // spine edges
+    const idx = out.map((r, i) => (r.isSeg ? -1 : i)).filter((i) => i >= 0);
+    const firstI = idx[0], lastI = idx[idx.length - 1];
+    out.forEach((r, i) => {
+      if (r.isSeg) r.edge = i < firstI ? 'ld-pre' : i > lastI ? 'ld-post' : '';
+      else r.edge = (i === firstI ? 'ld-first' : '') + (i === lastI ? ' ld-last' : '');
+      r.key = String(i);
+    });
+
+    // ── 5. figures ──
+    const used = rows.filter((r) => !r.left && !(isDate && r.date < TODAY));
+    const left = rows.filter((r) => r.left);
+    const effC = [0, 0, 0, 0]; for (const r of used) effC[r.eff] += 1;
+    const mins = used.reduce((a, r) => a + MIN[r.eff] * (r.repeat === 'daily' ? 1 : 1), 0);
+    const dated = used.filter((r) => !r.repeat).map((r) => r.date);
+    const lastD = Math.max(isRoutine ? END + days(3) : TODAY, ...dated);
+    const firstD = Math.min(TODAY, ...dated);
+    const spanDays = Math.round((lastD - firstD) / DAY);
+    const allOuts = ['site', 'page', 'market', 'circle', 'series', 'mail', 'forum', 'ig', 'fb', 'thr', 'yt'];
+    const usedOuts = new Set(); for (const r of used) for (const o of r.outs) usedOuts.add(o === 'story' ? 'ig' : o === 'talk' ? 'yt' : o);
+    const tOuts = new Set(); for (const s of T.steps) for (const o of s.out) tOuts.add(o === 'story' ? 'ig' : o);
+    if (T.first) for (const o of T.first[1]) { usedOuts.add(o); tOuts.add(o); }
+    if (liveWant) { tOuts.add('yt'); tOuts.add('fb'); }
+    const outlets = allOuts.filter((o) => tOuts.has(o)).map((o) => ({ icon: OUT[o][0], name: OUT[o][1] + (usedOuts.has(o) ? '' : ' (not used)'), off: usedOuts.has(o) ? 'false' : 'true' }));
+    const hm = (m) => (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min');
+
+    // reasons
+    why.push({ k: 'int', icon: 'layers', text: 'Intensity ' + I + ' (' + INT[I].toLowerCase() + '): ' + (devOn ? 'takes the developed side of the branch' : forkShown ? 'asks the branch, light side by default' : 'core steps only, and no branch') + '; steps up to tier ' + Math.max(lightTier, tailTier, devOn ? devTier : 0) + ' of 3.' });
+    why.push({ k: 'cad', icon: 'clock', text: 'Cadence ' + C + ': the written days × ' + C + '/7' + (isDate ? ', counted back from the date; the day before and the days after keep theirs.' : '.') });
+    const effLeft = left.filter((r) => r.left.startsWith('Asks') || r.left.startsWith('A live'));
+    if (effLeft.length) why.push({ k: 'out', icon: 'dash', text: 'Effort ' + EFF[E] + ' leaves out ' + plural(effLeft.length, 'step') + ': ' + effLeft.map((r) => r.t.toLowerCase()).slice(0, 2).join('; ') + (effLeft.length > 2 ? '…' : '') + '.' });
+    const reachLeft = left.filter((r) => r.left.startsWith('Outside') || r.left.startsWith('Reach'));
+    const reachCut = used.filter((r) => r.cut > 0).length;
+    if (reachLeft.length || reachCut) why.push({ k: 'out', icon: 'globe', text: 'Reach ' + R + ' (' + ['', 'website only', '+ letter and forum', '+ Instagram, Facebook', '+ Threads, YouTube', 'all, plus live'][R] + '): ' + (reachLeft.length ? plural(reachLeft.length, 'step') + ' left out' : 'no step left out') + (reachCut ? ', ' + plural(reachCut, 'step') + ' lose an outlet' : '') + '.' });
+    if (snapped) why.push({ k: 'slot', icon: 'repeat', text: plural(snapped, 'step') + ' placed in a routine slot (' + T.slots.ig.name.replace('Instagram slot · ', 'Instagram ') + (T.slots.note ? ', Studio note Thursdays' : '') + ').' });
+    else if (!SNAP) why.push({ k: 'slot', icon: 'repeat', text: 'Routine slots off: steps keep their counted days.' });
+    if (staggered) why.push({ k: 'slot', icon: 'clock', text: plural(staggered, 'step') + ' moved two days on, so one outlet does not carry the piece twice within two days.' });
+    if (late) why.push({ k: 'out', icon: 'hour', text: plural(late, 'step') + ' too late for ' + fmt(T.date) + ' at this cadence: their days have passed.' });
+    if (liveOn) why.push({ k: 'live', icon: 'live', text: 'Live on ' + fmt(liveDate) + (isDate ? (liveBefore ? ', ' + liveBefore + ' days before the date' : ', on the day') : '') + ', with a card ' + (Math.max(1, Math.round(7 * scale)) === 7 ? 'a week' : plural(Math.max(1, Math.round(7 * scale)), 'day')) + ' before and a clip the day after.' });
+    else if (liveWant) why.push({ k: 'out', icon: 'live', text: liveReason === 'reach' ? 'Live left out: reach ' + R + ' stops before live.' : 'Live left out: effort ' + EFF[E] + ' is below a live.' });
+    else why.push({ k: 'out', icon: 'live', text: 'Live is off.' });
+
+    // mini matrix
+    const at = {};
+    for (const c of order) { const cur = at[c.tag]; if (!cur) at[c.tag] = { nums: c.n ? [c.n] : [], path: c.path }; else { if (c.n) cur.nums.push(c.n); if (c.path === 'dev' || (c.path === 'light' && cur.path !== 'dev')) cur.path = c.path; } }
+    const mrows = EVO.map((e) => ({ name: EVO_NAME[e], cells: SHARE.map(([s]) => { const a = at[e + ':' + s]; return { cls: a ? 'is-' + (a.path === 'out' ? 'out' : a.path) : '', label: a ? (a.path === 'out' ? '×' : a.nums.join('·')) : '' }; }) }));
+    const mcols = SHARE.map(([, icon]) => ({ icon }));
+
+    // dock preview: the first next step
+    const nx = all.find((r) => r === firstNext);
+    const live2 = out.filter((r) => r.isStep && !r.isOut);
+    const nIdx = live2.length;
+    const nPos = live2.findIndex((r) => r.next) + 1;
+    const dockWhen = nx ? (nx.slot ? WD[wday(nx.date)] + ' ' + nx.slot.time : nx.date === TODAY ? 'Today' : fmt(nx.date)) : '';
+    const dockRest = nx ? (nx.slot ? nx.slot.name.split(' · ')[0] + ' · ' + nx.t.charAt(0).toLowerCase() + nx.t.slice(1) : (nx.outs.map((o) => OUT[o][1]).join(', ') || 'The circle') + ' · ' + nx.t.charAt(0).toLowerCase() + nx.t.slice(1)) : '';
+
+    // controls
+    const rail = (key, vals, cur, labels) => vals.map((v, i) => ({ label: labels ? labels[i] : String(v), on: v === cur, fill: typeof v === 'number' && typeof cur === 'number' && v < cur ? 'true' : 'false', pick: set(key, v) }));
+    const ctl = {
+      tpl: TEMPLATES.map((t) => ({ label: t.n + ' ' + t.name, on: t.name === T.name, fill: 'false', pick: set('template', t.name) })),
+      int: rail('intensity', [1, 2, 3, 4, 5], I, ['1', '2', '3', '4', '5']),
+      cad: rail('cadence', [1, 2, 3, 5, 7, 10, 14], C, ['1', '2', '3', '5', '7', '10', '14']),
+      eff: rail('effort', [1, 2, 3], E, ['Low', 'Medium', 'High']),
+      rch: rail('reach', [1, 2, 3, 4, 5], R, ['Site', '+ Letter', '+ IG, FB', '+ Thr, YT', '+ Live']),
+      live: rail('goLive', [0, 1, 2, 3, 4, 5, 6], LV, isDate ? ['Off', 'Day', '−3', '−7', '−10', '−14', '−21'] : isRoutine ? ['Off', 'D4', 'D8', 'D15', 'D22', 'D29', 'D36'] : ['Off', '+3', '+7', '+14', '+21', '+28', '+42']),
+    };
+    const liveLabel = !liveWant ? 'Not at all' : (isDate ? (liveBefore ? liveBefore + ' days before the date' : 'On the day') : isRoutine ? 'Day ' + (Math.round((liveDate - TODAY) / DAY) + 1) : '+' + liveOffStart + ' days') + (liveReason ? ' · left out' : '');
+
+    return {
+      piece: T.piece, tplName: T.n + ' ' + T.name,
+      intLabel: I + ' · ' + INT[I], cadLabel: 'every ~' + plural(C, 'day'), effLabel: ['', 'Low', 'Medium', 'High'][E], rchLabel: R + ' · ' + REACH[R], liveLabel,
+      snapOn: SNAP, snapLabel: SNAP ? 'On: steps land in the next routine slot' : 'Off: steps keep their counted days', toggleSnap: set('snapToSlots', !SNAP),
+      ctl, rows: out, why,
+      st: {
+        steps: String(used.length + (isDate ? 0 : 1)), stepsSub: left.length || late ? plural(left.length + late, 'step') + ' left out' : 'none left out',
+        span: isRoutine ? T.length + ' days' : plural(spanDays, 'day'), spanSub: fmt(firstD) + ' → ' + fmt(lastD),
+        effort: hm(mins), effortSub: [effC[1] && effC[1] + ' small', effC[2] && effC[2] + ' medium', effC[3] && effC[3] + ' large'].filter(Boolean).join(', ') || 'nothing',
+        live: liveOn ? fmt(liveDate) : 'Off', liveSub: liveOn ? 'Booth, YouTube and Facebook' : liveWant ? 'Left out by the settings' : 'Go live slider at 0',
+      },
+      outlets, mrows, mcols,
+      dock: { has: !!nx, eyebrow: T.piece.title + ' · step ' + nPos + ' of ' + nIdx, when: dockWhen, rest: dockRest },
+    };
+  }
+}
+</script>
+</body>
+</html>

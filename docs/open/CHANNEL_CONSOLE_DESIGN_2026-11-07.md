@@ -30,7 +30,13 @@ https://claude.ai/artifact/BYQ9PEbR52mZ3EzZFRo2So (private to the developer).
   none in `packages/studio/src/channel`; the console rendered to static HTML
   with sample data and screenshotted at 1440 px and 390 px (Chrome container):
   no overflow, no script errors. Not verified: the loader against the live
-  database, signed-in use, either app rebuilt.
+  database, signed-in use.
+- Deployed 2026-11-07 10:20 EST: arts-collective rebuilt (BUILD_ID
+  `vTuvRoTYPzT3LCP0kgUIu`) and katie-the-potter rebuilt (`KcqlTjwD646kbTY1pEgKk`)
+  from commit `30aa615` with a clean tree. Verified through the edge signed out:
+  `/studio/channel?org=katie-the-potter` 307 to login with the query kept;
+  pottery.arts-collective.com `/channel`, `/hub`, `/manage*` 307 to login, `/`
+  200. Backups: `~/eac-backups/next/{arts-collective,katie-the-potter}-20261107-1015.tgz`.
 - Differs from the sections below: "Posting for the org" is shown inside
   Accounts (setting it stays in the Center's Connections); "Post this" makes
   a draft post server-side instead of a `&piece=` parameter; Video and

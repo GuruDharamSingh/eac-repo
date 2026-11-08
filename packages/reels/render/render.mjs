@@ -517,6 +517,8 @@ function needsRemotion(edit, source) {
   const [w, h] = CLIP_SIZE[edit.format ?? 'landscape'] ?? CLIP_SIZE.landscape;
   // Bars need pad, which only the image's own ffmpeg has.
   if (edit.fit === 'contain' && !FULL_FFMPEG && Math.abs(source.width / source.height - w / h) > 0.01) return 'bars';
+  // ffmpeg pads bars with a flat colour; a gradient ground behind them is the template's
+  if (edit.fit === 'contain' && edit.brand?.gradient && Math.abs(source.width / source.height - w / h) > 0.01) return 'gradient bars';
   return null;
 }
 
