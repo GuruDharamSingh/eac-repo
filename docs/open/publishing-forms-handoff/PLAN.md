@@ -341,7 +341,14 @@ Decisions made during pass 2 (for Justin):
 - "Present it as a series" appears only before the first save.
 - Copy was changed wherever the design claims what the code doesn't do (Soft tissue's reports).
 
-Not live: the arts-collective wiring for series, artwork and offering waits for the PM's go.
+**Live** on arts-collective (2026-11-08, 0929c8d0, build _vpZWLGcrn2fBdnZFmm0i) as trial tabs beside the existing ones:
+- "Gatherings (new)", which now creates series.
+- "Artwork (new)" (`?kind=artwork-form`).
+- "Offerings (new)" (`?kind=service-form`).
+
+The Publish card's Artwork tile opens the trial form. "View on site" links use `networkItemUrl` (network subdomain plus `/<slug>`, HTTP-verified), which also fixed the Meetings tab's 404 on custom-domain orgs.
+
+Waiting: Justin's click-through, and pass 3 (quick compose + Poll/Questions, HE pilot with system32-a1).
 
 Open:
 - SectionProps has no record status, so Availability unlocks only on reload after a first publish.
