@@ -15,6 +15,7 @@
 
 import type * as React from 'react';
 import type { CommonIconName, HostLinks, IconMap, StudioLinkRequest } from '@elkdonis/utils/host';
+import type { ContentFieldSpec, ContentKind } from '@elkdonis/cms-ui/compose';
 import type { StudioResult } from '../types';
 import type { BlocksSlot, BodySlot } from './fields/FieldRenderer';
 import type { MediaSlot } from './fields/MediaField';
@@ -127,12 +128,24 @@ export interface SectionProps {
   fromPreset: Record<string, string>;
   tier: FormTier;
   host: FormHost;
+  /** The saved record's id; null on a new form (a "new only" control, such as Present it as a series, reads it). */
+  recordId?: string | null;
   /** Draw one cms-ui field by name with the shell's field components (so kinds never restyle a field). */
   field: (name: string, override?: FieldOverride) => React.ReactNode;
 }
 
 export interface FormKindSchema {
   id: FormKindId;
+  /**
+   * Which cms-ui content-fields list supplies the field specs (labels, inputs, dependsOn).
+   * Default: the code kind's. A gathering returns 'meeting' even as a series, so ticking
+   * "Present it as a series" never swaps its fields for the series card's (pass 2).
+   */
+  specKind?: (a: Answers) => ContentKind | null;
+  /** Specs for fields content-fields does not declare (artwork), merged over that list. */
+  specs?: Record<string, ContentFieldSpec>;
+  /** Draft autosave for these answers. Default true. Off for a series: each save rebuilds the draft. */
+  autosave?: (a: Answers) => boolean;
   /** FormSection.render keys → components. Owned by the kind (soft tissue); drawn by the shell (tendons). */
   components?: Record<string, React.ComponentType<SectionProps>>;
   /** Sections the design shows that this pass leaves out, with the reason and the pass that brings them (PLAN §1). */

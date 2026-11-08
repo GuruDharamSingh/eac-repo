@@ -25,6 +25,7 @@ export {
   readiness,
   sectionFieldNames,
   sectionStatus,
+  specKindOf,
   useFormState,
   visibleSections,
 } from './state';

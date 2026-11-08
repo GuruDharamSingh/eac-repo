@@ -62,11 +62,16 @@ export function contentKindOf(code: CodeKind): ContentKind | null {
   }
 }
 
+/** The content-fields list a kind's specs come from (FormKindSchema.specKind, else the code kind's). */
+export function specKindOf(schema: FormKindSchema, answers: Answers): ContentKind | null {
+  return schema.specKind ? schema.specKind(answers) : contentKindOf(schema.codeKind(answers));
+}
+
 /** Every field name a section draws: its own `fields` plus the fields of its cms-ui `groups`. */
 export function sectionFieldNames(section: FormSection, schema: FormKindSchema, answers: Answers, ctx: FormContext): string[] {
   const names = [...(section.fields ?? [])];
   if (section.groups?.length) {
-    const ck = contentKindOf(schema.codeKind(answers));
+    const ck = specKindOf(schema, answers);
     if (ck) {
       const groups = buildContentFields(ck, ctx.fields as ContentFieldContext);
       for (const g of groups) if (section.groups.includes(g.id)) names.push(...g.fields.map((f) => f.name));
@@ -378,7 +383,12 @@ export function useFormState(opts: UseFormStateOptions): FormController {
   // only after an edit, never before there is a title. A published or pending item's edits go
   // live only when the person presses Save; the server refuses an autosave over them too.
   const touched = React.useRef(false);
-  const mayAutosave = !!autosaveMs && !!actions && !state.publishedAt && (state.id === null || recordStatus(state.record) === 'draft');
+  const mayAutosave =
+    !!autosaveMs &&
+    !!actions &&
+    !state.publishedAt &&
+    (state.id === null || recordStatus(state.record) === 'draft') &&
+    (schema.autosave ? schema.autosave(state.answers) === true : true);
   React.useEffect(() => {
     if (!mayAutosave || state.saveStatus !== 'idle' || !touched.current) return;
     if (!isFilled(state.answers.title)) return;
