@@ -310,6 +310,60 @@ The questions as asked:
 - Hydration: ids from the block or field, never `useId`/random. Server code imports page-builder
   `/config` or `/server` only.
 
+## 12. Pass 2 contract: answer keys and server paths (bone, 2026-11-08)
+
+Every agent builds to these keys. Keys under `forms.*` are form state the adapter turns into real writes.
+
+**Series in place**: a gathering with `recurrence_pattern: 'WEEKLY'` and `forms.repeat_as_series: true` (codeKind `series`).
+
+Keys:
+- `forms.repeat_every_weeks`: 1–4 (default 1), mapped to `intervalWeeks`.
+- `forms.repeat_count`, or `recurrence_until`: the last date.
+- `forms.sessions`: `Array<{ date: 'YYYY-MM-DD'; title?: string; note?: string; skipped?: boolean; reason?: string }>`.
+  - Derived from the schedule and rebuilt when it changes. Typed titles, notes and skips are kept by date.
+  - Untitled sessions read "Session N".
+  - Skips renumber live.
+- `forms.series_page`: `{ listed: boolean; slides: boolean; featured: boolean }`.
+- Shared with the gathering: `where_mode`. 'link' becomes the series `join_url`, 'talk' becomes `create_talk_room`, 'place' becomes `location`.
+
+Save (new series only; an existing series opens in its planner, as today):
+- A new services composite, `createSeriesFromForm(viewerId, orgId, input)` in `packages/services/src/series-form.ts`.
+- Steps:
+  1. `createThread(kind 'series')` with `metadata.series` (cms-ui `seriesScheduleFromAnswers`, as IFAC's compose-adapter `toSeriesInput` does).
+  2. `saveSeriesSchedule`.
+  3. `ensureSeriesSession` and `saveSeriesSession` for each titled or noted week.
+  4. `cancelSeriesSession` for skipped weeks.
+  5. `saveSeriesPageSettings`.
+- It runs as one unit of work. A failed step reports and leaves a draft, never a half-public series.
+- Drafts: the series is created as a draft; Publish publishes the thread.
+
+**Artwork** (commerce `createArtwork` / `updateArtwork`; the author and store come from the signed-in person).
+
+Keys:
+- `title`
+- `pictures`: `Array<{ url; alt?; focal? }>`; the first is the card picture.
+- `credits`: `Array<{ role: 'artist' | string; userId?; name? }>`.
+  - The first artist with a `userId` becomes `creditedArtistUserId`.
+  - Other roles go to `forms.credits` (deferred if commerce can't store them).
+- `price_mode`: 'price' | 'request' | 'nfs'.
+- `price` (major units), `currency`.
+- `availability`: 'available' | 'reserved' | 'sold'.
+- `medium`, `height_cm`, `width_cm`, `depth_cm`, `unit`: 'cm' | 'in' (converted to cm on save), `year`.
+- `edition_type`: 'unique' | 'edition' | 'open', mapped to `kind` original / limited_edition / open_edition.
+- `edition_size`, `edition_proofs`.
+- `variants`: `Array<{ name; price; stock }>`.
+- `description` (HTML).
+- `shows`: `{ store; gallery }`.
+
+"On request" uses commerce inquiries if they can be turned on per artwork; otherwise it is deferred with evidence.
+
+**Service ("Offering")**: cms-ui content-fields' `service` keys, unchanged (`booking_type`, `format`, `location`, `session_duration_hrs`, `session_count`, `price`, `currency`, `sliding_scale`, `price_sliding_min`, `sliding_scale_note`, `registration_status`, `subtitle`, `excerpt`, `body`, `cover_image_url`, `visibility`, `feed_slug`).
+- Save: `serviceInputFromAnswers` → `upsertServiceOffering`, server side.
+- **The author is the signed-in user, never the org's service account** (`resolveSettlement` pays the author; HE migration 253).
+- Reference: HE `components/publish/service-kind.tsx`.
+
+**Host actions**: each kind's adapter takes a host-bound actions interface, the way gatheringActions takes MeetingActions. arts-collective action files are new files, imported only when the PM says go.
+
 ## 11. Status: pass 1 landed in packages (2026-11-08)
 
 Commits on `work/2026-11-08` (all committed by explicit path):
