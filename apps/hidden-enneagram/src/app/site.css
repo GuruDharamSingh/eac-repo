@@ -5,8 +5,8 @@
    components/aeon/aeon.css.
    ========================================================================== */
 
-/* Round 3: the quiet ground. Near-black with one soft white haze at the top,
-   as the Silex pages sit; the glow lives in the orbs between bands. */
+/* Round 3: the quiet ground. Near-black with one soft white haze at the top;
+   the glow lives in the orbs between bands. */
 body {
   background:
     radial-gradient(1100px 620px at 50% -14%, color-mix(in srgb, var(--he-ink) 5%, transparent), transparent 70%),
@@ -278,7 +278,7 @@ h1, h2, h3, h4 {
 
 /* ── shared pieces of the four site blocks ───────────────────────────── */
 
-/* The Silex kicker: 12px capitals, wide tracking, quiet ink. ÆON: gold mono. */
+/* The kicker: 12px capitals, wide tracking, quiet ink. ÆON: gold mono. */
 .he-eyebrow {
   margin: 0 0 1rem;
   font-family: var(--he-font-mono);
@@ -383,13 +383,13 @@ html[data-he-look="aeon"] .he-eyebrow { font-size: 0.68rem; letter-spacing: 0.26
 .eac-center-head-title { font-family: var(--he-font-display); }
 
 /* ==========================================================================
-   Round 3 (2026-11-07): the quiet redesign, in Ario's original Silex hand.
+   Round 3 (2026-11-07): the quiet redesign, in Ario's original hand.
    Centred and quiet, one idea per band, a 720px reading column, hairline
    rules, and the white-core orb between bands. Everything on tokens, so
    Site style (and the ÆON look) still moves it.
    ========================================================================== */
 
-/* ── the orb (the Silex pages' glow) ─────────────────────────────────── */
+/* ── the orb (the white-core glow) ───────────────────────────────────── */
 .he-orb {
   width: min(280px, 64vw);
   aspect-ratio: 1;
@@ -450,7 +450,7 @@ html[data-he-look="aeon"] .he-eyebrow { font-size: 0.68rem; letter-spacing: 0.26
 .he-welcome-sign { margin: 0.4em 0 1.2em; font-family: var(--he-font-display); font-style: italic; font-size: 1.2rem; color: var(--he-ink-dim); }
 @media (max-width: 760px) { .he-welcome-in { grid-template-columns: 1fr; gap: 20px; } }
 
-/* ── Opening (he-hero), quiet: Silex's centred hero; the orb beside ──── */
+/* ── Opening (he-hero), quiet: a centred hero; the orb beside ────────── */
 .he-hero[data-side="no"] .he-hero-copy { max-width: var(--he-reading); margin-inline: auto; text-align: center; }
 .he-hero[data-side="no"] .he-hero-lede { margin-inline: auto; }
 .he-hero[data-side="no"] .he-hero-actions { justify-content: center; }
@@ -460,7 +460,7 @@ html[data-he-look="aeon"] .he-eyebrow { font-size: 0.68rem; letter-spacing: 0.26
 .he-hero-orb .he-orb { width: min(320px, 70vw); }
 .he-btn { letter-spacing: 0.08em; }
 
-/* ── Passage, Silex prose: centred heading, a 720px column, 18px/1.78 ── */
+/* ── Passage, quiet prose: centred heading, a 720px column, 18px/1.78 ── */
 .he-passage[data-width="reading"] .he-passage-main { max-width: var(--he-reading); margin-inline: auto; }
 .he-passage[data-width="reading"] .he-passage-title,
 .he-passage[data-width="reading"] .he-passage-main > .he-eyebrow { text-align: center; }

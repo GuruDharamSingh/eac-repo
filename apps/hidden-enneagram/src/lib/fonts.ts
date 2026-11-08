@@ -3,8 +3,7 @@ import { Chivo_Mono, Cormorant_Garamond, EB_Garamond, Marcellus, Spectral } from
 /**
  * The house type.
  *
- * Round 3 (2026-11-07): Ario's original Silex faces are the default again
- * (packages/silex-nextcloud-connector/src/templates/enneagram/tokens):
+ * Round 3 (2026-11-07): Ario's original faces are the default again:
  *   Cormorant Garamond  display: titles, the large quiet headings
  *   EB Garamond         reading, and the letter-spaced small-capital labels
  *

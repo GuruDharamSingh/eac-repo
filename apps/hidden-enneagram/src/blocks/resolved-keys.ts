@@ -10,6 +10,8 @@ export const RESOLVED_KEYS: Record<string, readonly string[]> = {
   // Round 3. he-service's route keys are injected at render, never stored; listed so a save can never keep them.
   "he-shelf": ["items"],
   "he-forum": ["topics"],
-  "he-person": ["person"],
+  "he-person": ["person", "page", "routeSlug"],
   "he-service": ["service", "booking", "routeSlug", "routeQuery"],
+  // Round 6: the article template's record and route keys (injected at render, never stored).
+  "he-post": ["post", "routeFeed", "routeSlug"],
 };

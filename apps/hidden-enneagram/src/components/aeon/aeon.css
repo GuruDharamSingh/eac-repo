@@ -1,8 +1,7 @@
 /* The figure, the dossier, the sigil and the course card, ported from the ÆON
    draft (~/aeon-enneagram/css/aeon.css, 2026-10-29). Every colour is a --he-*
    token (defined in app/globals.css from the site's own colours, so Site
-   style changes them). Classes are he- prefixed so nothing here can reach
-   the Silex pages' own .eac-enn-* sheet. */
+   style changes them). Classes are he- prefixed. */
 
 .he-eyebrow {
   font-family: var(--he-font-mono);

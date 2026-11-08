@@ -11,7 +11,7 @@ import { AeonSigil } from "@/components/aeon/sigil";
 // them; the parts are clickable in the studio for this block's own look.
 //
 // Round 3 (2026-11-07): "A glow (orb)" beside the words, Ario's original
-// Silex ornament (a white-core radial glow), and quieter defaults: no course
+// ornament (a white-core radial glow), and quieter defaults: no course
 // link (the free course is de-emphasised; it lives on /enneagram only).
 // ============================================================================
 

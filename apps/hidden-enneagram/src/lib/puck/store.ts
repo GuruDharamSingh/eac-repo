@@ -30,13 +30,18 @@ export const READINGS_SLUG = "readings";
 export const ABOUT_SLUG = "about";
 /** Round 3: the template around every `/services/<slug>`, `puck:service` or DEFAULT_SERVICE_PAGE. */
 export const SERVICE_SLUG = "service";
+/** Round 6: the template around every `/<feed>/<slug>` (an article), `puck:post` or DEFAULT_POST_PAGE. */
+export const POST_SLUG = "post";
+/** Round 6: the template around every `/about/<slug>` (a person), `puck:person` or DEFAULT_PERSON_PAGE. */
+export const PERSON_SLUG = "person";
 
 /**
  * Built-in documents drawn at an address other than `/<slug>` (home is `/`;
- * service is every `/services/<slug>`). `[page]` must not also serve them at
- * `/home` or `/service`.
+ * service is every `/services/<slug>`, post every `/<feed>/<slug>`, person
+ * every `/about/<slug>`). `[page]` must not also serve them at `/home`,
+ * `/service`, `/post` or `/person`.
  */
-export const ELSEWHERE_SLUGS: ReadonlySet<string> = new Set([HOME_SLUG, SERVICE_SLUG]);
+export const ELSEWHERE_SLUGS: ReadonlySet<string> = new Set([HOME_SLUG, SERVICE_SLUG, POST_SLUG, PERSON_SLUG]);
 
 /** Pages drawn from a code default until one is published (always listed in /studio). */
 export const BUILT_IN_SLUGS: ReadonlyArray<{ slug: string; label: string; href: string }> = [
@@ -45,6 +50,8 @@ export const BUILT_IN_SLUGS: ReadonlyArray<{ slug: string; label: string; href: 
   { slug: READINGS_SLUG, label: "Readings (services and writing)", href: "/readings" },
   { slug: ABOUT_SLUG, label: "About", href: "/about" },
   { slug: SERVICE_SLUG, label: "A service page (every /services/…)", href: "/services" },
+  { slug: POST_SLUG, label: "Article page", href: "/writing" },
+  { slug: PERSON_SLUG, label: "Person page", href: "/about" },
   { slug: MUSIC_SLUG, label: "Music (the web of music)", href: "/music" },
 ];
 

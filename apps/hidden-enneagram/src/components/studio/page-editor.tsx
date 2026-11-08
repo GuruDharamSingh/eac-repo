@@ -34,6 +34,8 @@ const TITLES: Record<string, string> = {
   readings: "Readings (/readings)",
   about: "About (/about)",
   service: "A service page (/services/…)",
+  post: "Article page (/<feed>/…)",
+  person: "Person page (/about/…)",
   music: "Music (/music)",
 };
 

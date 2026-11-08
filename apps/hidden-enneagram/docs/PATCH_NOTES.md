@@ -1,6 +1,44 @@
 # The Hidden Enneagram: patch notes
 > Your friendly neighbourhood patch log: what changed, why, and what it touched. Newest first.
 > Guide to the editor and blocks: `docs/editor.md`.
+## 2026-11-08 · Round 6: Puck-first (preview only; live not rebuilt)
+
+### Thwip: articles are a template
+- Every `/<feed>/<slug>` (e.g. `/writing/what-the-map-is-for`) is now the studio page `post` ("Article page" in the
+  Pages tab, `/studio/post`; `DEFAULT_POST_PAGE` until published) around the new record block `he-post`: title,
+  date, author, cover and text come from the thread; the back link (`← {feed}`), the label above the title
+  ("Writing") and "Members only" are props. Same markup as before (ArticleView; the plain byline for other kinds).
+- The route keeps its gates and metadata unchanged: unknown or locked feed, member-only post for a visitor, draft
+  or unknown slug: 404; title, description, robots (noindex when not public), OpenGraph image. The resolver
+  (`lib/record-blocks.ts` loadPostBlock) repeats the same viewer-aware read, so the block can never show more
+  than the route allows. The page had no comments or forum link; none added.
+
+### Thwip: person pages are a template
+- Every `/about/<slug>` (e.g. `/about/aeon`) is now the studio page `person` ("Person page", `/studio/person`;
+  `DEFAULT_PERSON_PAGE`) around `he-person` with its new Shape "The whole person page" (`layout: "page"`):
+  getPersonPage as before (portrait from the Profile Pictures path, bio, posts and events in the org's order,
+  drafts and empty notes only for the person). Back link, section headings and empty notes are props. The
+  card on `/about` is untouched (no `layout` = card). 404 and metadata stay in the route.
+
+### Thwip: the last Silex dependency is gone
+- `/api/org/<org>/contact` now calls `lib/contact.ts` (the old shared handler, only what this route needs): same
+  validation and messages, the `contacts` row (its stored `source` value kept as it was), the owner note by
+  @elkdonis/email, and the same responses (201 `{ok:true}`; 400/404/500 `{error}`).
+- `@elkdonis/silex-render` dropped from `package.json` and `next.config.ts`; `docker compose run --rm install`
+  changed the lock only in this app's importer block (the three `@elkdonis/silex-render` lines).
+- Silex mentions in `src/` removed; one line in `app/palette.css` still says where the house look came from.
+
+### Thwip: tests
+- tsc clean (throwaway container). Signed out, :3024 = live :3012 (status, main text, title, description,
+  robots, og:image, images, links) for every thread of the org, unknown slugs and feeds, `/post`, `/person`,
+  `/about/aeon` (portrait 200), `/about`, `/`, `/readings`, `/writing`, `/enneagram`. Signed in as Ario: the same,
+  plus "Edit this page" on the two templates (as on service pages). Contact: validation and unknown-site
+  responses identical on both; no message sent, no row written.
+- Studio as Ario (session minted, then revoked; own Chromium on eris): both templates open, a framing field
+  edited, the canvas follows, closed without publishing (site_config unchanged).
+- Known: the templates sit in `<main class="he-content">`, so 24px more space above the footer than before
+  (as on service pages).
+
 ## 2026-11-07 · Round 5: hub + cleanup (preview only; live not rebuilt)
 
 ### Thwip: the hub drops its Silex suit

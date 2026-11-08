@@ -6,7 +6,7 @@ import { defineBlock, RichText, type PropsOf } from "@elkdonis/blocks";
 //   he-welcome  "Welcome." band: art-auction's home letter (.hw) in Ario's
 //               palette: a large serif word and a short rule on the left, a
 //               letter and one link on the right. Stacks on a phone.
-//   he-orb      A glow: the white-core radial "orb" the Silex pages set between
+//   he-orb      A glow: the white-core radial "orb" set between
 //               bands. Decorative only.
 //   he-works    Work impressions: pictures, recordings and video, each with a
 //               caption. A graceful line until Ario supplies media.

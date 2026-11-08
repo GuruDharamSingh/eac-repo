@@ -31,7 +31,6 @@
     "@elkdonis/primitives": "workspace:*",
     "@elkdonis/redis": "workspace:*",
     "@elkdonis/services": "workspace:*",
-    "@elkdonis/silex-render": "workspace:*",
     "@elkdonis/studio": "workspace:*",
     "@elkdonis/types": "workspace:*",
     "@elkdonis/utils": "workspace:*",

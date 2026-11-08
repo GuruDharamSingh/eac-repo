@@ -9,7 +9,7 @@ import { CATALOGUE } from "@/lib/puck/catalogue";
 import { loadCourse } from "@/lib/course";
 import { figurePlacement } from "@/blocks/enneagram-block";
 import { loadShelf } from "@/lib/shelf";
-import { loadForumTopics, loadPerson, loadServiceBlock } from "@/lib/record-blocks";
+import { loadForumTopics, loadPerson, loadPersonPage, loadPostBlock, loadServiceBlock } from "@/lib/record-blocks";
 
 // ============================================================================
 // The catalogue as a PUBLISHED page sees it: same blocks, resolvers that read
@@ -33,8 +33,14 @@ const serverResolvers: BlockResolvers = {
   // Round 3: the records the quiet pages frame.
   "he-shelf": async (props) => ({ items: await loadShelf(props) }),
   "he-forum": async (props) => ({ topics: await loadForumTopics(props.limit) }),
-  "he-person": async (props) => ({ person: await loadPerson(props.slug) }),
+  // Round 6: layout "page" is the /about/<slug> template (routeSlug injected by the route).
+  "he-person": async (props) =>
+    props.layout === "page"
+      ? { person: null, page: await loadPersonPage(typeof props.routeSlug === "string" ? props.routeSlug : props.slug) }
+      : { person: await loadPerson(props.slug) },
   "he-service": async (props) => loadServiceBlock(props),
+  // Round 6: the /<feed>/<slug> template (routeFeed + routeSlug injected by the route).
+  "he-post": async (props) => loadPostBlock(props),
 };
 
 export const serverPuckConfig = buildPuckConfig({

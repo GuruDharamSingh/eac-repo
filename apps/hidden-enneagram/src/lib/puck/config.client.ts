@@ -44,10 +44,21 @@ const clientResolvers: BlockResolvers = {
     items: await getJson(`/api/blocks/he-shelf?source=${encodeURIComponent(String(props.source ?? ""))}&feed=${encodeURIComponent(String(props.feed ?? ""))}&limit=${Number(props.limit) || 3}`, "items", []),
   }),
   "he-forum": async (props) => ({ topics: await getJson(`/api/blocks/he-records?block=forum&limit=${Number(props.limit) || 0}`, "topics", []) }),
-  "he-person": async (props) => ({ person: await getJson(`/api/blocks/he-records?block=person&slug=${encodeURIComponent(String(props.slug ?? ""))}`, "person", null) }),
+  "he-person": async (props) =>
+    props.layout === "page"
+      ? { person: null, page: await getJson(`/api/blocks/he-records?block=person-page&slug=${encodeURIComponent(String(props.slug ?? ""))}`, "page", null) }
+      : { person: await getJson(`/api/blocks/he-records?block=person&slug=${encodeURIComponent(String(props.slug ?? ""))}`, "person", null) },
   "he-service": async (props) => ({
     service: await getJson(`/api/blocks/he-records?block=service&slug=${encodeURIComponent(String(props.serviceSlug ?? ""))}`, "service", null),
     booking: null,
+  }),
+  // Round 6: the article template's sample (a feed's newest public post, or the one named).
+  "he-post": async (props) => ({
+    post: await getJson(
+      `/api/blocks/he-records?block=post&feed=${encodeURIComponent(String(props.postFeed ?? ""))}&slug=${encodeURIComponent(String(props.postSlug ?? ""))}`,
+      "post",
+      null,
+    ),
   }),
 };
 

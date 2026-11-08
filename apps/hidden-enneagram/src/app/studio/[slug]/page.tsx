@@ -5,8 +5,8 @@ import type { Data } from "@puckeditor/core";
 import { EMPTY_PAGE } from "@elkdonis/page-builder/config";
 import { isValidSlug } from "@elkdonis/page-builder/server";
 import { requireOrgEditor } from "@/lib/auth";
-import { ABOUT_SLUG, BUILT_IN_SLUGS, FIGURE_SLUG, HOME_SLUG, listPages, loadPage, MUSIC_SLUG, READINGS_SLUG, ROUTE_SLUGS, SERVICE_SLUG } from "@/lib/puck/store";
-import { DEFAULT_ABOUT_PAGE, DEFAULT_FIGURE_PAGE, DEFAULT_HOME, DEFAULT_MUSIC_PAGE, DEFAULT_READINGS_PAGE, DEFAULT_SERVICE_PAGE } from "@/lib/default-pages";
+import { ABOUT_SLUG, BUILT_IN_SLUGS, FIGURE_SLUG, HOME_SLUG, listPages, loadPage, MUSIC_SLUG, PERSON_SLUG, POST_SLUG, READINGS_SLUG, ROUTE_SLUGS, SERVICE_SLUG } from "@/lib/puck/store";
+import { DEFAULT_ABOUT_PAGE, DEFAULT_FIGURE_PAGE, DEFAULT_HOME, DEFAULT_MUSIC_PAGE, DEFAULT_PERSON_PAGE, DEFAULT_POST_PAGE, DEFAULT_READINGS_PAGE, DEFAULT_SERVICE_PAGE } from "@/lib/default-pages";
 import { READING_TEMPLATE } from "@/lib/reading-template";
 import { PageEditor } from "@/components/studio/page-editor";
 import { siteConfig } from "@/config/site";
@@ -31,6 +31,8 @@ function startingPoint(slug: string, template?: string): Data {
   if (slug === READINGS_SLUG) return DEFAULT_READINGS_PAGE as unknown as Data;
   if (slug === ABOUT_SLUG) return DEFAULT_ABOUT_PAGE as unknown as Data;
   if (slug === SERVICE_SLUG) return DEFAULT_SERVICE_PAGE as unknown as Data;
+  if (slug === POST_SLUG) return DEFAULT_POST_PAGE as unknown as Data;
+  if (slug === PERSON_SLUG) return DEFAULT_PERSON_PAGE as unknown as Data;
   if (template === "reading") return READING_TEMPLATE as unknown as Data;
   return EMPTY_PAGE as Data;
 }

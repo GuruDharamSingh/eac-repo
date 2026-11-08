@@ -80,7 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const styleCss = siteStyleCss(siteStyle, SITE_STYLE);
   const styleFonts = siteStyleFontsHref(siteStyle, SITE_STYLE);
   const footer = sections.footer ?? {};
-  // Round 3: the look preset ("quiet" = Ario's original Silex look, the default; "aeon" = round 1's ÆON).
+  // Round 3: the look preset ("quiet" = Ario's original look, the default; "aeon" = round 1's ÆON).
   const look = siteStyle?.theme?.["--he-look"] === "aeon" ? "aeon" : "quiet";
 
   return (

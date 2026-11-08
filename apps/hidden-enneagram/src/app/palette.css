@@ -1,9 +1,7 @@
 /* ==========================================================================
    The Hidden Enneagram: the house look.
 
-   Round 3 (2026-11-07): Ario's ORIGINAL Silex look is the default again,
-   matched to the live /introduction page and its template tokens
-   (packages/silex-nextcloud-connector/src/templates/enneagram/tokens):
+   Round 3 (2026-11-07): Ario's ORIGINAL look (his first site, built in Silex) is the default again:
    near-black #0a0a0c, warm ink #ece7dd, reading ink #bcb6aa, teal #3aa99c,
    Cormorant Garamond and EB Garamond, hairlines, and the white-core "orb"
    glow between bands (site.css .he-orb). Quiet, centred, one idea per band.
@@ -18,7 +16,7 @@
    Token NAMES are stored in block looks (`--he-aurum` is "the accent",
    teal here, gold in ÆON): never rename.
 
-   Contrast (Silex defaults):
+   Contrast (the defaults):
      ink #ece7dd on #0a0a0c        16.0:1
      reading ink #bcb6aa on it     10.0:1
      teal #3aa99c on it             6.6:1  (links, small accents)
@@ -94,7 +92,7 @@
   --he-max: 1180px;
   --he-gutter: clamp(18px, 4vw, 48px);
 
-  /* The old dark band (the triads page and the Silex-era sections). */
+  /* The old dark band (the triads page and the older sections). */
   --band: var(--background);
   --band-foreground: var(--foreground);
   --band-muted: var(--muted-foreground);

@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
     "@elkdonis/types",
     "@elkdonis/auth-client",
     "@elkdonis/auth-server",
-    "@elkdonis/silex-render",
     "@elkdonis/utils",
     "@elkdonis/email",
     "@elkdonis/services",
@@ -53,7 +52,7 @@ const nextConfig: NextConfig = {
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ source: `/type-${n}`, destination: `/enneagram#type-${n}`, permanent: true })),
       { source: "/contact", destination: "/#contact", permanent: true },
       { source: "/services", destination: "/readings", permanent: true },
-      // Round 5: the Silex editor bounce is gone; an old "Edit page" link lands in the page editor.
+      // Round 5: the old /edit bounce is gone; an old "Edit page" link lands in the page editor.
       { source: "/edit", destination: "/studio", permanent: false },
     ];
   },

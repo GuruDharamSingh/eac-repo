@@ -16,6 +16,8 @@
 //   /readings    DEFAULT_READINGS_PAGE: the services, then the writing.
 //   /about       DEFAULT_ABOUT_PAGE: Ario (profile + statement), ifac's shape.
 //   /services/<slug>  DEFAULT_SERVICE_PAGE: the template around he-service.
+//   /<feed>/<slug>    DEFAULT_POST_PAGE (round 6): the template around he-post.
+//   /about/<slug>     DEFAULT_PERSON_PAGE (round 6): he-person, whole-page shape.
 //   /music       DEFAULT_MUSIC_PAGE (round 2), unchanged.
 //
 // Words are Ario's where they exist (the old pages, the site copy in
@@ -448,6 +450,56 @@ export const DEFAULT_MUSIC_PAGE = {
         links: [],
         linksAt: "below",
         width: "reading",
+      },
+    },
+  ],
+};
+
+// Round 6 (2026-11-08, Puck-first): the two record templates. Each draws what
+// its route drew before, word for word; every word here is Ario's to change.
+
+/** Every `/<feed>/<slug>`: he-post draws the post in the address. */
+export const DEFAULT_POST_PAGE = {
+  root: { props: { title: "Article" } },
+  content: [
+    {
+      type: "he-post",
+      props: {
+        id: "he-post-main",
+        postFeed: "",
+        postSlug: "",
+        backLabel: "← {feed}",
+        backHref: "",
+        kindLabel: "Writing",
+        membersLabel: "Members only",
+        emptyNote: "No published post to show yet.",
+      },
+    },
+  ],
+};
+
+/** Every `/about/<slug>`: he-person, whole-page shape, draws the person in the address. */
+export const DEFAULT_PERSON_PAGE = {
+  root: { props: { title: "Person" } },
+  content: [
+    {
+      type: "he-person",
+      props: {
+        id: "he-person-page",
+        slug: "",
+        layout: "page",
+        eyebrow: "",
+        heading: "",
+        statement: "",
+        showBio: true,
+        linkLabel: "",
+        linkHref: "",
+        backLabel: "← About",
+        backHref: "/about",
+        postsHeading: "Posts",
+        eventsHeading: "Events",
+        emptyPosts: "Nothing posted here yet.",
+        emptyEvents: "No events yet.",
       },
     },
   ],

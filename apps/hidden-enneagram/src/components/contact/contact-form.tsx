@@ -5,8 +5,8 @@ import { siteConfig } from "@/config/site";
 
 /**
  * The he-contact block's form (round 3). Posts to this site's existing
- * `/api/org/<org>/contact` (handleOrgContact: a contacts row and a note to
- * the owner), as the Silex contact page did. Every word comes from the
+ * `/api/org/<org>/contact` (lib/contact.ts: a contacts row and a note to
+ * the owner), as the old contact page did. Every word comes from the
  * block's props.
  */
 export function ContactForm({

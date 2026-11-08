@@ -4,7 +4,7 @@ import { defineBlock, RichText, type PropsOf } from "@elkdonis/blocks";
 // Passage (he-passage): a section of Ario's writing in the house type: a mono
 // eyebrow, a Marcellus heading, Spectral paragraphs (formatted text, with an
 // optional drop capital), and an optional list of chapter links beside or
-// under it (the Silex site's "Introduction / Centers / Triads ..." buttons).
+// under it (the old site's "Introduction / Centers / Triads ..." buttons).
 // ============================================================================
 
 const props = [

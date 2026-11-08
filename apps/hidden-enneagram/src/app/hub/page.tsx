@@ -31,8 +31,7 @@ export const dynamic = "force-dynamic";
 /**
  * The hub (round 5, 2026-11-07): innergathering's "Cards 2" shape — a quiet
  * header and one grid of cards, each a door to its own page with a breadcrumb
- * back (or, for Publish and the forum, a popup). The Silex hub template that
- * used to sit on top is gone.
+ * back (or, for Publish and the forum, a popup).
  *
  * Who sees what:
  *   signed in (anyone, a follower included): Readings & bookings, the forum,

@@ -30,8 +30,10 @@ starts a reading.
 | `/` Landing | `puck:home`, else `DEFAULT_HOME`: Welcome, Opening (orb), work impressions (writing + pictures), a way into the enneagram, contact, the readings, the forum. No figure, no sound. | `/studio/home` |
 | `/enneagram` the exposition | `puck:enneagram`, else `DEFAULT_FIGURE_PAGE`: the figure in a Sticky side beside all of Ario's chapters (`lib/exposition.ts`, verbatim from the old pages), the nine types as `he-type` rows, the course line. | `/studio/enneagram` |
 | `/readings` | `puck:readings`, else `DEFAULT_READINGS_PAGE`: the services, then the writing. | `/studio/readings` |
-| `/about` | `puck:about`, else `DEFAULT_ABOUT_PAGE` (ifac's About shape: Ario's card + statement). `/about/<slug>` stays the PersonPage. | `/studio/about` |
+| `/about` | `puck:about`, else `DEFAULT_ABOUT_PAGE` (ifac's About shape: Ario's card + statement). | `/studio/about` |
 | `/services/<slug>` | `puck:service`, else `DEFAULT_SERVICE_PAGE`: ONE template for every service; `he-service` draws the service in the address. | `/studio/service` |
+| `/<feed>/<slug>` (round 6) | `puck:post`, else `DEFAULT_POST_PAGE`: ONE template for every article ("Article page"); `he-post` draws the post in the address. The route keeps the gates (unknown or locked feed, member-only post, draft: 404) and the metadata. | `/studio/post` |
+| `/about/<slug>` (round 6) | `puck:person`, else `DEFAULT_PERSON_PAGE`: ONE template for every person ("Person page"); `he-person` in its whole-page shape draws the person in the address (getPersonPage: portrait, bio, posts, events). 404 when there is no such person. | `/studio/person` |
 | `/music` | `puck:music`, else `DEFAULT_MUSIC_PAGE` (round 2) | `/studio/music` |
 | `/<slug>` | 1. a studio page `puck:<slug>`, 2. an org feed, 3. 404 | `/studio/<slug>` |
 
@@ -39,7 +41,7 @@ starts a reading.
   `/centers` → `#centers`, `/triads` → `#triads`, `/type-N` → `/enneagram#type-N` (the row opens, the
   figure selects N), `/contact` → `/#contact`, `/services` → `/readings`; `/services/<slug>/book` →
   `/services/<slug>` (page-level 308, keeps `?payment=cancelled`). Those slugs are in `ROUTE_SLUGS`, so
-  the studio refuses them; `home` and `service` are in `ELSEWHERE_SLUGS`, so `[page]` never serves them.
+  the studio refuses them; `home`, `service`, `post` and `person` are in `ELSEWHERE_SLUGS`, so `[page]` never serves them.
   `/edit` (the old Silex editor bounce) → `/studio` (307).
 - The studio refuses this app's own routes and the org's feed slugs (`ROUTE_SLUGS` in
   `src/lib/puck/store.ts`, feeds read live), so a page can never hide a route or a feed.
@@ -90,9 +92,13 @@ starts a reading.
 - Round 3 blocks: **`he-welcome`** Welcome (greeting, rule, letter, link), **`he-orb`** Glow, **`he-works`**
   Work impressions (pictures/recordings/video rows; a quiet line while empty), **`he-shelf`** Cards from
   the site (services, or a feed's PUBLIC posts; smart, `lib/shelf.ts`), **`he-type`** a type's chapter,
-  **`he-contact`** contact form (`/api/org/<org>/contact`), **`he-forum`** newest forum topics (smart),
-  **`he-person`** portrait (profile photo, else avatar) + statement (smart), **`he-service`** the service
-  + Book and pay (smart; route keys injected by `app/services/[slug]/page.tsx`). Records come from data
+  **`he-contact`** contact form (`/api/org/<org>/contact`, handled in `lib/contact.ts` since round 6),
+  **`he-forum`** newest forum topics (smart), **`he-person`** portrait (profile photo, else avatar) + statement
+  (smart; round 6: Shape "The whole person page" is the `/about/<slug>` template), **`he-service`** the service
+  + Book and pay (smart; route keys injected by `app/services/[slug]/page.tsx`). Round 6: **`he-post`** the post
+  in the address (title, date, author, cover, text; smart; `routeFeed`/`routeSlug` injected by
+  `app/[page]/[slug]/page.tsx` through `lib/puck/route-props.ts`). In the editor, `he-post` and the person page
+  draw a sample as a signed-out visitor sees it. Records come from data
   (`lib/record-blocks.ts`; the editor reads `/api/blocks/he-shelf` and `/api/blocks/he-records`); every
   word around them is a prop. `he-hero` gained "A glow (orb)" beside the words.
 - **`he-course` Course card (smart).** Resolver reads the course's PUBLISHED version

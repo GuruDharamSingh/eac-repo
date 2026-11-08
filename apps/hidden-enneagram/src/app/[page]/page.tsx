@@ -16,8 +16,7 @@ import { readingMetadata } from "@/lib/reading-privacy";
  *   3. none of them           -> 404
  *
  * The studio refuses feed slugs and this app's own routes, so 1 can never
- * hide a feed or a route. (Round 5: the Silex step is gone; no Silex page
- * was left after round 3.)
+ * hide a feed or a route.
  *
  * /services/*, /about, /readings, /hub, /enneagram are static routes and take
  * precedence over this segment entirely. Round 3: /introduction, /centers,

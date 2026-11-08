@@ -1653,9 +1653,6 @@ importers:
       '@elkdonis/services':
         specifier: workspace:*
         version: link:../../packages/services
-      '@elkdonis/silex-render':
-        specifier: workspace:*
-        version: link:../../packages/silex-render
       '@elkdonis/studio':
         specifier: workspace:*
         version: link:../../packages/studio

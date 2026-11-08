@@ -4,7 +4,7 @@ import { TYPE_CHAPTERS } from "@/lib/exposition";
 
 // ============================================================================
 // A type's chapter (he-type, round 3, 2026-11-07): one of the nine, in Ario's
-// words (the old /type-N Silex pages, folded into /enneagram). In the page it
+// words (the old /type-N pages, folded into /enneagram). In the page it
 // is a quiet row, number, name and epithets, that opens in place
 // (<details>, no script needed); `#type-N` opens it and scrolls to it, which
 // is where /type-N now redirects. With script, a tap opens the same chapter

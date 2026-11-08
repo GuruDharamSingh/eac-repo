@@ -12,7 +12,7 @@ import type { SiteStyleSchema } from "@elkdonis/direct-edit/site";
 // blocks, the figure and the Center together. Text colours carry `on`, so
 // the editor warns about hard pairs.
 //
-// Round 3 (2026-11-07): the defaults are Ario's original Silex look again
+// Round 3 (2026-11-07): the defaults are Ario's original look again
 // (near-black #0a0a0c, ink #ece7dd, teal #3aa99c, Cormorant Garamond and EB
 // Garamond). "Look" switches the whole set to round 1's ÆON (gold,
 // Marcellus/Spectral): app/palette.css keys it on html[data-he-look],
