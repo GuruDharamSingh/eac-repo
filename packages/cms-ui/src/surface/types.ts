@@ -1266,6 +1266,12 @@ export interface SurfaceOrgPeopleConnectors {
   list: (orgId: string) => Promise<SurfaceOrgPerson[]>;
   setRole: (orgId: string, userId: string, role: "viewer" | "member" | "guide") => Promise<{ ok: boolean; error?: string }>;
   setListed: (orgId: string, userId: string, on: boolean) => Promise<{ ok: boolean; error?: string }>;
+  /**
+   * May the viewer change roles and listing here? Owners only (services
+   * canChangeOrgPeople, 2026-11-08). When it answers false the table is
+   * read-only. Absent = the controls show (hosts not yet wired).
+   */
+  canChange?: (orgId: string) => Promise<boolean>;
   /** The org's full console, when the host has one. */
   manageHref?: string | null;
 }

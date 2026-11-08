@@ -354,6 +354,16 @@ function PeopleTable({ orgId, rows, setRows }: { orgId: string; rows: SurfaceOrg
   const surfaces = useSurfaceOptional();
   const people = surfaces!.connectors.orgPeople!;
   const [busy, setBusy] = React.useState<string | null>(null);
+  // Owners change roles and listing; everyone else here sees them read-only.
+  const [canChange, setCanChange] = React.useState<boolean>(!people.canChange);
+  React.useEffect(() => {
+    if (!people.canChange) return;
+    let live = true;
+    people.canChange(orgId).then((v) => live && setCanChange(v)).catch(() => live && setCanChange(false));
+    return () => {
+      live = false;
+    };
+  }, [people, orgId]);
   const [notice, setNotice] = React.useState<string | null>(null);
   if (!rows) return <p className="eac-jt-muted">Loading…</p>;
   if (rows.length === 0) return <p className="eac-jt-muted">Nobody yet.</p>;
@@ -379,6 +389,7 @@ function PeopleTable({ orgId, rows, setRows }: { orgId: string; rows: SurfaceOrg
   return (
     <div className="eac-jt-people">
       <p className="eac-jt-muted">Access and listing are separate: a viewer follows; a member takes part; a guide edits and manages. Listed means the public site shows them.</p>
+      {!canChange && <p className="eac-jt-muted">Only owners change roles.</p>}
       <table>
         <thead>
           <tr>
@@ -411,8 +422,8 @@ function PeopleTable({ orgId, rows, setRows }: { orgId: string; rows: SurfaceOrg
                 {r.arrivedFrom && <small> · from {r.arrivedFrom}</small>}
               </td>
               <td>
-                {r.role === "owner" ? (
-                  "Owner"
+                {r.role === "owner" || !canChange ? (
+                  r.role.charAt(0).toUpperCase() + r.role.slice(1)
                 ) : (
                   <select value={r.role} disabled={busy === r.userId} onChange={(e) => role(r, e.target.value as "viewer" | "member" | "guide")}>
                     <option value="viewer">Viewer</option>
@@ -422,10 +433,16 @@ function PeopleTable({ orgId, rows, setRows }: { orgId: string; rows: SurfaceOrg
                 )}
               </td>
               <td>
-                <label className="eac-jt-check">
-                  <input type="checkbox" checked={Boolean(r.listing?.isPublic)} disabled={busy === r.userId} onChange={(e) => listed(r, e.target.checked)} />
-                  listed
-                </label>
+                {canChange ? (
+                  <label className="eac-jt-check">
+                    <input type="checkbox" checked={Boolean(r.listing?.isPublic)} disabled={busy === r.userId} onChange={(e) => listed(r, e.target.checked)} />
+                    listed
+                  </label>
+                ) : r.listing?.isPublic ? (
+                  "listed"
+                ) : (
+                  "not listed"
+                )}
               </td>
             </tr>
           ))}

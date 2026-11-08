@@ -7,7 +7,7 @@
  * refuses anyone who is not an owner or guide of this org.
  */
 
-import { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople } from "@elkdonis/services";
+import { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople, canChangeOrgPeople } from "@elkdonis/services";
 import { getViewer } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 
@@ -32,4 +32,11 @@ export async function setOrgPersonListedAction(orgId: string, userId: string, on
   const viewer = await manager();
   if (orgId !== siteConfig.orgId || !viewer) return { ok: false, error: "Only owners and guides can change this." };
   return setOrgPersonListed(orgId, userId, viewer.userId, on);
+}
+
+/** Owners change roles and listing (services canChangeOrgPeople); the Center table asks first. */
+export async function canChangeOrgPeopleAction(orgId: string) {
+  const viewer = await getViewer();
+  if (!viewer || orgId !== siteConfig.orgId) return false;
+  return canChangeOrgPeople(viewer.userId, orgId);
 }

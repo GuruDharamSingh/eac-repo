@@ -21,7 +21,7 @@ import {
 import { loadJourneyAction, publishStoreAction, checkSiteAction, createSiteAction } from "@/lib/cms/journey-actions";
 import { checkStoreAction, saveArtworkDraftAction, publishArtworksAction } from "@/lib/cms/artwork-actions";
 import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction } from "@/lib/cms/own-service-actions";
-import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction } from "@/lib/cms/org-people-actions";
+import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction, canChangeOrgPeopleAction } from "@/lib/cms/org-people-actions";
 import { marketplaceLinks } from "@elkdonis/commerce/links";
 import { toSaveContentInput } from "@/lib/cms/compose-adapter";
 import { siteConfig } from "@/config/site";
@@ -225,6 +225,7 @@ export function HubSurfaces({
           list: listOrgPeopleAction,
           setRole: setOrgPersonRoleAction,
           setListed: setOrgPersonListedAction,
+          canChange: canChangeOrgPeopleAction,
           manageHref: "/manage/people",
         },
 

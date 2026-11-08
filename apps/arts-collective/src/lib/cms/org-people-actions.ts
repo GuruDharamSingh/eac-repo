@@ -8,7 +8,7 @@
  * of THAT org (canManageOrgPeople). Ported from ifac (2026-10-29).
  */
 
-import { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople } from "@elkdonis/services";
+import { listOrgPeople, setOrgPersonRole, setOrgPersonListed, canManageOrgPeople, canChangeOrgPeople } from "@elkdonis/services";
 import { getCurrentUser } from "@/lib/session";
 
 async function manager(orgId: string) {
@@ -32,4 +32,11 @@ export async function setOrgPersonListedAction(orgId: string, userId: string, on
   const user = await manager(orgId);
   if (!user) return { ok: false, error: "Only owners and guides can change this." };
   return setOrgPersonListed(orgId, userId, user.id, on);
+}
+
+/** Owners change roles and listing (services canChangeOrgPeople); the Center table asks first. */
+export async function canChangeOrgPeopleAction(orgId: string) {
+  const user = await getCurrentUser();
+  if (!user || !orgId) return false;
+  return canChangeOrgPeople(user.id, orgId);
 }

@@ -28,7 +28,7 @@ import { ArtPieceGate, BlogGate } from "@/components/hub/publish-gates";
 import { loadJourneyAction, publishStoreAction, checkSiteAction, createSiteAction } from "@/lib/cms/journey-actions";
 import { checkStoreAction, saveArtworkDraftAction, publishArtworksAction } from "@/lib/cms/artwork-actions";
 import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction } from "@/lib/cms/own-service-actions";
-import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction } from "@/lib/cms/org-people-actions";
+import { listOrgPeopleAction, setOrgPersonRoleAction, setOrgPersonListedAction, canChangeOrgPeopleAction } from "@/lib/cms/org-people-actions";
 import { marketplaceLinks } from "@elkdonis/commerce/links";
 // The shared canvas. Its own subpath because @excalidraw/excalidraw is an
 // optional peer of cms-ui — a drawing engine must not ride along with the hub.
@@ -155,6 +155,7 @@ export function HubSurfaces({
           list: listOrgPeopleAction,
           setRole: setOrgPersonRoleAction,
           setListed: setOrgPersonListedAction,
+          canChange: canChangeOrgPeopleAction,
           manageHref: "/manage/people",
         },
         // "Where you show" in the same popup, at /api/center/presence.

@@ -7,7 +7,7 @@ import { createHubConnectors } from "@elkdonis/cms-ui/hub";
 import { checkSiteAction, createSiteAction, loadJourneyAction, publishStoreAction } from "@/lib/cms/journey-actions";
 import { checkStoreAction, publishArtworksAction, saveArtworkDraftAction } from "@/lib/cms/artwork-actions";
 import { listOwnServicesAction, saveOwnServiceAction, setOwnServiceStatusAction } from "@/lib/cms/own-service-actions";
-import { listOrgPeopleAction, setOrgPersonListedAction, setOrgPersonRoleAction } from "@/lib/cms/org-people-actions";
+import { canChangeOrgPeopleAction, listOrgPeopleAction, setOrgPersonListedAction, setOrgPersonRoleAction } from "@/lib/cms/org-people-actions";
 import { disconnectPayoutsAction, loadProfilePageAction, setProfileSectionAction, startPayoutsAction } from "@/lib/cms/payout-actions";
 import { orgComposeConnectors, orgComposeContext } from "@/components/hub/console/org-compose";
 
@@ -95,7 +95,7 @@ export function LearnHost({ displayName, signedIn, org = null, children }: { dis
         },
         artwork: { checkStore: checkStoreAction, saveDraft: saveArtworkDraftAction, publish: publishArtworksAction },
         services: { list: listOwnServicesAction, save: saveOwnServiceAction, setStatus: setOwnServiceStatusAction },
-        orgPeople: { list: listOrgPeopleAction, setRole: setOrgPersonRoleAction, setListed: setOrgPersonListedAction, manageHref: "/hub/organization" },
+        orgPeople: { list: listOrgPeopleAction, setRole: setOrgPersonRoleAction, setListed: setOrgPersonListedAction, canChange: canChangeOrgPeopleAction, manageHref: "/hub/organization" },
         custom: {
           ...customCompose,
           [LEARN_FRAME]: ({ descriptor }) => <FramedPage src={String(descriptor.props?.src ?? "")} title={descriptor.title ?? ""} />,
