@@ -3,9 +3,11 @@ import { RESERVED_SLUGS } from "@elkdonis/utils/reserved-slugs";
 import {
   isNetworkHost,
   networkHost,
+  networkHostWithPort,
   networkRootHosts,
   normalizeDomain,
 } from "@/lib/domain";
+import { tenantRoute } from "@/lib/tenant-paths";
 
 /**
  * Subdomains of the network host that are infrastructure, not orgs —
@@ -16,29 +18,33 @@ import {
  */
 const RESERVED_SUBDOMAINS = RESERVED_SLUGS;
 
-// Top-level app routes that must never be rewritten to /sites/[slug]/[path].
-// These paths exist at the root of the Next.js app and should render as-is
-// even when accessed from a subdomain host.
-const PASSTHROUGH_PATHS = new Set([
-  "login",
-  "signup",
-  "hub",
-  "account",
-  "wizard",
-  "inner-temple",
-  "preview",
-  "edit",
-  "auth",
-  "complete",
-  "artists",
-  "commitments",
-  "sites",
-  "directory",
-  // A buyer's private booking link (/bookings/<token>, migration 174).
-  "bookings",
-  // Sophia's learner pages on the network host (2026-10-29).
-  "learn",
-]);
+// What each top-level path means on a tenant host (network / tenant /
+// canonical hop / manage → hub) lives in lib/tenant-paths.ts, which replaced
+// the flat PASSTHROUGH_PATHS list on 2026-11-08.
+
+/**
+ * Headers this middleware sets for the pages behind it. A client could send
+ * them itself, so they are dropped from every incoming request first: the
+ * tenant hub's server action trusts `x-org-slug` to say which org's host the
+ * request arrived on.
+ */
+const ORG_HEADERS = ["x-org-slug", "x-org-domain"] as const;
+
+function cleanHeaders(req: NextRequest): Headers {
+  const headers = new Headers(req.headers);
+  for (const h of ORG_HEADERS) headers.delete(h);
+  return headers;
+}
+
+/** The canonical network origin, for hops off a tenant host. */
+function canonicalOrigin(req: NextRequest): string {
+  const host = networkHostWithPort();
+  const forwarded = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const proto =
+    forwarded ||
+    (/^(localhost|127\.0\.0\.1)(:|$)/.test(host) ? "http" : req.nextUrl.protocol.replace(/:$/, "") || "https");
+  return `${proto}://${host}`;
+}
 
 function extractSubdomain(hostHeader: string | null): string | null {
   if (!hostHeader) return null;
@@ -124,7 +130,8 @@ function rewriteForOrg(
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
 
-  const requestHeaders = new Headers(req.headers);
+  const requestHeaders = cleanHeaders(req);
+  requestHeaders.set("x-org-slug", slug);
   if (customDomain) requestHeaders.set("x-org-domain", customDomain);
   const init = { request: { headers: requestHeaders } };
 
@@ -160,12 +167,35 @@ function rewriteForOrg(
     });
   }
 
-  if (segments.length > 0 && !PASSTHROUGH_PATHS.has(segments[0])) {
-    url.pathname = `/sites/${slug}/${segments.join("/")}`;
-    return NextResponse.rewrite(url, init);
+  const route = tenantRoute(segments);
+  switch (route.kind) {
+    case "network":
+      return NextResponse.next(init);
+    case "manage": {
+      const hub = req.nextUrl.clone();
+      hub.pathname = "/hub";
+      hub.search = "";
+      return NextResponse.redirect(hub, 307);
+    }
+    case "canonical": {
+      // A network console or network page: never drawn on a tenant host.
+      const target = new URL(pathname + url.search, canonicalOrigin(req));
+      if (route.withOrg && !target.searchParams.has("org")) target.searchParams.set("org", slug);
+      return NextResponse.redirect(target, 307);
+    }
+    case "tenant":
+    default:
+      url.pathname = `/sites/${slug}/${segments.join("/")}`;
+      return NextResponse.rewrite(url, init);
   }
+}
 
-  return NextResponse.next(init);
+/** Pass through, minus any org header the client sent itself. */
+function passThrough(req: NextRequest): NextResponse {
+  if (ORG_HEADERS.some((h) => req.headers.has(h))) {
+    return NextResponse.next({ request: { headers: cleanHeaders(req) } });
+  }
+  return NextResponse.next();
 }
 
 export async function middleware(req: NextRequest) {
@@ -177,11 +207,11 @@ export async function middleware(req: NextRequest) {
 
   // 2. Custom full domain (amritcanada.ca) — slug comes from org_domains.
   const domain = normalizeDomain(host);
-  if (!domain || isNetworkHost(domain)) return NextResponse.next();
+  if (!domain || isNetworkHost(domain)) return passThrough(req);
 
   const map = await getDomainMap(req.nextUrl.origin);
   const slug = map?.[domain];
-  if (!slug) return NextResponse.next();
+  if (!slug) return passThrough(req);
 
   return rewriteForOrg(req, slug, domain);
 }

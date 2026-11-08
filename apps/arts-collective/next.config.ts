@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
     // Classifieds editor: the direct-editing panel and the shared font library (2026-11-01).
     "@elkdonis/direct-edit",
     "@elkdonis/fonts",
+    // The shared hub cards on tenant hosts, /sites/<slug>/hub (2026-11-08).
+    "@elkdonis/hub",
   ],
   // Packages the server must REQUIRE at runtime rather than have bundled.
   //

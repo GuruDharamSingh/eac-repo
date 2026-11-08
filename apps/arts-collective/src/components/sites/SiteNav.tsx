@@ -13,7 +13,8 @@ export function SiteNav({
   signedIn = false,
 }: {
   orgName: string;
-  current: "offering" | "profile" | "community" | "center" | "classifieds";
+  /** "hub": the tenant hub (/hub on the org's host), which has no tab of its own. */
+  current: "offering" | "profile" | "community" | "center" | "classifieds" | "hub";
   mainSiteUrl?: string | null;
   /** Adds the Center tab; /center redirects a signed-out visitor to login. */
   signedIn?: boolean;

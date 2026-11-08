@@ -81,13 +81,16 @@ const TIME_ZONE = process.env.CHANNEL_TIME_ZONE ?? "America/Toronto";
 const MANAGER_ROLES = new Set(["owner", "guide"]);
 
 /**
- * Org sites that run as an app of their own and have no org_domains row yet:
- * their address and the screens their owners already use. Owner, 2026-11-07:
- * Katie gets her own public domain soon and is listed under it then (an
- * org_domains row, which wins over this); take her entry out at that point.
+ * Where an org lives comes from org_domains (its verified primary row, read by
+ * listOrgHomes), own-app sites included: katie → pottery.arts-collective.com
+ * and elktours → elkdonisexperiences.com since migration 263, which retired the
+ * hard-coded OWN_APP_SITES list (owner, 2026-11-07: an org_domains row wins;
+ * take Katie's entry out then). This copy is used ONLY when that read fails
+ * outright (listOrgHomes returns no orgs at all), and the log says so.
  */
-const OWN_APP_SITES: Record<string, { url: string; pages: string; people: string; store: string }> = {
-  "katie-the-potter": { url: "https://pottery.arts-collective.com", pages: "/manage/site", people: "/manage/people", store: "/manage/pieces" },
+const HOMES_FALLBACK: Record<string, string> = {
+  "katie-the-potter": "https://pottery.arts-collective.com",
+  elktours: "https://elkdonisexperiences.com",
 };
 const PERSONAL_ORG = "oad";
 const DAY_MS = 86_400_000;
@@ -181,14 +184,15 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
     .map((m) => ({ orgId: m.orgId, name: m.orgName, slug: m.orgSlug, role: m.role }));
   const scopeOrg = params.org ? orgs.find((o) => o.orgId === params.org || o.slug === params.org) ?? null : null;
   const homeOf = (orgId: string) => homes.find((h) => h.orgId === orgId) ?? null;
+  // No orgs at all means the organizations/org_domains read failed (listOrgHomes logs why).
+  const homesDown = homes.length === 0;
+  if (homesDown) console.error("[channel] org homes unavailable; own-app sites use HOMES_FALLBACK");
   const orgUrl = (orgId: string): string | null => {
     const h = homeOf(orgId);
     if (h?.primaryDomain) return getOrgHomeUrl({ slug: h.orgSlug, primaryDomain: h.primaryDomain });
-    if (OWN_APP_SITES[orgId]) return OWN_APP_SITES[orgId].url;
+    if (homesDown && HOMES_FALLBACK[orgId]) return HOMES_FALLBACK[orgId];
     return h ? getOrgHomeUrl({ slug: h.orgSlug, primaryDomain: null }) : null;
   };
-  // An own-app site keeps its own Pages / People / Store screens until it is listed by domain.
-  const ownApp = (orgId: string) => (homeOf(orgId)?.primaryDomain ? null : OWN_APP_SITES[orgId] ?? null);
 
   // ── identities ────────────────────────────────────────────────────────────
   const viewerName = profile?.displayName || user.email.split("@")[0];
@@ -810,10 +814,10 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
     site: scopeSite,
     newsletter: scopeOrg ? `/email?org=${encodeURIComponent(scopeOrg.slug)}` : orgs[0] ? `/email?org=${encodeURIComponent(orgs[0].slug)}` : null,
     connections: "/center?surface=me:connections",
-    people: scopeOrg ? (ownApp(scopeOrg.orgId) ? `${ownApp(scopeOrg.orgId)!.url}${ownApp(scopeOrg.orgId)!.people}` : `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}`) : null,
-    pages: scopeOrg ? (ownApp(scopeOrg.orgId) ? `${ownApp(scopeOrg.orgId)!.url}${ownApp(scopeOrg.orgId)!.pages}` : `/hub/sites/${encodeURIComponent(scopeOrg.slug)}/design`) : null,
-    template: scopeOrg && !ownApp(scopeOrg.orgId) ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
-    store: scopeOrg ? (ownApp(scopeOrg.orgId) ? `${ownApp(scopeOrg.orgId)!.url}${ownApp(scopeOrg.orgId)!.store}` : null) : `${MARKET}/studio`,
+    people: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
+    pages: scopeOrg ? `/hub/sites/${encodeURIComponent(scopeOrg.slug)}/design` : null,
+    template: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
+    store: scopeOrg ? null : `${MARKET}/studio`,
     identity: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : "/center?surface=me",
     writing: studio(null) || "/studio",
     video: studio("video"),

@@ -651,6 +651,9 @@ importers:
       '@elkdonis/gradients':
         specifier: workspace:*
         version: link:../../packages/gradients
+      '@elkdonis/hub':
+        specifier: workspace:*
+        version: link:../../packages/hub
       '@elkdonis/live-editor':
         specifier: workspace:*
         version: link:../../packages/live-editor
