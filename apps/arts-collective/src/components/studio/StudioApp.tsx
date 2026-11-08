@@ -7,11 +7,34 @@ import { postExtension, type PostKindProps } from "@elkdonis/studio/post";
 import { meetingExtension, type MeetingKindProps } from "@elkdonis/studio/meeting";
 import { recordingExtension, type RecordingKindProps } from "@elkdonis/studio/recording";
 import { wordartExtension, type WordArtFont } from "@elkdonis/studio/wordart";
-import { broadsheetFormTheme, gatheringActions, gatheringKind, type FormHost } from "@elkdonis/studio/forms";
+import {
+  artworkActions,
+  artworkKind,
+  broadsheetFormTheme,
+  gatheringActions,
+  gatheringKind,
+  gatheringOrSeriesActions,
+  seriesActions,
+  serviceActions,
+  serviceKind,
+  type FormHost,
+  type FormKindId,
+} from "@elkdonis/studio/forms";
+import { loadSeriesFormAction, saveSeriesFormAction, seriesFormContextAction } from "@/lib/series-form-actions";
+import { artworkFormContextAction, listArtworkFormAction, loadArtworkFormAction, saveArtworkFormAction } from "@/lib/artwork-form-actions";
+import { listServiceFormAction, loadServiceFormAction, saveServiceFormAction, serviceFormContextAction } from "@/lib/service-form-actions";
 import { formExtension, richTextBodySlot } from "@elkdonis/studio/forms/focus";
 import { MediaPicker } from "@elkdonis/cms-ui/files";
 
 const PERSONAL_ORG_ID = "oad";
+
+/** The forms' kinds → this Studio's `?kind=` (the trial tabs beside the existing ones). */
+const STUDIO_KIND_OF: Partial<Record<FormKindId, string>> = {
+  post: "",
+  gathering: "gathering",
+  artwork: "artwork-form",
+  service: "service-form",
+};
 
 /**
  * Fonts word art can set text in (public/fonts/wordart; opentype.js reads TTF, OTF and WOFF, not WOFF2).
@@ -39,6 +62,8 @@ export function StudioApp({
   post,
   meeting,
   gathering,
+  artworkForm,
+  serviceForm,
   recording,
 }: {
   shell: Omit<StudioShellProps, "extensions">;
@@ -47,6 +72,9 @@ export function StudioApp({
   meeting: MeetingKindProps;
   /** The publication forms' Gathering, on trial beside Meetings (2026-11-08). Same server actions. */
   gathering: { initialId: string | null };
+  /** The publication forms' Artwork and Offering, on trial (pass 2). */
+  artworkForm: { initialId: string | null };
+  serviceForm: { initialId: string | null };
   recording: RecordingKindProps;
 }) {
   const orgs = shell.orgs;
@@ -60,16 +88,50 @@ export function StudioApp({
         label: "Gatherings (new)",
         listLabel: "Gatherings",
         schema: gatheringKind,
+        // A gathering saves through the meeting actions; "Present it as a series" through the series ones.
         // No arts-collective org runs an attendee-reminder tick or the minimum-reached mail yet.
-        actions: gatheringActions(meeting.actions, { canRemind: () => false, canNotifyMin: () => false }),
+        actions: gatheringOrSeriesActions(
+          gatheringActions(meeting.actions, { canRemind: () => false, canNotifyMin: () => false }),
+          seriesActions({ context: seriesFormContextAction, loadSeries: loadSeriesFormAction, saveSeries: saveSeriesFormAction })
+        ),
         initialId: gathering.initialId,
+        theme: broadsheetFormTheme,
+        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+      }),
+      formExtension({
+        id: "artwork-form",
+        label: "Artwork (new)",
+        listLabel: "Artwork",
+        schema: artworkKind,
+        actions: artworkActions({
+          context: artworkFormContextAction,
+          loadArtwork: loadArtworkFormAction,
+          saveArtwork: saveArtworkFormAction,
+          listArtworks: listArtworkFormAction,
+        }),
+        initialId: artworkForm.initialId,
+        theme: broadsheetFormTheme,
+        host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
+      }),
+      formExtension({
+        id: "service-form",
+        label: "Offerings (new)",
+        listLabel: "Offerings",
+        schema: serviceKind,
+        actions: serviceActions({
+          context: serviceFormContextAction,
+          loadService: loadServiceFormAction,
+          saveService: saveServiceFormAction,
+          listServices: listServiceFormAction,
+        }),
+        initialId: serviceForm.initialId,
         theme: broadsheetFormTheme,
         host: (orgId) => gatheringHost(orgId, orgs, meeting.uploadEndpoint, meeting.libraryEndpoint),
       }),
       recordingExtension(recording),
       wordartExtension({ fonts: WORDART_FONTS }),
     ],
-    [video, post, meeting, gathering, recording, orgs]
+    [video, post, meeting, gathering, artworkForm, serviceForm, recording, orgs]
   );
   return <StudioShell {...shell} extensions={extensions} />;
 }
@@ -86,7 +148,8 @@ function gatheringHost(
     studioHref: (o) => {
       const q = new URLSearchParams();
       // "post" is the writing room, the Studio's default kind; "" is the Studio itself.
-      if (o.kind && o.kind !== "post") q.set("kind", o.kind);
+      const studioKind = STUDIO_KIND_OF[o.kind as FormKindId] ?? o.kind;
+      if (studioKind) q.set("kind", studioKind);
       if (o.id) q.set("id", o.id);
       if (orgId !== PERSONAL_ORG_ID) q.set("org", orgId);
       if (o.preset) q.set("preset", o.preset);

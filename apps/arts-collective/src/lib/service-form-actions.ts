@@ -16,7 +16,7 @@ import {
 import type { StudioResult } from "@elkdonis/studio";
 import { db } from "@elkdonis/db";
 import { getCurrentUser } from "@/lib/session";
-import { resolveOrgHomeUrl } from "@/lib/org-url.server";
+import { networkItemUrl } from "@/lib/org-url";
 
 /**
  * The publication forms' Service ("Offering"), on arts-collective (pass 2,
@@ -77,8 +77,8 @@ async function toRecord(o: ServiceOffering): Promise<ServiceFormRecord> {
     const [org] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${o.orgId}`.catch(
       () => [] as Array<{ slug: string }>
     );
-    const home = await resolveOrgHomeUrl(org?.slug ?? o.orgId).catch(() => null);
-    href = home ? `${home}/${o.slug}` : null;
+    // The network subdomain: `<custom domain>/<slug>` 404s where an org's own app serves its domain.
+    href = org?.slug ? networkItemUrl(org.slug, o.slug) : null;
   }
   return {
     id: o.id,

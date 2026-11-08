@@ -12,7 +12,7 @@ import type { StudioResult } from "@elkdonis/studio";
 import type { MeetingContextView } from "@elkdonis/studio/meeting";
 import { db } from "@elkdonis/db";
 import { getCurrentUser } from "@/lib/session";
-import { resolveOrgHomeUrl } from "@/lib/org-url.server";
+import { networkItemUrl } from "@/lib/org-url";
 
 /**
  * The publication forms' Series in place, on arts-collective (pass 2,
@@ -44,8 +44,8 @@ async function withHref(r: SeriesFormRecord): Promise<SeriesRecordWithHref> {
   const [org] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${r.orgId}`.catch(
     () => [] as Array<{ slug: string }>
   );
-  const home = await resolveOrgHomeUrl(org?.slug ?? r.orgId).catch(() => null);
-  return { ...r, href: home ? `${home}/${r.slug}` : null };
+  // The network subdomain: `<custom domain>/<slug>` 404s (sunjay, ifac serve series at /series/<slug>).
+  return { ...r, href: org?.slug ? networkItemUrl(org.slug, r.slug) : null };
 }
 
 /** The same gate and fields as a new meeting: an owner or guide of a real org. */

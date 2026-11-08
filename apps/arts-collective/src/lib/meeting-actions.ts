@@ -13,7 +13,7 @@ import type { StudioResult } from "@elkdonis/studio";
 import type { MeetingContextView, MeetingInputView, MeetingRecordView, MeetingSummaryView } from "@elkdonis/studio/meeting";
 import { db } from "@elkdonis/db";
 import { getCurrentUser } from "@/lib/session";
-import { resolveOrgHomeUrl } from "@/lib/org-url.server";
+import { networkItemUrl } from "@/lib/org-url";
 
 /**
  * The Studio's Meetings kind, on arts-collective (2026-11-01). Thin: who is
@@ -41,8 +41,8 @@ async function withHref(r: MeetingRecord): Promise<MeetingRecordView> {
   const [org] = await db<Array<{ slug: string }>>`SELECT slug FROM organizations WHERE id = ${r.orgId}`.catch(
     () => [] as Array<{ slug: string }>
   );
-  const home = await resolveOrgHomeUrl(org?.slug ?? r.orgId).catch(() => null);
-  return { ...r, href: home ? `${home}/${r.slug}` : null };
+  // The network subdomain: `<custom domain>/<slug>` 404s where an org's own app serves its domain.
+  return { ...r, href: org?.slug ? networkItemUrl(org.slug, r.slug) : null };
 }
 
 export async function meetingContextAction(orgId: string): Promise<MeetingContextView> {

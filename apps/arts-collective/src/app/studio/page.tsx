@@ -113,6 +113,8 @@ export default async function StudioPage({ searchParams }: Props) {
   const isPost = kind === "post";
   const isMeeting = kind === "meeting";
   const isGathering = kind === "gathering";
+  const isArtworkForm = kind === "artwork-form";
+  const isServiceForm = kind === "service-form";
   const isRecording = kind === "recording";
 
   const [profile, orgs, reels, admin] = await Promise.all([
@@ -150,7 +152,7 @@ export default async function StudioPage({ searchParams }: Props) {
         orgs: orgs.map((o) => ({ orgId: o.orgId, name: o.name, slug: o.slug })),
         initialPieces: pieces,
         initialOrgId,
-        initialPieceId: isVideo || isPost || isMeeting || isGathering || isRecording ? null : (id ?? null),
+        initialPieceId: isVideo || isPost || isMeeting || isGathering || isArtworkForm || isServiceForm || isRecording ? null : (id ?? null),
         initialKind: kind ?? null,
         // The Publish card's hand-off (packages/content studioNewHref): focus for this visit, and a preset.
         initialFocus: focus === "1",
@@ -284,6 +286,8 @@ export default async function StudioPage({ searchParams }: Props) {
         libraryEndpoint: "/api/media/library?org=:org",
       }}
       gathering={{ initialId: isGathering ? (id ?? null) : null }}
+      artworkForm={{ initialId: isArtworkForm ? (id ?? null) : null }}
+      serviceForm={{ initialId: isServiceForm ? (id ?? null) : null }}
       recording={{
         // Listed only when the kind is open: one PROPFIND per folder.
         initialItems: isRecording ? await listRecordings(user.id).catch(() => []) : [],

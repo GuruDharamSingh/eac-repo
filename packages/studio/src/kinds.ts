@@ -21,6 +21,9 @@ export const STUDIO_KINDS: StudioKind[] = [
   { id: 'meeting', label: 'Meetings', noun: 'meeting', ready: true, href: '/studio?kind=meeting' },
   // The publication forms' Gathering (2026-11-08), on trial beside Meetings until Justin has tried it.
   { id: 'gathering', label: 'Gatherings (new)', noun: 'gathering', ready: true, href: '/studio?kind=gathering' },
+  // The publication forms' Artwork and Offering (pass 2), on trial beside the existing tabs.
+  { id: 'artwork-form', label: 'Artwork (new)', noun: 'work', ready: true, href: '/studio?kind=artwork-form' },
+  { id: 'service-form', label: 'Offerings (new)', noun: 'offering', ready: true, href: '/studio?kind=service-form' },
   { id: 'workshop', label: 'Workshops', noun: 'workshop', ready: false },
   { id: 'service', label: 'Services', noun: 'service', ready: false },
   { id: 'question', label: 'Questions', noun: 'questionnaire', ready: false },
