@@ -5,8 +5,6 @@ import type { ReactNode } from "react";
 // (.claude/rules/apps/arts-collective.md).
 import "@elkdonis/cms-ui/surface.css";
 import "@/components/channel/channel.css";
-// After channel.css: the piece view's header and history styles (zero-specificity fallbacks cannot override Channel's).
-import "@elkdonis/content/content.css";
 
 export const metadata: Metadata = {
   title: "Channel — Elkdonis Arts Collective",

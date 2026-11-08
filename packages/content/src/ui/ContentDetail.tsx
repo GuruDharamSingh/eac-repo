@@ -3,8 +3,8 @@
 import * as React from "react";
 import { ArrowLeftRight, CalendarDays, ExternalLink, PenLine } from "lucide-react";
 import { SurfaceFrame, useLayer } from "@elkdonis/cms-ui/surface";
-import { fmtDayLong, groupTimeline, panelOf, type ContentDetailModel, type ContentEvent } from "../model";
-import { STATUS_WORD, typeGlyph, typeLabel, typeMeta } from "../registry";
+import { fmtDayLong, groupTimeline, panelOf, type ContentDetailModel } from "../model";
+import { typeGlyph, typeLabel, typeMeta } from "../registry";
 import { AppLink, ConnectorsCtx, type ContentDetailConnectors } from "./connectors";
 import { IdentityMark, NextChip, Thumb, Timeline } from "./atoms";
 import { CoveragePanel } from "./panels/coverage";
@@ -24,97 +24,10 @@ export interface ContentDetailProps {
   notFound?: string;
 }
 
-function Actions({ model, connectors }: { model: ContentDetailModel; connectors: ContentDetailConnectors }) {
-  return (
-    <div className="chn-actions">
-      {model.links.compose && (
-        <AppLink className="chn-btn is-primary" href={model.links.compose}>
-          <PenLine size={15} aria-hidden /> New post
-        </AppLink>
-      )}
-      {model.links.board && (
-        <AppLink className="chn-btn" href={model.links.board}>
-          <CalendarDays size={15} aria-hidden /> Board
-        </AppLink>
-      )}
-      {model.links.studio && (
-        <a className="chn-btn" href={model.links.studio}>
-          <ExternalLink size={15} aria-hidden /> Open in Studio
-        </a>
-      )}
-      {model.links.public && (
-        <a className="chn-link" href={model.links.public} target="_blank" rel="noreferrer">
-          View on {model.site.name === "Your page" ? "your page" : model.site.name} ↗
-        </a>
-      )}
-      {connectors.switchItem && (
-        <button type="button" className="chn-linkbtn chn-ps-switch" onClick={() => connectors.switchItem!(model.key)}>
-          <ArrowLeftRight size={14} aria-hidden /> Switch piece
-        </button>
-      )}
-    </div>
-  );
-}
-
-/** Media, kind, title, status, then the actions. */
-function PieceHeader({ model, connectors }: { model: ContentDetailModel; connectors: ContentDetailConnectors }) {
-  const status = model.status.value;
-  const known = status in STATUS_WORD;
-  return (
-    <header className="eac-c-pvh">
-      <Thumb cover={model.media.cover} type={model.type} size={112} />
-      <div className="eac-c-pvh-main">
-        <p className="chn-kicker">
-          {typeGlyph(model.type)} {typeLabel(model.type)}
-        </p>
-        <div className="eac-c-pvh-title">
-          <h2>{model.title}</h2>
-          <span className="eac-c-chip" data-state={known ? status : undefined}>
-            {known ? STATUS_WORD[status as keyof typeof STATUS_WORD] : model.status.label}
-          </span>
-        </div>
-        <p className="eac-c-pvh-meta">{model.meta}</p>
-        <Actions model={model} connectors={connectors} />
-      </div>
-    </header>
-  );
-}
-
-/** The history in three groups: Ahead (booked), Now (live or the last day), Past. */
-function PieceHistory({ model }: { model: ContentDetailModel }) {
-  const g = groupTimeline(model.timeline, model.now);
-  const list = (events: ContentEvent[]) => <Timeline events={events} identities={model.identities} timeZone={model.timeZone} showIdentity />;
-  if (!g.ahead.length && !g.now.length && !g.past.length) return <p className="chn-quiet">Nothing has gone out yet.</p>;
-  return (
-    <div className="eac-c-pvg-all">
-      {g.ahead.length > 0 && (
-        <section className="eac-c-pvg" data-g="ahead">
-          <h3>Ahead</h3>
-          {list(g.ahead)}
-        </section>
-      )}
-      {g.now.length > 0 && (
-        <section className="eac-c-pvg" data-g="now">
-          <h3>Now · {fmtDayLong(model.now, model.timeZone)}</h3>
-          {list(g.now)}
-        </section>
-      )}
-      {g.past.length > 0 && (
-        <section className="eac-c-pvg" data-g="past">
-          <h3>Past</h3>
-          {list(g.past)}
-        </section>
-      )}
-    </div>
-  );
-}
-
 /**
  * The content detail, pop-up layout (lifted from Channel's PieceSurface, 3a +
- * 3c). On Overview: a header (media, kind, title, status), the history as
- * Ahead / Now / Past above the tabs, then coverage by identity and what is
- * next. The Plan tab keeps the old masthead (meta and actions) over plan.md
- * and the board's waiting suggestions.
+ * 3c): a masthead, then Overview (where it has gone, coverage by identity,
+ * what is next) or Plan (plan.md beside the board's waiting suggestions).
  */
 export function ContentDetail({ model, connectors, initialTab = "overview", tabInAddress = false, notFound = "This item could not be found." }: ContentDetailProps) {
   const [tab, setTab] = React.useState<ContentDetailTab>(initialTab);
@@ -147,6 +60,13 @@ export function ContentDetail({ model, connectors, initialTab = "overview", tabI
   const planData = panelOf(model, "plan");
   const suggestions = planData?.suggestions ?? [];
   const waiting = suggestions.length;
+  // Ahead (booked), Now (live or the last day), Past: empty groups are left out.
+  const g = groupTimeline(model.timeline, model.now);
+  const history = ([
+    ["Ahead", g.ahead],
+    [`Now · ${fmtDayLong(model.now, model.timeZone)}`, g.now],
+    ["Past", g.past],
+  ] as const).filter(([, e]) => e.length > 0);
 
   return (
     <ConnectorsCtx.Provider value={connectors}>
@@ -170,20 +90,39 @@ export function ContentDetail({ model, connectors, initialTab = "overview", tabI
         status={<span className="chn-mono">Esc closes</span>}
       >
         <div className="chn-ps">
-          {tab === "overview" ? (
-            <div className="eac-c eac-c-pv">
-              <PieceHeader model={model} connectors={connectors} />
-              <PieceHistory model={model} />
-            </div>
-          ) : (
-            <header className="chn-ps-mast">
-              <Thumb cover={model.media.cover} type={model.type} size={84} />
-              <div>
-                <p className="chn-ps-meta">{model.meta}</p>
-                <Actions model={model} connectors={connectors} />
+          <header className="chn-ps-mast">
+            <Thumb cover={model.media.cover} type={model.type} size={84} />
+            <div>
+              <p className="chn-ps-meta">{model.meta}</p>
+              <div className="chn-actions">
+                {model.links.compose && (
+                  <AppLink className="chn-btn is-primary" href={model.links.compose}>
+                    <PenLine size={15} aria-hidden /> New post
+                  </AppLink>
+                )}
+                {model.links.board && (
+                  <AppLink className="chn-btn" href={model.links.board}>
+                    <CalendarDays size={15} aria-hidden /> Board
+                  </AppLink>
+                )}
+                {model.links.studio && (
+                  <a className="chn-btn" href={model.links.studio}>
+                    <ExternalLink size={15} aria-hidden /> Open in Studio
+                  </a>
+                )}
+                {model.links.public && (
+                  <a className="chn-link" href={model.links.public} target="_blank" rel="noreferrer">
+                    View on {model.site.name === "Your page" ? "your page" : model.site.name} ↗
+                  </a>
+                )}
+                {connectors.switchItem && (
+                  <button type="button" className="chn-linkbtn chn-ps-switch" onClick={() => connectors.switchItem!(model.key)}>
+                    <ArrowLeftRight size={14} aria-hidden /> Switch piece
+                  </button>
+                )}
               </div>
-            </header>
-          )}
+            </div>
+          </header>
 
           <div className="chn-tabs" role="group" aria-label="Piece view">
             <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>
@@ -195,19 +134,38 @@ export function ContentDetail({ model, connectors, initialTab = "overview", tabI
           </div>
 
           {tab === "overview" ? (
-            <div className="eac-c-pvo">
-              <h3 className="chn-kicker">Coverage by identity</h3>
-              {coverage && <CoveragePanel data={coverage} identities={model.identities} timeZone={model.timeZone} />}
-              {suggestions.length > 0 && (
-                <>
-                  <h3 className="chn-kicker">Next for this piece</h3>
-                  <div className="chn-chips is-stack">
-                    {suggestions.slice(0, 4).map((s) => (
-                      <NextChip key={s.id} suggestion={s} />
-                    ))}
-                  </div>
-                </>
-              )}
+            <div className="chn-ps-grid">
+              <section>
+                {history.length === 0 ? (
+                  <>
+                    <h3 className="chn-kicker">Where it has gone</h3>
+                    <Timeline events={[]} identities={model.identities} timeZone={model.timeZone} showIdentity />
+                  </>
+                ) : (
+                  history.map(([label, events], i) => (
+                    <React.Fragment key={label}>
+                      <h3 className="chn-kicker" style={i > 0 ? { marginTop: 18 } : undefined}>
+                        {label}
+                      </h3>
+                      <Timeline events={events} identities={model.identities} timeZone={model.timeZone} showIdentity />
+                    </React.Fragment>
+                  ))
+                )}
+              </section>
+              <aside>
+                <h3 className="chn-kicker">Coverage by identity</h3>
+                {coverage && <CoveragePanel data={coverage} identities={model.identities} timeZone={model.timeZone} />}
+                {suggestions.length > 0 && (
+                  <>
+                    <h3 className="chn-kicker">Next for this piece</h3>
+                    <div className="chn-chips is-stack">
+                      {suggestions.slice(0, 4).map((s) => (
+                        <NextChip key={s.id} suggestion={s} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </aside>
             </div>
           ) : planData ? (
             <PlanPanel data={planData} boardHref={model.links.board} timeZone={model.timeZone} />
