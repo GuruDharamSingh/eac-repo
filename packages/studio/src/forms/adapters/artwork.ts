@@ -15,11 +15,18 @@
 //                                         (commerce's own `kind` is read when edition_type is absent:
 //                                         the platform preset "Editioned print" sets it)
 //   certificateOfAuthenticity (boolean) → certificateOfAuthenticity (the same preset sets it)
+//   edition_size (edition_type 'edition') → editionTotal (the Default variant's edition_total;
+//                                         commerce clears it for other kinds, 7d6540c0)
+//   stock (copies on hand)              → inventoryQty. Sent only when it differs from the
+//                                         loaded value (forms.loaded_stock), so a sale made
+//                                         while the form was open is not written back over.
+//                                         Payment decrements it; unpaid orders hold copies.
+//   availability 'available' | 'reserved' | 'sold' → setArtworkAvailability, after the save,
+//                                         only on a listed piece and only when it differs
 //
 // Dropped, with a warning (commerce has no place for them; evidence in PLAN §12 notes):
 //   pictures[].focal, other credit roles and name-only credits, price_mode 'nfs'
-//   (saved as price on request), availability 'reserved' / 'sold' (only orders set
-//   them), edition_size / edition_proofs, variants, shows.store / shows.gallery,
+//   (saved as price on request), edition_proofs, variants, shows.store / shows.gallery,
 //   any forms.* key.
 // ============================================================================
 
@@ -31,6 +38,9 @@ export type ArtworkCurrency = 'CAD' | 'USD' | 'EUR' | 'GBP';
 export const ARTWORK_CURRENCIES: ArtworkCurrency[] = ['CAD', 'USD', 'EUR', 'GBP'];
 
 export type ArtworkKindView = 'original' | 'limited_edition' | 'open_edition';
+
+/** What a seller may set on a listed piece (commerce setArtworkAvailability). */
+export type ArtworkAvailabilityView = 'available' | 'reserved' | 'sold';
 
 // ── the host's side ─────────────────────────────────────────────────────────
 
@@ -62,6 +72,12 @@ export interface ArtworkInputView {
   creditedArtistUserId: string | null;
   certificateOfAuthenticity: boolean;
   images: Array<{ url: string; alt: string | null }>;
+  /** A limited edition's size (edition_total); null for other kinds, or to keep the stored size. */
+  editionTotal: number | null;
+  /** Copies on hand (inventory_qty). Saving: null = leave it as stored (a new piece gets 1). */
+  stock: number | null;
+  /** Saving: what the seller asked for; null = not asked. Reading: the listed piece's status, null for a draft. */
+  availability: ArtworkAvailabilityView | null;
 }
 
 export interface ArtworkRecordView {
@@ -119,6 +135,9 @@ const CONSUMED = new Set([
   'variants',
   'shows',
   'certificateOfAuthenticity',
+  'stock',
+  'forms.loaded_stock',
+  'forms.listed',
 ]);
 
 function str(v: unknown): string {
@@ -177,8 +196,17 @@ export function artworkInputFromAnswers(
   const currency = (currencyRaw || defaultCurrency) as ArtworkCurrency;
   if (!ARTWORK_CURRENCIES.includes(currency)) return { ok: false, error: 'Pick the price in CAD, USD, EUR or GBP.' };
 
-  const availability = str(a.availability);
-  if (availability === 'reserved' || availability === 'sold') dropped.push(`“${availability}” (a piece becomes reserved or sold through its order)`);
+  const availabilityRaw = str(a.availability);
+  const availability: ArtworkAvailabilityView | null =
+    availabilityRaw === 'available' || availabilityRaw === 'reserved' || availabilityRaw === 'sold' ? availabilityRaw : null;
+
+  // Copies on hand. Unchanged from what was loaded = not sent, so a sale made meanwhile stands.
+  const stockN = optNum(a.stock);
+  if (stockN !== null && (!Number.isInteger(stockN) || stockN < 0 || stockN > 100000)) {
+    return { ok: false, error: 'Copies on hand is a whole number, 0 or more.' };
+  }
+  const loadedStock = optNum(a['forms.loaded_stock']);
+  const stock = stockN !== null && stockN !== loadedStock ? stockN : null;
 
   const unit = str(a.unit) === 'in' ? 'in' : 'cm';
   const yearN = optNum(a.year);
@@ -189,7 +217,12 @@ export function artworkInputFromAnswers(
   const kind: ArtworkKindView =
     EDITION_KIND[str(a.edition_type)] ??
     (legacyKind === 'limited_edition' || legacyKind === 'open_edition' || legacyKind === 'original' ? legacyKind : 'original');
-  if (optNum(a.edition_size) !== null || optNum(a.edition_proofs) !== null) dropped.push('the edition size and proofs');
+  const sizeN = optNum(a.edition_size);
+  if (kind === 'limited_edition' && sizeN !== null && (!Number.isInteger(sizeN) || sizeN < 1 || sizeN > 100000)) {
+    return { ok: false, error: 'The edition size is a whole number, at least 1.' };
+  }
+  const editionTotal = kind === 'limited_edition' && sizeN !== null ? sizeN : null;
+  if (optNum(a.edition_proofs) !== null) dropped.push('the artist’s proofs');
   if (Array.isArray(a.variants) && a.variants.length > 0) dropped.push('variants (one price per piece for now)');
   const shows = obj(a.shows);
   if (shows.store === false || shows.gallery === true) dropped.push('where it shows');
@@ -210,6 +243,9 @@ export function artworkInputFromAnswers(
     creditedArtistUserId,
     certificateOfAuthenticity: a.certificateOfAuthenticity === true,
     images,
+    editionTotal,
+    stock,
+    availability,
   };
 
   const warnings: string[] = [];
@@ -221,7 +257,6 @@ export function artworkInputFromAnswers(
 /** A saved piece → the form's answers. */
 export function artworkAnswers(r: ArtworkRecordView): Answers {
   const i = r.input;
-  const listedState = r.artworkStatus === 'reserved' || r.artworkStatus === 'sold' ? r.artworkStatus : 'available';
   return {
     kind: 'artwork',
     title: i.title,
@@ -231,7 +266,13 @@ export function artworkAnswers(r: ArtworkRecordView): Answers {
     price_mode: i.priceMinor > 0 ? 'price' : 'request',
     price: i.priceMinor > 0 ? i.priceMinor / 100 : '',
     currency: i.currency,
-    availability: listedState,
+    availability: i.availability ?? 'available',
+    stock: i.stock ?? 1,
+    // The stock as loaded: an unchanged count is not sent back (a sale made meanwhile stands).
+    'forms.loaded_stock': i.stock ?? 1,
+    // Derived: in the store (commerce available, reserved or sold). Availability is set only then.
+    'forms.listed': r.status === 'published',
+    edition_size: i.kind === 'limited_edition' && i.editionTotal ? i.editionTotal : '',
     medium: i.medium ?? '',
     height_cm: i.heightCm ?? '',
     width_cm: i.widthCm ?? '',

@@ -1,6 +1,6 @@
 "use server";
 
-import { createArtwork, publishArtwork, setArtworkMedia, updateArtwork } from "@elkdonis/commerce/server";
+import { createArtwork, publishArtwork, setArtworkAvailability, setArtworkMedia, updateArtwork } from "@elkdonis/commerce/server";
 import { getArtworkForEdit, getStoreForUser, listMyArtworks } from "@elkdonis/commerce/queries";
 import { marketplaceLinks } from "@elkdonis/commerce/links";
 import type { Artwork, ArtworkKind, Currency } from "@elkdonis/commerce/types";
@@ -23,11 +23,19 @@ import { getCurrentUser } from "@/lib/session";
  * setArtworkMedia when the pictures changed, then publishArtwork: three. A
  * publish that fails (no picture, or the keepers hid the piece) leaves the
  * saved draft and comes back as `notPublished`.
+ *
+ * Editions and stock (commerce 7d6540c0): `editionTotal` is the limited
+ * edition's size, `stock` the copies on hand (inventoryQty; null leaves it as
+ * stored, a new piece gets 1). `availability` is set last, by
+ * setArtworkAvailability, only on a listed piece and only when it differs;
+ * its refusal ("Raise the quantity…") is a warning on a saved piece.
  */
 
 const MARKET_URL = process.env.NEXT_PUBLIC_ART_AUCTION_URL ?? "http://localhost:3009";
 const CURRENCIES: Currency[] = ["CAD", "USD", "EUR", "GBP"];
 const KINDS: ArtworkKind[] = ["original", "limited_edition", "open_edition"];
+type Availability = "available" | "reserved" | "sold";
+const AVAILABILITY: Availability[] = ["available", "reserved", "sold"];
 
 /** Structurally studio/forms adapters/artwork.ts ArtworkInputView. */
 interface ArtworkFormInput {
@@ -44,6 +52,9 @@ interface ArtworkFormInput {
   creditedArtistUserId: string | null;
   certificateOfAuthenticity: boolean;
   images: Array<{ url: string; alt: string | null }>;
+  editionTotal: number | null;
+  stock: number | null;
+  availability: Availability | null;
 }
 
 /** Structurally ArtworkRecordView. */
@@ -111,6 +122,9 @@ function toRecord(a: Artwork): ArtworkFormRecord {
       creditedArtistUserId: a.creditedArtistUserId ?? null,
       certificateOfAuthenticity: Boolean(a.certificateOfAuthenticity),
       images: media.map((m) => ({ url: m.url, alt: m.alt ?? null })),
+      editionTotal: a.kind === "limited_edition" ? (variant?.editionTotal ?? null) : null,
+      stock: variant ? variant.inventoryQty : null,
+      availability: listed ? (a.status as Availability) : null,
     },
     href: listed ? marketplaceLinks(MARKET_URL, { from: "arts-collective", handoff: true }).artwork(a.id) : null,
   };
@@ -179,6 +193,14 @@ export async function saveArtworkFormAction(
   const priceMinor = Number.isFinite(input.priceMinor) ? Math.max(0, Math.round(input.priceMinor)) : 0;
   const images = (input.images ?? []).filter((im) => im && typeof im.url === "string" && im.url.trim()).slice(0, 24);
   if (images.some((im) => !mediaUrl(im.url.trim()))) return { ok: false, error: "A picture needs an address starting with https:// or /." };
+  const whole = (n: unknown, min: number) => typeof n === "number" && Number.isInteger(n) && n >= min && n <= 100000;
+  if (input.stock !== null && input.stock !== undefined && !whole(input.stock, 0)) {
+    return { ok: false, error: "Copies on hand is a whole number, 0 or more." };
+  }
+  if (input.editionTotal !== null && input.editionTotal !== undefined && !whole(input.editionTotal, 1)) {
+    return { ok: false, error: "The edition size is a whole number, at least 1." };
+  }
+  const availability = input.availability && AVAILABILITY.includes(input.availability) ? input.availability : null;
 
   const warnings: string[] = [];
   // Pass 2 lists in the person's own store: they are the artist (artistUserId). Crediting
@@ -203,6 +225,10 @@ export async function saveArtworkFormAction(
     currency: input.currency,
     certificateOfAuthenticity: input.certificateOfAuthenticity === true,
     creditedArtistUserId: credited,
+    // Commerce writes it only for a limited edition and clears it for other kinds; absent keeps the stored size.
+    ...(input.kind === "limited_edition" && input.editionTotal ? { editionTotal: input.editionTotal } : {}),
+    // Copies on hand; absent leaves the stored count (a new piece gets 1).
+    ...(input.stock !== null && input.stock !== undefined ? { inventoryQty: input.stock } : {}),
   };
   const media = images.map((im, i) => ({ url: im.url.trim(), alt: im.alt?.trim() || title, role: i === 0 ? ("hero" as const) : ("detail" as const) }));
 
@@ -244,7 +270,23 @@ export async function saveArtworkFormAction(
     }
   }
 
-  const saved = await getArtworkForEdit(artworkId, viewer).catch(() => null);
+  let saved = await getArtworkForEdit(artworkId, viewer).catch(() => null);
   if (!saved) return { ok: false, error: "Saved, but the piece could not be read back." };
+
+  // Availability last, after the stock it may depend on: only a listed piece, only when it differs.
+  if (availability) {
+    const listed = saved.status === "available" || saved.status === "reserved" || saved.status === "sold";
+    if (!listed) {
+      if (availability !== "available") warnings.push(`“${availability}” is kept in the form: it is set once the piece is in the store.`);
+    } else if (saved.status !== availability) {
+      try {
+        await setArtworkAvailability(artworkId, viewer, availability);
+        saved = (await getArtworkForEdit(artworkId, viewer).catch(() => null)) ?? saved;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "It could not be changed.";
+        warnings.push(`Saved, but its availability was not changed: ${message}`);
+      }
+    }
+  }
   return { ok: true, value: { record: toRecord(saved), warnings, notPublished } };
 }
