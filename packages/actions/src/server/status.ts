@@ -168,6 +168,7 @@ export const CHECKS: Record<string, Check> = {
       SELECT COUNT(DISTINCT tt.org_id)::int AS n FROM thread_orgs tt
       JOIN threads t ON t.id = tt.thread_id
       WHERE t.author_id = ${userId} AND t.status = 'published' AND tt.org_id <> t.org_id
+        AND tt.status = 'approved' -- migration 261: a pending or declined listing isn't shown there
     `;
     return row?.n ? ok(`Shown on ${row.n} site${row.n === 1 ? '' : 's'} besides your own.`) : none('Your pieces show only on your own page so far.');
   },
