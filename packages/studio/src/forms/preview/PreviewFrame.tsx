@@ -45,7 +45,9 @@ function themeStyle(vars: Record<string, string> | undefined): React.CSSProperti
  * page, an artwork in the Store (or the gallery when it is not in the store), the rest on
  * the feed they go on.
  */
-export function previewPlace(kind: FormKindId | 'series', answers: Answers, host: Pick<FormHost, 'feeds'>, ctx: FormContext): string | null {
+export function previewPlace(kind: FormKindId | 'series', answers: Answers, host: Pick<FormHost, 'feeds' | 'preview'>, ctx: FormContext): string | null {
+  const named = host.preview?.place?.[kind];
+  if (typeof named === 'string' && named) return named;
   if (kind === 'series') return 'Series';
   if (kind === 'artwork') {
     const shows = answers.shows && typeof answers.shows === 'object' ? (answers.shows as { store?: unknown; gallery?: unknown }) : null;

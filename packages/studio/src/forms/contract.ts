@@ -55,7 +55,10 @@ export interface FormSection {
   fields?: string[];
   /** A kind-owned section with its own UI (the session planner, the variants grid). */
   render?: string;
-  /** The More row's value line when closed: "24 places · closes when it starts". */
+  /**
+   * The section's value line: beside a closed More row ("24 places · closes when it starts"),
+   * and beside an Essentials heading when given (Sessions: "8 sessions · 19 Nov to 21 Jan").
+   */
   summary?: (a: Answers, ctx: FormContext) => string;
   /** Shown only when this holds (series-only sections; Hosts only with hostCandidates). */
   when?: (a: Answers, ctx: FormContext) => boolean;
@@ -279,6 +282,11 @@ export interface FormHost extends HostLinks {
      * ("Earlier" / "Coming up" + its title). Unset or null draws none (no invented rows).
      */
     neighbour?: Partial<Record<FormKindId | 'series', { label: string; title: string } | null>>;
+    /**
+     * Where the item shows on this site, for "Preview on …" and the breadcrumb ("Series",
+     * "Store", "Offerings"). Unset falls back to the chosen feed's name, then to the defaults.
+     */
+    place?: Partial<Record<FormKindId | 'series', string>>;
   };
   /** "Goes on". */
   feeds: Array<{ slug: string; name: string }>;
