@@ -410,3 +410,13 @@ have no Studio form yet, so the strip draws them as "Soon" (`ready` prop overrid
 
 **Not done.** No hub card is wired (`defineHubCard` waits). `ContentDetail`'s header and the
 Ahead / Now / Past grouping are designed on the canvas but not built.
+
+## Piece view header and Ahead / Now / Past (2026-11-08)
+
+`ContentDetail` (Overview tab) now draws a header (media, kind, title, status chip, meta,
+actions) and the history as Ahead / Now / Past above the tabs. `groupTimeline` in `model.ts`
+does the split (checked by `src/model.check.ts`): Ahead = after now and scheduled or live;
+Now = live, or within 24 h; Past = the rest, newest first. The old "Where it has gone"
+column is gone from Overview (it is the history now). The Plan tab keeps the old masthead
+so the Plan screen is unchanged. Styles: `.eac-c-pv*` in `content.css`; Channel's layout
+imports `@elkdonis/content/content.css` after `channel.css`. No new data sources.

@@ -244,3 +244,44 @@ export function fmtDay(at: string | null | undefined, timeZone: string): string 
   if (!at) return "";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone }).format(new Date(at));
 }
+
+/** "Sat, Nov 8" in the item's time zone. */
+export function fmtDayLong(at: string | null | undefined, timeZone: string): string {
+  if (!at) return "";
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone }).format(new Date(at));
+}
+
+export interface TimelineGroups {
+  /** Scheduled or live, and still to come. Soonest first. */
+  ahead: ContentEvent[];
+  /** Live now, or within the last 24 hours. Newest first. */
+  now: ContentEvent[];
+  /** Everything else. Newest first. */
+  past: ContentEvent[];
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Splits a timeline into Ahead / Now / Past around `now` (an ISO string, a Date
+ * or epoch ms). Pure; the input is not changed.
+ *  - Ahead: `at` is after now and the state is scheduled or live.
+ *  - Now: the state is live, or `at` is no more than 24 h before now.
+ *  - Past: everything else, newest first. An unparseable `at` goes last.
+ */
+export function groupTimeline(events: readonly ContentEvent[], now: string | number | Date): TimelineGroups {
+  const t = now instanceof Date ? now.getTime() : typeof now === "number" ? now : Date.parse(now);
+  const at = (e: ContentEvent) => Date.parse(e.at);
+  const out: TimelineGroups = { ahead: [], now: [], past: [] };
+  for (const e of events) {
+    const a = at(e);
+    if (a > t && (e.state === "scheduled" || e.state === "live")) out.ahead.push(e);
+    else if (e.state === "live" || (a <= t && a >= t - DAY_MS)) out.now.push(e);
+    else out.past.push(e);
+  }
+  const rank = (e: ContentEvent) => (Number.isNaN(at(e)) ? -Infinity : at(e));
+  out.ahead.sort((x, y) => rank(x) - rank(y));
+  out.now.sort((x, y) => rank(y) - rank(x));
+  out.past.sort((x, y) => rank(y) - rank(x));
+  return out;
+}
