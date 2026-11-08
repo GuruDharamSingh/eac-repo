@@ -77,6 +77,14 @@ export function gatheringAnswers(record: MeetingRecordView, ctx: MeetingContextV
 export interface GatheringAdapterOptions {
   /** Ask for host fields only when the org has a rota (as MeetingKind does). */
   askHosts?: (ctx: MeetingContextView | null) => boolean;
+  /**
+   * Whether attendee reminders actually go out for this org: only sites that run a reminder
+   * tick reading threads.reminder_minutes_before do (innergathering lib/reminders.ts:21, sunjay
+   * :33, amrit-canada :29, elktours :29; not arts-collective, hidden-enneagram, katie, fourthway,
+   * or ifac, whose tick is series-only). Default: no, so the switch is not drawn where nothing
+   * would send it (owner ruling 7). The host knows which site serves the org.
+   */
+  canRemind?: (orgId: string) => boolean;
 }
 
 export function gatheringActions(actions: MeetingActions, opts: GatheringAdapterOptions = {}): FormActions<MeetingRecordView> {
@@ -93,7 +101,7 @@ export function gatheringActions(actions: MeetingActions, opts: GatheringAdapter
   return {
     async context(orgId) {
       const c = await context(orgId);
-      return { ...fieldContext(c), canEdit: c.canEdit, reason: c.reason };
+      return { ...fieldContext(c), canEdit: c.canEdit, reason: c.reason, canRemind: opts.canRemind ? opts.canRemind(orgId) : false };
     },
     async load(id) {
       const record = await actions.loadMeeting(id);
