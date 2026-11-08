@@ -1,7 +1,10 @@
 # MCP foundations: plan (2026-11-08)
 
-Status: proposed, waiting for go. Placement decided: **arts-collective, `https://arts-collective.com/api/mcp`**
-(DECISIONS D-1). Evidence for every claim is in `NOTES/01`–`04`.
+Status: slice 1 built and tested locally (2026-11-08; `NOTES/05-slice1-build.md`), not deployed.
+Placement decided: **arts-collective, `https://arts-collective.com/api/mcp`** (DECISIONS D-1).
+Evidence for every claim is in `NOTES/01`–`05`. Where the build differs from this plan,
+NOTES/05 "Deviations" wins: chiefly, the protocol layer is the official SDK
+`@modelcontextprotocol/server` 2.4.0, not in-house (D-6, verified).
 
 ## 0. What goes into an MCP (for Justin, plain words)
 

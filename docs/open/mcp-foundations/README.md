@@ -1,7 +1,9 @@
 # MCP foundations: workspace
 
-**Status (2026-11-08):** plan written, waiting for the PM's go. Nothing is built. No code,
-migration or container outside this folder has been touched.
+**Status (2026-11-08, evening):** slice 1 (read-only) built and tested locally; not deployed.
+Waiting on: Justin's approval to run `migrations/NNN_mcp_grants.sql`, then the PM's
+arts-collective build. Build log and test results: `NOTES/05-slice1-build.md`. Code:
+`packages/mcp/`, `apps/arts-collective/src/app/api/mcp/route.ts`, `packages/actions/src/agent.ts`.
 
 Purpose: the structural foundation of the platform's MCP server, the door through which
 assistants read and act on the platform through the same action registry the apps use.
@@ -19,6 +21,8 @@ assistant, and later OpenClaw. Lead: the MCP foundations session (a PM sub-agent
 | `NOTES/02-registry-inventory.md` | the action registry read for MCP: what it gives, entry-by-entry exposure |
 | `NOTES/03-auth-today.md` | identity on the platform today (GoTrue, SSO broker, admin OIDC, device tokens) and the gaps for MCP |
 | `NOTES/04-hosting.md` | arts-collective as the host: mount, middleware, build cost, reachability |
+| `NOTES/05-slice1-build.md` | slice 1: what was built, deviations, tests, build impact, the check:registry diagnosis |
+| `migrations/NNN_mcp_grants.sql` | parked migration (`mcp_grants`, `action_events.agent_id`); runs only with Justin's approval |
 | `NOTES/INBOX.md` | notes from other sessions (append here) |
 
 ## How other sessions leave notes

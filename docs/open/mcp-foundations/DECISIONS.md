@@ -17,6 +17,34 @@ decided and when. Open rows are for Justin through the PM. Plan references are `
   The MCP adds one lazy route and a small package with no new npm dependencies; peak build
   memory is measured before/after at PLAN §4.2 step 5.
 
+### D-3 · Personal `eacm_` keys now, OAuth later (approved)
+- PM with Justin's discretion, 2026-11-08. Built in slice 1 (`packages/mcp/src/server/grants.ts`);
+  the key table is the parked migration `migrations/NNN_mcp_grants.sql`.
+
+### D-4 / D-5 · arts-collective issues OAuth tokens (opaque); clients register by CIMD + DCR (approved for pass 4)
+- PM, 2026-11-08. Nothing built for it yet.
+
+### D-6 · Protocol layer: **the official SDK, `@modelcontextprotocol/server` 2.4.0** (decided after verification)
+- PM ruling 2026-11-08: use the SDK if it supports the current spec and its core runs on
+  web-standard Request/Response without express/hono; spec compliance outweighs weight.
+- Verified 2026-11-08 (GitHub releases, npm registry, the unpacked 2.4.0 tarballs):
+  - v2 is split into packages (`server`, `core`, `client`, and optional framework adapters
+    `express`, `hono`, `fastify`, `node`). Release 2.4.0 (23 Oct): "Works on 2025-11-25 and
+    2026-07-28"; the server README says v2 implements the 2026-07-28 spec.
+  - `createMcpHandler(factory, { legacy: 'stateless' })` returns `fetch: (Request) => Promise<Response>`;
+    2025-era requests are served statelessly from the same factory, GET/DELETE answer 405.
+    `authInfo` is pass-through (we verify the key ourselves). Host/Origin checks are ours.
+  - `@modelcontextprotocol/server` depends only on `@modelcontextprotocol/core` and `zod ^4.2`
+    (zod 4.6.7 installed beside the repo's 3.25; tool schemas use the SDK's `fromJsonSchema`,
+    so our code never mixes the two zods). No express, hono, ajv package (a JSON Schema
+    validator is bundled in its dist).
+  - My earlier reading (npm `@modelcontextprotocol/sdk` 1.32.2 with express/hono) was the v1
+    line; it does not apply.
+- Build cost: the SDK is in arts-collective's `serverExternalPackages`, so Next requires it
+  at runtime instead of bundling it; the route imports `@elkdonis/mcp/server` lazily.
+  `pnpm-lock.yaml`: +50 lines (also picks up a pending `apps/sunjay` link to
+  `@elkdonis/actions`/`@elkdonis/hub` from today's hub lane).
+
 ## Open (recommendation first)
 
 ### D-2 · First consumer
@@ -25,41 +53,10 @@ decided and when. Open rows are for Justin through the PM. Plan references are `
 - **Recommend (a)**, read-only (serving doc D-7). Costs the collective no model spend, proves
   the tool layer with a real client; (b) reuses the same `listTools`/`callTool` in pass 3.
 
-### D-3 · Auth for slice 1: personal keys before OAuth
-- Options: (a) operator-minted personal keys (`eacm_`, hashed, 90-day expiry, revocable,
-  bound to one org or `*`); (b) wait for full OAuth 2.1 (PLAN §2.3, pass 4).
-- **Recommend (a)**. Works today with Claude Code (`--header`) and the Claude API connector
-  (`authorization_token`); OAuth is the biggest piece of work and only matters once people
-  other than Justin connect. Keys are accepted by `/api/mcp` only, never as a session.
-
-### D-4 · Who issues OAuth tokens (pass 4)
-- Options: (a) arts-collective as the authorization server, opaque tokens in `mcp_grants`;
-  (b) extend admin's OIDC provider (`apps/admin/src/lib/oidc.ts`); (c) GoTrue.
-- **Recommend (a)**. arts-collective is the SSO broker with the login and session, and the
-  MCP's own origin. Admin's provider signs with the shared HS256 `JWT_SECRET` that also signs
-  SSO tokens, sets aud = client, has only confidential clients and no `resource`, DCR, CIMD or
-  consent (NOTES/03). Opaque tokens give instant revocation with no signing key to leak.
-
-### D-5 · How outside clients register (pass 4)
-- Options: (a) CIMD + DCR, open, unprivileged, consent every time; (b) CIMD only; (c)
-  pre-registered clients only (Justin adds each by hand).
-- **Recommend (a)**. Claude Code registers by DCR by default and discovers CIMD; the spec
-  prefers CIMD and keeps DCR for compatibility. Registration grants nothing: only a person's
-  consent creates a grant. DCR registrations rate-limited and expired when unused.
-
-### D-6 · Protocol layer: in-house vs the official SDK
-- Options: (a) in-house, ~400 lines of JSON-RPC in `packages/mcp`; (b)
-  `@modelcontextprotocol/sdk` 1.32.2.
-- **Recommend (a)**. The SDK brings express 5, hono, ajv, cors, eventsource,
-  express-rate-limit… into an app whose build is at its memory limit, and its npm page does
-  not mention protocol 2026-07-28. Our surface is small (stateless, 7 methods). Revisit if
-  we need SSE progress, subscriptions or MRTR elicitation.
-
-### D-7 · Exposure is opt-in per entry
-- Options: (a) a catalogue field `agent: 'read' | 'draft'`, default deny, checked by
-  `check:registry`; (b) expose every `derived`/`runnable` entry and deny-list the risky ones.
-- **Recommend (a)**. A new entry is invisible to agents until someone decides; (b) would have
-  exposed `org`, `store`, `profile` on day one (NOTES/02 table).
+### D-7 · Exposure is opt-in per entry (built, PM rule: additive, default deny)
+- The catalogue field `agent?: 'read' | 'draft'` (`packages/actions/src/types.ts`), set from
+  `packages/actions/src/agent.ts` by `withAgent`, never on `appOnly`; `check:registry` checks
+  it. Commit `0fd68d0f`. Owner may still review the map (NOTES/02 table).
 
 ### D-8 · Default org scope of a key or grant
 - Options: (a) one org per grant by default, `*` (all orgs the person manages) on request;
