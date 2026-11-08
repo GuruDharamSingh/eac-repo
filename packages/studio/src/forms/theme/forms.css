@@ -1757,3 +1757,436 @@
     animation: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PASS 2 (Tendons): inline lists, pictures, credits, the series / artwork /
+   offering previews. Same rules as above: --frm-* only, no color-mix().
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.frm {
+  /* the faint rule between list rows (the DS .table: text at 8%) */
+  --frm-rule: var(--eac-form-rule, rgba(128, 128, 128, 0.2));
+}
+
+/* A caret turned to point back or on (Move earlier / Move later). */
+.frm-turn-earlier {
+  transform: rotate(90deg);
+}
+.frm-turn-later {
+  transform: rotate(-90deg);
+}
+
+/* ── inline lists (GridRows): the session planner, the variants grid ────── */
+
+.frm-grid {
+  container: frm-grid / inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.frm-grid-row {
+  display: grid;
+  grid-template-columns: var(--frm-grid-cols);
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--frm-rule);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.frm-grid-head {
+  align-items: end;
+  padding: 0 0 8px;
+  border-bottom-color: var(--frm-divider);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: var(--frm-muted);
+}
+.frm-grid-cell {
+  grid-column: var(--frm-gc);
+  grid-row: 1;
+  min-width: 0;
+}
+.frm-grid-cell[data-align='end'] {
+  justify-self: end;
+  text-align: end;
+}
+.frm-grid-stack {
+  display: contents;
+}
+.frm-grid-cell-label {
+  display: none;
+}
+.frm-grid-detail {
+  grid-column: var(--frm-grid-detail);
+  min-width: 0;
+}
+.frm-grid-act-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+.frm-grid-act {
+  width: 30px;
+  height: 30px;
+  color: var(--frm-muted);
+}
+.frm-grid-act:hover {
+  background: var(--frm-hover);
+}
+.frm-grid-act[data-tone='accent'] {
+  color: var(--frm-accent);
+}
+.frm-grid-row[data-state='muted'] {
+  color: var(--frm-muted);
+}
+.frm-grid-cell[data-strike] {
+  text-decoration: line-through;
+}
+.frm-grid-row[data-state='highlighted'] {
+  margin-inline: -8px;
+  padding-inline: 8px;
+  background: var(--frm-accent-soft);
+}
+.frm-grid-empty {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--frm-rule);
+  font-size: 13px;
+  color: var(--frm-muted);
+}
+/* Inputs in a list cell fill it; a cell's own field frame keeps no extra gap. */
+.frm-grid-cell .frm-input:not([data-width]) {
+  width: 100%;
+}
+.frm-grid-cell > .frm-field {
+  gap: 4px;
+}
+
+@container frm-grid (max-width: 440px) {
+  .frm-grid-row {
+    grid-template-columns: var(--frm-grid-ncols, var(--frm-grid-cols));
+  }
+  .frm-grid-cell {
+    grid-column: var(--frm-gcn);
+  }
+  .frm-grid-cell[data-narrow='hide'] {
+    display: none;
+  }
+  .frm-grid-stack {
+    grid-column: var(--frm-grid-stack);
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    min-width: 0;
+  }
+  .frm-grid-stack > .frm-grid-cell {
+    grid-column: auto;
+    grid-row: auto;
+    flex: 1 1 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .frm-grid-head .frm-grid-stack {
+    display: none;
+  }
+  .frm-grid-cell-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    color: var(--frm-muted);
+  }
+  .frm-grid-detail {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── pictures (PicturesField) ───────────────────────────────────────────── */
+
+.frm-pics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.frm-pics-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.frm-pics-primary {
+  flex: 1 1 220px;
+  max-width: 300px;
+  min-width: 0;
+}
+.frm-pics-thumbs {
+  flex: 1 1 150px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+.frm-pics-tile {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: calc(var(--frm-radius-mark) / 2);
+  cursor: grab;
+}
+.frm-pics-tile > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.frm-pics-hit {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.frm .frm-pics-hit:focus-visible {
+  outline-offset: -3px;
+}
+.frm-pics-tile[data-chosen] {
+  outline: 2px solid var(--frm-accent);
+  outline-offset: 2px;
+}
+.frm-pics-tile[data-dragging] {
+  opacity: 0.45;
+}
+.frm-pics-tile[data-over] {
+  outline: 2px dashed var(--frm-accent);
+  outline-offset: 2px;
+}
+.frm-pics-tag {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  pointer-events: none;
+}
+.frm-pics-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 10px;
+  border: 1px dashed var(--frm-track-off);
+  border-radius: calc(var(--frm-radius-mark) / 2);
+  background: transparent;
+  font-size: 12px;
+  text-align: center;
+  color: var(--frm-accent-ink);
+  cursor: pointer;
+}
+.frm-pics-add:hover {
+  background: var(--frm-ghost-hover);
+}
+.frm-pics-add[data-first] {
+  gap: 8px;
+  padding: 18px;
+  font-size: 13px;
+  color: var(--frm-text);
+}
+.frm-pics-add > .frm-icon {
+  color: var(--frm-accent);
+}
+.frm-pics-add[data-state='error'] {
+  border-color: var(--frm-danger);
+  box-shadow: inset 0 0 0 1px var(--frm-danger);
+}
+.frm-pics-add[data-state='error'] > .frm-icon {
+  color: var(--frm-danger);
+}
+.frm-pics-chosen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 600px;
+}
+.frm-pics-chosen-h {
+  font-size: 13px;
+  font-weight: var(--frm-label-weight);
+}
+
+/* ── credits (CreditRows) ───────────────────────────────────────────────── */
+
+.frm-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.frm-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+.frm-credit-role {
+  font-size: 13px;
+}
+.frm-credit-who {
+  flex: 1 1 200px;
+  min-width: 0;
+  position: relative;
+}
+.frm-credit-x {
+  width: 36px;
+  height: 36px;
+  color: var(--frm-muted);
+}
+.frm-credit-x:hover {
+  background: var(--frm-hover);
+}
+.frm-credits-add {
+  align-self: flex-start;
+  margin-left: -5px;
+  font-size: 13px;
+}
+
+/* ── the series, artwork and offering previews ──────────────────────────── */
+
+/* A card's blurb with a second line ("First: Monotype basics"). */
+.frm-pvc[data-lines] .eac-face-blurb {
+  white-space: pre-line;
+}
+.frm-pvc-pic {
+  position: relative;
+  display: block;
+}
+.frm-pvc-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: calc(var(--sf-radius) / 3);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  background: var(--frm-pv-line);
+  color: var(--frm-pv-fg);
+}
+.frm-pvc-tag[data-tone='accent'] {
+  background: var(--frm-pv-accent);
+  color: var(--frm-pv-accent-on);
+}
+.frm-pvc-pic > .frm-pvc-tag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+.frm-pvc-img[data-ratio='square'] {
+  aspect-ratio: 1;
+}
+.frm-pvc-line {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.frm-pvc-price {
+  font-size: 15px;
+  font-weight: 600;
+}
+.frm-pvc-title[data-size='md'] {
+  font-size: 22px;
+}
+.frm-pvc-btn[data-align='start'] {
+  align-self: flex-start;
+}
+
+/* Artwork on a wall: the piece, then its label (title, maker, price). */
+.frm-pvc-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 240px;
+}
+.frm-pvc-wall-title {
+  font-family: var(--sf-font-title, inherit);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.frm-pvc-gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 8px;
+}
+.frm-pvc-gallery-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.frm-pvc-variants {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  border: 1px solid var(--frm-pv-line);
+  border-radius: calc(var(--sf-radius) / 3);
+}
+.frm-pvc-variant {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.frm-pvc-variant + .frm-pvc-variant {
+  border-left: 1px solid var(--frm-pv-line);
+}
+.frm-pvc-variant[data-on] {
+  background: var(--frm-pv-accent);
+  color: var(--frm-pv-accent-on);
+}
+
+/* The series page: its sessions, in order. */
+.frm-pvc-sessions {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--frm-pv-line);
+}
+.frm-pvc-sessions > li {
+  display: grid;
+  grid-template-columns: 18px 76px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--frm-pv-line);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.frm-pvc-sessions-no {
+  font-weight: 600;
+}
+.frm-pvc-sessions-day {
+  color: var(--frm-pv-muted);
+}
+.frm-pvc-sessions-title[data-empty] {
+  font-style: italic;
+  color: var(--frm-pv-muted);
+}
+.frm-pvc-sessions > li.frm-pvc-sessions-more {
+  display: block;
+  color: var(--frm-pv-muted);
+}
+
+/* An essentials heading with the section's summary beside it ("Sessions  8 sessions · …"). */
+.frm-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.frm-sec-sum {
+  font-size: 12px;
+  color: var(--frm-muted);
+}

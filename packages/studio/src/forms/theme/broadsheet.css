@@ -54,6 +54,7 @@
   --frm-press: rgba(32, 30, 29, 0.14);
   --frm-media-bg: #d7d3d3; /* neutral-300 under the dot screen */
   --frm-media-dot: rgba(32, 30, 29, 0.2);
+  --frm-rule: rgba(32, 30, 29, 0.08); /* list rows, the DS .table: text 8% */
   --frm-color-scheme: light;
 
   /* cyan, the accent: --color-accent and its 100–900 ramp */

@@ -147,6 +147,30 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
     return C ? <C {...sectionProps(s)} /> : <p className="frm-missing">This section has no component for "{s.render}".</p>;
   };
 
+  /** An essentials heading, with the section's summary beside it when it has one ("Sessions  8 sessions · 19 Nov to 21 Jan"). */
+  const heading = (s: FormSection, headingId: string) => {
+    let summary = '';
+    try {
+      summary = s.summary?.(answers, ctx) ?? '';
+    } catch {
+      summary = '';
+    }
+    const h = (
+      <h3 className="frm-sec-label" id={headingId}>
+        {s.label}
+      </h3>
+    );
+    if (!summary) return h;
+    return (
+      <div className="frm-sec-head">
+        {h}
+        <span className="frm-sec-sum" aria-live="polite">
+          {summary}
+        </span>
+      </div>
+    );
+  };
+
   const essential = (s: FormSection) => {
     const anchor = sectionAnchor(s.id, scope);
     const names = namesOf(s, groups);
@@ -154,9 +178,7 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
     if (s.render) {
       return (
         <div key={s.id} className="frm-sec" id={anchor} role="group" aria-labelledby={headingId}>
-          <h3 className="frm-sec-label" id={headingId}>
-            {s.label}
-          </h3>
+          {heading(s, headingId)}
           {custom(s)}
         </div>
       );
@@ -185,9 +207,7 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
     }
     return (
       <div key={s.id} className="frm-sec" id={anchor} role="group" aria-labelledby={headingId}>
-        <h3 className="frm-sec-label" id={headingId}>
-          {s.label}
-        </h3>
+        {heading(s, headingId)}
         {fieldRuns(names, rcFor(s, 'sub'), () => undefined)}
       </div>
     );

@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import { seriesCardLines } from '@elkdonis/cms-ui/compose';
-import { SurfaceCard, fmtPrice } from '@elkdonis/cms-ui/surface';
+import { SurfaceCard } from '@elkdonis/cms-ui/surface';
 import type { CardRenderer, CardRendererProps, FormKindId } from '../contract';
 import { mediaUrl } from '../fields/MediaField';
-import { feedName, paragraphs, parseWallClock, readingMinutes, shortDay, span, text, weekdayPlural, whereLine } from './format';
+import { feedName, paragraphs, parseWallClock, readingMinutes, shortDay, span, text, whereLine } from './format';
+import { artworkLines, seriesLines, serviceLines } from './kind-lines';
 
 // ============================================================================
 // The default preview cards: the network's own cms-ui face (SurfaceCard),
@@ -20,13 +21,23 @@ import { feedName, paragraphs, parseWallClock, readingMinutes, shortDay, span, t
 // never run markup.
 // ============================================================================
 
-function Picture({ url, ratio }: { url: string | null; ratio?: 'wide' | 'tall' }) {
-  return url ? <img className="frm-pvc-img" data-ratio={ratio} src={url} alt="" /> : <span className="frm-pvc-img frm-dots" data-ratio={ratio} aria-hidden="true" />;
+function Picture({ url, ratio, tag }: { url: string | null; ratio?: 'wide' | 'tall' | 'square'; tag?: string | null }) {
+  const img = url ? <img className="frm-pvc-img" data-ratio={ratio} src={url} alt="" /> : <span className="frm-pvc-img frm-dots" data-ratio={ratio} aria-hidden="true" />;
+  if (!tag) return img;
+  return (
+    <span className="frm-pvc-pic">
+      {img}
+      <span className="frm-pvc-tag" data-tone="accent">
+        {tag}
+      </span>
+    </span>
+  );
 }
 
-function Face(props: React.ComponentProps<typeof SurfaceCard>) {
+/** A cms-ui face, inert. `lines`: the blurb keeps its line breaks (a second line such as "First: …"). */
+function Face({ lines, ...props }: React.ComponentProps<typeof SurfaceCard> & { lines?: boolean }) {
   return (
-    <div className="frm-pvc" inert>
+    <div className="frm-pvc" data-lines={lines === true ? '' : undefined} inert>
       <SurfaceCard {...props} cue="" />
     </div>
   );
@@ -89,64 +100,150 @@ const gathering: CardRenderer = (p) => {
   return <Face kind="meeting" kicker={when} title={titleOf(p)} blurb={cap ? `${where} · ${cap}` : where} preview={<Picture url={cover(p)} ratio="wide" />} />;
 };
 
+/** Who hosts a gathering or a series, by name, from the host candidates the context lists. */
+function hostName(p: CardRendererProps): string {
+  const id = text(p.answers.host_user_id);
+  const list = (p.ctx.fields.hostCandidates as Array<{ userId: string; displayName: string }> | undefined) ?? [];
+  return list.find((h) => h.userId === id)?.displayName ?? '';
+}
+
 const series: CardRenderer = (p) => {
-  const lines = seriesCardLines(p.answers, { orgName: p.ctx.orgName });
-  const w = parseWallClock(p.answers.scheduled_at);
-  const kicker = w ? `Series · ${weekdayPlural(w)}, ${span(w, null)}` : lines.kicker || 'Series';
-  const count = typeof p.answers.session_count === 'number' ? p.answers.session_count : lines.sessions;
-  const blurb = [count ? `${count} sessions` : null, lines.span || null].filter(Boolean).join(', ');
+  const l = seriesLines(p.answers);
+  const fallback = seriesCardLines(p.answers, { orgName: p.ctx.orgName });
   if (p.mode === 'page') {
+    const on = l.sessions.filter((s) => !s.skipped);
+    const host = hostName(p);
     return (
       <article className="frm-pvc-page">
-        <span className="frm-pvc-kicker">{kicker}</span>
+        <span className="frm-pvc-kicker">{l.kicker}</span>
         <span className="frm-pvc-title">{titleOf(p)}</span>
-        <span className="frm-pvc-meta">{[lines.when, whereLine(p.answers)].filter(Boolean).join(' · ')}</span>
+        <span className="frm-pvc-meta">{[l.span || fallback.when, host ? `hosted by ${host}` : ''].filter(Boolean).join(' · ')}</span>
         <Picture url={cover(p)} />
-        <div className="frm-pvc-body">{paragraphs(p.answers.body ?? p.answers.lede, 3).map((t, i) => <p key={i}>{t}</p>)}</div>
+        {p.answers.is_rsvp_enabled !== false && (
+          <div className="frm-pvc-tools">
+            <span className="frm-pvc-btn" data-variant="primary">Join the series</span>
+            <span>or come to single evenings</span>
+          </div>
+        )}
+        <div className="frm-pvc-body">{paragraphs(p.answers.body ?? p.answers.lede, 2).map((t, i) => <p key={i}>{t}</p>)}</div>
+        {on.length > 0 && (
+          <ol className="frm-pvc-sessions">
+            {on.slice(0, 5).map((s) => (
+              <li key={s.date}>
+                <span className="frm-pvc-sessions-no">{s.no}</span>
+                <span className="frm-pvc-sessions-day">{s.day}</span>
+                <span className="frm-pvc-sessions-title" data-empty={s.title ? undefined : ''}>
+                  {s.title || `Session ${s.no}`}
+                </span>
+              </li>
+            ))}
+            {on.length > 5 && <li className="frm-pvc-sessions-more">{`and ${on.length - 5} more`}</li>}
+          </ol>
+        )}
       </article>
     );
   }
-  return <Face kind="series" kicker={kicker} title={titleOf(p)} blurb={blurb || lines.when} preview={<Picture url={cover(p)} ratio="wide" />} />;
+  const blurb = [l.span || fallback.span, l.first ? `First: ${l.first}` : ''].filter(Boolean).join('\n');
+  return (
+    <Face
+      kind="series"
+      lines
+      kicker={l.kicker}
+      title={titleOf(p)}
+      blurb={blurb || fallback.when || undefined}
+      preview={<Picture url={cover(p)} ratio="wide" tag={l.starts} />}
+    />
+  );
 };
 
+/**
+ * Artwork: the network's gallery label (commerce's ProductCard "wall" face: the piece, then
+ * title, maker, price), drawn from the surface tokens. The studio package does not depend on
+ * commerce, so a host that wants the real ProductCard passes it as preview.cards.artwork.
+ */
 const artwork: CardRenderer = (p) => {
-  const a = p.answers;
-  const priceMode = text(a.price_mode);
-  const price =
-    priceMode === 'request' ? 'Price on request' : priceMode === 'nfs' ? 'Not for sale' : fmtPrice(a.price as number | string | null | undefined, text(a.currency) || null) ?? 'Price not set';
-  const maker = [text(a.artist_name) || text(a.maker), text(a.medium), text(a.year)].filter(Boolean).join(' · ');
+  const l = artworkLines(p.answers);
+  const tag = l.availability ? (
+    <span className="frm-pvc-tag" data-tone={l.availability.tone}>
+      {l.availability.label}
+    </span>
+  ) : null;
   if (p.mode === 'page') {
+    const sold = l.availability !== null && l.availability.label !== 'Available';
+    const action = l.mode === 'nfs' || sold ? null : l.mode === 'request' ? 'Ask about it' : 'Buy';
     return (
       <article className="frm-pvc-page">
-        <Picture url={cover(p)} ratio="tall" />
-        <span className="frm-pvc-title">{titleOf(p)}</span>
-        {maker && <span className="frm-pvc-meta">{maker}</span>}
-        <div className="frm-pvc-tools">
-          <span>{price}</span>
-          {priceMode !== 'nfs' && <span className="frm-pvc-btn" data-variant="primary">{priceMode === 'request' ? 'Ask' : 'Buy'}</span>}
+        <div className="frm-pvc-gallery">
+          <Picture url={l.pictures[0] ?? null} ratio="tall" />
+          <div className="frm-pvc-gallery-thumbs">
+            {[1, 2, 3].map((i) => (
+              <Picture key={i} url={l.pictures[i] ?? null} ratio="square" />
+            ))}
+          </div>
         </div>
+        <span className="frm-pvc-title" data-size="md">
+          {titleOf(p)}
+        </span>
+        {l.creditLine && <span className="frm-pvc-line">{l.creditLine}</span>}
+        {l.detailsLine && <span className="frm-pvc-meta">{l.detailsLine}</span>}
+        {l.mode === 'price' && l.variants.length > 1 ? (
+          <div className="frm-pvc-variants">
+            {l.variants.map((v, i) => (
+              <span key={i} className="frm-pvc-variant" data-on={i === 0 ? '' : undefined}>
+                {[v.name, v.price].filter(Boolean).join(' ')}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="frm-pvc-tools">
+          <span className="frm-pvc-price">{l.price}</span>
+          {tag}
+        </div>
+        {action && (
+          <span className="frm-pvc-btn" data-variant="primary" data-align="start">
+            {action}
+          </span>
+        )}
+        <div className="frm-pvc-body">{paragraphs(p.answers.description ?? p.answers.body, 2).map((t, i) => <p key={i}>{t}</p>)}</div>
       </article>
     );
   }
-  return <Face kind="product" kicker="Artwork" title={titleOf(p)} blurb={maker ? `${maker} · ${price}` : price} preview={<Picture url={cover(p)} ratio="tall" />} />;
+  return (
+    <div className="frm-pvc frm-pvc-wall" inert>
+      <Picture url={l.pictures[0] ?? null} ratio="tall" />
+      <span className="frm-pvc-wall-title">{titleOf(p)}</span>
+      {l.makerLine && <span className="frm-pvc-line">{l.makerLine}</span>}
+      <span className="frm-pvc-tools">
+        <span className="frm-pvc-price">{l.price}</span>
+        {tag}
+      </span>
+    </div>
+  );
 };
 
 const service: CardRenderer = (p) => {
   const a = p.answers;
-  const price = fmtPrice(a.price as number | string | null | undefined, text(a.currency) || null);
-  const line = [text(a.subtitle), price].filter(Boolean).join(' · ');
+  const l = serviceLines(a);
   if (p.mode === 'page') {
     return (
       <article className="frm-pvc-page">
         <span className="frm-pvc-kicker">Offering</span>
         <span className="frm-pvc-title">{titleOf(p)}</span>
-        {line && <span className="frm-pvc-meta">{line}</span>}
+        {l.lede && <span className="frm-pvc-line">{l.lede}</span>}
+        {l.meta && <span className="frm-pvc-meta">{l.meta}</span>}
         <Picture url={cover(p)} />
+        <div className="frm-pvc-tools">
+          <span className="frm-pvc-btn" data-variant={l.open ? 'primary' : 'secondary'}>
+            {l.action}
+          </span>
+          {l.price && <span>{l.price}</span>}
+        </div>
         <div className="frm-pvc-body">{paragraphs(a.body, 3).map((t, i) => <p key={i}>{t}</p>)}</div>
       </article>
     );
   }
-  return <Face kind="service" kicker="Offering" title={titleOf(p)} blurb={line || undefined} preview={<Picture url={cover(p)} />} />;
+  const blurb = [l.lede, l.meta].filter(Boolean).join('\n');
+  return <Face kind="service" lines kicker="Offering" title={titleOf(p)} blurb={blurb || undefined} preview={<Picture url={cover(p)} />} />;
 };
 
 export const DEFAULT_CARDS: Record<FormKindId | 'series', CardRenderer> = { post, gathering, series, artwork, service };

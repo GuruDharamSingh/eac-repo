@@ -7,11 +7,13 @@ import type { Answers, FieldOverride, FormContext, FormHost, FormIconName, FormI
 import { readAnswer } from '../state';
 import { CheckList, CheckRow } from './CheckRow';
 import { PeopleInput, TagInput, type PersonOption } from './Chips';
+import { CreditRows } from './CreditRows';
 import { Field, fieldAria, type FieldLock, type FieldProblem } from './Field';
 import { fieldId } from './ids';
-import { DateTimeInput, Input, Select, Textarea } from './Input';
+import { DateTimeInput, Input, Select, Textarea, type SelectOption } from './Input';
 import { LiteEditor } from './LiteEditor';
 import { MediaField, type Focal, type MediaSlot } from './MediaField';
+import { PicturesField } from './PicturesField';
 import { Seg } from './Seg';
 import { Switch } from './Switch';
 import { Title } from './Title';
@@ -26,7 +28,8 @@ import { Title } from './Title';
 // `body` field → the host's body slot, else LiteEditor · datetime → date +
 // time · duration → a Seg of lengths with Other · timezone → Select ·
 // a `media` slot (cover_image_url, banners) → MediaField over the host's
-// picker · custom → the spec's own render · sessions → nothing (a kind's
+// picker · `pictures` → PicturesField (several, in order) · `credits` →
+// CreditRows · custom → the spec's own render · sessions → nothing (a kind's
 // planner draws it) · the `title` field → the headline Title.
 //
 // The override merges over the cms-ui spec. With `value`/`onChange` the
@@ -47,8 +50,8 @@ export interface ShellFieldOverride extends FieldOverride {
   width?: number | string;
   prefix?: string;
   suffix?: string;
-  /** Pick a control the input type alone does not name. */
-  control?: 'title' | 'tags' | 'people' | 'media' | 'lite' | 'textarea' | 'select' | 'seg';
+  /** Pick a control the input type alone does not name. `pictures` and `credits` are also picked by those field names. */
+  control?: 'title' | 'tags' | 'people' | 'media' | 'lite' | 'textarea' | 'select' | 'seg' | 'pictures' | 'credits';
   /** Switch: the line after the label ("Every week on Thursday, 8 sessions"). */
   summary?: string;
   /** CheckRow: the label in the label weight, and a second line. */
@@ -61,6 +64,10 @@ export interface ShellFieldOverride extends FieldOverride {
   disabled?: boolean;
   people?: { selfId?: string | null; fixed?: string[]; max?: number; allowFree?: boolean };
   media?: { variant?: 'cover' | 'drop'; aspect?: string; accept?: string; altField?: string; focalField?: string };
+  /** PicturesField: the first picture's proportion, its tag ("On cards"), a cap, the file types. */
+  pictures?: { aspect?: string; firstTag?: string; max?: number; accept?: string; focal?: boolean };
+  /** CreditRows: people credited by account (default: the context's hostCandidates), the roles, the add label, a cap, typed names. */
+  credits?: { people?: PersonOption[]; roles?: SelectOption[]; selfId?: string | null; addLabel?: string; max?: number; allowFree?: boolean };
   /** Duration: the minutes offered before "Other". */
   durations?: number[];
   /** Seg/CheckList: lay out in a row; Seg on the page ground. */
@@ -102,7 +109,7 @@ export type BodySlot = (props: { value: string; onChange: (html: string) => void
 const SPEC_KEYS = ['input', 'options', 'label', 'hint', 'placeholder', 'inline', 'required', 'min', 'max', 'step', 'dependsOn', 'slot', 'previewField', 'render'] as const;
 
 function mergeSpec(name: string, base: ContentFieldSpec | undefined, o: ShellFieldOverride | undefined): ContentFieldSpec | null {
-  if (!base && !o?.input) return null;
+  if (!base && !o?.input && o?.control !== 'pictures' && o?.control !== 'credits') return null;
   const spec: Record<string, unknown> = { ...(base ?? { name, label: name, input: 'text' }) };
   if (o) for (const k of SPEC_KEYS) if (k in o && o[k] !== undefined) spec[k] = o[k];
   spec.name = name;
@@ -164,7 +171,10 @@ function FieldRenderer({ name, spec, override: o = {}, rc }: { name: string; spe
   const aria = fieldAria({ id, hint: hintBelow, problem, fromPreset });
   const hidden = o.hideLabel ?? o.labelHidden;
 
-  const frame = (child: React.ReactNode, extra: { labelAsText?: boolean; labelHidden?: boolean; hint?: React.ReactNode | null; selfLabelled?: boolean } = {}) => (
+  const frame = (
+    child: React.ReactNode,
+    extra: { labelAsText?: boolean; labelHidden?: boolean; hint?: React.ReactNode | null; inlineHint?: React.ReactNode; selfLabelled?: boolean } = {}
+  ) => (
     <Field
       id={id}
       name={name}
@@ -173,7 +183,7 @@ function FieldRenderer({ name, spec, override: o = {}, rc }: { name: string; spe
       labelHidden={extra.labelHidden ?? hidden}
       labelAsText={extra.labelAsText}
       size={o.size ?? rc.defaultSize}
-      inlineHint={o.inlineHint}
+      inlineHint={extra.inlineHint ?? o.inlineHint}
       hint={extra.hint === null ? undefined : extra.hint ?? hintBelow}
       problem={problem}
       fromPreset={fromPreset}
@@ -238,7 +248,56 @@ function FieldRenderer({ name, spec, override: o = {}, rc }: { name: string; spe
     return frame(editor, { labelAsText: typeof blocks === 'function' || typeof slot === 'function' });
   }
 
-  // ── pictures ──
+  // ── several pictures, in order (artwork): the first is the card picture ──
+  if (control === 'pictures' || (name === 'pictures' && !control)) {
+    const pc = o.pictures ?? {};
+    // The design's hint sits beside the label: "Drag to reorder. The first is the one on cards."
+    const beside = o.inlineHint ?? spec.hint ?? `Drag to reorder. The first is the one ${(pc.firstTag ?? 'On cards').toLowerCase()}.`;
+    return frame(
+      <PicturesField
+        id={id}
+        value={value}
+        onChange={onChange}
+        slot={(rc.host.slots?.media as MediaSlot | undefined) ?? null}
+        label={spec.label}
+        accept={pc.accept}
+        aspect={pc.aspect}
+        firstTag={pc.firstTag}
+        max={pc.max}
+        focal={pc.focal !== false}
+        describedBy={problem?.message ? `${id}-msg` : undefined}
+        tone={tone}
+        disabled={disabled}
+      />,
+      { labelAsText: true, hint: null, inlineHint: beside }
+    );
+  }
+
+  // ── credits: role + person or name, per row ──
+  if (control === 'credits' || (name === 'credits' && !control)) {
+    const cr = o.credits ?? {};
+    const candidates = (rc.ctx.fields.hostCandidates as Array<{ userId: string; displayName: string }> | undefined) ?? [];
+    const people: PersonOption[] = cr.people ?? candidates.map((h) => ({ value: h.userId, label: h.displayName }));
+    return frame(
+      <CreditRows
+        id={id}
+        value={value}
+        onChange={onChange}
+        people={people}
+        roles={cr.roles}
+        selfId={cr.selfId}
+        addLabel={cr.addLabel}
+        max={cr.max}
+        allowFree={cr.allowFree !== false}
+        describedBy={aria['aria-describedby']}
+        tone={tone}
+        disabled={disabled}
+      />,
+      { labelAsText: true }
+    );
+  }
+
+  // ── a picture ──
   if (control === 'media' || spec.slot === 'media' || name === 'cover_image_url') {
     const m = o.media ?? {};
     const altKey = m.altField;

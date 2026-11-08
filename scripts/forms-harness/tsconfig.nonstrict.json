@@ -1,0 +1,9 @@
+{
+  "//": "The forms as a non-strict host (arts-collective) compiles them: unions narrowed by truthiness fail here. Run from packages/studio: tsc --noEmit -p ../../scripts/forms-harness/tsconfig.nonstrict.json",
+  "extends": "../../packages/studio/tsconfig.json",
+  "compilerOptions": {
+    "strict": false
+  },
+  "include": ["../../packages/studio/src/forms/**/*.ts", "../../packages/studio/src/forms/**/*.tsx"],
+  "exclude": ["../../packages/studio/src/forms/harness/**"]
+}

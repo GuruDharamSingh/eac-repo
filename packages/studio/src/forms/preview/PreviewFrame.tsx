@@ -40,6 +40,20 @@ function themeStyle(vars: Record<string, string> | undefined): React.CSSProperti
   return out as React.CSSProperties;
 }
 
+/**
+ * Where the item shows on the site, for "on …" and the breadcrumb: a series on the Series
+ * page, an artwork in the Store (or the gallery when it is not in the store), the rest on
+ * the feed they go on.
+ */
+export function previewPlace(kind: FormKindId | 'series', answers: Answers, host: Pick<FormHost, 'feeds'>, ctx: FormContext): string | null {
+  if (kind === 'series') return 'Series';
+  if (kind === 'artwork') {
+    const shows = answers.shows && typeof answers.shows === 'object' ? (answers.shows as { store?: unknown; gallery?: unknown }) : null;
+    return shows !== null && shows.store === false && shows.gallery === true ? 'Gallery' : 'Store';
+  }
+  return feedName(answers, host, ctx);
+}
+
 export interface PreviewFrameProps {
   kind: FormKindId | 'series';
   answers: Answers;
@@ -59,7 +73,7 @@ export interface PreviewFrameProps {
 }
 
 export function PreviewFrame({ kind, answers, ctx, host, mode, onMode, published, onClose, top, scope = '', className }: PreviewFrameProps) {
-  const feed = feedName(answers, host, ctx);
+  const feed = previewPlace(kind, answers, host, ctx);
   const render = host.preview.cards?.[kind] ?? DEFAULT_CARDS[kind];
   const neighbour = host.preview.neighbour?.[kind] ?? null;
   const props: CardRendererProps = { kind, answers, mode, ctx };
