@@ -6,9 +6,20 @@
 
 import type { Answers, FormContext, FormKindSchema, FormRule } from '../contract';
 import { computeIssues, visibleSections } from '../state';
-import { ARTWORK_SAMPLE, ARTWORK_SAMPLE_CONTEXT, artworkKind, descriptionSummary, detailsSummary, editionSummary, mediumShort, priceLine } from '../kinds/artwork';
+import {
+  ARTWORK_SAMPLE,
+  ARTWORK_SAMPLE_CONTEXT,
+  artworkKind,
+  availabilitySummary,
+  descriptionSummary,
+  detailsSummary,
+  editionSummary,
+  mediumShort,
+  priceLine,
+  stockLine,
+} from '../kinds/artwork';
 import { SERVICE_SAMPLE, SERVICE_SAMPLE_CONTEXT, bookingSummary, cardSummarySummary, heldSummary, priceSummary, serviceKind, subtitleSummary } from '../kinds/service';
-import { ARTWORK_RULES, pictureCount } from './artwork';
+import { ARTWORK_RULES, isListed, pictureCount, stockDrawn } from './artwork';
 import { SERVICE_RULES } from './service';
 
 export interface CheckTools {
@@ -74,7 +85,64 @@ export function checkKinds(t: CheckTools) {
   eq('details summary, inches with depth', detailsSummary({ medium: 'Bronze', height_cm: 12, width_cm: 8, depth_cm: 6.25, unit: 'in' }), 'Bronze · 12 × 8 × 6.3 in');
   eq('details summary, empty', detailsSummary({}), 'Medium, size and year');
   eq('medium short', [mediumShort('Etching and aquatint on Hahnemühle, 300 gsm'), mediumShort('Oil on linen'), mediumShort('')], ['Etching', 'Oil', '']);
-  eq('edition summary', [editionSummary(art), editionSummary({ edition_type: 'open' }), editionSummary({})], ['A limited edition', 'An open edition', 'One of a kind']);
+  eq('edition summary', [editionSummary(art), editionSummary({ edition_type: 'open' }), editionSummary({ edition_type: 'open', stock: 40 }), editionSummary({ edition_type: 'edition' }), editionSummary({})], [
+    'Edition of 25 · 18 on hand',
+    'An open edition',
+    'An open edition · 40 on hand',
+    'A limited edition',
+    'One of a kind',
+  ]);
+
+  // ── edition size, copies on hand, availability (commerce 7d6540c0) ──
+  cases(ARTWORK_RULES, 'artwork.edition-size', A, art, [
+    ['an edition of 25', {}, false],
+    ['no size', { edition_size: '' }, true],
+    ['0', { edition_size: 0 }, true],
+    ['not whole', { edition_size: 2.5 }, true],
+    ['a string from the input', { edition_size: '25' }, false],
+    ['one of a kind needs none', { edition_type: 'unique', edition_size: '' }, false],
+    ['open needs none', { edition_type: 'open', edition_size: '' }, false],
+  ]);
+  cases(ARTWORK_RULES, 'artwork.stock', A, art, [
+    ['18 on hand', {}, false],
+    ['0 on hand', { stock: 0 }, false],
+    ['empty, edition', { stock: '' }, true],
+    ['negative', { stock: -1 }, true],
+    ['not whole', { stock: 1.5 }, true],
+    ['open, empty', { edition_type: 'open', stock: undefined }, true],
+    ['one of a kind, not asked', { edition_type: 'unique', stock: undefined }, false],
+    ['one of a kind, sold (0 is asked, and valid)', { edition_type: 'unique', stock: 0 }, false],
+  ]);
+  cases(ARTWORK_RULES, 'artwork.stock-over', A, art, [
+    ['18 of 25', {}, false],
+    ['30 of 25', { stock: 30 }, true],
+    ['open has no size', { edition_type: 'open', stock: 30 }, false],
+  ]);
+  cases(ARTWORK_RULES, 'artwork.available-none', A, art, [
+    ['listed, available, 18 on hand', {}, false],
+    ['listed, available, none on hand', { stock: 0 }, true],
+    ['listed, sold, none on hand', { stock: 0, availability: 'sold' }, false],
+    ['a draft is not set here', { stock: 0, 'forms.listed': undefined }, false],
+  ]);
+  eq('stock line', [
+    stockLine(art),
+    stockLine({ edition_type: 'open', stock: 40 }),
+    stockLine({ edition_type: 'unique' }),
+    stockLine({ edition_type: 'unique', stock: 0 }),
+    stockLine({ ...art, stock: 0 }),
+  ], [
+    '18 of 25 left. Turns to Sold by itself when the last one goes.',
+    '40 left. Turns to Sold by itself when the last one goes.',
+    'Turns to Sold by itself when it sells.',
+    'None left to sell.',
+    'None left to sell.',
+  ]);
+  eq('availability summary', [availabilitySummary(art), availabilitySummary({ availability: 'reserved' }), availabilitySummary({ availability: 'sold' }), availabilitySummary({})], ['Available', 'Reserved', 'Sold', 'Available']);
+  eq('stockDrawn', [stockDrawn(art), stockDrawn({ edition_type: 'open' }), stockDrawn({ edition_type: 'unique' }), stockDrawn({ edition_type: 'unique', stock: 0 })], [true, true, false, true]);
+  eq('isListed reads forms.listed only', [isListed(art), isListed({}), isListed({ 'forms.listed': 'yes' })], [true, false, false]);
+  eq('an open edition with nothing on hand is asked for its copies', issueIds(artworkKind, { ...art, edition_type: 'open', stock: undefined }, A), ['block:artwork.stock']);
+  eq('a blank edition asks for its size and copies', issueIds(artworkKind, { ...artworkKind.empty(A), title: 'T', pictures: ['x'], price: 10, edition_type: 'edition' }, A), ['block:artwork.edition-size', 'block:artwork.stock']);
+  eq('blank artwork: available, not listed, no stock asked', [artworkKind.empty(A).availability, isListed(artworkKind.empty(A)), stockDrawn(artworkKind.empty(A))], ['available', false, false]);
   eq('description summary', [descriptionSummary(art), descriptionSummary({ description: '<p>Pulled on the Albion.</p>' })], ['None yet', 'Pulled on the Albion.']);
   eq('price line', [priceLine(art, A), priceLine({ ...art, price_mode: 'request' }, A), priceLine({ ...art, price: undefined }, A)], ['$180', 'Price on request', 'No price yet']);
 
@@ -88,6 +156,7 @@ export function checkKinds(t: CheckTools) {
     'essentials:title',
     'essentials:maker',
     'essentials:price',
+    'essentials:availability',
     'more:details',
     'more:edition',
     'more:description',

@@ -3,19 +3,20 @@
 // Publish Form.dc.html renderVals() (rail lists, default open). Reference:
 // cms-ui compose/ArtPieceComposer.tsx (the marketplace's own vocabulary).
 //
-//   Essentials  Pictures · Title · Maker · Price
+//   Essentials  Pictures · Title · Maker · Price · Availability
 //   More        Details (open) · Edition (open) · Description
 //
 // content-fields has no artwork list (state.ts contentKindOf → null), so the
 // kind supplies its own specs (FormKindSchema.specs, c59dcee7). Saved by
 // forms/adapters/artwork.ts (Ligament) through commerce createArtwork /
-// updateArtwork / setArtworkMedia; the store and the seller are the signed-in
-// person's.
+// updateArtwork / setArtworkMedia / setArtworkAvailability; the store and the
+// seller are the signed-in person's.
 //
-// Show only what works (owner ruling 7): Availability, Not for sale, the Ask
-// button, other credits, the focal point, the edition size and proofs, the
-// variants grid and Where it shows have no commerce path yet. They are in
-// `deferred` with the code that shows why, and are not drawn.
+// Since commerce 7d6540c0 (editions sell every copy) the edition size, the
+// copies on hand and Availability are drawn. Show only what works (owner
+// ruling 7): Not for sale, the Ask button, other credits, the focal point,
+// proofs, the variants grid and Where it shows have no commerce path yet. They
+// are in `deferred` with the code that shows why, and are not drawn.
 // ============================================================================
 
 import type { ContentFieldSpec } from '@elkdonis/cms-ui/compose';
@@ -23,6 +24,7 @@ import type { Answers, FormContext, FormKindSchema, KindLayout } from '../../con
 import { ARTWORK_RULES } from '../../rules/artwork';
 import { text } from '../../rules/answers';
 import {
+  ArtworkAvailability,
   ArtworkDetails,
   ArtworkEdition,
   ArtworkMaker,
@@ -48,6 +50,9 @@ export const ARTWORK_SPECS: Record<string, ContentFieldSpec> = {
   unit: { name: 'unit', label: 'Unit', input: 'radio', options: [{ value: 'cm', label: 'cm' }, { value: 'in', label: 'in' }] },
   year: { name: 'year', label: 'Year', input: 'number', min: 0 },
   edition_type: { name: 'edition_type', label: 'Edition', input: 'radio', options: [{ value: 'unique', label: 'One of a kind' }, { value: 'edition', label: 'Edition' }, { value: 'open', label: 'Open' }] },
+  edition_size: { name: 'edition_size', label: 'Edition of', input: 'number', min: 1, step: 1 },
+  stock: { name: 'stock', label: 'Copies on hand', input: 'number', min: 0, step: 1 },
+  availability: { name: 'availability', label: 'Availability', input: 'radio', options: [{ value: 'available', label: 'Available' }, { value: 'reserved', label: 'Reserved' }, { value: 'sold', label: 'Sold' }] },
   description: { name: 'description', label: 'Description', input: 'richtext', placeholder: 'The story of the piece, how it was made, how to care for it.' },
 };
 
@@ -68,6 +73,11 @@ export function emptyArtworkAnswers(ctx: FormContext): Answers {
     unit: 'cm',
     year: undefined,
     edition_type: 'unique',
+    // An edition's size, and its copies on hand (filled from the size on a new piece).
+    edition_size: undefined,
+    stock: undefined,
+    // What publishing sets; changed once it is listed.
+    availability: 'available',
     description: '',
   };
 }
@@ -77,6 +87,8 @@ export const ARTWORK_LAYOUT: KindLayout = {
   body: { section: 'description', field: 'body', editor: 'toolbar' },
   rows: [
     { section: 'price', row: 'artwork-price', cells: { price: '0 0 150px', currency: '0 0 110px' } },
+    // "Edition of [25]  Copies on hand [18]": side by side, both narrow, so they keep a line at 390px.
+    { section: 'edition', row: 'artwork-edition', cells: { edition_size: '0 0 110px', stock: '0 0 110px' } },
     // 390px: the three sizes keep a line; cm | in and the year drop under them.
     { section: 'details', row: 'artwork-size', cells: { unit: '0 0 auto', year: '0 0 90px' } },
     { section: 'details', row: 'artwork-dims', cells: { height_cm: '1 1 70px', width_cm: '1 1 70px', depth_cm: '1 1 70px' } },
@@ -111,6 +123,15 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
       done: (_a, ctx) => ctx.fields.canEdit !== false,
     },
     { id: 'price', label: 'Price', tier: 'essentials', fields: ['price_mode', 'price', 'currency'], render: 'artworkPrice', quick: true },
+    {
+      // setArtworkAvailability, on a listed piece only (commerce/src/server/index.ts:1417-1447); drawn disabled on a draft.
+      id: 'availability',
+      label: 'Availability',
+      tier: 'essentials',
+      fields: ['availability'],
+      render: 'artworkAvailability',
+      done: () => true,
+    },
     // ── More ──
     {
       id: 'details',
@@ -124,7 +145,7 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
       id: 'edition',
       label: 'Edition',
       tier: 'more',
-      fields: ['edition_type'],
+      fields: ['edition_type', 'edition_size', 'stock'],
       render: 'artworkEdition',
       summary: (a) => editionSummary(a),
       done: () => true,
@@ -135,6 +156,7 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
     artworkPictures: ArtworkPictures,
     artworkMaker: ArtworkMaker,
     artworkPrice: ArtworkPrice,
+    artworkAvailability: ArtworkAvailability,
     artworkDetails: ArtworkDetails,
     artworkEdition: ArtworkEdition,
   },
@@ -144,30 +166,23 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
   empty: emptyArtworkAnswers,
   deferred: [
     {
-      id: 'availability',
-      label: 'Availability (Available | Reserved | Sold)',
-      reason:
-        'Only publishing sets "available" (publishArtwork, packages/commerce/src/server/index.ts:1282-1310); reserved and sold are set by the order flow alone (commerce/src/server/orders.ts:325, :666) and a seller has no setter, so the seg would offer one choice.',
-      pass: 4,
-    },
-    {
       id: 'price.nfs',
       label: 'Not for sale',
-      reason: 'ArtworkStatus has no such state (packages/commerce/src/types/index.ts:19-24), and a 0 price means "price on request" (commerce/src/server/index.ts:1279-1281).',
+      reason: 'ArtworkStatus has no such state (packages/commerce/src/types/index.ts:19-24), and a 0 price means "price on request" (commerce/src/server/index.ts:1319-1321).',
       pass: 4,
     },
     {
       id: 'price.inquiries',
       label: 'An Ask button that emails you',
       reason:
-        'Commerce has no inquiry write path, only the table (packages/db/migrations/042_commerce_and_auction.sql:294); a price on request points buyers at messaging the artist (commerce/src/server/index.ts:1279-1281), which is what the hint says.',
+        'Commerce has no inquiry write path, only the table (packages/db/migrations/042_commerce_and_auction.sql:294); a price on request points buyers at messaging the artist (commerce/src/server/index.ts:1319-1321), which is what the hint says.',
       pass: 4,
     },
     {
       id: 'credits.roles',
       label: 'Another credit ("Printed by"), a name without an account',
       reason:
-        'A piece stores one credited artist by account, creditedArtistUserId (packages/commerce/src/types/index.ts:242, :288); other roles and typed names have no column. In pass 2 the maker is the seller (makerCandidates holds the viewer only).',
+        'A piece stores one credited artist by account, creditedArtistUserId (packages/commerce/src/types/index.ts:242, :298); other roles and typed names have no column. In pass 2 the maker is the seller (makerCandidates holds the viewer only).',
       pass: 4,
     },
     {
@@ -177,23 +192,23 @@ export const artworkKind: FormKindSchema & { layout: KindLayout } = {
       pass: 4,
     },
     {
-      id: 'edition.size',
-      label: 'of [25] + [3] proofs; "18 of 25 left"',
+      id: 'edition.proofs',
+      label: '+ [3] proofs',
       reason:
-        'artwork_variant.edition_total exists (packages/commerce/src/types/index.ts:421) but createArtwork and updateArtwork never write it (commerce/src/server/index.ts:1072-1081), proofs have no column, and the whole piece turns reserved at its first order and sold at its first payment (commerce/src/server/orders.ts:325, :666).',
+        'Proofs have no column: a variant has an edition number and total but no proofs (ArtworkVariant, packages/commerce/src/types/index.ts:422-437). The edition size itself is drawn (editionTotal, commerce/src/server/index.ts:1088-1098).',
       pass: 4,
     },
     {
       id: 'variants',
       label: 'Variants (Unframed sheet, Framed in oak)',
-      reason: 'A piece has one Default variant (createArtwork, packages/commerce/src/server/index.ts:1077) and updateArtwork edits the first only (:1160).',
+      reason: 'A piece has one Default variant (createArtwork, packages/commerce/src/server/index.ts:1097) and updateArtwork edits the first only (:1194).',
       pass: 4,
     },
     {
       id: 'shows',
       label: 'Where it shows (Store, Gallery on your profile)',
       reason:
-        'Listing in the store is the publish itself, and there is no per-piece gallery flag: the profile shows a person’s store section as a whole (hasProfileSection, packages/commerce/src/queries/index.ts:939).',
+        'Listing in the store is the publish itself, and there is no per-piece gallery flag: the profile shows a person’s store section as a whole (hasProfileSection, packages/commerce/src/queries/index.ts:940).',
       pass: 4,
     },
   ],

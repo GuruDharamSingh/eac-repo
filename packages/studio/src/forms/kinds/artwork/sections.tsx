@@ -1,8 +1,10 @@
 'use client';
 
 // ============================================================================
-// Artwork's sections (soft tissue, pass 2): Pictures, Maker, Price, Details,
-// Edition, with the closed-row summaries. Design: README §5, 1f, 1p.
+// Artwork's sections (soft tissue, pass 2): Pictures, Maker, Price,
+// Availability, Details, Edition, with the closed-row summaries. Design:
+// README §5, 1f, 1p. Since commerce 7d6540c0 editions sell every copy, so the
+// edition size, copies on hand and availability are drawn (PLAN §12).
 //
 // Keys are PLAN §12's, saved by forms/adapters/artwork.ts (Ligament) through
 // commerce createArtwork / updateArtwork / setArtworkMedia:
@@ -10,16 +12,20 @@
 //   credits       → credits[0] artist with a userId = creditedArtistUserId (named,
 //                   not paid), unless it is the seller, who is the artist already
 //   price_mode    'price' | 'request' ('request' = price 0, "price on request",
-//                   commerce/src/server/index.ts:1279-1281)
+//                   commerce/src/server/index.ts:1319-1321)
 //   price, currency, medium, height_cm, width_cm, depth_cm, unit ('in' → cm), year,
 //   edition_type  → kind original / limited_edition / open_edition
+//   edition_size  → editionTotal (an edition only)
+//   stock         → inventoryQty, copies on hand
+//   availability  → setArtworkAvailability, on a listed piece only
+//                   (forms.listed, set on load by the adapter)
 //   description   → descriptionHtml
 // Every control is the shell's, through field(); what is here is layout and copy.
 // ============================================================================
 
 import * as React from 'react';
 import type { Answers, FormContext, SectionProps } from '../../contract';
-import { ARTWORK_CURRENCIES, priceMode } from '../../rules/artwork';
+import { ARTWORK_CURRENCIES, availabilityOf, editionSize, editionType, isListed, priceMode, stockDrawn, stockOf } from '../../rules/artwork';
 import { clip, num, plainText, text } from '../../rules/answers';
 import { Cell, Hint, Row, Stack, Words, type Person } from '../post/parts';
 
@@ -77,7 +83,7 @@ export function ArtworkMaker({ answers: a, patch, ctx, field }: SectionProps) {
   const artistId = text(credits.find((c) => c && c.role === 'artist')?.userId) || viewerId;
 
   if (ctx.fields.canEdit === false) {
-    // requireActiveStore / canActForStore (commerce/src/server/index.ts:1000, :1002, :1044).
+    // requireActiveStore / canActForStore (commerce/src/server/index.ts:1014, :1016, :1058).
     return <Hint>{reason || 'A piece belongs to a store, and you don’t have an approved one here yet.'}</Hint>;
   }
 
@@ -142,7 +148,7 @@ export function ArtworkPrice({ answers: a, ctx, patch, field }: SectionProps) {
           <Hint>{price !== null && price > 0 ? `The card reads “${money(price, currency)}”.` : 'What it sells for.'}</Hint>
         </>
       ) : (
-        // A 0 price: shown, can't go in a cart, buyers pointed to message the artist (server/index.ts:1279-1281).
+        // A 0 price: shown, can't go in a cart, buyers pointed to message the artist (server/index.ts:1319-1321).
         <Hint>The page shows “Price on request” and points buyers to message you. It can’t be added to a cart.</Hint>
       )}
     </Stack>
@@ -232,29 +238,121 @@ const EDITION_TYPES = [
 ];
 
 /**
- * One of a kind | Edition | Open → commerce `kind`. The size ("of 25 + 3 proofs")
- * and the variants are not drawn: edition_total is never written and there is
- * one Default variant (deferred: edition.size, variants). Copy says what a buyer
- * meets today: the store sells one copy, then the piece shows as sold
- * (commerce/src/server/orders.ts:325, :666).
+ * One of a kind | Edition | Open → commerce `kind`; "of [25]" → editionTotal;
+ * copies on hand → inventoryQty (commerce 7d6540c0: payment takes one, and the
+ * piece turns reserved or sold by itself when none are left to sell). On a new
+ * piece the size fills the copies on hand until they are changed by hand.
+ * Proofs and the variants are not drawn (deferred: edition.proofs, variants).
  */
-export function ArtworkEdition({ answers: a, field }: SectionProps) {
-  const type = text(a.edition_type) || 'unique';
+export function ArtworkEdition({ answers: a, patch, field, recordId }: SectionProps) {
+  const type = editionType(a);
+  const size = editionSize(a);
+  const stock = stockOf(a);
+  const onHand = (label: string) =>
+    field('stock', { input: 'number', label, size: 'sub', min: 0, step: 1, placeholder: size !== null ? String(size) : '1' });
   return (
-    <Stack gap={8}>
+    <Stack gap={10}>
       {field('edition_type', { input: 'radio', label: 'Edition', hideLabel: true, options: EDITION_TYPES })}
+      {type === 'edition' && (
+        <Row name="artwork-edition" gap={12} align="flex-end">
+          <Cell flex="0 0 110px">
+            {field('edition_size', {
+              input: 'number',
+              label: 'Edition of',
+              size: 'sub',
+              min: 1,
+              step: 1,
+              placeholder: '25',
+              value: a.edition_size ?? '',
+              onChange: (v) => {
+                const n = num(v);
+                // A new piece starts with every copy on hand, until that number is changed by hand.
+                const follow = recordId == null && (stock === null || stock === size);
+                patch({ edition_size: v === '' || v === null ? null : v, ...(follow ? { stock: n !== null && Number.isInteger(n) && n >= 0 ? n : null } : {}) });
+              },
+            })}
+          </Cell>
+          <Cell flex="0 0 110px">{onHand('Copies on hand')}</Cell>
+        </Row>
+      )}
+      {type === 'open' && (
+        <Row name="artwork-edition" gap={12} align="flex-end">
+          <Cell flex="0 0 130px">{onHand('Copies on hand')}</Cell>
+        </Row>
+      )}
+      {type === 'unique' && stockDrawn(a) && (
+        <Row name="artwork-edition" gap={12} align="flex-end">
+          <Cell flex="0 0 130px">{onHand('On hand')}</Cell>
+        </Row>
+      )}
       <Hint>
         {type === 'unique'
-          ? 'One of one.'
-          : 'Say the edition size in the description. For now the store sells one copy, then shows the piece as sold.'}
+          ? stockDrawn(a)
+            ? 'It has sold. Set this to 1 to put it back on sale.'
+            : 'One of one.'
+          : 'Each sale takes one. When none are left, it turns to Sold by itself.'}
       </Hint>
     </Stack>
   );
 }
 
+/** "Edition of 25 · 18 on hand" | "An open edition · 40 on hand" | "One of a kind". */
 export function editionSummary(a: Answers): string {
-  const type = text(a.edition_type) || 'unique';
-  return type === 'edition' ? 'A limited edition' : type === 'open' ? 'An open edition' : 'One of a kind';
+  const type = editionType(a);
+  const stock = stockOf(a);
+  const size = editionSize(a);
+  const onHand = stock !== null && stock >= 0 ? `${stock} on hand` : '';
+  if (type === 'edition') return [size !== null && size >= 1 ? `Edition of ${size}` : 'A limited edition', onHand].filter(Boolean).join(' · ');
+  if (type === 'open') return ['An open edition', onHand].filter(Boolean).join(' · ');
+  return 'One of a kind';
+}
+
+// ── Availability ─────────────────────────────────────────────────────────────
+
+const AVAILABILITY = [
+  { value: 'available', label: 'Available' },
+  { value: 'reserved', label: 'Reserved' },
+  { value: 'sold', label: 'Sold' },
+];
+
+/** "18 of 25 left. Turns to Sold by itself when the last one goes." (the design's hint, now true: commerce 7d6540c0). */
+export function stockLine(a: Answers): string {
+  const type = editionType(a);
+  const stock = stockOf(a);
+  const size = editionSize(a);
+  if (type === 'unique') return stock === 0 ? 'None left to sell.' : 'Turns to Sold by itself when it sells.';
+  if (stock === null) return 'Turns to Sold by itself when the last one goes.';
+  if (stock === 0) return 'None left to sell.';
+  const left = type === 'edition' && size !== null && size >= 1 ? `${stock} of ${size} left` : `${stock} left`;
+  return `${left}. Turns to Sold by itself when the last one goes.`;
+}
+
+/**
+ * Available | Reserved | Sold, set by setArtworkAvailability, which works only on
+ * a listed piece (commerce/src/server/index.ts:1433-1436). A draft or new piece
+ * draws it disabled and says so; publishing makes it available.
+ */
+export function ArtworkAvailability({ answers: a, field }: SectionProps) {
+  const listed = isListed(a);
+  return (
+    <Stack gap={8}>
+      {field('availability', {
+        input: 'radio',
+        label: 'Availability',
+        hideLabel: true,
+        options: AVAILABILITY,
+        disabled: !listed,
+        // Bound to the answer when listed; a fixed "Available" (what publishing sets) on a draft.
+        ...(listed ? {} : { value: 'available', onChange: () => undefined }),
+      })}
+      <Hint>{listed ? stockLine(a) : `Set once it’s published. ${stockLine(a)}`}</Hint>
+    </Stack>
+  );
+}
+
+export function availabilitySummary(a: Answers): string {
+  const v = availabilityOf(a);
+  return v === 'available' ? 'Available' : v === 'reserved' ? 'Reserved' : 'Sold';
 }
 
 // ── Description ──────────────────────────────────────────────────────────────

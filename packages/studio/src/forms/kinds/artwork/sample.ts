@@ -1,9 +1,11 @@
 // ============================================================================
 // Artwork sample (README "Sample content": every name, org and price is made
 // up), for the harness's canvas ids 1f and 1p: "Tidewater, No. 3", an etching,
-// four pictures, $180, 40 × 50 cm, 2026, an edition. What commerce cannot store
-// is left out (the edition size, the variants, a second credit). The ids are
-// not real rows; nothing here is ever saved.
+// four pictures, $180, 40 × 50 cm, 2026, an edition of 25 with 18 on hand: a
+// piece already in the store (forms.listed, as the adapter sets it on load),
+// so Availability reads the design's "18 of 25 left. Turns to Sold by itself
+// when the last one goes." What commerce cannot store is left out (proofs, the
+// variants, a second credit). The ids are not real rows; nothing is saved.
 // ============================================================================
 
 import type { Answers, FormContext } from '../../contract';
@@ -47,5 +49,10 @@ export const ARTWORK_SAMPLE: Answers = {
   unit: 'cm',
   year: 2026,
   edition_type: 'edition',
+  edition_size: 25,
+  stock: 18,
+  availability: 'available',
+  'forms.listed': true,
+  'forms.loaded_stock': 18,
   description: '',
 };
