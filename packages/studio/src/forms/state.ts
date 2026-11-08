@@ -76,8 +76,13 @@ export function sectionFieldNames(section: FormSection, schema: FormKindSchema, 
 }
 
 /** Sections shown for these answers (series-only sections drop out for a one-off gathering). */
-export function visibleSections(schema: FormKindSchema, answers: Answers, tier: 'essentials' | 'more' | 'all' = 'all'): FormSection[] {
-  return schema.sections.filter((s) => (tier === 'all' || s.tier === tier) && (!s.when || s.when(answers)));
+export function visibleSections(
+  schema: FormKindSchema,
+  answers: Answers,
+  ctx: FormContext,
+  tier: 'essentials' | 'more' | 'all' = 'all'
+): FormSection[] {
+  return schema.sections.filter((s) => (tier === 'all' || s.tier === tier) && (!s.when || s.when(answers, ctx)));
 }
 
 // ── issues ───────────────────────────────────────────────────────────────────
@@ -90,7 +95,7 @@ export function computeIssues(
   serverErrors?: Record<string, string[] | undefined>
 ): FormIssue[] {
   const out: FormIssue[] = [];
-  const shown = new Set(visibleSections(schema, answers).map((s) => s.id));
+  const shown = new Set(visibleSections(schema, answers, ctx).map((s) => s.id));
   for (const r of schema.rules) {
     if (!shown.has(r.section)) continue;
     let failed = false;

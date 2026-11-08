@@ -54,8 +54,8 @@ export interface FormSection {
   render?: string;
   /** The More row's value line when closed: "24 places · closes when it starts". */
   summary?: (a: Answers, ctx: FormContext) => string;
-  /** Shown only when this holds (series-only sections). */
-  when?: (a: Answers) => boolean;
+  /** Shown only when this holds (series-only sections; Hosts only with hostCandidates). */
+  when?: (a: Answers, ctx: FormContext) => boolean;
   /** Drawn in quick compose too. */
   quick?: boolean;
 }
@@ -77,6 +77,26 @@ export interface FormRule {
   short: string;
 }
 
+/**
+ * Override for SectionProps.field(). Spec keys (input, options, label, hint, placeholder, …) are
+ * merged over the cms-ui spec. `value`/`onChange` make it a VIRTUAL control that is not bound to an
+ * answer key (the Repeats switch, the duration seg with Other, the Where seg); with `input` set,
+ * `name` may be a key cms-ui does not declare. Inputs: 'radio' = Seg, 'toggle' = Switch,
+ * 'boolean' = CheckRow, the rest as cms-ui WizardFieldInput.
+ */
+export interface FieldOverride {
+  input?: string;
+  options?: Array<{ value: string; label: string; hint?: string }>;
+  label?: string;
+  hint?: string;
+  placeholder?: string;
+  inline?: boolean;
+  required?: boolean;
+  value?: unknown;
+  onChange?: (value: unknown) => void;
+  [key: string]: unknown;
+}
+
 /** What a kind's own section component (FormSection.render) receives from the shell. */
 export interface SectionProps {
   answers: Answers;
@@ -88,7 +108,7 @@ export interface SectionProps {
   tier: FormTier;
   host: FormHost;
   /** Draw one cms-ui field by name with the shell's field components (so kinds never restyle a field). */
-  field: (name: string, override?: Partial<Record<string, unknown>>) => React.ReactNode;
+  field: (name: string, override?: FieldOverride) => React.ReactNode;
 }
 
 export interface FormKindSchema {
