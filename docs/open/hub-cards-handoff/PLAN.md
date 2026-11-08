@@ -246,3 +246,18 @@ Open:
 - Batched rebuild by the PM: ifac and sunjay first, then elktours, amrit-canada, innergathering and arts-collective for the guard and Center fixes. The lockfile importer is needed for `@elkdonis/hub`.
 - After the rebuild, retire the old tabs: `/manage/people`, `/manage/cloud`, `/manage/analytics` and `/manage/pages|builder`, with redirects.
 - Migrations run on Justin's OK: notes, saved templates, Dismiss, per-person sync, kinds.
+
+### 8.1 Later on 2026-11-08
+
+| Commit | What |
+|---|---|
+| ea7baded (PM) | Migrations 256–260 applied (owner approved). |
+| 53774449, c50f354d | Site Builder UI + harness (49 pages); sunjay mount, live in build 4spO1FN5. |
+| e622d17d | show-on status counts approved listings only (migration 261). |
+| 58234d29, da5c17fe | Review queue: listing-approve/decline, submission-review, review-switch; `@elkdonis/hub` review section + small card; ifac `/hub/review`, and `/manage/submissions` uses the shared queue. Built for the Content card to host later. |
+
+Still open:
+- Justin's signed-in smoke tests (ifac Members, sunjay Site Builder, ifac Review). After they pass, retire the old tabs with redirects.
+- Review queue harness pages.
+- The "recently decided" list.
+- Per-person storage sync (259 is applied, but one pending request per org limits it).
