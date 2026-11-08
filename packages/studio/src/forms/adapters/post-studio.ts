@@ -66,7 +66,8 @@ export function studioPostActions(actions: StudioActions, opts: StudioPostOption
   return {
     async context(orgId) {
       // Network pieces have no feeds; "Goes on" is the acting org, "Also show on" the listing.
-      return { feeds: [], listingOrgs: opts.orgs, homeOrgId: orgId, viewerName: opts.viewerName };
+      // canSetVisibility false: a network piece is always public, so the kind does not draw Public | Members.
+      return { feeds: [], listingOrgs: opts.orgs, homeOrgId: orgId, viewerName: opts.viewerName, canSetVisibility: false };
     },
     async load(id) {
       const r = await actions.loadPiece(id);

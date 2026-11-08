@@ -62,13 +62,16 @@ export function resolveGatheringAnswers(a: Answers): { answers: Answers; dropped
  * forms.* keys the kind translates into real columns before saving, so dropping them loses nothing:
  *   forms.repeat_count      "8 sessions" → the kind also patches recurrence_until; on load it is derived back.
  *   forms.repeat_as_series  pass 2 seam: codeKind reads it; the series adapter consumes it.
+ *   forms.loaded_start      the stored scheduled_at, set on load; the past-date rule compares against it.
  */
-export const DERIVED_FORM_KEYS = ['forms.repeat_count', 'forms.repeat_as_series'];
+export const DERIVED_FORM_KEYS = ['forms.repeat_count', 'forms.repeat_as_series', 'forms.loaded_start'];
 
 /** Saved record → form answers, with the Where seg set from what was stored. */
 export function gatheringAnswers(record: MeetingRecordView, ctx: MeetingContextView | null): Answers {
   const a = toAnswers(record, fieldContext(ctx));
-  return { ...a, where_mode: whereModeOf(a) };
+  // The stored start, so the past-date rule fires only when the date is CHANGED to a past one:
+  // editing a past one-off (adding its recording) or an old standing meeting stays possible.
+  return { ...a, where_mode: whereModeOf(a), 'forms.loaded_start': a.scheduled_at ?? '' };
 }
 
 export interface GatheringAdapterOptions {

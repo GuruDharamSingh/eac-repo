@@ -144,7 +144,8 @@ export function sectionStatus(
 }
 
 export interface Readiness {
-  status: 'ready' | 'blocked' | 'warned' | 'published';
+  /** `pending`: things are missing but Publish has not been pressed yet, so nothing is marked as an error. */
+  status: 'ready' | 'pending' | 'blocked' | 'warned' | 'published';
   text: string;
 }
 
@@ -154,10 +155,22 @@ function countWord(n: number, capital = false): string {
   return capital ? w : w.toLowerCase();
 }
 
-export function readiness(state: Pick<FormState, 'issues' | 'publishedAt'>, formatTime: (iso: string) => string): Readiness {
+/**
+ * The rail's last line. Before the first Publish press only server issues are shown, but the line
+ * never claims "Ready" while hidden blocks exist: it says how many things are left, neutrally.
+ */
+export function readiness(
+  state: Pick<FormState, 'issues' | 'publishedAt' | 'validationAttempted'>,
+  formatTime: (iso: string) => string
+): Readiness {
   if (state.publishedAt) return { status: 'published', text: `Published at ${formatTime(state.publishedAt)}. Edits go live when you save.` };
-  const b = state.issues.filter((i) => i.severity === 'block').length;
-  const w = state.issues.filter((i) => i.severity === 'warn').length;
+  const shown = state.issues.filter((i) => state.validationAttempted || i.source === 'server');
+  const hiddenBlocks = state.issues.filter((i) => i.severity === 'block' && !shown.includes(i)).length;
+  const b = shown.filter((i) => i.severity === 'block').length;
+  const w = shown.filter((i) => i.severity === 'warn').length;
+  if (!b && hiddenBlocks) {
+    return { status: 'pending', text: `${countWord(hiddenBlocks, true)} ${hiddenBlocks === 1 ? 'thing' : 'things'} left before it can go out.` };
+  }
   if (b) {
     const things = `${b} ${b === 1 ? 'thing' : 'things'} to fix before it can go out.`;
     return { status: 'blocked', text: w ? `${things} ${w} ${w === 1 ? 'warning' : 'warnings'}.` : things };

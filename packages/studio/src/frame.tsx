@@ -50,6 +50,8 @@ export interface StudioFrameApi {
    * with useNewRequest; before it, New on the kind you were already in did nothing.
    */
   newRequest: number;
+  /** `?preset=` from the hand-off (2026-11-08): the kind applies it once, on a new item. Null when none. */
+  preset?: string | null;
 }
 
 export const StudioFrameContext = React.createContext<StudioFrameApi | null>(null);

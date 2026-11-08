@@ -10,7 +10,7 @@ export const STUDIO_KINDS: StudioKind[] = [
   // Registered by the host as an extension (frame.tsx); href is the fallback for hosts that do not.
   { id: 'video', label: 'Video', noun: 'reel', ready: true, href: '/studio?kind=video' },
   // Posts for Facebook, Instagram and Threads (2026-10-31); an extension like Video.
-  { id: 'post', label: 'Posts', noun: 'post', ready: true, href: '/studio?kind=post' },
+  { id: 'post', label: 'Social posts', noun: 'post', ready: true, href: '/studio?kind=post' },
   // Recordings: camera, screen or phone into your files (2026-11-01); an extension like Video.
   { id: 'recording', label: 'Recordings', noun: 'recording', ready: true, href: '/studio?kind=recording' },
   // Word art: EAC logo cut-outs, text or an uploaded logo, filled with the gradient lab, 2D or 3D (2026-11-07).

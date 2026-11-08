@@ -69,6 +69,32 @@ export interface StudioShellProps {
   extensions?: StudioExtension[];
   /** `?kind=`: open on this kind; unknown ids fall back to writing. */
   initialKind?: string | null;
+  /**
+   * Offer "Just me" (the person's own directory pieces) as an acting org. Default true.
+   * A site that mounts the Studio for its own org only (hidden-enneagram /publish) sets false.
+   */
+  personalOrg?: boolean;
+  /**
+   * Keep the address bar in step with the org, kind and piece. Default true. A host that
+   * frames the Studio (a quick-compose popup) sets false: rewriting a framed document's
+   * URL reloaded the frame (system32-a1, 2026-11-08).
+   */
+  syncUrl?: boolean;
+  /**
+   * Where a kind with its own page goes from "New ▾" (2026-11-08, forms PLAN §1.4). Return
+   * null for a kind this host does not offer. Unset falls back to the kind's `href`
+   * (`/studio?kind=…`), which on hosts where /studio is the Puck editor is wrong.
+   */
+  kindHref?: (kindId: string) => string | null;
+  /** List kinds that are not built yet as "soon". Default true; false leaves them out. */
+  showSoon?: boolean;
+  /**
+   * `?focus=1`: open in focus mode for this visit without changing the remembered
+   * preference (`studio:focus`). The content Publish card sends it.
+   */
+  initialFocus?: boolean | null;
+  /** `?preset=`: handed to the kind through useStudioFrame().preset (the forms read it). */
+  initialPreset?: string | null;
 }
 
 /** A piece that exists only in the browser until its first save. */
@@ -120,6 +146,12 @@ export function StudioShell({
   links,
   extensions = [],
   initialKind,
+  personalOrg = true,
+  syncUrl = true,
+  kindHref,
+  showSoon = true,
+  initialFocus = null,
+  initialPreset = null,
 }: StudioShellProps) {
   const [kind, setKind] = React.useState<string>(
     initialKind && extensions.some((e) => e.id === initialKind) ? initialKind : 'writing'
@@ -128,11 +160,11 @@ export function StudioShell({
   const [actionsSlot, setActionsSlot] = React.useState<HTMLSpanElement | null>(null);
   const [statusSlot, setStatusSlot] = React.useState<HTMLSpanElement | null>(null);
   const allOrgs = React.useMemo<StudioOrg[]>(
-    () => [{ orgId: PERSONAL_ORG_ID, name: 'Just me', slug: PERSONAL_ORG_ID }, ...orgs],
-    [orgs]
+    () => (personalOrg || orgs.length === 0 ? [{ orgId: PERSONAL_ORG_ID, name: 'Just me', slug: PERSONAL_ORG_ID }, ...orgs] : orgs),
+    [orgs, personalOrg]
   );
   const [orgId, setOrgId] = React.useState<string>(
-    initialOrgId && allOrgs.some((o) => o.orgId === initialOrgId) ? initialOrgId : PERSONAL_ORG_ID
+    initialOrgId && allOrgs.some((o) => o.orgId === initialOrgId) ? initialOrgId : allOrgs[0]!.orgId
   );
   const org = allOrgs.find((o) => o.orgId === orgId) ?? allOrgs[0];
 
@@ -197,12 +229,14 @@ export function StudioShell({
 
   const [focus, setFocus] = React.useState(true);
   React.useEffect(() => {
+    // `?focus=1` wins for this visit and is not remembered.
+    if (initialFocus) return;
     try {
       if (window.localStorage.getItem(FOCUS_PREF) === '0') setFocus(false);
     } catch {
       /* stay focused */
     }
-  }, []);
+  }, [initialFocus]);
   function changeFocus(on: boolean) {
     setFocus(on);
     setSide(null);
@@ -305,7 +339,7 @@ export function StudioShell({
 
   // Keep the address bar honest so a reload lands on the same piece.
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !syncUrl) return;
     const url = new URL(window.location.href);
     if (orgId === PERSONAL_ORG_ID) url.searchParams.delete('org');
     else url.searchParams.set('org', orgId);
@@ -317,8 +351,9 @@ export function StudioShell({
       if (pieceId) url.searchParams.set('id', pieceId);
       else url.searchParams.delete('id');
     }
-    window.history.replaceState(null, '', url.toString());
-  }, [orgId, pieceId, kind]);
+    // Write only a real change: a no-op replaceState inside a frame still reloaded it.
+    if (url.toString() !== window.location.href) window.history.replaceState(null, '', url.toString());
+  }, [orgId, pieceId, kind, syncUrl]);
 
   function switchKind(next: string) {
     setMenu(false);
@@ -326,9 +361,11 @@ export function StudioShell({
     setSide(null);
     if (next === kind) return;
     // An id in the address belongs to the kind that put it there.
-    const url = new URL(window.location.href);
-    url.searchParams.delete('id');
-    window.history.replaceState(null, '', url.toString());
+    if (syncUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('id');
+      if (url.toString() !== window.location.href) window.history.replaceState(null, '', url.toString());
+    }
     setKind(next);
   }
 
@@ -516,6 +553,7 @@ export function StudioShell({
     actionsSlot,
     statusSlot,
     newRequest,
+    preset: initialPreset,
   };
   const kindSwitch =
     extensions.length > 0 ? (
@@ -624,37 +662,46 @@ export function StudioShell({
           </button>
           {menu && (
             <div className="studio-menu__list" role="menu">
-              {STUDIO_KINDS.map((k) => (
-                <button
-                  key={k.id}
-                  type="button"
-                  role="menuitem"
-                  className="studio-menu__item"
-                  disabled={k.id !== 'writing' && !extensions.some((e) => e.id === k.id) && !k.href}
-                  onClick={() => {
-                    if (k.id === 'writing') {
-                      switchKind('writing');
-                      newPiece();
-                    } else if (extensions.some((e) => e.id === k.id)) {
-                      switchKind(k.id);
-                      setNewRequest((n) => n + 1);
-                    }
-                    else if (k.href) window.location.assign(k.href);
-                  }}
-                >
-                  <b>{k.label}</b>
-                  {k.id !== 'writing' && !extensions.some((e) => e.id === k.id) && !k.href && <span className="studio-kind__soon">soon</span>}
-                </button>
-              ))}
-              <div className="studio-menu__sep" />
-              <button type="button" role="menuitem" className="studio-menu__item" disabled>
-                <b>Gallery</b>
-                <span className="studio-kind__soon">soon</span>
-              </button>
-              <button type="button" role="menuitem" className="studio-menu__item" disabled>
-                <b>Document library</b>
-                <span className="studio-kind__soon">soon</span>
-              </button>
+              {STUDIO_KINDS.map((k) => {
+                const inShell = k.id === 'writing' || extensions.some((e) => e.id === k.id);
+                const href = inShell ? null : kindHref ? kindHref(k.id) : k.href ?? null;
+                const soon = !inShell && !href;
+                if (soon && !showSoon) return null;
+                return (
+                  <button
+                    key={k.id}
+                    type="button"
+                    role="menuitem"
+                    className="studio-menu__item"
+                    disabled={soon}
+                    onClick={() => {
+                      if (k.id === 'writing') {
+                        switchKind('writing');
+                        newPiece();
+                      } else if (inShell) {
+                        switchKind(k.id);
+                        setNewRequest((n) => n + 1);
+                      } else if (href) window.location.assign(href);
+                    }}
+                  >
+                    <b>{k.label}</b>
+                    {soon && <span className="studio-kind__soon">soon</span>}
+                  </button>
+                );
+              })}
+              {showSoon && (
+                <>
+                  <div className="studio-menu__sep" />
+                  <button type="button" role="menuitem" className="studio-menu__item" disabled>
+                    <b>Gallery</b>
+                    <span className="studio-kind__soon">soon</span>
+                  </button>
+                  <button type="button" role="menuitem" className="studio-menu__item" disabled>
+                    <b>Document library</b>
+                    <span className="studio-kind__soon">soon</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

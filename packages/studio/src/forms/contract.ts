@@ -228,6 +228,11 @@ export interface FormHost extends HostLinks {
     cards?: Partial<Record<FormKindId | 'series', CardRenderer>>;
     /** The target org's site_themes vars, applied to the preview frame. */
     themeVars?: Record<string, string>;
+    /**
+     * The faded neighbour item under the preview: a real one from the target feed
+     * ("Earlier" / "Coming up" + its title). Unset or null draws none (no invented rows).
+     */
+    neighbour?: Partial<Record<FormKindId | 'series', { label: string; title: string } | null>>;
   };
   /** "Goes on". */
   feeds: Array<{ slug: string; name: string }>;
