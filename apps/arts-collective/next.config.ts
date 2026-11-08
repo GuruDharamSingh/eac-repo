@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/dock",
     // The content detail, lifted from the Channel piece view (2026-11-08, pass 1).
     "@elkdonis/content",
+    // The platform MCP endpoint, /api/mcp (2026-11-08; docs/open/mcp-foundations).
+    "@elkdonis/mcp",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
     "@elkdonis/reels",
     // Gradient backgrounds: reels' brand ground, studio controls (2026-11-07).
@@ -48,7 +50,10 @@ const nextConfig: NextConfig = {
   //           from its own package directory at runtime, and a bundler that
   //           inlines the JS without carrying that asset produces a server
   //           build that dies with ENOENT the first time anything sanitises.
-  serverExternalPackages: ["sweph", "jsdom", "isomorphic-dompurify"],
+  //   @modelcontextprotocol/server  the MCP SDK behind /api/mcp (2026-11-08): plain ESM
+  //           for Node, required at runtime instead of bundled, which keeps it out
+  //           of the build's work (a direct dependency of this app for that reason).
+  serverExternalPackages: ["sweph", "jsdom", "isomorphic-dompurify", "@modelcontextprotocol/server"],
   // Pin tracing root to the monorepo so Next doesn't pick up the stray
   // /home/elkdonis/pnpm-lock.yaml as the "workspace root".
   outputFileTracingRoot: path.resolve(__dirname, "../.."),

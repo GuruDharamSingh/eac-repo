@@ -1,0 +1,16 @@
+{
+  "//": "strict off, as in packages/actions and packages/services: they are imported as source and do not compile under strict.",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.mts"],
+  "exclude": ["node_modules"]
+}
