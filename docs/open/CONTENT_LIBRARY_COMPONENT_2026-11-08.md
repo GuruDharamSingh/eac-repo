@@ -383,3 +383,30 @@ returns the same `ContentDetailModel` that `channelPieceToDetail` builds today,
 so `ContentDetail` and its connectors do not change. Replace the adapter with a
 `connectors.load(ref)` call (or a server prop on the piece route), then delete
 `content-detail.ts`.
+
+## Publish primitives (2026-11-08, Lane B)
+
+Design canvas (private artifact): https://claude.ai/artifact/7tJHCEwk5R8hs8EE8Eqe4Z
+
+**Built in `packages/content/src/ui/`** (host-agnostic, no `next/*`, no app actions): `KindStrip`
+(icons, words, tiles; container-sized), `PieceRow` and `PieceList`, `PieceBrick` and `PieceLightbox`
+(lifted from Channel's Library), `ContentLibrary` (search, scope, kind, status, series, sort,
+bricks or list, "Show more"), `PublishCardFace` (a cms-ui `SurfaceCard`) and `PublishPopup`. Model
+additions: `ContentListItem`, `ContentStatus`, `ContentMark`; `ContentType` gains questionnaire and
+poll. `registry.ts` gains `CREATE_KINDS`, `studioNewHref`, `STATUS_WORD`. Styles: `src/content.css`
+(`./content.css` export). Tokens are `--ec-*`, read from Channel's `--ch-*`, then the cms-ui `--sf-*`,
+then literals; the `chn-*` atoms are restated at zero specificity by
+`scripts/content-css-fallback.py` for hosts without `channel.css`.
+
+**Channel.** `Library.tsx` now renders its lightbox through `PieceLightbox` (via
+`lib/channel/content-list.ts`). Harness screenshots for home, piece, plan, library, lightbox, dark,
+empty, katie and piece-phone are byte-identical before and after.
+
+**Studio hand-off.** The Studio reads `?kind=` (writing is the default and takes none; `video`,
+`post` (social posts), `meeting`, `recording`, `wordart`; anything else opens writing) and `?org=`.
+It does not read `focus`: focus mode is on by default for writing and stored per browser
+(`studio:focus`). `studioNewHref` sends `focus=1` anyway. Series, Artwork, Questionnaire and Poll
+have no Studio form yet, so the strip draws them as "Soon" (`ready` prop overrides).
+
+**Not done.** No hub card is wired (`defineHubCard` waits). `ContentDetail`'s header and the
+Ahead / Now / Past grouping are designed on the canvas but not built.

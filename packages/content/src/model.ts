@@ -17,7 +17,7 @@ export interface ContentRef {
 }
 
 /** How an item is shown. Pass 1: Channel's piece kinds, one to one. */
-export type ContentType = "artwork" | "product" | "writing" | "video" | "series" | "meeting" | "event" | "workshop";
+export type ContentType = "artwork" | "product" | "writing" | "video" | "series" | "meeting" | "event" | "workshop" | "questionnaire" | "poll";
 
 /** Every outlet an item can go to (Channel's Outlet). */
 export type ContentOutlet =
@@ -170,6 +170,53 @@ export interface ContentDetailModel {
   missing: string[];
   timeZone: string;
   now: string;
+}
+
+// ── list items (the library, the recent rows, the lightbox) ────────────────
+
+/** What a row, a brick or a chip says about where a piece stands. */
+export type ContentStatus = "draft" | "scheduled" | "live" | "published" | "archived";
+
+/** One outlet mark on a brick or in the lightbox: coloured by state. */
+export interface ContentMark {
+  outlet: ContentOutlet;
+  state: ContentCellState;
+  /** "Instagram": the mark's accessible name. */
+  label: string;
+}
+
+/**
+ * One piece as the library lists it: just enough for a brick, a row and the
+ * lightbox. Not the passport (ContentDetailModel); the host fills one per
+ * piece from whatever it already loaded, and the piece view loads the rest.
+ */
+export interface ContentListItem {
+  /** `<store>:<id>`. */
+  key: string;
+  type: ContentType;
+  title: string;
+  /** "Oil on linen · 60 × 90 cm · $2,400" */
+  meta: string;
+  excerpt: string;
+  cover: string | null;
+  status: ContentStatus;
+  /** Shown on the chip when the plain word is not enough ("Goes live Sun"). */
+  statusNote?: string | null;
+  /** The identity whose site it lives on: the library's grouping and scope. */
+  siteIdentityId: string;
+  siteName: string;
+  siteHost: string | null;
+  ownerIdentityId: string | null;
+  series: { id: string; name: string } | null;
+  createdAt: string;
+  /** The date the row shows: the next one ahead, otherwise the last change. */
+  date: string | null;
+  marks: ContentMark[];
+  /** The brick's last line: "In motion · Goes live Sun 2 PM" or "Quiet since Sep 30". */
+  note: { text: string; motion: boolean } | null;
+  /** Newest last. The lightbox shows the last four. */
+  timeline: ContentEvent[];
+  links: { public: string | null; studio: string | null; manage?: string | null };
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────

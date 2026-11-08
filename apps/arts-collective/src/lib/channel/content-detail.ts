@@ -51,7 +51,7 @@ function sourceOf(e: TimelineEntry): ContentEventSource {
   return "thread";
 }
 
-function eventOf(e: TimelineEntry): ContentEvent {
+export function eventOf(e: TimelineEntry): ContentEvent {
   // Channel timelines never carry "empty"; keep the type total anyway.
   const state: ContentState = e.state === "empty" ? "info" : e.state;
   return {

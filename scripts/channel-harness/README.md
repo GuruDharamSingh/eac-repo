@@ -31,3 +31,11 @@ when an action is added to `apps/arts-collective/src/lib/channel/actions.ts`, ad
 The piece pop-up renders `@elkdonis/content/ui` (`ContentDetail`, fed by
 `lib/channel/content-detail.ts`). The bundle finds the package through
 `apps/arts-collective/node_modules`, so run `pnpm install` in a fresh checkout.
+
+The publish primitives of `@elkdonis/content/ui` (KindStrip, PieceRow, PieceLightbox, ContentLibrary,
+PublishPopup, PublishCardFace) render from their own entry, `publish.tsx` (no Channel frame, sample data
+inline). Pages: kinds, face, popup, popup-lightbox, popup-empty, popup-plain (no Channel tokens: the
+fallbacks), popup-dark, content (200 pieces), content-list, content-lightbox, content-empty,
+lightbox-piece. `content-phone` and `popup-phone` are the same pages at 390 wide (see `shot.mjs`).
+`build.mjs` adds `packages/content/src/content.css` to every page; run
+`python3 scripts/content-css-fallback.py` after editing Channel's atoms in `channel.css`.

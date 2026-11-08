@@ -10,7 +10,8 @@
     "./model": "./src/model.ts",
     "./registry": "./src/registry.ts",
     "./server": "./src/server/index.ts",
-    "./ui": "./src/ui/index.ts"
+    "./ui": "./src/ui/index.ts",
+    "./content.css": "./src/content.css"
   },
   "dependencies": {
     "@elkdonis/cms-ui": "workspace:*",

@@ -13,6 +13,8 @@ const shots = [
   ["home", 1280, 900], ["matrix", 1280, 900], ["queue", 1280, 1000], ["month", 1280, 900], ["board", 1280, 900],
   ["newpost", 1280, 900], ["piece", 1280, 860], ["plan", 1280, 860], ["library", 1280, 860], ["quick", 1280, 860],
   ["home-phone", 390, 844], ["empty", 1100, 700], ["dark", 1280, 900], ["newpost", 390, 844, "phone"], ["piece", 390, 844, "phone"], ["lightbox", 1280, 860], ["outlets", 1280, 1000], ["outlets-live", 1280, 900], ["newpost-pick", 1280, 700], ["newpost-confirm", 1280, 900], ["newpost-posted", 1280, 900], ["katie", 1280, 900], ["routines", 1280, 900], ["adjust", 1280, 1000],
+  ["kinds", 1280, 900], ["face", 1280, 500], ["popup", 1280, 900], ["popup-lightbox", 1280, 900], ["popup-empty", 1280, 760], ["popup-plain", 1280, 900], ["popup-dark", 1280, 900], ["popup", 390, 844, "phone"],
+  ["content", 1280, 1100], ["content-list", 1280, 1000], ["content-lightbox", 1280, 900], ["content-empty", 1280, 700], ["content", 390, 844, "phone"], ["lightbox-piece", 1280, 600],
 ];
 for (const [name, w, h, tag] of shots) {
   if (only && !only.includes(name + (tag ? "-" + tag : ""))) continue;

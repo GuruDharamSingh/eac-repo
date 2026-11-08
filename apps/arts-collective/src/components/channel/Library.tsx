@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ExternalLink, Search, X } from "lucide-react";
+import { Search } from "lucide-react";
+import { PieceLightbox } from "@elkdonis/content/ui";
 import { SurfaceFrame } from "@elkdonis/cms-ui/surface";
-import { PIECE_KINDS, fmtDay, kindGlyph, kindLabel, type Piece, type PieceKind } from "@/lib/channel/model";
+import { PIECE_KINDS, fmtDay, kindGlyph, type Piece, type PieceKind } from "@/lib/channel/model";
+import { channelPieceToListItem } from "@/lib/channel/content-list";
 import { useChannel } from "./context";
 import { IdentityMark } from "./icons";
-import { KindLine, OutletMarks, Timeline } from "./bits";
+import { KindLine, OutletMarks } from "./bits";
 
 const FORUM = (process.env.NEXT_PUBLIC_FORUM_URL ?? "https://forum.arts-collective.com").replace(/\/$/, "");
 
@@ -165,55 +167,13 @@ export function LibrarySurface({ fromKey, onPick }: { fromKey: string | null; on
         </div>
         {openPieceObj && (
           // A preview inside the surface: the bricks behind it are inert while it is open.
-          <div className="chn-lightbox" role="dialog" aria-label={openPieceObj.title}>
-            <div className="chn-lightbox-inner">
-              <button type="button" className="chn-iconbtn chn-lightbox-x" aria-label="Close preview" onClick={close} autoFocus>
-                <X size={16} />
-              </button>
-              <div className="chn-lightbox-media">
-                {openPieceObj.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={openPieceObj.imageUrl} alt={openPieceObj.title} />
-                ) : (
-                  <span className="chn-brick-blank is-big" aria-hidden>
-                    {kindGlyph(openPieceObj.kind)}
-                  </span>
-                )}
-              </div>
-              <div className="chn-lightbox-text">
-                <p className="chn-kicker">
-                  {kindGlyph(openPieceObj.kind)} {kindLabel(openPieceObj.kind)} · {openPieceObj.siteName}
-                </p>
-                <h3>{openPieceObj.title}</h3>
-                <p className="chn-quiet">{openPieceObj.meta}</p>
-                {openPieceObj.excerpt && <p>{openPieceObj.excerpt}</p>}
-                <h4 className="chn-kicker">Coverage</h4>
-                <OutletMarks piece={openPieceObj} />
-                <Timeline entries={openPieceObj.timeline} limit={4} />
-                <div className="chn-actions">
-                  {onPick ? (
-                    <button type="button" className="chn-btn is-primary" onClick={() => pick(openPieceObj.key)}>
-                      Use this piece
-                    </button>
-                  ) : (
-                    <button type="button" className="chn-btn is-primary" onClick={() => openPiece(openPieceObj.key)}>
-                      Manage this piece
-                    </button>
-                  )}
-                  {openPieceObj.studioHref && (
-                    <a className="chn-btn" href={openPieceObj.studioHref}>
-                      Open in Studio
-                    </a>
-                  )}
-                  {openPieceObj.href && (
-                    <a className="chn-link" href={openPieceObj.href} target="_blank" rel="noreferrer">
-                      View <ExternalLink size={12} aria-hidden />
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          // The lightbox itself lives in @elkdonis/content/ui (same markup, same classes).
+          <PieceLightbox
+            item={channelPieceToListItem(openPieceObj, model.timeZone)}
+            timeZone={model.timeZone}
+            onClose={close}
+            primary={onPick ? { label: "Use this piece", onClick: () => pick(openPieceObj.key) } : { label: "Manage this piece", onClick: () => openPiece(openPieceObj.key) }}
+          />
         )}
       </div>
     </SurfaceFrame>
