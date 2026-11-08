@@ -47,6 +47,11 @@ sg docker -c "docker rm -f shot-forms"
 sit where they do at the end of the scroll, and prints each page's `scrollWidth` (no sideways
 scroll), its readiness line and any console errors.
 
+`keys.mjs` drives the `joints` page with real key events through the same Chrome and checks the
+joints' keyboard and focus behaviour (GridRows arrows, Home/End, focus after skip and after a row
+is removed; PicturesField moves, their announcement, choosing a tile; CreditRows add and its cap):
+`sg docker -c "docker run --rm --network guru-eac_eac-network -v $H/keys.mjs:/s/keys.mjs:ro node:24-alpine node /s/keys.mjs $IP"`.
+
 `out/` and `png/` are build output; do not commit them. When soft tissue changes a kind or its
 samples, the pages follow (they import them); when a canvas id is added, add it to `pages.ts`,
 `build.mjs` and `shot.mjs`.

@@ -5,12 +5,15 @@
 // "YYYY-MM-DD" and are never converted through an instant (see format.ts).
 // ============================================================================
 
-import type { Answers } from '../contract';
+import type { Answers, FormContext } from '../contract';
+import type { PersonOption } from '../fields/Chips';
 import { creditName, creditRoleLabel, readCredits, type CreditValue } from '../fields/CreditRows';
 import { mediaUrl } from '../fields/MediaField';
 import { readPictures } from '../fields/PicturesField';
+import { mediumShort, priceLine } from '../kinds/artwork/sections';
+import { heldSummary, priceSummary } from '../kinds/service/sections';
 import { firstTitledSession, seriesEnds, seriesEveryWeeks, seriesSessions } from '../rules/series';
-import { clock, parseWallClock, shortDay, text, weekdayPlural, type WallClock } from './format';
+import { clock, paragraphs, parseWallClock, shortDay, text, weekdayPlural, type WallClock } from './format';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -123,8 +126,10 @@ export function seriesLines(a: Answers): SeriesLines {
 }
 
 // ── artwork ──────────────────────────────────────────────────────────────────
+// The card's price and medium are the kind's own words (kinds/artwork priceLine,
+// mediumShort), so the form's hint ("The card reads …") and the card agree.
 
-/** The medium's first clause ("Etching and aquatint" from "Etching and aquatint on Hahnemühle, 300 gsm"). */
+/** The medium's first clause, for the page ("Etching and aquatint" from "Etching and aquatint on Hahnemühle, 300 gsm"). */
 export function shortMedium(medium: unknown): string {
   const m = text(medium);
   return (m.split(/,| on /i)[0] ?? '').trim();
@@ -165,69 +170,81 @@ export function readVariants(a: Answers): VariantLine[] {
     .filter((x) => x.name || x.price);
 }
 
+/** People a credit's userId can name: the context's maker candidates, host candidates and the viewer. */
+function peopleOf(ctx: FormContext | undefined): PersonOption[] {
+  if (!ctx) return [];
+  const f = ctx.fields;
+  const out: PersonOption[] = [];
+  for (const key of ['makerCandidates', 'hostCandidates']) {
+    const list = f[key];
+    if (!Array.isArray(list)) continue;
+    for (const p of list) {
+      const o = (p && typeof p === 'object' ? p : {}) as { userId?: unknown; displayName?: unknown };
+      if (typeof o.userId === 'string' && typeof o.displayName === 'string') out.push({ value: o.userId, label: o.displayName });
+    }
+  }
+  if (typeof f.viewerId === 'string' && typeof f.viewerName === 'string') out.push({ value: f.viewerId, label: f.viewerName });
+  return out;
+}
+
 export interface ArtworkLines {
   pictures: string[];
   credits: CreditValue[];
   artist: string;
   /** "Mara Okafor · printed by Elkdonis Lab" */
   creditLine: string;
-  /** "Mara Okafor · Etching and aquatint, 2026" */
+  /** "Mara Okafor · Etching, 2026" */
   makerLine: string;
   /** "Etching and aquatint · 40 × 50 cm · 2026 · Edition of 25" */
   detailsLine: string;
-  /** "From $180" | "$180" | "Price on request" | "Not for sale" | "Price not set" */
+  /** "$180" | "From $180" (variants) | "Price on request" | "Not for sale" | "No price yet" */
   price: string;
   mode: 'price' | 'request' | 'nfs';
-  /** "Available" | "Reserved" | "Sold"; null when not for sale. */
+  /** "Available" | "Reserved" | "Sold", only when the form keeps an availability; null otherwise. */
   availability: { label: string; tone: 'accent' | 'neutral' } | null;
   variants: VariantLine[];
 }
 
-export function artworkLines(a: Answers): ArtworkLines {
+export function artworkLines(a: Answers, ctx?: FormContext): ArtworkLines {
   const pictures = readPictures(a.pictures).map((p) => p.url);
   const cover = mediaUrl(a.cover_image_url ?? null);
   if (!pictures.length && cover) pictures.push(cover);
-  const credits = readCredits(a.credits).filter((c) => creditName(c));
+  const people = peopleOf(ctx);
+  const credits = readCredits(a.credits).filter((c) => creditName(c, people));
   const artistCredit = credits.find((c) => c.role === 'artist');
-  const artist = artistCredit ? creditName(artistCredit) : text(a.artist_name);
-  const others = credits.filter((c) => c !== artistCredit).map((c) => `${creditRoleLabel(c.role).toLowerCase()} ${creditName(c)}`);
-  const medium = shortMedium(a.medium);
+  const artist = artistCredit ? creditName(artistCredit, people) : text(a.artist_name);
+  const others = credits.filter((c) => c !== artistCredit).map((c) => `${creditRoleLabel(c.role).toLowerCase()} ${creditName(c, people)}`);
   const year = text(String(a.year ?? ''));
   const mode = a.price_mode === 'request' ? 'request' : a.price_mode === 'nfs' ? 'nfs' : 'price';
   const variants = readVariants(a);
   const prices = (Array.isArray(a.variants) ? a.variants : [])
     .map((v) => (v && typeof v === 'object' ? num((v as { price?: unknown }).price) : null))
     .filter((p): p is number => p !== null);
-  const base = num(a.price);
-  const all = prices.length ? prices : base !== null ? [base] : [];
-  const low = all.length ? Math.min(...all) : null;
-  const priceText =
-    mode === 'request'
-      ? 'Price on request'
-      : mode === 'nfs'
-        ? 'Not for sale'
-        : low === null
-          ? 'Price not set'
-          : `${new Set(all).size > 1 ? 'From ' : ''}${money(low, a.currency) ?? ''}`;
+  let priceText: string;
+  if (mode === 'nfs') priceText = 'Not for sale';
+  else if (mode === 'price' && prices.length) priceText = `${new Set(prices).size > 1 ? 'From ' : ''}${money(Math.min(...prices), a.currency) ?? ''}`;
+  else if (ctx) priceText = priceLine(a, ctx);
+  else priceText = mode === 'request' ? 'Price on request' : money(a.price, a.currency) ?? 'No price yet';
+  const kept = typeof a.availability === 'string' && a.availability !== '';
   const avail = a.availability === 'sold' ? 'Sold' : a.availability === 'reserved' ? 'Reserved' : 'Available';
   return {
     pictures,
     credits,
     artist,
     creditLine: [artist, ...others].filter(Boolean).join(' · '),
-    makerLine: [artist, [medium, year].filter(Boolean).join(', ')].filter(Boolean).join(' · '),
-    detailsLine: [medium, sizeLine(a), year, editionLine(a)].filter(Boolean).join(' · '),
+    makerLine: [artist, [mediumShort(text(a.medium)), year].filter(Boolean).join(', ')].filter(Boolean).join(' · '),
+    detailsLine: [shortMedium(a.medium), sizeLine(a), year, editionLine(a)].filter(Boolean).join(' · '),
     price: priceText,
     mode,
-    availability: mode === 'nfs' ? null : { label: avail, tone: avail === 'Available' ? 'accent' : 'neutral' },
+    availability: mode === 'nfs' || !kept ? null : { label: avail, tone: avail === 'Available' ? 'accent' : 'neutral' },
     variants,
   };
 }
 
 // ── offering (service) ──────────────────────────────────────────────────────
+// The booking and price lines are the kind's own (kinds/service heldSummary,
+// priceSummary): "One to one · 1h · Studio 4", "$40–$80, a sliding scale".
 
-const BOOKING: Record<string, string> = { one_on_one: 'One person', group: 'A group', async: 'Self-paced' };
-const FORMAT: Record<string, string> = { online: 'Online', in_person: 'In person', hybrid: 'Online or in person' };
 const STATUS: Record<string, string> = { waitlist: 'Waitlist only', full: 'Full', closed: 'Closed' };
 
 /** "1 hour", "1½ hours", "45 minutes". */
@@ -243,11 +260,11 @@ export function hoursLabel(h: unknown): string {
 }
 
 export interface ServiceLines {
-  /** subtitle, else the excerpt */
+  /** The line under the title, else the card summary, else the description's opening. */
   lede: string;
-  /** "One person · 1 hour · Online · $120" */
+  /** "One to one · 1h · Studio 4 · $40–$80, a sliding scale" */
   meta: string;
-  /** "$120" | "$60 to $120, sliding scale" | null */
+  /** "$80" | "$40–$80, a sliding scale" | "Free" */
   price: string | null;
   /** "Book" while open, else the status ("Full"). */
   action: string;
@@ -255,23 +272,12 @@ export interface ServiceLines {
 }
 
 export function serviceLines(a: Answers): ServiceLines {
-  const full = money(a.price, a.currency);
-  const low = a.sliding_scale === true ? money(a.price_sliding_min, a.currency) : null;
-  const price = full && low ? `${low} to ${full}, sliding scale` : full;
-  const count = num(a.session_count);
+  const price = priceSummary(a) || null;
   const status = typeof a.registration_status === 'string' ? a.registration_status : 'open';
-  const meta = [
-    BOOKING[text(a.booking_type)] ?? '',
-    hoursLabel(a.session_duration_hrs),
-    count && count > 1 ? `${count} sessions` : '',
-    FORMAT[text(a.format)] ?? '',
-    price ?? '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const opening = paragraphs(a.body, 1)[0] ?? '';
   return {
-    lede: text(a.subtitle) || text(a.excerpt),
-    meta,
+    lede: text(a.subtitle) || text(a.excerpt) || (opening.length > 160 ? `${opening.slice(0, 159)}…` : opening),
+    meta: [heldSummary(a), price ?? ''].filter(Boolean).join(' · '),
     price,
     action: STATUS[status] ?? 'Book',
     open: !(status in STATUS),

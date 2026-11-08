@@ -162,7 +162,7 @@ const series: CardRenderer = (p) => {
  * commerce, so a host that wants the real ProductCard passes it as preview.cards.artwork.
  */
 const artwork: CardRenderer = (p) => {
-  const l = artworkLines(p.answers);
+  const l = artworkLines(p.answers, p.ctx);
   const tag = l.availability ? (
     <span className="frm-pvc-tag" data-tone={l.availability.tone}>
       {l.availability.label}

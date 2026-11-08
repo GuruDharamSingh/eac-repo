@@ -1997,6 +1997,7 @@
   padding: 18px;
   font-size: 13px;
   color: var(--frm-text);
+  max-height: 240px; /* empty, the 4:5 tile would stand 375px tall */
 }
 .frm-pics-add > .frm-icon {
   color: var(--frm-accent);
@@ -2037,7 +2038,7 @@
   font-size: 13px;
 }
 .frm-credit-who {
-  flex: 1 1 200px;
+  flex: 1 1 160px; /* leaves room for the remove button at 390 */
   min-width: 0;
   position: relative;
 }
