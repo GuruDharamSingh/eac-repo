@@ -10,6 +10,7 @@
 // ============================================================================
 
 export * from "./color";
+export * from "./ramps";
 export * from "./palettes";
 export * from "./spec";
 export * from "./generate";

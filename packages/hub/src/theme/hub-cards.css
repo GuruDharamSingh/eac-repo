@@ -1,0 +1,272 @@
+/* ==========================================================================
+   @elkdonis/hub: hub card tokens and shared components (pass 0).
+   Plan: docs/open/hub-cards-handoff/PLAN.md §1.3. Spec: README "Shared hub patterns".
+
+   Components use ONLY --hc-*. Each resolves, in order:
+     1. the org hook          --eac-hub-*             (site_themes vars, brand kit)
+     2. the shared role ramp  --eac-accent-100…900,   (@elkdonis/gradients deriveRoleRamps:
+                              --eac-neutral-*, -on, -ink   literal hex, server-computed)
+     3. the host surface      --sf-*                  (cms-ui surface.css)
+     4. cms-ui neutrals       --paper / --ink / --line
+     5. a literal default
+   Tokens are declared on .hc (the card root), not :root, so a subtree theme
+   ([data-hub-theme="industry"], theme/industry.css) can redefine them — the
+   forms' broadsheet.css pattern. No color-mix() in token VALUES that a host
+   might minify into a raw-accent fallback; color-mix() is only used for
+   translucent tints in component rules, where the fallback is harmless.
+
+   Class names are all .hc-* so no host global (.card, .btn, .tag) collides.
+   ========================================================================== */
+
+.hc {
+  --hc-bg: var(--eac-hub-bg, var(--sf-bg, var(--paper, #f2f2f3)));
+  --hc-surface: var(--eac-hub-surface, var(--sf-bg-soft, var(--surface, #e9e9ea)));
+  --hc-text: var(--eac-hub-text, var(--sf-fg, var(--ink, #1d1f20)));
+  --hc-accent: var(--eac-hub-accent, var(--sf-accent, #5980a6));
+  --hc-accent-2: var(--eac-hub-accent-2, var(--hc-accent));
+  --hc-divider: var(--eac-hub-divider, var(--sf-line, var(--line, #d0d0d2)));
+  --hc-on-accent: var(--eac-hub-on-accent, var(--eac-accent-on, var(--sf-on-accent, #ffffff)));
+
+  --hc-a-100: var(--eac-hub-accent-100, var(--eac-accent-100, #eef6ff));
+  --hc-a-200: var(--eac-hub-accent-200, var(--eac-accent-200, #d6ebff));
+  --hc-a-300: var(--eac-hub-accent-300, var(--eac-accent-300, #b5d9fd));
+  --hc-a-400: var(--eac-hub-accent-400, var(--eac-accent-400, #94bce3));
+  --hc-a-500: var(--eac-hub-accent-500, var(--eac-accent-500, #749dc4));
+  --hc-a-600: var(--eac-hub-accent-600, var(--eac-accent-600, #597ea3));
+  --hc-a-700: var(--eac-hub-accent-700, var(--eac-accent-700, #416180));
+  /* Paragraph-size text in the accent (README: accent-700 or darker). */
+  --hc-accent-ink: var(--eac-hub-accent-ink, var(--eac-accent-ink, var(--hc-a-700)));
+  --hc-a-800: var(--eac-hub-accent-800, var(--eac-accent-800, #2c455d));
+  --hc-a-900: var(--eac-hub-accent-900, var(--eac-accent-900, #1d2d3d));
+
+  --hc-n-100: var(--eac-hub-neutral-100, var(--eac-neutral-100, #f5f5f8));
+  --hc-n-200: var(--eac-hub-neutral-200, var(--eac-neutral-200, #e7e7ea));
+  --hc-n-300: var(--eac-hub-neutral-300, var(--eac-neutral-300, #d4d4d7));
+  --hc-n-400: var(--eac-hub-neutral-400, var(--eac-neutral-400, #b7b7ba));
+  --hc-n-500: var(--eac-hub-neutral-500, var(--eac-neutral-500, #98989b));
+  --hc-n-600: var(--eac-hub-neutral-600, var(--eac-neutral-600, #7a7a7d));
+  --hc-n-700: var(--eac-hub-neutral-700, var(--eac-neutral-700, #5d5d60));
+  --hc-n-800: var(--eac-hub-neutral-800, var(--eac-neutral-800, #424244));
+  --hc-n-900: var(--eac-hub-neutral-900, var(--eac-neutral-900, #2b2b2d));
+
+  --hc-font-heading: var(--eac-hub-font-heading, var(--sf-font-title, inherit));
+  --hc-heading-weight: var(--eac-hub-heading-weight, 600);
+  --hc-font-body: var(--eac-hub-font-body, var(--sf-font-body, inherit));
+
+  /* Square by default (the spec); an org theme may round controls and frames. */
+  --hc-radius: var(--eac-hub-radius, 0px);
+  --hc-radius-control: var(--eac-hub-radius-control, var(--hc-radius));
+  /* "+" registration marks: 1 = drawn (Industry), 0 = hidden. */
+  --hc-marks: var(--eac-hub-marks, 0);
+
+  --hc-shadow-sm: var(--eac-hub-shadow-sm, 0 1px 2px rgb(43 43 45 / 0.14));
+  --hc-shadow-md: var(--eac-hub-shadow-md, 0 3px 10px rgb(43 43 45 / 0.16));
+  --hc-shadow-lg: var(--eac-hub-shadow-lg, 0 12px 32px rgb(43 43 45 / 0.22));
+  --hc-scrim: var(--eac-hub-scrim, rgb(43 43 45 / 0.32));
+  --hc-scrim-strong: var(--eac-hub-scrim-strong, rgb(43 43 45 / 0.45));
+
+  color: var(--hc-text);
+  font-family: var(--hc-font-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.hc *, .hc *::before, .hc *::after { box-sizing: border-box; }
+.hc :focus { outline: none; }
+.hc :focus-visible { outline: 2px solid var(--hc-accent); outline-offset: 2px; }
+.hc h1, .hc h2, .hc h3, .hc h4, .hc h5 {
+  font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0;
+}
+.hc-heading { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); }
+.hc-overline { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hc-n-700); }
+.hc-muted { color: var(--hc-n-700); }
+.hc-num { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); line-height: 0.9; font-variant-numeric: tabular-nums; }
+
+/* — blueprint frame (+ corner marks) — */
+.hc-frame { position: relative; border: 1px solid var(--hc-divider); border-radius: var(--hc-radius); }
+.hc-frame > .hc-corner {
+  position: absolute; width: 11px; height: 11px; pointer-events: none;
+  color: color-mix(in srgb, var(--hc-text) 55%, transparent);
+  opacity: var(--hc-marks);
+}
+.hc-frame > .hc-corner::before, .hc-frame > .hc-corner::after { content: ""; position: absolute; background: currentColor; }
+.hc-frame > .hc-corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.hc-frame > .hc-corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
+.hc-corner.tl { top: -6px; left: -6px; }
+.hc-corner.tr { top: -6px; right: -6px; }
+.hc-corner.bl { bottom: -6px; left: -6px; }
+.hc-corner.br { bottom: -6px; right: -6px; }
+.hc-elev-md { box-shadow: var(--hc-shadow-md); }
+.hc-elev-lg { box-shadow: var(--hc-shadow-lg); }
+
+/* — the collapsed card — */
+.hc-card {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 20px 20px 16px; background: transparent; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.hc-card:hover { border-color: var(--hc-accent); }
+.hc-card-title { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 26px; line-height: 1.2; }
+.hc-card-head { display: flex; align-items: center; gap: 8px; }
+.hc-card-head .hc-icon-accent { color: var(--hc-accent); display: flex; }
+.hc-card-head .hc-go { margin-left: auto; display: flex; color: var(--hc-n-700); }
+.hc-card-actions { margin-top: auto; display: flex; gap: 10px; border-top: 1px solid var(--hc-divider); padding-top: 14px; }
+.hc-card-actions > * { flex: 1; }
+
+/* — buttons — */
+.hc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight);
+  font-size: 15px; line-height: 1.2; color: var(--hc-text);
+  background: transparent; border: 1px solid var(--hc-divider);
+  padding: 6.8px 12.2px; border-radius: var(--hc-radius-control);
+}
+.hc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.hc-btn-primary { position: relative; background: var(--hc-accent); color: var(--hc-on-accent); border-color: var(--hc-accent); }
+.hc-btn-primary:not(:disabled):hover { background: var(--hc-a-600); }
+.hc-btn-primary:not(:disabled):active { background: var(--hc-a-700); }
+.hc-btn-secondary:not(:disabled):hover { background: color-mix(in srgb, var(--hc-text) 7%, transparent); }
+.hc-btn-ghost { color: var(--hc-a-700); border-color: transparent; padding-inline: 3.4px; }
+.hc-btn-ghost:not(:disabled):hover { background: color-mix(in srgb, var(--hc-accent) 10%, transparent); }
+.hc-btn-icon { width: 34px; height: 34px; padding: 0; }
+.hc-btn-sm { font-size: 13px; padding: 4px 9px; }
+
+/* — inputs — */
+.hc-input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit; font-size: 15px;
+  color: var(--hc-text); caret-color: var(--hc-accent); background: var(--hc-surface);
+  border: 1px solid var(--hc-divider); border-radius: var(--hc-radius-control);
+}
+.hc-input:hover { border-color: color-mix(in srgb, var(--hc-text) 45%, transparent); }
+.hc-input:focus-visible { border-color: var(--hc-accent); outline-offset: 0; }
+textarea.hc-input { resize: vertical; min-height: 0; }
+.hc-field > label, .hc-label { display: block; font-size: 12px; margin-bottom: 5px; color: var(--hc-n-800); }
+.hc-hint { font-size: 12.5px; color: var(--hc-n-700); margin-top: 4px; }
+.hc-error { font-size: 13.5px; color: var(--hc-a-800); }
+
+/* — tags — */
+.hc-tag {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 11px; letter-spacing: 0.02em;
+  padding: 3px 10px; border: 1px solid transparent; border-radius: var(--hc-radius-control); white-space: nowrap;
+}
+.hc-tag-editor { background: var(--hc-a-100); color: var(--hc-a-800); border-color: var(--hc-a-200); }
+.hc-tag-template { background: transparent; color: var(--hc-n-800); border-color: var(--hc-n-400); }
+.hc-tag-outline { border-color: var(--hc-accent); color: var(--hc-a-700); }
+.hc-tag-neutral { background: var(--hc-n-100); color: var(--hc-n-800); border-color: var(--hc-n-300); }
+.hc-tag-accent { background: var(--hc-accent); color: var(--hc-on-accent); }
+.hc-role-owner { background: var(--hc-a-800); color: var(--hc-bg); }
+.hc-role-guide { background: var(--hc-a-300); color: var(--hc-a-900); }
+.hc-role-member { background: var(--hc-a-100); color: var(--hc-a-800); border-color: var(--hc-a-200); }
+.hc-role-viewer { background: transparent; color: var(--hc-n-700); border-color: var(--hc-n-300); }
+
+/* — segmented filter — */
+.hc-seg { display: inline-flex; border: 1px solid var(--hc-divider); border-radius: var(--hc-radius-control); overflow: hidden; }
+.hc-seg > button {
+  display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13.5px; color: inherit;
+  padding: 7.5px 11.5px; background: transparent; border: 0; cursor: pointer;
+}
+.hc-seg > button + button { border-left: 1px solid var(--hc-divider); }
+.hc-seg > button[aria-pressed="true"] { background: var(--hc-accent); color: var(--hc-on-accent); }
+.hc-seg > button[aria-pressed="false"]:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--hc-accent); }
+.hc-seg > button:disabled { opacity: 0.4; cursor: default; }
+.hc-seg .hc-count { font-size: 12px; opacity: 0.8; }
+
+/* — square toggle — */
+.hc-toggle {
+  position: relative; width: 32px; height: 18px; flex: none; padding: 0; cursor: pointer;
+  border: 1px solid var(--hc-n-400); background: transparent; border-radius: var(--hc-radius-control);
+}
+.hc-toggle::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  background: var(--hc-n-500); transition: left 0.15s;
+}
+.hc-toggle[aria-checked="true"] { background: var(--hc-accent); border-color: var(--hc-accent); }
+.hc-toggle[aria-checked="true"]::after { left: 16px; background: var(--hc-bg); }
+.hc-toggle:disabled { opacity: 0.55; cursor: default; }
+
+/* — expanding rows — */
+.hc-chev { display: flex; color: var(--hc-n-600); transition: transform 0.15s; }
+.hc-chev[data-open="true"] { transform: rotate(90deg); }
+.hc-row { border-bottom: 1px solid color-mix(in srgb, var(--hc-text) 8%, transparent); }
+.hc-row-head:hover { background: color-mix(in srgb, var(--hc-text) 4%, transparent); }
+.hc-row[data-open="true"] > .hc-row-head { background: color-mix(in srgb, var(--hc-accent) 7%, transparent); }
+.hc-row-panel { background: color-mix(in srgb, var(--hc-accent) 6%, transparent); }
+
+/* — tabs — */
+.hc-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hc-divider); }
+.hc-tab {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--hc-font-heading);
+  font-weight: var(--hc-heading-weight); font-size: 19px; padding: 10px 18px; color: var(--hc-n-700);
+  background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
+}
+.hc-tab[aria-selected="true"] { color: var(--hc-text); border-bottom-color: var(--hc-accent); }
+.hc-tab:disabled { cursor: default; opacity: 0.7; }
+.hc-tab .hc-pill { font-family: var(--hc-font-body); font-size: 12px; padding: 0 7px; background: var(--hc-n-200); color: var(--hc-n-800); }
+.hc-tab[aria-selected="true"] .hc-pill { background: var(--hc-accent); color: var(--hc-bg); }
+
+/* — pop-up, scrim, dialog, toast — */
+.hc-scrim { position: fixed; inset: 0; background: var(--hc-scrim); z-index: 40; }
+.hc-popup {
+  position: absolute; top: 104px; left: 28px; z-index: 41; background: var(--hc-bg);
+  display: flex; flex-direction: column; max-width: calc(100vw - 32px);
+}
+.hc-popup-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px 20px; }
+.hc-popup-head .hc-title { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 24px; margin-right: auto; }
+.hc-popup-foot { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--hc-divider); }
+.hc-dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--hc-scrim-strong); }
+.hc-dialog { width: min(480px, 100%); background: var(--hc-bg); display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; }
+.hc-dialog-title { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 22px; }
+.hc-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.hc-info { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--hc-a-300); color: var(--hc-a-800); font-size: 13.5px; }
+.hc-toast {
+  position: fixed; top: 64px; right: 28px; z-index: 60; display: flex; align-items: center; gap: 8px;
+  background: var(--hc-bg); padding: 10px 14px; font-size: 14px;
+}
+.hc-toast .hc-icon-accent { color: var(--hc-a-700); display: flex; }
+.hc-spin { animation: hc-spin 1s linear infinite; display: inline-flex; }
+@keyframes hc-spin { to { transform: rotate(360deg); } }
+
+/* — detail page — */
+.hc-detail { padding: 20px 28px 44px; }
+.hc-crumb { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 14px; }
+.hc-detail-head { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.hc-detail-head h1 { font-size: 42px; }
+.hc-detail-head .hc-sub { font-size: 15px; color: var(--hc-n-800); margin-top: 4px; }
+.hc-detail-head .hc-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+/* — avatar — */
+.hc-avatar {
+  display: grid; place-items: center; flex: none; width: 30px; height: 30px;
+  background: var(--hc-a-100); color: var(--hc-a-800);
+  font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 12px;
+}
+.hc-avatar[data-arrival="true"] { background: transparent; border: 1px dashed var(--hc-accent); }
+
+/* — thumbnails and the no-thumbnail placeholder (README 1c) — */
+.hc-thumb { position: relative; overflow: hidden; flex: none; aspect-ratio: 16 / 10; background: var(--hc-bg); }
+.hc-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hc-thumb-empty {
+  background-color: var(--hc-bg);
+  background-image:
+    linear-gradient(var(--hc-n-200) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hc-n-200) 1px, transparent 1px);
+  background-size: 12.5% 20%;
+  container-type: inline-size;
+}
+.hc-thumb-empty > .hc-thumb-inner {
+  position: absolute; inset: 7%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4%; text-align: center; border: 1px dashed var(--hc-n-400); background: var(--hc-bg); color: var(--hc-n-600);
+}
+.hc-thumb-title { font-family: var(--hc-font-heading); font-weight: var(--hc-heading-weight); font-size: 8.5cqw; color: var(--hc-n-800); max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hc-thumb-note { font-size: 4.4cqw; color: var(--hc-n-700); max-width: 30ch; line-height: 1.3; }
+
+/* — phone — */
+@media (max-width: 640px) {
+  .hc-popup { top: 64px; left: 8px; right: 8px; width: auto !important; }
+  .hc-detail { padding: 16px 16px 32px; }
+  .hc-detail-head h1 { font-size: 32px; }
+  .hc-tab { font-size: 16px; padding: 8px 12px; }
+  .hc-toast { right: 8px; left: 8px; }
+}

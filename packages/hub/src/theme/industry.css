@@ -1,0 +1,58 @@
+/* ==========================================================================
+   The Industry theme for hub cards (README "Design tokens (Industry)").
+   One theme among others: it redefines --hc-* under [data-hub-theme="industry"],
+   as the forms' broadsheet.css does for --frm-*. Barlow / Barlow Condensed are
+   loaded on demand by <HubRoot theme="industry"> through @elkdonis/fonts, so a
+   host that doesn't use Industry pays no font cost.
+
+   The org's accent may still come through: set --eac-hub-accent (and its ramp)
+   and Industry keeps its frame, type and neutrals but wears the org colour.
+   ========================================================================== */
+
+.hc[data-hub-theme="industry"] {
+  --hc-bg: var(--eac-hub-bg, #f2f2f3);
+  --hc-surface: var(--eac-hub-surface, #e9e9ea);
+  --hc-text: var(--eac-hub-text, #1d1f20);
+  --hc-accent: var(--eac-hub-accent, #5980a6);
+  --hc-accent-2: var(--eac-hub-accent-2, #728fab);
+  /* #1d1f20 at 16% on #f2f2f3, as a literal (no color-mix in token values). */
+  --hc-divider: var(--eac-hub-divider, #d1d1d2);
+  --hc-on-accent: var(--eac-hub-on-accent, #f2f2f3);
+
+  --hc-a-100: var(--eac-hub-accent-100, #eef6ff);
+  --hc-a-200: var(--eac-hub-accent-200, #d6ebff);
+  --hc-a-300: var(--eac-hub-accent-300, #b5d9fd);
+  --hc-a-400: var(--eac-hub-accent-400, #94bce3);
+  --hc-a-500: var(--eac-hub-accent-500, #749dc4);
+  --hc-a-600: var(--eac-hub-accent-600, #597ea3);
+  --hc-a-700: var(--eac-hub-accent-700, #416180);
+  --hc-a-800: var(--eac-hub-accent-800, #2c455d);
+  --hc-a-900: var(--eac-hub-accent-900, #1d2d3d);
+  --hc-accent-ink: var(--eac-hub-accent-ink, #416180);
+
+  --hc-n-100: #f5f5f8;
+  --hc-n-200: #e7e7ea;
+  --hc-n-300: #d4d4d7;
+  --hc-n-400: #b7b7ba;
+  --hc-n-500: #98989b;
+  --hc-n-600: #7a7a7d;
+  --hc-n-700: #5d5d60;
+  --hc-n-800: #424244;
+  --hc-n-900: #2b2b2d;
+
+  --hc-font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --hc-heading-weight: 600;
+  --hc-font-body: "Barlow", system-ui, sans-serif;
+
+  --hc-radius: 0px;
+  --hc-radius-control: 0px;
+  --hc-marks: 1;
+
+  --hc-shadow-sm: 0 1px 2px rgb(43 43 45 / 0.14);
+  --hc-shadow-md: 0 3px 10px rgb(43 43 45 / 0.16);
+  --hc-shadow-lg: 0 12px 32px rgb(43 43 45 / 0.22);
+  --hc-scrim: rgb(43 43 45 / 0.32);
+  --hc-scrim-strong: rgb(43 43 45 / 0.45);
+
+  background: var(--hc-bg);
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@elkdonis/hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hub cards drawn by every host: the defineHubCard contract plus the Site Builder and Member Management cards (docs/open/hub-cards-handoff/PLAN.md).",
+  "type": "module",
+  "main": "./src/contract.ts",
+  "types": "./src/contract.ts",
+  "exports": {
+    "./contract": "./src/contract.ts",
+    "./gates": "./src/gates.ts",
+    "./ui": "./src/ui/index.ts",
+    "./members": "./src/members/index.ts",
+    "./members/model": "./src/members/model.ts",
+    "./site-builder": "./src/site-builder/index.ts",
+    "./site-builder/model": "./src/site-builder/model.ts",
+    "./server": "./src/server/index.ts",
+    "./hub-cards.css": "./src/theme/hub-cards.css",
+    "./industry.css": "./src/theme/industry.css"
+  },
+  "dependencies": {
+    "@elkdonis/fonts": "workspace:*",
+    "@elkdonis/utils": "workspace:*",
+    "lucide-react": "^0.544.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
+}
