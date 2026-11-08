@@ -174,3 +174,23 @@ export function slugFromName(name: string): string {
 }
 
 export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * The registry entries the Site Builder card calls (its host door's allow-list),
+ * with their inputs. Entries behind a pending migration are refused by the
+ * server until it is applied; the UI hides them through `can.*`.
+ *   site-section-save          { pageId, values: Record<slotKey, string> }    copy slots → org_site_sections
+ *   site-page-create           { title, path, start: string, fromPath?, templateId? } → Puck page (sanitised)
+ *   site-page-meta-save        { pageId, title?, notes?, linkPreview? }       needs migration 256 (can.notes)
+ *   site-template-save         { fromPath, name }                             needs migration 257 (can.savedTemplates)
+ *   site-identity-save         { name, line, where, primaryKind?, alsoKinds? } kinds need migration 260 (can.kinds)
+ *   site-theme-exception-remove { pageId }                                    site_themes row for that page
+ */
+export const SITE_BUILDER_ACTIONS = [
+  "site-section-save",
+  "site-page-create",
+  "site-page-meta-save",
+  "site-template-save",
+  "site-identity-save",
+  "site-theme-exception-remove",
+] as const;
