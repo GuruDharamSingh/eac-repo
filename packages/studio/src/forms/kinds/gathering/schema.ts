@@ -16,7 +16,8 @@
 // meeting specs) plus forms.repeat_every_weeks, forms.sessions and
 // forms.series_page; adapters/series.ts reads them through rules/series.ts.
 // What a series cannot store is not drawn for one: Hosts, Emails, Materials
-// (schema `when`), the RSVP minimum and closing time, Public | Members.
+// (schema `when`), the RSVP minimum and closing time. Public | Members is
+// drawn for a series too: series honour the thread audience since cc440377.
 // ============================================================================
 
 import { emptyContentAnswers, knownTimeZone, type ContentFieldContext } from '@elkdonis/cms-ui/compose';

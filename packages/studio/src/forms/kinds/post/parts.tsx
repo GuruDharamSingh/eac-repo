@@ -152,11 +152,10 @@ function visibilityOptions(a: Answers) {
  * writing pieces) lives on the acting org, shown fixed. `network` adds
  * share_to_network (center.ts:235: other orgs' network strip, PUBLIC only).
  */
-export function GoesOnFields(props: SectionProps & { label: string; visibilityHint?: string; network?: boolean; hideVisibility?: boolean }) {
-  const { answers: a, ctx, field, label, visibilityHint, network, hideVisibility } = props;
+export function GoesOnFields(props: SectionProps & { label: string; visibilityHint?: string; network?: boolean }) {
+  const { answers: a, ctx, field, label, visibilityHint, network } = props;
   const feeds = feedsOf(ctx);
-  // hideVisibility: the kind is always public (a series), so there is no choice to offer.
-  const showVisibility = canSetVisibility(ctx) && hideVisibility !== true;
+  const showVisibility = canSetVisibility(ctx);
   return (
     <Stack gap={8}>
       <Row name="goes-on">

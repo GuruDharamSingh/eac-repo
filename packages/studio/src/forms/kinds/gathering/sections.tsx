@@ -197,12 +197,14 @@ export function materialsSummary(a: Answers, ctx: FormContext): string {
 
 // ── Publishing ───────────────────────────────────────────────────────────────
 
+/** A members-only series: the series reads check the audience (canReadSeriesRow, meeting-series.ts:617-625; cc440377). */
+const SERIES_MEMBERS_HINT = 'Only this organisation’s members see the series, its sessions and its emails.';
+
 export function GatheringPublishing(props: SectionProps) {
-  // A series is public: the series reads never check visibility (loadSeries, meeting-series.ts:599-611;
-  // listSeriesRows, series-page.ts:110-115), so the adapter refuses anything else. The seg stays
-  // only while a preset or an earlier choice left it non-public, so it can be put right here.
-  const fixedPublic = isSeries(props.answers) && visibilityOf(props.answers) === 'PUBLIC';
-  return <GoesOnFields {...props} label="Goes on" network hideVisibility={fixedPublic} />;
+  // Since cc440377 a series honours the thread audience: its page, its weeks (which take the
+  // series' audience, meeting-series.ts:1392) and its letters (subscribers who may still read).
+  const membersSeries = isSeries(props.answers) && visibilityOf(props.answers) === 'ORGANIZATION';
+  return <GoesOnFields {...props} label="Goes on" network visibilityHint={membersSeries ? SERIES_MEMBERS_HINT : undefined} />;
 }
 
 export function publishingSummary(a: Answers, ctx: FormContext): string {

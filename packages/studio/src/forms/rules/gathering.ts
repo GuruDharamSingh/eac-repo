@@ -22,8 +22,8 @@
 //   series.weekly        WEEKLY only (adapters/series.ts; SeriesScheduleInput.monthly, meeting-series.ts:1918)
 //   series.duration      saveSeriesSchedule: 15 min to 10 h (meeting-series.ts:1995)
 //   series.sessions-none at least one session that is not skipped (design §7, the brief)
-//   series.public        a series is public (the series reads never check visibility,
-//                        meeting-series.ts:599-611; adapters/series.ts refuses another)
+// A series may be members-only: series honour the thread audience since cc440377
+// (canReadSeriesRow, meeting-series.ts:617-625), so there is no visibility rule.
 // ============================================================================
 
 import type { FormRule } from '../contract';
@@ -135,15 +135,6 @@ export const GATHERING_RULES: FormRule[] = [
     },
     message: 'Every date is skipped. Put one back, or add a session.',
     short: 'Sessions: every date is skipped',
-  },
-  {
-    id: 'series.public',
-    severity: 'block',
-    fields: ['visibility'],
-    section: 'publishing',
-    test: (a) => isSeries(a) && (text(a.visibility) || 'PUBLIC') !== 'PUBLIC',
-    message: 'A series is public: its page is listed for everyone. Make it Public, or untick “Present it as a series”.',
-    short: 'Publishing: a series is public',
   },
   {
     id: 'gathering.until',

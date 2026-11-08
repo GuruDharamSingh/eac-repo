@@ -248,11 +248,10 @@ cases(GATHERING_RULES, 'series.weekly', G, S, [
   ['weekly', {}, false],
   ['monthly from a preset', { recurrence_pattern: 'MONTHLY' }, true],
 ]);
-cases(GATHERING_RULES, 'series.public', G, S, [
-  ['public', {}, false],
-  ['members', { visibility: 'ORGANIZATION' }, true],
-  ['not a series, members', { 'forms.repeat_as_series': false, visibility: 'ORGANIZATION' }, false],
-]);
+// Series honour the thread audience since cc440377: a members-only series is fine.
+eq('no series visibility rule', GATHERING_RULES.some((r) => r.id === 'series.public'), false);
+eq('a members-only series is ready', issueIds(gatheringKind, { ...S, visibility: 'ORGANIZATION' }, G), []);
+eq('series publishing summary, members', publishingSummary({ ...S, visibility: 'ORGANIZATION' }, G), 'Members · Lab work · Elkdonis Arts Collective');
 cases(GATHERING_RULES, 'gathering.min-over-cap', G, S, [['a series carries no minimum', { min_attendees: 30, attendee_limit: 10 }, false]]);
 
 // ── post rules ───────────────────────────────────────────────────────────────
