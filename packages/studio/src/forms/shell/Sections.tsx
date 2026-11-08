@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { buildContentFields, type ContentFieldContext, type ContentFieldSpec } from '@elkdonis/cms-ui/compose';
 import type { Answers, FormContext, FormHost, FormIssue, FormKindSchema, FormSection, FormState, FormTier, SectionProps } from '../contract';
-import { contentKindOf, visibleSections } from '../state';
+import { specKindOf, visibleSections } from '../state';
 import { renderField, type FieldRenderContext, type ShellFieldOverride } from '../fields/FieldRenderer';
 import { sectionAnchor } from '../fields/ids';
 import { MoreRow } from '../fields/MoreRow';
@@ -27,17 +27,27 @@ export function shownIssues(state: Pick<FormState, 'issues' | 'validationAttempt
   return state.issues.filter((i) => state.validationAttempted || i.source === 'server');
 }
 
-/** cms-ui's field specs for the schema's current code kind, by name. */
+/**
+ * The field specs a kind draws with, by name: cms-ui's content-fields list for the kind's
+ * spec kind (state.ts specKindOf: a gathering keeps 'meeting' as a series), with the kind's
+ * own `specs` merged over it (artwork's fields content-fields does not declare), or those
+ * alone when there is no list.
+ */
 export function useFieldSpecs(schema: FormKindSchema, answers: Answers, ctx: FormContext) {
-  const ck = contentKindOf(schema.codeKind(answers));
+  const ck = specKindOf(schema, answers);
   const groups = React.useMemo(() => (ck ? buildContentFields(ck, ctx.fields as ContentFieldContext) : []), [ck, ctx.fields]);
+  const own = schema.specs;
   const specs = React.useMemo(() => {
     const m: Record<string, ContentFieldSpec> = {};
     for (const g of groups) for (const f of g.fields) if (!(f.name in m)) m[f.name] = f;
+    if (own) for (const [name, spec] of Object.entries(own)) m[name] = spec;
     return m;
-  }, [groups]);
+  }, [groups, own]);
   return { groups, specs };
 }
+
+/** The headline's spec when the kind's list has no `title` (drawn rather than dropped). */
+const TITLE_FALLBACK: ShellFieldOverride = { input: 'text', label: 'Title' };
 
 function namesOf(section: FormSection, groups: ReturnType<typeof useFieldSpecs>['groups']): string[] {
   const names = [...(section.fields ?? [])];
@@ -127,6 +137,7 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
       fromPreset: state.fromPreset,
       tier,
       host,
+      recordId: state.id,
       field: (name, override) => renderField(name, override as ShellFieldOverride | undefined, rc),
     };
   };
@@ -153,7 +164,7 @@ export function FormSections({ schema, state, host, ctx, tier, scope = '', patch
     if (names.length === 1 && names[0] === 'title') {
       return (
         <div key={s.id} className="frm-sec" id={anchor}>
-          {renderField('title', undefined, rcFor(s, 'section'))}
+          {renderField('title', specs.title ? undefined : TITLE_FALLBACK, rcFor(s, 'section'))}
         </div>
       );
     }
