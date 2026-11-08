@@ -47,7 +47,9 @@ import {
   untilForCount,
   zoneLabel,
 } from './answers';
+import { checkKinds } from './check-kinds';
 import { GATHERING_RULES } from './gathering';
+import { rulesFor } from './index';
 import { POST_RULES } from './post';
 
 let failed = 0;
@@ -354,6 +356,11 @@ for (const schema of [postKind, gatheringKind] as FormKindSchema[]) {
   }
   for (const id of schema.defaultOpen(schema.empty(schema.id === 'post' ? P : G))) eq(`${schema.id}: default-open ${id} exists`, ids.includes(id), true);
 }
+
+// ── pass 2: Artwork and Offering (rules/check-kinds.ts) ──────────────────────
+
+eq('rulesFor every kind', [rulesFor('post'), rulesFor('gathering'), rulesFor('artwork'), rulesFor('service')].map((r) => r.length > 0), [true, true, true, true]);
+checkKinds({ eq, cases });
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

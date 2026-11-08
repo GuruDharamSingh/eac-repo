@@ -365,8 +365,11 @@ export function useFormState(opts: UseFormStateOptions): FormController {
         failures.current = 0;
         const v = res.value;
         const id = recordId(v.record) ?? s.id ?? '';
-        dispatch({ type: 'saveDone', id, record: v.record, at: new Date().toISOString(), published: intent === 'published', serverErrors: v.fieldErrors });
-        if (intent === 'published' && !v.fieldErrors) onPublished?.(v.record);
+        // Live only when the server says so: a member's publish may come back 'pending' (review),
+        // and a stopped series or artwork publish comes back ok with a draft and fieldErrors.
+        const live = intent === 'published' && !v.fieldErrors && (recordStatus(v.record) ?? 'published') === 'published';
+        dispatch({ type: 'saveDone', id, record: v.record, at: new Date().toISOString(), published: live, serverErrors: v.fieldErrors });
+        if (live) onPublished?.(v.record);
         return !v.fieldErrors;
       } catch {
         failures.current += 1;

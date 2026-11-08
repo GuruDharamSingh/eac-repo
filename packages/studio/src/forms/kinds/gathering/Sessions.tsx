@@ -5,8 +5,8 @@
 // Design: README §4 "Sessions planner (1c, list version)"; Publish Form.dc.html
 // renderVals() `sessions`.
 //
-//   8 sessions · 19 Nov to 21 Jan · 2 dates skipped
-//   No. | Date | Title and note | action
+//   Sessions  8 sessions · 19 Nov to 21 Jan · 2 dates skipped   ← the section's summary (the shell)
+//   No. | Date | Title and note | action                        ← Tendons' GridRows
 //   1   Thu 19 Nov   Monotype basics / Aprons provided. Wear old shoes.   [skip]
 //   6̶   T̶h̶u̶ ̶2̶4̶ ̶D̶e̶c̶   Skipped                                         [put back]
 //   [Add a session] [Skip dates…]
@@ -28,12 +28,11 @@
 //   add       one more date ON the rule (count + 1, or the last date moved to the
 //             next one). A date off the rule is refused by ensureSeriesSession
 //             (:1297): deferred, sessions.off-rule.
-//
-// The list layout is local until Tendons' grid row lands in forms/fields.
 // ============================================================================
 
 import * as React from 'react';
 import type { SectionProps } from '../../contract';
+import { GridRows, type GridRow } from '../../fields/GridRows';
 import { fieldAnchor } from '../../fields/ids';
 import { datePart, dayLabel, num, untilForDate } from '../../rules/answers';
 import {
@@ -42,7 +41,6 @@ import {
   seriesRuleDate,
   seriesSessions,
   sessionEntries,
-  sessionsSummary,
   untitledLabel,
   withSeriesSchedule,
   type SessionEntry,
@@ -50,29 +48,6 @@ import {
 } from '../../rules/series';
 import { Icon } from '../../theme/context';
 import { Hint, Stack } from '../post/parts';
-
-const GRID: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '24px 82px minmax(0,1fr) 30px',
-  gap: 10,
-  alignItems: 'start',
-};
-
-const HEAD: React.CSSProperties = {
-  ...GRID,
-  padding: '0 0 8px',
-  fontSize: 11,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--frm-muted)',
-  borderBottom: '1px solid var(--frm-divider)',
-};
-
-const ROW: React.CSSProperties = {
-  ...GRID,
-  padding: '10px 0',
-  borderBottom: '1px solid color-mix(in srgb, var(--frm-text) 8%, transparent)',
-};
 
 const SMALL_ACTION: React.CSSProperties = {
   alignSelf: 'flex-start',
@@ -84,22 +59,6 @@ const SMALL_ACTION: React.CSSProperties = {
   color: 'var(--frm-accent-ink)',
   cursor: 'pointer',
 };
-
-/** The design's 30px icon button in the action column. */
-function RowAction({ label, icon, accent, onClick }: { label: string; icon: 'skip' | 'restore'; accent?: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className="frm-btn frm-btn--ghost frm-btn--icon"
-      title={label}
-      aria-label={label}
-      onClick={onClick}
-      style={{ width: 30, height: 30, color: accent ? 'var(--frm-accent)' : 'var(--frm-muted)' }}
-    >
-      <Icon name={icon} size={17} />
-    </button>
-  );
-}
 
 function clean(e: SessionEntry): SessionEntry {
   return {
@@ -118,6 +77,7 @@ export function GatheringSessions({ answers: a, patch, field, issues }: SectionP
   const extra = () => [...kept.current.values()];
   const rows = seriesSessions(a, undefined, extra());
   const ends = seriesEnds(a);
+  const addRef = React.useRef<HTMLButtonElement>(null);
   const [notesOpen, setNotesOpen] = React.useState<string[]>([]);
   const [bulk, setBulk] = React.useState<{ open: boolean; from: string; to: string; none: boolean }>({ open: false, from: '', to: '', none: false });
 
@@ -173,74 +133,66 @@ export function GatheringSessions({ answers: a, patch, field, issues }: SectionP
     return <Hint>Pick the day of the first session under When, and the sessions appear here.</Hint>;
   }
 
-  return (
-    <Stack gap={10}>
-      <Hint>{sessionsSummary({ ...a, 'forms.sessions': rows.map(clean) })}</Hint>
+  const day = (r: SessionRow) => dayLabel(r.date, { weekday: true });
 
-      <div id={fieldAnchor('forms.sessions')} role="table" aria-label="Sessions" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <div role="row" style={HEAD}>
-          <span role="columnheader">No.</span>
-          <span role="columnheader">Date</span>
-          <span role="columnheader">Title and note</span>
-          <span role="columnheader">
-            <span className="frm-sr">Skip or put back</span>
-          </span>
-        </div>
-        {rows.map((r) =>
-          r.skipped ? (
-            <div role="row" key={r.date} style={ROW} data-skipped="">
-              <span role="cell" style={{ fontSize: 15, lineHeight: 1.4, color: 'var(--frm-faint)', textDecoration: 'line-through' }}>
-                {r.number}
-              </span>
-              <span role="cell" style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--frm-muted)', textDecoration: 'line-through' }}>
-                {dayLabel(r.date, { weekday: true })}
-              </span>
-              <span role="cell" style={{ fontSize: 14, lineHeight: 1.5, fontStyle: 'italic', color: 'var(--frm-muted)', minWidth: 0 }}>
-                Skipped
-              </span>
-              <span role="cell">
-                <RowAction label={`Put ${dayLabel(r.date, { weekday: true })} back`} icon="restore" accent onClick={() => edit(r, { skipped: false })} />
-              </span>
-            </div>
-          ) : (
-            <div role="row" key={r.date} style={ROW}>
-              <span role="cell" style={{ fontSize: 15, fontWeight: 600, lineHeight: '36px' }}>
-                {r.number}
-              </span>
-              <span role="cell" style={{ fontSize: 13, lineHeight: '36px' }}>
-                {dayLabel(r.date, { weekday: true })}
-              </span>
-              <div role="cell" style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                {field(`forms.sessions.${r.date}.title`, {
-                  input: 'text',
-                  label: `Title of session ${r.number}, ${dayLabel(r.date, { weekday: true })}`,
-                  hideLabel: true,
-                  placeholder: untitledLabel(r),
-                  value: r.title,
-                  onChange: (v) => edit(r, { title: typeof v === 'string' ? v : '' }),
-                })}
-                {r.note || notesOpen.includes(r.date) ? (
-                  field(`forms.sessions.${r.date}.note`, {
-                    input: 'text',
-                    label: `Note for session ${r.number}`,
-                    hideLabel: true,
-                    placeholder: 'A line under the title',
-                    value: r.note,
-                    onChange: (v) => edit(r, { note: typeof v === 'string' ? v : '' }),
-                  })
-                ) : (
-                  <button type="button" style={SMALL_ACTION} onClick={() => setNotesOpen((o) => [...o, r.date])}>
-                    + note
-                  </button>
-                )}
-              </div>
-              <span role="cell">
-                <RowAction label={`Skip ${dayLabel(r.date, { weekday: true })}`} icon="skip" onClick={() => edit(r, { skipped: true })} />
-              </span>
-            </div>
-          )
+  const titleCell = (r: SessionRow): React.ReactNode =>
+    r.skipped ? (
+      <span style={{ fontSize: 14, lineHeight: 1.5, fontStyle: 'italic' }}>Skipped</span>
+    ) : (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        {field(`forms.sessions.${r.date}.title`, {
+          input: 'text',
+          label: `Title of session ${r.number}, ${day(r)}`,
+          hideLabel: true,
+          placeholder: untitledLabel(r),
+          value: r.title,
+          onChange: (v) => edit(r, { title: typeof v === 'string' ? v : '' }),
+        })}
+        {r.note || notesOpen.includes(r.date) ? (
+          field(`forms.sessions.${r.date}.note`, {
+            input: 'text',
+            label: `Note for session ${r.number}`,
+            hideLabel: true,
+            placeholder: 'A line under the title',
+            value: r.note,
+            onChange: (v) => edit(r, { note: typeof v === 'string' ? v : '' }),
+          })
+        ) : (
+          <button type="button" style={SMALL_ACTION} onClick={() => setNotesOpen((o) => [...o, r.date])}>
+            + note
+          </button>
         )}
       </div>
+    );
+
+  const gridRows: GridRow[] = rows.map((r) => ({
+    key: r.date,
+    state: r.skipped ? 'muted' : 'normal',
+    cells: {
+      no: <span style={{ fontSize: 15, fontWeight: r.skipped ? 400 : 600, lineHeight: '36px' }}>{r.number}</span>,
+      date: <span style={{ fontSize: 13, lineHeight: '36px' }}>{day(r)}</span>,
+      title: titleCell(r),
+    },
+    action: r.skipped
+      ? { icon: 'restore', label: `Put ${day(r)} back`, tone: 'accent', onClick: () => edit(r, { skipped: false }) }
+      : { icon: 'skip', label: `Skip ${day(r)}`, onClick: () => edit(r, { skipped: true }) },
+  }));
+
+  return (
+    <Stack gap={10}>
+      <GridRows
+        id={fieldAnchor('forms.sessions')}
+        label="Sessions"
+        columns={[
+          { id: 'no', label: 'No.', strikeWhenMuted: true },
+          { id: 'date', label: 'Date', strikeWhenMuted: true },
+          { id: 'title', label: 'Title and note' },
+        ]}
+        template="24px 82px minmax(0,1fr)"
+        actionLabel="Skip or put back"
+        rows={gridRows}
+        afterRef={addRef}
+      />
 
       {problem && (
         <p className="frm-msg" data-tone={problem.severity === 'block' ? 'error' : 'warning'}>
@@ -251,7 +203,7 @@ export function GatheringSessions({ answers: a, patch, field, issues }: SectionP
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginLeft: -5 }}>
         {ends !== 'open' && (
-          <button type="button" className="frm-btn frm-btn--ghost frm-btn--sm" onClick={addOne}>
+          <button ref={addRef} type="button" className="frm-btn frm-btn--ghost frm-btn--sm" onClick={addOne}>
             <Icon name="plus" size={14} />
             Add a session
           </button>

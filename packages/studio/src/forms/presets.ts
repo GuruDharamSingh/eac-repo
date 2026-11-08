@@ -34,7 +34,7 @@ export const PRESET_KEYS: Record<FormKindId, string[]> = {
     'host_user_id',
     'co_host_user_id',
   ],
-  artwork: ['kind', 'currency', 'listAsOrg', 'certificateOfAuthenticity', 'edition', 'variants', 'shows'],
+  artwork: ['edition_type', 'price_mode', 'currency', 'unit'],
   service: [
     'booking_type',
     'format',
@@ -82,10 +82,10 @@ export const PLATFORM_PRESETS: FormPreset[] = [
   {
     id: 'platform:artwork:print',
     name: 'Editioned print',
-    note: 'A limited edition with a certificate.',
+    note: 'A limited edition, priced, in centimetres.',
     kind: 'artwork',
     source: 'platform',
-    values: { kind: 'limited_edition', certificateOfAuthenticity: true },
+    values: { edition_type: 'edition', price_mode: 'price', unit: 'cm' },
   },
   { id: 'platform:service:one', name: 'One-to-one session', note: 'One person, online, booking open.', kind: 'service', source: 'platform', values: { booking_type: 'one_on_one', format: 'online', registration_status: 'open' } },
 ];

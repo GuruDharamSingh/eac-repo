@@ -23,7 +23,7 @@ import { emptyContentAnswers, knownTimeZone, type ContentFieldContext } from '@e
 import type { Answers, FormContext, FormKindSchema } from '../../contract';
 import { isRepeating, isSeries } from '../../rules/answers';
 import { GATHERING_RULES } from '../../rules/gathering';
-import { seriesHeldCount, seriesPageSummary } from '../../rules/series';
+import { seriesHeldCount, seriesPageSummary, sessionsSummary } from '../../rules/series';
 import type { KindLayout } from '../post/parts';
 import { SeriesPage } from './SeriesPage';
 import { GatheringSessions } from './Sessions';
@@ -104,6 +104,8 @@ export const gatheringKind: FormKindSchema & { layout: KindLayout } = {
       tier: 'essentials',
       fields: ['forms.sessions'],
       render: 'gatheringSessions',
+      // Beside the heading, as the design prints it: "8 sessions · 19 Nov to 21 Jan · 2 dates skipped".
+      summary: (a) => sessionsSummary(a),
       when: (a) => isSeries(a),
       done: (a) => seriesHeldCount(a) > 0,
     },

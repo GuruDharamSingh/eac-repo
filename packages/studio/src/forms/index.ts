@@ -37,10 +37,18 @@ export { gatheringActions, gatheringAnswers, resolveGatheringAnswers, whereModeO
 export type { GatheringAdapterOptions, WhereMode } from './adapters/gathering';
 export { studioPostActions, postAnswers, postPatch } from './adapters/post-studio';
 export type { StudioPostOptions } from './adapters/post-studio';
+export { seriesActions, gatheringOrSeriesActions, seriesInputFromAnswers, seriesAnswers } from './adapters/series';
+export type { SeriesActions, SeriesFormInputView, SeriesRecordView, SeriesSessionView, SeriesPageView } from './adapters/series';
+export { artworkActions, artworkInputFromAnswers, artworkAnswers, ARTWORK_CURRENCIES } from './adapters/artwork';
+export type { ArtworkActions, ArtworkContextView, ArtworkInputView, ArtworkRecordView } from './adapters/artwork';
+export { serviceActions, serviceAnswersForSave, SERVICE_CURRENCIES } from './adapters/service';
+export type { ServiceActions, ServiceContextView, ServiceRecordView } from './adapters/service';
 
 export { postKind, POST_LAYOUT } from './kinds/post';
 export { gatheringKind, GATHERING_LAYOUT } from './kinds/gathering';
-export { rulesFor, POST_RULES, GATHERING_RULES } from './rules';
+export { artworkKind, ARTWORK_LAYOUT } from './kinds/artwork';
+export { serviceKind, SERVICE_LAYOUT } from './kinds/service';
+export { rulesFor, POST_RULES, GATHERING_RULES, ARTWORK_RULES, SERVICE_RULES } from './rules';
 
 export * from './theme';
 export * from './fields';
