@@ -58,7 +58,7 @@ export async function savePageAction(
 export async function saveLandingAction(data: unknown): Promise<{ ok: boolean; error?: string }> {
   const editor = await getApiEditor();
   if (!editor) return { ok: false, error: "Only editors can change this page." };
-  const result = await savePage(LANDING_SLUG, cleanBoxDoc(data));
+  const result = await savePage(LANDING_SLUG, cleanBoxDoc(stripResolved(data)));
   if (result.ok) revalidatePath("/");
   return result;
 }
