@@ -23,6 +23,7 @@
     "@elkdonis/meta": "workspace:*",
     "@elkdonis/checkout": "workspace:*",
     "@elkdonis/commerce": "workspace:*",
+    "@elkdonis/content": "workspace:*",
     "@elkdonis/db": "workspace:*",
     "@elkdonis/direct-edit": "workspace:*",
     "@elkdonis/dock": "workspace:*",

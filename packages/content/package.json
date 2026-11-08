@@ -1,0 +1,31 @@
+{
+  "name": "@elkdonis/content",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The universal content detail: one model per item (thread or artwork), its timeline and panels, and the pop-up that shows it (docs/open/CONTENT_LIBRARY_COMPONENT_2026-11-08.md).",
+  "type": "module",
+  "main": "./src/model.ts",
+  "types": "./src/model.ts",
+  "exports": {
+    "./model": "./src/model.ts",
+    "./registry": "./src/registry.ts",
+    "./server": "./src/server/index.ts",
+    "./ui": "./src/ui/index.ts"
+  },
+  "dependencies": {
+    "@elkdonis/cms-ui": "workspace:*",
+    "@elkdonis/services": "workspace:*",
+    "lucide-react": "^0.544.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
+}

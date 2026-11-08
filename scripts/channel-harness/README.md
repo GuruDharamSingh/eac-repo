@@ -28,3 +28,6 @@ sg docker -c "docker rm -f shot-channel"
 `out/` and `png/` are build output; do not commit them. When the model type
 (`apps/arts-collective/src/lib/channel/model.ts`) changes, update the sample model in `entry.tsx`;
 when an action is added to `apps/arts-collective/src/lib/channel/actions.ts`, add a stub.
+The piece pop-up renders `@elkdonis/content/ui` (`ContentDetail`, fed by
+`lib/channel/content-detail.ts`). The bundle finds the package through
+`apps/arts-collective/node_modules`, so run `pnpm install` in a fresh checkout.

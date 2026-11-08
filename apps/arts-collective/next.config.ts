@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
     "@elkdonis/actions",
     // The dock: current course step and page actions in a corner box (2026-11-06).
     "@elkdonis/dock",
+    // The content detail, lifted from the Channel piece view (2026-11-08, pass 1).
+    "@elkdonis/content",
     // Studio Video page (/studio/video): templates, editor, Remotion player.
     "@elkdonis/reels",
     // Gradient backgrounds: reels' brand ground, studio controls (2026-11-07).

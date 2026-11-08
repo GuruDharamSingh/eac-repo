@@ -630,6 +630,9 @@ importers:
       '@elkdonis/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@elkdonis/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@elkdonis/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -3210,6 +3213,31 @@ importers:
         version: 3.6.2
       typescript:
         specifier: ^5.0.0
+        version: 5.9.2
+
+  packages/content:
+    dependencies:
+      '@elkdonis/cms-ui':
+        specifier: workspace:*
+        version: link:../cms-ui
+      '@elkdonis/services':
+        specifier: workspace:*
+        version: link:../services
+      lucide-react:
+        specifier: ^0.544.0
+        version: 0.544.0(react@19.1.0)
+      react:
+        specifier: ^19
+        version: 19.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.17
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      typescript:
+        specifier: ^5
         version: 5.9.2
 
   packages/db:
