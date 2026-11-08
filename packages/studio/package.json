@@ -19,7 +19,11 @@
     "./image": "./src/image/index.ts",
     "./image.css": "./src/image/image-editor.css",
     "./channel": "./src/channel/index.ts",
-    "./channel.css": "./src/channel/channel.css"
+    "./channel.css": "./src/channel/channel.css",
+    "./forms": "./src/forms/index.ts",
+    "./forms/focus": "./src/forms/focus.tsx",
+    "./forms.css": "./src/forms/theme/forms.css",
+    "./forms/broadsheet.css": "./src/forms/theme/broadsheet.css"
   },
   "scripts": {
     "check-types": "tsc --noEmit"

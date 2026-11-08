@@ -137,6 +137,7 @@ export function sectionStatus(
   const live = state.issues.filter((i) => i.section === section.id && (state.validationAttempted || i.source === 'server'));
   if (live.some((i) => i.severity === 'block')) return 'error';
   if (live.some((i) => i.severity === 'warn')) return 'warning';
+  if (section.done?.(state.answers, ctx)) return 'done';
   const names = sectionFieldNames(section, schema, state.answers, ctx);
   const filled = names.some((n) => isFilled(readAnswer(state.answers, n)));
   if (filled) return 'done';
@@ -230,10 +231,10 @@ export function initialFormState(deps: FormReducerDeps, init?: Partial<FormState
     fromPreset: init?.fromPreset ?? {},
     presetId: init?.presetId ?? null,
     issues: [],
-    validationAttempted: false,
-    saveStatus: 'idle',
+    validationAttempted: init?.validationAttempted ?? false,
+    saveStatus: init?.saveStatus ?? 'idle',
     editedWhileSaving: false,
-    savedAt: null,
+    savedAt: init?.savedAt ?? null,
     publishedAt: init?.publishedAt ?? null,
     id: init?.id ?? null,
     record: init?.record ?? null,

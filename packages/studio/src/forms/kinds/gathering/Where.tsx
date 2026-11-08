@@ -69,9 +69,9 @@ export function GatheringWhere({ answers: a, patch, ctx, field }: SectionProps) 
   };
 
   const options = [
-    { value: 'place', label: 'Place' },
-    { value: 'link', label: 'Online link' },
-    ...(canChooseTalk(a, ctx) ? [{ value: 'talk', label: 'Talk room' }] : []),
+    { value: 'place', label: 'Place', icon: 'place' as const },
+    { value: 'link', label: 'Online link', icon: 'link' as const },
+    ...(canChooseTalk(a, ctx) ? [{ value: 'talk', label: 'Talk room', icon: 'talk' as const }] : []),
   ];
 
   return (

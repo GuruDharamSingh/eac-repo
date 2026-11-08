@@ -55,6 +55,8 @@ export const postKind: FormKindSchema & { layout: KindLayout } = {
       render: 'alsoOn',
       summary: alsoShowOnSummary,
       when: (_a, ctx) => hasAlsoShowOn(ctx),
+      // The home site and the profile are listed by default, so it already says something.
+      done: () => true,
     },
   ],
   components: {

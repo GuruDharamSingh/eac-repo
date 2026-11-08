@@ -16,6 +16,8 @@
 import type * as React from 'react';
 import type { CommonIconName, HostLinks, IconMap, StudioLinkRequest } from '@elkdonis/utils/host';
 import type { StudioResult } from '../types';
+import type { BlocksSlot, BodySlot } from './fields/FieldRenderer';
+import type { MediaSlot } from './fields/MediaField';
 
 export type Answers = Record<string, unknown>;
 
@@ -58,6 +60,24 @@ export interface FormSection {
   when?: (a: Answers, ctx: FormContext) => boolean;
   /** Drawn in quick compose too. */
   quick?: boolean;
+  /**
+   * The rail shows the section done even with nothing typed, when its defaults already say
+   * something (Also show on: the home site and the profile are listed by default).
+   */
+  done?: (a: Answers, ctx: FormContext) => boolean;
+}
+
+/** How a kind lays out what it draws: the body editor, side-by-side rows and indents (for the 390px reflow). */
+export interface KindLayout {
+  /**
+   * The body slot: in focus mode `blocks` = the Studio essay Canvas (writes `body` and `body_doc`;
+   * body_doc wins on save), `toolbar` = the toolbar editor (`body` HTML). Quick compose uses the lite editor for both.
+   */
+  body: { section: string; field: 'body'; editor: 'blocks' | 'toolbar' };
+  /** Rows of side-by-side controls. `cells` maps a control's name to its CSS flex shorthand. */
+  rows: Array<{ section: string; row: string; cells: Record<string, string> }>;
+  /** Sub-blocks indented on desktop that keep their indent at 390px (px). */
+  indents?: Array<{ section: string; block: string; px: number }>;
 }
 
 export type RuleSeverity = 'block' | 'warn';
@@ -86,7 +106,7 @@ export interface FormRule {
  */
 export interface FieldOverride {
   input?: string;
-  options?: Array<{ value: string; label: string; hint?: string }>;
+  options?: Array<{ value: string; label: string; hint?: string; icon?: FormIconName }>;
   label?: string;
   hint?: string;
   placeholder?: string;
@@ -121,6 +141,7 @@ export interface FormKindSchema {
   label: (a: Answers) => string;
   sections: FormSection[];
   rules: FormRule[];
+  layout?: KindLayout;
   /** gathering + repeat.enabled + repeat.asSeries → 'series'. */
   codeKind: (a: Answers) => CodeKind;
   /** Section ids open on a fresh form. */
@@ -252,8 +273,12 @@ export interface FormHost extends HostLinks {
   /** After a publish: the Channel delivery close, a parent-frame message, a refresh. */
   onSaved?(kind: FormKindId, record: unknown): void;
   onPublished?(kind: FormKindId, record: unknown): void;
-  /** Rich widgets the host already bundles (RichTextEditor, MediaPicker); see cms-ui ContentComposerSlots. */
-  slots?: Record<string, unknown>;
+  /**
+   * Rich widgets the host already bundles. `blocks`: the essay Canvas (focus, Post body);
+   * `body`: a toolbar editor (cms-ui RichTextEditor); `media`: the picker. Quick compose
+   * always uses the lite editor, so `./forms` never needs tiptap.
+   */
+  slots?: { body?: BodySlot; blocks?: BlocksSlot; media?: MediaSlot; [key: string]: unknown };
 }
 
 // ── framed surface (PLAN §6, from hidden-enneagram components/publish/bridge.ts) ──

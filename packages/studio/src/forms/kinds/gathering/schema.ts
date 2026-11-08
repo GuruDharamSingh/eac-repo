@@ -56,7 +56,7 @@ export const GATHERING_LAYOUT: KindLayout = {
   body: { section: 'description', field: 'body', editor: 'toolbar' },
   rows: [
     // Desktop: one line. 390px: date takes the line, time and the length seg drop under it.
-    { section: 'when', row: 'when-start', cells: { scheduled_at: '1 1 170px', start_time: '0 0 96px', duration_choice: '0 1 auto', duration_minutes: '0 0 120px' } },
+    { section: 'when', row: 'when-start', cells: { scheduled_at: '1 1 170px', start_time: '0 0 132px', duration_choice: '0 1 auto', duration_minutes: '0 0 120px' } },
     { section: 'when', row: 'when-cadence', cells: { recurrence_pattern: '0 0 auto', 'forms.repeat_ends': '0 1 auto' } },
     { section: 'hosts', row: 'hosts', cells: { host_user_id: '1 1 200px', co_host_user_id: '1 1 200px' } },
     { section: 'rsvp', row: 'rsvp-numbers', cells: { attendee_limit: '1 1 120px', min_attendees: '1 1 120px', rsvp_deadline: '1 1 150px' } },

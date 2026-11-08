@@ -14,7 +14,7 @@
 // ============================================================================
 
 import * as React from 'react';
-import type { Answers, FormContext, SectionProps } from '../../contract';
+import type { Answers, FormContext, SectionProps, FormIconName } from '../../contract';
 import { text } from '../../rules/answers';
 
 // ── reflow ───────────────────────────────────────────────────────────────────
@@ -25,17 +25,8 @@ import { text } from '../../rules/answers';
  * inputs use flex-basis"), so at 390px they need nothing from the shell; this
  * lists them so the shell and the harness know which rows wrap and where.
  */
-export interface KindLayout {
-  /**
-   * The body slot: in focus mode `blocks` = the Studio essay Canvas (writes `body` and `body_doc`;
-   * body_doc wins on save), `toolbar` = the toolbar editor (`body` HTML). Quick compose uses the lite editor for both.
-   */
-  body: { section: string; field: 'body'; editor: 'blocks' | 'toolbar' };
-  /** Rows of side-by-side controls. `cells` maps a control's name to its CSS flex shorthand. */
-  rows: Array<{ section: string; row: string; cells: Record<string, string> }>;
-  /** Sub-blocks indented on desktop that keep their indent at 390px (px). */
-  indents?: Array<{ section: string; block: string; px: number }>;
-}
+// KindLayout moved into the contract (review, 2026-11-08); re-exported here for the kinds.
+export type { KindLayout } from '../../contract';
 
 const ROW: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 10, minWidth: 0 };
 
@@ -147,9 +138,9 @@ export function placementSummary(a: Answers, ctx: FormContext): string {
 const noop = () => undefined;
 
 function visibilityOptions(a: Answers) {
-  const options = [
-    { value: 'PUBLIC', label: 'Public' },
-    { value: 'ORGANIZATION', label: 'Members' },
+  const options: Array<{ value: string; label: string; icon?: FormIconName }> = [
+    { value: 'PUBLIC', label: 'Public', icon: 'public' },
+    { value: 'ORGANIZATION', label: 'Members', icon: 'members' },
   ];
   // Only shown to keep an invite-only record readable; nobody picks it here.
   if (visibilityOf(a) === 'INVITE_ONLY') options.push({ value: 'INVITE_ONLY', label: 'Invited' });

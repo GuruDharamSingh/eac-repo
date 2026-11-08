@@ -128,7 +128,7 @@ export function GatheringWhen({ answers: a, patch, ctx, field, tier }: SectionPr
             onChange: (v) => apply({ scheduled_at: joinStart(text(v), time) }),
           })}
         </Cell>
-        <Cell flex="0 0 96px">
+        <Cell flex="0 0 132px">
           {field('start_time', {
             input: 'time',
             label: 'Starts',
