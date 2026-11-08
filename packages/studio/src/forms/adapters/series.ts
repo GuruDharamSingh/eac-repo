@@ -17,7 +17,9 @@
 // attendance and its notice, the RSVP deadline, hosts (per week, in the
 // planner), the reminder (a series mails subscribers N days before), the
 // recording link, the document, RSVPs off, and any other forms.* key.
-// Members-only is refused: the series pages never check visibility.
+// Who sees it: visibility 'PUBLIC' → audience 'everyone'; 'ORGANIZATION' (the
+// form's "Members") or 'INVITE_ONLY' → 'members', which the server stores as
+// INVITE_ONLY + min_role member for the series and its weeks (cc440377).
 //
 // Saves: no autosave (a series draft is saved on Save draft or Publish). A
 // save with an id REBUILDS the draft (the server archives it and makes a fresh
@@ -79,7 +81,11 @@ export interface SeriesFormInputView {
   sessions: SeriesSessionView[];
   page: SeriesPageView;
   repeatCount?: number | null;
+  /** 'everyone' (default) or 'members': the series and its weeks (services' thread-audience). */
+  audience?: SeriesAudienceView;
 }
+
+export type SeriesAudienceView = 'everyone' | 'members';
 
 export interface SeriesRecordView {
   id: string;
@@ -163,10 +169,9 @@ export function seriesInputFromAnswers(
 ): { ok: true; input: SeriesFormInputView; warnings: string[] } | { ok: false; error: string } {
   if (!isSeries(a)) return { ok: false, error: 'This gathering is not presented as a series.' };
   if (repeatPattern(a) !== 'WEEKLY') return { ok: false, error: 'A series meets every 1 to 4 weeks: set Repeats to weekly.' };
+  // Until the PM rules on a finer mapping, any narrower visibility is "members".
   const visibility = text(a.visibility).trim();
-  if (visibility && visibility !== 'PUBLIC') {
-    return { ok: false, error: 'A series is public for now: members-only series are not supported yet.' };
-  }
+  const audience: SeriesAudienceView = visibility === 'ORGANIZATION' || visibility === 'INVITE_ONLY' ? 'members' : 'everyone';
 
   const { answers: r } = resolveGatheringAnswers(a);
   const zone = formZone(r);
@@ -210,6 +215,7 @@ export function seriesInputFromAnswers(
       .map((s) => ({ date: s.date, title: s.title.trim() || null, note: s.note.trim() || null, skipped: s.skipped, reason: s.reason.trim() || null })),
     page: seriesPageOf(a),
     repeatCount: count !== null && Number.isInteger(count) && count > 0 ? count : null,
+    audience,
   };
 
   const warnings: string[] = [];
@@ -247,7 +253,8 @@ export function seriesAnswers(record: SeriesRecordView, ctx: MeetingContextView 
     is_rsvp_enabled: true,
     attendee_limit: i.attendeeLimit ?? undefined,
     feed_slug: i.section ?? ctx?.feeds?.[0]?.slug,
-    visibility: 'PUBLIC',
+    // The form's "Members" option is 'ORGANIZATION'; the server keeps members as INVITE_ONLY + member.
+    visibility: i.audience === 'members' ? 'ORGANIZATION' : 'PUBLIC',
     share_to_network: i.shareToNetwork === true,
     'forms.repeat_as_series': true,
     'forms.repeat_every_weeks': i.schedule.intervalWeeks,

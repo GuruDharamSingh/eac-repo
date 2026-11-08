@@ -20,6 +20,7 @@ import {
   type SeriesClock,
 } from './meeting-series';
 import { saveSeriesPageSettings } from './series-page';
+import { audienceToStorage } from './thread-audience';
 
 // ============================================================================
 // A NEW meeting series from the publication forms (pass 2, 2026-11-08).
@@ -49,11 +50,18 @@ import { saveSeriesPageSettings } from './series-page';
 //   3. weeks     per typed week: saveSeriesSession (title, note → subtitle),
 //                then cancelSeriesSession for a skip, else publishSeriesSession
 //                for a titled week. Each call is its own short write.
-//   4. go-live   one UPDATE: visibility PUBLIC, share_to_network as asked,
-//                listed / landing as asked, metadata.forms dropped.
+//   4. go-live   one transaction: the series takes the chosen audience
+//                (audienceToStorage: everyone = PUBLIC; members = INVITE_ONLY +
+//                min_role member), share_to_network and listed / landing as
+//                asked, metadata.forms dropped; and the week threads step 3
+//                made take the same audience. (Since cc440377 a week thread
+//                copies its series' audience when it is made, which in step 3
+//                is the hidden INVITE_ONLY one, so go-live sets theirs too.)
 //   5. extras    best-effort, reported as warnings, never undone: the Talk
 //                room (after go-live: a draft or a hidden series makes no
-//                public room), featuring on the Series page, the calendar.
+//                public room), featuring on the Series page, the calendar (an
+//                everyone series only: the shared calendar never carries an
+//                INVITE_ONLY thread, org-calendar.ts pushThreadToCalendar).
 //
 // How atomic: the existing functions each write with the global `db` (no
 // transaction can be passed in), so steps 1–4 are NOT one transaction. What
@@ -136,7 +144,14 @@ export interface SeriesFormInput {
   page: SeriesFormPage;
   /** "N sessions" as the form counted them; kept on a draft so it reopens counting. Not stored on a published series. */
   repeatCount?: number | null;
+  /**
+   * Who may see the series and its weeks (thread-audience.ts): 'everyone' (default) or
+   * 'members' (INVITE_ONLY + min_role member). Applied at go-live; a draft keeps it in its input.
+   */
+  audience?: SeriesAudience;
 }
+
+export type SeriesAudience = 'everyone' | 'members';
 
 export interface SeriesFormRecord {
   id: string;
@@ -171,6 +186,7 @@ export type SeriesFormField =
   | 'attendeeLimit'
   | 'section'
   | 'sessions'
+  | 'audience'
   | 'replaces';
 
 export type SeriesPublishStep = 'publish' | 'schedule' | 'sessions' | 'go-live';
@@ -319,6 +335,9 @@ interface Plan {
   shareToNetwork: boolean;
   weeks: Week[];
   page: SeriesFormPage;
+  audience: SeriesAudience;
+  /** The audience as columns: visibility + min_role. */
+  storage: ReturnType<typeof audienceToStorage>;
   /** The input as stored on the draft (metadata.forms.input). */
   stored: SeriesFormInput;
 }
@@ -415,6 +434,9 @@ async function planOf(
   const shareToNetwork = input.shareToNetwork === true;
   const count = Number(input.repeatCount);
   const repeatCount = Number.isInteger(count) && count >= 1 && count <= 260 ? count : null;
+  const audienceRaw = input.audience ?? 'everyone';
+  if (audienceRaw !== 'everyone' && audienceRaw !== 'members') return refuse('A series is for everyone or for members.', 'audience');
+  const audience: SeriesAudience = audienceRaw;
 
   const stored: SeriesFormInput = {
     intent: 'draft',
@@ -431,6 +453,7 @@ async function planOf(
     sessions: weeks.map((w) => ({ date: w.date, title: w.title, note: w.note, skipped: w.skipped, reason: w.reason })),
     page,
     repeatCount,
+    audience,
   };
 
   return {
@@ -458,6 +481,8 @@ async function planOf(
       shareToNetwork,
       weeks,
       page,
+      audience,
+      storage: audienceToStorage(audience),
       stored,
     },
   };
@@ -536,6 +561,7 @@ async function undoPublish(orgId: string, threadId: string): Promise<void> {
         status = 'draft',
         published_at = NULL,
         visibility = 'PUBLIC',
+        min_role = NULL,
         share_to_network = false,
         metadata = jsonb_set(
           COALESCE(metadata, '{}'::jsonb), '{series}',
@@ -616,19 +642,29 @@ async function publishDraft(
     }
 
     step = 'go-live';
-    const live = await db<Array<{ id: string }>>`
-      UPDATE threads SET
-        visibility = 'PUBLIC',
-        share_to_network = ${plan.shareToNetwork},
-        metadata = jsonb_set(
-          COALESCE(metadata, '{}'::jsonb) - 'forms', '{series}',
-          COALESCE(metadata->'series', '{}'::jsonb) || ${db.json({ listed: plan.page.listed, landing: plan.page.slides } as never)}
-        ),
-        updated_at = NOW()
-      WHERE id = ${threadId} AND org_id = ${orgId} AND status = 'published'
-      RETURNING id
-    `;
-    if (!live[0]) throw new Error('The series could not be put live.');
+    const { visibility, minRole } = plan.storage;
+    await db.begin(async (tx) => {
+      const live = await tx<Array<{ id: string }>>`
+        UPDATE threads SET
+          visibility = ${visibility},
+          min_role = ${minRole},
+          share_to_network = ${plan.shareToNetwork},
+          metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb) - 'forms', '{series}',
+            COALESCE(metadata->'series', '{}'::jsonb) || ${tx.json({ listed: plan.page.listed, landing: plan.page.slides } as never)}
+          ),
+          updated_at = NOW()
+        WHERE id = ${threadId} AND org_id = ${orgId} AND status = 'published'
+        RETURNING id
+      `;
+      if (!live[0]) throw new Error('The series could not be put live.');
+      // The weeks made in step 3 copied the hidden audience; they take the series' own.
+      await tx`
+        UPDATE threads SET visibility = ${visibility}, min_role = ${minRole}, updated_at = NOW()
+        WHERE org_id = ${orgId} AND kind = ${SERIES_SESSION_KIND} AND status <> 'archived'
+          AND metadata->'seriesSession'->>'seriesId' = ${threadId}
+      `;
+    });
     return { ok: true };
   } catch (err) {
     console.error(`[series-form] publish failed at ${step}:`, err);
@@ -662,12 +698,15 @@ async function afterLive(viewerId: string, orgId: string, threadId: string, plan
       warnings.push('The series is live, but it could not be made the featured series.');
     }
   }
-  try {
-    if (!(await getOrgCalendarUri(orgId))) await ensureOrgCalendar(orgId);
-    await pushThreadToCalendar(orgId, threadId);
-  } catch (err) {
-    // The reconciler (org-calendar-sync.ts) picks it up later.
-    console.error('[series-form] calendar mirror failed:', err);
+  // The shared calendar never carries an INVITE_ONLY thread (org-calendar.ts pushThreadToCalendar).
+  if (plan.storage.visibility !== 'INVITE_ONLY') {
+    try {
+      if (!(await getOrgCalendarUri(orgId))) await ensureOrgCalendar(orgId);
+      await pushThreadToCalendar(orgId, threadId);
+    } catch (err) {
+      // The reconciler (org-calendar-sync.ts) picks it up later.
+      console.error('[series-form] calendar mirror failed:', err);
+    }
   }
   return warnings;
 }
