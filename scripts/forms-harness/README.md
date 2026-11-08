@@ -12,9 +12,9 @@ Pages (the canvas ids of `docs/open/publishing-forms-handoff/Publishing Forms.dc
   line must read "Four things left before it can go out.").
 - pass 2: 1c (a new series with the planner; soft tissue's gathering kind and
   `GATHERING_SERIES_SAMPLE`), 1f (artwork), `service` (an offering), the phones 1o, 1p and
-  `service-m`, and `1c-page`, `1f-page`, `service-page` (the preview on Page). Artwork and
-  Offering draw on harness fixtures (`forms/harness/fixtures.tsx`) until soft tissue's
-  `kinds/artwork` and `kinds/service` land. 1d/1e (planner alternates) are pass 4.
+  `service-m`, `1c-page`, `1f-page`, `service-page` (the preview on Page), and `joints` /
+  `joints-m` (GridRows, PicturesField and CreditRows on their own, in every state, at 900 and
+  390). 1d/1e (planner alternates) are pass 4.
 
 Each is built in three looks:
 
@@ -23,7 +23,7 @@ Each is built in three looks:
 - `<id>-dark`: a dark site's `site_themes` vars at `:root` (surface hooks plus `@elkdonis/gradients`
   `deriveRoleRamps`), the forms reading them through the fallback chain
 
-Widths: 1320 (desktop, as designed), 900 (1i), 390 (1l, 1m, 1n, 1o, 1p, service-m). The Post
+Widths: 1320 (desktop, as designed), 900 (1i, joints), 390 (1l, 1m, 1n, 1o, 1p, service-m, joints-m). The Post
 pages pass the Studio essay Canvas as the focus `blocks` slot, as the Studio host will.
 
 Hosts compile the forms with their own, non-strict tsconfig (arts-collective). To check the forms

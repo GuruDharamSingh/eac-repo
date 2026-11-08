@@ -41,7 +41,7 @@ const css = [
 const PAGES = [
   "1a", "2a", "2b", "1b", "1h", "1i", "1j", "1l", "1m", "1n", "blank",
   // pass 2
-  "1c", "1c-page", "1o", "1f", "1f-page", "1p", "service", "service-page", "service-m",
+  "1c", "1c-page", "1o", "1f", "1f-page", "1p", "service", "service-page", "service-m", "joints", "joints-m",
 ];
 const LOOKS = { broadsheet: "", plain: "-plain", dark: "-dark" };
 const font = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">';

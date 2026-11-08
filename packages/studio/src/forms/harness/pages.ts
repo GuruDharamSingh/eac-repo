@@ -5,12 +5,12 @@
 //           can go out.")
 //   pass 2: 1c (series with the planner), 1f (artwork), `service` (an offering),
 //           1o, 1p and `service-m` (phones), and `1c-page`, `1f-page`,
-//           `service-page` (the preview's Page view). 1d/1e (the planner
-//           alternates) are pass 4.
+//           `service-page` (the preview's Page view), plus `joints` / `joints-m`
+//           (GridRows, PicturesField and CreditRows on their own, every state).
+//           1d/1e (the planner alternates) are pass 4.
 // Each is drawn in three looks by scripts/forms-harness: Broadsheet, plain (no
 // theme, so every --frm-* falls back), and a dark site's themeVars. Sample data
-// is soft tissue's (kinds/*/sample.ts) where it has landed, else the harness
-// fixtures (fixtures.tsx); nothing is saved.
+// is soft tissue's (kinds/*/sample.ts); nothing is saved.
 // ============================================================================
 
 import type { Answers, FormContext, FormKindId, FormKindSchema, FormLayout, FormPreset, FormUiState } from '../contract';
@@ -25,7 +25,8 @@ import {
   emptyGatheringAnswers,
 } from '../kinds/gathering';
 import { postKind, POST_SAMPLE, POST_SAMPLE_CONTEXT } from '../kinds/post';
-import { ARTWORK_FIXTURE, ART_CONTEXT, SERVICE_CONTEXT, SERVICE_FIXTURE, artworkFixtureKind, serviceFixtureKind } from './fixtures';
+import { artworkKind, ARTWORK_SAMPLE, ARTWORK_SAMPLE_CONTEXT } from '../kinds/artwork';
+import { serviceKind, SERVICE_SAMPLE, SERVICE_SAMPLE_CONTEXT } from '../kinds/service';
 
 /** What happened before the screenshot, replayed as state events. */
 export type HarnessStep = 'saved' | 'attempt' | 'published';
@@ -54,14 +55,14 @@ export const THURSDAY_PRESET: FormPreset = {
   values: { duration_minutes: 120, start_time: '18:30', location: 'Studio 4, 120 Harbord St, Toronto', attendee_limit: 24, reminder_minutes_before: 1440 },
 };
 
-/** The design's artwork preset (1f). */
+/** The design's artwork preset (1f), with what commerce stores today: no edition size, no variants (soft tissue's deferred list). */
 export const EDITIONED_PRESET: FormPreset = {
   id: 'org:editioned-print',
   name: 'Editioned print',
-  note: 'Edition of 25, framed and unframed variants, in the store.',
+  note: 'An edition, priced in CAD, in the store.',
   kind: 'artwork',
   source: 'org',
-  values: { edition_type: 'edition', edition_size: 25, price_mode: 'price', currency: 'CAD', shows: { store: true, gallery: true } },
+  values: { edition_type: 'edition', price_mode: 'price', currency: 'CAD' },
 };
 
 export function harnessPresets(kind: FormKindId): FormPreset[] {
@@ -109,9 +110,9 @@ const artwork = (id: string, label: string, ui: HarnessPage['ui'], open: string[
   id,
   label,
   kind: 'artwork',
-  schema: artworkFixtureKind,
-  answers: ARTWORK_FIXTURE,
-  ctx: ART_CONTEXT,
+  schema: artworkKind,
+  answers: ARTWORK_SAMPLE,
+  ctx: ARTWORK_SAMPLE_CONTEXT,
   ui,
   open,
   presetId: EDITIONED_PRESET.id,
@@ -123,9 +124,9 @@ const service = (id: string, label: string, ui: HarnessPage['ui'], width = 1320)
   id,
   label,
   kind: 'service',
-  schema: serviceFixtureKind,
-  answers: SERVICE_FIXTURE,
-  ctx: SERVICE_CONTEXT,
+  schema: serviceKind,
+  answers: SERVICE_SAMPLE,
+  ctx: SERVICE_SAMPLE_CONTEXT,
   ui,
   open: [],
   steps: ['saved'],
@@ -203,3 +204,9 @@ export const HARNESS_PAGES: Record<string, HarnessPage> = {
 
 /** 1i is a sheet of field states, not a form. */
 export const STATES_PAGE = { id: '1i', label: 'Field states shared by every kind', width: 900 };
+
+/** The pass 2 joints on their own, at a form column's width and at a phone's. */
+export const JOINTS_PAGES: Record<string, { id: string; label: string; width: number }> = {
+  joints: { id: 'joints', label: 'GridRows, PicturesField, CreditRows: every state', width: 900 },
+  'joints-m': { id: 'joints-m', label: 'The same at 390', width: 390 },
+};

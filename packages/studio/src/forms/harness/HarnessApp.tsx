@@ -15,6 +15,7 @@ import { broadsheetFormTheme, defaultFormTheme } from '../theme/icons';
 import { DARK_SITE_VARS, STUB_ACTIONS, harnessHost, type HarnessTheme } from './host';
 import { HARNESS_PAGES, PUBLISHED_AT, SAVED_AT, harnessPresets, type HarnessPage } from './pages';
 import { StatesSheet } from './StatesSheet';
+import { JointsSheet } from './JointsSheet';
 
 function FormPage({ page, theme }: { page: HarnessPage; theme: HarnessTheme }) {
   const schema = page.schema;
@@ -75,6 +76,7 @@ export function HarnessApp({ page, theme }: { page: string; theme: HarnessTheme 
   }, [theme]);
 
   if (page === '1i') return <StatesSheet theme={theme === 'broadsheet' ? broadsheetFormTheme : defaultFormTheme} />;
+  if (page === 'joints' || page === 'joints-m') return <JointsSheet theme={theme === 'broadsheet' ? broadsheetFormTheme : defaultFormTheme} />;
   const p = HARNESS_PAGES[page];
   if (!p) return <p style={{ padding: 24 }}>No harness page "{page}".</p>;
   return <FormPage page={p} theme={theme} />;
