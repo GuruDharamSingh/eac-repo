@@ -219,6 +219,30 @@ For Justin (via PM):
 
 For system32-cd: one ramp/`-on` token helper shared by `--frm-*` and `--hc-*`, a shared icon-name map, and a `HostLinks` base type for `FormHost`/`HubCardHost`.
 
-For system32-a1: **answered 2026-11-08.** Sanitise on every copy through the host's own pipeline (folded into §1.2 `puck`). a1 also found that sunjay's `saveLandingAction` (`apps/sunjay/src/lib/puck/actions.ts:58-61`) saves `cleanBoxDoc(data)` with no resolved-key strip. That is a one-line fix; I propose to take it in pass 2 alongside the sunjay `setMemberRoleAction` fix, if the PM agrees.
+For system32-a1: **answered 2026-11-08.** Sanitise on every copy through the host's own pipeline (folded into §1.2 `puck`). a1 also found that sunjay's `saveLandingAction` (`apps/sunjay/src/lib/puck/actions.ts:58-61`) saves `cleanBoxDoc(data)` with no resolved-key strip. The PM fixed it in `d7cbd400`, so it's out of pass 2. The sunjay `setMemberRoleAction` guard fix stays in pass 2. Both go live in sunjay's next rebuild, which is batched with the pilot.
 
 For the architect: registry entries as the write path on custom hosts means mounting `actionRoutes()` on ifac and sunjay before the kit. `resolveActionOrg` falls back to `getOwnedOrgId`; the entries need the org from `site` instead. OK to add a site-scoped actor org?
+
+## 8. Progress (2026-11-08)
+
+Justin's answers to §7: all recommendations taken. Owner is never granted from the hub; the shared guard is owners-only for roles, listing and removals; migrations A–E are written but not run; Artists & dealers is kept; Cloud storage moves under Permissions; pilots use Industry; Visitors links to Full analytics; thumbnails use the placeholder in v1. The architect's conditions (site-bound door, allow-list, host server action, `act()`) are applied.
+
+| Commit | What |
+|---|---|
+| 90bdce2a, 476e7ca6 | Pass 0. `@elkdonis/hub`: contract, gates, models, `--hc-*` tokens, Industry theme, primitives, icons. `@elkdonis/gradients` ramps (shared with forms). |
+| 4af85834 | Ramps mirror on dark grounds (cd review). |
+| 94729a47 | Migrations 256–260 parked in `migrations-pending/` (outside the migrator). |
+| 0a5324e5 | Services guard is owners-only. Added remove, arrival queue, welcome and dismiss. Five appOnly registry entries. `siteOrgId` lock (opt-in). `performHubAction`. |
+| 96ffe4fa | Members server loader. |
+| a8ea03d9 | `setMemberRoleAction` goes through the shared guard (sunjay, elktours, amrit-canada, innergathering). |
+| 941cb783 | Members UI (face, pop-up, detail, small org) and `scripts/hub-cards-harness` (28 pages). |
+| 09d390e1 | ifac mount: `/hub/members` and the face on `/hub`. Industry theme. Write door `app/hub/actions.ts`. |
+| b0053995 | Review fix: `appOnly` needs the site-bound door, so dock and `runAction` are refused. Network admin is read-only. Removal clears arrivals. |
+| ac64add5 | Review fix: Center People tab is read-only for non-owners (cms-ui `canChange`, wired in 3 apps). |
+| 4db0e138, 681b089b, 8c4b81b9 | Site Builder: action ids, six registry entries with a host `SiteBuilderAdapter`, server loader, richer declaration. |
+
+Open:
+- Site Builder UI (port running), then the sunjay mount. Its files are staged.
+- Batched rebuild by the PM: ifac and sunjay first, then elktours, amrit-canada, innergathering and arts-collective for the guard and Center fixes. The lockfile importer is needed for `@elkdonis/hub`.
+- After the rebuild, retire the old tabs: `/manage/people`, `/manage/cloud`, `/manage/analytics` and `/manage/pages|builder`, with redirects.
+- Migrations run on Justin's OK: notes, saved templates, Dismiss, per-person sync, kinds.
