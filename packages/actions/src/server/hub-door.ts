@@ -13,6 +13,7 @@
 //   - records via 'app', so the audit row is the person ('human'), and appOnly
 //     entries may run (the HTTP routes and agents can't).
 import type { ActionResult } from '../types';
+import type { SiteBuilderAdapter } from './site-adapter';
 import { resolveActionOrg } from './org';
 import { performAction } from './run';
 
@@ -27,10 +28,12 @@ export async function performHubAction(
   id: string,
   input: unknown,
   allow: readonly string[],
+  /** Site Builder hosts: their pages, slug rules and save pipeline. */
+  siteAdapter?: SiteBuilderAdapter,
 ): Promise<ActionResult> {
   if (!actor?.userId) return { ok: false, error: 'Sign in first.', code: 'auth' };
   if (!allow.includes(id)) return { ok: false, error: 'This cannot be done from here.', code: 'unknown' };
   const orgId = await resolveActionOrg(actor.userId, site.orgId, { siteOrgId: site.orgId });
   if (!orgId) return { ok: false, error: 'Only the organisation’s owners and guides can change this.', code: 'forbidden' };
-  return performAction(id, { userId: actor.userId, email: actor.email, orgId, siteOrgId: site.orgId, via: 'app' }, input);
+  return performAction(id, { userId: actor.userId, email: actor.email, orgId, siteOrgId: site.orgId, via: 'app', siteAdapter }, input);
 }

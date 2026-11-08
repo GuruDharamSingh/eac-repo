@@ -5,6 +5,7 @@
 import { z } from 'zod/v4';
 import type { ActionResult } from '../types';
 import type { ActorContext, Runner } from './run';
+import { SITE_BUILDER_RUNNERS } from './sb-runners';
 
 const runner = <I>(r: Runner<I>): Runner<unknown> => r as Runner<unknown>;
 
@@ -61,4 +62,7 @@ export const HUB_RUNNERS: Record<string, Runner<unknown>> = {
       return fromPeople(await dismissOrgArrival(needOrg(ctx), input.arrivalId, ctx.userId));
     },
   }),
+
+  // Site Builder (./sb-runners.ts)
+  ...SITE_BUILDER_RUNNERS,
 };

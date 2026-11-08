@@ -26,6 +26,7 @@ import { actionMeta } from '../catalogue';
 import { CHANNEL_OUTLET_IDS } from '../channel';
 import { acceptSuggestion, dismissSuggestion, fillSlot, planStep } from './channel';
 import { HUB_RUNNERS } from './hub-runners';
+import type { SiteBuilderAdapter } from './site-adapter';
 
 export interface ActorContext {
   /** users.id of the signed-in person, from the host's verified session. */
@@ -47,6 +48,8 @@ export interface ActorContext {
    * entries are refused (Channel is central). Absent = no site binding (as before).
    */
   siteOrgId?: string | null;
+  /** The host's page adapter, passed by performHubAction for the Site Builder entries. */
+  siteAdapter?: SiteBuilderAdapter;
   /** A `thread` entry's subject: the post's id, as the caller names it. performAction loads and checks it. */
   subjectId?: string | null;
   /** Set by performAction for a `thread` entry: the post, read from the database. Never from the caller. */
