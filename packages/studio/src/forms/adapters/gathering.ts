@@ -58,7 +58,9 @@ export function resolveGatheringAnswers(a: Answers): { answers: Answers; dropped
   if (typeof out.recurrence_until === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(out.recurrence_until)) {
     out.recurrence_until = `${out.recurrence_until}T23:59`;
   }
-  const formKeys = Object.keys(out).filter((k) => k === 'forms' || k.startsWith('forms.'));
+  // A key whose value is undefined was never set (or was cleared): not a lost choice.
+  const formKeys = Object.keys(out).filter((k) => (k === 'forms' || k.startsWith('forms.')) && out[k] !== undefined);
+  for (const k of Object.keys(out)) if ((k === 'forms' || k.startsWith('forms.')) && out[k] === undefined) delete out[k];
   for (const k of ['where_mode', 'start_time', ...formKeys]) delete out[k];
   // Keys that are UI state already translated into stored columns are not "lost": no warning.
   const dropped = formKeys.filter((k) => !DERIVED_FORM_KEYS.includes(k));
@@ -70,8 +72,18 @@ export function resolveGatheringAnswers(a: Answers): { answers: Answers; dropped
  *   forms.repeat_count      "8 sessions" → the kind also patches recurrence_until; on load it is derived back.
  *   forms.repeat_as_series  pass 2 seam: codeKind reads it; the series adapter consumes it.
  *   forms.loaded_start      the stored scheduled_at, set on load; the past-date rule compares against it.
+ *   forms.repeat_every_weeks, forms.sessions, forms.series_page
+ *                           series-only; kept in the answers when "Present it as a series" is
+ *                           unticked so re-ticking restores them, and saved only by the series adapter.
  */
-export const DERIVED_FORM_KEYS = ['forms.repeat_count', 'forms.repeat_as_series', 'forms.loaded_start'];
+export const DERIVED_FORM_KEYS = [
+  'forms.repeat_count',
+  'forms.repeat_as_series',
+  'forms.loaded_start',
+  'forms.repeat_every_weeks',
+  'forms.sessions',
+  'forms.series_page',
+];
 
 /** Saved record → form answers, with the Where seg set from what was stored. */
 export function gatheringAnswers(record: MeetingRecordView, ctx: MeetingContextView | null): Answers {
