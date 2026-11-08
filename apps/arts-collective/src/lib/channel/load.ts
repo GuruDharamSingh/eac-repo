@@ -92,6 +92,18 @@ const HOMES_FALLBACK: Record<string, string> = {
   "katie-the-potter": "https://pottery.arts-collective.com",
   elktours: "https://elkdonisexperiences.com",
 };
+
+/**
+ * Orgs that run an app of their own (not the shell), and the screens that app
+ * serves for Channel's People / Pages / Store links. The HOST always comes from
+ * the org's org_domains primary row (orgUrl); only the paths live here, checked
+ * against each app's routes on 2026-11-08 (apps/<app>/src/app/manage). Moves to
+ * the site record's manage_paths (§4.3) when that table lands.
+ */
+const OWN_APP_SCREENS: Record<string, { people: string; pages: string; store: string }> = {
+  "katie-the-potter": { people: "/manage/people", pages: "/manage/site", store: "/manage/pieces" },
+  elktours: { people: "/manage/people", pages: "/manage/builder", store: "/manage/tours" },
+};
 const PERSONAL_ORG = "oad";
 const DAY_MS = 86_400_000;
 const IN_MOTION_DAYS = 14;
@@ -192,6 +204,14 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
     if (h?.primaryDomain) return getOrgHomeUrl({ slug: h.orgSlug, primaryDomain: h.primaryDomain });
     if (homesDown && HOMES_FALLBACK[orgId]) return HOMES_FALLBACK[orgId];
     return h ? getOrgHomeUrl({ slug: h.orgSlug, primaryDomain: null }) : null;
+  };
+  // An own-app org's screen on its own host: the domain row gives the host, OWN_APP_SCREENS the path.
+  // Without a domain row (migration 263 not applied) its subdomain is the shell, not its app: no link.
+  const ownAppHref = (orgId: string, screen: "people" | "pages" | "store"): string | null => {
+    const paths = OWN_APP_SCREENS[orgId];
+    if (!paths) return null;
+    const base = homeOf(orgId)?.primaryDomain ? orgUrl(orgId) : homesDown ? HOMES_FALLBACK[orgId] ?? null : null;
+    return base ? `${base}${paths[screen]}` : null;
   };
 
   // ── identities ────────────────────────────────────────────────────────────
@@ -814,10 +834,10 @@ export async function loadChannelModel(user: SessionUser, params: LoadParams): P
     site: scopeSite,
     newsletter: scopeOrg ? `/email?org=${encodeURIComponent(scopeOrg.slug)}` : orgs[0] ? `/email?org=${encodeURIComponent(orgs[0].slug)}` : null,
     connections: "/center?surface=me:connections",
-    people: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
-    pages: scopeOrg ? `/hub/sites/${encodeURIComponent(scopeOrg.slug)}/design` : null,
-    template: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
-    store: scopeOrg ? null : `${MARKET}/studio`,
+    people: scopeOrg ? ownAppHref(scopeOrg.orgId, "people") ?? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
+    pages: scopeOrg ? ownAppHref(scopeOrg.orgId, "pages") ?? `/hub/sites/${encodeURIComponent(scopeOrg.slug)}/design` : null,
+    template: scopeOrg && !OWN_APP_SCREENS[scopeOrg.orgId] ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : null,
+    store: scopeOrg ? ownAppHref(scopeOrg.orgId, "store") : `${MARKET}/studio`,
     identity: scopeOrg ? `/hub/organization?org=${encodeURIComponent(scopeOrg.slug)}` : "/center?surface=me",
     writing: studio(null) || "/studio",
     video: studio("video"),
