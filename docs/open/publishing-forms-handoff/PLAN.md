@@ -310,6 +310,45 @@ The questions as asked:
 - Hydration: ids from the block or field, never `useId`/random. Server code imports page-builder
   `/config` or `/server` only.
 
+## 13. Status: pass 2 landed in packages (2026-11-08)
+
+Commits on work/2026-11-08:
+- Ligament:
+  - 877cbbcc: createSeriesFromForm, draft first; publish undoes itself on failure (37 rollback checks plus one end-to-end run).
+  - c8e477d2: the series, artwork and service adapters, plus three arts-collective action files, unimported.
+  - e23e01d1: artwork stock, edition and availability after commerce 7d6540c0.
+- Soft tissue:
+  - 20d05c73, c77d0526: series in place.
+  - 26e8f274: the Artwork and Offering kinds.
+  - b25ad868: artwork edition, stock and availability.
+- Tendons:
+  - d412edc3: shell spec hooks.
+  - bf0cc2cf: GridRows, PicturesField, CreditRows and the previews.
+  - f6c9dc89, d758f6a1, c64b4c3a: harness, 66 pages, keys.mjs 16/16.
+- Bone:
+  - c59dcee7: specKind, specs, autosave and recordId.
+  - 7c1617b8: derived series keys.
+  - fe756afe: series guard.
+  - 7ed2901d: integration; publish counts as live only when the record says so.
+  - 7c89488a: preview.place.
+
+Checks: studio tsc 0 (strict and non-strict); rules 361/361; arts-collective tsc 0; the ./forms bundle is 407 KiB with no tiptap.
+
+Decisions made during pass 2 (for Justin):
+- Session numbers stay fixed on a skip: rule numbers, shown struck through. The design renumbers live.
+- Series can't be members-only, because the series pages don't check visibility.
+- Series drafts don't autosave.
+- "Present it as a series" appears only before the first save.
+- Copy was changed wherever the design claims what the code doesn't do (Soft tissue's reports).
+
+Not live: the arts-collective wiring for series, artwork and offering waits for the PM's go.
+
+Open:
+- SectionProps has no record status, so Availability unlocks only on reload after a first publish.
+- commerce doesn't export artworkStock, so the form can't show copies on hold.
+- Edition proofs, variants beyond the default, and per-artwork gallery and store toggles have no storage.
+- The Canvas alt-text rule (pass 1).
+
 ## 12. Pass 2 contract: answer keys and server paths (bone, 2026-11-08)
 
 Every agent builds to these keys. Keys under `forms.*` are form state the adapter turns into real writes.
